@@ -33,6 +33,9 @@ export async function setSetting(key: string, value: unknown): Promise<void> {
     .values({ key, value })
     .onConflictDoUpdate({
       target: appSetting.key,
-      set: { value, updatedAt: sql`now()` },
+      // Use the value from the attempted insert explicitly. Passing the plain
+      // object through Drizzle's conflict-update path can acknowledge the
+      // request while leaving the existing JSONB value unchanged.
+      set: { value: sql`excluded.value`, updatedAt: sql`now()` },
     });
 }
