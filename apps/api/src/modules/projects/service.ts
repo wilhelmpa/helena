@@ -7,8 +7,10 @@ import {
   issue,
   issueAttachment,
   issueType,
+  aiAgent,
   project,
   projectColumn,
+  projectProvisioningJob,
   projectMember,
   projectDocument,
   teamRole,
@@ -32,6 +34,9 @@ import { getProjectDefaults } from '#modules/settings/service';
 import { dropUnusedTeamMembership } from '#modules/scim/reconcile';
 import { deleteObjects } from '#shared/s3';
 import { lockAttachmentStorage } from '#modules/attachments/storage';
+import { applyProjectTemplateInTransaction } from '#modules/project-templates/service';
+import { getDefaultRoleId } from '#modules/roles/service';
+import { ensureDefaultProjectViews } from '#modules/views/service';
 
 // Data access for projects: the top-level container that groups its own columns,
 // issue types, labels, assignees, custom fields, issues, saved views, and
@@ -312,12 +317,86 @@ export const ISSUE_TYPE_PRESET_KEYS = Object.keys(ISSUE_TYPE_PRESETS);
 
 export type IssueTypePreset = keyof typeof ISSUE_TYPE_PRESETS;
 
+export const DEFAULT_PROVISIONING_RESOURCES = [
+  'coordinator',
+  'workspace',
+  'files',
+  'browser',
+  'terminal',
+] as const;
+
+export interface ProvisioningJobRow {
+  id: string;
+  projectId: number;
+  requestedResources: string[];
+  status: 'pending' | 'succeeded' | 'failed';
+  attempts: number;
+  lastError: string | null;
+  result: unknown;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function mapProvisioningJob(row: typeof projectProvisioningJob.$inferSelect): ProvisioningJobRow {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    requestedResources: row.requestedResources,
+    status: row.status as ProvisioningJobRow['status'],
+    attempts: row.attempts,
+    lastError: row.lastError,
+    result: row.result,
+    completedAt: row.completedAt ? iso(row.completedAt) : null,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  };
+}
+
+export async function getProvisioningJob(projectId: number): Promise<ProvisioningJobRow | null> {
+  const [row] = await db
+    .select()
+    .from(projectProvisioningJob)
+    .where(eq(projectProvisioningJob.projectId, projectId));
+  return row ? mapProvisioningJob(row) : null;
+}
+
+export async function retryProvisioningJob(projectId: number): Promise<ProvisioningJobRow> {
+  const [row] = await db
+    .update(projectProvisioningJob)
+    .set({
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: new Date(),
+      lastError: null,
+      completedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(projectProvisioningJob.projectId, projectId),
+        eq(projectProvisioningJob.status, 'failed'),
+      ),
+    )
+    .returning();
+  if (!row) {
+    if (await getProvisioningJob(projectId)) {
+      throw new HttpError(409, 'Only failed provisioning jobs can be retried');
+    }
+    throw new HttpError(404, 'Provisioning job not found');
+  }
+  return mapProvisioningJob(row);
+}
+
 export async function createProject(
   input: {
     key: string;
     name: string;
     description?: string;
     preset?: string;
+    templateId?: number;
+    autoAssignTeamAgents?: boolean;
+    provisionResources?: string[];
   },
   ownerId: string,
   teamId?: number,
@@ -325,7 +404,13 @@ export async function createProject(
   const ownerTeam = await targetTeam(ownerId, teamId);
   // What a new project starts with, set instance-wide in god mode. Read before the
   // transaction opens so the settings lookup is not part of it.
-  const defaults = await getProjectDefaults();
+  const [defaults, teamAgents, defaultRoleId] = await Promise.all([
+    getProjectDefaults(),
+    input.autoAssignTeamAgents === false
+      ? Promise.resolve([])
+      : db.select({ userId: aiAgent.userId }).from(aiAgent).where(eq(aiAgent.teamId, ownerTeam.id)),
+    getDefaultRoleId(ownerTeam.id),
+  ]);
   return db.transaction(async (tx) => {
     const [row] = await tx
       .insert(project)
@@ -338,6 +423,16 @@ export async function createProject(
       })
       .returning();
     await tx.insert(projectMember).values({ projectId: row.id, userId: ownerId, role: 'owner' });
+    if (teamAgents.length > 0) {
+      await tx.insert(projectMember).values(
+        teamAgents.map(({ userId }) => ({
+          projectId: row.id,
+          userId,
+          role: 'member' as const,
+          roleId: defaultRoleId,
+        })),
+      );
+    }
     for (const [position, column] of DEFAULT_COLUMNS.entries()) {
       await tx.insert(projectColumn).values({
         projectId: row.id,
@@ -357,9 +452,26 @@ export async function createProject(
         position,
       });
     }
+    const { ids: defaultViewIds } = await ensureDefaultProjectViews(tx, row.id);
     await tx
       .insert(projectSetting)
       .values({ projectId: row.id, key: AUTO_ARCHIVE_KEY, value: DEFAULT_AUTO_ARCHIVE });
+    const requestedResources = (
+      input.provisionResources ?? [...DEFAULT_PROVISIONING_RESOURCES, 'boards']
+    ).flatMap((resource) =>
+      resource === 'boards'
+        ? defaultViewIds.map((id) => `board:${id}`)
+        : resource === 'workflows'
+          ? []
+          : [resource],
+    );
+    await tx.insert(projectProvisioningJob).values({
+      projectId: row.id,
+      requestedResources,
+    });
+    if (input.templateId !== undefined) {
+      await applyProjectTemplateInTransaction(tx, row.id, input.templateId);
+    }
     return mapProject({ ...row, teamName: ownerTeam.name, teamMcpEnabled: ownerTeam.mcpEnabled });
   });
 }

@@ -11,6 +11,7 @@ import { Message, MessageContent, MessageFooter } from '@/components/ui/message'
 import { MessageScrollerItem } from '@/components/ui/message-scroller';
 import AgentChatToolCalls from './AgentChatToolCalls';
 import AgentChatUserText from './AgentChatUserText';
+import AgentChatSpeakButton from './AgentChatSpeakButton';
 import { useTranslations } from 'next-intl';
 
 type Block = { text: string } | { tools: AiChatToolPart[] };
@@ -40,6 +41,10 @@ export default function AgentChatMessage({
 }) {
   const t = useTranslations('common.agentChat');
   const isUser = message.role === 'user';
+  const spokenText = message.parts
+    .filter((part): part is Extract<AiChatPart, { type: 'text' }> => part.type === 'text')
+    .map((part) => part.text)
+    .join('\n');
 
   return (
     <MessageScrollerItem
@@ -71,9 +76,12 @@ export default function AgentChatMessage({
           </Bubble>
           {message.error && <p className="text-xs text-destructive">{message.error}</p>}
           <MessageFooter>
-            {message.stopped
-              ? `${t('stopped')} · ${formatTime(message.createdAt)}`
-              : formatTime(message.createdAt)}
+            <span>
+              {message.stopped
+                ? `${t('stopped')} · ${formatTime(message.createdAt)}`
+                : formatTime(message.createdAt)}
+            </span>
+            {!isUser && !message.error && <AgentChatSpeakButton text={spokenText} />}
           </MessageFooter>
         </MessageContent>
       </Message>

@@ -64,7 +64,12 @@ const configFields = {
   memoryLastMessages: t.Optional(
     t.Nullable(t.Integer({ minimum: 1, description: 'How many recent messages to recall.' })),
   ),
-  triggerOnMention: t.Optional(t.Boolean({ description: 'Run when @-mentioned in a comment.' })),
+  triggerOnMention: t.Optional(
+    t.Boolean({
+      description:
+        'Run when @-mentioned, replied to, or when a human comments on an issue still delegated to the agent.',
+    }),
+  ),
   triggerOnAssign: t.Optional(t.Boolean({ description: 'Run when assigned to an issue.' })),
   fieldTriggers: t.Optional(
     t.Array(
@@ -107,9 +112,17 @@ const configFields = {
 export const AiAgentResponse = t.Object({
   id: t.Number(),
   teamId: t.Number(),
-  projects: t.Array(t.Object({ id: t.Number(), key: t.String(), name: t.String() }), {
-    description: 'The projects of the team the agent works in.',
-  }),
+  projects: t.Array(
+    t.Object({
+      id: t.Number(),
+      key: t.String(),
+      name: t.String(),
+      roleId: t.Nullable(t.Number()),
+      roleName: t.Nullable(t.String()),
+      instructions: t.String(),
+    }),
+    { description: 'The projects of the team the agent works in.' },
+  ),
   userId: t.String(),
   name: t.String(),
   username: t.String(),

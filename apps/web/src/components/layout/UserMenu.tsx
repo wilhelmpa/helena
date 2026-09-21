@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { signOut, useSession } from '@/lib/auth-client';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
 import { useAccountSectionLabel } from '@/hooks/useSectionLabels';
+import { runtimeEnv } from '@/utils/runtimeEnv';
 import Avatar from '@/components/common/Avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -47,6 +48,18 @@ export default function UserMenu() {
 
   async function onSignOut() {
     await signOut();
+    const logoutUrl = runtimeEnv().logoutUrl;
+    if (logoutUrl) {
+      try {
+        const target = new URL(logoutUrl, window.location.origin);
+        if (target.origin === window.location.origin) {
+          window.location.assign(target.toString());
+          return;
+        }
+      } catch {
+        // Invalid deployment configuration falls back to the local login page.
+      }
+    }
     router.push('/login');
     router.refresh();
   }

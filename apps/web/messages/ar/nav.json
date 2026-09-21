@@ -24,6 +24,9 @@
   "backToApp": "العودة إلى التطبيق",
   "integrations": "التكاملات (integrations)",
   "projects": "المشاريع",
+  "home": "الرئيسية",
+  "globalHomeHint": "استخدم المنسق العام هنا، أو اختر مشروعًا لسياق خاص بالمشروع.",
+  "workflows": "سير العمل",
   "noProjects": "لا توجد مشاريع بعد",
   "newTeam": "فريق جديد",
   "manageTeams": "إدارة الفرق",
@@ -32,13 +35,37 @@
   "searchHint": "ابحث أو نفّذ أمرًا ({key})",
   "newIssueHint": "مهمة جديدة ({key})",
   "aiChatHint": "الدردشة مع وكلاء الذكاء الاصطناعي ({key})",
+  "openClawHint": "فتح OpenClaw",
+  "paperlessHint": "فتح Paperless",
+  "openClawTabsLabel": "عروض OpenClaw",
+  "openClawProject": "المشروع",
+  "openClawCoordinator": "المنسق",
+  "openClawTerminal": "الطرفية",
   "sections": "الأقسام",
   "doubleClickToRename": "انقر نقرًا مزدوجًا لإعادة التسمية",
+  "workspace": {
+    "tools": "أدوات مساحة العمل",
+    "chat": "الدردشة",
+    "terminal": "الطرفية",
+    "code": "الكود",
+    "browser": "المتصفح",
+    "files": "الملفات",
+    "paperless": "Paperless",
+    "inbox": "البريد الوارد",
+    "connections": "الاتصالات",
+    "advanced": "متقدم",
+    "openExternal": "فتح {tool} في علامة تبويب جديدة",
+    "unavailable": "لم تتم تهيئة {tool}",
+    "unavailableDescription": "يمكن للمسؤول ربط مساحة العمل هذه بالنسخة.",
+    "mail": "Mail"
+  },
   "groups": {
     "project": "المشروع",
     "workflow": "سير العمل",
     "automation": "الأتمتة"
   },
   "godModeOwnerOnly": "وضع المشرف متاح لمالك النسخة بس.",
-  "project": "المشروع"
+  "project": "المشروع",
+  "organization": "Organization",
+  "connections": "Connections"
 }

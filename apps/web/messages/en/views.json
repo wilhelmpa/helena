@@ -11,5 +11,15 @@
   "unfavorite": "Remove from favorites",
   "shareBoard": "Share board",
   "newViewHint": "Create a view from the current filters and display",
-  "filter": "Filter"
+  "filter": "Filter",
+  "manageFolders": "Manage view folders",
+  "newFolder": "New folder",
+  "folderNamePrompt": "Folder name",
+  "renameFolder": "Rename folder",
+  "moveFolderUp": "Move up",
+  "moveFolderDown": "Move down",
+  "deleteFolder": "Delete folder",
+  "deleteFolderConfirm": "Delete {name}? Its views will remain without a folder.",
+  "moveToFolder": "Move to folder",
+  "noFolder": "No folder"
 }

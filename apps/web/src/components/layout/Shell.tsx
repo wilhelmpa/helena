@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
 import { useRouter } from 'next/navigation';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
 import { useIssueBySeqQuery } from '@/services/issues.service';
@@ -13,6 +14,7 @@ import { useSettingsNavGroups } from '@/hooks/useSettingsNavGroups';
 import { useShellProject } from '@/hooks/useShellProject';
 import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
+import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
 import { projectPath, issuePath } from '@/utils/paths';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
 import { ShellCtx, type ShellContext } from '@/context/shellContext';
@@ -23,8 +25,7 @@ import CommandLayer from '@/components/layout/CommandLayer';
 import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import ShellOverlays from '@/components/layout/ShellOverlays';
-import { ChatPanel } from '@/features/ai-chat/components/panel/ChatPanel';
-import { useChatPanel } from '@/features/ai-chat/hooks/useChatPanel';
+import WorkspacePanel from '@/components/layout/WorkspacePanel';
 import { useTranslations } from 'next-intl';
 
 // The layout for /project/:projectKey and its children (the work items view and the
@@ -34,9 +35,15 @@ import { useTranslations } from 'next-intl';
 export default function Shell({
   children,
   defaultSidebarOpen = true,
+  globalHome = false,
+  globalTitle,
+  autoOpenGlobalChat = true,
 }: {
   children: ReactNode;
   defaultSidebarOpen?: boolean;
+  globalHome?: boolean;
+  globalTitle?: ReactNode;
+  autoOpenGlobalChat?: boolean;
 }) {
   const t = useTranslations('nav');
   const router = useRouter();
@@ -57,19 +64,19 @@ export default function Shell({
   } = useShellProject(projectKey, route.activeViewId);
 
   const initiativeOptions = useInitiativeOptionsQuery(projectKey).data ?? [];
-  const { issueOpenMode, showChatByDefault } = useAccountPreferences();
+  const { issueOpenMode } = useAccountPreferences();
   const overlays = useOverlays();
-  const chatPanel = useChatPanel(projectKey, showChatByDefault);
-  // The agent a page asked to chat with, held until the panel has opened its tab.
-  const [chatAgentId, setChatAgentId] = useState<number | null>(null);
+  const workspacePanel = useWorkspacePanel({ defaultOpen: globalHome && autoOpenGlobalChat });
+  const navigation = useWorkspaceNavigation(projectKey, defaultSidebarOpen);
   // The Shell renders the context provider, so its own permission check reads the
   // project it loaded rather than the context.
   const { can } = usePermissions(project);
-  const chatAvailable = !!projectKey && can('ai_agents', 'read');
   const canCreateInitiative = !!project?.project.initiativesEnabled && can('initiatives', 'create');
   const issueQuery = useIssueBySeqQuery(projectKey, routeIssueSeq);
 
-  useProjectRouteSync({ projects, projectsLoaded, projectKey });
+  useProjectRouteSync({ projects, projectsLoaded, projectKey, allowEmpty: globalHome });
+
+  const selectWorkspaceTool = workspacePanel.toggleTool;
 
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.
@@ -88,6 +95,8 @@ export default function Shell({
 
   const openNewIssue = () => addIssue({});
 
+  const toggleCoordinatorChat = () => workspacePanel.toggleTool('chat');
+
   // The issue the palette builds its issue commands for: the open detail panel
   // takes precedence over the issue page behind it.
   const currentIssueId = overlays.openIssueId ?? issueQuery.data?.id ?? null;
@@ -100,7 +109,7 @@ export default function Shell({
 
   useKeyboardShortcuts({
     hasProject: !!project,
-    hasChat: chatAvailable,
+    hasChat: true,
     overlayOpen: overlays.anyOpen,
     onToggleCommand: () => overlays.setShowCommand((v) => !v),
     onChangeView: editor.changeView,
@@ -108,7 +117,7 @@ export default function Shell({
     onNewInitiative: () => canCreateInitiative && overlays.setShowNewInitiative(true),
     onNewProject: () => overlays.setShowNewProject(true),
     onSettings: () => firstSettingsHref && router.push(firstSettingsHref),
-    onToggleChat: chatPanel.toggle,
+    onToggleChat: toggleCoordinatorChat,
   });
 
   // Every view opens an issue through this one callback, so the user's choice
@@ -132,6 +141,8 @@ export default function Shell({
   };
 
   const context: ShellContext = {
+    workspaceTool: workspacePanel.open ? workspacePanel.activeTool : null,
+    onOpenWorkspaceTool: workspacePanel.openTool,
     project,
     filteredProject,
     views,
@@ -139,36 +150,42 @@ export default function Shell({
     customFields,
     onOpenIssue: openIssue,
     onAddIssue: addIssue,
-    onChatWithAgent: (agentId: number) => {
-      setChatAgentId(agentId);
-      chatPanel.openPanel();
-    },
+    onChatWithAgent: () => workspacePanel.openTool('chat'),
   };
 
   return (
     <ShellCtx.Provider value={context}>
-      <SidebarProvider defaultOpen={defaultSidebarOpen} className="h-svh overflow-hidden">
+      <SidebarProvider
+        open={navigation.sidebarOpen}
+        onOpenChange={navigation.setSidebarOpen}
+        className="h-svh overflow-hidden"
+      >
         <AppSidebar
           projects={projects}
           currentProjectKey={projectKey}
-          onSelectProject={(key) => router.push(projectPath(key))}
+          onSelectProject={(key) => router.push(navigation.projectDestination(key))}
           onNewTeam={() => overlays.setShowNewTeam(true)}
         />
         <SidebarInset className="min-w-0">
           <AppHeader
             title={
-              <ShellHeaderTitle
-                route={route}
-                projectName={project?.project.name ?? t('project')}
-                issueIdentifier={issueQuery.data?.identifier ?? null}
-                issueParent={issueQuery.data?.parent ?? null}
-              />
+              globalHome ? (
+                (globalTitle ?? t('home'))
+              ) : (
+                <ShellHeaderTitle
+                  route={route}
+                  projectName={project?.project.name ?? t('project')}
+                  issueIdentifier={issueQuery.data?.identifier ?? null}
+                  issueParent={issueQuery.data?.parent ?? null}
+                />
+              )
             }
             hasProject={!!project}
             onOpenCommand={() => overlays.setShowCommand(true)}
             onNewIssue={openNewIssue}
-            chatActive={chatPanel.open}
-            onToggleChat={chatPanel.toggle}
+            workspaceOpen={workspacePanel.open}
+            activeWorkspaceTool={workspacePanel.activeTool}
+            onSelectWorkspaceTool={selectWorkspaceTool}
           />
 
           {errorMsg && !forbidden && (
@@ -185,24 +202,22 @@ export default function Shell({
                 hasError={!!errorMsg}
                 projectsLoaded={projectsLoaded}
                 projectCount={projects.length}
+                allowNoProject={globalHome}
               >
                 {children}
               </ShellBody>
             </div>
 
-            {chatAvailable && projectKey && (
-              <ChatPanel
-                projectKey={projectKey}
-                open={chatPanel.open}
-                mode={chatPanel.mode}
-                fullscreen={chatPanel.fullscreen}
-                onToggleMode={chatPanel.toggleMode}
-                onToggleFullscreen={chatPanel.toggleFullscreen}
-                onClose={chatPanel.toggle}
-                newChatAgentId={chatAgentId}
-                onNewChatHandled={() => setChatAgentId(null)}
-              />
-            )}
+            <WorkspacePanel
+              open={workspacePanel.open}
+              activeTool={workspacePanel.activeTool}
+              contextProjectKey={projectKey}
+              mode={workspacePanel.mode}
+              fullscreen={workspacePanel.fullscreen}
+              onToggleMode={workspacePanel.toggleMode}
+              onToggleFullscreen={workspacePanel.toggleFullscreen}
+              onClose={() => workspacePanel.setOpen(false)}
+            />
           </div>
         </SidebarInset>
 
@@ -221,10 +236,10 @@ export default function Shell({
           onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
           onNewInitiative={() => overlays.setShowNewInitiative(true)}
           onNewProject={() => overlays.setShowNewProject(true)}
-          onSelectProject={(key) => router.push(projectPath(key))}
+          onSelectProject={(key) => router.push(navigation.projectDestination(key))}
           onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
           onIssueDeleted={onIssueDeleted}
-          onToggleChat={chatPanel.toggle}
+          onToggleChat={toggleCoordinatorChat}
         />
 
         <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />

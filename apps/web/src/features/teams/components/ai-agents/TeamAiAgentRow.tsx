@@ -62,9 +62,21 @@ export function TeamAiAgentRow({
                 <span className="text-xs text-muted-foreground/80">{t('noProjectsShort')}</span>
               ) : (
                 agent.projects.map((project) => (
-                  <Badge key={project.id} variant="outline" className="shrink-0 font-mono text-xs">
-                    {project.key}
-                  </Badge>
+                  <Tooltip key={project.id}>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="shrink-0 font-mono text-xs">
+                        {project.key}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="font-medium">
+                        {project.name} · {project.roleName ?? t('defaultProjectRole')}
+                      </div>
+                      <div className="text-xs opacity-80">
+                        {project.instructions || t('noProjectInstructions')}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
                 ))
               )}
             </div>

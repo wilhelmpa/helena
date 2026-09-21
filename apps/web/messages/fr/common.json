@@ -86,6 +86,11 @@
     "sendHint": "Entrée pour envoyer, ⌘/Ctrl+Entrée pour un retour à la ligne",
     "stop": "Arrêter",
     "stopped": "Arrêté",
+    "startDictation": "Dicter le message",
+    "stopDictation": "Arrêter la dictée",
+    "dictationFailed": "La saisie vocale n'a pas pu démarrer. Vérifiez l'autorisation du microphone dans le navigateur.",
+    "readAloud": "Lire la réponse à voix haute",
+    "stopReading": "Arrêter la lecture",
     "loadingEarlier": "Chargement des messages précédents…",
     "messages": "Messages de la conversation",
     "usingTool": "Utilisation de {tool}…",
@@ -201,5 +206,6 @@
     "page": "Page {number}",
     "perPage": "par page",
     "range": "{first}-{last} sur {total}"
-  }
+  },
+  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
 }

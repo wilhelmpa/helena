@@ -86,6 +86,11 @@
     "sendHint": "Enter untuk mengirim, ⌘/Ctrl+Enter untuk baris baru",
     "stop": "Hentikan",
     "stopped": "Dihentikan",
+    "startDictation": "Dikte pesan",
+    "stopDictation": "Hentikan dikte",
+    "dictationFailed": "Input suara tidak dapat dimulai. Periksa izin mikrofon browser.",
+    "readAloud": "Bacakan respons",
+    "stopReading": "Hentikan membaca",
     "loadingEarlier": "Memuat pesan sebelumnya…",
     "messages": "Pesan percakapan",
     "usingTool": "Menggunakan {tool}…",
@@ -201,5 +206,6 @@
     "page": "Halaman {number}",
     "perPage": "per halaman",
     "range": "{first}-{last} dari {total}"
-  }
+  },
+  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
 }

@@ -18,6 +18,9 @@ export interface AgentProject {
   id: number;
   key: string;
   name: string;
+  roleId: number | null;
+  roleName: string | null;
+  instructions: string;
 }
 
 // An AI agent of a team: a bot user plus its configuration. `kind` is

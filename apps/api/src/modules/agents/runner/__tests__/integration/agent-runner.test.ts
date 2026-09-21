@@ -3,6 +3,7 @@ import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, teamOf } from '#tests/helpers/agents';
+import { db, organizationProjectAssignment } from '@repo/db';
 
 // The runner queue: a process on the operator's machine authenticates with the
 // external agent's API key, claims one run at a time, and reports the result. Runs
@@ -24,6 +25,8 @@ async function setup() {
   return {
     asOwner,
     columnId,
+    projectId: view.data!.project.id,
+    teamId: view.data!.project.teamId,
     agent: created.data!.agent,
     asRunner: apiKeyApi(created.data!.apiKey!),
   };
@@ -52,6 +55,7 @@ describe('agent runner queue', () => {
     expect(res.data!.run).toMatchObject({
       trigger: 'mention',
       issueId: issue.id,
+      sourceActivityId: expect.any(Number),
       attempts: 1,
     });
     expect(res.data!.run!.issueIdentifier).toBe(`MKT-${issue.sequenceNumber}`);
@@ -96,6 +100,27 @@ describe('agent runner queue', () => {
     const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
     expect(run.systemPrompt).toContain('Always answer in German.');
     expect(run.systemPrompt).toContain('Marketing');
+  });
+
+  it('mixes project-wide and agent-specific instructions into the system prompt', async () => {
+    const { asOwner, asRunner, agent, columnId, projectId, teamId } = await setup();
+    await db.insert(organizationProjectAssignment).values({
+      teamId,
+      projectId,
+      instructions: 'Use the approved release checklist.',
+    });
+    await asOwner
+      .projects({ projectKey: 'MKT' })
+      .members({ userId: agent.userId })
+      .description.patch({ description: 'Report completed checks to the project coordinator.' });
+    await queueRun(asOwner, columnId, agent.username);
+
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(run.systemPrompt).toContain('## Project scope: MKT');
+    expect(run.systemPrompt).toContain('### Project-wide instructions');
+    expect(run.systemPrompt).toContain('Use the approved release checklist.');
+    expect(run.systemPrompt).toContain('### Your assignment in this project');
+    expect(run.systemPrompt).toContain('Report completed checks to the project coordinator.');
   });
 
   it('returns null when the queue is empty', async () => {

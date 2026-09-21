@@ -24,6 +24,9 @@
   "backToApp": "返回应用",
   "integrations": "集成",
   "projects": "项目",
+  "home": "主页",
+  "globalHomeHint": "在此使用全局协调器，或选择项目以使用该项目的上下文。",
+  "workflows": "工作流",
   "noProjects": "暂无项目",
   "newTeam": "新建团队",
   "manageTeams": "管理团队",
@@ -32,13 +35,37 @@
   "searchHint": "搜索或运行命令（{key}）",
   "newIssueHint": "新建工作项（{key}）",
   "aiChatHint": "与 AI 代理聊天（{key}）",
+  "openClawHint": "打开 OpenClaw",
+  "paperlessHint": "打开 Paperless",
+  "openClawTabsLabel": "OpenClaw 视图",
+  "openClawProject": "项目",
+  "openClawCoordinator": "协调器",
+  "openClawTerminal": "终端",
   "sections": "功能区",
   "doubleClickToRename": "双击重命名",
+  "workspace": {
+    "tools": "工作区工具",
+    "chat": "聊天",
+    "terminal": "终端",
+    "code": "代码",
+    "browser": "浏览器",
+    "files": "文件",
+    "paperless": "Paperless",
+    "inbox": "收件箱",
+    "connections": "连接",
+    "advanced": "高级",
+    "openExternal": "在新标签页中打开{tool}",
+    "unavailable": "尚未配置{tool}",
+    "unavailableDescription": "管理员可以为此实例连接该工作区。",
+    "mail": "Mail"
+  },
   "groups": {
     "project": "项目",
     "workflow": "工作流",
     "automation": "自动化"
   },
   "godModeOwnerOnly": "管理模式仅对实例管理员开放。",
-  "project": "项目"
+  "project": "项目",
+  "organization": "Organization",
+  "connections": "Connections"
 }

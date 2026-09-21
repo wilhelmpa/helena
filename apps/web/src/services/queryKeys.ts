@@ -4,6 +4,7 @@
 export const qk = {
   projects: ['projects'] as const,
   teams: ['teams'] as const,
+  organization: (teamId: number) => ['organization', teamId] as const,
   // One team: its counters and what the caller may do with what it holds.
   team: (teamId: number) => ['team', teamId] as const,
   // The members of a team and the projects it owns, each read by its own section. A
@@ -29,6 +30,7 @@ export const qk = {
   notificationSettings: (teamId: number) => ['notificationSettings', teamId] as const,
   // The board scaffold (columns/types/labels/fields/viewer) for a project.
   project: (projectKey: string) => ['workItems', projectKey] as const,
+  projectProvisioning: (projectKey: string) => ['projectProvisioning', projectKey] as const,
   // Every project scaffold, for a write outside the project that changes what one
   // of them shows (a team setting the project inherits).
   anyProject: ['workItems'] as const,
@@ -52,7 +54,10 @@ export const qk = {
   // The member's own notification preferences for a project.
   notificationPreferences: (projectKey: string) => ['notificationPreferences', projectKey] as const,
   views: (projectKey: string) => ['views', projectKey] as const,
+  viewFolders: (projectKey: string) => ['viewFolders', projectKey] as const,
   actions: (projectKey: string) => ['actions', projectKey] as const,
+  actionRuns: (projectKey: string) => ['actionRuns', projectKey] as const,
+  projectTemplates: (projectKey: string) => ['projectTemplates', projectKey] as const,
   webhooks: (projectKey: string) => ['webhooks', projectKey] as const,
   webhookDeliveries: (webhookId: number) => ['webhookDeliveries', webhookId] as const,
   // Saved dashboards (the analytics tabs) and the read-only metrics behind their
@@ -233,6 +238,9 @@ export const qk = {
   notifications: (projectKey: string, filters?: unknown) =>
     ['notifications', projectKey, filters ?? {}] as const,
   notificationsUnread: (projectKey: string) => ['notificationsUnread', projectKey] as const,
+  hubInboxSources: (teamId: number) => ['hubInbox', teamId, 'sources'] as const,
+  hubInboxThreads: (teamId: number, filters: unknown) =>
+    ['hubInbox', teamId, 'threads', filters] as const,
   // The signed-in user's WebAuthn passkeys (account security page).
   passkeys: ['passkeys'] as const,
   // The signed-in user's connected external accounts (accounts page): the linked

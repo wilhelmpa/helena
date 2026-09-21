@@ -1,4 +1,4 @@
-import { db, projectMember, teamRole, revision } from '@repo/db';
+import { db, projectMember, teamMember, teamRole, revision } from '@repo/db';
 import { and, eq, inArray } from 'drizzle-orm';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
 import { hasPermission, type PermissionResource } from '#shared/permissions';
@@ -14,17 +14,20 @@ import { hasPermission, type PermissionResource } from '#shared/permissions';
 export interface ScopeKind {
   key: (id: number, userId: string) => string;
   resource: PermissionResource | null;
+  teamScoped?: boolean;
 }
 
 export const scopeKind: Record<string, ScopeKind> = {
   board: { key: (projectId) => `board:${projectId}`, resource: 'work_items' },
   documents: { key: (projectId) => `documents:${projectId}`, resource: 'documents' },
+  actionRuns: { key: (projectId) => `action-runs:${projectId}`, resource: 'actions' },
   issue: { key: (issueId) => `issue:${issueId}`, resource: 'work_items' },
   initiative: {
     key: (initiativeId) => `initiative:${initiativeId}`,
     resource: 'initiatives',
   },
   inbox: { key: (projectId, userId) => `inbox:${projectId}:${userId}`, resource: null },
+  hubInbox: { key: (teamId) => `hub-inbox:${teamId}`, resource: null, teamScoped: true },
 };
 
 // A scope with no row has never changed; a client treats it the same as any other
@@ -35,6 +38,7 @@ export const NO_REV = '0';
 export interface ScopeRead {
   key: string;
   resource: PermissionResource | null;
+  teamScoped?: boolean;
 }
 
 // The markers a client is watching, in one query. The join against the membership
@@ -46,25 +50,30 @@ export async function readRevs(
   userId: string,
 ): Promise<Record<string, string>> {
   if (wanted.length === 0) return {};
-  const rows = await db
-    .select({
-      scope: revision.scope,
-      rev: revision.rev,
-      role: projectMember.role,
-      permissions: teamRole.permissions,
-    })
-    .from(revision)
-    .innerJoin(projectMember, eq(projectMember.projectId, revision.projectId))
-    .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
-    .where(
-      and(
-        inArray(
-          revision.scope,
-          wanted.map((w) => w.key),
-        ),
-        eq(projectMember.userId, userId),
-      ),
-    );
+  const projectWanted = wanted.filter((row) => !row.teamScoped);
+  const teamWanted = wanted.filter((row) => row.teamScoped);
+  const rows =
+    projectWanted.length === 0
+      ? []
+      : await db
+          .select({
+            scope: revision.scope,
+            rev: revision.rev,
+            role: projectMember.role,
+            permissions: teamRole.permissions,
+          })
+          .from(revision)
+          .innerJoin(projectMember, eq(projectMember.projectId, revision.projectId))
+          .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
+          .where(
+            and(
+              inArray(
+                revision.scope,
+                projectWanted.map((w) => w.key),
+              ),
+              eq(projectMember.userId, userId),
+            ),
+          );
 
   const resources = new Map(wanted.map((w) => [w.key, w.resource]));
   const out: Record<string, string> = {};
@@ -75,6 +84,22 @@ export async function readRevs(
       if (!hasPermission(permissions, resource, 'read')) continue;
     }
     out[row.scope] = String(row.rev);
+  }
+  if (teamWanted.length > 0) {
+    const teamRows = await db
+      .select({ scope: revision.scope, rev: revision.rev })
+      .from(revision)
+      .innerJoin(teamMember, eq(teamMember.teamId, revision.projectId))
+      .where(
+        and(
+          inArray(
+            revision.scope,
+            teamWanted.map((row) => row.key),
+          ),
+          eq(teamMember.userId, userId),
+        ),
+      );
+    for (const row of teamRows) out[row.scope] = String(row.rev);
   }
   return out;
 }

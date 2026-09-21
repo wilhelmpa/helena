@@ -6,6 +6,8 @@
 .gitignore
 **/.env
 **/.env.local
+**/.env.*
+!**/.env.example
 **/*.log
 **/.DS_Store
 README.md

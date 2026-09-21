@@ -38,7 +38,11 @@ export const syncRoutes = new Elysia({ name: 'sync', detail: { tags: ['Sync'] } 
         if (!spec || !Number.isInteger(id) || id <= 0) {
           throw new HttpError(400, `Unknown scope '${scope}'`);
         }
-        reads.set(scope, { key: spec.key(id, userId), resource: spec.resource });
+        reads.set(scope, {
+          key: spec.key(id, userId),
+          resource: spec.resource,
+          teamScoped: spec.teamScoped,
+        });
       }
 
       const found = await readRevs([...reads.values()], userId);

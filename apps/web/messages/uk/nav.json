@@ -24,6 +24,9 @@
   "backToApp": "Назад до застосунку",
   "integrations": "Інтеграції",
   "projects": "Проєкти",
+  "home": "Головна",
+  "globalHomeHint": "Використовуйте тут глобального координатора або виберіть проєкт для його контексту.",
+  "workflows": "Робочі процеси",
   "noProjects": "Проєктів ще немає",
   "newTeam": "Нова команда",
   "manageTeams": "Керування командами",
@@ -32,13 +35,37 @@
   "searchHint": "Пошук або команда ({key})",
   "newIssueHint": "Нова задача ({key})",
   "aiChatHint": "Чат зі ШІ-агентами ({key})",
+  "openClawHint": "Відкрити OpenClaw",
+  "paperlessHint": "Відкрити Paperless",
+  "openClawTabsLabel": "Розділи OpenClaw",
+  "openClawProject": "Проєкт",
+  "openClawCoordinator": "Координатор",
+  "openClawTerminal": "Термінал",
   "sections": "Розділи",
   "doubleClickToRename": "Подвійний клік, щоб перейменувати",
+  "workspace": {
+    "tools": "Інструменти робочого простору",
+    "chat": "Чат",
+    "terminal": "Термінал",
+    "code": "Код",
+    "browser": "Браузер",
+    "files": "Файли",
+    "paperless": "Paperless",
+    "inbox": "Вхідні",
+    "connections": "Підключення",
+    "advanced": "Додатково",
+    "openExternal": "Відкрити {tool} у новій вкладці",
+    "unavailable": "{tool} не налаштовано",
+    "unavailableDescription": "Адміністратор може підключити цей робочий простір до інстансу.",
+    "mail": "Mail"
+  },
   "groups": {
     "project": "Проєкт",
     "workflow": "Робочий процес",
     "automation": "Автоматизація"
   },
   "godModeOwnerOnly": "Режим адміністратора доступний лише власнику інстансу.",
-  "project": "Проєкт"
+  "project": "Проєкт",
+  "organization": "Organization",
+  "connections": "Connections"
 }

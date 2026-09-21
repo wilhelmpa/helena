@@ -4,6 +4,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
 import { createAgent, teamOf } from '#tests/helpers/agents';
+import { db, organizationProjectAssignment } from '@repo/db';
 
 // Chatting with an external agent: a member sends a message, the agent's runner claims
 // it, reports what its command produces as AG-UI events, and closes it. The claim waits
@@ -24,6 +25,8 @@ async function setup() {
   return {
     owner,
     asOwner,
+    projectId: (await asOwner.projects({ projectKey: 'MKT' }).get()).data!.project.id,
+    teamId: await teamOf(asOwner, 'MKT'),
     agent: created.data!.agent,
     asRunner: apiKeyApi(created.data!.apiKey!),
   };
@@ -100,6 +103,27 @@ describe('external agent chat', () => {
 
     const claimed = await asRunner['agent-chats'].claim.post();
     expect(claimed.data!.message!.systemPrompt).toContain('Always answer in German.');
+  });
+
+  it('scopes project-wide and assignment instructions in a new chat session', async () => {
+    const { asOwner, asRunner, agent, projectId, teamId } = await setup();
+    await db.insert(organizationProjectAssignment).values({
+      teamId,
+      projectId,
+      instructions: 'Use the approved release checklist.',
+    });
+    await asOwner
+      .projects({ projectKey: 'MKT' })
+      .members({ userId: agent.userId })
+      .description.patch({ description: 'Summarize evidence for the coordinator.' });
+    await send(asOwner, agent.id, 'Status?');
+
+    const prompt = (await asRunner['agent-chats'].claim.post()).data!.message!.systemPrompt;
+    expect(prompt).toContain('## Project scope: MKT');
+    expect(prompt).toContain('### Project-wide instructions\nUse the approved release checklist.');
+    expect(prompt).toContain(
+      '### Your assignment in this project\nSummarize evidence for the coordinator.',
+    );
   });
 
   it('carries the conversation so far into the next task', async () => {

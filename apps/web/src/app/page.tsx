@@ -1,81 +1,75 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { CircleAlert, CircleCheck, Clock3, FolderKanban, MessageSquareText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Plus, SquareKanban } from 'lucide-react';
-import { useProjectsQuery } from '@/services/projects.service';
-import { useAccountPreferencesQuery } from '@/services/preferences.service';
-import { startPagePath, projectPath } from '@/utils/paths';
-import NewProjectModal from '@/components/layout/NewProjectModal';
-import { Button } from '@/components/ui/button';
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import Shell from '@/components/layout/Shell';
+import type { Project } from '@/lib/api/endpoints/projects';
+import { useProjectProvisioningQuery, useProjectsQuery } from '@/services/projects.service';
+import { projectPath } from '@/utils/paths';
 
-// The index route: reopen the last-used project if it still exists, otherwise the
-// first project, on the section the user picked as their start page. Waits for both
-// the project list and the preferences before deciding so it does not flash the
-// wrong destination. With no projects at all, offers to create the first one.
-export default function Home() {
-  const t = useTranslations('shell');
-  const tCommon = useTranslations('common');
-  const router = useRouter();
-  const { data: projects } = useProjectsQuery();
-  const { data: prefs, isPending: prefsPending } = useAccountPreferencesQuery();
-  const [creating, setCreating] = useState(false);
-
-  useEffect(() => {
-    if (projects == null || projects.length === 0 || prefsPending) return;
-    // The remembered project only counts while the user still has access to it: the
-    // list holds their projects only, so a deleted or revoked one falls to the first.
-    const last = projects.find((p) => p.id === prefs?.lastProjectId);
-    const target = last?.key ?? projects[0]?.key;
-    if (target) router.replace(startPagePath(target, prefs?.startPage ?? 'work-items'));
-  }, [projects, prefs, prefsPending, router]);
-
-  // No projects yet: the Shell (which owns the New project modal) never mounts
-  // without a project, so the empty state offers project creation directly.
-  if (projects && projects.length === 0) {
-    return (
-      <div className="flex h-svh items-center justify-center p-6">
-        <Empty className="max-w-md">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <SquareKanban />
-            </EmptyMedia>
-            <EmptyTitle>{t('noProjectsTitle')}</EmptyTitle>
-            <EmptyDescription>{t('noProjectsHint')}</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button onClick={() => setCreating(true)}>
-              <Plus />
-              {t('createProject')}
-            </Button>
-          </EmptyContent>
-        </Empty>
-
-        {creating && (
-          <NewProjectModal
-            onClose={() => setCreating(false)}
-            onCreated={(key) => {
-              setCreating(false);
-              router.push(projectPath(key));
-            }}
-          />
-        )}
-      </div>
-    );
-  }
+function ProjectCard({ project }: { project: Project }) {
+  const statusCopy = useTranslations('settings.actions.runStatus');
+  const provisioning = useProjectProvisioningQuery(project.key).data;
+  const status = provisioning?.status;
+  const StatusIcon =
+    status === 'succeeded' ? CircleCheck : status === 'failed' ? CircleAlert : Clock3;
 
   return (
-    <div className="flex h-svh items-center justify-center bg-background text-sm text-muted-foreground">
-      {tCommon('loading')}
-    </div>
+    <Link
+      href={projectPath(project.key)}
+      className="group flex min-h-32 flex-col rounded-lg border bg-card p-4 transition-colors hover:bg-accent/40"
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-hover:text-foreground">
+          <FolderKanban className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="truncate text-sm font-semibold">{project.name}</h2>
+            {status ? (
+              <span
+                className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
+                title={statusCopy(status)}
+              >
+                <StatusIcon className="size-3.5" />
+                {statusCopy(status)}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {project.key} · {project.teamName}
+          </p>
+        </div>
+      </div>
+      {project.description ? (
+        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{project.description}</p>
+      ) : null}
+    </Link>
+  );
+}
+
+export default function Home() {
+  const t = useTranslations('nav');
+  const projects = useProjectsQuery();
+  return (
+    <Shell globalHome>
+      <div className="h-full overflow-y-auto p-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6 flex items-start gap-3">
+            <MessageSquareText className="mt-0.5 size-8 shrink-0 text-muted-foreground" />
+            <div>
+              <h1 className="text-xl font-semibold">{t('home')}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{t('globalHomeHint')}</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {projects.data?.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </Shell>
   );
 }

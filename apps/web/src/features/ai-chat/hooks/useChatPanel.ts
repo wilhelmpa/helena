@@ -72,6 +72,12 @@ export function useChatPanel(projectKey: string | null, showByDefault: boolean) 
     if (projectKey) write(openKey(projectKey), 'open');
   }, [projectKey]);
 
+  const closePanel = useCallback(() => {
+    touched.current = true;
+    setOpen(false);
+    if (projectKey) write(openKey(projectKey), 'closed');
+  }, [projectKey]);
+
   const toggleMode = useCallback(() => {
     setMode((prev) => {
       const next = prev === 'push' ? 'overlay' : 'push';
@@ -88,5 +94,5 @@ export function useChatPanel(projectKey: string | null, showByDefault: boolean) 
     });
   }, [projectKey]);
 
-  return { open, mode, fullscreen, toggle, openPanel, toggleMode, toggleFullscreen };
+  return { open, mode, fullscreen, toggle, openPanel, closePanel, toggleMode, toggleFullscreen };
 }

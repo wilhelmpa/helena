@@ -110,6 +110,28 @@ export interface ProjectDefaults {
   mcpEnabled: boolean;
 }
 
+export interface ProvisionedProjectResource {
+  kind: string;
+  id: string;
+  url?: string;
+}
+
+export interface ProjectProvisioningJob {
+  id: string;
+  projectId: number;
+  requestedResources: string[];
+  status: 'pending' | 'succeeded' | 'failed';
+  attempts: number;
+  lastError: string | null;
+  result: {
+    resources: ProvisionedProjectResource[];
+    warnings?: string[];
+  } | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const listProjects = () => request<Project[]>('/projects');
 
 export const createProject = (input: {
@@ -117,6 +139,8 @@ export const createProject = (input: {
   name: string;
   description?: string;
   preset?: string;
+  templateId?: number;
+  autoAssignTeamAgents?: boolean;
 }) => request<Project>('/projects', { method: 'POST', body: JSON.stringify(input) });
 
 // Update a project's name/description. The key is immutable, so it is not sent.
@@ -130,3 +154,6 @@ export const getProject = (projectKey: string, signal?: AbortSignal) =>
 // The board's issues and their relations.
 export const getBoardIssues = (projectKey: string) =>
   request<BoardIssues>(`/projects/${projectKey}/issues/board`);
+
+export const getProjectProvisioning = (projectKey: string) =>
+  request<ProjectProvisioningJob>(`/projects/${encodeURIComponent(projectKey)}/provisioning`);

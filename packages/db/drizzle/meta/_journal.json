@@ -897,6 +897,55 @@
       "when": 1788917221155,
       "tag": "0127_solid_daimon_hellstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1789946003417,
+      "tag": "0128_new_beast",
+      "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1789946630149,
+      "tag": "0129_fast_iron_monger",
+      "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1789947710863,
+      "tag": "0130_tough_iron_fist",
+      "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1789948942786,
+      "tag": "0131_cheerful_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1789975215085,
+      "tag": "0132_green_mister_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1789989972319,
+      "tag": "0133_stale_maria_hill",
+      "breakpoints": true
+    },
+    {
+      "idx": 134,
+      "version": "7",
+      "when": 1789990921712,
+      "tag": "0134_wet_tony_stark",
+      "breakpoints": true
     }
   ]
 }

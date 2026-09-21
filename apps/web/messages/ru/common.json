@@ -86,6 +86,11 @@
     "sendHint": "Enter — отправить, ⌘/Ctrl+Enter — новая строка",
     "stop": "Остановить",
     "stopped": "Остановлено",
+    "startDictation": "Диктовать сообщение",
+    "stopDictation": "Остановить диктовку",
+    "dictationFailed": "Не удалось запустить голосовой ввод. Проверьте разрешение микрофона в браузере.",
+    "readAloud": "Прочитать ответ вслух",
+    "stopReading": "Остановить чтение",
     "loadingEarlier": "Загрузка предыдущих сообщений…",
     "messages": "Сообщения разговора",
     "usingTool": "Использует {tool}…",
@@ -201,5 +206,6 @@
     "page": "Страница {number}",
     "perPage": "на странице",
     "range": "{first}-{last} из {total}"
-  }
+  },
+  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
 }

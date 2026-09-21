@@ -242,13 +242,22 @@ export function useViewEditor(
   // front for the caller only, while position is shared by the project.
   function reorderView(draggedId: number, targetId: number | null) {
     if (draggedId === targetId) return;
-    const next = [...views].sort((a, b) => a.position - b.position || a.id - b.id);
+    const dragged = views.find((view) => view.id === draggedId);
+    if (!dragged) return;
+    const target = targetId == null ? null : views.find((view) => view.id === targetId);
+    if (target && target.folderId !== dragged.folderId) return;
+    const next = views
+      .filter((view) => view.folderId === dragged.folderId)
+      .sort((a, b) => a.position - b.position || a.id - b.id);
     const from = next.findIndex((v) => v.id === draggedId);
     const to = targetId == null ? 0 : next.findIndex((v) => v.id === targetId);
     if (from < 0 || to < 0 || from === to) return;
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
-    reorderViewsMutation.mutate(next.map((v) => v.id));
+    reorderViewsMutation.mutate({
+      folderId: dragged.folderId,
+      orderedIds: next.map((view) => view.id),
+    });
   }
 
   return {

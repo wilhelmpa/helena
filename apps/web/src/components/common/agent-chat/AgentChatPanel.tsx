@@ -7,6 +7,7 @@ import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { ChatMessage, ChatStatus, PendingMessage } from '@/hooks/useAgentChat';
 import { AgentChatTranscript } from './AgentChatTranscript';
 import { AgentRunnerStatus } from './AgentRunnerStatus';
+import AgentChatSpeechInput from './AgentChatSpeechInput';
 import { isRunnerOnline } from './runnerOnline';
 import {
   Empty,
@@ -279,6 +280,12 @@ export function AgentChatPanel({
                     <span className="sr-only">{t('reset')}</span>
                   </InputGroupButton>
                 )}
+                <AgentChatSpeechInput
+                  disabled={runnerOffline}
+                  onTranscript={(text) =>
+                    setInput((current) => `${current}${current ? ' ' : ''}${text}`)
+                  }
+                />
                 <div className="ms-auto flex items-center gap-1">
                   {composerEnd}
                   {status !== 'ready' && (

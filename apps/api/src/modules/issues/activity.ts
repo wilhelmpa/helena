@@ -290,10 +290,11 @@ export async function createComment(input: {
   const comment = mapFeedItem(row);
 
   const projectRows = await db
-    .select({ projectId: issue.projectId })
+    .select({ projectId: issue.projectId, delegateUserId: issue.delegateUserId })
     .from(issue)
     .where(eq(issue.id, input.issueId));
-  const projectId = projectRows[0]?.projectId;
+  const issueRef = projectRows[0];
+  const projectId = issueRef?.projectId;
   if (projectId != null) {
     await emitWebhookEvent(projectId, 'comment.created', comment);
     // Resolved once: the agent halves start runs, the member half is notified.
@@ -301,7 +302,12 @@ export async function createComment(input: {
       projectId,
       parseMentionHandles(comment.body ?? ''),
     );
-    await enqueueMentionRuns(projectId, comment, mentioned.agentUserIds);
+    await enqueueMentionRuns(
+      projectId,
+      comment,
+      mentioned.agentUserIds,
+      issueRef?.delegateUserId ?? null,
+    );
     await notifyComment(projectId, comment, mentioned);
   }
 
@@ -399,8 +405,8 @@ async function enqueueMentionRuns(
   projectId: number,
   comment: FeedItemRow,
   mentionedAgentUserIds: string[],
+  delegateUserId: string | null = null,
 ): Promise<void> {
-  if (mentionedAgentUserIds.length === 0 && comment.replyToId == null) return;
   // A comment an agent wrote starts no run of its own, which stops agent-to-agent
   // mention loops.
   if (comment.actorUserId && (await isAgentUser(comment.actorUserId))) return;
@@ -412,11 +418,15 @@ async function enqueueMentionRuns(
       .where(eq(issueActivity.id, comment.replyToId));
     if (parent?.actorUserId) reachedUserIds.add(parent.actorUserId);
   }
-  const agents = await listMentionTriggerAgents(
-    projectId,
-    [...reachedUserIds],
-    comment.actorUserId,
-  );
+  let agents = await listMentionTriggerAgents(projectId, [...reachedUserIds], comment.actorUserId);
+  // A normal human follow-up continues the agent that still owns the issue. An
+  // explicit agent mention or a reply to an agent remains targeted at that agent;
+  // only when neither reaches one do we fall back to the current delegate. This is
+  // independent of the board column, so moving the issue back to Todo while waiting
+  // for feedback does not sever the conversation.
+  if (agents.length === 0 && delegateUserId) {
+    agents = await listMentionTriggerAgents(projectId, [delegateUserId], comment.actorUserId);
+  }
   for (const agent of agents) {
     await enqueueAgentRun({
       agentId: agent.id,

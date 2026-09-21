@@ -24,6 +24,9 @@
   "backToApp": "Voltar ao app",
   "integrations": "Integrações",
   "projects": "Projetos",
+  "home": "Início",
+  "globalHomeHint": "Use o coordenador global aqui ou escolha um projeto para o contexto específico dele.",
+  "workflows": "Fluxos de trabalho",
   "noProjects": "Nenhum projeto ainda",
   "newTeam": "Novo time",
   "manageTeams": "Gerenciar times",
@@ -32,13 +35,37 @@
   "searchHint": "Buscar ou executar um comando ({key})",
   "newIssueHint": "Nova issue ({key})",
   "aiChatHint": "Converse com seus agentes de IA ({key})",
+  "openClawHint": "Abrir OpenClaw",
+  "paperlessHint": "Abrir Paperless",
+  "openClawTabsLabel": "Visualizações do OpenClaw",
+  "openClawProject": "Projeto",
+  "openClawCoordinator": "Coordenador",
+  "openClawTerminal": "Terminal",
   "sections": "Seções",
   "doubleClickToRename": "Clique duas vezes para renomear",
+  "workspace": {
+    "tools": "Ferramentas do espaço de trabalho",
+    "chat": "Chat",
+    "terminal": "Terminal",
+    "code": "Código",
+    "browser": "Navegador",
+    "files": "Arquivos",
+    "paperless": "Paperless",
+    "inbox": "Caixa de entrada",
+    "connections": "Conexões",
+    "advanced": "Avançado",
+    "openExternal": "Abrir {tool} em uma nova aba",
+    "unavailable": "{tool} não está configurado",
+    "unavailableDescription": "Um administrador pode conectar este espaço de trabalho à instância.",
+    "mail": "Mail"
+  },
   "groups": {
     "project": "Projeto",
     "workflow": "Fluxo de trabalho",
     "automation": "Automação"
   },
   "godModeOwnerOnly": "O modo god está aberto apenas ao dono da instância.",
-  "project": "Projeto"
+  "project": "Projeto",
+  "organization": "Organization",
+  "connections": "Connections"
 }

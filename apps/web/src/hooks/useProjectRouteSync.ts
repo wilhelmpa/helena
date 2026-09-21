@@ -15,10 +15,12 @@ export function useProjectRouteSync({
   projects,
   projectsLoaded,
   projectKey,
+  allowEmpty = false,
 }: {
   projects: Project[];
   projectsLoaded: boolean;
   projectKey: string | null;
+  allowEmpty?: boolean;
 }) {
   const router = useRouter();
   const prefsQuery = useAccountPreferencesQuery();
@@ -28,10 +30,11 @@ export function useProjectRouteSync({
   // a deleted project), preferring the first.
   useEffect(() => {
     if (!projectsLoaded) return;
+    if (allowEmpty && !projectKey) return;
     if (projectKey && projects.some((p) => p.key === projectKey)) return;
     const first = projects[0]?.key;
     if (first) router.replace(projectPath(first));
-  }, [projectsLoaded, projects, projectKey, router]);
+  }, [allowEmpty, projectsLoaded, projects, projectKey, router]);
 
   // Written only when it differs from what is stored. A failed save rolls the
   // cache back, which would satisfy the condition again, so the attempted id is

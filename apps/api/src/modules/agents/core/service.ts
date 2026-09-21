@@ -6,7 +6,9 @@ import {
   project,
   projectColumn,
   projectMember,
+  organizationProjectAssignment,
   teamMember,
+  teamRole,
   agentSkillLink,
   agentToolLink,
   agentFieldTrigger,
@@ -69,6 +71,9 @@ export interface AgentProject {
   id: number;
   key: string;
   name: string;
+  roleId: number | null;
+  roleName: string | null;
+  instructions: string;
 }
 
 export interface AiAgentRow {
@@ -191,7 +196,7 @@ const agentColumns = {
   // of another team cannot happen (the attach route refuses it) and is not listed.
   projects: sql<
     AgentProject[]
-  >`(select coalesce(json_agg(json_build_object('id', p.id, 'key', p.key, 'name', p.name) order by p.key), '[]'::json) from ${projectMember} pm join ${project} p on p.id = pm.project_id where pm.user_id = ${aiAgent.userId} and p.team_id = ${aiAgent.teamId})`,
+  >`(select coalesce(json_agg(json_build_object('id', p.id, 'key', p.key, 'name', p.name, 'roleId', pm.role_id, 'roleName', tr.name, 'instructions', pm.description) order by p.key), '[]'::json) from ${projectMember} pm join ${project} p on p.id = pm.project_id left join ${teamRole} tr on tr.id = pm.role_id where pm.user_id = ${aiAgent.userId} and p.team_id = ${aiAgent.teamId})`,
   userId: aiAgent.userId,
   name: user.name,
   username: aiAgent.username,
@@ -315,6 +320,25 @@ export async function getAgentById(
 export async function getAgentInProject(id: number, projectId: number): Promise<AiAgentRow | null> {
   const rows = await agentQuery().where(and(eq(aiAgent.id, id), inProject(projectId)));
   return rows[0] ? mapAgent(rows[0]) : null;
+}
+
+// Shared organization instructions belong to the project rather than one agent.
+// They are loaded only for execution so the regular agent DTO remains unchanged.
+export async function getProjectWideInstructions(
+  teamId: number,
+  projectId: number,
+): Promise<string> {
+  const rows = await db
+    .select({ instructions: organizationProjectAssignment.instructions })
+    .from(organizationProjectAssignment)
+    .where(
+      and(
+        eq(organizationProjectAssignment.teamId, teamId),
+        eq(organizationProjectAssignment.projectId, projectId),
+      ),
+    )
+    .limit(1);
+  return rows[0]?.instructions ?? '';
 }
 
 // An agent may run for whoever triggered it: always an internal agent, which runs on

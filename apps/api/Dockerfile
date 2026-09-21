@@ -1,6 +1,8 @@
 # ── Elysia API (Bun) — built from the monorepo root ──
 # build context in docker-compose = repository root (.)
-FROM oven/bun:1.4.0-alpine AS base
+FROM oven/bun:1.4.0-alpine@sha256:07235578f79ef8c6f97d94aee7938e76f5cdba5f21ae5dbfdd3d3d38058437eb AS base
+# Apply distribution security fixes before dependency installation and runtime.
+RUN apk upgrade --no-cache
 WORKDIR /app
 
 # 1) Install dependencies from manifests (cacheable layer). All workspace

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Braces, Server, Shield } from 'lucide-react';
+import { Braces, Server, Shield, UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { useSession } from '@/lib/auth-client';
@@ -17,19 +17,16 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarRail,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
-import ProjectSwitcher from '@/components/layout/ProjectSwitcher';
+import ProjectList from '@/components/layout/ProjectList';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarMainNav from '@/components/layout/SidebarMainNav';
 import SidebarSettingsNav from '@/components/layout/SidebarSettingsNav';
-import SidebarBrandFooter from '@/components/brand/SidebarBrandFooter';
 
 // The app sidebar. It has two modes driven by the route: the main work
 // navigation, and the project settings navigation reached through the "Project
-// settings" entry. The project switcher header and the footer (API docs, MCP
-// server, brand mark) are shared by both modes. Creating and deleting a project
-// live in the team panel on Manage teams, not here.
+// settings" entry. Projects stay visible in the scrollable sidebar in both modes.
+// Creating and deleting a project live in the team panel on Manage teams.
 export default function AppSidebar({
   projects,
   currentProjectKey,
@@ -44,7 +41,6 @@ export default function AppSidebar({
   const t = useTranslations('nav');
   const pathname = usePathname();
   const disabled = !currentProjectKey;
-  const projectId = projects.find((p) => p.key === currentProjectKey)?.id ?? null;
 
   const { data: session } = useSession();
   // The session store can already be filled by the time React hydrates, while the
@@ -66,60 +62,69 @@ export default function AppSidebar({
 
   return (
     <Sidebar collapsible="icon" side={side}>
-      <SidebarHeader>
-        <ProjectSwitcher
+      <SidebarHeader className="h-12 shrink-0 justify-center border-b px-4 py-0">
+        <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
+          <span className="text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+            {t('projects')}
+          </span>
+          <button
+            type="button"
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            title={t('newTeam')}
+            onClick={onNewTeam}
+          >
+            <UserPlus className="size-4" />
+            <span className="sr-only">{t('newTeam')}</span>
+          </button>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent className="overflow-hidden">
+        <ProjectList
           projects={projects}
           currentProjectKey={currentProjectKey}
           onSelectProject={onSelectProject}
-          onNewTeam={onNewTeam}
         />
-      </SidebarHeader>
-
-      <SidebarContent>
-        {settingsMode ? (
-          <SidebarSettingsNav projectKey={currentProjectKey} />
-        ) : (
-          <SidebarMainNav projectKey={currentProjectKey} projectId={projectId} />
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain group-data-[collapsible=icon]:overflow-hidden">
+          {settingsMode ? (
+            <SidebarSettingsNav projectKey={currentProjectKey} />
+          ) : (
+            <SidebarMainNav projectKey={currentProjectKey} />
+          )}
+        </div>
       </SidebarContent>
 
-      <SidebarFooter>
-        {!settingsMode && (
-          <>
-            <SidebarMenu>
-              <SidebarNavItem
-                href={currentProjectKey ? apiDocsPath(currentProjectKey) : '#'}
-                icon={Braces}
-                label={t('apiDocs')}
-                active={onApiDocs}
-                disabled={disabled}
-              />
-              <SidebarNavItem
-                href={currentProjectKey ? mcpServerPath(currentProjectKey) : '#'}
-                icon={Server}
-                label={t('mcpServer')}
-                active={onMcp}
-                disabled={disabled}
-              />
-              {/* Instance administration, only for the owner account. The API
+      {!settingsMode && (
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarNavItem
+              href={currentProjectKey ? apiDocsPath(currentProjectKey) : '#'}
+              icon={Braces}
+              label={t('apiDocs')}
+              active={onApiDocs}
+              disabled={disabled}
+            />
+            <SidebarNavItem
+              href={currentProjectKey ? mcpServerPath(currentProjectKey) : '#'}
+              icon={Server}
+              label={t('mcpServer')}
+              active={onMcp}
+              disabled={disabled}
+            />
+            {/* Instance administration, only for the owner account. The API
                   enforces the same, so hiding it here is about noise, not access. */}
-              {isGod && (
-                <SidebarNavItem
-                  href={godPath(GOD_SECTIONS[0]!.slug)}
-                  icon={Shield}
-                  label={t('godMode')}
-                  active={false}
-                  disabled={false}
-                />
-              )}
-            </SidebarMenu>
-
-            <SidebarSeparator />
-          </>
-        )}
-
-        <SidebarBrandFooter />
-      </SidebarFooter>
+            {isGod && (
+              <SidebarNavItem
+                href={godPath(GOD_SECTIONS[0]!.slug)}
+                icon={Shield}
+                label={t('godMode')}
+                active={false}
+                disabled={false}
+              />
+            )}
+          </SidebarMenu>
+        </SidebarFooter>
+      )}
 
       <SidebarRail />
     </Sidebar>

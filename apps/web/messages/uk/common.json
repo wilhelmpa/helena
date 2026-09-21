@@ -86,6 +86,11 @@
     "sendHint": "Enter — надіслати, ⌘/Ctrl+Enter — новий рядок",
     "stop": "Зупинити",
     "stopped": "Зупинено",
+    "startDictation": "Диктувати повідомлення",
+    "stopDictation": "Зупинити диктування",
+    "dictationFailed": "Не вдалося запустити голосове введення. Перевірте дозвіл мікрофона в браузері.",
+    "readAloud": "Прочитати відповідь уголос",
+    "stopReading": "Зупинити читання",
     "loadingEarlier": "Завантаження попередніх повідомлень…",
     "messages": "Повідомлення розмови",
     "usingTool": "Використовує {tool}…",
@@ -201,5 +206,6 @@
     "page": "Сторінка {number}",
     "perPage": "на сторінці",
     "range": "{first}-{last} з {total}"
-  }
+  },
+  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
 }

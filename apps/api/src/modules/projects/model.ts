@@ -14,8 +14,8 @@ import { COPY_INCLUDE_KEYS } from './copy';
 export const PROJECT_DESCRIPTION_LIMIT = 2000;
 
 const projectBody = t.Object({
-  key: t.String({ minLength: 1 }),
-  name: t.String({ minLength: 1 }),
+  key: t.String({ minLength: 1, maxLength: 32 }),
+  name: t.String({ minLength: 1, maxLength: 200 }),
   description: t.Optional(t.String({ maxLength: PROJECT_DESCRIPTION_LIMIT })),
 });
 
@@ -25,14 +25,42 @@ const projectBody = t.Object({
 export const createProjectBody = t.Composite([
   projectBody,
   t.Object({
+    templateId: t.Optional(t.Integer({ minimum: 1 })),
+    autoAssignTeamAgents: t.Optional(t.Boolean()),
     preset: t.Optional(
       t.Union(
         ISSUE_TYPE_PRESET_KEYS.map((k) => t.Literal(k)),
         { description: `Issue-type preset: ${ISSUE_TYPE_PRESET_KEYS.join(', ')}.` },
       ),
     ),
+    provisionResources: t.Optional(
+      t.Array(
+        t.Union([
+          t.Literal('coordinator'),
+          t.Literal('workspace'),
+          t.Literal('files'),
+          t.Literal('browser'),
+          t.Literal('boards'),
+          t.Literal('workflows'),
+        ]),
+        { uniqueItems: true, maxItems: 6 },
+      ),
+    ),
   }),
 ]);
+
+export const ProvisioningJobResponse = t.Object({
+  id: t.String(),
+  projectId: t.Number(),
+  requestedResources: t.Array(t.String()),
+  status: t.Union([t.Literal('pending'), t.Literal('succeeded'), t.Literal('failed')]),
+  attempts: t.Number(),
+  lastError: t.Nullable(t.String()),
+  result: t.Nullable(t.Any()),
+  completedAt: t.Nullable(t.String()),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+});
 
 // Copy adds an optional selection of which parts of the source project to carry over.
 // Omitted → the source project's structure (states, types, labels, custom fields,

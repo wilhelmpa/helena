@@ -11,5 +11,15 @@
   "unfavorite": "إزالة من المفضلة",
   "shareBoard": "مشاركة اللوحة",
   "newViewHint": "اعمل عرض من الفلاتر وإعدادات العرض الحالية",
-  "filter": "تصفية"
+  "filter": "تصفية",
+  "manageFolders": "إدارة مجلدات طرق العرض",
+  "newFolder": "مجلد جديد",
+  "folderNamePrompt": "اسم المجلد",
+  "renameFolder": "إعادة تسمية المجلد",
+  "moveFolderUp": "نقل لأعلى",
+  "moveFolderDown": "نقل لأسفل",
+  "deleteFolder": "حذف المجلد",
+  "deleteFolderConfirm": "حذف {name}؟ ستبقى طرق العرض بدون مجلد.",
+  "moveToFolder": "نقل إلى مجلد",
+  "noFolder": "بدون مجلد"
 }

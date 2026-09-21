@@ -5,6 +5,7 @@ import {
   resetPassword,
   sendVerificationEmail,
 } from '@/lib/auth-client';
+import { authCallbackPath } from '../utils/authCallbackPath';
 
 // Where a link in an email lands the reader. The auth handler runs on the API
 // origin, so every link it builds needs the web origin passed in explicitly —
@@ -122,11 +123,16 @@ export async function signInWithGoogle(): Promise<void> {
 // Starts the round trip through the instance's own OIDC provider. Same shape as the
 // Google call above: it navigates away, and both callback URLs must be on the web
 // origin. The provider id is fixed — the instance has exactly one.
-export async function signInWithOidc(): Promise<void> {
+export async function signInWithOidc(callbackPath = '/'): Promise<void> {
+  const safeCallbackPath = authCallbackPath(callbackPath);
+  const errorPath =
+    safeCallbackPath === '/'
+      ? '/login'
+      : `/login?callbackURL=${encodeURIComponent(safeCallbackPath)}`;
   const result = await signIn.oauth2({
     providerId: 'oidc',
-    callbackURL: appUrl('/'),
-    errorCallbackURL: appUrl('/login'),
+    callbackURL: appUrl(safeCallbackPath),
+    errorCallbackURL: appUrl(errorPath),
   });
   if (result.error) throw new Error(result.error.message ?? '');
 }

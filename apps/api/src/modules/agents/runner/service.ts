@@ -1,4 +1,11 @@
-import { db, aiAgent, agentRun, project, projectMember } from '@repo/db';
+import {
+  db,
+  aiAgent,
+  agentRun,
+  organizationProjectAssignment,
+  project,
+  projectMember,
+} from '@repo/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { type ContextUsage } from '../chat-usage';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
@@ -8,6 +15,7 @@ import type { AgentRunTrigger } from '../model';
 import {
   framePrompt,
   peopleContext,
+  projectInstructionsPreamble,
   projectPreamble,
   runModePreamble,
   type RunForPrompt,
@@ -27,6 +35,8 @@ export interface RunnerProject {
   key: string;
   name: string;
   description: string;
+  projectInstructions: string;
+  agentProjectInstructions: string;
 }
 
 export interface RunnerAgent {
@@ -62,9 +72,22 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
   const row = rows[0];
   if (!row) return null;
   const projects = await db
-    .select({ key: project.key, name: project.name, description: project.description })
+    .select({
+      key: project.key,
+      name: project.name,
+      description: project.description,
+      projectInstructions: sql<string>`coalesce(${organizationProjectAssignment.instructions}, '')`,
+      agentProjectInstructions: projectMember.description,
+    })
     .from(projectMember)
     .innerJoin(project, eq(project.id, projectMember.projectId))
+    .leftJoin(
+      organizationProjectAssignment,
+      and(
+        eq(organizationProjectAssignment.projectId, project.id),
+        eq(organizationProjectAssignment.teamId, row.teamId),
+      ),
+    )
     .where(and(eq(projectMember.userId, userId), eq(project.teamId, row.teamId)))
     .orderBy(project.key);
   return { ...row, kind: row.kind as AgentKind, projects };
@@ -84,6 +107,9 @@ export interface RunnerRun {
   // The issue's human-readable key ("MKT-42"), so the runner can name the work in its
   // log. Null for a run with no issue, or a deleted one.
   issueIdentifier: string | null;
+  // The human comment that started the run. The external runner attaches its final
+  // answer to it so the issue feed keeps the exchange threaded.
+  sourceActivityId: number | null;
 }
 
 // The claim's raw row, before framing. The extra people columns exist only to build
@@ -93,6 +119,8 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
   projectKey: string;
   projectName: string;
   projectDescription: string;
+  projectInstructions: string;
+  agentProjectInstructions: string;
   issueTitle: string | null;
   assigneeName: string | null;
   assigneeUsername: string | null;
@@ -155,6 +183,10 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       (SELECT p.key FROM project p WHERE p.id = r.project_id) AS "projectKey",
       (SELECT p.name FROM project p WHERE p.id = r.project_id) AS "projectName",
       (SELECT p.description FROM project p WHERE p.id = r.project_id) AS "projectDescription",
+      (SELECT opa.instructions FROM organization_project_assignment opa
+         WHERE opa.project_id = r.project_id AND opa.team_id = ${agent.teamId}) AS "projectInstructions",
+      (SELECT pm.description FROM project_member pm
+         WHERE pm.project_id = r.project_id AND pm.user_id = ${agent.userId}) AS "agentProjectInstructions",
       (SELECT p.key || '-' || i.sequence_number
          FROM issue i JOIN project p ON p.id = i.project_id
          WHERE i.id = r.issue_id) AS "issueIdentifier",
@@ -194,6 +226,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     attempts: row.attempts,
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
+    sourceActivityId: row.sourceActivityId,
   };
 }
 
@@ -201,12 +234,21 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
 // works in, that the run is autonomous, who the people behind it are, and last the
 // operator's own instructions from the agent's settings, which therefore win over the
 // generic parts.
-function buildSystemPrompt(agent: RunnerAgent, project: RunnerProject, run: RunForPrompt): string {
+function buildSystemPrompt(
+  agent: RunnerAgent,
+  project: Pick<RunnerProject, 'key' | 'name' | 'description'>,
+  run: RunForPrompt & Pick<ClaimedRow, 'projectInstructions' | 'agentProjectInstructions'>,
+): string {
   const instructions = agent.instructions?.trim();
   return (
     projectPreamble(project) +
     runModePreamble(run.trigger) +
     peopleContext(run) +
+    projectInstructionsPreamble({
+      key: project.key,
+      projectInstructions: run.projectInstructions,
+      agentProjectInstructions: run.agentProjectInstructions,
+    }) +
     (instructions ? `## Instructions\n${instructions}\n` : '')
   );
 }

@@ -137,6 +137,16 @@ export const app = new Elysia()
           { name: 'Link previews', description: 'Public web link metadata' },
           { name: 'Note boards', description: 'Freeform canvases of sticky notes' },
           { name: 'Notifications', description: "The session user's inbox notifications" },
+          {
+            name: 'Connections',
+            description: 'Native runtime connections and human-confirmed mail management',
+          },
+          { name: 'Project templates', description: 'Reusable project and board structures' },
+          {
+            name: 'Organization',
+            description: 'Team departments, goals, and agent reporting lines',
+          },
+          { name: 'Hub Inbox', description: 'External message triage and task routing' },
           { name: 'Sync', description: 'Change markers a client polls for live refresh' },
           {
             name: 'Telegram',
@@ -230,7 +240,11 @@ export const app = new Elysia()
   // into the SCIM group tables, so a group mapped to a project in god mode grants
   // access on an OIDC-only instance too, not just one that also runs a SCIM sync.
   .all('/api/auth/*', async ({ request }) => {
-    const response = await auth.handler(request);
+    const prefix = new URL(apiUrl).pathname.replace(/\/+$/, '');
+    const authUrl = new URL(request.url);
+    authUrl.pathname = `${prefix}${authUrl.pathname}`;
+    const authRequest = prefix ? new Request(authUrl.toString(), request) : request;
+    const response = await auth.handler(authRequest);
     if (new URL(request.url).pathname.startsWith('/api/auth/oauth2/callback/')) {
       await syncOidcGroupsAfterCallback(response);
     }

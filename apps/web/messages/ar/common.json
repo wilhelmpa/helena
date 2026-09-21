@@ -86,6 +86,11 @@
     "sendHint": "اضغط Enter للإرسال، وCtrl/⌘+Enter لسطر جديد",
     "stop": "إيقاف",
     "stopped": "أُوقف",
+    "startDictation": "إملاء الرسالة",
+    "stopDictation": "إيقاف الإملاء",
+    "dictationFailed": "تعذر بدء الإدخال الصوتي. تحقق من إذن الميكروفون في المتصفح.",
+    "readAloud": "قراءة الرد بصوت عالٍ",
+    "stopReading": "إيقاف القراءة",
     "loadingEarlier": "جارٍ تحميل الرسائل السابقة…",
     "messages": "رسائل المحادثة",
     "usingTool": "يستخدم {tool}…",
@@ -201,5 +206,6 @@
     "page": "الصفحة {number}",
     "perPage": "لكل صفحة",
     "range": "{first}-{last} من {total}"
-  }
+  },
+  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
 }

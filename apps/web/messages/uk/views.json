@@ -11,5 +11,15 @@
   "unfavorite": "Прибрати з обраного",
   "shareBoard": "Поділитися дошкою",
   "newViewHint": "Створити подання з поточних фільтрів і налаштувань",
-  "filter": "Фільтр"
+  "filter": "Фільтр",
+  "manageFolders": "Керування папками подань",
+  "newFolder": "Нова папка",
+  "folderNamePrompt": "Назва папки",
+  "renameFolder": "Перейменувати папку",
+  "moveFolderUp": "Перемістити вгору",
+  "moveFolderDown": "Перемістити вниз",
+  "deleteFolder": "Видалити папку",
+  "deleteFolderConfirm": "Видалити {name}? Подання залишаться без папки.",
+  "moveToFolder": "Перемістити до папки",
+  "noFolder": "Без папки"
 }

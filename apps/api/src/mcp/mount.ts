@@ -1,6 +1,6 @@
 import { t } from 'elysia';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import { auth, withMcpAuth } from '@repo/auth';
+import { auth, getSessionFromHeaders, withMcpAuth } from '@repo/auth';
 import { buildMcpServer } from './server';
 import type { McpApp } from './types';
 import type { McpCredential } from './credential';
@@ -9,7 +9,15 @@ import type { McpCredential } from './credential';
 // x-api-key is also accepted (the REST convention). Returns null when absent.
 function extractApiKey(request: Request): string | null {
   const bearer = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
-  return bearer ?? request.headers.get('x-api-key') ?? null;
+  const direct = request.headers.get('x-api-key');
+  return direct ?? (bearer?.startsWith('itp_') ? bearer : null);
+}
+
+function withoutCredentials(request: Request): Request {
+  const headers = new Headers(request.headers);
+  headers.delete('authorization');
+  headers.delete('x-api-key');
+  return new Request(request.url, { method: request.method, headers });
 }
 
 // Adds the MCP endpoint (POST /mcp) to the app and returns the same app. Mounted on
@@ -44,16 +52,18 @@ export function mountMcp(app: any): void {
       if (apiKey) {
         const headers = new Headers(request.headers);
         headers.set('x-api-key', apiKey);
-        try {
-          const session = await auth.api.getSession({ headers });
-          // A deactivated account is refused here too, the way shared/auth-context.ts
-          // refuses it for every planner route. Deactivation arrives over SCIM, after
-          // the key was issued.
-          if (session && session.user.active !== false)
-            return serve({ kind: 'api-key', apiKey }, session.user.id);
-        } catch {
-          // Not an API key: let the native OAuth handler validate the bearer token.
-        }
+        const session = await getSessionFromHeaders(headers);
+        // A deactivated account is refused here too, the way shared/auth-context.ts
+        // refuses it for every planner route. Deactivation arrives over SCIM, after
+        // the key was issued.
+        if (session && session.user.active !== false)
+          return serve({ kind: 'api-key', apiKey }, session.user.id);
+        // Do not reinterpret a revoked or malformed personal API key as an OAuth
+        // token. Challenge without forwarding the rejected credential so auth
+        // failures stay 401 and the credential never reaches an error/log path.
+        return withMcpAuth(auth, () => Promise.reject(new Error('unreachable')))(
+          withoutCredentials(request),
+        );
       }
       // withMcpAuth verifies the native OAuth token and returns the standard MCP
       // WWW-Authenticate challenge that clients use for OAuth discovery.

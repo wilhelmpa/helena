@@ -14,6 +14,7 @@ import {
   getBoardIssues,
   createProject,
   updateProject,
+  getProjectProvisioning,
 } from '@/lib/api/endpoints/projects';
 import { qk } from '@/services/queryKeys';
 
@@ -37,6 +38,15 @@ export function useBoardIssuesQuery(projectKey: string | null) {
     queryKey: qk.boardIssues(projectKey ?? ''),
     queryFn: () => getBoardIssues(projectKey!),
     enabled: projectKey != null,
+  });
+}
+
+export function useProjectProvisioningQuery(projectKey: string | null) {
+  return useQuery({
+    queryKey: qk.projectProvisioning(projectKey ?? ''),
+    queryFn: () => getProjectProvisioning(projectKey!),
+    enabled: projectKey != null,
+    refetchInterval: (query) => (query.state.data?.status === 'pending' ? 2_000 : false),
   });
 }
 
@@ -159,6 +169,7 @@ export function useUpdateTeamProject() {
 function forgetProject(qc: ReturnType<typeof useQueryClient>, projectKey: string) {
   qc.setQueryData<Project[]>(qk.projects, (prev) => prev?.filter((p) => p.key !== projectKey));
   qc.removeQueries({ queryKey: qk.project(projectKey) });
+  qc.removeQueries({ queryKey: qk.projectProvisioning(projectKey) });
   qc.removeQueries({ queryKey: qk.boardIssues(projectKey) });
   qc.removeQueries({ queryKey: qk.views(projectKey) });
   qc.removeQueries({ queryKey: qk.dashboards(projectKey) });

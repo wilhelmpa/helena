@@ -11,6 +11,7 @@ export default function ShellBody({
   hasError,
   projectsLoaded,
   projectCount,
+  allowNoProject = false,
   children,
 }: {
   forbidden: boolean;
@@ -18,6 +19,7 @@ export default function ShellBody({
   hasError: boolean;
   projectsLoaded: boolean;
   projectCount: number;
+  allowNoProject?: boolean;
   children: ReactNode;
 }) {
   const t = useTranslations('shell');
@@ -33,6 +35,7 @@ export default function ShellBody({
   // the error itself is shown by the banner above. A loading one gets a skeleton of
   // the page it will become.
   if (!hasProject) {
+    if (allowNoProject) return <>{children}</>;
     if (hasError)
       return (
         <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">

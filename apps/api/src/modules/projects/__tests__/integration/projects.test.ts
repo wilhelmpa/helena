@@ -1,4 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
+import { db, projectProvisioningJob } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -71,6 +73,58 @@ describe('projects', () => {
       });
     });
 
+    it('adds existing agents from the owning team on the default member role only', async () => {
+      const owner = await signUpClient();
+      await owner.api.projects.post({ key: 'SRC', name: 'Source' });
+      const mine = await createAgent(owner.api, 'SRC', {
+        name: 'Team tester',
+        username: 'team-tester',
+        kind: 'external',
+      });
+      const other = await signUpClient();
+      await other.api.projects.post({ key: 'OTH', name: 'Other source' });
+      const theirs = await createAgent(other.api, 'OTH', {
+        name: 'Other tester',
+        username: 'other-tester',
+        kind: 'external',
+      });
+
+      await owner.api.projects.post({ key: 'NEW', name: 'New project' });
+      const members = await owner.api.projects({ projectKey: 'NEW' }).members.get({
+        query: { kind: 'agent' },
+      });
+      expect(members.status).toBe(200);
+      expect(members.data?.items).toHaveLength(1);
+      expect(members.data?.items[0]).toMatchObject({
+        userId: mine.data!.agent.userId,
+        role: 'member',
+        isAgent: true,
+      });
+      expect(
+        members.data?.items.some((member) => member.userId === theirs.data!.agent.userId),
+      ).toBe(false);
+    });
+
+    it('supports an explicit project-create opt out from team agent assignment', async () => {
+      const owner = await signUpClient();
+      await owner.api.projects.post({ key: 'SRC', name: 'Source' });
+      await createAgent(owner.api, 'SRC', {
+        name: 'Team tester',
+        username: 'team-tester',
+        kind: 'external',
+      });
+
+      await owner.api.projects.post({
+        key: 'NEW',
+        name: 'New project',
+        autoAssignTeamAgents: false,
+      });
+      const members = await owner.api
+        .projects({ projectKey: 'NEW' })
+        .members.get({ query: { kind: 'agent' } });
+      expect(members.data?.items).toHaveLength(0);
+    });
+
     it('stores a provided description', async () => {
       const { api } = await signUpClient();
       const created = await api.projects.post({
@@ -88,6 +142,64 @@ describe('projects', () => {
       const view = await viewOf(api, 'MKT');
       expect(view.status).toBe(200);
       expect(view.data?.columns.map((c) => c.name)).toEqual(DEFAULT_COLUMN_NAMES);
+    });
+
+    it('seeds and provisions stable Kanban and List views by default', async () => {
+      const { api } = await signUpClient();
+      await api.projects.post({ key: 'MKT', name: 'Marketing' });
+
+      const views = await api.projects({ projectKey: 'MKT' }).views.get();
+      expect(views.status).toBe(200);
+      expect(views.data).toMatchObject([
+        { name: 'Kanban', folderId: null, display: { layout: 'kanban' } },
+        { name: 'List', folderId: null, display: { layout: 'table' } },
+      ]);
+      const job = await api.projects({ projectKey: 'MKT' }).provisioning.get();
+      for (const view of views.data!) {
+        expect(job.data?.requestedResources).toContain(`board:${view.id}`);
+      }
+      expect(job.data?.requestedResources).not.toContain('boards');
+      expect(job.data?.requestedResources).not.toContain('workflows');
+    });
+
+    it('atomically creates a durable provisioning job with configurable resources', async () => {
+      const { api } = await signUpClient();
+      const created = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing',
+        provisionResources: ['workspace', 'boards'],
+      });
+
+      const job = await api.projects({ projectKey: 'MKT' }).provisioning.get();
+      expect(job.status).toBe(200);
+      expect(job.data).toMatchObject({
+        projectId: created.data!.id,
+        status: 'pending',
+        attempts: 0,
+        lastError: null,
+      });
+      const views = await api.projects({ projectKey: 'MKT' }).views.get();
+      expect(job.data?.requestedResources).toEqual([
+        'workspace',
+        ...views.data!.map((view) => `board:${view.id}`),
+      ]);
+      expect(typeof job.data?.id).toBe('string');
+    });
+
+    it('only retries a failed provisioning job', async () => {
+      const { api } = await signUpClient();
+      const created = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+
+      const active = await api.projects({ projectKey: 'MKT' }).provisioning.retry.post();
+      expect(active.status).toBe(409);
+
+      await db
+        .update(projectProvisioningJob)
+        .set({ status: 'failed', attempts: 3, lastError: 'HTTP 500' })
+        .where(eq(projectProvisioningJob.projectId, created.data!.id));
+      const retried = await api.projects({ projectKey: 'MKT' }).provisioning.retry.post();
+      expect(retried.status).toBe(200);
+      expect(retried.data).toMatchObject({ status: 'pending', attempts: 0, lastError: null });
     });
 
     it('denies a project member whose rank in the team is member', async () => {
@@ -325,6 +437,32 @@ describe('projects', () => {
       expect(view.data?.viewer.role).toBe('owner');
     });
 
+    it('atomically provisions copied or fallback boards for every project copy', async () => {
+      const { api } = await signUpClient();
+      await api.projects.post({ key: 'SRC', name: 'Source' });
+
+      await api.projects({ projectKey: 'SRC' }).copy.post({
+        key: 'DST',
+        name: 'Destination',
+        include: { views: false },
+      });
+
+      const views = await api.projects({ projectKey: 'DST' }).views.get();
+      expect(views.data).toMatchObject([
+        { name: 'Kanban', display: { layout: 'kanban' } },
+        { name: 'List', display: { layout: 'table' } },
+      ]);
+      const provisioning = await api.projects({ projectKey: 'DST' }).provisioning.get();
+      expect(provisioning.data?.requestedResources).toEqual([
+        'coordinator',
+        'workspace',
+        'files',
+        'browser',
+        'terminal',
+        ...views.data!.map((view) => `board:${view.id}`),
+      ]);
+    });
+
     it('refuses a project member who does not run the team', async () => {
       const owner = await signUpClient();
       await setupSource(owner.api);
@@ -455,7 +593,7 @@ describe('projects', () => {
       // the new column id, not the source's.
       expect(dstBacklog.id).not.toBe(srcBacklog.id);
       const dstViews = await api.projects({ projectKey: 'DST' }).views.get();
-      const filters = dstViews.data![0].filters as {
+      const filters = dstViews.data!.find((view) => view.name === 'Open')!.filters as {
         conditions: { field: string; values: number[] }[];
       };
       expect(filters.conditions[0].values).toEqual([dstBacklog.id]);
@@ -527,7 +665,7 @@ describe('projects', () => {
       expect(dstReview).toBeDefined();
       expect(dstReview.id).not.toBe(review.id);
       const dstViews = await api.projects({ projectKey: 'DST' }).views.get();
-      const filters = dstViews.data![0].filters as {
+      const filters = dstViews.data!.find((view) => view.name === 'In review')!.filters as {
         conditions: { field: string; values: number[] }[];
       };
       expect(filters.conditions[0].values).toEqual([dstReview.id]);
@@ -573,6 +711,31 @@ describe('projects', () => {
         ['ai-agents'].get({ query: { projectId: await projectIdOf(api, 'DST') } });
       expect(copied.data?.[0]).toMatchObject({ runnerScope: 'owner', ownerUserId: user.userId });
       expect((await api.teams({ teamId })['ai-agents'].get()).data).toHaveLength(1);
+    });
+
+    it('assigns every target-team agent to a copy even without copying agent settings', async () => {
+      const { api } = await signUpClient();
+      await api.projects.post({ key: 'SRC', name: 'Source' });
+      const agent = await createAgent(api, 'SRC', {
+        name: 'Shared tester',
+        username: 'shared-tester',
+        kind: 'external',
+      });
+
+      await api.projects({ projectKey: 'SRC' }).copy.post({
+        key: 'DST',
+        name: 'Destination',
+      });
+
+      const teamId = await teamOf(api, 'DST');
+      const assigned = await api
+        .teams({ teamId })
+        ['ai-agents'].get({ query: { projectId: await projectIdOf(api, 'DST') } });
+      expect(assigned.data).toHaveLength(1);
+      expect(assigned.data?.[0]).toMatchObject({ id: agent.data!.agent.id });
+      expect(assigned.data?.[0].projects.find((item) => item.key === 'DST')).toMatchObject({
+        roleName: 'Member',
+      });
     });
 
     it('carries no agent into another team', async () => {

@@ -1,3 +1,6 @@
+import { projectTemplateRoutes } from './modules/project-templates';
+import { connectionsRoutes } from './modules/connections';
+import { organizationRoutes } from './modules/organization';
 import { Elysia } from 'elysia';
 import { HttpError, pgErrorCode } from './shared/lib';
 import { authContext } from './shared/auth-context';
@@ -44,6 +47,7 @@ import { userPreferenceRoutes } from './modules/user-preferences';
 import { telegramRoutes } from './modules/telegram';
 import { syncRoutes } from './modules/sync';
 import { linkPreviewRoutes } from './modules/link-previews';
+import { hubInboxRoutes } from './modules/hub-inbox';
 
 // The planner API: projects and their columns, issue types, labels, AI agents,
 // custom fields, issues, attachments, saved views, and actions. Mounted on the
@@ -108,6 +112,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(viewRoutes)
   .use(shareRoutes)
   .use(actionRoutes)
+  .use(projectTemplateRoutes)
   .use(webhookRoutes)
   .use(gitSettingsRoutes)
   .use(agentScheduleRoutes)
@@ -125,5 +130,8 @@ export const planner = new Elysia({ name: 'planner' })
   .use(telegramRoutes)
   .use(syncRoutes)
   .use(linkPreviewRoutes)
+  .use(hubInboxRoutes)
+  .use(organizationRoutes)
+  .use(connectionsRoutes)
   .use(settingsRoutes)
   .use(godRoutes);

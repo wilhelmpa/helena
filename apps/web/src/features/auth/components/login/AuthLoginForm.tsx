@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -30,6 +30,7 @@ import {
 import { useAuthAction } from '../../hooks/useAuthAction';
 import { useAuthConfig } from '@/services/authConfig.service';
 import { useRedirectError } from '../../hooks/useRedirectError';
+import { authCallbackPath } from '../../utils/authCallbackPath';
 
 // How the visitor is signing in. The screen holds one method at a time: with a
 // password, or with a link mailed to the address. Passkeys stay available in both,
@@ -66,9 +67,26 @@ export default function AuthLoginForm() {
   // query string.
   const redirectErrorMessage = useRedirectError();
   const redirectError = redirectErrorMessage(params.get('error'), params.get('error_description'));
+  const callbackPath = authCallbackPath(params.get('callbackURL'));
+  const oidcOnly =
+    authConfig?.oidc === true && authConfig.emailPassword === false && authConfig.google === false;
+  const autoOidcStarted = useRef(false);
   // The confirmation link carries ?verified=1 and adds ?error=… when it failed, so
   // the success line only stands while there is no error next to it.
   const justVerified = params.get('verified') === '1' && !redirectError;
+
+  useEffect(() => {
+    if (
+      !oidcOnly ||
+      autoOidcStarted.current ||
+      params.has('error') ||
+      params.has('error_description')
+    ) {
+      return;
+    }
+    autoOidcStarted.current = true;
+    void run(() => signInWithOidc(callbackPath), { redirect: false });
+  }, [callbackPath, oidcOnly, params, run]);
 
   function switchTo(next: Method) {
     setMethod(next);
@@ -188,7 +206,7 @@ export default function AuthLoginForm() {
           signingInWithLink={signingInWithLink}
           pending={pending}
           onToggleMethod={() => switchTo(signingInWithLink ? 'password' : 'link')}
-          onOidc={() => run(signInWithOidc, { redirect: false })}
+          onOidc={() => run(() => signInWithOidc(callbackPath), { redirect: false })}
           onGoogle={() => run(signInWithGoogle, { redirect: false })}
           onPasskey={() => run(signInWithPasskey, { fallback: t('errors.passkey') })}
         />

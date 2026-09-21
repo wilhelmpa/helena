@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { ActionDef, ActionEffect } from '@/lib/api/endpoints/actions';
+import type { ActionDef, ActionEffect, WorkflowDefinition } from '@/lib/api/endpoints/actions';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import {
@@ -8,6 +8,7 @@ import {
   useCreateAction,
   useDeleteAction,
   useUpdateAction,
+  legacyWorkflow,
 } from '@/services/actions.service';
 import { EMPTY_FILTER_SET, type FilterSet } from '@/utils/filters';
 import { EmptyState } from '@/components/common/page/EmptyState';
@@ -15,8 +16,16 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import SettingsConfirmDeleteDialog from '../crud/SettingsConfirmDeleteDialog';
 import { SettingsActionDialog } from './SettingsActionDialog';
 import { SettingsActionsTable } from './SettingsActionsTable';
+import { SettingsActionRuns } from './SettingsActionRuns';
 
-type ActionSeed = { name: string; icon: string; condition: FilterSet; effect: ActionEffect };
+type ActionSeed = {
+  name: string;
+  icon: string;
+  trigger: ActionDef['trigger'];
+  condition: FilterSet;
+  effect: ActionEffect;
+  workflow: WorkflowDefinition;
+};
 
 // Project settings tab for manual actions. Each action is a saved macro: a
 // condition selecting which issues it applies to and an effect applied in one
@@ -58,8 +67,10 @@ export default function SettingsActions({
     setNewSeed({
       name: t('copySuffix', { name: action.name }),
       icon: action.icon,
+      trigger: action.trigger,
       condition: action.condition,
       effect: action.effect,
+      workflow: structuredClone(action.workflow),
     });
     setEditing('new');
   }
@@ -93,21 +104,30 @@ export default function SettingsActions({
             onEdit={setEditing}
             onDuplicate={startDuplicate}
             onDelete={setDeleting}
+            onToggle={(action, enabled) =>
+              updateAction.mutate({ id: action.id, input: { enabled } })
+            }
           />
         </div>
       )}
+
+      <SettingsActionRuns project={project} />
 
       {showDialog && (
         <SettingsActionDialog
           key={editingAction?.id ?? 'new'}
           projectKey={projectKey}
+          actionId={editingAction?.id}
           project={project}
           customFields={customFields}
           mode={editingAction ? 'edit' : 'new'}
           initialName={editingAction?.name ?? newSeed?.name ?? ''}
           initialIcon={editingAction?.icon ?? newSeed?.icon ?? ''}
-          initialCondition={editingAction?.condition ?? newSeed?.condition ?? EMPTY_FILTER_SET}
-          initialEffect={editingAction?.effect ?? newSeed?.effect ?? {}}
+          initialWorkflow={
+            editingAction?.workflow ??
+            newSeed?.workflow ??
+            legacyWorkflow('manual', EMPTY_FILTER_SET, {})
+          }
           saving={saving}
           onSave={saveAction}
           onClose={() => setEditing(null)}

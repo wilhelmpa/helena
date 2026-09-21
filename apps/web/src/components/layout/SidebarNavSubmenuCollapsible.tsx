@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -21,14 +22,18 @@ export default function SidebarNavSubmenuCollapsible({
   label: string;
   items: SidebarNavSubmenuItem[];
 }) {
+  const [open, setOpen] = usePersistedBoolean(
+    `sidebar:group:${items[0]?.href ?? 'empty'}`,
+    items.some((item) => item.active),
+  );
   return (
-    <Collapsible asChild defaultOpen={items.some((i) => i.active)} className="group/collapsible">
+    <Collapsible asChild open={open} onOpenChange={setOpen} className="group/collapsible">
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton isActive={items.some((i) => i.active)}>
             <Icon />
             <span>{label}</span>
-            <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+            <ChevronRight className="ms-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>

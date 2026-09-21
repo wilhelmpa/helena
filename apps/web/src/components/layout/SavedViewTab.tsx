@@ -2,9 +2,17 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Globe, MoreHorizontal, Pencil, Star, Trash2 } from 'lucide-react';
+import {
+  FolderClosed,
+  FolderInput,
+  Globe,
+  MoreHorizontal,
+  Pencil,
+  Star,
+  Trash2,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { View } from '@/lib/api/endpoints/views';
+import type { View, ViewFolder } from '@/lib/api/endpoints/views';
 import { enableViewShare, disableViewShare } from '@/lib/api/endpoints/share';
 import { qk } from '@/services/queryKeys';
 import { useSetViewFavorite } from '@/services/views.service';
@@ -26,6 +34,8 @@ export default function SavedViewTab({
   onSelect,
   onEdit,
   onDelete,
+  folders,
+  onMove,
 }: {
   view: View;
   projectKey: string;
@@ -35,6 +45,8 @@ export default function SavedViewTab({
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  folders: ViewFolder[];
+  onMove: (folderId: number | null) => void;
 }) {
   const t = useTranslations('views');
   const tCommon = useTranslations('common');
@@ -42,6 +54,7 @@ export default function SavedViewTab({
   const [sharing, setSharing] = useState(false);
   const qc = useQueryClient();
   const setFavorite = useSetViewFavorite(projectKey);
+  const folder = folders.find((candidate) => candidate.id === view.folderId);
 
   // Enabling/revoking the public link refetches the views so the tab's shareToken
   // and shareExtended (which the dialog reads) stay in sync. The same call creates
@@ -72,6 +85,11 @@ export default function SavedViewTab({
       className={cn(canEdit ? 'cursor-grab' : 'cursor-default', isDragging && 'opacity-40')}
     >
       <button type="button" onClick={onSelect} className="flex items-center gap-1.5 py-1 pr-1 pl-2">
+        {folder && (
+          <span className="flex max-w-24 items-center gap-1 truncate text-xs text-muted-foreground">
+            <FolderClosed className="size-3 shrink-0" /> {folder.name}
+          </span>
+        )}
         <ViewTabLabel view={view} />
       </button>
       {/* Favoriting is personal and needs no permission, so an active tab always has a menu. */}
@@ -100,6 +118,25 @@ export default function SavedViewTab({
               />
               {view.favorite ? t('unfavorite') : t('favorite')}
             </button>
+            {canEdit && (
+              <div className="border-t px-2 py-1">
+                <p className="py-1 text-xs text-muted-foreground">{t('moveToFolder')}</p>
+                {[{ id: null, name: t('noFolder') }, ...folders].map((folder) => (
+                  <button
+                    key={folder.id ?? 'none'}
+                    type="button"
+                    disabled={view.folderId === folder.id}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onMove(folder.id);
+                    }}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-accent disabled:opacity-50"
+                  >
+                    <FolderInput className="size-3.5 shrink-0" /> {folder.name}
+                  </button>
+                ))}
+              </div>
+            )}
             {canEdit && (
               <button
                 type="button"

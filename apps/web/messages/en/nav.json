@@ -24,6 +24,9 @@
   "backToApp": "Back to app",
   "integrations": "Integrations",
   "projects": "Projects",
+  "home": "Home",
+  "globalHomeHint": "Use the global coordinator here, or choose a project for project-specific context.",
+  "workflows": "Workflows",
   "noProjects": "No projects yet",
   "newTeam": "New team",
   "manageTeams": "Manage teams",
@@ -32,13 +35,37 @@
   "searchHint": "Search or run a command ({key})",
   "newIssueHint": "New issue ({key})",
   "aiChatHint": "Chat with your AI agents ({key})",
+  "openClawHint": "Open OpenClaw",
+  "paperlessHint": "Open Paperless",
+  "openClawTabsLabel": "OpenClaw views",
+  "openClawProject": "Project",
+  "openClawCoordinator": "Coordinator",
+  "openClawTerminal": "Terminal",
   "sections": "Sections",
   "doubleClickToRename": "Double-click to rename",
+  "workspace": {
+    "tools": "Workspace tools",
+    "chat": "Chat",
+    "terminal": "Terminal",
+    "code": "Code",
+    "browser": "Browser",
+    "files": "Files",
+    "paperless": "Paperless",
+    "inbox": "Inbox",
+    "connections": "Connections",
+    "advanced": "Advanced",
+    "openExternal": "Open {tool} in a new tab",
+    "unavailable": "{tool} is not configured",
+    "unavailableDescription": "An administrator can connect this workspace for the instance.",
+    "mail": "Mail"
+  },
   "groups": {
     "project": "Project",
     "workflow": "Workflow",
     "automation": "Automation"
   },
   "godModeOwnerOnly": "God mode is open to the instance owner only.",
-  "project": "Project"
+  "project": "Project",
+  "organization": "Organization",
+  "connections": "Connections"
 }

@@ -133,6 +133,38 @@ export const project = pgTable('project', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Durable handoff to the external project provisioner. A row is inserted in the
+// same transaction as its project, then claimed and delivered by the worker. The
+// stable UUID lets the receiver make resource creation idempotent across retries.
+export const projectProvisioningJob = pgTable(
+  'project_provisioning_job',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    requestedResources: jsonb('requested_resources').$type<string[]>().notNull().default([]),
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    lastError: text('last_error'),
+    result: jsonb('result'),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('project_provisioning_job_project_unique').on(t.projectId),
+    check(
+      'project_provisioning_job_status_check',
+      sql`${t.status} IN ('pending', 'succeeded', 'failed')`,
+    ),
+    index('project_provisioning_job_due_idx')
+      .on(t.nextAttemptAt)
+      .where(sql`${t.status} = 'pending'`),
+  ],
+);
+
 // Per-project key-value settings, mirroring app_setting but scoped to a project.
 // The value is a jsonb blob owned by whatever feature reads the key, so one table
 // backs many project settings (e.g. auto-archive thresholds under key
@@ -1783,9 +1815,28 @@ export const issueActivity = pgTable(
   ],
 );
 
+// One-level folders for saved work-item views. They organize views only: issues
+// and project workflow columns remain shared by every view in the project.
+export const projectViewFolder = pgTable(
+  'project_view_folder',
+  {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    position: doublePrecision('position').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('project_view_folder_project_name_unique').on(t.projectId, t.name),
+    index('project_view_folder_project_idx').on(t.projectId, t.position),
+  ],
+);
+
 // Saved views (the tabs above a project's work items view). filters and display are jsonb
 // blobs owned by the UI; the server stores and returns them without inspecting
-// them. position orders the tabs.
+// them. position orders the tabs within the optional folder.
 export const projectView = pgTable(
   'project_view',
   {
@@ -1793,6 +1844,9 @@ export const projectView = pgTable(
     projectId: integer('project_id')
       .notNull()
       .references(() => project.id, { onDelete: 'cascade' }),
+    folderId: integer('folder_id').references(() => projectViewFolder.id, {
+      onDelete: 'set null',
+    }),
     name: text('name').notNull(),
     icon: text('icon'),
     filters: jsonb('filters').notNull().default({}),
@@ -1808,7 +1862,7 @@ export const projectView = pgTable(
     shareExtended: boolean('share_extended').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('project_view_project_idx').on(t.projectId, t.position)],
+  (t) => [index('project_view_project_idx').on(t.projectId, t.folderId, t.position)],
 );
 
 // The saved views a user marked as favorite. Favorites are personal: they pin the
@@ -2062,9 +2116,9 @@ export const noteBoardMember = pgTable(
   ],
 );
 
-// Manual actions: saved macros on a project. condition is a filter set deciding
-// which issues the action applies to (empty = always); effect is a partial
-// issue patch applied in one update. Both jsonb blobs are owned by the UI.
+// Declarative actions: saved issue patches that run manually, when an issue moves
+// to another state, or after an authorized inbox message is linked. Conditions and
+// effects are schema-validated by the API.
 export const projectAction = pgTable(
   'project_action',
   {
@@ -2075,12 +2129,71 @@ export const projectAction = pgTable(
     name: text('name').notNull(),
     // Icon key for the action, resolved to a lucide icon by the UI (empty = default).
     icon: text('icon').notNull().default(''),
+    enabled: boolean('enabled').notNull().default(true),
+    trigger: text('trigger').notNull().default('manual'),
     condition: jsonb('condition').notNull().default({}),
     effect: jsonb('effect').notNull().default({}),
+    workflow: jsonb('workflow'),
     position: doublePrecision('position').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('project_action_project_idx').on(t.projectId, t.position)],
+  (t) => [
+    check(
+      'project_action_trigger_check',
+      sql`${t.trigger} IN ('manual', 'issue_state_changed', 'issue_comment_added')`,
+    ),
+    index('project_action_project_idx').on(t.projectId, t.position),
+  ],
+);
+
+// Durable execution log and outbox for actions. A state change or linked inbox
+// comment inserts pending rows in the same transaction as its evidence. root_event_id,
+// action_id and the target column make a step idempotent while still allowing a chain
+// to reach a new state.
+export const projectActionRun = pgTable(
+  'project_action_run',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    actionId: integer('action_id').references(() => projectAction.id, { onDelete: 'set null' }),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    // Keep the audit record when a work item is deleted. Pending runs with no
+    // work item are terminally skipped by the runner.
+    issueId: integer('issue_id').references(() => issue.id, { onDelete: 'set null' }),
+    actorUserId: text('actor_user_id').references(() => user.id, { onDelete: 'set null' }),
+    actionName: text('action_name').notNull(),
+    trigger: text('trigger').notNull(),
+    fromColumnId: integer('from_column_id').notNull(),
+    toColumnId: integer('to_column_id').notNull(),
+    rootEventId: uuid('root_event_id').notNull(),
+    depth: integer('depth').notNull().default(0),
+    condition: jsonb('condition').notNull().default({}),
+    effect: jsonb('effect').notNull().default({}),
+    workflow: jsonb('workflow'),
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    lastError: text('last_error'),
+    result: jsonb('result').$type<{ changedFields: string[] }>(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'project_action_run_trigger_check',
+      sql`${t.trigger} IN ('manual', 'issue_state_changed', 'issue_comment_added')`,
+    ),
+    check(
+      'project_action_run_status_check',
+      sql`${t.status} IN ('pending', 'running', 'succeeded', 'skipped', 'failed')`,
+    ),
+    uniqueIndex('project_action_run_step_uq').on(t.rootEventId, t.actionId, t.toColumnId),
+    index('project_action_run_due_idx').on(t.status, t.nextAttemptAt),
+    index('project_action_run_project_idx').on(t.projectId, t.createdAt.desc()),
+  ],
 );
 
 // Outgoing webhook subscription. On a subscribed event the API posts the event
@@ -2137,6 +2250,162 @@ export const webhookDelivery = pgTable(
       .on(t.nextAttemptAt)
       .where(sql`${t.status} = 'pending'`),
     index('webhook_delivery_webhook_idx').on(t.webhookId),
+  ],
+);
+
+// External message sources discovered through the host integration service. Secrets
+// and provider credentials stay in that service; this row only reports health and
+// controls triage and optional task creation for one account.
+export const hubInboxSource = pgTable(
+  'hub_inbox_source',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    channel: text('channel').notNull(),
+    account: text('account').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    status: text('status').notNull().default('disabled'),
+    cursor: text('cursor'),
+    confidenceThreshold: doublePrecision('confidence_threshold').notNull().default(0.75),
+    autoCreateTasks: boolean('auto_create_tasks').notNull().default(false),
+    autoTaskProjectId: integer('auto_task_project_id').references(() => project.id, {
+      onDelete: 'set null',
+    }),
+    automationActorUserId: text('automation_actor_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    lastSyncAt: timestamp('last_sync_at', { withTimezone: true }),
+    lastSuccessAt: timestamp('last_success_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    nextSyncAt: timestamp('next_sync_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('hub_inbox_source_channel_check', sql`${t.channel} IN ('mail', 'whatsapp')`),
+    check(
+      'hub_inbox_source_status_check',
+      sql`${t.status} IN ('disabled', 'connecting', 'connected', 'error')`,
+    ),
+    check(
+      'hub_inbox_source_confidence_check',
+      sql`${t.confidenceThreshold} >= 0 AND ${t.confidenceThreshold} <= 1`,
+    ),
+    unique().on(t.teamId, t.channel, t.account),
+    index('hub_inbox_source_due_idx').on(t.enabled, t.nextSyncAt),
+  ],
+);
+
+// Durable normalized events returned by the host adapter. The unique provider id
+// makes overlapping sync windows and push redeliveries idempotent. Only bounded
+// metadata and a short snippet are stored; provider message bodies stay at source.
+export const hubInboxEvent = pgTable(
+  'hub_inbox_event',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceId: integer('source_id')
+      .notNull()
+      .references(() => hubInboxSource.id, { onDelete: 'cascade' }),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    externalEventId: text('external_event_id').notNull(),
+    externalThreadId: text('external_thread_id').notNull(),
+    externalMessageId: text('external_message_id').notNull(),
+    issueActivityId: integer('issue_activity_id').references(() => issueActivity.id, {
+      onDelete: 'set null',
+    }),
+    sender: text('sender').notNull(),
+    subject: text('subject').notNull().default(''),
+    snippet: text('snippet').notNull().default(''),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'hub_inbox_event_status_check',
+      sql`${t.status} IN ('pending', 'running', 'succeeded', 'failed')`,
+    ),
+    unique().on(t.sourceId, t.externalEventId),
+    unique().on(t.issueActivityId),
+    index('hub_inbox_event_due_idx').on(t.status, t.nextAttemptAt),
+    index('hub_inbox_event_thread_idx').on(t.sourceId, t.externalThreadId, t.receivedAt.desc()),
+  ],
+);
+
+// One unified inbox row per provider thread. Triage is asynchronous because the
+// OpenClaw hook may return a run id before classification completes. A project and
+// issue link always reference validated local rows.
+export const hubInboxThread = pgTable(
+  'hub_inbox_thread',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceId: integer('source_id')
+      .notNull()
+      .references(() => hubInboxSource.id, { onDelete: 'cascade' }),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    externalThreadId: text('external_thread_id').notNull(),
+    latestExternalMessageId: text('latest_external_message_id').notNull(),
+    sender: text('sender').notNull(),
+    subject: text('subject').notNull().default(''),
+    snippet: text('snippet').notNull().default(''),
+    externalUrl: text('external_url'),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+    messageCount: integer('message_count').notNull().default(1),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'set null' }),
+    issueId: integer('issue_id').references(() => issue.id, { onDelete: 'set null' }),
+    status: text('status').notNull().default('new'),
+    priority: text('priority'),
+    triageSummary: text('triage_summary'),
+    triageStatus: text('triage_status').notNull().default('pending'),
+    triageRunId: text('triage_run_id'),
+    triageGeneration: integer('triage_generation').notNull().default(0),
+    triageAttempts: integer('triage_attempts').notNull().default(0),
+    nextTriageAt: timestamp('next_triage_at', { withTimezone: true }).notNull().defaultNow(),
+    lastTriageError: text('last_triage_error'),
+    confidence: doublePrecision('confidence'),
+    requiresAction: boolean('requires_action'),
+    ticketStatus: text('ticket_status').notNull().default('none'),
+    ticketAttempts: integer('ticket_attempts').notNull().default(0),
+    nextTicketAt: timestamp('next_ticket_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'hub_inbox_thread_status_check',
+      sql`${t.status} IN ('new', 'assigned', 'waiting', 'done')`,
+    ),
+    check(
+      'hub_inbox_thread_priority_check',
+      sql`${t.priority} IS NULL OR ${t.priority} IN ('low', 'medium', 'high', 'urgent')`,
+    ),
+    check(
+      'hub_inbox_thread_triage_status_check',
+      sql`${t.triageStatus} IN ('pending', 'queued', 'running', 'succeeded', 'needs_review', 'failed', 'skipped')`,
+    ),
+    check(
+      'hub_inbox_thread_ticket_status_check',
+      sql`${t.ticketStatus} IN ('none', 'pending', 'running', 'created', 'failed', 'skipped')`,
+    ),
+    check(
+      'hub_inbox_thread_confidence_check',
+      sql`${t.confidence} IS NULL OR (${t.confidence} >= 0 AND ${t.confidence} <= 1)`,
+    ),
+    unique().on(t.sourceId, t.externalThreadId),
+    index('hub_inbox_thread_team_idx').on(t.teamId, t.receivedAt.desc()),
+    index('hub_inbox_thread_project_idx').on(t.projectId, t.receivedAt.desc()),
+    index('hub_inbox_thread_triage_due_idx').on(t.triageStatus, t.nextTriageAt),
+    index('hub_inbox_thread_ticket_due_idx').on(t.ticketStatus, t.nextTicketAt),
   ],
 );
 

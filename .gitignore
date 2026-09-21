@@ -44,3 +44,6 @@ coverage
 
 # agent scratch space (test docs, drafts)
 .workspace/
+
+# local pre-migration environment snapshots
+/.env.pre-*

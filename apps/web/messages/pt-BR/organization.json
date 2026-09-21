@@ -1,0 +1,61 @@
+{
+  "title": "Organization",
+  "description": "Manage departments, goals, agent reporting lines, and project responsibilities.",
+  "loading": "Loading organization…",
+  "managerRequired": "Only team owners and managers can view and edit the organization.",
+  "tabs": {
+    "departments": "Departments",
+    "goals": "Goals",
+    "agents": "Agents",
+    "projects": "Projects"
+  },
+  "fields": {
+    "team": "Team",
+    "name": "Name",
+    "title": "Title",
+    "description": "Description",
+    "parentDepartment": "Parent department",
+    "department": "Department",
+    "project": "Project",
+    "status": "Status",
+    "targetDate": "Target date",
+    "roleTitle": "Organization role",
+    "reportsTo": "Reports to",
+    "openClawAgentId": "OpenClaw agent ID",
+    "projectInstructions": "Project instructions"
+  },
+  "values": {
+    "none": "None"
+  },
+  "actions": {
+    "add": "Add",
+    "save": "Save",
+    "delete": "Delete",
+    "clearAssignment": "Clear assignment",
+    "saveInstructions": "Save instructions"
+  },
+  "departments": {
+    "newPlaceholder": "New department",
+    "empty": "No departments have been created."
+  },
+  "goals": {
+    "newPlaceholder": "New goal",
+    "empty": "No organization goals have been created."
+  },
+  "agents": {
+    "empty": "This team has no agents.",
+    "openClawPlaceholder": "coordinator-agent-id",
+    "projectInstructions": "Project-specific instructions",
+    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
+  },
+  "projects": {
+    "empty": "This team has no projects.",
+    "instructionsPlaceholder": "Describe the project's mandate and operating instructions."
+  },
+  "statuses": {
+    "planned": "Planned",
+    "active": "Active",
+    "achieved": "Achieved",
+    "paused": "Paused"
+  }
+}

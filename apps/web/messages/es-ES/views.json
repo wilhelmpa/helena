@@ -11,5 +11,15 @@
   "unfavorite": "Quitar de favoritos",
   "shareBoard": "Compartir tablero",
   "newViewHint": "Crear una vista a partir de los filtros y la visualización actuales",
-  "filter": "Filtro"
+  "filter": "Filtro",
+  "manageFolders": "Administrar carpetas de vistas",
+  "newFolder": "Nueva carpeta",
+  "folderNamePrompt": "Nombre de la carpeta",
+  "renameFolder": "Renombrar carpeta",
+  "moveFolderUp": "Mover arriba",
+  "moveFolderDown": "Mover abajo",
+  "deleteFolder": "Eliminar carpeta",
+  "deleteFolderConfirm": "¿Eliminar {name}? Sus vistas quedarán sin carpeta.",
+  "moveToFolder": "Mover a carpeta",
+  "noFolder": "Sin carpeta"
 }

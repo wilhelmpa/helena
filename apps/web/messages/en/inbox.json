@@ -33,5 +33,52 @@
     "commented": "{who} commented",
     "stateChanged": "{who} changed the status from {from} to {to}",
     "stateChangedPlain": "{who} changed the status"
+  },
+  "hub": {
+    "messages": "Messages",
+    "updates": "Updates",
+    "noSources": "No message source is connected. Source health appears only after the host integration reports it.",
+    "enabled": "Source enabled",
+    "confidence": "Confidence threshold",
+    "autoCreate": "Create tasks automatically",
+    "autoTaskProject": "Automatic task project",
+    "reviewOnly": "Review only",
+    "allProjects": "All projects",
+    "allSources": "All sources",
+    "allStatuses": "All statuses",
+    "needsReview": "Needs review",
+    "loading": "Loading messages…",
+    "empty": "No messages",
+    "loadMore": "Load more",
+    "selectMessage": "Select a message",
+    "triage": "Triage",
+    "confidenceValue": "Confidence: {value}%",
+    "project": "Project",
+    "unassigned": "Unassigned",
+    "statusLabel": "Status",
+    "openSource": "Open source message",
+    "openTask": "Open {id}",
+    "createTask": "Create task",
+    "retryTriage": "Retry triage",
+    "taskCreated": "Task created",
+    "taskFailed": "Task creation failed",
+    "saveFailed": "Could not save",
+    "channel": {
+      "mail": "Mail",
+      "whatsapp": "WhatsApp"
+    },
+    "connection": {
+      "disabled": "Disabled",
+      "connecting": "Connecting",
+      "connected": "Connected",
+      "error": "Error"
+    },
+    "status": {
+      "new": "New",
+      "assigned": "Assigned",
+      "waiting": "Waiting",
+      "done": "Done"
+    },
+    "back": "Back to messages"
   }
 }

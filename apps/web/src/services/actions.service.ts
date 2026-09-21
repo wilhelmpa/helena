@@ -6,6 +6,9 @@ import {
   updateAction,
   deleteAction,
   reorderActions,
+  listActionRuns,
+  previewAction,
+  runAction,
 } from '@/lib/api/endpoints/actions';
 import { EMPTY_FILTER_SET, type FilterSet } from '@/utils/filters';
 import { useOptimisticReorder } from '@/services/optimisticReorder';
@@ -16,10 +19,32 @@ import { qk } from '@/services/queryKeys';
 // Applied by the actions query and after a create/update.
 export function normalizeAction(a: ActionDef): ActionDef {
   const conditions = (a.condition as FilterSet | undefined)?.conditions;
+  const condition = Array.isArray(conditions) ? { conditions } : EMPTY_FILTER_SET;
+  const effect = a.effect && typeof a.effect === 'object' ? a.effect : {};
   return {
     ...a,
-    condition: Array.isArray(conditions) ? { conditions } : EMPTY_FILTER_SET,
-    effect: a.effect && typeof a.effect === 'object' ? a.effect : {},
+    condition,
+    effect,
+    workflow: a.workflow ?? legacyWorkflow(a.trigger, condition, effect),
+  };
+}
+
+export function legacyWorkflow(
+  trigger: ActionDef['trigger'],
+  condition: FilterSet,
+  effect: ActionDef['effect'],
+): ActionDef['workflow'] {
+  return {
+    version: 1,
+    nodes: [
+      { id: 'trigger', type: 'trigger', config: { trigger }, position: { x: 0, y: 0 } },
+      { id: 'condition', type: 'condition', config: condition, position: { x: 0, y: 160 } },
+      { id: 'action', type: 'action', config: effect, position: { x: 0, y: 320 } },
+    ],
+    edges: [
+      { id: 'trigger-condition', source: 'trigger', target: 'condition', branch: 'always' },
+      { id: 'condition-action', source: 'condition', target: 'action', branch: 'true' },
+    ],
   };
 }
 
@@ -70,4 +95,38 @@ export function useReorderActions(projectKey: string | null) {
   return useOptimisticReorder<ActionDef>(projectKey ? qk.actions(projectKey) : null, (orderedIds) =>
     reorderActions(projectKey!, orderedIds),
   );
+}
+
+export function useActionRuns(projectKey: string) {
+  return useQuery({
+    queryKey: qk.actionRuns(projectKey),
+    queryFn: () => listActionRuns(projectKey),
+  });
+}
+
+export function useRunAction(projectKey: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ actionId, issueId }: { actionId: number; issueId: number }) =>
+      runAction(actionId, issueId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.actionRuns(projectKey) });
+      void qc.invalidateQueries({ queryKey: qk.boardIssues(projectKey) });
+    },
+  });
+}
+
+export function usePreviewAction() {
+  return useMutation({
+    mutationFn: ({
+      actionId,
+      issueId,
+      workflow,
+    }: {
+      actionId: number;
+      issueId: number;
+      workflow: ActionDef['workflow'];
+    }) => previewAction(actionId, issueId, workflow),
+    meta: { suppressErrorToast: true },
+  });
 }

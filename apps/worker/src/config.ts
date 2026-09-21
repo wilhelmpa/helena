@@ -23,6 +23,10 @@ export interface WorkerConfig {
   cleanupDays: number;
   // Run the cleanup once every this many ticks.
   cleanupEveryTicks: number;
+  projectProvisioningUrl: string | null;
+  projectProvisioningToken: string | null;
+  // OpenClaw and WebDAV setup can take longer than a regular webhook.
+  projectProvisioningTimeoutMs: number;
 }
 
 let cached: WorkerConfig | null = null;
@@ -38,6 +42,14 @@ export function workerConfig(): WorkerConfig {
     leaseSeconds: intEnv('WEBHOOK_LEASE_SECONDS', 120),
     cleanupDays: intEnv('WEBHOOK_CLEANUP_DAYS', 30),
     cleanupEveryTicks: intEnv('WEBHOOK_CLEANUP_EVERY_TICKS', 300),
+    projectProvisioningUrl: process.env.OPENCLAW_PROVISIONING_URL?.trim() || null,
+    projectProvisioningToken: process.env.OPENCLAW_PROVISIONING_TOKEN?.trim() || null,
+    projectProvisioningTimeoutMs: intEnv('PROJECT_PROVISIONING_TIMEOUT_MS', 120_000),
   };
   return cached;
+}
+
+export function resetWorkerConfigForTests(): void {
+  if (process.env.NODE_ENV === 'production') return;
+  cached = null;
 }

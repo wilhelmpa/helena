@@ -24,6 +24,9 @@
   "backToApp": "Назад в приложение",
   "integrations": "Интеграции",
   "projects": "Проекты",
+  "home": "Главная",
+  "globalHomeHint": "Используйте здесь глобального координатора или выберите проект для его контекста.",
+  "workflows": "Рабочие процессы",
   "noProjects": "Проектов пока нет",
   "newTeam": "Новая команда",
   "manageTeams": "Управление командами",
@@ -32,13 +35,37 @@
   "searchHint": "Поиск или команда ({key})",
   "newIssueHint": "Новая задача ({key})",
   "aiChatHint": "Чат с ИИ-агентами ({key})",
+  "openClawHint": "Открыть OpenClaw",
+  "paperlessHint": "Открыть Paperless",
+  "openClawTabsLabel": "Разделы OpenClaw",
+  "openClawProject": "Проект",
+  "openClawCoordinator": "Координатор",
+  "openClawTerminal": "Терминал",
   "sections": "Разделы",
   "doubleClickToRename": "Двойной клик, чтобы переименовать",
+  "workspace": {
+    "tools": "Инструменты рабочего пространства",
+    "chat": "Чат",
+    "terminal": "Терминал",
+    "code": "Код",
+    "browser": "Браузер",
+    "files": "Файлы",
+    "paperless": "Paperless",
+    "inbox": "Входящие",
+    "connections": "Подключения",
+    "advanced": "Дополнительно",
+    "openExternal": "Открыть {tool} в новой вкладке",
+    "unavailable": "{tool} не настроен",
+    "unavailableDescription": "Администратор может подключить это рабочее пространство к инстансу.",
+    "mail": "Mail"
+  },
   "groups": {
     "project": "Проект",
     "workflow": "Рабочий процесс",
     "automation": "Автоматизация"
   },
   "godModeOwnerOnly": "Режим администратора доступен только владельцу инстанса.",
-  "project": "Проект"
+  "project": "Проект",
+  "organization": "Organization",
+  "connections": "Connections"
 }

@@ -12,9 +12,9 @@ import ProjectAiAgents from './ProjectAiAgents';
 
 const section = AI_AGENTS_SECTION;
 
-// The AI agents page (/project/:projectKey/ai-agents), a top-level nav item. It lists
-// the agents working in the project and nothing more: an agent belongs to the team, so
-// it is created, attached to projects and edited in the team section.
+// The AI agents page (/project/:projectKey/ai-agents), a top-level nav item. Agents
+// are created and attached in team settings; their role and instructions are assigned
+// here for the active project.
 export default function ProjectAiAgentsSection() {
   const { project } = useShell();
   if (!project) return null;

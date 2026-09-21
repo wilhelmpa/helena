@@ -29,6 +29,9 @@ export default function ShellHeaderTitle({
     const { sub, section, aiTeamSection } = route;
     const known = (slug: string) => SETTINGS_SECTIONS.some((s) => s.slug === slug);
     if (section) return known(section) ? sectionText(section).label : t('projectSettings');
+    if (sub === 'workflows') return t('workflows');
+    if (sub === 'inbox') return t('inbox');
+    if (sub === 'docs') return t('documents');
     if (sub === 'members') return t('members');
     if (sub === 'dashboard') return t('dashboards');
     if (sub === 'initiatives') return t('initiatives');

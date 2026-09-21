@@ -7,13 +7,23 @@ import { HttpError } from '#shared/lib';
 import { accessErrors, commonErrors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import {
+  ViewFolderResponse,
   ViewResponse,
   createViewBody,
   reorderViewsBody,
   updateViewBody,
   viewParams,
+  viewFolderBody,
+  viewFolderParams,
+  reorderViewFoldersBody,
 } from './model';
 import {
+  listViewFolders,
+  getViewFolder,
+  createViewFolder,
+  updateViewFolder,
+  deleteViewFolder,
+  reorderViewFolders,
   listViews,
   createView,
   getView,
@@ -23,6 +33,7 @@ import {
   isFavoriteView,
   addFavoriteView,
   removeFavoriteView,
+  backfillDefaultProjectViews,
 } from './service';
 
 export const viewRoutes = new Elysia({ name: 'views', detail: { tags: ['Views'] } })
@@ -34,7 +45,72 @@ export const viewRoutes = new Elysia({ name: 'views', detail: { tags: ['Views'] 
       'View not found',
       async (p) => (await getView(Number(p.viewId)))?.projectId ?? null,
     ),
+    savedViewFolder: entityGuard(
+      'views',
+      'View folder not found',
+      async (p) => (await getViewFolder(Number(p.folderId)))?.projectId ?? null,
+    ),
   })
+  .get('/projects/:projectKey/view-folders', ({ project }) => listViewFolders(project.id), {
+    permission: ['views', 'read'],
+    response: { 200: t.Array(ViewFolderResponse), ...accessErrors },
+    detail: { summary: 'List saved view folders' },
+  })
+
+  .post(
+    '/projects/:projectKey/view-folders',
+    async ({ project, body, set }) => {
+      set.status = 201;
+      return createViewFolder(project.id, body.name);
+    },
+    {
+      body: viewFolderBody,
+      permission: ['views', 'create'],
+      response: { 201: ViewFolderResponse, ...commonErrors },
+      detail: { summary: 'Create a saved view folder' },
+    },
+  )
+
+  .put(
+    '/projects/:projectKey/view-folders/reorder',
+    ({ project, body }) => reorderViewFolders(project.id, body.orderedIds),
+    {
+      body: reorderViewFoldersBody,
+      permission: ['views', 'edit'],
+      response: { 200: t.Array(ViewFolderResponse), ...commonErrors },
+      detail: { summary: 'Reorder saved view folders' },
+    },
+  )
+
+  .patch(
+    '/view-folders/:folderId',
+    async ({ params, body }) => {
+      const folder = await updateViewFolder(params.folderId, body.name);
+      if (!folder) throw new HttpError(404, 'View folder not found');
+      return folder;
+    },
+    {
+      params: viewFolderParams,
+      body: viewFolderBody,
+      savedViewFolder: 'edit',
+      response: { 200: ViewFolderResponse, ...commonErrors },
+      detail: { summary: 'Rename a saved view folder' },
+    },
+  )
+
+  .delete(
+    '/view-folders/:folderId',
+    async ({ params }) => {
+      await deleteViewFolder(params.folderId);
+      return noContent();
+    },
+    {
+      params: viewFolderParams,
+      savedViewFolder: 'delete',
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Delete a saved view folder' },
+    },
+  )
   .get(
     '/projects/:projectKey/views',
     async ({ project, user }) => {
@@ -69,10 +145,23 @@ export const viewRoutes = new Elysia({ name: 'views', detail: { tags: ['Views'] 
     },
   )
 
+  .post(
+    '/projects/:projectKey/views/defaults',
+    ({ project, user }) => backfillDefaultProjectViews(project.id, requireUser(user).id),
+    {
+      permission: ['views', 'edit'],
+      response: { 200: t.Array(ViewResponse), ...commonErrors },
+      detail: {
+        summary: 'Ensure default saved views',
+        description: 'Ensure the project has Kanban and List saved views.',
+      },
+    },
+  )
+
   .put(
     '/projects/:projectKey/views/reorder',
     async ({ project, body, user }) => {
-      return reorderViews(project.id, body.orderedIds, requireUser(user).id);
+      return reorderViews(project.id, body.folderId ?? null, body.orderedIds, requireUser(user).id);
     },
     {
       body: reorderViewsBody,

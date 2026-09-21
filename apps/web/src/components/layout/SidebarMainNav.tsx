@@ -4,16 +4,10 @@ import SidebarWorkNav from '@/components/layout/SidebarWorkNav';
 
 // The main sidebar body: the work navigation, the AI Team group, then the
 // Configuration group.
-export default function SidebarMainNav({
-  projectKey,
-  projectId,
-}: {
-  projectKey: string | null;
-  projectId: number | null;
-}) {
+export default function SidebarMainNav({ projectKey }: { projectKey: string | null }) {
   return (
     <>
-      <SidebarWorkNav projectKey={projectKey} projectId={projectId} />
+      <SidebarWorkNav projectKey={projectKey} />
       <SidebarAiTeamNav projectKey={projectKey} />
       <SidebarConfigNav projectKey={projectKey} />
     </>

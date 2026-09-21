@@ -17,6 +17,8 @@ import MobileViewSwitcher from '@/components/layout/MobileViewSwitcher';
 import SavedViewTab from '@/components/layout/SavedViewTab';
 import ViewTabChrome from '@/components/layout/ViewTabChrome';
 import ViewTabLabel from '@/components/layout/ViewTabLabel';
+import ViewFolderManager from '@/components/layout/ViewFolderManager';
+import { useUpdateView, useViewFoldersQuery } from '@/services/views.service';
 
 // The row of saved-view tabs above a project, plus a New view button and, on the
 // right, the filter and display toggles. The leading "All" tab is implicit and
@@ -53,6 +55,8 @@ export default function ViewTabs({
   const canEditView = can('views', 'edit');
   const canDeleteView = can('views', 'delete');
   const sensors = useStripSortSensors();
+  const { data: folders = [] } = useViewFoldersQuery(projectKey);
+  const updateView = useUpdateView(projectKey);
   // The view being dragged, used to render the DragOverlay preview.
   const [activeId, setActiveId] = useState<number | null>(null);
   const activeView = activeId != null ? (views.find((v) => v.id === activeId) ?? null) : null;
@@ -72,7 +76,7 @@ export default function ViewTabs({
   }
 
   return (
-    <div className="flex items-center gap-1 border-b px-2 py-1.5 sm:px-3">
+    <div className="flex h-12 shrink-0 items-center gap-1 border-b px-2 sm:px-3">
       {/* Mobile: views collapse into a dropdown (no drag reorder there). */}
       <div className="flex min-w-0 flex-1 items-center sm:hidden">
         <MobileViewSwitcher
@@ -85,7 +89,7 @@ export default function ViewTabs({
       </div>
 
       {/* Desktop: the scrollable, reorderable tab strip. */}
-      <div className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto sm:flex">
+      <div className="hidden min-w-0 flex-1 [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden sm:flex">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -111,6 +115,8 @@ export default function ViewTabs({
                 onSelect={() => onSelect(view.id)}
                 onEdit={() => onEdit(view)}
                 onDelete={() => onDelete(view)}
+                folders={folders}
+                onMove={(folderId) => updateView.mutate({ id: view.id, input: { folderId } })}
               />
             ))}
           </SortableContext>
@@ -140,6 +146,7 @@ export default function ViewTabs({
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5 pl-2">
+        {canEditView && <ViewFolderManager projectKey={projectKey} folders={folders} />}
         <button
           type="button"
           onClick={onToggleFilter}

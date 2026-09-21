@@ -74,6 +74,10 @@ function gate(request: NextRequest): NextResponse {
 
   if (!hasSession) {
     const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set(
+      'callbackURL',
+      `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    );
     return NextResponse.redirect(loginUrl);
   }
 

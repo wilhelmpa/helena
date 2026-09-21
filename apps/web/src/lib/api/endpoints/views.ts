@@ -8,6 +8,7 @@ import { request } from '@/lib/api/core/client';
 export interface View {
   id: number;
   projectId: number;
+  folderId: number | null;
   name: string;
   icon: string | null;
   filters: FilterSet;
@@ -27,6 +28,7 @@ export interface View {
 
 export interface NewViewInput {
   name: string;
+  folderId?: number | null;
   icon?: string | null;
   filters?: FilterSet;
   display?: SavedViewDisplay;
@@ -34,9 +36,18 @@ export interface NewViewInput {
 
 export interface ViewPatch {
   name?: string;
+  folderId?: number | null;
   icon?: string | null;
   filters?: FilterSet;
   display?: SavedViewDisplay;
+}
+
+export interface ViewFolder {
+  id: number;
+  projectId: number;
+  name: string;
+  position: number;
+  createdAt: string;
 }
 
 export const listViews = (projectKey: string, signal?: AbortSignal) =>
@@ -54,8 +65,32 @@ export const deleteView = (viewId: number) =>
 export const setViewFavorite = (viewId: number, favorite: boolean) =>
   request<void>(`/views/${viewId}/favorite`, { method: favorite ? 'PUT' : 'DELETE' });
 
-export const reorderViews = (projectKey: string, orderedIds: number[]) =>
+export const reorderViews = (projectKey: string, folderId: number | null, orderedIds: number[]) =>
   request<View[]>(`/projects/${projectKey}/views/reorder`, {
+    method: 'PUT',
+    body: JSON.stringify({ folderId, orderedIds }),
+  });
+
+export const listViewFolders = (projectKey: string, signal?: AbortSignal) =>
+  request<ViewFolder[]>(`/projects/${encodeURIComponent(projectKey)}/view-folders`, { signal });
+
+export const createViewFolder = (projectKey: string, name: string) =>
+  request<ViewFolder>(`/projects/${encodeURIComponent(projectKey)}/view-folders`, {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+
+export const updateViewFolder = (folderId: number, name: string) =>
+  request<ViewFolder>(`/view-folders/${folderId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  });
+
+export const deleteViewFolder = (folderId: number) =>
+  request<void>(`/view-folders/${folderId}`, { method: 'DELETE' });
+
+export const reorderViewFolders = (projectKey: string, orderedIds: number[]) =>
+  request<ViewFolder[]>(`/projects/${encodeURIComponent(projectKey)}/view-folders/reorder`, {
     method: 'PUT',
     body: JSON.stringify({ orderedIds }),
   });

@@ -1,0 +1,1 @@
+ALTER TABLE "project_action" ADD COLUMN "enabled" boolean DEFAULT true NOT NULL;

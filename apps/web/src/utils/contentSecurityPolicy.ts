@@ -1,4 +1,5 @@
 import { serverRuntimeEnv } from '@/utils/runtimeEnv';
+import { workspaceFrameOrigins } from '@/utils/workspaceTools';
 
 // The api origin is read from the running server, so the policy is built per
 // request (src/proxy.ts) rather than frozen into the build with the other headers
@@ -19,6 +20,7 @@ function apiOrigin(): string {
 // pictures, and the /media proxy on this origin. React evals in development only,
 // to rebuild server error stacks in the browser.
 export function contentSecurityPolicy(): string {
+  const frameOrigins = workspaceFrameOrigins(serverRuntimeEnv().workspace);
   const scriptSources =
     process.env.NODE_ENV === 'development'
       ? "'self' 'unsafe-inline' 'unsafe-eval'"
@@ -31,6 +33,7 @@ export function contentSecurityPolicy(): string {
     "media-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
     `connect-src 'self' ${apiOrigin()}`.trimEnd(),
+    `frame-src ${frameOrigins.length > 0 ? frameOrigins.join(' ') : "'none'"}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

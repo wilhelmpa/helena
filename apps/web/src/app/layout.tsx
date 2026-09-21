@@ -7,6 +7,7 @@ import RuntimeEnvScript from '@/components/runtime-env-script';
 import WhatsNew from '@/features/whats-new/WhatsNew';
 import { localeDirection, type Locale } from '@/i18n/locales';
 import './globals.css';
+import WorkspaceToolsProvider from './WorkspaceToolsProvider';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
@@ -36,7 +37,7 @@ export default async function RootLayout({
         >
           <NextIntlClientProvider>
             <Providers>
-              {children}
+              <WorkspaceToolsProvider>{children}</WorkspaceToolsProvider>
               <WhatsNew />
             </Providers>
           </NextIntlClientProvider>

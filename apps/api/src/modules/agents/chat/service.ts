@@ -13,7 +13,12 @@ import {
   type ThreadRow,
 } from '../chat-history';
 import { appendTextPart } from '../chat-parts';
-import { attachmentPreamble, chartPreamble, projectsPreamble } from '../core/prompt/framing';
+import {
+  attachmentPreamble,
+  chartPreamble,
+  projectInstructionsPreamble,
+  projectsPreamble,
+} from '../core/prompt/framing';
 import { peoplePreamble, type Person } from '../core/prompt/run-context';
 import type { ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { newChatThreadId } from '../core/runtime/thread-ids';
@@ -547,6 +552,7 @@ function buildSystemPrompt(agent: RunnerAgent, requester: Person): string {
     chartPreamble() +
     attachmentPreamble() +
     peoplePreamble({ requester }) +
+    agent.projects.map(projectInstructionsPreamble).join('') +
     (instructions ? `## Instructions\n${instructions}\n` : '')
   );
 }

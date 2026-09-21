@@ -85,6 +85,9 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
+      CONNECTIONS_INTEGRATION_URL: ${CONNECTIONS_INTEGRATION_URL:-}
+      CONNECTIONS_INTEGRATION_TOKEN: ${CONNECTIONS_INTEGRATION_TOKEN:-}
+      CONNECTIONS_INTEGRATION_TIMEOUT_MS: ${CONNECTIONS_INTEGRATION_TIMEOUT_MS:-30000}
       NODE_ENV: production
       API_PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER:-itsaplan}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-itsaplan}
@@ -142,6 +145,16 @@ services:
         condition: service_started
     environment:
       NODE_ENV: production
+      OPENCLAW_PROVISIONING_URL: ${OPENCLAW_PROVISIONING_URL:-}
+      OPENCLAW_PROVISIONING_TOKEN: ${OPENCLAW_PROVISIONING_TOKEN:-}
+      PROJECT_PROVISIONING_TIMEOUT_MS: ${PROJECT_PROVISIONING_TIMEOUT_MS:-120000}
+      INBOX_INTEGRATION_URL: ${INBOX_INTEGRATION_URL:-}
+      INBOX_INTEGRATION_TOKEN: ${INBOX_INTEGRATION_TOKEN:-}
+      INBOX_TEAM_ID: ${INBOX_TEAM_ID:-}
+      INBOX_ACCOUNTS: ${INBOX_ACCOUNTS:-}
+      INBOX_SYNC_INTERVAL_MS: ${INBOX_SYNC_INTERVAL_MS:-300000}
+      INBOX_INTEGRATION_TIMEOUT_MS: ${INBOX_INTEGRATION_TIMEOUT_MS:-30000}
+      INBOX_WAKE_PORT: ${INBOX_WAKE_PORT:-18801}
       DATABASE_URL: postgres://${POSTGRES_USER:-itsaplan}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-itsaplan}
       # Notification delivery sends email and Telegram messages itself, with the
       # provider credentials stored in the database — encrypted with this key, the
@@ -196,8 +209,20 @@ services:
       # there (/media) so they are served from the web origin.
       SERVICE_URL_API: http://api:3000
       # Legal document URLs shown on the logged-out screens; empty hides the notice.
+      SSO_LOGOUT_URL: ${SSO_LOGOUT_URL:-}
       PRIVACY_URL: ${PRIVACY_URL:-}
       TERMS_URL: ${TERMS_URL:-}
+      OPENCLAW_URL: ${OPENCLAW_URL:-}
+      OPENCLAW_COORDINATOR_ID: ${OPENCLAW_COORDINATOR_ID:-coordinator}
+      OPENCLAW_PROJECT_COORDINATORS: ${OPENCLAW_PROJECT_COORDINATORS:-}
+      TERMINAL_URL: ${TERMINAL_URL:-}
+      CODE_URL: ${CODE_URL:-}
+      PROJECT_WORKSPACE_PATHS: ${PROJECT_WORKSPACE_PATHS:-}
+      BROWSER_URL: ${BROWSER_URL:-}
+      FILES_URL: ${FILES_URL:-}
+      PAPERLESS_URL: ${PAPERLESS_URL:-}
+      INBOX_URL: ${INBOX_URL:-}
+      CONNECTIONS_URL: ${CONNECTIONS_URL:-}
     # /login renders without a session, and without reaching the api.
     healthcheck:
       test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3001/login']

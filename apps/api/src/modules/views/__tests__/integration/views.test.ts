@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
+import { db, projectProvisioningJob } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -7,6 +9,8 @@ async function setupOwnerProject() {
   const owner = await signUpTestUser();
   const asOwner = authedApi(owner.cookie);
   const project = await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+  const defaultViews = (await asOwner.projects({ projectKey: 'MKT' }).views.get()).data!;
+  for (const view of defaultViews) await asOwner.views({ viewId: view.id }).delete();
   return { asOwner, projectId: project.data!.id };
 }
 
@@ -16,6 +20,51 @@ describe('views', () => {
   });
 
   describe('create and list', () => {
+    it('backfills Kanban and List defaults idempotently without replacing an existing board', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const scope = asOwner.projects({ projectKey: 'MKT' });
+      const legacy = await scope.views.post({ name: 'Project board' });
+
+      const [first, second] = await Promise.all([
+        scope.views.defaults.post(),
+        scope.views.defaults.post(),
+      ]);
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(second.data).toMatchObject([
+        { id: legacy.data!.id, name: 'Kanban', display: { layout: 'kanban' } },
+        { name: 'List', display: { layout: 'table' } },
+      ]);
+      expect(second.data).toHaveLength(2);
+      const provisioning = await scope.provisioning.get();
+      for (const view of second.data!) {
+        expect(provisioning.data?.requestedResources).toContain(`board:${view.id}`);
+      }
+      await scope.views.defaults.post();
+      expect((await scope.provisioning.get()).data?.id).toBe(provisioning.data?.id);
+    });
+
+    it('does not treat a filtered custom Kanban view as the all-tasks default', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const scope = asOwner.projects({ projectKey: 'MKT' });
+      const mail = await scope.views.post({
+        name: 'Mail',
+        filters: { conditions: [{ id: 'mail', field: 'labels', op: 'is', values: [17] }] },
+        display: { layout: 'kanban' },
+      });
+
+      const views = await scope.views.defaults.post();
+
+      expect(views.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: mail.data!.id, name: 'Mail' }),
+          expect.objectContaining({ name: 'Kanban', filters: {}, display: { layout: 'kanban' } }),
+          expect.objectContaining({ name: 'List', filters: {}, display: { layout: 'table' } }),
+        ]),
+      );
+    });
+
     it('creates a view with default icon/filters/display and lists it', async () => {
       const { asOwner, projectId } = await setupOwnerProject();
 
@@ -37,6 +86,8 @@ describe('views', () => {
       expect(list.status).toBe(200);
       expect(list.data).toHaveLength(1);
       expect(list.data?.[0]).toMatchObject({ name: 'My issues' });
+      const provisioning = await asOwner.projects({ projectKey: 'MKT' }).provisioning.get();
+      expect(provisioning.data?.requestedResources).toContain(`board:${created.data!.id}`);
     });
 
     it('stores icon, filters and display verbatim', async () => {
@@ -65,6 +116,23 @@ describe('views', () => {
         { name: 'First', position: 0 },
         { name: 'Second', position: 1 },
       ]);
+    });
+
+    it('keeps every board resource when views are created concurrently', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const scope = asOwner.projects({ projectKey: 'MKT' });
+
+      const [first, second] = await Promise.all([
+        scope.views.post({ name: 'First' }),
+        scope.views.post({ name: 'Second' }),
+      ]);
+
+      expect(first.status).toBe(201);
+      expect(second.status).toBe(201);
+      const provisioning = await scope.provisioning.get();
+      expect(provisioning.data?.requestedResources).toEqual(
+        expect.arrayContaining([`board:${first.data!.id}`, `board:${second.data!.id}`]),
+      );
     });
 
     it('lists views ordered by position', async () => {
@@ -105,6 +173,29 @@ describe('views', () => {
         name: 'Renamed',
         filters: { replaced: true },
       });
+    });
+
+    it('requeues the same stable board resource when its name changes', async () => {
+      const { asOwner, projectId } = await setupOwnerProject();
+      const created = await asOwner.projects({ projectKey: 'MKT' }).views.post({ name: 'Board' });
+      const delivered = await asOwner.projects({ projectKey: 'MKT' }).provisioning.get();
+      await db
+        .update(projectProvisioningJob)
+        .set({ status: 'succeeded', result: { resources: [] }, completedAt: new Date() })
+        .where(eq(projectProvisioningJob.projectId, projectId));
+
+      const renamed = await asOwner
+        .views({ viewId: created.data!.id })
+        .patch({ name: 'Renamed board' });
+      expect(renamed.data).toMatchObject({ id: created.data!.id, name: 'Renamed board' });
+      const provisioning = await asOwner.projects({ projectKey: 'MKT' }).provisioning.get();
+      expect(provisioning.data).toMatchObject({
+        status: 'pending',
+        result: null,
+        completedAt: null,
+      });
+      expect(provisioning.data?.id).not.toBe(delivered.data?.id);
+      expect(provisioning.data?.requestedResources).toContain(`board:${created.data!.id}`);
     });
 
     it('sets and clears the icon', async () => {
@@ -165,32 +256,102 @@ describe('views', () => {
       expect(list.data?.map((v) => v.id)).toEqual([c.id, a.id, b.id]);
     });
 
-    it('ignores ids that belong to another project', async () => {
+    it('rejects ids that belong to another project', async () => {
       const { asOwner } = await setupOwnerProject();
       await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
       const mkt = (await asOwner.projects({ projectKey: 'MKT' }).views.post({ name: 'Mine' }))
         .data!;
-      // The OPS view sits at position 0; the reorder below places its id at index
-      // 1, so a scope leak would move it to position 1.
+      // The OPS project keeps its two seeded views as well as this view. None may
+      // be accepted as part of an MKT reorder.
       const ops = (await asOwner.projects({ projectKey: 'OPS' }).views.post({ name: 'Theirs' }))
         .data!;
 
       const reordered = await asOwner
         .projects({ projectKey: 'MKT' })
         .views.reorder.put({ orderedIds: [mkt.id, ops.id] });
-      expect(reordered.status).toBe(200);
-      expect(reordered.data?.map((v) => v.id)).toEqual([mkt.id]);
+      expect(reordered.status).toBe(400);
 
       const opsList = await asOwner.projects({ projectKey: 'OPS' }).views.get();
-      expect(opsList.data).toMatchObject([{ id: ops.id, position: 0 }]);
+      expect(opsList.data?.find((view) => view.id === ops.id)).toMatchObject({ position: 2 });
     });
 
-    it('rejects a reorder with an empty list', async () => {
+    it('accepts an empty order when the folder has no views', async () => {
       const { asOwner } = await setupOwnerProject();
       const res = await asOwner
         .projects({ projectKey: 'MKT' })
         .views.reorder.put({ orderedIds: [] });
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
+    });
+  });
+
+  describe('folders', () => {
+    it('creates, renames, reorders and deletes folders without deleting their views', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const folders = asOwner.projects({ projectKey: 'MKT' })['view-folders'];
+      const first = (await folders.post({ name: 'Delivery' })).data!;
+      const second = (await folders.post({ name: 'Planning' })).data!;
+      const view = (
+        await asOwner.projects({ projectKey: 'MKT' }).views.post({
+          name: 'Current work',
+          folderId: first.id,
+        })
+      ).data!;
+
+      expect(view.folderId).toBe(first.id);
+      expect((await folders.reorder.put({ orderedIds: [second.id, first.id] })).data).toMatchObject(
+        [
+          { id: second.id, position: 0 },
+          { id: first.id, position: 1 },
+        ],
+      );
+      expect(
+        (await asOwner['view-folders']({ folderId: first.id }).patch({ name: 'Build' })).data,
+      ).toMatchObject({ name: 'Build' });
+
+      await asOwner.views({ viewId: view.id }).favorite.put();
+      expect((await asOwner['view-folders']({ folderId: first.id }).delete()).status).toBe(204);
+      expect((await asOwner.projects({ projectKey: 'MKT' }).views.get()).data).toMatchObject([
+        { id: view.id, folderId: null, favorite: true },
+      ]);
+    });
+
+    it('rejects duplicate or incomplete folder and view orders', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const scope = asOwner.projects({ projectKey: 'MKT' });
+      const folderA = (await scope['view-folders'].post({ name: 'A' })).data!;
+      const folderB = (await scope['view-folders'].post({ name: 'B' })).data!;
+      const viewA = (await scope.views.post({ name: 'A', folderId: folderA.id })).data!;
+      await scope.views.post({ name: 'B', folderId: folderA.id });
+
+      expect(
+        (await scope['view-folders'].reorder.put({ orderedIds: [folderA.id, folderA.id] })).status,
+      ).toBe(400);
+      expect((await scope['view-folders'].reorder.put({ orderedIds: [folderA.id] })).status).toBe(
+        400,
+      );
+      expect(
+        (
+          await scope.views.reorder.put({
+            folderId: folderA.id,
+            orderedIds: [viewA.id],
+          })
+        ).status,
+      ).toBe(400);
+      expect(folderB.id).not.toBe(folderA.id);
+    });
+
+    it('rejects moving a view to a folder in another project', async () => {
+      const { asOwner } = await setupOwnerProject();
+      await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+      const foreign = (
+        await asOwner.projects({ projectKey: 'OPS' })['view-folders'].post({ name: 'Foreign' })
+      ).data!;
+      const view = (await asOwner.projects({ projectKey: 'MKT' }).views.post({ name: 'Local' }))
+        .data!;
+
+      expect(
+        (await asOwner.views({ viewId: view.id }).patch({ folderId: foreign.id })).status,
+      ).toBe(400);
     });
   });
 

@@ -3,8 +3,9 @@ import { noContent } from '#shared/http';
 import { guards, entityGuard } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
 import { HttpError } from '#shared/lib';
+import { requireUser } from '#shared/access';
 import { mcpTool } from '#mcp/generate';
-import { accessErrors, commonErrors } from '#shared/responses';
+import { accessErrors, commonErrors, errors } from '#shared/responses';
 import {
   ActionResponse,
   ActionListResponse,
@@ -12,6 +13,11 @@ import {
   createActionBody,
   updateActionBody,
   reorderActionsBody,
+  runActionBody,
+  ActionRunResponse,
+  ActionRunListResponse,
+  ActionPreviewResponse,
+  previewActionBody,
 } from './model';
 import {
   listActions,
@@ -20,7 +26,10 @@ import {
   updateAction,
   deleteAction,
   reorderActions,
+  listActionRuns,
+  getActionRun,
 } from './service';
+import { previewAction, runManualAction } from './runner';
 
 export const actionRoutes = new Elysia({ name: 'actions', detail: { tags: ['Actions'] } })
   .use(authContext)
@@ -33,7 +42,36 @@ export const actionRoutes = new Elysia({ name: 'actions', detail: { tags: ['Acti
       'Action not found',
       async (p) => (await getAction(Number(p.actionId)))?.projectId ?? null,
     ),
+    savedActionRun: entityGuard(
+      'actions',
+      'Action run not found',
+      async (p) => (await getActionRun(String(p.runId)))?.projectId ?? null,
+    ),
   })
+  .get('/projects/:projectKey/action-runs', async ({ project }) => listActionRuns(project.id), {
+    permission: ['actions', 'read'],
+    response: { 200: ActionRunListResponse, ...accessErrors },
+    detail: {
+      summary: 'List action runs',
+      description: "List a project's latest manual, status, and inbox-message action runs.",
+    },
+  })
+
+  .get(
+    '/action-runs/:runId',
+    async ({ params }) => {
+      const run = await getActionRun(params.runId);
+      if (!run) throw new HttpError(404, 'Action run not found');
+      return run;
+    },
+    {
+      params: t.Object({ runId: t.String({ format: 'uuid' }) }),
+      savedActionRun: 'read',
+      response: { 200: ActionRunResponse, ...commonErrors },
+      detail: { summary: 'Get an action run and its workflow steps' },
+    },
+  )
+
   .get(
     '/projects/:projectKey/actions',
     async ({ project }) => {
@@ -120,6 +158,40 @@ export const actionRoutes = new Elysia({ name: 'actions', detail: { tags: ['Acti
         summary: 'Update an action',
         description: 'Update an existing action.',
         ...mcpTool('update_action'),
+      },
+    },
+  )
+
+  .post(
+    '/actions/:actionId/run',
+    async ({ params, body, user }) => {
+      const run = await runManualAction(params.actionId, body.issueId, requireUser(user).id);
+      if (!run) throw new HttpError(404, 'Action run not found');
+      return run;
+    },
+    {
+      body: runActionBody,
+      params: actionParams,
+      response: { 200: ActionRunResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Run a manual action',
+        description:
+          'Apply a manual action to one work item and record the run. The caller must still be able to edit the work item.',
+      },
+    },
+  )
+
+  .post(
+    '/actions/:actionId/preview',
+    ({ params, body, user }) =>
+      previewAction(params.actionId, body.issueId, requireUser(user).id, body.workflow),
+    {
+      body: previewActionBody,
+      params: actionParams,
+      response: { 200: ActionPreviewResponse, ...commonErrors },
+      detail: {
+        summary: 'Preview a workflow',
+        description: 'Evaluate workflow branches for one work item without changing it.',
       },
     },
   )

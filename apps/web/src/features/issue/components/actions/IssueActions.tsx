@@ -6,7 +6,8 @@ import { matchesFilterSet } from '@/utils/filters';
 import { describeEffect } from '@/utils/actions';
 import { useEffectText } from '@/hooks/useEffectText';
 import { dispositionReady } from '@/utils/subtasks';
-import { useDeleteIssue, useIssueQuery, useUpdateIssue } from '@/services/issues.service';
+import { useDeleteIssue, useIssueQuery } from '@/services/issues.service';
+import { useRunAction } from '@/services/actions.service';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import SubtaskDisposalChoice from './SubtaskDisposalChoice';
 import type { ReactNode } from 'react';
@@ -19,7 +20,9 @@ export function matchedActions(
   project: ProjectDetail,
   issue: Issue,
 ): ActionDef[] {
-  return actions.filter((a) => matchesFilterSet(issue, a.condition, project));
+  return actions.filter(
+    (a) => a.enabled && a.trigger === 'manual' && matchesFilterSet(issue, a.condition, project),
+  );
 }
 
 // The confirm-dialog body for running an action: the changes it will apply, one
@@ -116,13 +119,13 @@ export function ApplyActionDialog({
   onClose: () => void;
 }) {
   const t = useTranslations('issue.actions');
-  const updateIssue = useUpdateIssue(project.project.key);
+  const runAction = useRunAction(project.project.key);
   return (
     <ConfirmDialog
       title={action.name}
       confirmLabel={t('apply')}
       onConfirm={async () => {
-        await updateIssue.mutateAsync({ id: issue.id, patch: action.effect });
+        await runAction.mutateAsync({ actionId: action.id, issueId: issue.id });
         onClose();
       }}
       onClose={onClose}

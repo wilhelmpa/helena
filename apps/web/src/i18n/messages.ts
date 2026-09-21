@@ -1,3 +1,5 @@
+import connections from '../../messages/en/connections.json';
+import organization from '../../messages/en/organization.json';
 import account from '../../messages/en/account.json';
 import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
@@ -69,6 +71,8 @@ const defaultMessages = {
   teams,
   updates,
   whatsNew,
+  organization,
+  connections,
 };
 
 export type Messages = typeof defaultMessages;

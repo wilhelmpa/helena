@@ -10,6 +10,7 @@ export default function SidebarNavItem({
   active,
   disabled,
   badge,
+  onClick,
 }: {
   href: string;
   icon: LucideIcon;
@@ -17,11 +18,22 @@ export default function SidebarNavItem({
   active: boolean;
   disabled: boolean;
   badge?: number;
+  onClick?: () => void;
 }) {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={active} disabled={disabled} tooltip={label}>
-        <Link href={disabled ? '#' : href}>
+        <Link
+          href={disabled ? '#' : href}
+          onClick={
+            onClick
+              ? (event) => {
+                  event.preventDefault();
+                  if (!disabled) onClick();
+                }
+              : undefined
+          }
+        >
           <Icon />
           <span>{label}</span>
         </Link>

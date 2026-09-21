@@ -1,5 +1,10 @@
 import { Agent } from '@mastra/core/agent';
-import { getAgentInProject, getInternalAgentApiKey, type AiAgentRow } from '../service';
+import {
+  getAgentInProject,
+  getInternalAgentApiKey,
+  getProjectWideInstructions,
+  type AiAgentRow,
+} from '../service';
 import { getProjectById } from '#modules/projects/service';
 import { getCredentialSecret } from '../../integrations/service';
 import { listAgentSkills } from '../../skills/service';
@@ -13,7 +18,7 @@ import { toolArgsText, toolText } from '../../chat-parts';
 import { recordContextUsage, type ContextUsage } from '../../chat-usage';
 import { isChatThreadId, newChatThreadId } from './thread-ids';
 import { errorMessage } from '../helpers/errors';
-import { projectPreamble } from '../prompt/framing';
+import { projectInstructionsPreamble, projectPreamble } from '../prompt/framing';
 import { HttpError } from '#shared/lib';
 
 // Runtime execution of internal agents via Mastra. An agent is built on demand
@@ -82,9 +87,16 @@ async function buildAgent(
   const skills = await listAgentSkills(row.id);
   const customTools = await listAgentToolsForRun(row.id);
   const apiKey = await getInternalAgentApiKey(row);
+  const projectMembership = row.projects.find((entry) => entry.id === projectId);
+  const projectInstructions = await getProjectWideInstructions(row.teamId, projectId);
   const instructions =
     projectPreamble(project) +
     contextPreamble +
+    projectInstructionsPreamble({
+      key: project.key,
+      projectInstructions,
+      agentProjectInstructions: projectMembership?.instructions,
+    }) +
     (row.instructions ?? DEFAULT_INSTRUCTIONS) +
     skillsPreamble(skills);
   return new Agent({

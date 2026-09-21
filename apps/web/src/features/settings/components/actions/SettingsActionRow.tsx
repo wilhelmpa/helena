@@ -8,6 +8,7 @@ import { useEffectText } from '@/hooks/useEffectText';
 import { describeEffect } from '@/utils/actions';
 import { actionIcon } from '@/utils/actionIcons';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { TableCell, TableRow } from '@/components/ui/table';
 import SettingsIconButton from '../SettingsIconButton';
 import { useSettingsCan } from '../../context/settingsPermission';
@@ -19,6 +20,7 @@ export function SettingsActionRow({
   onEdit,
   onDuplicate,
   onDelete,
+  onToggle,
 }: {
   action: ActionDef;
   project: ProjectDetail;
@@ -26,8 +28,10 @@ export function SettingsActionRow({
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onToggle: (enabled: boolean) => void;
 }) {
   const t = useTranslations('settings.actions');
+  const tCommon = useTranslations('common');
   const can = useSettingsCan();
   const { describeConditions } = useFilterFields(project.project.key);
   const effectText = useEffectText();
@@ -42,7 +46,15 @@ export function SettingsActionRow({
             <Icon className="size-4" />
           </div>
           <div className="flex min-w-0 flex-col gap-1.5 pt-1">
-            <span className="truncate text-sm font-medium">{action.name}</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="truncate text-sm font-medium">{action.name}</span>
+              <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+                {t(triggerLabel(action.trigger))}
+              </Badge>
+              <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
+                {t('stepCount', { count: action.workflow.nodes.length })}
+              </Badge>
+            </div>
             {conditions.length > 0 ? (
               <div className="flex flex-wrap items-center gap-1">
                 <span className="text-xs text-muted-foreground">{t('when')}</span>
@@ -74,6 +86,13 @@ export function SettingsActionRow({
       <TableCell className="px-3 py-2 pt-3 align-top">
         <div className="flex items-center justify-end gap-1">
           {can('edit') && (
+            <Switch
+              checked={action.enabled}
+              onCheckedChange={onToggle}
+              aria-label={tCommon('enabled')}
+            />
+          )}
+          {can('edit') && (
             <SettingsIconButton title={t('edit')} onClick={onEdit}>
               <Pencil className="size-4" />
             </SettingsIconButton>
@@ -92,4 +111,10 @@ export function SettingsActionRow({
       </TableCell>
     </TableRow>
   );
+}
+
+function triggerLabel(trigger: ActionDef['trigger']) {
+  if (trigger === 'manual') return 'triggerManual' as const;
+  if (trigger === 'issue_comment_added') return 'triggerCommentAdded' as const;
+  return 'triggerStateChanged' as const;
 }

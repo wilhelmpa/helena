@@ -1,48 +1,55 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { ActionEffect } from '@/lib/api/endpoints/actions';
+import type { ActionDef, ActionEffect, WorkflowDefinition } from '@/lib/api/endpoints/actions';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
-import { isActiveFilterSet, type FilterSet } from '@/utils/filters';
+import type { FilterSet } from '@/utils/filters';
 import { isEmptyEffect } from '@/utils/actions';
+import { usePreviewAction } from '@/services/actions.service';
 import Modal from '@/components/common/overlay/Modal';
-import FilterBar from '@/components/layout/FilterBar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { SettingsEffectEditor } from './SettingsEffectEditor';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SettingsActionIconPicker } from './SettingsActionIconPicker';
+import { WorkflowGraphEditor } from './WorkflowGraphEditor';
 
-// The popup editor for one action (new or existing): an icon, a name, the
-// availability condition (the shared FilterBar), and the effect. Edits are local
-// until Save; the parent decides create vs update.
 export function SettingsActionDialog({
+  actionId,
   projectKey,
   project,
   customFields,
   mode,
   initialName,
   initialIcon,
-  initialCondition,
-  initialEffect,
+  initialWorkflow,
   saving,
   onSave,
   onClose,
 }: {
+  actionId?: number;
   projectKey: string;
   project: ProjectDetail;
   customFields: CustomField[];
   mode: 'new' | 'edit';
   initialName: string;
   initialIcon: string;
-  initialCondition: FilterSet;
-  initialEffect: ActionEffect;
+  initialWorkflow: WorkflowDefinition;
   saving: boolean;
   onSave: (input: {
     name: string;
     icon: string;
+    trigger: ActionDef['trigger'];
     condition: FilterSet;
     effect: ActionEffect;
+    workflow: WorkflowDefinition;
   }) => void;
   onClose: () => void;
 }) {
@@ -50,23 +57,32 @@ export function SettingsActionDialog({
   const tCommon = useTranslations('common');
   const [name, setName] = useState(initialName);
   const [icon, setIcon] = useState(initialIcon);
-  const [condition, setCondition] = useState<FilterSet>(initialCondition);
-  const [effect, setEffect] = useState<ActionEffect>(initialEffect);
-
-  const isValid = name.trim().length > 0 && !isEmptyEffect(effect);
+  const [workflow, setWorkflow] = useState(initialWorkflow);
+  const [issueId, setIssueId] = useState(project.issues[0]?.id ?? 0);
+  const preview = usePreviewAction();
+  const actionNodes = workflow.nodes.filter((node) => node.type === 'action');
+  const isValid = name.trim().length > 0 && actionNodes.some((node) => !isEmptyEffect(node.config));
 
   function submit() {
     if (!isValid) return;
-    onSave({ name: name.trim(), icon, condition, effect });
+    const triggerNode = workflow.nodes.find((node) => node.type === 'trigger');
+    const conditionNode = workflow.nodes.find((node) => node.type === 'condition');
+    const actionNode = workflow.nodes.find((node) => node.type === 'action');
+    if (!triggerNode || !actionNode) return;
+    onSave({
+      name: name.trim(),
+      icon,
+      trigger: triggerNode.config.trigger,
+      condition: conditionNode?.config ?? { conditions: [] },
+      effect: actionNode.config,
+      workflow,
+    });
   }
-
-  const actionLabel = mode === 'edit' ? t('save') : t('create');
-  const pendingLabel = mode === 'edit' ? tCommon('saving') : t('creating');
 
   return (
     <Modal
       title={t(mode === 'edit' ? 'dialogEdit' : 'dialogNew')}
-      description={t('dialogHint')}
+      description={t('workflowHint')}
       scope={projectKey}
       onClose={onClose}
       wide
@@ -86,38 +102,89 @@ export function SettingsActionDialog({
               id="action-name"
               autoFocus
               required
+              maxLength={120}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
               placeholder={t('namePlaceholder')}
               className="h-9"
             />
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>{t('availableWhen')}</Label>
-          <FilterBar
-            filters={condition}
-            onChange={setCondition}
+        <div className="space-y-2">
+          <Label>{t('workflow')}</Label>
+          <WorkflowGraphEditor
+            workflow={workflow}
             project={project}
             customFields={customFields}
+            onChange={(next) => {
+              setWorkflow(next);
+              preview.reset();
+            }}
           />
-          {!isActiveFilterSet(condition) && (
-            <p className="text-sm text-muted-foreground">{t('noConditions')}</p>
-          )}
+          {!isValid && <p className="text-sm text-muted-foreground">{t('workflowNeedsAction')}</p>}
         </div>
 
-        <div className="space-y-2.5">
-          <Label>{t('thenSet')}</Label>
-          <SettingsEffectEditor effect={effect} project={project} onChange={setEffect} />
-        </div>
+        <section className="space-y-2 rounded-xl border p-3">
+          <div>
+            <h3 className="text-sm font-medium">{t('testWorkflow')}</h3>
+            <p className="text-xs text-muted-foreground">{t('testWorkflowHint')}</p>
+          </div>
+          {actionId && project.issues.length > 0 ? (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Select value={String(issueId)} onValueChange={(value) => setIssueId(Number(value))}>
+                <SelectTrigger className="min-w-0 flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {project.issues.slice(0, 100).map((issue) => (
+                    <SelectItem key={issue.id} value={String(issue.id)}>
+                      {issue.identifier} · {issue.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!isValid || preview.isPending || issueId < 1}
+                onClick={() => preview.mutate({ actionId, issueId, workflow })}
+              >
+                {preview.isPending ? t('testing') : t('testWorkflow')}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {actionId ? t('testNeedsIssue') : t('testAfterSave')}
+            </p>
+          )}
+          {preview.data && (
+            <Alert>
+              <AlertDescription>
+                {t('testResult', {
+                  steps: preview.data.path.length,
+                  actions: preview.data.effects.length,
+                })}
+              </AlertDescription>
+            </Alert>
+          )}
+          {preview.error && (
+            <Alert variant="destructive">
+              <AlertDescription>{preview.error.message}</AlertDescription>
+            </Alert>
+          )}
+        </section>
 
         <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </Button>
           <Button type="submit" disabled={!isValid || saving}>
-            {saving ? pendingLabel : actionLabel}
+            {saving
+              ? mode === 'edit'
+                ? tCommon('saving')
+                : t('creating')
+              : t(mode === 'edit' ? 'save' : 'create')}
           </Button>
         </div>
       </form>

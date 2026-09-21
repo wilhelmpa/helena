@@ -11,5 +11,15 @@
   "unfavorite": "Убрать из избранного",
   "shareBoard": "Поделиться доской",
   "newViewHint": "Создать представление из текущих фильтров и настроек",
-  "filter": "Фильтр"
+  "filter": "Фильтр",
+  "manageFolders": "Управление папками представлений",
+  "newFolder": "Новая папка",
+  "folderNamePrompt": "Имя папки",
+  "renameFolder": "Переименовать папку",
+  "moveFolderUp": "Переместить вверх",
+  "moveFolderDown": "Переместить вниз",
+  "deleteFolder": "Удалить папку",
+  "deleteFolderConfirm": "Удалить {name}? Представления останутся без папки.",
+  "moveToFolder": "Переместить в папку",
+  "noFolder": "Без папки"
 }

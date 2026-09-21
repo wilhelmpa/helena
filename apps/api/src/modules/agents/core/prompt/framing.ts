@@ -176,6 +176,26 @@ export function projectsPreamble(
   ].join('\n');
 }
 
+// Instructions attached to the project apply to every agent working there. The
+// member description is the narrower assignment for this agent in that project, so
+// it follows the shared instructions. Naming the project in the heading keeps each
+// block scoped when a chat exposes more than one project.
+export function projectInstructionsPreamble(project: {
+  key: string;
+  projectInstructions?: string | null;
+  agentProjectInstructions?: string | null;
+}): string {
+  const shared = project.projectInstructions?.trim();
+  const assignment = project.agentProjectInstructions?.trim();
+  if (!shared && !assignment) return '';
+  return [
+    `## Project scope: ${project.key}`,
+    ...(shared ? ['### Project-wide instructions', shared, ''] : []),
+    ...(assignment ? ['### Your assignment in this project', assignment, ''] : []),
+    '',
+  ].join('\n');
+}
+
 // Only the chat paths carry this: a chart is drawn where the answer is read in the
 // app, while an autonomous run writes its answer into a comment, which draws none.
 export function chartPreamble(): string {

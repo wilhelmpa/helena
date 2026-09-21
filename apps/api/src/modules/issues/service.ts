@@ -71,6 +71,7 @@ import { getMembership } from '#modules/members/service';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
 import { applySubtaskAutomation } from './automation';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
+import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
 
 // Data access for issues and their per-issue data: labels, custom field values,
 // and selected options. The human identifier (e.g. "MKT-42") is the project key
@@ -836,6 +837,12 @@ export async function createIssue(
   project: ProjectRow,
   input: NewIssueInput,
   actorUserId?: string | null,
+  opts?: {
+    afterInsert?: (
+      tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+      issueId: number,
+    ) => Promise<void>;
+  },
 ): Promise<IssueRow> {
   await assertAssignments(project.id, input);
   await assertInitiative(project.id, input.initiativeId);
@@ -883,6 +890,7 @@ export async function createIssue(
         position: Number(posRow.pos),
       })
       .returning({ id: issue.id, createdAt: issue.createdAt });
+    await opts?.afterInsert?.(tx, row.id);
     return row;
   });
 
@@ -1004,7 +1012,11 @@ export async function updateIssue(
   id: number,
   patch: IssuePatch,
   actor?: ActivityActor,
-  opts?: { onlyIfColumnId?: number; skipIfColumnFull?: boolean },
+  opts?: {
+    onlyIfColumnId?: number;
+    skipIfColumnFull?: boolean;
+    actionChain?: ActionChain;
+  },
 ): Promise<IssueRow | null> {
   const before = await loadSnapshot(id);
   if (!before) return null;
@@ -1063,7 +1075,21 @@ export async function updateIssue(
       opts?.onlyIfColumnId == null
         ? eq(issue.id, id)
         : and(eq(issue.id, id), eq(issue.columnId, opts.onlyIfColumnId));
-    const updated = await db.update(issue).set(set).where(guard).returning({ id: issue.id });
+    const updated = await db.transaction(async (tx) => {
+      const rows = await tx.update(issue).set(set).where(guard).returning({ id: issue.id });
+      if (rows.length > 0 && movedToColumnId !== null) {
+        await enqueueStateChangedActions({
+          tx,
+          projectId: before.projectId,
+          issueId: id,
+          actorUserId: actorId(actor),
+          fromColumnId: before.columnId,
+          toColumnId: movedToColumnId,
+          chain: opts?.actionChain,
+        });
+      }
+      return rows;
+    });
     if (updated.length === 0) return getIssue(id);
   }
   const after = await getIssue(id);

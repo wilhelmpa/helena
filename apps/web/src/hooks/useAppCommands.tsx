@@ -96,16 +96,14 @@ export function useAppCommands({
       run: onNewInitiative,
     });
   }
-  if (hasProject && can('ai_agents', 'read')) {
-    generalItems.push({
-      id: 'general.ai-chat',
-      label: tPalette('toggleChat'),
-      icon: <MessagesSquare />,
-      keywords: 'ai agents chat panel',
-      shortcut: hotkey('chat.toggle') ?? undefined,
-      run: onToggleChat,
-    });
-  }
+  generalItems.push({
+    id: 'general.coordinator-chat',
+    label: tPalette('toggleChat'),
+    icon: <MessagesSquare />,
+    keywords: 'coordinator chat workspace',
+    shortcut: hotkey('chat.toggle') ?? undefined,
+    run: onToggleChat,
+  });
   generalItems.push({
     id: 'general.new-project',
     label: tPalette('newProject'),

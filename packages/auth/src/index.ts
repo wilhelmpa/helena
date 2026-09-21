@@ -18,6 +18,7 @@ import {
   isOidcUsable,
 } from './instance';
 import { sendAuthEmail } from './mail';
+import { oidcProfileLabel } from './oidc-profile';
 
 // Frontend origins allowed to call the auth handler. Mandatory config: cookies, the
 // WebAuthn relying party and the cookie domain are all derived from it, so a deploy
@@ -50,7 +51,10 @@ function parentDomain(origin: string | undefined): string | undefined {
 
 // Explicit COOKIE_DOMAIN wins (needed for multi-label TLDs or deep subdomains);
 // otherwise derive it from the frontend origin.
-const cookieDomain = process.env.COOKIE_DOMAIN || parentDomain(trustedOrigins[0]);
+const cookieDomain =
+  process.env.COOKIE_DOMAIN === 'host-only'
+    ? undefined
+    : process.env.COOKIE_DOMAIN || parentDomain(trustedOrigins[0]);
 
 // WebAuthn relying-party id: the frontend domain the passkey is bound to (no port,
 // no scheme). The WebAuthn ceremony runs in the frontend JS, so the expected origin
@@ -113,6 +117,7 @@ const oidcOptions: GenericOAuthConfig = {
   discoveryUrl: '',
   scopes: [],
   pkce: true,
+  mapProfileToUser: oidcProfileLabel,
 };
 
 // The exact value that has to be registered as a redirect URI with the identity
@@ -266,7 +271,8 @@ export const API_KEY_DEFAULT_EXPIRES_IN_SEC = 90 * DAY_SEC;
 export const API_KEY_MAX_EXPIRES_IN_DAYS = 365;
 
 export const auth = betterAuth({
-  baseURL,
+  baseURL: `${baseURL.replace(/\/+$/, '')}/api/auth`,
+  basePath: `${new URL(baseURL).pathname.replace(/\/+$/, '')}/api/auth`,
   secret: process.env.BETTER_AUTH_SECRET,
 
   database: drizzleAdapter(db, {

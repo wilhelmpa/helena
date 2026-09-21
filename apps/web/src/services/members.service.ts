@@ -89,6 +89,7 @@ export function useSetMemberRole(projectKey: string) {
     onSuccess: (_data, { role }) => {
       qc.invalidateQueries({ queryKey: qk.members(projectKey) });
       qc.invalidateQueries({ queryKey: qk.anyTeam });
+      qc.invalidateQueries({ queryKey: qk.anyAiAgents });
       toast.success(t(role === 'owner' ? 'promoted' : 'roleUpdated'));
     },
   });
@@ -104,6 +105,7 @@ export function useSetMemberDescription(projectKey: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.members(projectKey) });
       qc.invalidateQueries({ queryKey: qk.anyTeam });
+      qc.invalidateQueries({ queryKey: qk.anyAiAgents });
       toast.success(t('descriptionUpdated'));
     },
   });

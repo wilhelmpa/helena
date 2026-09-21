@@ -48,7 +48,15 @@ describe('proxy', () => {
 
   it('sends a visitor without a session to the login page', () => {
     const res = run('/', undefined);
-    assert.equal(res.headers.get('location'), 'http://localhost/login');
+    assert.equal(res.headers.get('location'), 'http://localhost/login?callbackURL=%2F');
+  });
+
+  it('keeps the protected destination through sign-in', () => {
+    const res = run('/project/VERV?view=board', undefined);
+    assert.equal(
+      res.headers.get('location'),
+      'http://localhost/login?callbackURL=%2Fproject%2FVERV%3Fview%3Dboard',
+    );
   });
 });
 

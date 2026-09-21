@@ -497,7 +497,9 @@
     "noProjectsShort": "Нет проектов",
     "chatNeedsAgent": "Создайте ИИ-агента, чтобы протестировать его здесь.",
     "chatNeedsProject": "Добавьте ИИ-агента в проект, чтобы протестировать его здесь.",
-    "triggerFieldsTitle": "Кастомные поля, запускающие run"
+    "triggerFieldsTitle": "Кастомные поля, запускающие run",
+    "defaultProjectRole": "Default project role",
+    "noProjectInstructions": "No project-specific instructions"
   },
   "members": {
     "roleSaved": "{name} теперь {role}",

@@ -12,6 +12,7 @@ interface SettingsActionsTableProps {
   onEdit: (actionId: number) => void;
   onDuplicate: (action: ActionDef) => void;
   onDelete: (action: ActionDef) => void;
+  onToggle: (action: ActionDef, enabled: boolean) => void;
 }
 
 export function SettingsActionsTable({
@@ -21,6 +22,7 @@ export function SettingsActionsTable({
   onEdit,
   onDuplicate,
   onDelete,
+  onToggle,
 }: SettingsActionsTableProps) {
   const t = useTranslations('settings.actions');
   const tCommon = useTranslations('common');
@@ -55,6 +57,7 @@ export function SettingsActionsTable({
             onEdit={() => onEdit(action.id)}
             onDuplicate={() => onDuplicate(action)}
             onDelete={() => onDelete(action)}
+            onToggle={(enabled) => onToggle(action, enabled)}
           />
         ))}
       </TableBody>

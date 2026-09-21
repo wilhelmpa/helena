@@ -1,5 +1,7 @@
-import SettingsActionsPage from '@/features/settings/SettingsActionsPage';
+import { redirect } from 'next/navigation';
+import { projectPath } from '@/utils/paths';
 
-export default function Page() {
-  return <SettingsActionsPage />;
+export default async function Page({ params }: { params: Promise<{ projectKey: string }> }) {
+  const { projectKey } = await params;
+  redirect(`${projectPath(projectKey)}/workflows`);
 }

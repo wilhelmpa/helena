@@ -22,6 +22,7 @@ import {
   ProjectListResponse,
   ProjectResponse,
   ProjectSettingsResponse,
+  ProvisioningJobResponse,
   SubtaskAutomationResponse,
   copyProjectBody,
   createProjectBody,
@@ -44,6 +45,8 @@ import {
   getSubtaskAutomationSettings,
   setSubtaskAutomationSettings,
   setEstimateSettings,
+  getProvisioningJob,
+  retryProvisioningJob,
 } from './service';
 import { copyProject } from './copy';
 
@@ -216,6 +219,30 @@ export const projectRoutes = new Elysia({ name: 'projects', detail: { tags: ['Pr
       projectMember: true,
       response: { 200: ProjectSettingsResponse, ...accessErrors },
       detail: { summary: "Get a project's settings" },
+    },
+  )
+
+  .get(
+    '/projects/:projectKey/provisioning',
+    async ({ project }) => {
+      const job = await getProvisioningJob(project.id);
+      if (!job) throw new HttpError(404, 'Provisioning job not found');
+      return job;
+    },
+    {
+      projectMember: true,
+      response: { 200: ProvisioningJobResponse, ...accessErrors },
+      detail: { summary: "Get a project's provisioning status" },
+    },
+  )
+
+  .post(
+    '/projects/:projectKey/provisioning/retry',
+    ({ project }) => retryProvisioningJob(project.id),
+    {
+      projectAdmin: true,
+      response: { 200: ProvisioningJobResponse, ...accessErrors, ...errors(409) },
+      detail: { summary: "Retry a project's failed provisioning job" },
     },
   )
 

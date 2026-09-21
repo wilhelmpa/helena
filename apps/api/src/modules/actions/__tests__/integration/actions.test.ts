@@ -1,13 +1,31 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
+import { db, projectActionRun } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
+import { updateIssue } from '#modules/issues/service';
+import { processActionRuns } from '../../runner';
+import { claimActionRuns, createManualActionRun } from '../../queue';
 
 async function setupOwnerProject() {
   const owner = await signUpTestUser();
   const asOwner = authedApi(owner.cookie);
   const project = await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
-  return { asOwner, projectId: project.data!.id };
+  return { asOwner, projectId: project.data!.id, ownerUserId: owner.userId };
+}
+
+async function projectColumns(asOwner: ReturnType<typeof authedApi>) {
+  const project = await asOwner.projects({ projectKey: 'MKT' }).get();
+  return project.data!.columns;
+}
+
+async function createIssue(asOwner: ReturnType<typeof authedApi>, columnId: number) {
+  return (
+    await asOwner
+      .projects({ projectKey: 'MKT' })
+      .issues.post({ title: 'Automation target', columnId })
+  ).data!;
 }
 
 // Adds a member on the default role, which grants no `actions` permission.
@@ -38,7 +56,9 @@ describe('actions', () => {
         name: 'Auto-close',
         projectId,
         icon: '',
-        condition: {},
+        enabled: true,
+        trigger: 'manual',
+        condition: { conditions: [] },
         effect: {},
         position: 0,
       });
@@ -66,10 +86,26 @@ describe('actions', () => {
       expect(patched.data).toMatchObject({ icon: 'rocket' });
     });
 
-    it('stores condition and effect verbatim', async () => {
+    it('can disable and re-enable an action', async () => {
       const { asOwner } = await setupOwnerProject();
-      const condition = { all: [{ field: 'priority', eq: 'high' }] };
-      const effect = { columnId: 3, assigneeId: 7 };
+      const created = await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+        name: 'Approve',
+        enabled: false,
+      });
+      expect(created.data).toMatchObject({ enabled: false });
+
+      const patched = await asOwner
+        .actions({ actionId: created.data!.id })
+        .patch({ enabled: true });
+      expect(patched.data).toMatchObject({ enabled: true });
+    });
+
+    it('stores a validated condition and effect', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const condition = {
+        conditions: [{ id: 'priority', field: 'priority', op: 'is' as const, values: ['high'] }],
+      };
+      const effect = { columnId: 3, assigneeUserId: 'user-7' };
 
       const created = await asOwner.projects({ projectKey: 'MKT' }).actions.post({
         name: 'Escalate',
@@ -91,6 +127,306 @@ describe('actions', () => {
         { name: 'First', position: 0 },
         { name: 'Second', position: 1 },
       ]);
+    });
+  });
+
+  describe('runs', () => {
+    it('previews and executes the selected workflow branch with durable step results', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const [source] = await projectColumns(asOwner);
+      const issue = await createIssue(asOwner, source.id);
+      const workflow = {
+        version: 1 as const,
+        nodes: [
+          {
+            id: 'trigger',
+            type: 'trigger' as const,
+            config: { trigger: 'manual' as const },
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'condition',
+            type: 'condition' as const,
+            config: {
+              conditions: [
+                { id: 'priority', field: 'priority', op: 'is' as const, values: ['high'] },
+              ],
+            },
+            position: { x: 0, y: 100 },
+          },
+          {
+            id: 'matched',
+            type: 'action' as const,
+            config: { priority: 'urgent' as const },
+            position: { x: 0, y: 200 },
+          },
+          {
+            id: 'other',
+            type: 'action' as const,
+            config: { priority: 'low' as const },
+            position: { x: 200, y: 200 },
+          },
+        ],
+        edges: [
+          { id: 'start', source: 'trigger', target: 'condition', branch: 'always' as const },
+          { id: 'yes', source: 'condition', target: 'matched', branch: 'true' as const },
+          { id: 'no', source: 'condition', target: 'other', branch: 'false' as const },
+        ],
+      };
+      const action = (
+        await asOwner.projects({ projectKey: 'MKT' }).actions.post({ name: 'Branch', workflow })
+      ).data!;
+
+      const preview = await asOwner
+        .actions({ actionId: action.id })
+        .preview.post({ issueId: issue.id, workflow });
+      expect(preview.status).toBe(200);
+      expect(preview.data).toMatchObject({
+        path: [
+          { nodeId: 'trigger', outcome: 'manual' },
+          { nodeId: 'condition', outcome: 'false' },
+          { nodeId: 'other', outcome: 'would_apply' },
+        ],
+        effects: [{ priority: 'low' }],
+      });
+      expect((await asOwner.issues({ issueId: issue.id }).get()).data?.priority).toBeNull();
+
+      const executed = await asOwner
+        .actions({ actionId: action.id })
+        .run.post({ issueId: issue.id });
+      expect(executed.status).toBe(200);
+      expect((await asOwner.issues({ issueId: issue.id }).get()).data?.priority).toBe('low');
+      const detail = await asOwner['action-runs']({ runId: executed.data!.id }).get();
+      expect(detail.status).toBe(200);
+      expect(detail.data?.steps).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            nodeId: 'condition',
+            status: 'succeeded',
+            result: { matched: false },
+          }),
+          expect.objectContaining({
+            nodeId: 'other',
+            status: 'succeeded',
+            result: { changedFields: ['priority'] },
+          }),
+          expect.objectContaining({ nodeId: 'trigger', status: 'succeeded' }),
+        ]),
+      );
+    });
+
+    it('runs a manual action through the API and records the result', async () => {
+      const { asOwner, ownerUserId } = await setupOwnerProject();
+      const [source] = await projectColumns(asOwner);
+      const issue = await createIssue(asOwner, source.id);
+      const action = (
+        await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+          name: 'Escalate',
+          condition: {
+            conditions: [{ id: 'status', field: 'status', op: 'is', values: [source.id] }],
+          },
+          effect: { priority: 'urgent' },
+        })
+      ).data!;
+
+      const executed = await asOwner.actions({ actionId: action.id }).run.post({
+        issueId: issue.id,
+      });
+      expect(executed.status).toBe(200);
+      expect(executed.data).toMatchObject({
+        actionId: action.id,
+        issueId: issue.id,
+        actorUserId: ownerUserId,
+        trigger: 'manual',
+        status: 'succeeded',
+        attempts: 1,
+        result: { changedFields: ['priority'] },
+      });
+      expect((await asOwner.issues({ issueId: issue.id }).get()).data?.priority).toBe('urgent');
+
+      const history = await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get();
+      expect(history.status).toBe(200);
+      expect(history.data).toHaveLength(1);
+      expect(history.data?.[0]).toMatchObject({
+        actionName: 'Escalate',
+        issueIdentifier: issue.identifier,
+        status: 'succeeded',
+      });
+
+      expect((await asOwner.issues({ issueId: issue.id }).delete()).status).toBe(204);
+      const retained = await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get();
+      expect(retained.data?.[0]).toMatchObject({
+        issueId: null,
+        issueIdentifier: null,
+        status: 'succeeded',
+      });
+    });
+
+    it('never reclaims a manual run after its synchronous worker lease expires', async () => {
+      const { asOwner, ownerUserId, projectId } = await setupOwnerProject();
+      const [column] = await projectColumns(asOwner);
+      const issue = await createIssue(asOwner, column.id);
+      const action = (
+        await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+          name: 'One shot',
+          effect: { priority: 'high' },
+        })
+      ).data!;
+      const run = await createManualActionRun({
+        actionId: action.id,
+        projectId,
+        issueId: issue.id,
+        actorUserId: ownerUserId,
+        actionName: action.name,
+        columnId: column.id,
+        condition: action.condition,
+        effect: action.effect,
+      });
+      await db
+        .update(projectActionRun)
+        .set({ nextAttemptAt: new Date(0) })
+        .where(eq(projectActionRun.id, run.id));
+
+      expect(await claimActionRuns()).toEqual([]);
+      const [expired] = await db
+        .select({ status: projectActionRun.status, lastError: projectActionRun.lastError })
+        .from(projectActionRun)
+        .where(eq(projectActionRun.id, run.id));
+      expect(expired).toEqual({
+        status: 'failed',
+        lastError: 'Worker lease expired too many times',
+      });
+    });
+
+    it('queues a status action transactionally and executes its snapshotted effect', async () => {
+      const { asOwner, ownerUserId } = await setupOwnerProject();
+      const [source, target] = await projectColumns(asOwner);
+      const issue = await createIssue(asOwner, source.id);
+      const action = (
+        await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+          name: 'Prioritize review',
+          trigger: 'issue_state_changed',
+          condition: {
+            conditions: [{ id: 'status', field: 'status', op: 'is', values: [target.id] }],
+          },
+          effect: { priority: 'high' },
+        })
+      ).data!;
+
+      const moved = await asOwner.issues({ issueId: issue.id }).patch({ columnId: target.id });
+      expect(moved.status).toBe(200);
+      expect(moved.data).toMatchObject({ columnId: target.id, priority: null });
+
+      const queued = await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get();
+      expect(queued.data).toHaveLength(1);
+      expect(queued.data?.[0]).toMatchObject({
+        actionId: action.id,
+        actorUserId: ownerUserId,
+        fromColumnId: source.id,
+        toColumnId: target.id,
+        status: 'pending',
+        attempts: 0,
+      });
+
+      await processActionRuns();
+
+      expect((await asOwner.issues({ issueId: issue.id }).get()).data?.priority).toBe('high');
+      const finished = await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get();
+      expect(finished.data?.[0]).toMatchObject({
+        status: 'succeeded',
+        attempts: 1,
+        result: { changedFields: ['priority'] },
+      });
+    });
+
+    it('rechecks the initiating member permission before an automatic run', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const [source, target] = await projectColumns(asOwner);
+      const member = await signUpTestUser();
+      const invite = await asOwner
+        .projects({ projectKey: 'MKT' })
+        .invites.post({ email: member.email, role: 'member' });
+      const asMember = authedApi(member.cookie);
+      await asMember.invites({ token: invite.data!.token }).accept.post();
+      const issue = await createIssue(asOwner, source.id);
+      await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+        name: 'Escalate after move',
+        trigger: 'issue_state_changed',
+        effect: { priority: 'urgent' },
+      });
+
+      expect(
+        (await asMember.issues({ issueId: issue.id }).patch({ columnId: target.id })).status,
+      ).toBe(200);
+      expect(
+        (await asOwner.projects({ projectKey: 'MKT' }).members({ userId: member.userId }).delete())
+          .status,
+      ).toBe(204);
+
+      await processActionRuns();
+
+      expect((await asOwner.issues({ issueId: issue.id }).get()).data?.priority).toBeNull();
+      const [run] = (await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get()).data!;
+      expect(run).toMatchObject({ status: 'skipped', actorUserId: member.userId });
+      expect(run.lastError).toContain('no longer has permission');
+    });
+
+    it('does not grant a named system actor implicit project permissions', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const [source, target] = await projectColumns(asOwner);
+      const issue = await createIssue(asOwner, source.id);
+      await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+        name: 'System escalation',
+        trigger: 'issue_state_changed',
+        effect: { priority: 'urgent' },
+      });
+
+      await updateIssue(issue.id, { columnId: target.id }, { system: 'External integration' });
+
+      const history = await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get();
+      expect(history.data).toHaveLength(0);
+      expect((await asOwner.issues({ issueId: issue.id }).get()).data).toMatchObject({
+        columnId: target.id,
+        priority: null,
+      });
+    });
+
+    it('bounds a two-action status loop to one run per action and target state', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const [source, stateA, stateB] = await projectColumns(asOwner);
+      const issue = await createIssue(asOwner, source.id);
+      await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+        name: 'A to B',
+        trigger: 'issue_state_changed',
+        condition: {
+          conditions: [{ id: 'a', field: 'status', op: 'is', values: [stateA.id] }],
+        },
+        effect: { columnId: stateB.id },
+      });
+      await asOwner.projects({ projectKey: 'MKT' }).actions.post({
+        name: 'B to A',
+        trigger: 'issue_state_changed',
+        condition: {
+          conditions: [{ id: 'b', field: 'status', op: 'is', values: [stateB.id] }],
+        },
+        effect: { columnId: stateA.id },
+      });
+
+      await asOwner.issues({ issueId: issue.id }).patch({ columnId: stateA.id });
+      await processActionRuns();
+      await processActionRuns();
+      await processActionRuns();
+
+      const history = (await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get()).data!;
+      expect(history).toHaveLength(4);
+      expect(history.every((run) => ['succeeded', 'skipped'].includes(run.status))).toBe(true);
+      expect(Math.max(...history.map((run) => run.depth))).toBe(1);
+      expect((await asOwner.issues({ issueId: issue.id }).get()).data?.columnId).toBe(stateA.id);
+
+      await processActionRuns();
+      expect(
+        (await asOwner.projects({ projectKey: 'MKT' })['action-runs'].get()).data,
+      ).toHaveLength(4);
     });
   });
 
@@ -134,8 +470,10 @@ describe('actions', () => {
       const { asOwner } = await setupOwnerProject();
       const created = await asOwner.projects({ projectKey: 'MKT' }).actions.post({
         name: 'Original',
-        condition: { keep: true },
-        effect: { keep: true },
+        condition: {
+          conditions: [{ id: 'priority', field: 'priority', op: 'is', values: ['high'] }],
+        },
+        effect: { priority: 'high' },
       });
       const id = created.data!.id;
 
@@ -143,17 +481,19 @@ describe('actions', () => {
       expect(patchedName.status).toBe(200);
       expect(patchedName.data).toMatchObject({
         name: 'Renamed',
-        condition: { keep: true },
-        effect: { keep: true },
+        condition: {
+          conditions: [{ id: 'priority', field: 'priority', op: 'is', values: ['high'] }],
+        },
+        effect: { priority: 'high' },
       });
 
       const patchedEffect = await asOwner
         .actions({ actionId: id })
-        .patch({ effect: { replaced: true } });
+        .patch({ effect: { priority: 'urgent' } });
       expect(patchedEffect.status).toBe(200);
       expect(patchedEffect.data).toMatchObject({
         name: 'Renamed',
-        effect: { replaced: true },
+        effect: { priority: 'urgent' },
       });
     });
 
@@ -247,6 +587,47 @@ describe('actions', () => {
         .data!.id;
       const res = await asOwner.actions({ actionId: id }).patch({ name: '' });
       expect(res.status).toBe(400);
+    });
+
+    it('rejects unsupported condition fields and strips unsupported effect keys', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const projectActions = asOwner.projects({ projectKey: 'MKT' }).actions;
+      const condition = await projectActions.post({
+        name: 'Unsafe condition',
+        condition: {
+          conditions: [{ id: 'x', field: 'script', op: 'is', values: ['alert(1)'] }],
+        },
+      } as never);
+      expect(condition.status).toBe(400);
+
+      const effect = await projectActions.post({
+        name: 'Unsafe effect',
+        effect: { script: 'delete everything' },
+      } as never);
+      expect(effect.status).toBe(201);
+      expect(effect.data?.effect).toEqual({});
+    });
+
+    it('bounds declarative workflow input size', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const projectActions = asOwner.projects({ projectKey: 'MKT' }).actions;
+      const tooManyConditions = Array.from({ length: 26 }, (_, index) => ({
+        id: `condition-${index}`,
+        field: 'priority',
+        op: 'is',
+        values: ['high'],
+      }));
+      const condition = await projectActions.post({
+        name: 'Too large',
+        condition: { conditions: tooManyConditions },
+      } as never);
+      expect(condition.status).toBe(400);
+
+      const labels = await projectActions.post({
+        name: 'Too many labels',
+        effect: { labelIds: Array.from({ length: 51 }, (_, index) => index + 1) },
+      } as never);
+      expect(labels.status).toBe(400);
     });
 
     it('rejects a non-numeric action id', async () => {

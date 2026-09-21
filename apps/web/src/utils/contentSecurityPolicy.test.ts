@@ -2,15 +2,30 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { contentSecurityPolicy } from './contentSecurityPolicy';
 
-let originalApiUrl: string | undefined;
+const envNames = [
+  'API_URL',
+  'OPENCLAW_URL',
+  'TERMINAL_URL',
+  'CODE_URL',
+  'BROWSER_URL',
+  'FILES_URL',
+  'PAPERLESS_URL',
+  'INBOX_URL',
+  'CONNECTIONS_URL',
+] as const;
+let originalValues: Record<string, string | undefined>;
 
 beforeEach(() => {
-  originalApiUrl = process.env.API_URL;
+  originalValues = Object.fromEntries(envNames.map((name) => [name, process.env[name]]));
+  for (const name of envNames) delete process.env[name];
 });
 
 afterEach(() => {
-  if (originalApiUrl === undefined) delete process.env.API_URL;
-  else process.env.API_URL = originalApiUrl;
+  for (const name of envNames) {
+    const value = originalValues[name];
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
 });
 
 describe('contentSecurityPolicy', () => {
@@ -22,5 +37,19 @@ describe('contentSecurityPolicy', () => {
   it('falls back to same-origin requests when the api url is not absolute', () => {
     process.env.API_URL = 'not a url';
     assert.match(contentSecurityPolicy(), /connect-src 'self';/);
+  });
+
+  it('allows only configured workspace origins as external frames', () => {
+    process.env.OPENCLAW_URL = 'https://openclaw.example.com/path';
+    process.env.CODE_URL = 'https://code.example.com/';
+    process.env.PAPERLESS_URL = 'invalid';
+    assert.match(
+      contentSecurityPolicy(),
+      /frame-src https:\/\/openclaw\.example\.com https:\/\/code\.example\.com;/,
+    );
+  });
+
+  it('disables external frames when no workspace is configured', () => {
+    assert.match(contentSecurityPolicy(), /frame-src 'none';/);
   });
 });

@@ -107,6 +107,19 @@ beforeEach(async () => {
     apiUrl: 'https://api.example.test',
     privacyUrl: '',
     termsUrl: '',
+    workspace: {
+      openClawUrl: '',
+      coordinatorId: 'coordinator',
+      projectCoordinators: {},
+      terminalUrl: '',
+      codeUrl: '',
+      projectWorkspacePaths: {},
+      browserUrl: '',
+      filesUrl: '',
+      paperlessUrl: '',
+      inboxUrl: '',
+      connectionsUrl: '',
+    },
   };
   Object.defineProperties(globalThis, {
     window: { configurable: true, value: dom.window },

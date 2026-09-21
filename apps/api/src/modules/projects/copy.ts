@@ -1,5 +1,6 @@
 import {
   db,
+  aiAgent,
   project,
   projectMember,
   projectColumn,
@@ -15,11 +16,13 @@ import {
   projectAction,
   webhook,
   projectSetting,
+  projectProvisioningJob,
 } from '@repo/db';
 import { and, eq, inArray, or } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import {
   DEFAULT_COLUMNS,
+  DEFAULT_PROVISIONING_RESOURCES,
   getProjectById,
   mapProject,
   targetTeam,
@@ -39,6 +42,8 @@ import {
   deleteAttachmentObject,
 } from '#modules/attachments/storage';
 import { assertValidDocumentContentJson, replaceAssetReferences } from '#modules/documents/service';
+import { getDefaultRoleId } from '#modules/roles/service';
+import { ensureDefaultProjectViews } from '#modules/views/service';
 
 // Which parts of a source project the copy carries over. A key set false skips that
 // entity. Some sections depend on others (a view's filters reference
@@ -248,7 +253,11 @@ export async function copyProject(
   const ownerTeam = await targetTeam(ownerId, teamId);
   // What a new project starts with, set instance-wide in god mode. Read before the
   // transaction opens so the settings lookup is not part of it.
-  const defaults = await getProjectDefaults();
+  const [defaults, teamAgents, defaultRoleId] = await Promise.all([
+    getProjectDefaults(),
+    db.select({ userId: aiAgent.userId }).from(aiAgent).where(eq(aiAgent.teamId, ownerTeam.id)),
+    getDefaultRoleId(ownerTeam.id),
+  ]);
   // Agents, integration credentials and roles belong to the team, so what references
   // them survives the copy only when it stays in the same team.
   const sameTeam = ownerTeam.id === source.teamId;
@@ -291,6 +300,16 @@ export async function copyProject(
       teamMcpEnabled: ownerTeam.mcpEnabled,
     });
     await tx.insert(projectMember).values({ projectId: proj.id, userId: ownerId, role: 'owner' });
+    if (teamAgents.length > 0) {
+      await tx.insert(projectMember).values(
+        teamAgents.map(({ userId }) => ({
+          projectId: proj.id,
+          userId,
+          role: 'member' as const,
+          roleId: defaultRoleId,
+        })),
+      );
+    }
 
     // States (columns). When copied, every source column is carried over so views,
     // actions and issues have somewhere to map to. When not copied, the project is
@@ -421,6 +440,7 @@ export async function copyProject(
     }
 
     // Views: their filters reference the ids captured above.
+    const copiedViewIds: number[] = [];
     if (inc.views) {
       const viewRows = await tx
         .select()
@@ -428,16 +448,29 @@ export async function copyProject(
         .where(eq(projectView.projectId, sourceProjectId))
         .orderBy(projectView.position, projectView.id);
       for (const v of viewRows) {
-        await tx.insert(projectView).values({
-          projectId: proj.id,
-          name: v.name,
-          icon: v.icon,
-          filters: remapViewFilters(v.filters, maps) ?? {},
-          display: remapViewDisplay(v.display, maps) ?? {},
-          position: v.position,
-        });
+        const [created] = await tx
+          .insert(projectView)
+          .values({
+            projectId: proj.id,
+            name: v.name,
+            icon: v.icon,
+            filters: remapViewFilters(v.filters, maps) ?? {},
+            display: remapViewDisplay(v.display, maps) ?? {},
+            position: v.position,
+          })
+          .returning({ id: projectView.id });
+        copiedViewIds.push(created.id);
       }
     }
+    copiedViewIds.push(...(await ensureDefaultProjectViews(tx, proj.id)).ids);
+    const provisionedViewIds = [...new Set(copiedViewIds)];
+    await tx.insert(projectProvisioningJob).values({
+      projectId: proj.id,
+      requestedResources: [
+        ...DEFAULT_PROVISIONING_RESOURCES,
+        ...provisionedViewIds.map((id) => `board:${id}`),
+      ],
+    });
 
     // Dashboards: the layout blob is copied verbatim. Widget filters that reference
     // assignee/type/label ids are not remapped (those filters just match nothing until

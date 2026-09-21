@@ -4,6 +4,7 @@ import { processNotificationDeliveries } from './notification-delivery';
 import { equalJitterBackoffMs } from './backoff';
 import { startPollLoop, type WorkerHandle } from './poll-loop';
 import { TELEMETRY_CHECK_EVERY_TICKS, processTelemetry } from './telemetry';
+import { processProjectProvisioning } from './project-provisioning';
 import {
   type ClaimedDelivery,
   claimDueDeliveries,
@@ -32,6 +33,7 @@ async function tick(): Promise<void> {
     await Promise.all(claimed.map(processDelivery));
   }
   await processNotificationDeliveries();
+  await processProjectProvisioning();
   if (++ticksSinceCleanup >= cfg.cleanupEveryTicks) {
     ticksSinceCleanup = 0;
     const removed = await cleanupOldDeliveries();

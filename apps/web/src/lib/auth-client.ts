@@ -9,7 +9,7 @@ import { API_URL, markSigningOut } from '@/lib/api/core/client';
 // inferAdditionalFields declares the custom `role` column added in @repo/auth so the
 // session user is typed with it (the web app never imports server packages).
 export const authClient = createAuthClient({
-  baseURL: API_URL,
+  baseURL: `${API_URL.replace(/\/+$/, '')}/api/auth`,
   plugins: [
     inferAdditionalFields({
       user: {

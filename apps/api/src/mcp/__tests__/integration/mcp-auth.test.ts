@@ -1,5 +1,7 @@
 import { describe, expect, it, beforeEach } from 'bun:test';
 import { auth } from '@repo/auth';
+import { apikey, db } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { app } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -44,6 +46,24 @@ describe('MCP authentication', () => {
     );
 
     expect(res.status).toBe(401);
+  });
+
+  it('returns 401 for a revoked API key', async () => {
+    const user = await signUpTestUser();
+    const created = await auth.api.createApiKey({
+      body: { userId: user.userId, name: 'revoked-mcp' },
+    });
+    await db.delete(apikey).where(eq(apikey.id, created.id));
+
+    const response = await initialize(created.key);
+    expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toContain('resource_metadata');
+  });
+
+  it('returns 401 for a malformed branded API key', async () => {
+    const response = await initialize('itp_invalid-fixed-test-key');
+    expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toContain('resource_metadata');
   });
 
   it('refuses a key whose account was deactivated over SCIM', async () => {

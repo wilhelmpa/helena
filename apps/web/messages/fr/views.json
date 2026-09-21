@@ -11,5 +11,15 @@
   "unfavorite": "Retirer des favoris",
   "shareBoard": "Partager le tableau",
   "newViewHint": "Créer une vue à partir des filtres et de l'affichage actuels",
-  "filter": "Filtrer"
+  "filter": "Filtrer",
+  "manageFolders": "Gérer les dossiers de vues",
+  "newFolder": "Nouveau dossier",
+  "folderNamePrompt": "Nom du dossier",
+  "renameFolder": "Renommer le dossier",
+  "moveFolderUp": "Déplacer vers le haut",
+  "moveFolderDown": "Déplacer vers le bas",
+  "deleteFolder": "Supprimer le dossier",
+  "deleteFolderConfirm": "Supprimer {name} ? Ses vues resteront sans dossier.",
+  "moveToFolder": "Déplacer vers le dossier",
+  "noFolder": "Aucun dossier"
 }

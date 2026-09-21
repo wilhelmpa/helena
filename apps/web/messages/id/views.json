@@ -11,5 +11,15 @@
   "unfavorite": "Hapus dari favorit",
   "shareBoard": "Bagikan papan",
   "newViewHint": "Buat tampilan berdasarkan filter dan tampilan saat ini",
-  "filter": "Filter"
+  "filter": "Filter",
+  "manageFolders": "Kelola folder tampilan",
+  "newFolder": "Folder baru",
+  "folderNamePrompt": "Nama folder",
+  "renameFolder": "Ubah nama folder",
+  "moveFolderUp": "Pindah ke atas",
+  "moveFolderDown": "Pindah ke bawah",
+  "deleteFolder": "Hapus folder",
+  "deleteFolderConfirm": "Hapus {name}? Tampilannya akan tetap ada tanpa folder.",
+  "moveToFolder": "Pindah ke folder",
+  "noFolder": "Tanpa folder"
 }

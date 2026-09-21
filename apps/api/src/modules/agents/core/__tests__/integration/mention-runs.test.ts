@@ -196,6 +196,41 @@ describe('agent mention runs', () => {
     expect((await runsForIssue(issue.id)).length).toBe(0);
   });
 
+  it('continues the agent still delegated to the issue on a plain human comment', async () => {
+    const { asOwner, columnId } = await setup();
+    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const issue = (await createIssue(asOwner, columnId)).data!;
+    await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: agent.userId });
+
+    const comment = (
+      await asOwner.issues({ issueId: issue.id }).comments.post({ body: 'please continue' })
+    ).data!;
+
+    expect(await runsForIssue(issue.id)).toContainEqual(
+      expect.objectContaining({
+        agentId: agent.id,
+        trigger: 'mention',
+        sourceActivityId: comment.id,
+        prompt: 'please continue',
+      }),
+    );
+  });
+
+  it('does not loop when the delegated agent comments on its own issue', async () => {
+    const { asOwner, columnId } = await setup();
+    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const issue = (await createIssue(asOwner, columnId)).data!;
+    await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: agent.userId });
+
+    await createComment({
+      issueId: issue.id,
+      actorUserId: agent.userId,
+      body: 'work completed',
+    });
+
+    expect((await runsForIssue(issue.id)).length).toBe(0);
+  });
+
   it('queues a run for an external agent mentioned by its owner', async () => {
     const { asOwner, columnId } = await setup();
     const ext = (

@@ -11,5 +11,15 @@
   "unfavorite": "Remover dos favoritos",
   "shareBoard": "Compartilhar quadro",
   "newViewHint": "Criar uma visão a partir dos filtros e da exibição atuais",
-  "filter": "Filtro"
+  "filter": "Filtro",
+  "manageFolders": "Gerenciar pastas de visualizações",
+  "newFolder": "Nova pasta",
+  "folderNamePrompt": "Nome da pasta",
+  "renameFolder": "Renomear pasta",
+  "moveFolderUp": "Mover para cima",
+  "moveFolderDown": "Mover para baixo",
+  "deleteFolder": "Excluir pasta",
+  "deleteFolderConfirm": "Excluir {name}? As visualizações permanecerão sem pasta.",
+  "moveToFolder": "Mover para pasta",
+  "noFolder": "Sem pasta"
 }

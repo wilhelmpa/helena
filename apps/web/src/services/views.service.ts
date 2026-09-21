@@ -7,6 +7,12 @@ import {
   deleteView,
   setViewFavorite,
   reorderViews,
+  type ViewFolder,
+  listViewFolders,
+  createViewFolder,
+  updateViewFolder,
+  deleteViewFolder,
+  reorderViewFolders,
 } from '@/lib/api/endpoints/views';
 import { EMPTY_FILTER_SET, type FilterSet } from '@/utils/filters';
 import { normalizeSavedDisplay } from '@/utils/viewSettings';
@@ -81,7 +87,59 @@ export function useSetViewFavorite(projectKey: string | null) {
 }
 
 export function useReorderViews(projectKey: string | null) {
-  return useOptimisticReorder<View>(projectKey ? qk.views(projectKey) : null, (orderedIds) =>
-    reorderViews(projectKey!, orderedIds),
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ folderId, orderedIds }: { folderId: number | null; orderedIds: number[] }) =>
+      reorderViews(projectKey!, folderId, orderedIds),
+    onSuccess: () => {
+      if (projectKey) void qc.invalidateQueries({ queryKey: qk.views(projectKey) });
+    },
+  });
+}
+
+export function useViewFoldersQuery(projectKey: string | null) {
+  return useQuery({
+    queryKey: qk.viewFolders(projectKey ?? ''),
+    queryFn: () => listViewFolders(projectKey!),
+    enabled: projectKey != null,
+  });
+}
+
+export function useCreateViewFolder(projectKey: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => createViewFolder(projectKey!, name),
+    onSuccess: () => {
+      if (projectKey) void qc.invalidateQueries({ queryKey: qk.viewFolders(projectKey) });
+    },
+  });
+}
+
+export function useUpdateViewFolder(projectKey: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) => updateViewFolder(id, name),
+    onSuccess: () => {
+      if (projectKey) void qc.invalidateQueries({ queryKey: qk.viewFolders(projectKey) });
+    },
+  });
+}
+
+export function useDeleteViewFolder(projectKey: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteViewFolder(id),
+    onSuccess: () => {
+      if (!projectKey) return;
+      void qc.invalidateQueries({ queryKey: qk.viewFolders(projectKey) });
+      void qc.invalidateQueries({ queryKey: qk.views(projectKey) });
+    },
+  });
+}
+
+export function useReorderViewFolders(projectKey: string | null) {
+  return useOptimisticReorder<ViewFolder>(
+    projectKey ? qk.viewFolders(projectKey) : null,
+    (orderedIds) => reorderViewFolders(projectKey!, orderedIds),
   );
 }

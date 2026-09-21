@@ -19,12 +19,12 @@ const SECURITY_HEADERS = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  // Passkeys are the one powerful feature the app uses; the rest is switched off for
-  // this origin and for anything it might embed.
+  // Passkeys and same-origin microphone input are the powerful features the app uses;
+  // the rest is switched off for this origin and for anything it might embed.
   {
     key: 'Permissions-Policy',
     value:
-      'camera=(), microphone=(), geolocation=(), payment=(), usb=(), ' +
+      'camera=(), microphone=(self), geolocation=(), payment=(), usb=(), ' +
       'publickey-credentials-get=(self), publickey-credentials-create=(self)',
   },
 ];

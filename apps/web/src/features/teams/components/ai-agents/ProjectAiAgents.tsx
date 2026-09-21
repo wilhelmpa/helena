@@ -1,8 +1,9 @@
-import { MessageSquarePlus, Shield } from 'lucide-react';
+import { MessageSquarePlus, Shield, UserMinus, UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useProjectAgents } from '@/hooks/useProjectAgents';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useShell } from '@/context/shellContext';
 import { useIntegrationCatalogQuery } from '@/services/integrations.service';
+import { useAiAgentsQuery, useUpdateAiAgent } from '@/services/aiAgents.service';
 import { integrationLabel } from '@/utils/integrationLabels';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
 import ListPager from '@/components/common/ListPager';
@@ -20,27 +21,39 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AGENT_KIND_ICON } from '../../utils/agentKindIcon';
-import { useAgentSection } from '../../context/agentSection';
+import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { AgentMetaChip } from './AgentMetaChip';
 import { AgentMetaRow } from './AgentMetaRow';
 import { AgentTriggers } from './AgentTriggers';
+import ProjectAgentAssignmentDialog from './ProjectAgentAssignmentDialog';
 
-// The agents working in this project, read-only: an agent belongs to the team, so it
-// is created, attached and edited in the team section. Here a project member sees what
-// each agent reacts to and what it is configured with, and starts a chat with one.
+// The team's real agents, split by whether they work in this project. This keeps the
+// shared roster visible from every project without copying agent configuration into
+// the project. Attaching creates only the project membership; role and instructions
+// remain project-specific fields on that membership.
 export default function ProjectAiAgents() {
   const t = useTranslations('settings.agents');
   const tTeam = useTranslations('teams.agents');
   const tChat = useTranslations('aiChat');
   const tCommon = useTranslations('common');
-  const { onChatWithAgent } = useShell();
+  const { onChatWithAgent, project } = useShell();
+  const { can, isAdmin } = usePermissions();
   const { teamId } = useAgentSection();
-  const query = useProjectAgents();
+  const canManageAgents = useAgentCan()('edit');
+  const query = useAiAgentsQuery(teamId);
+  const updateAgent = useUpdateAiAgent(teamId);
   const paging = usePaging();
   const agents = query.data ?? [];
+  const orderedAgents = project
+    ? [...agents].sort((left, right) => {
+        const leftAttached = left.projects.some((entry) => entry.id === project.project.id);
+        const rightAttached = right.projects.some((entry) => entry.id === project.project.id);
+        return Number(rightAttached) - Number(leftAttached) || left.name.localeCompare(right.name);
+      })
+    : agents;
   // The team's agents come in one list — it is read whole by the chat panel and the
   // schedule editor too — so the page is cut here rather than asked for.
-  const shown = paging.slice(agents);
+  const shown = paging.slice(orderedAgents);
   // The integration catalog maps a provider key to a readable label for the meta row.
   const catalog = useIntegrationCatalogQuery(teamId).data ?? [];
 
@@ -51,15 +64,19 @@ export default function ProjectAiAgents() {
     <div className="space-y-4">
       <Table className="min-w-[640px] table-fixed">
         <colgroup>
-          <col className="w-[34%]" />
-          <col className="w-[18%]" />
-          <col className="w-[36%]" />
-          <col className="w-[12%]" />
+          <col className="w-[25%]" />
+          <col className="w-[25%]" />
+          <col className="w-[14%]" />
+          <col className="w-[25%]" />
+          <col className="w-[11%]" />
         </colgroup>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="text-xs font-medium text-muted-foreground">
               {tTeam('agent')}
+            </TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground">
+              {t('assignment')}
             </TableHead>
             <TableHead className="text-xs font-medium text-muted-foreground">
               {tTeam('columns.triggers')}
@@ -75,6 +92,9 @@ export default function ProjectAiAgents() {
         <TableBody>
           {shown.map((agent) => {
             const KindIcon = AGENT_KIND_ICON[agent.kind];
+            const assignment = project
+              ? agent.projects.find((entry) => entry.id === project.project.id)
+              : undefined;
             return (
               <TableRow key={agent.id} className="group/item">
                 <TableCell className="px-3 py-3 align-middle whitespace-normal">
@@ -89,6 +109,23 @@ export default function ProjectAiAgents() {
                       </span>
                     </div>
                   </div>
+                </TableCell>
+                <TableCell className="px-3 py-3 align-middle whitespace-normal">
+                  {assignment ? (
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className="text-sm font-medium">
+                        {assignment.roleName ?? t('defaultRole')}
+                      </span>
+                      <span className="line-clamp-2 text-xs text-muted-foreground">
+                        {assignment.instructions || t('noProjectInstructions')}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground">{t('available')}</span>
+                      <span className="text-xs text-muted-foreground">{t('availableHint')}</span>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="px-3 py-3 align-middle whitespace-normal">
                   <AgentTriggers agent={agent} />
@@ -111,20 +148,67 @@ export default function ProjectAiAgents() {
                   )}
                 </TableCell>
                 <TableCell className="px-3 py-2 align-middle">
-                  <div className="flex items-center justify-end">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          className="size-8"
-                          aria-label={tChat('newChat')}
-                          onClick={() => onChatWithAgent(agent.id)}
-                        >
-                          <MessageSquarePlus className="size-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{tChat('newChat')}</TooltipContent>
-                    </Tooltip>
+                  <div className="flex items-center justify-end gap-1">
+                    {assignment && project && (can('members_manage', 'edit') || isAdmin) && (
+                      <ProjectAgentAssignmentDialog
+                        agent={agent}
+                        assignment={assignment}
+                        projectKey={project.project.key}
+                        teamId={teamId}
+                      />
+                    )}
+                    {project && canManageAgents && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-muted-foreground hover:text-foreground"
+                            disabled={updateAgent.isPending}
+                            aria-label={assignment ? t('removeFromProject') : t('addToProject')}
+                            onClick={() =>
+                              updateAgent.mutate({
+                                id: agent.id,
+                                patch: {
+                                  projectIds: assignment
+                                    ? agent.projects
+                                        .filter((entry) => entry.id !== project.project.id)
+                                        .map((entry) => entry.id)
+                                    : [
+                                        ...agent.projects.map((entry) => entry.id),
+                                        project.project.id,
+                                      ],
+                                },
+                              })
+                            }
+                          >
+                            {assignment ? (
+                              <UserMinus className="size-4" />
+                            ) : (
+                              <UserPlus className="size-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {assignment ? t('removeFromProject') : t('addToProject')}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    {assignment && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            className="size-8"
+                            aria-label={tChat('newChat')}
+                            onClick={() => onChatWithAgent(agent.id)}
+                          >
+                            <MessageSquarePlus className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{tChat('newChat')}</TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -132,7 +216,7 @@ export default function ProjectAiAgents() {
           })}
         </TableBody>
       </Table>
-      <ListPager paging={paging} total={agents.length} />
+      <ListPager paging={paging} total={orderedAgents.length} />
     </div>
   );
 }
