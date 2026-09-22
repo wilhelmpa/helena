@@ -148,7 +148,7 @@ export const organizationRoutes = new Elysia({
       detail: {
         summary: 'Set an agent organization assignment',
         description:
-          'Set an existing team agent role, department, reporting line and OpenClaw agent reference. This does not configure the OpenClaw agent.',
+          'Set an existing team agent role, department, reporting line and runtime agent reference. Runtime policy is configured on the agent itself.',
       },
     },
   )

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { SettingsResourceProvider } from '@/features/settings/context/settingsPermission';
 import SettingsActions from '@/features/settings/components/actions/SettingsActions';
 import { ProjectTemplatesPanel } from './components/workflows/ProjectTemplatesPanel';
+import { ControlPlaneWorkflowPanel } from './components/workflows/ControlPlaneWorkflowPanel';
 
 export default function WorkflowsPage() {
   const t = useTranslations('settings.actions');
@@ -32,6 +33,7 @@ export default function WorkflowsPage() {
     >
       <SettingsResourceProvider resource="actions">
         <RequirePermission resource="actions" action="read">
+          <ControlPlaneWorkflowPanel projectKey={project.project.key} />
           <SettingsActions
             project={project}
             customFields={customFields}

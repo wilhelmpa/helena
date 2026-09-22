@@ -62,7 +62,12 @@ export type PendingMessage = { id: string; text: string };
 // transcript, marked stopped. An internal agent's run is bound to the stream, so
 // dropping it is the stop; an external one is answered on the operator's machine and is
 // stopped through the API, which its runner reads on its next report.
-export function useAgentChat(projectKey: string, agentId: number, external: boolean) {
+export function useAgentChat(
+  projectKey: string,
+  agentId: number,
+  external: boolean,
+  settings?: { model: string | null; thinkingLevel: string | null },
+) {
   const t = useTranslations('common.agentChat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ChatStatus>('ready');
@@ -71,6 +76,8 @@ export function useAgentChat(projectKey: string, agentId: number, external: bool
   // Mirrors threadId for the send closure, so a send in flight uses the current
   // thread without re-creating the callback on every thread change.
   const threadRef = useRef<string | null>(null);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   const [pending, setPending] = useState<PendingMessage[]>([]);
   // A running turn is held twice: the ref so a second send in the same frame sees it
@@ -113,7 +120,7 @@ export function useAgentChat(projectKey: string, agentId: number, external: bool
         for await (const event of stream(
           projectKey,
           agentId,
-          { prompt: text, threadId: threadRef.current },
+          { prompt: text, threadId: threadRef.current, ...(external ? settingsRef.current : {}) },
           stopper.signal,
         )) {
           switch (event.type) {

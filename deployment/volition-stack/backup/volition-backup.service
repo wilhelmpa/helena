@@ -1,0 +1,19 @@
+[Unit]
+Description=Encrypted Volition application backup and integrity check
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sg docker -c /home/pw/services/volition-stack/backup/backup.sh
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=45min
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pw/services/volition-backups
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=default.target

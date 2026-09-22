@@ -89,7 +89,7 @@ describe('ai agents', () => {
     );
   });
 
-  it('stores no model config on an external agent even when config fields are sent', async () => {
+  it('stores runtime-neutral policy on an external agent without an LLM credential', async () => {
     const { asOwner } = await setup();
     const res = await createAgent(asOwner, 'MKT', {
       name: 'Ext',
@@ -98,14 +98,30 @@ describe('ai agents', () => {
       model: 'gpt-5.4',
       tools: ['create_issue'],
       memoryEnabled: true,
+      memoryLastMessages: 12,
+      runtimePolicy: {
+        reasoningEffort: 'high',
+        toolAllow: ['browser'],
+        toolDeny: ['message.send'],
+        mcpGrants: ['itsaplan__get_issue'],
+        files: [{ kind: 'instructions', path: 'AGENTS.md', content: '# Agent' }],
+      },
     });
     expect(res.status).toBe(201);
     expect(res.data?.agent).toMatchObject({
       kind: 'external',
       modelCredentialId: null,
-      model: null,
+      model: 'gpt-5.4',
       tools: [],
-      memoryEnabled: false,
+      memoryEnabled: true,
+      memoryLastMessages: 12,
+      runtimePolicy: {
+        reasoningEffort: 'high',
+        toolAllow: ['browser'],
+        toolDeny: ['message.send'],
+        mcpGrants: ['itsaplan__get_issue'],
+        files: [{ kind: 'instructions', path: 'AGENTS.md', content: '# Agent' }],
+      },
     });
   });
 
@@ -928,6 +944,7 @@ describe('ai agents', () => {
       'PATCH /projects/:projectKey/ai-agents/:agentId/threads/:threadId',
       'DELETE /projects/:projectKey/ai-agents/:agentId/threads/:threadId',
       'POST /projects/:projectKey/ai-agents/:agentId/chat',
+      'GET /projects/:projectKey/ai-agents/:agentId/chat/catalog',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/events',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream',
       'POST /projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel',

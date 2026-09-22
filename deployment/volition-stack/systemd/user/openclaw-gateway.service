@@ -1,0 +1,31 @@
+[Unit]
+Description=OpenClaw Gateway
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=10
+StartLimitIntervalSec=300
+
+[Service]
+ExecStartPre=/usr/bin/node /home/pw/.openclaw/bin/configure-openclaw-control-ui-embed.mjs
+ExecStart=/usr/bin/node --max-old-space-size=7887 /home/pw/.npm-global/lib/node_modules/openclaw/dist/index.js gateway --port 18789
+Restart=always
+RestartSec=5
+RestartPreventExitStatus=78
+TimeoutStopSec=330
+TimeoutStartSec=30
+SuccessExitStatus=0 143
+OOMPolicy=continue
+KillMode=mixed
+Environment=HOME=/home/pw
+Environment=TMPDIR=/tmp
+Environment=PATH=/usr/bin:/home/pw/.npm-global/bin:/usr/local/bin:/bin:/home/pw/.local/bin:/home/pw/bin:/home/pw/.nix-profile/bin
+Environment=NODE_OPTIONS=
+Environment=OPENCLAW_GATEWAY_PORT=18789
+Environment=OPENCLAW_SYSTEMD_UNIT=openclaw-gateway.service
+Environment="OPENCLAW_WINDOWS_TASK_NAME=OpenClaw Gateway"
+Environment=OPENCLAW_WINDOWS_TASK_HIDDEN_LAUNCHER=1
+Environment=OPENCLAW_SERVICE_MARKER=openclaw
+Environment=OPENCLAW_SERVICE_KIND=gateway
+
+[Install]
+WantedBy=default.target

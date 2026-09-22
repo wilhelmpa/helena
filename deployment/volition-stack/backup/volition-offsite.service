@@ -1,0 +1,17 @@
+[Unit]
+Description=Volition encrypted offsite backup
+After=volition-backup.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/pw/services/volition-stack/backup/offsite.py
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pw/services/volition-backups
+ReadWritePaths=/home/pw/.local/share/openclaw-gog/config /home/pw/.local/share/openclaw-gog/data
+MemoryMax=768M
+CPUQuota=100%
+TimeoutStartSec=3h

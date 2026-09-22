@@ -1,7 +1,14 @@
-import { db, agentChatEvent, agentChatFavorite, agentChatMessage, agentChatThread } from '@repo/db';
+import {
+  db,
+  agentChatCatalog,
+  agentChatEvent,
+  agentChatFavorite,
+  agentChatMessage,
+  agentChatThread,
+} from '@repo/db';
 import { and, asc, desc, eq, gt, inArray, notExists, sql } from 'drizzle-orm';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { intEnv, iso } from '#shared/lib';
+import { HttpError, intEnv, iso } from '#shared/lib';
 import { deleteContextUsage, recordContextUsage, type ContextUsage } from '../chat-usage';
 import { deleteFavorite, FAVORITES_LIMIT } from '../chat-favorites';
 import {
@@ -13,17 +20,18 @@ import {
   type ThreadRow,
 } from '../chat-history';
 import { appendTextPart } from '../chat-parts';
-import {
-  attachmentPreamble,
-  chartPreamble,
-  projectInstructionsPreamble,
-  projectsPreamble,
-} from '../core/prompt/framing';
-import { peoplePreamble, type Person } from '../core/prompt/run-context';
 import type { ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { newChatThreadId } from '../core/runtime/thread-ids';
 import { touchRunner, type RunnerAgent } from '../runner/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
+
+export type ChatCatalogModel = {
+  id: string;
+  name: string;
+  reasoning: boolean;
+  thinkingLevels: string[];
+  thinkingDefault: string | null;
+};
 
 // Chat with an external agent. The answer is produced by a runner on the operator's
 // machine, so it cannot be generated in this process the way an internal agent's is:
@@ -41,12 +49,17 @@ import type { AgUiEventBody, ChatMessageStatus } from './model';
 export const agentChatConfig = {
   leaseSeconds: () => intEnv('AGENT_CHAT_LEASE_SECONDS', 300),
   maxAttempts: () => intEnv('AGENT_CHAT_MAX_ATTEMPTS', 3),
+  maxLiveTurnsPerThread: () => intEnv('AGENT_CHAT_MAX_LIVE_TURNS_PER_THREAD', 1),
+  sendLimit: () => intEnv('AGENT_CHAT_SEND_LIMIT', 10),
+  sendWindowSeconds: () => intEnv('AGENT_CHAT_SEND_WINDOW_SECONDS', 60),
+  streamLimit: () => intEnv('AGENT_CHAT_STREAM_LIMIT', 30),
+  streamWindowSeconds: () => intEnv('AGENT_CHAT_STREAM_WINDOW_SECONDS', 60),
+  streamConcurrentLimit: () => intEnv('AGENT_CHAT_STREAM_CONCURRENT_LIMIT', 4),
   // How long a claim waits for work before it answers "nothing", and how often it looks
   // while it waits. The wait is what makes an answer start the moment it is sent.
   claimWaitMs: () => intEnv('AGENT_CHAT_CLAIM_WAIT_MS', 25_000),
   claimPollMs: () => intEnv('AGENT_CHAT_CLAIM_POLL_MS', 500),
   streamPollMs: () => intEnv('AGENT_CHAT_STREAM_POLL_MS', 300),
-  historyMessages: () => intEnv('AGENT_CHAT_HISTORY_MESSAGES', 20),
 };
 
 const PAGE_SIZE = 25;
@@ -105,6 +118,8 @@ const threadColumns = {
   id: agentChatThread.id,
   title: agentChatThread.title,
   cliSessionId: agentChatThread.cliSessionId,
+  model: agentChatThread.model,
+  thinkingLevel: agentChatThread.thinkingLevel,
   createdAt: agentChatThread.createdAt,
   updatedAt: agentChatThread.updatedAt,
 };
@@ -158,6 +173,8 @@ async function searchThreads(
     SELECT t.id,
            t.title,
            t.cli_session_id AS "cliSessionId",
+           t.model,
+           t.thinking_level AS "thinkingLevel",
            t.created_at AS "createdAt",
            t.updated_at AS "updatedAt",
            f.thread_id IS NOT NULL AS favorite,
@@ -344,10 +361,32 @@ export async function sendMessage(input: {
   userId: string;
   prompt: string;
   threadId?: string;
+  model?: string | null;
+  thinkingLevel?: string | null;
 }): Promise<{ threadId: string; messageId: number } | null> {
   const { agentId, userId, prompt } = input;
   return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`agent-chat-send:${agentId}:${userId}`}, 0))`,
+    );
+    const [recent] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(agentChatMessage)
+      .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
+      .where(
+        and(
+          eq(agentChatMessage.agentId, agentId),
+          eq(agentChatMessage.role, 'user'),
+          eq(agentChatThread.userId, userId),
+          sql`${agentChatMessage.createdAt} > now() - make_interval(secs => ${agentChatConfig.sendWindowSeconds()})`,
+        ),
+      );
+    if (Number(recent?.count ?? 0) >= agentChatConfig.sendLimit()) {
+      throw new HttpError(429, 'Too many chat messages. Wait before sending another.');
+    }
+
     let threadId = input.threadId;
+    const settings = await validateChatSettings(agentId, input.model, input.thinkingLevel);
     if (threadId) {
       const rows = await tx
         .select({ id: agentChatThread.id })
@@ -361,19 +400,40 @@ export async function sendMessage(input: {
         )
         .limit(1);
       if (!rows[0]) return null;
+      const [live] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agentChatMessage)
+        .where(
+          and(
+            eq(agentChatMessage.threadId, threadId),
+            eq(agentChatMessage.role, 'assistant'),
+            inArray(agentChatMessage.status, LIVE_STATUSES),
+          ),
+        );
+      if (Number(live?.count ?? 0) >= agentChatConfig.maxLiveTurnsPerThread()) {
+        throw new HttpError(429, 'Wait for the current answer before sending another message.');
+      }
       await tx
         .update(agentChatThread)
-        .set({ updatedAt: new Date() })
+        .set({ updatedAt: new Date(), ...settings })
         .where(eq(agentChatThread.id, threadId));
     } else {
       threadId = newChatThreadId(agentId, userId);
-      await tx
-        .insert(agentChatThread)
-        .values({ id: threadId, agentId, userId, title: prompt.slice(0, TITLE_LIMIT) });
+      await tx.insert(agentChatThread).values({
+        id: threadId,
+        agentId,
+        userId,
+        title: prompt.slice(0, TITLE_LIMIT),
+        ...settings,
+      });
     }
-    await tx
-      .insert(agentChatMessage)
-      .values({ threadId, agentId, role: 'user', content: prompt, status: 'success' });
+    await tx.insert(agentChatMessage).values({
+      threadId,
+      agentId,
+      role: 'user',
+      content: prompt,
+      status: 'success',
+    });
     const answer = await tx
       .insert(agentChatMessage)
       .values({ threadId, agentId, role: 'assistant' })
@@ -389,6 +449,8 @@ export interface ClaimedChat {
   systemPrompt: string;
   attempts: number;
   sessionId: string | null;
+  model: string | null;
+  thinkingLevel: string | null;
 }
 
 // The claim's raw row: the answer plus what the prompts are built from.
@@ -396,9 +458,9 @@ interface ClaimedRow {
   id: number;
   threadId: string;
   attempts: number;
-  requesterName: string | null;
-  requesterUsername: string | null;
   sessionId: string | null;
+  model: string | null;
+  thinkingLevel: string | null;
 }
 
 // Fails answers handed out too many times without a result, so a chat whose runner
@@ -462,34 +524,74 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
       m.id,
       m.thread_id AS "threadId",
       m.attempts,
-      (SELECT u.name FROM agent_chat_thread t JOIN "user" u ON u.id = t.user_id
-         WHERE t.id = m.thread_id) AS "requesterName",
-      (SELECT u.username FROM agent_chat_thread t JOIN "user" u ON u.id = t.user_id
-         WHERE t.id = m.thread_id) AS "requesterUsername",
       (SELECT cli_session_id FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "sessionId"
+      , (SELECT model FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model"
+      , (SELECT thinking_level FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "thinkingLevel"
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
   await db.delete(agentChatEvent).where(eq(agentChatEvent.messageId, row.id));
-  // A thread bound to a live session on the runner's machine needs neither the earlier
-  // turns nor the system prompt again: that session already holds both, in fuller form
-  // than the transcript here keeps them.
-  const resumed = row.sessionId !== null;
-  const history = await readHistory(row.threadId, row.id, resumed);
-  const question = history.pop()?.content ?? '';
+  const question = await readQuestion(row.threadId, row.id);
   return {
     id: row.id,
     threadId: row.threadId,
-    prompt: resumed ? question : frameChatPrompt(history, question),
-    systemPrompt: resumed
-      ? ''
-      : buildSystemPrompt(agent, {
-          name: row.requesterName ?? 'the member',
-          username: row.requesterUsername,
-        }),
+    prompt: question,
+    systemPrompt: '',
     attempts: row.attempts,
     sessionId: row.sessionId,
+    model: row.model,
+    thinkingLevel: row.thinkingLevel,
   };
+}
+
+export async function publishChatCatalog(
+  agentId: number,
+  models: ChatCatalogModel[],
+): Promise<void> {
+  await db
+    .insert(agentChatCatalog)
+    .values({ agentId, models })
+    .onConflictDoUpdate({
+      target: agentChatCatalog.agentId,
+      set: { models, updatedAt: new Date() },
+    });
+}
+
+export async function readChatCatalog(agentId: number): Promise<{
+  models: ChatCatalogModel[];
+  updatedAt: string | null;
+}> {
+  const [row] = await db
+    .select({
+      models: agentChatCatalog.models,
+      updatedAt: agentChatCatalog.updatedAt,
+    })
+    .from(agentChatCatalog)
+    .where(eq(agentChatCatalog.agentId, agentId))
+    .limit(1);
+  return {
+    models: (row?.models as ChatCatalogModel[] | undefined) ?? [],
+    updatedAt: row ? iso(row.updatedAt) : null,
+  };
+}
+
+async function validateChatSettings(
+  agentId: number,
+  model: string | null | undefined,
+  thinkingLevel: string | null | undefined,
+): Promise<{ model?: string | null; thinkingLevel?: string | null }> {
+  if (model === undefined && thinkingLevel === undefined) return {};
+  if (model === null) {
+    if (thinkingLevel) throw new HttpError(400, 'A thinking level needs a model');
+    return { model: null, thinkingLevel: null };
+  }
+  const catalog = await readChatCatalog(agentId);
+  const selected = catalog.models.find((entry) => entry.id === model);
+  if (!selected) throw new HttpError(400, 'The selected model is not available');
+  if (thinkingLevel && !selected.thinkingLevels.includes(thinkingLevel)) {
+    throw new HttpError(400, 'The selected thinking level is not available for this model');
+  }
+  return { model, thinkingLevel: thinkingLevel ?? null };
 }
 
 // Binds a thread to the session its runner started, addressed through the answer being
@@ -517,16 +619,9 @@ export async function setThreadSession(
     );
 }
 
-// The turns before the claimed answer, oldest last, capped at the configured depth. The
-// last of them is the message being answered. `questionOnly` takes just that one, for a
-// thread whose session already remembers everything before it.
-async function readHistory(
-  threadId: string,
-  beforeMessageId: number,
-  questionOnly: boolean,
-): Promise<{ role: string; content: string }[]> {
+async function readQuestion(threadId: string, beforeMessageId: number): Promise<string> {
   const rows = await db
-    .select({ role: agentChatMessage.role, content: agentChatMessage.content })
+    .select({ content: agentChatMessage.content })
     .from(agentChatMessage)
     .where(
       and(
@@ -536,51 +631,8 @@ async function readHistory(
       ),
     )
     .orderBy(desc(agentChatMessage.id))
-    .limit(questionOnly ? 1 : agentChatConfig.historyMessages());
-  return rows.reverse();
-}
-
-// What the agent is told before the task: the projects it works in, that a person is
-// waiting in a chat, who that person is, and last the operator's own instructions,
-// which therefore win over the generic parts. A chat is held with the agent rather
-// than inside a project, so every project it reaches is named.
-function buildSystemPrompt(agent: RunnerAgent, requester: Person): string {
-  const instructions = agent.instructions?.trim();
-  return (
-    projectsPreamble(agent.projects) +
-    chatModePreamble() +
-    chartPreamble() +
-    attachmentPreamble() +
-    peoplePreamble({ requester }) +
-    agent.projects.map(projectInstructionsPreamble).join('') +
-    (instructions ? `## Instructions\n${instructions}\n` : '')
-  );
-}
-
-// The counterpart of runModePreamble for a chat: here a human is present, so the
-// autonomous-run rule about never asking questions does not apply.
-function chatModePreamble(): string {
-  return [
-    '## Run mode',
-    'You are in a chat with a person who is waiting for your reply in the app. What you',
-    'print is what they read, so answer them directly and keep it short. Ask a clarifying',
-    'question when you genuinely need one — unlike an autonomous run, someone is there to',
-    'answer it.',
-    '',
-    '',
-  ].join('\n');
-}
-
-function frameChatPrompt(history: { role: string; content: string }[], prompt: string): string {
-  const lines: string[] = [];
-  if (history.length > 0) {
-    lines.push('Earlier in this conversation:', '');
-    for (const m of history) {
-      lines.push(`${m.role === 'user' ? 'Person' : 'You'}: ${m.content}`, '');
-    }
-  }
-  lines.push('The person writes:', '', prompt);
-  return lines.join('\n');
+    .limit(1);
+  return rows[0]?.content ?? '';
 }
 
 // When a claimed answer falls back to the feed unless the runner reports again.
@@ -697,7 +749,10 @@ export async function finishMessage(
       finishedAt: new Date(),
     })
     .where(liveAnswer(agentId, messageId))
-    .returning({ id: agentChatMessage.id, threadId: agentChatMessage.threadId });
+    .returning({
+      id: agentChatMessage.id,
+      threadId: agentChatMessage.threadId,
+    });
   if (rows.length > 0) {
     // Undefined is a runner that said nothing about the context — an older one, or a
     // command that reports no counts at all — and the thread keeps the number it has.

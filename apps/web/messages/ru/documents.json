@@ -189,5 +189,31 @@
     "divider": "Разделитель",
     "undo": "Отменить",
     "redo": "Повторить"
+  },
+  "files": {
+    "title": "Files",
+    "description": "Project files from the restricted workspace storage.",
+    "newText": "New text file",
+    "breadcrumb": "File path",
+    "parent": "Parent folder",
+    "loading": "Loading files…",
+    "loadError": "Files could not be loaded.",
+    "retry": "Retry",
+    "empty": "This folder is empty.",
+    "bytes": "{count, number} B",
+    "download": "Download",
+    "downloadError": "The file could not be downloaded.",
+    "close": "Close",
+    "loadingPreview": "Loading preview…",
+    "previewError": "The text preview could not be loaded.",
+    "createTitle": "Create text file",
+    "createDescription": "Create a new .txt, .md, or .markdown file in this folder. Existing files are never overwritten.",
+    "filename": "Filename",
+    "filenamePlaceholder": "notes.md",
+    "content": "Content",
+    "contentPlaceholder": "Write text or Markdown…",
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating…"
   }
 }

@@ -1,5 +1,7 @@
 import { projectTemplateRoutes } from './modules/project-templates';
+import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
 import { connectionsRoutes } from './modules/connections';
+import { projectFileRoutes } from './modules/project-files';
 import { organizationRoutes } from './modules/organization';
 import { Elysia } from 'elysia';
 import { HttpError, pgErrorCode } from './shared/lib';
@@ -40,6 +42,7 @@ import { godRoutes } from './modules/god';
 import { agentScheduleRoutes } from './modules/agents/schedules';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
+import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
 import { notificationRoutes } from './modules/notifications';
 import { notificationSettingsRoutes } from './modules/notification-settings';
 import { notificationPreferenceRoutes } from './modules/notification-preferences';
@@ -113,14 +116,17 @@ export const planner = new Elysia({ name: 'planner' })
   .use(shareRoutes)
   .use(actionRoutes)
   .use(projectTemplateRoutes)
+  .use(controlPlaneWorkflowRoutes)
   .use(webhookRoutes)
   .use(gitSettingsRoutes)
   .use(agentScheduleRoutes)
   .use(agentRunnerRoutes)
   .use(agentChatRoutes)
+  .use(agentRuntimePolicyRoutes)
   .use(dashboardRoutes)
   .use(noteBoardRoutes)
   .use(documentRoutes)
+  .use(projectFileRoutes)
   .use(analyticsRoutes)
   .use(chartRoutes)
   .use(notificationRoutes)

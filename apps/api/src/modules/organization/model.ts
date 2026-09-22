@@ -35,6 +35,7 @@ export const createGoalBody = t.Object({
   description: t.Optional(t.String({ maxLength: 2000 })),
   departmentId: t.Optional(nullableId),
   projectId: t.Optional(nullableId),
+  parentGoalId: t.Optional(nullableId),
   status: t.Optional(goalStatus),
   targetDate: t.Optional(t.Nullable(t.String({ format: 'date' }))),
 });
@@ -44,7 +45,7 @@ export const setAgentAssignmentBody = t.Object({
   departmentId: t.Optional(nullableId),
   reportsToAgentId: t.Optional(nullableId),
   roleTitle: t.Optional(t.String({ maxLength: 100 })),
-  openClawAgentId: t.Optional(
+  runtimeAgentId: t.Optional(
     t.Nullable(
       t.String({
         minLength: 1,
@@ -80,6 +81,7 @@ const GoalResponse = t.Object({
   description: t.String(),
   departmentId: nullableId,
   projectId: nullableId,
+  parentGoalId: nullableId,
   status: goalStatus,
   targetDate: t.Nullable(t.String()),
   createdAt: t.String(),
@@ -102,7 +104,15 @@ const OrganizationAgentResponse = t.Object({
   departmentId: nullableId,
   reportsToAgentId: nullableId,
   roleTitle: t.String(),
-  openClawAgentId: t.Nullable(t.String()),
+  runtimeAgentId: t.Nullable(t.String()),
+  runtimeState: t.Object({
+    adapter: t.Nullable(t.String()),
+    status: t.Union([t.Literal('offline'), t.Literal('online'), t.Literal('degraded')]),
+    appliedRevision: t.Nullable(t.String()),
+    capabilities: t.Array(t.String()),
+    detail: t.Nullable(t.String()),
+    reportedAt: t.Nullable(t.String()),
+  }),
   projects: t.Array(AgentProjectResponse),
 });
 

@@ -1,0 +1,120 @@
+services:
+  postgres:
+    image: volition/postgres:17-alpine-gosu-go1.26.6-20260921
+    security_opt: [no-new-privileges:true]
+    cap_drop: [NET_RAW]
+    mem_limit: 1024m
+    cpus: 1.5
+    pids_limit: 128
+  minio:
+    profiles: [legacy-minio]
+    image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    security_opt: [no-new-privileges:true]
+    cap_drop: [NET_RAW]
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 128
+  minio-init:
+    profiles: [legacy-minio]
+  garage:
+    image: dxflrs/garage@sha256:9c96caa2612d3411acc5b0e6701fb238dbfba33e533a6d7d3d811a4b12d0d020
+    restart: unless-stopped
+    user: '1000:1000'
+    read_only: true
+    command: ['/garage', 'server', '--single-node', '--default-bucket']
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY_ID}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_ACCESS_KEY}
+      GARAGE_DEFAULT_BUCKET: ${S3_BUCKET:-planner-attachments}
+    volumes:
+      - ${GARAGE_ROOT:-/home/pw/services/volition-stack/garage}/garage.toml:/etc/garage.toml:ro
+      - ${GARAGE_ROOT:-/home/pw/services/volition-stack/garage}/meta:/meta
+      - ${GARAGE_ROOT:-/home/pw/services/volition-stack/garage}/data:/data
+    tmpfs: ['/tmp:rw,nosuid,nodev,noexec,size=32m,uid=1000,gid=1000']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1
+    healthcheck:
+      test: ['CMD', '/garage', 'status']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+  api:
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+    environment:
+      S3_ENDPOINT: http://garage:3900
+      S3_ACCESS_KEY_ID: ${GARAGE_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${GARAGE_SECRET_ACCESS_KEY}
+      S3_REGION: garage
+      S3_FORCE_PATH_STYLE: 'true'
+      MASTRA_CONTROL_URL: http://172.30.254.1:18800/internal/mastra/control
+      MASTRA_CONTROL_TOKEN_FILE: /run/secrets/mastra_control_token
+    volumes:
+      - /home/pw/services/volition-stack/.secrets/plan_mastra_control_token:/run/secrets/mastra_control_token:ro
+    ports: !override ["127.0.0.1:3000:3000"]
+    image: volition/itsaplan-api:2026-09-22-v20-files
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,nosuid,nodev,size=256m,uid=1000,gid=1000']
+    pids_limit: 256
+    mem_limit: 1536m
+    cpus: 2
+    networks:
+      default: {}
+      control:
+        ipv4_address: 172.30.254.3
+  web:
+    ports: !override ["127.0.0.1:3001:3001"]
+    image: volition/itsaplan-web:2026-09-22-v20-final
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,nosuid,nodev,size=128m,uid=1000,gid=1000']
+    volumes:
+      - web-cache:/app/apps/web/.next/cache
+    pids_limit: 128
+    mem_limit: 768m
+    cpus: 1.5
+  worker:
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      WEBHOOK_BATCH_SIZE: '2'
+    image: volition/itsaplan-worker:2026-09-21-v10
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,nosuid,nodev,size=128m,uid=1000,gid=1000']
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1
+    networks:
+      default: {}
+      control:
+        ipv4_address: 172.30.254.2
+  bot:
+    profiles: [telegram]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+networks:
+  control:
+    external: true
+    name: volition_control
+volumes:
+  web-cache:
+    external: true
+    name: itsaplan_web-cache

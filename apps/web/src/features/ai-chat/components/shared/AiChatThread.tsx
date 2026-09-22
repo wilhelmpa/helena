@@ -25,6 +25,7 @@ export function AiChatThread({
   onStateChange,
   composerStart,
   composerEnd,
+  chatSettings,
 }: {
   projectKey: string;
   agent: AiAgent;
@@ -37,6 +38,7 @@ export function AiChatThread({
   composerStart?: ReactNode;
   // What the host says about this conversation, put at the end of the same row.
   composerEnd?: ReactNode;
+  chatSettings?: { model: string | null; thinkingLevel: string | null };
 }) {
   const {
     messages,
@@ -49,7 +51,7 @@ export function AiChatThread({
     removePending,
     loadThread,
     prependHistory,
-  } = useAgentChat(projectKey, agent.id, agent.kind === 'external');
+  } = useAgentChat(projectKey, agent.id, agent.kind === 'external', chatSettings);
   const messagesQuery = useAgentThreadMessagesQuery(projectKey, agent.id, threadId);
   const qc = useQueryClient();
 

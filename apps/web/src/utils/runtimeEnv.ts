@@ -15,12 +15,12 @@ export interface WorkspaceRuntimeEnv {
   openClawUrl: string;
   coordinatorId: string;
   projectCoordinators: Record<string, string>;
+  homeChatProjectKey: string;
   terminalUrl: string;
   codeUrl: string;
   projectWorkspacePaths: Record<string, string>;
   browserUrl: string;
   filesUrl: string;
-  paperlessUrl: string;
   inboxUrl: string;
   connectionsUrl: string;
 }
@@ -60,12 +60,12 @@ const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   openClawUrl: '',
   coordinatorId: 'coordinator',
   projectCoordinators: {},
+  homeChatProjectKey: '',
   terminalUrl: '',
   codeUrl: '',
   projectWorkspacePaths: {},
   browserUrl: '',
   filesUrl: '',
-  paperlessUrl: '',
   inboxUrl: '',
   connectionsUrl: '',
 });
@@ -80,12 +80,12 @@ export function serverRuntimeEnv(): RuntimeEnv {
       openClawUrl: readOrigin('OPENCLAW_URL'),
       coordinatorId: readOrigin('OPENCLAW_COORDINATOR_ID') || 'coordinator',
       projectCoordinators: readJsonRecord('OPENCLAW_PROJECT_COORDINATORS'),
+      homeChatProjectKey: readOrigin('HOME_CHAT_PROJECT_KEY'),
       terminalUrl: readOrigin('TERMINAL_URL'),
       codeUrl: readOrigin('CODE_URL'),
       projectWorkspacePaths: readJsonRecord('PROJECT_WORKSPACE_PATHS'),
       browserUrl: readOrigin('BROWSER_URL'),
       filesUrl: readOrigin('FILES_URL'),
-      paperlessUrl: readOrigin('PAPERLESS_URL'),
       inboxUrl: readOrigin('INBOX_URL'),
       connectionsUrl: readOrigin('CONNECTIONS_URL'),
     },

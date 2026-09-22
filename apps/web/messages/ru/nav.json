@@ -36,7 +36,6 @@
   "newIssueHint": "Новая задача ({key})",
   "aiChatHint": "Чат с ИИ-агентами ({key})",
   "openClawHint": "Открыть OpenClaw",
-  "paperlessHint": "Открыть Paperless",
   "openClawTabsLabel": "Разделы OpenClaw",
   "openClawProject": "Проект",
   "openClawCoordinator": "Координатор",
@@ -50,7 +49,6 @@
     "code": "Код",
     "browser": "Браузер",
     "files": "Файлы",
-    "paperless": "Paperless",
     "inbox": "Входящие",
     "connections": "Подключения",
     "advanced": "Дополнительно",
@@ -67,5 +65,13 @@
   "godModeOwnerOnly": "Режим администратора доступен только владельцу инстанса.",
   "project": "Проект",
   "organization": "Organization",
-  "connections": "Connections"
+  "connections": "Connections",
+  "agentPool": "Пул агентов",
+  "mcps": "MCP",
+  "tools": "Инструменты",
+  "skills": "Навыки",
+  "loading": "Loading…",
+  "teamScopeRequired": "Choose one team scope",
+  "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
+  "vault": "Vault"
 }

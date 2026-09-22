@@ -23,6 +23,29 @@ export interface AgentProject {
   instructions: string;
 }
 
+export interface AgentRuntimeFile {
+  kind: 'instructions' | 'memory';
+  path: string;
+  content: string;
+}
+
+export interface AgentRuntimePolicy {
+  reasoningEffort: string | null;
+  toolAllow: string[];
+  toolDeny: string[];
+  mcpGrants: string[];
+  files: AgentRuntimeFile[];
+}
+
+export interface AgentRuntimeState {
+  adapter: string | null;
+  status: 'offline' | 'online' | 'degraded';
+  appliedRevision: string | null;
+  capabilities: string[];
+  detail: string | null;
+  reportedAt: string | null;
+}
+
 // An AI agent of a team: a bot user plus its configuration. `kind` is
 // 'external' (driven by an outside caller through the API) or 'internal' (run by
 // the built-in runtime, so it carries provider/model/instructions/tools). Only an
@@ -47,6 +70,8 @@ export interface AiAgent {
   maxSteps: number | null;
   memoryEnabled: boolean;
   memoryLastMessages: number | null;
+  runtimePolicy: AgentRuntimePolicy;
+  runtimeState: AgentRuntimeState;
   // Run triggers.
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
@@ -128,6 +153,7 @@ export interface NewAiAgentInput {
   maxSteps?: number | null;
   memoryEnabled?: boolean;
   memoryLastMessages?: number | null;
+  runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
   fieldTriggers?: AgentFieldTrigger[];
@@ -147,6 +173,7 @@ export interface AiAgentPatch {
   maxSteps?: number | null;
   memoryEnabled?: boolean;
   memoryLastMessages?: number | null;
+  runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
   fieldTriggers?: AgentFieldTrigger[];

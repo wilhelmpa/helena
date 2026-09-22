@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { MessageSquareOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
@@ -12,6 +12,7 @@ import { AiChatSessionBadge } from '../shared/AiChatSessionBadge';
 import { AiChatThread } from '../shared/AiChatThread';
 import { ChatPanelAgentSwitcher } from './ChatPanelAgentSwitcher';
 import { ChatPanelHistory } from './ChatPanelHistory';
+import { ChatPanelModelSettings } from './ChatPanelModelSettings';
 import { useShownThread } from '../../hooks/useShownThread';
 import type { ChatSession, ChatSessionState } from '../../hooks/useChatSessions';
 
@@ -55,6 +56,16 @@ export function ChatPanelSession({
     [session.id, onStateChange],
   );
   const thread = useShownThread(projectKey, agent.id, session.threadId);
+  const [chatSettings, setChatSettings] = useState<{
+    model: string | null;
+    thinkingLevel: string | null;
+  }>({ model: null, thinkingLevel: null });
+  useEffect(() => {
+    setChatSettings({
+      model: thread?.model ?? null,
+      thinkingLevel: thread?.thinkingLevel ?? null,
+    });
+  }, [agent.id, thread?.id, thread?.model, thread?.thinkingLevel]);
   const t = useTranslations('aiChat');
   // An internal agent with memory off stores no thread and no message, so it has no
   // history to list and its conversation ends with the page.
@@ -69,6 +80,7 @@ export function ChatPanelSession({
         threadId={session.threadId}
         onThreadCreated={handleThreadCreated}
         onStateChange={handleStateChange}
+        chatSettings={chatSettings}
         composerStart={
           <>
             <ChatPanelAgentSwitcher
@@ -104,6 +116,16 @@ export function ChatPanelSession({
               </Tooltip>
             )}
             {thread?.cliSessionId && <AiChatSessionBadge sessionId={thread.cliSessionId} />}
+            {agent.kind === 'external' && (
+              <ChatPanelModelSettings
+                projectKey={projectKey}
+                agentId={agent.id}
+                model={chatSettings.model}
+                thinkingLevel={chatSettings.thinkingLevel}
+                disabled={session.running}
+                onChange={setChatSettings}
+              />
+            )}
           </>
         }
         composerEnd={

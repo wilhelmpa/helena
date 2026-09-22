@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  boolean,
   index,
   integer,
   jsonb,
@@ -13,7 +14,39 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
-import { projectActionRun, team } from './app';
+import { project, projectActionRun, team } from './app';
+
+export interface ProjectWorkflowConfiguration {
+  instructions?: string;
+  retryLimit?: number;
+}
+
+export const projectWorkflowAssignment = pgTable(
+  'project_workflow_assignment',
+  {
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    workflowId: text('workflow_id').notNull(),
+    enabled: boolean('enabled').notNull().default(false),
+    configuration: jsonb('configuration')
+      .$type<ProjectWorkflowConfiguration>()
+      .notNull()
+      .default({}),
+    capabilityRefs: jsonb('capability_refs').$type<string[]>().notNull().default([]),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.projectId, t.workflowId] }),
+    check(
+      'project_workflow_assignment_id_check',
+      sql`${t.workflowId} ~ '^[a-z0-9][a-z0-9-]{0,63}$'`,
+    ),
+    index('project_workflow_assignment_project_idx').on(t.projectId, t.enabled, t.workflowId),
+  ],
+);
 
 export const projectTemplate = pgTable(
   'project_template',

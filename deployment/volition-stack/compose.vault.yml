@@ -1,0 +1,46 @@
+name: volition-vault
+services:
+  vaultwarden:
+    image: vaultwarden/server:1.37.3-alpine@sha256:9a905c5cf5df61bb827da3805e160170741c0b53b0c63bb07e1afd3d2e21b1c8
+    user: "1000:1000"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      DOMAIN: https://vault.volition.one
+      ROCKET_PORT: "8080"
+      UMASK: "077"
+      SIGNUPS_ALLOWED: "false"
+      SIGNUPS_VERIFY: "false"
+      INVITATIONS_ALLOWED: "false"
+      ORG_CREATION_USERS: owner@example.com
+      SENDS_ALLOWED: "false"
+      EMERGENCY_ACCESS_ALLOWED: "false"
+      DISABLE_ICON_DOWNLOAD: "true"
+      ICON_CACHE_TTL: "0"
+      IP_HEADER: none
+      LOG_LEVEL: warn
+      EXTENDED_LOGGING: "false"
+    volumes: ["./.state/vaultwarden:/data"]
+    tmpfs: ["/tmp:rw,nosuid,nodev,noexec,size=32m,uid=1000,gid=1000"]
+    mem_limit: 256m
+    cpus: 1.0
+    pids_limit: 128
+    healthcheck:
+      test: [CMD, /healthcheck.sh]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      vault:
+        ipv4_address: 172.30.94.10
+    logging:
+      driver: json-file
+      options: {max-size: 2m, max-file: '2'}
+networks:
+  vault:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.94.0/24

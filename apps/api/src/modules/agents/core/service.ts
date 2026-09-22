@@ -53,6 +53,96 @@ export type AgentKind = 'external' | 'internal';
 // credentials should serve nobody else.
 export type RunnerScope = 'owner' | 'team';
 
+export interface AgentRuntimePolicy {
+  reasoningEffort: string | null;
+  toolAllow: string[];
+  toolDeny: string[];
+  mcpGrants: string[];
+  files: { kind: 'instructions' | 'memory'; path: string; content: string }[];
+}
+
+export interface AgentRuntimeState {
+  adapter: string | null;
+  status: 'offline' | 'online' | 'degraded';
+  appliedRevision: string | null;
+  capabilities: string[];
+  detail: string | null;
+  reportedAt: string | null;
+}
+
+const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
+  reasoningEffort: null,
+  toolAllow: [],
+  toolDeny: [],
+  mcpGrants: [],
+  files: [],
+};
+
+const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
+  adapter: null,
+  status: 'offline',
+  appliedRevision: null,
+  capabilities: [],
+  detail: null,
+  reportedAt: null,
+};
+
+function normalizeRuntimeState(value: unknown): AgentRuntimeState {
+  if (!value || typeof value !== 'object') return { ...EMPTY_RUNTIME_STATE };
+  const state = value as Partial<AgentRuntimeState>;
+  return {
+    adapter:
+      typeof state.adapter === 'string' && state.adapter.trim() ? state.adapter.trim() : null,
+    status: state.status === 'online' || state.status === 'degraded' ? state.status : 'offline',
+    appliedRevision:
+      typeof state.appliedRevision === 'string' && state.appliedRevision.trim()
+        ? state.appliedRevision.trim()
+        : null,
+    capabilities: Array.isArray(state.capabilities)
+      ? [...new Set(state.capabilities.filter((v): v is string => typeof v === 'string'))]
+      : [],
+    detail:
+      typeof state.detail === 'string' && state.detail.trim() ? state.detail.slice(0, 500) : null,
+    reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
+  };
+}
+
+function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
+  if (!value || typeof value !== 'object') return { ...EMPTY_RUNTIME_POLICY };
+  const policy = value as Partial<AgentRuntimePolicy>;
+  const strings = (items: unknown) =>
+    Array.isArray(items)
+      ? [
+          ...new Set(
+            items
+              .filter((item): item is string => typeof item === 'string')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          ),
+        ]
+      : [];
+  const files = Array.isArray(policy.files)
+    ? policy.files.filter(
+        (file): file is AgentRuntimePolicy['files'][number] =>
+          !!file &&
+          typeof file === 'object' &&
+          (file.kind === 'instructions' || file.kind === 'memory') &&
+          typeof file.path === 'string' &&
+          typeof file.content === 'string',
+      )
+    : [];
+  return {
+    reasoningEffort:
+      typeof policy.reasoningEffort === 'string' && policy.reasoningEffort.trim()
+        ? policy.reasoningEffort.trim()
+        : null,
+    toolAllow: strings(policy.toolAllow),
+    toolDeny: strings(policy.toolDeny),
+    mcpGrants: strings(policy.mcpGrants),
+    files,
+  };
+}
+
 // One member custom field an agent reacts to, with the seconds its run waits before
 // the agent may pick it up.
 export interface FieldTrigger {
@@ -96,6 +186,8 @@ export interface AiAgentRow {
   // Conversation memory: recall the last memoryLastMessages messages of a thread.
   memoryEnabled: boolean;
   memoryLastMessages: number | null;
+  runtimePolicy: AgentRuntimePolicy;
+  runtimeState: AgentRuntimeState;
   // Run triggers.
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
@@ -143,6 +235,8 @@ function mapAgent(row: {
   maxSteps: number | null;
   memoryEnabled: boolean;
   memoryLastMessages: number | null;
+  runtimePolicy: unknown;
+  runtimeState: unknown;
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
   fieldTriggers: FieldTriggerRead[];
@@ -173,6 +267,8 @@ function mapAgent(row: {
     maxSteps: row.maxSteps,
     memoryEnabled: row.memoryEnabled,
     memoryLastMessages: row.memoryLastMessages,
+    runtimePolicy: normalizeRuntimePolicy(row.runtimePolicy),
+    runtimeState: normalizeRuntimeState(row.runtimeState),
     triggerOnMention: row.triggerOnMention,
     triggerOnAssign: row.triggerOnAssign,
     fieldTriggers: row.fieldTriggers,
@@ -209,6 +305,8 @@ const agentColumns = {
   maxSteps: aiAgent.maxSteps,
   memoryEnabled: aiAgent.memoryEnabled,
   memoryLastMessages: aiAgent.memoryLastMessages,
+  runtimePolicy: aiAgent.runtimePolicy,
+  runtimeState: aiAgent.runtimeState,
   triggerOnMention: aiAgent.triggerOnMention,
   triggerOnAssign: aiAgent.triggerOnAssign,
   fieldTriggers: sql<
@@ -540,6 +638,7 @@ export interface NewAgentInput {
   maxSteps?: number | null;
   memoryEnabled?: boolean;
   memoryLastMessages?: number | null;
+  runtimePolicy?: AgentRuntimePolicy;
   // Run triggers. Assign is off by default, and so is mention for an external agent:
   // nothing answers its runs until its operator starts a runner, so an agent added
   // for its API key alone must not collect runs no one drains.
@@ -629,13 +728,16 @@ export async function createAgent(
           username: input.username,
           kind: input.kind,
           modelCredentialId: isInternal ? (input.modelCredentialId ?? null) : null,
-          model: isInternal ? (input.model ?? null) : null,
+          model: input.model ?? null,
           instructions: input.instructions ?? null,
           tools: isInternal ? normalizeToolKeys(input.tools) : [],
           temperature: isInternal ? (input.temperature ?? null) : null,
           maxSteps: isInternal ? (input.maxSteps ?? null) : null,
-          memoryEnabled: isInternal ? (input.memoryEnabled ?? false) : false,
-          memoryLastMessages: isInternal ? (input.memoryLastMessages ?? null) : null,
+          memoryEnabled: input.memoryEnabled ?? false,
+          memoryLastMessages: input.memoryEnabled ? (input.memoryLastMessages ?? null) : null,
+          runtimePolicy: isInternal
+            ? EMPTY_RUNTIME_POLICY
+            : normalizeRuntimePolicy(input.runtimePolicy),
           triggerOnMention: input.triggerOnMention ?? isInternal,
           triggerOnAssign: input.triggerOnAssign ?? false,
           delegationDelaySec: input.delegationDelaySec,
@@ -793,6 +895,7 @@ export interface AgentPatch {
   maxSteps?: number | null;
   memoryEnabled?: boolean;
   memoryLastMessages?: number | null;
+  runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
   fieldTriggers?: FieldTrigger[];
@@ -829,6 +932,8 @@ export async function updateAgent(
   if (patch.maxSteps !== undefined) set.maxSteps = patch.maxSteps;
   if (patch.memoryEnabled !== undefined) set.memoryEnabled = patch.memoryEnabled;
   if (patch.memoryLastMessages !== undefined) set.memoryLastMessages = patch.memoryLastMessages;
+  if (patch.runtimePolicy !== undefined)
+    set.runtimePolicy = normalizeRuntimePolicy(patch.runtimePolicy);
   if (patch.triggerOnMention !== undefined) set.triggerOnMention = patch.triggerOnMention;
   if (patch.triggerOnAssign !== undefined) set.triggerOnAssign = patch.triggerOnAssign;
   if (patch.delegationDelaySec !== undefined) set.delegationDelaySec = patch.delegationDelaySec;

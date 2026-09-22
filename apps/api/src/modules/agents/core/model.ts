@@ -28,8 +28,32 @@ const username = t.String({
   description: 'Mention handle (letters, digits, . _ -).',
 });
 
-// Internal-agent model configuration, all optional so a config can be filled in
-// over time. Ignored (stored as null/empty) for an external agent.
+const runtimeFile = t.Object({
+  kind: t.Union([t.Literal('instructions'), t.Literal('memory')]),
+  path: t.String({ minLength: 1, maxLength: 160 }),
+  content: t.String({ maxLength: 131072 }),
+});
+
+export const runtimePolicy = t.Object({
+  reasoningEffort: t.Nullable(t.String({ maxLength: 32 })),
+  toolAllow: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
+  toolDeny: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
+  mcpGrants: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
+  files: t.Array(runtimeFile, { maxItems: 32 }),
+});
+
+export const runtimeState = t.Object({
+  adapter: t.Nullable(t.String()),
+  status: t.Union([t.Literal('offline'), t.Literal('online'), t.Literal('degraded')]),
+  appliedRevision: t.Nullable(t.String()),
+  capabilities: t.Array(t.String()),
+  detail: t.Nullable(t.String()),
+  reportedAt: t.Nullable(t.String()),
+});
+
+// Agent configuration, all optional so a config can be filled in over time. External
+// agents use model as an OpenClaw model ref and runtimePolicy for host-owned controls;
+// modelCredentialId/temperature/maxSteps remain internal-only.
 const configFields = {
   modelCredentialId: t.Optional(
     t.Nullable(
@@ -64,6 +88,7 @@ const configFields = {
   memoryLastMessages: t.Optional(
     t.Nullable(t.Integer({ minimum: 1, description: 'How many recent messages to recall.' })),
   ),
+  runtimePolicy: t.Optional(runtimePolicy),
   triggerOnMention: t.Optional(
     t.Boolean({
       description:
@@ -135,6 +160,8 @@ export const AiAgentResponse = t.Object({
   maxSteps: t.Nullable(t.Number()),
   memoryEnabled: t.Boolean(),
   memoryLastMessages: t.Nullable(t.Number()),
+  runtimePolicy,
+  runtimeState,
   triggerOnMention: t.Boolean(),
   triggerOnAssign: t.Boolean(),
   fieldTriggers: t.Array(t.Object({ fieldId: t.Number(), name: t.String(), delaySec: t.Number() })),
@@ -200,6 +227,8 @@ export const ChatThreadResponse = t.Object({
         'own machine. Always null for an internal agent, which runs in this process.',
     }),
   ),
+  model: t.Nullable(t.String()),
+  thinkingLevel: t.Nullable(t.String()),
   contextTokens: t.Optional(
     t.Nullable(
       t.Number({

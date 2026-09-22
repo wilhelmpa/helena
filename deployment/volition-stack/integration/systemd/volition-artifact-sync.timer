@@ -1,0 +1,11 @@
+[Unit]
+Description=Run project artifact archive hourly
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5m
+Persistent=true
+Unit=volition-artifact-sync.service
+
+[Install]
+WantedBy=timers.target

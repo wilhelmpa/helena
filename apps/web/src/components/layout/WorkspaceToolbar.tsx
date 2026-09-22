@@ -1,17 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import {
-  Archive,
-  Code2,
-  Folder,
-  Globe2,
-  Inbox,
-  Mail,
-  MessageSquare,
-  PlugZap,
-  Terminal,
-} from 'lucide-react';
+import { Code2, Folder, Globe2, Inbox, Mail, MessageSquare, PlugZap, Terminal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { WORKSPACE_TOOL_IDS, type WorkspaceToolId } from '@/utils/workspaceTools';
 import { cn } from '@/lib/utils';
@@ -23,7 +13,6 @@ const ICONS: Record<WorkspaceToolId, LucideIcon> = {
   code: Code2,
   browser: Globe2,
   files: Folder,
-  paperless: Archive,
   inbox: Inbox,
   mail: Mail,
   connections: PlugZap,

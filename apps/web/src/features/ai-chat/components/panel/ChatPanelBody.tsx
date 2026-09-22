@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useEffect } from 'react';
+import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useProjectAgents } from '@/hooks/useProjectAgents';
 import { AiChatThreadSkeleton } from '../shared/AiChatThreadSkeleton';
 import { ChatPanelEmpty } from './ChatPanelEmpty';
@@ -16,13 +17,17 @@ export const ChatPanelBody = memo(function ChatPanelBody({
   projectKey,
   newChatAgentId,
   onNewChatHandled,
+  agents: suppliedAgents,
+  agentsLoading,
 }: {
   projectKey: string;
   newChatAgentId: number | null;
   onNewChatHandled: () => void;
+  agents?: AiAgent[];
+  agentsLoading?: boolean;
 }) {
   const agentsQuery = useProjectAgents();
-  const agents = agentsQuery.data ?? [];
+  const agents = suppliedAgents ?? agentsQuery.data ?? [];
   const providerLabel = useProviderLabel();
   const {
     sessions,
@@ -61,7 +66,7 @@ export const ChatPanelBody = memo(function ChatPanelBody({
     if (session) closeSession(session.id);
   };
 
-  if (agentsQuery.isLoading) {
+  if (agentsLoading ?? agentsQuery.isLoading) {
     return (
       <div className="min-h-0 flex-1">
         <AiChatThreadSkeleton />

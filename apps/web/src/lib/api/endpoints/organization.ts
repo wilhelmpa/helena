@@ -18,6 +18,7 @@ export interface OrganizationGoal {
   description: string;
   departmentId: number | null;
   projectId: number | null;
+  parentGoalId: number | null;
   status: OrganizationGoalStatus;
   targetDate: string | null;
   createdAt: string;
@@ -40,7 +41,15 @@ export interface OrganizationAgent {
   departmentId: number | null;
   reportsToAgentId: number | null;
   roleTitle: string;
-  openClawAgentId: string | null;
+  runtimeAgentId: string | null;
+  runtimeState: {
+    adapter: string | null;
+    status: 'offline' | 'online' | 'degraded';
+    appliedRevision: string | null;
+    capabilities: string[];
+    detail: string | null;
+    reportedAt: string | null;
+  };
   projects: OrganizationAgentProject[];
 }
 
@@ -73,6 +82,7 @@ export interface GoalInput {
   description?: string;
   departmentId?: number | null;
   projectId?: number | null;
+  parentGoalId?: number | null;
   status?: OrganizationGoalStatus;
   targetDate?: string | null;
 }
@@ -81,7 +91,7 @@ export interface AgentAssignmentInput {
   departmentId?: number | null;
   reportsToAgentId?: number | null;
   roleTitle?: string;
-  openClawAgentId?: string | null;
+  runtimeAgentId?: string | null;
 }
 
 export interface ProjectAssignmentInput {

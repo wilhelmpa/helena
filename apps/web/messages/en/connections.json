@@ -57,8 +57,8 @@
     }
   },
   "secrets": {
-    "title": "OpenClaw credentials",
-    "description": "Central secret references managed by OpenClaw. Values are write-only and never displayed. Configure which integration uses each reference in OpenClaw.",
+    "title": "Runtime credentials",
+    "description": "Central secret references managed by the automation runtime. Values are write-only and never displayed.",
     "name": "Secret name",
     "value": "New secret value",
     "hosts": "Allowed substitution hosts (comma separated)",
@@ -67,8 +67,39 @@
     "save": "Store secret",
     "rotate": "Replace secret",
     "saving": "Saving…",
-    "saved": "Secret stored in OpenClaw. Only its metadata is visible.",
+    "saved": "Secret stored in the runtime credential store. Only its metadata is visible.",
     "failed": "Secret storage is unavailable or the request failed. No value is returned.",
     "rotateNotice": "This replaces the existing value immediately. Services using this reference may require a reload."
+  },
+  "vault": {
+    "title": "Vault",
+    "description": "Human credentials and automation grants stay in their separate security boundaries.",
+    "accessTitle": "Vaultwarden access",
+    "accessDescription": "The human password vault opens through the protected access gateway.",
+    "open": "Open Vaultwarden",
+    "status": {
+      "protected": "Protected access available",
+      "reachable": "Access route reachable",
+      "unavailable": "Access route unavailable",
+      "unconfigured": "Access route not configured"
+    },
+    "statusScope": "This checks the protected access route only. Vaultwarden backend health is intentionally not exposed to Plan.",
+    "checked": "Checked {time}",
+    "boundaryTitle": "Secret boundary",
+    "humanVault": "Human vault",
+    "humanVaultDescription": "Vaultwarden stores credentials people use interactively.",
+    "automationVault": "Automation credentials",
+    "automationVaultDescription": "Scoped systemd, Docker, and runtime credential stores remain the authority for agents and services.",
+    "boundaryRule": "Secret values are never copied into Plan, prompts, logs, or this page.",
+    "connectionsTitle": "Connection metadata",
+    "connectionsDescription": "Redacted runtime connection state already available to the interactive owner.",
+    "grantsTitle": "Automation grants",
+    "grantsDescription": "Names, update times, and allowed hosts from the existing redacted inventory. Values remain write-only.",
+    "noConnections": "No connection metadata is available.",
+    "noGrants": "No automation grants are registered.",
+    "allowedHosts": "Allowed hosts",
+    "updated": "Updated {time}",
+    "never": "Never",
+    "loadError": "Vault metadata could not be loaded."
   }
 }

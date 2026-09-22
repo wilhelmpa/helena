@@ -1,0 +1,50 @@
+name: volition-mastra-studio
+services:
+  studio:
+    image: volition/mastra-studio:2026-09-22-v5
+    build: .
+    restart: unless-stopped
+    init: true
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 768m
+    cpus: 1.0
+    environment:
+      STUDIO_OWNER_EMAIL: owner@example.com
+      INBOX_ADAPTER_TOKEN_FILE: /run/secrets/mastra_inbox_adapter_token
+      INBOX_CLASSIFIER_TOKEN_FILE: /run/secrets/mastra_inbox_adapter_token
+      INBOX_CLASSIFIER_SOCKET: /run/volition-ipc/mastra-inbox-classifier.sock
+      INBOX_CLASSIFIER_CAPABILITY: inbox-triage.v1
+    secrets:
+      - mastra_inbox_adapter_token
+    networks:
+      isolated:
+        ipv4_address: 172.30.95.2
+    volumes:
+      - studio-data:/data
+      - /home/pw/.openclaw/volition/ipc:/run/volition-ipc:ro
+    tmpfs:
+      - /tmp:size=64m,mode=1777,noexec,nosuid
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:4111/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: 5m, max-file: '2'}
+networks:
+  isolated:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.95.0/28
+volumes:
+  studio-data:
+secrets:
+  mastra_inbox_adapter_token:
+    file: ../../.secrets/mastra_inbox_adapter_token

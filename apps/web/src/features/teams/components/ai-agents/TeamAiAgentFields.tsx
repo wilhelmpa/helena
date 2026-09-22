@@ -20,6 +20,7 @@ import AgentActionsSection from './AgentActionsSection';
 import AgentTriggersSection from './AgentTriggersSection';
 import { AgentInstructionsField } from './AgentInstructionsField';
 import AgentRunnerSection from './AgentRunnerSection';
+import AgentRuntimePolicySection from './AgentRuntimePolicySection';
 import { useTranslations } from 'next-intl';
 
 // Which sections open when an existing agent is opened for editing, so the form reads
@@ -198,6 +199,15 @@ export default function TeamAiAgentFields({
     <AgentRunnerSection key="runner" {...sectionProps('runner')} agent={agent} />
   );
 
+  const runtimePolicySection = (
+    <AgentRuntimePolicySection
+      key="runtime-policy"
+      {...sectionProps('runtime-policy')}
+      value={value}
+      onChange={onChange}
+    />
+  );
+
   const modelSection = (
     <AgentModelSection
       key="model"
@@ -337,6 +347,9 @@ export default function TeamAiAgentFields({
       ? [
           basicsSection,
           projectsSection,
+          runtimePolicySection,
+          skillsSection,
+          toolsSection,
           tokenSection,
           accessSection,
           triggersSection,

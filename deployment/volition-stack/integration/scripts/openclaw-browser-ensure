@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec 9>"${TMPDIR:-/tmp}/volition-browser-ensure.lock"
+flock -n 9 || exit 0
+
+if curl --fail --silent --show-error --max-time 2 http://127.0.0.1:18800/json/version >/dev/null 2>&1; then
+  exit 0
+fi
+
+systemctl --user is-active --quiet openclaw-gateway.service || exit 0
+
+for attempt in 1 2 3 4 5 6; do
+  /home/pw/.npm-global/bin/openclaw browser start --headless --json >/dev/null 2>&1 || true
+  if curl --fail --silent --show-error --max-time 2 http://127.0.0.1:18800/json/version >/dev/null 2>&1; then
+    logger -t volition-browser "persistent browser profile is ready"
+    exit 0
+  fi
+  sleep 2
+done
+
+logger -t volition-browser "browser could not be started after six attempts"
+exit 1

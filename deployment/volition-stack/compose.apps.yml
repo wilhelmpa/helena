@@ -1,0 +1,267 @@
+name: volition-apps
+
+services:
+  workspace:
+    hostname: volition-code
+    build:
+      context: ./workspace
+    image: volition/code-workspace:4.138.0-node24.21.0-bun1.4.2-v5
+    restart: unless-stopped
+    init: true
+    user: "1000:1000"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      GIT_SSH_COMMAND: /usr/local/bin/volition-git-ssh
+    secrets:
+      - source: verve_git_deploy_key
+        target: verve_git_deploy_key
+        uid: "1000"
+        gid: "1000"
+        mode: 0400
+      - source: github_known_hosts
+        target: github_known_hosts
+        uid: "1000"
+        gid: "1000"
+        mode: 0400
+      - source: trading_bridge_token
+        target: trading_bridge_token
+        uid: "1000"
+        gid: "1000"
+        mode: 0400
+    ports:
+      - "127.0.0.1:8091:8080"
+      - "127.0.0.1:8100:8082"
+    volumes:
+      - workspace_home:/home/coder
+      - type: bind
+        source: ${CODE_SETTINGS_DIR:-/home/pw/services/volition-stack/.state/code-user-settings}
+        target: /run/volition-code-settings
+      - type: bind
+        source: ${PROJECTS_ROOT:-/home/pw/services/volition-workspaces/projects}
+        target: /projects
+      - type: bind
+        source: ${ITSAPLAN_PROJECT_PATH:-/home/pw/services/volition-workspaces/projects/itsaplan}
+        target: /projects/itsaplan
+      - type: bind
+        source: ${VERVE_PROJECT_PATH:-/home/pw/Projekte/Shopify/v1-cart-suite}
+        target: /projects/verve
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=512m,uid=1000,gid=1000
+    mem_limit: 4g
+    cpus: 3.0
+    pids_limit: 1024
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl --fail --silent http://127.0.0.1:8080/healthz >/dev/null &&
+          curl --fail --silent -H 'X-Forwarded-User: healthcheck@localhost'
+          'http://127.0.0.1:8082/focus/terminal-project/?arg=default' >/dev/null
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      workspace:
+        ipv4_address: 172.30.90.10
+
+  nextcloud-db:
+    image: volition/postgres:17-alpine-gosu-go1.26.6-20260921
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD_FILE: /run/secrets/nextcloud_db_password
+    secrets:
+      - nextcloud_db_password
+    volumes:
+      - nextcloud_db:/var/lib/postgresql/data
+    mem_limit: 1g
+    cpus: 1.5
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      files-data:
+        ipv4_address: 172.30.92.20
+
+  nextcloud-redis:
+    image: volition/redis:8.2-alpine-patched-20260921-v2
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - /bin/sh
+      - -ec
+      - exec redis-server --appendonly yes --appendfsync everysec --requirepass "$$(cat /run/secrets/redis_password)"
+    secrets:
+      - redis_password
+    volumes:
+      - nextcloud_redis:/data
+    mem_limit: 384m
+    cpus: 0.75
+    pids_limit: 128
+    healthcheck:
+      test: ["CMD-SHELL", "set -e; test -s /run/secrets/redis_password; pass=$$(cat /run/secrets/redis_password); test -n \"$$pass\"; test \"$$(redis-cli --no-auth-warning -a \"$$pass\" --raw CONFIG GET requirepass | tail -n 1)\" = \"$$pass\"; test \"$$(redis-cli --no-auth-warning -a \"$$pass\" ping)\" = PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      files-data:
+        ipv4_address: 172.30.92.21
+
+  nextcloud:
+    build:
+      context: ./files
+    image: volition/nextcloud:34.0.4-user-saml-8.3.1
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      nextcloud-db:
+        condition: service_healthy
+      nextcloud-redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8092:80"
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD_FILE: /run/secrets/nextcloud_db_password
+      POSTGRES_HOST: nextcloud-db
+      NEXTCLOUD_ADMIN_USER: volition-admin
+      NEXTCLOUD_ADMIN_PASSWORD_FILE: /run/secrets/nextcloud_admin_password
+      NEXTCLOUD_DATA_DIR: /var/www/html/data
+      NEXTCLOUD_TRUSTED_DOMAINS: cloud.volition.one localhost 127.0.0.1
+      REDIS_HOST: nextcloud-redis
+      VOLITION_REDIS_SECRET_SOURCE: /run/secrets/redis_password
+      REDIS_HOST_PASSWORD_FILE: /run/volition-secrets/redis_password
+      APACHE_DISABLE_REWRITE_IP: "1"
+      TRUSTED_PROXIES: 127.0.0.1 172.30.93.1
+      OVERWRITEHOST: cloud.volition.one
+      OVERWRITEPROTOCOL: https
+      OVERWRITECLIURL: https://cloud.volition.one
+      PHP_MEMORY_LIMIT: 768M
+      PHP_UPLOAD_LIMIT: 2G
+    secrets:
+      - nextcloud_db_password
+      - nextcloud_admin_password
+      - redis_password
+    volumes:
+      - nextcloud_html:/var/www/html
+      - nextcloud_data:/var/www/html/data
+    mem_limit: 2g
+    cpus: 2.0
+    pids_limit: 512
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1/status.php | grep -q '\"installed\":true' && curl --fail --silent http://127.0.0.1/status.php | grep -q '\"maintenance\":false'"]
+      interval: 15s
+      timeout: 8s
+      retries: 20
+      start_period: 90s
+    networks:
+      files-front:
+        ipv4_address: 172.30.93.22
+      files-data:
+        ipv4_address: 172.30.92.22
+
+  nextcloud-init:
+    image: volition/nextcloud:34.0.4-user-saml-8.3.1
+    restart: "no"
+    entrypoint: ["/bin/sh", "/opt/volition/init-sso.sh"]
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: nextcloud-redis
+      VOLITION_REDIS_SECRET_SOURCE: /run/secrets/redis_password
+      REDIS_HOST_PASSWORD_FILE: /run/volition-secrets/redis_password
+    secrets:
+      - redis_password
+    volumes:
+      - nextcloud_html:/var/www/html
+      - nextcloud_data:/var/www/html/data
+      - ./files/init-sso.sh:/opt/volition/init-sso.sh:ro
+    networks:
+      files-data:
+        ipv4_address: 172.30.92.23
+
+  nextcloud-cron:
+    image: volition/nextcloud:34.0.4-user-saml-8.3.1
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    command: ["/cron.sh"]
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+    volumes:
+      - nextcloud_html:/var/www/html
+      - nextcloud_data:/var/www/html/data
+    environment:
+      REDIS_HOST: nextcloud-redis
+      VOLITION_REDIS_SECRET_SOURCE: /run/secrets/redis_password
+      REDIS_HOST_PASSWORD_FILE: /run/volition-secrets/redis_password
+    secrets:
+      - redis_password
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    networks:
+      files-data:
+        ipv4_address: 172.30.92.24
+
+secrets:
+  verve_git_deploy_key:
+    file: ./.secrets/verve_git_deploy_key
+  github_known_hosts:
+    file: ./.secrets/github_known_hosts
+  trading_bridge_token:
+    file: ./.secrets/trading_bridge_token
+  nextcloud_db_password:
+    file: ./.secrets/nextcloud_db_password
+  nextcloud_admin_password:
+    file: ./.secrets/nextcloud_admin_password
+  redis_password:
+    file: ./.secrets/redis_password
+
+volumes:
+  workspace_home:
+  nextcloud_html:
+  nextcloud_data:
+  nextcloud_db:
+    external: true
+    name: volition-nextcloud-db-alpine-20260921-v2
+  nextcloud_redis:
+    external: true
+    name: volition-nextcloud-redis-alpine-20260921-v2
+
+networks:
+  workspace:
+    name: volition-workspace
+    ipam:
+      config:
+        - subnet: 172.30.90.0/24
+          gateway: 172.30.90.1
+  files-front:
+    name: volition-files-front
+    ipam:
+      config:
+        - subnet: 172.30.93.0/24
+          gateway: 172.30.93.1
+  files-data:
+    name: volition-files-data
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.92.0/24
+          gateway: 172.30.92.1

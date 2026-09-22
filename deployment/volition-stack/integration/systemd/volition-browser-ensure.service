@@ -1,0 +1,15 @@
+[Unit]
+Description=Ensure Volition persistent browser is running
+After=openclaw-gateway.service network-online.target
+
+[Service]
+Type=oneshot
+Environment=TMPDIR=/tmp
+ExecStart=/home/pw/.local/libexec/openclaw-browser-ensure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pw/.openclaw /home/pw/.cache/openclaw
+RestrictSUIDSGID=true
+LockPersonality=true

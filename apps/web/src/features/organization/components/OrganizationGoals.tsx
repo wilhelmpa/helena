@@ -60,6 +60,7 @@ export default function OrganizationGoals({
               key={goal.id}
               teamId={teamId}
               goal={goal}
+              goals={goals}
               departments={departments}
               projects={projects}
             />

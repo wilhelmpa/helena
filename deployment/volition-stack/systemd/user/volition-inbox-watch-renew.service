@@ -1,0 +1,31 @@
+[Unit]
+Description=Renew Volition Gmail Pub/Sub watches
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/pw/services/volition-stack/integration
+EnvironmentFile=/home/pw/.openclaw/volition/inbox-watch.env
+Environment=HOME=/home/pw
+Environment=PATH=/home/pw/.local/bin:/usr/local/bin:/usr/bin:/bin
+LoadCredential=gog_keyring_password:/home/pw/.local/share/openclaw-gog/keyring.pass
+Environment=GOG_KEYRING_PASSWORD_FILE=%d/gog_keyring_password
+ExecStart=/usr/bin/node /home/pw/services/volition-stack/integration/renew-gmail-watches.mjs
+UMask=0077
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pw/.local/share/openclaw-gog/config/config.lock /home/pw/.local/share/openclaw-gog/data/keyring/.lock /home/pw/.local/share/openclaw-gog/state/gmail-watch
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native

@@ -33,6 +33,7 @@ export default function WorkspacePanel({
   open,
   activeTool,
   contextProjectKey,
+  toolSession,
   mode,
   fullscreen,
   onToggleMode,
@@ -42,6 +43,7 @@ export default function WorkspacePanel({
   open: boolean;
   activeTool: WorkspaceToolId;
   contextProjectKey: string | null;
+  toolSession: number;
   mode: WorkspacePanelMode;
   fullscreen: boolean;
   onToggleMode: () => void;
@@ -71,19 +73,19 @@ export default function WorkspacePanel({
   );
   const tool = tools[activeTool];
   const contents = useWorkspaceContents();
-  const Content = contents[activeTool];
+  const RegisteredContent = contents[activeTool];
   const labels: Record<WorkspaceToolId, string> = {
     chat: t('chat'),
     terminal: t('terminal'),
     code: t('code'),
     browser: t('browser'),
     files: t('files'),
-    paperless: t('paperless'),
     inbox: t('inbox'),
     mail: t('mail'),
     connections: t('connections'),
   };
   const [advanced, setAdvanced] = useState(false);
+  const Content = activeTool === 'chat' && advanced ? undefined : RegisteredContent;
   const [browserLossless, setBrowserLossless] = useState(false);
   const [browserPreferenceReady, setBrowserPreferenceReady] = useState(false);
   const [frames, setFrames] = useState<
@@ -96,7 +98,10 @@ export default function WorkspacePanel({
     if (!browserPreferenceReady) return null;
     return browserStreamUrl(tool.url, browserLossless);
   }, [activeTool, advanced, browserLossless, browserPreferenceReady, tool]);
-  const frameKey = `${activeTool}:${activeTool === 'browser' ? tool.url : activeUrl}`;
+  const frameKey = `${activeTool}:${
+    activeTool === 'browser' ? `${tool.url}:${toolSession}` : activeUrl
+  }`;
+  const activeLabel = labels[activeTool];
   useEffect(() => setAdvanced(false), [activeTool, contextProjectKey]);
   useEffect(() => {
     try {
@@ -118,11 +123,11 @@ export default function WorkspacePanel({
     if (!activeUrl) return;
     setFrames((current) => {
       const existing = current.find((frame) => frame.key === frameKey);
-      if (existing?.url === activeUrl) return current;
+      if (existing?.url === activeUrl && existing.title === activeLabel) return current;
       const nextFrame = {
         key: frameKey,
         url: activeUrl,
-        title: labels[activeTool],
+        title: activeLabel,
         tool: activeTool,
       };
       const remaining = current.filter(
@@ -130,9 +135,7 @@ export default function WorkspacePanel({
       );
       return [...remaining, nextFrame].slice(-4);
     });
-    // Labels do not invalidate a running tool session.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTool, open, activeUrl, frameKey, Content]);
+  }, [activeTool, activeLabel, open, activeUrl, frameKey, Content]);
 
   const overlay = isMobile || mode === 'overlay';
   const title = advanced ? t('advanced') : labels[activeTool];
@@ -205,7 +208,7 @@ export default function WorkspacePanel({
             key={`${id}:${contextProjectKey ?? 'global'}`}
             className={cn(
               'min-h-0 flex-1 overflow-hidden',
-              (!open || activeTool !== id) && 'hidden',
+              (!open || activeTool !== id || (id === 'chat' && advanced)) && 'hidden',
             )}
           >
             <ToolContent projectKey={contextProjectKey} />

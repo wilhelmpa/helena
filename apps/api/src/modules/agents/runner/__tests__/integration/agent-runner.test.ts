@@ -66,6 +66,52 @@ describe('agent runner queue', () => {
     expect(res.data!.run!.systemPrompt).toContain('Run mode');
   });
 
+  it('serves a secret-free runtime policy and records generic adapter status', async () => {
+    const { asOwner, asRunner, agent, teamId } = await setup();
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({
+        model: 'openai/gpt-5.6-sol',
+        memoryEnabled: true,
+        memoryLastMessages: 20,
+        runtimePolicy: {
+          reasoningEffort: 'high',
+          toolAllow: ['browser'],
+          toolDeny: [],
+          mcpGrants: ['itsaplan__get_issue'],
+          files: [{ kind: 'memory', path: 'memory/team.md', content: '# Team memory' }],
+        },
+      });
+
+    const policy = await asRunner['agent-runtime'].policy.get();
+    expect(policy.status).toBe(200);
+    expect(typeof policy.data!.revision).toBe('string');
+    expect(policy.data).toMatchObject({
+      model: 'openai/gpt-5.6-sol',
+      memory: { enabled: true, lastMessages: 20 },
+      runtimePolicy: { reasoningEffort: 'high', mcpGrants: ['itsaplan__get_issue'] },
+    });
+    expect(JSON.stringify(policy.data)).not.toContain('apiKey');
+
+    const reported = await asRunner['agent-runtime'].status.post({
+      adapter: 'openclaw',
+      status: 'online',
+      appliedRevision: policy.data!.revision,
+      capabilities: ['model', 'reasoning', 'managed-markdown'],
+      detail: null,
+    });
+    expect(reported.status).toBe(200);
+    expect(reported.data).toMatchObject({ adapter: 'openclaw', status: 'online' });
+
+    const saved = await asOwner.teams({ teamId })['ai-agents']({ agentId: agent.id }).get();
+    expect(saved.data!.runtimeState).toMatchObject({
+      adapter: 'openclaw',
+      status: 'online',
+      appliedRevision: policy.data!.revision,
+    });
+  });
+
   it('logs on the issue that the agent picked the run up and how it ended', async () => {
     const { asOwner, asRunner, agent, columnId } = await setup();
     const issue = await queueRun(asOwner, columnId, agent.username);

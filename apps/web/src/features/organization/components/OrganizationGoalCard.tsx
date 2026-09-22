@@ -16,11 +16,13 @@ import { useDeleteGoal, useUpdateGoal } from '../services/organization.service';
 export default function OrganizationGoalCard({
   teamId,
   goal,
+  goals,
   departments,
   projects,
 }: {
   teamId: number;
   goal: OrganizationGoal;
+  goals: OrganizationGoal[];
   departments: OrganizationDepartment[];
   projects: OrganizationProject[];
 }) {
@@ -32,6 +34,7 @@ export default function OrganizationGoalCard({
   const [status, setStatus] = useState<OrganizationGoalStatus>(goal.status);
   const [departmentId, setDepartmentId] = useState(goal.departmentId?.toString() ?? '');
   const [projectId, setProjectId] = useState(goal.projectId?.toString() ?? '');
+  const [parentGoalId, setParentGoalId] = useState(goal.parentGoalId?.toString() ?? '');
   const [targetDate, setTargetDate] = useState(goal.targetDate ?? '');
 
   return (
@@ -47,6 +50,7 @@ export default function OrganizationGoalCard({
             status,
             departmentId: departmentId ? Number(departmentId) : null,
             projectId: projectId ? Number(projectId) : null,
+            parentGoalId: parentGoalId ? Number(parentGoalId) : null,
             targetDate: targetDate || null,
           },
         });
@@ -99,6 +103,23 @@ export default function OrganizationGoalCard({
                 {project.key} · {project.name}
               </option>
             ))}
+          </select>
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="text-muted-foreground">Parent goal</span>
+          <select
+            className="h-9 w-full rounded-md border bg-background px-3"
+            value={parentGoalId}
+            onChange={(event) => setParentGoalId(event.target.value)}
+          >
+            <option value="">{t('values.none')}</option>
+            {goals
+              .filter((candidate) => candidate.id !== goal.id)
+              .map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.title}
+                </option>
+              ))}
           </select>
         </label>
       </div>

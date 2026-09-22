@@ -21,7 +21,7 @@
     "targetDate": "Target date",
     "roleTitle": "Organization role",
     "reportsTo": "Reports to",
-    "openClawAgentId": "OpenClaw agent ID",
+    "openClawAgentId": "Runtime agent ID",
     "projectInstructions": "Project instructions"
   },
   "values": {

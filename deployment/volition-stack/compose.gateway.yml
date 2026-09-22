@@ -1,0 +1,19 @@
+name: volition-stack
+services:
+  gateway:
+    image: volition/gateway:2026-09-21-v7
+    build: ./gateway
+    network_mode: host
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 192m
+    cpus: 0.5
+    volumes:
+      - ./config/gateway.json:/config/gateway.json:ro
+      - ./.secrets/inbox_push_token:/run/secrets/inbox_push_token:ro
+    logging:
+      driver: json-file
+      options: {max-size: 5m, max-file: '3'}

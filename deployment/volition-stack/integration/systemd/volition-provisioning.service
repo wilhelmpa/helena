@@ -1,0 +1,49 @@
+[Unit]
+Description=Volition project provisioning service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pw/services/volition-stack/integration
+EnvironmentFile=/home/pw/.openclaw/volition/provisioning.env
+EnvironmentFile=/home/pw/.openclaw/credentials/itsaplan-mcp.env
+Environment=HOME=/home/pw
+Environment=PATH=/home/pw/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+LoadCredential=nextcloud_app_password:/home/pw/services/volition-stack/.secrets/nextcloud_patrick_app_password
+LoadCredential=connections_integration_token:/home/pw/.openclaw/volition/connections-integration-token
+LoadCredential=inbox_integration_token:/home/pw/.openclaw/volition/inbox-integration-token
+LoadCredential=inbox_push_token:/home/pw/services/volition-stack/.secrets/inbox_push_token
+LoadCredential=gog_keyring_password:/home/pw/.local/share/openclaw-gog/keyring.pass
+LoadCredential=openclaw_gateway_password:/home/pw/.openclaw/credentials/gateway-auth-password
+Environment=NEXTCLOUD_APP_PASSWORD_FILE=%d/nextcloud_app_password
+Environment=CONNECTIONS_INTEGRATION_TOKEN_FILE=%d/connections_integration_token
+Environment=INBOX_INTEGRATION_TOKEN_FILE=%d/inbox_integration_token
+Environment=INBOX_PUSH_TOKEN_FILE=%d/inbox_push_token
+Environment=GOG_KEYRING_PASSWORD_FILE=%d/gog_keyring_password
+Environment=OPENCLAW_GATEWAY_PASSWORD_FILE=%d/openclaw_gateway_password
+ExecStart=/usr/bin/node /home/pw/services/volition-stack/integration/server.mjs
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pw/.openclaw /home/pw/.cache/openclaw /home/pw/.cache/openclaw-1000 /home/pw/services/volition-workspaces/projects
+ReadWritePaths=/home/pw/.local/share/openclaw-gog/config/config.lock /home/pw/.local/share/openclaw-gog/data/keyring/.lock
+ReadOnlyPaths=/home/pw/Projekte/Shopify/v1-cart-suite
+ReadWritePaths=/home/pw/Projekte/Shopify/v1-cart-suite/boards
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=default.target

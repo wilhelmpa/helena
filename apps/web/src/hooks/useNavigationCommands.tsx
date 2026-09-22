@@ -1,8 +1,9 @@
 import { useRouter } from 'next/navigation';
 import {
   Bell,
-  BookOpenText,
-  Braces,
+  Building2,
+  Code2,
+  Folder,
   Inbox,
   LayoutDashboard,
   Server,
@@ -10,13 +11,15 @@ import {
   SquareKanban,
   Target,
   Users,
+  Workflow,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useShell } from '@/context/shellContext';
 import { useSession } from '@/lib/auth-client';
 import {
   aiAgentsPath,
   aiTeamPath,
-  apiDocsPath,
+  connectionsPath,
   dashboardsPath,
   documentsPath,
   godPath,
@@ -26,7 +29,9 @@ import {
   mcpServerPath,
   membersPath,
   notificationsPath,
+  organizationPath,
   projectPath,
+  workflowsPath,
 } from '@/utils/paths';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
 import { AI_AGENTS_SECTION, AI_TEAM_SECTIONS } from '@/utils/settingsSections';
@@ -53,6 +58,7 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
   const godText = useGodSectionText();
   const accountLabel = useAccountSectionLabel();
   const router = useRouter();
+  const { onOpenWorkspaceTool } = useShell();
   const { can } = usePermissions();
   const features = useProjectFeatures();
   const { data: session } = useSession();
@@ -67,9 +73,11 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
 
   if (projectKey) {
     const key = projectKey;
-    add('nav.inbox', t('inbox'), <Inbox />, inboxPath(key), 'notifications unread');
     if (features.dashboards && can('dashboards', 'read'))
       add('nav.dashboards', t('dashboards'), <LayoutDashboard />, dashboardsPath(key), 'charts');
+    add('nav.organization', t('organization'), <Building2 />, organizationPath(key), 'team goals');
+    if (can('actions', 'read'))
+      add('nav.workflows', t('workflows'), <Workflow />, workflowsPath(key), 'automation actions');
     add(
       'nav.work-items',
       t('workItems'),
@@ -77,16 +85,25 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
       projectPath(key),
       'board issues kanban',
     );
-    if (features.initiatives && can('initiatives', 'read'))
-      add('nav.initiatives', t('initiatives'), <Target />, initiativesPath(key), 'epics');
+    add('nav.inbox', t('inbox'), <Inbox />, inboxPath(key), 'notifications unread');
     if (features.documents && can('documents', 'read'))
       add(
-        'nav.documents',
-        t('documents'),
-        <BookOpenText />,
+        'nav.files',
+        t('workspace.files'),
+        <Folder />,
         documentsPath(key),
-        'docs pages documentation',
+        'files docs pages documentation',
       );
+    if (onOpenWorkspaceTool)
+      items.push({
+        id: 'nav.code',
+        label: t('workspace.code'),
+        icon: <Code2 />,
+        keywords: 'code workspace editor',
+        run: () => onOpenWorkspaceTool('code'),
+      });
+    if (features.initiatives && can('initiatives', 'read'))
+      add('nav.initiatives', t('initiatives'), <Target />, initiativesPath(key), 'epics');
     for (const s of AI_TEAM_SECTIONS) {
       if (can(s.resource, 'read'))
         add(
@@ -127,8 +144,9 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
         });
       }
     }
-    add('nav.api', t('apiDocs'), <Braces />, apiDocsPath(key), 'rest openapi');
     add('nav.mcp', t('mcpServer'), <Server />, mcpServerPath(key), 'model context protocol');
+  } else {
+    add('nav.connections', t('connections'), <Server />, connectionsPath(), 'accounts health');
   }
 
   add(

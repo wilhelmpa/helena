@@ -65,6 +65,8 @@ export type ChatThreadSummary = {
   id: string;
   title: string | null;
   cliSessionId: string | null;
+  model: string | null;
+  thinkingLevel: string | null;
   contextTokens?: number | null;
   favorite: boolean;
   snippet?: string;

@@ -96,17 +96,26 @@ export const ThemeSyncResponse = t.Object({
   theme: t.Union([t.Literal('light'), t.Literal('dark')]),
   results: t.Array(
     t.Object({
-      service: t.Union([
-        t.Literal('openclaw'),
-        t.Literal('code'),
-        t.Literal('nextcloud'),
-        t.Literal('paperless'),
-      ]),
+      service: t.Union([t.Literal('openclaw'), t.Literal('code'), t.Literal('nextcloud')]),
       status: t.Union([t.Literal('updated'), t.Literal('failed')]),
       attempts: t.Integer({ minimum: 1, maximum: 2 }),
       error: t.Optional(t.String({ maxLength: 200 })),
     }),
   ),
+});
+
+export const VaultStatusResponse = t.Object({
+  checkedAt: t.String(),
+  accessUrl: t.Nullable(t.String()),
+  accessStatus: t.Union([
+    t.Literal('protected'),
+    t.Literal('reachable'),
+    t.Literal('unavailable'),
+    t.Literal('unconfigured'),
+  ]),
+  httpStatus: t.Nullable(t.Integer()),
+  serviceHealthExposed: t.Literal(false),
+  secretValuesExposed: t.Literal(false),
 });
 
 export const SecretInventoryResponse = t.Object({

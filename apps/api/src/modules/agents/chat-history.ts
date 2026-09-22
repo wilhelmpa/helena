@@ -64,6 +64,8 @@ export interface ThreadRow {
   id: string;
   title: string | null;
   cliSessionId: string | null;
+  model?: string | null;
+  thinkingLevel?: string | null;
   favorite: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -79,6 +81,8 @@ export async function summarize(rows: ThreadRow[]): Promise<ChatThreadSummary[]>
     id: row.id,
     title: row.title && row.title.length > 0 ? row.title : null,
     cliSessionId: row.cliSessionId,
+    model: row.model ?? null,
+    thinkingLevel: row.thinkingLevel ?? null,
     favorite: row.favorite,
     ...(row.rank != null ? { match: matchOfRank(row.rank) } : {}),
     ...(row.snippet ? { snippet: row.snippet } : {}),

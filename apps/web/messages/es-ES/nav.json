@@ -36,7 +36,6 @@
   "newIssueHint": "Nuevo ticket ({key})",
   "aiChatHint": "Chatea con tus agentes de IA ({key})",
   "openClawHint": "Abrir OpenClaw",
-  "paperlessHint": "Abrir Paperless",
   "openClawTabsLabel": "Vistas de OpenClaw",
   "openClawProject": "Proyecto",
   "openClawCoordinator": "Coordinador",
@@ -50,7 +49,6 @@
     "code": "Código",
     "browser": "Navegador",
     "files": "Archivos",
-    "paperless": "Paperless",
     "inbox": "Bandeja de entrada",
     "connections": "Conexiones",
     "advanced": "Avanzado",
@@ -67,5 +65,13 @@
   "godModeOwnerOnly": "El modo dios está abierto solo al propietario de la instancia.",
   "project": "Proyecto",
   "organization": "Organization",
-  "connections": "Connections"
+  "connections": "Connections",
+  "agentPool": "Pool de agentes",
+  "mcps": "MCP",
+  "tools": "Herramientas",
+  "skills": "Habilidades",
+  "loading": "Loading…",
+  "teamScopeRequired": "Choose one team scope",
+  "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
+  "vault": "Vault"
 }

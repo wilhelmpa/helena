@@ -36,7 +36,6 @@
   "newIssueHint": "新建工作项（{key}）",
   "aiChatHint": "与 AI 代理聊天（{key}）",
   "openClawHint": "打开 OpenClaw",
-  "paperlessHint": "打开 Paperless",
   "openClawTabsLabel": "OpenClaw 视图",
   "openClawProject": "项目",
   "openClawCoordinator": "协调器",
@@ -50,7 +49,6 @@
     "code": "代码",
     "browser": "浏览器",
     "files": "文件",
-    "paperless": "Paperless",
     "inbox": "收件箱",
     "connections": "连接",
     "advanced": "高级",
@@ -67,5 +65,13 @@
   "godModeOwnerOnly": "管理模式仅对实例管理员开放。",
   "project": "项目",
   "organization": "Organization",
-  "connections": "Connections"
+  "connections": "Connections",
+  "agentPool": "智能体池",
+  "mcps": "MCP",
+  "tools": "工具",
+  "skills": "技能",
+  "loading": "Loading…",
+  "teamScopeRequired": "Choose one team scope",
+  "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
+  "vault": "Vault"
 }

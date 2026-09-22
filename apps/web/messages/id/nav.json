@@ -36,7 +36,6 @@
   "newIssueHint": "Issue baru ({key})",
   "aiChatHint": "Mengobrol dengan agen AI Anda ({key})",
   "openClawHint": "Buka OpenClaw",
-  "paperlessHint": "Buka Paperless",
   "openClawTabsLabel": "Tampilan OpenClaw",
   "openClawProject": "Proyek",
   "openClawCoordinator": "Koordinator",
@@ -50,7 +49,6 @@
     "code": "Kode",
     "browser": "Peramban",
     "files": "Berkas",
-    "paperless": "Paperless",
     "inbox": "Kotak masuk",
     "connections": "Koneksi",
     "advanced": "Lanjutan",
@@ -67,5 +65,13 @@
   "godModeOwnerOnly": "Mode God hanya terbuka untuk pemilik instance.",
   "project": "Proyek",
   "organization": "Organization",
-  "connections": "Connections"
+  "connections": "Connections",
+  "agentPool": "Agent Pool",
+  "mcps": "MCP",
+  "tools": "Alat",
+  "skills": "Keahlian",
+  "loading": "Loading…",
+  "teamScopeRequired": "Choose one team scope",
+  "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
+  "vault": "Vault"
 }

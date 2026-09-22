@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily encrypted Volition backup
+
+[Timer]
+OnCalendar=*-*-* 03:35:00
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

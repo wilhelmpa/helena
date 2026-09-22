@@ -88,20 +88,10 @@ export function AgentSheetForm({
     teamId,
     value.kind === 'internal' ? selectedProvider : null,
   );
-  const skillsLibraryQuery = useSkillOptionsQuery(
-    value.kind === 'internal' && canManageSkills ? teamId : null,
-  );
-  const agentSkillsQuery = useAgentSkillsQuery(
-    teamId,
-    agent && agent.kind === 'internal' && canManageSkills ? agent.id : null,
-  );
-  const toolsLibraryQuery = useConfiguredToolOptionsQuery(
-    value.kind === 'internal' && canManageTools ? teamId : null,
-  );
-  const agentToolsQuery = useAgentToolLinksQuery(
-    teamId,
-    agent && agent.kind === 'internal' && canManageTools ? agent.id : null,
-  );
+  const skillsLibraryQuery = useSkillOptionsQuery(canManageSkills ? teamId : null);
+  const agentSkillsQuery = useAgentSkillsQuery(teamId, agent && canManageSkills ? agent.id : null);
+  const toolsLibraryQuery = useConfiguredToolOptionsQuery(canManageTools ? teamId : null);
+  const agentToolsQuery = useAgentToolLinksQuery(teamId, agent && canManageTools ? agent.id : null);
 
   const createAgent = useCreateAiAgent(teamId);
   const updateAgent = useUpdateAiAgent(teamId);
@@ -173,27 +163,27 @@ export function AgentSheetForm({
       const res = await createAgent.mutateAsync(toCreateInput(value));
       // Link the picked skills/tools against the freshly created agent id (the join
       // tables need an id, which only exists after the create returns).
-      if (res.agent.kind === 'internal' && canManageSkills && skillIds && skillIds.length > 0) {
+      if (canManageSkills && skillIds && skillIds.length > 0) {
         await setAgentSkills.mutateAsync({ agentId: res.agent.id, skillIds });
       }
-      if (res.agent.kind === 'internal' && canManageTools && toolIds && toolIds.length > 0) {
+      if (canManageTools && toolIds && toolIds.length > 0) {
         await setAgentTools.mutateAsync({ agentId: res.agent.id, agentToolIds: toolIds });
       }
       setRevealedKey(res.apiKey);
       onCreated(res.agent);
     } else {
       await updateAgent.mutateAsync({ id: agent.id, patch: toUpdatePatch(value) });
-      if (agent.kind === 'internal' && canManageSkills && skillIds !== null) {
+      if (canManageSkills && skillIds !== null) {
         await setAgentSkills.mutateAsync({ agentId: agent.id, skillIds });
       }
-      if (agent.kind === 'internal' && canManageTools && toolIds !== null) {
+      if (canManageTools && toolIds !== null) {
         await setAgentTools.mutateAsync({ agentId: agent.id, agentToolIds: toolIds });
       }
     }
   }
 
   const skillsLibrary = skillsLibraryQuery.data ?? [];
-  const showSkills = value.kind === 'internal' && canManageSkills;
+  const showSkills = canManageSkills;
 
   // The Skills section body (the fields layout wraps it in a section). The configured
   // skill library the agent may load.
@@ -222,7 +212,7 @@ export function AgentSheetForm({
   ) : null;
 
   const toolsLibrary = toolsLibraryQuery.data ?? [];
-  const showTools = value.kind === 'internal' && canManageTools;
+  const showTools = canManageTools;
 
   // The Tools section body: the configured custom tools the agent may call.
   const toolsContent = showTools ? (

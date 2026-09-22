@@ -1,0 +1,11 @@
+{
+  "chat.commandCenter.enabled": false,
+  "chat.disableAIFeatures": true,
+  "remote.autoForwardPorts": false,
+  "remote.autoForwardPortsSource": "output",
+  "telemetry.telemetryLevel": "off",
+  "update.mode": "none",
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "workbench.settings.showAISearchToggle": false,
+  "workbench.startupEditor": "none"
+}

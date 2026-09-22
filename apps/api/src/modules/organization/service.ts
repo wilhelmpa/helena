@@ -18,6 +18,37 @@ export type GoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
 type TransactionCallback = Parameters<typeof db.transaction>[0];
 type Transaction = Parameters<TransactionCallback>[0];
 
+function normalizeOrganizationRuntimeState(value: unknown): {
+  adapter: string | null;
+  status: 'offline' | 'online' | 'degraded';
+  appliedRevision: string | null;
+  capabilities: string[];
+  detail: string | null;
+  reportedAt: string | null;
+} {
+  if (!value || typeof value !== 'object') {
+    return {
+      adapter: null,
+      status: 'offline',
+      appliedRevision: null,
+      capabilities: [],
+      detail: null,
+      reportedAt: null,
+    };
+  }
+  const state = value as Record<string, unknown>;
+  return {
+    adapter: typeof state.adapter === 'string' ? state.adapter : null,
+    status: state.status === 'online' || state.status === 'degraded' ? state.status : 'offline',
+    appliedRevision: typeof state.appliedRevision === 'string' ? state.appliedRevision : null,
+    capabilities: Array.isArray(state.capabilities)
+      ? state.capabilities.filter((item): item is string => typeof item === 'string')
+      : [],
+    detail: typeof state.detail === 'string' ? state.detail : null,
+    reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
+  };
+}
+
 async function lockTeam(tx: Transaction, teamId: number): Promise<void> {
   const rows = await tx.execute(sql`select id from ${team} where id = ${teamId} for update`);
   if (rows.length === 0) throw new HttpError(404, 'Team not found');
@@ -60,6 +91,43 @@ async function requireAgent(tx: Transaction, teamId: number, agentId: number): P
     .where(and(eq(aiAgent.id, agentId), eq(aiAgent.teamId, teamId)))
     .limit(1);
   if (!row) throw new HttpError(404, 'Agent not found');
+}
+
+async function requireGoal(
+  tx: Transaction,
+  teamId: number,
+  goalId: number | null | undefined,
+): Promise<void> {
+  if (goalId == null) return;
+  const [row] = await tx
+    .select({ id: organizationGoal.id })
+    .from(organizationGoal)
+    .where(and(eq(organizationGoal.id, goalId), eq(organizationGoal.teamId, teamId)))
+    .limit(1);
+  if (!row) throw new HttpError(400, 'Goal does not belong to this team');
+}
+
+async function assertGoalAcyclic(
+  tx: Transaction,
+  teamId: number,
+  goalId: number,
+  parentGoalId: number | null,
+): Promise<void> {
+  if (parentGoalId == null) return;
+  if (parentGoalId === goalId) throw new HttpError(400, 'A goal cannot contain itself');
+  const rows = await tx
+    .select({ id: organizationGoal.id, parentGoalId: organizationGoal.parentGoalId })
+    .from(organizationGoal)
+    .where(eq(organizationGoal.teamId, teamId));
+  const parents = new Map(rows.map((row) => [row.id, row.parentGoalId]));
+  let current: number | null = parentGoalId;
+  const visited = new Set<number>();
+  while (current != null) {
+    if (current === goalId) throw new HttpError(400, 'Goal hierarchy cannot cycle');
+    if (visited.has(current)) throw new HttpError(400, 'Goal hierarchy already contains a cycle');
+    visited.add(current);
+    current = parents.get(current) ?? null;
+  }
 }
 
 async function assertDepartmentAcyclic(
@@ -142,6 +210,7 @@ export async function getOrganization(teamId: number) {
         description: organizationGoal.description,
         departmentId: organizationGoal.departmentId,
         projectId: organizationGoal.projectId,
+        parentGoalId: organizationGoal.parentGoalId,
         status: organizationGoal.status,
         targetDate: organizationGoal.targetDate,
         createdAt: organizationGoal.createdAt,
@@ -160,7 +229,8 @@ export async function getOrganization(teamId: number) {
         departmentId: organizationAgentAssignment.departmentId,
         reportsToAgentId: organizationAgentAssignment.reportsToAgentId,
         roleTitle: organizationAgentAssignment.roleTitle,
-        openClawAgentId: organizationAgentAssignment.openClawAgentId,
+        runtimeAgentId: organizationAgentAssignment.runtimeAgentId,
+        runtimeState: aiAgent.runtimeState,
       })
       .from(aiAgent)
       .innerJoin(user, eq(user.id, aiAgent.userId))
@@ -231,6 +301,7 @@ export async function getOrganization(teamId: number) {
       ...row,
       kind: row.kind as 'external' | 'internal',
       roleTitle: row.roleTitle ?? '',
+      runtimeState: normalizeOrganizationRuntimeState(row.runtimeState),
       projects: (projectsByAgent.get(row.id) ?? []).map(({ agentId: _agentId, ...entry }) => entry),
     })),
     projects: projects.map((row) => ({ ...row, instructions: row.instructions ?? '' })),
@@ -325,6 +396,7 @@ export async function createGoal(
     description?: string;
     departmentId?: number | null;
     projectId?: number | null;
+    parentGoalId?: number | null;
     status?: GoalStatus;
     targetDate?: string | null;
   },
@@ -333,6 +405,7 @@ export async function createGoal(
     await lockTeam(tx, teamId);
     await requireDepartment(tx, teamId, input.departmentId);
     await requireProject(tx, teamId, input.projectId);
+    await requireGoal(tx, teamId, input.parentGoalId);
     const [row] = await tx
       .insert(organizationGoal)
       .values({
@@ -341,6 +414,7 @@ export async function createGoal(
         description: input.description?.trim() ?? '',
         departmentId: input.departmentId ?? null,
         projectId: input.projectId ?? null,
+        parentGoalId: input.parentGoalId ?? null,
         status: input.status ?? 'planned',
         targetDate: input.targetDate ?? null,
       })
@@ -362,6 +436,7 @@ export async function updateGoal(
     description?: string;
     departmentId?: number | null;
     projectId?: number | null;
+    parentGoalId?: number | null;
     status?: GoalStatus;
     targetDate?: string | null;
   },
@@ -370,6 +445,10 @@ export async function updateGoal(
     await lockTeam(tx, teamId);
     await requireDepartment(tx, teamId, patch.departmentId);
     await requireProject(tx, teamId, patch.projectId);
+    await requireGoal(tx, teamId, patch.parentGoalId);
+    if (patch.parentGoalId !== undefined) {
+      await assertGoalAcyclic(tx, teamId, goalId, patch.parentGoalId);
+    }
     const [row] = await tx
       .update(organizationGoal)
       .set({
@@ -377,6 +456,7 @@ export async function updateGoal(
         ...(patch.description !== undefined ? { description: patch.description.trim() } : {}),
         ...(patch.departmentId !== undefined ? { departmentId: patch.departmentId } : {}),
         ...(patch.projectId !== undefined ? { projectId: patch.projectId } : {}),
+        ...(patch.parentGoalId !== undefined ? { parentGoalId: patch.parentGoalId } : {}),
         ...(patch.status !== undefined ? { status: patch.status } : {}),
         ...(patch.targetDate !== undefined ? { targetDate: patch.targetDate } : {}),
         updatedAt: new Date(),
@@ -408,7 +488,7 @@ export async function setAgentAssignment(
     departmentId?: number | null;
     reportsToAgentId?: number | null;
     roleTitle?: string;
-    openClawAgentId?: string | null;
+    runtimeAgentId?: string | null;
   },
 ) {
   return db.transaction(async (tx) => {
@@ -425,7 +505,7 @@ export async function setAgentAssignment(
         departmentId: input.departmentId ?? null,
         reportsToAgentId: input.reportsToAgentId ?? null,
         roleTitle: input.roleTitle?.trim() ?? '',
-        openClawAgentId: input.openClawAgentId ?? null,
+        runtimeAgentId: input.runtimeAgentId ?? null,
       })
       .onConflictDoUpdate({
         target: [organizationAgentAssignment.teamId, organizationAgentAssignment.agentId],
@@ -433,7 +513,7 @@ export async function setAgentAssignment(
           departmentId: input.departmentId ?? null,
           reportsToAgentId: input.reportsToAgentId ?? null,
           roleTitle: input.roleTitle?.trim() ?? '',
-          openClawAgentId: input.openClawAgentId ?? null,
+          runtimeAgentId: input.runtimeAgentId ?? null,
           updatedAt: new Date(),
         },
       })

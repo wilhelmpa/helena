@@ -1,0 +1,15 @@
+[Unit]
+Description=Verify Volition source files, Nextcloud hashes, exact ticket links and native MCPs
+After=volition-provisioning.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/pw/services/volition-ops
+EnvironmentFile=/home/pw/.openclaw/volition/provisioning.env
+EnvironmentFile=/home/pw/.openclaw/credentials/itsaplan-mcp.env
+Environment=VOLITION_AUDIT_REPORT=/home/pw/services/volition-ops/integration-audit-result.json
+LoadCredential=nextcloud_app_password:/home/pw/services/volition-stack/.secrets/nextcloud_patrick_app_password
+UMask=0077
+TimeoutStartSec=15min
+NoNewPrivileges=yes
+ExecStart=/usr/bin/node /home/pw/services/volition-ops/integration-audit.mjs

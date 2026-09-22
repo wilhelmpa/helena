@@ -520,6 +520,14 @@ export const aiAgent = pgTable(
     // store). memory_last_messages is NULL when memory is off.
     memoryEnabled: boolean('memory_enabled').notNull().default(false),
     memoryLastMessages: integer('memory_last_messages'),
+    // Runtime-owned policy that has no internal-agent equivalent. The agent row stays
+    // the single control-plane record; an external runner projects this non-secret
+    // policy into its mapped runtime. File contents are limited and validated by the
+    // API before they reach this JSON document.
+    runtimePolicy: jsonb('runtime_policy').notNull().default({}),
+    // Latest non-secret adapter report. This is operational state, not a second
+    // configuration store: OpenClaw and future Hermes runners use the same shape.
+    runtimeState: jsonb('runtime_state').notNull().default({}),
     // The member who created the agent. An external agent's runner authenticates
     // with the agent's key, so `owner` scope means the runner only receives runs
     // this member triggered; `team` scope, the default, means any member's.
@@ -660,11 +668,26 @@ export const agentChatThread = pgTable(
     // Set once the runner reports the session it started; null means the next message
     // starts a fresh one and is sent with the conversation framed into its prompt.
     cliSessionId: text('cli_session_id'),
+    // Requested OpenClaw session settings. Null means the mapped agent's current
+    // default, so a later model-default change is inherited without rewriting chats.
+    model: text('model'),
+    thinkingLevel: text('thinking_level'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('agent_chat_thread_agent_user_idx').on(t.agentId, t.userId, t.updatedAt.desc())],
 );
+
+// The non-secret model catalog an external runner publishes for one agent. The
+// OpenClaw gateway stays authoritative and Plan only stores the choices the chat may
+// present. A runner refreshes this row periodically and after startup.
+export const agentChatCatalog = pgTable('agent_chat_catalog', {
+  agentId: integer('agent_id')
+    .primaryKey()
+    .references(() => aiAgent.id, { onDelete: 'cascade' }),
+  models: jsonb('models').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 // One turn of a chat thread, and for an agent turn also the queue row the runner
 // drains. A member's message is written 'success' with its text; the agent's answer is

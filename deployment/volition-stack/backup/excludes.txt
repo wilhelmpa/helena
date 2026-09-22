@@ -1,0 +1,19 @@
+**/node_modules
+**/.next
+**/.turbo
+**/.cache
+**/.venv
+**/venv
+**/__pycache__
+**/.pytest_cache
+**/Cache
+**/Code Cache
+**/GPUCache
+**/Crashpad
+**/Singleton*
+/home/pw/services/volition-stack/.secrets/backup_restic_password
+/home/pw/.openclaw/quarantine
+/home/pw/services/volition-stack/garage/meta
+/home/pw/services/volition-stack/garage/data
+
+/home/pw/services/volition-stack/.state/vaultwarden

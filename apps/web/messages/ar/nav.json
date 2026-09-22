@@ -36,7 +36,6 @@
   "newIssueHint": "مهمة جديدة ({key})",
   "aiChatHint": "الدردشة مع وكلاء الذكاء الاصطناعي ({key})",
   "openClawHint": "فتح OpenClaw",
-  "paperlessHint": "فتح Paperless",
   "openClawTabsLabel": "عروض OpenClaw",
   "openClawProject": "المشروع",
   "openClawCoordinator": "المنسق",
@@ -50,7 +49,6 @@
     "code": "الكود",
     "browser": "المتصفح",
     "files": "الملفات",
-    "paperless": "Paperless",
     "inbox": "البريد الوارد",
     "connections": "الاتصالات",
     "advanced": "متقدم",
@@ -67,5 +65,13 @@
   "godModeOwnerOnly": "وضع المشرف متاح لمالك النسخة بس.",
   "project": "المشروع",
   "organization": "Organization",
-  "connections": "Connections"
+  "connections": "Connections",
+  "agentPool": "مجموعة الوكلاء",
+  "mcps": "MCP",
+  "tools": "الأدوات",
+  "skills": "المهارات",
+  "loading": "Loading…",
+  "teamScopeRequired": "Choose one team scope",
+  "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
+  "vault": "Vault"
 }

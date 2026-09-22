@@ -9,7 +9,6 @@ const envNames = [
   'CODE_URL',
   'BROWSER_URL',
   'FILES_URL',
-  'PAPERLESS_URL',
   'INBOX_URL',
   'CONNECTIONS_URL',
 ] as const;
@@ -42,7 +41,6 @@ describe('contentSecurityPolicy', () => {
   it('allows only configured workspace origins as external frames', () => {
     process.env.OPENCLAW_URL = 'https://openclaw.example.com/path';
     process.env.CODE_URL = 'https://code.example.com/';
-    process.env.PAPERLESS_URL = 'invalid';
     assert.match(
       contentSecurityPolicy(),
       /frame-src https:\/\/openclaw\.example\.com https:\/\/code\.example\.com;/,

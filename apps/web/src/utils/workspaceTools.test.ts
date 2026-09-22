@@ -1,18 +1,24 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { WorkspaceRuntimeEnv } from './runtimeEnv';
-import { coordinatorId, workspaceFrameOrigins, workspaceTools } from './workspaceTools';
+import {
+  coordinatorId,
+  coordinatorUsername,
+  nativeChatProjectKey,
+  workspaceFrameOrigins,
+  workspaceTools,
+} from './workspaceTools';
 
 const config: WorkspaceRuntimeEnv = {
   openClawUrl: 'https://openclaw.example.com/root/',
   coordinatorId: 'coordinator',
   projectCoordinators: { VERV: 'verve-agent' },
+  homeChatProjectKey: 'PRIV',
   terminalUrl: '',
   codeUrl: 'https://code.example.com/',
   projectWorkspacePaths: { VERV: '/workspace/verve' },
   browserUrl: 'https://browser.example.com/',
   filesUrl: 'https://files.example.com/',
-  paperlessUrl: 'https://paperless.example.com/',
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
 };
@@ -24,6 +30,13 @@ describe('workspaceTools', () => {
       workspaceTools(config, null).chat.url,
       'https://openclaw.example.com/root/chat/coordinator',
     );
+  });
+
+  it('anchors the native Home chat while preserving its global coordinator', () => {
+    assert.equal(nativeChatProjectKey(config, null), 'PRIV');
+    assert.equal(coordinatorUsername(config, null), 'openclaw-coordinator');
+    assert.equal(nativeChatProjectKey(config, 'verv'), 'VERV');
+    assert.equal(coordinatorUsername(config, 'VERV'), 'openclaw-verve-agent');
   });
 
   it('uses configured project coordinators and workspace paths', () => {
@@ -94,7 +107,6 @@ describe('workspaceTools', () => {
       'https://code.example.com',
       'https://browser.example.com',
       'https://files.example.com',
-      'https://paperless.example.com',
       'https://inbox.example.com',
     ]);
   });

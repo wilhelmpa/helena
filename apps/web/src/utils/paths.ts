@@ -10,6 +10,22 @@ export const viewPath = (key: string, viewId: number | null) =>
 
 export const dashboardsPath = (key: string) => `${projectPath(key)}/dashboard`;
 
+export const organizationPath = (key: string) => `${projectPath(key)}/organization`;
+
+export const workflowsPath = (key: string) => `${projectPath(key)}/workflows`;
+
+export const connectionsPath = () => '/connections';
+
+export const agentsPath = () => '/agents';
+
+export const mcpsPath = () => '/mcps';
+
+export const toolsPath = () => '/tools';
+
+export const skillsPath = () => '/skills';
+
+export const vaultPath = () => '/vault';
+
 // Public read-only share pages (no auth). The token is the unguessable share key.
 export const shareIssuePath = (token: string) => `/share/issue/${token}`;
 export const shareViewPath = (token: string) => `/share/view/${token}`;
@@ -26,6 +42,8 @@ export const notesPath = (key: string) => `${projectPath(key)}/notes`;
 export const notePath = (key: string, boardId: number) => `${notesPath(key)}/${boardId}`;
 
 export const documentsPath = (key: string) => `${projectPath(key)}/docs`;
+
+export const filesPath = (key: string) => `${projectPath(key)}/files`;
 
 export const documentPath = (key: string, documentId: number) =>
   `${documentsPath(key)}/${documentId}`;

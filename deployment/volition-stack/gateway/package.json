@@ -1,0 +1,7 @@
+{
+  "name": "volition-access-gateway",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "test": "node --test" },
+  "dependencies": { "http-proxy": "1.18.1", "jose": "6.1.3" }
+}

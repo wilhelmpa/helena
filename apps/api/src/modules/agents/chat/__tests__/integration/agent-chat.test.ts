@@ -4,7 +4,6 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
 import { createAgent, teamOf } from '#tests/helpers/agents';
-import { db, organizationProjectAssignment } from '@repo/db';
 
 // Chatting with an external agent: a member sends a message, the agent's runner claims
 // it, reports what its command produces as AG-UI events, and closes it. The claim waits
@@ -25,8 +24,6 @@ async function setup() {
   return {
     owner,
     asOwner,
-    projectId: (await asOwner.projects({ projectKey: 'MKT' }).get()).data!.project.id,
-    teamId: await teamOf(asOwner, 'MKT'),
     agent: created.data!.agent,
     asRunner: apiKeyApi(created.data!.apiKey!),
   };
@@ -47,7 +44,9 @@ async function answer(asRunner: Api, text: string) {
   await asRunner['agent-chats']({ messageId: claimed.id }).events.post({
     events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: text }],
   });
-  await asRunner['agent-chats']({ messageId: claimed.id }).result.post({ status: 'success' });
+  await asRunner['agent-chats']({ messageId: claimed.id }).result.post({
+    status: 'success',
+  });
 }
 
 // The stream is a raw Response rather than a JSON body, so it is driven through the
@@ -72,7 +71,7 @@ describe('external agent chat', () => {
     await resetDb();
   });
 
-  it('queues an answer the runner claims with the message framed as its task', async () => {
+  it('queues an answer the runner claims as pure message transport', async () => {
     const { asOwner, asRunner, agent } = await setup();
 
     const sent = await send(asOwner, agent.id, 'What is left for the launch?');
@@ -86,14 +85,11 @@ describe('external agent chat', () => {
       threadId: sent.data!.threadId,
       attempts: 1,
     });
-    expect(claimed.data!.message!.prompt).toContain('What is left for the launch?');
-    // A chat is the opposite of an autonomous run: someone is waiting, and the agent
-    // is told so along with the project it works in.
-    expect(claimed.data!.message!.systemPrompt).toContain('Run mode');
-    expect(claimed.data!.message!.systemPrompt).toContain('Marketing');
+    expect(claimed.data!.message!.prompt).toBe('What is left for the launch?');
+    expect(claimed.data!.message!.systemPrompt).toBe('');
   });
 
-  it("mixes the agent's own instructions into the system prompt", async () => {
+  it('leaves agent policy and memory to OpenClaw', async () => {
     const { asOwner, asRunner, agent } = await setup();
     await asOwner
       .teams({ teamId: await teamOf(asOwner, 'MKT') })
@@ -102,45 +98,109 @@ describe('external agent chat', () => {
     await send(asOwner, agent.id, 'Status?');
 
     const claimed = await asRunner['agent-chats'].claim.post();
-    expect(claimed.data!.message!.systemPrompt).toContain('Always answer in German.');
-  });
-
-  it('scopes project-wide and assignment instructions in a new chat session', async () => {
-    const { asOwner, asRunner, agent, projectId, teamId } = await setup();
-    await db.insert(organizationProjectAssignment).values({
-      teamId,
-      projectId,
-      instructions: 'Use the approved release checklist.',
+    expect(claimed.data!.message).toMatchObject({
+      prompt: 'Status?',
+      systemPrompt: '',
     });
-    await asOwner
-      .projects({ projectKey: 'MKT' })
-      .members({ userId: agent.userId })
-      .description.patch({ description: 'Summarize evidence for the coordinator.' });
-    await send(asOwner, agent.id, 'Status?');
-
-    const prompt = (await asRunner['agent-chats'].claim.post()).data!.message!.systemPrompt;
-    expect(prompt).toContain('## Project scope: MKT');
-    expect(prompt).toContain('### Project-wide instructions\nUse the approved release checklist.');
-    expect(prompt).toContain(
-      '### Your assignment in this project\nSummarize evidence for the coordinator.',
-    );
   });
 
-  it('carries the conversation so far into the next task', async () => {
+  it('validates and retains the model and thinking choice for a chat thread', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    const models = [
+      {
+        id: 'openai/gpt-6-astra',
+        name: 'GPT-6-Astra',
+        reasoning: true,
+        thinkingLevels: ['low', 'high', 'ultra'],
+        thinkingDefault: 'high',
+      },
+      {
+        id: 'openai/gpt-5.5',
+        name: 'GPT-5.5',
+        reasoning: true,
+        thinkingLevels: ['low', 'high'],
+        thinkingDefault: 'high',
+      },
+    ];
+    expect((await asRunner['agent-chats'].catalog.post({ models })).status).toBe(204);
+    expect((await chatOf(asOwner, agent.id).chat.catalog.get()).data!.models).toEqual(models);
+
+    const sent = await chatOf(asOwner, agent.id).chat.post({
+      prompt: 'Use deep reasoning',
+      model: 'openai/gpt-6-astra',
+      thinkingLevel: 'ultra',
+    });
+    expect(sent.status).toBe(200);
+    const first = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(first).toMatchObject({
+      model: 'openai/gpt-6-astra',
+      thinkingLevel: 'ultra',
+    });
+    await asRunner['agent-chats']({ messageId: first.id }).result.post({ status: 'success' });
+
+    await chatOf(asOwner, agent.id).chat.post({
+      prompt: 'Keep those settings',
+      threadId: sent.data!.threadId,
+    });
+    const second = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(second).toMatchObject({
+      model: 'openai/gpt-6-astra',
+      thinkingLevel: 'ultra',
+    });
+
+    expect(
+      (
+        await chatOf(asOwner, agent.id).chat.post({
+          prompt: 'Unsupported pair',
+          model: 'openai/gpt-5.5',
+          thinkingLevel: 'ultra',
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await chatOf(asOwner, agent.id).chat.post({
+          prompt: 'Unknown model',
+          model: 'openai/not-in-catalog',
+        })
+      ).status,
+    ).toBe(400);
+  });
+
+  it('does not frame conversation history into the next task', async () => {
     const { asOwner, asRunner, agent } = await setup();
     const first = await send(asOwner, agent.id, 'Who owns the launch?');
     const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
     await asRunner['agent-chats']({ messageId: answer.id }).events.post({
       events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Maria does.' }],
     });
-    await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({
+      status: 'success',
+    });
 
     await send(asOwner, agent.id, 'And the launch date?', first.data!.threadId);
     const second = (await asRunner['agent-chats'].claim.post()).data!.message!;
     expect(second.threadId).toBe(first.data!.threadId);
-    expect(second.prompt).toContain('Who owns the launch?');
-    expect(second.prompt).toContain('Maria does.');
-    expect(second.prompt).toContain('And the launch date?');
+    expect(second.prompt).toBe('And the launch date?');
+  });
+
+  it('keeps one live answer per thread', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    const first = await send(asOwner, agent.id, 'First question');
+
+    const blocked = await send(asOwner, agent.id, 'Too soon', first.data!.threadId);
+    expect(blocked.status).toBe(429);
+
+    await answer(asRunner, 'First answer');
+    expect((await send(asOwner, agent.id, 'Follow-up', first.data!.threadId)).status).toBe(200);
+  });
+
+  it('limits chat sends per member and agent', async () => {
+    const { asOwner, agent } = await setup();
+    for (let i = 0; i < 10; i += 1) {
+      expect((await send(asOwner, agent.id, `Question ${i}`)).status).toBe(200);
+    }
+    expect((await send(asOwner, agent.id, 'One too many')).status).toBe(429);
   });
 
   it('returns nothing when the feed is empty', async () => {
@@ -162,7 +222,9 @@ describe('external agent chat', () => {
       events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Maria does.' }],
       sessionId: 'sess-abc',
     });
-    await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({
+      status: 'success',
+    });
 
     await send(asOwner, agent.id, 'And the launch date?', first.data!.threadId);
     const second = (await asRunner['agent-chats'].claim.post()).data!.message!;
@@ -252,7 +314,9 @@ describe('external agent chat', () => {
     // An older runner sends no field at all: the answer is stored with no number and no
     // error.
     const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
-    const closed = await asRunner['agent-chats']({ messageId: answer.id }).result.post({
+    const closed = await asRunner['agent-chats']({
+      messageId: answer.id,
+    }).result.post({
       status: 'success',
     });
     expect(closed.status).toBe(204);
@@ -319,16 +383,27 @@ describe('external agent chat', () => {
     const sent = await send(asOwner, agent.id, 'Summarise the sprint');
     const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
 
-    const reported = await asRunner['agent-chats']({ messageId: answer.id }).events.post({
+    const reported = await asRunner['agent-chats']({
+      messageId: answer.id,
+    }).events.post({
       events: [
         { type: 'RUN_STARTED' },
         { type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' },
         { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Two things ' },
-        { type: 'TOOL_CALL_START', toolCallId: 't1', toolCallName: 'list_issues' },
+        {
+          type: 'TOOL_CALL_START',
+          toolCallId: 't1',
+          toolCallName: 'list_issues',
+        },
         { type: 'TOOL_CALL_ARGS', toolCallId: 't1', delta: '{"status":' },
         { type: 'TOOL_CALL_ARGS', toolCallId: 't1', delta: '"open"}' },
         { type: 'TOOL_CALL_END', toolCallId: 't1' },
-        { type: 'TOOL_CALL_RESULT', messageId: 'm1', toolCallId: 't1', content: '2 issues' },
+        {
+          type: 'TOOL_CALL_RESULT',
+          messageId: 'm1',
+          toolCallId: 't1',
+          content: '2 issues',
+        },
         { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'are left.' },
       ],
     });
@@ -360,7 +435,9 @@ describe('external agent chat', () => {
       .events.get({ query: { after: cursor } });
     expect(later.data!.items.map((item) => item.event.type)).toEqual(['RUN_FINISHED']);
 
-    await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({
+      status: 'success',
+    });
     const transcript = await chatOf(asOwner, agent.id)
       .threads({ threadId: sent.data!.threadId })
       .messages.get();
@@ -392,7 +469,9 @@ describe('external agent chat', () => {
     await asRunner['agent-chats']({ messageId: answer.id }).events.post({
       events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Pong' }],
     });
-    await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({
+      status: 'success',
+    });
 
     const stream = await readStream(owner.cookie, agent.id, answer.id);
     expect(stream.status).toBe(200);
@@ -401,6 +480,20 @@ describe('external agent chat', () => {
     expect(stream.frames[0]).toContain('Pong');
     // The runner reported no lifecycle events, so the end is stated for it.
     expect(stream.frames.at(-1)).toContain('RUN_FINISHED');
+  });
+
+  it('limits repeated stream connections per member', async () => {
+    const { owner, asOwner, asRunner, agent } = await setup();
+    await send(asOwner, agent.id, 'Ping');
+    const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({
+      status: 'success',
+    });
+
+    for (let i = 0; i < 30; i += 1) {
+      expect((await readStream(owner.cookie, agent.id, answer.id)).status).toBe(200);
+    }
+    expect((await readStream(owner.cookie, agent.id, answer.id)).status).toBe(429);
   });
 
   it('ends a failed answer with the reason it stopped', async () => {
@@ -422,7 +515,9 @@ describe('external agent chat', () => {
     await send(asOwner, agent.id, 'Hello');
     const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
 
-    const beat = await asRunner['agent-chats']({ messageId: answer.id }).heartbeat.post();
+    const beat = await asRunner['agent-chats']({
+      messageId: answer.id,
+    }).heartbeat.post();
     expect(beat.status).toBe(200);
     expect(beat.data).toEqual({ canceled: false });
   });
@@ -440,7 +535,9 @@ describe('external agent chat', () => {
     const stopped = await chatOf(asOwner, agent.id).chat({ messageId: answer.id }).cancel.post();
     expect(stopped.status).toBe(204);
 
-    const reported = await asRunner['agent-chats']({ messageId: answer.id }).events.post({
+    const reported = await asRunner['agent-chats']({
+      messageId: answer.id,
+    }).events.post({
       events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'are left.' }],
     });
     expect(reported.data).toEqual({ canceled: true });
@@ -455,7 +552,11 @@ describe('external agent chat', () => {
       .messages.get();
     expect(transcript.data!.items).toMatchObject([
       { role: 'user' },
-      { role: 'assistant', parts: [{ type: 'text', text: 'Two things ' }], stopped: true },
+      {
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Two things ' }],
+        stopped: true,
+      },
     ]);
   });
 
@@ -506,7 +607,10 @@ describe('external agent chat', () => {
     });
 
     const events = await chatOf(asOwner, agent.id).chat({ messageId: answer.id }).events.get();
-    expect(events.data!).toMatchObject({ status: 'failed', error: 'claude exited with 1' });
+    expect(events.data!).toMatchObject({
+      status: 'failed',
+      error: 'claude exited with 1',
+    });
     expect(
       (
         await asRunner['agent-chats']({ messageId: answer.id }).events.post({
@@ -515,8 +619,11 @@ describe('external agent chat', () => {
       ).status,
     ).toBe(404);
     expect(
-      (await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' }))
-        .status,
+      (
+        await asRunner['agent-chats']({ messageId: answer.id }).result.post({
+          status: 'success',
+        })
+      ).status,
     ).toBe(404);
   });
 
@@ -565,7 +672,9 @@ describe('external agent chat', () => {
     await send(asOwner, agent.id, 'invoices');
     await answer(asRunner, 'paid');
 
-    const res = await chatOf(asOwner, agent.id).threads.get({ query: { q: 'launch' } });
+    const res = await chatOf(asOwner, agent.id).threads.get({
+      query: { q: 'launch' },
+    });
     expect(res.status).toBe(200);
     // Ranked: the title first, then the member's own message, then the agent's reply.
     expect(res.data!.items.map((t) => t.id)).toEqual([
@@ -583,15 +692,32 @@ describe('external agent chat', () => {
     const claimed = (await asRunner['agent-chats'].claim.post()).data!.message!;
     await asRunner['agent-chats']({ messageId: claimed.id }).events.post({
       events: [
-        { type: 'TOOL_CALL_START', toolCallId: 'call-1', toolCallName: 'list_issues' },
-        { type: 'TOOL_CALL_ARGS', toolCallId: 'call-1', delta: '{"status":"kryptonite"}' },
-        { type: 'TOOL_CALL_RESULT', messageId: 'm1', toolCallId: 'call-1', content: 'kryptonite' },
+        {
+          type: 'TOOL_CALL_START',
+          toolCallId: 'call-1',
+          toolCallName: 'list_issues',
+        },
+        {
+          type: 'TOOL_CALL_ARGS',
+          toolCallId: 'call-1',
+          delta: '{"status":"kryptonite"}',
+        },
+        {
+          type: 'TOOL_CALL_RESULT',
+          messageId: 'm1',
+          toolCallId: 'call-1',
+          content: 'kryptonite',
+        },
         { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Two things.' },
       ],
     });
-    await asRunner['agent-chats']({ messageId: claimed.id }).result.post({ status: 'success' });
+    await asRunner['agent-chats']({ messageId: claimed.id }).result.post({
+      status: 'success',
+    });
 
-    const res = await chatOf(asOwner, agent.id).threads.get({ query: { q: 'kryptonite' } });
+    const res = await chatOf(asOwner, agent.id).threads.get({
+      query: { q: 'kryptonite' },
+    });
     expect(res.data!.items).toEqual([]);
   });
 
@@ -599,11 +725,15 @@ describe('external agent chat', () => {
     const { asOwner, agent } = await setup();
     const kept = await send(asOwner, agent.id, 'kept');
     const plain = await send(asOwner, agent.id, 'plain');
-    const thread = chatOf(asOwner, agent.id).threads({ threadId: kept.data!.threadId });
+    const thread = chatOf(asOwner, agent.id).threads({
+      threadId: kept.data!.threadId,
+    });
 
     expect((await thread.favorite.put()).status).toBe(204);
 
-    const favorites = await chatOf(asOwner, agent.id).threads.get({ query: { favorites: true } });
+    const favorites = await chatOf(asOwner, agent.id).threads.get({
+      query: { favorites: true },
+    });
     expect(favorites.data!.items.map((t) => t.id)).toEqual([kept.data!.threadId]);
     expect(favorites.data!.nextPage).toBeNull();
 
@@ -613,7 +743,11 @@ describe('external agent chat', () => {
 
     expect((await thread.favorite.delete()).status).toBe(204);
     expect(
-      (await chatOf(asOwner, agent.id).threads.get({ query: { favorites: true } })).data!.items,
+      (
+        await chatOf(asOwner, agent.id).threads.get({
+          query: { favorites: true },
+        })
+      ).data!.items,
     ).toEqual([]);
     const back = await chatOf(asOwner, agent.id).threads.get();
     expect(back.data!.items.map((t) => t.id)).toEqual([plain.data!.threadId, kept.data!.threadId]);
@@ -649,7 +783,9 @@ describe('external agent chat', () => {
     const asOtherRunner = apiKeyApi(other.data!.apiKey!);
     expect(
       (
-        await asOtherRunner['agent-chats']({ messageId: answer.id }).result.post({
+        await asOtherRunner['agent-chats']({
+          messageId: answer.id,
+        }).result.post({
           status: 'success',
         })
       ).status,

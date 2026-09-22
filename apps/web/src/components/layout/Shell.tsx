@@ -66,7 +66,10 @@ export default function Shell({
   const initiativeOptions = useInitiativeOptionsQuery(projectKey).data ?? [];
   const { issueOpenMode } = useAccountPreferences();
   const overlays = useOverlays();
-  const workspacePanel = useWorkspacePanel({ defaultOpen: globalHome && autoOpenGlobalChat });
+  const workspacePanel = useWorkspacePanel({
+    defaultOpen: globalHome && autoOpenGlobalChat,
+    projectKey,
+  });
   const navigation = useWorkspaceNavigation(projectKey, defaultSidebarOpen);
   // The Shell renders the context provider, so its own permission check reads the
   // project it loaded rather than the context.
@@ -212,6 +215,7 @@ export default function Shell({
               open={workspacePanel.open}
               activeTool={workspacePanel.activeTool}
               contextProjectKey={projectKey}
+              toolSession={workspacePanel.toolSession}
               mode={workspacePanel.mode}
               fullscreen={workspacePanel.fullscreen}
               onToggleMode={workspacePanel.toggleMode}

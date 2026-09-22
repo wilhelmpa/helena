@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Home, SquareKanban, Users, Network, PlugZap } from 'lucide-react';
+import { Home, SquareKanban } from 'lucide-react';
 import type { Project } from '@/lib/api/endpoints/projects';
-import { manageTeamsPath } from '@/utils/paths';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -60,40 +59,6 @@ export default function ProjectList({
             ))}
           </SidebarMenu>
         )}
-        <SidebarMenu className="mt-4 border-t border-sidebar-border/60 pt-3">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === '/organization'}
-              tooltip={t('organization')}
-            >
-              <Link href="/organization">
-                <Network />
-                <span>{t('organization')}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === '/connections'}
-              tooltip={t('connections')}
-            >
-              <Link href="/connections">
-                <PlugZap />
-                <span>{t('connections')}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={t('manageTeams')}>
-              <Link href={manageTeamsPath()}>
-                <Users />
-                <span>{t('manageTeams')}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
   );

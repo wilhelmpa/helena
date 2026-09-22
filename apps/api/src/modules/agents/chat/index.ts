@@ -11,10 +11,12 @@ import { runnerAuth } from '../runner-auth';
 import {
   ChatAckResponse,
   ChatEventsResponse,
+  ChatCatalogResponse,
   ClaimChatResponse,
   SendChatResponse,
   projectAgentParams,
   chatEventsBody,
+  chatCatalogBody,
   chatEventsQuery,
   chatMessageParams,
   chatResultBody,
@@ -31,7 +33,9 @@ import {
   finishMessage,
   heartbeatMessage,
   readEvents,
+  readChatCatalog,
   sendMessage,
+  publishChatCatalog,
   setThreadSession,
 } from './service';
 
@@ -45,6 +49,47 @@ import {
 // online, so this is a bound on the connection, not on the answer.
 const STREAM_MAX_MS = 30 * 60_000;
 const KEEPALIVE_MS = 15_000;
+
+type StreamLimit = { startedAt: number; requests: number; active: number };
+const streamLimits = new Map<string, StreamLimit>();
+
+function acquireStream(userId: string): (() => void) | null {
+  const now = Date.now();
+  const windowMs = agentChatConfig.streamWindowSeconds() * 1000;
+  for (const [key, value] of streamLimits) {
+    if (value.active === 0 && now - value.startedAt >= windowMs) streamLimits.delete(key);
+  }
+  let limit = streamLimits.get(userId);
+  if (!limit || now - limit.startedAt >= windowMs) {
+    limit = { startedAt: now, requests: 0, active: 0 };
+    streamLimits.set(userId, limit);
+  }
+  if (
+    limit.requests >= agentChatConfig.streamLimit() ||
+    limit.active >= agentChatConfig.streamConcurrentLimit()
+  ) {
+    return null;
+  }
+  limit.requests += 1;
+  limit.active += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    limit.active = Math.max(0, limit.active - 1);
+  };
+}
+
+async function* limitedStream(
+  frames: AsyncIterable<string>,
+  release: () => void,
+): AsyncGenerator<string> {
+  try {
+    yield* frames;
+  } finally {
+    release();
+  }
+}
 
 // The agent this route acts on, or a 404. Only an external agent has a chat feed: an
 // internal one is run in-process by /run and /run/stream.
@@ -75,6 +120,8 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         userId: caller.id,
         prompt: body.prompt,
         threadId: body.threadId,
+        model: body.model,
+        thinkingLevel: body.thinkingLevel,
       });
       if (!sent) throw new HttpError(404, 'Thread not found');
       return sent;
@@ -83,12 +130,30 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       body: sendChatBody,
       params: projectAgentParams,
       permission: ['ai_agents', 'read'],
-      response: { 200: SendChatResponse, ...commonErrors },
+      response: { 200: SendChatResponse, ...commonErrors, ...errors(429) },
       detail: {
         summary: 'Send a chat message',
         description:
           "Queue a message for an external agent's runner and return the answer it will " +
           'produce. Follow the answer with the stream endpoint.',
+      },
+    },
+  )
+
+  .get(
+    '/projects/:projectKey/ai-agents/:agentId/chat/catalog',
+    async ({ params, project }) => {
+      await requireExternalAgent(params.agentId, project.id);
+      return readChatCatalog(params.agentId);
+    },
+    {
+      params: projectAgentParams,
+      permission: ['ai_agents', 'read'],
+      response: { 200: ChatCatalogResponse, ...commonErrors },
+      detail: {
+        summary: 'List chat models',
+        description:
+          "Return the models and thinking levels last published by this external agent's runner.",
       },
     },
   )
@@ -128,7 +193,14 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       if (!(await readEvents(params.messageId, params.agentId, caller.id, after))) {
         throw new HttpError(404, 'Message not found');
       }
-      return sseResponse(streamChatEvents(params.messageId, params.agentId, caller.id, after));
+      const release = acquireStream(caller.id);
+      if (!release) throw new HttpError(429, 'Too many chat stream requests. Try again shortly.');
+      return sseResponse(
+        limitedStream(
+          streamChatEvents(params.messageId, params.agentId, caller.id, after),
+          release,
+        ),
+      );
     },
     {
       params: chatMessageParams,
@@ -139,6 +211,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         // JSON shape the validator can describe.
         200: t.Any(),
         ...commonErrors,
+        ...errors(429),
       },
       detail: { summary: 'Stream an answer' },
     },
@@ -182,6 +255,24 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         'heartbeats, or a result, otherwise it is handed out again.',
     },
   })
+
+  .post(
+    '/agent-chats/catalog',
+    async ({ agent, body }) => {
+      await publishChatCatalog(agent.id, body.models);
+      return noContent();
+    },
+    {
+      runnerAgent: true,
+      body: chatCatalogBody,
+      response: { 204: t.Void(), ...errors(401, 403) },
+      detail: {
+        summary: 'Publish the runner model catalog',
+        description:
+          "Replace the calling external agent's model catalog used for member chat configuration.",
+      },
+    },
+  )
 
   .post(
     '/agent-chats/:messageId/events',

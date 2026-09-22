@@ -101,12 +101,15 @@ export async function* streamAiAgentRun(
 export async function* streamAiAgentChat(
   projectKey: string,
   agentId: number,
-  input: { prompt: string; threadId?: string | null },
+  input: {
+    prompt: string;
+    threadId?: string | null;
+    model?: string | null;
+    thinkingLevel?: string | null;
+  },
   signal?: AbortSignal,
 ): AsyncGenerator<AgentRunEvent> {
-  const body = input.threadId
-    ? { prompt: input.prompt, threadId: input.threadId }
-    : { prompt: input.prompt };
+  const body = { ...input, threadId: input.threadId || undefined };
   const sent = await request<{ threadId: string; messageId: number }>(
     `/projects/${projectKey}/ai-agents/${agentId}/chat`,
     { method: 'POST', body: JSON.stringify(body) },
@@ -193,6 +196,8 @@ export interface AiChatThread {
   id: string;
   title: string | null;
   cliSessionId: string | null;
+  model: string | null;
+  thinkingLevel: string | null;
   contextTokens?: number | null;
   favorite: boolean;
   snippet?: string;
@@ -242,6 +247,22 @@ export interface ChatAttachment {
   createdAt: string;
   url: string;
 }
+
+export interface AiChatModel {
+  id: string;
+  name: string;
+  reasoning: boolean;
+  thinkingLevels: string[];
+  thinkingDefault: string | null;
+}
+
+export interface AiChatCatalog {
+  models: AiChatModel[];
+  updatedAt: string | null;
+}
+
+export const getAiAgentChatCatalog = (projectKey: string, agentId: number) =>
+  request<AiChatCatalog>(`/projects/${projectKey}/ai-agents/${agentId}/chat/catalog`);
 
 // One page of the caller's own chat threads with an agent, newest first. `q` searches
 // them by title and message text instead, over every page.

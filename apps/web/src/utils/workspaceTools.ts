@@ -7,7 +7,6 @@ export const WORKSPACE_TOOL_IDS = [
   'code',
   'browser',
   'files',
-  'paperless',
   'inbox',
   'mail',
   'connections',
@@ -83,6 +82,25 @@ export function coordinatorId(
   return /^[a-z0-9][a-z0-9_-]{0,31}$/.test(slug) ? `${slug}-coordinator` : '';
 }
 
+export function coordinatorUsername(
+  config: WorkspaceRuntimeEnv,
+  projectKey: string | null,
+  resources: ProvisionedProjectResource[] = [],
+): string {
+  const id = coordinatorId(config, projectKey, resources);
+  if (!id) return '';
+  return id.startsWith('openclaw-') ? id : `openclaw-${id}`;
+}
+
+export function nativeChatProjectKey(
+  config: WorkspaceRuntimeEnv,
+  projectKey: string | null,
+): string | null {
+  const key = projectKey ?? config.homeChatProjectKey;
+  const normalized = key.trim().toUpperCase();
+  return /^[A-Z][A-Z0-9_-]{0,31}$/.test(normalized) ? normalized : null;
+}
+
 function codeUrl(
   config: WorkspaceRuntimeEnv,
   projectKey: string | null,
@@ -121,7 +139,7 @@ export function workspaceTools(
   const browser = provisionedResource(resources, 'browser');
   const files = provisionedResource(resources, 'files');
   const tools = {
-    chat: { id: 'chat', url: chatUrl, advancedUrl: openClawUrl },
+    chat: { id: 'chat', url: chatUrl, advancedUrl: '' },
     terminal: {
       id: 'terminal',
       url:
@@ -141,7 +159,6 @@ export function workspaceTools(
       url: trustedResourceUrl(files?.url, [config.filesUrl]) || frameUrl(config.filesUrl),
       advancedUrl: '',
     },
-    paperless: { id: 'paperless', url: frameUrl(config.paperlessUrl), advancedUrl: '' },
     mail: { id: 'mail', url: '', advancedUrl: '' },
     inbox: { id: 'inbox', url: frameUrl(config.inboxUrl), advancedUrl: '' },
     connections: { id: 'connections', url: frameUrl(config.connectionsUrl), advancedUrl: '' },
@@ -156,7 +173,6 @@ export function workspaceFrameOrigins(config: WorkspaceRuntimeEnv): string[] {
     config.codeUrl,
     config.browserUrl,
     config.filesUrl,
-    config.paperlessUrl,
     config.inboxUrl,
     config.connectionsUrl,
   ];

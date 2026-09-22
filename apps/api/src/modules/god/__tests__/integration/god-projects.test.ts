@@ -72,7 +72,7 @@ describe('god projects', () => {
         initiativeCount: 1,
         agentCount: 1,
         dashboardCount: 0,
-        viewCount: 0,
+        viewCount: 2,
         skillCount: 0,
         toolCount: 0,
       });

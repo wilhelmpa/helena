@@ -1,4 +1,10 @@
-import type { AgentTool, AiAgent, NewAiAgentInput, AiAgentPatch } from '@/lib/api/endpoints/agents';
+import type {
+  AgentRuntimePolicy,
+  AgentTool,
+  AiAgent,
+  NewAiAgentInput,
+  AiAgentPatch,
+} from '@/lib/api/endpoints/agents';
 import { transliterate } from '@/utils/projectKey';
 
 // The editable shape of an agent form. temperature/maxSteps are kept as strings so
@@ -15,6 +21,7 @@ export interface AgentFormValue {
   maxSteps: string;
   memoryEnabled: boolean;
   memoryLastMessages: string;
+  runtimePolicy: AgentRuntimePolicy;
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
   // The member custom fields that start a run when the agent is set into one, each
@@ -70,6 +77,13 @@ export function initialAgentValue(agent?: AiAgent): AgentFormValue {
     maxSteps: agent?.maxSteps != null ? String(agent.maxSteps) : '',
     memoryEnabled: agent?.memoryEnabled ?? false,
     memoryLastMessages: agent?.memoryLastMessages != null ? String(agent.memoryLastMessages) : '',
+    runtimePolicy: agent?.runtimePolicy ?? {
+      reasoningEffort: null,
+      toolAllow: [],
+      toolDeny: [],
+      mcpGrants: [],
+      files: [],
+    },
     triggerOnMention: agent?.triggerOnMention ?? true,
     triggerOnAssign: agent?.triggerOnAssign ?? false,
     fieldTriggers: (agent?.fieldTriggers ?? []).map((trigger) => ({
@@ -105,6 +119,18 @@ function parseNum(s: string): number | null {
 // adds the scope of the runs its runner receives, an internal one the model/tools
 // config.
 function configFields(v: AgentFormValue) {
+  const cleanList = (items: string[]) => [
+    ...new Set(items.map((item) => item.trim()).filter(Boolean)),
+  ];
+  const runtimePolicy = {
+    ...v.runtimePolicy,
+    toolAllow: cleanList(v.runtimePolicy.toolAllow),
+    toolDeny: cleanList(v.runtimePolicy.toolDeny),
+    mcpGrants: cleanList(v.runtimePolicy.mcpGrants),
+    files: v.runtimePolicy.files
+      .map((file) => ({ ...file, path: file.path.trim() }))
+      .filter((file) => file.path.length > 0),
+  };
   const common = {
     projectIds: v.projectIds,
     instructions: v.instructions.trim() || null,
@@ -117,7 +143,14 @@ function configFields(v: AgentFormValue) {
     delegationDelaySec: delaySecFromMinutes(v.delegationDelayMin),
   };
   if (v.kind === 'external') {
-    return { ...common, runnerScope: v.runnerScope };
+    return {
+      ...common,
+      runnerScope: v.runnerScope,
+      model: v.model.trim() || null,
+      memoryEnabled: v.memoryEnabled,
+      memoryLastMessages: v.memoryEnabled ? parseNum(v.memoryLastMessages) : null,
+      runtimePolicy,
+    };
   }
   return {
     ...common,

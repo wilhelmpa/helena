@@ -103,11 +103,28 @@ export const chatMessageParams = t.Object({
 
 export const runnerMessageParams = t.Object({ messageId: t.Numeric() });
 
+const chatModel = t.Object({
+  id: t.String({ minLength: 1, maxLength: 200 }),
+  name: t.String({ minLength: 1, maxLength: 200 }),
+  reasoning: t.Boolean(),
+  thinkingLevels: t.Array(t.String({ minLength: 1, maxLength: 40 }), { maxItems: 20 }),
+  thinkingDefault: t.Nullable(t.String({ maxLength: 40 })),
+});
+
+export const chatCatalogBody = t.Object({ models: t.Array(chatModel, { maxItems: 200 }) });
+
+export const ChatCatalogResponse = t.Object({
+  models: t.Array(chatModel),
+  updatedAt: t.Nullable(t.String()),
+});
+
 export const sendChatBody = t.Object({
   prompt: t.String({ minLength: 1, description: 'Message to send the agent.' }),
   threadId: t.Optional(
     t.String({ description: 'Thread id of an earlier message, to continue that conversation.' }),
   ),
+  model: t.Optional(t.Nullable(t.String({ minLength: 1, maxLength: 200 }))),
+  thinkingLevel: t.Optional(t.Nullable(t.String({ minLength: 1, maxLength: 40 }))),
 });
 
 // What the caller needs to follow the answer: the thread it belongs to and the id of
@@ -158,6 +175,8 @@ export const ClaimChatResponse = t.Object({
             'Null when there is none yet: start a fresh one and report the id it got.',
         }),
       ),
+      model: t.Nullable(t.String()),
+      thinkingLevel: t.Nullable(t.String()),
     }),
   ),
 });

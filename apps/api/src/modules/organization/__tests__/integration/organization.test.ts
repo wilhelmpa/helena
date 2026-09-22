@@ -44,7 +44,7 @@ describe('organization', () => {
           departmentId: department.data!.id,
           reportsToAgentId: null,
           roleTitle: 'Lead researcher',
-          openClawAgentId: 'marketing-researcher',
+          runtimeAgentId: 'marketing-researcher',
         })
       ).status,
     ).toBe(204);
@@ -75,7 +75,7 @@ describe('organization', () => {
       {
         id: agent.id,
         roleTitle: 'Lead researcher',
-        openClawAgentId: 'marketing-researcher',
+        runtimeAgentId: 'marketing-researcher',
         projects: [{ id: project.id, instructions: 'Research only verified customer needs.' }],
       },
     ]);
@@ -118,6 +118,28 @@ describe('organization', () => {
         await organization
           .agents({ agentId: second.data!.agent.id })
           .put({ reportsToAgentId: agent.id })
+      ).status,
+    ).toBe(400);
+  });
+
+  it('stores goal ancestry and rejects a goal cycle', async () => {
+    const { api, teamId } = await setup();
+    const organization = api.teams({ teamId }).organization;
+    const parent = await organization.goals.post({ title: 'Company outcome' });
+    const child = await organization.goals.post({
+      title: 'Team outcome',
+      parentGoalId: parent.data!.id,
+    });
+    expect((await organization.get()).data!.goals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: child.data!.id, parentGoalId: parent.data!.id }),
+      ]),
+    );
+    expect(
+      (
+        await organization
+          .goals({ goalId: parent.data!.id })
+          .patch({ parentGoalId: child.data!.id })
       ).status,
     ).toBe(400);
   });

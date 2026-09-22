@@ -1,17 +1,23 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { act } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
 import { useWorkspacePanel } from './useWorkspacePanel';
 
 let panel: ReturnType<typeof useWorkspacePanel>;
-function Probe({ defaultOpen = false }: { defaultOpen?: boolean }) {
-  panel = useWorkspacePanel({ defaultOpen });
+function Probe({
+  defaultOpen = false,
+  projectKey = null,
+}: {
+  defaultOpen?: boolean;
+  projectKey?: string | null;
+}) {
+  panel = useWorkspacePanel({ defaultOpen, projectKey });
   return null;
 }
 
-test('explicitly closed tools stay closed when Home remounts, while tool and layout choices survive', () => {
+function setup() {
   const dom = new JSDOM('<div id="root"></div>', { url: 'https://plan.test' });
   const globals = ['window', 'document', 'navigator', 'localStorage', 'IS_REACT_ACT_ENVIRONMENT'];
   const descriptors = new Map(
@@ -25,30 +31,74 @@ test('explicitly closed tools stay closed when Home remounts, while tool and lay
           ? true
           : (dom.window as unknown as Record<string, unknown>)[key],
     });
-  let root = createRoot(dom.window.document.getElementById('root')!);
+  let root: Root | null = createRoot(dom.window.document.getElementById('root')!);
+  return {
+    dom,
+    root: () => root!,
+    remount: () => {
+      root = createRoot(dom.window.document.getElementById('root')!);
+    },
+    unmount: () => {
+      act(() => root?.unmount());
+      root = null;
+    },
+    cleanup: () => {
+      if (root) act(() => root?.unmount());
+      dom.window.close();
+      for (const [key, descriptor] of descriptors) {
+        if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+        else Reflect.deleteProperty(globalThis, key);
+      }
+    },
+  };
+}
+
+test('explicitly closed tools stay closed when Home remounts, while tool and layout choices survive', () => {
+  const test = setup();
   try {
-    act(() => root.render(<Probe defaultOpen />));
+    act(() => test.root().render(<Probe defaultOpen />));
     assert.equal(panel.open, true);
     act(() => panel.openTool('inbox'));
     act(() => panel.toggleMode());
     act(() => panel.setOpen(false));
-    act(() => root.unmount());
-    root = createRoot(dom.window.document.getElementById('root')!);
-    act(() => root.render(<Probe defaultOpen />));
+    test.unmount();
+    test.remount();
+    act(() => test.root().render(<Probe defaultOpen />));
     assert.equal(panel.open, false);
     assert.equal(panel.activeTool, 'inbox');
     assert.equal(panel.mode, 'push');
-    act(() => panel.toggleTool('code'));
+  } finally {
+    test.cleanup();
+  }
+});
+
+test('a project-scoped tool never survives a project change or a return Home', () => {
+  const test = setup();
+  try {
+    act(() => test.root().render(<Probe projectKey="SYSQA" />));
+    act(() => panel.openTool('code'));
     assert.equal(panel.open, true);
-    assert.equal(panel.activeTool, 'code');
-    act(() => panel.toggleTool('code'));
+    act(() => test.root().render(<Probe projectKey={null} />));
+    assert.equal(panel.open, false);
+
+    const browserSession = panel.toolSession;
+    act(() => panel.openTool('browser'));
+    assert.equal(panel.toolSession, browserSession + 1);
+    act(() => panel.setOpen(false));
+    act(() => panel.openTool('browser'));
+    assert.equal(panel.toolSession, browserSession + 2);
+
+    act(() => panel.openTool('chat'));
+    act(() => test.root().render(<Probe projectKey="OTHER" />));
+    assert.equal(panel.open, true);
+    assert.equal(panel.activeTool, 'chat');
+
+    act(() => panel.openTool('files'));
+    test.unmount();
+    test.remount();
+    act(() => test.root().render(<Probe projectKey="SYSQA" />));
     assert.equal(panel.open, false);
   } finally {
-    act(() => root.unmount());
-    dom.window.close();
-    for (const [key, descriptor] of descriptors) {
-      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
-      else Reflect.deleteProperty(globalThis, key);
-    }
+    test.cleanup();
   }
 });

@@ -1,0 +1,119 @@
+{
+  "issuer": "https://team.cloudflareaccess.com",
+  "ownerEmail": "owner@example.com",
+  "port": 8088,
+  "routes": {
+    "plan.volition.one": {
+      "audience": [
+        "<cloudflare-access-audience>"
+      ],
+      "target": "http://127.0.0.1:3001",
+      "origins": [
+        "https://plan.volition.one"
+      ],
+      "frameAncestors": [
+        "'self'",
+        "https://plan.volition.one"
+      ],
+      "allowPlanCookies": true,
+      "paths": [
+        {
+          "prefix": "/backend",
+          "target": "http://127.0.0.1:3000"
+        },
+        {
+          "prefix": "/mastra",
+          "target": "http://172.30.95.2:4111",
+          "stripPrefix": false
+        }
+      ],
+      "expireLegacyCookieDomain": "volition.one"
+    },
+    "plan-api.volition.one": {
+      "audience": [
+        "<cloudflare-access-audience>"
+      ],
+      "target": "http://127.0.0.1:3000",
+      "origins": [
+        "https://plan-api.volition.one",
+        "https://plan.volition.one"
+      ],
+      "frameAncestors": [
+        "'self'",
+        "https://plan.volition.one"
+      ],
+      "corsOrigin": "https://plan.volition.one",
+      "allowPlanCookies": true
+    },
+    "openclaw.volition.one": {
+      "audience": [
+        "<cloudflare-access-audience>"
+      ],
+      "target": "http://127.0.0.1:18789",
+      "origins": [
+        "https://openclaw.volition.one"
+      ],
+      "frameAncestors": [
+        "'self'",
+        "https://plan.volition.one"
+      ],
+      "paths": [
+        {
+          "prefix": "/focus/terminal-project",
+          "target": "http://127.0.0.1:8100",
+          "stripPrefix": false
+        }
+      ]
+    },
+    "code.volition.one": {
+      "audience": [
+        "<cloudflare-access-audience>"
+      ],
+      "target": "http://127.0.0.1:8091",
+      "origins": [
+        "https://code.volition.one"
+      ],
+      "frameAncestors": [
+        "'self'",
+        "https://plan.volition.one"
+      ]
+    },
+    "cloud.volition.one": {
+      "audience": [
+        "<cloudflare-access-audience>"
+      ],
+      "target": "http://127.0.0.1:8092",
+      "origins": [
+        "https://cloud.volition.one"
+      ],
+      "frameAncestors": [
+        "'self'",
+        "https://plan.volition.one"
+      ]
+    },
+    "vault.volition.one": {
+      "audience": [
+        "<cloudflare-access-audience>"
+      ],
+      "target": "http://172.30.94.10:8080",
+      "origins": [
+        "https://vault.volition.one"
+      ]
+    }
+  },
+  "pushRoutes": {
+    "push.volition.one": {
+      "path": "/gmail",
+      "target": "http://172.30.254.1:18800/inbox/gmail/push",
+      "tokenFile": "/run/secrets/inbox_push_token",
+      "audience": "https://push.volition.one/gmail",
+      "serviceAccount": "gmail-push@example-project.iam.gserviceaccount.com",
+      "subscription": "projects/<google-project>/subscriptions/<gmail-push-subscription>",
+      "accounts": [
+        "owner@example.com",
+        "archive@example.com",
+        "personal@example.com"
+      ]
+    }
+  }
+}

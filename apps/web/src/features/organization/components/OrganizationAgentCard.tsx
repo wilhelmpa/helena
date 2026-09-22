@@ -23,7 +23,7 @@ export default function OrganizationAgentCard({
   const save = useSetAgentAssignment(teamId);
   const clear = useClearAgentAssignment(teamId);
   const [roleTitle, setRoleTitle] = useState(agent.roleTitle);
-  const [openClawAgentId, setOpenClawAgentId] = useState(agent.openClawAgentId ?? '');
+  const [runtimeAgentId, setRuntimeAgentId] = useState(agent.runtimeAgentId ?? '');
   const [departmentId, setDepartmentId] = useState(agent.departmentId?.toString() ?? '');
   const [reportsToAgentId, setReportsToAgentId] = useState(
     agent.reportsToAgentId?.toString() ?? '',
@@ -49,12 +49,12 @@ export default function OrganizationAgentCard({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.openClawAgentId')}</span>
+          <span className="text-muted-foreground">Runtime agent ID</span>
           <Input
-            value={openClawAgentId}
+            value={runtimeAgentId}
             maxLength={128}
-            placeholder={t('agents.openClawPlaceholder')}
-            onChange={(event) => setOpenClawAgentId(event.target.value)}
+            placeholder="Agent ID in the connected runtime"
+            onChange={(event) => setRuntimeAgentId(event.target.value)}
           />
         </label>
         <label className="space-y-1 text-sm">
@@ -122,7 +122,7 @@ export default function OrganizationAgentCard({
               id: agent.id,
               input: {
                 roleTitle,
-                openClawAgentId: openClawAgentId || null,
+                runtimeAgentId: runtimeAgentId || null,
                 departmentId: departmentId ? Number(departmentId) : null,
                 reportsToAgentId: reportsToAgentId ? Number(reportsToAgentId) : null,
               },

@@ -51,6 +51,9 @@ export const organizationGoal = pgTable(
       onDelete: 'set null',
     }),
     projectId: integer('project_id').references(() => project.id, { onDelete: 'set null' }),
+    parentGoalId: integer('parent_goal_id').references((): AnyPgColumn => organizationGoal.id, {
+      onDelete: 'set null',
+    }),
     title: text('title').notNull(),
     description: text('description').notNull().default(''),
     status: text('status').notNull().default('planned'),
@@ -62,6 +65,11 @@ export const organizationGoal = pgTable(
     index('organization_goal_team_idx').on(t.teamId),
     index('organization_goal_department_idx').on(t.departmentId),
     index('organization_goal_project_idx').on(t.projectId),
+    index('organization_goal_parent_idx').on(t.teamId, t.parentGoalId),
+    check(
+      'organization_goal_not_self_parent_check',
+      sql`${t.parentGoalId} IS NULL OR ${t.parentGoalId} <> ${t.id}`,
+    ),
     check(
       'organization_goal_status_check',
       sql`${t.status} IN ('planned', 'active', 'achieved', 'paused')`,
@@ -85,7 +93,7 @@ export const organizationAgentAssignment = pgTable(
       onDelete: 'set null',
     }),
     roleTitle: text('role_title').notNull().default(''),
-    openClawAgentId: text('openclaw_agent_id'),
+    runtimeAgentId: text('runtime_agent_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

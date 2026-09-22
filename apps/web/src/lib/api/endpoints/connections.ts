@@ -38,6 +38,16 @@ export interface MailAccountStatus {
 export type MailPayload = Record<string, unknown> | unknown[];
 
 export const getConnections = () => request<ConnectionsSnapshot>('/connections');
+export interface VaultStatus {
+  checkedAt: string;
+  accessUrl: string | null;
+  accessStatus: 'protected' | 'reachable' | 'unavailable' | 'unconfigured';
+  httpStatus: number | null;
+  serviceHealthExposed: false;
+  secretValuesExposed: false;
+}
+
+export const getVaultStatus = () => request<VaultStatus>('/vault/status', { cache: 'no-store' });
 export const runConnectionAction = (id: string, action: 'probe' | 'reconnect') =>
   request<ConnectionsSnapshot>('/connections/actions', {
     method: 'POST',
@@ -95,7 +105,7 @@ export const sendMailDraft = (account: string, draftId: string, confirmationToke
 export interface ThemeSyncResult {
   theme: 'light' | 'dark';
   results: Array<{
-    service: 'openclaw' | 'code' | 'nextcloud' | 'paperless';
+    service: 'openclaw' | 'code' | 'nextcloud';
     status: 'updated' | 'failed';
     attempts: number;
     error?: string;

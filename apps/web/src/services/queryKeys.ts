@@ -58,6 +58,13 @@ export const qk = {
   actions: (projectKey: string) => ['actions', projectKey] as const,
   actionRuns: (projectKey: string) => ['actionRuns', projectKey] as const,
   projectTemplates: (projectKey: string) => ['projectTemplates', projectKey] as const,
+  controlPlaneWorkflows: (projectKey: string) => ['controlPlaneWorkflows', projectKey] as const,
+  controlPlaneWorkflowRuns: (projectKey: string, workflowId: string) =>
+    ['controlPlaneWorkflows', projectKey, workflowId, 'runs'] as const,
+  controlPlaneWorkflowRun: (projectKey: string, workflowId: string, runId: string) =>
+    ['controlPlaneWorkflows', projectKey, workflowId, 'runs', runId] as const,
+  controlPlaneWorkflowSchedules: (projectKey: string, workflowId: string) =>
+    ['controlPlaneWorkflows', projectKey, workflowId, 'schedules'] as const,
   webhooks: (projectKey: string) => ['webhooks', projectKey] as const,
   webhookDeliveries: (webhookId: number) => ['webhookDeliveries', webhookId] as const,
   // Saved dashboards (the analytics tabs) and the read-only metrics behind their

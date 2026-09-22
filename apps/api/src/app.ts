@@ -37,7 +37,7 @@ const apiDescription = `REST API for projects, work items, AI agents, Git integr
 
 \`\`\`sh
 curl "${apiUrl}/projects" \\
-  --header "x-api-key: YOUR_PERSONAL_API_KEY"
+  --header "x-api-key: YOUR_PERSONAL_API_KEY" # gitleaks:allow
 \`\`\`
 
 JSON errors use \`{ "error": "message" }\` and may also include a stable \`code\`. Pagination parameters and response envelopes are documented per operation.
@@ -125,6 +125,7 @@ export const app = new Elysia()
           { name: 'Views', description: 'Saved work items views' },
           { name: 'Share', description: 'Public read-only sharing of issues and views' },
           { name: 'Actions', description: 'Project automation actions' },
+          { name: 'Workflows', description: 'Project-bound Mastra workflows and runs' },
           { name: 'Webhooks', description: 'Outgoing webhook subscriptions' },
           {
             name: 'Git',
@@ -134,6 +135,10 @@ export const app = new Elysia()
           { name: 'Agent Schedules', description: 'Recurring tasks for internal agents' },
           { name: 'Dashboards', description: 'Saved analytics dashboards' },
           { name: 'Documents', description: 'Shared project Docs pages' },
+          {
+            name: 'Files',
+            description: 'Project-scoped files backed by the restricted workspace bridge',
+          },
           { name: 'Link previews', description: 'Public web link metadata' },
           { name: 'Note boards', description: 'Freeform canvases of sticky notes' },
           { name: 'Notifications', description: "The session user's inbox notifications" },

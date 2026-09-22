@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { WORKSPACE_TOOL_IDS } from '@/utils/workspaceTools';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 
@@ -10,6 +10,9 @@ const OPEN_KEY = 'workspace:panel:open';
 const TOOL_KEY = 'workspace:panel:tool';
 const MODE_KEY = 'workspace:panel:mode';
 const FULLSCREEN_KEY = 'workspace:panel:fullscreen';
+const PROJECT_KEY = 'workspace:panel:project';
+
+const PROJECT_SCOPED_TOOLS = new Set<WorkspaceToolId>(['terminal', 'code', 'files']);
 
 function write(key: string, value: string) {
   try {
@@ -23,36 +26,61 @@ function isToolId(value: string | null): value is WorkspaceToolId {
   return WORKSPACE_TOOL_IDS.some((tool) => tool === value);
 }
 
-export function useWorkspacePanel({ defaultOpen = false }: { defaultOpen?: boolean } = {}) {
+export function useWorkspacePanel({
+  defaultOpen = false,
+  projectKey = null,
+}: { defaultOpen?: boolean; projectKey?: string | null } = {}) {
   const [open, setOpenState] = useState(false);
   const [activeTool, setActiveTool] = useState<WorkspaceToolId>('chat');
   const [mode, setMode] = useState<WorkspacePanelMode>('overlay');
   const [fullscreen, setFullscreen] = useState(false);
+  const [toolSession, setToolSession] = useState(0);
+  const previousProjectKey = useRef(projectKey);
 
   useEffect(() => {
     try {
       const savedOpen = localStorage.getItem(OPEN_KEY);
-      setOpenState(savedOpen === null ? defaultOpen : savedOpen === 'open');
       const storedTool = localStorage.getItem(TOOL_KEY);
+      const tool = isToolId(storedTool) ? storedTool : 'chat';
+      const staleProjectTool =
+        PROJECT_SCOPED_TOOLS.has(tool) && localStorage.getItem(PROJECT_KEY) !== (projectKey ?? '');
+      setOpenState(
+        staleProjectTool ? false : savedOpen === null ? defaultOpen : savedOpen === 'open',
+      );
+      if (staleProjectTool) write(OPEN_KEY, 'closed');
       if (isToolId(storedTool)) setActiveTool(storedTool);
       setMode(localStorage.getItem(MODE_KEY) === 'push' ? 'push' : 'overlay');
       setFullscreen(localStorage.getItem(FULLSCREEN_KEY) === 'true');
     } catch {
       return;
     }
-  }, [defaultOpen]);
+  }, [defaultOpen, projectKey]);
+
+  useEffect(() => {
+    if (previousProjectKey.current === projectKey) return;
+    previousProjectKey.current = projectKey;
+    if (open && PROJECT_SCOPED_TOOLS.has(activeTool)) {
+      setOpenState(false);
+      write(OPEN_KEY, 'closed');
+    }
+  }, [activeTool, open, projectKey]);
 
   const setOpen = useCallback((next: boolean) => {
     setOpenState(next);
     write(OPEN_KEY, next ? 'open' : 'closed');
   }, []);
 
-  const openTool = useCallback((tool: WorkspaceToolId) => {
-    setActiveTool(tool);
-    setOpenState(true);
-    write(TOOL_KEY, tool);
-    write(OPEN_KEY, 'open');
-  }, []);
+  const openTool = useCallback(
+    (tool: WorkspaceToolId) => {
+      setActiveTool(tool);
+      setToolSession((current) => current + 1);
+      setOpenState(true);
+      write(TOOL_KEY, tool);
+      write(OPEN_KEY, 'open');
+      if (PROJECT_SCOPED_TOOLS.has(tool)) write(PROJECT_KEY, projectKey ?? '');
+    },
+    [projectKey],
+  );
 
   const toggleTool = useCallback(
     (tool: WorkspaceToolId) => {
@@ -86,6 +114,7 @@ export function useWorkspacePanel({ defaultOpen = false }: { defaultOpen?: boole
     activeTool,
     mode,
     fullscreen,
+    toolSession,
     setOpen,
     openTool,
     toggleTool,
