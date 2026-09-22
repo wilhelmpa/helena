@@ -18,6 +18,7 @@ import {
   dashboardsPath,
   documentsPath,
   filesPath,
+  codePath,
   inboxPath,
   initiativesPath,
   notesPath,
@@ -31,7 +32,6 @@ import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarWorkItemsNav from '@/components/layout/SidebarWorkItemsNav';
-import { useShell } from '@/context/shellContext';
 
 // The top sidebar group. An entry appears only when its project feature is on and
 // the user may read the section.
@@ -39,7 +39,6 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
   const t = useTranslations('nav');
   const pathname = usePathname();
   const { can } = usePermissions();
-  const { workspaceTool, onOpenWorkspaceTool } = useShell();
   const features = useProjectFeatures();
   const disabled = !projectKey;
   const { data: views = [] } = useViewsQuery(projectKey);
@@ -118,12 +117,11 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
             />
           )}
           <SidebarNavItem
-            href="#"
+            href={projectKey ? codePath(projectKey) : '#'}
             icon={Code2}
             label={t('workspace.code')}
-            active={workspaceTool === 'code'}
-            disabled={disabled || !onOpenWorkspaceTool}
-            onClick={() => onOpenWorkspaceTool?.('code')}
+            active={!!projectKey && pathname === codePath(projectKey)}
+            disabled={disabled}
           />
           {features.documents && can('documents', 'read') && (
             <SidebarNavItem

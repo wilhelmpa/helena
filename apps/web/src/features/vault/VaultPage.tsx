@@ -40,6 +40,7 @@ function StatusBadge({ status }: { status: VaultStatus['accessStatus'] }) {
 
 export default function VaultPage() {
   const t = useTranslations('connections.vault');
+  const connectionsT = useTranslations('connections');
   const status = useQuery({ queryKey: ['vault', 'status'], queryFn: getVaultStatus });
   const connections = useQuery({
     queryKey: ['connections'],
@@ -50,7 +51,7 @@ export default function VaultPage() {
     queryKey: ['connections', 'secrets'],
     queryFn: getSecretInventory,
   });
-  const failed = status.isError || connections.isError || grants.isError;
+  const failed = status.isError || grants.isError;
 
   return (
     <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
@@ -119,6 +120,11 @@ export default function VaultPage() {
           <section className="rounded-lg border bg-card p-5">
             <h2 className="font-semibold">{t('connectionsTitle')}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{t('connectionsDescription')}</p>
+            {connections.isError ? (
+              <p className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                {connectionsT('loadError')}
+              </p>
+            ) : null}
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {(connections.data?.items ?? []).map((connection) => (
                 <div
@@ -132,7 +138,7 @@ export default function VaultPage() {
                 </div>
               ))}
             </div>
-            {connections.data?.items.length === 0 ? (
+            {!connections.isError && connections.data?.items.length === 0 ? (
               <p className="mt-4 text-sm text-muted-foreground">{t('noConnections')}</p>
             ) : null}
           </section>

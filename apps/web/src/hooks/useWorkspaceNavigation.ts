@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { safeProjectDestination } from '@/utils/workspaceNavigation';
+import { matchingProjectDestination, safeProjectDestination } from '@/utils/workspaceNavigation';
 
 export function useWorkspaceNavigation(projectKey: string | null, defaultSidebarOpen: boolean) {
   const pathname = usePathname();
@@ -20,12 +20,17 @@ export function useWorkspaceNavigation(projectKey: string | null, defaultSidebar
       /* Navigation still works without storage. */
     }
   }, [pathname, projectKey]);
-  const projectDestination = useCallback((key: string) => {
-    try {
-      return safeProjectDestination(key, localStorage.getItem(`workspace:project:${key}:route`));
-    } catch {
-      return safeProjectDestination(key, null);
-    }
-  }, []);
+  const projectDestination = useCallback(
+    (key: string) => {
+      const matching = matchingProjectDestination(projectKey, key, pathname);
+      if (matching) return matching;
+      try {
+        return safeProjectDestination(key, localStorage.getItem(`workspace:project:${key}:route`));
+      } catch {
+        return safeProjectDestination(key, null);
+      }
+    },
+    [pathname, projectKey],
+  );
   return { sidebarOpen, setSidebarOpen, projectDestination };
 }

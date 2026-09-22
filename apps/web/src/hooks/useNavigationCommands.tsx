@@ -14,14 +14,14 @@ import {
   Workflow,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useShell } from '@/context/shellContext';
 import { useSession } from '@/lib/auth-client';
 import {
   aiAgentsPath,
   aiTeamPath,
   connectionsPath,
   dashboardsPath,
-  documentsPath,
+  filesPath,
+  codePath,
   godPath,
   inboxPath,
   initiativesPath,
@@ -58,7 +58,6 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
   const godText = useGodSectionText();
   const accountLabel = useAccountSectionLabel();
   const router = useRouter();
-  const { onOpenWorkspaceTool } = useShell();
   const { can } = usePermissions();
   const features = useProjectFeatures();
   const { data: session } = useSession();
@@ -87,21 +86,8 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
     );
     add('nav.inbox', t('inbox'), <Inbox />, inboxPath(key), 'notifications unread');
     if (features.documents && can('documents', 'read'))
-      add(
-        'nav.files',
-        t('workspace.files'),
-        <Folder />,
-        documentsPath(key),
-        'files docs pages documentation',
-      );
-    if (onOpenWorkspaceTool)
-      items.push({
-        id: 'nav.code',
-        label: t('workspace.code'),
-        icon: <Code2 />,
-        keywords: 'code workspace editor',
-        run: () => onOpenWorkspaceTool('code'),
-      });
+      add('nav.files', t('workspace.files'), <Folder />, filesPath(key), 'files workspace storage');
+    add('nav.code', t('workspace.code'), <Code2 />, codePath(key), 'code workspace editor');
     if (features.initiatives && can('initiatives', 'read'))
       add('nav.initiatives', t('initiatives'), <Target />, initiativesPath(key), 'epics');
     for (const s of AI_TEAM_SECTIONS) {

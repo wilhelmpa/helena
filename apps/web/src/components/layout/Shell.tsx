@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
 import { useRouter } from 'next/navigation';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
@@ -80,6 +80,14 @@ export default function Shell({
   useProjectRouteSync({ projects, projectsLoaded, projectKey, allowEmpty: globalHome });
 
   const selectWorkspaceTool = workspacePanel.toggleTool;
+
+  useEffect(() => {
+    const routedTool =
+      route.sub === 'code' || route.sub === 'files' || route.sub === 'inbox' ? route.sub : null;
+    if (routedTool && workspacePanel.open && workspacePanel.activeTool === routedTool) {
+      workspacePanel.setOpen(false);
+    }
+  }, [route.sub, workspacePanel.activeTool, workspacePanel.open, workspacePanel.setOpen]);
 
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.

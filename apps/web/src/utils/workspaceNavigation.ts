@@ -18,3 +18,59 @@ export function safeProjectDestination(projectKey: string, saved: string | null)
     return base;
   return saved;
 }
+
+const PROJECT_SECTION_ROOTS = new Set([
+  'dashboard',
+  'organization',
+  'workflows',
+  'inbox',
+  'files',
+  'code',
+  'docs',
+  'initiatives',
+  'cycles',
+  'notes',
+  'ai-agents',
+  'mcp',
+  'members',
+  'notifications',
+]);
+
+const PROJECT_SETTINGS_SECTIONS = new Set([
+  'actions',
+  'configuration',
+  'custom-fields',
+  'general',
+  'git',
+  'issue-templates',
+  'issue-types',
+  'labels',
+  'states',
+  'webhooks',
+]);
+
+const PROJECT_AI_TEAM_SECTIONS = new Set(['chat', 'schedules']);
+
+export function matchingProjectDestination(
+  currentProjectKey: string | null,
+  nextProjectKey: string,
+  pathname: string,
+): string | null {
+  if (!currentProjectKey) return null;
+  const currentBase = projectPath(currentProjectKey);
+  if (safeProjectDestination(currentProjectKey, pathname) !== pathname) return null;
+  const parts = pathname.slice(currentBase.length).split('/').filter(Boolean);
+  const [root, section] = parts;
+  if (!root || root === 'view' || root === 'issue') return projectPath(nextProjectKey);
+  if (root === 'settings')
+    return section && PROJECT_SETTINGS_SECTIONS.has(section)
+      ? `${projectPath(nextProjectKey)}/settings/${section}`
+      : projectPath(nextProjectKey);
+  if (root === 'ai-team')
+    return section && PROJECT_AI_TEAM_SECTIONS.has(section)
+      ? `${projectPath(nextProjectKey)}/ai-team/${section}`
+      : projectPath(nextProjectKey);
+  return PROJECT_SECTION_ROOTS.has(root)
+    ? `${projectPath(nextProjectKey)}/${root}`
+    : projectPath(nextProjectKey);
+}

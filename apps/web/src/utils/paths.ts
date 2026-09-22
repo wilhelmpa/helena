@@ -45,6 +45,8 @@ export const documentsPath = (key: string) => `${projectPath(key)}/docs`;
 
 export const filesPath = (key: string) => `${projectPath(key)}/files`;
 
+export const codePath = (key: string) => `${projectPath(key)}/code`;
+
 export const documentPath = (key: string, documentId: number) =>
   `${documentsPath(key)}/${documentId}`;
 

@@ -74,7 +74,7 @@ services:
         ipv4_address: 172.30.254.3
   web:
     ports: !override ["127.0.0.1:3001:3001"]
-    image: volition/itsaplan-web:2026-09-22-v20-final
+    image: volition/itsaplan-web:2026-09-22-v22-nav-vault
     user: '1000:1000'
     read_only: true
     cap_drop: [ALL]

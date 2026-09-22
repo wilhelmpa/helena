@@ -31,6 +31,8 @@ export default function ShellHeaderTitle({
     if (section) return known(section) ? sectionText(section).label : t('projectSettings');
     if (sub === 'workflows') return t('workflows');
     if (sub === 'inbox') return t('inbox');
+    if (sub === 'files') return t('workspace.files');
+    if (sub === 'code') return t('workspace.code');
     if (sub === 'docs') return t('documents');
     if (sub === 'members') return t('members');
     if (sub === 'dashboard') return t('dashboards');

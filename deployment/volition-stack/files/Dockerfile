@@ -15,6 +15,8 @@ COPY remote-user.php /usr/local/etc/php/volition-remote-user.php
 COPY remote-user.ini /usr/local/etc/php/conf.d/zz-volition-remote-user.ini
 COPY nextcloud-entrypoint.sh /usr/local/bin/volition-nextcloud-entrypoint
 RUN a2enconf remote-user \
+    && a2disconf remoteip \
+    && sed -i 's/^[[:space:]]*configure_redis_session$/    : # Redis session config is generated in tmpfs by the Volition entrypoint/' /entrypoint.sh \
     && chmod 0755 /usr/local/bin/volition-nextcloud-entrypoint
 
 ENTRYPOINT ["/usr/local/bin/volition-nextcloud-entrypoint"]

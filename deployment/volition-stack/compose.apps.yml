@@ -72,8 +72,17 @@ services:
   nextcloud-db:
     image: volition/postgres:17-alpine-gosu-go1.26.6-20260921
     restart: unless-stopped
+    user: postgres
+    group_add:
+      - "1000"
+    read_only: true
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /run/postgresql:rw,nosuid,nodev,noexec,mode=3775,uid=70,gid=70
+      - /tmp:rw,nosuid,nodev,noexec,mode=1777
     environment:
       POSTGRES_DB: nextcloud
       POSTGRES_USER: nextcloud
@@ -86,7 +95,7 @@ services:
     cpus: 1.5
     pids_limit: 256
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud"]
+      test: ["CMD-SHELL", "psql -U nextcloud -d nextcloud -Atqc 'SELECT 1' | grep -qx 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -97,8 +106,14 @@ services:
   nextcloud-redis:
     image: volition/redis:8.2-alpine-patched-20260921-v2
     restart: unless-stopped
+    user: redis
+    read_only: true
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,mode=1777
     command:
       - /bin/sh
       - -ec
@@ -122,10 +137,24 @@ services:
   nextcloud:
     build:
       context: ./files
-    image: volition/nextcloud:34.0.4-user-saml-8.3.1
+    image: volition/nextcloud:34.0.4-user-saml-8.3.1-hardened-20260922
     restart: unless-stopped
+    read_only: true
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
+    tmpfs:
+      - /run:rw,nosuid,nodev,noexec,mode=0755
+      - /tmp:rw,nosuid,nodev,noexec,mode=1777
+      - /var/lib/php/sessions:rw,nosuid,nodev,noexec,mode=1733
     depends_on:
       nextcloud-db:
         condition: service_healthy
@@ -145,7 +174,6 @@ services:
       REDIS_HOST: nextcloud-redis
       VOLITION_REDIS_SECRET_SOURCE: /run/secrets/redis_password
       REDIS_HOST_PASSWORD_FILE: /run/volition-secrets/redis_password
-      APACHE_DISABLE_REWRITE_IP: "1"
       TRUSTED_PROXIES: 127.0.0.1 172.30.93.1
       OVERWRITEHOST: cloud.volition.one
       OVERWRITEPROTOCOL: https
@@ -163,7 +191,7 @@ services:
     cpus: 2.0
     pids_limit: 512
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1/status.php | grep -q '\"installed\":true' && curl --fail --silent http://127.0.0.1/status.php | grep -q '\"maintenance\":false'"]
+      test: ["CMD-SHELL", "set -e; body=$$(curl --fail --silent http://127.0.0.1/status.php); printf '%s' \"$$body\" | grep -q '\"installed\":true'; printf '%s' \"$$body\" | grep -q '\"maintenance\":false'; test \"$$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/remote.php/dav/files/)\" = 401"]
       interval: 15s
       timeout: 8s
       retries: 20
@@ -175,8 +203,23 @@ services:
         ipv4_address: 172.30.92.22
 
   nextcloud-init:
-    image: volition/nextcloud:34.0.4-user-saml-8.3.1
+    image: volition/nextcloud:34.0.4-user-saml-8.3.1-hardened-20260922
     restart: "no"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    tmpfs:
+      - /run:rw,nosuid,nodev,noexec,mode=0755
+      - /tmp:rw,nosuid,nodev,noexec,mode=1777
+      - /var/lib/php/sessions:rw,nosuid,nodev,noexec,mode=1733
     entrypoint: ["/bin/sh", "/opt/volition/init-sso.sh"]
     depends_on:
       nextcloud:
@@ -191,16 +234,33 @@ services:
       - nextcloud_html:/var/www/html
       - nextcloud_data:/var/www/html/data
       - ./files/init-sso.sh:/opt/volition/init-sso.sh:ro
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
     networks:
       files-data:
         ipv4_address: 172.30.92.23
 
   nextcloud-cron:
-    image: volition/nextcloud:34.0.4-user-saml-8.3.1
+    image: volition/nextcloud:34.0.4-user-saml-8.3.1-hardened-20260922
     restart: unless-stopped
+    user: www-data
+    group_add:
+      - "1000"
+    read_only: true
     security_opt:
       - no-new-privileges:true
-    command: ["/cron.sh"]
+    cap_drop:
+      - ALL
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        trap 'exit 0' TERM INT
+        while true; do
+          php -f /var/www/html/cron.php
+          date +%s > /tmp/nextcloud-cron-last-success
+          sleep 300 & wait $$!
+        done
     depends_on:
       nextcloud:
         condition: service_healthy
@@ -210,12 +270,21 @@ services:
     environment:
       REDIS_HOST: nextcloud-redis
       VOLITION_REDIS_SECRET_SOURCE: /run/secrets/redis_password
-      REDIS_HOST_PASSWORD_FILE: /run/volition-secrets/redis_password
+      REDIS_HOST_PASSWORD_FILE: /run/secrets/redis_password
     secrets:
       - redis_password
     mem_limit: 512m
     cpus: 0.5
     pids_limit: 128
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,mode=1777
+      - /var/lib/php/sessions:rw,nosuid,nodev,noexec,mode=1733
+    healthcheck:
+      test: ["CMD-SHELL", "set -e; test -s /tmp/nextcloud-cron-last-success; now=$$(date +%s); last=$$(cat /tmp/nextcloud-cron-last-success); test $$((now - last)) -lt 900; kill -0 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       files-data:
         ipv4_address: 172.30.92.24

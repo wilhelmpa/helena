@@ -3,9 +3,11 @@
 import type { LucideIcon } from 'lucide-react';
 import { Code2, Folder, Globe2, Inbox, Mail, MessageSquare, PlugZap, Terminal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { WORKSPACE_TOOL_IDS, type WorkspaceToolId } from '@/utils/workspaceTools';
+import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+const HEADER_WORKSPACE_TOOLS = ['chat', 'terminal', 'browser', 'mail', 'connections'] as const;
 
 const ICONS: Record<WorkspaceToolId, LucideIcon> = {
   chat: MessageSquare,
@@ -34,7 +36,7 @@ export default function WorkspaceToolbar({
       aria-label={t('tools')}
     >
       <div className="ms-auto flex h-full min-w-max items-center gap-1">
-        {WORKSPACE_TOOL_IDS.map((tool) => {
+        {HEADER_WORKSPACE_TOOLS.map((tool) => {
           const Icon = ICONS[tool];
           const active = open && activeTool === tool;
           const label = t(tool);
