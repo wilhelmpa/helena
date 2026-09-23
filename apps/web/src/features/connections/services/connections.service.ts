@@ -1,18 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  getConnections,
-  getMailAccounts,
-  runConnectionAction,
-} from '@/lib/api/endpoints/connections';
+import { getConnections, runConnectionAction } from '@/lib/api/endpoints/connections';
 
-const keys = { connections: ['connections'] as const, mailAccounts: ['mail', 'accounts'] as const };
+const keys = { connections: ['connections'] as const };
 
 export function useConnectionsQuery() {
   return useQuery({ queryKey: keys.connections, queryFn: getConnections, refetchInterval: 60_000 });
-}
-
-export function useMailAccountsQuery() {
-  return useQuery({ queryKey: keys.mailAccounts, queryFn: getMailAccounts });
 }
 
 export function useConnectionAction() {

@@ -26,14 +26,6 @@ export interface ConnectionsDto {
     manageUrl?: string | null;
   }>;
 }
-export interface MailAccountsDto {
-  accounts: Array<{
-    account: string;
-    status: ConnectionStatus;
-    lastCheckedAt: string;
-    lastError: string | null;
-  }>;
-}
 
 function bridgeConfigured() {
   return Boolean(
@@ -120,39 +112,3 @@ export const connectionsSnapshot = () =>
     : Promise.resolve({ checkedAt: new Date().toISOString(), items: [] });
 export const connectionsAction = (body: unknown) =>
   json<ConnectionsDto>('/api/connections/actions', body);
-export const mailAccounts = () =>
-  bridgeConfigured()
-    ? json<MailAccountsDto>('/api/mail/accounts', {})
-    : Promise.resolve({ accounts: [] });
-export const mailSearch = (body: unknown) => json('/api/mail/search', body);
-export const mailThread = (body: unknown) => json('/api/mail/thread', body);
-export const mailLabels = (body: unknown) => json('/api/mail/labels', body);
-export const mailModifyLabels = (body: unknown) => json('/api/mail/labels/modify', body);
-export const mailCreateDraft = (body: unknown) => json('/api/mail/drafts', body);
-export const mailListDrafts = (body: unknown) => json('/api/mail/drafts/list', body);
-export const mailAuthorizeSend = (body: unknown) => json('/api/mail/drafts/authorize-send', body);
-export const mailSendDraft = (body: unknown) => json('/api/mail/drafts/send', body);
-
-export async function mailAttachment(body: unknown): Promise<Response> {
-  const response = await bridge('/api/mail/attachment', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) {
-    const payload: unknown = await response.json().catch(() => null);
-    const message =
-      payload &&
-      typeof payload === 'object' &&
-      'message' in payload &&
-      typeof payload.message === 'string'
-        ? payload.message
-        : 'Attachment download failed';
-    throw new HttpError(response.status >= 500 ? 502 : response.status, message);
-  }
-  const headers = new Headers();
-  headers.set('Content-Type', 'application/octet-stream');
-  headers.set('Content-Disposition', response.headers.get('Content-Disposition') || 'attachment');
-  headers.set('Cache-Control', 'private, no-store');
-  headers.set('X-Content-Type-Options', 'nosniff');
-  return new Response(response.body, { status: 200, headers });
-}

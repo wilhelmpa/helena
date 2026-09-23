@@ -9,7 +9,7 @@ Rules and invariants for this package below; read the code for the walkthrough.
   `index.ts` (controller), `model.ts` (schemas), `service.ts` (Drizzle). Cross-cutting
   code in `shared/`. See `src/modules/` for the current set.
 - Features nest one level deeper only where they already call each other:
-  `modules/agents/{core,chat,runner,skills,tools,mcp-servers,credentials}`, where `core` holds the
+  `modules/agents/{core,chat,runner,skills,tools,mcp-servers,credentials,learning}`, where `core` holds the
   agent itself and its runtime. A feature whose links to its neighbours run one way
   stays flat. A schema several of the nested features share sits in the parent's
   `model.ts` and is re-exported from each child's (`agentParams`).
@@ -187,6 +187,43 @@ carries `teamMcpEnabled` from the join it already makes. The team guards check t
 switch through `assertTeamMcpAllowed`, which is what covers the resources no project
 flag reaches: the agents, the skills, the tools, the roles and the credentials.
 
+## Workflow builder
+
+`modules/pipelines/` stores the workflows members put together (`pipeline`, versions in
+`pipeline_version`, a project's use in `project_pipeline`) and their runs
+(`pipeline_run`, `pipeline_run_step`). Mastra's `plan-pipeline` runs them. Three things a
+reader would otherwise get wrong:
+
+- **The definition body is `t.Any()`.** `definition.ts` reads and checks it and names every
+  problem with its step and field, which the editor shows inline; a `t` schema would answer
+  a draft with one generic 400. A save refuses any problem; the problems of a project
+  (`project-context.ts`: roles no agent fills, unknown status names) refuse enabling.
+- **Plan writes a run before Mastra starts it.** A task event plans a `pending` run and
+  `drainPendingStarts` in `background.ts` starts it, so the write that fired the event never
+  waits for Mastra. A task change made by a workflow (the system actor `Workflow`) starts no
+  workflow.
+- **Mastra decides the next step, Plan does the step.** `control.ts` holds the operations
+  Mastra calls through the bridge (`/internal/orchestration/pipeline`); each answers a
+  repeated call for the same step execution with what the first one did. The contract is
+  in `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
+
+## Mail
+
+`modules/mail/{accounts,threads,drafts}` read and write what the worker imports. Two
+rules a reader would otherwise redraw:
+
+- **A thread's project decides who reaches it**, not its account. `mail_thread.project_id`
+  starts as the account's project (or a routing rule's) and changes with "Move to project";
+  NULL is Home, which only the team's owners and managers reach. Project mail needs the
+  `mail` permission there (`modules/mail/access.ts`). An agent's MCP tools are the
+  `:projectKey` routes, so an agent reaches only the threads filed under its project.
+- **The password is a secret of the credential store.** `mail_account.credential_id`
+  points at an `integration_credential` of kind `secret`; a typed password becomes one
+  labelled `Mail: <address>`, so the Credentials page lists every mail password.
+- **An agent never sends.** The send route refuses an agent; `request_mail_send` files an
+  approval request and parks the draft in `pending_approval`, and the worker queues it once
+  the request is approved.
+
 ## SCIM
 
 `modules/scim/` serves SCIM 2.0 (RFC 7643 / 7644) at `/scim/v2` for an identity provider
@@ -231,6 +268,16 @@ channel and is read only for a claim, not for authentication. Both funnel into
 `syncEmbeddedGroups`, the same additive-only join a group pushed through `POST /Groups`
 gets — a name missing from a later sync is never removed by this path, only by an explicit
 `PATCH /Groups/:id` or an unmapping in god mode.
+
+## Knowledge vault
+
+`modules/knowledge/` serves the vault (`packages/vault/AGENTS.md`): Docs notes and the
+other files, addressed by vault-relative path, not by project key. Its routes use the
+`vault` guard (`guard.ts`) instead of the project guards: it resolves the caller's reach
+once (`scope.ts`: the project role's Docs permission per project, the owner for Home,
+Templates and Private, the agent rules on top) and checks every path field the route
+names. Lists and search filter by the same reach in SQL (`readableEntries`). A note is
+written with the sha256 it was read at; a stale one is a 409 with `code: 'conflict'`.
 
 ## Security
 

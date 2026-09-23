@@ -1,75 +1,39 @@
 import { ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import type { ProjectDocumentSummary } from '@/lib/api/endpoints/documents';
 import { cn } from '@/lib/utils';
-import { documentPath, documentsPath } from '@/utils/paths';
+import { baseName, foldersBetween, noteName } from '../utils/vaultPaths';
 
-export default function DocumentBreadcrumbs({
-  projectKey,
-  projectName,
-  ancestors,
-  document,
-}: {
-  projectKey: string;
-  projectName: string;
-  ancestors: ProjectDocumentSummary[];
-  document: ProjectDocumentSummary;
-}) {
+export default function DocumentBreadcrumbs({ root, path }: { root: string; path: string }) {
   const t = useTranslations('documents');
+  const folders = foldersBetween(root, path);
 
   return (
     <nav
       className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-[12px] text-muted-foreground"
-      aria-label={t('treeLabel')}
+      aria-label={t('breadcrumb')}
     >
-      <span
-        className="hidden max-w-28 shrink-0 truncate font-medium lg:inline"
-        dir="auto"
-        title={projectName}
-      >
-        {projectName}
-      </span>
-      <ChevronRight className="hidden size-3 shrink-0 lg:block rtl:rotate-180" />
-      <Link
-        href={documentsPath(projectKey)}
-        className="shrink-0 rounded-sm px-1 py-0.5 font-medium transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        {t('title')}
-      </Link>
-
-      {ancestors.map((ancestor, index) => {
-        const nearest = index === ancestors.length - 1;
-        const ancestorTitle = ancestor.title.trim() || t('untitled');
-        return (
-          <span
-            key={ancestor.id}
-            className={cn(
-              'min-w-0 items-center gap-1',
-              nearest ? 'hidden sm:flex' : 'hidden xl:flex',
-            )}
-          >
-            <ChevronRight className="size-3 shrink-0 rtl:rotate-180" />
-            <Link
-              href={documentPath(projectKey, ancestor.id)}
-              className="max-w-32 truncate rounded-sm px-1 py-0.5 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              dir="auto"
-              title={ancestorTitle}
-            >
-              {ancestorTitle}
-            </Link>
+      <span className="shrink-0 px-1 py-0.5 font-medium">{t('title')}</span>
+      {folders.map((folder, index) => (
+        <span
+          key={folder}
+          className={cn(
+            'hidden min-w-0 items-center gap-1',
+            index === folders.length - 1 ? 'sm:flex' : 'xl:flex',
+          )}
+        >
+          <ChevronRight className="size-3 shrink-0 rtl:rotate-180" />
+          <span className="max-w-32 truncate px-1 py-0.5" dir="auto" title={baseName(folder)}>
+            {baseName(folder)}
           </span>
-        );
-      })}
-
+        </span>
+      ))}
       <ChevronRight className="size-3 shrink-0 rtl:rotate-180" />
       <span
-        className="min-w-8 truncate rounded-sm px-1 py-0.5 font-medium text-foreground"
+        className="min-w-8 truncate px-1 py-0.5 font-medium text-foreground"
         dir="auto"
-        title={document.title.trim() || t('untitled')}
         aria-current="page"
       >
-        {document.title.trim() || t('untitled')}
+        {noteName(path)}
       </span>
     </nav>
   );

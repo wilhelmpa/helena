@@ -947,8 +947,6 @@ def prepare_reset(snapshot_id):
         "volition-offsite.service",
         "volition-artifact-sync.timer",
         "volition-artifact-sync.service",
-        "volition-inbox-watch-renew.timer",
-        "volition-inbox-watch-renew.service",
         "volition-browser-ensure.timer",
         "volition-browser-ensure.service",
         "volition-provisioning.service",

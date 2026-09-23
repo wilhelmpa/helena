@@ -123,6 +123,12 @@ export const app = new Elysia()
             name: 'Credentials',
             description: "The team's web logins, API keys, SSH keys and secrets, and their grants",
           },
+          {
+            name: 'Agent Learning',
+            description:
+              'What an external agent learned in its runtime, and the actions its runner ' +
+              'carries out on it',
+          },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
           { name: 'Issues', description: 'Issues, their fields, feed, and comments' },
@@ -142,6 +148,10 @@ export const app = new Elysia()
           { name: 'Share', description: 'Public read-only sharing of issues and views' },
           { name: 'Actions', description: 'Project automation actions' },
           { name: 'Workflows', description: 'Project-bound Mastra workflows and runs' },
+          {
+            name: 'Workflow builder',
+            description: 'Workflows members put together in Plan, which Mastra runs',
+          },
           { name: 'Webhooks', description: 'Outgoing webhook subscriptions' },
           {
             name: 'Git',
@@ -153,7 +163,7 @@ export const app = new Elysia()
             description: 'Tasks created or reopened for an agent on a schedule, run by Mastra',
           },
           { name: 'Dashboards', description: 'Saved analytics dashboards' },
-          { name: 'Documents', description: 'Shared project Docs pages' },
+          { name: 'Knowledge', description: 'The knowledge vault: Docs notes, files and search' },
           {
             name: 'Files',
             description: 'Project-scoped files backed by the restricted workspace bridge',
@@ -175,6 +185,10 @@ export const app = new Elysia()
             description: 'Team departments, goals, and agent reporting lines',
           },
           { name: 'Hub Inbox', description: 'External message triage and task routing' },
+          {
+            name: 'Mail',
+            description: 'IMAP/SMTP mail accounts, threads, drafts and the mail tools of agents',
+          },
           {
             name: 'Agent Activity',
             description: 'The timeline of agent chats, agent runs and workflow runs',

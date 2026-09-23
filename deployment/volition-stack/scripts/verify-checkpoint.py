@@ -18,7 +18,6 @@ def sanitize(data):
  text=re.sub(r'[A-Za-z0-9._%+-]+@volition\.one','owner@example.com',text,flags=re.I)
  text=re.sub(r'[A-Za-z0-9._%+-]+@emrani-wilhelm\.de','archive@example.com',text,flags=re.I)
  text=re.sub(r'[A-Za-z0-9._%+-]+@gmail\.com','personal@example.com',text,flags=re.I)
- text=re.sub(r'^INBOX_BASELINES=.*$','INBOX_BASELINES={}',text,flags=re.M)
  text=re.sub(r'hermes-codex-[A-Za-z0-9_-]+/node_modules/@hermes/codex','hermes-codex-<project>/node_modules/@hermes/codex',text)
  return text.encode()
 def expected_files(source):

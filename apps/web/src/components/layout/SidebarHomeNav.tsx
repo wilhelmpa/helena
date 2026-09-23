@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react';
 import {
   Activity,
-  Bot,
+  AtSign,
+  BookOpenText,
   BookText,
+  Bot,
   Building2,
   Clock3,
   Folder,
@@ -15,6 +18,7 @@ import {
   Radio,
   ShieldCheck,
   UsersRound,
+  Workflow,
   Wrench,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -26,7 +30,9 @@ import {
   SidebarMenu,
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
+import { useSession } from '@/lib/auth-client';
 import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
+import { usePipelineApprovals } from '@/services/pipelines.service';
 import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 
@@ -37,14 +43,17 @@ const icons = {
   chat: MessageCircle,
   files: Folder,
   approvals: ShieldCheck,
+  docs: BookOpenText,
   agentPool: Bot,
   organization: Building2,
   agentActivity: Activity,
   schedules: Clock3,
+  workflows: Workflow,
   skills: BookText,
   tools: Wrench,
   mcps: Radio,
   connections: Plug,
+  mailAccounts: AtSign,
   credentials: KeyRound,
   devices: MonitorSmartphone,
   teamSettings: UsersRound,
@@ -65,9 +74,15 @@ export default function SidebarHomeNav({
 }) {
   const pathname = usePathname();
   const t = useTranslations('nav');
-  const items = homeNavigation(teamId);
+  const { data: session } = useSession();
+  // Read after mount: the server rendered without the session.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const items = homeNavigation(teamId, mounted && session?.user.role === 'god');
   const pendingApprovals =
-    (usePendingApprovalCount().data?.count ?? 0) + (useWorkflowGates().data?.items.length ?? 0);
+    (usePendingApprovalCount().data?.count ?? 0) +
+    (useWorkflowGates().data?.items.length ?? 0) +
+    (usePipelineApprovals().data?.length ?? 0);
 
   const groups = GROUPS.map((group) => {
     const groupItems = items.filter((item) => item.group === group);

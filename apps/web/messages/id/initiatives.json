@@ -154,13 +154,5 @@
     "download": "Unduh",
     "downloadFile": "Unduh {name}",
     "deleteFile": "Hapus {name}"
-  },
-  "documents": {
-    "title": "Dokumen",
-    "add": "Tautkan Dokumen",
-    "empty": "Belum ada Dokumen yang ditautkan.",
-    "loadFailed": "Gagal memuat Dokumen yang ditautkan. Coba lagi.",
-    "untitled": "Tanpa judul",
-    "remove": "Putuskan tautan {title}"
   }
 }

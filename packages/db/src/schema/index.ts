@@ -3,3 +3,6 @@ export * from './app';
 export * from './scim';
 export * from './workflows';
 export * from './organization';
+export * from './pipelines';
+export * from './mail';
+export * from './vault';

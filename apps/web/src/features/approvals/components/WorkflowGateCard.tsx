@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { WorkflowGate } from '@/lib/api/endpoints/approvals';
 import { formatDateTime } from '@/utils/dates';
 import { useDecideWorkflowGate } from '../services/approvals.service';
-import ApprovalDecisionForm from './ApprovalDecisionForm';
+import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
 
 export default function WorkflowGateCard({ gate }: { gate: WorkflowGate }) {
   const t = useTranslations('approvals');

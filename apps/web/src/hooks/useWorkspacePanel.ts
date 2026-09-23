@@ -27,10 +27,13 @@ function isToolId(value: string | null): value is WorkspaceToolId {
   return WORKSPACE_TOOL_IDS.some((tool) => tool === value);
 }
 
+// A pinned panel stays open beside the page, as on the kiosk's second screen: it cannot
+// be closed, float over the page or cover it.
 export function useWorkspacePanel({
   defaultOpen = false,
   projectKey = null,
-}: { defaultOpen?: boolean; projectKey?: string | null } = {}) {
+  pinned = false,
+}: { defaultOpen?: boolean; projectKey?: string | null; pinned?: boolean } = {}) {
   const [open, setOpenState] = useState(false);
   const [activeTool, setActiveTool] = useState<WorkspaceToolId>('chat');
   const [mode, setMode] = useState<WorkspacePanelMode>('overlay');
@@ -99,13 +102,13 @@ export function useWorkspacePanel({
 
   const toggleTool = useCallback(
     (tool: WorkspaceToolId) => {
-      if (open && activeTool === tool) {
+      if (open && activeTool === tool && !pinned) {
         setOpen(false);
         return;
       }
       openTool(tool);
     },
-    [activeTool, open, openTool, setOpen],
+    [activeTool, open, openTool, pinned, setOpen],
   );
 
   const toggleMode = useCallback(() => {
@@ -125,10 +128,11 @@ export function useWorkspacePanel({
   }, []);
 
   return {
-    open,
+    open: pinned || open,
     activeTool,
-    mode,
-    fullscreen,
+    mode: pinned ? ('push' as const) : mode,
+    fullscreen: !pinned && fullscreen,
+    pinned,
     toolSession,
     splitTool,
     setOpen,

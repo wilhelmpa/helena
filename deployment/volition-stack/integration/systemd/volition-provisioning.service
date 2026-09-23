@@ -16,7 +16,6 @@ Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
 Environment=PROJECT_BROWSER_PUBLIC_URL=https://plan.volition.one/browser/
 Environment=CODE_PUBLIC_URL=https://plan.volition.one/workspace/code/
 Environment=TERMINAL_PUBLIC_URL=https://plan.volition.one/focus/terminal-project/
-Environment=INBOX_BASELINES={}
 LoadCredential=provisioning_token:/home/pw/services/volition-stack/.secrets/project_provisioning_token
 LoadCredential=plan_api_key:/home/pw/services/volition-stack/.secrets/itsaplan_home_master_agent_api_key
 LoadCredential=plan_control_token:/home/pw/services/volition-stack/.secrets/plan_mastra_control_token

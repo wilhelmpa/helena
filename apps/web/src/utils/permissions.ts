@@ -84,6 +84,7 @@ const GROUP_DEFS: PermissionGroup[] = [
   { key: 'dashboards', resources: ['dashboards'] },
   { key: 'documents', resources: ['documents'] },
   { key: 'notes', resources: ['note_boards'] },
+  { key: 'mail', resources: ['mail'] },
   { key: 'ai', resources: ['ai_agents', 'integrations', 'agent_skills', 'agent_tools'] },
   {
     key: 'configuration',

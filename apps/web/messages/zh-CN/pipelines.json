@@ -1,0 +1,449 @@
+{
+  "kinds": {
+    "agent": "代理",
+    "approval": "审批",
+    "condition": "条件",
+    "action": "任务操作",
+    "wait": "等待"
+  },
+  "kindHints": {
+    "agent": "由代理处理任务",
+    "approval": "由人工批准或退回",
+    "condition": "将运行拆分为是与否两支",
+    "action": "更改任务",
+    "wait": "暂停运行"
+  },
+  "triggers": {
+    "manual": "手动启动",
+    "task_created": "任务已创建",
+    "task_assigned": "任务已指派",
+    "status_changed": "状态已更改",
+    "label_added": "已添加标签",
+    "schedule": "定时任务"
+  },
+  "triggerSummary": {
+    "statusTo": "状态变为 {status}",
+    "label": "添加标签 {label}",
+    "schedule": "定时任务 {cron}"
+  },
+  "library": {
+    "hint": "团队库中的工作流模板。项目启用一个模板，并为其角色指定代理。",
+    "newTemplate": "新建模板",
+    "newTemplateDescription": "模板从一个代理步骤开始，在编辑器中构建它。",
+    "name": "名称",
+    "create": "创建",
+    "templates": "模板",
+    "empty": "还没有模板",
+    "emptyHint": "在下方添加一个内置模板，或创建一个新模板。",
+    "builtins": "内置模板",
+    "builtinsHint": "添加会将其以你的语言复制到你的库中，之后可以修改。",
+    "addToLibrary": "添加到库",
+    "added": "已将 {name} 添加到库中。",
+    "steps": "{count, plural, other {# 个步骤}}",
+    "version": "版本 {version}",
+    "delete": "删除",
+    "deleteTitle": "删除模板",
+    "deleteConfirm": "删除 {name}？其版本和运行记录将被删除，使用它的每个项目都会停止运行它。",
+    "loadFailed": "无法加载模板。",
+    "tryAgain": "重试",
+    "noAccess": "你可能无法查看此团队的工作流。",
+    "readOnly": "只有可创建工作流的成员才能在此添加模板。"
+  },
+  "starter": {
+    "name": "新建工作流",
+    "role": "协调者",
+    "step": "处理任务",
+    "instruction": "处理任务 {identifier}“{title}”。\n\n{description}"
+  },
+  "builtin": {
+    "agent-team": {
+      "name": "智能体团队（默认）",
+      "description": "协调者制定计划，专家完成工作，协调者进行评审，任务随后移至评审。",
+      "roles": {
+        "coordinator": "协调者",
+        "specialist": "专家"
+      },
+      "steps": {
+        "plan": "协调者制定计划",
+        "implement": "专家完成工作",
+        "review": "协调者评审结果",
+        "accepted": "评审是否通过？",
+        "report-accepted": "报告已接受的结果",
+        "report-changes": "报告所需的更改",
+        "to-review": "将任务移至评审"
+      }
+    },
+    "release-notes": {
+      "name": "实现、审批、发布说明",
+      "description": "编码者实现任务，你批准或退回，内容代理随后撰写发布说明。",
+      "roles": {
+        "coder": "编码者",
+        "writer": "内容代理"
+      },
+      "steps": {
+        "implement": "编码者实现",
+        "approve": "审批",
+        "release-notes": "内容代理撰写发布说明",
+        "post-notes": "发布该说明"
+      }
+    }
+  },
+  "editor": {
+    "back": "工作流",
+    "template": "模板",
+    "projectWorkflow": "项目工作流",
+    "version": "版本 {version}",
+    "unsaved": "有未保存的更改",
+    "save": "保存",
+    "saved": "{name} 已保存。",
+    "blocked": "请先修正错误才能保存。",
+    "tabs": {
+      "build": "构建",
+      "runs": "运行",
+      "versions": "版本"
+    },
+    "name": "名称",
+    "description": "描述",
+    "descriptionPlaceholder": "该工作流的作用",
+    "noDescription": "无描述",
+    "readOnly": "你可以查看此工作流。可编辑工作流的成员才能更改它。",
+    "loadFailed": "无法加载该工作流。",
+    "templateElsewhere": "此工作流是团队库中的一个模板，在主页编辑。",
+    "openTemplate": "打开模板",
+    "issuesTitle": "{count, plural, other {# 个问题}}",
+    "warningsTitle": "{count, plural, other {此项目中有 # 个问题}}",
+    "warningsHint": "该工作流可以保存，但在修正这些问题之前无法在此项目中启用。"
+  },
+  "trigger": {
+    "title": "触发器",
+    "type": "启动条件",
+    "status": "状态",
+    "anyStatus": "任意状态",
+    "statusHint": "留空则在每次状态更改时启动。",
+    "label": "标签",
+    "cron": "Cron 表达式",
+    "cronHint": "分钟、小时、日期、月份和星期几。0 9 * * 1-5 表示工作日 9:00 运行。",
+    "timezone": "时区",
+    "taskTitle": "任务标题",
+    "taskTitleHint": "每次运行都会以此标题创建一个任务，并在其上运行该工作流。"
+  },
+  "roles": {
+    "title": "角色",
+    "hint": "代理步骤指定一个角色。项目为每个角色指定代理，或由下面的规则查找。",
+    "add": "添加角色",
+    "newRole": "新建角色",
+    "name": "名称",
+    "match": "查找方式",
+    "matchTypes": {
+      "coordinator": "项目的协调者",
+      "capability": "具备某项能力的代理",
+      "template": "模板代理的副本",
+      "none": "在项目中指定"
+    },
+    "capability": "能力",
+    "templateAgent": "模板代理",
+    "chooseAgent": "选择代理",
+    "remove": "移除角色",
+    "empty": "还没有角色。"
+  },
+  "steps": {
+    "title": "步骤",
+    "add": "步骤",
+    "addHere": "在此添加步骤",
+    "empty": "还没有步骤。",
+    "drag": "拖动以重新排序",
+    "yes": "是",
+    "no": "否",
+    "endsRun": "运行在此步骤后结束",
+    "limit": "一个工作流最多包含 {max} 个步骤。",
+    "problems": "{count, plural, other {# 个问题}}"
+  },
+  "summary": {
+    "agentRole": "角色 {role}",
+    "agentDirect": "@{username}",
+    "noInstruction": "尚无指令",
+    "approvalEnd": "已拒绝：运行结束",
+    "approvalGoto": "已拒绝：返回 {step}",
+    "outcome": "结果为 {outcomes}",
+    "keyword": "结果包含 {keyword}",
+    "taskIs": "{field} 为 {values}",
+    "taskIsNot": "{field} 不为 {values}",
+    "setStatus": "将状态设为 {status}",
+    "addLabels": "添加 {labels}",
+    "removeLabels": "移除 {labels}",
+    "assignRole": "指派给角色 {role}",
+    "assignMember": "指派给 {name}",
+    "unassign": "移除负责人",
+    "comment": "评论：{text}",
+    "subtask": "子任务：{title}",
+    "waitDelay": "等待 {duration}",
+    "waitUntil": "直到 {field} 的 {time}"
+  },
+  "duration": {
+    "minutes": "{count, plural, other {# 分钟}}",
+    "hours": "{count, plural, other {# 小时}}",
+    "days": "{count, plural, other {# 天}}"
+  },
+  "inspector": {
+    "title": "步骤",
+    "empty": "选择一个步骤以更改它。",
+    "name": "名称",
+    "delete": "删除步骤",
+    "insertVariable": "插入变量",
+    "variableGroups": {
+      "task": "任务",
+      "previous": "上一步骤",
+      "step": "步骤 {name}"
+    },
+    "variables": {
+      "title": "标题",
+      "description": "描述",
+      "identifier": "标识符",
+      "status": "状态",
+      "summary": "结果",
+      "outcome": "结论",
+      "note": "审批备注"
+    },
+    "agent": {
+      "assignee": "负责人",
+      "roles": "角色",
+      "agents": "项目的代理",
+      "instruction": "指令",
+      "instructionPlaceholder": "代理应执行的操作。变量会传递任务和此前步骤的结果。",
+      "timeout": "超时（分钟）",
+      "maxTurns": "最多轮数",
+      "runBudget": "最多分钟数",
+      "noLimit": "代理自身的限制",
+      "model": "模型",
+      "agentModel": "该代理的模型",
+      "limitsHint": "步骤只能降低代理自身的限制，不能提高。"
+    },
+    "approval": {
+      "message": "消息",
+      "messagePlaceholder": "审批人应检查的内容",
+      "onReject": "拒绝时",
+      "end": "结束运行",
+      "goto": "返回到较早的步骤",
+      "target": "返回到",
+      "chooseStep": "选择一个步骤",
+      "maxLoops": "最多这么多次",
+      "noEarlierSteps": "没有可返回的更早步骤。"
+    },
+    "condition": {
+      "kind": "检查项",
+      "kinds": {
+        "outcome": "上一步骤的结果",
+        "keyword": "上一结果中的词语",
+        "task": "任务的字段"
+      },
+      "outcomes": {
+        "success": "成功",
+        "failed": "失败",
+        "blocked": "受阻"
+      },
+      "keyword": "词语",
+      "keywordHint": "当上一步骤的结果包含该词语时为是，不区分大小写。",
+      "field": "字段",
+      "fields": {
+        "status": "状态",
+        "statusType": "状态类型",
+        "labels": "标签",
+        "area": "区域",
+        "priority": "优先级"
+      },
+      "op": "比较方式",
+      "ops": {
+        "is": "是",
+        "is_not": "不是"
+      },
+      "values": "值",
+      "namesHint": "名称，以逗号分隔。项目使用相同的命名方式。",
+      "choose": "选择"
+    },
+    "action": {
+      "kind": "操作",
+      "kinds": {
+        "set_status": "设置状态",
+        "add_labels": "添加标签",
+        "remove_labels": "移除标签",
+        "set_assignee": "设置负责人",
+        "comment": "撰写评论",
+        "create_subtask": "创建子任务"
+      },
+      "status": "状态",
+      "labels": "标签",
+      "assignee": "负责人",
+      "nobody": "无人",
+      "roles": "角色",
+      "members": "项目成员",
+      "body": "评论",
+      "title": "标题",
+      "description": "描述"
+    },
+    "wait": {
+      "kind": "等待方式",
+      "kinds": {
+        "delay": "等待一段时间",
+        "until": "直到任务的某个日期"
+      },
+      "amount": "时长",
+      "unit": "单位",
+      "units": {
+        "minutes": "分钟",
+        "hours": "小时",
+        "days": "天"
+      },
+      "field": "日期",
+      "fields": {
+        "dueDate": "截止日期",
+        "startDate": "开始日期"
+      },
+      "time": "时间",
+      "timeHint": "时间以 Europe/Berlin 为准。"
+    }
+  },
+  "issues": {
+    "invalid": "该值无效。",
+    "required": "此项为必填。",
+    "too_long": "最多 {max} 个字符。",
+    "too_many": "最多 {max} 个条目。",
+    "out_of_range": "须在 {min} 与 {max} 之间。",
+    "too_deep": "条件最多嵌套 {max} 层。",
+    "invalid_cron": "Cron 表达式无效。",
+    "invalid_timezone": "时区无效。",
+    "no_steps": "该工作流没有步骤。",
+    "duplicate_role_key": "两个角色使用了相同的键。",
+    "duplicate_step_id": "两个步骤使用了相同的 id。",
+    "unknown_role": "角色 {role} 不存在。",
+    "agent_in_template": "模板指定角色，而非代理。",
+    "member_in_template": "模板不能指定成员。",
+    "invalid_rework_target": "返回的步骤必须在此审批之前。",
+    "unknown_variable": "变量 {variable} 不存在。",
+    "unknown_step_variable": "{variable} 指定的步骤不存在。",
+    "step_variable_not_before": "{variable} 指定的步骤不在此步骤之前运行。",
+    "no_previous_step": "此步骤之前没有步骤为 {variable} 留下结果。",
+    "unreachable_step": "没有运行会到达此步骤：其前面条件的两个分支都会结束运行。",
+    "role_unresolved": "项目中没有代理担任角色 {role}。",
+    "agent_not_in_project": "该代理不在此项目中工作。",
+    "member_not_in_project": "该成员不在此项目中。",
+    "unknown_status": "该项目没有名为 {name} 的状态。",
+    "unknown_label": "该项目没有名为 {name} 的标签。",
+    "unknown_area": "该项目没有名为 {name} 的区域。",
+    "model_not_allowed": "团队中没有代理运行模型 {model}。",
+    "schedule_too_frequent": "该定时任务的运行频率超过了团队允许的上限。"
+  },
+  "runs": {
+    "status": {
+      "pending": "已排队",
+      "running": "运行中",
+      "waiting": "等待中",
+      "succeeded": "成功",
+      "failed": "失败",
+      "canceled": "已取消",
+      "rejected": "已拒绝"
+    },
+    "stepStatus": {
+      "running": "运行中",
+      "waiting": "等待中",
+      "succeeded": "已完成",
+      "failed": "失败",
+      "canceled": "已取消",
+      "simulated": "已模拟"
+    },
+    "outcomes": {
+      "success": "成功",
+      "failed": "失败",
+      "blocked": "受阻",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "true": "是",
+      "false": "否"
+    },
+    "agentRunStatus": {
+      "pending": "已排队",
+      "running": "运行中",
+      "success": "已完成",
+      "failed": "失败",
+      "canceled": "已取消"
+    },
+    "testRun": "试运行",
+    "version": "版本 {version}",
+    "trigger": "触发方式：{trigger}",
+    "startedBy": "由 {name} 启动",
+    "iteration": "第 {iteration} 轮",
+    "attempt": "第 {attempt} 次尝试",
+    "agentRun": "代理运行 #{id}",
+    "showResult": "显示结果",
+    "hideResult": "隐藏结果",
+    "note": "备注：{note}",
+    "decidedBy": "由 {name} 决定",
+    "wakeAt": "将于 {time} 继续",
+    "cancel": "取消运行",
+    "retry": "重试",
+    "approvedToast": "已批准。工作流继续执行。",
+    "rejectedToast": "已拒绝。工作流将走拒绝路径。",
+    "empty": "还没有运行记录。",
+    "loadFailed": "无法加载运行记录。",
+    "allStatuses": "所有状态",
+    "allRuns": "所有运行",
+    "onlyTestRuns": "试运行",
+    "onlyRealRuns": "正式运行",
+    "allProjects": "所有项目"
+  },
+  "versions": {
+    "empty": "没有版本。",
+    "current": "当前",
+    "createdBy": "由 {name}",
+    "open": "打开",
+    "viewing": "版本 {version}，来自 {date}。只读。",
+    "back": "返回版本列表"
+  },
+  "testRun": {
+    "button": "试运行",
+    "saveFirst": "请先保存更改。试运行会运行已保存的版本。",
+    "title": "试运行",
+    "hint": "代理步骤会被模拟，条件会被评估，任务本身不会有任何更改。",
+    "project": "项目",
+    "chooseProject": "选择一个项目",
+    "task": "任务",
+    "search": "搜索任务",
+    "noMatches": "没有匹配的任务",
+    "typeToSearch": "输入以搜索该项目的任务",
+    "start": "开始试运行",
+    "again": "再次开始"
+  },
+  "project": {
+    "title": "工作流构建器",
+    "hint": "团队库中的模板和此项目自己的工作流。启用一个，为其角色指定代理，它就会按触发条件运行。",
+    "create": "创建工作流",
+    "createDescription": "仅属于此项目的工作流，以一个代理步骤开始。",
+    "name": "名称",
+    "empty": "还没有工作流。在主页将模板添加到库中，或在此创建一个工作流。",
+    "loadFailed": "无法加载工作流。",
+    "template": "模板",
+    "own": "项目工作流",
+    "enabled": "已启用",
+    "disabled": "已停用",
+    "readOnly": "可编辑工作流的成员才能启用它们并为其角色指定代理。",
+    "roles": "各角色的代理",
+    "automatic": "自动（{agent}）",
+    "automaticPlain": "自动",
+    "nobody": "无人",
+    "open": "打开",
+    "runs": "运行",
+    "problems": "此处无法运行的原因"
+  },
+  "issuePanel": {
+    "title": "工作流",
+    "start": "启动工作流",
+    "empty": "此任务上还没有运行过任何工作流。",
+    "unavailable": "暂时无法加载工作流的运行记录。",
+    "showMore": "{count, plural, other {显示另外 # 个运行}}",
+    "showLess": "显示更少运行"
+  },
+  "approvals": {
+    "of": "{project} 中的 {workflow}",
+    "step": "步骤：{step}",
+    "waitingSince": "自 {time} 起等待"
+  }
+}

@@ -1,0 +1,449 @@
+{
+  "kinds": {
+    "agent": "Agente",
+    "approval": "Aprovação",
+    "condition": "Condição",
+    "action": "Ação na tarefa",
+    "wait": "Espera"
+  },
+  "kindHints": {
+    "agent": "Um agente trabalha na tarefa",
+    "approval": "Uma pessoa aprova ou devolve",
+    "condition": "Divide a execução em Sim e Não",
+    "action": "Altera a tarefa",
+    "wait": "Pausa a execução"
+  },
+  "triggers": {
+    "manual": "Iniciado manualmente",
+    "task_created": "Tarefa criada",
+    "task_assigned": "Tarefa atribuída",
+    "status_changed": "Status alterado",
+    "label_added": "Etiqueta adicionada",
+    "schedule": "Agendamento"
+  },
+  "triggerSummary": {
+    "statusTo": "O status muda para {status}",
+    "label": "A etiqueta {label} é adicionada",
+    "schedule": "Agendamento {cron}"
+  },
+  "library": {
+    "hint": "Os modelos de fluxo de trabalho da sua equipe. Um projeto ativa um modelo e nomeia os agentes de suas funções.",
+    "newTemplate": "Novo modelo",
+    "newTemplateDescription": "O modelo começa com uma etapa de agente. Você o monta no editor.",
+    "name": "Nome",
+    "create": "Criar",
+    "templates": "Modelos",
+    "empty": "Ainda não há modelos",
+    "emptyHint": "Adicione um modelo integrado abaixo ou crie um novo.",
+    "builtins": "Modelos integrados",
+    "builtinsHint": "Ao adicionar um, ele é copiado para sua biblioteca no seu idioma, onde você pode alterá-lo.",
+    "addToLibrary": "Adicionar à biblioteca",
+    "added": "{name} foi adicionado à biblioteca.",
+    "steps": "{count, plural, one {# etapa} other {# etapas}}",
+    "version": "Versão {version}",
+    "delete": "Excluir",
+    "deleteTitle": "Excluir modelo",
+    "deleteConfirm": "Excluir {name}? Suas versões e execuções são excluídas, e todo projeto que o usa para de executá-lo.",
+    "loadFailed": "Não foi possível carregar os modelos.",
+    "tryAgain": "Tentar novamente",
+    "noAccess": "Você pode não ver os fluxos de trabalho desta equipe.",
+    "readOnly": "Somente membros que podem criar fluxos de trabalho adicionam modelos aqui."
+  },
+  "starter": {
+    "name": "Novo fluxo de trabalho",
+    "role": "Coordenador",
+    "step": "Trabalhar na tarefa",
+    "instruction": "Trabalhe na tarefa {identifier} “{title}”.\n\n{description}"
+  },
+  "builtin": {
+    "agent-team": {
+      "name": "Equipe de agentes (padrão)",
+      "description": "O coordenador planeja, um especialista faz o trabalho, o coordenador o revisa, e a tarefa vai para Revisão.",
+      "roles": {
+        "coordinator": "Coordenador",
+        "specialist": "Especialista"
+      },
+      "steps": {
+        "plan": "O coordenador planeja o trabalho",
+        "implement": "O especialista faz o trabalho",
+        "review": "O coordenador revisa o resultado",
+        "accepted": "Revisão aceita?",
+        "report-accepted": "Relatar o resultado aceito",
+        "report-changes": "Relatar as alterações solicitadas",
+        "to-review": "Mover a tarefa para Revisão"
+      }
+    },
+    "release-notes": {
+      "name": "Implementar, aprovar, notas de versão",
+      "description": "Um programador implementa a tarefa, você aprova ou devolve, e um agente de conteúdo escreve as notas de versão.",
+      "roles": {
+        "coder": "Programador",
+        "writer": "Agente de conteúdo"
+      },
+      "steps": {
+        "implement": "O programador implementa",
+        "approve": "Aprovação",
+        "release-notes": "O agente de conteúdo escreve as notas de versão",
+        "post-notes": "Publicar as notas de versão"
+      }
+    }
+  },
+  "editor": {
+    "back": "Fluxos de trabalho",
+    "template": "Modelo",
+    "projectWorkflow": "Fluxo de trabalho do projeto",
+    "version": "Versão {version}",
+    "unsaved": "Alterações não salvas",
+    "save": "Salvar",
+    "saved": "{name} salvo.",
+    "blocked": "Corrija os erros para salvar.",
+    "tabs": {
+      "build": "Construir",
+      "runs": "Execuções",
+      "versions": "Versões"
+    },
+    "name": "Nome",
+    "description": "Descrição",
+    "descriptionPlaceholder": "O que o fluxo de trabalho faz",
+    "noDescription": "Sem descrição",
+    "readOnly": "Você pode ler este fluxo de trabalho. Membros que podem editar fluxos de trabalho o alteram.",
+    "loadFailed": "Não foi possível carregar o fluxo de trabalho.",
+    "templateElsewhere": "Este fluxo de trabalho é um modelo da biblioteca da equipe. Ele é editado em Início.",
+    "openTemplate": "Abrir o modelo",
+    "issuesTitle": "{count, plural, one {# problema} other {# problemas}}",
+    "warningsTitle": "{count, plural, one {# problema neste projeto} other {# problemas neste projeto}}",
+    "warningsHint": "O fluxo de trabalho pode ser salvo, mas não ativado no projeto até que sejam corrigidos."
+  },
+  "trigger": {
+    "title": "Gatilho",
+    "type": "Começa quando",
+    "status": "Status",
+    "anyStatus": "Qualquer status",
+    "statusHint": "Deixe em branco para começar em toda mudança de status.",
+    "label": "Etiqueta",
+    "cron": "Expressão cron",
+    "cronHint": "Minuto, hora, dia do mês, mês e dia da semana. 0 9 * * 1-5 é executado nos dias úteis às 9:00.",
+    "timezone": "Fuso horário",
+    "taskTitle": "Título da tarefa",
+    "taskTitleHint": "Cada execução cria uma tarefa com este título e executa o fluxo de trabalho nela."
+  },
+  "roles": {
+    "title": "Funções",
+    "hint": "Uma etapa de agente nomeia uma função. Um projeto nomeia o agente de cada função, ou a regra abaixo o encontra.",
+    "add": "Adicionar função",
+    "newRole": "Nova função",
+    "name": "Nome",
+    "match": "Encontrado por",
+    "matchTypes": {
+      "coordinator": "O coordenador do projeto",
+      "capability": "Um agente com uma capacidade",
+      "template": "A cópia de um agente do modelo",
+      "none": "Nomeado no projeto"
+    },
+    "capability": "Capacidade",
+    "templateAgent": "Agente do modelo",
+    "chooseAgent": "Escolher um agente",
+    "remove": "Remover função",
+    "empty": "Ainda não há funções."
+  },
+  "steps": {
+    "title": "Etapas",
+    "add": "Etapa",
+    "addHere": "Adicionar uma etapa aqui",
+    "empty": "Ainda não há etapas.",
+    "drag": "Arraste para reordenar",
+    "yes": "Sim",
+    "no": "Não",
+    "endsRun": "A execução termina depois desta etapa",
+    "limit": "Um fluxo de trabalho tem no máximo {max} etapas.",
+    "problems": "{count, plural, one {# problema} other {# problemas}}"
+  },
+  "summary": {
+    "agentRole": "Função {role}",
+    "agentDirect": "@{username}",
+    "noInstruction": "Ainda sem instrução",
+    "approvalEnd": "Rejeitado: a execução termina",
+    "approvalGoto": "Rejeitado: volta para {step}",
+    "outcome": "O resultado é {outcomes}",
+    "keyword": "O resultado contém {keyword}",
+    "taskIs": "{field} é {values}",
+    "taskIsNot": "{field} não é {values}",
+    "setStatus": "Definir o status para {status}",
+    "addLabels": "Adicionar {labels}",
+    "removeLabels": "Remover {labels}",
+    "assignRole": "Atribuir à função {role}",
+    "assignMember": "Atribuir a {name}",
+    "unassign": "Remover o responsável",
+    "comment": "Comentário: {text}",
+    "subtask": "Subtarefa: {title}",
+    "waitDelay": "Esperar {duration}",
+    "waitUntil": "Até a {field} às {time}"
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minuto} other {# minutos}}",
+    "hours": "{count, plural, one {# hora} other {# horas}}",
+    "days": "{count, plural, one {# dia} other {# dias}}"
+  },
+  "inspector": {
+    "title": "Etapa",
+    "empty": "Selecione uma etapa para alterá-la.",
+    "name": "Nome",
+    "delete": "Excluir etapa",
+    "insertVariable": "Inserir variável",
+    "variableGroups": {
+      "task": "Tarefa",
+      "previous": "Etapa anterior",
+      "step": "Etapa {name}"
+    },
+    "variables": {
+      "title": "Título",
+      "description": "Descrição",
+      "identifier": "Identificador",
+      "status": "Status",
+      "summary": "Resultado",
+      "outcome": "Resultado final",
+      "note": "Nota de aprovação"
+    },
+    "agent": {
+      "assignee": "Responsável",
+      "roles": "Funções",
+      "agents": "Agentes do projeto",
+      "instruction": "Instrução",
+      "instructionPlaceholder": "O que o agente deve fazer. As variáveis passam a tarefa e os resultados anteriores.",
+      "timeout": "Tempo limite em minutos",
+      "maxTurns": "Turnos no máximo",
+      "runBudget": "Minutos no máximo",
+      "noLimit": "Limite do agente",
+      "model": "Modelo",
+      "agentModel": "O modelo do agente",
+      "limitsHint": "Uma etapa pode reduzir os limites próprios do agente, não aumentá-los."
+    },
+    "approval": {
+      "message": "Mensagem",
+      "messagePlaceholder": "O que quem aprova deve verificar",
+      "onReject": "Quando rejeitado",
+      "end": "Encerrar a execução",
+      "goto": "Voltar a uma etapa anterior",
+      "target": "Voltar para",
+      "chooseStep": "Escolher uma etapa",
+      "maxLoops": "Vezes no máximo",
+      "noEarlierSteps": "Não há uma etapa anterior para voltar."
+    },
+    "condition": {
+      "kind": "Verifica",
+      "kinds": {
+        "outcome": "Resultado final da etapa anterior",
+        "keyword": "Palavra no resultado anterior",
+        "task": "Campo da tarefa"
+      },
+      "outcomes": {
+        "success": "Sucesso",
+        "failed": "Falhou",
+        "blocked": "Bloqueado"
+      },
+      "keyword": "Palavra",
+      "keywordHint": "Sim quando o resultado da etapa anterior a contém, sem diferenciar maiúsculas de minúsculas.",
+      "field": "Campo",
+      "fields": {
+        "status": "Status",
+        "statusType": "Tipo de status",
+        "labels": "Etiquetas",
+        "area": "Área",
+        "priority": "Prioridade"
+      },
+      "op": "Comparação",
+      "ops": {
+        "is": "é",
+        "is_not": "não é"
+      },
+      "values": "Valores",
+      "namesHint": "Nomes, separados por vírgulas. O projeto os nomeia da mesma forma.",
+      "choose": "Escolher"
+    },
+    "action": {
+      "kind": "Ação",
+      "kinds": {
+        "set_status": "Definir o status",
+        "add_labels": "Adicionar etiquetas",
+        "remove_labels": "Remover etiquetas",
+        "set_assignee": "Definir o responsável",
+        "comment": "Escrever um comentário",
+        "create_subtask": "Criar uma subtarefa"
+      },
+      "status": "Status",
+      "labels": "Etiquetas",
+      "assignee": "Responsável",
+      "nobody": "Ninguém",
+      "roles": "Funções",
+      "members": "Membros do projeto",
+      "body": "Comentário",
+      "title": "Título",
+      "description": "Descrição"
+    },
+    "wait": {
+      "kind": "Esperas",
+      "kinds": {
+        "delay": "Por um tempo",
+        "until": "Até uma data da tarefa"
+      },
+      "amount": "Duração",
+      "unit": "Unidade",
+      "units": {
+        "minutes": "Minutos",
+        "hours": "Horas",
+        "days": "Dias"
+      },
+      "field": "Data",
+      "fields": {
+        "dueDate": "data de vencimento",
+        "startDate": "data de início"
+      },
+      "time": "Hora",
+      "timeHint": "Hora em Europe/Berlin."
+    }
+  },
+  "issues": {
+    "invalid": "O valor é inválido.",
+    "required": "Isto é obrigatório.",
+    "too_long": "No máximo {max} caracteres.",
+    "too_many": "No máximo {max} itens.",
+    "out_of_range": "Entre {min} e {max}.",
+    "too_deep": "As condições se aninham no máximo {max} níveis.",
+    "invalid_cron": "A expressão cron é inválida.",
+    "invalid_timezone": "O fuso horário é inválido.",
+    "no_steps": "O fluxo de trabalho não tem etapas.",
+    "duplicate_role_key": "Duas funções compartilham uma chave.",
+    "duplicate_step_id": "Duas etapas compartilham um id.",
+    "unknown_role": "A função {role} não existe.",
+    "agent_in_template": "Um modelo nomeia funções, não agentes.",
+    "member_in_template": "Um modelo não pode nomear um membro.",
+    "invalid_rework_target": "A etapa para a qual voltar deve vir antes desta aprovação.",
+    "unknown_variable": "A variável {variable} não existe.",
+    "unknown_step_variable": "{variable} nomeia uma etapa que não existe.",
+    "step_variable_not_before": "{variable} nomeia uma etapa que não é executada antes desta.",
+    "no_previous_step": "Nenhuma etapa anterior a esta deixa um resultado para {variable}.",
+    "unreachable_step": "Nenhuma execução chega a esta etapa: os dois ramos da condição anterior encerram a execução.",
+    "role_unresolved": "Nenhum agente do projeto preenche a função {role}.",
+    "agent_not_in_project": "O agente não trabalha neste projeto.",
+    "member_not_in_project": "O membro não está neste projeto.",
+    "unknown_status": "O projeto não tem o status {name}.",
+    "unknown_label": "O projeto não tem a etiqueta {name}.",
+    "unknown_area": "O projeto não tem a área {name}.",
+    "model_not_allowed": "Nenhum agente da equipe executa o modelo {model}.",
+    "schedule_too_frequent": "O agendamento é executado com mais frequência do que a equipe permite."
+  },
+  "runs": {
+    "status": {
+      "pending": "Na fila",
+      "running": "Em execução",
+      "waiting": "Aguardando",
+      "succeeded": "Concluído",
+      "failed": "Falhou",
+      "canceled": "Cancelado",
+      "rejected": "Rejeitado"
+    },
+    "stepStatus": {
+      "running": "Em execução",
+      "waiting": "Aguardando",
+      "succeeded": "Concluído",
+      "failed": "Falhou",
+      "canceled": "Cancelado",
+      "simulated": "Simulado"
+    },
+    "outcomes": {
+      "success": "Sucesso",
+      "failed": "Falhou",
+      "blocked": "Bloqueado",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado",
+      "true": "Sim",
+      "false": "Não"
+    },
+    "agentRunStatus": {
+      "pending": "Na fila",
+      "running": "Em execução",
+      "success": "Concluído",
+      "failed": "Falhou",
+      "canceled": "Cancelado"
+    },
+    "testRun": "Execução de teste",
+    "version": "Versão {version}",
+    "trigger": "Gatilho: {trigger}",
+    "startedBy": "Iniciada por {name}",
+    "iteration": "Passagem {iteration}",
+    "attempt": "Tentativa {attempt}",
+    "agentRun": "Execução do agente nº {id}",
+    "showResult": "Mostrar resultado",
+    "hideResult": "Ocultar resultado",
+    "note": "Nota: {note}",
+    "decidedBy": "Decidido por {name}",
+    "wakeAt": "Continua {time}",
+    "cancel": "Cancelar execução",
+    "retry": "Tentar novamente",
+    "approvedToast": "Aprovado. O fluxo de trabalho continua.",
+    "rejectedToast": "Rejeitado. O fluxo de trabalho segue seu caminho de rejeição.",
+    "empty": "Ainda não há execuções.",
+    "loadFailed": "Não foi possível carregar as execuções.",
+    "allStatuses": "Todos os status",
+    "allRuns": "Todas as execuções",
+    "onlyTestRuns": "Execuções de teste",
+    "onlyRealRuns": "Execuções reais",
+    "allProjects": "Todos os projetos"
+  },
+  "versions": {
+    "empty": "Sem versões.",
+    "current": "Atual",
+    "createdBy": "por {name}",
+    "open": "Abrir",
+    "viewing": "Versão {version} de {date}. Somente leitura.",
+    "back": "Voltar para as versões"
+  },
+  "testRun": {
+    "button": "Execução de teste",
+    "saveFirst": "Salve suas alterações primeiro. Uma execução de teste executa a versão salva.",
+    "title": "Execução de teste",
+    "hint": "As etapas de agente são simuladas, as condições são avaliadas, e nada muda na tarefa.",
+    "project": "Projeto",
+    "chooseProject": "Escolher um projeto",
+    "task": "Tarefa",
+    "search": "Buscar tarefas",
+    "noMatches": "Nenhuma tarefa encontrada",
+    "typeToSearch": "Digite para buscar nas tarefas do projeto",
+    "start": "Iniciar execução de teste",
+    "again": "Iniciar outra"
+  },
+  "project": {
+    "title": "Construtor de fluxos de trabalho",
+    "hint": "Modelos da biblioteca da equipe e fluxos de trabalho próprios deste projeto. Ative um, nomeie os agentes de suas funções, e ele será executado pelo seu gatilho.",
+    "create": "Criar fluxo de trabalho",
+    "createDescription": "Um fluxo de trabalho só deste projeto. Ele começa com uma etapa de agente.",
+    "name": "Nome",
+    "empty": "Ainda não há fluxos de trabalho. Adicione modelos à biblioteca em Início ou crie um aqui.",
+    "loadFailed": "Não foi possível carregar os fluxos de trabalho.",
+    "template": "Modelo",
+    "own": "Fluxo de trabalho do projeto",
+    "enabled": "Ativado",
+    "disabled": "Desativado",
+    "readOnly": "Membros que podem editar fluxos de trabalho os ativam e nomeiam os agentes de suas funções.",
+    "roles": "Agentes das funções",
+    "automatic": "Automático ({agent})",
+    "automaticPlain": "Automático",
+    "nobody": "ninguém",
+    "open": "Abrir",
+    "runs": "Execuções",
+    "problems": "Por que não pode ser executado aqui"
+  },
+  "issuePanel": {
+    "title": "Fluxos de trabalho",
+    "start": "Iniciar fluxo de trabalho",
+    "empty": "Nenhum fluxo de trabalho foi executado nesta tarefa ainda.",
+    "unavailable": "As execuções do fluxo de trabalho não podem ser carregadas agora.",
+    "showMore": "{count, plural, one {Mostrar mais # execução} other {Mostrar mais # execuções}}",
+    "showLess": "Mostrar menos execuções"
+  },
+  "approvals": {
+    "of": "{workflow} em {project}",
+    "step": "Etapa: {step}",
+    "waitingSince": "Aguardando desde {time}"
+  }
+}

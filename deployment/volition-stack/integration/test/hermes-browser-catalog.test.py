@@ -163,6 +163,12 @@ class HermesApprovalGuardCatalogTest(unittest.TestCase):
         self.assertEqual(link.readlink(), self.plugins / "plan-approval-guard")
         self.assertTrue((link / "plugin.yaml").is_file())
 
+    def test_names_the_links_the_runner_keeps(self):
+        self.assertEqual(
+            CATALOG.plan_plugins(self.plugins),
+            {"plan-approval-guard": str(self.plugins / "plan-approval-guard")},
+        )
+
     def test_rejects_another_plugin_in_the_guard_place(self):
         (self.home / "plugins" / "plan-approval-guard").mkdir(parents=True)
         with self.assertRaisesRegex(RuntimeError, "conflicts"):

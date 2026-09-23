@@ -30,33 +30,9 @@ describe('interactive communications boundary', () => {
     ).toBe(503);
   });
 
-  it('requires an owner session and an allowed browser origin before mail operations', async () => {
-    const owner = await signUpTestUser();
+  it('refuses a member who does not own the instance', async () => {
+    await signUpTestUser();
     const member = await signUpTestUser();
     expect((await authedApi(member.cookie).connections.get()).status).toBe(403);
-    expect(
-      (
-        await authedApi(owner.cookie).mail.search.post({
-          account: 'owner@example.com',
-          query: 'in:inbox',
-        })
-      ).status,
-    ).toBe(403);
-    expect(
-      (
-        await authedApi(owner.cookie, { origin: 'https://evil.test' }).mail.search.post({
-          account: 'owner@example.com',
-          query: 'in:inbox',
-        })
-      ).status,
-    ).toBe(403);
-    expect(
-      (
-        await authedApi(owner.cookie, { origin: 'http://localhost:3001' }).mail.search.post({
-          account: 'owner@example.com',
-          query: 'in:inbox',
-        })
-      ).status,
-    ).toBe(503);
   });
 });

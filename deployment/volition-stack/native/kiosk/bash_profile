@@ -1,0 +1,3 @@
+if [ "$(tty)" = /dev/tty1 ] && ! /usr/bin/systemd-detect-virt --container --quiet; then
+  exec /usr/local/libexec/volition-plan-kiosk
+fi

@@ -4,11 +4,11 @@ import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ApprovalRequestList from './components/ApprovalRequestList';
-import WorkflowGateList from './components/WorkflowGateList';
+import WorkflowApprovalList from './components/WorkflowApprovalList';
 
 // Every decision waiting for the reader across the projects they may decide in: the
-// requests agents made before acting outside Plan, and the workflow runs held at their
-// approval gate. The decided tab keeps the agents' requests with their outcome.
+// requests agents made before acting outside Plan, and the workflow runs waiting at an
+// approval. The decided tab keeps the agents' requests with their outcome.
 export default function ApprovalsPage() {
   const tNav = useTranslations('nav');
   const t = useTranslations('approvals');
@@ -27,7 +27,7 @@ export default function ApprovalsPage() {
             </TabsList>
             <TabsContent value="pending" className="space-y-8 pt-2">
               <ApprovalRequestList status="pending" />
-              <WorkflowGateList />
+              <WorkflowApprovalList />
             </TabsContent>
             <TabsContent value="decided" className="pt-2">
               <ApprovalRequestList status="decided" />

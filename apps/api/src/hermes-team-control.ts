@@ -28,6 +28,7 @@ import {
 import { getMembership } from './modules/members/service';
 import { getProjectByKey } from './modules/projects/service';
 import { bumpControlPlaneRevision } from './modules/sync/service';
+import { pipelineControl } from './modules/pipelines/control';
 
 const REF = /^[a-z][a-z0-9-]*:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const IDEMPOTENCY = /^[a-f0-9]{64}$/;
@@ -87,6 +88,15 @@ async function resolveAgent(projectId: number, agentRef: string) {
   return row ?? null;
 }
 
+async function teamRunsModel(teamId: number, model: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(and(eq(aiAgent.teamId, teamId), eq(aiAgent.model, model)))
+    .limit(1);
+  return row !== undefined;
+}
+
 export async function enqueueHermesStage(body: unknown) {
   const input = object(body);
   const projectRef = ref(input?.projectRef, 'project');
@@ -122,6 +132,10 @@ export async function enqueueHermesStage(body: unknown) {
     (executionPolicy?.runBudgetSeconds != null && runBudgetSeconds === null)
   )
     return { status: 400, body: { error: 'Invalid Hermes run budget' } };
+  // A workflow step may run the agent on another model its team runs.
+  const modelOverride = executionPolicy?.model == null ? null : text(executionPolicy.model, 200);
+  if (executionPolicy?.model != null && !modelOverride)
+    return { status: 400, body: { error: 'Invalid Hermes run model' } };
   if (Number(leaseBound) < agentRunConfig.leaseSeconds() || Number(heartbeatBound) < 60)
     return {
       status: 409,
@@ -147,6 +161,8 @@ export async function enqueueHermesStage(body: unknown) {
     return { status: 409, body: { error: 'Hermes agent execution settings do not match Plan' } };
   // Refused rather than queued, so the workflow run fails with the reason instead of
   // waiting on a run no runner claims.
+  if (modelOverride && !(await teamRunsModel(resolved.project.teamId, modelOverride)))
+    return { status: 409, body: { error: `No agent of the team runs the model ${modelOverride}` } };
   const refusal = await enforceAgentLimits(agent.id, resolved.project.id, resolved.task.id);
   if (refusal)
     return {
@@ -164,6 +180,7 @@ export async function enqueueHermesStage(body: unknown) {
     maxAttempts,
     maxTurns: maxTurns ?? undefined,
     runBudgetSeconds: runBudgetSeconds ?? undefined,
+    model: modelOverride ?? undefined,
   });
   const result = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
@@ -208,6 +225,7 @@ export async function enqueueHermesStage(body: unknown) {
         trigger: 'manual',
         maxTurns,
         runBudgetSeconds,
+        model: modelOverride,
       })
       .returning({ id: agentRun.id });
     if (!run) throw new Error('Hermes stage could not be queued');
@@ -641,4 +659,5 @@ export const hermesTeamControlRoutes = new Elysia({ name: 'hermes-team-control' 
   .post('/internal/orchestration/task-sync', ({ request }) =>
     respond(request, synchronizeHermesStage),
   )
-  .post('/internal/orchestration/routine', ({ request }) => respond(request, dispatchRoutine));
+  .post('/internal/orchestration/routine', ({ request }) => respond(request, dispatchRoutine))
+  .post('/internal/orchestration/pipeline', ({ request }) => respond(request, pipelineControl));

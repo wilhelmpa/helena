@@ -269,32 +269,31 @@ describe('sync', () => {
   });
 
   describe('documents scope', () => {
-    it('moves for document, preference, and asset changes', async () => {
+    it('moves when a note of the project is created, edited, renamed or trashed', async () => {
       const { asOwner, projectId } = await setup();
       const scope = `documents:${projectId}`;
       const initial = await rev(asOwner, scope);
-      const documents = asOwner.projects({ projectKey: 'MKT' }).documents;
+      const path = 'Projects/MKT/Docs/Handbook.md';
 
-      const page = (await documents.post({ title: 'Handbook' })).data!;
-      const created = await rev(asOwner, scope);
-      expect(created).not.toBe(initial);
+      const created = await asOwner.knowledge.notes.put({ path, content: 'First' });
+      const afterCreate = await rev(asOwner, scope);
+      expect(afterCreate).not.toBe(initial);
 
-      await documents({ documentId: page.id }).patch({ version: page.version, content: 'Updated' });
-      const edited = await rev(asOwner, scope);
-      expect(edited).not.toBe(created);
-
-      await documents({ documentId: page.id }).preferences.patch({ isFavorite: true });
-      const favorited = await rev(asOwner, scope);
-      expect(favorited).not.toBe(edited);
-
-      const asset = await documents({ documentId: page.id }).assets.post({
-        file: new File(['diagram'], 'diagram.png', { type: 'image/png' }),
+      await asOwner.knowledge.notes.put({
+        path,
+        content: 'Second',
+        expectedSha: created.data!.sha256,
       });
-      const uploaded = await rev(asOwner, scope);
-      expect(uploaded).not.toBe(favorited);
+      const afterEdit = await rev(asOwner, scope);
+      expect(afterEdit).not.toBe(afterCreate);
 
-      await documents({ documentId: page.id }).assets({ publicId: asset.data!.id }).delete();
-      expect(await rev(asOwner, scope)).not.toBe(uploaded);
+      const renamed = 'Projects/MKT/Docs/Guide.md';
+      await asOwner.knowledge.move.post({ from: path, to: renamed });
+      const afterMove = await rev(asOwner, scope);
+      expect(afterMove).not.toBe(afterEdit);
+
+      await asOwner.knowledge.trash.post({ path: renamed });
+      expect(await rev(asOwner, scope)).not.toBe(afterMove);
     });
   });
 
@@ -396,7 +395,7 @@ describe('sync', () => {
 
     it('hides a documents scope from a member without documents read access', async () => {
       const { asOwner, projectId } = await setup();
-      await asOwner.projects({ projectKey: 'MKT' }).documents.post({ title: 'Handbook' });
+      await asOwner.knowledge.notes.put({ path: 'Projects/MKT/Docs/Handbook.md', content: '' });
       const { userId, api: asMember } = await addMember(asOwner);
       const scope = `documents:${projectId}`;
       expect(await rev(asMember, scope)).not.toBe('0');

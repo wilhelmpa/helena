@@ -49,6 +49,27 @@ export const runtimePolicy = t.Object({
   // Defaults for every queued run of the agent; a chat answer is not limited.
   maxTurns: t.Optional(t.Nullable(t.Integer(maxTurnsLimit))),
   runBudgetSeconds: t.Optional(t.Nullable(t.Integer(runBudgetSecondsLimit))),
+  learning: t.Optional(
+    t.Boolean({
+      description:
+        'Whether the agent keeps memory and creates skills in its runtime. Unset, it does.',
+    }),
+  ),
+  curator: t.Optional(
+    t.Boolean({
+      description:
+        "Whether the runtime's curator may archive skills the agent created and no longer " +
+        'uses. Unset, it may not.',
+    }),
+  ),
+  reflection: t.Optional(
+    t.Union([t.Literal('off'), t.Literal('failure'), t.Literal('complex')], {
+      description:
+        'When a learning agent reflects on a run in a short follow-up turn of the same ' +
+        "session: 'failure' after a failed run and after rework on an issue, 'complex' also " +
+        "after a run of many tool calls. Unset, 'complex'.",
+    }),
+  ),
 });
 
 // A managed file the runtime found changed outside Plan. The runtime kept a copy and
@@ -79,6 +100,14 @@ export const runtimeInventory = t.Object({
             "one of Plan's skills, 'agent' was created by the agent.",
         },
       ),
+      path: t.Optional(
+        t.String({
+          minLength: 1,
+          maxLength: 260,
+          description: "The skill's directory in the runtime, which an action names it by.",
+        }),
+      ),
+      pinned: t.Optional(t.Boolean()),
     }),
     { maxItems: 300 },
   ),
@@ -87,8 +116,18 @@ export const runtimeInventory = t.Object({
       file: t.Union([t.Literal('MEMORY.md'), t.Literal('USER.md')]),
       content: t.String({ maxLength: 16384 }),
       truncated: t.Boolean(),
+      sha256: t.Optional(
+        t.String({
+          pattern: '^[a-f0-9]{64}$',
+          description: 'Of the whole file; an edit names the version it was made on.',
+        }),
+      ),
+      chars: t.Optional(t.Integer({ minimum: 0 })),
     }),
     { maxItems: 2 },
+  ),
+  cronJobs: t.Optional(
+    t.Integer({ minimum: 0, description: "Jobs in the runtime's own scheduler." }),
   ),
 });
 
@@ -99,6 +138,11 @@ export const runtimeState = t.Object({
   capabilities: t.Array(t.String()),
   detail: t.Nullable(t.String()),
   conflicts: t.Array(runtimeConflict),
+  restored: t.Array(t.String(), {
+    description:
+      'What the runtime put back after it was changed or removed outside Plan: managed ' +
+      'files and plugin links, by their path in the runtime.',
+  }),
   inventory: t.Nullable(runtimeInventory),
   reportedAt: t.Nullable(t.String()),
 });
@@ -280,6 +324,35 @@ export const AgentRunResponse = t.Object({
         'The question the agent asked when it reported itself blocked during the run, which ' +
         'then ended as a success. Null for a run that was not blocked.',
     }),
+  ),
+  reflection: t.Nullable(
+    t.Object(
+      {
+        status: t.Union([
+          t.Literal('pending'),
+          t.Literal('success'),
+          t.Literal('failed'),
+          t.Literal('lost'),
+        ]),
+        reason: t.Union([t.Literal('failure'), t.Literal('rework'), t.Literal('complex')]),
+        saved: t.Array(
+          t.Object({
+            tool: t.Union([t.Literal('memory'), t.Literal('skill')]),
+            action: t.String(),
+            target: t.String(),
+          }),
+        ),
+        summary: t.Nullable(t.String()),
+        error: t.Nullable(t.String()),
+        tokens: t.Optional(t.Number()),
+      },
+      {
+        description:
+          "The follow-up turn in which the agent kept what the run taught it: 'lost' when " +
+          "its runner never reported it. Its tokens are part of the run's. Null for a run " +
+          'without one.',
+      },
+    ),
   ),
   nextAttemptAt: t.String(),
   createdAt: t.String(),

@@ -1,6 +1,7 @@
 import { t } from 'elysia';
 
 import { runtimeConflict, runtimeInventory, runtimePolicy, runtimeState } from '../core/model';
+import { learnedSkill, runtimeActionResult, runtimeActionSnapshot } from '../learning/model';
 
 // A literal, or the id of a secret whose value GET /agent-runtime/mcp-secrets returns.
 const runtimeMcpValue = t.Union([
@@ -31,6 +32,14 @@ export const RuntimePolicySnapshotResponse = t.Object({
   configuredTools: t.Array(
     t.Object({ id: t.Number(), toolKey: t.String(), integrationKey: t.String() }),
   ),
+  // The parts of the knowledge vault the agent's own file tools may reach, as absolute
+  // paths (see knowledge.ts). The runner hands it to Hermes as VOLITION_VAULT_ACCESS.
+  vaultAccess: t.Object({
+    root: t.String(),
+    read: t.Array(t.String()),
+    write: t.Array(t.String()),
+    deny: t.Array(t.String()),
+  }),
   mcpServers: t.Array(
     t.Object({
       name: t.String(),
@@ -49,6 +58,15 @@ export const RuntimePolicySnapshotResponse = t.Object({
       'run and chat answer from GET /agent-runs/:runId/web-logins or ' +
       '/agent-chats/:messageId/web-logins.',
   }),
+  learning: t.Object({
+    enabled: t.Boolean({ description: 'The agent keeps memory and creates skills.' }),
+    curator: t.Boolean({
+      description: "The runtime's curator may archive learned skills the agent no longer uses.",
+    }),
+  }),
+  actions: t.Array(runtimeActionSnapshot, {
+    description: "The owner's decisions on what the agent learned, not carried out yet.",
+  }),
 });
 
 export const McpSecretsResponse = t.Object({
@@ -64,7 +82,10 @@ export const RuntimeStateBody = t.Object({
   capabilities: t.Array(t.String({ minLength: 1, maxLength: 80 }), { maxItems: 64 }),
   detail: t.Nullable(t.String({ maxLength: 500 })),
   conflicts: t.Optional(t.Array(runtimeConflict, { maxItems: 8 })),
+  restored: t.Optional(t.Array(t.String({ minLength: 1, maxLength: 300 }), { maxItems: 20 })),
   inventory: t.Optional(runtimeInventory),
+  learnedSkills: t.Optional(t.Array(learnedSkill, { maxItems: 50 })),
+  actions: t.Optional(t.Array(runtimeActionResult, { maxItems: 100 })),
 });
 
 export const RuntimeStateResponse = runtimeState;

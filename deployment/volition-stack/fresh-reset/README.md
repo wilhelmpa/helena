@@ -118,9 +118,9 @@ recreated without adding an Hermes or Hermes IPC mount.
 Backup and offsite timers are stopped before the first destructive operation.
 The offsite timer starts after all fresh-service checks pass. The backup timer
 stays stopped until `backup.sh` removes plaintext staging after every success
-and failure path. Artifact sync, inbox watch, and the former Hermes
-browser-ensure timer stay stopped until their fresh credentials and replacement
-integrations are configured. A failed run leaves both backup timers stopped so
+and failure path. Artifact sync and the former Hermes browser-ensure timer
+stay stopped until their fresh credentials and replacement integrations are
+configured. A failed run leaves both backup timers stopped so
 a partial reset is not captured as a valid fresh state.
 
 The Vault UI requirement is fail-closed. The separate marker identifies the

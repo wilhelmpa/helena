@@ -330,3 +330,149 @@ test('HTTP bridge aborts a stage when Mastra closes the connection before the an
   await assert.rejects(request);
   await abandoned;
 });
+
+const pipelineAgent = {
+  schemaVersion: 1,
+  idempotencyKey: KEY,
+  projectRef: 'project:VERV',
+  taskRef: 'task:VERV-1',
+  agentRef: 'agent:coder',
+  prompt: 'Implement the task.',
+  timeoutSeconds: 600,
+  policy: { maxTurns: 20, model: 'luna', ignored: true },
+};
+
+test('a pipeline agent step queues a Plan run and answers its outcome', async () => {
+  const queued = [];
+  let status = { runId: 51, status: 'success', output: 'Done. Summary: tests pass.' };
+  const service = createHermesTeamService({
+    enqueue: async input => {
+      queued.push(input);
+      return { runId: 51, replayed: false };
+    },
+    status: async () => status,
+  });
+  assert.deepEqual(await service.executePipelineAgent(pipelineAgent), {
+    agentRunId: 51,
+    outcome: 'success',
+    summary: 'Done. Summary: tests pass.',
+  });
+  assert.deepEqual(queued, [{
+    idempotencyKey: KEY,
+    projectRef: 'project:VERV',
+    task: { taskRef: 'task:VERV-1' },
+    agent: { agentRef: 'agent:coder' },
+    execution: {},
+    policy: { maxTurns: 20, model: 'luna' },
+    prompt: 'Implement the task.',
+  }]);
+  status = { runId: 51, status: 'success', output: 'x', blockedQuestion: 'Which API?' };
+  assert.deepEqual(await service.executePipelineAgent(pipelineAgent), {
+    agentRunId: 51,
+    outcome: 'blocked',
+    summary: 'Which API?',
+  });
+  status = { runId: 51, status: 'failed', error: 'The runner crashed' };
+  assert.equal((await service.executePipelineAgent(pipelineAgent)).outcome, 'failed');
+  status = { runId: 51, status: 'success', output: `start ${'a'.repeat(5_000)} the summary` };
+  const long = await service.executePipelineAgent(pipelineAgent);
+  assert.equal(long.summary.length, 4_000);
+  assert.ok(long.summary.endsWith('the summary'));
+  for (const invalid of [
+    { ...pipelineAgent, taskRef: 'task:OTHER-1' },
+    { ...pipelineAgent, idempotencyKey: 'short' },
+    { ...pipelineAgent, timeoutSeconds: 59 },
+    { ...pipelineAgent, prompt: '' },
+  ]) {
+    await assert.rejects(
+      () => service.executePipelineAgent(invalid),
+      error => error instanceof HermesTeamError && error.code === 'invalid_pipeline_agent_request',
+    );
+  }
+});
+
+test('a pipeline agent step that times out or is abandoned cancels its Plan run', async () => {
+  let clock = 0;
+  const canceled = [];
+  const service = createHermesTeamService(
+    {
+      enqueue: async () => ({ runId: 52, replayed: false }),
+      status: async () => ({ runId: 52, status: 'pending' }),
+      cancel: async input => {
+        canceled.push(input);
+        return { runId: 52, status: 'canceled' };
+      },
+    },
+    { now: () => clock, wait: async milliseconds => { clock += milliseconds; } },
+  );
+  await assert.rejects(
+    () => service.executePipelineAgent(pipelineAgent),
+    error => error instanceof HermesTeamError && error.code === 'hermes_run_timeout',
+  );
+  const mastra = new AbortController();
+  mastra.abort();
+  await assert.rejects(
+    () => service.executePipelineAgent(pipelineAgent, mastra.signal),
+    error => error instanceof HermesTeamError && error.code === 'stage_canceled',
+  );
+  assert.deepEqual(canceled, [
+    { runId: 52, projectRef: 'project:VERV' },
+    { runId: 52, projectRef: 'project:VERV' },
+  ]);
+});
+
+test('a pipeline control request reaches Plan unchanged', async () => {
+  const calls = [];
+  const service = createHermesTeamService({
+    pipeline: async input => {
+      calls.push(input);
+      return { matched: true };
+    },
+  });
+  const request = {
+    schemaVersion: 1,
+    operation: 'condition',
+    runId: 'run-1',
+    projectRef: 'project:VERV',
+    stepId: 'check',
+    iteration: 1,
+    seq: 2,
+  };
+  assert.deepEqual(await service.pipeline(request), { matched: true });
+  assert.deepEqual(calls, [request]);
+  for (const invalid of [
+    { ...request, operation: 'drop' },
+    { ...request, projectRef: 'task:VERV-1' },
+    { ...request, runId: '' },
+    { ...request, schemaVersion: 2 },
+  ]) {
+    await assert.rejects(
+      () => service.pipeline(invalid),
+      error => error instanceof HermesTeamError && error.code === 'invalid_pipeline_request',
+    );
+  }
+});
+
+test('HTTP bridge routes pipeline requests', async () => {
+  let agentSignal;
+  const service = {
+    pipeline: async value => ({ operation: value.operation }),
+    executePipelineAgent: async (value, signal) => {
+      agentSignal = signal;
+      return { agentRunId: 1, outcome: 'success', summary: value.prompt };
+    },
+  };
+  server = http.createServer(createHermesTeamHandler({ bridgeToken: TOKEN, planToken: TOKEN }, service));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const post = (path, body) => fetch(`${origin}${path}`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const control = await post('/internal/hermes/team/pipeline', { operation: 'begin' });
+  assert.deepEqual(await control.json(), { operation: 'begin' });
+  const agent = await post('/internal/hermes/team/pipeline-agent', pipelineAgent);
+  assert.deepEqual(await agent.json(), { agentRunId: 1, outcome: 'success', summary: 'Implement the task.' });
+  assert.equal(agentSignal.aborted, false);
+});

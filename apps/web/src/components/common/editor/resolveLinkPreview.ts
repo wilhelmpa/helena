@@ -3,7 +3,7 @@ import { getLinkPreview, type LinkPreview } from '@/lib/api/endpoints/link-previ
 import { getProject } from '@/lib/api/endpoints/projects';
 import { getIssue, getIssueBySeq } from '@/lib/api/endpoints/issues';
 import { getNoteBoard } from '@/lib/api/endpoints/noteBoards';
-import { getDocument } from '@/lib/api/endpoints/documents';
+import { getVaultDocument } from '@/lib/api/endpoints/knowledge';
 import { listViews } from '@/lib/api/endpoints/views';
 import { normalizeSavedDisplay } from '@/utils/viewSettings';
 import { internalLinkTarget } from './internalLinkTarget';
@@ -49,6 +49,18 @@ async function resolveInternalLinkPreview(
       updatedAt: issue.updatedAt,
     };
   }
+  if (target.kind === 'document') {
+    const document = await getVaultDocument(target.path, signal);
+    const project = document.projectKey ? await getProject(document.projectKey, signal) : null;
+    return {
+      ...empty,
+      kind: 'document',
+      title: document.title,
+      description: previewExcerpt(document.body),
+      siteName: project?.project.name ?? null,
+      updatedAt: document.updatedAt,
+    };
+  }
   const project = await getProject(target.projectKey, signal);
   const base = { ...empty, siteName: project.project.name };
   switch (target.kind) {
@@ -60,16 +72,6 @@ async function resolveInternalLinkPreview(
         description: previewExcerpt(project.project.description),
         siteName: project.project.key,
       };
-    case 'document': {
-      const document = await getDocument(target.projectKey, target.id, signal);
-      return {
-        ...base,
-        kind: 'document',
-        title: document.title,
-        description: previewExcerpt(document.content),
-        updatedAt: document.updatedAt,
-      };
-    }
     case 'notes': {
       const board = await getNoteBoard(target.projectKey, target.id, signal);
       const notes = Array.isArray(board.canvas?.nodes) ? board.canvas.nodes : [];

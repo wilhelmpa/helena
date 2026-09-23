@@ -391,13 +391,11 @@
       "skipped": "Saltada"
     }
   },
-  "documents": {
-    "title": "Documentos",
-    "add": "Enlazar una página de documentos",
-    "empty": "Todavía no hay documentos enlazados.",
-    "loadFailed": "No se han podido cargar los documentos enlazados. Pulsa para reintentar.",
-    "remove": "Desenlazar {title}",
-    "untitled": "Sin título"
+  "knowledge": {
+    "title": "Conocimiento",
+    "create": "Nueva nota sobre esta tarea",
+    "empty": "Ninguna nota enlaza esta tarea todavía. Una nota la enlaza con {link}.",
+    "loadFailed": "No se pudieron cargar las notas. Haz clic para reintentar."
   },
   "archived": "Archivada",
   "activityHeading": "Actividad",

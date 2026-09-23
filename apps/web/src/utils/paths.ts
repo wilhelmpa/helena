@@ -42,6 +42,8 @@ export const homeChatPath = (location: ChatLocation = {}) => `/chat${chatQuery(l
 
 export const connectionsPath = () => '/connections';
 
+export const mailAccountsPath = () => '/mail/accounts';
+
 export const agentsPath = () => '/agents';
 export const teamOrganizationPath = () => '/organization';
 
@@ -62,6 +64,13 @@ export const globalInboxPath = () => '/inbox';
 export const globalAgentActivityPath = () => '/activity';
 export const approvalsPath = () => '/approvals';
 export const schedulesPath = () => '/schedules';
+
+// The workflow builder: the team's library of templates in Home and the editor of one
+// template, and the editor of a project's own workflow.
+export const pipelinesPath = () => '/workflows';
+export const pipelinePath = (pipelineId: number) => `${pipelinesPath()}/${pipelineId}`;
+export const projectPipelinePath = (key: string, pipelineId: number) =>
+  `${workflowsPath(key)}/${pipelineId}`;
 
 // Public read-only share pages (no auth). The token is the unguessable share key.
 export const shareIssuePath = (token: string) => `/share/issue/${token}`;
@@ -107,8 +116,16 @@ export const homeFilesPath = (folder?: string, location: FilesLocation = {}) =>
 
 export const codePath = (key: string) => `${projectPath(key)}/code`;
 
-export const documentPath = (key: string, documentId: number) =>
-  `${documentsPath(key)}/${documentId}`;
+// The Docs of Home: the notes under Home/Docs in the vault.
+export const homeDocsPath = () => '/docs';
+
+// The Docs page that opens one note of the vault by its vault-relative path: the Docs of
+// its project for a path under Projects/<KEY>/, Home's Docs for any other.
+export const vaultNotePath = (path: string) => {
+  const [top, key] = path.split('/');
+  const base = top === 'Projects' && key ? documentsPath(key) : homeDocsPath();
+  return `${base}?path=${encodeURIComponent(path)}`;
+};
 
 export const settingsPath = (key: string, section: string) =>
   `${projectPath(key)}/settings/${section}`;
@@ -135,6 +152,12 @@ export const membersPath = (key: string) => `${projectPath(key)}/members`;
 // "MKT-42"), not the internal database id: /project/MKT/issue/42.
 export const issuePath = (key: string, sequenceNumber: number) =>
   `${projectPath(key)}/issue/${sequenceNumber}`;
+
+// An issue by its identifier, "MKT-42", where a response carries no number of its own.
+export const issueIdentifierPath = (identifier: string) => {
+  const match = /^(.+)-(\d+)$/.exec(identifier);
+  return match ? issuePath(match[1]!, Number(match[2])) : `/${identifier}`;
+};
 
 export const initiativesPath = (key: string) => `${projectPath(key)}/initiatives`;
 

@@ -1,0 +1,7 @@
+From: legacy@example.net
+To: patrick@example.org
+Subject: Ohne Message-ID
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Diese Mail hat keine Message-ID und kein Datum.

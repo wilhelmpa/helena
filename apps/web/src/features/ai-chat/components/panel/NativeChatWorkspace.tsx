@@ -3,7 +3,7 @@
 import { useContext, useMemo } from 'react';
 import { ShellCtx } from '@/context/shellContext';
 import type { WorkspaceContentProps } from '@/context/workspaceContents';
-import { soleTeamId } from '@/features/home/homeTeamScope';
+import { soleTeamId } from '@/utils/homeTeamScope';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { useProjectQuery } from '@/services/projects.service';
 import { useTeamsQuery } from '@/services/teams.service';

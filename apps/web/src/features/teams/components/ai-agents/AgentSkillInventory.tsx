@@ -1,13 +1,29 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
+import type { RuntimeAction } from '@/lib/api/endpoints/agentLearning';
 import type { AgentInventorySkill } from '@/lib/api/endpoints/agents';
 import { skillGroups } from '../../utils/agentAbilities';
+import AgentLearnedSkillRow from './AgentLearnedSkillRow';
 import { AgentListSearch, SEARCH_THRESHOLD } from './AgentListSearch';
 
-// The skills in the agent's Hermes profile, read-only. A skill that did not ship with
-// Hermes says where it came from, so the ones the agent wrote itself stand out.
-export default function AgentSkillInventory({ skills }: { skills: AgentInventorySkill[] }) {
+// What the owner can do about the skills the agent learned, when its runner carries it out.
+export interface LearnedSkillControls {
+  agentId: number;
+  actions: RuntimeAction[] | undefined;
+  onPromoted: (skillId: number) => void;
+}
+
+// The skills in the agent's Hermes profile. A skill that did not ship with Hermes says
+// where it came from, so the ones the agent learned itself stand out, with what the owner
+// can do about them.
+export default function AgentSkillInventory({
+  skills,
+  learned,
+}: {
+  skills: AgentInventorySkill[];
+  learned: LearnedSkillControls | null;
+}) {
   const t = useTranslations('teams.agents.abilities');
   const tAgents = useTranslations('teams.agents');
   const [query, setQuery] = useState('');
@@ -37,29 +53,38 @@ export default function AgentSkillInventory({ skills }: { skills: AgentInventory
                   <p className="text-xs font-medium tracking-wide text-muted-foreground">
                     {category || t('uncategorized')}
                   </p>
-                  {items.map((skill, index) => (
-                    <div
-                      key={`${skill.name}-${index}`}
-                      className="flex items-start justify-between gap-3"
-                    >
-                      <span className="min-w-0" dir="auto">
-                        <span className="text-sm">{skill.name}</span>
-                        {skill.description && (
-                          <span className="block text-xs text-muted-foreground">
-                            {skill.description}
-                          </span>
+                  {items.map((skill, index) =>
+                    learned && skill.origin === 'agent' && skill.path ? (
+                      <AgentLearnedSkillRow
+                        key={skill.path}
+                        skill={skill}
+                        path={skill.path}
+                        {...learned}
+                      />
+                    ) : (
+                      <div
+                        key={`${skill.name}-${index}`}
+                        className="flex items-start justify-between gap-3"
+                      >
+                        <span className="min-w-0" dir="auto">
+                          <span className="text-sm">{skill.name}</span>
+                          {skill.description && (
+                            <span className="block text-xs text-muted-foreground">
+                              {skill.description}
+                            </span>
+                          )}
+                        </span>
+                        {skill.origin !== 'bundled' && (
+                          <Badge
+                            variant={skill.origin === 'agent' ? 'secondary' : 'outline'}
+                            className="shrink-0"
+                          >
+                            {t(`origin.${skill.origin}`)}
+                          </Badge>
                         )}
-                      </span>
-                      {skill.origin !== 'bundled' && (
-                        <Badge
-                          variant={skill.origin === 'agent' ? 'secondary' : 'outline'}
-                          className="shrink-0"
-                        >
-                          {t(`origin.${skill.origin}`)}
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    ),
+                  )}
                 </div>
               ))
             )}
