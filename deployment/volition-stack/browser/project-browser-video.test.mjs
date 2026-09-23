@@ -151,6 +151,9 @@ describe("encoderArguments", () => {
     assert.equal(args[args.indexOf("-threads") + 1], String(high.threads));
     // The capture size already fits "high" (no cap), so no scale filter is added.
     assert.ok(!args.includes("-vf"));
+    assert.equal(args[args.indexOf("-bf") + 1], "0");
+    // More than one thread must not cost latency: sliced, not frame, parallelism.
+    assert.equal(args[args.indexOf("-x264-params") + 1], "sliced-threads=1:rc-lookahead=0:sync-lookahead=0");
   });
 
   it("scales a lower tier's output down and still grabs the full area", () => {

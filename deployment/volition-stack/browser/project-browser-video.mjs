@@ -125,6 +125,15 @@ export function encoderArguments({ x, y, width, height, display }, tier) {
     "zerolatency",
     "-crf",
     String(tier.crf),
+    "-bf",
+    "0",
+    // Multiple threads default to x264's frame-parallel mode, which pipelines several frames
+    // at once and so holds each one back a few frames before it comes out the other end.
+    // Slice-parallel mode instead splits each frame across the threads, which has no such
+    // queue: more than one thread costs nothing in latency, only in the bitstream's own
+    // slice overhead.
+    "-x264-params",
+    "sliced-threads=1:rc-lookahead=0:sync-lookahead=0",
     "-pix_fmt",
     "yuv420p",
     "-g",
