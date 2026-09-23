@@ -1,3 +1,4 @@
+import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
 import type { WorkspaceRuntimeEnv } from './runtimeEnv';
 import type { ProvisionedProjectResource } from '@/lib/api/endpoints/projects';
 
@@ -57,11 +58,17 @@ function provisionedResource(
   return resources.find((resource) => resource.kind === kind);
 }
 
+// The naming convention itself lives in @repo/agent-naming, shared with the API (which
+// creates the coordinator agent with this exact handle) so the two cannot drift apart.
+// This wrapper adds only what is specific to picking a chat default: null falls back
+// to the Home agent, and a project key that would produce a handle Helena's own
+// username rules reject falls back to "no default" rather than a broken preselection.
 export function preferredAgentUsername(projectKey: string | null): string {
   if (!projectKey) return 'master';
   const normalizedKey = projectKey.trim().toUpperCase();
+  const slugPattern = /^[a-z0-9][a-z0-9_-]{0,31}$/;
   const slug = normalizedKey === 'VERV' ? 'verve' : normalizedKey.toLowerCase();
-  return /^[a-z0-9][a-z0-9_-]{0,31}$/.test(slug) ? `hermes-${slug}-coordinator` : '';
+  return slugPattern.test(slug) ? hermesProjectCoordinatorUsername(normalizedKey) : '';
 }
 
 export function nativeChatProjectKey(

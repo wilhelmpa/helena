@@ -12,6 +12,7 @@
     "test": "bun test --preload ./test/setup.ts"
   },
   "dependencies": {
+    "@repo/agent-naming": "workspace:*",
     "@base-ui/react": "^1.7.0",
     "@better-auth/api-key": "1.6.27",
     "@better-auth/passkey": "1.6.27",
