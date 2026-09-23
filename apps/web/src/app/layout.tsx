@@ -8,6 +8,7 @@ import { Providers } from '@/components/providers';
 import RuntimeEnvScript from '@/components/runtime-env-script';
 import WhatsNew from '@/features/whats-new/WhatsNew';
 import { localeDirection, type Locale } from '@/i18n/locales';
+import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from '@/utils/app';
 import './globals.css';
 import WorkspaceToolsProvider from './WorkspaceToolsProvider';
 
@@ -24,8 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fbfaf7' },
-    { media: '(prefers-color-scheme: dark)', color: '#23201e' },
+    { media: '(prefers-color-scheme: light)', color: THEME_COLOR_LIGHT },
+    { media: '(prefers-color-scheme: dark)', color: THEME_COLOR_DARK },
   ],
 };
 

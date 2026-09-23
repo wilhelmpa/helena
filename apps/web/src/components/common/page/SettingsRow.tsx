@@ -18,12 +18,12 @@ export default function SettingsRow({
   control: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 p-4">
-      <div className="max-w-2xl space-y-1">
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="max-w-2xl space-y-0.5">
         <div className="text-sm font-medium">{title}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-caption text-muted-foreground">{description}</p>
         {note && (
-          <Alert className="mt-2 w-fit bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-300">
+          <Alert className="mt-2 w-fit bg-status-waiting/10 px-3 py-2 text-status-waiting">
             <Info />
             <AlertDescription className="text-xs text-current">{note}</AlertDescription>
           </Alert>

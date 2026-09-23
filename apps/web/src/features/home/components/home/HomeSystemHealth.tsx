@@ -5,16 +5,18 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useSession } from '@/lib/auth-client';
 import { formatDurationShort } from '@/utils/dates';
+import { SectionLabel } from '@/components/common/page/RowList';
 import { useSystemHealthQuery } from '../../services/systemHealth.service';
 import { healthProblems } from '../../utils/systemHealth';
 import HomeJanitorState from './HomeJanitorState';
 import HomeServiceState from './HomeServiceState';
 
-// The instance owner's view of the services around Plan — the Hermes runner, Mastra, the
-// bridge between them, the provisioning service and the worker — the agent runs that
-// wait or overran, and the janitor loops that clean up hung runs, orphaned stage runs
-// and stale workflow schedules. Only what needs attention is listed under the services;
-// no secret or path ever appears here, only counts, times and short reasons.
+// The instance owner's view of the services around Helena — the Hermes runner, Mastra,
+// the bridge between them, the provisioning service and the worker — the agent runs
+// that wait or overran, and the janitor loops that clean up hung runs, orphaned stage
+// runs and stale workflow schedules. A status report in two columns of 32px lines, not
+// a grid of cards: nothing here is a control, so nothing here looks like one. No secret
+// or path ever appears, only counts, times and short reasons.
 export default function HomeSystemHealth() {
   const t = useTranslations('god.systemHealth');
   const { data: session } = useSession();
@@ -35,31 +37,25 @@ export default function HomeSystemHealth() {
   );
 
   return (
-    <section className="mb-6 space-y-4">
-      <div>
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
-          <Activity className="size-4 text-muted-foreground" />
-          {t('title')}
-        </h2>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,12rem),1fr))] gap-2">
+    <section className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
+      <div className="min-w-0">
+        <SectionLabel icon={<Activity />}>{t('title')}</SectionLabel>
+        <ul className="grid grid-cols-1 border-t border-sidebar-border pt-1 sm:grid-cols-2 lg:grid-cols-1">
           {data.services.map((health) => (
             <HomeServiceState key={health.service} health={health} />
           ))}
         </ul>
         {problems.length > 0 && (
-          <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+          <ul className="mt-1 space-y-0.5 px-2 text-xs text-status-waiting">
             {problems.map((problem) => (
               <li key={problem}>{problem}</li>
             ))}
           </ul>
         )}
       </div>
-      <div>
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
-          <Brush className="size-4 text-muted-foreground" />
-          {t('janitorsTitle')}
-        </h2>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-2">
+      <div className="min-w-0">
+        <SectionLabel icon={<Brush />}>{t('janitorsTitle')}</SectionLabel>
+        <ul className="grid grid-cols-1 border-t border-sidebar-border pt-1">
           {data.janitors.map((health) => (
             <HomeJanitorState key={health.job} health={health} />
           ))}

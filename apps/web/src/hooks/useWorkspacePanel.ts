@@ -55,8 +55,16 @@ export function useWorkspacePanel({
       const tool = isToolId(storedTool) ? storedTool : 'chat';
       const staleProjectTool =
         PROJECT_SCOPED_TOOLS.has(tool) && localStorage.getItem(PROJECT_KEY) !== (projectKey ?? '');
+      // Home opens the chat beside the page on first visit — on a desktop. On a phone
+      // the panel covers the whole page, so Home starts on Home there.
+      const roomBeside =
+        typeof window.matchMedia !== 'function' || window.matchMedia('(min-width: 768px)').matches;
       setOpenState(
-        staleProjectTool ? false : savedOpen === null ? defaultOpen : savedOpen === 'open',
+        staleProjectTool
+          ? false
+          : savedOpen === null
+            ? defaultOpen && roomBeside
+            : savedOpen === 'open',
       );
       if (staleProjectTool) write(OPEN_KEY, 'closed');
       if (isToolId(storedTool)) setActiveTool(storedTool);

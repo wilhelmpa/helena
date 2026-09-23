@@ -55,3 +55,11 @@ export function janitorSummary(
     cleaned: health.cleaned && health.cleaned > 0 ? health.cleaned : null,
   };
 }
+
+// A service's or janitor's state in the app's one status vocabulary (StatusBadge): ok
+// is success, down is danger, and a state nobody could ask for yet is idle.
+export function healthStatus(state: 'ok' | 'down' | 'unknown'): 'success' | 'danger' | 'idle' {
+  if (state === 'ok') return 'success';
+  if (state === 'down') return 'danger';
+  return 'idle';
+}

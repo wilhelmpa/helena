@@ -5,13 +5,13 @@ import { useTranslations } from 'next-intl';
 import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectSettingsNavGroups } from '@/hooks/useProjectSettingsNavGroups';
 import ProjectSettingsNav from '@/components/common/page/ProjectSettingsNav';
+import ProjectSettingsNavSelect from '@/components/common/page/ProjectSettingsNavSelect';
 
 // The chrome every /project/:projectKey/settings/* page shares: the grouped
 // sub-navigation in a second, narrow column (docs/volition-design-helena-ui.md
-// "Eigenes Einstellungs-Layout"), the page itself beside it. Mobile stacks the nav
-// above the page instead of a side rail — the same responsive contract
-// TeamsPageView/TeamsPageRail already use for team settings, repeated here rather
-// than shared, to keep the two features decoupled.
+// "Eigenes Einstellungs-Layout"), the page itself beside it. Below lg the rail becomes
+// one select above the page ("Mobil: Unternavigation als Auswahlmenü"), so the page
+// starts with its own content.
 export default function ProjectSettingsShell({ children }: { children: ReactNode }) {
   const t = useTranslations('nav');
   const { projectKey } = useShellRoute();
@@ -22,8 +22,11 @@ export default function ProjectSettingsShell({ children }: { children: ReactNode
   if (!projectKey) return <>{children}</>;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-      <div className="shrink-0 border-b p-3 lg:w-60 lg:overflow-y-auto lg:border-e lg:border-b-0">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="shrink-0 border-b border-sidebar-border px-4 py-2 lg:hidden">
+        <ProjectSettingsNavSelect groups={groups} label={t('projectSettings')} />
+      </div>
+      <div className="hidden shrink-0 overflow-y-auto border-e border-sidebar-border p-2 lg:block lg:w-56">
         <ProjectSettingsNav groups={groups} label={t('projectSettings')} />
       </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>

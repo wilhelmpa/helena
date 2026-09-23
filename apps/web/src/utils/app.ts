@@ -12,6 +12,12 @@ export const APP_NAME = 'Helena';
 // in every language, so it is not a translation key.
 export const APP_BYLINE = 'by Volition';
 
+// The page background of each theme (globals.css --background, as hex), for the places
+// that need a literal colour before the stylesheet applies: the browser's theme-color
+// (the phone status bar) and the install manifest's splash screen.
+export const THEME_COLOR_LIGHT = '#fbfaf7';
+export const THEME_COLOR_DARK = '#23201e';
+
 // The project this product is a fork of, named with its licence in the user menu.
 export const UPSTREAM_URL = 'https://github.com/croffasia/itsaplan';
 
