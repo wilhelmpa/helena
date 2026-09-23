@@ -119,18 +119,22 @@ export const ownerTerminalRoutes = new Elysia({
       },
     },
   )
-  .get('/owner-terminal/audit', async ({ set }) => {
-    set.headers['Cache-Control'] = 'private, no-store';
-    return listAudit();
-  }, {
-    response: { 200: OwnerTerminalAuditResponse, ...errors(401, 403) },
-    detail: {
-      summary: 'List the owner terminal audit trail',
-      description:
-        'Step-up attempts, grant lifecycle and session start/end, newest first. No ' +
-        'keystrokes -- see /owner-terminal/settings for the opt-in output recording.',
+  .get(
+    '/owner-terminal/audit',
+    async ({ set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      return listAudit();
     },
-  })
+    {
+      response: { 200: OwnerTerminalAuditResponse, ...errors(401, 403) },
+      detail: {
+        summary: 'List the owner terminal audit trail',
+        description:
+          'Step-up attempts, grant lifecycle and session start/end, newest first. No ' +
+          'keystrokes -- see /owner-terminal/settings for the opt-in output recording.',
+      },
+    },
+  )
   .get('/owner-terminal/settings', () => getOwnerTerminalSettings(), {
     response: { 200: OwnerTerminalSettingsResponse, ...errors(401, 403) },
     detail: {
@@ -140,19 +144,15 @@ export const ownerTerminalRoutes = new Elysia({
         'Linux password, and which session kinds record their output.',
     },
   })
-  .patch(
-    '/owner-terminal/settings',
-    ({ body }) => setOwnerTerminalSettings(body),
-    {
-      body: OwnerTerminalSettingsPatch,
-      response: { 200: OwnerTerminalSettingsResponse, ...commonErrors },
-      detail: {
-        summary: 'Update the owner terminal policy',
-        description:
-          '`sudoPasswordRequired` takes effect on the next deploy (setup.sh reads it when ' +
-          'it installs the sudoers policy) -- sudo authorizes by Unix account, not by which ' +
-          'process asked, so nothing at runtime can flip it per request. See the branch ' +
-          'report for why.',
-      },
+  .patch('/owner-terminal/settings', ({ body }) => setOwnerTerminalSettings(body), {
+    body: OwnerTerminalSettingsPatch,
+    response: { 200: OwnerTerminalSettingsResponse, ...commonErrors },
+    detail: {
+      summary: 'Update the owner terminal policy',
+      description:
+        '`sudoPasswordRequired` takes effect on the next deploy (setup.sh reads it when ' +
+        'it installs the sudoers policy) -- sudo authorizes by Unix account, not by which ' +
+        'process asked, so nothing at runtime can flip it per request. See the branch ' +
+        'report for why.',
     },
-  );
+  });

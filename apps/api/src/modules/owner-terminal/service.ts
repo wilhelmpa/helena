@@ -43,7 +43,11 @@ export async function getOwnerTerminalSettings(): Promise<OwnerTerminalSettings>
 export async function setOwnerTerminalSettings(
   patch: Partial<OwnerTerminalSettings>,
 ): Promise<OwnerTerminalSettings> {
-  const next = { ...(await getOwnerTerminalSettings()), ...patch, stepUpMethods: ['totp'] as const };
+  const next: OwnerTerminalSettings = {
+    ...(await getOwnerTerminalSettings()),
+    ...patch,
+    stepUpMethods: ['totp'],
+  };
   await setSetting(SETTINGS_KEY, next);
   return next;
 }
@@ -71,9 +75,9 @@ function deviceLabel(request: Request): string {
 // Sits behind nginx in every deployment (see deployment/volition-stack/native/nginx),
 // which is what sets this header from the real client address.
 function clientIp(request: Request): string {
-  return (
-    request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for') ?? 'unknown'
-  ).split(',')[0]!.trim();
+  return (request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for') ?? 'unknown')
+    .split(',')[0]!
+    .trim();
 }
 
 async function writeAudit(entry: {
@@ -148,7 +152,10 @@ async function currentGrantRow(userId: string, sessionId: string) {
 // `twoFactor.verified` to true, which is what turns "TOTP enrolled" into
 // "TOTP usable" -- so this same endpoint finishes the enrollment the owner starts
 // at Account -> Security.
-export async function stepUpWithTotp(request: Request, code: string): Promise<{ expiresAt: string }> {
+export async function stepUpWithTotp(
+  request: Request,
+  code: string,
+): Promise<{ expiresAt: string }> {
   const { userId, sessionId } = await requireSession(request);
   const device = deviceLabel(request);
   const ipAddress = clientIp(request);

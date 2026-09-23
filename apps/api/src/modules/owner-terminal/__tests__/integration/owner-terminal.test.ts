@@ -42,23 +42,36 @@ function totpCode(secret: string, offsetSteps = 0): string {
   return String(binary % 1_000_000).padStart(6, '0');
 }
 
-async function ownerWithTotp(): Promise<{ user: TestUser; secret: string }> {
-  const user = await signUpTestUser();
+// Enrolls TOTP for an already signed-in cookie and confirms it with one code, as
+// the enrollment screen at Account -> Security does. The confirming verifyTOTP
+// call is also where better-auth marks `twoFactorEnabled` on the user, and it
+// rotates the session while doing so (better-auth's two-factor plugin: the first
+// successful verify replaces the session and deletes the old token) -- so this
+// returns the cookie the caller must use afterward, not the one it started with.
+async function enrollTotp(cookie: string): Promise<{ cookie: string; secret: string }> {
   const enabled = await auth.api.enableTwoFactor({
-    headers: new Headers({ cookie: user.cookie }),
+    headers: new Headers({ cookie }),
     body: { password: 'test-password-123' },
   });
   const secret = new URL(enabled.totpURI.replace('otpauth://', 'https://')).searchParams.get(
     'secret',
   );
   if (!secret) throw new Error('enableTwoFactor did not return a secret in the TOTP URI');
-  // The first verify flips twoFactor.verified to true -- enrollment is not
-  // "usable" until this happens (see packages/auth AGENTS.md / service.ts).
-  await auth.api.verifyTOTP({
-    headers: new Headers({ cookie: user.cookie }),
+  const response = await auth.api.verifyTOTP({
+    headers: new Headers({ cookie }),
     body: { code: totpCode(secret) },
+    asResponse: true,
   });
-  return { user, secret };
+  const setCookies = response.headers.getSetCookie();
+  const nextCookie =
+    setCookies.length > 0 ? setCookies.map((c) => c.split(';')[0]).join('; ') : cookie;
+  return { cookie: nextCookie, secret };
+}
+
+async function ownerWithTotp(): Promise<{ user: TestUser; secret: string }> {
+  const user = await signUpTestUser();
+  const { cookie, secret } = await enrollTotp(user.cookie);
+  return { user: { ...user, cookie }, secret };
 }
 
 describe('owner terminal', () => {
@@ -98,18 +111,8 @@ describe('owner terminal', () => {
   it('refuses a non-owner and an API key even with a correct code', async () => {
     await signUpTestUser(); // god
     const plain = await signUpTestUser({ email: 'plain-user@example.com' });
-    const enabled = await auth.api.enableTwoFactor({
-      headers: new Headers({ cookie: plain.cookie }),
-      body: { password: 'test-password-123' },
-    });
-    const secret = new URL(enabled.totpURI.replace('otpauth://', 'https://')).searchParams.get(
-      'secret',
-    )!;
-    await auth.api.verifyTOTP({
-      headers: new Headers({ cookie: plain.cookie }),
-      body: { code: totpCode(secret) },
-    });
-    const api = authedApi(plain.cookie, ORIGIN);
+    const { cookie, secret } = await enrollTotp(plain.cookie);
+    const api = authedApi(cookie, ORIGIN);
     const result = await api['owner-terminal']['step-up']['totp'].post({
       code: totpCode(secret, 1),
     });
