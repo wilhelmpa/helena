@@ -89,12 +89,20 @@
       "followAgentOn": "Following the agent's tab",
       "followAgentOff": "Follow the agent's tab",
       "liveKeyboard": "Live browser. Keys go to the page while the view has the focus.",
-      "controlAgent": "The agent is acting",
       "connecting": "Connecting to the browser…",
       "reconnecting": "The connection to the browser was lost. Reconnecting…",
       "dialogTitle": "The page asks",
       "dialogOk": "OK",
-      "dialogCancel": "Cancel"
+      "dialogCancel": "Cancel",
+      "controlPrefix": "In control:",
+      "you": "You",
+      "controlledByAgentGeneric": "an agent",
+      "takeOver": "Take over",
+      "handBack": "Hand back",
+      "takeOverError": "Could not take over the browser.",
+      "handBackError": "Could not hand the browser back.",
+      "handoverMessage": "The agent needs your help: {reason}",
+      "handoverTitle": "The agent is asking you to take over"
     }
   },
   "groups": {

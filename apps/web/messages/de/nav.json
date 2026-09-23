@@ -87,12 +87,20 @@
       "followAgentOn": "Folgt dem Tab des Agenten",
       "followAgentOff": "Dem Tab des Agenten folgen",
       "liveKeyboard": "Live-Browser. Tasten gehen an die Seite, solange die Ansicht den Fokus hat.",
-      "controlAgent": "Der Agent handelt gerade",
       "connecting": "Verbindung zum Browser wird hergestellt…",
       "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…",
       "dialogTitle": "Die Seite fragt",
       "dialogOk": "OK",
-      "dialogCancel": "Abbrechen"
+      "dialogCancel": "Abbrechen",
+      "controlPrefix": "Steuert:",
+      "you": "Sie",
+      "controlledByAgentGeneric": "ein Agent",
+      "takeOver": "Übernehmen",
+      "handBack": "Zurückgeben",
+      "takeOverError": "Übernehmen war nicht möglich.",
+      "handBackError": "Zurückgeben war nicht möglich.",
+      "handoverMessage": "Der Agent braucht Ihre Hilfe: {reason}",
+      "handoverTitle": "Der Agent bittet Sie zu übernehmen"
     }
   },
   "groups": {

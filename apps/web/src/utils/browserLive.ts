@@ -60,6 +60,28 @@ export interface LiveDialog {
   defaultPrompt: string;
 }
 
+// A handover request from an agent's `browser_handover` tool call (design §4, §7:
+// "Bittet den Owner zu übernehmen (CAPTCHA, unbekannte Rückfrage). Erzeugt eine
+// Freigabe-Karte... und wartet."). Not sent by the router yet — as of this writing
+// project-browser-screencast.mjs only emits the `dialog` and `control` text messages
+// (design §7/§5) — so this type documents the wire shape the gateway will add
+// (`{"type":"handover","open":true,"reason":"..."}`, mirroring how a dialog message is
+// shaped) and useBrowserScreencast.ts is already wired to read it once it arrives.
+export interface LiveHandover {
+  reason: string;
+}
+
+// Who has the project browser's control lock right now (design §5), as the router's
+// `control` text message reports it. `by` is sent today; `agentName` and `since` are not
+// yet (project-browser-screencast.mjs currently sends only `{"type":"control","by":...}`)
+// — the live view falls back to a generic label and omits the "seit …" clause until the
+// router starts including them.
+export interface LiveControlState {
+  by: 'agent' | 'owner';
+  agentName?: string;
+  since?: string;
+}
+
 // The DevTools modifier bits.
 const ALT = 1;
 const CONTROL = 2;

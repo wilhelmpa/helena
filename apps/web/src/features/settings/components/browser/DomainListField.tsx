@@ -3,16 +3,7 @@ import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-
-// A domain: lowercase, no scheme, no path, no trailing dot. A leading "*." is dropped
-// because a domain already covers its subdomains (same rule as the API, model.ts).
-function normalizeDomain(raw: string): string | null {
-  let domain = raw.trim().toLowerCase();
-  domain = domain.replace(/^[a-z]+:\/\//, '').replace(/\/.*$/, '');
-  if (domain.startsWith('*.')) domain = domain.slice(2);
-  if (domain.endsWith('.')) domain = domain.slice(0, -1);
-  return domain.length > 0 && domain.length <= 253 ? domain : null;
-}
+import { normalizeDomain } from '../../utils/domainList';
 
 // A domain list edited as chips: type a domain, press Enter/comma/space or blur to add
 // it, backspace on the empty field to drop the last one. Used for the browser gateway's

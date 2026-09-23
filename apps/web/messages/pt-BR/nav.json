@@ -86,12 +86,20 @@
       "followAgentOn": "Seguindo a aba do agente",
       "followAgentOff": "Seguir a aba do agente",
       "liveKeyboard": "Navegador ao vivo. As teclas vão para a página enquanto a visualização tem o foco.",
-      "controlAgent": "O agente está agindo",
       "connecting": "Conectando ao navegador…",
       "reconnecting": "A conexão com o navegador foi perdida. Reconectando…",
       "dialogTitle": "A página pergunta",
       "dialogOk": "OK",
-      "dialogCancel": "Cancelar"
+      "dialogCancel": "Cancelar",
+      "controlPrefix": "No controle:",
+      "you": "Você",
+      "controlledByAgentGeneric": "um agente",
+      "takeOver": "Assumir o controle",
+      "handBack": "Devolver o controle",
+      "takeOverError": "Não foi possível assumir o controle do navegador.",
+      "handBackError": "Não foi possível devolver o controle do navegador.",
+      "handoverMessage": "O agente precisa da sua ajuda: {reason}",
+      "handoverTitle": "O agente está pedindo para você assumir o controle"
     }
   },
   "groups": {

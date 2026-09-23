@@ -7,7 +7,9 @@ import {
   screencastUrl,
   VIDEO_FRAGMENT,
   VIDEO_INIT,
+  type LiveControlState,
   type LiveDialog,
+  type LiveHandover,
   type LiveMessage,
   type Size,
 } from '@/utils/browserLive';
@@ -35,13 +37,19 @@ const THROUGHPUT_WINDOW_MS = 4_000;
 
 type ServerText =
   | ({ type: 'dialog'; open: boolean } & LiveDialog)
+  | ({ type: 'handover'; open: boolean } & LiveHandover)
   | { type: 'video'; codec: string; width: number; height: number }
   | { type: 'tab' }
   | { type: 'pong'; t: number }
-  | { type: 'control'; by: 'agent' | 'owner' };
+  | ({ type: 'control' } & LiveControlState);
 
-// Who last acted on the page, purely informational (see the router's ScreencastStream).
-export type LiveControl = 'agent' | 'owner';
+// What the live view shows centered over the page right now: a JS dialog the page opened,
+// or an agent's handover request (design §4, §7 — see LiveHandover). At most one at a time.
+export type LiveOverlay = ({ type: 'dialog' } & LiveDialog) | ({ type: 'handover' } & LiveHandover);
+
+// Who last acted on the page (design §5). `by` is always known; `agentName`/`since` are
+// filled in once the router sends them (see LiveControlState).
+export type LiveControl = LiveControlState['by'];
 
 // The live view's connection to the browser router. Video is played as it arrives: on the
 // canvas with WebCodecs, or in the video element with Media Source Extensions where WebCodecs
@@ -63,8 +71,8 @@ export function useBrowserScreencast(
   const [status, setStatus] = useState<ScreencastStatus>('connecting');
   const [mode, setMode] = useState<ScreencastMode>('jpeg');
   const [hasFrame, setHasFrame] = useState(false);
-  const [dialog, setDialog] = useState<LiveDialog | null>(null);
-  const [controlBy, setControlBy] = useState<LiveControl>('owner');
+  const [overlay, setOverlay] = useState<LiveOverlay | null>(null);
+  const [control, setControl] = useState<LiveControlState>({ by: 'owner' });
   const socket = useRef<WebSocket | null>(null);
   // The page size of the frame shown, which pointer positions are mapped to.
   const frameSize = useRef<Size | null>(null);
@@ -254,8 +262,11 @@ export function useBrowserScreencast(
           return receive(event.data);
         }
         const message = JSON.parse(event.data) as ServerText;
-        if (message.type === 'dialog') setDialog(message.open ? message : null);
-        else if (message.type === 'video') {
+        if (message.type === 'dialog') {
+          setOverlay(message.open ? { ...message } : null);
+        } else if (message.type === 'handover') {
+          setOverlay(message.open ? { ...message } : null);
+        } else if (message.type === 'video') {
           announced.current = {
             codec: message.codec,
             size: { width: message.width, height: message.height },
@@ -265,15 +276,15 @@ export function useBrowserScreencast(
           if (pingSentAt.current === message.t)
             rttMs.current = Math.round(performance.now() - message.t);
         } else if (message.type === 'control') {
-          setControlBy(message.by);
+          setControl({ by: message.by, agentName: message.agentName, since: message.since });
         } else void queryClient.invalidateQueries({ queryKey: browserTabsQueryKey(controlBase) });
       };
       current.onclose = () => {
         clearInterval(pingTimer);
         clearInterval(statsTimer);
         if (stopped) return;
-        setDialog(null);
-        setControlBy('owner');
+        setOverlay(null);
+        setControl({ by: 'owner' });
         closeVideo();
         socket.current = null;
         pending.current = null;
@@ -319,8 +330,8 @@ export function useBrowserScreencast(
     playback: playback.current,
     hasFrame,
     frameSize,
-    dialog,
-    controlBy,
+    overlay,
+    control,
     send,
     setViewport,
   };

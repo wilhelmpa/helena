@@ -2,10 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRelativeTime } from '@/context/relativeTimeContext';
 import { useBrowserLiveInput } from '@/hooks/useBrowserLiveInput';
+import { useBrowserLock } from '@/hooks/useBrowserLock';
 import { useBrowserScreencast } from '@/hooks/useBrowserScreencast';
 import { useDevicePixelRatio } from '@/hooks/useDevicePixelRatio';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import WorkspaceBrowserDialog from './WorkspaceBrowserDialog';
 
 // The view's size is sent once it has not changed for this long, so dragging the panel's
@@ -30,15 +33,17 @@ export default function WorkspaceBrowserLive({
   className?: string;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
+  const relativeTime = useRelativeTime();
   const view = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const keyboard = useRef<HTMLTextAreaElement>(null);
-  const { status, mode, playback, hasFrame, frameSize, dialog, controlBy, send, setViewport } =
+  const { status, mode, playback, hasFrame, frameSize, overlay, control, send, setViewport } =
     useBrowserScreencast(base, active, reloadToken, canvas, video, followAgent);
   const inVideoElement = mode === 'video' && playback === 'mse';
   const { pointer, keys } = useBrowserLiveInput(view, keyboard, frameSize, send);
   const dpr = useDevicePixelRatio();
+  const { takeOver, takingOver, release, releasing } = useBrowserLock(base);
 
   useEffect(() => {
     const element = view.current;
@@ -90,20 +95,54 @@ export default function WorkspaceBrowserLive({
         className="absolute start-0 top-0 size-px resize-none opacity-0"
         {...keys}
       />
-      {dialog && (
+      {overlay && (
         <WorkspaceBrowserDialog
-          key={dialog.message}
-          dialog={dialog}
+          key={
+            overlay.type === 'dialog' ? `dialog:${overlay.message}` : `handover:${overlay.reason}`
+          }
+          overlay={overlay}
           onAnswer={(accept, text) => send({ type: 'dialog', accept, text })}
+          onTakeOver={() => takeOver()}
+          takingOver={takingOver}
         />
       )}
-      {/* Informational only: who last acted on the page. The lock this hands off to later is
-          the browser gateway's, not this view's. */}
-      {controlBy === 'agent' && (
-        <div className="pointer-events-none absolute start-2 top-2 rounded-full bg-background/80 px-2 py-0.5 text-xs text-muted-foreground shadow-sm">
-          {t('controlAgent')}
-        </div>
-      )}
+      {/* Who has the control lock right now (design §5): "Steuert: <Agent> · seit <Zeit>" with
+          an Übernehmen button while an agent controls it, "Steuert: Sie" with a Zurückgeben
+          button while the owner does. agentName/since are not sent by the router yet (see
+          LiveControlState), so the agent case falls back to a generic label and omits the
+          "seit …" clause until it starts including them. */}
+      <div className="absolute start-2 top-2 flex items-center gap-1.5 rounded-full bg-background/80 py-1 ps-2.5 pe-1 text-xs text-muted-foreground shadow-sm">
+        <span>
+          {t('controlPrefix')}{' '}
+          <strong className="font-medium text-foreground">
+            {control.by === 'agent'
+              ? (control.agentName ?? t('controlledByAgentGeneric'))
+              : t('you')}
+          </strong>
+          {control.by === 'agent' && control.since && <> · {relativeTime(control.since)}</>}
+        </span>
+        {control.by === 'agent' ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-6 px-2 text-xs"
+            disabled={takingOver}
+            onClick={() => takeOver()}
+          >
+            {t('takeOver')}
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs"
+            disabled={releasing}
+            onClick={() => release()}
+          >
+            {t('handBack')}
+          </Button>
+        )}
+      </div>
       {notice && (
         <div
           aria-live="polite"

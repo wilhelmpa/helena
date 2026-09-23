@@ -86,12 +86,20 @@
       "followAgentOn": "Suit l’onglet de l’agent",
       "followAgentOff": "Suivre l’onglet de l’agent",
       "liveKeyboard": "Navigateur en direct. Les touches vont à la page tant que la vue a le focus.",
-      "controlAgent": "L’agent agit actuellement",
       "connecting": "Connexion au navigateur…",
       "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…",
       "dialogTitle": "La page demande",
       "dialogOk": "OK",
-      "dialogCancel": "Annuler"
+      "dialogCancel": "Annuler",
+      "controlPrefix": "Contrôle :",
+      "you": "Vous",
+      "controlledByAgentGeneric": "un agent",
+      "takeOver": "Prendre le contrôle",
+      "handBack": "Rendre le contrôle",
+      "takeOverError": "Impossible de prendre le contrôle du navigateur.",
+      "handBackError": "Impossible de rendre le contrôle du navigateur.",
+      "handoverMessage": "L'agent a besoin de votre aide : {reason}",
+      "handoverTitle": "L'agent vous demande de prendre le contrôle"
     }
   },
   "groups": {
