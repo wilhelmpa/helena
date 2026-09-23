@@ -1,0 +1,23 @@
+{
+  "editAction": "Projekt bearbeiten",
+  "copyAction": "Projekt kopieren",
+  "deleteAction": "Projekt löschen",
+  "leaveAction": "Projekt verlassen",
+  "deleteDialog": {
+    "title": "{name} löschen?",
+    "confirm": "Endgültig löschen",
+    "description": "Damit werden <strong>{name}</strong> und alle Inhalte endgültig gelöscht: Aufgaben, Kommentare, Anhänge und Einstellungen. Das kann nicht rückgängig gemacht werden.",
+    "typeToConfirm": "Gib zur Bestätigung <code>{key}</code> ein."
+  },
+  "leaveDialog": {
+    "title": "{name} verlassen?",
+    "confirm": "Projekt verlassen",
+    "description": "Du verlierst den Zugriff auf <strong>{name}</strong> und die zugehörigen Aufgaben. Um wieder beizutreten, brauchst du eine neue Einladung von einem Inhaber."
+  },
+  "editDialog": {
+    "title": "Projekt bearbeiten",
+    "name": "Name",
+    "description": "Beschreibung",
+    "submit": "Speichern"
+  }
+}

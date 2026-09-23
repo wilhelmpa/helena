@@ -1,0 +1,37 @@
+{
+  "label": "API-Schlüssel",
+  "title": "API-Schlüssel",
+  "description": "Persönliche API-Schlüssel authentifizieren Anfragen an die API mit deinem Konto ({email}). Der Wert eines Schlüssels wird nur einmal angezeigt, direkt beim Erstellen.",
+  "sectionTitle": "Deine API-Schlüssel",
+  "create": "API-Schlüssel erstellen",
+  "empty": "Noch keine API-Schlüssel. Erstelle einen, um Anfragen an die API zu authentifizieren.",
+  "fallbackName": "API-Schlüssel",
+  "createdAt": "Erstellt am {date}",
+  "expiresAt": "Läuft am {date} ab",
+  "noExpiry": "Läuft nicht ab",
+  "deleteAction": "API-Schlüssel löschen",
+  "createDialog": {
+    "title": "API-Schlüssel erstellen",
+    "nameLabel": "Name",
+    "namePlaceholder": "z. B. CI-Pipeline",
+    "nameHint": "Eine Bezeichnung, an der du den Schlüssel später erkennst.",
+    "expiryLabel": "Gültigkeitsdauer",
+    "expiresInDays": "{days} Tage",
+    "expiryHint": "Ab diesem Tag funktioniert der Schlüssel nicht mehr. Erstelle dann einen neuen, um weiterzuarbeiten.",
+    "submit": "Schlüssel erstellen",
+    "submitPending": "Wird erstellt…",
+    "error": "Der API-Schlüssel konnte nicht erstellt werden."
+  },
+  "createdDialog": {
+    "title": "API-Schlüssel erstellt",
+    "description": "Kopiere deinen Schlüssel jetzt. Aus Sicherheitsgründen wird er nur einmal angezeigt und kann später nicht mehr abgerufen werden.",
+    "copy": "Schlüssel kopieren"
+  },
+  "deleteDialog": {
+    "title": "API-Schlüssel löschen?",
+    "confirm": "Schlüssel löschen",
+    "description": "Alle Anfragen mit diesem Schlüssel schlagen sofort fehl. Das kann nicht rückgängig gemacht werden.",
+    "error": "Der API-Schlüssel konnte nicht gelöscht werden."
+  },
+  "loadFailed": "API-Schlüssel konnten nicht geladen werden."
+}
