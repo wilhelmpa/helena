@@ -70,6 +70,24 @@ export const qk = {
     ['controlPlaneWorkflows', projectKey, workflowId, 'runs', runId] as const,
   controlPlaneWorkflowSchedules: (projectKey: string, workflowId: string) =>
     ['controlPlaneWorkflows', projectKey, workflowId, 'schedules'] as const,
+  // The workflow builder: the team's library, a project's workflows, one workflow with
+  // its versions, the editor's pickers and validation, and the runs. Saving a workflow
+  // refreshes every list under 'pipelines'.
+  anyPipelines: ['pipelines'] as const,
+  pipelineTemplates: (teamId: number) => ['pipelines', 'team', teamId] as const,
+  pipelineBuiltins: (teamId: number) => ['pipelineBuiltins', teamId] as const,
+  projectPipelines: (projectKey: string) => ['pipelines', 'project', projectKey] as const,
+  pipeline: (pipelineId: number) => ['pipeline', pipelineId] as const,
+  pipelineVersions: (pipelineId: number) => ['pipeline', pipelineId, 'versions'] as const,
+  pipelineVersion: (pipelineId: number, version: number) =>
+    ['pipeline', pipelineId, 'versions', version] as const,
+  pipelineContext: (scope: string) => ['pipelineContext', scope] as const,
+  pipelineValidation: (scope: string, draft: string) =>
+    ['pipelineValidation', scope, draft] as const,
+  anyPipelineRuns: ['pipelineRuns'] as const,
+  pipelineRuns: (pipelineId: number, params: unknown, filters: unknown) =>
+    ['pipelineRuns', 'pipeline', pipelineId, params, filters] as const,
+  pipelineRun: (runId: string) => ['pipelineRuns', 'run', runId] as const,
   // The agent timeline of a project, or of Home when the key is null: one filter's
   // pages, and every filter's for a live refresh.
   agentActivity: (projectKey: string | null, filters: unknown) =>
@@ -221,6 +239,9 @@ export const qk = {
   issueCycles: (id: number) => ['issue', id, 'cycles'] as const,
   // Under the issue prefix, so the issue's live refresh also reloads the team runs.
   issueAgentTeamRuns: (id: number) => ['issue', id, 'agent-team'] as const,
+  // The workflows to start on an issue and its workflow runs, under the issue prefix too.
+  issuePipelines: (id: number) => ['issue', id, 'pipelines'] as const,
+  issuePipelineRuns: (id: number) => ['issue', id, 'pipeline-runs'] as const,
   anyIssue: ['issue'] as const,
   // Resolving an issue by its project-scoped number (the identifier-based URL).
   issueBySeq: (projectKey: string, seq: number) => ['issueBySeq', projectKey, seq] as const,
@@ -276,6 +297,7 @@ export const qk = {
   approvals: (status: string, params: unknown) => ['approvals', 'list', status, params] as const,
   approvalsPendingCount: ['approvals', 'pendingCount'] as const,
   workflowGates: ['approvals', 'workflowGates'] as const,
+  pipelineApprovals: ['approvals', 'pipelines'] as const,
   hubInboxSources: (teamId: number) => ['hubInbox', teamId, 'sources'] as const,
   hubInboxThreads: (teamId: number, filters: unknown) =>
     ['hubInbox', teamId, 'threads', filters] as const,

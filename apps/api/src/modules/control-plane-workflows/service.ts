@@ -13,6 +13,9 @@ import { bumpControlPlaneRevision } from '#modules/sync/service';
 // The workflow a routine of the Schedules page runs.
 export const ROUTINE_WORKFLOW = 'agent-routine';
 
+// The workflow that runs the workflows of the builder, which a project enables one by one.
+export const PIPELINE_WORKFLOW = 'plan-pipeline';
+
 // The time zone of a schedule that names none.
 export const DEFAULT_TIMEZONE = 'Europe/Berlin';
 
@@ -178,9 +181,10 @@ export async function listProjectWorkflows(projectId: number) {
       .orderBy(asc(projectWorkflowAssignment.workflowId)),
   ]);
   const assigned = new Map(assignments.map((row) => [row.workflowId, row]));
-  // Routines are managed on the Schedules page and need no assignment.
+  // Routines are managed on the Schedules page and the builder's workflows on their own,
+  // so neither needs an assignment.
   return flows
-    .filter((flow) => flow.id !== ROUTINE_WORKFLOW)
+    .filter((flow) => flow.id !== ROUTINE_WORKFLOW && flow.id !== PIPELINE_WORKFLOW)
     .map((flow) => {
       const row = assigned.get(flow.id);
       return {

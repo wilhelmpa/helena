@@ -145,6 +145,47 @@ function validateRoutine(input) {
   };
 }
 
+const PIPELINE_OPERATIONS = new Set(['begin', 'agent', 'condition', 'action', 'approval', 'wait', 'record', 'finish']);
+
+// An operation of plan-pipeline for Plan's pipeline control API, which checks the rest.
+function validatePipelineRequest(input) {
+  const row = record(input);
+  if (
+    row?.schemaVersion !== 1 || !PIPELINE_OPERATIONS.has(row.operation) ||
+    !reference(row.projectRef, 'project') || !string(row.runId, 200)
+  ) throw new HermesTeamError(400, 'invalid_pipeline_request', 'Invalid pipeline request');
+  return row;
+}
+
+function validatePipelineAgent(input) {
+  const row = record(input);
+  const idempotencyKey = string(row?.idempotencyKey, 64);
+  const projectRef = reference(row?.projectRef, 'project');
+  const taskRef = reference(row?.taskRef, 'task');
+  const agentRef = reference(row?.agentRef, 'agent');
+  const prompt = string(row?.prompt, 48_000);
+  const timeoutSeconds = Number(row?.timeoutSeconds);
+  const policy = record(row?.policy) ?? {};
+  if (
+    row?.schemaVersion !== 1 || !idempotencyKey || !IDEMPOTENCY.test(idempotencyKey) ||
+    !projectRef || !taskRef || !taskInProject(taskRef, projectRef) || !agentRef || !prompt ||
+    !Number.isInteger(timeoutSeconds) || timeoutSeconds < 60 || timeoutSeconds > 86_400
+  ) throw new HermesTeamError(400, 'invalid_pipeline_agent_request', 'Invalid pipeline agent request');
+  return {
+    idempotencyKey, projectRef, taskRef, agentRef, prompt, timeoutSeconds,
+    policy: Object.fromEntries(
+      ['maxTurns', 'runBudgetSeconds', 'model'].filter(key => policy[key] != null).map(key => [key, policy[key]]),
+    ),
+  };
+}
+
+// The agent's answer ends with the summary the step asked for, so a long one keeps its
+// end.
+function summaryOf(text) {
+  const value = typeof text === 'string' ? text.trim() : '';
+  return value.length > 4_000 ? `…${value.slice(-3_999)}` : value;
+}
+
 function prompt(stage) {
   const allowed = Array.isArray(stage.allowedSpecialists)
     ? stage.allowedSpecialists.map(item => record(item)).filter(Boolean)
@@ -252,6 +293,41 @@ export function createHermesTeamService(plan, options = {}) {
     },
     async synchronize(input) {
       return plan.synchronize(validateSynchronization(input));
+    },
+    async pipeline(input) {
+      return plan.pipeline(validatePipelineRequest(input));
+    },
+    // The agent run of a plan-pipeline agent step. Its outcome is an answer, not an
+    // error: the workflow may branch on a failed or blocked run. A step that runs out of
+    // time or is abandoned cancels the run.
+    async executePipelineAgent(input, signal) {
+      const request = validatePipelineAgent(input);
+      const queued = await plan.enqueue({
+        idempotencyKey: request.idempotencyKey,
+        projectRef: request.projectRef,
+        task: { taskRef: request.taskRef },
+        agent: { agentRef: request.agentRef },
+        execution: {},
+        policy: request.policy,
+        prompt: request.prompt,
+      });
+      const cancel = () => plan.cancel({ runId: queued.runId, projectRef: request.projectRef }).catch(() => {});
+      const deadline = now() + request.timeoutSeconds * 1_000;
+      while (now() < deadline) {
+        if (signal?.aborted) {
+          await cancel();
+          throw new HermesTeamError(499, 'stage_canceled', 'The agent step was canceled');
+        }
+        const run = await plan.status({ runId: queued.runId, projectRef: request.projectRef });
+        const answer = (outcome, summary) => ({ agentRunId: queued.runId, outcome, summary: summaryOf(summary) });
+        if (run.status === 'success' && run.blockedQuestion) return answer('blocked', run.blockedQuestion);
+        if (run.status === 'success') return answer('success', run.output);
+        if (run.status === 'failed') return answer('failed', run.error || 'The agent run failed');
+        if (run.status === 'canceled') return answer('failed', 'The agent run was canceled');
+        await wait(Math.min(2_000, Math.max(100, deadline - now())), signal);
+      }
+      await cancel();
+      throw new HermesTeamError(504, 'hermes_run_timeout', 'The agent step timed out');
     },
     async routine(input) {
       return plan.routine(validateRoutine(input));

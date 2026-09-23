@@ -4,6 +4,7 @@ import { processAgentRuns } from '#modules/agents/core/run-poller';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
 import { processActionRuns } from '#modules/actions/runner';
 import { processInboxTasks } from '#modules/hub-inbox/tasks';
+import { drainPendingStarts } from '#modules/pipelines/runs';
 
 // The api's background jobs, started by index.ts rather than assembled into the app,
 // so importing the app in a test starts nothing. Several api replicas run them without
@@ -17,6 +18,9 @@ export function startBackgroundJobs(): void {
   startLoop('agent-runs', processAgentRuns, agentRunConfig.pollIntervalMs);
   startLoop('action-runs', processActionRuns, () => intEnv('ACTION_RUN_POLL_INTERVAL_MS', 1000));
   startLoop('inbox-tasks', processInboxTasks, () => intEnv('INBOX_TASK_POLL_INTERVAL_MS', 2000));
+  startLoop('pipeline-starts', drainPendingStarts, () =>
+    intEnv('PIPELINE_START_POLL_INTERVAL_MS', 2000),
+  );
   // Archiving is not time-sensitive, so the sweep runs far less often than the queue
   // is drained.
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));

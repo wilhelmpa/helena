@@ -1,0 +1,449 @@
+{
+  "kinds": {
+    "agent": "Agent",
+    "approval": "Approval",
+    "condition": "Condition",
+    "action": "Task action",
+    "wait": "Wait"
+  },
+  "kindHints": {
+    "agent": "An agent works on the task",
+    "approval": "A person approves or sends it back",
+    "condition": "Splits the run into Yes and No",
+    "action": "Changes the task",
+    "wait": "Pauses the run"
+  },
+  "triggers": {
+    "manual": "Started by hand",
+    "task_created": "Task created",
+    "task_assigned": "Task assigned",
+    "status_changed": "Status changed",
+    "label_added": "Label added",
+    "schedule": "Schedule"
+  },
+  "triggerSummary": {
+    "statusTo": "Status changes to {status}",
+    "label": "Label {label} is added",
+    "schedule": "Schedule {cron}"
+  },
+  "library": {
+    "hint": "Your team's workflow templates. A project turns a template on and names the agents of its roles.",
+    "newTemplate": "New template",
+    "newTemplateDescription": "The template starts with one agent step. You build it in the editor.",
+    "name": "Name",
+    "create": "Create",
+    "templates": "Templates",
+    "empty": "No templates yet",
+    "emptyHint": "Add a built-in template below or create a new one.",
+    "builtins": "Built-in templates",
+    "builtinsHint": "Adding one copies it into your library in your language, where you can change it.",
+    "addToLibrary": "Add to library",
+    "added": "{name} was added to the library.",
+    "steps": "{count, plural, one {# step} other {# steps}}",
+    "version": "Version {version}",
+    "delete": "Delete",
+    "deleteTitle": "Delete template",
+    "deleteConfirm": "Delete {name}? Its versions and runs are deleted, and every project that uses it stops running it.",
+    "loadFailed": "The templates could not be loaded.",
+    "tryAgain": "Try again",
+    "noAccess": "You may not see the workflows of this team.",
+    "readOnly": "Only members who may create workflows add templates here."
+  },
+  "starter": {
+    "name": "New workflow",
+    "role": "Coordinator",
+    "step": "Work on the task",
+    "instruction": "Work on task {identifier} “{title}”.\n\n{description}"
+  },
+  "builtin": {
+    "agent-team": {
+      "name": "Agent team (default)",
+      "description": "The coordinator plans, a specialist does the work, the coordinator reviews it, and the task moves to Review.",
+      "roles": {
+        "coordinator": "Coordinator",
+        "specialist": "Specialist"
+      },
+      "steps": {
+        "plan": "Coordinator plans the work",
+        "implement": "Specialist does the work",
+        "review": "Coordinator reviews the result",
+        "accepted": "Review accepted?",
+        "report-accepted": "Report the accepted result",
+        "report-changes": "Report the requested changes",
+        "to-review": "Move the task to Review"
+      }
+    },
+    "release-notes": {
+      "name": "Implement, approve, release notes",
+      "description": "A coder implements the task, you approve it or send it back, and a content agent writes the release notes.",
+      "roles": {
+        "coder": "Coder",
+        "writer": "Content agent"
+      },
+      "steps": {
+        "implement": "Coder implements",
+        "approve": "Approval",
+        "release-notes": "Content agent writes release notes",
+        "post-notes": "Post the release notes"
+      }
+    }
+  },
+  "editor": {
+    "back": "Workflows",
+    "template": "Template",
+    "projectWorkflow": "Project workflow",
+    "version": "Version {version}",
+    "unsaved": "Unsaved changes",
+    "save": "Save",
+    "saved": "{name} saved.",
+    "blocked": "Fix the errors to save.",
+    "tabs": {
+      "build": "Build",
+      "runs": "Runs",
+      "versions": "Versions"
+    },
+    "name": "Name",
+    "description": "Description",
+    "descriptionPlaceholder": "What the workflow does",
+    "noDescription": "No description",
+    "readOnly": "You can read this workflow. Members who may edit workflows change it.",
+    "loadFailed": "The workflow could not be loaded.",
+    "templateElsewhere": "This workflow is a template of the team's library. It is edited in Home.",
+    "openTemplate": "Open the template",
+    "issuesTitle": "{count, plural, one {# problem} other {# problems}}",
+    "warningsTitle": "{count, plural, one {# problem in this project} other {# problems in this project}}",
+    "warningsHint": "The workflow can be saved, but not enabled in the project until these are fixed."
+  },
+  "trigger": {
+    "title": "Trigger",
+    "type": "Starts when",
+    "status": "Status",
+    "anyStatus": "Any status",
+    "statusHint": "Leave it empty to start on every status change.",
+    "label": "Label",
+    "cron": "Cron expression",
+    "cronHint": "Minute, hour, day of month, month and day of week. 0 9 * * 1-5 runs on weekdays at 9:00.",
+    "timezone": "Time zone",
+    "taskTitle": "Task title",
+    "taskTitleHint": "Every run creates a task with this title and runs the workflow on it."
+  },
+  "roles": {
+    "title": "Roles",
+    "hint": "An agent step names a role. A project names the agent of each role, or the rule below finds it.",
+    "add": "Add role",
+    "newRole": "New role",
+    "name": "Name",
+    "match": "Found by",
+    "matchTypes": {
+      "coordinator": "The project's coordinator",
+      "capability": "An agent with a capability",
+      "template": "The copy of a template agent",
+      "none": "Named in the project"
+    },
+    "capability": "Capability",
+    "templateAgent": "Template agent",
+    "chooseAgent": "Choose an agent",
+    "remove": "Remove role",
+    "empty": "No roles yet."
+  },
+  "steps": {
+    "title": "Steps",
+    "add": "Step",
+    "addHere": "Add a step here",
+    "empty": "No steps yet.",
+    "drag": "Drag to reorder",
+    "yes": "Yes",
+    "no": "No",
+    "endsRun": "Run ends after this",
+    "limit": "A workflow holds at most {max} steps.",
+    "problems": "{count, plural, one {# problem} other {# problems}}"
+  },
+  "summary": {
+    "agentRole": "Role {role}",
+    "agentDirect": "@{username}",
+    "noInstruction": "No instruction yet",
+    "approvalEnd": "Rejected: the run ends",
+    "approvalGoto": "Rejected: back to {step}",
+    "outcome": "Result is {outcomes}",
+    "keyword": "Result contains {keyword}",
+    "taskIs": "{field} is {values}",
+    "taskIsNot": "{field} is not {values}",
+    "setStatus": "Set the status to {status}",
+    "addLabels": "Add {labels}",
+    "removeLabels": "Remove {labels}",
+    "assignRole": "Assign to role {role}",
+    "assignMember": "Assign to {name}",
+    "unassign": "Remove the assignee",
+    "comment": "Comment: {text}",
+    "subtask": "Subtask: {title}",
+    "waitDelay": "Wait {duration}",
+    "waitUntil": "Until the {field} at {time}"
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "hours": "{count, plural, one {# hour} other {# hours}}",
+    "days": "{count, plural, one {# day} other {# days}}"
+  },
+  "inspector": {
+    "title": "Step",
+    "empty": "Select a step to change it.",
+    "name": "Name",
+    "delete": "Delete step",
+    "insertVariable": "Insert variable",
+    "variableGroups": {
+      "task": "Task",
+      "previous": "Previous step",
+      "step": "Step {name}"
+    },
+    "variables": {
+      "title": "Title",
+      "description": "Description",
+      "identifier": "Identifier",
+      "status": "Status",
+      "summary": "Result",
+      "outcome": "Outcome",
+      "note": "Approval note"
+    },
+    "agent": {
+      "assignee": "Assignee",
+      "roles": "Roles",
+      "agents": "Agents of the project",
+      "instruction": "Instruction",
+      "instructionPlaceholder": "What the agent should do. Variables pass on the task and earlier results.",
+      "timeout": "Timeout in minutes",
+      "maxTurns": "Turns at most",
+      "runBudget": "Minutes at most",
+      "noLimit": "Agent's limit",
+      "model": "Model",
+      "agentModel": "The agent's model",
+      "limitsHint": "A step can lower the agent's own limits, not raise them."
+    },
+    "approval": {
+      "message": "Message",
+      "messagePlaceholder": "What the approver should check",
+      "onReject": "When rejected",
+      "end": "End the run",
+      "goto": "Go back to an earlier step",
+      "target": "Back to",
+      "chooseStep": "Choose a step",
+      "maxLoops": "At most this many times",
+      "noEarlierSteps": "No earlier step to go back to."
+    },
+    "condition": {
+      "kind": "Checks",
+      "kinds": {
+        "outcome": "Outcome of the previous step",
+        "keyword": "Word in the previous result",
+        "task": "Field of the task"
+      },
+      "outcomes": {
+        "success": "Success",
+        "failed": "Failed",
+        "blocked": "Blocked"
+      },
+      "keyword": "Word",
+      "keywordHint": "Yes when the result of the previous step contains it, in any case.",
+      "field": "Field",
+      "fields": {
+        "status": "Status",
+        "statusType": "Status type",
+        "labels": "Labels",
+        "area": "Area",
+        "priority": "Priority"
+      },
+      "op": "Comparison",
+      "ops": {
+        "is": "is",
+        "is_not": "is not"
+      },
+      "values": "Values",
+      "namesHint": "Names, separated by commas. The project names them the same way.",
+      "choose": "Choose"
+    },
+    "action": {
+      "kind": "Action",
+      "kinds": {
+        "set_status": "Set the status",
+        "add_labels": "Add labels",
+        "remove_labels": "Remove labels",
+        "set_assignee": "Set the assignee",
+        "comment": "Write a comment",
+        "create_subtask": "Create a subtask"
+      },
+      "status": "Status",
+      "labels": "Labels",
+      "assignee": "Assignee",
+      "nobody": "Nobody",
+      "roles": "Roles",
+      "members": "Members of the project",
+      "body": "Comment",
+      "title": "Title",
+      "description": "Description"
+    },
+    "wait": {
+      "kind": "Waits",
+      "kinds": {
+        "delay": "For a while",
+        "until": "Until a date of the task"
+      },
+      "amount": "Duration",
+      "unit": "Unit",
+      "units": {
+        "minutes": "Minutes",
+        "hours": "Hours",
+        "days": "Days"
+      },
+      "field": "Date",
+      "fields": {
+        "dueDate": "due date",
+        "startDate": "start date"
+      },
+      "time": "Time",
+      "timeHint": "Time in Europe/Berlin."
+    }
+  },
+  "issues": {
+    "invalid": "The value is invalid.",
+    "required": "This is required.",
+    "too_long": "At most {max} characters.",
+    "too_many": "At most {max} entries.",
+    "out_of_range": "Between {min} and {max}.",
+    "too_deep": "Conditions nest at most {max} levels deep.",
+    "invalid_cron": "The cron expression is invalid.",
+    "invalid_timezone": "The time zone is invalid.",
+    "no_steps": "The workflow has no steps.",
+    "duplicate_role_key": "Two roles share a key.",
+    "duplicate_step_id": "Two steps share an id.",
+    "unknown_role": "The role {role} does not exist.",
+    "agent_in_template": "A template names roles, not agents.",
+    "member_in_template": "A template cannot name a member.",
+    "invalid_rework_target": "The step to go back to must come before this approval.",
+    "unknown_variable": "The variable {variable} does not exist.",
+    "unknown_step_variable": "{variable} names a step that does not exist.",
+    "step_variable_not_before": "{variable} names a step that does not run before this one.",
+    "no_previous_step": "No step before this one leaves a result for {variable}.",
+    "unreachable_step": "No run reaches this step: both branches of the condition before it end the run.",
+    "role_unresolved": "No agent of the project fills the role {role}.",
+    "agent_not_in_project": "The agent does not work in this project.",
+    "member_not_in_project": "The member is not in this project.",
+    "unknown_status": "The project has no status {name}.",
+    "unknown_label": "The project has no label {name}.",
+    "unknown_area": "The project has no area {name}.",
+    "model_not_allowed": "No agent of the team runs the model {model}.",
+    "schedule_too_frequent": "The schedule runs more often than the team allows."
+  },
+  "runs": {
+    "status": {
+      "pending": "Queued",
+      "running": "Running",
+      "waiting": "Waiting",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "canceled": "Canceled",
+      "rejected": "Rejected"
+    },
+    "stepStatus": {
+      "running": "Running",
+      "waiting": "Waiting",
+      "succeeded": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled",
+      "simulated": "Simulated"
+    },
+    "outcomes": {
+      "success": "Success",
+      "failed": "Failed",
+      "blocked": "Blocked",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "true": "Yes",
+      "false": "No"
+    },
+    "agentRunStatus": {
+      "pending": "Queued",
+      "running": "Running",
+      "success": "Finished",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "testRun": "Test run",
+    "version": "Version {version}",
+    "trigger": "Trigger: {trigger}",
+    "startedBy": "Started by {name}",
+    "iteration": "Pass {iteration}",
+    "attempt": "Attempt {attempt}",
+    "agentRun": "Agent run #{id}",
+    "showResult": "Show result",
+    "hideResult": "Hide result",
+    "note": "Note: {note}",
+    "decidedBy": "Decided by {name}",
+    "wakeAt": "Continues {time}",
+    "cancel": "Cancel run",
+    "retry": "Retry",
+    "approvedToast": "Approved. The workflow continues.",
+    "rejectedToast": "Rejected. The workflow follows its rejection path.",
+    "empty": "No runs yet.",
+    "loadFailed": "The runs could not be loaded.",
+    "allStatuses": "All statuses",
+    "allRuns": "All runs",
+    "onlyTestRuns": "Test runs",
+    "onlyRealRuns": "Real runs",
+    "allProjects": "All projects"
+  },
+  "versions": {
+    "empty": "No versions.",
+    "current": "Current",
+    "createdBy": "by {name}",
+    "open": "Open",
+    "viewing": "Version {version} from {date}. Read only.",
+    "back": "Back to the versions"
+  },
+  "testRun": {
+    "button": "Test run",
+    "saveFirst": "Save your changes first. A test run runs the saved version.",
+    "title": "Test run",
+    "hint": "Agent steps are simulated, conditions are evaluated, and nothing on the task changes.",
+    "project": "Project",
+    "chooseProject": "Choose a project",
+    "task": "Task",
+    "search": "Search tasks",
+    "noMatches": "No matching tasks",
+    "typeToSearch": "Type to search the tasks of the project",
+    "start": "Start test run",
+    "again": "Start another"
+  },
+  "project": {
+    "title": "Workflow builder",
+    "hint": "Templates of the team's library and this project's own workflows. Turn one on, name the agents of its roles, and it runs on its trigger.",
+    "create": "Create workflow",
+    "createDescription": "A workflow of this project alone. It starts with one agent step.",
+    "name": "Name",
+    "empty": "No workflows yet. Add templates to the library in Home or create a workflow here.",
+    "loadFailed": "The workflows could not be loaded.",
+    "template": "Template",
+    "own": "Project workflow",
+    "enabled": "On",
+    "disabled": "Off",
+    "readOnly": "Members who may edit workflows turn them on and name the agents of their roles.",
+    "roles": "Agents of the roles",
+    "automatic": "Automatic ({agent})",
+    "automaticPlain": "Automatic",
+    "nobody": "nobody",
+    "open": "Open",
+    "runs": "Runs",
+    "problems": "Why it cannot run here"
+  },
+  "issuePanel": {
+    "title": "Workflows",
+    "start": "Start workflow",
+    "empty": "No workflow has run on this task yet.",
+    "unavailable": "The workflow runs cannot be loaded right now.",
+    "showMore": "{count, plural, one {Show # more run} other {Show # more runs}}",
+    "showLess": "Show fewer runs"
+  },
+  "approvals": {
+    "of": "{workflow} in {project}",
+    "step": "Step: {step}",
+    "waitingSince": "Waiting since {time}"
+  }
+}

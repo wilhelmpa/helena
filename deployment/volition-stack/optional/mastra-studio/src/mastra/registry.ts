@@ -6,6 +6,7 @@ import {
   workEnvelopeSchema,
 } from './contracts.ts';
 import { planEffects, type EffectSpec } from './effects.ts';
+import { planPipelineWorkflow } from './pipeline-workflow.ts';
 import { agentRoutineWorkflow } from './routine-workflow.ts';
 import { agentTeamWorkflow } from './team-workflow.ts';
 
@@ -73,4 +74,5 @@ export const workflowRegistry = {
   'inbox-triage': inboxTriageWorkflow,
   'agent-team': agentTeamWorkflow,
   'agent-routine': agentRoutineWorkflow,
+  'plan-pipeline': planPipelineWorkflow,
 };

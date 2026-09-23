@@ -43,6 +43,13 @@ export const globalAgentActivityPath = () => '/activity';
 export const approvalsPath = () => '/approvals';
 export const schedulesPath = () => '/schedules';
 
+// The workflow builder: the team's library of templates in Home and the editor of one
+// template, and the editor of a project's own workflow.
+export const pipelinesPath = () => '/workflows';
+export const pipelinePath = (pipelineId: number) => `${pipelinesPath()}/${pipelineId}`;
+export const projectPipelinePath = (key: string, pipelineId: number) =>
+  `${workflowsPath(key)}/${pipelineId}`;
+
 // Public read-only share pages (no auth). The token is the unguessable share key.
 export const shareIssuePath = (token: string) => `/share/issue/${token}`;
 export const shareViewPath = (token: string) => `/share/view/${token}`;
@@ -115,6 +122,12 @@ export const membersPath = (key: string) => `${projectPath(key)}/members`;
 // "MKT-42"), not the internal database id: /project/MKT/issue/42.
 export const issuePath = (key: string, sequenceNumber: number) =>
   `${projectPath(key)}/issue/${sequenceNumber}`;
+
+// An issue by its identifier, "MKT-42", where a response carries no number of its own.
+export const issueIdentifierPath = (identifier: string) => {
+  const match = /^(.+)-(\d+)$/.exec(identifier);
+  return match ? issuePath(match[1]!, Number(match[2])) : `/${identifier}`;
+};
 
 export const initiativesPath = (key: string) => `${projectPath(key)}/initiatives`;
 

@@ -135,6 +135,66 @@ test('retry runs a failed run again from its failed step without waiting for it'
   assert.deepEqual(result, { runId: 'run-1', resourceId: 'project:PRIV', status: 'running' });
 });
 
+test('retry runs the failed step of a loop again with the input it failed with', async () => {
+  const calls = [];
+  const control = service(async (url, init = {}) => {
+    calls.push({ url: String(url), init });
+    if (init.method === 'POST') return json({ message: 'Workflow run time travel started' });
+    return json({
+      runId: 'run-1',
+      resourceId: 'project:PRIV',
+      status: 'failed',
+      steps: {
+        'prepare-pipeline': { status: 'success', output: { cursor: 'build' } },
+        'run-pipeline-step': { status: 'failed', payload: { cursor: 'review', seq: 3 } },
+      },
+    });
+  });
+  await control.execute({
+    schemaVersion: 1,
+    operation: 'retry',
+    workflowId: 'agent-team',
+    projectRef: 'project:PRIV',
+    runId: 'run-1',
+  });
+  assert.deepEqual(JSON.parse(calls.at(-1).init.body), {
+    step: 'run-pipeline-step',
+    inputData: { cursor: 'review', seq: 3 },
+    requestContext: { projectRef: 'project:PRIV' },
+  });
+});
+
+test('resume continues the suspended step with the decision without waiting for the run', async () => {
+  const calls = [];
+  const control = service(async (url, init = {}) => {
+    calls.push({ url: String(url), init });
+    if (init.method === 'POST') return json({ message: 'Workflow run resumed' });
+    return json({
+      runId: 'run-1',
+      resourceId: 'project:PRIV',
+      status: 'suspended',
+      steps: { 'prepare-pipeline': { status: 'success' }, 'run-pipeline-step': { status: 'suspended' } },
+    });
+  });
+  await control.execute({
+    schemaVersion: 1,
+    operation: 'resume',
+    workflowId: 'agent-team',
+    projectRef: 'project:PRIV',
+    runId: 'run-1',
+    approved: false,
+    decidedBy: 'user-1',
+    note: 'Add tests first.',
+  });
+  const resumed = calls.at(-1);
+  assert.match(resumed.url, /\/workflows\/agent-team\/resume\?runId=run-1$/);
+  assert.deepEqual(JSON.parse(resumed.init.body), {
+    step: 'run-pipeline-step',
+    resumeData: { approved: false, decidedBy: 'user-1', note: 'Add tests first.' },
+    requestContext: { projectRef: 'project:PRIV' },
+  });
+});
+
 test('retry refuses a run that did not fail or has no failed step', async () => {
   for (const run of [
     { status: 'success', steps: {} },

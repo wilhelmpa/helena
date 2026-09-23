@@ -4,11 +4,12 @@
 
 `MASTRA_FRESH_MODE=true` starts Studio with no registered workflows. It is an explicit reset mode. The deployment default registers the control-plane workflows. Stored runs are cleared separately during a fresh reset.
 
-This project exposes three typed Mastra 1.67 workflows in Studio:
+This project exposes four typed Mastra 1.67 workflows in Studio:
 
 - `inbox-triage`
 - `agent-team`
 - `agent-routine`
+- `plan-pipeline`
 
 Each workflow accepts the shared envelope in `src/mastra/contracts.ts`. With
 `dryRun: true`, a run validates its input and calls neither Hermes nor Plan.
@@ -33,6 +34,11 @@ owns the exact task and receives the reviewed summary, evidence and final
 through the same bridge, to create a task delegated to an agent or to reopen the
 routine's task, and is skipped while that task is open or when it starts more than
 ten minutes late. Its contract is in `ORCHESTRATION_CONTRACT.md` as well.
+
+`plan-pipeline` runs the workflows members put together in Plan's workflow builder,
+one step per iteration of a loop. Plan evaluates and records every step through its
+pipeline control API; agent steps are Plan agent runs, and approvals wait in Plan's
+Approvals page. Its contract is in `ORCHESTRATION_CONTRACT.md` as well.
 
 ## Private event ingress
 

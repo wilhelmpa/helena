@@ -661,6 +661,9 @@ export const agentRun = pgTable(
     // iterations and wall-clock seconds. Null takes the agent's runtime policy default.
     maxTurns: integer('max_turns'),
     runBudgetSeconds: integer('run_budget_seconds'),
+    // The model of this run when a workflow step overrides the agent's own. Null runs
+    // the agent's model.
+    model: text('model'),
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),

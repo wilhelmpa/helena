@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const workflowIds = ['inbox-triage', 'agent-team', 'agent-routine'] as const;
+export const workflowIds = ['inbox-triage', 'agent-team', 'agent-routine', 'plan-pipeline'] as const;
 
 export const workflowIdSchema = z.enum(workflowIds);
 

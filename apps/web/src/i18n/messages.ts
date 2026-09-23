@@ -29,6 +29,7 @@ import newProject from '../../messages/en/newProject.json';
 import notes from '../../messages/en/notes.json';
 import palette from '../../messages/en/palette.json';
 import permissions from '../../messages/en/permissions.json';
+import pipelines from '../../messages/en/pipelines.json';
 import projects from '../../messages/en/projects.json';
 import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
@@ -84,6 +85,7 @@ const defaultMessages = {
   credentials,
   agentActivity,
   routines,
+  pipelines,
   devices,
 };
 
