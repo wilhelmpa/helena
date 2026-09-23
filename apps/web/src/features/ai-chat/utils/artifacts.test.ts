@@ -4,7 +4,9 @@ import {
   ARTIFACT_SANDBOX,
   artifactDocument,
   artifactFileName,
+  extractArtifacts,
   isArtifactLanguage,
+  splitArtifacts,
 } from './artifacts';
 
 describe('artifacts', () => {
@@ -52,5 +54,38 @@ describe('artifacts', () => {
       artifactFileName('html', 'Landing: page / v2', new Date('2026-09-23T14:05:00Z')),
       'Landing page v2 20260923-1405.html',
     );
+  });
+
+  it('finds the html and svg fences of an answer, tagged or not', () => {
+    const text = [
+      'Here is a page:',
+      '```html',
+      '<h1>Hi</h1>',
+      '```',
+      'and an icon:',
+      '```svg',
+      '<svg></svg>',
+      '```',
+      'and some data, which is not an artifact:',
+      '```json',
+      '{"a":1}',
+      '```',
+    ].join('\n');
+    const artifacts = extractArtifacts(text);
+    assert.equal(artifacts.length, 2);
+    assert.deepEqual(artifacts[0], { language: 'html', code: '<h1>Hi</h1>' });
+    assert.deepEqual(artifacts[1], { language: 'svg', code: '<svg></svg>' });
+  });
+
+  it('takes the fences out of the prose an artifact card replaces them with', () => {
+    const { text, artifacts } = splitArtifacts('Before.\n```html\n<p>x</p>\n```\nAfter.');
+    assert.equal(artifacts.length, 1);
+    assert.equal(text, 'Before.\n\nAfter.');
+  });
+
+  it('leaves plain prose with no fence untouched', () => {
+    const { text, artifacts } = splitArtifacts('Just an answer, no code.');
+    assert.equal(artifacts.length, 0);
+    assert.equal(text, 'Just an answer, no code.');
   });
 });

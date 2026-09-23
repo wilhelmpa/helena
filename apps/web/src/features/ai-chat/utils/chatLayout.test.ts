@@ -17,12 +17,20 @@ describe('chat layout by container width', () => {
 
   it('keeps the breakpoint equal to the container query the layout uses', async () => {
     const { readFile } = await import('node:fs/promises');
-    const source = await readFile(
+    // The named container is declared once, on the workspace root…
+    const workspace = await readFile(
       new URL('../components/workspace/ChatWorkspace.tsx', import.meta.url),
+      'utf8',
+    );
+    assert.match(workspace, /@container\/chat/);
+    // …and the list pane is what actually switches between a column and a drawer at
+    // it, so that is where the @3xl breakpoint has to match CHAT_SPLIT_WIDTH.
+    const listPane = await readFile(
+      new URL('../components/workspace/ChatListPane.tsx', import.meta.url),
       'utf8',
     );
     // @3xl is 48rem, 768px at the default root size.
     assert.equal(CHAT_SPLIT_WIDTH, 48 * 16);
-    assert.match(source, /@3xl\/chat:/);
+    assert.match(listPane, /@3xl\/chat:/);
   });
 });
