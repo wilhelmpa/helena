@@ -283,29 +283,57 @@ def run_hermes_end_to_end(report, keys, state) -> None:
     report.add('5', 'hermes: the egress log names the run', bool(tagged), json.dumps(tagged[:1])[:200])
 
 
-def run_other_runtimes(report, client) -> None:
+def run_other_runtimes(report, client, keys=None, state=None) -> None:
     """Claude Code and Codex start as the project user and reach their API only through the
     egress proxy; without a login they are refused there, which is the end of what a test
-    without the owner's credentials can show."""
+    without the owner's credentials can show. The first refusal is enough: the command is
+    then stopped (it would retry for minutes)."""
+    import select  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415
+
     workspace = f'{ROOT}/workspaces/projects/alpha'
     runs = {
         'claude': (['-p', '--output-format', 'stream-json', '--verbose', '--max-turns', '1'],
                    {'ANTHROPIC_API_KEY': 'sk-ant-api03-proof-invalid-key-0000000000'},
-                   ('authentication', 'invalid', '401')),
+                   ('authentication_failed', 'invalid x-api-key', '401'), 'api.anthropic.com'),
         'codex': (['exec', '--json', '--skip-git-repo-check', '-c', 'sandbox_mode="workspace-write"', '-'],
                   {'OPENAI_API_KEY': 'sk-proof-invalid-key-000000000000000000'},
-                  ('401', 'unauthorized', 'invalid', 'incorrect api key')),
+                  ('401', 'unauthorized', 'incorrect api key', 'invalid_api_key'), 'api.openai.com'),
     }
-    for runtime, (args, env, needles) in runs.items():
-        argv = ['run', '--slug', 'alpha', '--profile', 'alpha', '--runtime', runtime, '--cwd', workspace]
-        for key, value in env.items():
+    env = {'VOLITION_LAUNCHER_SOCKET': '/run/vpt-launcher/launch.sock', 'PATH': '/usr/bin:/bin'}
+    for runtime, (args, extra, needles, host) in runs.items():
+        argv = ['/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I', f'{ISO}/launch_client.py',
+                'run', '--slug', 'alpha', '--profile', 'alpha', '--runtime', runtime, '--cwd', workspace]
+        for key, value in extra.items():
             argv += ['--env', f'{key}={value}']
-        done = client(argv + ['--', *args], check=False, stdin=b'Say hi.', timeout=180)
-        output = (done.stdout + done.stderr).decode(errors='replace')
-        lowered = output.lower()
-        report.add('5', f'{runtime}: starts in the sandbox and reaches its API via the proxy',
-                   any(needle in lowered for needle in needles) and 'not reachable' not in lowered,
-                   f'rc={done.returncode} {output.strip()[-240:]}')
+        process = subprocess.Popen(argv + ['--', *args], env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+        process.stdin.write(b'Say hi.')
+        process.stdin.close()
+        output = b''
+        found = False
+        deadline = time.time() + 120
+        while time.time() < deadline and process.poll() is None and not found:
+            ready, _, _ = select.select([process.stdout], [], [], 1)
+            if ready:
+                chunk = os.read(process.stdout.fileno(), 65536)
+                output += chunk
+                found = any(needle in output.decode(errors='replace').lower() for needle in needles)
+        if process.poll() is None:
+            process.kill()
+        process.wait()
+        output += process.stdout.read() or b''
+        text = output.decode(errors='replace')
+        report.add('5', f'{runtime}: starts in the sandbox and is refused by its API behind the proxy',
+                   any(needle in text.lower() for needle in needles),
+                   text.strip().replace(chr(10), ' ')[-260:])
+        if keys and state:
+            time.sleep(4)
+            code, page = api(state, 'GET', '/projects/ALPHA/agent-network/events?limit=200', keys()['ownerKey'])
+            items = page.get('items', []) if isinstance(page, dict) else []
+            reached = [item for item in items if item['host'] == host and item['decision'] == 'allowed']
+            report.add('5', f'{runtime}: {host} reached through the egress proxy', bool(reached),
+                       json.dumps(reached[:1])[:200])
 
 
 def run_stop(report, client) -> None:
@@ -343,7 +371,7 @@ def run_stop(report, client) -> None:
 
 def run_function_proofs(report, probe, client, keys, state) -> None:
     run_hermes_end_to_end(report, keys, state)
-    run_other_runtimes(report, client)
+    run_other_runtimes(report, client, keys, state)
     run_stop(report, client)
 
 
