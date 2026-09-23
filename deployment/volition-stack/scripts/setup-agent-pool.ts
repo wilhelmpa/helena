@@ -4,9 +4,10 @@
  *
  * Sets up, through Helena's own HTTP API (never the database directly): the curated
  * skills of docs/volition-agent-pool-research.md Section A, the 10 agent templates of
- * Section B, the project copies that close the gaps of Section C, the "Familie &
- * Privat" department, the Shopify Dev MCP server (read-only, no mutations) on
- * coder-verve, and goals for volition-hub-plan.md's roadmap phases.
+ * Section B plus an 11th (Markt-Analyst, added after Section A/B were written — see
+ * its own comment below), the project copies that close the gaps of Section C, the
+ * "Familie & Privat" department, the Shopify Dev MCP server (read-only, no mutations)
+ * on coder-verve, and goals for volition-hub-plan.md's roadmap phases.
  *
  * Idempotent: every step reads the current state first and only writes what is
  * missing or different. Running it twice in a row produces "already …" on the second
@@ -224,6 +225,60 @@ const NEW_SKILLS: SkillSeed[] = [
       'https://github.com/nimrodfisher/data-analytics-skills/tree/main/03-data-analysis-investigation/ab-test-analysis',
     license: 'MIT',
   },
+  // agiprolabs/claude-trading-skills, MIT, pinned to 981e1d7 (23.09.2026) — the owner
+  // asked for "the trader skill set with ~100k GitHub stars". That description best
+  // matches TauricResearch/TradingAgents (~102k-108k stars, Apache-2.0) or
+  // virattt/ai-hedge-fund (~63.6k, MIT), both checked directly: neither has a SKILL.md
+  // anywhere in the tree (main.py / pyproject.toml Python applications you run
+  // stand-alone, not portable skills). HKUDS/Vibe-Trading (~33.9k, MIT), also named by
+  // the owner, is the same kind of stand-alone app. Of the four repos named,
+  // agiprolabs/claude-trading-skills (373 stars) is the only genuine SKILL.md
+  // collection and is what is actually imported below; questflowai/investorskills
+  // (1.9k stars, MIT) and marian2js/trading-skills (13 stars, MIT) were also checked
+  // and are smaller/thinner collections on the same topic. Only 6 of that repo's ~66
+  // skills are imported, chosen by reading each one's SKILL.md: analysis, metrics and
+  // reporting only. Explicitly left out: everything about executing an order or
+  // talking to a broker/exchange/DEX or a wallet (dex-execution, copy-trading,
+  // jito-bundles, solana-tx-building, rl-execution, raptor-dex, mev-analysis,
+  // shredstream), on-chain surveillance (wallet-profiling, sybil-detection), and every
+  // *-api skill (birdeye/coingecko/defillama/helius/solana-rpc/…), which exist to wire
+  // up live market-data or broker connections this template must not have.
+  {
+    key: 'portfolio-analytics',
+    sourceUrl:
+      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/portfolio-analytics',
+    license: 'MIT',
+  },
+  {
+    key: 'risk-management',
+    sourceUrl:
+      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/risk-management',
+    license: 'MIT',
+  },
+  {
+    key: 'correlation-analysis',
+    sourceUrl:
+      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/correlation-analysis',
+    license: 'MIT',
+  },
+  {
+    key: 'regime-detection',
+    sourceUrl:
+      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/regime-detection',
+    license: 'MIT',
+  },
+  {
+    key: 'volatility-modeling',
+    sourceUrl:
+      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/volatility-modeling',
+    license: 'MIT',
+  },
+  {
+    key: 'trade-journal',
+    sourceUrl:
+      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/trade-journal',
+    license: 'MIT',
+  },
 ];
 
 const ALL_SKILLS = [...EXISTING_SKILLS, ...NEW_SKILLS];
@@ -404,6 +459,32 @@ const NEW_TEMPLATES: TemplateSeed[] = [
       'Konkurrenzseiten ansehen, Formulare ausfüllen, Social-Entwürfe vorbereiten. Läuft erst ' +
       'produktiv, sobald der Projekt-Browser-Gateway (hub/agent-browser-mcp) live ist — bis ' +
       'dahin bewusst nur als Vorlage ohne aktive Kopie.',
+  },
+  {
+    key: 'market-analyst',
+    username: 'market-analyst',
+    name: 'Markt-Analyst',
+    roleTitle: 'Markt-Analyst',
+    capabilities: ['market-analysis', 'research'],
+    skills: [
+      'portfolio-analytics',
+      'risk-management',
+      'correlation-analysis',
+      'regime-detection',
+      'volatility-modeling',
+      'trade-journal',
+    ],
+    // The owner's rule, verbatim as the template's standing instruction so every run
+    // and every copy carries it, not just this script's comments: analysis only, never
+    // a trade, never a login. No MCP server or configured tool is wired to this
+    // template for the same reason (no broker/exchange API, no wallet key, no order
+    // tool) — only the six analysis/reporting skills above.
+    instructions:
+      'Markt- und Wertpapier-Recherche: Kennzahlen berechnen, Backtests interpretieren, ' +
+      'Korrelationen und Marktregime einordnen, Berichte ins Vault ablegen. Ergebnisse sind ' +
+      'Informationen, keine Anlageberatung. Jede Handlung mit Geld ist tabu: keine Order, kein ' +
+      'Trade, kein Broker- oder Börsenzugang, kein Wallet-Key. Dieser Agent hat und bekommt ' +
+      'keine Zugangsdaten zu einem Broker, einer Börse oder einer Wallet.',
   },
 ];
 
