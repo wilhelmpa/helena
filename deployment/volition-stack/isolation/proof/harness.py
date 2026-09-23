@@ -203,11 +203,29 @@ def setup(args: argparse.Namespace) -> None:
         mkdir(f'{ROOT}/workspaces/projects/{slug}', 'vpt-hermes', 'vpt-hermes', 0o750)
         write(f'{ROOT}/workspaces/projects/{slug}/secret-{slug}.txt', f'workspace of {slug}\n',
               'vpt-hermes', 'vpt-hermes', 0o640)
+        mkdir(f'{ROOT}/workspaces/projects/{slug}/src', 'vpt-hermes', 'vpt-hermes', 0o750)
+        write(f'{ROOT}/workspaces/projects/{slug}/src/main.py', 'print(1)\n', 'vpt-hermes', 'vpt-hermes', 0o640)
     # The global Hermes home and its profiles root, runner-owned and private.
     mkdir(f'{ROOT}/hermes', 'vpt-hermes', 'vpt-hermes', 0o755)
     mkdir(f'{ROOT}/hermes/profiles', 'vpt-hermes', 'vpt-hermes', 0o700)
     mkdir(f'{ROOT}/hermes/shared', 'vpt-hermes', 'vpt-hermes', 0o700)
     write(f'{ROOT}/hermes/auth.json', '{"secret": "model token of the runner"}\n', 'vpt-hermes', 'vpt-hermes', 0o600)
+    # The Home agent's state in the global home, which the migration copies into its profile,
+    # and the runner's own files there, which it must leave alone.
+    write(f'{ROOT}/hermes/SOUL.md', 'You are the Home agent.\n', 'vpt-hermes', 'vpt-hermes', 0o600)
+    mkdir(f'{ROOT}/hermes/memories', 'vpt-hermes', 'vpt-hermes', 0o700)
+    write(f'{ROOT}/hermes/memories/MEMORY.md', 'home memory\n', 'vpt-hermes', 'vpt-hermes', 0o600)
+    mkdir(f'{ROOT}/hermes/run', 'vpt-hermes', 'vpt-hermes', 0o700)
+    mkdir(f'{ROOT}/hermes/run/agents', 'vpt-hermes', 'vpt-hermes', 0o700)
+    write(f'{ROOT}/hermes/run/agents/alpha.json', '{"apiKey": "runner descriptor"}\n', 'vpt-hermes', 'vpt-hermes', 0o600)
+    import sqlite3  # noqa: PLC0415
+    database = f'{ROOT}/hermes/state.db'
+    if os.path.exists(database):
+        os.unlink(database)
+    with sqlite3.connect(database) as connection:
+        connection.execute('create table sessions (id text)')
+        connection.execute("insert into sessions values ('home-session-1')")
+    os.chown(database, uid('vpt-hermes'), gid('vpt-hermes'))
     port = args.model_port
     write(f'{ROOT}/hermes/config.yaml',
           'model:\n  provider: custom\n'
@@ -234,6 +252,17 @@ def setup(args: argparse.Namespace) -> None:
     for slug in PROJECTS:
         mkdir(f'{ROOT}/project-browser/{slug}', 'vpt-browser', 'vpt-browser', 0o700)
         write(f'{ROOT}/project-browser/{slug}/Cookies', 'cookie\n', 'vpt-browser', 'vpt-browser', 0o600)
+    # What an agent that ran as the runner user could have left in its workspace: a hard link
+    # to the runner's model token and a symbolic link to a root secret. The migration must
+    # hand neither target to the project.
+    trap = f'{ROOT}/workspaces/projects/alpha/stolen-auth.json'
+    if os.path.lexists(trap):
+        os.unlink(trap)
+    os.link(f'{ROOT}/hermes/auth.json', trap)
+    link = f'{ROOT}/workspaces/projects/alpha/token-link'
+    if os.path.lexists(link):
+        os.unlink(link)
+    os.symlink(f'{ROOT}/secrets/token', link)
     # The egress proxy's token, and the copy the test Plan API reads.
     token = os.urandom(24).hex()
     write(f'{PROOF}/egress.token', token, 'root', 'root', 0o600)
@@ -330,13 +359,32 @@ def start(args: argparse.Namespace) -> None:
         'StateDirectory=volition-agent-launcher': 'StateDirectory=vpt-launcher-open',
     })
     time.sleep(0.5)
-    for slug, profiles in (('home', ['home']), ('alpha', ['alpha', 'alpha_7']), ('beta', ['beta'])):
-        answer = client(['ensure-project-user', slug, *sum((['--profile', p] for p in profiles), [])])
-        print(f'ensure-project-user {slug}: {answer.stdout.decode().strip()}')
-    # On the host the profiles root is the runner's alone, so the files are put there by root.
-    for slug, profile in (('alpha', 'alpha'), ('alpha', 'alpha_7'), ('beta', 'beta'), ('home', 'home')):
+    # The agents' profiles as they are before the migration: the runner's.
+    for profile in ('alpha', 'alpha_7', 'beta'):
+        mkdir(f'{ROOT}/hermes/profiles/{profile}', 'vpt-hermes', 'vpt-hermes', 0o700)
         write(f'{ROOT}/hermes/profiles/{profile}/MEMORY.md', f'memory of {profile}\n',
-              f'vpt-{slug}', f'vpt-{slug}', 0o600)
+              'vpt-hermes', 'vpt-hermes', 0o600)
+    migrate = ['/usr/bin/python3', '-I', f'{ISO}/migrate.py', 'apply', '--config', f'{ISO}/launcher.json',
+               '--browser-root', f'{ROOT}/project-browser', '--browser-user', 'vpt-browser',
+               '--model-auth', f'{ROOT}/hermes/config.yaml']
+    dry = sh(*migrate, '--dry-run')
+    with open(f'{PROOF}/migrate-dry-run.txt', 'wb') as handle:
+        handle.write(dry.stdout + dry.stderr)
+    state = load_state()
+    state['afterDryRun'] = {
+        'workspaceFileUid': os.stat(f'{ROOT}/workspaces/projects/alpha/secret-alpha.txt').st_uid,
+        'homeProfileExists': os.path.exists(f'{ROOT}/hermes/profiles/home'),
+    }
+    save_state(state)
+    done = sh(*migrate)
+    with open(f'{PROOF}/migrate-apply.txt', 'wb') as handle:
+        handle.write(done.stdout + done.stderr)
+    again = sh(*migrate, '--dry-run')
+    with open(f'{PROOF}/migrate-again.txt', 'wb') as handle:
+        handle.write(again.stdout + again.stderr)
+    # Provisioning of a running system: the launcher's own call, idempotent after the migration.
+    answer = client(['ensure-project-user', 'alpha', '--profile', 'alpha', '--profile', 'alpha_7'])
+    print(f'ensure-project-user alpha: {answer.stdout.decode().strip()}')
     print('started')
 
 
@@ -420,6 +468,7 @@ def prove(args: argparse.Namespace) -> None:
         ('1', prove_1_egress_basic), ('2', prove_2_egress_blocks), ('3', prove_3_no_local_services),
         ('4', prove_4_no_foreign_files), ('5', prove_5_function), ('6', prove_6_launcher_refuses),
         ('7', prove_7_browser), ('M', prove_modes), ('P', prove_plan_socket), ('T', prove_terminal),
+        ('G', prove_migration), ('U', prove_users),
     ]
     for number, function in tests:
         if only and number not in only:
@@ -624,6 +673,80 @@ def prove_terminal(report: Report) -> None:
     from proof_function import run_terminal_proofs  # noqa: PLC0415
 
     run_terminal_proofs(report, sh, ISO, LAUNCH_SOCKET, ROOT)
+
+
+def prove_migration(report: Report) -> None:
+    """The migration hands each project its files, copies Home's state and follows no link."""
+    state = load_state()
+    after = state.get('afterDryRun', {})
+    report.add('G', 'dry run changes nothing', after.get('workspaceFileUid') == uid('vpt-hermes')
+               and after.get('homeProfileExists') is False, json.dumps(after))
+    with open(f'{PROOF}/migrate-dry-run.txt', encoding='utf-8') as handle:
+        dry = handle.read()
+    report.add('G', 'dry run lists each change', dry.count('would chown') > 5 and 'would setfacl' in dry,
+               f'{dry.count("would chown")} chown, {dry.count("would setfacl")} setfacl lines')
+    with open(f'{PROOF}/migrate-again.txt', encoding='utf-8') as handle:
+        again = json.loads(handle.read().strip().splitlines()[-1])
+    report.add('G', 'second run changes nothing', again['changes'] == 0, json.dumps(again)[:200])
+    info = os.stat(f'{ROOT}/workspaces/projects/alpha/secret-alpha.txt')
+    report.add('G', 'workspace file belongs to the project', info.st_uid == uid('vpt-alpha'), f'uid={info.st_uid}')
+    info = os.stat(f'{ROOT}/hermes/profiles/alpha_7/MEMORY.md')
+    report.add('G', 'profile belongs to the project', info.st_uid == uid('vpt-alpha'), f'uid={info.st_uid}')
+    info = os.stat(f'{ROOT}/hermes/auth.json')
+    acl = sh('getfacl', '-cp', f'{ROOT}/hermes/auth.json').stdout.decode()
+    report.add('G', 'hard-linked runner token untouched', info.st_uid == uid('vpt-hermes') and 'vpt-alpha' not in acl,
+               f'uid={info.st_uid} links={info.st_nlink} acl={acl.strip().replace(chr(10), " ")}')
+    with open(f'{PROOF}/migrate-apply.txt', encoding='utf-8') as handle:
+        applied = handle.read()
+    report.add('G', 'hard link reported', 'stolen-auth.json: hard link' in applied, 'skipped list names it')
+    info = os.stat(f'{ROOT}/secrets/token')
+    report.add('G', 'link target untouched', info.st_uid == 0 and oct(info.st_mode & 0o777) == '0o600', f'uid={info.st_uid}')
+    done = sh('/usr/sbin/runuser', '-u', 'vpt-alpha', '--', 'cat', f'{ROOT}/workspaces/projects/alpha/stolen-auth.json',
+              check=False)
+    report.add('G', 'project cannot read the hard link', done.returncode != 0, (done.stderr or b'').decode().strip()[:120])
+    home = f'{ROOT}/hermes/profiles/home'
+    copied = {name: os.path.exists(os.path.join(home, name)) for name in
+              ('SOUL.md', 'memories/MEMORY.md', 'state.db', 'run/agents', 'auth.json')}
+    report.add('G', "Home's state copied, keys left behind",
+               copied == {'SOUL.md': True, 'memories/MEMORY.md': True, 'state.db': True, 'run/agents': False,
+                          'auth.json': False} and os.stat(home).st_uid == uid('vpt-home'), json.dumps(copied))
+    import sqlite3  # noqa: PLC0415
+    with sqlite3.connect(f'file:{home}/state.db?mode=ro', uri=True) as connection:
+        rows = connection.execute('select id from sessions').fetchall()
+    report.add('G', "Home's sessions carried over", rows == [('home-session-1',)], str(rows))
+    results = probe('home', 'home', [f'read:{home}/SOUL.md', f'read:{home}/state.db'])
+    expect(report, 'G', results, f'read:{home}/SOUL.md', True)
+    info = os.stat(f'{ROOT}/project-browser/alpha/Cookies')
+    report.add('G', 'browser state belongs to the browser user', info.st_uid == uid('vpt-browser'), f'uid={info.st_uid}')
+
+
+def prove_users(report: Report) -> None:
+    """The launcher creates a project user with a UID that is never given out twice."""
+    registry = f'{ROOT}/provisioning/projects/gamma.json'
+    write(registry, json.dumps({'schemaVersion': 1, 'slug': 'gamma', 'project': {'id': 3, 'key': 'GAMMA'}}),
+          'vpt-hermes', 'vpt-hermes', 0o600)
+    mkdir(f'{ROOT}/workspaces/projects/gamma', 'vpt-hermes', 'vpt-hermes', 0o750)
+    try:
+        first = json.loads(client(['ensure-project-user', 'gamma', '--profile', 'gamma']).stdout)
+        report.add('U', 'creates the user', first.get('created') is True and first['user'] == 'vpt-gamma', json.dumps(first))
+        info = os.stat(f'{ROOT}/workspaces/projects/gamma')
+        acl = sh('getfacl', '-cp', f'{ROOT}/workspaces/projects/gamma').stdout.decode()
+        report.add('U', 'workspace to the user, runner and readers by ACL',
+                   info.st_uid == first['uid'] and 'user:vpt-hermes:rwx' in acl and 'default:user:vpt-hermes:rwx' in acl
+                   and 'group:vpt-hermes:r-x' in acl, acl.strip().replace('\n', ' ')[:300])
+        again = json.loads(client(['ensure-project-user', 'gamma']).stdout)
+        report.add('U', 'second call changes nothing', again.get('created') is False and again['uid'] == first['uid'],
+                   json.dumps(again))
+        removed = json.loads(client(['remove-project-user', 'gamma']).stdout)
+        report.add('U', 'removes the user', removed.get('removed') is True, json.dumps(removed))
+        recreated = json.loads(client(['ensure-project-user', 'gamma']).stdout)
+        report.add('U', 'a new user gets a new UID', recreated['uid'] != first['uid'],
+                   f'first={first["uid"]} then={recreated["uid"]}')
+        home = client(['ensure-project-user', 'root'], check=False)
+        report.add('U', 'refuses a reserved name', home.returncode != 0 and b'invalid' in home.stdout, home.stdout.decode()[:120])
+    finally:
+        client(['remove-project-user', 'gamma'], check=False)
+        os.unlink(registry)
 
 
 def main() -> None:
