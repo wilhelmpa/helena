@@ -30,7 +30,8 @@
     "capabilities": "Fähigkeiten"
   },
   "values": {
-    "none": "Keine"
+    "none": "Keine",
+    "outsideProject": "Außerhalb dieses Projekts"
   },
   "actions": {
     "add": "Hinzufügen",

@@ -26,11 +26,13 @@ import { useTranslations } from 'next-intl';
 export function TeamAiAgentSheet({
   open,
   agent,
+  projectId,
   onClose,
 }: {
   open: boolean;
   agent: AiAgent | null;
-  // The project a new agent starts attached to, when the sheet is opened from one.
+  // The project a new agent is created in, when the sheet is opened from one.
+  projectId?: number;
   onClose: () => void;
 }) {
   return (
@@ -46,13 +48,19 @@ export function TeamAiAgentSheet({
       >
         {/* Key by agent (or 'new' for create) so switching gives a fresh form and chat
             session; create keeps the 'new' key while it becomes edit, so no remount. */}
-        {open && <SheetBody key={agent?.id ?? 'new'} initialAgent={agent} />}
+        {open && <SheetBody key={agent?.id ?? 'new'} initialAgent={agent} projectId={projectId} />}
       </SheetContent>
     </Sheet>
   );
 }
 
-function SheetBody({ initialAgent }: { initialAgent: AiAgent | null }) {
+function SheetBody({
+  initialAgent,
+  projectId,
+}: {
+  initialAgent: AiAgent | null;
+  projectId?: number;
+}) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
   const { teamId } = useAgentSection();
@@ -114,7 +122,12 @@ function SheetBody({ initialAgent }: { initialAgent: AiAgent | null }) {
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 flex-1 basis-0 flex-col border-e border-border/60">
-          <AgentSheetForm agent={agent} expanded onCreated={setCreatedAgent} />
+          <AgentSheetForm
+            agent={agent}
+            projectId={projectId}
+            expanded
+            onCreated={setCreatedAgent}
+          />
         </div>
 
         <div className="flex min-h-0 flex-1 basis-0 flex-col">

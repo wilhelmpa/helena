@@ -10,7 +10,7 @@ feature belongs; a change that gives a second component the same responsibility 
 |---|---|---|---|
 | Role | Executes agent work | Decides what runs, when, by whom and in which order | Stores all configuration and results; the only user interface |
 | Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Workflows, event ingress, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, run history. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, secrets, connections, mail accounts, browser logins, approvals, activity. |
-| Does not | Schedule business work (Hermes cron is limited to Hermes maintenance). Delegate inside automated runs. Hold its own configuration: profiles are generated from Plan. | Call an LLM provider directly. Serve a user interface (Studio is a debugging tool). Store project or agent data of its own. | Run agents itself. Schedule work. Contain workflow logic beyond simple issue rules. |
+| Does not | Schedule business work (Hermes cron is limited to Hermes maintenance). Delegate inside automated runs, apart from a coordinator's sub-agents (see Agent structure). Hold its own configuration: profiles are generated from Plan. | Call an LLM provider directly. Serve a user interface (Studio is a debugging tool). Store project or agent data of its own. | Run agents itself. Schedule work. Contain workflow logic beyond simple issue rules. |
 | Stores | Sessions, memory, learned skills | Run state: runs, checkpoints, schedules | Configuration and results |
 
 The Kingston integration service (`deployment/volition-stack/integration/server.mjs`) is the
@@ -56,6 +56,22 @@ and makes no decisions.
   │ schedules     │        │ per agent     │
   └───────────────┘        └───────────────┘
 ```
+
+## Agent structure
+
+- The Home agent (`master`) is the master of a team's agents and is used from Home only. It
+  is a member of every project so it can read and create work there, and the project-scoped
+  lists of the API leave it out. It gets work done in a project by creating a task there,
+  delegated to the project's coordinator.
+- Each project has a coordinator (`hermes-<slug>-coordinator`) that reports to the Home
+  agent. An agent created in a project works in that project only, as a specialist that
+  reports to the coordinator.
+- A template is a pool agent that runs nowhere. A project adds a copy of it as a specialist
+  of its own. Knowledge shared across projects goes through the skills library; each copy
+  has its own memory.
+- A coordinator may split one run across Hermes sub-agents (the `delegation` toolset). They
+  are not Plan agents and Plan does not show them. Longer or specialist work goes to the
+  project's specialists through the agent team.
 
 ## Rules that keep the boundaries
 

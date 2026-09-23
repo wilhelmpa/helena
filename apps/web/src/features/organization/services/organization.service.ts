@@ -24,10 +24,11 @@ import {
 } from '@/lib/api/endpoints/organization';
 import { qk } from '@/services/queryKeys';
 
-export function useOrganizationQuery(teamId: number | null) {
+export function useOrganizationQuery(teamId: number | null, projectId?: number) {
   return useQuery({
-    queryKey: teamId == null ? ['organization', 'none'] : qk.organization(teamId),
-    queryFn: () => getOrganization(teamId!),
+    queryKey:
+      teamId == null ? ['organization', 'none'] : [...qk.organization(teamId), projectId ?? 'all'],
+    queryFn: () => getOrganization(teamId!, projectId),
     enabled: teamId != null,
   });
 }

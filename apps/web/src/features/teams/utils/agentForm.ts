@@ -33,6 +33,9 @@ export interface AgentFormValue {
   // The projects of the team the agent works in. Its key reaches those and nothing
   // else, so an agent with none authenticates and sees no project.
   projectIds: number[];
+  // The project a new agent is created in, which it then works in alone.
+  projectId: number | null;
+  template: boolean;
   runnerScope: 'owner' | 'team';
 }
 
@@ -63,8 +66,8 @@ export function isAgentFormValid(v: AgentFormValue): boolean {
 }
 
 // The form's starting value, from an existing agent when editing or blank defaults
-// when creating.
-export function initialAgentValue(agent?: AiAgent): AgentFormValue {
+// when creating, in the project given.
+export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFormValue {
   return {
     name: agent?.name ?? '',
     username: agent?.username ?? '',
@@ -92,6 +95,8 @@ export function initialAgentValue(agent?: AiAgent): AgentFormValue {
     })),
     delegationDelayMin: String(Math.round((agent?.delegationDelaySec ?? 120) / 60)),
     projectIds: (agent?.projects ?? []).map((project) => project.id),
+    projectId: agent ? null : (projectId ?? null),
+    template: agent?.template ?? false,
     runnerScope: agent?.runnerScope ?? 'team',
   };
 }
@@ -132,7 +137,8 @@ function configFields(v: AgentFormValue) {
       .filter((file) => file.path.length > 0),
   };
   const common = {
-    projectIds: v.projectIds,
+    projectIds: v.template ? [] : v.projectIds,
+    template: v.template,
     instructions: v.instructions.trim() || null,
     triggerOnMention: v.triggerOnMention,
     triggerOnAssign: v.triggerOnAssign,
@@ -164,9 +170,12 @@ function configFields(v: AgentFormValue) {
   };
 }
 
-// Payload for creating a new agent, including its kind.
+// Payload for creating a new agent, including its kind. An agent created in a project
+// names that project instead of a project set.
 export function toCreateInput(v: AgentFormValue): NewAiAgentInput {
-  return { name: v.name.trim(), username: v.username.trim(), kind: v.kind, ...configFields(v) };
+  const { projectIds, ...config } = configFields(v);
+  const input = { name: v.name.trim(), username: v.username.trim(), kind: v.kind, ...config };
+  return v.projectId != null ? { ...input, projectId: v.projectId } : { ...input, projectIds };
 }
 
 // Patch for editing an existing agent. The kind cannot change, so it is omitted.

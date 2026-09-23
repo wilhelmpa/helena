@@ -1,6 +1,11 @@
 import { t } from 'elysia';
 
 export const organizationTeamParams = t.Object({ teamId: t.Numeric() });
+export const organizationQuery = t.Object({
+  projectId: t.Optional(
+    t.Numeric({ description: 'Only the agents working in this project, without the Home agent.' }),
+  ),
+});
 export const organizationDepartmentParams = t.Object({
   teamId: t.Numeric(),
   departmentId: t.Numeric(),

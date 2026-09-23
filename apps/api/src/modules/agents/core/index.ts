@@ -8,6 +8,7 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import { teamParams } from '#modules/teams/model';
 import { runsTeam } from '#modules/teams/service';
+import { isHomeAgent } from './home-agent';
 import {
   listAgents,
   createAgent,
@@ -19,6 +20,7 @@ import {
   getAgentInProject,
   agentScopeOf,
   memberProjectIds,
+  copyTemplateIntoProject,
   type AgentKind,
 } from './service';
 import {
@@ -33,6 +35,7 @@ import {
   RunAgentResponse,
   agentListQuery,
   agentParams,
+  copyTemplateBody,
   createAgentBody,
   projectAgentParams,
   runBody,
@@ -123,6 +126,13 @@ async function requireVisibleAgent(agentId: number, membership: TeamMembership) 
   return agent;
 }
 
+// The Home agent is recognised by its handle, so no other agent may take it.
+function assertNotHomeHandle(username: string | undefined) {
+  if (username !== undefined && isHomeAgent(username)) {
+    throw new HttpError(409, 'This username is reserved for the Home agent');
+  }
+}
+
 // The projects the caller may put the agent in: an owner or a manager of the team
 // reaches every project it owns, anyone else only the projects they are a member of
 // themselves. A project outside that set is refused. One the agent already works in
@@ -199,7 +209,12 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
   .post(
     '/teams/:teamId/ai-agents',
     async ({ membership, body, set, user }) => {
-      const projectIds = await resolveAgentProjects(membership, body.projectIds, []);
+      assertNotHomeHandle(body.username);
+      const projectIds = await resolveAgentProjects(
+        membership,
+        body.projectId != null ? [body.projectId] : body.projectIds,
+        [],
+      );
       set.status = 201;
       return createAgent(membership.teamId, {
         ...body,
@@ -222,10 +237,36 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     },
   )
 
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/copy',
+    async ({ params, membership, body, set, user }) => {
+      const template = await requireVisibleAgent(params.agentId, membership);
+      await resolveAgentProjects(membership, [body.projectId], []);
+      set.status = 201;
+      return copyTemplateIntoProject(template, body.projectId, requireUser(user).id);
+    },
+    {
+      params: agentParams,
+      body: copyTemplateBody,
+      teamPermission: ['ai_agents', 'create'],
+      response: { 201: CreateAgentResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Add a specialist from a template',
+        description:
+          'Copy a template into a project. The copy works in that project only, as a ' +
+          "specialist reporting to the project's coordinator, with the template's " +
+          'instructions, model, runtime policy, skills and capabilities, and its name and ' +
+          "handle suffixed with the project key. An external copy's API key is returned once.",
+        ...mcpTool('copy_ai_agent_template'),
+      },
+    },
+  )
+
   .patch(
     '/teams/:teamId/ai-agents/:agentId',
     async ({ params, membership, body, user }) => {
       const current = await requireVisibleAgent(params.agentId, membership);
+      if (!isHomeAgent(current.username)) assertNotHomeHandle(body.username);
       const projectIds = await resolveAgentProjects(membership, body.projectIds, current.projects);
       const agent = await updateAgent(
         params.agentId,

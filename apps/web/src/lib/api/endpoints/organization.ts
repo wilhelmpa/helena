@@ -120,7 +120,10 @@ export interface ProjectAssignmentInput {
 
 const base = (teamId: number) => `/teams/${teamId}/organization`;
 
-export const getOrganization = (teamId: number) => request<Organization>(base(teamId));
+// With projectId, the agents are the ones working in that project, the Home agent left
+// out.
+export const getOrganization = (teamId: number, projectId?: number) =>
+  request<Organization>(`${base(teamId)}${projectId != null ? `?projectId=${projectId}` : ''}`);
 
 export const createDepartment = (teamId: number, input: DepartmentInput) =>
   request<OrganizationDepartment>(`${base(teamId)}/departments`, {

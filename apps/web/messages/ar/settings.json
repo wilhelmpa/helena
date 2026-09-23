@@ -66,7 +66,7 @@
   },
   "agents": {
     "empty": "لا يوجد وكلاء بعد",
-    "emptyHint": "الفريق يربطهم بالمشروع من إعداداته.",
+    "emptyHint": "أنشئ وكيلًا هنا أو أضف وكيلًا من قالب.",
     "editAssignment": "Edit project assignment",
     "assignmentDescription": "Set the role and project-specific instructions for {name}.",
     "projectRole": "Role in this project",
@@ -75,10 +75,12 @@
     "assignment": "Project assignment",
     "defaultRole": "Default project role",
     "noProjectInstructions": "No project-specific instructions",
-    "available": "Available to this project",
-    "availableHint": "Add the shared agent to grant project access.",
-    "addToProject": "Add to project",
-    "removeFromProject": "Remove from project"
+    "removeFromProject": "Remove from project",
+    "newFromTemplate": "إضافة متخصص من قالب",
+    "templateDialogDescription": "تعمل النسخة في هذا المشروع فقط، كمتخصص يتبع منسق المشروع.",
+    "template": "قالب",
+    "chooseTemplate": "اختر قالبًا",
+    "addSpecialist": "إضافة متخصص"
   },
   "notifications": {
     "title": "الإشعارات",

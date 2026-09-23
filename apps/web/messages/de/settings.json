@@ -66,7 +66,7 @@
   },
   "agents": {
     "empty": "Noch keine Agenten",
-    "emptyHint": "Das Team fügt sie in seinen Einstellungen einem Projekt hinzu.",
+    "emptyHint": "Erstelle hier einen Agenten oder füge einen aus einer Vorlage hinzu.",
     "editAssignment": "Projektzuordnung bearbeiten",
     "assignmentDescription": "Lege die Rolle und projektspezifische Anweisungen für {name} fest.",
     "projectRole": "Rolle in diesem Projekt",
@@ -75,10 +75,12 @@
     "assignment": "Projektzuordnung",
     "defaultRole": "Standard-Projektrolle",
     "noProjectInstructions": "Keine projektspezifischen Anweisungen",
-    "available": "Für dieses Projekt verfügbar",
-    "availableHint": "Füge den geteilten Agenten hinzu, um ihm Zugriff auf das Projekt zu geben.",
-    "addToProject": "Zum Projekt hinzufügen",
-    "removeFromProject": "Aus Projekt entfernen"
+    "removeFromProject": "Aus Projekt entfernen",
+    "newFromTemplate": "Spezialisten aus Vorlage hinzufügen",
+    "templateDialogDescription": "Die Kopie arbeitet nur in diesem Projekt, als Spezialist, der dem Koordinator des Projekts berichtet.",
+    "template": "Vorlage",
+    "chooseTemplate": "Vorlage wählen",
+    "addSpecialist": "Spezialisten hinzufügen"
   },
   "notifications": {
     "title": "Benachrichtigungen",

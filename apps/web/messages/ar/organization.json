@@ -30,7 +30,8 @@
     "capabilities": "القدرات"
   },
   "values": {
-    "none": "None"
+    "none": "None",
+    "outsideProject": "خارج هذا المشروع"
   },
   "actions": {
     "add": "Add",

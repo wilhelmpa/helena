@@ -124,6 +124,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     async ({ params, membership, body, user }) => {
       const caller = requireUser(user);
       const agent = await requireTeamExternalAgent(params.agentId, membership);
+      if (agent.template) throw new HttpError(400, 'A template does not run');
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
       }

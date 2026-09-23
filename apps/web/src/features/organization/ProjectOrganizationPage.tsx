@@ -13,7 +13,7 @@ export default function ProjectOrganizationPage() {
   const { project } = useShell();
   const teamId = project?.project.teamId ?? null;
   const projectKey = project?.project.key ?? null;
-  const organization = useOrganizationQuery(teamId);
+  const organization = useOrganizationQuery(teamId, project?.project.id);
   const scopedOrganization = useMemo(
     () =>
       organization.data && projectKey

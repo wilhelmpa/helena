@@ -30,7 +30,8 @@
     "capabilities": "Capabilities"
   },
   "values": {
-    "none": "None"
+    "none": "None",
+    "outsideProject": "Outside this project"
   },
   "actions": {
     "add": "Add",

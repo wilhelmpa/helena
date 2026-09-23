@@ -6,6 +6,7 @@ import {
   project,
   projectColumn,
   projectMember,
+  organizationAgentAssignment,
   projectProvisioningJob,
   organizationProjectAssignment,
   teamMember,
@@ -16,7 +17,7 @@ import {
   customField,
   integrationCredential,
 } from '@repo/db';
-import { and, eq, inArray, isNull, ne, notInArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
 import { auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { getCredentialById } from '../integrations/service';
@@ -30,6 +31,7 @@ import { getDefaultRoleId } from '#modules/roles/service';
 import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
+import { isHomeAgent, notHomeAgent } from './home-agent';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -259,6 +261,8 @@ export interface AiAgentRow {
   // limited to. 'team' scope lets the runner take any member's runs.
   ownerUserId: string | null;
   runnerScope: RunnerScope;
+  // A template runs nowhere and works in no project; a project adds a copy of it.
+  template: boolean;
   // When a runner last polled for this agent, which is what presence is derived
   // from. Null until a runner connects.
   lastSeenAt: string | null;
@@ -304,6 +308,7 @@ function mapAgent(row: {
   delegationDelaySec: number;
   ownerUserId: string | null;
   runnerScope: string;
+  template: boolean;
   lastSeenAt: Date | null;
   pausedAt: Date | null;
   pauseReason: string | null;
@@ -338,6 +343,7 @@ function mapAgent(row: {
     delegationDelaySec: row.delegationDelaySec,
     ownerUserId: row.ownerUserId,
     runnerScope: row.runnerScope as RunnerScope,
+    template: row.template,
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
     pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
     pauseReason: row.pauseReason,
@@ -380,6 +386,7 @@ const agentColumns = {
   delegationDelaySec: aiAgent.delegationDelaySec,
   ownerUserId: aiAgent.ownerUserId,
   runnerScope: aiAgent.runnerScope,
+  template: aiAgent.template,
   lastSeenAt: aiAgent.lastSeenAt,
   pausedAt: aiAgent.pausedAt,
   pauseReason: aiAgent.pauseReason,
@@ -414,8 +421,9 @@ function inProject(projectId: number) {
 }
 
 // The agents a caller may reach: an owner or a manager of the team reaches every agent
-// it has, anyone else only the ones working in a project they are a member of. The
-// reads below take the id it returns, or nothing when the whole team is theirs.
+// it has, anyone else the ones working in a project they are a member of and the
+// templates, which work in none. The reads below take the id it returns, or nothing when
+// the whole team is theirs.
 export function agentScopeOf(membership: {
   role: TeamStanding;
   userId: string;
@@ -442,20 +450,24 @@ function sharesProjectWith(userId: string) {
   return sql`exists (select 1 from ${projectMember} pm join ${projectMember} mine on mine.project_id = pm.project_id and mine.user_id = ${userId} where pm.user_id = ${aiAgent.userId})`;
 }
 
+function visibleTo(userId: string | undefined) {
+  return userId == null ? undefined : or(eq(aiAgent.template, true), sharesProjectWith(userId));
+}
+
 // The agents of the team, or only the ones working in one of its projects when
-// projectId is given. visibleTo narrows the list to the agents working in a project
-// that user belongs to; the callers who run the team pass nothing and see them all.
+// projectId is given, the Home agent left out. visibleToUser narrows the list the way
+// agentScopeOf describes; the callers who run the team pass nothing and see them all.
 export async function listAgents(
   teamId: number,
   projectId?: number,
-  visibleTo?: string,
+  visibleToUser?: string,
 ): Promise<AiAgentRow[]> {
   const rows = await agentQuery()
     .where(
       and(
         eq(aiAgent.teamId, teamId),
-        projectId == null ? undefined : inProject(projectId),
-        visibleTo == null ? undefined : sharesProjectWith(visibleTo),
+        projectId == null ? undefined : and(inProject(projectId), notHomeAgent()),
+        visibleTo(visibleToUser),
       ),
     )
     .orderBy(user.name);
@@ -467,14 +479,10 @@ export async function listAgents(
 export async function getAgentById(
   id: number,
   teamId: number,
-  visibleTo?: string,
+  visibleToUser?: string,
 ): Promise<AiAgentRow | null> {
   const rows = await agentQuery().where(
-    and(
-      eq(aiAgent.id, id),
-      eq(aiAgent.teamId, teamId),
-      visibleTo == null ? undefined : sharesProjectWith(visibleTo),
-    ),
+    and(eq(aiAgent.id, id), eq(aiAgent.teamId, teamId), visibleTo(visibleToUser)),
   );
   return rows[0] ? mapAgent(rows[0]) : null;
 }
@@ -730,10 +738,43 @@ export interface NewAgentInput {
   // The projects of the team the agent works in. Empty means it works in none yet:
   // it authenticates and reaches nothing until it is attached to one.
   projectIds?: number[];
+  // The project the agent is created in, in place of projectIds: it works in that
+  // project only, as a specialist reporting to the project's coordinator.
+  projectId?: number;
+  template?: boolean;
+  // What a copy of a template carries over: the role title and capabilities of its
+  // place in the agent team, and its skills.
+  roleTitle?: string;
+  capabilities?: string[];
+  skillIds?: number[];
   // External-agent runner scope (default: any member's runs).
   runnerScope?: RunnerScope;
   // The member creating the agent, who owns its runner.
   ownerUserId?: string | null;
+}
+
+// The coordinator that leads the project's agent team, or null when it has none.
+async function projectCoordinatorId(teamId: number, projectId: number): Promise<number | null> {
+  const rows = await db
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .innerJoin(
+      organizationAgentAssignment,
+      and(
+        eq(organizationAgentAssignment.agentId, aiAgent.id),
+        eq(organizationAgentAssignment.teamId, aiAgent.teamId),
+      ),
+    )
+    .where(
+      and(
+        eq(aiAgent.teamId, teamId),
+        eq(organizationAgentAssignment.role, 'coordinator'),
+        inProject(projectId),
+      ),
+    )
+    .orderBy(asc(aiAgent.id))
+    .limit(1);
+  return rows[0]?.id ?? null;
 }
 
 // A handle addresses one person or one agent, never several: a mention is resolved
@@ -788,9 +829,17 @@ export async function createAgent(
   const userId = crypto.randomUUID();
   const email = `${userId}@agents.local`;
   const isInternal = input.kind === 'internal';
+  if (input.template && (input.projectId != null || (input.projectIds?.length ?? 0) > 0)) {
+    throw new HttpError(400, 'A template joins no project');
+  }
   await assertUsernameFree(teamId, input.username);
   if (isInternal) await assertModelCredential(teamId, input.modelCredentialId);
-  const projectIds = await resolveTeamProjectIds(teamId, input.projectIds ?? []);
+  const projectIds = await resolveTeamProjectIds(
+    teamId,
+    input.projectId != null ? [input.projectId] : (input.projectIds ?? []),
+  );
+  const coordinatorId =
+    input.projectId != null ? await projectCoordinatorId(teamId, input.projectId) : null;
   // An agent joins a project the way a person accepting an invite does: on the team's
   // default role, changed per project from the project's member list afterwards.
   const roleId = await getDefaultRoleId(teamId);
@@ -823,6 +872,7 @@ export async function createAgent(
           delegationDelaySec: input.delegationDelaySec,
           ownerUserId: input.ownerUserId ?? null,
           runnerScope: input.runnerScope ?? 'team',
+          template: input.template ?? false,
         })
         .returning({ id: aiAgent.id });
       // The agent belongs to the team's member list like a person does, on a standing
@@ -832,6 +882,21 @@ export async function createAgent(
         await tx
           .insert(projectMember)
           .values(projectIds.map((projectId) => ({ projectId, userId, role: 'member', roleId })));
+      }
+      if (input.projectId != null) {
+        await tx.insert(organizationAgentAssignment).values({
+          teamId,
+          agentId: row.id,
+          role: 'specialist',
+          reportsToAgentId: coordinatorId,
+          roleTitle: input.roleTitle ?? '',
+          capabilities: input.capabilities ?? [],
+        });
+      }
+      if (input.skillIds?.length) {
+        await tx
+          .insert(agentSkillLink)
+          .values(input.skillIds.map((skillId) => ({ agentId: row.id, skillId })));
       }
       return row.id;
     } catch (err) {
@@ -1021,6 +1086,8 @@ export interface AgentPatch {
   fieldTriggers?: FieldTrigger[];
   delegationDelaySec?: number;
   runnerScope?: RunnerScope;
+  // Turning it on detaches the agent from every project.
+  template?: boolean;
 }
 
 export async function updateAgent(
@@ -1032,6 +1099,13 @@ export async function updateAgent(
 ): Promise<AiAgentRow | null> {
   const agent = await getAgentById(id, teamId);
   if (!agent) return null;
+  if (patch.template && isHomeAgent(agent.username)) {
+    throw new HttpError(400, 'The Home agent cannot be a template');
+  }
+  const template = patch.template ?? agent.template;
+  if (template && (patch.projectIds?.length ?? 0) > 0) {
+    throw new HttpError(400, 'A template joins no project');
+  }
   await assertModelCredential(teamId, patch.modelCredentialId);
 
   // The display name lives on the bot user.
@@ -1057,6 +1131,7 @@ export async function updateAgent(
   if (patch.triggerOnMention !== undefined) set.triggerOnMention = patch.triggerOnMention;
   if (patch.triggerOnAssign !== undefined) set.triggerOnAssign = patch.triggerOnAssign;
   if (patch.delegationDelaySec !== undefined) set.delegationDelaySec = patch.delegationDelaySec;
+  if (patch.template !== undefined) set.template = patch.template;
   // The scope and its owner are one setting: 'owner' means the runs of the member who
   // chose it, so switching to it hands the agent to them.
   if (patch.runnerScope !== undefined) {
@@ -1077,10 +1152,9 @@ export async function updateAgent(
   // The projects go first, so a field trigger of a project the same call attaches is
   // kept rather than dropped as unknown.
   const previousProjectIds = agent.projects.map((p) => p.id);
+  const wanted = template ? [] : patch.projectIds;
   const projectIds =
-    patch.projectIds !== undefined
-      ? await setAgentProjects(agent, patch.projectIds)
-      : previousProjectIds;
+    wanted !== undefined ? await setAgentProjects(agent, wanted) : previousProjectIds;
   if (patch.fieldTriggers !== undefined) {
     await setFieldTriggers(id, projectIds, patch.fieldTriggers);
   }
@@ -1093,6 +1167,60 @@ export async function updateAgent(
   }
 
   return getAgentById(id, teamId);
+}
+
+// A copy of a template for one project: a specialist of that project with the
+// template's configuration, skills and capabilities. Knowledge the copies share goes
+// through the skills; each copy keeps a memory of its own.
+export async function copyTemplateIntoProject(
+  template: AiAgentRow,
+  projectId: number,
+  ownerUserId: string,
+): Promise<{ agent: AiAgentRow; apiKey: string | null }> {
+  if (!template.template) throw new HttpError(400, 'Only a template can be copied into a project');
+  const [target] = await db
+    .select({ key: project.key })
+    .from(project)
+    .where(and(eq(project.id, projectId), eq(project.teamId, template.teamId)));
+  if (!target) throw new HttpError(400, 'Project not found in this team');
+  const suffix = `-${target.key.toLowerCase()}`;
+  const [assignment, skills] = await Promise.all([
+    db
+      .select({
+        roleTitle: organizationAgentAssignment.roleTitle,
+        capabilities: organizationAgentAssignment.capabilities,
+      })
+      .from(organizationAgentAssignment)
+      .where(eq(organizationAgentAssignment.agentId, template.id))
+      .then((rows) => rows[0]),
+    db
+      .select({ skillId: agentSkillLink.skillId })
+      .from(agentSkillLink)
+      .where(eq(agentSkillLink.agentId, template.id)),
+  ]);
+  return createAgent(template.teamId, {
+    name: `${template.name} ${target.key}`,
+    username: template.username.slice(0, 64 - suffix.length) + suffix,
+    kind: template.kind,
+    modelCredentialId: template.modelCredentialId,
+    model: template.model,
+    instructions: template.instructions,
+    tools: template.tools,
+    temperature: template.temperature,
+    maxSteps: template.maxSteps,
+    memoryEnabled: template.memoryEnabled,
+    memoryLastMessages: template.memoryLastMessages,
+    runtimePolicy: template.runtimePolicy,
+    triggerOnMention: template.triggerOnMention,
+    triggerOnAssign: template.triggerOnAssign,
+    delegationDelaySec: template.delegationDelaySec,
+    runnerScope: template.runnerScope,
+    ownerUserId,
+    projectId,
+    roleTitle: assignment?.roleTitle,
+    capabilities: assignment?.capabilities,
+    skillIds: skills.map(({ skillId }) => skillId),
+  });
 }
 
 // Replaces the agent's API key: deletes the current key row(s) for the bot user
@@ -1126,18 +1254,12 @@ export async function deleteAgent(id: number, teamId: number): Promise<boolean> 
 export async function agentInTeam(
   agentId: number,
   teamId: number,
-  visibleTo?: string,
+  visibleToUser?: string,
 ): Promise<boolean> {
   const rows = await db
     .select({ id: aiAgent.id })
     .from(aiAgent)
-    .where(
-      and(
-        eq(aiAgent.id, agentId),
-        eq(aiAgent.teamId, teamId),
-        visibleTo == null ? undefined : sharesProjectWith(visibleTo),
-      ),
-    )
+    .where(and(eq(aiAgent.id, agentId), eq(aiAgent.teamId, teamId), visibleTo(visibleToUser)))
     .limit(1);
   return rows.length > 0;
 }

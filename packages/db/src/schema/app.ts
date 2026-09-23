@@ -585,6 +585,9 @@ export const aiAgent = pgTable(
     // this member triggered; `team` scope, the default, means any member's.
     ownerUserId: text('owner_user_id').references(() => user.id, { onDelete: 'set null' }),
     runnerScope: text('runner_scope').notNull().default('team'),
+    // A template runs nowhere and joins no project. A project adds a copy of it as a
+    // specialist of its own.
+    template: boolean('template').notNull().default(false),
     // Last time a runner claimed work or sent a heartbeat for this agent, which is
     // what the UI shows as its presence. NULL for an agent no runner ever polled.
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),

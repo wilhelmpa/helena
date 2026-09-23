@@ -1,6 +1,5 @@
 import {
   db,
-  aiAgent,
   project,
   projectMember,
   projectColumn,
@@ -27,7 +26,7 @@ import {
   mapProject,
   targetTeam,
   createHermesProjectCoordinator,
-  isHermesProjectCoordinatorUsername,
+  newProjectAgentUserIds,
   type ProjectRow,
 } from './service';
 import { GIT_SETTING_KEY } from '#modules/git/service';
@@ -255,17 +254,11 @@ export async function copyProject(
   const ownerTeam = await targetTeam(ownerId, teamId);
   // What a new project starts with, set instance-wide in god mode. Read before the
   // transaction opens so the settings lookup is not part of it.
-  const [defaults, teamAgents, defaultRoleId] = await Promise.all([
+  const [defaults, agentUserIds, defaultRoleId] = await Promise.all([
     getProjectDefaults(),
-    db
-      .select({ userId: aiAgent.userId, username: aiAgent.username })
-      .from(aiAgent)
-      .where(eq(aiAgent.teamId, ownerTeam.id)),
+    newProjectAgentUserIds(ownerTeam.id, true),
     getDefaultRoleId(ownerTeam.id),
   ]);
-  const sharedTeamAgents = teamAgents.filter(
-    ({ username }) => !isHermesProjectCoordinatorUsername(username),
-  );
   // Agents, integration credentials and roles belong to the team, so what references
   // them survives the copy only when it stays in the same team.
   const sameTeam = ownerTeam.id === source.teamId;
@@ -308,9 +301,9 @@ export async function copyProject(
       teamMcpEnabled: ownerTeam.mcpEnabled,
     });
     await tx.insert(projectMember).values({ projectId: proj.id, userId: ownerId, role: 'owner' });
-    if (sharedTeamAgents.length > 0) {
+    if (agentUserIds.length > 0) {
       await tx.insert(projectMember).values(
-        sharedTeamAgents.map(({ userId }) => ({
+        agentUserIds.map((userId) => ({
           projectId: proj.id,
           userId,
           role: 'member' as const,
@@ -684,14 +677,15 @@ export async function copyProject(
     throw error;
   }
 
-  // Agents: the ones working in the source project, attached to the new one as well.
-  // The team owns them and one handle is unique in it, so a second copy of the same
-  // agent cannot exist. A copy into another team carries no agent: creating one there
-  // would mean a new bot user and a new API key for something the operator did not ask
-  // for, and its skills and configured tools would be missing anyway.
+  // Agents: the internal ones working in the source project, attached to the new one as
+  // well. The team owns them and one handle is unique in it, so a second copy of the same
+  // agent cannot exist. An external agent keeps to its one project, which is what gives
+  // it a Hermes runtime of its own. A copy into another team carries no agent: creating
+  // one there would mean a new bot user and a new API key for something the operator did
+  // not ask for, and its skills and configured tools would be missing anyway.
   if (inc.agents && sameTeam) {
     for (const a of await listAgents(source.teamId, sourceProjectId)) {
-      if (isHermesProjectCoordinatorUsername(a.username)) continue;
+      if (a.kind === 'external') continue;
       // The member fields the agent reacts to, remapped onto the copies.
       const fieldTriggers = a.fieldTriggers.flatMap((trigger) => {
         const fieldId = maps.field.get(trigger.fieldId);

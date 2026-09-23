@@ -183,6 +183,13 @@ const configFields = {
         "'team' any member's.",
     }),
   ),
+  template: t.Optional(
+    t.Boolean({
+      description:
+        'A template runs nowhere and works in no project: turning it on detaches the agent ' +
+        'from every project. copy_ai_agent_template adds a copy of it to a project.',
+    }),
+  ),
 };
 
 // An agent DTO (AiAgentRow from the service).
@@ -220,6 +227,7 @@ export const AiAgentResponse = t.Object({
   delegationDelaySec: t.Number(),
   ownerUserId: t.Nullable(t.String()),
   runnerScope: t.Union([t.Literal('owner'), t.Literal('team')]),
+  template: t.Boolean(),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({
@@ -371,6 +379,17 @@ export const createAgentBody = t.Object({
     description: "'external' (API key) or 'internal' (in-process, needs a model config).",
   }),
   ...configFields,
+  projectId: t.Optional(
+    t.Integer({
+      description:
+        'The project the agent is created in, in place of projectIds: it works in that ' +
+        "project only, as a specialist reporting to the project's coordinator.",
+    }),
+  ),
+});
+
+export const copyTemplateBody = t.Object({
+  projectId: t.Integer({ description: 'The project of the team the copy works in.' }),
 });
 
 export const updateAgentBody = t.Object({

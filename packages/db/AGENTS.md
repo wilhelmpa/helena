@@ -55,6 +55,9 @@ without being a person in it.
 
 `ai_agent_team_username_uq` makes the mention handle unique per team, not per project.
 
+`ai_agent.template` marks an agent that runs nowhere and works in no project; a project
+adds a copy of it as a specialist of its own.
+
 ## Revision engine
 
 `revision` holds one counter per scope — the change markers the clients poll through

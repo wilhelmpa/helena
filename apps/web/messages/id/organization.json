@@ -30,7 +30,8 @@
     "capabilities": "Kemampuan"
   },
   "values": {
-    "none": "None"
+    "none": "None",
+    "outsideProject": "Di luar proyek ini"
   },
   "actions": {
     "add": "Add",
