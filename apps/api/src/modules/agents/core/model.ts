@@ -284,7 +284,9 @@ export const AiAgentResponse = t.Object({
   ownerUserId: t.Nullable(t.String()),
   runnerScope: t.Union([t.Literal('owner'), t.Literal('team')]),
   template: t.Boolean(),
-  sourceTemplateId: t.Nullable(t.Number({ description: 'The template this agent was copied from.' })),
+  sourceTemplateId: t.Nullable(
+    t.Number({ description: 'The template this agent was copied from.' }),
+  ),
   templateOverrides: t.Array(templateFieldGroup, {
     description: "Field groups this copy's owner changed by hand; a template sync skips them.",
   }),

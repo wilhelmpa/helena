@@ -137,13 +137,7 @@ export interface AgentRuntimeState {
 // (toolAllow/toolDeny/mcpGrants), instructions (+ runtimePolicy.files), model +
 // reasoning standard, and budgets (token ceilings, maxTurns, runBudgetSeconds).
 export type TemplateFieldGroup =
-  | 'skills'
-  | 'tools'
-  | 'mcpServers'
-  | 'approvals'
-  | 'instructions'
-  | 'model'
-  | 'budgets';
+  'skills' | 'tools' | 'mcpServers' | 'approvals' | 'instructions' | 'model' | 'budgets';
 
 export interface AiAgent {
   id: number;

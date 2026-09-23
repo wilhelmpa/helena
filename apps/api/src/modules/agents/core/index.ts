@@ -283,7 +283,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         summary: "Reset a template copy's field group to its template",
         description:
           "Drop a copy's own override of one field group (skills, tools, mcpServers, " +
-          'approvals, instructions, model, or budgets) and re-apply the template\'s ' +
+          "approvals, instructions, model, or budgets) and re-apply the template's " +
           'current value for it right away.',
         ...mcpTool('reset_ai_agent_to_template'),
       },

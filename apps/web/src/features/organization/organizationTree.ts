@@ -85,7 +85,13 @@ function agentTree(agents: OrganizationAgent[]): OrganizationAgentNode[] {
 export function buildOrganizationTree(organization: Organization): OrganizationDepartmentNode[] {
   const nodes = new Map<number, OrganizationDepartmentNode>();
   for (const department of organization.departments) {
-    nodes.set(department.id, { department, kind: 'department', agents: [], goals: [], children: [] });
+    nodes.set(department.id, {
+      department,
+      kind: 'department',
+      agents: [],
+      goals: [],
+      children: [],
+    });
   }
   const roots: OrganizationDepartmentNode[] = [];
   for (const node of nodes.values()) {
@@ -108,7 +114,9 @@ export function buildOrganizationTree(organization: Organization): OrganizationD
   // reports to someone (the normal case today: departments are assigned to projects,
   // rarely to individual agents) never land in the same bucket as a real orphan or a
   // pool template.
-  const templates = withoutDepartment.filter((agent) => organizationAgentStatus(agent) === 'template');
+  const templates = withoutDepartment.filter(
+    (agent) => organizationAgentStatus(agent) === 'template',
+  );
   const unassigned = withoutDepartment.filter(
     (agent) => organizationAgentStatus(agent) === 'unassigned',
   );
@@ -126,10 +134,22 @@ export function buildOrganizationTree(organization: Organization): OrganizationD
     });
   }
   if (templates.length > 0) {
-    roots.push({ department: null, kind: 'templates', agents: agentTree(templates), goals: [], children: [] });
+    roots.push({
+      department: null,
+      kind: 'templates',
+      agents: agentTree(templates),
+      goals: [],
+      children: [],
+    });
   }
   if (unassigned.length > 0) {
-    roots.push({ department: null, kind: 'unassigned', agents: agentTree(unassigned), goals: [], children: [] });
+    roots.push({
+      department: null,
+      kind: 'unassigned',
+      agents: agentTree(unassigned),
+      goals: [],
+      children: [],
+    });
   }
   const sortDepartments = (items: OrganizationDepartmentNode[]) => {
     items.sort(

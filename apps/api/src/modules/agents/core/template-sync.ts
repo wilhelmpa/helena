@@ -67,10 +67,7 @@ function sameArray(a: unknown[] | undefined, b: unknown[] | undefined): boolean 
 // a generic "PATCH runtimePolicy" (the only entry point the agent editor has for
 // reasoning/approvals/budgets sub-fields) marks a copy's override, or fans a template's
 // change out to its copies, only for the groups whose values really moved.
-export function runtimePolicyGroupsChanged(
-  previous: unknown,
-  next: unknown,
-): TemplateFieldGroup[] {
+export function runtimePolicyGroupsChanged(previous: unknown, next: unknown): TemplateFieldGroup[] {
   const prev = asPolicy(previous);
   const nxt = asPolicy(next);
   const groups: TemplateFieldGroup[] = [];
@@ -165,7 +162,9 @@ async function syncSkillLinks(copyId: number, templateId: number): Promise<void>
     .where(eq(agentSkillLink.agentId, templateId));
   await db.delete(agentSkillLink).where(eq(agentSkillLink.agentId, copyId));
   if (rows.length > 0) {
-    await db.insert(agentSkillLink).values(rows.map((r) => ({ agentId: copyId, skillId: r.skillId })));
+    await db
+      .insert(agentSkillLink)
+      .values(rows.map((r) => ({ agentId: copyId, skillId: r.skillId })));
   }
 }
 
@@ -282,10 +281,7 @@ export async function syncTemplateToCopies(
     const toApply = groups.filter((g) => !overrides.has(g));
     if (toApply.length === 0) continue;
     await applyGroupsToCopy(template, copy, toApply);
-    await db
-      .update(aiAgent)
-      .set({ templateSyncedAt: new Date() })
-      .where(eq(aiAgent.id, copy.id));
+    await db.update(aiAgent).set({ templateSyncedAt: new Date() }).where(eq(aiAgent.id, copy.id));
     await logSync(template.teamId, templateId, copy.id, toApply);
   }
 }

@@ -1199,7 +1199,10 @@ export async function updateAgent(
   }
   if (patch.runtimePolicy !== undefined) {
     changedGroups.push(
-      ...runtimePolicyGroupsChanged(agent.runtimePolicy, normalizeRuntimePolicy(patch.runtimePolicy)),
+      ...runtimePolicyGroupsChanged(
+        agent.runtimePolicy,
+        normalizeRuntimePolicy(patch.runtimePolicy),
+      ),
     );
   }
 
