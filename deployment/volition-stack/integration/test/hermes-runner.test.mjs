@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -12,7 +12,7 @@ describe("Hermes runner deployment", () => {
     const config = JSON.parse(readFileSync(resolve(integration, "hermes-runner/itsaplan-runner.json"), "utf8"));
     const catalog = readFileSync(resolve(integration, "scripts/volition-hermes-catalog.py"), "utf8");
     const wrapper = readFileSync(resolve(integration, "scripts/volition-hermes-runner"), "utf8");
-    const unit = readFileSync(resolve(integration, "systemd/volition-hermes-runner.service"), "utf8");
+    const unit = readFileSync(resolve(integration, "../native/systemd/volition-hermes-runner.service"), "utf8");
 
     assert.equal(config.agent, "hermes");
     assert.equal(config.apiKey, undefined);
@@ -26,29 +26,29 @@ describe("Hermes runner deployment", () => {
     assert.ok(catalog.includes("require_browser_toolset"));
     assert.ok(wrapper.includes("HERMES_RUNNER_DESCRIPTOR_ROOT"));
     assert.ok(wrapper.includes("HERMES_PROJECT_BROWSER_ROOT"));
-    assert.ok(wrapper.includes('PATH="$HERMES_HOME/node:'));
-    assert.ok(unit.includes("ReadOnlyPaths=/home/pw/services/volition-stack/data/hermes/config.yaml"));
-    assert.ok(unit.includes("/var/lib/volition/project-browser/projects"));
+    assert.ok(wrapper.includes("catalog_script=/usr/local/libexec/volition-hermes-catalog.py"));
+    assert.ok(unit.includes("LoadCredential=itsaplan_api_key:/etc/volition/hermes-plan-key"));
+    assert.ok(unit.includes("ExecStart=/usr/local/libexec/volition-hermes-runner"));
   });
 
-  it("resolves the pinned browser executable through the actual runner environment", () => {
+  it("exports the native Hermes runtime environment before starting the runner", () => {
     const wrapper = readFileSync(resolve(integration, "scripts/volition-hermes-runner"), "utf8");
-    const setup = wrapper.split("/home/pw/services/hermes-agent/venv/bin/python", 1)[0];
-    const root = mkdtempSync(join(tmpdir(), "hermes-runner-path-"));
+    const setup = wrapper.split("\n/var/lib/volition/hermes/venv/bin/python", 1)[0];
+    const root = mkdtempSync(join(tmpdir(), "hermes-runner-env-"));
     try {
       const credentials = join(root, "credentials");
-      const home = join(root, "home");
       mkdirSync(credentials);
-      mkdirSync(join(home, "node"), { recursive: true });
       writeFileSync(join(credentials, "itsaplan_api_key"), "test-only");
-      const browser = join(home, "node", "agent-browser");
-      writeFileSync(browser, "#!/bin/sh\nexit 0\n");
-      chmodSync(browser, 0o700);
-      const resolved = execFileSync("/bin/sh", ["-c", `${setup}\ncommand -v agent-browser`], {
-        env: { ...process.env, CREDENTIALS_DIRECTORY: credentials, HERMES_HOME: home },
-        encoding: "utf8",
-      }).trim();
-      assert.equal(resolved, browser);
+      const output = execFileSync(
+        "/bin/sh",
+        ["-c", `${setup}\nprintf '%s\\n' "$HERMES_RUNNER_DESCRIPTOR_ROOT" "$HERMES_HOME" "$PATH"`],
+        { env: { ...process.env, CREDENTIALS_DIRECTORY: credentials }, encoding: "utf8" },
+      );
+      assert.deepEqual(output.trim().split("\n"), [
+        "/var/lib/volition/hermes/run/agents",
+        "/var/lib/volition/hermes",
+        "/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin",
+      ]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
