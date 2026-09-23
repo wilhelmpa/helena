@@ -216,6 +216,17 @@ export class PatchrightGatewaySession implements GatewaySession {
     }
   }
 
+  // Selects and deletes whatever the field already holds, via real key events (Ctrl+A then
+  // Backspace — this gateway only ever runs against Linux Chromium, so no Cmd/Ctrl split to
+  // handle) — not locator.fill('')'s DOM-level clear, for the same reason typing itself
+  // never uses el.value = .... A login form's own fields should start empty regardless of
+  // anything typed into them earlier in the session (a field that already had "wrong" text
+  // in it must not end up with the login appended after it).
+  async #clearField(): Promise<void> {
+    await this.#page.keyboard.press('Control+A');
+    await this.#page.keyboard.press('Backspace');
+  }
+
   async select(ref: string, values: string[]): Promise<string> {
     const locator = await this.#resolveOne(ref);
     await locator.selectOption(values, { timeout: 10_000 });
@@ -414,10 +425,12 @@ export class PatchrightGatewaySession implements GatewaySession {
     const usernameLocator = await this.#resolveOne(usernameRef);
     await this.#humanMoveTo(usernameLocator);
     await usernameLocator.click({ timeout: 10_000 });
+    await this.#clearField();
     await this.#typeHumanLike(username);
     const passwordLocator = await this.#resolveOne(passwordRef);
     await this.#humanMoveTo(passwordLocator);
     await passwordLocator.click({ timeout: 10_000 });
+    await this.#clearField();
     await this.#typeHumanLike(password);
     return 'Login filled.';
   }
@@ -426,6 +439,7 @@ export class PatchrightGatewaySession implements GatewaySession {
     const locator = await this.#resolveOne(ref);
     await this.#humanMoveTo(locator);
     await locator.click({ timeout: 10_000 });
+    await this.#clearField();
     await this.#typeHumanLike(code);
     return 'Code filled.';
   }

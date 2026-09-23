@@ -7,4 +7,5 @@ export * from './human';
 export * from './plan-client';
 export * from './project-slug';
 export type * from './session-types';
+export * from './session';
 export * from './server';
