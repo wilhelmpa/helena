@@ -9,6 +9,7 @@ import auth from '../../messages/en/auth.json';
 import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
+import devices from '../../messages/en/devices.json';
 import display from '../../messages/en/display.json';
 import documents from '../../messages/en/documents.json';
 import filters from '../../messages/en/filters.json';
@@ -79,6 +80,7 @@ const defaultMessages = {
   connections,
   agentActivity,
   routines,
+  devices,
 };
 
 export type Messages = typeof defaultMessages;

@@ -2,6 +2,7 @@ import {
   agentsPath,
   approvalsPath,
   connectionsPath,
+  devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
   manageTeamsPath,
@@ -28,6 +29,7 @@ export type HomeNavigationId =
   | 'mcps'
   | 'connections'
   | 'vault'
+  | 'devices'
   | 'teamSettings';
 
 // The sidebar group an entry is listed under while no project is selected: the work
@@ -64,6 +66,7 @@ export function homeNavigation(teamId: number | null, vaultEnabled = true): Home
     ...(vaultEnabled
       ? [{ id: 'vault' as const, group: 'globalSettings' as const, href: vaultPath() }]
       : []),
+    { id: 'devices', group: 'globalSettings', href: devicesPath() },
     { id: 'teamSettings', group: 'globalSettings', href: manageTeamsPath() },
   ];
 }
