@@ -78,6 +78,10 @@ export const getPendingApprovalCount = (projectKey?: string) =>
 // filter and the per-project nav badge.
 export const listApprovalProjects = () => request<ApprovalProject[]>('/approvals/projects');
 
+// One approval request by id — what the chat's approval card reads to show its
+// current status and, once it is decided, who decided it.
+export const getApproval = (id: number) => request<ApprovalRequest>(`/approvals/${id}`);
+
 export const listWorkflowGates = () => request<WorkflowGateList>('/approvals/workflow-gates');
 
 export const decideApproval = (id: number, decision: ApprovalDecision) =>

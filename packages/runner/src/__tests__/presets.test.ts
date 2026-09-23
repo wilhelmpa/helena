@@ -100,6 +100,14 @@ describe('preset arguments', () => {
     expect(unrestricted).not.toContain('--toolsets');
   });
 
+  it('hands Hermes the image of a chat question, and nothing without one', () => {
+    const withImage = presetArgv(PRESETS.hermes, null, '', [], 'what is this?', {
+      image: '/vault/Home/Files/Chat/shot.png',
+    });
+    expect(withImage.slice(-2)).toEqual(['--image', '/vault/Home/Files/Chat/shot.png']);
+    expect(presetArgv(PRESETS.hermes, null, '', [], 'do it', {})).not.toContain('--image');
+  });
+
   it("appends the operator's arguments after the preset's, so a repeated flag wins", () => {
     const argv = presetArgv(PRESETS.claude, null, '', ['--permission-mode', 'plan'], 'do it');
     expect(argv.lastIndexOf('--permission-mode')).toBeGreaterThan(

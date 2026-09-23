@@ -392,6 +392,20 @@ export async function describeVaultFile(root: FileRoot, relative: string) {
   };
 }
 
+// A vault file a chat message refers to: what the message keeps of it, without reading
+// the file.
+export async function statVaultFile(root: FileRoot, relative: string) {
+  const safe = relativePath(relative);
+  const { info } = await existingEntry(root, safe);
+  if (!info.isFile() || !root.vaultPath) throw new HttpError(400, 'File path must refer to a file');
+  return {
+    vaultPath: joinPath(root.vaultPath, safe),
+    name: path.basename(safe),
+    contentType: contentTypeOf(safe),
+    sizeBytes: info.size,
+  };
+}
+
 function vaultEntry(vaultPath: string) {
   const entry = projectRootOf(relativePath(vaultPath));
   if (!entry?.relative) throw new HttpError(400, 'File path is invalid');

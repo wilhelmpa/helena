@@ -39,6 +39,8 @@ export interface ChatMessage {
   sessionId: string | null;
   model: string | null;
   thinkingLevel: string | null;
+  // Absolute paths of the images attached to the question. Older servers send none.
+  images?: string[];
 }
 
 // A follow-up turn in the session of a finished run, in which the agent keeps what the run
@@ -234,6 +236,7 @@ export class Client {
       error?: string;
       usage?: ContextUsage | null;
       sessionLost?: boolean;
+      model?: string;
     },
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);

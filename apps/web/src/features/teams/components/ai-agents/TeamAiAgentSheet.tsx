@@ -28,12 +28,16 @@ export function TeamAiAgentSheet({
   agent,
   projectId,
   onClose,
+  initialOpenSection,
 }: {
   open: boolean;
   agent: AiAgent | null;
   // The project a new agent is created in, when the sheet is opened from one.
   projectId?: number;
   onClose: () => void;
+  // A section id to open besides the defaults, e.g. from a `/skills` or `/memory` chat
+  // command.
+  initialOpenSection?: string;
 }) {
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -48,7 +52,14 @@ export function TeamAiAgentSheet({
       >
         {/* Key by agent (or 'new' for create) so switching gives a fresh form and chat
             session; create keeps the 'new' key while it becomes edit, so no remount. */}
-        {open && <SheetBody key={agent?.id ?? 'new'} initialAgent={agent} projectId={projectId} />}
+        {open && (
+          <SheetBody
+            key={agent?.id ?? 'new'}
+            initialAgent={agent}
+            projectId={projectId}
+            initialOpenSection={initialOpenSection}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -57,9 +68,11 @@ export function TeamAiAgentSheet({
 function SheetBody({
   initialAgent,
   projectId,
+  initialOpenSection,
 }: {
   initialAgent: AiAgent | null;
   projectId?: number;
+  initialOpenSection?: string;
 }) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
@@ -127,6 +140,7 @@ function SheetBody({
             projectId={projectId}
             expanded
             onCreated={setCreatedAgent}
+            initialOpenSection={initialOpenSection}
           />
         </div>
 
