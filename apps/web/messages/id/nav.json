@@ -73,7 +73,10 @@
       "desktopTitle": "Desktop (VNC)",
       "liveKeyboard": "Browser langsung. Tombol dikirim ke halaman selama tampilan ini memiliki fokus.",
       "connecting": "Menghubungkan ke browser…",
-      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…"
+      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…",
+      "dialogTitle": "Halaman bertanya",
+      "dialogOk": "OK",
+      "dialogCancel": "Batal"
     }
   },
   "groups": {

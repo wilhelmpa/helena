@@ -4,15 +4,18 @@ import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useBrowserLiveInput } from '@/hooks/useBrowserLiveInput';
 import { useBrowserScreencast } from '@/hooks/useBrowserScreencast';
+import { useDevicePixelRatio } from '@/hooks/useDevicePixelRatio';
 import { cn } from '@/lib/utils';
+import WorkspaceBrowserDialog from './WorkspaceBrowserDialog';
 
 // The view's size is sent once it has not changed for this long, so dragging the panel's
 // edge resizes the browser window once.
-const RESIZE_DELAY_MS = 300;
+const RESIZE_DELAY_MS = 200;
 
 // The tab in front of the project browser, streamed by the browser router and controlled
-// with the mouse and the keyboard. The page is shown at the size of this view; a click into
-// the view gives it the keyboard.
+// with the mouse and the keyboard. The page is shown at the CSS size of this view and in the
+// screen's pixels, so the frames fill the view one to one; a click into the view gives it the
+// keyboard.
 export default function WorkspaceBrowserLive({
   base,
   active,
@@ -28,13 +31,14 @@ export default function WorkspaceBrowserLive({
   const view = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const keyboard = useRef<HTMLTextAreaElement>(null);
-  const { status, hasFrame, frameSize, send, setViewport } = useBrowserScreencast(
+  const { status, hasFrame, frameSize, dialog, send, setViewport } = useBrowserScreencast(
     base,
     active,
     reloadToken,
     canvas,
   );
   const { pointer, keys } = useBrowserLiveInput(view, keyboard, frameSize, send);
+  const dpr = useDevicePixelRatio();
 
   useEffect(() => {
     const element = view.current;
@@ -45,7 +49,7 @@ export default function WorkspaceBrowserLive({
       if (!width || !height) return;
       clearTimeout(timer);
       timer = setTimeout(
-        () => setViewport({ width: Math.round(width), height: Math.round(height) }),
+        () => setViewport({ width: Math.round(width), height: Math.round(height), dpr }),
         RESIZE_DELAY_MS,
       );
     });
@@ -54,7 +58,7 @@ export default function WorkspaceBrowserLive({
       observer.disconnect();
       clearTimeout(timer);
     };
-  }, [active, setViewport]);
+  }, [active, dpr, setViewport]);
 
   const notice = status === 'reconnecting' ? t('reconnecting') : hasFrame ? null : t('connecting');
 
@@ -80,6 +84,13 @@ export default function WorkspaceBrowserLive({
         className="absolute start-0 top-0 size-px resize-none opacity-0"
         {...keys}
       />
+      {dialog && (
+        <WorkspaceBrowserDialog
+          key={dialog.message}
+          dialog={dialog}
+          onAnswer={(accept, text) => send({ type: 'dialog', accept, text })}
+        />
+      )}
       {notice && (
         <div
           aria-live="polite"

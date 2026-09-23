@@ -13,8 +13,9 @@ export interface Point {
 }
 
 export type LiveMessage =
-  | { type: 'viewport'; width: number; height: number }
+  | { type: 'viewport'; width: number; height: number; dpr: number }
   | { type: 'ack' }
+  | { type: 'dialog'; accept: boolean; text?: string }
   | {
       type: 'mouse';
       event: 'move' | 'down' | 'up' | 'click';
@@ -43,6 +44,13 @@ export interface KeyMessage {
 
 export type MouseButton = 'none' | 'left' | 'middle' | 'right' | 'back' | 'forward';
 
+// A JavaScript dialog the page shows, which the browser draws outside the streamed page.
+export interface LiveDialog {
+  kind: 'alert' | 'confirm' | 'prompt' | 'beforeunload';
+  message: string;
+  defaultPrompt: string;
+}
+
 // The DevTools modifier bits.
 const ALT = 1;
 const CONTROL = 2;
@@ -54,7 +62,7 @@ export function screencastUrl(controlBase: string): string {
   return `${controlBase.replace(/^http/, 'ws')}/screencast`;
 }
 
-// A frame message: the page's size in CSS pixels, then the JPEG.
+// A frame message: the page's viewport in CSS pixels, then the JPEG.
 export function readFrame(data: ArrayBuffer): { size: Size; jpeg: Blob } {
   const header = new DataView(data, 0, 4);
   return {

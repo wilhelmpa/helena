@@ -73,7 +73,10 @@
       "desktopTitle": "Escritorio (VNC)",
       "liveKeyboard": "Navegador en directo. Las teclas van a la página mientras la vista tiene el foco.",
       "connecting": "Conectando con el navegador…",
-      "reconnecting": "Se perdió la conexión con el navegador. Reconectando…"
+      "reconnecting": "Se perdió la conexión con el navegador. Reconectando…",
+      "dialogTitle": "La página pregunta",
+      "dialogOk": "Aceptar",
+      "dialogCancel": "Cancelar"
     }
   },
   "groups": {

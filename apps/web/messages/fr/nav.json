@@ -73,7 +73,10 @@
       "desktopTitle": "Bureau (VNC)",
       "liveKeyboard": "Navigateur en direct. Les touches vont à la page tant que la vue a le focus.",
       "connecting": "Connexion au navigateur…",
-      "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…"
+      "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…",
+      "dialogTitle": "La page demande",
+      "dialogOk": "OK",
+      "dialogCancel": "Annuler"
     }
   },
   "groups": {

@@ -74,7 +74,10 @@
       "desktopTitle": "Desktop (VNC)",
       "liveKeyboard": "Live-Browser. Tasten gehen an die Seite, solange die Ansicht den Fokus hat.",
       "connecting": "Verbindung zum Browser wird hergestellt…",
-      "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…"
+      "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…",
+      "dialogTitle": "Die Seite fragt",
+      "dialogOk": "OK",
+      "dialogCancel": "Abbrechen"
     }
   },
   "groups": {

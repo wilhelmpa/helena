@@ -1,7 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { browserTabsQueryKey } from '@/utils/browserControl';
-import { readFrame, screencastUrl, type LiveMessage, type Size } from '@/utils/browserLive';
+import {
+  readFrame,
+  screencastUrl,
+  type LiveDialog,
+  type LiveMessage,
+  type Size,
+} from '@/utils/browserLive';
+
+// The view's size in CSS pixels and the screen's pixel ratio, which the page is shown at.
+export interface LiveViewport extends Size {
+  dpr: number;
+}
 
 export type ScreencastStatus = 'connecting' | 'live' | 'reconnecting';
 
@@ -22,10 +33,11 @@ export function useBrowserScreencast(
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<ScreencastStatus>('connecting');
   const [hasFrame, setHasFrame] = useState(false);
+  const [dialog, setDialog] = useState<LiveDialog | null>(null);
   const socket = useRef<WebSocket | null>(null);
   // The page size of the frame on the canvas, which pointer positions are mapped to.
   const frameSize = useRef<Size | null>(null);
-  const viewport = useRef<Size | null>(null);
+  const viewport = useRef<LiveViewport | null>(null);
   const pending = useRef<ArrayBuffer | null>(null);
   const unacknowledged = useRef(0);
   const drawing = useRef(false);
@@ -85,7 +97,9 @@ export function useBrowserScreencast(
       };
       current.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
         if (typeof event.data === 'string') {
-          void queryClient.invalidateQueries({ queryKey: browserTabsQueryKey(controlBase) });
+          const message = JSON.parse(event.data) as { type: string; open?: boolean } & LiveDialog;
+          if (message.type === 'dialog') setDialog(message.open ? message : null);
+          else void queryClient.invalidateQueries({ queryKey: browserTabsQueryKey(controlBase) });
           return;
         }
         attempt = 0;
@@ -96,6 +110,7 @@ export function useBrowserScreencast(
       };
       current.onclose = () => {
         if (stopped) return;
+        setDialog(null);
         socket.current = null;
         pending.current = null;
         unacknowledged.current = 0;
@@ -113,15 +128,14 @@ export function useBrowserScreencast(
     };
   }, [controlBase, reloadToken, draw, queryClient]);
 
-  // The view's size in CSS pixels, which the page is shown at. It is sent again after a
-  // reconnect while the view is shown.
+  // Sent again after a reconnect while the view is shown.
   const setViewport = useCallback(
-    (size: Size) => {
+    (size: LiveViewport) => {
       viewport.current = size;
       send({ type: 'viewport', ...size });
     },
     [send],
   );
 
-  return { status, hasFrame, frameSize, send, setViewport };
+  return { status, hasFrame, frameSize, dialog, send, setViewport };
 }

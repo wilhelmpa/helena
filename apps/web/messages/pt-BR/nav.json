@@ -73,7 +73,10 @@
       "desktopTitle": "Área de trabalho (VNC)",
       "liveKeyboard": "Navegador ao vivo. As teclas vão para a página enquanto a visualização tem o foco.",
       "connecting": "Conectando ao navegador…",
-      "reconnecting": "A conexão com o navegador foi perdida. Reconectando…"
+      "reconnecting": "A conexão com o navegador foi perdida. Reconectando…",
+      "dialogTitle": "A página pergunta",
+      "dialogOk": "OK",
+      "dialogCancel": "Cancelar"
     }
   },
   "groups": {

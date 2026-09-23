@@ -76,7 +76,10 @@
       "desktopTitle": "Desktop (VNC)",
       "liveKeyboard": "Live browser. Keys go to the page while the view has the focus.",
       "connecting": "Connecting to the browser…",
-      "reconnecting": "The connection to the browser was lost. Reconnecting…"
+      "reconnecting": "The connection to the browser was lost. Reconnecting…",
+      "dialogTitle": "The page asks",
+      "dialogOk": "OK",
+      "dialogCancel": "Cancel"
     }
   },
   "groups": {
