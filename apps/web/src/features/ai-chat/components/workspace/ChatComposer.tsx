@@ -19,7 +19,11 @@ import { fillPrompt, promptVariables } from '../../utils/promptVariables';
 import { CHAT_PROMPT_LIMIT, type PlanChatMetadata } from '../../utils/chatMessages';
 import type { PlanSendOptions } from '../../services/planChatTransport';
 import type { ChatAgentState } from '../../utils/agentPresence';
-import type { ComposerActivity } from '../../utils/composerActivity';
+import type { ComposerActivity, PendingChoices } from '../../utils/composerActivity';
+import { AgentContextSize } from '@/components/common/agent-chat/AgentContextSize';
+import ChatDictationButton from './ChatDictationButton';
+import ChatQueuedMessages, { type QueuedMessage } from './ChatQueuedMessages';
+import ChatChoiceChips from './ChatChoiceChips';
 import ChatComposerAttachments, { type PendingAttachment } from './ChatComposerAttachments';
 import ChatSlashMenu from './ChatSlashMenu';
 import ChatAttachPicker from './ChatAttachPicker';
@@ -36,8 +40,20 @@ export interface ChatComposerProps {
   // composer's bottom left — picking another one starts a new chat with it.
   agents: AiAgent[];
   states: Map<number, ChatAgentState>;
-  // What the answer is doing, or how it ended (see composerActivity).
+  // What the answer is doing, or how it ended (see composerActivity), and the tool it
+  // is running right now, if any.
   activity: ComposerActivity;
+  tool: string | null;
+  // Messages written while an answer was still coming, waiting to go out in order.
+  queue: QueuedMessage[];
+  queuePaused: boolean;
+  onQueue: (text: string, options: PlanSendOptions, metadata: PlanChatMetadata) => void;
+  onRemoveQueued: (id: string) => void;
+  // The answers the agent offered for its last question (Hermes' clarify), if any.
+  choices: PendingChoices | null;
+  // The conversation's context size after its last answer (see AgentContextSize);
+  // undefined while none has completed.
+  contextTokens: number | null | undefined;
   threadId: string | null;
   projectKey: string | null;
   // Where a new chat's text is kept while its agent is still being picked.
@@ -60,17 +76,26 @@ export interface ChatComposerProps {
 
 // The claude.ai-style composer, kept slim — and the one place the conversation's state
 // is shown and steered (owner, 2026-09-24): its first line says what the answer is
-// doing ("Home is thinking …") or how it ended, with continue / reconnect / regenerate;
-// the send button turns into stop while an answer is written; the agent (with its
-// presence) and the model sit at its bottom left. Files dropped or pasted in land in
-// the vault; `/` opens Hermes' commands and the prompt library. Enter sends,
-// Shift+Enter breaks the line.
+// doing ("Home is thinking …", "Home nutzt web_search …") or how it ended, with
+// continue / reconnect / regenerate; a stop button sits next to send while an answer is
+// written, and what is sent meanwhile waits in a queue over the field; the agent (with
+// its presence), the model and dictation sit at its bottom left, the context size at
+// its right. Choices the agent offered for its question appear as chips. Files dropped
+// or pasted in land in the vault; `/` opens Hermes' commands and the prompt library.
+// Enter sends, Shift+Enter or ⌘/Ctrl+Enter breaks the line.
 export default function ChatComposer({
   scopeKey,
   agent,
   agents,
   states,
   activity,
+  tool,
+  queue,
+  queuePaused,
+  onQueue,
+  onRemoveQueued,
+  choices,
+  contextTokens,
   threadId,
   projectKey,
   draft,
@@ -176,29 +201,46 @@ export default function ChatComposer({
 
   async function submit() {
     const text = value.trim();
-    if (!text || busy || upload.isPending) return;
-    if (!(await checkConcurrency(agent.maxConcurrentChats))) {
-      toast.error(
-        t('composer.concurrencyLimit', { agent: agent.name, limit: agent.maxConcurrentChats }),
-      );
-      return;
+    if (!text || upload.isPending) return;
+    const options: PlanSendOptions = {
+      agentId: agent.id,
+      files: attachments.map((item) => item.path),
+      model,
+      thinkingLevel,
+    };
+    const metadata: PlanChatMetadata = {
+      attachments: attachments.map((item) => ({
+        kind: 'file' as const,
+        path: item.path,
+        name: item.name,
+        contentType: '',
+        sizeBytes: 0,
+      })),
+    };
+    // While an answer is still coming (or others wait before it), the message waits its
+    // turn instead of being refused or lost.
+    if (busy || queue.length > 0) {
+      onQueue(text, options, metadata);
+    } else {
+      if (!(await checkConcurrency(agent.maxConcurrentChats))) {
+        toast.error(
+          t('composer.concurrencyLimit', { agent: agent.name, limit: agent.maxConcurrentChats }),
+        );
+        return;
+      }
+      onSend(text, options, metadata);
     }
-    onSend(
-      text,
-      { agentId: agent.id, files: attachments.map((item) => item.path), model, thinkingLevel },
-      {
-        attachments: attachments.map((item) => ({
-          kind: 'file' as const,
-          path: item.path,
-          name: item.name,
-          contentType: '',
-          sizeBytes: 0,
-        })),
-      },
-    );
     setValue('');
     setAttachments([]);
     requestAnimationFrame(resize);
+  }
+
+  // ⌘/Ctrl+Enter breaks the line at the caret like Shift+Enter; setRangeText keeps the
+  // browser's own undo working.
+  function insertNewline(node: HTMLTextAreaElement) {
+    node.setRangeText('\n', node.selectionStart, node.selectionEnd, 'end');
+    setValue(node.value);
+    resize();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -222,6 +264,11 @@ export default function ChatComposer({
         setValue('');
         return;
       }
+    }
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      insertNewline(event.currentTarget);
+      return;
     }
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
@@ -257,8 +304,21 @@ export default function ChatComposer({
             dragOver && 'border-brand bg-brand-subtle/40',
           )}
         >
+          <ChatQueuedMessages
+            queue={queue}
+            agentName={agent.name}
+            paused={queuePaused}
+            onRemove={onRemoveQueued}
+          />
+          {choices && !busy && queue.length === 0 && (
+            <ChatChoiceChips
+              choices={choices}
+              onPick={(choice) => onSend(choice, { agentId: agent.id, model, thinkingLevel }, {})}
+            />
+          )}
           <ChatComposerStatus
             activity={activity}
+            tool={tool}
             agentName={agent.name}
             onReconnect={onReconnect}
             onContinue={onContinue}
@@ -305,6 +365,13 @@ export default function ChatComposer({
                 event.target.value = '';
               }}
             />
+            <ChatDictationButton
+              value={value}
+              onChange={(next) => {
+                setValue(next);
+                requestAnimationFrame(resize);
+              }}
+            />
             <ChatAgentMenu agent={agent} agents={agents} states={states} onPick={onPickAgent} />
             <ChatModelPicker
               scopeKey={scopeKey}
@@ -316,6 +383,11 @@ export default function ChatComposer({
               onOpenChange={setModelPickerOpen}
             />
             <div className="flex-1" />
+            {threadId && contextTokens !== undefined && (
+              <span className="px-1">
+                <AgentContextSize tokens={contextTokens} />
+              </span>
+            )}
             {activity === 'answered' && !busy && (
               <Button
                 type="button"
@@ -329,7 +401,7 @@ export default function ChatComposer({
                 <RefreshCw className="size-4" />
               </Button>
             )}
-            {busy ? (
+            {busy && (
               <Button
                 type="button"
                 size="icon"
@@ -341,15 +413,16 @@ export default function ChatComposer({
               >
                 <Square className="size-3 fill-current" />
               </Button>
-            ) : (
+            )}
+            {(!busy || value.trim()) && (
               <Button
                 type="button"
                 size="icon"
                 className="size-8 rounded-lg"
                 disabled={!value.trim() || upload.isPending}
                 onClick={() => void submit()}
-                aria-label={t('composer.send')}
-                title={t('composer.send')}
+                aria-label={busy ? t('composer.queue') : t('composer.send')}
+                title={busy ? t('composer.queue') : t('composer.send')}
               >
                 <ArrowUp className="size-4" />
               </Button>

@@ -99,7 +99,13 @@ export function usePlanChat({
     onFinish: ({ message, isAbort }) => {
       void client.invalidateQueries({ queryKey: qk.anyChatList });
       if (isAbort || message.metadata?.interrupted) return;
-      void refreshNewest();
+      void refreshNewest().then(() => {
+        // The chat's own record carries what the answer changed: its context size, the
+        // session the runner bound, the title.
+        if (transport.threadId) {
+          void client.invalidateQueries({ queryKey: qk.chat(transport.threadId) });
+        }
+      });
     },
     onError: (error) => latest.current.onError(error),
   });

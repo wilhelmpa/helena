@@ -72,11 +72,13 @@
     "noteSource": "Chat with {agent}, saved {date}",
     "restoreFailedTitle": "This chat could not be loaded",
     "restoreFailed": "Its messages could not be read. Check the connection and try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "today": "Today",
+    "yesterday": "Yesterday"
   },
   "composer": {
     "placeholder": "Message {agent}…",
-    "hint": "Shift + Enter for a new line · Drop or paste files to attach them · / for commands and prompts",
+    "hint": "Enter sends · Shift+Enter or ⌘/Ctrl+Enter for a new line · drop or paste files to attach · / for commands and prompts",
     "send": "Send",
     "stop": "Stop the answer",
     "attach": "Attach",
@@ -110,7 +112,17 @@
       "outside": "This isn’t something the chat can do."
     },
     "reasoning": "Reasoning effort",
-    "reasoningDefault": "default"
+    "reasoningDefault": "default",
+    "queue": "Add to queue",
+    "queued": "waiting for {agent}",
+    "queuePaused": "paused",
+    "removeQueued": "Remove from queue",
+    "dictate": "Dictate",
+    "stopDictation": "Stop dictation",
+    "dictationFailed": "Dictation could not be started.",
+    "dictationBlocked": "The browser did not allow the microphone. Allow it in the site settings.",
+    "dictationInsecureTitle": "Dictation needs a secure connection",
+    "dictationInsecure": "Browsers only lend the microphone to HTTPS pages. Until Helena runs on HTTPS: open chrome://flags in Chrome, enable “Insecure origins treated as secure” and add {origin}. The kiosk already allows it."
   },
   "artifact": {
     "title": "Artifact",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} is thinking…",
     "writing": "{agent} is writing…",
-    "queued": "Waiting for {agent} — its runner is offline. The answer starts once it is back."
+    "queued": "Waiting for {agent} — its runner is offline. The answer starts once it is back.",
+    "usingTool": "{agent} is using {tool} …"
+  },
+  "session": {
+    "copy": "Copy session ID",
+    "copied": "Session ID copied",
+    "hint": "Continue in a terminal: hermes --resume {id} (or claude --resume {id})"
   }
 }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { composerActivity, pendingChoices } from './composerActivity';
+import { activeTool, composerActivity, pendingChoices } from './composerActivity';
 import type { PlanUIMessage } from './chatMessages';
 
 const question: PlanUIMessage = { id: '1', role: 'user', parts: [{ type: 'text', text: 'Q' }] };
@@ -60,5 +60,28 @@ describe('pendingChoices', () => {
       null,
     );
     assert.equal(pendingChoices([question]), null);
+  });
+});
+
+describe('activeTool', () => {
+  const running = (state: 'input-available' | 'output-available'): PlanUIMessage =>
+    answer([
+      {
+        type: 'dynamic-tool',
+        toolName: 'web_search',
+        toolCallId: 't1',
+        state,
+        input: {},
+        ...(state === 'output-available' ? { output: 'ok' } : {}),
+      } as PlanUIMessage['parts'][number],
+    ]);
+
+  it('names the tool whose result is still out while the answer streams', () => {
+    assert.equal(activeTool([question, running('input-available')], 'streaming'), 'web_search');
+    assert.equal(activeTool([question, running('input-available')], 'ready'), null);
+  });
+
+  it('is null once the tool answered', () => {
+    assert.equal(activeTool([question, running('output-available')], 'streaming'), null);
   });
 });

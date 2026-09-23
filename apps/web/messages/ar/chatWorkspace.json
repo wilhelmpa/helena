@@ -72,11 +72,13 @@
     "noteSource": "محادثة مع {agent}، حُفظت في {date}",
     "restoreFailedTitle": "تعذّر تحميل هذه الدردشة",
     "restoreFailed": "تعذّرت قراءة رسائلها. تحقّق من الاتصال وحاول مرة أخرى.",
-    "retry": "حاول مرة أخرى"
+    "retry": "حاول مرة أخرى",
+    "today": "اليوم",
+    "yesterday": "أمس"
   },
   "composer": {
     "placeholder": "رسالة إلى {agent}…",
-    "hint": "Shift + Enter لسطر جديد · أفلت الملفات أو الصقها لإرفاقها · / للأوامر والمطالبات",
+    "hint": "Enter للإرسال · Shift+Enter أو ⌘/Ctrl+Enter لسطر جديد · أفلت الملفات أو الصقها للإرفاق · / للأوامر والقوالب",
     "send": "إرسال",
     "stop": "إيقاف الإجابة",
     "attach": "إرفاق",
@@ -110,7 +112,17 @@
       "outside": "هذا ليس شيئًا يمكن للمحادثة فعله."
     },
     "reasoning": "مستوى التفكير",
-    "reasoningDefault": "الافتراضي"
+    "reasoningDefault": "الافتراضي",
+    "queue": "إضافة إلى قائمة الانتظار",
+    "queued": "بانتظار {agent}",
+    "queuePaused": "متوقف",
+    "removeQueued": "إزالة من قائمة الانتظار",
+    "dictate": "إملاء",
+    "stopDictation": "إيقاف الإملاء",
+    "dictationFailed": "تعذّر بدء الإملاء.",
+    "dictationBlocked": "لم يسمح المتصفح باستخدام الميكروفون. اسمح به من إعدادات الموقع.",
+    "dictationInsecureTitle": "الإملاء يحتاج إلى اتصال آمن",
+    "dictationInsecure": "لا تتيح المتصفحات الميكروفون إلا لصفحات HTTPS. إلى أن تعمل Helena عبر HTTPS: افتح chrome://flags في Chrome وفعّل “Insecure origins treated as secure” وأضف {origin}. الكشك يسمح بذلك مسبقًا."
   },
   "artifact": {
     "title": "المُصنَّع",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} يفكّر…",
     "writing": "{agent} يكتب…",
-    "queued": "بانتظار {agent} — المشغّل الخاص به غير متصل. تبدأ الإجابة فور عودته."
+    "queued": "بانتظار {agent} — المشغّل الخاص به غير متصل. تبدأ الإجابة فور عودته.",
+    "usingTool": "{agent} يستخدم {tool} …"
+  },
+  "session": {
+    "copy": "نسخ معرّف الجلسة",
+    "copied": "تم نسخ معرّف الجلسة",
+    "hint": "المتابعة في الطرفية: hermes --resume {id} (أو claude --resume {id})"
   }
 }

@@ -72,11 +72,13 @@
     "noteSource": "Chat mit {agent}, gespeichert am {date}",
     "restoreFailedTitle": "Dieser Chat konnte nicht geladen werden",
     "restoreFailed": "Seine Nachrichten konnten nicht gelesen werden. Prüfe die Verbindung und versuche es erneut.",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "today": "Heute",
+    "yesterday": "Gestern"
   },
   "composer": {
     "placeholder": "Nachricht an {agent} …",
-    "hint": "Umschalt + Eingabe für eine neue Zeile · Dateien zum Anhängen ablegen oder einfügen · / für Befehle und Prompts",
+    "hint": "Eingabe sendet · Umschalt+Eingabe oder ⌘/Strg+Eingabe für eine neue Zeile · Dateien ablegen oder einfügen · / für Befehle und Prompts",
     "send": "Senden",
     "stop": "Antwort stoppen",
     "attach": "Anhängen",
@@ -110,7 +112,17 @@
       "outside": "Das kann der Chat nicht."
     },
     "reasoning": "Denkaufwand",
-    "reasoningDefault": "Standard"
+    "reasoningDefault": "Standard",
+    "queue": "In die Warteschlange",
+    "queued": "wartet auf {agent}",
+    "queuePaused": "angehalten",
+    "removeQueued": "Aus der Warteschlange nehmen",
+    "dictate": "Diktieren",
+    "stopDictation": "Diktat beenden",
+    "dictationFailed": "Das Diktat konnte nicht gestartet werden.",
+    "dictationBlocked": "Der Browser hat das Mikrofon nicht freigegeben. Erlaube es in den Website-Einstellungen.",
+    "dictationInsecureTitle": "Diktieren braucht eine sichere Verbindung",
+    "dictationInsecure": "Der Browser gibt das Mikrofon nur über HTTPS frei. Bis Helena über HTTPS läuft: in Chrome chrome://flags öffnen, „Insecure origins treated as secure“ aktivieren und {origin} eintragen. Im Kiosk ist es bereits freigeschaltet."
   },
   "artifact": {
     "title": "Artefakt",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} denkt nach …",
     "writing": "{agent} schreibt …",
-    "queued": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist."
+    "queued": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist.",
+    "usingTool": "{agent} nutzt {tool} …"
+  },
+  "session": {
+    "copy": "Session-ID kopieren",
+    "copied": "Session-ID kopiert",
+    "hint": "Im Terminal fortsetzen: hermes --resume {id} (bzw. claude --resume {id})"
   }
 }

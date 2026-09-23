@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { copyText } from '@/utils/clipboard';
 import { messageText, type PlanUIMessage } from '../../utils/chatMessages';
 import ChatToIssueDialog from './ChatToIssueDialog';
+import ChatSpeakButton from './ChatSpeakButton';
 
 export interface ChatMessageActionsProps {
   message: PlanUIMessage;
@@ -55,6 +56,7 @@ export default function ChatMessageActions({
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
         </Button>
       )}
+      {!isUser && text && <ChatSpeakButton text={text} />}
       {isUser && (
         <Button
           variant="ghost"

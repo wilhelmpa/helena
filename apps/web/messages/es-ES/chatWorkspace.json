@@ -72,11 +72,13 @@
     "noteSource": "Chat con {agent}, guardado el {date}",
     "restoreFailedTitle": "No se pudo cargar este chat",
     "restoreFailed": "No se pudieron leer sus mensajes. Comprueba la conexión y vuelve a intentarlo.",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "today": "Hoy",
+    "yesterday": "Ayer"
   },
   "composer": {
     "placeholder": "Mensaje para {agent}…",
-    "hint": "Mayús + Intro para una nueva línea · Suelta o pega archivos para adjuntarlos · / para comandos y prompts",
+    "hint": "Intro envía · Mayús+Intro o ⌘/Ctrl+Intro para una línea nueva · suelta o pega archivos para adjuntar · / para comandos y prompts",
     "send": "Enviar",
     "stop": "Detener la respuesta",
     "attach": "Adjuntar",
@@ -110,7 +112,17 @@
       "outside": "Esto no es algo que el chat pueda hacer."
     },
     "reasoning": "Esfuerzo de razonamiento",
-    "reasoningDefault": "predeterminado"
+    "reasoningDefault": "predeterminado",
+    "queue": "Añadir a la cola",
+    "queued": "esperando a {agent}",
+    "queuePaused": "en pausa",
+    "removeQueued": "Quitar de la cola",
+    "dictate": "Dictar",
+    "stopDictation": "Detener el dictado",
+    "dictationFailed": "No se pudo iniciar el dictado.",
+    "dictationBlocked": "El navegador no ha permitido el micrófono. Permítelo en la configuración del sitio.",
+    "dictationInsecureTitle": "El dictado necesita una conexión segura",
+    "dictationInsecure": "Los navegadores solo prestan el micrófono a páginas HTTPS. Hasta que Helena funcione con HTTPS: abre chrome://flags en Chrome, activa «Insecure origins treated as secure» y añade {origin}. El quiosco ya lo permite."
   },
   "artifact": {
     "title": "Artefacto",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} está pensando…",
     "writing": "{agent} está escribiendo…",
-    "queued": "Esperando a {agent}: su runner no está conectado. La respuesta empieza en cuanto vuelva."
+    "queued": "Esperando a {agent}: su runner no está conectado. La respuesta empieza en cuanto vuelva.",
+    "usingTool": "{agent} está usando {tool} …"
+  },
+  "session": {
+    "copy": "Copiar ID de sesión",
+    "copied": "ID de sesión copiado",
+    "hint": "Continuar en un terminal: hermes --resume {id} (o claude --resume {id})"
   }
 }

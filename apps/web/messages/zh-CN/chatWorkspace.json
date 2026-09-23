@@ -72,11 +72,13 @@
     "noteSource": "与 {agent} 的聊天，保存于 {date}",
     "restoreFailedTitle": "无法加载此对话",
     "restoreFailed": "无法读取其消息。请检查连接后重试。",
-    "retry": "重试"
+    "retry": "重试",
+    "today": "今天",
+    "yesterday": "昨天"
   },
   "composer": {
     "placeholder": "给 {agent} 发消息…",
-    "hint": "Shift + Enter 换行 · 拖放或粘贴文件即可附加 · 输入 / 使用命令和提示词",
+    "hint": "回车发送 · Shift+回车 或 ⌘/Ctrl+回车 换行 · 拖放或粘贴文件以附加 · / 打开命令和提示词",
     "send": "发送",
     "stop": "停止回答",
     "attach": "附加",
@@ -110,7 +112,17 @@
       "outside": "这不是聊天能做的事。"
     },
     "reasoning": "推理强度",
-    "reasoningDefault": "默认"
+    "reasoningDefault": "默认",
+    "queue": "加入队列",
+    "queued": "等待 {agent}",
+    "queuePaused": "已暂停",
+    "removeQueued": "从队列移除",
+    "dictate": "语音输入",
+    "stopDictation": "停止语音输入",
+    "dictationFailed": "无法开始语音输入。",
+    "dictationBlocked": "浏览器未允许使用麦克风。请在网站设置中允许。",
+    "dictationInsecureTitle": "语音输入需要安全连接",
+    "dictationInsecure": "浏览器只向 HTTPS 页面提供麦克风。在 Helena 使用 HTTPS 之前：在 Chrome 中打开 chrome://flags，启用 “Insecure origins treated as secure” 并添加 {origin}。展台模式已允许。"
   },
   "artifact": {
     "title": "产物",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} 正在思考…",
     "writing": "{agent} 正在撰写…",
-    "queued": "正在等待 {agent}——它的运行器离线。运行器恢复后开始回答。"
+    "queued": "正在等待 {agent}——它的运行器离线。运行器恢复后开始回答。",
+    "usingTool": "{agent} 正在使用 {tool} …"
+  },
+  "session": {
+    "copy": "复制会话 ID",
+    "copied": "已复制会话 ID",
+    "hint": "在终端中继续：hermes --resume {id}（或 claude --resume {id}）"
   }
 }

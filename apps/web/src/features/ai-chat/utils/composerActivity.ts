@@ -51,6 +51,20 @@ export function composerActivity(
   return 'answered';
 }
 
+// The tool the answer is running right now — its last part is a tool call whose result
+// has not come back — so the composer can say "Home nutzt web_search …" instead of a
+// bare "schreibt …" while nothing new appears for a while.
+export function activeTool(messages: PlanUIMessage[], status: ChatStatus): string | null {
+  if (status !== 'submitted' && status !== 'streaming') return null;
+  const last = messages.at(-1);
+  if (last?.role !== 'assistant') return null;
+  const part = last.parts.at(-1);
+  if (part?.type !== 'dynamic-tool') return null;
+  return part.state === 'input-streaming' || part.state === 'input-available'
+    ? part.toolName
+    : null;
+}
+
 // A question the agent asked with fixed answers to pick from — Hermes' `clarify` tool
 // with its `choices` — still open at the end of the conversation. Only such a
 // structured question gets its answers offered as chips over the input; any other

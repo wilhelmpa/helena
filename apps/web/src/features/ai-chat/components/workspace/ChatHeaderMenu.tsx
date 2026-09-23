@@ -11,8 +11,10 @@ import {
   Pencil,
   Pin,
   PinOff,
+  SquareTerminal,
   Trash2,
 } from 'lucide-react';
+import { copyText } from '@/utils/clipboard';
 import { toast } from 'sonner';
 import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
 import {
@@ -90,6 +92,24 @@ export default function ChatHeaderMenu({
           {onToIssue && (
             <DropdownMenuItem onSelect={onToIssue}>
               <ListPlus className="size-4" /> {t('issue.fromChat')}
+            </DropdownMenuItem>
+          )}
+          {chat.cliSessionId && (
+            <DropdownMenuItem
+              onSelect={async () => {
+                await copyText(chat.cliSessionId!);
+                toast.success(t('session.copied'), {
+                  description: t('session.hint', { id: chat.cliSessionId! }),
+                });
+              }}
+            >
+              <SquareTerminal className="size-4" /> {t('session.copy')}
+              <span
+                dir="ltr"
+                className="ms-auto max-w-28 truncate font-mono text-xs text-muted-foreground"
+              >
+                {chat.cliSessionId}
+              </span>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem

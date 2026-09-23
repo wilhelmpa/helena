@@ -12,7 +12,7 @@ import ChatMessageBubbleUser from './ChatMessageBubbleUser';
 import ChatMessageBubbleAssistant from './ChatMessageBubbleAssistant';
 import ChatBranchNav from './ChatBranchNav';
 import ChatMessageActions from './ChatMessageActions';
-import ChatMessageMeta from './ChatMessageMeta';
+import ChatMessageMeta, { ChatMessageTime } from './ChatMessageMeta';
 
 export interface ChatMessageItemProps {
   message: PlanUIMessage;
@@ -75,6 +75,7 @@ export default function ChatMessageItem({
         </Bubble>
         {!editing && !streaming && (
           <MessageFooter className="h-7 gap-1">
+            {isUser ? null : <ChatMessageTime message={message} />}
             <ChatBranchNav message={message} onSwitchVersion={onSwitchVersion} />
             <ChatMessageActions
               message={message}
@@ -85,6 +86,7 @@ export default function ChatMessageItem({
               onEditRequest={() => setEditing(true)}
             />
             {!isUser && <ChatMessageMeta message={message} />}
+            {isUser ? <ChatMessageTime message={message} /> : null}
           </MessageFooter>
         )}
       </MessageContent>

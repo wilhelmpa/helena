@@ -11,6 +11,7 @@ import type { ComposerActivity } from '../../utils/composerActivity';
 // on from there. Nothing at all while there is nothing to say.
 export default function ChatComposerStatus({
   activity,
+  tool,
   agentName,
   onReconnect,
   onContinue,
@@ -18,6 +19,8 @@ export default function ChatComposerStatus({
   onResend,
 }: {
   activity: ComposerActivity;
+  // The tool the answer is running right now, if any (see activeTool).
+  tool: string | null;
   agentName: string;
   onReconnect: () => void;
   onContinue: () => void;
@@ -29,8 +32,12 @@ export default function ChatComposerStatus({
 
   const live = activity === 'thinking' || activity === 'writing';
   const text = {
-    thinking: t('activity.thinking', { agent: agentName }),
-    writing: t('activity.writing', { agent: agentName }),
+    thinking: tool
+      ? t('activity.usingTool', { agent: agentName, tool })
+      : t('activity.thinking', { agent: agentName }),
+    writing: tool
+      ? t('activity.usingTool', { agent: agentName, tool })
+      : t('activity.writing', { agent: agentName }),
     queued: t('activity.queued', { agent: agentName }),
     lost: t('interrupted.lost', { agent: agentName }),
     stopped: t('interrupted.stopped'),

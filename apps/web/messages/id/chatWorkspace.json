@@ -72,11 +72,13 @@
     "noteSource": "Obrolan dengan {agent}, disimpan {date}",
     "restoreFailedTitle": "Chat ini tidak dapat dimuat",
     "restoreFailed": "Pesannya tidak dapat dibaca. Periksa koneksi lalu coba lagi.",
-    "retry": "Coba lagi"
+    "retry": "Coba lagi",
+    "today": "Hari ini",
+    "yesterday": "Kemarin"
   },
   "composer": {
     "placeholder": "Pesan untuk {agent}…",
-    "hint": "Shift + Enter untuk baris baru · Jatuhkan atau tempel berkas untuk melampirkannya · / untuk perintah dan prompt",
+    "hint": "Enter mengirim · Shift+Enter atau ⌘/Ctrl+Enter untuk baris baru · lepas atau tempel berkas untuk melampirkan · / untuk perintah dan prompt",
     "send": "Kirim",
     "stop": "Hentikan jawaban",
     "attach": "Lampirkan",
@@ -110,7 +112,17 @@
       "outside": "Ini bukan sesuatu yang bisa dilakukan obrolan."
     },
     "reasoning": "Upaya penalaran",
-    "reasoningDefault": "bawaan"
+    "reasoningDefault": "bawaan",
+    "queue": "Tambahkan ke antrean",
+    "queued": "menunggu {agent}",
+    "queuePaused": "dijeda",
+    "removeQueued": "Hapus dari antrean",
+    "dictate": "Dikte",
+    "stopDictation": "Hentikan dikte",
+    "dictationFailed": "Dikte tidak dapat dimulai.",
+    "dictationBlocked": "Browser tidak mengizinkan mikrofon. Izinkan di pengaturan situs.",
+    "dictationInsecureTitle": "Dikte memerlukan koneksi aman",
+    "dictationInsecure": "Browser hanya meminjamkan mikrofon ke halaman HTTPS. Sampai Helena berjalan di HTTPS: buka chrome://flags di Chrome, aktifkan “Insecure origins treated as secure” dan tambahkan {origin}. Kios sudah mengizinkannya."
   },
   "artifact": {
     "title": "Artefak",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} sedang berpikir…",
     "writing": "{agent} sedang menulis…",
-    "queued": "Menunggu {agent} — runner-nya offline. Jawaban dimulai begitu runner kembali."
+    "queued": "Menunggu {agent} — runner-nya offline. Jawaban dimulai begitu runner kembali.",
+    "usingTool": "{agent} sedang memakai {tool} …"
+  },
+  "session": {
+    "copy": "Salin ID sesi",
+    "copied": "ID sesi disalin",
+    "hint": "Lanjutkan di terminal: hermes --resume {id} (atau claude --resume {id})"
   }
 }

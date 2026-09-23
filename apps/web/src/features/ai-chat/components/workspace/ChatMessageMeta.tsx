@@ -1,7 +1,19 @@
 'use client';
 
 import { useFormatter } from 'next-intl';
+import { formatTime } from '@/utils/dates';
 import type { PlanUIMessage } from '../../utils/chatMessages';
+
+// When a message was written, always visible next to its actions (old-chat parity).
+export function ChatMessageTime({ message }: { message: PlanUIMessage }) {
+  const at = message.metadata?.createdAt;
+  if (!at) return null;
+  return (
+    <time dateTime={at} className="px-1 text-xs text-muted-foreground tabular-nums">
+      {formatTime(at)}
+    </time>
+  );
+}
 
 // What an answer ran on and what it took — the model, the time, the tokens — once the
 // server has recorded them (see usePlanChat's refresh after an answer ends). Quiet and

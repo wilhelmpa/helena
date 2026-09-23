@@ -1,6 +1,8 @@
 'use client';
 
+import { Fragment, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { dayKey } from '@/utils/dates';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +19,7 @@ import type { PlanChat } from '../../hooks/usePlanChat';
 import type { Artifact } from '../../utils/artifacts';
 import type { PlanUIMessage } from '../../utils/chatMessages';
 import ChatMessageItem from './ChatMessageItem';
+import ChatDaySeparator from './ChatDaySeparator';
 
 // An answer that has nothing to show yet (no text, reasoning or tool call, no error).
 const isEmptyAnswer = (message: PlanUIMessage) =>
@@ -45,6 +48,24 @@ export default function ChatMessageList({
 }: ChatMessageListProps) {
   const t = useTranslations('chatWorkspace');
   const { messages, status } = plan;
+  // Older messages load by themselves when the top of the transcript comes into view
+  // (old-chat parity); the button stays for keyboards and as the loading indicator.
+  const topRef = useRef<HTMLDivElement>(null);
+  const loadOlder = useRef(plan.loadOlder);
+  loadOlder.current = plan.loadOlder;
+  const canLoadOlder = plan.hasOlder && !plan.loadingOlder && !plan.restoring;
+  useEffect(() => {
+    const node = topRef.current;
+    if (!node || !canLoadOlder) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) void loadOlder.current();
+      },
+      { rootMargin: '200px 0px 0px 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [canLoadOlder]);
 
   if (plan.restoring) {
     return (
@@ -62,6 +83,7 @@ export default function ChatMessageList({
         <InitialScrollToEnd hasMessages={messages.length > 0} />
         <MessageScrollerViewport aria-label={t('messages.transcript')}>
           <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-2 px-4 pt-6 pb-6">
+            <div ref={topRef} aria-hidden="true" />
             {plan.hasOlder && (
               <div className="flex justify-center">
                 <Button
@@ -74,27 +96,36 @@ export default function ChatMessageList({
                 </Button>
               </div>
             )}
-            {messages.map((message, index) =>
-              isEmptyAnswer(message) ? null : (
-                <MessageScrollerItem
-                  key={message.id}
-                  messageId={message.id}
-                  scrollAnchor={message.role === 'user'}
-                >
-                  <ChatMessageItem
-                    message={message}
-                    isLast={index === messages.length - 1}
-                    status={status}
-                    agent={agent}
-                    projectKey={projectKey}
-                    threadId={threadId}
-                    onEdit={(text) => void plan.edit(index, text)}
-                    onShowArtifact={onShowArtifact}
-                    onSwitchVersion={(messageId) => void plan.switchVersion(messageId)}
-                  />
-                </MessageScrollerItem>
-              ),
-            )}
+            {messages.map((message, index) => {
+              if (isEmptyAnswer(message)) return null;
+              const at = message.metadata?.createdAt;
+              const previousAt = messages
+                .slice(0, index)
+                .findLast((earlier) => !isEmptyAnswer(earlier))?.metadata?.createdAt;
+              const newDay =
+                at != null && (previousAt == null || dayKey(previousAt) !== dayKey(at));
+              return (
+                <Fragment key={message.id}>
+                  {newDay ? <ChatDaySeparator at={at} /> : null}
+                  <MessageScrollerItem
+                    messageId={message.id}
+                    scrollAnchor={message.role === 'user'}
+                  >
+                    <ChatMessageItem
+                      message={message}
+                      isLast={index === messages.length - 1}
+                      status={status}
+                      agent={agent}
+                      projectKey={projectKey}
+                      threadId={threadId}
+                      onEdit={(text) => void plan.edit(index, text)}
+                      onShowArtifact={onShowArtifact}
+                      onSwitchVersion={(messageId) => void plan.switchVersion(messageId)}
+                    />
+                  </MessageScrollerItem>
+                </Fragment>
+              );
+            })}
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />

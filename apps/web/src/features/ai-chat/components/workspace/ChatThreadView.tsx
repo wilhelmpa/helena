@@ -1,11 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { ApiError } from '@/lib/api/core/client';
 import { usePlanChat } from '../../hooks/usePlanChat';
+import { useChatSummary } from '../../hooks/useChatSummary';
+import type { PlanSendOptions } from '../../services/planChatTransport';
+import type { PlanChatMetadata } from '../../utils/chatMessages';
+import { uuid } from '@/utils/uuid';
 import type { ChatAgentState } from '../../utils/agentPresence';
 import type { Artifact } from '../../utils/artifacts';
 import ChatHeader from './ChatHeader';
@@ -13,7 +17,10 @@ import ChatMessageList from './ChatMessageList';
 import ChatComposer from './ChatComposer';
 import ChatNewChatIntro from './ChatNewChatIntro';
 import ChatRestoreError from './ChatRestoreError';
-import { composerActivity } from '../../utils/composerActivity';
+import { activeTool, composerActivity, pendingChoices } from '../../utils/composerActivity';
+import type { QueuedMessage } from './ChatQueuedMessages';
+
+type Queued = QueuedMessage & { options: PlanSendOptions; metadata: PlanChatMetadata };
 
 export interface ChatThreadViewProps {
   scopeKey: string;
@@ -74,13 +81,48 @@ export default function ChatThreadView({
       }
     },
   });
-  const [model, setModel] = useState<{ model: string | null; thinkingLevel: string | null }>({
-    model: null,
-    thinkingLevel: null,
-  });
+  const [model, setModel] = useState<{
+    model: string | null;
+    thinkingLevel: string | null;
+    // Set by the member (the picker or /model); until then a reopened chat follows the
+    // model it was last sent with.
+    chosen: boolean;
+  }>({ model: null, thinkingLevel: null, chosen: false });
+  const summary = useChatSummary(threadId);
+  useEffect(() => {
+    const data = summary.data;
+    if (!data || model.chosen) return;
+    if (data.model !== model.model || data.thinkingLevel !== model.thinkingLevel) {
+      setModel({ model: data.model, thinkingLevel: data.thinkingLevel, chosen: false });
+    }
+  }, [summary.data, model]);
   const state = states.get(agent.id);
   const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
   const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
+
+  // What is written while an answer is still coming waits here and goes out in order
+  // once the agent is done (old-chat parity). An answer that failed holds the queue:
+  // nothing more is sent on its own until the member sends again.
+  const [queue, setQueue] = useState<Queued[]>([]);
+  const [queuePaused, setQueuePaused] = useState(false);
+  useEffect(() => {
+    if (activity === 'failed' || activity === 'sendFailed') setQueuePaused(true);
+  }, [activity]);
+  // One send per turn: between handing a message to the chat and the chat reporting it
+  // busy there is a render in which it still looks idle; the next status change (the
+  // send taken, or refused) opens the gate again.
+  const dispatching = useRef(false);
+  useEffect(() => {
+    dispatching.current = false;
+  }, [plan.status]);
+  useEffect(() => {
+    if (dispatching.current || plan.busy || plan.restoring || queuePaused) return;
+    if (queue.length === 0) return;
+    const [next, ...rest] = queue;
+    dispatching.current = true;
+    setQueue(rest);
+    void plan.send(next!.text, next!.options, next!.metadata);
+  }, [plan, queue, queuePaused]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -117,14 +159,29 @@ export default function ChatThreadView({
         agents={agents}
         states={states}
         activity={activity}
+        tool={activeTool(plan.messages, plan.status)}
+        queue={queue}
+        queuePaused={queuePaused}
+        onQueue={(text, options, metadata) => {
+          setQueuePaused(false);
+          setQueue((current) => [...current, { id: uuid(), text, options, metadata }]);
+        }}
+        onRemoveQueued={(id) => setQueue((current) => current.filter((item) => item.id !== id))}
+        choices={activity === 'answered' ? pendingChoices(plan.messages) : null}
+        contextTokens={summary.data?.contextTokens}
         threadId={threadId}
         projectKey={projectKey}
         draft={threadId == null ? newChatDraft : undefined}
         busy={plan.busy}
         model={model.model}
         thinkingLevel={model.thinkingLevel}
-        onModelChange={(next, thinkingLevel) => setModel({ model: next, thinkingLevel })}
-        onSend={(text, options, metadata) => void plan.send(text, options, metadata)}
+        onModelChange={(next, thinkingLevel) =>
+          setModel({ model: next, thinkingLevel, chosen: true })
+        }
+        onSend={(text, options, metadata) => {
+          setQueuePaused(false);
+          void plan.send(text, options, metadata);
+        }}
         onStop={() => void plan.stop()}
         onNewChat={() => onNewChat(agent.id)}
         onPickAgent={onNewChat}

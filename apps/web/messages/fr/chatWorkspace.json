@@ -72,11 +72,13 @@
     "noteSource": "Chat avec {agent}, enregistré le {date}",
     "restoreFailedTitle": "Impossible de charger cette discussion",
     "restoreFailed": "Ses messages n’ont pas pu être lus. Vérifiez la connexion et réessayez.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "today": "Aujourd’hui",
+    "yesterday": "Hier"
   },
   "composer": {
     "placeholder": "Message à {agent}…",
-    "hint": "Maj + Entrée pour une nouvelle ligne · Déposez ou collez des fichiers pour les joindre · / pour les commandes et les prompts",
+    "hint": "Entrée envoie · Maj+Entrée ou ⌘/Ctrl+Entrée pour une nouvelle ligne · déposez ou collez des fichiers · / pour les commandes et prompts",
     "send": "Envoyer",
     "stop": "Arrêter la réponse",
     "attach": "Joindre",
@@ -110,7 +112,17 @@
       "outside": "Le chat ne peut pas faire cela."
     },
     "reasoning": "Effort de réflexion",
-    "reasoningDefault": "par défaut"
+    "reasoningDefault": "par défaut",
+    "queue": "Mettre en file d’attente",
+    "queued": "en attente de {agent}",
+    "queuePaused": "en pause",
+    "removeQueued": "Retirer de la file d’attente",
+    "dictate": "Dicter",
+    "stopDictation": "Arrêter la dictée",
+    "dictationFailed": "La dictée n’a pas pu démarrer.",
+    "dictationBlocked": "Le navigateur n’a pas autorisé le microphone. Autorisez-le dans les paramètres du site.",
+    "dictationInsecureTitle": "La dictée nécessite une connexion sécurisée",
+    "dictationInsecure": "Les navigateurs ne prêtent le microphone qu’aux pages HTTPS. Tant que Helena ne tourne pas en HTTPS : ouvrez chrome://flags dans Chrome, activez « Insecure origins treated as secure » et ajoutez {origin}. Le kiosque l’autorise déjà."
   },
   "artifact": {
     "title": "Artefact",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} réfléchit…",
     "writing": "{agent} écrit…",
-    "queued": "En attente de {agent} — son runner est hors ligne. La réponse commence dès son retour."
+    "queued": "En attente de {agent} — son runner est hors ligne. La réponse commence dès son retour.",
+    "usingTool": "{agent} utilise {tool} …"
+  },
+  "session": {
+    "copy": "Copier l’ID de session",
+    "copied": "ID de session copié",
+    "hint": "Continuer dans un terminal : hermes --resume {id} (ou claude --resume {id})"
   }
 }

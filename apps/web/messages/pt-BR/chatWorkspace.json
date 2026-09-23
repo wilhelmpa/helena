@@ -72,11 +72,13 @@
     "noteSource": "Chat com {agent}, salvo em {date}",
     "restoreFailedTitle": "Não foi possível carregar este chat",
     "restoreFailed": "Não foi possível ler as mensagens. Verifique a conexão e tente novamente.",
-    "retry": "Tentar novamente"
+    "retry": "Tentar novamente",
+    "today": "Hoje",
+    "yesterday": "Ontem"
   },
   "composer": {
     "placeholder": "Mensagem para {agent}…",
-    "hint": "Shift + Enter para uma nova linha · Arraste ou cole arquivos para anexá-los · / para comandos e prompts",
+    "hint": "Enter envia · Shift+Enter ou ⌘/Ctrl+Enter para nova linha · solte ou cole arquivos para anexar · / para comandos e prompts",
     "send": "Enviar",
     "stop": "Parar a resposta",
     "attach": "Anexar",
@@ -110,7 +112,17 @@
       "outside": "Isso não é algo que o chat possa fazer."
     },
     "reasoning": "Esforço de raciocínio",
-    "reasoningDefault": "padrão"
+    "reasoningDefault": "padrão",
+    "queue": "Adicionar à fila",
+    "queued": "aguardando {agent}",
+    "queuePaused": "pausada",
+    "removeQueued": "Remover da fila",
+    "dictate": "Ditar",
+    "stopDictation": "Parar ditado",
+    "dictationFailed": "Não foi possível iniciar o ditado.",
+    "dictationBlocked": "O navegador não permitiu o microfone. Permita nas configurações do site.",
+    "dictationInsecureTitle": "O ditado precisa de uma conexão segura",
+    "dictationInsecure": "Os navegadores só liberam o microfone para páginas HTTPS. Até a Helena rodar em HTTPS: abra chrome://flags no Chrome, ative “Insecure origins treated as secure” e adicione {origin}. O quiosque já permite."
   },
   "artifact": {
     "title": "Artefato",
@@ -192,6 +204,12 @@
   "activity": {
     "thinking": "{agent} está pensando…",
     "writing": "{agent} está escrevendo…",
-    "queued": "Aguardando {agent} — o runner está offline. A resposta começa assim que ele voltar."
+    "queued": "Aguardando {agent} — o runner está offline. A resposta começa assim que ele voltar.",
+    "usingTool": "{agent} está usando {tool} …"
+  },
+  "session": {
+    "copy": "Copiar ID da sessão",
+    "copied": "ID da sessão copiado",
+    "hint": "Continuar em um terminal: hermes --resume {id} (ou claude --resume {id})"
   }
 }
