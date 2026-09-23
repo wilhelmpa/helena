@@ -31,7 +31,14 @@ sudo deployment/volition-stack/native/dev/setup.sh       # once: env file, Nginx
 sudo deployment/volition-stack/native/dev/refresh-db.sh  # replace the dev database with a live copy
 deployment/volition-stack/native/dev/start.sh            # API and web in the tmux session plan-dev
 deployment/volition-stack/native/dev/stop.sh
+sudo deployment/volition-stack/native/dev/agent-runner.sh vol     # a project agent against the dev API
 ```
+
+`agent-runner.sh` runs one project agent against the development API with a copy of its
+Hermes profile, the runner built from this worktree and Hermes from
+`/srv/volition/source/hermes-dev` (a worktree of the Hermes checkout on the branch
+`volition/main`, where Hermes changes are made before they reach the live checkout). The
+copy is removed when the runner stops.
 
 `setup.sh` renders `/etc/volition/plan-dev.env` from the live `plan.env` without
 printing any value. It points the database at `itsaplan_dev`, moves the ports, removes
