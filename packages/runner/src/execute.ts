@@ -233,9 +233,17 @@ export async function execute(
   child.stdin.on('error', () => {});
   child.stdin.end(stdinText(preset, task));
 
+  // 'close' also waits for the command's stdio to close, which never happens if a
+  // grandchild it left behind inherited the same pipe -- a killed command must not be
+  // able to hang the run that way. 'exit' alone can fire before the last chunk of
+  // output is delivered, so it is given a brief moment to catch a 'close' that is
+  // already on its way before it is trusted on its own.
   const exited = new Promise<{ code: number | null; signal: string | null }>((resolve, reject) => {
     child.on('error', reject);
     child.on('close', (exitCode, exitSignal) => resolve({ code: exitCode, signal: exitSignal }));
+    child.on('exit', (exitCode, exitSignal) => {
+      setTimeout(() => resolve({ code: exitCode, signal: exitSignal }), 200).unref();
+    });
   });
 
   let code: number | null;

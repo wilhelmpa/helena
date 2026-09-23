@@ -24,6 +24,10 @@ export function runEnv(run: Run): Record<string, string> {
     ITSAPLAN_SYSTEM_PROMPT: run.systemPrompt,
     ITSAPLAN_ISSUE: run.issueIdentifier ?? '',
     ITSAPLAN_ISSUE_ID: run.issueId == null ? '' : String(run.issueId),
+    // Set when this run is resuming: an operator command with no preset can use it to
+    // pick its own session back up, the way the preset commands already do through
+    // their --resume flag.
+    ITSAPLAN_SESSION_ID: run.sessionId ?? '',
   };
 }
 
@@ -79,7 +83,14 @@ export async function perform(
         logins.write(chunk);
       },
       onSessionId: (sessionId) => {
-        void client.reportSession(run.id, run.claim, sessionId).catch(() => {});
+        // Best effort, and never allowed to disrupt reading the run's own output: a
+        // client that cannot take this report, or a server that predates the route,
+        // is not fatal to the run.
+        try {
+          void client.reportSession(run.id, run.claim, sessionId).catch(() => {});
+        } catch {
+          // Ignored for the same reason.
+        }
       },
       signal: stop.signal,
     },
