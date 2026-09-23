@@ -52,7 +52,6 @@
     "transcript": "消息",
     "loadOlder": "加载更早的消息",
     "loading": "加载中…",
-    "thinking": "正在思考…",
     "reasoning": "思考过程",
     "reasoningLive": "正在思考…",
     "toolCalls": "{count, plural, other {# 次工具调用}}",
@@ -65,16 +64,12 @@
     "regenerate": "重新生成",
     "previousVersion": "上一个版本",
     "nextVersion": "下一个版本",
-    "clarificationLabel": "正在等待你的回复",
-    "clarificationPlaceholder": "输入你的回复…",
-    "reply": "回复",
     "saveAsNote": "另存为笔记",
     "noteSaved": "聊天已作为笔记保存到 Docs。",
     "noteSaveFailed": "无法将聊天保存为笔记。",
     "noteQuestion": "问题",
     "noteAnswer": "{agent} 的回答",
     "noteSource": "与 {agent} 的聊天，保存于 {date}",
-    "waitingForRunner": "正在等待 {agent}——它的运行器离线。运行器恢复后开始回答。",
     "restoreFailedTitle": "无法加载此对话",
     "restoreFailed": "无法读取其消息。请检查连接后重试。",
     "retry": "重试"
@@ -156,8 +151,7 @@
   },
   "newChat": {
     "title": "与 {agent} 的新对话",
-    "offlineHint": "它的运行器目前未连接。消息会在队列中等待，运行器恢复后即会回复。",
-    "pickAgent": "选择此对话的智能体"
+    "hint": "在输入框左下角选择智能体——它的状态也显示在那里。"
   },
   "agents": {
     "status": {
@@ -194,5 +188,10 @@
     "memory": "打开智能体的记忆",
     "usage": "显示此对话的 token 用量",
     "stop": "停止回答"
+  },
+  "activity": {
+    "thinking": "{agent} 正在思考…",
+    "writing": "{agent} 正在撰写…",
+    "queued": "正在等待 {agent}——它的运行器离线。运行器恢复后开始回答。"
   }
 }

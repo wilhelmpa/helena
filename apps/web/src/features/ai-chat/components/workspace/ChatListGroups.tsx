@@ -14,6 +14,7 @@ export interface ChatListGroupsProps {
   q?: string;
   selectedThreadId: string | null;
   onSelectThread: (thread: { id: string; agentId: number }) => void;
+  onThreadRemoved: (threadId: string) => void;
 }
 
 function groupLabel(t: ReturnType<typeof useTranslations>, key: ChatGroup['key']): string {
@@ -46,6 +47,7 @@ export default function ChatListGroups({
   q,
   selectedThreadId,
   onSelectThread,
+  onThreadRemoved,
 }: ChatListGroupsProps) {
   const t = useTranslations('chatWorkspace');
   const query = useChatList({ projectKey: projectKey ?? undefined, q, view });
@@ -109,6 +111,7 @@ export default function ChatListGroups({
                   selected={chat.id === selectedThreadId}
                   onSelect={() => onSelectThread({ id: chat.id, agentId: chat.agent.id })}
                   highlightQuery={q}
+                  onRemoved={onThreadRemoved}
                 />
               </li>
             ))}

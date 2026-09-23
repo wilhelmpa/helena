@@ -1,10 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { AiAgent } from '@/lib/api/endpoints/agents';
 import Markdown from '@/components/common/Markdown';
-import { Marker, MarkerContent } from '@/components/ui/marker';
-import { useTranslations } from 'next-intl';
 import { splitArtifacts } from '../../utils/artifacts';
 import { chatSources } from '../../utils/chatSources';
 import { messageBlocks, type PlanUIMessage } from '../../utils/chatMessages';
@@ -17,27 +14,20 @@ import ChatSourcesFooter from './ChatSourcesFooter';
 export interface ChatMessageBubbleAssistantProps {
   message: PlanUIMessage;
   streaming: boolean;
-  agent: AiAgent;
-  // Whether the agent's runner is there to pick the answer up; a question to an agent
-  // that is not waits in its queue, which the status line says instead of "thinking".
-  agentOnline: boolean;
   projectKey: string | null;
   onShowArtifact: (artifact: Artifact) => void;
 }
 
 // An agent's answer: its reasoning and tool calls where the model made them, its
 // prose as Markdown, any artifact fences as cards instead of raw code, and, once it is
-// done, what it drew on. Empty and still streaming, a status line takes the bubble's
-// place so the reader is not staring at nothing while the runner starts up.
+// done, what it drew on. While it has nothing yet it shows nothing: the composer says
+// the agent is thinking (ChatComposerStatus).
 export default function ChatMessageBubbleAssistant({
   message,
   streaming,
-  agent,
-  agentOnline,
   projectKey,
   onShowArtifact,
 }: ChatMessageBubbleAssistantProps) {
-  const t = useTranslations('chatWorkspace');
   const blocks = useMemo(() => messageBlocks(message), [message]);
   const sources = useMemo(
     () => (streaming ? [] : chatSources(message, projectKey ? [projectKey] : [])),
@@ -45,18 +35,7 @@ export default function ChatMessageBubbleAssistant({
   );
   const error = message.metadata?.error;
 
-  if (blocks.length === 0 && !error) {
-    if (!streaming) return null;
-    return (
-      <Marker role="status">
-        <MarkerContent className={agentOnline ? 'shimmer' : undefined}>
-          {agentOnline
-            ? t('messages.thinking')
-            : t('messages.waitingForRunner', { agent: agent.name })}
-        </MarkerContent>
-      </Marker>
-    );
-  }
+  if (blocks.length === 0 && !error) return null;
 
   return (
     <div className="space-y-3 text-sm leading-relaxed">

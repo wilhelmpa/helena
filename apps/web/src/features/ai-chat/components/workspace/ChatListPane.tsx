@@ -13,6 +13,8 @@ export interface ChatListPaneProps {
   onOpenChange: (open: boolean) => void;
   selectedThreadId: string | null;
   onSelectThread: (thread: { id: string; agentId: number }) => void;
+  // A chat was deleted: the open one closes.
+  onThreadRemoved: (threadId: string) => void;
   onNewChat: () => void;
 }
 

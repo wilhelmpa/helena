@@ -52,7 +52,6 @@
     "transcript": "Mensagens",
     "loadOlder": "Carregar mensagens anteriores",
     "loading": "Carregando…",
-    "thinking": "Pensando…",
     "reasoning": "Raciocínio",
     "reasoningLive": "Raciocinando…",
     "toolCalls": "{count, plural, one {# chamada de ferramenta} other {# chamadas de ferramenta}}",
@@ -65,16 +64,12 @@
     "regenerate": "Regenerar",
     "previousVersion": "Versão anterior",
     "nextVersion": "Próxima versão",
-    "clarificationLabel": "Aguardando sua resposta",
-    "clarificationPlaceholder": "Digite sua resposta…",
-    "reply": "Responder",
     "saveAsNote": "Salvar como nota",
     "noteSaved": "Chat salvo como nota em Docs.",
     "noteSaveFailed": "Não foi possível salvar o chat como nota.",
     "noteQuestion": "Pergunta",
     "noteAnswer": "Resposta de {agent}",
     "noteSource": "Chat com {agent}, salvo em {date}",
-    "waitingForRunner": "Aguardando {agent} — o runner está offline. A resposta começa assim que ele voltar.",
     "restoreFailedTitle": "Não foi possível carregar este chat",
     "restoreFailed": "Não foi possível ler as mensagens. Verifique a conexão e tente novamente.",
     "retry": "Tentar novamente"
@@ -156,8 +151,7 @@
   },
   "newChat": {
     "title": "Novo chat com {agent}",
-    "offlineHint": "O runner dele não está conectado agora. Uma mensagem aguarda na fila e é respondida assim que ele voltar.",
-    "pickAgent": "Escolher o agente deste chat"
+    "hint": "Escolha o agente no canto inferior esquerdo do campo de entrada — o status dele aparece ali."
   },
   "agents": {
     "status": {
@@ -194,5 +188,10 @@
     "memory": "Abrir a memória do agente",
     "usage": "Mostrar o uso de tokens deste chat",
     "stop": "Parar a resposta"
+  },
+  "activity": {
+    "thinking": "{agent} está pensando…",
+    "writing": "{agent} está escrevendo…",
+    "queued": "Aguardando {agent} — o runner está offline. A resposta começa assim que ele voltar."
   }
 }

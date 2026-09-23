@@ -52,7 +52,6 @@
     "transcript": "Messages",
     "loadOlder": "Charger les messages précédents",
     "loading": "Chargement…",
-    "thinking": "Réflexion…",
     "reasoning": "Raisonnement",
     "reasoningLive": "Raisonnement…",
     "toolCalls": "{count, plural, one {# appel d’outil} other {# appels d’outils}}",
@@ -65,16 +64,12 @@
     "regenerate": "Régénérer",
     "previousVersion": "Version précédente",
     "nextVersion": "Version suivante",
-    "clarificationLabel": "En attente de votre réponse",
-    "clarificationPlaceholder": "Écrivez votre réponse…",
-    "reply": "Répondre",
     "saveAsNote": "Enregistrer comme note",
     "noteSaved": "Chat enregistré comme note dans Docs.",
     "noteSaveFailed": "Impossible d’enregistrer le chat comme note.",
     "noteQuestion": "Question",
     "noteAnswer": "Réponse de {agent}",
     "noteSource": "Chat avec {agent}, enregistré le {date}",
-    "waitingForRunner": "En attente de {agent} — son runner est hors ligne. La réponse commence dès son retour.",
     "restoreFailedTitle": "Impossible de charger cette discussion",
     "restoreFailed": "Ses messages n’ont pas pu être lus. Vérifiez la connexion et réessayez.",
     "retry": "Réessayer"
@@ -156,8 +151,7 @@
   },
   "newChat": {
     "title": "Nouvelle discussion avec {agent}",
-    "offlineHint": "Son runner n’est pas connecté pour le moment. Un message attend dans sa file et reçoit une réponse dès son retour.",
-    "pickAgent": "Choisir l’agent de cette discussion"
+    "hint": "Choisissez l’agent en bas à gauche du champ de saisie — son état y est affiché."
   },
   "agents": {
     "status": {
@@ -194,5 +188,10 @@
     "memory": "Ouvrir la mémoire de l’agent",
     "usage": "Afficher les jetons utilisés par cette discussion",
     "stop": "Arrêter la réponse"
+  },
+  "activity": {
+    "thinking": "{agent} réfléchit…",
+    "writing": "{agent} écrit…",
+    "queued": "En attente de {agent} — son runner est hors ligne. La réponse commence dès son retour."
   }
 }

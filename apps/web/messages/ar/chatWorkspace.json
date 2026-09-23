@@ -52,7 +52,6 @@
     "transcript": "الرسائل",
     "loadOlder": "تحميل رسائل أقدم",
     "loading": "جارٍ التحميل…",
-    "thinking": "يفكّر…",
     "reasoning": "التفكير",
     "reasoningLive": "يفكّر الآن…",
     "toolCalls": "{count, plural, zero {لا استدعاءات أدوات} one {استدعاء أداة واحد} two {استدعاءا أداتين} few {# استدعاءات أدوات} many {# استدعاء أداة} other {# استدعاء أداة}}",
@@ -65,16 +64,12 @@
     "regenerate": "إعادة التوليد",
     "previousVersion": "النسخة السابقة",
     "nextVersion": "النسخة التالية",
-    "clarificationLabel": "بانتظار ردّك",
-    "clarificationPlaceholder": "اكتب ردّك…",
-    "reply": "رد",
     "saveAsNote": "حفظ كملاحظة",
     "noteSaved": "حُفظت المحادثة كملاحظة في Docs.",
     "noteSaveFailed": "تعذّر حفظ المحادثة كملاحظة.",
     "noteQuestion": "السؤال",
     "noteAnswer": "إجابة {agent}",
     "noteSource": "محادثة مع {agent}، حُفظت في {date}",
-    "waitingForRunner": "بانتظار {agent} — المشغّل الخاص به غير متصل. تبدأ الإجابة فور عودته.",
     "restoreFailedTitle": "تعذّر تحميل هذه الدردشة",
     "restoreFailed": "تعذّرت قراءة رسائلها. تحقّق من الاتصال وحاول مرة أخرى.",
     "retry": "حاول مرة أخرى"
@@ -156,8 +151,7 @@
   },
   "newChat": {
     "title": "دردشة جديدة مع {agent}",
-    "offlineHint": "المشغّل الخاص به غير متصل الآن. تنتظر الرسالة في قائمة الانتظار ويُرد عليها فور عودته.",
-    "pickAgent": "اختر وكيل هذه الدردشة"
+    "hint": "اختر الوكيل أسفل يسار حقل الإدخال — وتظهر حالته هناك أيضًا."
   },
   "agents": {
     "status": {
@@ -194,5 +188,10 @@
     "memory": "فتح ذاكرة الوكيل",
     "usage": "عرض استهلاك الرموز في هذه الدردشة",
     "stop": "إيقاف الإجابة"
+  },
+  "activity": {
+    "thinking": "{agent} يفكّر…",
+    "writing": "{agent} يكتب…",
+    "queued": "بانتظار {agent} — المشغّل الخاص به غير متصل. تبدأ الإجابة فور عودته."
   }
 }

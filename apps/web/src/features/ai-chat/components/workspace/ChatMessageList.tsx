@@ -15,13 +15,16 @@ import {
 import InitialScrollToEnd from '@/components/common/agent-chat/InitialScrollToEnd';
 import type { PlanChat } from '../../hooks/usePlanChat';
 import type { Artifact } from '../../utils/artifacts';
+import type { PlanUIMessage } from '../../utils/chatMessages';
 import ChatMessageItem from './ChatMessageItem';
-import ChatInterruptedBar from './ChatInterruptedBar';
+
+// An answer that has nothing to show yet (no text, reasoning or tool call, no error).
+const isEmptyAnswer = (message: PlanUIMessage) =>
+  message.role === 'assistant' && message.parts.length === 0 && !message.metadata?.error;
 
 export interface ChatMessageListProps {
   plan: PlanChat;
   agent: AiAgent;
-  agentOnline: boolean;
   projectKey: string | null;
   threadId: string | null;
   onShowArtifact: (artifact: Artifact) => void;
@@ -31,12 +34,11 @@ export interface ChatMessageListProps {
 // newest message while the reader stays at the bottom, and stops the moment they
 // scroll up to read back, with a button to jump back down. Centered at a comfortable
 // reading width rather than filling the pane edge to edge, the way claude.ai reads.
-// Under the last turn, when an answer did not end the normal way, the bar that offers
-// to pick it up again (ChatInterruptedBar).
+// Only messages: an answer with nothing to show yet is left out, and what the answer is
+// doing is said at the composer (ChatComposerStatus).
 export default function ChatMessageList({
   plan,
   agent,
-  agentOnline,
   projectKey,
   threadId,
   onShowArtifact,
@@ -59,7 +61,7 @@ export default function ChatMessageList({
       <MessageScroller className="flex-1">
         <InitialScrollToEnd hasMessages={messages.length > 0} />
         <MessageScrollerViewport aria-label={t('messages.transcript')}>
-          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-6 px-4 pt-6 pb-10">
+          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-2 px-4 pt-6 pb-6">
             {plan.hasOlder && (
               <div className="flex justify-center">
                 <Button
@@ -72,29 +74,27 @@ export default function ChatMessageList({
                 </Button>
               </div>
             )}
-            {messages.map((message, index) => (
-              <MessageScrollerItem
-                key={message.id}
-                messageId={message.id}
-                scrollAnchor={message.role === 'user'}
-              >
-                <ChatMessageItem
-                  message={message}
-                  isLast={index === messages.length - 1}
-                  status={status}
-                  agent={agent}
-                  agentOnline={agentOnline}
-                  projectKey={projectKey}
-                  threadId={threadId}
-                  onRegenerate={() => void plan.regenerate(message.id)}
-                  onEdit={(text) => void plan.edit(index, text)}
-                  onReply={(text) => void plan.send(text, { agentId: agent.id })}
-                  onShowArtifact={onShowArtifact}
-                  onSwitchVersion={(messageId) => void plan.switchVersion(messageId)}
-                />
-              </MessageScrollerItem>
-            ))}
-            <ChatInterruptedBar plan={plan} agent={agent} />
+            {messages.map((message, index) =>
+              isEmptyAnswer(message) ? null : (
+                <MessageScrollerItem
+                  key={message.id}
+                  messageId={message.id}
+                  scrollAnchor={message.role === 'user'}
+                >
+                  <ChatMessageItem
+                    message={message}
+                    isLast={index === messages.length - 1}
+                    status={status}
+                    agent={agent}
+                    projectKey={projectKey}
+                    threadId={threadId}
+                    onEdit={(text) => void plan.edit(index, text)}
+                    onShowArtifact={onShowArtifact}
+                    onSwitchVersion={(messageId) => void plan.switchVersion(messageId)}
+                  />
+                </MessageScrollerItem>
+              ),
+            )}
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />

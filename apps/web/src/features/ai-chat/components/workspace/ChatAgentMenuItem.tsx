@@ -29,7 +29,7 @@ export default function ChatAgentMenuItem({
         name={agent.name}
         presence={state?.presence}
         runtime={state?.runtime ?? undefined}
-        className="size-6 text-3xl"
+        className="size-6 text-2xl"
       />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm">{agent.name}</div>

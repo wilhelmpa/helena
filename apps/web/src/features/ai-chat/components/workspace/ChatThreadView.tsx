@@ -13,6 +13,7 @@ import ChatMessageList from './ChatMessageList';
 import ChatComposer from './ChatComposer';
 import ChatNewChatIntro from './ChatNewChatIntro';
 import ChatRestoreError from './ChatRestoreError';
+import { composerActivity } from '../../utils/composerActivity';
 
 export interface ChatThreadViewProps {
   scopeKey: string;
@@ -24,6 +25,7 @@ export interface ChatThreadViewProps {
   // The text typed into a new chat so far, kept by the workspace across agent picks.
   newChatDraft: { current: string };
   onThreadCreated: (threadId: string) => void;
+  onThreadDeleted: (threadId: string) => void;
   onNewChat: (agentId: number) => void;
   onOpenList: () => void;
   compact: boolean;
@@ -33,12 +35,11 @@ export interface ChatThreadViewProps {
   hasArtifact: boolean;
 }
 
-// One open conversation: the header, the transcript (or, before the first message, who
-// the new chat is with) and the composer. Remounted (see the `key` ChatWorkspace gives
-// it) whenever the agent or the thread changes, so none of this has to reset its own
-// state by hand. The composer keeps its place in the tree between the new-chat layout
-// (centered, claude.ai-style) and the conversation (docked at the bottom), so what was
-// typed and the model picked survive the first send.
+// One open conversation: the header, the transcript (or, before the first message, a
+// quiet line saying who the new chat is with) and the composer at the bottom, which
+// also shows and steers the answer. Remounted (see the `key` ChatWorkspace gives it)
+// whenever the agent or the thread changes, so none of this has to reset its own state
+// by hand.
 export default function ChatThreadView({
   scopeKey,
   projectKey,
@@ -48,6 +49,7 @@ export default function ChatThreadView({
   threadId,
   newChatDraft,
   onThreadCreated,
+  onThreadDeleted,
   onNewChat,
   onOpenList,
   compact,
@@ -78,6 +80,7 @@ export default function ChatThreadView({
   });
   const state = states.get(agent.id);
   const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
+  const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -85,12 +88,11 @@ export default function ChatThreadView({
         scopeKey={scopeKey}
         projectKey={projectKey}
         agent={agent}
-        agents={agents}
-        states={states}
         threadId={threadId}
         messages={plan.messages}
         onOpenList={onOpenList}
         onNewChat={onNewChat}
+        onDeleted={onThreadDeleted}
         compact={compact}
         artifactOpen={artifactOpen}
         onToggleArtifact={onToggleArtifact}
@@ -99,12 +101,11 @@ export default function ChatThreadView({
       {plan.restoreFailed ? (
         <ChatRestoreError onRetry={() => void plan.retryRestore()} />
       ) : empty ? (
-        <ChatNewChatIntro agent={agent} agents={agents} states={states} onPick={onNewChat} />
+        <ChatNewChatIntro agent={agent} />
       ) : (
         <ChatMessageList
           plan={plan}
           agent={agent}
-          agentOnline={state?.online ?? true}
           projectKey={projectKey}
           threadId={threadId}
           onShowArtifact={onArtifact}
@@ -113,9 +114,11 @@ export default function ChatThreadView({
       <ChatComposer
         scopeKey={scopeKey}
         agent={agent}
+        agents={agents}
+        states={states}
+        activity={activity}
         threadId={threadId}
         projectKey={projectKey}
-        docked={!empty}
         draft={threadId == null ? newChatDraft : undefined}
         busy={plan.busy}
         model={model.model}
@@ -124,10 +127,13 @@ export default function ChatThreadView({
         onSend={(text, options, metadata) => void plan.send(text, options, metadata)}
         onStop={() => void plan.stop()}
         onNewChat={() => onNewChat(agent.id)}
+        onPickAgent={onNewChat}
         onRetryLast={() => void plan.regenerate()}
+        onReconnect={() => void plan.reconnect()}
+        onContinue={() => void plan.send(t('interrupted.continuePrompt'), { agentId: agent.id })}
+        onResend={() => void plan.retrySend()}
         onUndo={plan.undo}
       />
-      {empty && <div aria-hidden className="flex-1" />}
     </div>
   );
 }

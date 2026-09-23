@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import type { ChangeEvent, ClipboardEvent, DragEvent, KeyboardEvent } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowUp, Square } from 'lucide-react';
+import { ArrowUp, RefreshCw, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
@@ -18,20 +18,28 @@ import { useComposerCommands } from '../../hooks/useComposerCommands';
 import { fillPrompt, promptVariables } from '../../utils/promptVariables';
 import { CHAT_PROMPT_LIMIT, type PlanChatMetadata } from '../../utils/chatMessages';
 import type { PlanSendOptions } from '../../services/planChatTransport';
+import type { ChatAgentState } from '../../utils/agentPresence';
+import type { ComposerActivity } from '../../utils/composerActivity';
 import ChatComposerAttachments, { type PendingAttachment } from './ChatComposerAttachments';
 import ChatSlashMenu from './ChatSlashMenu';
 import ChatAttachPicker from './ChatAttachPicker';
 import ChatModelPicker from './ChatModelPicker';
 import ChatRenameDialog from './ChatRenameDialog';
 import ChatPromptVariablesDialog from './ChatPromptVariablesDialog';
+import ChatComposerStatus from './ChatComposerStatus';
+import ChatAgentMenu from './ChatAgentMenu';
 
 export interface ChatComposerProps {
   scopeKey: string;
   agent: AiAgent;
+  // Every agent a chat can be with, and how each is doing, for the picker at the
+  // composer's bottom left — picking another one starts a new chat with it.
+  agents: AiAgent[];
+  states: Map<number, ChatAgentState>;
+  // What the answer is doing, or how it ended (see composerActivity).
+  activity: ComposerActivity;
   threadId: string | null;
   projectKey: string | null;
-  // At the bottom of a conversation (a hairline above it), or centered in a new chat.
-  docked: boolean;
   // Where a new chat's text is kept while its agent is still being picked.
   draft?: { current: string };
   busy: boolean;
@@ -41,21 +49,30 @@ export interface ChatComposerProps {
   onSend: (text: string, options: PlanSendOptions, metadata: PlanChatMetadata) => void;
   onStop: () => void;
   onNewChat: () => void;
+  onPickAgent: (agentId: number) => void;
   onRetryLast: () => void;
+  onReconnect: () => void;
+  onContinue: () => void;
+  onResend: () => void;
   // Drops the last exchange from view and reports whether there was one (`/undo`).
   onUndo: () => boolean;
 }
 
-// The claude.ai-style composer, kept slim: an auto-sizing textarea, files dropped or
-// pasted into it landing in the vault, the `/` menu for Hermes' commands and the prompt
-// library, the model (and reasoning) picker, and a send button that turns into stop
-// while an answer is written. Enter sends, Shift+Enter breaks the line.
+// The claude.ai-style composer, kept slim — and the one place the conversation's state
+// is shown and steered (owner, 2026-09-24): its first line says what the answer is
+// doing ("Home is thinking …") or how it ended, with continue / reconnect / regenerate;
+// the send button turns into stop while an answer is written; the agent (with its
+// presence) and the model sit at its bottom left. Files dropped or pasted in land in
+// the vault; `/` opens Hermes' commands and the prompt library. Enter sends,
+// Shift+Enter breaks the line.
 export default function ChatComposer({
   scopeKey,
   agent,
+  agents,
+  states,
+  activity,
   threadId,
   projectKey,
-  docked,
   draft,
   busy,
   model,
@@ -64,7 +81,11 @@ export default function ChatComposer({
   onSend,
   onStop,
   onNewChat,
+  onPickAgent,
   onRetryLast,
+  onReconnect,
+  onContinue,
+  onResend,
   onUndo,
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
@@ -210,7 +231,7 @@ export default function ChatComposer({
 
   return (
     <div
-      className={cn('shrink-0 bg-background px-3 pt-2 pb-3', !docked && 'pb-2')}
+      className="shrink-0 bg-background px-3 pt-2 pb-3"
       onDragOver={(event) => {
         event.preventDefault();
         setDragOver(true);
@@ -236,6 +257,14 @@ export default function ChatComposer({
             dragOver && 'border-brand bg-brand-subtle/40',
           )}
         >
+          <ChatComposerStatus
+            activity={activity}
+            agentName={agent.name}
+            onReconnect={onReconnect}
+            onContinue={onContinue}
+            onRegenerate={onRetryLast}
+            onResend={onResend}
+          />
           <ChatComposerAttachments
             attachments={attachments}
             uploading={upload.isPending}
@@ -276,6 +305,7 @@ export default function ChatComposer({
                 event.target.value = '';
               }}
             />
+            <ChatAgentMenu agent={agent} agents={agents} states={states} onPick={onPickAgent} />
             <ChatModelPicker
               scopeKey={scopeKey}
               agentId={agent.id}
@@ -286,6 +316,19 @@ export default function ChatComposer({
               onOpenChange={setModelPickerOpen}
             />
             <div className="flex-1" />
+            {activity === 'answered' && !busy && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-8 text-muted-foreground hover:text-foreground"
+                onClick={onRetryLast}
+                aria-label={t('messages.regenerate')}
+                title={t('messages.regenerate')}
+              >
+                <RefreshCw className="size-4" />
+              </Button>
+            )}
             {busy ? (
               <Button
                 type="button"

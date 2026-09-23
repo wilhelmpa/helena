@@ -17,12 +17,19 @@ import ChatRenameDialog from './ChatRenameDialog';
 
 // The row's own actions: pin, rename, archive and delete — restore and purge instead,
 // in the trash. Kept out of the row's button so the row stays a single click target.
+//
+// The menu is not modal and the confirmation closes before the chat is moved: the row
+// (and everything it renders) leaves the list the moment the list refetches, and a
+// dialog torn down while open can leave the page blocked for clicks. `onRemoved` tells
+// the workspace a chat was deleted, so an open one closes instead of lingering.
 export default function ChatListItemMenu({
   chat,
   view,
+  onRemoved,
 }: {
   chat: ChatSummary;
   view: ChatListView;
+  onRemoved: (threadId: string) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const { pin, rename, archive, trash, purge, restore } = useChatListMutations();
@@ -31,7 +38,7 @@ export default function ChatListItemMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -95,8 +102,10 @@ export default function ChatListItemMenu({
           confirmLabel={t(view === 'trash' ? 'list.deleteForever' : 'list.delete')}
           onClose={() => setDeleting(false)}
           onConfirm={async () => {
-            await (view === 'trash' ? purge.mutateAsync(chat.id) : trash.mutateAsync(chat.id));
+            const threadId = chat.id;
             setDeleting(false);
+            await (view === 'trash' ? purge.mutateAsync(threadId) : trash.mutateAsync(threadId));
+            onRemoved(threadId);
           }}
         >
           <p className="text-sm text-muted-foreground">

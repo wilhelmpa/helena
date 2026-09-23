@@ -20,6 +20,7 @@ export default function ChatListPaneBody({
   onOpenChange,
   selectedThreadId,
   onSelectThread,
+  onThreadRemoved,
   onNewChat,
 }: ChatListPaneProps) {
   const t = useTranslations('chatWorkspace');
@@ -62,6 +63,7 @@ export default function ChatListPaneBody({
         q={term}
         selectedThreadId={selectedThreadId}
         onSelectThread={onSelectThread}
+        onThreadRemoved={onThreadRemoved}
       />
       {view === 'active' && (
         <div className="border-t border-sidebar-border p-2">
