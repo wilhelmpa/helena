@@ -361,7 +361,18 @@
     "secretHint": "قيمة السر بتوصل بس للـ runner بتاع الوكيل المفعّل عنده الخادم، وعمرها ما بتوصل للصفحة دي.",
     "missingSecret": "سر محذوف",
     "addValue": "إضافة",
-    "removeValue": "إزالة"
+    "removeValue": "إزالة",
+    "builtinBadge": "مدمج",
+    "builtin": {
+      "projekt-browser": {
+        "title": "متصفح المشروع",
+        "description": "يتحكم كل من Hermes وClaude Code وCodex في متصفح المشروع عبر بوابة مشتركة: تُملأ بيانات الدخول من صفحة «بيانات الدخول»، ولا تظهر كلمة مرور في السجلّ أبدًا."
+      },
+      "hermes-browser-legacy": {
+        "title": "متصفح Hermes الخاص (قديم)",
+        "description": "يعود إلى أداة متصفح CDP الخاصة بـ Hermes بدلاً من البوابة المشتركة."
+      }
+    }
   },
   "agents": {
     "newAgent": "وكيل ذكاء اصطناعي جديد",

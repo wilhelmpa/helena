@@ -361,7 +361,18 @@
     "secretHint": "El valor de un secreto solo llega al runner de un agente que tiene el servidor activado, nunca a esta página.",
     "missingSecret": "secreto eliminado",
     "addValue": "Añadir",
-    "removeValue": "Quitar"
+    "removeValue": "Quitar",
+    "builtinBadge": "Integrado",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Navegador del proyecto",
+        "description": "Hermes, Claude Code y Codex controlan el navegador del proyecto a través de una puerta de enlace compartida: los inicios de sesión provienen de Credenciales, y nunca aparece una contraseña en el historial."
+      },
+      "hermes-browser-legacy": {
+        "title": "Navegador propio de Hermes (antiguo)",
+        "description": "Recurre a la propia herramienta de navegador CDP de Hermes en lugar de la puerta de enlace compartida."
+      }
+    }
   },
   "agents": {
     "newAgent": "Nuevo agente de IA",

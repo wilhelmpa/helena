@@ -45,6 +45,16 @@ export const BrowserGatewaySettingsResponse = t.Object({
   lockTimeoutSec: t.Number(),
 });
 
+// Home's "Browser" overview (design §5, §8: "Home → Browser: Übersicht"). Every project
+// that could have a project browser, name and key only — the router that will serve the
+// live current URL, who controls it, and a thumbnail is still being built (see
+// docs/volition-design-browser-gateway.md §3, §5), so this carries no live fields yet.
+export const BrowserGatewayOverviewResponse = t.Object({
+  projects: t.Array(
+    t.Object({ projectId: t.Number(), projectKey: t.String(), projectName: t.String() }),
+  ),
+});
+
 export const updateBrowserGatewaySettingsBody = t.Object({
   domainBlocklist: t.Optional(DomainList),
   domainAllowlist: t.Optional(DomainList),

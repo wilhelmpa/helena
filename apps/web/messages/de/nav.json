@@ -134,5 +134,6 @@
     "dropUngrouped": "Hier ablegen, um das Projekt aus der Gruppe zu nehmen"
   },
   "agentActivity": "Aktivität",
-  "approvals": "Freigaben"
+  "approvals": "Freigaben",
+  "browser": "Browser"
 }

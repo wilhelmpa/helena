@@ -134,5 +134,6 @@
     "projectOptions": "Project options",
     "groupOptions": "Group options",
     "dropUngrouped": "Drop here to take the project out of its group"
-  }
+  },
+  "browser": "Browser"
 }

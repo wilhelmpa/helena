@@ -1,0 +1,11 @@
+{
+  "homeTitle": "Navegador",
+  "homeDescription": "Los navegadores de proyecto de todos los proyectos en los que trabajas: la página actual, quién tiene el control y una miniatura en vivo en cuanto el enrutador del navegador la proporcione.",
+  "empty": "Aún no hay navegadores de proyecto",
+  "emptyHint": "Un proyecto obtiene su propio navegador en cuanto un agente activa la herramienta «Navegador del proyecto».",
+  "noLiveImage": "Sin imagen en vivo todavía",
+  "noUrl": "Aún sin página actual",
+  "controlledByAgent": "{agentName} tiene el control",
+  "controlledByOwner": "Tienes el control",
+  "controlledByUnknown": "Control desconocido"
+}

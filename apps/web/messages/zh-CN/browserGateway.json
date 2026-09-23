@@ -1,0 +1,11 @@
+{
+  "homeTitle": "浏览器",
+  "homeDescription": "您参与的每个项目的项目浏览器:当前页面、谁在控制,以及浏览器路由就绪后的实时缩略图。",
+  "empty": "还没有项目浏览器",
+  "emptyHint": "一旦某个代理开启项目浏览器工具,项目就会拥有自己的浏览器。",
+  "noLiveImage": "暂无实时画面",
+  "noUrl": "暂无当前页面",
+  "controlledByAgent": "{agentName} 正在控制",
+  "controlledByOwner": "您正在控制",
+  "controlledByUnknown": "控制状态未知"
+}

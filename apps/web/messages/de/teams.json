@@ -361,7 +361,18 @@
     "secretHint": "Der Wert eines Secrets erreicht nur den Runner eines Agenten, für den der Server aktiviert ist, nie diese Seite.",
     "missingSecret": "gelöschtes Secret",
     "addValue": "Hinzufügen",
-    "removeValue": "Entfernen"
+    "removeValue": "Entfernen",
+    "builtinBadge": "Integriert",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Projekt-Browser",
+        "description": "Hermes, Claude Code und Codex steuern den Projekt-Browser über ein gemeinsames Gateway: Logins aus Zugänge, keine Passwörter im Verlauf."
+      },
+      "hermes-browser-legacy": {
+        "title": "Hermes-eigener Browser (alt)",
+        "description": "Fällt auf Hermes' eigenes CDP-Browser-Werkzeug zurück statt auf das Gateway."
+      }
+    }
   },
   "agents": {
     "newAgent": "Neuer KI-Agent",

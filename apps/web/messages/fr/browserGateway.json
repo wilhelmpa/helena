@@ -1,0 +1,11 @@
+{
+  "homeTitle": "Navigateur",
+  "homeDescription": "Les navigateurs de projet de tous les projets sur lesquels vous travaillez : la page actuelle, qui a le contrôle, et une vignette en direct dès que le routeur du navigateur la fournira.",
+  "empty": "Pas encore de navigateur de projet",
+  "emptyHint": "Un projet reçoit son propre navigateur dès qu'un agent active l'outil « Navigateur du projet ».",
+  "noLiveImage": "Pas encore d'image en direct",
+  "noUrl": "Pas encore de page actuelle",
+  "controlledByAgent": "{agentName} a le contrôle",
+  "controlledByOwner": "Vous avez le contrôle",
+  "controlledByUnknown": "Contrôle inconnu"
+}

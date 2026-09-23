@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import type { McpServer } from '@/lib/api/endpoints/agentMcpServers';
 import { Checkbox } from '@/components/ui/checkbox';
 import { teamSectionPath } from '@/utils/paths';
+import { builtinMcpServerSlug } from '../../utils/builtinMcpServers';
 import { TeamSettingState } from '../TeamSettingState';
 import { AgentEmptyNotice } from './AgentEmptyNotice';
 
@@ -22,6 +23,7 @@ export default function AgentLibraryMcpServers({
   onToggle: (id: number, on: boolean) => void;
 }) {
   const t = useTranslations('teams.agents');
+  const tMcp = useTranslations('teams.mcpServers');
 
   if (servers.length === 0) {
     return canEdit ? (
@@ -48,11 +50,18 @@ export default function AgentLibraryMcpServers({
       <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
         {servers.map((server) => {
           const on = selected.includes(server.id);
+          const builtinSlug = builtinMcpServerSlug(server);
+          const name = builtinSlug ? tMcp(`builtin.${builtinSlug}.title`) : server.name;
+          const description = builtinSlug
+            ? tMcp(`builtin.${builtinSlug}.description`)
+            : server.description;
           const label = (
             <span className="min-w-0">
-              <span className="font-mono text-[13px]">{server.name}</span>
-              {server.description && (
-                <span className="block text-xs text-muted-foreground">{server.description}</span>
+              <span className={builtinSlug ? 'text-[13px] font-medium' : 'font-mono text-[13px]'}>
+                {name}
+              </span>
+              {description && (
+                <span className="block text-xs text-muted-foreground">{description}</span>
               )}
             </span>
           );

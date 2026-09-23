@@ -1,0 +1,11 @@
+{
+  "homeTitle": "Browser",
+  "homeDescription": "The project browsers of every project you work in: the current tab, who is in control, and a live thumbnail once the browser router serves it.",
+  "empty": "No project browsers yet",
+  "emptyHint": "A project gets its own browser once an agent's \"Project browser\" tool is turned on.",
+  "noLiveImage": "No live image yet",
+  "noUrl": "No current page yet",
+  "controlledByAgent": "{agentName} is in control",
+  "controlledByOwner": "You are in control",
+  "controlledByUnknown": "Control unknown"
+}

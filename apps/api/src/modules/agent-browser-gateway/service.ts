@@ -4,6 +4,7 @@ import { db, project, projectSetting } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
+import { listProjects } from '#modules/projects/service';
 import {
   BROWSER_GATEWAY_MCP_SERVER_NAME,
   agentMcpServerIds,
@@ -141,4 +142,18 @@ export async function browserGatewayEnabledForAgent(
   ]);
   const server = servers.find((row) => row.name === BROWSER_GATEWAY_MCP_SERVER_NAME);
   return server !== undefined && enabledIds.includes(server.id);
+}
+
+// Home's "Browser" overview (design §5, §8): every project the caller is a member of, as
+// a project could always get a browser gateway. Reuses the projects module's own listing
+// rather than a second query, so the set of "eligible" projects is one definition — a
+// project template is a separate `project_template` row, never a `project` row, so it is
+// never in this list to begin with. No live state (current URL, who controls it, a
+// thumbnail): the router that will serve that is still being built (see model.ts,
+// BrowserGatewayOverviewResponse).
+export async function listBrowserGatewayOverview(
+  userId: string,
+): Promise<{ projectId: number; projectKey: string; projectName: string }[]> {
+  const rows = await listProjects(userId);
+  return rows.map((row) => ({ projectId: row.id, projectKey: row.key, projectName: row.name }));
 }

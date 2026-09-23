@@ -635,5 +635,22 @@
     "propertiesHint": "Appliquées à la création du ticket, et modifiables avant.",
     "emptyTitle": "Aucun modèle pour l'instant",
     "emptyDescription": "Un modèle remplit un nouveau ticket avec un titre, une description et des propriétés."
+  },
+  "browser": {
+    "accessTitle": "Domaines",
+    "accessHint": "Contrôle les domaines que le navigateur du projet des agents peut ouvrir. Un domaine couvre aussi ses sous-domaines.",
+    "blocklistLabel": "Liste de domaines bloqués",
+    "blocklistHint": "Ces domaines restent bloqués même s'ils figurent dans la liste autorisée.",
+    "allowlistLabel": "Liste autorisée",
+    "allowlistHint": "Vide, elle autorise tout domaine sauf ceux bloqués. Non vide, elle autorise uniquement ces domaines (par exemple en laissant les sites bancaires bloqués).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "exemple.com",
+    "removeDomain": "Retirer {domain}",
+    "behaviorTitle": "Comportement",
+    "humanInputLabel": "Saisie de type humain",
+    "humanInputHint": "Tape et clique avec des pauses de type humain plutôt qu'à vitesse maximale. À désactiver uniquement pour un projet de test à faible risque.",
+    "lockTimeoutLabel": "Délai du verrou",
+    "lockTimeoutHint": "Passé ce nombre de secondes sans action, le contrôle du navigateur par un agent est libéré automatiquement.",
+    "seconds": "secondes"
   }
 }

@@ -1,13 +1,19 @@
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
-import { accessErrors, commonErrors } from '#shared/responses';
+import { requireUser } from '#shared/access';
+import { accessErrors, commonErrors, errors } from '#shared/responses';
 import {
+  BrowserGatewayOverviewResponse,
   BrowserGatewaySettingsResponse,
   browserGatewayProjectParams,
   updateBrowserGatewaySettingsBody,
 } from './model';
-import { getBrowserGatewaySettings, setBrowserGatewaySettings } from './service';
+import {
+  getBrowserGatewaySettings,
+  listBrowserGatewayOverview,
+  setBrowserGatewaySettings,
+} from './service';
 import { listBrowserGatewayEvents } from './events';
 
 // A project's browser gateway settings (design §8: "Projekt → Einstellungen → Browser") and
@@ -20,6 +26,20 @@ export const agentBrowserGatewayRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
+  .get(
+    '/browser-gateway/overview',
+    async ({ user }) => ({ projects: await listBrowserGatewayOverview(requireUser(user).id) }),
+    {
+      response: { 200: BrowserGatewayOverviewResponse, ...errors(401) },
+      detail: {
+        summary: 'List the projects with a project browser',
+        description:
+          'Every project you are a member of, for the Home "Browser" overview (design §5). No ' +
+          'live state yet — the router that will serve the current URL, who controls it, and a ' +
+          'thumbnail is still being built.',
+      },
+    },
+  )
   .get(
     '/projects/:projectKey/settings/browser-gateway',
     ({ project }) => getBrowserGatewaySettings(project.id),

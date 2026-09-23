@@ -69,6 +69,8 @@ export const globalInboxPath = () => '/inbox';
 export const globalAgentActivityPath = () => '/activity';
 export const approvalsPath = () => '/approvals';
 export const schedulesPath = () => '/schedules';
+// Home's "Browser" overview (design §5: a tile per project browser).
+export const browserOverviewPath = () => '/browser';
 
 // The workflow builder: the team's library of templates in Home and the editor of one
 // template, and the editor of a project's own workflow.

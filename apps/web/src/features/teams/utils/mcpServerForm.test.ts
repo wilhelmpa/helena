@@ -116,6 +116,7 @@ describe('MCP server form', () => {
         { name: 'GONE', value: null, credentialId: 4, credentialLabel: null },
       ],
       headers: [],
+      builtin: false,
       createdAt: '2026-09-23T00:00:00.000Z',
     };
     const value = mcpServerValue(server);

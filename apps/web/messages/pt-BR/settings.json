@@ -635,5 +635,22 @@
     "propertiesHint": "Aplicadas quando a issue é criada, e editáveis antes disso.",
     "emptyTitle": "Nenhum modelo ainda",
     "emptyDescription": "Um modelo preenche uma nova issue com título, descrição e propriedades."
+  },
+  "browser": {
+    "accessTitle": "Domínios",
+    "accessHint": "Controla quais domínios o navegador do projeto dos agentes pode abrir. Um domínio também cobre seus subdomínios.",
+    "blocklistLabel": "Lista de bloqueio de domínios",
+    "blocklistHint": "Esses domínios permanecem bloqueados mesmo que estejam na lista de permissões.",
+    "allowlistLabel": "Lista de permissões",
+    "allowlistHint": "Vazia permite qualquer domínio, exceto os bloqueados. Não vazia permite apenas esses domínios (por exemplo, mantendo bancos bloqueados).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "exemplo.com",
+    "removeDomain": "Remover {domain}",
+    "behaviorTitle": "Comportamento",
+    "humanInputLabel": "Entrada humanizada",
+    "humanInputHint": "Digita e clica com pausas humanizadas em vez de no máximo de velocidade. Desative apenas em um projeto de teste de baixo risco.",
+    "lockTimeoutLabel": "Tempo limite do bloqueio",
+    "lockTimeoutHint": "Após esse número de segundos sem ação, o controle do navegador por um agente é liberado automaticamente.",
+    "seconds": "segundos"
   }
 }

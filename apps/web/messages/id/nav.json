@@ -134,5 +134,6 @@
     "projectOptions": "Opsi proyek",
     "groupOptions": "Opsi grup",
     "dropUngrouped": "Lepaskan di sini untuk mengeluarkan proyek dari grupnya"
-  }
+  },
+  "browser": "Browser"
 }
