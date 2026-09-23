@@ -7,7 +7,8 @@ import { readFileSync } from 'node:fs';
 // service reads the same file as User=wilhelmpa -- both are members of the
 // `volition` group already (see deployment/.../90-wilhelmpa and the group check
 // in the setup script), so no new group is needed for this alone.
-const KEY_PATH = process.env.OWNER_TERMINAL_KEY_PATH ?? '/etc/volition/owner-terminal.key';
+// Read when the first token is minted, not at import, so a test can point it at its own key.
+const keyPath = () => process.env.OWNER_TERMINAL_KEY_PATH ?? '/etc/volition/owner-terminal.key';
 
 // Matches the router: a 60-second window is long enough for one request/reconnect
 // round trip and short enough that a captured token is worthless a minute later.
@@ -15,7 +16,7 @@ const TOKEN_TTL_SEC = 60;
 
 let cachedKey: string | null = null;
 function key(): string {
-  if (cachedKey === null) cachedKey = readFileSync(KEY_PATH, 'utf8').trim();
+  if (cachedKey === null) cachedKey = readFileSync(keyPath(), 'utf8').trim();
   return cachedKey;
 }
 

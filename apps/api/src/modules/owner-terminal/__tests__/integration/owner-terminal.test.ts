@@ -1,10 +1,19 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { auth } from '@repo/auth';
 import { db, ownerTerminalAudit } from '@repo/db';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
+
+// The proxy token is signed with the key setup.sh writes on a real host; the test signs
+// with a key of its own instead of depending on the host having one.
+const keyFile = join(mkdtempSync(join(tmpdir(), 'owner-terminal-')), 'key');
+writeFileSync(keyFile, randomBytes(32).toString('hex'));
+process.env.OWNER_TERMINAL_KEY_PATH = keyFile;
 
 const ORIGIN = { origin: 'http://localhost:3001' };
 
