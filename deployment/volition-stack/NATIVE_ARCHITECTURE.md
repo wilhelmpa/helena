@@ -124,9 +124,11 @@ instance preserves its profile directory.
 The project coordinator receives the matching `BROWSER_CDP_URL`. In Browser Use mode,
 `browser_exec` should use `session="project"` to keep its tab visible in Plan's Browser panel
 between calls. The generated project instructions specify this session.
-The container-era browser paths and units under `deployment/volition-stack/browser/` are
-legacy references. Kingston uses `/var/lib/volition/project-browser/projects/<slug>` and
-the native units under `deployment/volition-stack/native/systemd/`.
+`deployment/volition-stack/browser/` holds the loopback router
+(`/usr/local/libexec/volition-project-browser-router.mjs`) and the display wait helper
+(`/usr/local/libexec/volition-wait-for-x`). The KasmVNC and Chromium units are in
+`deployment/volition-stack/native/systemd/`, and the state is in
+`/var/lib/volition/project-browser/projects/<slug>`.
 
 ## Security invariants
 

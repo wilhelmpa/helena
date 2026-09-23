@@ -163,17 +163,10 @@ describe("project browser provisioning", () => {
           args.join(" ").includes("stop volition-project-browser-chromium@demo.service"),
       ),
     );
-    for (const legacyUnit of ["xvfb", "vnc", "novnc"]) {
-      assert.ok(
-        calls.some(({ args }) =>
-          args.join(" ").includes(`stop volition-project-browser-${legacyUnit}@demo.service`),
-        ),
-      );
-    }
     assert.equal(await deprovision({ id: 7 }, "demo", quarantineRoot), destination);
   });
 
-  it("tolerates absent legacy units but surfaces actual systemd failures", async () => {
+  it("tolerates an absent unit but surfaces actual systemd failures", async () => {
     const browserConfig = config();
     const ensure = createProjectBrowserProvisioner(browserConfig, {
       execute,
@@ -182,7 +175,7 @@ describe("project browser provisioning", () => {
     await ensure({ id: 7 }, "demo");
     const deprovision = createProjectBrowserDeprovisioner(browserConfig, {
       execute: async (file, args) => {
-        if (args.at(-1).includes("-xvfb@")) {
+        if (args.at(-1).includes("-chromium@")) {
           const error = new Error("Unit could not be found");
           error.stderr = "Unit not found";
           throw error;

@@ -158,10 +158,6 @@ async function stopProjectBrowserUnits(config, execute, slug) {
     `volition-project-browser@${slug}.target`,
     `volition-project-browser-chromium@${slug}.service`,
     `volition-project-browser-kasm@${slug}.service`,
-    // Cleanup compatibility for project browsers created before KasmVNC.
-    `volition-project-browser-xvfb@${slug}.service`,
-    `volition-project-browser-vnc@${slug}.service`,
-    `volition-project-browser-novnc@${slug}.service`,
   ];
   for (const unit of units) {
     try {

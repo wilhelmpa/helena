@@ -32,7 +32,7 @@ export async function loadArtifactConfig(env = process.env) {
     nextcloudUser: env.NEXTCLOUD_USER,
     nextcloudPassword: await credential(env.NEXTCLOUD_APP_PASSWORD_FILE, "NEXTCLOUD_APP_PASSWORD_FILE"),
     filesUrl: url(env.FILES_PUBLIC_URL, "FILES_PUBLIC_URL"),
-    artifactSyncStatePath: env.ARTIFACT_SYNC_STATE_PATH || "/home/pw/services/volition-workspaces/.state/integration/artifact-sync.json",
+    artifactSyncStatePath: env.ARTIFACT_SYNC_STATE_PATH || "/var/lib/volition/provisioning/integration/artifact-sync.json",
   };
 }
 

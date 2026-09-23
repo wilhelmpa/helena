@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-runtime=/home/pw/services/volition-stack/browser/runtime/vendor
-export LD_LIBRARY_PATH="$runtime/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$runtime/usr/bin/x11vnc" "$@"

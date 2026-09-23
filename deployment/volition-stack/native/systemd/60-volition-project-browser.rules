@@ -5,6 +5,6 @@ polkit.addRule(function(action, subject) {
   var verb = action.lookup("verb") || "";
   if (!/^(start|stop|restart)$/.test(verb)) return;
   if (unit === "volition-hermes-runner.service") return polkit.Result.YES;
-  if (/^volition-project-browser-(kasm|chromium|xvfb|vnc|novnc)@[a-z0-9][a-z0-9-]{0,31}\.service$/.test(unit)) return polkit.Result.YES;
+  if (/^volition-project-browser-(kasm|chromium)@[a-z0-9][a-z0-9-]{0,31}\.service$/.test(unit)) return polkit.Result.YES;
   if (/^volition-project-browser@[a-z0-9][a-z0-9-]{0,31}\.target$/.test(unit)) return polkit.Result.YES;
 });

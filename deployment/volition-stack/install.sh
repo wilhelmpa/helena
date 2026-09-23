@@ -6,7 +6,6 @@ PLAN_ROOT="${PLAN_ROOT:-/home/pw/services/itsaplan}"
 STACK_ROOT="${STACK_ROOT:-/home/pw/services/volition-stack}"
 HERMES_ROOT="${HERMES_ROOT:-/home/pw/services/hermes-agent}"
 HERMES_HOME="${HERMES_HOME:-$STACK_ROOT/data/hermes}"
-BROWSER_PACKAGE_ROOT="${BROWSER_PACKAGE_ROOT:-/home/pw/services/volition-browser}"
 UNIT_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 HERMES_REMOTE="https://github.com/NousResearch/hermes-agent.git"
 HERMES_COMMIT="836b5f8253d27fee79b4f833bc43624f06a890b3"
@@ -72,8 +71,6 @@ for path in \
   "$PLAN_ROOT/deployment/volition-stack/integration/systemd/volition-hermes-bootstrap.service" \
   "$PLAN_ROOT/deployment/volition-stack/integration/systemd/volition-hermes-bootstrap.timer" \
   "$PLAN_ROOT/deployment/volition-stack/integration/systemd/volition-provisioning.service" \
-  "$PLAN_ROOT/deployment/volition-stack/browser/install.sh" \
-  "$PLAN_ROOT/deployment/volition-stack/browser/project-router.mjs" \
   "$PLAN_ROOT/.env" \
   "$STACK_ROOT/.env" \
   "$STACK_ROOT/config/gateway.json"; do
@@ -329,14 +326,6 @@ ensure_foundations() {
   done
 }
 
-install_browser_assets() {
-  local installer="$PLAN_ROOT/deployment/volition-stack/browser/install.sh"
-  run env \
-    BROWSER_PACKAGE_ROOT="$BROWSER_PACKAGE_ROOT" \
-    BROWSER_LIVE_ROOT="$STACK_ROOT/browser" \
-    "$installer"
-}
-
 build_runner() {
   local image
   if "$DRY_RUN"; then
@@ -371,10 +360,8 @@ run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.vault.y
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/optional/mastra-studio/compose.yml" up -d --wait
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.gateway.yml" up -d --wait
 run loginctl enable-linger "$USER"
-install_browser_assets
 run systemctl --user daemon-reload
 run systemctl --user enable --now volition-provisioning.service
-run systemctl --user enable --now volition-project-browser-router.service
 run systemctl --user enable --now volition-hermes-bootstrap.timer
 run systemctl --user start volition-hermes-bootstrap.service
 
