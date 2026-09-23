@@ -1,3 +1,5 @@
+import { setTimeout as sleep } from 'node:timers/promises';
+
 const IDEMPOTENCY = /^[a-f0-9]{64}$/;
 const REFERENCE = /^[a-z][a-z0-9._-]*:[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
@@ -187,10 +189,13 @@ function stageResult(stage, run, output) {
 }
 
 export function createHermesTeamService(plan, options = {}) {
-  const wait = options.wait ?? (milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)));
+  const wait = options.wait ?? ((milliseconds, signal) => sleep(milliseconds, undefined, { signal }).catch(() => {}));
   const now = options.now ?? (() => Date.now());
   return {
-    async executeStage(input) {
+    // `signal` is aborted when Mastra stops waiting for the stage, which it does when its
+    // workflow run is canceled. The Plan run is canceled then, so no runner executes a
+    // stage whose result nobody reads.
+    async executeStage(input, signal) {
       const stage = validateStage(input);
       const queued = await plan.enqueue({
         idempotencyKey: stage.idempotencyKey,
@@ -203,11 +208,15 @@ export function createHermesTeamService(plan, options = {}) {
       });
       const deadline = now() + stage.timeoutSeconds * 1_000;
       while (now() < deadline) {
+        if (signal?.aborted) {
+          await plan.cancel({ runId: queued.runId, projectRef: stage.projectRef });
+          throw new HermesTeamError(499, 'stage_canceled', 'The execution stage was canceled');
+        }
         const run = await plan.status({ runId: queued.runId, projectRef: stage.projectRef });
         if (run.status === 'success') return stageResult(stage, run, run.output);
         if (run.status === 'failed' || run.status === 'canceled')
           throw new HermesTeamError(502, 'hermes_run_failed', 'Hermes could not complete the execution stage');
-        await wait(Math.min(2_000, Math.max(100, deadline - now())));
+        await wait(Math.min(2_000, Math.max(100, deadline - now())), signal);
       }
       throw new HermesTeamError(504, 'hermes_run_timeout', 'Hermes execution stage timed out');
     },

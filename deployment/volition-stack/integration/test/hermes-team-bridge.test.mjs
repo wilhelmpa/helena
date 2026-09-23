@@ -156,6 +156,30 @@ test('recovery retries the same idempotency key after a bridge interruption', as
   assert.deepEqual(enqueued, [KEY, KEY]);
 });
 
+test('a stage Mastra stops waiting for cancels its Plan run and stops polling', async () => {
+  const mastra = new AbortController();
+  const canceled = [];
+  let statusCalls = 0;
+  const service = createHermesTeamService({
+    enqueue: async () => ({ runId: 43, replayed: false }),
+    status: async () => {
+      statusCalls += 1;
+      mastra.abort();
+      return { runId: 43, status: 'pending' };
+    },
+    cancel: async input => {
+      canceled.push(input);
+      return { runId: 43, status: 'canceled' };
+    },
+  });
+  await assert.rejects(
+    () => service.executeStage(baseStage, mastra.signal),
+    error => error instanceof HermesTeamError && error.code === 'stage_canceled',
+  );
+  assert.equal(statusCalls, 1);
+  assert.deepEqual(canceled, [{ runId: 43, projectRef: 'project:VERV' }]);
+});
+
 test('synchronization is project-bound and safely replays the same idempotency key', async () => {
   const calls = [];
   const service = createHermesTeamService({
@@ -185,8 +209,12 @@ test('synchronization is project-bound and safely replays the same idempotency k
 });
 
 test('HTTP bridge requires the private bearer and preserves the stage contract', async () => {
+  let stageSignal;
   const service = {
-    executeStage: async value => ({ executionId: 'plan-run:1', idempotencyKey: value.idempotencyKey }),
+    executeStage: async (value, signal) => {
+      stageSignal = signal;
+      return { executionId: 'plan-run:1', idempotencyKey: value.idempotencyKey };
+    },
     synchronize: async value => ({ idempotencyKey: value.idempotencyKey, synchronizedAt: '2026-09-23T10:00:00.000Z' }),
   };
   server = http.createServer(createHermesTeamHandler({ bridgeToken: TOKEN, planToken: TOKEN }, service));
@@ -205,4 +233,35 @@ test('HTTP bridge requires the private bearer and preserves the stage contract',
   });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { executionId: 'plan-run:1', idempotencyKey: KEY });
+  assert.equal(stageSignal.aborted, false);
+});
+
+test('HTTP bridge aborts a stage when Mastra closes the connection before the answer', { timeout: 5_000 }, async () => {
+  let started;
+  const waiting = new Promise(resolve => { started = resolve; });
+  let aborted;
+  const abandoned = new Promise(resolve => { aborted = resolve; });
+  const service = {
+    executeStage: (value, signal) => new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => {
+        aborted();
+        reject(new HermesTeamError(499, 'stage_canceled', 'canceled'));
+      });
+      started();
+    }),
+    synchronize: async () => ({}),
+  };
+  server = http.createServer(createHermesTeamHandler({ bridgeToken: TOKEN, planToken: TOKEN }, service));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const mastra = new AbortController();
+  const request = fetch(`http://127.0.0.1:${server.address().port}/internal/hermes/team/stages`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify(baseStage),
+    signal: mastra.signal,
+  });
+  await waiting;
+  mastra.abort();
+  await assert.rejects(request);
+  await abandoned;
 });

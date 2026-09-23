@@ -65,6 +65,7 @@ test('bounded exponential backoff preserves attempts for an idempotent operation
       if (attempt < 3) throw new Error('retry');
       return 'ok';
     },
+    undefined,
     async (milliseconds) => {
       waits.push(milliseconds);
     },
@@ -72,6 +73,24 @@ test('bounded exponential backoff preserves attempts for an idempotent operation
   assert.equal(result, 'ok');
   assert.deepEqual(attempts, [1, 2, 3]);
   assert.deepEqual(waits, [10, 20]);
+});
+
+test('an aborted signal ends the backoff wait and stops further attempts', async () => {
+  const canceled = new AbortController();
+  const attempts: number[] = [];
+  await assert.rejects(
+    withBackoff(
+      { maxAttempts: 3, initialBackoffMs: 60_000, maxBackoffMs: 60_000, backoffMultiplier: 2 },
+      async (attempt) => {
+        attempts.push(attempt);
+        canceled.abort();
+        throw new Error('the request was aborted');
+      },
+      canceled.signal,
+    ),
+    { name: 'AbortError' },
+  );
+  assert.deepEqual(attempts, [1]);
 });
 
 test('external effects suspend, then resume without executing them', async () => {

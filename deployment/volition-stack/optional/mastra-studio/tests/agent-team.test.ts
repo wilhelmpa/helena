@@ -298,6 +298,35 @@ test('dependent assignments run after their dependencies and receive their resul
   assert.equal(independent?.dependencyResults, undefined);
 });
 
+// The step retries of Mastra call the adapter again with the aborted signal, which the
+// real adapter refuses without a request.
+test('canceling the run aborts the Hermes stage it waits for', { timeout: 10_000 }, async () => {
+  let started: () => void = () => {};
+  const waiting = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const signals: (AbortSignal | undefined)[] = [];
+  const adapter: HermesTeamAdapter = {
+    executeStage: (_request, signal) =>
+      new Promise((_resolve, reject) => {
+        signals.push(signal);
+        started();
+        if (signal?.aborted) reject(signal.reason);
+        signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+      }),
+    synchronizePlan: async () => {
+      throw new Error('unexpected Plan call');
+    },
+  };
+  const workflowRun = await buildAgentTeamWorkflow(adapter).createRun();
+  const result = workflowRun.start({ inputData: envelope(false, payload()) });
+  await waiting;
+  await workflowRun.cancel();
+  assert.equal((await result).status, 'canceled');
+  assert.ok(signals.length > 0);
+  assert.ok(signals.every((signal) => signal?.aborted));
+});
+
 test('a dependency cycle from the coordinator stops the run before specialist work', async () => {
   const recorder = recordingAdapter({
     delegations: [
