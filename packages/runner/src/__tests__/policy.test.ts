@@ -484,7 +484,7 @@ describe('Hermes runtime policy synchronizer', () => {
       { profile },
     );
 
-    expect(await sync.runSettings()).toEqual({ toolsets: null, env: {} });
+    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web', 'itsaplan'], env: {} });
     await sync.ensure();
     const settings = {
       toolsets: ['file', 'itsaplan', 'jev-browser'],
@@ -505,7 +505,7 @@ describe('Hermes runtime policy synchronizer', () => {
 
     // Without servers there is nothing to read from Plan.
     await sync.ensure();
-    expect(await sync.runSettings()).toEqual({ toolsets: null, env: {} });
+    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web', 'itsaplan'], env: {} });
   });
 });
 
