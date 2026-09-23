@@ -335,7 +335,6 @@
   transition-duration: var(--default-transition-duration);
 }
 [data-sidebar='menu-button'][data-size='default'] {
-  height: 1.875rem;
   font-size: 0.8125rem;
 }
 [data-sidebar='menu-sub-button'][data-size='md'] {
@@ -378,7 +377,7 @@ html [data-sonner-toaster][data-sonner-theme] {
   --error-border: color-mix(in oklab, var(--destructive) 22%, var(--popover));
   --error-text: var(--destructive);
 }
-html [data-sonner-toast][data-styled='true'] {
+html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   box-shadow: var(--overlay-shadow);
 }
 
