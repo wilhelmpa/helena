@@ -30,20 +30,44 @@ function nal(type, refIdc = 3, extra = []) {
 }
 
 describe("quality tiers", () => {
-  it("picks the best tier a fresh connection's numbers afford", () => {
-    assert.equal(TIERS[chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0 })].name, "high");
-    assert.equal(TIERS[chooseTier({ downlinkKbps: 2000, rttMs: 40, bufferedBytes: 0 })].name, "medium");
-    assert.equal(TIERS[chooseTier({ downlinkKbps: 100, rttMs: 300, bufferedBytes: 0 })].name, "low");
-    // No measurement yet reads as the worst connection, so a fresh viewer starts safely.
-    assert.equal(TIERS[chooseTier({ downlinkKbps: 0, rttMs: 0, bufferedBytes: 0 })].name, "low");
+  it("starts a fresh viewer on a safe middle tier before its first real measurement", () => {
+    // Not "low": that would make a fast connection wait out several rises for no reason.
+    // Not "high": that would risk a burst of frames a slow connection cannot drain, before
+    // its first ping and stats report arrive to say so.
+    assert.equal(TIERS[chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0 }, null)].name, "medium");
+    assert.equal(TIERS[chooseTier({ downlinkKbps: 0, rttMs: 0, bufferedBytes: 0 })].name, "medium");
+  });
+
+  it("sets the ceiling from the round trip alone while the socket has no backlog", () => {
+    const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
+    // A quiet page sends little regardless of tier; a low downlink reading alone must not
+    // hold a fast, idle connection back from rising.
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 5, rttMs: 20, bufferedBytes: 0 }, mediumIndex)].name,
+      "high",
+    );
+    // A genuinely slow round trip still rules a tier out on its own.
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 5, rttMs: 400, bufferedBytes: 0 }, mediumIndex)].name,
+      "low",
+    );
+  });
+
+  it("holds a low downlink against a tier once the socket has some backlog", () => {
+    const highIndex = TIERS.findIndex((tier) => tier.name === "high");
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 100, rttMs: 20, bufferedBytes: 300_000 }, highIndex)].name,
+      "low",
+    );
   });
 
   it("rises one tier at a time but drops as far as the numbers call for", () => {
     const lowIndex = TIERS.findIndex((tier) => tier.name === "low");
+    const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
     const highIndex = TIERS.findIndex((tier) => tier.name === "high");
     // A connection now good enough for "high" only rises to "medium" from "low".
     const risen = chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0 }, lowIndex);
-    assert.equal(TIERS[risen].name, "medium");
+    assert.equal(risen, mediumIndex);
     // From "medium", the same good numbers reach "high" next.
     assert.equal(chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0 }, risen), highIndex);
     // A stall drops straight to the worst tier, not one step at a time.

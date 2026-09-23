@@ -21,34 +21,47 @@ export const TIERS = [
   { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 1, threads: 1 },
 ];
 
-// The downlink and round trip a tier needs, and the socket backlog that always counts as
-// congested no matter what a viewer last reported: bufferedBytes grows only when the socket
-// cannot drain as fast as frames arrive, so it outranks a stale measurement.
+// The round trip a tier needs, and the downlink it needs once throughput is informative at
+// all (see chooseTier). A socket backlog past CONGESTED_BYTES always means the worst tier, no
+// matter what a viewer last reported: it grows only when the socket cannot drain as fast as
+// frames arrive, so it outranks a stale measurement; past the smaller BACKLOG_BYTES, a little
+// is building up, which is when a low measured downlink is taken at face value.
 const DOWNLINK_KBPS = { high: 4000, medium: 1200, low: 0 };
 const RTT_MS = { high: 60, medium: 250, low: Infinity };
 const CONGESTED_BYTES = 2 * 1024 * 1024;
+const BACKLOG_BYTES = 256 * 1024;
 
 // The tier a viewer's connection affords, given its last measurement and the tier index it is
-// on now (null for a viewer joining fresh). A tier drops as far as the numbers call for right
-// away, so a stall recovers quickly, but rises only one step at a time, so a connection that
-// looks better for one sample does not swing the picture straight to the heaviest tier; a
-// fresh viewer instead starts directly on the best tier it affords.
+// on now (null for a viewer joining fresh, which starts on a safe middle tier before its
+// first real measurement arrives, rather than reading its unmeasured zeros as either extreme).
+// A tier drops as far as the numbers call for right away, so a stall recovers quickly, but
+// rises only one step at a time, so a connection that looks better for one sample does not
+// swing the picture straight to the heaviest tier.
+//
+// The round trip alone sets the ceiling ordinarily: a live H.264 stream's own bitrate swings
+// hugely with how much the page is changing, so a quiet page legitimately sends little without
+// that meaning the connection is slow, and holding a low measured downlink against it would
+// leave a fast connection stuck on a low tier it long since outgrew. Downlink only lowers that
+// ceiling once the socket has a little backlog: that is the point a low number stops being
+// "nothing to send" and starts being "cannot send it fast enough".
 export function chooseTier(measurement, currentIndex = null) {
+  if (currentIndex === null || currentIndex === undefined) {
+    return TIERS.findIndex((tier) => tier.name === "medium");
+  }
   const { downlinkKbps = 0, rttMs = 0, bufferedBytes = 0 } = measurement;
+  if (bufferedBytes > CONGESTED_BYTES) return TIERS.length - 1;
+  const throughputMatters = bufferedBytes > BACKLOG_BYTES;
   let affordable = TIERS.length - 1;
   for (let index = 0; index < TIERS.length; index++) {
     const tier = TIERS[index];
-    if (downlinkKbps >= DOWNLINK_KBPS[tier.name] && rttMs <= RTT_MS[tier.name]) {
+    if (rttMs <= RTT_MS[tier.name] && (!throughputMatters || downlinkKbps >= DOWNLINK_KBPS[tier.name])) {
       affordable = index;
       break;
     }
   }
-  if (bufferedBytes > CONGESTED_BYTES) affordable = TIERS.length - 1;
   // A lower index is a better tier. Dropping to a worse or equal one (a higher or same index)
   // applies at once; rising to a better one (a lower index) moves at most one step closer.
-  if (currentIndex === null || currentIndex === undefined || affordable >= currentIndex) {
-    return affordable;
-  }
+  if (affordable >= currentIndex) return affordable;
   return Math.max(affordable, currentIndex - 1);
 }
 
