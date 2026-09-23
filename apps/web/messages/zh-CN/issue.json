@@ -226,7 +226,8 @@
     "edited": "已编辑",
     "deleteComment": "删除评论",
     "deleteCommentTitle": "删除此评论？",
-    "deleteCommentConfirmation": "该评论及其所有回复将被永久删除。"
+    "deleteCommentConfirmation": "该评论及其所有回复将被永久删除。",
+    "agentPaused": "已暂停"
   },
   "stats": {
     "title": "统计",
@@ -428,7 +429,8 @@
     "noCandidates": "没有可选对象。",
     "area": "区域",
     "noArea": "无区域",
-    "changeArea": "移动到区域…"
+    "changeArea": "移动到区域…",
+    "agentPaused": "已暂停"
   },
   "watchers": {
     "watch": "关注",

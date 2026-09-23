@@ -77,6 +77,25 @@ export const setAgentProjectInstructionsBody = t.Object({
   instructions: t.String({ maxLength: 500 }),
 });
 
+export const pauseAgentBody = t.Object({
+  reason: t.Optional(
+    t.String({
+      maxLength: 500,
+      description: 'Why the agent is paused. Defaults to who paused it.',
+    }),
+  ),
+});
+
+// Null removes the ceiling.
+const tokenCeiling = t.Nullable(t.Integer({ minimum: 1, maximum: 1_000_000_000_000 }));
+
+export const setAgentTokenCeilingsBody = t.Object({
+  daily: tokenCeiling,
+  monthly: tokenCeiling,
+});
+
+export const setProjectTokenCeilingBody = t.Object({ monthly: tokenCeiling });
+
 const DepartmentResponse = t.Object({
   id: t.Number(),
   name: t.String(),
@@ -128,6 +147,13 @@ const OrganizationAgentResponse = t.Object({
     reportedAt: t.Nullable(t.String()),
   }),
   projects: t.Array(AgentProjectResponse),
+  pausedAt: t.Nullable(t.String()),
+  pauseReason: t.Nullable(t.String()),
+  dailyTokenCeiling: t.Nullable(t.Number()),
+  monthlyTokenCeiling: t.Nullable(t.Number()),
+  // What the agent's runs used today and this month, UTC, in every project of the team.
+  tokensToday: t.Number(),
+  tokensThisMonth: t.Number(),
 });
 
 const OrganizationProjectResponse = t.Object({
@@ -137,6 +163,8 @@ const OrganizationProjectResponse = t.Object({
   description: t.String(),
   departmentId: nullableId,
   instructions: t.String(),
+  monthlyTokenCeiling: t.Nullable(t.Number()),
+  tokensThisMonth: t.Number(),
 });
 
 export const OrganizationResponse = t.Object({

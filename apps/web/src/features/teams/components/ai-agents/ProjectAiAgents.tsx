@@ -5,6 +5,7 @@ import { useShell } from '@/context/shellContext';
 import { useIntegrationCatalogQuery } from '@/services/integrations.service';
 import { useAiAgentsQuery, useUpdateAiAgent } from '@/services/aiAgents.service';
 import { integrationLabel } from '@/utils/integrationLabels';
+import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
 import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
@@ -103,7 +104,10 @@ export default function ProjectAiAgents() {
                       <KindIcon className="size-4" />
                     </div>
                     <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="truncate text-sm font-medium">{agent.name}</span>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-medium">{agent.name}</span>
+                        <AgentPausedBadge agent={agent} />
+                      </div>
                       <span className="truncate text-xs text-muted-foreground">
                         @{agent.username}
                       </span>

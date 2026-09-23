@@ -551,7 +551,11 @@
         "web": "Durchsucht das Web und liest Seiten.",
         "x_search": "Durchsucht Beiträge auf X (Twitter)."
       }
-    }
+    },
+    "paused": "Pausiert",
+    "pausedNoReason": "Pausiert. Es wurde kein Grund angegeben.",
+    "blocked": "Blockiert",
+    "blockedQuestion": "Frage"
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

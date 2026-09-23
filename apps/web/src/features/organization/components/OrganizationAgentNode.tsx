@@ -2,6 +2,7 @@
 
 import { Bot, Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import {
   organizationAgentRole,
   type OrganizationAgentNode as AgentNode,
@@ -30,6 +31,7 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                   {t(`roles.${role}`)}
                 </span>
+                <AgentPausedBadge agent={agent} />
               </div>
               <p className="truncate text-xs text-muted-foreground">
                 {agent.roleTitle || `@${agent.username}`}

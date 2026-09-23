@@ -551,7 +551,11 @@
         "web": "Шукає в інтернеті та читає сторінки.",
         "x_search": "Шукає публікації в X (Twitter)."
       }
-    }
+    },
+    "paused": "Призупинено",
+    "pausedNoReason": "Призупинено. Причину не вказано.",
+    "blocked": "Заблоковано",
+    "blockedQuestion": "Питання"
   },
   "members": {
     "roleSaved": "{name} тепер {role}",

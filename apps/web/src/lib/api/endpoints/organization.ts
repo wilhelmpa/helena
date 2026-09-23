@@ -56,6 +56,15 @@ export interface OrganizationAgent {
     reportedAt: string | null;
   };
   projects: OrganizationAgentProject[];
+  // Set while the agent takes no new work, with why.
+  pausedAt: string | null;
+  pauseReason: string | null;
+  // Null is no ceiling. Days and months are UTC.
+  dailyTokenCeiling: number | null;
+  monthlyTokenCeiling: number | null;
+  // What the agent's runs used in every project of the team.
+  tokensToday: number;
+  tokensThisMonth: number;
 }
 
 export interface OrganizationProject {
@@ -65,6 +74,8 @@ export interface OrganizationProject {
   description: string;
   departmentId: number | null;
   instructions: string;
+  monthlyTokenCeiling: number | null;
+  tokensThisMonth: number;
 }
 
 export interface Organization {
@@ -176,4 +187,34 @@ export const setAgentProjectInstructions = (
   request<void>(`${base(teamId)}/agents/${agentId}/projects/${projectId}`, {
     method: 'PATCH',
     body: JSON.stringify({ instructions }),
+  });
+
+export const pauseAgent = (teamId: number, agentId: number) =>
+  request<void>(`${base(teamId)}/agents/${agentId}/pause`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+
+export const resumeAgent = (teamId: number, agentId: number) =>
+  request<void>(`${base(teamId)}/agents/${agentId}/resume`, { method: 'POST' });
+
+export interface AgentTokenCeilings {
+  daily: number | null;
+  monthly: number | null;
+}
+
+export const setAgentTokenCeilings = (
+  teamId: number,
+  agentId: number,
+  ceilings: AgentTokenCeilings,
+) =>
+  request<void>(`${base(teamId)}/agents/${agentId}/token-ceilings`, {
+    method: 'PUT',
+    body: JSON.stringify(ceilings),
+  });
+
+export const setProjectTokenCeiling = (teamId: number, projectId: number, monthly: number | null) =>
+  request<void>(`${base(teamId)}/projects/${projectId}/token-ceiling`, {
+    method: 'PUT',
+    body: JSON.stringify({ monthly }),
   });

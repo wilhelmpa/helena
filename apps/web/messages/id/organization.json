@@ -56,6 +56,32 @@
     "capabilitiesHint": "Kata huruf kecil dipisahkan koma. Tugas yang labelnya cocok dengan kemampuan tepat satu spesialis langsung diberikan ke spesialis itu tanpa rencana koordinator.",
     "saved": "{name} disimpan"
   },
+  "governance": {
+    "title": "Pekerjaan dan batas token",
+    "active": "Menerima pekerjaan baru.",
+    "pause": "Jeda",
+    "resume": "Lanjutkan",
+    "paused": "{name} dijeda",
+    "resumed": "{name} menerima pekerjaan lagi"
+  },
+  "tokens": {
+    "today": "Hari ini",
+    "thisMonth": "Bulan ini",
+    "dailyCeiling": "Batas harian",
+    "monthlyCeiling": "Batas bulanan",
+    "noCeiling": "Tanpa batas",
+    "usedOfCeiling": "{used, number} dari {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "Token dari eksekusi agen di semua proyek, dihitung per hari dan bulan UTC. Mencapai batas akan menjeda agen dan memberi tahu pemiliknya.",
+    "invalid": "Masukkan bilangan bulat minimal 1, atau kosongkan kolom untuk tanpa batas.",
+    "save": "Simpan batas",
+    "saved": "Batas token {name} disimpan",
+    "projectTitle": "Anggaran token",
+    "projectDescription": "Token dari eksekusi agen di proyek ini bulan ini (UTC). Mencapai batas akan menjeda agen yang eksekusinya akan dimulai berikutnya dan memberi tahu pemilik proyek.",
+    "projectSaved": "Batas token {name} disimpan",
+    "agentsTitle": "Agen",
+    "agentsHint": "Dihitung di semua proyek tim. Atur batas agen di tab Agen."
+  },
   "projects": {
     "empty": "This team has no projects.",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions."

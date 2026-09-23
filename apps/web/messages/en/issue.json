@@ -226,7 +226,8 @@
     "edited": "edited",
     "deleteComment": "Delete comment",
     "deleteCommentTitle": "Delete this comment?",
-    "deleteCommentConfirmation": "The comment and its replies will be permanently deleted."
+    "deleteCommentConfirmation": "The comment and its replies will be permanently deleted.",
+    "agentPaused": "Paused"
   },
   "stats": {
     "title": "Stats",
@@ -428,7 +429,8 @@
     "noCandidates": "Nobody to pick.",
     "area": "Area",
     "noArea": "No area",
-    "changeArea": "Move to area…"
+    "changeArea": "Move to area…",
+    "agentPaused": "Paused"
   },
   "watchers": {
     "watch": "Watch",

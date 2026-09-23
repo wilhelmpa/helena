@@ -226,7 +226,8 @@
     "edited": "изменено",
     "deleteComment": "Удалить комментарий",
     "deleteCommentTitle": "Удалить этот комментарий?",
-    "deleteCommentConfirmation": "Комментарий и ответы на него будут удалены безвозвратно."
+    "deleteCommentConfirmation": "Комментарий и ответы на него будут удалены безвозвратно.",
+    "agentPaused": "Приостановлен"
   },
   "stats": {
     "title": "Статистика",
@@ -428,7 +429,8 @@
     "noCandidates": "Некого выбрать.",
     "area": "Область",
     "noArea": "Без области",
-    "changeArea": "Переместить в область…"
+    "changeArea": "Переместить в область…",
+    "agentPaused": "Приостановлен"
   },
   "watchers": {
     "watch": "Следить",

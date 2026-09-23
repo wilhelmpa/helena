@@ -16,7 +16,10 @@ import {
   organizationGoalParams,
   organizationProjectParams,
   organizationTeamParams,
+  pauseAgentBody,
   setAgentAssignmentBody,
+  setAgentTokenCeilingsBody,
+  setProjectTokenCeilingBody,
   setAgentProjectInstructionsBody,
   setProjectAssignmentBody,
   updateDepartmentBody,
@@ -36,6 +39,12 @@ import {
   updateDepartment,
   updateGoal,
 } from './service';
+import {
+  pauseAgent,
+  resumeAgent,
+  setAgentTokenCeilings,
+  setProjectTokenCeiling,
+} from '#modules/agents/governance';
 
 export const organizationRoutes = new Elysia({
   name: 'organization',
@@ -165,6 +174,92 @@ export const organizationRoutes = new Elysia({
       teamManager: true,
       response: { 204: t.Void(), ...commonErrors },
       detail: { summary: 'Clear an agent organization assignment' },
+    },
+  )
+  .post(
+    '/teams/:teamId/organization/agents/:agentId/pause',
+    async ({ membership, params, body, user }) => {
+      const reason = body.reason?.trim() || `Paused by ${user?.name ?? 'a team manager'}.`;
+      if (!(await pauseAgent(membership.teamId, params.agentId, reason))) {
+        throw new HttpError(404, 'Agent not found');
+      }
+      return noContent();
+    },
+    {
+      params: organizationAgentParams,
+      body: pauseAgentBody,
+      teamManager: true,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: {
+        summary: 'Pause an agent',
+        description:
+          'Stop the agent from taking new work: its queued runs and chat answers wait, a ' +
+          'mention or a delegation does not start it, and an agent-team stage for it is ' +
+          'refused. Work it is doing now finishes.',
+      },
+    },
+  )
+  .post(
+    '/teams/:teamId/organization/agents/:agentId/resume',
+    async ({ membership, params }) => {
+      if (!(await resumeAgent(membership.teamId, params.agentId))) {
+        throw new HttpError(404, 'Agent not found');
+      }
+      return noContent();
+    },
+    {
+      params: organizationAgentParams,
+      teamManager: true,
+      response: { 204: t.Void(), ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Resume an agent',
+        description:
+          'Let a paused agent take work again. Refused while its daily or monthly token ' +
+          'ceiling is still reached.',
+      },
+    },
+  )
+  .put(
+    '/teams/:teamId/organization/agents/:agentId/token-ceilings',
+    async ({ membership, params, body }) => {
+      if (!(await setAgentTokenCeilings(membership.teamId, params.agentId, body))) {
+        throw new HttpError(404, 'Agent not found');
+      }
+      return noContent();
+    },
+    {
+      params: organizationAgentParams,
+      body: setAgentTokenCeilingsBody,
+      teamManager: true,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: {
+        summary: "Set an agent's token ceilings",
+        description:
+          'Set how many tokens the agent runs may use per day and per calendar month (UTC), ' +
+          'or null for no ceiling. Reaching one pauses the agent and notifies its owner.',
+      },
+    },
+  )
+  .put(
+    '/teams/:teamId/organization/projects/:projectId/token-ceiling',
+    async ({ membership, params, body }) => {
+      if (!(await setProjectTokenCeiling(membership.teamId, params.projectId, body.monthly))) {
+        throw new HttpError(404, 'Project not found');
+      }
+      return noContent();
+    },
+    {
+      params: organizationProjectParams,
+      body: setProjectTokenCeilingBody,
+      teamManager: true,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: {
+        summary: "Set a project's token ceiling",
+        description:
+          'Set how many tokens the agent runs of the project may use per calendar month ' +
+          '(UTC), or null for no ceiling. Reaching it pauses the agent whose run would start ' +
+          'next and notifies the project owners.',
+      },
     },
   )
   .put(

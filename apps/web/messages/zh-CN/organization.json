@@ -56,6 +56,32 @@
     "capabilitiesHint": "用逗号分隔的小写词。任务标签只与一位专家的能力匹配时，任务会直接交给该专家，不经过协调者的计划。",
     "saved": "已保存 {name}"
   },
+  "governance": {
+    "title": "工作与 token 上限",
+    "active": "接受新工作。",
+    "pause": "暂停",
+    "resume": "恢复",
+    "paused": "已暂停 {name}",
+    "resumed": "{name} 已恢复接受工作"
+  },
+  "tokens": {
+    "today": "今天",
+    "thisMonth": "本月",
+    "dailyCeiling": "每日上限",
+    "monthlyCeiling": "每月上限",
+    "noCeiling": "无上限",
+    "usedOfCeiling": "{used, number} / {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "代理在所有项目中运行所用的 token，按 UTC 日和月统计。达到上限会暂停代理并通知其所有者。",
+    "invalid": "请输入不小于 1 的整数，或留空表示无上限。",
+    "save": "保存上限",
+    "saved": "已保存 {name} 的 token 上限",
+    "projectTitle": "token 预算",
+    "projectDescription": "本项目本月（UTC）代理运行所用的 token。达到上限会暂停下一个将要开始运行的代理，并通知项目所有者。",
+    "projectSaved": "已保存 {name} 的 token 上限",
+    "agentsTitle": "代理",
+    "agentsHint": "统计团队所有项目中的用量。在“代理”选项卡中设置代理的上限。"
+  },
   "projects": {
     "empty": "This team has no projects.",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions."

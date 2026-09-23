@@ -551,7 +551,11 @@
         "web": "يبحث في الويب ويقرأ الصفحات.",
         "x_search": "يبحث في منشورات X (تويتر)."
       }
-    }
+    },
+    "paused": "متوقف مؤقتًا",
+    "pausedNoReason": "متوقف مؤقتًا. لم يُذكر سبب.",
+    "blocked": "محظور",
+    "blockedQuestion": "السؤال"
   },
   "members": {
     "roleSaved": "{name} الآن {role}",
