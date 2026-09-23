@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { authedApi, type Api } from '#tests/helpers/app';
+import { createHash } from 'node:crypto';
+import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { controlPlane } from '#tests/helpers/control';
+import { controlApi, controlPlane } from '#tests/helpers/control';
 
 // The agent team of a project, started from Plan: delegating an issue to a coordinator
 // of a project that runs agent-team, or starting it on the issue directly. The Mastra
@@ -61,6 +62,13 @@ async function createIssue(asOwner: Api, columnId: number, body: Record<string, 
       .projects({ projectKey: 'MKT' })
       .issues.post({ columnId, title: 'Launch page', ...body })
   ).data!;
+}
+
+// The key the agent-team workflow sends with a stage (teamIdempotencyKey in Mastra).
+function stageKey(eventId: string, taskRef: string, phase: string, subject: string) {
+  return createHash('sha256')
+    .update(`agent-team\0${eventId}\0${taskRef}\0${phase}\0${subject}`)
+    .digest('hex');
 }
 
 async function runsOf(asOwner: Api, teamId: number, agentId: number) {
@@ -335,6 +343,7 @@ describe('agent team', () => {
           { id: 'prepare-team', status: 'success' },
           { id: 'coordinate', status: 'running' },
         ],
+        stages: [],
         result: null,
         error: null,
       },
@@ -351,6 +360,100 @@ describe('agent team', () => {
       projectRef: 'project:MKT',
       taskRef: `task:MKT-${issue.sequenceNumber}`,
     });
+  });
+
+  it('shows the Hermes run behind each stage with its duration and tokens', async () => {
+    const { asOwner, columnId } = await setup();
+    const created = await createAgent(asOwner, 'MKT', {
+      name: 'Designer',
+      username: 'designer',
+      kind: 'external',
+    });
+    const asRunner = apiKeyApi(created.data!.apiKey!);
+    const issue = await createIssue(asOwner, columnId);
+    const taskRef = `task:MKT-${issue.sequenceNumber}`;
+    const queue = async (phase: string, subject: string) => {
+      const res = await controlApi().internal.orchestration['agent-run'].post({
+        projectRef: 'project:MKT',
+        task: { taskRef },
+        agent: { agentRef: 'agent:designer' },
+        idempotencyKey: stageKey('run-1', taskRef, phase, subject),
+        prompt: `Run the ${phase} stage.`,
+        policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
+      });
+      return (res.data as unknown as { runId: number }).runId;
+    };
+    const coordinated = await queue('coordinate', taskRef);
+    await asRunner['agent-runs'].claim.post();
+    await asRunner['agent-runs']({ runId: coordinated }).result.post({
+      status: 'success',
+      output: '{}',
+      usage: { inputTokens: 900, outputTokens: 100 },
+    });
+    const specialized = await queue('specialize', 'assignment-1');
+    await asRunner['agent-runs'].claim.post();
+    controlPlane.answer = (request) =>
+      request.operation === 'runs'
+        ? {
+            runs: [
+              {
+                runId: 'run-1',
+                status: 'running',
+                createdAt: '2026-09-23T10:00:00.000Z',
+                snapshot: {
+                  status: 'running',
+                  context: {
+                    input: {
+                      eventId: 'run-1',
+                      correlationId: taskRef,
+                      payload: { task: { taskRef } },
+                    },
+                    coordinate: {
+                      status: 'success',
+                      output: {
+                        delegations: [
+                          { assignmentId: 'assignment-1' },
+                          { assignmentId: 'assignment-2' },
+                        ],
+                      },
+                    },
+                    specialize: { status: 'running' },
+                  },
+                },
+              },
+            ],
+          }
+        : {};
+
+    const res = await asOwner.issues({ issueId: issue.id })['agent-team'].runs.get();
+    expect(res.status).toBe(200);
+    const agent = { id: created.data!.agent.id, username: 'designer', name: 'Designer' };
+    expect(res.data![0]!.stages).toEqual([
+      {
+        phase: 'coordinate',
+        assignmentId: null,
+        agentRunId: coordinated,
+        agent,
+        status: 'success',
+        startedAt: expect.anything(),
+        finishedAt: expect.anything(),
+        durationMs: expect.any(Number),
+        inputTokens: 900,
+        outputTokens: 100,
+      },
+      {
+        phase: 'specialize',
+        assignmentId: 'assignment-1',
+        agentRunId: specialized,
+        agent,
+        status: 'running',
+        startedAt: expect.anything(),
+        finishedAt: null,
+        durationMs: null,
+        inputTokens: null,
+        outputTokens: null,
+      },
+    ]);
   });
 
   it('keeps the agent team of an issue to its project members', async () => {
