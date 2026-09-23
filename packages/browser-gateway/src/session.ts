@@ -5,7 +5,7 @@
 // vorhanden"): the only evaluate calls in this file are the fixed, internal ones the
 // snapshot pipeline and the download/console/network capture need, none of them accept
 // caller-supplied script.
-import type { Browser, BrowserContext, Page, Download } from 'patchright-core';
+import type { Browser, BrowserContext, Page, Download, Dialog } from 'patchright-core';
 import { chromium } from 'patchright-core';
 import { SecretGuard, isCredentialField } from './redact.ts';
 import {
@@ -47,7 +47,10 @@ export class PatchrightGatewaySession implements GatewaySession {
   #ownTabIds = new Set<string>();
   #console: ConsoleEntry[] = [];
   #network: NetworkEntry[] = [];
-  #dialog: { type: string; message: string } | null = null;
+  // The actual pending Dialog object, not just its data — Playwright/patchright's dialog
+  // protocol needs the exact object accept()ed/dismiss()ed; a *new* page.on('dialog', ...)
+  // registered later never fires again for the same, already-delivered dialog event.
+  #dialog: Dialog | null = null;
   #downloads: { fileName: string; path: string; at: number }[] = [];
   #vaultInbox: string;
   #humanInput: boolean;
@@ -98,7 +101,7 @@ export class PatchrightGatewaySession implements GatewaySession {
       if (this.#console.length > MAX_BUFFER) this.#console.shift();
     });
     page.on('dialog', (dialog) => {
-      this.#dialog = { type: dialog.type(), message: dialog.message() };
+      this.#dialog = dialog;
     });
     page.on('download', (download: Download) => {
       void this.#saveDownload(download);
@@ -396,31 +399,32 @@ export class PatchrightGatewaySession implements GatewaySession {
       return `Focused ${tabId}`;
     }
     if (action === 'close') {
+      const wasActive = target === this.#page;
       await target.close();
+      if (wasActive) {
+        // The closed tab was the one every other method acts on (this.#page) — fall back
+        // to whatever tab is left, or the closed handle would make the very next call
+        // ("Target page, context or browser has been closed") instead of a clean error.
+        const remaining = this.#context.pages();
+        if (remaining.length > 0) {
+          this.#page = remaining[remaining.length - 1];
+          await this.#page.bringToFront().catch(() => {});
+        }
+      }
       return `Closed ${tabId}`;
     }
     throw new Error(`Unknown tabs action: ${action}`);
   }
 
   async dialogAction(action: 'accept' | 'dismiss', promptText?: string): Promise<string> {
-    // patchright/Playwright dialogs are handled via a one-shot listener that must already
-    // be registered before the dialog fires; since #wireCapture only records the dialog for
-    // browser_status/browser_dialog to read, the actual accept/dismiss is done by racing a
-    // fresh listener against the page (a dialog left open blocks the page, so the listener
-    // resolves on the very next 'dialog' event if one is already pending, or on navigation
-    // once handled).
-    if (!this.#dialog) throw new Error('No dialog is open.');
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('No dialog is open.')), 100);
-      this.#page.once('dialog', (dialog) => {
-        clearTimeout(timer);
-        (action === 'accept' ? dialog.accept(promptText) : dialog.dismiss()).then(resolve, reject);
-      });
-      // The listener above only fires for a *new* dialog event; since one is already
-      // pending (this.#dialog is set), CDP redelivers it to a fresh listener on patchright/
-      // Playwright's own dialog queue, matching how Playwright's own tests drive this.
-    });
+    // #wireCapture's page.on('dialog', ...) listener already holds the one-and-only Dialog
+    // object for the pending dialog — a dialog event fires exactly once per real browser
+    // dialog, so accept/dismiss has to happen on that same object, not by waiting for a
+    // second event that will never come.
+    const dialog = this.#dialog;
+    if (!dialog) throw new Error('No dialog is open.');
     this.#dialog = null;
+    await (action === 'accept' ? dialog.accept(promptText) : dialog.dismiss());
     return `Dialog ${action === 'accept' ? 'accepted' : 'dismissed'}`;
   }
 
