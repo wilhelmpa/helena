@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
 import { useRouter } from 'next/navigation';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
@@ -17,7 +17,7 @@ import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
 import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
 import { projectPath, issuePath } from '@/utils/paths';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
-import { ShellCtx, type ShellContext } from '@/context/shellContext';
+import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/shellContext';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/AppSidebar';
 import AppHeader from '@/components/layout/AppHeader';
@@ -112,6 +112,7 @@ export default function Shell({
   const openNewIssue = () => addIssue({});
 
   const toggleCoordinatorChat = () => workspacePanel.toggleTool('chat');
+  const [chatThreadRequest, setChatThreadRequest] = useState<ChatThreadRequest | null>(null);
 
   // The issue the palette builds its issue commands for: the open detail panel
   // takes precedence over the issue page behind it.
@@ -167,6 +168,12 @@ export default function Shell({
     onOpenIssue: openIssue,
     onAddIssue: addIssue,
     onChatWithAgent: () => workspacePanel.openTool('chat'),
+    onOpenChatThread: (agentId, threadId) => {
+      setChatThreadRequest({ agentId, threadId });
+      workspacePanel.openTool('chat');
+    },
+    chatThreadRequest,
+    onChatThreadHandled: () => setChatThreadRequest(null),
   };
 
   return (

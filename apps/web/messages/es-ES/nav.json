@@ -25,6 +25,7 @@
   "home": "Inicio",
   "globalHomeHint": "Usa aquí el coordinador global o elige un proyecto para obtener contexto específico.",
   "workflows": "Flujos de trabajo",
+  "agentActivity": "Actividad",
   "noProjects": "Todavía no hay proyectos",
   "newTeam": "Nuevo equipo",
   "manageTeams": "Gestionar equipos",

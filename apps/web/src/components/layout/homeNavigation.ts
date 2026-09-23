@@ -1,6 +1,7 @@
 import {
   agentsPath,
   connectionsPath,
+  globalAgentActivityPath,
   globalInboxPath,
   manageTeamsPath,
   teamOrganizationPath,
@@ -17,6 +18,7 @@ export type HomeNavigationId =
   | 'inbox'
   | 'agentPool'
   | 'organization'
+  | 'agentActivity'
   | 'skills'
   | 'tools'
   | 'mcps'
@@ -44,6 +46,9 @@ export function homeNavigation(teamId: number | null, vaultEnabled = true): Home
     ...teamOnly([
       { id: 'agentPool', group: 'agents', href: agentsPath() },
       { id: 'organization', group: 'agents', href: teamOrganizationPath() },
+    ]),
+    { id: 'agentActivity', group: 'agents', href: globalAgentActivityPath() },
+    ...teamOnly([
       { id: 'skills', group: 'globalSettings', href: skillsPath() },
       { id: 'tools', group: 'globalSettings', href: toolsPath() },
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },

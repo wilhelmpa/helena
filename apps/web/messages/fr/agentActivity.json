@@ -1,0 +1,44 @@
+{
+  "title": "Activité",
+  "projectDescription": "Ce que les agents de ce projet ont fait, du plus récent au plus ancien : vos réponses de chat, leurs exécutions, et les exécutions d’équipe d’agents et de flux dans Mastra.",
+  "homeDescription": "Ce que les agents de vos projets ont fait, du plus récent au plus ancien : vos réponses de chat, leurs exécutions, et les exécutions d’équipe d’agents et de flux dans Mastra.",
+  "allKinds": "Tous les types",
+  "allAgents": "Tous les agents",
+  "kinds": {
+    "chat": "Réponse de chat",
+    "agent-run": "Exécution d’agent",
+    "agent-team-run": "Exécution d’équipe d’agents",
+    "workflow-run": "Exécution de flux"
+  },
+  "status": {
+    "pending": "En file",
+    "running": "En cours",
+    "streaming": "Répond",
+    "waiting": "En attente",
+    "suspended": "En attente d’approbation",
+    "success": "Terminé",
+    "failed": "Échec",
+    "canceled": "Annulé",
+    "bailed": "Arrêté",
+    "skipped": "Ignoré"
+  },
+  "triggers": {
+    "mention": "Mention",
+    "delegation": "Délégation",
+    "field": "Déclencheur de champ",
+    "schedule": "Planification",
+    "manual": "Manuel"
+  },
+  "maxTurns": "{count, plural, one {# tour au plus} other {# tours au plus}}",
+  "runBudget": "{minutes, plural, one {Budget # minute} other {Budget # minutes}}",
+  "openChat": "Ouvrir le chat",
+  "openRun": "Ouvrir l’exécution",
+  "showMore": "Afficher plus",
+  "empty": "Aucune activité pour l’instant",
+  "emptyHint": "Les réponses de chat, les exécutions d’agents et de flux apparaissent ici dès que les agents travaillent.",
+  "unavailable": "L’activité n’a pas pu être chargée.",
+  "notice": {
+    "workflow-runs-unavailable": "Mastra n’a pas répondu, les exécutions de flux sont donc omises.",
+    "workflow-runs-limited": "Toutes les exécutions de flux ne sont pas affichées : la chronologie lit un nombre limité de flux et d’exécutions dans Mastra."
+  }
+}

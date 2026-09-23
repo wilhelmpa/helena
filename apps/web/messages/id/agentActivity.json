@@ -1,0 +1,44 @@
+{
+  "title": "Aktivitas",
+  "projectDescription": "Apa yang dikerjakan agen proyek ini, terbaru lebih dulu: jawaban chat Anda, proses mereka, serta proses tim agen dan alur kerja di Mastra.",
+  "homeDescription": "Apa yang dikerjakan agen di proyek Anda, terbaru lebih dulu: jawaban chat Anda, proses mereka, serta proses tim agen dan alur kerja di Mastra.",
+  "allKinds": "Semua jenis",
+  "allAgents": "Semua agen",
+  "kinds": {
+    "chat": "Jawaban chat",
+    "agent-run": "Proses agen",
+    "agent-team-run": "Proses tim agen",
+    "workflow-run": "Proses alur kerja"
+  },
+  "status": {
+    "pending": "Dalam antrean",
+    "running": "Berjalan",
+    "streaming": "Menjawab",
+    "waiting": "Menunggu",
+    "suspended": "Menunggu persetujuan",
+    "success": "Selesai",
+    "failed": "Gagal",
+    "canceled": "Dibatalkan",
+    "bailed": "Dihentikan",
+    "skipped": "Dilewati"
+  },
+  "triggers": {
+    "mention": "Sebutan",
+    "delegation": "Delegasi",
+    "field": "Pemicu bidang",
+    "schedule": "Jadwal",
+    "manual": "Manual"
+  },
+  "maxTurns": "{count, plural, other {Paling banyak # giliran}}",
+  "runBudget": "{minutes, plural, other {Batas # menit}}",
+  "openChat": "Buka chat",
+  "openRun": "Buka proses",
+  "showMore": "Tampilkan lagi",
+  "empty": "Belum ada aktivitas",
+  "emptyHint": "Jawaban chat, proses agen, dan proses alur kerja muncul di sini setelah agen bekerja.",
+  "unavailable": "Aktivitas tidak dapat dimuat.",
+  "notice": {
+    "workflow-runs-unavailable": "Mastra tidak menjawab, jadi proses alur kerja tidak ditampilkan.",
+    "workflow-runs-limited": "Tidak semua proses alur kerja ditampilkan: linimasa membaca sejumlah terbatas alur kerja dan proses dari Mastra."
+  }
+}

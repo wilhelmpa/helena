@@ -36,6 +36,10 @@ export default function IssueAgentTeamPanel({
     scope: revScope.controlPlane(project.project.id),
     targets: [qk.issueAgentTeamRuns(issueId)],
   });
+  useLiveRefresh({
+    scope: revScope.agentRuns(project.project.id),
+    targets: [qk.issueAgentTeamRuns(issueId)],
+  });
   if (!enabled) return null;
 
   const rows = runs.data ?? [];

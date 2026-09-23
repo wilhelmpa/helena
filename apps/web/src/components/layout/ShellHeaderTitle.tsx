@@ -30,6 +30,7 @@ export default function ShellHeaderTitle({
     const known = (slug: string) => SETTINGS_SECTIONS.some((s) => s.slug === slug);
     if (section) return known(section) ? sectionText(section).label : t('projectSettings');
     if (sub === 'workflows') return t('workflows');
+    if (sub === 'activity') return t('agentActivity');
     if (sub === 'inbox') return t('inbox');
     if (sub === 'files') return t('workspace.files');
     if (sub === 'code') return t('workspace.code');

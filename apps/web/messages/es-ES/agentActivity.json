@@ -1,0 +1,44 @@
+{
+  "title": "Actividad",
+  "projectDescription": "Lo que hicieron los agentes de este proyecto, lo más reciente primero: tus respuestas de chat, sus ejecuciones y las ejecuciones del equipo de agentes y de flujos en Mastra.",
+  "homeDescription": "Lo que hicieron los agentes de tus proyectos, lo más reciente primero: tus respuestas de chat, sus ejecuciones y las ejecuciones del equipo de agentes y de flujos en Mastra.",
+  "allKinds": "Todos los tipos",
+  "allAgents": "Todos los agentes",
+  "kinds": {
+    "chat": "Respuesta de chat",
+    "agent-run": "Ejecución de agente",
+    "agent-team-run": "Ejecución del equipo de agentes",
+    "workflow-run": "Ejecución de flujo"
+  },
+  "status": {
+    "pending": "En cola",
+    "running": "En curso",
+    "streaming": "Respondiendo",
+    "waiting": "En espera",
+    "suspended": "Esperando aprobación",
+    "success": "Terminado",
+    "failed": "Fallido",
+    "canceled": "Cancelado",
+    "bailed": "Detenido",
+    "skipped": "Omitido"
+  },
+  "triggers": {
+    "mention": "Mención",
+    "delegation": "Delegación",
+    "field": "Disparador de campo",
+    "schedule": "Programación",
+    "manual": "Manual"
+  },
+  "maxTurns": "{count, plural, one {Como máximo # turno} other {Como máximo # turnos}}",
+  "runBudget": "{minutes, plural, one {Límite de # minuto} other {Límite de # minutos}}",
+  "openChat": "Abrir chat",
+  "openRun": "Abrir ejecución",
+  "showMore": "Mostrar más",
+  "empty": "Todavía no hay actividad",
+  "emptyHint": "Las respuestas de chat y las ejecuciones de agentes y flujos aparecen aquí en cuanto los agentes trabajan.",
+  "unavailable": "No se pudo cargar la actividad.",
+  "notice": {
+    "workflow-runs-unavailable": "Mastra no respondió, así que faltan las ejecuciones de flujos.",
+    "workflow-runs-limited": "No se muestran todas las ejecuciones de flujos: la cronología lee de Mastra un número limitado de flujos y ejecuciones."
+  }
+}

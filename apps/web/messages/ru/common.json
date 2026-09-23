@@ -127,7 +127,8 @@
     "importSkippedRow": "Строка {row} пропущена: {reason}",
     "contextSize": "Контекст диалога: {count, plural, one {# токен} few {# токена} many {# токенов} other {# токена}}",
     "contextUnavailable": "Размер контекста для этого агента недоступен",
-    "reasoning": "Рассуждение"
+    "reasoning": "Рассуждение",
+    "tokenCounts": "Прочитано токенов: {input, number}, записано: {output, number}"
   },
   "share": {
     "createFailed": "Не удалось создать ссылку. Попробуйте ещё раз.",

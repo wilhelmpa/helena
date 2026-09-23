@@ -127,7 +127,8 @@
     "importSkippedRow": "Fila saltada {row}: {reason}",
     "contextSize": "Contexto de la conversación: {count, plural, one {# token} other {# tokens}}",
     "contextUnavailable": "El tamaño del contexto no está disponible para este agente",
-    "reasoning": "Razonamiento"
+    "reasoning": "Razonamiento",
+    "tokenCounts": "{input, number} tokens leídos, {output, number} escritos"
   },
   "share": {
     "createFailed": "No se ha podido crear el enlace. Inténtalo otra vez.",

@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useEffect } from 'react';
+import type { ChatThreadRequest } from '@/context/shellContext';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useProjectAgents } from '@/hooks/useProjectAgents';
 import { AiChatThreadSkeleton } from '../shared/AiChatThreadSkeleton';
@@ -17,12 +18,17 @@ export const ChatPanelBody = memo(function ChatPanelBody({
   projectKey,
   newChatAgentId,
   onNewChatHandled,
+  openThreadRequest = null,
+  onOpenThreadHandled,
   agents: suppliedAgents,
   agentsLoading,
 }: {
   projectKey: string;
   newChatAgentId: number | null;
   onNewChatHandled: () => void;
+  // A conversation a page asked for: it is brought forward, or opened as a tab.
+  openThreadRequest?: ChatThreadRequest | null;
+  onOpenThreadHandled?: () => void;
   agents?: AiAgent[];
   agentsLoading?: boolean;
 }) {
@@ -51,6 +57,12 @@ export const ChatPanelBody = memo(function ChatPanelBody({
     openTab(newChatAgentId);
     onNewChatHandled();
   }, [newChatAgentId, openTab, onNewChatHandled]);
+
+  useEffect(() => {
+    if (!openThreadRequest) return;
+    openThread(openThreadRequest.agentId, openThreadRequest.threadId);
+    onOpenThreadHandled?.();
+  }, [openThreadRequest, openThread, onOpenThreadHandled]);
 
   // A session that has said nothing changes its agent in place; one with a transcript
   // keeps it, and the other agent is chatted with in a tab of its own.

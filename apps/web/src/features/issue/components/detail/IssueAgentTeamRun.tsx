@@ -2,30 +2,20 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { useRelativeTime } from '@/context/relativeTimeContext';
+import { AgentTokenCounts } from '@/components/common/agent-chat/AgentTokenCounts';
 import type { AgentTeamRun } from '@/lib/api/endpoints/issues';
+import { agentTeamTokens, isKnownStatus } from '../../utils/agentTeam';
+import IssueAgentTeamStages from './IssueAgentTeamStages';
 import IssueAgentTeamSteps from './IssueAgentTeamSteps';
 
-const KNOWN_STATUS = [
-  'pending',
-  'running',
-  'waiting',
-  'suspended',
-  'success',
-  'failed',
-  'canceled',
-] as const;
-
-function isKnownStatus(status: string): status is (typeof KNOWN_STATUS)[number] {
-  return (KNOWN_STATUS as readonly string[]).includes(status);
-}
-
-// One agent-team run: its state, the stages, and once it finished the summary written
-// to the task with what each stage reported.
+// One agent-team run: its state, the stages with the Hermes run behind each, and once it
+// finished the summary written to the task with what each stage reported.
 export default function IssueAgentTeamRun({ run }: { run: AgentTeamRun }) {
   const t = useTranslations('issue.agentTeam');
   const relativeTime = useRelativeTime();
   const [open, setOpen] = useState(false);
   const history = run.result?.history ?? [];
+  const tokens = agentTeamTokens(run);
 
   return (
     <div className="space-y-2 rounded-md border p-3">
@@ -36,11 +26,15 @@ export default function IssueAgentTeamRun({ run }: { run: AgentTeamRun }) {
         {run.result && run.result.status !== 'dry-run-complete' && (
           <span className="text-muted-foreground">{t(`outcome.${run.result.status}`)}</span>
         )}
-        {run.createdAt && (
-          <span className="ms-auto text-muted-foreground">{relativeTime(run.createdAt)}</span>
-        )}
+        <span className="ms-auto flex items-center gap-3">
+          {tokens && <AgentTokenCounts input={tokens.input} output={tokens.output} />}
+          {run.createdAt && (
+            <span className="text-muted-foreground">{relativeTime(run.createdAt)}</span>
+          )}
+        </span>
       </div>
       <IssueAgentTeamSteps run={run} />
+      <IssueAgentTeamStages stages={run.stages} />
       {run.error && <p className="text-xs text-destructive">{run.error}</p>}
       {run.result && (
         <p className="text-sm whitespace-pre-wrap" dir="auto">

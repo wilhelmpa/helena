@@ -133,6 +133,16 @@
         "synchronize": "O resumo e as evidências são gravados na tarefa, que vai para Revisão ou Concluído."
       },
       "route": "Quando os rótulos da tarefa correspondem às capacidades de um único especialista, ou o projeto tem só um, o Mastra pula o plano e atribui a tarefa diretamente."
+    },
+    "usage": {
+      "title": "Consumo de tokens",
+      "description": "Execuções de agentes deste projeto desde {since}. Respostas do chat não são contadas.",
+      "loading": "Carregando o consumo…",
+      "unavailable": "Não foi possível carregar o consumo de tokens.",
+      "month": "Este mês",
+      "split": "{input} lidos, {output} escritos",
+      "perClosedTask": "Por tarefa concluída",
+      "closedTasks": "{count, plural, =0 {Nenhuma tarefa concluída com agentes este mês} one {# tarefa concluída com agentes este mês} other {# tarefas concluídas com agentes este mês}}"
     }
   }
 }

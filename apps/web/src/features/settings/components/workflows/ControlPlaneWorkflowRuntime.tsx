@@ -23,20 +23,27 @@ import {
   useWorkflowScheduleControl,
   useWorkflowSchedules,
 } from '@/services/controlPlaneWorkflows.service';
+import { cn } from '@/lib/utils';
 import { qk } from '@/services/queryKeys';
 import { revScope } from '@/utils/revScopes';
 import { workflowRunId, workflowRunRows } from './workflowRuns';
+
+function scrollIntoView(element: HTMLElement | null) {
+  element?.scrollIntoView({ block: 'center' });
+}
 
 export default function ControlPlaneWorkflowRuntime({
   projectId,
   projectKey,
   workflow,
   editable,
+  markedRunId = null,
 }: {
   projectId: number;
   projectKey: string;
   workflow: ProjectWorkflow;
   editable: boolean;
+  markedRunId?: string | null;
 }) {
   const t = useTranslations('settings.actions.controlPlane');
   const runs = useWorkflowRuns(projectKey, workflow.id);
@@ -98,7 +105,14 @@ export default function ControlPlaneWorkflowRuntime({
             {runRows.slice(0, 20).map((run) => {
               const id = workflowRunId(run);
               return (
-                <div key={id} className="flex flex-wrap items-center gap-2 px-3 py-2 text-xs">
+                <div
+                  key={id}
+                  ref={id === markedRunId ? scrollIntoView : undefined}
+                  className={cn(
+                    'flex flex-wrap items-center gap-2 px-3 py-2 text-xs',
+                    id === markedRunId && 'bg-accent',
+                  )}
+                >
                   <code className="min-w-0 flex-1 truncate">{id}</code>
                   <Badge variant="outline">{run.status}</Badge>
                   {editable && run.status === 'suspended' && (

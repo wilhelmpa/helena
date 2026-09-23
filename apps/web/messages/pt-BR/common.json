@@ -127,7 +127,8 @@
     "importSkippedRow": "Linha {row} ignorada: {reason}",
     "contextSize": "Contexto da conversa: {count, plural, one {# token} other {# tokens}}",
     "contextUnavailable": "O tamanho do contexto não está disponível para este agente",
-    "reasoning": "Raciocínio"
+    "reasoning": "Raciocínio",
+    "tokenCounts": "{input, number} tokens lidos, {output, number} escritos"
   },
   "share": {
     "createFailed": "Não foi possível criar o link. Tente novamente.",

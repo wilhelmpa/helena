@@ -127,7 +127,8 @@
     "importSkippedRow": "已跳过第 {row} 行：{reason}",
     "contextSize": "对话上下文：{count, plural, other {# 个 token}}",
     "contextUnavailable": "该智能体不提供上下文大小",
-    "reasoning": "思考过程"
+    "reasoning": "思考过程",
+    "tokenCounts": "读取 {input, number} 个令牌，写入 {output, number} 个"
   },
   "share": {
     "createFailed": "无法创建链接，请重试。",

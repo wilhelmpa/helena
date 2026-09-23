@@ -70,6 +70,12 @@ export const qk = {
     ['controlPlaneWorkflows', projectKey, workflowId, 'runs', runId] as const,
   controlPlaneWorkflowSchedules: (projectKey: string, workflowId: string) =>
     ['controlPlaneWorkflows', projectKey, workflowId, 'schedules'] as const,
+  // The agent timeline of a project, or of Home when the key is null: one filter's
+  // pages, and every filter's for a live refresh.
+  agentActivity: (projectKey: string | null, filters: unknown) =>
+    ['agentActivity', projectKey ?? 'home', filters] as const,
+  agentActivityAll: (projectKey: string | null) => ['agentActivity', projectKey ?? 'home'] as const,
+  agentUsage: (projectKey: string) => ['agentUsage', projectKey] as const,
   webhooks: (projectKey: string) => ['webhooks', projectKey] as const,
   webhookDeliveries: (webhookId: number) => ['webhookDeliveries', webhookId] as const,
   // Saved dashboards (the analytics tabs) and the read-only metrics behind their

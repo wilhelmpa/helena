@@ -338,12 +338,27 @@ export interface AgentTeamResult {
   history: AgentTeamHistoryEntry[];
 }
 
+// The Hermes run Plan queued for one stage of an agent-team run.
+export interface AgentTeamStage {
+  phase: 'coordinate' | 'specialize' | 'review';
+  assignmentId: string | null;
+  agentRunId: number;
+  agent: { id: number; username: string; name: string };
+  status: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  durationMs: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}
+
 export interface AgentTeamRun {
   runId: string;
   status: string;
   createdAt: string | null;
   updatedAt: string | null;
   steps: { id: string; status: string }[];
+  stages: AgentTeamStage[];
   result: AgentTeamResult | null;
   error: string | null;
 }

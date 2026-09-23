@@ -14,6 +14,12 @@ export const organizationPath = (key: string) => `${projectPath(key)}/organizati
 
 export const workflowsPath = (key: string) => `${projectPath(key)}/workflows`;
 
+// The Workflows page with one run's workflow opened and the run marked.
+export const workflowRunPath = (key: string, workflowId: string, runId: string) =>
+  `${workflowsPath(key)}?${new URLSearchParams({ workflow: workflowId, run: runId })}`;
+
+export const agentActivityPath = (key: string) => `${projectPath(key)}/activity`;
+
 export const connectionsPath = () => '/connections';
 
 export const agentsPath = () => '/agents';
@@ -27,9 +33,11 @@ export const skillsPath = () => '/skills';
 
 export const vaultPath = () => '/vault';
 
-// The Home pages that read across every project: the task list and the inbox.
+// The Home pages that read across every project: the task list, the inbox and the
+// agent activity.
 export const tasksPath = () => '/tasks';
 export const globalInboxPath = () => '/inbox';
+export const globalAgentActivityPath = () => '/activity';
 
 // Public read-only share pages (no auth). The token is the unguessable share key.
 export const shareIssuePath = (token: string) => `/share/issue/${token}`;

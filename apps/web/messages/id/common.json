@@ -127,7 +127,8 @@
     "importSkippedRow": "Baris dilewati {row}: {reason}",
     "contextSize": "Konteks percakapan: {count, plural, one {# token} other {# token}}",
     "contextUnavailable": "Ukuran konteks tidak tersedia untuk agen ini",
-    "reasoning": "Pemikiran"
+    "reasoning": "Pemikiran",
+    "tokenCounts": "{input, number} token dibaca, {output, number} ditulis"
   },
   "share": {
     "createFailed": "Gagal membuat tautan. Coba lagi.",
