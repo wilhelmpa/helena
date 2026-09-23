@@ -886,10 +886,10 @@ async function assertUsernameFree(
 // stored secret with nothing that would renew it, and an external agent's key is
 // rotated by its operator through regenerate-key. The plugin puts its default on
 // every key it creates, so the expiry is cleared on the row afterwards.
-async function issueKey(userId: string, name: string): Promise<string> {
+async function issueKey(userId: string, name: string): Promise<{ key: string; id: string }> {
   const created = await auth.api.createApiKey({ body: { userId, name: `agent:${name}` } });
   await db.update(apikey).set({ expiresAt: null }).where(eq(apikey.id, created.id));
-  return created.key;
+  return { key: created.key, id: created.id };
 }
 
 // Creates an agent: a bot user, the ai_agent config row, its team and project
@@ -1001,8 +1001,17 @@ export async function createAgent(
   }
 
   // Issued outside the transaction: better-auth writes the key through its own
-  // connection, so it cannot join this one.
-  const apiKey = await issueKey(userId, input.name);
+  // connection, so it cannot join this one. A key that fails to issue (e.g. the
+  // combined name is too long for better-auth's apiKey plugin) must not leave a
+  // half-created agent behind: with the row already committed, a retry with the same
+  // username would otherwise fail with 409 instead of the original error, hiding it.
+  let apiKey: string;
+  try {
+    apiKey = (await issueKey(userId, input.name)).key;
+  } catch (err) {
+    await deleteAgent(agentId, teamId);
+    throw err;
+  }
   if (isInternal) await storeAgentKey(agentId, apiKey);
   else await queueAgentRuntime(userId);
   const agent = (await getAgentById(agentId, teamId))!;
@@ -1148,12 +1157,15 @@ export async function getInternalAgentApiKey(agent: AiAgentRow): Promise<string>
       .insert(teamMember)
       .values({ teamId: agent.teamId, userId: agent.userId, role: 'agent' })
       .onConflictDoNothing();
-    // Clears any key row left without a stored secret, so the bot user ends with
-    // exactly the one issued here.
-    await db.delete(apikey).where(eq(apikey.referenceId, agent.userId));
-    const apiKey = await issueKey(agent.userId, agent.name);
-    await storeAgentKey(agent.id, apiKey);
-    return apiKey;
+    // Issue before clearing old rows: if issueKey fails, a key row left without a
+    // stored secret (the case this is meant to clean up) is still there for the next
+    // attempt to find and retry, instead of also deleting it first and leaving none.
+    const issued = await issueKey(agent.userId, agent.name);
+    await db
+      .delete(apikey)
+      .where(and(eq(apikey.referenceId, agent.userId), ne(apikey.id, issued.id)));
+    await storeAgentKey(agent.id, issued.key);
+    return issued.key;
   });
 }
 
@@ -1360,10 +1372,15 @@ export async function copyTemplateIntoProject(
 export async function regenerateKey(id: number, teamId: number): Promise<string | null> {
   const agent = await getAgentById(id, teamId);
   if (!agent) return null;
-  await db.delete(apikey).where(eq(apikey.referenceId, agent.userId));
-  const apiKey = await issueKey(agent.userId, agent.name);
-  if (agent.kind === 'internal') await storeAgentKey(agent.id, apiKey);
-  return apiKey;
+  // Issue the replacement before dropping the old key(s): if issueKey fails (the same
+  // name-length limit createAgent can hit), the agent keeps working on its current key
+  // instead of being left with none until someone retries.
+  const issued = await issueKey(agent.userId, agent.name);
+  await db
+    .delete(apikey)
+    .where(and(eq(apikey.referenceId, agent.userId), ne(apikey.id, issued.id)));
+  if (agent.kind === 'internal') await storeAgentKey(agent.id, issued.key);
+  return issued.key;
 }
 
 // Deletes an agent: its conversation threads, its API key row(s), then the bot user.

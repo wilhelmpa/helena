@@ -71,7 +71,14 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
         )}
       </div>
       {node.reports.length > 0 && (
-        <ul className="ms-3 border-s pt-3">
+        // space-y-3 matches the sibling gap OrganizationDepartmentNode already uses for
+        // a department's own (flat) agent list — the one spacing step already in use
+        // for "cards of the same kind, one under another" anywhere in this tree, kept
+        // here so every level (Home's coordinators, a coordinator's specialists) reads
+        // the same. No dedicated spacing token exists in this branch's base yet
+        // (hub/helena-design, not merged here, is where that is meant to land); this
+        // is the plain Tailwind step to swap for that token once it exists.
+        <ul className="ms-3 space-y-3 border-s pt-3">
           {node.reports.map((report) => (
             <OrganizationAgentNode key={report.agent.id} node={report} />
           ))}
