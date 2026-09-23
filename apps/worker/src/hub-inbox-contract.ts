@@ -1,24 +1,5 @@
 export type InboxChannel = 'mail' | 'whatsapp';
 
-export interface InboxSyncEvent {
-  externalEventId: string;
-  externalThreadId: string;
-  externalMessageId: string;
-  sender: string;
-  subject: string;
-  snippet: string;
-  receivedAt: string;
-}
-
-export interface InboxSyncSource {
-  channel: InboxChannel;
-  account: string;
-  status: 'disabled' | 'connected' | 'error';
-  cursor: string | null;
-  error: string | null;
-  events: InboxSyncEvent[];
-}
-
 export interface InboxTriageResult {
   summary: string;
   priority: 'low' | 'medium' | 'high' | 'urgent' | null;
@@ -47,43 +28,6 @@ const text = (value: unknown, max: number, required = true): string => {
 
 const nullableText = (value: unknown, max: number): string | null =>
   value == null ? null : text(value, max, false) || null;
-
-export function parseSyncResponse(value: unknown): InboxSyncSource[] {
-  const root = object(value);
-  if (!Array.isArray(root.sources) || root.sources.length > 50)
-    throw new Error('Invalid sync response');
-  return root.sources.map((rawSource) => {
-    const source = object(rawSource);
-    const channel = source.channel;
-    if (channel !== 'mail' && channel !== 'whatsapp') throw new Error('Invalid sync response');
-    const status = source.status;
-    if (status !== 'disabled' && status !== 'connected' && status !== 'error')
-      throw new Error('Invalid sync response');
-    if (!Array.isArray(source.events) || source.events.length > 100)
-      throw new Error('Invalid sync response');
-    return {
-      channel,
-      account: text(source.account, 320),
-      status,
-      cursor: nullableText(source.cursor, 2048),
-      error: nullableText(source.error, 500),
-      events: source.events.map((rawEvent) => {
-        const event = object(rawEvent);
-        const receivedAt = text(event.receivedAt, 64);
-        if (!Number.isFinite(Date.parse(receivedAt))) throw new Error('Invalid sync response');
-        return {
-          externalEventId: text(event.externalEventId, 512),
-          externalThreadId: text(event.externalThreadId, 512),
-          externalMessageId: text(event.externalMessageId, 512),
-          sender: text(event.sender, 500),
-          subject: text(event.subject ?? '', 500, false),
-          snippet: text(event.snippet ?? '', 2000, false),
-          receivedAt,
-        };
-      }),
-    };
-  });
-}
 
 export function parseTriageResponse(value: unknown): InboxTriageResponse {
   const root = object(value);

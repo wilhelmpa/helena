@@ -18,6 +18,9 @@ Environment=API_PORT=3000
 Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
 Environment=PROJECT_WORKSPACE_ROOT=/srv/volition/workspaces/projects
 Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
+# Files it writes into the vault (mail notes, moved mail attachments) stay writable for
+# the volition group.
+UMask=0007
 LoadCredential=plan_control_token:/etc/volition/plan-control.token
 LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
 Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token

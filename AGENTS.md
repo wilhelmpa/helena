@@ -77,6 +77,8 @@ packages/db     @repo/db     — Drizzle client, schema, migrations, permission 
 packages/auth   @repo/auth   — better-auth server instance + instance auth settings
 packages/crypto @repo/crypto — AES-256-GCM encryption for secrets at rest
 packages/mailer @repo/mailer — SMTP/Resend transport for outbound email
+packages/mail   @repo/mail   — IMAP/SMTP mail: MIME parsing, HTML sanitizing, vault paths of mail files
+packages/storage @repo/storage — stored files on the local disk below STORAGE_ROOT
 packages/net    @repo/net    — SSRF guard for server-side fetches of a supplied URL
 packages/agent-tools @repo/agent-tools — tool definitions for the AI agent runtime
 packages/runner @itsaplan/runner — CLI that runs an external agent's queued tasks on the operator's own machine

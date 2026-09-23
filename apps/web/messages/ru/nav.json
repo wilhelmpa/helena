@@ -57,7 +57,7 @@
     "openExternal": "Открыть {tool} в новой вкладке",
     "unavailable": "{tool} не настроен",
     "unavailableDescription": "Администратор может подключить это рабочее пространство к инстансу.",
-    "mail": "Mail",
+    "mail": "Написать",
     "openBeside": "Открыть рядом",
     "closeSplit": "Закрыть разделённый вид",
     "browserBar": {
@@ -91,6 +91,7 @@
   "organization": "Organization",
   "schedules": "Расписания",
   "connections": "Connections",
+  "mailAccounts": "Почтовые аккаунты",
   "agentPool": "Пул агентов",
   "mcps": "MCP",
   "tools": "Инструменты",

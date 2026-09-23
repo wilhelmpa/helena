@@ -16,7 +16,6 @@ Environment=PROJECT_BROWSER_ROOT=/home/pw/services/volition-stack/browser/projec
 Environment=PROJECT_BROWSER_PUBLIC_URL=https://plan.volition.one/browser/
 Environment=CODE_PUBLIC_URL=https://plan.volition.one/workspace/code/
 Environment=TERMINAL_PUBLIC_URL=https://plan.volition.one/focus/terminal-project/
-Environment=INBOX_BASELINES={}
 LoadCredential=provisioning_token:/home/pw/services/volition-stack/.secrets/project_provisioning_token
 Environment=PROVISIONING_TOKEN_FILE=%d/provisioning_token
 ExecStart=/usr/bin/node /home/pw/services/itsaplan/deployment/volition-stack/integration/server.mjs

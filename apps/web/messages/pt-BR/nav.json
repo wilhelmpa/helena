@@ -57,7 +57,7 @@
     "openExternal": "Abrir {tool} em uma nova aba",
     "unavailable": "{tool} não está configurado",
     "unavailableDescription": "Um administrador pode conectar este espaço de trabalho à instância.",
-    "mail": "Mail",
+    "mail": "Escrever",
     "openBeside": "Abrir ao lado",
     "closeSplit": "Fechar visualização dividida",
     "browserBar": {
@@ -91,6 +91,7 @@
   "organization": "Organization",
   "schedules": "Agendamentos",
   "connections": "Connections",
+  "mailAccounts": "Contas de e-mail",
   "agentPool": "Pool de agentes",
   "mcps": "MCPs",
   "tools": "Ferramentas",

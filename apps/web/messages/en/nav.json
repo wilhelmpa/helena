@@ -60,7 +60,7 @@
     "openExternal": "Open {tool} in a new tab",
     "unavailable": "{tool} is not configured",
     "unavailableDescription": "An administrator can connect this workspace for the instance.",
-    "mail": "Mail",
+    "mail": "Compose",
     "openBeside": "Open beside",
     "closeSplit": "Close split view",
     "browserBar": {
@@ -94,6 +94,7 @@
   "organization": "Organization",
   "schedules": "Schedules",
   "connections": "Connections",
+  "mailAccounts": "Mail accounts",
   "agentPool": "Agent Pool",
   "mcps": "MCPs",
   "tools": "Tools",

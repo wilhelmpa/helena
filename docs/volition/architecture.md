@@ -16,8 +16,13 @@ responsibility is wrong.
 
 The Kingston integration service (`deployment/volition-stack/integration/server.mjs`) is the
 only component that changes operating-system resources: project workspaces, browser units,
-terminal sessions, Hermes profiles, the Gmail API and inbound mail. It has no user interface
-and makes no decisions.
+terminal sessions and Hermes profiles. It has no user interface and makes no decisions.
+
+Plan imports mail over IMAP in its worker and sends mail over SMTP after the owner confirms
+it. For an account with triage switched on, the worker hands new inbox mail to the Mastra
+`inbox-triage` workflow through the integration service's triage route
+(`POST /api/inbox/triage`). Hermes reads and drafts mail through Plan's MCP tools
+`search_mail`, `read_mail`, `draft_reply` and `request_mail_send`.
 
 ## Two paths
 
@@ -51,9 +56,7 @@ and makes no decisions.
    on the Approvals page, next to the Mastra runs held at an approval gate. A command
    Hermes flags as dangerous goes the same way in a run: Hermes' `plan-approval-guard`
    plugin blocks it until Plan lists it as approved for that run.
-4. **Plan and Mastra → integration service**: provisioning, sending mail after the owner
-   confirms it, browser control. The integration service reports inbound mail to Mastra as
-   an event.
+4. **Plan and Mastra → integration service**: provisioning, inbox triage, browser control.
 
 ```
           owner

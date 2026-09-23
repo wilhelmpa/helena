@@ -207,6 +207,23 @@ reader would otherwise get wrong:
   repeated call for the same step execution with what the first one did. The contract is
   in `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
 
+## Mail
+
+`modules/mail/{accounts,threads,drafts}` read and write what the worker imports. Two
+rules a reader would otherwise redraw:
+
+- **A thread's project decides who reaches it**, not its account. `mail_thread.project_id`
+  starts as the account's project (or a routing rule's) and changes with "Move to project";
+  NULL is Home, which only the team's owners and managers reach. Project mail needs the
+  `mail` permission there (`modules/mail/access.ts`). An agent's MCP tools are the
+  `:projectKey` routes, so an agent reaches only the threads filed under its project.
+- **The password is a secret of the credential store.** `mail_account.credential_id`
+  points at an `integration_credential` of kind `secret`; a typed password becomes one
+  labelled `Mail: <address>`, so the Credentials page lists every mail password.
+- **An agent never sends.** The send route refuses an agent; `request_mail_send` files an
+  approval request and parks the draft in `pending_approval`, and the worker queues it once
+  the request is approved.
+
 ## SCIM
 
 `modules/scim/` serves SCIM 2.0 (RFC 7643 / 7644) at `/scim/v2` for an identity provider

@@ -51,7 +51,7 @@ export async function createInboxTask(
     if (!column) throw new HttpError(400, 'Assigned project has no state');
 
     const title = (claimed.subject.trim() || `Message from ${claimed.sender}`).slice(0, 300);
-    const externalUrl = exactSourceUrl(claimed.channel, claimed.account, claimed.externalThreadId);
+    const externalUrl = exactSourceUrl(claimed.channel, claimed.externalThreadId);
     const sourceName = claimed.channel === 'mail' ? 'Mail' : 'WhatsApp';
     const description = externalUrl
       ? `Source: ${sourceName}\n\n[Open source thread](${externalUrl})`

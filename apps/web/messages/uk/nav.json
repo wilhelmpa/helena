@@ -57,7 +57,7 @@
     "openExternal": "Відкрити {tool} у новій вкладці",
     "unavailable": "{tool} не налаштовано",
     "unavailableDescription": "Адміністратор може підключити цей робочий простір до інстансу.",
-    "mail": "Mail",
+    "mail": "Написати",
     "openBeside": "Відкрити поруч",
     "closeSplit": "Закрити розділений вигляд",
     "browserBar": {
@@ -91,6 +91,7 @@
   "organization": "Organization",
   "schedules": "Розклади",
   "connections": "Connections",
+  "mailAccounts": "Поштові акаунти",
   "agentPool": "Пул агентів",
   "mcps": "MCP",
   "tools": "Інструменти",

@@ -22,6 +22,8 @@ export const agentActivityPath = (key: string) => `${projectPath(key)}/activity`
 
 export const connectionsPath = () => '/connections';
 
+export const mailAccountsPath = () => '/mail/accounts';
+
 export const agentsPath = () => '/agents';
 export const teamOrganizationPath = () => '/organization';
 

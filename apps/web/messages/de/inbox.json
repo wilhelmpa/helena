@@ -39,48 +39,6 @@
   "hub": {
     "messages": "Nachrichten",
     "updates": "Updates",
-    "noSources": "Keine Nachrichtenquelle verbunden. Der Zustand der Quellen wird erst angezeigt, wenn die Host-Integration ihn meldet.",
-    "enabled": "Quelle aktiviert",
-    "confidence": "Konfidenzschwelle",
-    "autoCreate": "Aufgaben automatisch erstellen",
-    "autoTaskProject": "Projekt für automatische Aufgaben",
-    "reviewOnly": "Nur prüfen",
-    "allProjects": "Alle Projekte",
-    "allSources": "Alle Quellen",
-    "allStatuses": "Alle Status",
-    "needsReview": "Zu prüfen",
-    "loading": "Nachrichten werden geladen…",
-    "empty": "Keine Nachrichten",
-    "loadMore": "Mehr laden",
-    "selectMessage": "Wähle eine Nachricht aus",
-    "triage": "Triage",
-    "confidenceValue": "Konfidenz: {value} %",
-    "project": "Projekt",
-    "unassigned": "Nicht zugewiesen",
-    "statusLabel": "Status",
-    "openSource": "Originalnachricht öffnen",
-    "openTask": "{id} öffnen",
-    "createTask": "Aufgabe erstellen",
-    "retryTriage": "Triage wiederholen",
-    "taskCreated": "Aufgabe erstellt",
-    "taskFailed": "Aufgabe konnte nicht erstellt werden",
-    "saveFailed": "Speichern fehlgeschlagen",
-    "channel": {
-      "mail": "E-Mail",
-      "whatsapp": "WhatsApp"
-    },
-    "connection": {
-      "disabled": "Deaktiviert",
-      "connecting": "Wird verbunden",
-      "connected": "Verbunden",
-      "error": "Fehler"
-    },
-    "status": {
-      "new": "Neu",
-      "assigned": "Zugewiesen",
-      "waiting": "Wartend",
-      "done": "Erledigt"
-    },
-    "back": "Zurück zu den Nachrichten"
+    "loading": "Nachrichten werden geladen…"
   }
 }

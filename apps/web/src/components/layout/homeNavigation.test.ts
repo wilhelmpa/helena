@@ -13,6 +13,7 @@ describe('home sidebar navigation', () => {
       { id: 'agentActivity', group: 'agents', href: '/activity' },
       { id: 'schedules', group: 'agents', href: '/schedules' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
+      { id: 'mailAccounts', group: 'globalSettings', href: '/mail/accounts' },
       { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
@@ -34,6 +35,7 @@ describe('home sidebar navigation', () => {
       { id: 'tools', group: 'globalSettings', href: '/tools' },
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
+      { id: 'mailAccounts', group: 'globalSettings', href: '/mail/accounts' },
       { id: 'credentials', group: 'globalSettings', href: '/credentials' },
       { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },

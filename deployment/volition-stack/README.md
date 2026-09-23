@@ -17,7 +17,7 @@ Keep these services separate. A single container would combine credentials, writ
 
 ## Excluded data
 
-The checkpoint excludes `.env`, `.secrets`, application state, databases, object data, backups, logs, generated Mastra state, dependency directories, deploy keys, and historical staging copies. Production identities and provider identifiers are replaced with examples. `config/gateway.example.json` contains placeholders for deployment-specific Cloudflare and Pub/Sub identifiers.
+The checkpoint excludes `.env`, `.secrets`, application state, databases, object data, backups, logs, generated Mastra state, dependency directories, deploy keys, and historical staging copies. Production identities and provider identifiers are replaced with examples. `config/gateway.example.json` contains placeholders for deployment-specific Cloudflare identifiers.
 
 ## Prerequisites
 
@@ -33,7 +33,6 @@ The captured units use `/home/pw`. Replace that path before installing on anothe
 
 Create `.secrets` with mode `0700`. Create these files with mode `0600`:
 
-- `inbox_push_token`
 - `mastra_inbox_adapter_token`
 - `nextcloud_admin_password`
 - `nextcloud_db_password`
@@ -48,7 +47,7 @@ Use a password manager or host credential store as the source. Copy `.env.exampl
 
 ## Gateway
 
-Copy `config/gateway.example.json` to the ignored `config/gateway.json`. Set the Cloudflare Access issuer, audience, owner identity, Google service account, Pub/Sub subscription, and mailbox allowlist. Cloudflare must route the application hostnames to the local gateway. The gateway verifies each signed Access assertion before proxying.
+Copy `config/gateway.example.json` to the ignored `config/gateway.json`. Set the Cloudflare Access issuer, audience, and owner identity. Cloudflare must route the application hostnames to the local gateway. The gateway verifies each signed Access assertion before proxying.
 
 ## Start
 

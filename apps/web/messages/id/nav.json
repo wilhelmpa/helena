@@ -57,7 +57,7 @@
     "openExternal": "Buka {tool} di tab baru",
     "unavailable": "{tool} belum dikonfigurasi",
     "unavailableDescription": "Administrator dapat menghubungkan ruang kerja ini untuk instans.",
-    "mail": "Mail",
+    "mail": "Tulis",
     "openBeside": "Buka di samping",
     "closeSplit": "Tutup tampilan terbagi",
     "browserBar": {
@@ -91,6 +91,7 @@
   "organization": "Organization",
   "schedules": "Jadwal",
   "connections": "Connections",
+  "mailAccounts": "Akun email",
   "agentPool": "Agent Pool",
   "mcps": "MCP",
   "tools": "Alat",

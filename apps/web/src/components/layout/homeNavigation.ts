@@ -6,6 +6,7 @@ import {
   globalAgentActivityPath,
   globalInboxPath,
   homeFilesPath,
+  mailAccountsPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
@@ -32,6 +33,7 @@ export type HomeNavigationId =
   | 'tools'
   | 'mcps'
   | 'connections'
+  | 'mailAccounts'
   | 'credentials'
   | 'devices'
   | 'teamSettings';
@@ -70,6 +72,7 @@ export function homeNavigation(teamId: number | null): HomeNavigationItem[] {
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },
     ]),
     { id: 'connections', group: 'globalSettings', href: connectionsPath() },
+    { id: 'mailAccounts', group: 'globalSettings', href: mailAccountsPath() },
     ...teamOnly([{ id: 'credentials', group: 'globalSettings', href: credentialsPath() }]),
     { id: 'devices', group: 'globalSettings', href: devicesPath() },
     { id: 'teamSettings', group: 'globalSettings', href: manageTeamsPath() },

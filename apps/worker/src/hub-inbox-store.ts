@@ -5,12 +5,13 @@ import {
   hubInboxThread,
   issue,
   issueActivity,
+  mailThread,
   project,
   projectAction,
   projectActionRun,
 } from '@repo/db';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import type { InboxSyncSource, InboxTriageResult } from './hub-inbox-contract';
+import type { InboxTriageResult } from './hub-inbox-contract';
 
 export interface ClaimedInboxThread {
   id: string;
@@ -31,92 +32,6 @@ export interface ClaimedInboxThread {
   confidenceThreshold: number;
   autoCreateTasks: boolean;
   autoTaskProjectId: number | null;
-}
-
-export async function sourceCursors(teamId: number): Promise<Record<string, string | null>> {
-  const rows = await db
-    .select({ account: hubInboxSource.account, cursor: hubInboxSource.cursor })
-    .from(hubInboxSource)
-    .where(and(eq(hubInboxSource.teamId, teamId), eq(hubInboxSource.enabled, true)));
-  return Object.fromEntries(rows.map((row) => [row.account, row.cursor]));
-}
-
-export async function saveSyncSources(
-  teamId: number,
-  sources: InboxSyncSource[],
-  syncIntervalMs: number,
-): Promise<number> {
-  let inserted = 0;
-  for (const source of sources) {
-    inserted += await db.transaction(async (tx) => {
-      const now = new Date();
-      const [saved] = await tx
-        .insert(hubInboxSource)
-        .values({
-          teamId,
-          channel: source.channel,
-          account: source.account,
-          status: source.status,
-          cursor: source.cursor,
-          lastSyncAt: now,
-          lastSuccessAt: source.status === 'connected' ? now : null,
-          lastError: source.error,
-          nextSyncAt: new Date(now.getTime() + syncIntervalMs),
-          updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: [hubInboxSource.teamId, hubInboxSource.channel, hubInboxSource.account],
-          set: {
-            status: source.status,
-            cursor: source.cursor,
-            lastSyncAt: now,
-            lastSuccessAt:
-              source.status === 'connected' ? now : sql`${hubInboxSource.lastSuccessAt}`,
-            lastError: source.error,
-            nextSyncAt: new Date(now.getTime() + syncIntervalMs),
-            updatedAt: now,
-          },
-        })
-        .returning({ id: hubInboxSource.id, enabled: hubInboxSource.enabled });
-      if (!saved?.enabled || source.events.length === 0) return 0;
-      const rows = await tx
-        .insert(hubInboxEvent)
-        .values(
-          source.events.map((event) => ({
-            sourceId: saved.id,
-            teamId,
-            externalEventId: event.externalEventId,
-            externalThreadId: event.externalThreadId,
-            externalMessageId: event.externalMessageId,
-            sender: event.sender,
-            subject: event.subject,
-            snippet: event.snippet,
-            receivedAt: new Date(event.receivedAt),
-          })),
-        )
-        .onConflictDoNothing()
-        .returning({ id: hubInboxEvent.id });
-      return rows.length;
-    });
-  }
-  return inserted;
-}
-
-export async function markSourcesSyncError(
-  teamId: number,
-  error: string,
-  syncIntervalMs: number,
-): Promise<void> {
-  await db
-    .update(hubInboxSource)
-    .set({
-      status: 'error',
-      lastSyncAt: new Date(),
-      lastError: error.slice(0, 500),
-      nextSyncAt: new Date(Date.now() + syncIntervalMs),
-      updatedAt: new Date(),
-    })
-    .where(and(eq(hubInboxSource.teamId, teamId), eq(hubInboxSource.enabled, true)));
 }
 
 interface ClaimedEvent {
@@ -214,7 +129,6 @@ export async function materializeInboxEvents(limit = 100): Promise<number> {
           sender: latest.sender,
           subject: latest.subject,
           snippet: latest.snippet,
-          externalUrl: sourceUrl(latest.channel, latest.account, latest.externalThreadId),
           receivedAt: new Date(latest.receivedAt),
           messageCount: group.length,
         })
@@ -225,7 +139,6 @@ export async function materializeInboxEvents(limit = 100): Promise<number> {
             sender: sql`CASE WHEN excluded.received_at >= ${hubInboxThread.receivedAt} THEN excluded.sender ELSE ${hubInboxThread.sender} END`,
             subject: sql`CASE WHEN excluded.received_at >= ${hubInboxThread.receivedAt} THEN excluded.subject ELSE ${hubInboxThread.subject} END`,
             snippet: sql`CASE WHEN excluded.received_at >= ${hubInboxThread.receivedAt} THEN excluded.snippet ELSE ${hubInboxThread.snippet} END`,
-            externalUrl: sql`CASE WHEN excluded.received_at >= ${hubInboxThread.receivedAt} THEN excluded.external_url ELSE ${hubInboxThread.externalUrl} END`,
             receivedAt: sql`GREATEST(excluded.received_at, ${hubInboxThread.receivedAt})`,
             messageCount: sql`${hubInboxThread.messageCount} + ${group.length}`,
             status: sql`CASE WHEN ${hubInboxThread.issueId} IS NOT NULL OR ${hubInboxThread.projectId} IS NOT NULL THEN 'assigned' ELSE 'new' END`,
@@ -244,7 +157,7 @@ export async function materializeInboxEvents(limit = 100): Promise<number> {
           .select({ projectId: issue.projectId, columnId: issue.columnId })
           .from(issue)
           .where(eq(issue.id, savedThread.issueId));
-        const body = linkedIssueMessage(latest.channel, latest.account, latest.externalThreadId);
+        const body = linkedIssueMessage(latest.channel);
         for (const event of group) {
           const [activity] = await tx
             .insert(issueActivity)
@@ -512,6 +425,25 @@ export async function completeTriage(
         eq(hubInboxThread.triageGeneration, thread.triageGeneration),
       ),
     );
+  if (!linked && route.projectId != null) {
+    await suggestMailThreadProject(thread.externalThreadId, route.projectId);
+  }
+}
+
+// A triaged mail thread keeps its project; the project the triage chose is offered
+// to the owner as a suggestion on the mail thread.
+async function suggestMailThreadProject(externalThreadId: string, projectId: number) {
+  const match = /^mail-thread:(\d+)$/.exec(externalThreadId);
+  if (!match) return;
+  await db
+    .update(mailThread)
+    .set({ suggestedProjectId: projectId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(mailThread.id, Number(match[1])),
+        sql`${mailThread.projectId} IS DISTINCT FROM ${projectId}`,
+      ),
+    );
 }
 
 async function resolveFallbackProject(
@@ -579,18 +511,8 @@ async function resolveRoute(
     : { projectId: null, issueId: null, invalid: true };
 }
 
-function sourceUrl(channel: 'mail' | 'whatsapp', account: string, threadId: string): string | null {
-  if (channel !== 'mail') return null;
-  return `https://mail.google.com/mail/u/${encodeURIComponent(account)}/#all/${encodeURIComponent(threadId)}`;
-}
-
-function linkedIssueMessage(
-  channel: 'mail' | 'whatsapp',
-  account: string,
-  threadId: string,
-): string {
-  const url = sourceUrl(channel, account, threadId);
-  return url
-    ? `New mail message received in the linked inbox thread. [Open source thread](${url})`
+function linkedIssueMessage(channel: 'mail' | 'whatsapp'): string {
+  return channel === 'mail'
+    ? 'New mail message received in the linked inbox thread.'
     : 'New WhatsApp message received in the linked inbox thread.';
 }

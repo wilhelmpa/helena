@@ -16,6 +16,7 @@ import IssueDevelopmentPanel from './IssueDevelopmentPanel';
 import IssueAgentTeamPanel from './IssueAgentTeamPanel';
 import IssuePipelinesPanel from './IssuePipelinesPanel';
 import IssueDocumentsPanel from './IssueDocumentsPanel';
+import IssueMailsPanel from './IssueMailsPanel';
 import IssueWorklogPanel from './IssueWorklogPanel';
 import IssueSubtasksPanel from './IssueSubtasksPanel';
 import IssueActivityFeed from './IssueActivityFeed';
@@ -215,6 +216,14 @@ export default function IssueDetailContent({
           issueId={issue.id}
           canRead={canReadDocuments}
           canLink={canLinkDocuments}
+        />
+      )}
+
+      {permissions.can('mail', 'read') && (
+        <IssueMailsPanel
+          teamId={project.project.teamId}
+          projectKey={project.project.key}
+          issueId={issue.id}
         />
       )}
 

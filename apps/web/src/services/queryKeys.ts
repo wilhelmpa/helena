@@ -298,9 +298,17 @@ export const qk = {
   approvalsPendingCount: ['approvals', 'pendingCount'] as const,
   workflowGates: ['approvals', 'workflowGates'] as const,
   pipelineApprovals: ['approvals', 'pipelines'] as const,
-  hubInboxSources: (teamId: number) => ['hubInbox', teamId, 'sources'] as const,
-  hubInboxThreads: (teamId: number, filters: unknown) =>
-    ['hubInbox', teamId, 'threads', filters] as const,
+  mail: (teamId: number) => ['mail', teamId] as const,
+  mailAccounts: (teamId: number) => ['mail', teamId, 'accounts'] as const,
+  projectMailAccounts: (projectKey: string) => ['mail', 'project', projectKey, 'accounts'] as const,
+  mailRules: (teamId: number) => ['mail', teamId, 'rules'] as const,
+  mailFolders: (teamId: number, accountId?: number) =>
+    ['mail', teamId, 'folders', accountId ?? null] as const,
+  mailThreads: (teamId: number, filters: unknown) => ['mail', teamId, 'threads', filters] as const,
+  mailThread: (threadId: number) => ['mail', 'thread', threadId] as const,
+  mailDrafts: (teamId: number) => ['mail', teamId, 'drafts'] as const,
+  mailDraft: (draftId: number) => ['mail', 'draft', draftId] as const,
+  issueMailThreads: (issueId: number) => ['mail', 'issue', issueId] as const,
   // The signed-in user's WebAuthn passkeys (account security page).
   passkeys: ['passkeys'] as const,
   // The signed-in user's connected external accounts (accounts page): the linked
