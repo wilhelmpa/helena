@@ -69,7 +69,9 @@ async function handle(
   else log(`${label}: started (${run.trigger})`);
   state.stops.add(stop);
   try {
-    const hermes = stop.signal.aborted ? null : ((await policy?.runSettings()) ?? null);
+    const hermes = stop.signal.aborted
+      ? null
+      : ((await policy?.runSettings({ runId: run.id })) ?? null);
     const outcome = stop.signal.aborted
       ? null
       : await withHeartbeat(
@@ -122,7 +124,7 @@ async function handleChat(
   const stop = new AbortController();
   state.stops.add(stop);
   try {
-    const hermes = (await policy?.runSettings()) ?? null;
+    const hermes = (await policy?.runSettings({ messageId: message.id })) ?? null;
     await withHeartbeat(
       log,
       async () => {

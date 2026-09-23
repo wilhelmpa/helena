@@ -315,6 +315,9 @@ describe('Hermes runtime policy synchronizer', () => {
         if (!next) throw new Error('no secrets expected');
         return next;
       },
+      webLogins: async () => {
+        throw new Error('no logins expected');
+      },
     };
   }
 

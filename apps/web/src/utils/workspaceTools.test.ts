@@ -17,7 +17,6 @@ const config: WorkspaceRuntimeEnv = {
   browserUrl: 'https://browser.example.com/',
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
-  vaultEnabled: true,
   obsidianVault: 'Volition',
 };
 

@@ -98,7 +98,7 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault",
+  "credentials": "Доступи",
   "devices": "Пристрої та Obsidian",
   "teamSettings": "Налаштування команди",
   "teamOrchestration": "Команда й оркестрація",

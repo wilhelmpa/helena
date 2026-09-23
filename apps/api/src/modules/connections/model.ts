@@ -88,33 +88,3 @@ export const MailAttachmentBody = t.Object({
 });
 
 export const MailPayload = t.Any();
-
-export const VaultStatusResponse = t.Object({
-  checkedAt: t.String(),
-  accessUrl: t.Nullable(t.String()),
-  accessStatus: t.Union([
-    t.Literal('protected'),
-    t.Literal('reachable'),
-    t.Literal('unavailable'),
-    t.Literal('unconfigured'),
-  ]),
-  httpStatus: t.Nullable(t.Integer()),
-  serviceHealthExposed: t.Literal(false),
-  secretValuesExposed: t.Literal(false),
-});
-
-export const SecretInventoryResponse = t.Object({
-  checkedAt: t.String(),
-  entries: t.Array(
-    t.Object({
-      name: t.String(),
-      updatedAt: t.Nullable(t.String()),
-      allowedHosts: t.Array(t.String()),
-    }),
-  ),
-});
-export const SecretSetBody = t.Object({
-  name: t.String({ pattern: '^[A-Z][A-Z0-9_]{2,127}$' }),
-  value: t.String({ minLength: 1, maxLength: 16384 }),
-  allowedHosts: t.Array(t.String({ minLength: 1, maxLength: 253 }), { maxItems: 20 }),
-});

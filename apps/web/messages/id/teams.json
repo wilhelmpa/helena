@@ -242,18 +242,12 @@
       "tool": {
         "title": "Alat",
         "hint": "Integrasi yang dapat dipanggil agen sebagai alat"
-      },
-      "secret": {
-        "title": "Rahasia",
-        "hint": "Nilai bernama yang dibaca server MCP milik agen tim"
       }
     },
     "columns": {
       "integration": "Integrasi",
       "credentials": "Kredensial"
-    },
-    "secretName": "Nama",
-    "secretNameHint": "Server MCP memilih rahasia berdasarkan nama ini. Nilainya disimpan terenkripsi dan tidak pernah ditampilkan lagi."
+    }
   },
   "skills": {
     "newSkill": "Keahlian baru",
@@ -363,7 +357,7 @@
     "literal": "Nilai",
     "secret": "Rahasia",
     "chooseSecret": "Pilih rahasia",
-    "noSecrets": "Tim belum memiliki rahasia. Tambahkan di Integrasi.",
+    "noSecrets": "Tim belum memiliki rahasia. Tambahkan di Kredensial.",
     "secretHint": "Nilai rahasia hanya dikirim ke runner agen yang mengaktifkan server ini, tidak pernah ke halaman ini.",
     "missingSecret": "rahasia terhapus",
     "addValue": "Tambah",

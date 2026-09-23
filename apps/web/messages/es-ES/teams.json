@@ -242,18 +242,12 @@
       "tool": {
         "title": "Herramientas",
         "hint": "Integraciones que un agente puede llamar como herramientas"
-      },
-      "secret": {
-        "title": "Secretos",
-        "hint": "Valores con nombre que leen los servidores MCP de los agentes del equipo"
       }
     },
     "columns": {
       "integration": "Integración",
       "credentials": "Credenciales"
-    },
-    "secretName": "Nombre",
-    "secretNameHint": "Los servidores MCP eligen el secreto por este nombre. El valor se guarda cifrado y no se vuelve a mostrar."
+    }
   },
   "skills": {
     "newSkill": "Nueva habilidad",
@@ -363,7 +357,7 @@
     "literal": "Valor",
     "secret": "Secreto",
     "chooseSecret": "Elige un secreto",
-    "noSecrets": "El equipo aún no tiene secretos. Añade uno en Integraciones.",
+    "noSecrets": "El equipo aún no tiene secretos. Añade uno en Credenciales.",
     "secretHint": "El valor de un secreto solo llega al runner de un agente que tiene el servidor activado, nunca a esta página.",
     "missingSecret": "secreto eliminado",
     "addValue": "Añadir",
