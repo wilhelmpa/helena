@@ -10,7 +10,7 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { getDefaultRoleId, getRole } from '#modules/roles/service';
 import { getTeamMembership } from '#modules/teams/service';
 import type { ProjectRow } from '#modules/projects/service';
-import { isAgentUser } from '#modules/agents/core/service';
+import { isAgentUser, queueAgentRuntime } from '#modules/agents/core/service';
 import {
   MemberCandidateListResponse,
   MemberPageResponse,
@@ -139,6 +139,7 @@ export const memberRoutes = new Elysia({ name: 'members', detail: { tags: ['Memb
           'ALREADY_PROJECT_MEMBER',
         );
       }
+      await queueAgentRuntime(body.userId);
       return noContent();
     },
     {
@@ -237,6 +238,7 @@ export const memberRoutes = new Elysia({ name: 'members', detail: { tags: ['Memb
         throw new HttpError(400, 'A project must have at least one owner');
       }
       await removeMember(project.id, params.userId);
+      await queueAgentRuntime(params.userId, [project.id]);
       return noContent();
     },
     {

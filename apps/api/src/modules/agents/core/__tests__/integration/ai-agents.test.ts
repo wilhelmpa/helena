@@ -929,6 +929,96 @@ describe('ai agents', () => {
     expect(detached.data?.projects.map((p) => p.key)).toEqual(['OPS']);
   });
 
+  // An external agent runs in a Hermes runtime the integration service provisions with
+  // its project, so every change to where it works queues that provisioning again. A
+  // queued run carries a new job id.
+  describe('Hermes runtime provisioning', () => {
+    async function jobIds(api: Api, keys: string[]) {
+      const ids: Record<string, string | undefined> = {};
+      for (const projectKey of keys) {
+        const job = await api.projects({ projectKey }).provisioning.get();
+        expect(job.data?.status).toBe('pending');
+        ids[projectKey] = job.data?.id;
+      }
+      return ids;
+    }
+
+    it('queues the projects an external agent joins, leaves and is deleted from', async () => {
+      const { asOwner, teamId } = await setup();
+      const ops = await asOwner
+        .teams({ teamId })
+        .projects.post({ key: 'OPS', name: 'Operations', autoAssignTeamAgents: false });
+      const before = await jobIds(asOwner, ['MKT', 'OPS']);
+
+      const created = await createAgent(asOwner, 'MKT', {
+        name: 'Coder',
+        username: 'coder',
+        kind: 'external',
+      });
+      const afterCreate = await jobIds(asOwner, ['MKT', 'OPS']);
+      expect(afterCreate.MKT).not.toBe(before.MKT);
+      expect(afterCreate.OPS).toBe(before.OPS);
+
+      const agent = agents(asOwner, teamId)({ agentId: created.data!.agent.id });
+      await agent.projects.put({ projectIds: [ops.data!.id] });
+      const afterMove = await jobIds(asOwner, ['MKT', 'OPS']);
+      expect(afterMove.MKT).not.toBe(afterCreate.MKT);
+      expect(afterMove.OPS).not.toBe(afterCreate.OPS);
+
+      // Saving the same projects again changes nothing it runs with.
+      await agent.patch({ name: 'Coder 2', projectIds: [ops.data!.id] });
+      expect(await jobIds(asOwner, ['MKT', 'OPS'])).toEqual(afterMove);
+
+      await agent.delete();
+      const afterDelete = await jobIds(asOwner, ['MKT', 'OPS']);
+      expect(afterDelete.MKT).toBe(afterMove.MKT);
+      expect(afterDelete.OPS).not.toBe(afterMove.OPS);
+    });
+
+    it('queues the projects of an agent added or removed through the member list', async () => {
+      const { asOwner, teamId } = await setup();
+      await asOwner
+        .teams({ teamId })
+        .projects.post({ key: 'OPS', name: 'Operations', autoAssignTeamAgents: false });
+      const created = await createAgent(asOwner, 'MKT', {
+        name: 'Coder',
+        username: 'coder',
+        kind: 'external',
+      });
+      const userId = created.data!.agent.userId;
+      const before = await jobIds(asOwner, ['MKT', 'OPS']);
+
+      const added = await asOwner
+        .projects({ projectKey: 'OPS' })
+        .members.post({ userId, role: 'member' });
+      expect(added.status).toBe(204);
+      const afterAdd = await jobIds(asOwner, ['MKT', 'OPS']);
+      expect(afterAdd.MKT).not.toBe(before.MKT);
+      expect(afterAdd.OPS).not.toBe(before.OPS);
+
+      await asOwner.projects({ projectKey: 'OPS' }).members({ userId }).delete();
+      const afterRemove = await jobIds(asOwner, ['MKT', 'OPS']);
+      expect(afterRemove.MKT).not.toBe(afterAdd.MKT);
+      expect(afterRemove.OPS).not.toBe(afterAdd.OPS);
+    });
+
+    it('leaves the provisioning of a project alone for an internal agent or a person', async () => {
+      const { asOwner } = await setup();
+      const credentialId = await openAiCredential(asOwner);
+      const before = await jobIds(asOwner, ['MKT']);
+
+      await createAgent(asOwner, 'MKT', {
+        name: 'Internal',
+        username: 'internal',
+        kind: 'internal',
+        modelCredentialId: credentialId,
+        model: 'gpt-4o-mini',
+      });
+      await addProjectMember(asOwner, 'MKT');
+      expect(await jobIds(asOwner, ['MKT'])).toEqual(before);
+    });
+  });
+
   // An agent is set up and talked to entirely over MCP. What stays out serves the chat
   // UI: the streamed run and the caller's own thread history, plus this agent's run
   // history — the analytics routes carry the project-wide run feed MCP reads instead.

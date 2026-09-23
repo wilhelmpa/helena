@@ -476,10 +476,13 @@ export async function getProvisioningJob(projectId: number): Promise<Provisionin
   return row ? mapProvisioningJob(row) : null;
 }
 
+// A retry is a new request: the agents and boards it sends may differ from the failed
+// one, and the integration service refuses a known id with another request.
 export async function retryProvisioningJob(projectId: number): Promise<ProvisioningJobRow> {
   const [row] = await db
     .update(projectProvisioningJob)
     .set({
+      id: crypto.randomUUID(),
       status: 'pending',
       attempts: 0,
       nextAttemptAt: new Date(),
