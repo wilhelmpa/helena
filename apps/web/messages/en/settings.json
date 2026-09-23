@@ -482,7 +482,8 @@
         "budgetMinutes": "Minutes per stage",
         "noLimit": "No limit",
         "hint": "Limits apply to each Hermes stage. A stage that reaches them stops and reports what it has."
-      }
+      },
+      "configurationSaved": "{name}: configuration saved"
     }
   },
   "webhooks": {

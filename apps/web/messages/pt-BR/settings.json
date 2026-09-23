@@ -482,7 +482,8 @@
         "budgetMinutes": "Minutos por etapa",
         "noLimit": "Sem limite",
         "hint": "Os limites valem para cada etapa do Hermes. Uma etapa que os atinge para e relata o que tem."
-      }
+      },
+      "configurationSaved": "{name}: configuração salva"
     }
   },
   "webhooks": {

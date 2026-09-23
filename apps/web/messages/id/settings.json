@@ -482,7 +482,8 @@
         "budgetMinutes": "Menit per tahap",
         "noLimit": "Tanpa batas",
         "hint": "Batas berlaku untuk setiap tahap Hermes. Tahap yang mencapainya berhenti dan melaporkan hasilnya."
-      }
+      },
+      "configurationSaved": "{name}: konfigurasi disimpan"
     }
   },
   "webhooks": {

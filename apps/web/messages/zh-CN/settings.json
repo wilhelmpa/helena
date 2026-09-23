@@ -482,7 +482,8 @@
         "budgetMinutes": "每阶段分钟数",
         "noLimit": "不限",
         "hint": "限制作用于每个 Hermes 阶段。达到限制的阶段会停止并报告已有结果。"
-      }
+      },
+      "configurationSaved": "{name}：配置已保存"
     }
   },
   "webhooks": {

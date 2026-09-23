@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -82,18 +83,21 @@ export default function ControlPlaneWorkflowConfiguration({
       className="grid gap-3 rounded-lg bg-muted/30 p-3 sm:grid-cols-[1fr_8rem_auto]"
       onSubmit={(event) => {
         event.preventDefault();
-        update.mutate({
-          workflowId: workflow.id,
-          assignment: {
-            ...workflow.assignment,
-            configuration: {
-              ...workflow.assignment.configuration,
-              instructions: instructions.trim() || undefined,
-              retryLimit: Math.max(0, Number.parseInt(retryLimit, 10) || 0),
-              ...(agentTeam ? agentTeamPolicyConfiguration(policy) : {}),
+        update.mutate(
+          {
+            workflowId: workflow.id,
+            assignment: {
+              ...workflow.assignment,
+              configuration: {
+                ...workflow.assignment.configuration,
+                instructions: instructions.trim() || undefined,
+                retryLimit: Math.max(0, Number.parseInt(retryLimit, 10) || 0),
+                ...(agentTeam ? agentTeamPolicyConfiguration(policy) : {}),
+              },
             },
           },
-        });
+          { onSuccess: () => toast.success(t('configurationSaved', { name: workflow.name })) },
+        );
       }}
     >
       <div className="space-y-1">
