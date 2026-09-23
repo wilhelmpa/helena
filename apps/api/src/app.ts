@@ -161,6 +161,10 @@ export const app = new Elysia()
             name: 'Connections',
             description: 'Native runtime connections and human-confirmed mail management',
           },
+          {
+            name: 'Device sync',
+            description: "Syncthing, which syncs the vault with the owner's devices",
+          },
           { name: 'Project templates', description: 'Reusable project and board structures' },
           {
             name: 'Organization',

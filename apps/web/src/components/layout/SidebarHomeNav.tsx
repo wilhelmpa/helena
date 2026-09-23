@@ -8,6 +8,7 @@ import {
   KeyRound,
   LayoutGrid,
   ListTodo,
+  MonitorSmartphone,
   Plug,
   Radio,
   ShieldCheck,
@@ -41,6 +42,7 @@ const icons = {
   mcps: Radio,
   connections: Plug,
   credentials: KeyRound,
+  devices: MonitorSmartphone,
   teamSettings: UsersRound,
 } as const;
 
