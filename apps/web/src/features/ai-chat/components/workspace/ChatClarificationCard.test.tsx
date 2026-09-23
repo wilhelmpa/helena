@@ -72,17 +72,7 @@ describe('ChatClarificationCard', () => {
       dom.window.HTMLTextAreaElement.prototype,
       'value',
     )!.set!;
-    // React's own change-value tracking (ChangeEventPlugin) keeps the fiber of the
-    // field it is watching in module scope, not per root, updated only by processing
-    // a real focus event through React's own delegated listeners — set here as its
-    // own commit, before the value change, so that update lands before anything
-    // reads it, rather than racing it in the same batch. Left stale (a previous
-    // test's own field, from a root this one never rendered) it derefs a fiber this
-    // root's own unmount already cleared, and the next value change taken as a
-    // report on that dead node crashes.
-    act(() => textarea.dispatchEvent(new dom.window.FocusEvent('focusin', { bubbles: true })));
     act(() => {
-      textarea.focus();
       setValue.call(textarea, '  Yes, go ahead.  ');
       textarea.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
     });
@@ -101,9 +91,7 @@ describe('ChatClarificationCard', () => {
       dom.window.HTMLTextAreaElement.prototype,
       'value',
     )!.set!;
-    act(() => textarea.dispatchEvent(new dom.window.FocusEvent('focusin', { bubbles: true })));
     act(() => {
-      textarea.focus();
       setValue.call(textarea, 'ok');
       textarea.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
     });
