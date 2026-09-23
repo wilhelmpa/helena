@@ -6,8 +6,9 @@ import {
   agentChatMessage,
   agentChatThread,
   aiAgent,
+  user,
 } from '@repo/db';
-import { and, asc, desc, eq, gt, inArray, isNotNull, notExists, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, notExists, sql } from 'drizzle-orm';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { HttpError, intEnv, iso } from '#shared/lib';
 import { deleteContextUsage, recordContextUsage, type ContextUsage } from '../chat-usage';
@@ -25,6 +26,15 @@ import type { ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { newChatThreadId } from '../core/runtime/thread-ids';
 import { touchRunner, type RunnerAgent } from '../runner/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
+import { questionText, imagePaths, type ChatAttachment } from './attachments';
+import {
+  buildTree,
+  latestLeaf,
+  newestMessage,
+  pathTo,
+  siblingsOf,
+  type MessageTree,
+} from './branches';
 
 export type ChatCatalogModel = {
   id: string;
@@ -77,6 +87,7 @@ const EVENT_PAGE = 500;
 // The statuses an answer can still be worked on in: a runner claims either, and only
 // these take events, heartbeats and a result.
 const LIVE_STATUSES = ['pending', 'streaming'];
+const isLive = (status: string) => LIVE_STATUSES.includes(status);
 
 // The caller's conversations with one external agent: the favorites group, the hits of
 // a search, or one page of the rest of them, newest first.
@@ -107,6 +118,7 @@ async function favoriteThreads(userId: string, agentId: number): Promise<ChatThr
         eq(agentChatThread.agentId, agentId),
         eq(agentChatThread.userId, userId),
         eq(agentChatFavorite.userId, userId),
+        isNull(agentChatThread.deletedAt),
       ),
     )
     .orderBy(desc(agentChatThread.updatedAt))
@@ -138,6 +150,7 @@ async function unstarredPage(userId: string, agentId: number, page: number): Pro
       and(
         eq(agentChatThread.agentId, agentId),
         eq(agentChatThread.userId, userId),
+        isNull(agentChatThread.deletedAt),
         notExists(
           db
             .select({ one: sql`1` })
@@ -197,6 +210,7 @@ async function searchThreads(
     ) hit ON true
     WHERE t.agent_id = ${agentId}
       AND t.user_id = ${userId}
+      AND t.deleted_at IS NULL
       AND (t.title ILIKE ${like} OR hit.snippet IS NOT NULL)
     ORDER BY rank, t.updated_at DESC
     LIMIT ${PAGE_SIZE + 1} OFFSET ${page * PAGE_SIZE}
@@ -225,27 +239,49 @@ export async function ownsThread(
   return rows.length > 0;
 }
 
-// One page of a thread's transcript, oldest first within the page, page 0 being the
-// newest — the shape the chat history loads backwards from. Null when the thread is not
-// the caller's, which the route maps to a 404.
+// The skeleton of a thread's messages, from which its branches are read.
+export async function readTree(threadId: string): Promise<MessageTree> {
+  const rows = await db
+    .select({ id: agentChatMessage.id, parentId: agentChatMessage.parentId })
+    .from(agentChatMessage)
+    .where(eq(agentChatMessage.threadId, threadId));
+  return buildTree(rows);
+}
+
+// The shown branch of a thread, oldest first.
+async function shownPath(threadId: string): Promise<{ tree: MessageTree; path: number[] }> {
+  const [thread] = await db
+    .select({ activeMessageId: agentChatThread.activeMessageId })
+    .from(agentChatThread)
+    .where(eq(agentChatThread.id, threadId));
+  const tree = await readTree(threadId);
+  const leaf =
+    thread?.activeMessageId != null && tree.has(thread.activeMessageId)
+      ? thread.activeMessageId
+      : newestMessage(tree);
+  return { tree, path: pathTo(tree, leaf) };
+}
+
+// One page of the shown branch of a thread, oldest first within the page, page 0 being
+// the newest — the shape the chat history loads backwards from. Null when the thread is
+// not the caller's, which the route maps to a 404.
 export async function getThreadMessages(
   threadId: string,
   userId: string,
   page = 0,
 ): Promise<ChatMessagePage | null> {
   if (!(await ownsThread(threadId, userId))) return null;
-  const rows = await db
-    .select()
-    .from(agentChatMessage)
-    .where(eq(agentChatMessage.threadId, threadId))
-    .orderBy(desc(agentChatMessage.id))
-    .limit(PAGE_SIZE + 1)
-    .offset(page * PAGE_SIZE);
-  const hasMore = rows.length > PAGE_SIZE;
-  const turns = (hasMore ? rows.slice(0, PAGE_SIZE) : rows).reverse();
+  const { tree, path } = await shownPath(threadId);
+  const end = path.length - page * PAGE_SIZE;
+  const ids = path.slice(Math.max(0, end - PAGE_SIZE), Math.max(0, end));
+  const rows =
+    ids.length > 0
+      ? await db.select().from(agentChatMessage).where(inArray(agentChatMessage.id, ids))
+      : [];
+  const turns = ids.flatMap((id) => rows.filter((row) => row.id === id));
   const newest = page === 0 ? turns.at(-1) : undefined;
   const activeAnswer =
-    newest?.role === 'assistant' && (newest.status === 'pending' || newest.status === 'streaming')
+    newest?.role === 'assistant' && isLive(newest.status)
       ? {
           messageId: newest.id,
           status: newest.status as 'pending' | 'streaming',
@@ -264,14 +300,28 @@ export async function getThreadMessages(
           ? (answers.get(r.id) ?? [])
           : [{ type: 'text' as const, text: r.content }],
       createdAt: iso(r.createdAt),
+      parentId: r.parentId == null ? null : String(r.parentId),
+      siblingIds: siblingsOf(tree, r.id).map(String),
+      agentId: r.agentId,
+      ...(r.attachments ? { attachments: r.attachments as ChatAttachment[] } : {}),
+      ...(r.role === 'assistant' && {
+        model: r.model,
+        inputTokens: r.inputTokens,
+        outputTokens: r.outputTokens,
+        durationMs:
+          r.startedAt && r.finishedAt ? r.finishedAt.getTime() - r.startedAt.getTime() : null,
+      }),
       ...(r.status === 'canceled' ? { stopped: true } : {}),
+      ...(r.status === 'failed'
+        ? { error: r.lastError ?? 'The agent did not finish the answer' }
+        : {}),
     }))
     // An answer whose runner has reported nothing yet has nothing to show; the browser
-    // is streaming it.
-    .filter((m) => m.parts.length > 0);
+    // is streaming it. A failed one is kept for its error, so it can be tried again.
+    .filter((m) => m.parts.length > 0 || m.error);
   return {
     items,
-    nextPage: hasMore ? page + 1 : null,
+    nextPage: end - PAGE_SIZE > 0 ? page + 1 : null,
     ...(activeAnswer && { activeAnswer }),
   };
 }
@@ -301,6 +351,7 @@ async function readAnswerParts(messageIds: number[]): Promise<Map<number, ChatPa
       content: sql<string | null>`${agentChatEvent.payload}->>'content'`,
       toolCallId: sql<string | null>`${agentChatEvent.payload}->>'toolCallId'`,
       toolCallName: sql<string | null>`${agentChatEvent.payload}->>'toolCallName'`,
+      isError: sql<boolean | null>`(${agentChatEvent.payload}->>'isError')::boolean`,
     })
     .from(agentChatEvent)
     .where(
@@ -341,6 +392,7 @@ async function readAnswerParts(messageIds: number[]): Promise<Map<number, ChatPa
       case 'TOOL_CALL_RESULT': {
         const call = calls.get(callKey);
         if (call && row.content) call.result = row.content;
+        if (call && row.isError) call.isError = true;
         break;
       }
     }
@@ -374,100 +426,212 @@ export async function deleteThread(threadId: string, userId: string): Promise<bo
   return true;
 }
 
-// Stores the member's message and queues the answer next to it. A thread id continues
-// that conversation; without one a thread is created, titled after the message. Null
-// when the thread named is not the caller's. A paused agent takes no message: the
-// member would wait for an answer that does not come.
-export async function sendMessage(input: {
-  agentId: number;
-  userId: string;
-  prompt: string;
-  threadId?: string;
-  model?: string | null;
-  thinkingLevel?: string | null;
-}): Promise<{ threadId: string; messageId: number } | null> {
-  const { agentId, userId, prompt } = input;
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Refuses a send the member is making too fast, and one into a thread whose answer is
+// still being produced. Held under the member's lock on the agent, so two sends in the
+// same moment are counted one after the other.
+async function assertMaySend(tx: Tx, agentId: number, userId: string, threadId?: string) {
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`agent-chat-send:${agentId}:${userId}`}, 0))`,
+  );
+  const [recent] = await tx
+    .select({ count: sql<number>`count(*)::int` })
+    .from(agentChatMessage)
+    .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
+    .where(
+      and(
+        eq(agentChatMessage.agentId, agentId),
+        eq(agentChatThread.userId, userId),
+        // Every send and every retry queues one answer, so the answers count both.
+        eq(agentChatMessage.role, 'assistant'),
+        sql`${agentChatMessage.createdAt} > now() - make_interval(secs => ${agentChatConfig.sendWindowSeconds()})`,
+      ),
+    );
+  if (Number(recent?.count ?? 0) >= agentChatConfig.sendLimit()) {
+    throw new HttpError(429, 'Too many chat messages. Wait before sending another.');
+  }
+  if (!threadId) return;
+  const [live] = await tx
+    .select({ count: sql<number>`count(*)::int` })
+    .from(agentChatMessage)
+    .where(
+      and(
+        eq(agentChatMessage.threadId, threadId),
+        eq(agentChatMessage.role, 'assistant'),
+        inArray(agentChatMessage.status, LIVE_STATUSES),
+      ),
+    );
+  if (Number(live?.count ?? 0) >= agentChatConfig.maxLiveTurnsPerThread()) {
+    throw new HttpError(429, 'Wait for the current answer before sending another message.');
+  }
+}
+
+async function assertNotPaused(agentId: number) {
   const [paused] = await db
     .select({ reason: aiAgent.pauseReason })
     .from(aiAgent)
     .where(and(eq(aiAgent.id, agentId), isNotNull(aiAgent.pausedAt)));
   if (paused)
     throw new HttpError(409, `The agent is paused${paused.reason ? `: ${paused.reason}` : '.'}`);
-  return db.transaction(async (tx) => {
-    await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${`agent-chat-send:${agentId}:${userId}`}, 0))`,
-    );
-    const [recent] = await tx
-      .select({ count: sql<number>`count(*)::int` })
-      .from(agentChatMessage)
-      .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
-      .where(
-        and(
-          eq(agentChatMessage.agentId, agentId),
-          eq(agentChatMessage.role, 'user'),
-          eq(agentChatThread.userId, userId),
-          sql`${agentChatMessage.createdAt} > now() - make_interval(secs => ${agentChatConfig.sendWindowSeconds()})`,
-        ),
-      );
-    if (Number(recent?.count ?? 0) >= agentChatConfig.sendLimit()) {
-      throw new HttpError(429, 'Too many chat messages. Wait before sending another.');
-    }
+}
 
+// The caller's live thread in the scope a route addresses: a project's chat, or Home
+// with no project. Null when it is someone else's, of another scope, or deleted.
+async function scopedThread(tx: Tx, threadId: string, userId: string, projectId: number | null) {
+  const [thread] = await tx
+    .select({ id: agentChatThread.id, activeMessageId: agentChatThread.activeMessageId })
+    .from(agentChatThread)
+    .where(
+      and(
+        eq(agentChatThread.id, threadId),
+        eq(agentChatThread.userId, userId),
+        projectId == null
+          ? isNull(agentChatThread.projectId)
+          : eq(agentChatThread.projectId, projectId),
+        isNull(agentChatThread.deletedAt),
+      ),
+    )
+    .for('update');
+  return thread ?? null;
+}
+
+// Stores the member's message and queues the answer next to it. A thread id continues
+// that conversation; without one a thread is created in the route's scope, titled
+// after the message. The question follows `parentId` — the message the member answered
+// from, or null for the first message of an edited conversation — and otherwise the
+// message the thread shows last. The agent answering may be another one than the
+// thread's own: an agent addressed with @ answers in the same thread.
+//
+// Null when the thread named is not the caller's. A paused agent takes no message: the
+// member would wait for an answer that does not come.
+export async function sendMessage(input: {
+  agentId: number;
+  userId: string;
+  projectId: number | null;
+  prompt: string;
+  threadId?: string;
+  parentId?: number | null;
+  attachments?: ChatAttachment[];
+  model?: string | null;
+  thinkingLevel?: string | null;
+}): Promise<{ threadId: string; messageId: number; userMessageId: number } | null> {
+  const { agentId, userId, prompt } = input;
+  await assertNotPaused(agentId);
+  return db.transaction(async (tx) => {
+    await assertMaySend(tx, agentId, userId, input.threadId);
     let threadId = input.threadId;
+    let parentId: number | null = null;
     const settings = await validateChatSettings(agentId, input.model, input.thinkingLevel);
     if (threadId) {
-      const rows = await tx
-        .select({ id: agentChatThread.id })
-        .from(agentChatThread)
-        .where(
-          and(
-            eq(agentChatThread.id, threadId),
-            eq(agentChatThread.agentId, agentId),
-            eq(agentChatThread.userId, userId),
-          ),
-        )
-        .limit(1);
-      if (!rows[0]) return null;
-      const [live] = await tx
-        .select({ count: sql<number>`count(*)::int` })
-        .from(agentChatMessage)
-        .where(
-          and(
-            eq(agentChatMessage.threadId, threadId),
-            eq(agentChatMessage.role, 'assistant'),
-            inArray(agentChatMessage.status, LIVE_STATUSES),
-          ),
-        );
-      if (Number(live?.count ?? 0) >= agentChatConfig.maxLiveTurnsPerThread()) {
-        throw new HttpError(429, 'Wait for the current answer before sending another message.');
+      const thread = await scopedThread(tx, threadId, userId, input.projectId);
+      if (!thread) return null;
+      parentId = input.parentId === undefined ? thread.activeMessageId : input.parentId;
+      if (parentId != null && !(await isMessageOf(tx, threadId, parentId))) {
+        throw new HttpError(400, 'The message to continue from is not part of this chat');
       }
-      await tx
-        .update(agentChatThread)
-        .set({ updatedAt: new Date(), ...settings })
-        .where(eq(agentChatThread.id, threadId));
     } else {
       threadId = newChatThreadId(agentId, userId);
       await tx.insert(agentChatThread).values({
         id: threadId,
         agentId,
         userId,
+        projectId: input.projectId,
         title: prompt.slice(0, TITLE_LIMIT),
         ...settings,
       });
     }
-    await tx.insert(agentChatMessage).values({
-      threadId,
-      agentId,
-      role: 'user',
-      content: prompt,
-      status: 'success',
-    });
-    const answer = await tx
+    const [question] = await tx
       .insert(agentChatMessage)
-      .values({ threadId, agentId, role: 'assistant' })
+      .values({
+        threadId,
+        agentId,
+        parentId,
+        role: 'user',
+        content: prompt,
+        status: 'success',
+        attachments: input.attachments?.length ? input.attachments : null,
+      })
       .returning({ id: agentChatMessage.id });
-    return { threadId, messageId: answer[0].id };
+    const [answer] = await tx
+      .insert(agentChatMessage)
+      .values({ threadId, agentId, parentId: question.id, role: 'assistant' })
+      .returning({ id: agentChatMessage.id });
+    await tx
+      .update(agentChatThread)
+      .set({ activeMessageId: answer.id, archivedAt: null, updatedAt: new Date(), ...settings })
+      .where(eq(agentChatThread.id, threadId));
+    return { threadId, messageId: answer.id, userMessageId: question.id };
   });
+}
+
+// Queues another answer to a question of the thread, next to the answers it already
+// has. The new answer becomes the one the thread shows.
+export async function retryMessage(input: {
+  agentId: number;
+  userId: string;
+  projectId: number | null;
+  threadId: string;
+  questionId: number;
+}): Promise<{ threadId: string; messageId: number } | null> {
+  await assertNotPaused(input.agentId);
+  return db.transaction(async (tx) => {
+    await assertMaySend(tx, input.agentId, input.userId, input.threadId);
+    const thread = await scopedThread(tx, input.threadId, input.userId, input.projectId);
+    if (!thread) return null;
+    const [question] = await tx
+      .select({ role: agentChatMessage.role })
+      .from(agentChatMessage)
+      .where(
+        and(
+          eq(agentChatMessage.id, input.questionId),
+          eq(agentChatMessage.threadId, input.threadId),
+        ),
+      );
+    if (question?.role !== 'user') {
+      throw new HttpError(400, 'Only a question of this chat can be answered again');
+    }
+    const [answer] = await tx
+      .insert(agentChatMessage)
+      .values({
+        threadId: input.threadId,
+        agentId: input.agentId,
+        parentId: input.questionId,
+        role: 'assistant',
+      })
+      .returning({ id: agentChatMessage.id });
+    await tx
+      .update(agentChatThread)
+      .set({ activeMessageId: answer.id, updatedAt: new Date() })
+      .where(eq(agentChatThread.id, input.threadId));
+    return { threadId: input.threadId, messageId: answer.id };
+  });
+}
+
+async function isMessageOf(tx: Tx, threadId: string, messageId: number): Promise<boolean> {
+  const rows = await tx
+    .select({ id: agentChatMessage.id })
+    .from(agentChatMessage)
+    .where(and(eq(agentChatMessage.id, messageId), eq(agentChatMessage.threadId, threadId)));
+  return rows.length > 0;
+}
+
+// Shows another version of a message: the thread then shows that version and the newest
+// conversation that continued from it. False when the thread or the message is not the
+// caller's.
+export async function showVersion(
+  threadId: string,
+  userId: string,
+  messageId: number,
+): Promise<boolean> {
+  if (!(await ownsThread(threadId, userId))) return false;
+  const tree = await readTree(threadId);
+  if (!tree.has(messageId)) return false;
+  await db
+    .update(agentChatThread)
+    .set({ activeMessageId: latestLeaf(tree, messageId) })
+    .where(eq(agentChatThread.id, threadId));
+  return true;
 }
 
 export interface ClaimedChat {
@@ -479,6 +643,7 @@ export interface ClaimedChat {
   sessionId: string | null;
   model: string | null;
   thinkingLevel: string | null;
+  images: string[];
 }
 
 // The claim's raw row: the answer plus what the prompts are built from.
@@ -486,7 +651,6 @@ interface ClaimedRow {
   id: number;
   threadId: string;
   attempts: number;
-  sessionId: string | null;
   model: string | null;
   thinkingLevel: string | null;
 }
@@ -536,6 +700,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
     SET attempts = m.attempts + 1,
         status = 'streaming',
         content = '',
+        session_id = NULL,
         started_at = coalesce(m.started_at, now()),
         next_attempt_at = now() + make_interval(secs => ${agentChatConfig.leaseSeconds()})
     WHERE m.id = (
@@ -553,32 +718,81 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
       m.id,
       m.thread_id AS "threadId",
       m.attempts,
-      (SELECT cli_session_id FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "sessionId"
-      , (SELECT model FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model"
-      , (SELECT thinking_level FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "thinkingLevel"
+      (SELECT model FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model",
+      (SELECT thinking_level FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "thinkingLevel"
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
   await db.delete(agentChatEvent).where(eq(agentChatEvent.messageId, row.id));
   // The agent's instructions reach Hermes through the SOUL.md of its profile, so the
-  // message carries no system prompt. A thread bound to a live session needs only the
-  // new message; one without a session gets the earlier turns, which Hermes lost.
-  const resumed = row.sessionId !== null;
-  const history = await readHistory(row.threadId, row.id, resumed);
-  const question = history.pop()?.content ?? '';
+  // message carries no system prompt. A branch whose last answer is the last one of a
+  // live session needs only the new question; any other gets the earlier turns of the
+  // branch, which that session does not hold.
+  const history = await readBranch(row.threadId, row.id);
+  const question = history.pop();
+  const sessionId = await resumableSession(row.threadId, history, agent.id);
   // A thread without its own model follows the agent's settings, the way a run does.
   const settings = row.model
     ? { model: row.model, thinkingLevel: row.thinkingLevel }
     : { model: agent.model, thinkingLevel: agent.thinkingLevel };
+  await db
+    .update(agentChatMessage)
+    .set({ model: settings.model, sessionId })
+    .where(eq(agentChatMessage.id, row.id));
+  const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
+  const text = questionText(question?.content ?? '', attachments);
+  const earlier = sessionId ? [] : history.slice(-agentChatConfig.historyMessages());
   return {
     id: row.id,
     threadId: row.threadId,
-    prompt: history.length > 0 ? frameChatPrompt(history, question) : question,
+    prompt: earlier.length > 0 ? frameChatPrompt(earlier, text, agent.id) : text,
     systemPrompt: '',
     attempts: row.attempts,
-    sessionId: row.sessionId,
+    sessionId,
     ...settings,
+    images: imagePaths(attachments),
   };
+}
+
+type BranchTurn = typeof agentChatMessage.$inferSelect & { agentName: string };
+
+// The turns of the branch that leads to the claimed answer, oldest first, without the
+// answer itself: the last of them is the question being answered. Turns with nothing to
+// say — an answer that failed before writing — are left out.
+async function readBranch(threadId: string, answerId: number): Promise<BranchTurn[]> {
+  const tree = await readTree(threadId);
+  const ids = pathTo(tree, answerId).slice(0, -1);
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select({ message: agentChatMessage, agentName: user.name })
+    .from(agentChatMessage)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentChatMessage.agentId))
+    .innerJoin(user, eq(user.id, aiAgent.userId))
+    .where(inArray(agentChatMessage.id, ids));
+  return ids.flatMap((id) => {
+    const row = rows.find((candidate) => candidate.message.id === id);
+    if (!row || (row.message.role === 'assistant' && !row.message.content)) return [];
+    return [{ ...row.message, agentName: row.agentName }];
+  });
+}
+
+// The session to resume: the one the branch's last answer ran in, when that answer was
+// this agent's and the last one produced in the session. Otherwise the session holds a
+// conversation other than this branch, and a fresh one is started.
+async function resumableSession(
+  threadId: string,
+  history: BranchTurn[],
+  agentId: number,
+): Promise<string | null> {
+  const last = [...history].reverse().find((turn) => turn.role === 'assistant');
+  if (!last?.sessionId || last.agentId !== agentId) return null;
+  const [latest] = await db
+    .select({ id: sql<number>`max(${agentChatMessage.id})` })
+    .from(agentChatMessage)
+    .where(
+      and(eq(agentChatMessage.threadId, threadId), eq(agentChatMessage.sessionId, last.sessionId)),
+    );
+  return latest?.id === last.id ? last.sessionId : null;
 }
 
 export async function publishChatCatalog(
@@ -631,33 +845,19 @@ async function validateChatSettings(
   return { model, thinkingLevel: thinkingLevel ?? null };
 }
 
-// The turns before the claimed answer, oldest first, capped at the configured depth. The
-// last of them is the message being answered. `questionOnly` takes just that one, for a
-// thread whose session already holds everything before it.
-async function readHistory(
-  threadId: string,
-  beforeMessageId: number,
-  questionOnly: boolean,
-): Promise<{ role: string; content: string }[]> {
-  const rows = await db
-    .select({ role: agentChatMessage.role, content: agentChatMessage.content })
-    .from(agentChatMessage)
-    .where(
-      and(
-        eq(agentChatMessage.threadId, threadId),
-        sql`${agentChatMessage.id} < ${beforeMessageId}`,
-        sql`length(${agentChatMessage.content}) > 0`,
-      ),
-    )
-    .orderBy(desc(agentChatMessage.id))
-    .limit(questionOnly ? 1 : agentChatConfig.historyMessages());
-  return rows.reverse();
-}
-
-function frameChatPrompt(history: { role: string; content: string }[], prompt: string): string {
+// The earlier turns ahead of the question, for a session that does not hold them. An
+// answer another agent gave is named by that agent.
+function frameChatPrompt(history: BranchTurn[], question: string, agentId: number): string {
   const lines = ['Earlier in this conversation:', ''];
-  for (const m of history) lines.push(`${m.role === 'user' ? 'Person' : 'You'}: ${m.content}`, '');
-  lines.push('The person writes:', '', prompt);
+  for (const turn of history) {
+    const speaker =
+      turn.role === 'user' ? 'Person' : turn.agentId === agentId ? 'You' : turn.agentName;
+    lines.push(
+      `${speaker}: ${questionText(turn.content, turn.attachments as ChatAttachment[] | null)}`,
+      '',
+    );
+  }
+  lines.push('The person writes:', '', question);
   return lines.join('\n');
 }
 
@@ -700,6 +900,7 @@ export async function appendEvents(
       .set({
         content: sql`left(${agentChatMessage.content} || ${textOf(events)}, ${ANSWER_LIMIT})`,
         nextAttemptAt: leaseUntil(),
+        ...(sessionId && { sessionId: sql`coalesce(${agentChatMessage.sessionId}, ${sessionId})` }),
       })
       .where(liveAnswer(agentId, messageId))
       .returning({ threadId: agentChatMessage.threadId });
@@ -784,6 +985,7 @@ export async function finishMessage(
     error?: string | null;
     usage?: ContextUsage | null;
     sessionLost?: boolean;
+    model?: string;
   },
 ): Promise<boolean> {
   await touchRunner(agentId);
@@ -796,6 +998,11 @@ export async function finishMessage(
       lastError:
         result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Answer failed') : null,
       finishedAt: new Date(),
+      ...(result.model && { model: result.model.slice(0, 200) }),
+      ...(result.usage && {
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+      }),
     })
     .where(liveAnswer(agentId, messageId))
     .returning({
@@ -821,16 +1028,32 @@ export async function finishMessage(
 // a thread whose runner keeps failing.
 async function requeueWithoutSession(agentId: number, messageId: number): Promise<boolean> {
   return db.transaction(async (tx) => {
+    const [lost] = await tx
+      .select({ sessionId: agentChatMessage.sessionId })
+      .from(agentChatMessage)
+      .where(liveAnswer(agentId, messageId));
     const rows = await tx
       .update(agentChatMessage)
       .set({ status: 'pending', nextAttemptAt: new Date() })
       .where(liveAnswer(agentId, messageId))
       .returning({ threadId: agentChatMessage.threadId });
     if (rows.length === 0) return wasCanceled(agentId, messageId);
+    const threadId = rows[0].threadId;
+    if (lost?.sessionId) {
+      await tx
+        .update(agentChatMessage)
+        .set({ sessionId: null })
+        .where(
+          and(
+            eq(agentChatMessage.threadId, threadId),
+            eq(agentChatMessage.sessionId, lost.sessionId),
+          ),
+        );
+    }
     await tx
       .update(agentChatThread)
       .set({ cliSessionId: null })
-      .where(eq(agentChatThread.id, rows[0].threadId));
+      .where(eq(agentChatThread.id, threadId));
     return true;
   });
 }

@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 
+import { pageQueryFields, pageResponse } from '#shared/pagination';
 import { contextUsageBody } from '../model';
 
 export { agentParams, projectAgentParams } from '../model';
@@ -89,6 +90,8 @@ const ToolCallResultEvent = t.Object({
   toolCallId: t.String({ maxLength: 200 }),
   content: t.String({ maxLength: TOOL_TEXT_LIMIT }),
   role: t.Optional(t.Literal('tool')),
+  // Not part of AG-UI: the tool reported a failure, and `content` is its error.
+  isError: t.Optional(t.Boolean()),
 });
 
 export const AgUiEvent = t.Union([
@@ -149,11 +152,46 @@ export const sendChatBody = t.Object({
   ),
   model: t.Optional(t.Nullable(t.String({ minLength: 1, maxLength: 200 }))),
   thinkingLevel: t.Optional(t.Nullable(t.String({ minLength: 1, maxLength: 40 }))),
+  parentId: t.Optional(
+    t.Nullable(
+      t.Numeric({
+        description:
+          'The message of the thread this one follows. Omitted, the message the thread shows ' +
+          'last; null, a new first message — which is how an edited first question is sent.',
+      }),
+    ),
+  ),
+  attachments: t.Optional(
+    t.Object({
+      files: t.Optional(
+        t.Array(t.String({ minLength: 1, maxLength: 1024 }), {
+          maxItems: 10,
+          description:
+            'Vault paths of files for the agent to read: Home/…, Templates/… or Projects/<KEY>/….',
+        }),
+      ),
+      issueIds: t.Optional(
+        t.Array(t.Integer(), { maxItems: 10, description: 'Tasks the message refers to.' }),
+      ),
+    }),
+  ),
+});
+
+// Answers a question of the thread again, next to the answers it has.
+export const retryChatBody = t.Object({
+  threadId: t.String(),
+  questionId: t.Numeric({ description: 'The question to answer again.' }),
 });
 
 // What the caller needs to follow the answer: the thread it belongs to and the id of
-// the answer being produced.
+// the answer being produced, and the id the question was stored under.
 export const SendChatResponse = t.Object({
+  threadId: t.String(),
+  messageId: t.Number(),
+  userMessageId: t.Number(),
+});
+
+export const RetryChatResponse = t.Object({
   threadId: t.String(),
   messageId: t.Number(),
 });
@@ -201,6 +239,10 @@ export const ClaimChatResponse = t.Object({
       ),
       model: t.Nullable(t.String()),
       thinkingLevel: t.Nullable(t.String()),
+      images: t.Array(t.String(), {
+        description:
+          'Absolute paths of the images attached to the question, for a model that reads images.',
+      }),
     }),
   ),
 });
@@ -230,6 +272,9 @@ export const chatResultBody = t.Object({
         'queued again with the conversation in its prompt.',
     }),
   ),
+  model: t.Optional(
+    t.String({ maxLength: 200, description: 'The model the answer was produced with.' }),
+  ),
 });
 
 // The answer of every runner call that reports progress. `canceled` is how the stop
@@ -240,3 +285,62 @@ export const ChatAckResponse = t.Object({
     description: 'The answer was stopped from the chat: kill the command and stop reporting.',
   }),
 });
+
+// The caller's chats across the agents: Home reads all of them, a project its own.
+export const chatListQuery = t.Object({
+  projectKey: t.Optional(t.String({ description: 'Only the chats of this project.' })),
+  agentId: t.Optional(t.Numeric({ description: 'Only the chats with this agent.' })),
+  q: t.Optional(
+    t.String({
+      maxLength: 200,
+      description:
+        'Case-insensitive substring, matched against the title and the text of every message. ' +
+        'Shorter than two characters searches nothing.',
+    }),
+  ),
+  view: t.Optional(
+    t.UnionEnum(['active', 'archived', 'trash'], {
+      description: 'The listed chats, the archived ones, or the deleted ones. Default active.',
+    }),
+  ),
+  ...pageQueryFields,
+});
+
+export const ChatSummaryResponse = t.Object({
+  id: t.String(),
+  title: t.Nullable(t.String()),
+  agent: t.Object({ id: t.Number(), name: t.String(), username: t.String() }),
+  teamId: t.Number(),
+  project: t.Nullable(t.Object({ id: t.Number(), key: t.String(), name: t.String() })),
+  issue: t.Nullable(t.Object({ id: t.Number(), identifier: t.String(), title: t.String() })),
+  pinned: t.Boolean(),
+  running: t.Boolean({ description: 'An answer is being produced.' }),
+  archivedAt: t.Nullable(t.String()),
+  deletedAt: t.Nullable(t.String()),
+  snippet: t.Optional(t.String()),
+  match: t.Optional(t.UnionEnum(['title', 'user', 'assistant'])),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+});
+
+export const ChatListResponse = pageResponse(ChatSummaryResponse);
+
+export const chatParams = t.Object({ threadId: t.String() });
+
+export const updateChatBody = t.Object({
+  title: t.Optional(t.String({ minLength: 1, maxLength: 80 })),
+  archived: t.Optional(t.Boolean()),
+  issueId: t.Optional(t.Nullable(t.Integer({ description: 'The task to link, or null.' }))),
+});
+
+export const deleteChatQuery = t.Object({
+  permanent: t.Optional(
+    t.Boolean({ description: 'Delete a chat in the trash for good, with its messages.' }),
+  ),
+});
+
+export const showVersionBody = t.Object({
+  messageId: t.Integer({ description: 'The version to show: a message of the chat.' }),
+});
+
+export const issueChatParams = t.Object({ issueId: t.Numeric() });

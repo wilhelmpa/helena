@@ -340,6 +340,23 @@ const ChatPartResponse = t.Union([
     toolName: t.String(),
     args: t.Optional(t.String()),
     result: t.Optional(t.String()),
+    isError: t.Optional(t.Boolean()),
+  }),
+]);
+
+export const ChatAttachmentResponse = t.Union([
+  t.Object({
+    kind: t.Literal('file'),
+    path: t.String({ description: 'Path relative to the vault.' }),
+    name: t.String(),
+    contentType: t.String(),
+    sizeBytes: t.Number(),
+  }),
+  t.Object({
+    kind: t.Literal('task'),
+    issueId: t.Number(),
+    identifier: t.String(),
+    title: t.String(),
   }),
 ]);
 
@@ -352,6 +369,15 @@ export const ChatMessagesResponse = t.Object({
       parts: t.Array(ChatPartResponse),
       createdAt: t.String(),
       stopped: t.Optional(t.Boolean()),
+      parentId: t.Optional(t.Nullable(t.String())),
+      siblingIds: t.Optional(t.Array(t.String())),
+      agentId: t.Optional(t.Number()),
+      attachments: t.Optional(t.Array(ChatAttachmentResponse)),
+      model: t.Optional(t.Nullable(t.String())),
+      inputTokens: t.Optional(t.Nullable(t.Number())),
+      outputTokens: t.Optional(t.Nullable(t.Number())),
+      durationMs: t.Optional(t.Nullable(t.Number())),
+      error: t.Optional(t.String()),
     }),
   ),
   nextPage: t.Nullable(t.Number()),

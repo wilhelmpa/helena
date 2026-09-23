@@ -758,10 +758,27 @@ export const agentChatThread = pgTable(
     // default, so a later model-default change is inherited without rewriting chats.
     model: text('model'),
     thinkingLevel: text('thinking_level'),
+    // The project the chat was started in; null for a Home chat. Home lists every chat
+    // of the member, a project only its own.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    // The task the member linked the chat to, which lists it on its detail.
+    issueId: integer('issue_id').references(() => issue.id, { onDelete: 'set null' }),
+    // The message the chat shows last. The messages form a tree (see
+    // agent_chat_message.parent_id); the shown branch is this message and its
+    // ancestors. No foreign key: the message references the thread.
+    activeMessageId: integer('active_message_id'),
+    // Archived and deleted chats leave the list. A deleted one stays restorable until
+    // it is deleted for good.
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('agent_chat_thread_agent_user_idx').on(t.agentId, t.userId, t.updatedAt.desc())],
+  (t) => [
+    index('agent_chat_thread_agent_user_idx').on(t.agentId, t.userId, t.updatedAt.desc()),
+    index('agent_chat_thread_user_idx').on(t.userId, t.updatedAt.desc()),
+    index('agent_chat_thread_issue_idx').on(t.issueId),
+  ],
 );
 
 // The non-secret model catalog an external runner publishes for one agent. The
@@ -793,9 +810,26 @@ export const agentChatMessage = pgTable(
       .notNull()
       .references(() => aiAgent.id, { onDelete: 'cascade' }),
     role: text('role').notNull(),
+    // The message this one follows. An edited question or a regenerated answer is a
+    // second child of the same parent, so the thread is a tree of versions.
+    parentId: integer('parent_id').references((): AnyPgColumn => agentChatMessage.id, {
+      onDelete: 'cascade',
+    }),
     // The turn's text: what the member wrote, or what the agent has said so far. It is
     // appended to as text events arrive, so the transcript reads correctly mid-answer.
     content: text('content').notNull().default(''),
+    // Vault files and tasks the member attached to the question: `{ kind: 'file', path,
+    // name, contentType, sizeBytes }` with the vault path, or `{ kind: 'task', issueId,
+    // identifier, title }`.
+    attachments: jsonb('attachments'),
+    // The runner session that produced the answer. The next answer resumes it only
+    // while this answer is the last one produced in it.
+    sessionId: text('session_id'),
+    // The model the runner reported for the answer, and the tokens its last call read
+    // and wrote.
+    model: text('model'),
+    inputTokens: integer('input_tokens'),
+    outputTokens: integer('output_tokens'),
     status: text('status').notNull().default('pending'),
     attempts: integer('attempts').notNull().default(0),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
@@ -811,6 +845,7 @@ export const agentChatMessage = pgTable(
       sql`${t.status} IN ('pending', 'streaming', 'success', 'failed', 'canceled')`,
     ),
     index('agent_chat_message_thread_idx').on(t.threadId, t.id),
+    index('agent_chat_message_parent_idx').on(t.parentId),
     index('agent_chat_message_due_idx')
       .on(t.agentId, t.nextAttemptAt)
       .where(sql`${t.status} IN ('pending', 'streaming')`),
@@ -876,6 +911,32 @@ export const agentChatFavorite = pgTable(
     threadId: text('thread_id').notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.threadId] })],
+);
+
+// A member's saved chat prompt, inserted with `/<command>` in the composer. `{{name}}`
+// in the text is a variable the member fills in before it is inserted. A prompt with
+// no project is offered in every chat; one with a project only in that project's.
+export const chatPrompt = pgTable(
+  'chat_prompt',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    command: text('command').notNull(),
+    title: text('title').notNull(),
+    content: text('content').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('chat_prompt_user_scope_command_uq').on(
+      t.userId,
+      sql`coalesce(${t.projectId}, 0)`,
+      t.command,
+    ),
+  ],
 );
 
 // Stored credentials for a team's integrations, shared by every project it owns. One
