@@ -106,6 +106,21 @@ test('a dependent specialist stage carries the results of its dependencies and t
   assert.deepEqual(queued.policy, { timeoutSeconds: 30, maxTurns: 12, runBudgetSeconds: 600 });
 });
 
+test('a stage whose agent marked the task blocked fails with the question', async () => {
+  const service = createHermesTeamService({
+    enqueue: async () => ({ runId: 41, replayed: false }),
+    status: async () => ({ ...completedRun({}), output: 'I need input.', blockedQuestion: 'Which market first?' }),
+  });
+  await assert.rejects(
+    () => service.executeStage(baseStage),
+    error =>
+      error instanceof HermesTeamError &&
+      error.status === 409 &&
+      error.code === 'hermes_run_blocked' &&
+      error.message === 'The agent is blocked and needs input: Which market first?',
+  );
+});
+
 test('rejects coordinator delegation outside the supplied project team', async () => {
   const service = createHermesTeamService({
     enqueue: async () => ({ runId: 41, replayed: false }),
