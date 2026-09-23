@@ -8,10 +8,10 @@ export default function OrganizationGoalNode({ node }: { node: GoalNode }) {
   const t = useTranslations('organization');
   return (
     <li className="ps-4">
-      <div className="flex items-center gap-2 text-sm">
-        <Target className="size-3.5 text-muted-foreground" />
-        <span>{node.goal.title}</span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+      <div className="flex min-h-7 items-center gap-2 text-sm">
+        <Target className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className="min-w-0 truncate">{node.goal.title}</span>
+        <span className="shrink-0 text-xs text-muted-foreground">
           {t(`statuses.${node.goal.status}`)}
         </span>
       </div>
