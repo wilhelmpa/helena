@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { auth, getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from './lib';
 import { getMcpOAuthToken } from './mcp-request';
+import { checkAgentSocket } from './agent-socket';
 
 // GET routes that need no session. The raw attachment and avatar bytes routes
 // must work in <img>/<video> and external fetches. The invite lookup
@@ -39,6 +40,7 @@ export const authContext = new Elysia({ name: 'auth-context' }).resolve(
     const session = await getSessionFromHeaders(request.headers);
     if (session) {
       if (session.user.active === false) throw new HttpError(401, 'This account is deactivated');
+      await checkAgentSocket(request.headers, session.user.id);
       return { user: session.user };
     }
     const mcpToken = getMcpOAuthToken(request);
@@ -50,6 +52,7 @@ export const authContext = new Elysia({ name: 'auth-context' }).resolve(
         const user = await db.query.user.findFirst({ where: eq(users.id, oauthSession.userId) });
         if (user) {
           if (user.active === false) throw new HttpError(401, 'This account is deactivated');
+          await checkAgentSocket(request.headers, user.id);
           return { user: user as SessionUser };
         }
       }

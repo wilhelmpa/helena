@@ -22,6 +22,8 @@ import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
 import { normalizeOpenApiResponse } from './openapi';
 import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
 import { hermesTeamControlRoutes } from './hermes-team-control';
+import { agentEgressInternalRoutes } from './modules/agent-egress/internal';
+import { agentSocketRequestAllowed } from './shared/agent-socket';
 import pkg from '../../../package.json';
 
 const apiUrl = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
@@ -50,6 +52,18 @@ For agent clients, use the MCP endpoint at [${apiUrl}/mcp](${apiUrl}/mcp). SCIM,
 // binds the port; tests import it and pass it to Eden Treaty to drive routes in
 // memory (no network). Keep the chain unbroken so `type App` stays accurate.
 export const app = new Elysia()
+  // A request from an isolated agent (it names the agent's project, see
+  // shared/agent-socket.ts) never reaches the host's control plane or the sign-in flows,
+  // whatever the route would say about its credential.
+  .onRequest(({ request }) => {
+    let allowed: boolean;
+    try {
+      allowed = agentSocketRequestAllowed(request, new URL(request.url).pathname);
+    } catch {
+      allowed = false;
+    }
+    if (!allowed) return Response.json({ error: 'Not available to agents' }, { status: 403 });
+  })
   .use(
     cors({
       origin: trustedOrigins,
@@ -63,6 +77,7 @@ export const app = new Elysia()
   )
   .use(homeAgentBootstrapRoutes)
   .use(hermesTeamControlRoutes)
+  .use(agentEgressInternalRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
   // so the UI at /docs and the spec at /docs/json are reachable without a
   // session. The spec is generated from the `t` schemas on every route.

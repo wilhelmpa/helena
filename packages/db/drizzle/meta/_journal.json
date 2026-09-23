@@ -1086,6 +1086,13 @@
       "when": 1790186301680,
       "tag": "0154_workflow_builder",
       "breakpoints": true
+    },
+    {
+      "idx": 155,
+      "version": "7",
+      "when": 1790190032367,
+      "tag": "0155_agent_egress",
+      "breakpoints": true
     }
   ]
 }

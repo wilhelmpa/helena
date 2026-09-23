@@ -4,6 +4,14 @@ import { auth, getSessionFromHeaders, withMcpAuth } from '@repo/auth';
 import { buildMcpServer } from './server';
 import type { McpApp } from './types';
 import type { McpCredential } from './credential';
+import { agentSocketProject, checkAgentSocket } from '../shared/agent-socket';
+import { HttpError } from '../shared/lib';
+
+function refused(error: unknown): Response {
+  const status = error instanceof HttpError ? error.status : 403;
+  const message = error instanceof HttpError ? error.message : 'Forbidden';
+  return Response.json({ error: message }, { status });
+}
 
 // The API key on the request. MCP clients send Authorization: Bearer <key>;
 // x-api-key is also accepted (the REST convention). Returns null when absent.
@@ -49,6 +57,17 @@ export function mountMcp(app: any): void {
       };
 
       const apiKey = extractApiKey(request);
+      // An isolated agent reaches this endpoint only through the agent socket, which
+      // names its project; there it has to use the key of an agent of that project.
+      let agentSocket: string | null;
+      try {
+        agentSocket = agentSocketProject(request.headers);
+      } catch (error) {
+        return refused(error);
+      }
+      if (agentSocket !== null && !apiKey) {
+        return refused(new HttpError(403, 'Only an agent key is accepted on the agent socket'));
+      }
       if (apiKey) {
         const headers = new Headers(request.headers);
         headers.set('x-api-key', apiKey);
@@ -56,8 +75,14 @@ export function mountMcp(app: any): void {
         // A deactivated account is refused here too, the way shared/auth-context.ts
         // refuses it for every planner route. Deactivation arrives over SCIM, after
         // the key was issued.
-        if (session && session.user.active !== false)
+        if (session && session.user.active !== false) {
+          try {
+            await checkAgentSocket(request.headers, session.user.id);
+          } catch (error) {
+            return refused(error);
+          }
           return serve({ kind: 'api-key', apiKey }, session.user.id);
+        }
         // Do not reinterpret a revoked or malformed personal API key as an OAuth
         // token. Challenge without forwarding the rejected credential so auth
         // failures stay 401 and the credential never reaches an error/log path.

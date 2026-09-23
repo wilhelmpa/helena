@@ -687,6 +687,42 @@ export const agentRun = pgTable(
   ],
 );
 
+// What the egress proxy of isolated agents (deployment/volition-stack/isolation) let
+// through or refused, summed per unit, destination and decision over a short window. It
+// names hosts and counts bytes; it never holds what was sent. The agent and the run come
+// from the unit the proxy saw the connection come from, so they are null for work that
+// ran outside a run (a chat answer names its message in the unit, not here).
+export const agentEgressEvent = pgTable(
+  'agent_egress_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    // The slug of the Unix user the connection came from: a project's, or 'home' for the
+    // Home agent, which works in no project of its own (project_id is null then).
+    slug: text('slug').notNull(),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    host: text('host').notNull(),
+    port: integer('port').notNull(),
+    // 'allowed' or 'blocked'; `reason` says why a connection was refused.
+    decision: text('decision').notNull(),
+    reason: text('reason'),
+    connections: integer('connections').notNull().default(1),
+    bytesOut: bigint('bytes_out', { mode: 'number' }).notNull().default(0),
+    bytesIn: bigint('bytes_in', { mode: 'number' }).notNull().default(0),
+    firstAt: timestamp('first_at', { withTimezone: true }).notNull(),
+    lastAt: timestamp('last_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_egress_event_decision_check', sql`${t.decision} IN ('allowed', 'blocked')`),
+    check('agent_egress_event_port_check', sql`${t.port} >= 0 AND ${t.port} <= 65535`),
+    index('agent_egress_event_project_idx').on(t.projectId, t.id),
+    index('agent_egress_event_last_idx').on(t.lastAt),
+    index('agent_egress_event_run_idx').on(t.runId),
+  ],
+);
+
 // An agent's request to take an action outside Plan (send, publish, pay, delete), which
 // a person with the ai_agents edit permission of the project approves or rejects. The
 // decision queues a run of the agent with the decision in its prompt (followUpRunId).
