@@ -3,6 +3,8 @@ Description=Volition Plan worker
 After=network-online.target postgresql.service volition-plan-migrate.service volition-plan-api.service
 Wants=network-online.target
 Requires=postgresql.service volition-plan-migrate.service
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -17,8 +19,10 @@ Environment=PROJECT_PROVISIONING_TOKEN_FILE=%d/provisioning_token
 LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
 Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/worker/src/index.ts
-Restart=on-failure
+Restart=always
 RestartSec=2
+RestartSteps=5
+RestartMaxDelaySec=60
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes

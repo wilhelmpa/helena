@@ -1,8 +1,11 @@
 [Unit]
 Description=Volition project provisioning service
 After=network-online.target volition-plan-api.service volition-hermes-runner.service
-Wants=network-online.target
-Requires=volition-plan-api.service
+# Wants rather than Requires: systemd restarts a service with the service it requires,
+# and this one rides out the API being down.
+Wants=network-online.target volition-plan-api.service
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -43,8 +46,10 @@ Environment=CONNECTIONS_ENABLED=false
 Environment=MAIL_ENABLED=false
 Environment=MASTRA_EVENT_INGRESS_ENABLED=false
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/server.mjs
-Restart=on-failure
+Restart=always
 RestartSec=3
+RestartSteps=5
+RestartMaxDelaySec=60
 TimeoutStopSec=20
 UMask=0077
 NoNewPrivileges=yes

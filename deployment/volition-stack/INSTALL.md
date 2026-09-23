@@ -117,6 +117,24 @@ dependency order:
 5. code-server, project terminal, and project browser router.
 6. Nginx.
 
+The units encode this order with `After=` and `Wants=`. No Volition service `Requires=`
+another one apart from the migration: systemd restarts a unit together with every unit it
+requires, and a restart of the API would otherwise restart the runner, the bridge, Mastra
+and the provisioning service and cut the work in flight. Each of them waits for the
+service it uses while that is down. Every long-running unit has `Restart=always`,
+`StartLimitIntervalSec=0` and `RestartSteps=5` up to `RestartMaxDelaySec=60`, so a crash
+loop is slowed down but never ends in a failed unit that stays down.
+`deployment/volition-stack/test/native-units.test.mjs` checks these rules.
+
+After a reboot, work in flight continues in this way:
+- systemd stops the runner before the API; the runner stops its Hermes processes and hands
+  their runs back to the queue, and claims them again when it starts.
+- A run whose runner was killed without a stop is claimed again when its five-minute lease
+  runs out.
+- Mastra continues its active workflow runs. Each continued stage asks for its Plan run
+  with the same idempotency key and waits for it.
+- The api asks Mastra again for agent-team starts it recorded but Mastra did not answer.
+
 The live instance runs no development servers:
 - `volition-plan-api` and `volition-plan-worker` run the checkout's sources without a file
   watcher.

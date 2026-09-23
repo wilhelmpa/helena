@@ -1,10 +1,13 @@
 [Unit]
 Description=Volition Plan Hermes agent runner
 After=network-online.target volition-plan-api.service volition-hermes-gateway.service
-Wants=network-online.target
-Requires=volition-plan-api.service
+# Wants rather than Requires: systemd restarts a service with the service it requires,
+# and this one rides out the API being down.
+Wants=network-online.target volition-plan-api.service
 ConditionPathExists=/srv/volition/source/plan/packages/runner/dist/cli.js
 ConditionPathExists=/etc/volition/hermes-plan-key
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -16,9 +19,11 @@ Environment=HOME=/var/lib/volition/hermes
 Environment=HERMES_HOME=/var/lib/volition/hermes
 LoadCredential=itsaplan_api_key:/etc/volition/hermes-plan-key
 ExecStart=/usr/local/libexec/volition-hermes-runner
-Restart=on-failure
+Restart=always
 RestartSec=5
-TimeoutStopSec=30
+RestartSteps=5
+RestartMaxDelaySec=60
+TimeoutStopSec=45
 KillMode=mixed
 UMask=0077
 NoNewPrivileges=yes

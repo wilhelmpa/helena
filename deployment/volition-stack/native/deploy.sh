@@ -84,7 +84,8 @@ if changed deployment/volition-stack/integration; then
   restart+=(volition-provisioning.service volition-hermes-team-bridge.service)
 fi
 
-for unit in volition-mastra.service volition-provisioning.service; do
+for unit in volition-hermes-runner.service volition-hermes-team-bridge.service \
+  volition-mastra.service volition-provisioning.service; do
   if changed "deployment/volition-stack/native/systemd/$unit"; then
     install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
     systemctl daemon-reload
