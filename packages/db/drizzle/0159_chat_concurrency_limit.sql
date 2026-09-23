@@ -1,2 +1,0 @@
-ALTER TABLE "ai_agent" ADD COLUMN "max_concurrent_chats" integer DEFAULT 3 NOT NULL;--> statement-breakpoint
-ALTER TABLE "ai_agent" ADD CONSTRAINT "ai_agent_max_concurrent_chats_check" CHECK ("ai_agent"."max_concurrent_chats" >= 1 AND "ai_agent"."max_concurrent_chats" <= 20);

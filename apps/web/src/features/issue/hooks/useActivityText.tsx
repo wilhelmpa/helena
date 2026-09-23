@@ -169,6 +169,8 @@ export function useActivityText() {
         return { line: line('agentStarted') };
       case 'agent_finished':
         return { line: line(subject === 'failed' ? 'agentFailed' : 'agentFinished') };
+      case 'workflow_run_limited':
+        return { line: rich('workflowRunLimited', { workflow: subject ?? '' }) };
       case 'git_pr':
       case 'github_pr': {
         // The from side is "owner/repo#42", the to side the pull request's URL.

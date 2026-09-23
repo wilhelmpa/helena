@@ -20,6 +20,7 @@ ALTER TABLE "agent_chat_thread" ADD COLUMN "issue_id" integer;--> statement-brea
 ALTER TABLE "agent_chat_thread" ADD COLUMN "active_message_id" integer;--> statement-breakpoint
 ALTER TABLE "agent_chat_thread" ADD COLUMN "archived_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "agent_chat_thread" ADD COLUMN "deleted_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "ai_agent" ADD COLUMN "max_concurrent_chats" integer DEFAULT 3 NOT NULL;--> statement-breakpoint
 ALTER TABLE "chat_prompt" ADD CONSTRAINT "chat_prompt_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_prompt" ADD CONSTRAINT "chat_prompt_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "chat_prompt_user_scope_command_uq" ON "chat_prompt" USING btree ("user_id",coalesce("project_id", 0),"command");--> statement-breakpoint
@@ -29,6 +30,7 @@ ALTER TABLE "agent_chat_thread" ADD CONSTRAINT "agent_chat_thread_issue_id_issue
 CREATE INDEX "agent_chat_message_parent_idx" ON "agent_chat_message" USING btree ("parent_id");--> statement-breakpoint
 CREATE INDEX "agent_chat_thread_user_idx" ON "agent_chat_thread" USING btree ("user_id","updated_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "agent_chat_thread_issue_idx" ON "agent_chat_thread" USING btree ("issue_id");--> statement-breakpoint
+ALTER TABLE "ai_agent" ADD CONSTRAINT "ai_agent_max_concurrent_chats_check" CHECK ("ai_agent"."max_concurrent_chats" >= 1 AND "ai_agent"."max_concurrent_chats" <= 20);--> statement-breakpoint
 UPDATE "agent_chat_message" m SET "parent_id" = p.prev
   FROM (SELECT "id", lag("id") OVER (PARTITION BY "thread_id" ORDER BY "id") AS prev FROM "agent_chat_message") p
   WHERE p."id" = m."id";--> statement-breakpoint

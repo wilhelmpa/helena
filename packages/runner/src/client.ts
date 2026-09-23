@@ -11,6 +11,11 @@ export interface Run {
   trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
   prompt: string;
   systemPrompt: string;
+  attempts: number;
+  // Names this claim on every heartbeat, result and release, so the server can tell the
+  // runner that the run was claimed again after its lease ran out. It changes when this
+  // runner claims the run again. Absent on a server that predates it.
+  claim?: number;
   issueId: number | null;
   issueIdentifier: string | null;
   model: string | null;
@@ -158,17 +163,25 @@ export class Client {
     return body.run;
   }
 
-  // True when the run was canceled, for instance with the workflow run of its stage.
-  async heartbeat(runId: number): Promise<boolean> {
-    return canceled(await this.post(`/agent-runs/${runId}/heartbeat`));
+  // True when the run was canceled, for instance with the workflow run of its stage, or
+  // is no longer this runner's: claimed again, finished, or deleted.
+  async heartbeat(runId: number, claim?: number): Promise<boolean> {
+    return gone(() => this.post(`/agent-runs/${runId}/heartbeat${claimQuery(claim)}`));
+  }
+
+  // Hands a run back to the queue without spending its attempt, for a runner that stops.
+  async release(runId: number, claim: number): Promise<void> {
+    await this.post(`/agent-runs/${runId}/release${claimQuery(claim)}`);
   }
 
   // `usage` is what the run read and wrote: its totals where the command reports them
   // (Hermes), otherwise its last model call. Left out where the command reported
   // nothing about it, which stores the run without counts.
-  // The answer names the reflection Plan asks for, if any. An older server answers 204.
+  // A 404 means the run is no longer this runner's to report. The answer names the
+  // reflection Plan asks for, if any. An older server answers 204.
   async report(
     runId: number,
+    claim: number | undefined,
     result: {
       status: 'success' | 'failed';
       output?: string;
@@ -178,7 +191,7 @@ export class Client {
       toolCalls?: number;
     },
   ): Promise<ReflectionRequest | null> {
-    const res = await this.post(`/agent-runs/${runId}/result`, result);
+    const res = await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);
     const body = (await res.json().catch(() => ({}))) as { reflection?: ReflectionRequest | null };
     return body.reflection ?? null;
   }
@@ -211,7 +224,7 @@ export class Client {
   // True when the member stopped the answer. This is how a command that is writing
   // nothing learns of the stop.
   async chatHeartbeat(messageId: number): Promise<boolean> {
-    return canceled(await this.post(`/agent-chats/${messageId}/heartbeat`));
+    return gone(() => this.post(`/agent-chats/${messageId}/heartbeat`));
   }
 
   // `usage` is the size of the context the answer left behind. Left out where the
@@ -234,9 +247,30 @@ function workParams(work: WorkRef): Record<string, string> {
   return 'runId' in work ? { runId: String(work.runId) } : { messageId: String(work.messageId) };
 }
 
+function claimQuery(claim: number | undefined): string {
+  return claim === undefined ? '' : `?claim=${claim}`;
+}
+
 // An instance too old to know about stopping answers this with 204 and no body, which
 // reads the same way as work nobody stopped.
 async function canceled(res: Response): Promise<boolean> {
   const body = (await res.json().catch(() => ({}))) as { canceled?: boolean };
   return body.canceled === true;
+}
+
+// A heartbeat the server answers with 404 names work that is not there any more: it was
+// finished, or deleted with its agent or issue. The command is stopped as for a cancel.
+async function gone(send: () => Promise<Response>): Promise<boolean> {
+  try {
+    return await canceled(await send());
+  } catch (err) {
+    if (err instanceof RequestError && err.status === 404) return true;
+    throw err;
+  }
+}
+
+// A request the server may answer differently later: it was not reached, or failed on
+// its side. A 4xx answer is final.
+export function isTransient(err: unknown): boolean {
+  return !(err instanceof RequestError) || err.status >= 500 || err.status === 429;
 }

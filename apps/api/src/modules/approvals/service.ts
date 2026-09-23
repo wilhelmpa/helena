@@ -344,8 +344,20 @@ export async function listApprovedCommands(agentId: number, runId: number): Prom
 }
 
 // The requests of the projects in which the user may decide, or null for none.
-async function decidableWhere(userId: string, status: 'pending' | 'decided'): Promise<SQL | null> {
-  const projectIds = (await projectsWithPermission(userId, DECIDE_PERMISSION)).map((p) => p.id);
+// `projectKey`, when given, narrows to that one project — but only when it is
+// among the projects the user may decide in; anything else (no permission there,
+// or no such project) is treated the same as an empty result, so the caller never
+// learns from this whether a project it cannot see exists.
+async function decidableWhere(
+  userId: string,
+  status: 'pending' | 'decided',
+  projectKey?: string,
+): Promise<SQL | null> {
+  const projects = await projectsWithPermission(userId, DECIDE_PERMISSION);
+  const projectIds =
+    projectKey == null
+      ? projects.map((p) => p.id)
+      : projects.filter((p) => p.key === projectKey).map((p) => p.id);
   if (projectIds.length === 0) return null;
   return and(
     inArray(approvalRequest.projectId, projectIds),
@@ -368,8 +380,9 @@ export async function listApprovals(
   userId: string,
   status: 'pending' | 'decided',
   window: { limit: number; offset: number },
+  projectKey?: string,
 ): Promise<{ items: ApprovalDto[]; total: number }> {
-  const where = await decidableWhere(userId, status);
+  const where = await decidableWhere(userId, status, projectKey);
   if (!where) return { items: [], total: 0 };
   const [rows, total] = await Promise.all([
     selectApprovals()
@@ -382,7 +395,20 @@ export async function listApprovals(
   return { items: rows.map(toDto), total };
 }
 
-export async function countPendingApprovals(userId: string): Promise<number> {
-  const where = await decidableWhere(userId, 'pending');
+export async function countPendingApprovals(userId: string, projectKey?: string): Promise<number> {
+  const where = await decidableWhere(userId, 'pending', projectKey);
   return where ? countWhere(where) : 0;
+}
+
+// The projects the caller may decide approvals in, for the global list's project
+// filter. Same set `decidableWhere` restricts to, so the filter never offers a
+// project the caller could not already see requests from.
+export async function listApprovalProjects(
+  userId: string,
+): Promise<{ id: number; key: string; name: string }[]> {
+  return (await projectsWithPermission(userId, DECIDE_PERMISSION)).map(({ id, key, name }) => ({
+    id,
+    key,
+    name,
+  }));
 }

@@ -431,7 +431,14 @@
     "nobody": "nadie",
     "open": "Abrir",
     "runs": "Ejecuciones",
-    "problems": "Por qué no puede ejecutarse aquí"
+    "problems": "Por qué no puede ejecutarse aquí",
+    "runLimit": {
+      "title": "Límite de ejecuciones del flujo de trabajo",
+      "hint": "Evita que los flujos de trabajo se reactiven entre sí sin fin: como máximo se puede iniciar este número de ejecuciones de flujo de trabajo en una tarea por hora.",
+      "perHour": "por hora",
+      "save": "Guardar",
+      "saved": "Guardado."
+    }
   },
   "issuePanel": {
     "title": "Flujos de trabajo",

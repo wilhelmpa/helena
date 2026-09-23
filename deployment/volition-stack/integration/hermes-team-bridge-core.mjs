@@ -2,6 +2,9 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 const IDEMPOTENCY = /^[a-f0-9]{64}$/;
 const REFERENCE = /^[a-z][a-z0-9._-]*:[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const WORKFLOW_RUN = /^[A-Za-z0-9_-]{1,200}$/;
+// How long the bridge waits before it asks Plan again while Plan cannot be reached.
+const PLAN_RETRY_MS = 2_000;
 
 export class HermesTeamError extends Error {
   constructor(status, code, message) {
@@ -95,12 +98,23 @@ function validateStage(input) {
   const agentRef = reference(agent?.agentRef, 'agent');
   const policy = record(row?.policy);
   const timeoutSeconds = Number(policy?.timeoutSeconds);
+  const workflowRunId = row?.workflowRunId;
   if (
     row?.schemaVersion !== 1 || !phase || !idempotencyKey || !IDEMPOTENCY.test(idempotencyKey) ||
     !projectRef || !taskRef || !agentRef || !Number.isInteger(timeoutSeconds) ||
-    timeoutSeconds < 30 || timeoutSeconds > 7_200
+    timeoutSeconds < 30 || timeoutSeconds > 7_200 ||
+    (workflowRunId !== undefined && (typeof workflowRunId !== 'string' || !WORKFLOW_RUN.test(workflowRunId)))
   ) throw new HermesTeamError(400, 'invalid_stage_request', 'Invalid Hermes stage request');
   return { ...row, phase, idempotencyKey, projectRef, task, taskRef, agent, agentRef, policy, timeoutSeconds };
+}
+
+function validateStageCancel(input) {
+  const row = record(input);
+  const idempotencyKey = string(row?.idempotencyKey, 64);
+  const projectRef = reference(row?.projectRef, 'project');
+  if (row?.schemaVersion !== 1 || !idempotencyKey || !IDEMPOTENCY.test(idempotencyKey) || !projectRef)
+    throw new HermesTeamError(400, 'invalid_cancel_request', 'Invalid stage cancel request');
+  return { idempotencyKey, projectRef };
 }
 
 function taskInProject(taskRef, projectRef) {
@@ -260,12 +274,26 @@ export function createHermesTeamService(plan, options = {}) {
   const wait = options.wait ?? ((milliseconds, signal) => sleep(milliseconds, undefined, { signal }).catch(() => {}));
   const now = options.now ?? (() => Date.now());
   return {
-    // `signal` is aborted when Mastra stops waiting for the stage, which it does when its
-    // workflow run is canceled. The Plan run is canceled then, so no runner executes a
-    // stage whose result nobody reads.
+    // `signal` is aborted when Mastra stops waiting for the stage: its connection closed
+    // because the workflow run was canceled or because Mastra stopped. The bridge only
+    // stops polling then. The Plan run keeps going, so a Mastra that continues the stage
+    // after a restart finds it under the same key; a canceled workflow run cancels it
+    // through cancelStage. Plan restarting or unreachable is waited out until the stage's
+    // deadline.
     async executeStage(input, signal) {
       const stage = validateStage(input);
-      const queued = await plan.enqueue({
+      const deadline = now() + stage.timeoutSeconds * 1_000;
+      const ask = async call => {
+        for (;;) {
+          try {
+            return await call();
+          } catch (error) {
+            if (error?.code !== 'plan_unavailable' || now() >= deadline || signal?.aborted) throw error;
+            await wait(PLAN_RETRY_MS, signal);
+          }
+        }
+      };
+      const queued = await ask(() => plan.enqueue({
         idempotencyKey: stage.idempotencyKey,
         projectRef: stage.projectRef,
         task: { taskRef: stage.taskRef },
@@ -273,14 +301,12 @@ export function createHermesTeamService(plan, options = {}) {
         execution: stage.execution ?? {},
         policy: stage.policy,
         prompt: prompt(stage),
-      });
-      const deadline = now() + stage.timeoutSeconds * 1_000;
+        ...(stage.workflowRunId ? { workflowRunId: stage.workflowRunId } : {}),
+      }));
       while (now() < deadline) {
-        if (signal?.aborted) {
-          await plan.cancel({ runId: queued.runId, projectRef: stage.projectRef });
-          throw new HermesTeamError(499, 'stage_canceled', 'The execution stage was canceled');
-        }
-        const run = await plan.status({ runId: queued.runId, projectRef: stage.projectRef });
+        if (signal?.aborted)
+          throw new HermesTeamError(499, 'stage_detached', 'Mastra stopped waiting for the execution stage');
+        const run = await ask(() => plan.status({ runId: queued.runId, projectRef: stage.projectRef }));
         // The agent marked the task blocked and asked a person; its output is no stage result.
         if (run.status === 'success' && run.blockedQuestion)
           throw new HermesTeamError(409, 'hermes_run_blocked', `The agent is blocked and needs input: ${run.blockedQuestion}`);
@@ -290,6 +316,10 @@ export function createHermesTeamService(plan, options = {}) {
         await wait(Math.min(2_000, Math.max(100, deadline - now())), signal);
       }
       throw new HermesTeamError(504, 'hermes_run_timeout', 'Hermes execution stage timed out');
+    },
+    // Called by Mastra when the workflow run that waits on a stage was canceled.
+    async cancelStage(input) {
+      return plan.cancel(validateStageCancel(input));
     },
     async synchronize(input) {
       return plan.synchronize(validateSynchronization(input));

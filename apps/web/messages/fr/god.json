@@ -313,5 +313,33 @@
       "remove": "Retirer le projet",
       "saved": "Accès du groupe enregistré"
     }
+  },
+  "systemHealth": {
+    "title": "Services",
+    "service": {
+      "runner": "Exécuteur Hermes",
+      "mastra": "Mastra",
+      "bridge": "Pont de l’équipe Hermes",
+      "provisioning": "Provisionnement",
+      "worker": "Worker"
+    },
+    "seen": "vu il y a {time}",
+    "lastSeen": "vu pour la dernière fois il y a {time}",
+    "neverSeen": "pas encore vu",
+    "waiting": "{count, plural, one {# exécution attend} other {# exécutions attendent}} d’être prises en charge, la plus ancienne depuis {time}",
+    "overdue": "{count, plural, one {# exécution tourne} other {# exécutions tournent}} encore au-delà de la limite de temps",
+    "agentTeamStartsWaiting": "{count, plural, one {# démarrage d’agent-team attend} other {# démarrages d’agent-team attendent}} Mastra",
+    "stalledWorkflowRuns": "{count, plural, one {# exécution d’agent-team n’a pas avancé} other {# exécutions d’agent-team n’ont pas avancé}} depuis 15 minutes",
+    "failedLastDay": "{count, plural, one {# exécution a échoué} other {# exécutions ont échoué}} au cours des dernières 24 heures",
+    "provisioningFailed": "{count, plural, one {# tâche de provisionnement a échoué} other {# tâches de provisionnement ont échoué}}",
+    "janitorsTitle": "Tâches de nettoyage",
+    "janitor": {
+      "run-janitor": "Nettoyage des exécutions",
+      "stage-janitor": "Nettoyage des étapes",
+      "workflow-schedules": "Synchronisation des plannings"
+    },
+    "janitorRan": "exécuté il y a {time}",
+    "janitorCleaned": "{count, plural, one {a nettoyé # élément} other {a nettoyé # éléments}}",
+    "janitorNeverRan": "n'a pas encore tourné"
   }
 }

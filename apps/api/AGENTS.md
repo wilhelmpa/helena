@@ -19,10 +19,15 @@ Rules and invariants for this package below; read the code for the walkthrough.
 - **Background jobs are started from `index.ts`, never assembled into the app**, so
   importing the app in a test starts nothing. `background.ts` drains the `agent_run`
   queue in one loop and runs the auto-archive sweep in a loop of its own, so neither
-  waits on the other. Several api replicas run them without overlapping: the queue is
+  waits on the other. The same goes for the agent-team starts waiting for Mastra and the
+  janitors that repair what a restart leaves behind: runs whose runner never reported,
+  stage runs whose Mastra run is gone, and schedules out of line with the workflow
+  settings. Several api replicas run them without overlapping: the queue is
   claimed with `FOR UPDATE SKIP LOCKED`, and the sweep only touches rows it has not
   archived yet. An agent run is built from the queue row alone — the project it works
-  in and the bot user it acts as are read there, never handed in.
+  in and the bot user it acts as are read there, never handed in. Each janitor run goes
+  through `janitorJob`, which writes what it cleaned up, or why it failed, to
+  `janitor_run`; `/god/system-health` reads that for the owner's health overview on Home.
 - `index.ts`: `new Elysia({ name: "<feature>", detail: { tags: ["<Tag>"] } })` —
   routes chained directly on it, each route sets `detail.summary`. Handlers only;
   the schemas they reference come from `model.ts`.

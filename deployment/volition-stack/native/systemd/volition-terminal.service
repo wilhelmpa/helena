@@ -2,6 +2,8 @@
 Description=Volition project-scoped web terminals
 After=network-online.target
 Wants=network-online.target
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -19,8 +21,10 @@ Environment=TERMINAL_RUNTIME_ROOT=/run/volition-terminal
 Environment=TERMINAL_ALLOWED_HOSTS=kingston-server.local,kingston-server
 Environment=TERMINAL_SHELL=/srv/volition/source/plan/deployment/volition-stack/native/terminal/terminal-shell
 ExecStart=/usr/local/bin/node project-terminal-router.mjs
-Restart=on-failure
+Restart=always
 RestartSec=2
+RestartSteps=5
+RestartMaxDelaySec=60
 TimeoutStopSec=20
 KillMode=control-group
 UMask=0077

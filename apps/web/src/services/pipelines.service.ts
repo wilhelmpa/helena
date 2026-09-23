@@ -12,6 +12,7 @@ import {
   getPipeline,
   getPipelineRun,
   getPipelineVersion,
+  getPipelineRunLimit,
   getProjectPipelineContext,
   getTeamPipelineContext,
   listBuiltinPipelines,
@@ -23,6 +24,7 @@ import {
   listProjectPipelines,
   listStartablePipelines,
   retryPipelineRun,
+  setPipelineRunLimit,
   setProjectPipeline,
   startPipelineRun,
   updatePipeline,
@@ -92,6 +94,24 @@ export function useSetProjectPipeline(projectKey: string) {
         client.invalidateQueries({ queryKey: qk.projectPipelines(projectKey) }),
         client.invalidateQueries({ queryKey: qk.anyIssue }),
       ]),
+  });
+}
+
+// The project's guard against workflows re-triggering each other without end (see
+// modules/pipelines/rate-limit.ts on the API): editable from the workflow builder's
+// project settings.
+export const usePipelineRunLimit = (projectKey: string | null) =>
+  useQuery({
+    queryKey: qk.pipelineRunLimit(projectKey ?? ''),
+    queryFn: () => getPipelineRunLimit(projectKey!),
+    enabled: projectKey !== null,
+  });
+
+export function useSetPipelineRunLimit(projectKey: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (maxRuns: number) => setPipelineRunLimit(projectKey, maxRuns),
+    onSuccess: (data) => client.setQueryData(qk.pipelineRunLimit(projectKey), data),
   });
 }
 
@@ -250,5 +270,5 @@ export function useDecidePipelineApproval() {
   });
 }
 
-export const usePipelineApprovals = () =>
-  useQuery({ queryKey: qk.pipelineApprovals, queryFn: listPipelineApprovals });
+export const usePipelineApprovals = (enabled = true) =>
+  useQuery({ queryKey: qk.pipelineApprovals, queryFn: listPipelineApprovals, enabled });

@@ -1,4 +1,6 @@
 #!/bin/sh
+# tty1 of the plan-kiosk user: Helena full screen on Kingston's own monitors. cage extends
+# one window across all connected outputs; the session script scales them.
 set -eu
 umask 077
 export XKB_DEFAULT_LAYOUT=de
@@ -13,13 +15,7 @@ if [ "$connected_outputs" -ge 2 ]; then
 else
   kiosk_display=single
 fi
+# The hotplug rule restarts the kiosk only when the number of screens changed.
+printf "%s\n" "$connected_outputs" >"$HOME/.kiosk-outputs"
 exec /usr/bin/dbus-run-session -- /usr/bin/cage -d -s -m extend -- \
-  /usr/bin/chromium \
-  --ozone-platform=wayland \
-  --kiosk \
-  --force-device-scale-factor=2 \
-  --no-first-run \
-  --no-default-browser-check \
-  --disable-session-crashed-bubble \
-  --user-data-dir="$HOME/chromium" \
-  --app="http://kingston-server.local/?kioskDisplay=$kiosk_display"
+  /usr/local/libexec/volition-plan-kiosk-session "$kiosk_display"

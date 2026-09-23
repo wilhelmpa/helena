@@ -119,5 +119,20 @@ export const listApprovalsQuery = t.Object({
       description: 'pending (default) or decided.',
     }),
   ),
+  projectKey: t.Optional(
+    t.String({ description: 'Narrow the list to one project the caller may decide in.' }),
+  ),
   ...pageQueryFields,
 });
+
+export const pendingCountQuery = t.Object({
+  projectKey: t.Optional(t.String({ description: 'Count only the requests of this project.' })),
+});
+
+export const ApprovalProjectResponse = t.Array(
+  t.Object({
+    id: t.Number(),
+    key: t.String(),
+    name: t.String(),
+  }),
+);

@@ -17,6 +17,8 @@ export type TeamPhase = 'coordinate' | 'specialize' | 'review';
 export interface StageRequest {
   phase: TeamPhase;
   idempotencyKey: string;
+  // The Mastra run that waits on the stage.
+  workflowRunId?: string;
   projectRef: string;
   task: AgentTeamPayload['task'];
   agent: AgentTeamPayload['coordinator'];
@@ -118,8 +120,9 @@ function socketPath(): string {
 }
 
 // The bridge answers a stage only once its Hermes run has finished, so a stage
-// request waits as long as the stage timeout allows. Aborting it closes the
-// connection, which makes the bridge cancel the stage's Plan run.
+// request waits as long as the stage timeout allows. Aborting it closes the connection,
+// which only makes the bridge stop waiting; the stage's Plan run is canceled by an
+// explicit request.
 export async function bridgeRequest(
   path: string,
   body: unknown,
@@ -172,39 +175,112 @@ export async function bridgeRequest(
   });
 }
 
-export const privateHermesTeamAdapter: HermesTeamAdapter = {
-  async executeStage(input, signal) {
-    return withBackoff(
-      input.policy,
-      async attempt => {
-        const raw = await bridgeRequest(
-          '/internal/hermes/team/stages',
-          { schemaVersion: 1, ...input, attempt },
-          (input.policy.timeoutSeconds + 30) * 1_000,
+export type BridgeRequest = (
+  path: string,
+  body: unknown,
+  timeoutMs?: number,
+  signal?: AbortSignal,
+) => Promise<unknown>;
+
+// How long a request waits before it is sent again while the bridge cannot be reached,
+// and how long a synchronization or routine request keeps trying.
+const BRIDGE_RETRY_MS = 2_000;
+export const BRIDGE_OUTAGE_MS = 5 * 60_000;
+
+// The socket is missing or refuses while the bridge starts, and a connection ends when
+// the bridge stops. Nothing Plan did is lost then: asking again with the same key finds it.
+function bridgeUnreachable(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException | undefined)?.code;
+  return code === 'ENOENT' || code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'EPIPE';
+}
+
+export async function untilBridgeAnswers<T>(
+  call: () => Promise<T>,
+  deadline: number,
+  signal?: AbortSignal,
+  wait: (milliseconds: number, signal?: AbortSignal) => Promise<void> = (milliseconds, signal) =>
+    sleep(milliseconds, undefined, { signal }).catch(() => {}),
+): Promise<T> {
+  for (;;) {
+    try {
+      return await call();
+    } catch (error) {
+      if (!bridgeUnreachable(error) || Date.now() >= deadline || signal?.aborted) throw error;
+      await wait(BRIDGE_RETRY_MS, signal);
+    }
+  }
+}
+
+export function createHermesTeamAdapter(
+  request: BridgeRequest = bridgeRequest,
+  wait?: (milliseconds: number, signal?: AbortSignal) => Promise<void>,
+): HermesTeamAdapter {
+  return {
+    // A bridge that cannot be reached is waited for until the stage's own timeout, which
+    // does not count as an attempt. The abort of a canceled workflow run cancels the
+    // stage's Plan run by its key; a Mastra that stops aborts nothing, so the run keeps
+    // going and the continued stage finds it.
+    async executeStage(input, signal) {
+      const cancel = () => {
+        void request(
+          '/internal/hermes/team/stages/cancel',
+          { schemaVersion: 1, idempotencyKey: input.idempotencyKey, projectRef: input.projectRef },
+          30_000,
+        ).catch(() => {});
+      };
+      signal?.addEventListener('abort', cancel, { once: true });
+      const timeoutMs = (input.policy.timeoutSeconds + 30) * 1_000;
+      const deadline = Date.now() + timeoutMs;
+      try {
+        return await withBackoff(
+          input.policy,
+          async attempt => {
+            const raw = await untilBridgeAnswers(
+              () =>
+                request(
+                  '/internal/hermes/team/stages',
+                  { schemaVersion: 1, ...input, attempt },
+                  timeoutMs,
+                  signal,
+                ),
+              deadline,
+              signal,
+              wait,
+            );
+            const result = validateLease(stageResultSchema.parse(raw), input.policy);
+            if (result.idempotencyKey !== input.idempotencyKey || result.phase !== input.phase) {
+              throw new Error('Hermes returned a result for another execution stage');
+            }
+            if (result.status === 'failed') throw new Error('Hermes execution stage failed');
+            return result;
+          },
           signal,
+          wait,
         );
-        const result = validateLease(stageResultSchema.parse(raw), input.policy);
-        if (result.idempotencyKey !== input.idempotencyKey || result.phase !== input.phase) {
-          throw new Error('Hermes returned a result for another execution stage');
-        }
-        if (result.status === 'failed') throw new Error('Hermes execution stage failed');
-        return result;
-      },
-      signal,
-    );
-  },
-  async synchronizePlan(input) {
-    const raw = await bridgeRequest('/internal/hermes/team/synchronize', { schemaVersion: 1, ...input });
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-      throw new Error('Hermes team bridge returned an invalid synchronization result');
-    }
-    const value = raw as Record<string, unknown>;
-    if (value.idempotencyKey !== input.idempotencyKey || typeof value.synchronizedAt !== 'string') {
-      throw new Error('Hermes team bridge returned an invalid synchronization result');
-    }
-    if (!Number.isFinite(Date.parse(value.synchronizedAt))) {
-      throw new Error('Hermes team bridge returned an invalid synchronization timestamp');
-    }
-    return { synchronizedAt: new Date(value.synchronizedAt).toISOString() };
-  },
-};
+      } finally {
+        signal?.removeEventListener('abort', cancel);
+      }
+    },
+    async synchronizePlan(input) {
+      const raw = await untilBridgeAnswers(
+        () => request('/internal/hermes/team/synchronize', { schemaVersion: 1, ...input }),
+        Date.now() + BRIDGE_OUTAGE_MS,
+        undefined,
+        wait,
+      );
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        throw new Error('Hermes team bridge returned an invalid synchronization result');
+      }
+      const value = raw as Record<string, unknown>;
+      if (value.idempotencyKey !== input.idempotencyKey || typeof value.synchronizedAt !== 'string') {
+        throw new Error('Hermes team bridge returned an invalid synchronization result');
+      }
+      if (!Number.isFinite(Date.parse(value.synchronizedAt))) {
+        throw new Error('Hermes team bridge returned an invalid synchronization timestamp');
+      }
+      return { synchronizedAt: new Date(value.synchronizedAt).toISOString() };
+    },
+  };
+}
+
+export const privateHermesTeamAdapter = createHermesTeamAdapter();

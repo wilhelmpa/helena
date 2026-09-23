@@ -129,7 +129,10 @@ The runner JSON and Hermes YAML contain no key.
 - A delegated task is claimed once, heartbeated and completed or failed explicitly.
 - A run canceled while Hermes executes it is stopped on the next heartbeat (at most 60
   seconds later), and the runner reports nothing for it.
-- Stopping the unit terminates the active process group; an expired lease can be claimed again.
+- Stopping the unit stops the active process group and hands the run back to the queue,
+  where it is claimed again at once. A run whose runner died is claimed again when its
+  lease expires; a runner whose run was claimed again stops its command on the next
+  heartbeat.
 - The API key does not appear in JSON, YAML, argv, journal output or AG-UI events.
 
 ## Current contract limits

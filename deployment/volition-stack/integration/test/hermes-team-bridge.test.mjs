@@ -62,7 +62,8 @@ test('coordinator stage is project-bound and returns a validated lease', async (
       }],
     }),
   });
-  const result = await service.executeStage(baseStage);
+  const result = await service.executeStage({ ...baseStage, workflowRunId: 'team-run-1' });
+  assert.equal(queued.workflowRunId, 'team-run-1');
   assert.equal(queued.projectRef, 'project:VERV');
   assert.equal(queued.task.taskRef, 'task:VERV-1');
   assert.deepEqual(queued.execution, { model: 'luna', reasoning: 'low' });
@@ -141,17 +142,21 @@ test('rejects coordinator delegation outside the supplied project team', async (
   );
 });
 
-test('recovery retries the same idempotency key after a bridge interruption', async () => {
+test('Plan restarting while a stage runs is waited out and the stage keeps its run', async () => {
   const enqueued = [];
+  let enqueueCalls = 0;
   let statusCalls = 0;
+  const unavailable = () => new HermesTeamError(502, 'plan_unavailable', 'Plan is unavailable');
   const plan = {
     enqueue: async input => {
+      enqueueCalls += 1;
+      if (enqueueCalls === 1) throw unavailable();
       enqueued.push(input.idempotencyKey);
-      return { runId: 77, replayed: enqueued.length > 1 };
+      return { runId: 77, replayed: false };
     },
     status: async () => {
       statusCalls += 1;
-      if (statusCalls === 1) throw new HermesTeamError(502, 'plan_unavailable', 'Plan is unavailable');
+      if (statusCalls < 3) throw unavailable();
       return completedRun({
         summary: 'Recovered the existing run.',
         delegations: [{
@@ -164,14 +169,39 @@ test('recovery retries the same idempotency key after a bridge interruption', as
       }, 77);
     },
   };
-  const service = createHermesTeamService(plan);
-  await assert.rejects(() => service.executeStage(baseStage), /Plan is unavailable/);
+  const service = createHermesTeamService(plan, { wait: async () => {} });
   const recovered = await service.executeStage(baseStage);
   assert.equal(recovered.executionId, 'plan-run:77');
-  assert.deepEqual(enqueued, [KEY, KEY]);
+  assert.deepEqual(enqueued, [KEY]);
+  assert.equal(statusCalls, 3);
 });
 
-test('a stage Mastra stops waiting for cancels its Plan run and stops polling', async () => {
+test('a stage fails once Plan stays unavailable past its deadline, and a refusal at once', async () => {
+  let clock = 0;
+  const service = createHermesTeamService({
+    enqueue: async () => ({ runId: 78, replayed: false }),
+    status: async () => {
+      throw new HermesTeamError(502, 'plan_unavailable', 'Plan is unavailable');
+    },
+  }, { now: () => clock, wait: async ms => { clock += ms; } });
+  await assert.rejects(
+    () => service.executeStage(baseStage),
+    error => error instanceof HermesTeamError && error.code === 'plan_unavailable',
+  );
+  assert.ok(clock >= baseStage.policy.timeoutSeconds * 1_000);
+
+  let refused = 0;
+  const refusing = createHermesTeamService({
+    enqueue: async () => {
+      refused += 1;
+      throw new HermesTeamError(409, 'plan_request_failed', 'Hermes agent coordinator is paused');
+    },
+  }, { wait: async () => {} });
+  await assert.rejects(() => refusing.executeStage(baseStage), /is paused/);
+  assert.equal(refused, 1);
+});
+
+test('a stage Mastra stops waiting for keeps its Plan run and stops polling', async () => {
   const mastra = new AbortController();
   const canceled = [];
   let statusCalls = 0;
@@ -189,10 +219,33 @@ test('a stage Mastra stops waiting for cancels its Plan run and stops polling', 
   });
   await assert.rejects(
     () => service.executeStage(baseStage, mastra.signal),
-    error => error instanceof HermesTeamError && error.code === 'stage_canceled',
+    error => error instanceof HermesTeamError && error.code === 'stage_detached',
   );
   assert.equal(statusCalls, 1);
-  assert.deepEqual(canceled, [{ runId: 43, projectRef: 'project:VERV' }]);
+  assert.deepEqual(canceled, []);
+});
+
+test('a canceled workflow run cancels its stage by the idempotency key', async () => {
+  const canceled = [];
+  const service = createHermesTeamService({
+    cancel: async input => {
+      canceled.push(input);
+      return { runId: 43, status: 'canceled' };
+    },
+  });
+  assert.deepEqual(
+    await service.cancelStage({ schemaVersion: 1, idempotencyKey: KEY, projectRef: 'project:VERV' }),
+    { runId: 43, status: 'canceled' },
+  );
+  assert.deepEqual(canceled, [{ idempotencyKey: KEY, projectRef: 'project:VERV' }]);
+  await assert.rejects(
+    () => service.cancelStage({ schemaVersion: 1, idempotencyKey: 'short', projectRef: 'project:VERV' }),
+    error => error instanceof HermesTeamError && error.status === 400,
+  );
+  await assert.rejects(
+    () => service.executeStage({ ...baseStage, workflowRunId: 'no spaces' }),
+    error => error instanceof HermesTeamError && error.status === 400,
+  );
 });
 
 test('synchronization is project-bound and safely replays the same idempotency key', async () => {
@@ -301,7 +354,7 @@ test('HTTP bridge requires the private bearer and preserves the stage contract',
   assert.deepEqual(await routine.json(), { idempotencyKey: KEY, outcome: 'skipped' });
 });
 
-test('HTTP bridge aborts a stage when Mastra closes the connection before the answer', { timeout: 5_000 }, async () => {
+test('HTTP bridge stops waiting for a stage when Mastra closes the connection before the answer', { timeout: 5_000 }, async () => {
   let started;
   const waiting = new Promise(resolve => { started = resolve; });
   let aborted;
@@ -329,6 +382,26 @@ test('HTTP bridge aborts a stage when Mastra closes the connection before the an
   mastra.abort();
   await assert.rejects(request);
   await abandoned;
+});
+
+test('HTTP bridge passes a stage cancel to the service', async () => {
+  const canceled = [];
+  const service = {
+    cancelStage: async value => {
+      canceled.push(value);
+      return { runId: 43, status: 'canceled' };
+    },
+  };
+  server = http.createServer(createHermesTeamHandler({ bridgeToken: TOKEN, planToken: TOKEN }, service));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/internal/hermes/team/stages/cancel`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ schemaVersion: 1, idempotencyKey: KEY, projectRef: 'project:VERV' }),
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { runId: 43, status: 'canceled' });
+  assert.deepEqual(canceled, [{ schemaVersion: 1, idempotencyKey: KEY, projectRef: 'project:VERV' }]);
 });
 
 const pipelineAgent = {

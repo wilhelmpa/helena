@@ -82,6 +82,8 @@ export const qk = {
   pipelineVersion: (pipelineId: number, version: number) =>
     ['pipeline', pipelineId, 'versions', version] as const,
   pipelineContext: (scope: string) => ['pipelineContext', scope] as const,
+  pipelineRunLimit: (projectKey: string) =>
+    ['pipelines', 'project', projectKey, 'runLimit'] as const,
   pipelineValidation: (scope: string, draft: string) =>
     ['pipelineValidation', scope, draft] as const,
   anyPipelineRuns: ['pipelineRuns'] as const,
@@ -305,11 +307,17 @@ export const qk = {
   notifications: (projectKey: string, filters?: unknown) =>
     ['notifications', projectKey, filters ?? {}] as const,
   notificationsUnread: (projectKey: string) => ['notificationsUnread', projectKey] as const,
-  // The approvals inbox: agents' requests, the pending count of the sidebar badge, and
-  // the workflow runs waiting at an approval gate.
+  // The approvals inbox: agents' requests (globally or narrowed to one project), the
+  // pending count of the sidebar badges, and the workflow runs waiting at an approval
+  // gate. approvalsPendingCountAll is the invalidation target for every pending count,
+  // global and per-project alike (a query key prefix match).
   approvalLists: ['approvals', 'list'] as const,
-  approvals: (status: string, params: unknown) => ['approvals', 'list', status, params] as const,
-  approvalsPendingCount: ['approvals', 'pendingCount'] as const,
+  approvals: (status: string, params: unknown, projectKey?: string) =>
+    ['approvals', 'list', status, params, projectKey ?? null] as const,
+  approvalsPendingCountAll: ['approvals', 'pendingCount'] as const,
+  approvalsPendingCount: (projectKey?: string) =>
+    ['approvals', 'pendingCount', projectKey ?? null] as const,
+  approvalProjects: ['approvals', 'projects'] as const,
   workflowGates: ['approvals', 'workflowGates'] as const,
   pipelineApprovals: ['approvals', 'pipelines'] as const,
   mail: (teamId: number) => ['mail', teamId] as const,
@@ -347,6 +355,8 @@ export const qk = {
   instanceTelegramSettings: ['instanceTelegramSettings'] as const,
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
+  // The services around Plan and the agent runs that wait or overran (Home, god only).
+  systemHealth: ['systemHealth'] as const,
   // The upload limits as read by the upload UI (open to any signed-in user).
   storageSettings: ['storageSettings'] as const,
   // The running version (any signed-in user) and the upstream release check (god).

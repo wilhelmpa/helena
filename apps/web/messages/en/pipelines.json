@@ -431,7 +431,14 @@
     "nobody": "nobody",
     "open": "Open",
     "runs": "Runs",
-    "problems": "Why it cannot run here"
+    "problems": "Why it cannot run here",
+    "runLimit": {
+      "title": "Workflow run limit",
+      "hint": "Stops workflows from re-triggering each other without end: at most this many workflow runs may start on one task within an hour.",
+      "perHour": "per hour",
+      "save": "Save",
+      "saved": "Saved."
+    }
   },
   "issuePanel": {
     "title": "Workflows",

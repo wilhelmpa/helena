@@ -1,7 +1,10 @@
 {
   "hint": "Os agentes pedem aprovação aqui antes de enviar, publicar, pagar ou excluir algo fora do Plan, e os fluxos de trabalho aguardam aqui na etapa de aprovação. Sua decisão e sua nota iniciam a próxima etapa.",
+  "projectHint": "Os agentes pedem aprovação aqui antes de enviar, publicar, pagar ou excluir algo fora do Plan para este projeto, e os fluxos de trabalho dele aguardam aqui na etapa de aprovação.",
   "pending": "Pendentes",
   "decided": "Decididas",
+  "filterProject": "Filtrar por projeto",
+  "filterProjectAll": "Todos os projetos",
   "empty": {
     "pending": "Nada para decidir",
     "decided": "Nenhuma decisão ainda"
