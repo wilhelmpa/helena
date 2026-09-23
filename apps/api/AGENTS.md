@@ -9,7 +9,7 @@ Rules and invariants for this package below; read the code for the walkthrough.
   `index.ts` (controller), `model.ts` (schemas), `service.ts` (Drizzle). Cross-cutting
   code in `shared/`. See `src/modules/` for the current set.
 - Features nest one level deeper only where they already call each other:
-  `modules/agents/{core,chat,runner,skills,tools,mcp-servers,credentials}`, where `core` holds the
+  `modules/agents/{core,chat,runner,skills,tools,mcp-servers,credentials,learning}`, where `core` holds the
   agent itself and its runtime. A feature whose links to its neighbours run one way
   stays flat. A schema several of the nested features share sits in the parent's
   `model.ts` and is re-exported from each child's (`agentParams`).

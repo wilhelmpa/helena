@@ -1100,6 +1100,13 @@
       "when": 1790188115076,
       "tag": "0156_vault_knowledge",
       "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1790188169038,
+      "tag": "0157_hermes_learning",
+      "breakpoints": true
     }
   ]
 }

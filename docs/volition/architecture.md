@@ -166,9 +166,30 @@ Plan keeps only an index of them in Postgres (`vault_entry`, `vault_link`, `vaul
   owner as an approval request: the owner signs in in the project's live browser, whose
   profile keeps the session, and the approval starts the agent's next run.
 - Configuration files (`AGENTS.md`, `SOUL.md`, instruction files, managed skills, toolsets,
-  MCP grants, model) are owned by Plan. A change Hermes makes to one of them is imported
-  into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are
-  shown read-only in Plan.
+  MCP grants, model) are owned by Plan. The runner puts back a managed file Hermes changed or
+  removed, every minute and after every run, and Plan shows the changed version so it can be
+  taken over. The same holds for the plugin links Plan requires in every Hermes home, such as
+  `plan-approval-guard`; a run whose link cannot be put back fails.
+- Memory and the skills an agent creates are stored by Hermes in the agent's profile. Whether
+  an agent learns is set per agent in Plan (on unless turned off), and so is Hermes' curator
+  (off unless turned on). The owner reads what an agent learned in Plan, edits or clears its
+  memory, and pins, discards or takes a learned skill into the team's library, where it
+  becomes one of Plan's skills; the runner carries each action out on its next sync. An
+  agent learns in its own turns, so what learning costs is in the tokens its runs report:
+  the runner turns off Hermes' post-turn review and its model-written session titles, which a
+  one-shot run would pay for without Plan counting them. Hermes' review and curator only
+  change skills the review created, never Plan's.
+- After a run finishes, Plan may ask the runner for a reflection: a short, counted follow-up
+  turn in the run's own session, started right after it, in which the agent keeps only what
+  that run taught it. Its only tools are memory and skills, so it cannot continue the task and
+  has no path to SOUL.md, approvals, or any other setting of its own; a plan-managed skill it
+  reaches through those tools is put back like any other managed file. It runs under the same
+  approval guard as the run itself, never with `--yolo`, bounded to 8 turns and 120 seconds so
+  it ends on its own or is stopped. Plan decides whether one is worth it from the agent's own
+  setting — off, after a failure or rework, or also after a run of many tool calls, the default
+  — and never for an agent that does not learn. The runner reports what the reflection saved
+  and its tokens, which are added to the run's own and count toward the agent's ceilings; Plan
+  shows the outcome, why it ran, and what was saved on the run in its history.
 - An agent has the MCP servers of Hermes' `config.yaml` that the owner did not turn off for
   it, and the servers of the team's library enabled on it. Both are stored in Plan; the runner
   writes them to a managed configuration of the agent's profile, never to `config.yaml`.

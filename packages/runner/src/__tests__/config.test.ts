@@ -114,6 +114,17 @@ describe('one agent', () => {
     );
   });
 
+  it('reads the plugins every Hermes home has to link to', async () => {
+    const plugins = { 'plan-approval-guard': '/srv/plan/hermes-plugins/plan-approval-guard' };
+    const hermes = { toolsets: ['file'], mcpServers: [], plugins };
+    const [config] = await load({ ...base, apiKey: 'key-a', agent: 'hermes', hermes });
+    expect(config.hermes).toEqual(hermes);
+
+    await expect(
+      load({ ...base, apiKey: 'key-a', hermes: { ...hermes, plugins: ['plan-approval-guard'] } }),
+    ).rejects.toThrow('hermes.plugins must map plugin names to directories');
+  });
+
   it('refuses to disable Hermes rule loading while Plan policy sync is enabled', async () => {
     await expect(
       load({

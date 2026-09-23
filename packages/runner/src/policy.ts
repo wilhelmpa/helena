@@ -1,8 +1,24 @@
-import { createHash, randomUUID } from 'node:crypto';
-import { chmod, lstat, mkdir, open, readFile, rename, rm, unlink } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { lstat, readFile, readlink, rename, symlink, unlink } from 'node:fs/promises';
+import { isAbsolute, join, resolve } from 'node:path';
+import { RequestError } from './client';
 import type { RunnerConfig } from './config';
-import { readHermesInventory, type HermesInventory, type HermesProfile } from './inventory';
+import { atomicWrite, digest, ensureRoot, ensureSafeParent } from './files';
+import {
+  readHermesInventory,
+  type HermesInventory,
+  type HermesProfile,
+  type InventorySkill,
+} from './inventory';
+import {
+  learningConfig,
+  readLearnedSkills,
+  runActions,
+  setCuratorPaused,
+  type LearnedSkill,
+  type RuntimeAction,
+  type RuntimeActionResult,
+  type RuntimeLearning,
+} from './learning';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 
 export interface RuntimePolicyFile {
@@ -63,6 +79,10 @@ export interface RuntimePolicySnapshot {
   // Whether website logins are granted to the agent. An older server sends none.
   webLogins?: boolean;
   vaultAccess?: VaultAccess;
+  // Whether the agent learns. An older server sends none, and Hermes' own settings apply.
+  learning?: RuntimeLearning;
+  // The owner's decisions on what the agent learned, not carried out yet.
+  actions?: RuntimeAction[];
 }
 
 // A managed file that was changed outside Plan. Plan's version replaced it; the changed
@@ -79,7 +99,13 @@ export interface RuntimeStatus {
   capabilities: string[];
   detail: string | null;
   conflicts?: RuntimeConflict[];
+  // What the runner put back after it was changed or removed outside Plan: managed files
+  // and plugin links, by their path in the Hermes home.
+  restored?: string[];
   inventory?: HermesInventory;
+  learnedSkills?: LearnedSkill[];
+  // The results of the actions of the applied revision.
+  actions?: RuntimeActionResult[];
 }
 
 export interface RuntimePolicyClient {
@@ -125,22 +151,22 @@ const MAX_RUNTIME_BYTES = 128 * 1024;
 const MAX_SKILL_BYTES = 1024 * 1024;
 const MAX_CONFLICT_BYTES = 64 * 1024;
 const MCP_SERVER_NAME = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const PLUGIN_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const MAX_CONFLICTS = 8;
+const MAX_RESTORED = 20;
 const CAPABILITIES = [
   'model',
   'reasoning',
   'managed-markdown',
   'managed-skills',
   'managed-mcp-servers',
+  'learning',
 ];
 // A revision that failed to apply is tried again after this long, not on every claim.
 const RETRY_FAILED_MS = 60_000;
-// Skills and memory change while the agent works. They are read again after this long, and
-// after every run and chat answer.
-const INVENTORY_INTERVAL_MS = 60_000;
-
-function digest(content: string | Buffer): string {
-  return createHash('sha256').update(content).digest('hex');
-}
+// Skills and memory change while the agent works, and so can the files Plan manages. Both
+// are checked again after this long, and after every run and chat answer.
+const CHECK_INTERVAL_MS = 60_000;
 
 function byteLengthWithin(content: string, limit: number): boolean {
   return Buffer.byteLength(content, 'utf8') <= limit;
@@ -151,41 +177,6 @@ function assertRoot(path: string, label: string): string {
   return resolve(path);
 }
 
-async function ensureRoot(path: string): Promise<void> {
-  await mkdir(path, { recursive: true, mode: 0o700 });
-  const info = await lstat(path);
-  if (info.isSymbolicLink() || !info.isDirectory()) throw new Error('managed root is unsafe');
-}
-
-function assertInside(root: string, target: string): void {
-  const rel = relative(root, target);
-  if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
-    if (target !== root) throw new Error('managed path escapes its root');
-  }
-}
-
-async function ensureSafeParent(root: string, target: string): Promise<void> {
-  await ensureRoot(root);
-  assertInside(root, target);
-  const parent = dirname(target);
-  const rel = relative(root, parent);
-  let current = root;
-  if (rel && rel !== '.') {
-    for (const segment of rel.split(sep)) {
-      current = join(current, segment);
-      try {
-        const info = await lstat(current);
-        if (info.isSymbolicLink() || !info.isDirectory()) {
-          throw new Error('managed path contains an unsafe directory');
-        }
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-        await mkdir(current, { mode: 0o700 });
-      }
-    }
-  }
-}
-
 async function existingHash(target: string): Promise<string | null> {
   try {
     const info = await lstat(target);
@@ -193,33 +184,6 @@ async function existingHash(target: string): Promise<string | null> {
     return digest(await readFile(target));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
-  }
-}
-
-async function atomicWrite(root: string, target: string, content: string): Promise<void> {
-  await ensureSafeParent(root, target);
-  const temp = join(dirname(target), `.itsaplan-${randomUUID()}.tmp`);
-  const handle = await open(temp, 'wx', 0o600);
-  try {
-    await handle.writeFile(content, 'utf8');
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-  try {
-    await ensureSafeParent(root, target);
-    const targetInfo = await lstat(target).catch((error: NodeJS.ErrnoException) => {
-      if (error.code === 'ENOENT') return null;
-      throw error;
-    });
-    if (targetInfo?.isSymbolicLink() || (targetInfo && !targetInfo.isFile())) {
-      throw new Error('managed target is unsafe');
-    }
-    await rename(temp, target);
-    await chmod(target, 0o600);
-  } catch (error) {
-    await rm(temp, { force: true });
     throw error;
   }
 }
@@ -340,6 +304,12 @@ function conflictPath(entry: ManifestEntry): string {
   return entry.source === 'runtime' ? entry.path : `skills/${entry.slug}/${entry.path}`;
 }
 
+function homePath(entry: ManifestEntry): string {
+  return entry.source === 'runtime'
+    ? entry.path
+    : `skills/plan-managed/${entry.slug}/${entry.path}`;
+}
+
 // The variable a secret reaches Hermes in. Hermes expands ${NAME} in its configuration
 // with its own environment.
 export function mcpSecretVariable(id: number): string {
@@ -410,6 +380,7 @@ export class HermesPolicyMaterializer {
   // profile's own, which the agents share, and cannot be changed from inside Hermes.
   readonly managedDir: string;
   private readonly profile: HermesProfile | undefined;
+  private pluginCheck: Promise<string[]> | null = null;
 
   constructor(options: { hermesHome: string; profile?: HermesProfile }) {
     this.hermesHome = assertRoot(options.hermesHome, 'HERMES_HOME');
@@ -419,12 +390,14 @@ export class HermesPolicyMaterializer {
   }
 
   // Plan's version always wins. A file found changed outside Plan (an existing SOUL.md on
-  // first sync, or one Hermes edited since) is kept next to it and returned as a conflict.
-  // `mcpSecrets` lists the secrets the managed configuration names, and is null when there
-  // is no managed configuration.
+  // first sync, or one Hermes edited since) is kept next to it and returned as a conflict;
+  // `restored` names every managed file that was changed or removed since Plan wrote it.
+  // Applying the same snapshot again is how that is checked. `mcpSecrets` lists the
+  // secrets the managed configuration names, and is null when it names none.
   async apply(snapshot: RuntimePolicySnapshot): Promise<{
     revision: string;
     conflicts: RuntimeConflict[];
+    restored: string[];
     mcpSecrets: number[] | null;
   }> {
     await ensureRoot(this.hermesHome);
@@ -441,6 +414,7 @@ export class HermesPolicyMaterializer {
     const desiredByKey = new Map(desired.map((entry) => [entryKey(entry.manifest), entry]));
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     const conflicts: RuntimeConflict[] = [];
+    const restored: string[] = [];
 
     for (const entry of desired) {
       const current = await existingHash(entry.target);
@@ -454,6 +428,7 @@ export class HermesPolicyMaterializer {
           content: content.slice(0, MAX_CONFLICT_BYTES),
         });
       }
+      if (old && current !== old.sha256) restored.push(homePath(entry.manifest));
       await atomicWrite(entry.root, entry.target, entry.content);
     }
     for (const old of previous?.entries ?? []) {
@@ -463,28 +438,78 @@ export class HermesPolicyMaterializer {
       if ((await existingHash(target)) === old.sha256) await unlink(target);
     }
 
-    const managedConfig = join(this.managedDir, 'config.yaml');
-    if (mcpServers) {
-      // JSON is YAML, which is how Hermes reads it.
-      const content = `${JSON.stringify({ mcp_servers: mcpServers }, null, 2)}\n`;
-      if ((await existingHash(managedConfig)) !== digest(content)) {
-        await atomicWrite(this.managedDir, managedConfig, content);
-      }
-    } else {
-      await rm(managedConfig, { force: true });
-    }
+    // JSON is YAML, which is how Hermes reads it.
+    await this.writeIfChanged(
+      this.managedDir,
+      join(this.managedDir, 'config.yaml'),
+      `${JSON.stringify(
+        { ...learningConfig(snapshot.learning), ...(mcpServers && { mcp_servers: mcpServers }) },
+        null,
+        2,
+      )}\n`,
+    );
+    if (snapshot.learning) await setCuratorPaused(this.hermesHome, !snapshot.learning.curator);
 
     const manifest: Manifest = {
       schemaVersion: 1,
       revision: snapshot.revision,
       entries: desired.map(({ manifest }) => manifest),
     };
-    await atomicWrite(this.hermesHome, this.manifestPath, `${JSON.stringify(manifest)}\n`);
+    await this.writeIfChanged(this.hermesHome, this.manifestPath, `${JSON.stringify(manifest)}\n`);
     return {
       revision: snapshot.revision,
       conflicts,
+      restored,
       mcpSecrets: mcpServers ? mcpSecretIds(servers) : null,
     };
+  }
+
+  // The plugins Plan requires, such as the approval guard, are links from plugins/ in the
+  // home to Plan's checkout. One the agent removed or replaced is put back, and whatever
+  // took its place is moved to run/. Returns the entries it restored. Runs and chat
+  // answers that start together share one check.
+  ensurePlugins(): Promise<string[]> {
+    this.pluginCheck ??= this.checkPlugins().finally(() => {
+      this.pluginCheck = null;
+    });
+    return this.pluginCheck;
+  }
+
+  private async checkPlugins(): Promise<string[]> {
+    const restored: string[] = [];
+    const plugins = join(this.hermesHome, 'plugins');
+    for (const [name, source] of Object.entries(this.profile?.plugins ?? {})) {
+      if (!PLUGIN_NAME.test(name) || !isAbsolute(source)) {
+        throw new Error('the runner config names an invalid Hermes plugin');
+      }
+      await ensureRoot(plugins);
+      const target = join(plugins, name);
+      const info = await lstat(target).catch((error: NodeJS.ErrnoException) => {
+        if (error.code === 'ENOENT') return null;
+        throw error;
+      });
+      if (info?.isSymbolicLink() && (await readlink(target)) === source) continue;
+      if (info) {
+        const aside = join(this.hermesHome, 'run', `plugin-${name}.outside-${Date.now()}`);
+        await ensureSafeParent(this.hermesHome, aside);
+        await rename(target, aside);
+      }
+      await symlink(source, target);
+      restored.push(`plugins/${name}`);
+    }
+    return restored;
+  }
+
+  // The skill directories below skills/plan-managed that the manifest says Plan wrote.
+  async planSkills(): Promise<Set<string>> {
+    const manifest = await loadManifest(this.manifestPath, this.hermesHome);
+    return new Set(
+      (manifest?.entries ?? []).flatMap((entry) => (entry.source === 'skill' ? [entry.slug] : [])),
+    );
+  }
+
+  private async writeIfChanged(root: string, target: string, content: string): Promise<void> {
+    if ((await existingHash(target)) !== digest(content)) await atomicWrite(root, target, content);
   }
 }
 
@@ -528,33 +553,56 @@ export function toolsetsWithBrowser(
   return toolsets && !toolsets.includes('browser') ? [...toolsets, 'browser'] : toolsets;
 }
 
-type ReportedState = Pick<RuntimeStatus, 'status' | 'detail' | 'conflicts'>;
+type ReportedState = Pick<
+  RuntimeStatus,
+  'status' | 'detail' | 'conflicts' | 'restored' | 'actions'
+>;
 
 export interface SynchronizerOptions {
   inventory?: () => Promise<HermesInventory>;
+  // The content of the skills the agent created, of those the inventory lists.
+  learned?: (skills: InventorySkill[]) => Promise<LearnedSkill[]>;
   profile?: HermesProfile;
   now?: () => number;
   // The agent's Hermes vault, which receives its website logins.
   vault?: WebLoginVault;
 }
 
+// Each path once, the most recent last.
+function latest(paths: string[]): string[] {
+  return [...new Set(paths.reverse())].reverse().slice(-MAX_RESTORED);
+}
+
+const RESTORED_DETAIL =
+  'Files or plugin links changed outside Plan were restored; a changed file is kept next to it.';
+
 export class HermesPolicySynchronizer {
   private appliedRevision: string | null = null;
+  // The snapshot of the applied revision, which each check applies again.
+  private applied: RuntimePolicySnapshot | null = null;
   private failed: { revision: string; at: number } | null = null;
+  private checkFailed = false;
   private active: Promise<void> | null = null;
-  // What the last applied or failed revision reported. A changed inventory is reported
-  // with it again, since a report replaces the whole state Plan keeps.
+  // What the last applied or failed revision reported, with what was restored since. A
+  // changed inventory is reported with it again, since a report replaces the whole state
+  // Plan keeps.
   private state: ReportedState | null = null;
+  // Restored before any revision applied, reported with the first one.
+  private pendingRestored: string[] = [];
+  // A report that did not reach Plan is sent again with the next sync.
+  private unreported = false;
   private deniedToolsets: string[] = [];
+  private learning: RuntimeLearning | undefined;
   private webLogins = false;
   // The agent's own MCP servers and the secrets they name, as the last applied revision
-  // wrote them. mcpSecrets is null while there is no managed configuration.
+  // wrote them. mcpSecrets is null while the managed configuration names no secret.
   private mcpServerNames: string[] = [];
   private mcpSecrets: number[] | null = null;
   private vaultAccess: VaultAccess | null = null;
   private inventory: HermesInventory | undefined;
+  private learnedSkills: LearnedSkill[] | undefined;
   private inventoryDigest: string | null = null;
-  private inventoryReadAt = -Infinity;
+  private checkedAt = -Infinity;
   private readonly now: () => number;
 
   constructor(
@@ -575,22 +623,32 @@ export class HermesPolicySynchronizer {
     return this.active;
   }
 
-  // A run or a chat answer may have changed the skills or the memory, so the next sync
-  // reads them again.
+  // A run or a chat answer may have changed the skills, the memory or a managed file, so
+  // the next sync checks them again.
   inventoryChanged(): void {
-    this.inventoryReadAt = -Infinity;
+    this.checkedAt = -Infinity;
   }
 
   toolsets(): string[] | null {
-    return allowedToolsets(this.options.profile, this.deniedToolsets, this.mcpServerNames);
+    return allowedToolsets(this.options.profile, this.denied(), this.mcpServerNames);
+  }
+
+  // An agent that does not learn has no memory tool.
+  private denied(): string[] {
+    return this.learning?.enabled === false
+      ? [...this.deniedToolsets, 'memory']
+      : this.deniedToolsets;
   }
 
   // Read before each run and chat answer, so a secret changed in Plan applies at once.
   // Plan answers with the secrets of the agent's current servers, which also covers a
   // revision the other feed applies before Hermes reads the managed configuration. For a
   // run or chat answer the vault is brought to the logins granted now; a login revoked in
-  // Plan is removed from it before Hermes starts.
+  // Plan is removed from it before Hermes starts. A required plugin that cannot be put
+  // back throws, which fails the run instead of running it without the plugin.
   async runSettings(work?: WorkRef): Promise<HermesRunSettings> {
+    const restored = await this.materializer.ensurePlugins();
+    if (restored.length > 0) this.noteRestored(restored, []);
     const settings = {
       toolsets: this.toolsets(),
       env: { ...this.vaultAccessEnv(), ...(await this.mcpEnv(work)) },
@@ -599,11 +657,7 @@ export class HermesPolicySynchronizer {
     const granted = this.webLogins ? await this.client.webLogins(work) : [];
     const logins = await this.options.vault.sync(granted);
     if (logins.size === 0) return { ...settings, logins };
-    const toolsets = toolsetsWithBrowser(
-      this.options.profile,
-      this.deniedToolsets,
-      this.mcpServerNames,
-    );
+    const toolsets = toolsetsWithBrowser(this.options.profile, this.denied(), this.mcpServerNames);
     return { ...settings, toolsets, logins };
   }
 
@@ -612,9 +666,11 @@ export class HermesPolicySynchronizer {
     return this.vaultAccess ? { VOLITION_VAULT_ACCESS: JSON.stringify(this.vaultAccess) } : {};
   }
 
+  // Hermes reads the managed configuration from HERMES_MANAGED_DIR, and the values of the
+  // secrets its MCP servers name from the environment.
   private async mcpEnv(work?: WorkRef): Promise<Record<string, string>> {
-    if (this.mcpSecrets === null) return {};
     const env: Record<string, string> = { HERMES_MANAGED_DIR: this.materializer.managedDir };
+    if (this.mcpSecrets === null) return env;
     const values = await this.client.mcpSecrets(work);
     for (const [id, value] of Object.entries(values)) {
       if (/^\d+$/.test(id)) env[mcpSecretVariable(Number(id))] = value;
@@ -634,14 +690,21 @@ export class HermesPolicySynchronizer {
     }
     // The restrictions write no file, so they hold even while a revision fails to apply.
     this.deniedToolsets = snapshot.runtimePolicy?.toolDeny ?? [];
+    this.learning = snapshot.learning;
     this.webLogins = snapshot.webLogins === true;
     this.vaultAccess = snapshot.vaultAccess ?? null;
     const applied = await this.apply(snapshot);
-    const inventoryChanged = await this.readInventory();
-    if ((applied || inventoryChanged) && this.state) await this.report(this.state);
+    let changed = applied;
+    if (applied || this.now() - this.checkedAt >= CHECK_INTERVAL_MS) {
+      this.checkedAt = this.now();
+      if (!applied) changed = (await this.verify()) || changed;
+      changed = (await this.readInventory()) || changed;
+    }
+    if ((changed || this.unreported) && this.state) await this.report(this.state);
   }
 
   // True when the revision was applied or failed to apply, either of which is reported.
+  // The actions it carries run once, after it applied.
   private async apply(snapshot: RuntimePolicySnapshot): Promise<boolean> {
     if (snapshot.revision === this.appliedRevision) return false;
     if (
@@ -652,17 +715,25 @@ export class HermesPolicySynchronizer {
     }
     try {
       const result = await this.materializer.apply(snapshot);
+      const actions = await runActions(
+        this.materializer.hermesHome,
+        await this.materializer.planSkills(),
+        snapshot.actions ?? [],
+      );
       this.appliedRevision = result.revision;
+      this.applied = snapshot;
       this.mcpServerNames = (snapshot.mcpServers ?? []).map(({ name }) => name);
       this.mcpSecrets = result.mcpSecrets;
       this.failed = null;
+      this.checkFailed = false;
+      const restored = latest([...this.pendingRestored, ...result.restored]);
+      this.pendingRestored = [];
       this.state = {
         status: 'online',
-        detail:
-          result.conflicts.length > 0
-            ? 'Files changed outside Plan were replaced; the changed versions are kept next to them.'
-            : null,
+        detail: result.conflicts.length > 0 || restored.length > 0 ? RESTORED_DETAIL : null,
         conflicts: result.conflicts,
+        restored,
+        actions,
       };
     } catch (error) {
       this.failed = { revision: snapshot.revision, at: this.now() };
@@ -670,39 +741,86 @@ export class HermesPolicySynchronizer {
         status: 'degraded',
         detail: `Runtime policy sync failed: ${describeFailure(error)}`,
         conflicts: [],
+        restored: this.state?.restored ?? [],
+        actions: [],
       };
     }
     return true;
   }
 
+  // Applies the applied revision again, which puts back a managed file or a plugin link
+  // that was changed or removed since. True when that changed what Plan is told.
+  private async verify(): Promise<boolean> {
+    if (!this.applied || this.failed) return false;
+    try {
+      const result = await this.materializer.apply(this.applied);
+      const restored = [...result.restored, ...(await this.materializer.ensurePlugins())];
+      const recovered = this.checkFailed;
+      this.checkFailed = false;
+      if (restored.length > 0) this.noteRestored(restored, result.conflicts);
+      else if (recovered && this.state)
+        this.state = { ...this.state, status: 'online', detail: null };
+      return restored.length > 0 || recovered;
+    } catch (error) {
+      this.checkFailed = true;
+      if (this.state) {
+        this.state = {
+          ...this.state,
+          status: 'degraded',
+          detail: `Runtime policy check failed: ${describeFailure(error)}`,
+        };
+      }
+      return true;
+    }
+  }
+
+  private noteRestored(restored: string[], conflicts: RuntimeConflict[]): void {
+    if (!this.state) {
+      this.pendingRestored = latest([...this.pendingRestored, ...restored]);
+      return;
+    }
+    // A revision that failed to apply, or a check that failed, still says so.
+    const degraded = this.state.status === 'degraded';
+    this.state = {
+      ...this.state,
+      detail: degraded ? this.state.detail : RESTORED_DETAIL,
+      conflicts: [...(this.state.conflicts ?? []), ...conflicts].slice(-MAX_CONFLICTS),
+      restored: latest([...(this.state.restored ?? []), ...restored]),
+    };
+    this.unreported = true;
+  }
+
   // True when the inventory was read and differs from the one reported last.
   private async readInventory(): Promise<boolean> {
-    if (!this.options.inventory || this.now() - this.inventoryReadAt < INVENTORY_INTERVAL_MS) {
-      return false;
-    }
-    this.inventoryReadAt = this.now();
+    if (!this.options.inventory) return false;
     try {
       this.inventory = await this.options.inventory();
+      this.learnedSkills = await this.options.learned?.(this.inventory.skills);
     } catch {
       // Plan keeps showing the inventory it received last.
       return false;
     }
-    const inventoryDigest = digest(JSON.stringify(this.inventory));
+    const inventoryDigest = digest(JSON.stringify([this.inventory, this.learnedSkills ?? null]));
     if (inventoryDigest === this.inventoryDigest) return false;
     this.inventoryDigest = inventoryDigest;
     return true;
   }
 
   private async report(state: ReportedState): Promise<void> {
-    await this.client
-      .reportRuntimeStatus({
+    try {
+      await this.client.reportRuntimeStatus({
         adapter: 'hermes',
         ...state,
         appliedRevision: this.appliedRevision,
         capabilities: CAPABILITIES,
         ...(this.inventory && { inventory: this.inventory }),
-      })
-      .catch(() => {});
+        ...(this.learnedSkills && { learnedSkills: this.learnedSkills }),
+      });
+      this.unreported = false;
+    } catch (error) {
+      // Plan refuses the same report again, so only one that did not arrive is sent again.
+      this.unreported = !(error instanceof RequestError && error.status < 500);
+    }
   }
 }
 
@@ -716,7 +834,9 @@ export function hermesPolicySynchronizer(
   const materializer = new HermesPolicyMaterializer({ hermesHome, profile: config.hermes });
   const python = config.env.HERMES_PYTHON ?? process.env.HERMES_PYTHON ?? 'python3';
   return new HermesPolicySynchronizer(client, materializer, {
-    inventory: () => readHermesInventory(materializer.hermesHome, config.hermes),
+    inventory: async () =>
+      readHermesInventory(materializer.hermesHome, config.hermes, await materializer.planSkills()),
+    learned: (skills) => readLearnedSkills(materializer.hermesHome, skills),
     profile: config.hermes,
     vault: new WebLoginVault(
       materializer.hermesHome,

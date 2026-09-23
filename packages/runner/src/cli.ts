@@ -4,6 +4,7 @@ import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
 import { hermesPolicySynchronizer, type HermesPolicySynchronizer } from './policy';
+import { reflect } from './reflect';
 import { perform } from './run';
 
 // The runner holds no state — the queue is the server's — so stopping it mid-task only
@@ -14,6 +15,7 @@ import { perform } from './run';
 // several agents runs that pair for each of them, in the one process.
 
 const HEARTBEAT_MS = 60_000;
+const noSettings = { toolsets: null, env: {} };
 const ERROR_BACKOFF_MS = 5_000;
 const CATALOG_RETRY_MS = 30_000;
 
@@ -54,18 +56,25 @@ async function handle(
   const stop = new AbortController();
   try {
     const hermes = (await policy?.runSettings({ runId: run.id })) ?? null;
-    const outcome = await withHeartbeat(
+    const performed = await withHeartbeat(
       log,
       async () => {
         if (await client.heartbeat(run.id)) stop.abort();
       },
       perform(config, client, run, stop, hermes),
     );
-    log(
-      outcome
-        ? `${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`
-        : `${label}: canceled`,
-    );
+    if (!performed) {
+      log(`${label}: canceled`);
+      return;
+    }
+    const { outcome, reflection } = performed;
+    log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
+    // The run is finished and reported, so a reflection has no lease to keep alive.
+    if (reflection && outcome.sessionId) {
+      await reflect(config, client, run, outcome.sessionId, reflection, hermes ?? noSettings)
+        .then((done) => log(`${label}: reflection ${done.status}, ${done.saved.length} saved`))
+        .catch((err) => log(`${label}: reflection not reported — ${String(err)}`));
+    }
   } catch (err) {
     // The command itself never throws here; this is the runner failing to run or
     // report it. Reporting the failure keeps the run from being retried blindly. A

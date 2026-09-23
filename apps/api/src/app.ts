@@ -119,6 +119,12 @@ export const app = new Elysia()
             name: 'Credentials',
             description: "The team's web logins, API keys, SSH keys and secrets, and their grants",
           },
+          {
+            name: 'Agent Learning',
+            description:
+              'What an external agent learned in its runtime, and the actions its runner ' +
+              'carries out on it',
+          },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
           { name: 'Issues', description: 'Issues, their fields, feed, and comments' },
