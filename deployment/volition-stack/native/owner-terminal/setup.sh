@@ -1,30 +1,36 @@
 #!/usr/bin/env bash
 # Installs the owner terminal: the volition-owner-terminal service (Unix socket,
-# runs as wilhelmpa), its nginx location, its signing key, and its sudoers policy.
-# Idempotent -- safe to run on every deploy, which is what deployment/.../deploy.sh
-# is expected to call it from.
+# runs as wilhelmpa), its nginx location and its signing key. Idempotent -- safe
+# to run on every deploy, which is what deployment/.../deploy.sh is expected to
+# call it from.
 #
 #   sudo deployment/volition-stack/native/owner-terminal/setup.sh [--dry-run]
-#     [--sudo-policy=narrow|legacy-nopasswd]
+#     [--install-sudo-policy=narrow|legacy-nopasswd]
 #
 # --dry-run prints what would change without writing, enabling or restarting
 # anything, and needs no root.
-# --sudo-policy picks which of this directory's two sudoers files becomes
-# /etc/sudoers.d/90-wilhelmpa. narrow (the default) is the reviewed, least-
-# privilege policy this feature adds; legacy-nopasswd keeps today's blanket
-# NOPASSWD: ALL. Read 90-wilhelmpa's own comment before choosing -- the two are
-# not a "safe default vs. advanced option" pair, they are "the browser terminal's
-# sudo asks for a password" vs. "it does not, and neither does SSH automation
-# it cannot be told apart from".
+#
+# By default this script never touches /etc/sudoers.d/90-wilhelmpa -- not even
+# to overwrite it with identical content. Read 90-wilhelmpa's own comment for
+# why: sudo authorizes by Unix account, so the file's blanket NOPASSWD: ALL
+# covers this feature's browser terminal exactly as much as it covers SSH
+# automation, and the automation's actual command surface is broader than what
+# is reviewed and encoded in this repo's 90-wilhelmpa today. Passing
+# --install-sudo-policy is a deliberate, separate operational step the
+# orchestrator takes only once the owner has turned "sudo in the browser
+# terminal asks for a password" on in Home -> Security *and* the automation's
+# `sudo -n` command surface has been audited against 90-wilhelmpa's
+# Cmnd_Aliases -- never invoked automatically, and not by deploy.sh's call to
+# this script.
 set -euo pipefail
 
 dry_run=0
-sudo_policy=narrow
+sudo_policy=
 for arg in "$@"; do
   case "$arg" in
     --dry-run) dry_run=1 ;;
-    --sudo-policy=narrow) sudo_policy=narrow ;;
-    --sudo-policy=legacy-nopasswd) sudo_policy=legacy-nopasswd ;;
+    --install-sudo-policy=narrow) sudo_policy=narrow ;;
+    --install-sudo-policy=legacy-nopasswd) sudo_policy=legacy-nopasswd ;;
     *)
       echo "setup.sh: unknown argument: $arg" >&2
       exit 64
@@ -95,20 +101,25 @@ if [[ $dry_run -eq 0 ]] && command -v nginx >/dev/null; then
   systemctl reload nginx
 fi
 
-log "checking the sudoers policy ($sudo_policy)"
-sudoers_src="$here/90-wilhelmpa"
-if [[ $sudo_policy == legacy-nopasswd ]]; then
-  sudoers_src="$here/90-wilhelmpa.legacy-nopasswd"
-fi
-if [[ $dry_run -eq 1 ]]; then
-  /usr/sbin/visudo -cf "$sudoers_src" >/dev/null
-  log "[dry-run] $sudoers_src is valid; would install it as /etc/sudoers.d/90-wilhelmpa"
+if [[ -z $sudo_policy ]]; then
+  log "sudoers policy: leaving /etc/sudoers.d/90-wilhelmpa untouched (default;" \
+    "pass --install-sudo-policy=narrow|legacy-nopasswd to change it deliberately)"
 else
-  tmp=$(mktemp)
-  install -m 0440 "$sudoers_src" "$tmp"
-  /usr/sbin/visudo -cf "$tmp" >/dev/null
-  install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/90-wilhelmpa
-  rm -f "$tmp"
+  log "installing the sudoers policy ($sudo_policy)"
+  sudoers_src="$here/90-wilhelmpa"
+  if [[ $sudo_policy == legacy-nopasswd ]]; then
+    sudoers_src="$here/90-wilhelmpa.legacy-nopasswd"
+  fi
+  if [[ $dry_run -eq 1 ]]; then
+    /usr/sbin/visudo -cf "$sudoers_src" >/dev/null
+    log "[dry-run] $sudoers_src is valid; would install it as /etc/sudoers.d/90-wilhelmpa"
+  else
+    tmp=$(mktemp)
+    install -m 0440 "$sudoers_src" "$tmp"
+    /usr/sbin/visudo -cf "$tmp" >/dev/null
+    install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/90-wilhelmpa
+    rm -f "$tmp"
+  fi
 fi
 
 log "done ($([[ $dry_run -eq 1 ]] && echo 'dry-run, nothing changed' || echo 'installed'))"
