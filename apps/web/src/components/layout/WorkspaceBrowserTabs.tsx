@@ -47,7 +47,10 @@ export default function WorkspaceBrowserTabs({
             className="gap-2"
             aria-current={tab.active}
           >
-            <span className={`min-w-0 flex-1 truncate ${tab.active ? 'font-medium' : ''}`} dir="auto">
+            <span
+              className={`min-w-0 flex-1 truncate ${tab.active ? 'font-medium' : ''}`}
+              dir="auto"
+            >
               {tab.title}
             </span>
             <button
