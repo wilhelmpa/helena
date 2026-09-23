@@ -470,7 +470,19 @@
       "runNow": "Run now",
       "pauseSchedule": "Pause schedule",
       "resumeSchedule": "Resume schedule",
-      "delete": "Delete"
+      "delete": "Delete",
+      "agentTeam": {
+        "result": "النتيجة",
+        "autonomyReview": "تنتقل المهمة إلى المراجعة",
+        "autonomyDone": "العمل المقبول ينتقل إلى مكتملة",
+        "review": "مراجعة المنسق",
+        "reviewed": "مع مراجعة",
+        "notReviewed": "بدون مراجعة",
+        "maxTurns": "الأدوار لكل مرحلة",
+        "budgetMinutes": "الدقائق لكل مرحلة",
+        "noLimit": "بلا حد",
+        "hint": "تنطبق الحدود على كل مرحلة في Hermes. المرحلة التي تبلغها تتوقف وتبلّغ بما لديها."
+      }
     }
   },
   "webhooks": {

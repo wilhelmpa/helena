@@ -470,7 +470,19 @@
       "runNow": "Run now",
       "pauseSchedule": "Pause schedule",
       "resumeSchedule": "Resume schedule",
-      "delete": "Delete"
+      "delete": "Delete",
+      "agentTeam": {
+        "result": "结果",
+        "autonomyReview": "任务移至评审",
+        "autonomyDone": "被接受的工作移至完成",
+        "review": "协调者评审",
+        "reviewed": "经评审",
+        "notReviewed": "未评审",
+        "maxTurns": "每阶段轮数",
+        "budgetMinutes": "每阶段分钟数",
+        "noLimit": "不限",
+        "hint": "限制作用于每个 Hermes 阶段。达到限制的阶段会停止并报告已有结果。"
+      }
     }
   },
   "webhooks": {

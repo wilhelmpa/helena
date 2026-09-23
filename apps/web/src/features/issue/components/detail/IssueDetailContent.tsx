@@ -13,6 +13,7 @@ import IssueAttachmentsPanel from './IssueAttachmentsPanel';
 import IssueChecklistsPanel from './IssueChecklistsPanel';
 import IssueLinksPanel from './IssueLinksPanel';
 import IssueDevelopmentPanel from './IssueDevelopmentPanel';
+import IssueAgentTeamPanel from './IssueAgentTeamPanel';
 import IssueDocumentsPanel from './IssueDocumentsPanel';
 import IssueWorklogPanel from './IssueWorklogPanel';
 import IssueSubtasksPanel from './IssueSubtasksPanel';
@@ -77,6 +78,7 @@ export default function IssueDetailContent({
   const permissions = usePermissions(project);
   const canEdit = permissions.can('work_items', 'edit');
   const canManageDevelopment = permissions.can('integrations', 'edit');
+  const canReadWorkflows = permissions.can('actions', 'read');
   const canReadDocuments = permissions.can('documents', 'read');
   const canLinkDocuments = canEdit && permissions.can('documents', 'edit');
   const features = useProjectFeatures();
@@ -188,6 +190,10 @@ export default function IssueDetailContent({
       {features.checklists && <IssueChecklistsPanel issue={issue} />}
 
       {features.timeLogging && <IssueWorklogPanel project={project} issue={issue} />}
+
+      {canReadWorkflows && (
+        <IssueAgentTeamPanel project={project} issueId={issue.id} canEdit={canEdit} />
+      )}
 
       <IssueDevelopmentPanel
         issueId={issue.id}

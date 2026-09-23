@@ -439,5 +439,45 @@
     "noAssignee": "بلا مسؤول",
     "noType": "بلا نوع",
     "noLabels": "لا شيء"
+  },
+  "agentTeam": {
+    "title": "فريق الوكلاء",
+    "start": "تشغيل فريق الوكلاء",
+    "startAgain": "تشغيل مرة أخرى",
+    "empty": "لم يعمل فريق الوكلاء على هذه المهمة بعد. شغّله من هنا، أو أسند المهمة إلى المنسق.",
+    "unavailable": "تعذّر تحميل عمليات التشغيل الآن.",
+    "showStages": "{count, plural, zero {عرض # مرحلة} one {عرض مرحلة واحدة} two {عرض مرحلتين} few {عرض # مراحل} many {عرض # مرحلة} other {عرض # مرحلة}}",
+    "hideStages": "إخفاء المراحل",
+    "status": {
+      "pending": "في الانتظار",
+      "running": "قيد التشغيل",
+      "waiting": "بانتظار",
+      "suspended": "بانتظار الموافقة",
+      "success": "اكتمل",
+      "failed": "فشل",
+      "canceled": "أُلغي"
+    },
+    "outcome": {
+      "review": "نُقلت المهمة إلى المراجعة",
+      "done": "نُقلت المهمة إلى مكتملة"
+    },
+    "steps": {
+      "coordinate": "التخطيط",
+      "specialize": "المتخصصون",
+      "review": "المراجعة",
+      "synchronize": "النتيجة إلى المهمة"
+    },
+    "phases": {
+      "route": "توجيه",
+      "coordinate": "المنسق",
+      "specialize": "متخصص",
+      "review": "المراجعة",
+      "synchronize": "النتيجة"
+    },
+    "stageStatus": {
+      "completed": "مكتملة",
+      "needs-review": "تحتاج مراجعة",
+      "failed": "فشلت"
+    }
   }
 }

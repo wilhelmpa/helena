@@ -439,5 +439,45 @@
     "noAssignee": "无负责人",
     "noType": "无类型",
     "noLabels": "无标签"
+  },
+  "agentTeam": {
+    "title": "智能体团队",
+    "start": "启动智能体团队",
+    "startAgain": "再次运行",
+    "empty": "智能体团队尚未处理此任务。可在此启动，或将任务委派给协调者。",
+    "unavailable": "暂时无法加载运行记录。",
+    "showStages": "{count, plural, other {显示 # 个阶段}}",
+    "hideStages": "隐藏阶段",
+    "status": {
+      "pending": "排队中",
+      "running": "运行中",
+      "waiting": "等待中",
+      "suspended": "等待批准",
+      "success": "已完成",
+      "failed": "失败",
+      "canceled": "已取消"
+    },
+    "outcome": {
+      "review": "任务已移至评审",
+      "done": "任务已移至完成"
+    },
+    "steps": {
+      "coordinate": "计划",
+      "specialize": "专家",
+      "review": "评审",
+      "synchronize": "结果写入任务"
+    },
+    "phases": {
+      "route": "已路由",
+      "coordinate": "协调者",
+      "specialize": "专家",
+      "review": "评审",
+      "synchronize": "结果"
+    },
+    "stageStatus": {
+      "completed": "完成",
+      "needs-review": "需评审",
+      "failed": "失败"
+    }
   }
 }

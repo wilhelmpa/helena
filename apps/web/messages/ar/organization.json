@@ -8,7 +8,8 @@
     "departments": "Departments",
     "goals": "Goals",
     "agents": "Agents",
-    "projects": "Projects"
+    "projects": "Projects",
+    "orchestration": "التنسيق"
   },
   "fields": {
     "team": "Team",
@@ -24,7 +25,9 @@
     "reportsTo": "Reports to",
     "hermesAgentId": "Hermes agent ID",
     "parentGoal": "Parent goal",
-    "projectInstructions": "Project instructions"
+    "projectInstructions": "Project instructions",
+    "teamRole": "دور الفريق",
+    "capabilities": "القدرات"
   },
   "values": {
     "none": "None"
@@ -48,7 +51,10 @@
     "empty": "This team has no agents.",
     "hermesPlaceholder": "coordinator-agent-id",
     "projectInstructions": "Project-specific instructions",
-    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
+    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project.",
+    "capabilitiesPlaceholder": "research, writing, code",
+    "capabilitiesHint": "كلمات بأحرف صغيرة تفصل بينها فواصل. المهمة التي تطابق وسومها قدرات متخصص واحد فقط تذهب إليه مباشرة دون خطة المنسق.",
+    "saved": "تم حفظ {name}"
   },
   "projects": {
     "empty": "This team has no projects.",
@@ -85,5 +91,48 @@
     "active": "Active",
     "achieved": "Achieved",
     "paused": "Paused"
+  },
+  "orchestration": {
+    "teamTitle": "فريق الوكلاء",
+    "teamDescription": "تنطبق الأدوار والقدرات على كل مشاريع الفريق. يشارك في تشغيل الفريق الوكلاء الذين يعملون في Hermes فقط.",
+    "internal": "ليس في Hermes",
+    "editRoles": "حدّد الأدوار والقدرات في تبويب الوكلاء.",
+    "policyTitle": "سير عمل فريق الوكلاء",
+    "policyDescription": "يعمل في Mastra عند إسناد مهمة إلى منسق.",
+    "on": "مفعّل",
+    "off": "متوقف",
+    "configure": "إعداد",
+    "loading": "جارٍ تحميل سير العمل…",
+    "unavailable": "قائمة سير العمل غير متاحة. تحقّق من أن Mastra يعمل.",
+    "offHint": "متوقف لهذا المشروع: المهمة المسندة إلى منسق تُصفّ لذلك الوكيل وحده.",
+    "result": "النتيجة",
+    "autonomyReview": "تنتقل المهمة إلى المراجعة",
+    "autonomyDone": "العمل المقبول ينتقل إلى مكتملة",
+    "review": "مراجعة المنسق",
+    "reviewRequired": "مطلوبة",
+    "reviewSkipped": "متخطاة",
+    "maxTurns": "الأدوار لكل مرحلة",
+    "runBudget": "الوقت لكل مرحلة",
+    "noLimit": "بلا حد",
+    "minutes": "{count, plural, zero {# دقيقة} one {دقيقة واحدة} two {دقيقتان} few {# دقائق} many {# دقيقة} other {# دقيقة}}",
+    "warnings": {
+      "noCoordinator": "لا يملك أي وكيل في Hermes دور المنسق، لذا لا تبدأ المهمة المسندة تشغيلًا للفريق.",
+      "severalCoordinators": "عدة منسقين: يقود التشغيلَ المنسقُ الذي أُسندت إليه المهمة.",
+      "noSpecialists": "لا يوجد متخصصون: ينجز المنسق العمل بنفسه."
+    },
+    "flow": {
+      "title": "كيف تصل المهمة إلى الوكلاء",
+      "directTitle": "مباشرة",
+      "direct": "المحادثة أو الإشارة @ أو المهمة المسندة إلى وكيل واحد تذهب مباشرة إلى ذلك الوكيل في Hermes.",
+      "teamTitle": "عبر فريق الوكلاء",
+      "team": "المهمة المسندة إلى منسق، أو التي تُبدأ من قسم فريق الوكلاء في المهمة، تعمل في Mastra:",
+      "stages": {
+        "coordinate": "يقسّم المنسق المهمة إلى تكليفات.",
+        "specialize": "يعمل المتخصصون عليها في Hermes، والمستقلة منها بالتوازي.",
+        "review": "يراجع المنسق النتائج.",
+        "synchronize": "يُكتب الملخص والأدلة في المهمة، فتنتقل إلى المراجعة أو مكتملة."
+      },
+      "route": "عندما تطابق وسوم المهمة قدرات متخصص واحد فقط، أو عندما يكون في المشروع متخصص واحد، يتخطى Mastra الخطة ويسند المهمة مباشرة."
+    }
   }
 }

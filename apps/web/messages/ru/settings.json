@@ -470,7 +470,19 @@
       "runNow": "Run now",
       "pauseSchedule": "Pause schedule",
       "resumeSchedule": "Resume schedule",
-      "delete": "Delete"
+      "delete": "Delete",
+      "agentTeam": {
+        "result": "Результат",
+        "autonomyReview": "Задача переходит в «Ревью»",
+        "autonomyDone": "Принятая работа переходит в «Готово»",
+        "review": "Ревью координатора",
+        "reviewed": "с ревью",
+        "notReviewed": "без ревью",
+        "maxTurns": "Ходов на этап",
+        "budgetMinutes": "Минут на этап",
+        "noLimit": "Без ограничения",
+        "hint": "Ограничения действуют на каждый этап в Hermes. Этап, достигший их, останавливается и сообщает, что успел."
+      }
     }
   },
   "webhooks": {

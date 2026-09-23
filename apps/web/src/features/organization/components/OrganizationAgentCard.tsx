@@ -2,9 +2,15 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { OrganizationAgent, OrganizationDepartment } from '@/lib/api/endpoints/organization';
+import type {
+  AgentTeamRole,
+  OrganizationAgent,
+  OrganizationDepartment,
+} from '@/lib/api/endpoints/organization';
+import { parseCapabilities } from '../capabilities';
 import { useClearAgentAssignment, useSetAgentAssignment } from '../services/organization.service';
 import OrganizationAgentProjectInstruction from './OrganizationAgentProjectInstruction';
 
@@ -28,6 +34,8 @@ export default function OrganizationAgentCard({
   const [reportsToAgentId, setReportsToAgentId] = useState(
     agent.reportsToAgentId?.toString() ?? '',
   );
+  const [role, setRole] = useState<AgentTeamRole | ''>(agent.role ?? '');
+  const [capabilities, setCapabilities] = useState(agent.capabilities.join(', '));
 
   return (
     <div className="space-y-4 rounded-lg border p-4">
@@ -57,6 +65,30 @@ export default function OrganizationAgentCard({
             onChange={(event) => setRuntimeAgentId(event.target.value)}
           />
         </label>
+        <label className="space-y-1 text-sm">
+          <span className="text-muted-foreground">{t('fields.teamRole')}</span>
+          <select
+            className="h-9 w-full rounded-md border bg-background px-3"
+            value={role}
+            onChange={(event) => setRole(event.target.value as AgentTeamRole | '')}
+          >
+            <option value="">{t('roles.pool')}</option>
+            <option value="coordinator">{t('roles.coordinator')}</option>
+            <option value="specialist">{t('roles.specialist')}</option>
+            <option value="reviewer">{t('roles.reviewer')}</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="text-muted-foreground">{t('fields.capabilities')}</span>
+          <Input
+            value={capabilities}
+            placeholder={t('agents.capabilitiesPlaceholder')}
+            onChange={(event) => setCapabilities(event.target.value)}
+          />
+        </label>
+        <p className="text-xs text-muted-foreground md:col-span-2">
+          {t('agents.capabilitiesHint')}
+        </p>
         <label className="space-y-1 text-sm">
           <span className="text-muted-foreground">{t('fields.department')}</span>
           <select
@@ -118,15 +150,20 @@ export default function OrganizationAgentCard({
           size="sm"
           disabled={save.isPending}
           onClick={() =>
-            save.mutate({
-              id: agent.id,
-              input: {
-                roleTitle,
-                runtimeAgentId: runtimeAgentId || null,
-                departmentId: departmentId ? Number(departmentId) : null,
-                reportsToAgentId: reportsToAgentId ? Number(reportsToAgentId) : null,
+            save.mutate(
+              {
+                id: agent.id,
+                input: {
+                  roleTitle,
+                  runtimeAgentId: runtimeAgentId || null,
+                  departmentId: departmentId ? Number(departmentId) : null,
+                  reportsToAgentId: reportsToAgentId ? Number(reportsToAgentId) : null,
+                  role: role || null,
+                  capabilities: parseCapabilities(capabilities),
+                },
               },
-            })
+              { onSuccess: () => toast.success(t('agents.saved', { name: agent.name })) },
+            )
           }
         >
           {t('actions.save')}

@@ -439,5 +439,45 @@
     "noAssignee": "Tanpa penerima tugas",
     "noType": "Tanpa tipe",
     "noLabels": "Tidak ada"
+  },
+  "agentTeam": {
+    "title": "Tim agen",
+    "start": "Mulai tim agen",
+    "startAgain": "Jalankan lagi",
+    "empty": "Tim agen belum mengerjakan tugas ini. Mulai dari sini, atau delegasikan tugas ke koordinator.",
+    "unavailable": "Proses tidak dapat dimuat saat ini.",
+    "showStages": "{count, plural, other {Tampilkan # tahap}}",
+    "hideStages": "Sembunyikan tahap",
+    "status": {
+      "pending": "Dalam antrean",
+      "running": "Berjalan",
+      "waiting": "Menunggu",
+      "suspended": "Menunggu persetujuan",
+      "success": "Selesai",
+      "failed": "Gagal",
+      "canceled": "Dibatalkan"
+    },
+    "outcome": {
+      "review": "Tugas dipindahkan ke Tinjauan",
+      "done": "Tugas dipindahkan ke Selesai"
+    },
+    "steps": {
+      "coordinate": "Rencana",
+      "specialize": "Spesialis",
+      "review": "Tinjauan",
+      "synchronize": "Hasil ke tugas"
+    },
+    "phases": {
+      "route": "Diarahkan",
+      "coordinate": "Koordinator",
+      "specialize": "Spesialis",
+      "review": "Tinjauan",
+      "synchronize": "Hasil"
+    },
+    "stageStatus": {
+      "completed": "selesai",
+      "needs-review": "perlu ditinjau",
+      "failed": "gagal"
+    }
   }
 }

@@ -197,6 +197,8 @@ export const qk = {
     ['issue', id, 'development', 'repositories', repositoryId, 'branches'] as const,
   // Under the issue prefix, so every issue mutation refreshes the cycles with it.
   issueCycles: (id: number) => ['issue', id, 'cycles'] as const,
+  // Under the issue prefix, so the issue's live refresh also reloads the team runs.
+  issueAgentTeamRuns: (id: number) => ['issue', id, 'agent-team'] as const,
   anyIssue: ['issue'] as const,
   // Resolving an issue by its project-scoped number (the identifier-based URL).
   issueBySeq: (projectKey: string, seq: number) => ['issueBySeq', projectKey, seq] as const,

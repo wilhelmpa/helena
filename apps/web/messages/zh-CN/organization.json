@@ -8,7 +8,8 @@
     "departments": "Departments",
     "goals": "Goals",
     "agents": "Agents",
-    "projects": "Projects"
+    "projects": "Projects",
+    "orchestration": "编排"
   },
   "fields": {
     "team": "Team",
@@ -24,7 +25,9 @@
     "reportsTo": "Reports to",
     "hermesAgentId": "Hermes agent ID",
     "parentGoal": "Parent goal",
-    "projectInstructions": "Project instructions"
+    "projectInstructions": "Project instructions",
+    "teamRole": "团队角色",
+    "capabilities": "能力"
   },
   "values": {
     "none": "None"
@@ -48,7 +51,10 @@
     "empty": "This team has no agents.",
     "hermesPlaceholder": "coordinator-agent-id",
     "projectInstructions": "Project-specific instructions",
-    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
+    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project.",
+    "capabilitiesPlaceholder": "research, writing, code",
+    "capabilitiesHint": "用逗号分隔的小写词。任务标签只与一位专家的能力匹配时，任务会直接交给该专家，不经过协调者的计划。",
+    "saved": "已保存 {name}"
   },
   "projects": {
     "empty": "This team has no projects.",
@@ -85,5 +91,48 @@
     "active": "Active",
     "achieved": "Achieved",
     "paused": "Paused"
+  },
+  "orchestration": {
+    "teamTitle": "智能体团队",
+    "teamDescription": "角色和能力适用于团队的所有项目。只有在 Hermes 中运行的智能体参与团队运行。",
+    "internal": "不在 Hermes 中",
+    "editRoles": "在“智能体”标签页设置角色和能力。",
+    "policyTitle": "agent-team 工作流",
+    "policyDescription": "任务委派给协调者时在 Mastra 中运行。",
+    "on": "开启",
+    "off": "关闭",
+    "configure": "配置",
+    "loading": "正在加载工作流…",
+    "unavailable": "工作流列表不可用。请检查 Mastra 是否在运行。",
+    "offHint": "此项目已关闭：委派给协调者的任务只为该智能体排队。",
+    "result": "结果",
+    "autonomyReview": "任务移至评审",
+    "autonomyDone": "被接受的工作移至完成",
+    "review": "协调者评审",
+    "reviewRequired": "必需",
+    "reviewSkipped": "跳过",
+    "maxTurns": "每阶段轮数",
+    "runBudget": "每阶段时长",
+    "noLimit": "不限",
+    "minutes": "{count, plural, other {# 分钟}}",
+    "warnings": {
+      "noCoordinator": "没有 Hermes 智能体担任协调者，因此委派的任务不会启动团队运行。",
+      "severalCoordinators": "有多位协调者：由任务所委派的协调者主导运行。",
+      "noSpecialists": "没有专家：由协调者自己完成工作。"
+    },
+    "flow": {
+      "title": "任务如何到达智能体",
+      "directTitle": "直接",
+      "direct": "聊天、@提及或分配给某个智能体的任务会直接交给 Hermes 中的该智能体。",
+      "teamTitle": "通过智能体团队",
+      "team": "委派给协调者的任务，或从任务的“智能体团队”部分启动的任务，在 Mastra 中运行：",
+      "stages": {
+        "coordinate": "协调者将任务拆分为分派。",
+        "specialize": "专家在 Hermes 中完成分派，相互独立的并行进行。",
+        "review": "协调者评审结果。",
+        "synchronize": "摘要和证据写入任务，任务移至评审或完成。"
+      },
+      "route": "当任务标签只与一位专家的能力匹配，或项目只有一位专家时，Mastra 跳过计划，直接分派任务。"
+    }
   }
 }

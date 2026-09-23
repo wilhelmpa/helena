@@ -41,6 +41,18 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
             {agent.runtimeState.adapter ?? agent.kind}
           </span>
         </div>
+        {agent.capabilities.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {agent.capabilities.map((capability) => (
+              <span
+                key={capability}
+                className="rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground"
+              >
+                {capability}
+              </span>
+            ))}
+          </div>
+        )}
         {agent.projects.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {agent.projects.map((project) => (

@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { ProjectWorkflow } from '@/lib/api/endpoints/controlPlaneWorkflows';
 import { useUpdateProjectWorkflow } from '@/services/controlPlaneWorkflows.service';
+import ControlPlaneAgentTeamPolicy from './ControlPlaneAgentTeamPolicy';
+import { agentTeamPolicyConfiguration, agentTeamPolicyDraft } from './agentTeamPolicy';
 
 export default function ControlPlaneWorkflowConfiguration({
   projectKey,
@@ -26,10 +28,15 @@ export default function ControlPlaneWorkflowConfiguration({
   const [retryLimit, setRetryLimit] = useState(
     workflow.assignment.configuration.retryLimit?.toString() ?? '3',
   );
+  const agentTeam = workflow.id === 'agent-team';
+  const [policy, setPolicy] = useState(() =>
+    agentTeamPolicyDraft(workflow.assignment.configuration),
+  );
 
   useEffect(() => {
     setInstructions(workflow.assignment.configuration.instructions ?? '');
     setRetryLimit(workflow.assignment.configuration.retryLimit?.toString() ?? '3');
+    setPolicy(agentTeamPolicyDraft(workflow.assignment.configuration));
   }, [workflow.assignment.configuration]);
 
   if (!editable) {
@@ -43,6 +50,29 @@ export default function ControlPlaneWorkflowConfiguration({
           <p className="text-xs font-medium text-muted-foreground">{t('retryLimit')}</p>
           <p className="mt-1">{retryLimit}</p>
         </div>
+        {agentTeam && (
+          <>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">{t('agentTeam.result')}</p>
+              <p className="mt-1">
+                {policy.autonomy === 'done'
+                  ? t('agentTeam.autonomyDone')
+                  : t('agentTeam.autonomyReview')}
+                {' · '}
+                {policy.reviewRequired ? t('agentTeam.reviewed') : t('agentTeam.notReviewed')}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">
+                {t('agentTeam.maxTurns')} · {t('agentTeam.budgetMinutes')}
+              </p>
+              <p className="mt-1">
+                {policy.maxTurns || t('agentTeam.noLimit')} ·{' '}
+                {policy.budgetMinutes || t('agentTeam.noLimit')}
+              </p>
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -60,6 +90,7 @@ export default function ControlPlaneWorkflowConfiguration({
               ...workflow.assignment.configuration,
               instructions: instructions.trim() || undefined,
               retryLimit: Math.max(0, Number.parseInt(retryLimit, 10) || 0),
+              ...(agentTeam ? agentTeamPolicyConfiguration(policy) : {}),
             },
           },
         });
@@ -85,7 +116,10 @@ export default function ControlPlaneWorkflowConfiguration({
           onChange={(event) => setRetryLimit(event.target.value)}
         />
       </div>
-      <Button className="self-end" type="submit" disabled={update.isPending}>
+      {agentTeam && (
+        <ControlPlaneAgentTeamPolicy id={workflow.id} value={policy} onChange={setPolicy} />
+      )}
+      <Button className="self-end sm:col-start-3" type="submit" disabled={update.isPending}>
         {t('saveConfiguration')}
       </Button>
     </form>

@@ -439,5 +439,45 @@
     "noAssignee": "Aucun responsable",
     "noType": "Aucun type",
     "noLabels": "Aucune"
+  },
+  "agentTeam": {
+    "title": "Équipe d’agents",
+    "start": "Lancer l’équipe d’agents",
+    "startAgain": "Relancer",
+    "empty": "L’équipe d’agents n’a pas encore travaillé sur cette tâche. Lancez-la ici ou déléguez la tâche au coordinateur.",
+    "unavailable": "Les exécutions ne peuvent pas être chargées pour le moment.",
+    "showStages": "{count, plural, one {Afficher # étape} other {Afficher # étapes}}",
+    "hideStages": "Masquer les étapes",
+    "status": {
+      "pending": "En file",
+      "running": "En cours",
+      "waiting": "En attente",
+      "suspended": "En attente d’approbation",
+      "success": "Terminé",
+      "failed": "Échec",
+      "canceled": "Annulé"
+    },
+    "outcome": {
+      "review": "Tâche passée en Revue",
+      "done": "Tâche passée en Terminé"
+    },
+    "steps": {
+      "coordinate": "Plan",
+      "specialize": "Spécialistes",
+      "review": "Revue",
+      "synchronize": "Résultat vers la tâche"
+    },
+    "phases": {
+      "route": "Routé",
+      "coordinate": "Coordinateur",
+      "specialize": "Spécialiste",
+      "review": "Revue",
+      "synchronize": "Résultat"
+    },
+    "stageStatus": {
+      "completed": "terminé",
+      "needs-review": "à revoir",
+      "failed": "échec"
+    }
   }
 }

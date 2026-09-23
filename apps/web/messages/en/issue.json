@@ -439,5 +439,45 @@
     "noAssignee": "No assignee",
     "noType": "No type",
     "noLabels": "None"
+  },
+  "agentTeam": {
+    "title": "Agent team",
+    "start": "Start agent team",
+    "startAgain": "Run again",
+    "empty": "The agent team has not worked on this task yet. Start it here, or delegate the task to the coordinator.",
+    "unavailable": "The runs cannot be loaded right now.",
+    "showStages": "{count, plural, one {Show # stage} other {Show # stages}}",
+    "hideStages": "Hide stages",
+    "status": {
+      "pending": "Queued",
+      "running": "Running",
+      "waiting": "Waiting",
+      "suspended": "Waiting for approval",
+      "success": "Finished",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "outcome": {
+      "review": "Task moved to Review",
+      "done": "Task moved to Done"
+    },
+    "steps": {
+      "coordinate": "Plan",
+      "specialize": "Specialists",
+      "review": "Review",
+      "synchronize": "Result to task"
+    },
+    "phases": {
+      "route": "Routed",
+      "coordinate": "Coordinator",
+      "specialize": "Specialist",
+      "review": "Review",
+      "synchronize": "Result"
+    },
+    "stageStatus": {
+      "completed": "done",
+      "needs-review": "needs review",
+      "failed": "failed"
+    }
   }
 }

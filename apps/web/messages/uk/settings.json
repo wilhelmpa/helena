@@ -470,7 +470,19 @@
       "runNow": "Run now",
       "pauseSchedule": "Pause schedule",
       "resumeSchedule": "Resume schedule",
-      "delete": "Delete"
+      "delete": "Delete",
+      "agentTeam": {
+        "result": "Результат",
+        "autonomyReview": "Завдання переходить у «Рев’ю»",
+        "autonomyDone": "Прийнята робота переходить у «Готово»",
+        "review": "Рев’ю координатора",
+        "reviewed": "з рев’ю",
+        "notReviewed": "без рев’ю",
+        "maxTurns": "Ходів на етап",
+        "budgetMinutes": "Хвилин на етап",
+        "noLimit": "Без обмеження",
+        "hint": "Обмеження діють на кожен етап у Hermes. Етап, що їх досяг, зупиняється і повідомляє, що встиг."
+      }
     }
   },
   "webhooks": {

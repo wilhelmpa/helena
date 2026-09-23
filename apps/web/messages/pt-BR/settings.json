@@ -470,7 +470,19 @@
       "runNow": "Run now",
       "pauseSchedule": "Pause schedule",
       "resumeSchedule": "Resume schedule",
-      "delete": "Delete"
+      "delete": "Delete",
+      "agentTeam": {
+        "result": "Resultado",
+        "autonomyReview": "A tarefa vai para Revisão",
+        "autonomyDone": "Trabalho aceito vai para Concluído",
+        "review": "Revisão do coordenador",
+        "reviewed": "com revisão",
+        "notReviewed": "sem revisão",
+        "maxTurns": "Turnos por etapa",
+        "budgetMinutes": "Minutos por etapa",
+        "noLimit": "Sem limite",
+        "hint": "Os limites valem para cada etapa do Hermes. Uma etapa que os atinge para e relata o que tem."
+      }
     }
   },
   "webhooks": {

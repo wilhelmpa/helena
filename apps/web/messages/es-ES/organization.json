@@ -8,7 +8,8 @@
     "departments": "Departments",
     "goals": "Goals",
     "agents": "Agents",
-    "projects": "Projects"
+    "projects": "Projects",
+    "orchestration": "Orquestación"
   },
   "fields": {
     "team": "Team",
@@ -24,7 +25,9 @@
     "reportsTo": "Reports to",
     "hermesAgentId": "Hermes agent ID",
     "parentGoal": "Parent goal",
-    "projectInstructions": "Project instructions"
+    "projectInstructions": "Project instructions",
+    "teamRole": "Rol en el equipo",
+    "capabilities": "Capacidades"
   },
   "values": {
     "none": "None"
@@ -48,7 +51,10 @@
     "empty": "This team has no agents.",
     "hermesPlaceholder": "coordinator-agent-id",
     "projectInstructions": "Project-specific instructions",
-    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
+    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project.",
+    "capabilitiesPlaceholder": "research, writing, code",
+    "capabilitiesHint": "Palabras en minúsculas separadas por comas. Una tarea cuyas etiquetas coinciden con las capacidades de un solo especialista va a ese especialista sin el plan del coordinador.",
+    "saved": "{name} guardado"
   },
   "projects": {
     "empty": "This team has no projects.",
@@ -85,5 +91,48 @@
     "active": "Active",
     "achieved": "Achieved",
     "paused": "Paused"
+  },
+  "orchestration": {
+    "teamTitle": "Equipo de agentes",
+    "teamDescription": "Los roles y las capacidades se aplican a todos los proyectos del equipo. Solo los agentes que se ejecutan en Hermes participan en una ejecución del equipo.",
+    "internal": "fuera de Hermes",
+    "editRoles": "Define roles y capacidades en la pestaña Agentes.",
+    "policyTitle": "Flujo agent-team",
+    "policyDescription": "Se ejecuta en Mastra cuando una tarea se delega a un coordinador.",
+    "on": "Activo",
+    "off": "Inactivo",
+    "configure": "Configurar",
+    "loading": "Cargando flujo…",
+    "unavailable": "La lista de flujos no está disponible. Comprueba que Mastra esté en marcha.",
+    "offHint": "Inactivo en este proyecto: una tarea delegada a un coordinador se pone en cola solo para ese agente.",
+    "result": "Resultado",
+    "autonomyReview": "La tarea pasa a Revisión",
+    "autonomyDone": "El trabajo aceptado pasa a Hecho",
+    "review": "Revisión del coordinador",
+    "reviewRequired": "Obligatoria",
+    "reviewSkipped": "Omitida",
+    "maxTurns": "Turnos por etapa",
+    "runBudget": "Tiempo por etapa",
+    "noLimit": "Sin límite",
+    "minutes": "{count, plural, one {# minuto} other {# minutos}}",
+    "warnings": {
+      "noCoordinator": "Ningún agente de Hermes tiene el rol de coordinador, así que una tarea delegada no inicia ninguna ejecución del equipo.",
+      "severalCoordinators": "Varios coordinadores: dirige la ejecución aquel al que se delega la tarea.",
+      "noSpecialists": "Sin especialistas: el coordinador hace el trabajo él mismo."
+    },
+    "flow": {
+      "title": "Cómo llega una tarea a los agentes",
+      "directTitle": "Directamente",
+      "direct": "Un chat, una @mención o una tarea asignada a un agente va directamente a ese agente en Hermes.",
+      "teamTitle": "A través del equipo de agentes",
+      "team": "Una tarea delegada a un coordinador, o iniciada desde la sección Equipo de agentes de la tarea, se ejecuta en Mastra:",
+      "stages": {
+        "coordinate": "El coordinador divide la tarea en encargos.",
+        "specialize": "Los especialistas trabajan en ellos en Hermes, los independientes en paralelo.",
+        "review": "El coordinador revisa los resultados.",
+        "synchronize": "El resumen y las evidencias se escriben en la tarea, que pasa a Revisión o Hecho."
+      },
+      "route": "Cuando las etiquetas de la tarea coinciden con las capacidades de un solo especialista, o el proyecto solo tiene uno, Mastra omite el plan y asigna la tarea directamente."
+    }
   }
 }

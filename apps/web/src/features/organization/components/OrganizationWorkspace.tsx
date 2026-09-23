@@ -6,6 +6,7 @@ import type { Organization } from '@/lib/api/endpoints/organization';
 import OrganizationAgents from './OrganizationAgents';
 import OrganizationDepartments from './OrganizationDepartments';
 import OrganizationGoals from './OrganizationGoals';
+import OrganizationOrchestration from './OrganizationOrchestration';
 import OrganizationProjects from './OrganizationProjects';
 import OrganizationTree from './OrganizationTree';
 import OrganizationProjectResources from './OrganizationProjectResources';
@@ -20,14 +21,23 @@ export default function OrganizationWorkspace({
   const t = useTranslations('organization');
 
   return (
-    <Tabs defaultValue="structure" className="min-h-0 min-w-0 flex-1 gap-0">
+    <Tabs
+      defaultValue={projectKey ? 'orchestration' : 'structure'}
+      className="min-h-0 min-w-0 flex-1 gap-0"
+    >
       <TabsList variant="line" className="h-11 shrink-0 overflow-x-auto px-4">
+        {projectKey && <TabsTrigger value="orchestration">{t('tabs.orchestration')}</TabsTrigger>}
         <TabsTrigger value="structure">{t('tabs.map')}</TabsTrigger>
         <TabsTrigger value="departments">{t('tabs.departments')}</TabsTrigger>
         <TabsTrigger value="goals">{t('tabs.goals')}</TabsTrigger>
         <TabsTrigger value="agents">{t('tabs.agents')}</TabsTrigger>
         <TabsTrigger value="projects">{t('tabs.projects')}</TabsTrigger>
       </TabsList>
+      {projectKey && (
+        <TabsContent value="orchestration" className="min-w-0 overflow-y-auto p-4">
+          <OrganizationOrchestration agents={organization.agents} projectKey={projectKey} />
+        </TabsContent>
+      )}
       <TabsContent value="structure" className="min-w-0 overflow-auto p-4">
         {projectKey ? <OrganizationProjectResources projectKey={projectKey} /> : null}
         <OrganizationTree organization={organization} />

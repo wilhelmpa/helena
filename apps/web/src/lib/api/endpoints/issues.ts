@@ -307,6 +307,46 @@ export const getIssueBySeq = (projectKey: string, seq: number, signal?: AbortSig
 
 export const listIssueCycles = (id: number) => request<IssueCycleEntry[]>(`/issues/${id}/cycles`);
 
+export type AgentTeamPhase = 'route' | 'coordinate' | 'specialize' | 'review' | 'synchronize';
+
+export interface AgentTeamHistoryEntry {
+  executionId: string;
+  phase: AgentTeamPhase;
+  status: 'completed' | 'needs-review' | 'failed';
+  attempt: number;
+  startedAt: string;
+  completedAt: string;
+  summary: string;
+}
+
+// The agent-team output once a run finished: the state the task was moved to, the
+// summary written to it and one entry per stage.
+export interface AgentTeamResult {
+  status: 'dry-run-complete' | 'review' | 'done';
+  summary: string;
+  evidence: { kind: string; ref: string; label: string }[];
+  history: AgentTeamHistoryEntry[];
+}
+
+export interface AgentTeamRun {
+  runId: string;
+  status: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  steps: { id: string; status: string }[];
+  result: AgentTeamResult | null;
+  error: string | null;
+}
+
+export const listIssueAgentTeamRuns = (id: number) =>
+  request<AgentTeamRun[]>(`/issues/${id}/agent-team/runs`);
+
+export const startIssueAgentTeam = (id: number) =>
+  request<{ runId: string; status: string; taskRef: string }>(`/issues/${id}/agent-team`, {
+    method: 'POST',
+    body: JSON.stringify({ idempotencyKey: crypto.randomUUID() }),
+  });
+
 export const updateIssue = (id: number, patch: IssuePatch) =>
   request<Issue>(`/issues/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
 

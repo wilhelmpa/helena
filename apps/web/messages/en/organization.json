@@ -8,7 +8,8 @@
     "departments": "Departments",
     "goals": "Goals",
     "agents": "Agents",
-    "projects": "Projects"
+    "projects": "Projects",
+    "orchestration": "Orchestration"
   },
   "fields": {
     "team": "Team",
@@ -24,7 +25,9 @@
     "reportsTo": "Reports to",
     "hermesAgentId": "Runtime agent ID",
     "parentGoal": "Parent goal",
-    "projectInstructions": "Project instructions"
+    "projectInstructions": "Project instructions",
+    "teamRole": "Team role",
+    "capabilities": "Capabilities"
   },
   "values": {
     "none": "None"
@@ -48,7 +51,10 @@
     "empty": "This team has no agents.",
     "hermesPlaceholder": "coordinator-agent-id",
     "projectInstructions": "Project-specific instructions",
-    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
+    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project.",
+    "capabilitiesPlaceholder": "research, writing, code",
+    "capabilitiesHint": "Lowercase words separated by commas. A task whose labels match the capabilities of exactly one specialist goes to that specialist without the coordinator's plan.",
+    "saved": "{name} saved"
   },
   "projects": {
     "empty": "This team has no projects.",
@@ -85,5 +91,48 @@
     "active": "Active",
     "achieved": "Achieved",
     "paused": "Paused"
+  },
+  "orchestration": {
+    "teamTitle": "Agent team",
+    "teamDescription": "Roles and capabilities apply to every project of the team. Only agents that run in Hermes take part in a team run.",
+    "internal": "not in Hermes",
+    "editRoles": "Set roles and capabilities on the Agents tab.",
+    "policyTitle": "Agent-team workflow",
+    "policyDescription": "Runs in Mastra when a task is delegated to a coordinator.",
+    "on": "On",
+    "off": "Off",
+    "configure": "Configure",
+    "loading": "Loading workflow…",
+    "unavailable": "The workflow list is not available. Check that Mastra is running.",
+    "offHint": "Off for this project: a task delegated to a coordinator is queued for that agent alone.",
+    "result": "Result",
+    "autonomyReview": "Task goes to Review",
+    "autonomyDone": "Accepted work goes to Done",
+    "review": "Coordinator review",
+    "reviewRequired": "Required",
+    "reviewSkipped": "Skipped",
+    "maxTurns": "Turns per stage",
+    "runBudget": "Time per stage",
+    "noLimit": "No limit",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "warnings": {
+      "noCoordinator": "No Hermes agent has the coordinator role, so a delegated task starts no team run.",
+      "severalCoordinators": "Several coordinators: the one the task is delegated to leads the run.",
+      "noSpecialists": "No specialists: the coordinator does the work itself."
+    },
+    "flow": {
+      "title": "How a task reaches the agents",
+      "directTitle": "Directly",
+      "direct": "A chat, an @mention or a task assigned to one agent goes straight to that agent in Hermes.",
+      "teamTitle": "Through the agent team",
+      "team": "A task delegated to a coordinator, or started from the task's Agent team section, runs in Mastra:",
+      "stages": {
+        "coordinate": "The coordinator splits the task into assignments.",
+        "specialize": "Specialists work on them in Hermes, independent ones in parallel.",
+        "review": "The coordinator reviews the results.",
+        "synchronize": "The summary and evidence are written to the task, which moves to Review or Done."
+      },
+      "route": "When the task's labels match the capabilities of exactly one specialist, or the project has only one, Mastra skips the plan and assigns the task directly."
+    }
   }
 }

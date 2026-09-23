@@ -8,7 +8,8 @@
     "departments": "Departments",
     "goals": "Goals",
     "agents": "Agents",
-    "projects": "Projects"
+    "projects": "Projects",
+    "orchestration": "Orkestrasi"
   },
   "fields": {
     "team": "Team",
@@ -24,7 +25,9 @@
     "reportsTo": "Reports to",
     "hermesAgentId": "Hermes agent ID",
     "parentGoal": "Parent goal",
-    "projectInstructions": "Project instructions"
+    "projectInstructions": "Project instructions",
+    "teamRole": "Peran tim",
+    "capabilities": "Kemampuan"
   },
   "values": {
     "none": "None"
@@ -48,7 +51,10 @@
     "empty": "This team has no agents.",
     "hermesPlaceholder": "coordinator-agent-id",
     "projectInstructions": "Project-specific instructions",
-    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
+    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project.",
+    "capabilitiesPlaceholder": "research, writing, code",
+    "capabilitiesHint": "Kata huruf kecil dipisahkan koma. Tugas yang labelnya cocok dengan kemampuan tepat satu spesialis langsung diberikan ke spesialis itu tanpa rencana koordinator.",
+    "saved": "{name} disimpan"
   },
   "projects": {
     "empty": "This team has no projects.",
@@ -85,5 +91,48 @@
     "active": "Active",
     "achieved": "Achieved",
     "paused": "Paused"
+  },
+  "orchestration": {
+    "teamTitle": "Tim agen",
+    "teamDescription": "Peran dan kemampuan berlaku untuk semua proyek tim. Hanya agen yang berjalan di Hermes yang ikut dalam proses tim.",
+    "internal": "tidak di Hermes",
+    "editRoles": "Atur peran dan kemampuan di tab Agen.",
+    "policyTitle": "Alur kerja agent-team",
+    "policyDescription": "Berjalan di Mastra saat tugas didelegasikan ke koordinator.",
+    "on": "Aktif",
+    "off": "Nonaktif",
+    "configure": "Konfigurasi",
+    "loading": "Memuat alur kerja…",
+    "unavailable": "Daftar alur kerja tidak tersedia. Periksa apakah Mastra berjalan.",
+    "offHint": "Nonaktif untuk proyek ini: tugas yang didelegasikan ke koordinator diantrekan untuk agen itu saja.",
+    "result": "Hasil",
+    "autonomyReview": "Tugas pindah ke Tinjauan",
+    "autonomyDone": "Pekerjaan yang diterima pindah ke Selesai",
+    "review": "Tinjauan koordinator",
+    "reviewRequired": "Wajib",
+    "reviewSkipped": "Dilewati",
+    "maxTurns": "Giliran per tahap",
+    "runBudget": "Waktu per tahap",
+    "noLimit": "Tanpa batas",
+    "minutes": "{count, plural, other {# menit}}",
+    "warnings": {
+      "noCoordinator": "Tidak ada agen Hermes dengan peran koordinator, jadi tugas yang didelegasikan tidak memulai proses tim.",
+      "severalCoordinators": "Beberapa koordinator: yang menerima delegasi tugas memimpin proses.",
+      "noSpecialists": "Tidak ada spesialis: koordinator mengerjakannya sendiri."
+    },
+    "flow": {
+      "title": "Bagaimana tugas sampai ke agen",
+      "directTitle": "Langsung",
+      "direct": "Chat, @mention, atau tugas yang ditugaskan ke satu agen langsung sampai ke agen itu di Hermes.",
+      "teamTitle": "Melalui tim agen",
+      "team": "Tugas yang didelegasikan ke koordinator, atau dimulai dari bagian Tim agen pada tugas, berjalan di Mastra:",
+      "stages": {
+        "coordinate": "Koordinator membagi tugas menjadi penugasan.",
+        "specialize": "Spesialis mengerjakannya di Hermes, yang independen secara paralel.",
+        "review": "Koordinator meninjau hasilnya.",
+        "synchronize": "Ringkasan dan bukti ditulis ke tugas, yang pindah ke Tinjauan atau Selesai."
+      },
+      "route": "Jika label tugas cocok dengan kemampuan tepat satu spesialis, atau proyek hanya punya satu, Mastra melewati rencana dan menugaskan tugas secara langsung."
+    }
   }
 }

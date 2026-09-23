@@ -8,7 +8,8 @@
     "departments": "Departments",
     "goals": "Goals",
     "agents": "Agents",
-    "projects": "Projects"
+    "projects": "Projects",
+    "orchestration": "Оркестрація"
   },
   "fields": {
     "team": "Team",
@@ -24,7 +25,9 @@
     "reportsTo": "Reports to",
     "hermesAgentId": "Hermes agent ID",
     "parentGoal": "Parent goal",
-    "projectInstructions": "Project instructions"
+    "projectInstructions": "Project instructions",
+    "teamRole": "Роль у команді",
+    "capabilities": "Навички"
   },
   "values": {
     "none": "None"
@@ -48,7 +51,10 @@
     "empty": "This team has no agents.",
     "hermesPlaceholder": "coordinator-agent-id",
     "projectInstructions": "Project-specific instructions",
-    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
+    "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project.",
+    "capabilitiesPlaceholder": "research, writing, code",
+    "capabilitiesHint": "Слова малими літерами через кому. Завдання, мітки якого збігаються з навичками рівно одного спеціаліста, йде йому без плану координатора.",
+    "saved": "{name}: збережено"
   },
   "projects": {
     "empty": "This team has no projects.",
@@ -85,5 +91,48 @@
     "active": "Active",
     "achieved": "Achieved",
     "paused": "Paused"
+  },
+  "orchestration": {
+    "teamTitle": "Команда агентів",
+    "teamDescription": "Ролі та навички діють у всіх проєктах команди. У запуску команди беруть участь лише агенти, що працюють у Hermes.",
+    "internal": "не в Hermes",
+    "editRoles": "Ролі та навички задаються на вкладці «Агенти».",
+    "policyTitle": "Процес agent-team",
+    "policyDescription": "Запускається в Mastra, коли завдання делеговано координатору.",
+    "on": "Увімк.",
+    "off": "Вимк.",
+    "configure": "Налаштувати",
+    "loading": "Завантаження процесу…",
+    "unavailable": "Список процесів недоступний. Перевірте, що Mastra запущена.",
+    "offHint": "Вимкнено в цьому проєкті: завдання, делеговане координатору, стає в чергу лише цьому агенту.",
+    "result": "Результат",
+    "autonomyReview": "Завдання переходить у «Рев’ю»",
+    "autonomyDone": "Прийнята робота переходить у «Готово»",
+    "review": "Рев’ю координатора",
+    "reviewRequired": "Обов’язкове",
+    "reviewSkipped": "Пропускається",
+    "maxTurns": "Ходів на етап",
+    "runBudget": "Час на етап",
+    "noLimit": "Без обмеження",
+    "minutes": "{count, plural, one {# хвилина} few {# хвилини} many {# хвилин} other {# хвилини}}",
+    "warnings": {
+      "noCoordinator": "Жоден агент Hermes не має ролі координатора, тому делеговане завдання не запускає команду.",
+      "severalCoordinators": "Кілька координаторів: запуск веде той, кому делеговано завдання.",
+      "noSpecialists": "Немає спеціалістів: координатор виконує роботу сам."
+    },
+    "flow": {
+      "title": "Як завдання потрапляє до агентів",
+      "directTitle": "Напряму",
+      "direct": "Чат, @згадка або завдання, призначене одному агенту, потрапляють прямо до цього агента в Hermes.",
+      "teamTitle": "Через команду агентів",
+      "team": "Завдання, делеговане координатору або запущене з розділу «Команда агентів» завдання, виконується в Mastra:",
+      "stages": {
+        "coordinate": "Координатор ділить завдання на доручення.",
+        "specialize": "Спеціалісти виконують їх у Hermes, незалежні — паралельно.",
+        "review": "Координатор перевіряє результати.",
+        "synchronize": "Підсумок і підтвердження записуються в завдання, і воно переходить у «Рев’ю» або «Готово»."
+      },
+      "route": "Якщо мітки завдання збігаються з навичками рівно одного спеціаліста або він у проєкті один, Mastra пропускає план і призначає завдання напряму."
+    }
   }
 }
