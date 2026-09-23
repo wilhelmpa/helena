@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "Tidak memiliki templat dan tidak melapor kepada siapa pun. Tetapkan departemen atau atasan.",
+    "noDepartment": "Tanpa departemen",
+    "templates": "Templat pool"
   },
   "summary": {
     "pool": "Agent pool",

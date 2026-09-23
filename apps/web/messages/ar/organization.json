@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "لا يملك قالبًا ولا يُبلغ لأي أحد. عيّن قسمًا أو مسؤولًا.",
+    "noDepartment": "بدون قسم",
+    "templates": "قوالب المجمع"
   },
   "summary": {
     "pool": "Agent pool",

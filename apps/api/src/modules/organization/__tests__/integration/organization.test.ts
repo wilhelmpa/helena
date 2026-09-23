@@ -137,6 +137,37 @@ describe('organization', () => {
     expect(await read()).toMatchObject({ role: 'reviewer', capabilities: sixteen });
   });
 
+  it('marks the Home master and pool templates so neither counts as unassigned', async () => {
+    const { api, teamId, agent } = await setup();
+    const template = await api.teams({ teamId })['ai-agents'].post({
+      name: 'Coder',
+      username: 'coder',
+      kind: 'external',
+      template: true,
+    });
+    expect(template.status).toBe(201);
+
+    const snapshot = await api.teams({ teamId }).organization.get();
+    expect(snapshot.status).toBe(200);
+    const byUsername = (username: string) =>
+      snapshot.data!.agents.find((entry) => entry.username === username);
+
+    // The Home master carries no organization_agent_assignment row and no
+    // reportsToAgentId, exactly like a real orphan would — only isHome tells them apart.
+    expect(byUsername('master')).toMatchObject({ isHome: true, template: false });
+    // A pool template runs in no project and reports to no one either, but must be
+    // marked as a template, not as unassigned.
+    expect(byUsername('coder')).toMatchObject({ isHome: false, template: true });
+    // The project's auto-created coordinator reports to master.
+    expect(byUsername('hermes-mkt-coordinator')).toMatchObject({
+      isHome: false,
+      template: false,
+      reportsToAgentId: byUsername('master')!.id,
+    });
+    const researcher = snapshot.data!.agents.find((entry) => entry.id === agent.id);
+    expect(researcher).toMatchObject({ isHome: false, template: false });
+  });
+
   it("makes a new project's Hermes coordinator the coordinator of its agent team", async () => {
     const { api, teamId } = await setup();
     const coordinator = (await api.teams({ teamId }).organization.get()).data!.agents.find(

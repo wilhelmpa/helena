@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "Нет шаблона, и агент никому не подчиняется. Назначьте отдел или руководителя.",
+    "noDepartment": "Без отдела",
+    "templates": "Шаблоны пула"
   },
   "summary": {
     "pool": "Agent pool",

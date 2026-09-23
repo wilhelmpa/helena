@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "No tiene plantilla y no depende de nadie. Asigna un departamento o un responsable.",
+    "noDepartment": "Sin departamento",
+    "templates": "Plantillas del grupo"
   },
   "summary": {
     "pool": "Agent pool",
