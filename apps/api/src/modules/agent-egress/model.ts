@@ -93,6 +93,7 @@ export const AgentNetworkEventPageResponse = t.Object({
 
 // Why the egress proxy refused a connection, as its reports name it.
 export const EGRESS_REASONS = [
+  'blocked',
   'private-address',
   'port',
   'denylisted',

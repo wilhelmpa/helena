@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "callers": ["volition-hermes"],
+  "userPrefix": "vp-",
+  "agentsGroup": "volition-agents",
+  "uidRange": [58000, 58899],
+  "unitPrefix": "volition-agent-",
+  "terminalPrefix": "volition-terminal-",
+  "registryRoot": "/var/lib/volition/provisioning/projects",
+  "workspaceRoot": "/srv/volition/workspaces/projects",
+  "homeWorkspace": "/srv/volition/workspaces/home",
+  "profilesRoot": "/var/lib/volition/hermes/profiles",
+  "vaultRoot": "/srv/volition/vault",
+  "homeSlug": "home",
+  "runnerUser": "volition-hermes",
+  "readersGroup": "volition",
+  "stateRoot": "/var/lib/volition-agent-launcher",
+  "python": "/usr/bin/python3",
+  "sandbox": "/usr/local/lib/volition-isolation/sandbox.py",
+  "tmuxConf": "/usr/local/lib/volition-isolation/tmux.conf",
+  "sockets": {
+    "egress": "/run/volition-agents/egress.sock",
+    "plan": "/run/volition-agents/plan.sock"
+  },
+  "hide": ["/var/lib/volition", "/srv/volition", "/var/lib/volition-agent-launcher", "/var/lib/volition-egress"],
+  "inaccessible": ["/etc/volition", "/var/lib/postgresql", "/var/lib/redis", "/var/backups", "/var/log"],
+  "path": "/usr/local/bin:/usr/bin:/bin",
+  "limits": {
+    "memoryMax": "6G",
+    "cpuQuota": "400%",
+    "tasksMax": 1024,
+    "runtimeMaxSec": 7200,
+    "runtimeMaxSecLimit": 14400,
+    "stopGraceSec": 10,
+    "maxUnitsPerProject": 24,
+    "maxUnits": 96
+  },
+  "runtimes": {
+    "hermes": {
+      "exec": "/var/lib/volition/hermes/venv/bin/hermes",
+      "readOnly": [
+        "/var/lib/volition/hermes/venv",
+        "/var/lib/volition/hermes/python",
+        "/srv/volition/source/hermes",
+        "/var/lib/volition/hermes/config.yaml",
+        "/srv/volition/source/plan/deployment/volition-stack/integration/hermes-plugins"
+      ],
+      "optionalReadOnly": [
+        "/var/lib/volition/hermes/auth.json",
+        "/var/lib/volition/hermes/.env",
+        "/var/lib/volition/hermes/bin",
+        "/var/lib/volition/hermes/.local/share/uv/tools",
+        "/var/lib/volition/hermes/shared"
+      ],
+      "credentialBinds": [
+        { "source": "/var/lib/volition/hermes/.codex", "target": "{home}/.codex" }
+      ],
+      "env": {
+        "PATH": "/var/lib/volition/hermes/venv/bin:/var/lib/volition/hermes/bin:/usr/local/bin:/usr/bin:/bin",
+        "PYTHONPATH": "/srv/volition/source/hermes",
+        "HERMES_SHARED_AUTH_DIR": "/var/lib/volition/hermes/shared"
+      },
+      "profileLinks": {
+        "config.yaml": "/var/lib/volition/hermes/config.yaml",
+        ".env": "/var/lib/volition/hermes/.env",
+        "plugins/plan-approval-guard": "/srv/volition/source/plan/deployment/volition-stack/integration/hermes-plugins/plan-approval-guard"
+      }
+    },
+    "claude": {
+      "exec": "/usr/local/bin/claude",
+      "credentialBinds": [
+        { "source": "/var/lib/volition/agent-credentials/claude/.credentials.json", "target": "{home}/.claude/.credentials.json" }
+      ],
+      "env": { "DISABLE_AUTOUPDATER": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1" }
+    },
+    "codex": {
+      "exec": "/usr/local/bin/codex",
+      "credentialBinds": [
+        { "source": "/var/lib/volition/agent-credentials/codex/auth.json", "target": "{home}/.codex/auth.json" }
+      ]
+    },
+    "profile-helper": {
+      "exec": "/usr/local/bin/node",
+      "fixedArgs": ["/srv/volition/source/plan/packages/runner/dist/cli.js", "profile-helper"],
+      "callerArgs": false,
+      "readOnly": [
+        "/srv/volition/source/plan/packages/runner/dist",
+        "/var/lib/volition/hermes/venv",
+        "/var/lib/volition/hermes/python",
+        "/srv/volition/source/hermes"
+      ],
+      "env": {
+        "PATH": "/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin",
+        "PYTHONPATH": "/srv/volition/source/hermes"
+      }
+    }
+  }
+}
