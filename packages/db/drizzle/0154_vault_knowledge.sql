@@ -47,7 +47,8 @@ CREATE INDEX "vault_entry_search_idx" ON "vault_entry" USING gin ("search");--> 
 CREATE INDEX "vault_entry_extraction_idx" ON "vault_entry" USING btree ("extraction_status");--> statement-breakpoint
 CREATE INDEX "vault_link_entry_idx" ON "vault_link" USING btree ("entry_id");--> statement-breakpoint
 CREATE INDEX "vault_link_target_idx" ON "vault_link" USING btree ("kind","target");--> statement-breakpoint
-CREATE INDEX "vault_move_from_idx" ON "vault_move" USING btree ("from_path","moved_at");DROP FUNCTION IF EXISTS default_project_document_owner();--> statement-breakpoint
+CREATE INDEX "vault_move_from_idx" ON "vault_move" USING btree ("from_path","moved_at");--> statement-breakpoint
+DROP FUNCTION IF EXISTS default_project_document_owner();--> statement-breakpoint
 DROP FUNCTION IF EXISTS capture_project_document_revision();--> statement-breakpoint
 DROP FUNCTION IF EXISTS rev_document();--> statement-breakpoint
 DROP FUNCTION IF EXISTS rev_document_child();--> statement-breakpoint

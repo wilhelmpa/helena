@@ -114,6 +114,48 @@ describe('runner gateway client', () => {
     expect(apiKey).toBe('runner-secret');
   });
 
+  it('names the run or chat answer it reads logins and secrets for', async () => {
+    const requests: { method?: string; url?: string; body: string }[] = [];
+    server = createServer((request, response) => {
+      let body = '';
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        requests.push({ method: request.method, url: request.url, body });
+        if (request.method === 'POST') {
+          response.statusCode = 204;
+          response.end();
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ logins: [{ id: 3 }], secrets: {} }));
+      });
+    });
+    await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+    const client = new Client({
+      url: `http://127.0.0.1:${address.port}`,
+      apiKey: 'runner-secret',
+    } as RunnerConfig);
+
+    expect(await client.webLogins({ runId: 4 })).toEqual([{ id: 3 }] as never);
+    await client.webLogins({ messageId: 5 });
+    await client.mcpSecrets({ runId: 4 });
+    await client.reportLoginUses({ messageId: 5 }, [
+      { credentialId: 3, tool: 'browser_vault_fill', origin: 'https://github.com' },
+    ]);
+    expect(requests.map(({ method, url }) => `${method} ${url}`)).toEqual([
+      'GET /agent-runs/4/web-logins',
+      'GET /agent-chats/5/web-logins',
+      'GET /agent-runtime/mcp-secrets?runId=4',
+      'POST /agent-runtime/credential-uses',
+    ]);
+    expect(JSON.parse(requests[3].body)).toEqual({
+      messageId: 5,
+      uses: [{ credentialId: 3, tool: 'browser_vault_fill', origin: 'https://github.com' }],
+    });
+  });
+
   it('reads a canceled run off its heartbeat, and no body as not canceled', async () => {
     server = createServer((request, response) => {
       if (request.url === '/agent-runs/1/heartbeat') {

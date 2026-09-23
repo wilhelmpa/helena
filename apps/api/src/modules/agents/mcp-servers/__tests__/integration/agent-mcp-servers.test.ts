@@ -3,6 +3,7 @@ import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createCredential } from '#tests/helpers/integrations';
+import { createCredentialEntry } from '#tests/helpers/credentials';
 import { untaggedRoutes } from '#tests/helpers/mcp';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
@@ -26,10 +27,10 @@ const agentServers = (api: Api, teamId: number, agentId: number) =>
   api.teams({ teamId })['ai-agents']({ agentId })['mcp-servers'];
 
 function typesafeSecret(asOwner: Api, projectKey = 'MKT'): Promise<number> {
-  return createCredential(asOwner, projectKey, {
-    integrationKey: 'secret',
+  return createCredentialEntry(asOwner, projectKey, {
+    kind: 'secret',
     label: 'TYPESAFE_API_KEY',
-    credential: { value: SECRET_VALUE },
+    value: SECRET_VALUE,
   });
 }
 
@@ -165,20 +166,6 @@ describe('agent MCP servers', () => {
     }
   });
 
-  it('refuses a secret without a name', async () => {
-    const { asOwner, teamId } = await setup();
-    const res = await asOwner
-      .teams({ teamId })
-      .integrations.post({ integrationKey: 'secret', credential: { value: SECRET_VALUE } });
-    expect(res.status).toBe(400);
-    const credentialId = await typesafeSecret(asOwner);
-    const rename = await asOwner
-      .teams({ teamId })
-      .integrations({ credentialId })
-      .patch({ label: ' ' });
-    expect(rename.status).toBe(400);
-  });
-
   it('refuses a second server with the same name', async () => {
     const { asOwner, teamId } = await setup();
     const body = { name: 'shopify-dev', transport: 'stdio' as const, command: 'npx' };
@@ -276,10 +263,10 @@ describe('agent MCP servers', () => {
   it("gives the agent's runner its servers, and their secrets on a route of their own", async () => {
     const { asOwner, teamId } = await setup();
     const credentialId = await typesafeSecret(asOwner);
-    await createCredential(asOwner, 'MKT', {
-      integrationKey: 'secret',
+    await createCredentialEntry(asOwner, 'MKT', {
+      kind: 'secret',
       label: 'UNUSED',
-      credential: { value: 'unused-value' },
+      value: 'unused-value',
     });
     const server = await servers(asOwner, teamId).post(jevBrowser(credentialId));
     const agent = await externalAgent(asOwner, 'shopper');

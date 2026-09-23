@@ -13,7 +13,6 @@ describe('home sidebar navigation', () => {
       { id: 'agentActivity', group: 'agents', href: '/activity' },
       { id: 'schedules', group: 'agents', href: '/schedules' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
-      { id: 'vault', group: 'globalSettings', href: '/vault' },
       { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
@@ -34,7 +33,7 @@ describe('home sidebar navigation', () => {
       { id: 'tools', group: 'globalSettings', href: '/tools' },
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
-      { id: 'vault', group: 'globalSettings', href: '/vault' },
+      { id: 'credentials', group: 'globalSettings', href: '/credentials' },
       { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
@@ -45,10 +44,10 @@ describe('home sidebar navigation', () => {
   });
 
   test('lists Home Docs for the instance owner only', () => {
-    const ids = (isOwner: boolean) => homeNavigation(42, true, isOwner).map((item) => item.id);
+    const ids = (isOwner: boolean) => homeNavigation(42, isOwner).map((item) => item.id);
     assert.ok(!ids(false).includes('docs'));
     assert.deepEqual(
-      homeNavigation(42, true, true).find((item) => item.id === 'docs'),
+      homeNavigation(42, true).find((item) => item.id === 'docs'),
       { id: 'docs', group: 'work', href: '/docs' },
     );
     assert.deepEqual(ids(true).slice(0, 6), [
@@ -59,9 +58,5 @@ describe('home sidebar navigation', () => {
       'approvals',
       'docs',
     ]);
-  });
-
-  test('hides the vault when the runtime disables it', () => {
-    assert.ok(!homeNavigation(42, false).some((item) => item.id === 'vault'));
   });
 });
