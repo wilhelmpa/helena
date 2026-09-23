@@ -9,6 +9,7 @@ import { Marker, MarkerContent } from '@/components/ui/marker';
 import {
   MessageScroller,
   MessageScrollerButton,
+  MessageScrollerProvider,
   MessageScrollerContent,
   MessageScrollerItem,
   MessageScrollerViewport,
@@ -78,7 +79,10 @@ export default function ChatMessageList({
 
   let lastDate = '';
 
+  // The scroller's hooks (InitialScrollToEnd) read the provider's context, not the root's;
+  // without it the first rendered message throws and takes the page down.
   return (
+    <MessageScrollerProvider>
     <MessageScroller>
       <InitialScrollToEnd hasMessages={messages.length > 0} />
       <MessageScrollerViewport aria-label={t('messages.transcript')}>
@@ -127,5 +131,6 @@ export default function ChatMessageList({
       </MessageScrollerViewport>
       <MessageScrollerButton />
     </MessageScroller>
+    </MessageScrollerProvider>
   );
 }
