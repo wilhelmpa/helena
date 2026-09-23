@@ -11,21 +11,19 @@ type ObjectStore = Pick<typeof s3, 'putObject' | 'getObject' | 'deleteObject'>;
 const NOT_CONFIGURED =
   'File storage is not configured: set STORAGE_ROOT to a directory on the local disk, or S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY for an S3-compatible store.';
 
-function selectedStore(): ObjectStore | null {
+function store(): ObjectStore {
   if (process.env.STORAGE_ROOT?.trim()) return local;
   if (process.env.S3_ENDPOINT?.trim()) return s3;
-  return null;
-}
-
-function store(): ObjectStore {
-  const selected = selectedStore();
-  if (!selected) throw new Error(NOT_CONFIGURED);
-  return selected;
+  throw new Error(NOT_CONFIGURED);
 }
 
 // Without storage the api still serves everything except uploads and downloads.
 export function warnIfStorageNotConfigured(): void {
-  if (!selectedStore()) console.warn(`[planner] ${NOT_CONFIGURED}`);
+  try {
+    if (store() === local) local.storageRoot();
+  } catch (error) {
+    console.warn(`[planner] ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {

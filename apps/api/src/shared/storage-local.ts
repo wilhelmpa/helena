@@ -9,7 +9,7 @@ import path from 'node:path';
 
 type Area = 'objects' | 'content-types';
 
-function storageRoot(): string {
+export function storageRoot(): string {
   const root = process.env.STORAGE_ROOT?.trim() ?? '';
   if (!path.isAbsolute(root)) throw new Error('STORAGE_ROOT must be an absolute path');
   return path.resolve(root);
