@@ -16,6 +16,7 @@ import { hermesPolicySynchronizer } from './policy';
 
 const HEARTBEAT_MS = 60_000;
 const ERROR_BACKOFF_MS = 5_000;
+const CATALOG_RETRY_MS = 30_000;
 
 type Log = (message: string) => void;
 
@@ -177,6 +178,26 @@ function parseArgv(argv: string[]): { configPath?: string; agent?: string; args:
   return parsed;
 }
 
+// The server can be unreachable while the runner starts, for instance when both start at
+// boot. The agent answers meanwhile; its model list follows once the server takes it.
+async function publishCatalog(
+  state: { stopping: boolean },
+  log: Log,
+  client: Client,
+  config: RunnerConfig,
+): Promise<void> {
+  while (!state.stopping) {
+    try {
+      await client.publishChatCatalog(config.models);
+      return;
+    } catch (err) {
+      if (err instanceof RequestError && (err.status === 401 || err.status === 403)) return;
+      log(`publishing the model catalog failed: ${String(err)}`);
+      await sleep(CATALOG_RETRY_MS);
+    }
+  }
+}
+
 // Everything one agent needs: the two feeds, until the runner is stopped or the server
 // refuses its key.
 async function serve(state: { stopping: boolean }, config: RunnerConfig): Promise<void> {
@@ -189,7 +210,7 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
   );
   const policy = hermesPolicySynchronizer(config, client);
   await policy?.ensure();
-  if (config.models.length > 0) await client.publishChatCatalog(config.models);
+  if (config.models.length > 0) void publishCatalog(state, log, client, config);
   let chatSupported = true;
   await Promise.all([
     drain<Run>(
