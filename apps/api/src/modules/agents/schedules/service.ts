@@ -274,8 +274,9 @@ export interface ScheduleRunRow {
   attempts: number;
   lastError: string | null;
   output: string | null;
-  // What the last model call of the run read and wrote. Absent for a run that finished
-  // before this was recorded and for one whose agent reports no counts.
+  // What the run read and wrote: its totals where the agent reports them (Hermes),
+  // otherwise its last model call. Absent for a run that finished before this was
+  // recorded and for one whose agent reports no counts.
   contextTokens?: number;
   scheduledFor: string | null;
   startedAt: string | null;

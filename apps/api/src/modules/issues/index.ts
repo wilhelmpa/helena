@@ -69,6 +69,15 @@ import {
 import { listDevelopmentRepositories, listManagedBranches } from '#modules/git/connections-service';
 import { DevelopmentLinkResponse } from '#modules/git/model';
 import {
+  listIssueAgentTeamRuns,
+  startIssueAgentTeam,
+} from '#modules/control-plane-workflows/agent-team';
+import {
+  AgentTeamRunResponse,
+  AgentTeamStartResponse,
+  startAgentTeamBody,
+} from '#modules/control-plane-workflows/model';
+import {
   createChecklist,
   createChecklistItem,
   deleteChecklist,
@@ -1282,6 +1291,36 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       },
     },
   )
+
+  .post(
+    '/issues/:issueId/agent-team',
+    ({ params, body, user }) =>
+      startIssueAgentTeam(params.issueId, requireUser(user).id, body.idempotencyKey),
+    {
+      body: startAgentTeamBody,
+      params: issueParams,
+      workItem: 'edit',
+      response: { 200: AgentTeamStartResponse, ...commonErrors, ...errors(409, 502, 503) },
+      detail: {
+        summary: "Start the project's agent team on an issue",
+        description:
+          'Start the Mastra agent-team workflow with the issue as its task: the delegate leads ' +
+          "when it is a coordinator, otherwise the project's only coordinator; the project's " +
+          'specialists do the work. The project must have agent-team enabled.',
+      },
+    },
+  )
+
+  .get('/issues/:issueId/agent-team/runs', ({ params }) => listIssueAgentTeamRuns(params.issueId), {
+    params: issueParams,
+    workItem: 'read',
+    response: { 200: t.Array(AgentTeamRunResponse), ...commonErrors, ...errors(502, 503) },
+    detail: {
+      summary: 'List the agent-team runs of an issue',
+      description:
+        'The agent-team runs whose task is this issue, newest first, with the status of each step and the result once a run finished.',
+    },
+  })
 
   // Read on its own, not as part of the issue: only the issue screen shows the
   // cycles, and every board carries the issue payload.

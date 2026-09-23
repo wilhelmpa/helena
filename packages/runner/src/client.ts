@@ -14,6 +14,9 @@ export interface Run {
   issueIdentifier: string | null;
   model: string | null;
   thinkingLevel: string | null;
+  // Absent on a server that predates run limits.
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -106,8 +109,9 @@ export class Client {
     await this.post(`/agent-runs/${runId}/heartbeat`);
   }
 
-  // `usage` is what the last model call of the run read and wrote. Left out where the
-  // command reported nothing about it, which stores the run without counts.
+  // `usage` is what the run read and wrote: its totals where the command reports them
+  // (Hermes), otherwise its last model call. Left out where the command reported
+  // nothing about it, which stores the run without counts.
   async report(
     runId: number,
     result: {

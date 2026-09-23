@@ -101,6 +101,62 @@ describe('organization', () => {
     ]);
   });
 
+  it('sets an agent team role and capabilities and keeps them when omitted', async () => {
+    const { api, teamId, agent } = await setup();
+    const organization = api.teams({ teamId }).organization;
+    const assignment = organization.agents({ agentId: agent.id });
+    const read = async () =>
+      (await organization.get()).data!.agents.find((entry) => entry.id === agent.id);
+
+    expect(await read()).toMatchObject({ role: null, capabilities: [] });
+    expect(
+      (
+        await assignment.put({
+          role: 'specialist',
+          capabilities: ['frontend', 'qa-2', 'frontend'],
+        })
+      ).status,
+    ).toBe(204);
+    expect(await read()).toMatchObject({
+      role: 'specialist',
+      capabilities: ['frontend', 'qa-2'],
+    });
+
+    expect((await assignment.put({ roleTitle: 'Tester' })).status).toBe(204);
+    expect(await read()).toMatchObject({
+      roleTitle: 'Tester',
+      role: 'specialist',
+      capabilities: ['frontend', 'qa-2'],
+    });
+
+    expect((await assignment.put({ role: null, capabilities: [] })).status).toBe(204);
+    expect(await read()).toMatchObject({ role: null, capabilities: [] });
+
+    const sixteen = Array.from({ length: 16 }, (_, index) => `skill-${index}`);
+    expect((await assignment.put({ role: 'reviewer', capabilities: sixteen })).status).toBe(204);
+    expect(await read()).toMatchObject({ role: 'reviewer', capabilities: sixteen });
+  });
+
+  it('rejects an unknown team role and invalid capabilities', async () => {
+    const { api, teamId, agent } = await setup();
+    const assignment = api.teams({ teamId }).organization.agents({ agentId: agent.id });
+
+    expect((await assignment.put({ role: 'manager' as unknown as 'coordinator' })).status).toBe(
+      400,
+    );
+    expect((await assignment.put({ capabilities: ['Frontend'] })).status).toBe(400);
+    expect((await assignment.put({ capabilities: ['front end'] })).status).toBe(400);
+    expect((await assignment.put({ capabilities: [''] })).status).toBe(400);
+    expect((await assignment.put({ capabilities: ['x'.repeat(33)] })).status).toBe(400);
+    expect(
+      (
+        await assignment.put({
+          capabilities: Array.from({ length: 17 }, (_, index) => `skill-${index}`),
+        })
+      ).status,
+    ).toBe(400);
+  });
+
   it('rejects cycles in departments and reporting lines', async () => {
     const { api, teamId, agent } = await setup();
     const second = await createAgent(api, 'MKT', {

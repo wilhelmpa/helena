@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
-import { db, projectWorkflowAssignment } from '@repo/db';
+import { db, projectWorkflowAssignment, type ProjectWorkflowConfiguration } from '@repo/db';
 import { HttpError, iso } from '#shared/lib';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 
@@ -18,14 +18,14 @@ interface CatalogFlow {
   [key: string]: unknown;
 }
 
-const CONTROL_URL =
-  process.env.MASTRA_CONTROL_URL?.trim() || 'http://127.0.0.1:4111/internal/mastra/control';
-const CONTROL_TOKEN_FILE =
-  process.env.MASTRA_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/mastra_control_token';
 let tokenPromise: Promise<string> | null = null;
 
+// The environment is read on use rather than at import, so a test can point the
+// client at a control endpoint of its own.
 function controlUrl(): URL {
-  const url = new URL(CONTROL_URL);
+  const url = new URL(
+    process.env.MASTRA_CONTROL_URL?.trim() || 'http://127.0.0.1:4111/internal/mastra/control',
+  );
   const privateHost =
     url.hostname === '127.0.0.1' ||
     /^10\./.test(url.hostname) ||
@@ -46,12 +46,14 @@ function controlUrl(): URL {
 }
 
 async function controlToken(): Promise<string> {
+  const tokenFile =
+    process.env.MASTRA_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/mastra_control_token';
   tokenPromise ??= fs
-    .lstat(CONTROL_TOKEN_FILE)
+    .lstat(tokenFile)
     .then(async (stat) => {
       if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0)
         throw new Error('invalid secret file');
-      const token = (await fs.readFile(CONTROL_TOKEN_FILE, 'utf8')).trim();
+      const token = (await fs.readFile(tokenFile, 'utf8')).trim();
       if (Buffer.byteLength(token) < 32 || token.length > 2048) throw new Error('invalid token');
       return token;
     })
@@ -62,7 +64,10 @@ async function controlToken(): Promise<string> {
   return tokenPromise;
 }
 
-export async function controlPlaneRequest<T = unknown>(body: Record<string, unknown>): Promise<T> {
+export async function controlPlaneRequest<T = unknown>(
+  body: Record<string, unknown>,
+  timeoutMs = 330_000,
+): Promise<T> {
   const response = await fetch(controlUrl(), {
     method: 'POST',
     headers: {
@@ -72,7 +77,7 @@ export async function controlPlaneRequest<T = unknown>(body: Record<string, unkn
     },
     body: JSON.stringify({ schemaVersion: 1, ...body }),
     redirect: 'error',
-    signal: AbortSignal.timeout(330_000),
+    signal: AbortSignal.timeout(timeoutMs),
   }).catch(() => {
     throw new HttpError(502, 'Workflow control plane is unavailable');
   });
@@ -108,6 +113,36 @@ async function catalogFlows(): Promise<CatalogFlow[]> {
   return Array.isArray(result?.catalog?.flows) ? result.catalog.flows : [];
 }
 
+// The agent-team settings with their defaults: the coordinator reviews the work, the
+// task stays in Review for a person, and Hermes keeps its own turn and time limits.
+function agentTeamConfiguration(configuration: ProjectWorkflowConfiguration) {
+  return {
+    ...configuration,
+    autonomy: configuration.autonomy ?? 'review',
+    reviewRequired: configuration.reviewRequired ?? true,
+    maxTurns: configuration.maxTurns ?? null,
+    runBudgetSeconds: configuration.runBudgetSeconds ?? null,
+  };
+}
+
+function effectiveConfiguration(workflowId: string, configuration: ProjectWorkflowConfiguration) {
+  return workflowId === 'agent-team' ? agentTeamConfiguration(configuration) : configuration;
+}
+
+// The policy of an agent-team run: the project's settings replace the same fields of a
+// policy the start request carries, and a limit the project leaves unset keeps the
+// request's.
+function agentTeamPolicy(configuration: ProjectWorkflowConfiguration, requested: unknown) {
+  const settings = agentTeamConfiguration(configuration);
+  return {
+    ...(requested && typeof requested === 'object' && !Array.isArray(requested) ? requested : {}),
+    reviewRequired: settings.reviewRequired,
+    autonomy: settings.autonomy,
+    ...(settings.maxTurns ? { maxTurns: settings.maxTurns } : {}),
+    ...(settings.runBudgetSeconds ? { runBudgetSeconds: settings.runBudgetSeconds } : {}),
+  };
+}
+
 async function assignment(projectId: number, workflowId: string) {
   const [row] = await db
     .select()
@@ -139,11 +174,15 @@ export async function listProjectWorkflows(projectId: number) {
         ? {
             enabled: row.enabled,
             capabilityRefs: row.capabilityRefs,
-            configuration: row.configuration,
+            configuration: effectiveConfiguration(flow.id, row.configuration),
             createdAt: iso(row.createdAt),
             updatedAt: iso(row.updatedAt),
           }
-        : { enabled: false, capabilityRefs: [], configuration: {} },
+        : {
+            enabled: false,
+            capabilityRefs: [],
+            configuration: effectiveConfiguration(flow.id, {}),
+          },
     };
   });
 }
@@ -153,9 +192,14 @@ export async function setProjectWorkflowAssignment(input: {
   workflowId: string;
   enabled: boolean;
   capabilityRefs: string[];
-  configuration?: { instructions?: string; retryLimit?: number };
+  configuration?: ProjectWorkflowConfiguration;
   createdBy: string;
 }) {
+  if (input.workflowId === 'agent-team') {
+    const settings = agentTeamConfiguration(input.configuration ?? {});
+    if (settings.autonomy === 'done' && !settings.reviewRequired)
+      throw new HttpError(400, 'Autonomy done requires the coordinator review');
+  }
   const flow = (await catalogFlows()).find((item) => item.id === input.workflowId);
   if (!flow) throw new HttpError(404, 'Workflow not found');
   const allowed = new Set(refs(flow.capabilityRefs));
@@ -213,6 +257,22 @@ export function listWorkflowRuns(
   });
 }
 
+// Every run of the workflow whose payload names the task, newest first.
+export function listTaskWorkflowRuns(project: ProjectContext, workflowId: string, taskRef: string) {
+  return controlPlaneRequest<{ runs?: unknown[] }>({
+    operation: 'runs',
+    workflowId,
+    projectRef: projectWorkflowScope(project).projectRef,
+    taskRef,
+    page: 0,
+    pageSize: 100,
+  });
+}
+
+export async function isWorkflowEnabled(projectId: number, workflowId: string) {
+  return (await assignment(projectId, workflowId))?.enabled === true;
+}
+
 export function getWorkflowRun(project: ProjectContext, workflowId: string, runId: string) {
   return controlPlaneRequest({
     operation: 'run',
@@ -235,19 +295,30 @@ export async function startWorkflow(
 ) {
   const row = await enabledAssignment(project.id, workflowId);
   const context = projectWorkflowScope(project);
-  const result = await controlPlaneRequest({
-    operation: 'start',
-    workflowId,
-    ...context,
-    eventId: input.idempotencyKey,
-    correlationId: input.correlationId,
-    occurredAt: new Date().toISOString(),
-    actorId: userId,
-    dryRun: input.dryRun,
-    payload: { ...input.payload, configuration: row.configuration },
-    capabilityRefs: row.capabilityRefs,
-    connectionRefs: [],
-  });
+  const result = await controlPlaneRequest(
+    {
+      operation: 'start',
+      workflowId,
+      ...context,
+      eventId: input.idempotencyKey,
+      correlationId: input.correlationId,
+      occurredAt: new Date().toISOString(),
+      actorId: userId,
+      dryRun: input.dryRun,
+      payload: {
+        ...input.payload,
+        ...(workflowId === 'agent-team'
+          ? { policy: agentTeamPolicy(row.configuration, input.payload.policy) }
+          : {}),
+        configuration: row.configuration,
+      },
+      capabilityRefs: row.capabilityRefs,
+      connectionRefs: [],
+    },
+    // The control plane starts the run without waiting for it, so a start that takes
+    // longer is a control plane that does not answer; an issue delegation waits on it.
+    30_000,
+  );
   await bumpControlPlaneRevision(project.id);
   return result;
 }

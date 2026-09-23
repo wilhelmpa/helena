@@ -11,7 +11,7 @@ import { HttpError } from '#shared/lib';
 import { type ContextUsage } from '../chat-usage';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
-import type { AgentKind } from '../core/service';
+import { normalizeRuntimePolicy, type AgentKind } from '../core/service';
 import type { AgentRunTrigger } from '../model';
 import { MAX_RUN_OUTPUT_BYTES } from './model';
 import {
@@ -55,6 +55,9 @@ export interface RunnerAgent {
   instructions: string | null;
   model: string | null;
   thinkingLevel: string | null;
+  // The run limits of the agent's runtime policy, for a run that sets none itself.
+  maxTurns: number | null;
+  runBudgetSeconds: number | null;
 }
 
 // The agent whose bot user is the caller, or null when the caller is not an agent.
@@ -96,15 +99,14 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
     )
     .where(and(eq(projectMember.userId, userId), eq(project.teamId, row.teamId)))
     .orderBy(project.key);
-  const policy = row.runtimePolicy as { reasoningEffort?: unknown };
+  const policy = normalizeRuntimePolicy(row.runtimePolicy);
   return {
     ...row,
     kind: row.kind as AgentKind,
     projects,
-    thinkingLevel:
-      typeof policy.reasoningEffort === 'string' && policy.reasoningEffort.trim()
-        ? policy.reasoningEffort.trim()
-        : null,
+    thinkingLevel: policy.reasoningEffort,
+    maxTurns: policy.maxTurns ?? null,
+    runBudgetSeconds: policy.runBudgetSeconds ?? null,
   };
 }
 
@@ -127,6 +129,9 @@ export interface RunnerRun {
   sourceActivityId: number | null;
   model: string | null;
   thinkingLevel: string | null;
+  // Handed to Hermes as --max-turns and --run-budget; null leaves Hermes' own default.
+  maxTurns: number | null;
+  runBudgetSeconds: number | null;
 }
 
 // The claim's raw row, before framing. The extra people columns exist only to build
@@ -197,6 +202,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.prompt,
       r.attempts,
       r.issue_id AS "issueId",
+      r.max_turns AS "maxTurns",
+      r.run_budget_seconds AS "runBudgetSeconds",
       (SELECT p.key FROM project p WHERE p.id = r.project_id) AS "projectKey",
       (SELECT p.name FROM project p WHERE p.id = r.project_id) AS "projectName",
       (SELECT p.description FROM project p WHERE p.id = r.project_id) AS "projectDescription",
@@ -246,6 +253,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     sourceActivityId: row.sourceActivityId,
     model: agent.model,
     thinkingLevel: agent.thinkingLevel,
+    maxTurns: row.maxTurns ?? agent.maxTurns,
+    runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
   };
 }
 

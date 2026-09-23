@@ -2,7 +2,6 @@
 
 import { Bot, Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import {
   organizationAgentRole,
   type OrganizationAgentNode as AgentNode,
@@ -14,16 +13,10 @@ const statusClass = {
   offline: 'fill-muted-foreground/40 text-muted-foreground/40',
 };
 
-export default function OrganizationAgentNode({
-  node,
-  agents,
-}: {
-  node: AgentNode;
-  agents: OrganizationAgent[];
-}) {
+export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
   const t = useTranslations('organization');
   const { agent } = node;
-  const role = organizationAgentRole(agent, agents);
+  const role = organizationAgentRole(agent);
 
   return (
     <li className="relative ps-5 before:absolute before:start-0 before:top-0 before:h-5 before:w-4 before:rounded-bl-md before:border-s before:border-b">
@@ -66,7 +59,7 @@ export default function OrganizationAgentNode({
       {node.reports.length > 0 && (
         <ul className="ms-3 border-s pt-3">
           {node.reports.map((report) => (
-            <OrganizationAgentNode key={report.agent.id} node={report} agents={agents} />
+            <OrganizationAgentNode key={report.agent.id} node={report} />
           ))}
         </ul>
       )}

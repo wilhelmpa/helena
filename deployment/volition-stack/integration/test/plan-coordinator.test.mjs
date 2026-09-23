@@ -94,6 +94,7 @@ describe("ensurePlanCoordinator", () => {
     assert.equal(f.state.descriptor.hermesHome, "/data/hermes/profiles/sysqa");
     assert.equal(f.state.descriptor.browserCdpUrl, "http://127.0.0.1:19201");
     assert.equal(f.state.organization.agents[0].runtimeAgentId, "hermes-sysqa-coordinator");
+    assert.equal(f.state.organization.agents[0].role, "coordinator");
   });
 
   it("reuses an intact private descriptor without rotating a Plan key", async () => {

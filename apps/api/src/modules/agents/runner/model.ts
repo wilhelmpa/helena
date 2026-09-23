@@ -17,6 +17,8 @@ export const RunnerRunResponse = t.Object({
   sourceActivityId: t.Nullable(t.Number()),
   model: t.Nullable(t.String()),
   thinkingLevel: t.Nullable(t.String()),
+  maxTurns: t.Nullable(t.Number()),
+  runBudgetSeconds: t.Nullable(t.Number()),
 });
 
 // The claim result. The run is wrapped so an empty queue is an explicit null rather

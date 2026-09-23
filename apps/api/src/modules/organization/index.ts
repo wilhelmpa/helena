@@ -148,7 +148,7 @@ export const organizationRoutes = new Elysia({
       detail: {
         summary: 'Set an agent organization assignment',
         description:
-          'Set an existing team agent role, department, reporting line and runtime agent reference. Runtime policy is configured on the agent itself.',
+          'Set an existing team agent role title, department, reporting line, runtime agent reference, agent-team role and capabilities. The agent-team role and capabilities keep their stored values when omitted. Runtime policy is configured on the agent itself.',
       },
     },
   )

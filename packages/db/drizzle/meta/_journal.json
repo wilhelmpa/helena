@@ -981,6 +981,20 @@
       "when": 1790121600000,
       "tag": "0139_project_mail_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1790152716112,
+      "tag": "0140_organization_agent_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 141,
+      "version": "7",
+      "when": 1790152950408,
+      "tag": "0141_agent_run_budgets",
+      "breakpoints": true
     }
   ]
 }

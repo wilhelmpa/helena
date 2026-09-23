@@ -136,8 +136,14 @@ function prompt(stage) {
     stage.phase === 'coordinate'
       ? 'Only plan assignments. Mastra executes each delegation after this stage. Do not call delegate_task, spawn agents, execute assignments, or mutate the task in this stage.'
       : 'Complete only this stage. Mastra owns delegation and task synchronization; do not spawn additional agents or change the task status.',
+    stage.phase === 'coordinate'
+      ? 'List in dependsOn the assignmentIds that must finish before an assignment can start. Assignments without dependencies run in parallel; a dependent assignment receives the summaries and evidence of the assignments it depends on.'
+      : '',
     stage.phase === 'coordinate' ? `Allowed specialists: ${JSON.stringify(allowed)}` : '',
     stage.assignment ? `Assignment: ${JSON.stringify(stage.assignment)}` : '',
+    Array.isArray(stage.dependencyResults) && stage.dependencyResults.length > 0
+      ? `Results of the assignments this assignment depends on: ${JSON.stringify(stage.dependencyResults)}`
+      : '',
     stage.specialistResults ? `Specialist results: ${JSON.stringify(stage.specialistResults)}` : '',
     `Output contract: ${contract}`,
   ].filter(Boolean).join('\n\n');

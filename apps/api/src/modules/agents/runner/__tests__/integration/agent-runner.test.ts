@@ -3,6 +3,7 @@ import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, teamOf } from '#tests/helpers/agents';
+import { controlApi } from '#tests/helpers/control';
 import { db, organizationProjectAssignment } from '@repo/db';
 
 // The runner queue: a process on the operator's machine authenticates with the
@@ -200,6 +201,65 @@ describe('agent runner queue', () => {
     expect(run).toMatchObject({
       model: 'anthropic/claude-opus-4.6',
       thinkingLevel: 'high',
+    });
+  });
+
+  it("hands a stage's run limits, or else the agent's defaults, to the runner", async () => {
+    const { asOwner, asRunner, agent, columnId, teamId } = await setup();
+    const issue = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Team task' })
+    ).data!;
+    const stage = (key: string, policy: Record<string, unknown>) =>
+      controlApi().internal.orchestration['agent-run'].post({
+        projectRef: 'project:MKT',
+        task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
+        agent: { agentRef: `agent:${agent.username}` },
+        idempotencyKey: key.repeat(64),
+        prompt: 'Complete the assignment.',
+        policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3, ...policy },
+      });
+
+    expect((await stage('b', { maxTurns: 0 })).status).toBe(400);
+    expect((await stage('b', { maxTurns: 201 })).status).toBe(400);
+    expect((await stage('b', { runBudgetSeconds: 59 })).status).toBe(400);
+    expect((await stage('b', { runBudgetSeconds: 7_201 })).status).toBe(400);
+    expect((await stage('a', { maxTurns: 200, runBudgetSeconds: 7_200 })).status).toBe(200);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      trigger: 'manual',
+      maxTurns: 200,
+      runBudgetSeconds: 7_200,
+    });
+
+    await queueRun(asOwner, columnId, agent.username);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      trigger: 'mention',
+      maxTurns: null,
+      runBudgetSeconds: null,
+    });
+
+    const policy = { reasoningEffort: null, toolAllow: [], toolDeny: [], mcpGrants: [], files: [] };
+    expect(
+      (
+        await asOwner
+          .teams({ teamId })
+          ['ai-agents']({ agentId: agent.id })
+          .patch({ runtimePolicy: { ...policy, maxTurns: 0 } })
+      ).status,
+    ).toBe(400);
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({ runtimePolicy: { ...policy, maxTurns: 1, runBudgetSeconds: 60 } });
+    expect((await stage('c', { maxTurns: 20 })).status).toBe(200);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      maxTurns: 20,
+      runBudgetSeconds: 60,
+    });
+    await queueRun(asOwner, columnId, agent.username);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      trigger: 'mention',
+      maxTurns: 1,
+      runBudgetSeconds: 60,
     });
   });
 

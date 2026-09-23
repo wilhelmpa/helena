@@ -6,6 +6,12 @@ const ORGANIZATION_REF = /^organization:[A-Za-z0-9._-]+$/;
 const CAPABILITY_REF = /^[a-z][a-z0-9._-]*\.v\d+$/;
 const CONNECTION_REF = /^[a-z][a-z0-9._-]*:[A-Za-z0-9._-]+$/;
 const SCHEDULE_KEY = /^[a-z0-9][a-z0-9._-]{0,99}$/;
+const TASK_REF = /^task:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+// Mastra cannot filter runs by their payload, so a task's runs are searched among
+// this many of the project's newest runs, 20 per request to stay below the response
+// size limit.
+const TASK_RUN_PAGES = 10;
+const TASK_RUN_PAGE_SIZE = 20;
 const TERMINAL_STATUSES = new Set(['success', 'failed', 'canceled', 'bailed', 'skipped']);
 
 export class MastraControlError extends Error {
@@ -153,16 +159,23 @@ export function createMastraControlService(config, options = {}) {
       if (input.operation === 'runs') {
         const currentPage = page(input.page, 0, 10_000);
         const pageSize = page(input.pageSize, 20, 100);
+        const withStatus = (run) => ({ ...run, status: run?.status ?? run?.snapshot?.status ?? 'unknown' });
+        if (input.taskRef !== undefined) {
+          const taskRef = string(input.taskRef, TASK_REF, 'taskRef');
+          const matches = [];
+          for (let scan = 0; scan < TASK_RUN_PAGES; scan += 1) {
+            const result = object(await call(`workflows/${workflowId}/runs?resourceId=${projectRef}&page=${scan}&perPage=${TASK_RUN_PAGE_SIZE}`), 'Mastra runs');
+            const runs = Array.isArray(result.runs) ? result.runs : [];
+            matches.push(...runs.filter((run) => run?.snapshot?.context?.input?.payload?.task?.taskRef === taskRef));
+            if (runs.length < TASK_RUN_PAGE_SIZE) break;
+          }
+          return {
+            runs: matches.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map(withStatus),
+            total: matches.length,
+          };
+        }
         const result = object(await call(`workflows/${workflowId}/runs?resourceId=${projectRef}&page=${currentPage}&perPage=${pageSize}`), 'Mastra runs');
-        return {
-          ...result,
-          runs: Array.isArray(result.runs)
-            ? result.runs.map((run) => ({
-                ...run,
-                status: run?.status ?? run?.snapshot?.status ?? 'unknown',
-              }))
-            : [],
-        };
+        return { ...result, runs: Array.isArray(result.runs) ? result.runs.map(withStatus) : [] };
       }
       if (input.operation === 'run') {
         return ownedRun(workflowId, string(input.runId, RUN_ID, 'runId'), projectRef);
@@ -190,14 +203,17 @@ export function createMastraControlService(config, options = {}) {
           dryRun: input.dryRun === true,
           payload: object(input.payload, 'payload'),
         };
-        return call(`workflows/${workflowId}/start-async?runId=${encodeURIComponent(eventId)}`, {
+        // The run is created first and started without waiting for it: a workflow can
+        // run far longer than any caller waits for a response.
+        const created = await call(`workflows/${workflowId}/create-run?runId=${encodeURIComponent(eventId)}`, {
           method: 'POST',
-          body: JSON.stringify({
-            inputData: envelope,
-            resourceId: projectRef,
-            requestContext: envelope.context,
-          }),
+          body: JSON.stringify({ resourceId: projectRef }),
         });
+        await call(`workflows/${workflowId}/start?runId=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          body: JSON.stringify({ inputData: envelope, requestContext: envelope.context }),
+        });
+        return { runId: created?.runId ?? eventId, resourceId: projectRef, status: 'running' };
       }
 
       if (input.operation === 'schedules') {

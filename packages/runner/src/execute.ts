@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import type { ContextUsage } from './agui';
 import { presetOf, type RunnerConfig } from './config';
 import { presetArgv, presetPrompt, type Preset } from './presets';
 
@@ -18,12 +19,18 @@ export interface Task {
   sessionId?: string | null;
   model?: string | null;
   thinkingLevel?: string | null;
+  // Limits of a queued run; a chat answer has none.
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 export interface Outcome {
   status: 'success' | 'failed';
   output: string;
   error?: string;
+  // What the whole run read, cache included, and wrote, for a command that reports
+  // its totals (Hermes).
+  usage?: ContextUsage;
 }
 
 // Only the tail of each stream is reported, so a long transcript still shows its ending —
@@ -32,10 +39,13 @@ const OUTPUT_LIMIT = 8000;
 const ERROR_LIMIT = 400;
 const HERMES_RESULT_LIMIT_BYTES = 128 * 1024;
 
+// Hermes' closing `result` line carries the final answer and the token counts of its
+// session, summed over every model call of the run.
 class HermesResultReader {
   private line = '';
   private oversized = false;
   result: { text: string; exitCode: number } | undefined;
+  usage: ContextUsage | undefined;
 
   write(chunk: string): void {
     const lines = chunk.split('\n');
@@ -58,6 +68,14 @@ class HermesResultReader {
         this.result = {
           text: value.text,
           exitCode: typeof value.exit_code === 'number' ? value.exit_code : 0,
+        };
+      }
+      const tokens = value?.type === 'result' ? value.tokens : undefined;
+      if (tokens && typeof tokens === 'object') {
+        const count = (key: string) => (typeof tokens[key] === 'number' ? tokens[key] : 0);
+        this.usage = {
+          inputTokens: count('input') + count('cache_read') + count('cache_write'),
+          outputTokens: count('output'),
         };
       }
     } catch {
@@ -121,6 +139,8 @@ function spawnArgs(
       provider: config.provider,
       model: task.model,
       thinkingLevel: task.thinkingLevel,
+      maxTurns: task.maxTurns,
+      runBudgetSeconds: task.runBudgetSeconds,
     }),
   ];
 }
@@ -192,6 +212,19 @@ export async function execute(
   }
 
   hermesResult?.end();
+  const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
+  return hermesResult?.usage ? { ...outcome, usage: hermesResult.usage } : outcome;
+}
+
+function settle(
+  code: number | null,
+  signal: string | null,
+  timedOut: boolean,
+  stdout: string,
+  stderr: string,
+  config: RunnerConfig,
+  hermesResult: HermesResultReader | null,
+): Outcome {
   const output = hermesResult?.result?.text ?? stdout.trim();
   if (hermesResult?.result && Buffer.byteLength(output, 'utf8') > HERMES_RESULT_LIMIT_BYTES)
     return { status: 'failed', output: '', error: 'Hermes final result exceeds 128 KiB' };

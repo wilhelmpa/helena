@@ -96,6 +96,8 @@ const organization: Organization = {
       departmentId: 2,
       reportsToAgentId: null,
       roleTitle: '',
+      role: null,
+      capabilities: [],
       runtimeAgentId: null,
       runtimeState: offlineRuntime,
       projects: [
@@ -112,6 +114,8 @@ const organization: Organization = {
       departmentId: 3,
       reportsToAgentId: null,
       roleTitle: '',
+      role: null,
+      capabilities: [],
       runtimeAgentId: null,
       runtimeState: offlineRuntime,
       projects: [{ id: 20, key: 'OTH', name: 'Other', instructions: '' }],

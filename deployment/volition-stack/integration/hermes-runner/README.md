@@ -40,6 +40,16 @@ existing local Codex CLI login without persisting it. Actual runs use Hermes' ow
 store; credentials are never embedded in the image or repository. Restarting
 `volition-hermes-runner.service` refreshes the catalog after a provider or account change.
 
+## Run limits
+
+A queued run carries two limits that the runner passes to `hermes chat`: `--max-turns`
+(tool-calling iterations, 1–200) and `--run-budget` (wall-clock seconds, 60–7200). An
+agent-team stage takes them from the project's `agent-team` configuration; any other run
+takes them from the agent's runtime policy (`maxTurns`, `runBudgetSeconds`). A limit that
+is not set is not passed, so Hermes applies its own default. Chat answers have no limits.
+`timeoutMs` in `itsaplan-runner.json` is still the hard stop of the runner, so it has to be
+larger than the largest run budget.
+
 ## Secret boundary
 
 The external-agent API key exists only at

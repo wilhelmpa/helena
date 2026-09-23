@@ -35,6 +35,10 @@ export interface AgentRuntimePolicy {
   toolDeny: string[];
   mcpGrants: string[];
   files: AgentRuntimeFile[];
+  // Defaults for the agent's queued runs: Hermes --max-turns (1-200) and --run-budget
+  // seconds (60-7200). Chat answers are not limited.
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 // A managed file the runtime found changed outside Plan. It wrote Plan's version and kept
@@ -123,8 +127,9 @@ export interface AgentRun {
   attempts: number;
   lastError: string | null;
   output: string | null;
-  // What the last model call of the run read and wrote: absent for a run that finished
-  // before this was recorded and for one whose agent reports no counts.
+  // What the run read and wrote: its totals where the agent reports them (Hermes),
+  // otherwise its last model call. Absent for a run that finished before this was
+  // recorded and for one whose agent reports no counts.
   contextTokens?: number;
   nextAttemptAt: string;
   createdAt: string;

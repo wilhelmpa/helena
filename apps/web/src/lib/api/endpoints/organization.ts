@@ -2,6 +2,8 @@ import { request } from '@/lib/api/core/client';
 
 export type OrganizationGoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
 
+export type AgentTeamRole = 'coordinator' | 'specialist' | 'reviewer';
+
 export interface OrganizationDepartment {
   id: number;
   name: string;
@@ -41,6 +43,8 @@ export interface OrganizationAgent {
   departmentId: number | null;
   reportsToAgentId: number | null;
   roleTitle: string;
+  role: AgentTeamRole | null;
+  capabilities: string[];
   runtimeAgentId: string | null;
   runtimeState: {
     adapter: string | null;
@@ -88,10 +92,13 @@ export interface GoalInput {
   targetDate?: string | null;
 }
 
+// role and capabilities keep their stored values when left out.
 export interface AgentAssignmentInput {
   departmentId?: number | null;
   reportsToAgentId?: number | null;
   roleTitle?: string;
+  role?: AgentTeamRole | null;
+  capabilities?: string[];
   runtimeAgentId?: string | null;
 }
 

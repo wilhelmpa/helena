@@ -14,6 +14,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
 
 export type GoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
+export type AgentTeamRole = 'coordinator' | 'specialist' | 'reviewer';
 
 type TransactionCallback = Parameters<typeof db.transaction>[0];
 type Transaction = Parameters<TransactionCallback>[0];
@@ -229,6 +230,8 @@ export async function getOrganization(teamId: number) {
         departmentId: organizationAgentAssignment.departmentId,
         reportsToAgentId: organizationAgentAssignment.reportsToAgentId,
         roleTitle: organizationAgentAssignment.roleTitle,
+        role: organizationAgentAssignment.role,
+        capabilities: organizationAgentAssignment.capabilities,
         runtimeAgentId: organizationAgentAssignment.runtimeAgentId,
         runtimeState: aiAgent.runtimeState,
       })
@@ -301,6 +304,8 @@ export async function getOrganization(teamId: number) {
       ...row,
       kind: row.kind as 'external' | 'internal',
       roleTitle: row.roleTitle ?? '',
+      role: row.role as AgentTeamRole | null,
+      capabilities: row.capabilities ?? [],
       runtimeState: normalizeOrganizationRuntimeState(row.runtimeState),
       projects: (projectsByAgent.get(row.id) ?? []).map(({ agentId: _agentId, ...entry }) => entry),
     })),
@@ -488,9 +493,12 @@ export async function setAgentAssignment(
     departmentId?: number | null;
     reportsToAgentId?: number | null;
     roleTitle?: string;
+    role?: AgentTeamRole | null;
+    capabilities?: string[];
     runtimeAgentId?: string | null;
   },
 ) {
+  const capabilities = input.capabilities && [...new Set(input.capabilities)];
   return db.transaction(async (tx) => {
     await lockTeam(tx, teamId);
     await requireAgent(tx, teamId, agentId);
@@ -505,6 +513,8 @@ export async function setAgentAssignment(
         departmentId: input.departmentId ?? null,
         reportsToAgentId: input.reportsToAgentId ?? null,
         roleTitle: input.roleTitle?.trim() ?? '',
+        role: input.role ?? null,
+        capabilities: capabilities ?? [],
         runtimeAgentId: input.runtimeAgentId ?? null,
       })
       .onConflictDoUpdate({
@@ -513,6 +523,10 @@ export async function setAgentAssignment(
           departmentId: input.departmentId ?? null,
           reportsToAgentId: input.reportsToAgentId ?? null,
           roleTitle: input.roleTitle?.trim() ?? '',
+          // Kept when omitted: a client that only edits the reporting line must not
+          // take an agent out of its team.
+          ...(input.role !== undefined ? { role: input.role } : {}),
+          ...(capabilities !== undefined ? { capabilities } : {}),
           runtimeAgentId: input.runtimeAgentId ?? null,
           updatedAt: new Date(),
         },

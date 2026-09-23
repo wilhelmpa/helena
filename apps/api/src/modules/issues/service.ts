@@ -69,6 +69,7 @@ import { getInitiativeProjectId } from '#modules/initiatives/service';
 import { cycleStatus, getCycleRef, type CycleStatus } from '#modules/cycles/service';
 import { getMembership } from '#modules/members/service';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
+import { startDelegatedAgentTeam } from '#modules/control-plane-workflows/agent-team';
 import { applySubtaskAutomation } from './automation';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
 import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
@@ -1119,12 +1120,14 @@ export async function updateIssue(
 // If an issue's new delegate is an agent that reacts to delegation, queue a run so it
 // can act on the issue. Skipped when the agent delegated to itself (an agent setting
 // itself off). The run is executed later — by the poller or by the agent's runner —
-// so the write is never blocked on it.
+// so the write is never blocked on it. A coordinator of a project that runs the
+// agent-team workflow gets the issue through Mastra instead, as the lead of its team.
 async function enqueueDelegateRun(after: IssueRow, actor?: ActivityActor): Promise<void> {
   const delegate = after.delegateUserId;
   if (!delegate || delegate === actorId(actor)) return;
   const agent = await getAssignTriggerAgent(after.projectId, delegate, actorId(actor));
   if (!agent) return;
+  if (await startDelegatedAgentTeam(after.id, after.projectId, agent.id, actorId(actor))) return;
   await enqueueAgentRun({
     agentId: agent.id,
     projectId: after.projectId,

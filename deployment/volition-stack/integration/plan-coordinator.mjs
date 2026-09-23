@@ -372,6 +372,7 @@ async function ensureOrganization(config, fetchImpl, project, agent, hermesIdent
     departmentId: hasCustomAssignment ? currentAgent.departmentId : departmentId,
     reportsToAgentId: hasCustomAssignment ? currentAgent.reportsToAgentId : null,
     roleTitle: currentAgent?.roleTitle?.trim() || roleTitle(project),
+    role: "coordinator",
     runtimeAgentId: hermesIdentity,
   };
   await planWrite(

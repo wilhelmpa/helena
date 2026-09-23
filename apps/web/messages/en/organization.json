@@ -66,7 +66,8 @@
   "roles": {
     "pool": "Pool",
     "coordinator": "Coordinator",
-    "specialist": "Specialist"
+    "specialist": "Specialist",
+    "reviewer": "Reviewer"
   },
   "resources": {
     "title": "Project resources",

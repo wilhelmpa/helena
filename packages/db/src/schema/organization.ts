@@ -5,6 +5,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   serial,
@@ -93,12 +94,22 @@ export const organizationAgentAssignment = pgTable(
       onDelete: 'set null',
     }),
     roleTitle: text('role_title').notNull().default(''),
+    // What the agent does in an agent team: 'coordinator', 'specialist' or 'reviewer'.
+    // Null for an agent that takes no part in one.
+    role: text('role'),
+    // Short lower-case keywords matched against issue labels to route work to a
+    // specialist.
+    capabilities: jsonb('capabilities').$type<string[]>().notNull().default([]),
     runtimeAgentId: text('runtime_agent_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.teamId, t.agentId] }),
+    check(
+      'organization_agent_role_check',
+      sql`${t.role} IS NULL OR ${t.role} IN ('coordinator', 'specialist', 'reviewer')`,
+    ),
     index('organization_agent_department_idx').on(t.teamId, t.departmentId),
     index('organization_agent_manager_idx').on(t.teamId, t.reportsToAgentId),
     check(

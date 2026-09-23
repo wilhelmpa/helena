@@ -75,6 +75,21 @@ describe('preset arguments', () => {
     ]);
   });
 
+  it("hands Hermes a run's turn and time limits, and leaves them out when unset", () => {
+    const limited = presetArgv(PRESETS.hermes, null, '', [], 'do it', {
+      maxTurns: 40,
+      runBudgetSeconds: 900,
+    });
+    expect(limited.slice(-4)).toEqual(['--max-turns', '40', '--run-budget', '900']);
+
+    const unlimited = presetArgv(PRESETS.hermes, null, '', [], 'do it', {
+      maxTurns: null,
+      runBudgetSeconds: null,
+    });
+    expect(unlimited).not.toContain('--max-turns');
+    expect(unlimited).not.toContain('--run-budget');
+  });
+
   it("appends the operator's arguments after the preset's, so a repeated flag wins", () => {
     const argv = presetArgv(PRESETS.claude, null, '', ['--permission-mode', 'plan'], 'do it');
     expect(argv.lastIndexOf('--permission-mode')).toBeGreaterThan(

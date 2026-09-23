@@ -2,18 +2,11 @@
 
 import { Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import type { OrganizationDepartmentNode as DepartmentNode } from '../organizationTree';
 import OrganizationAgentNode from './OrganizationAgentNode';
 import OrganizationGoalNode from './OrganizationGoalNode';
 
-export default function OrganizationDepartmentNode({
-  node,
-  agents,
-}: {
-  node: DepartmentNode;
-  agents: OrganizationAgent[];
-}) {
+export default function OrganizationDepartmentNode({ node }: { node: DepartmentNode }) {
   const t = useTranslations('organization');
   return (
     <li className="relative ps-6 before:absolute before:start-0 before:top-0 before:h-6 before:w-5 before:rounded-bl-md before:border-s before:border-b">
@@ -28,7 +21,7 @@ export default function OrganizationDepartmentNode({
         {node.agents.length > 0 && (
           <ul className="mt-4 space-y-3 border-s">
             {node.agents.map((agent) => (
-              <OrganizationAgentNode key={agent.agent.id} node={agent} agents={agents} />
+              <OrganizationAgentNode key={agent.agent.id} node={agent} />
             ))}
           </ul>
         )}
@@ -46,11 +39,7 @@ export default function OrganizationDepartmentNode({
       {node.children.length > 0 && (
         <ul className="ms-4 space-y-4 border-s pt-4">
           {node.children.map((child) => (
-            <OrganizationDepartmentNode
-              key={child.department?.id ?? 'unassigned'}
-              node={child}
-              agents={agents}
-            />
+            <OrganizationDepartmentNode key={child.department?.id ?? 'unassigned'} node={child} />
           ))}
         </ul>
       )}
