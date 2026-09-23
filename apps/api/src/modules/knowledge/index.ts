@@ -222,16 +222,20 @@ export const knowledgeRoutes = new Elysia({
       },
     },
   )
-  .get('/knowledge/conflicts', ({ scope, paths }) => vaultCall(() => listConflicts(scope, paths.root)), {
-    vault: { action: 'read', fields: ['root'] },
-    query: treeQuery,
-    response: { 200: ConflictListResponse, ...commonErrors },
-    detail: {
-      summary: 'List sync conflicts',
-      description:
-        'The copies Syncthing kept below a folder where two devices changed a file at the same time, each with the file it belongs to.',
+  .get(
+    '/knowledge/conflicts',
+    ({ scope, paths }) => vaultCall(() => listConflicts(scope, paths.root)),
+    {
+      vault: { action: 'read', fields: ['root'] },
+      query: treeQuery,
+      response: { 200: ConflictListResponse, ...commonErrors },
+      detail: {
+        summary: 'List sync conflicts',
+        description:
+          'The copies Syncthing kept below a folder where two devices changed a file at the same time, each with the file it belongs to.',
+      },
     },
-  })
+  )
   .get('/knowledge/history', ({ paths }) => noteHistory(paths.path), {
     vault: { action: 'read', fields: ['path'] },
     query: pathQuery,

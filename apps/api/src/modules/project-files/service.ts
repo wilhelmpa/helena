@@ -17,6 +17,7 @@ import {
 import path from 'node:path';
 import { db, issueAttachment } from '@repo/db';
 import { or, eq, sql } from 'drizzle-orm';
+import { isSyncConflict } from '@repo/vault';
 import { HttpError } from '#shared/lib';
 import {
   assertNoSymlinks,
@@ -129,9 +130,13 @@ export async function listFolder(root: FileRoot, relative = '') {
     if (!safe && root.creatable && isMissing(error)) entries = [];
     else fileSystemError(error, 'Folder not found');
   }
-  // Hidden entries (.obsidian, .trash, .git) are not the owner's documents.
+  // Hidden entries (.obsidian, .trash, .git) and Syncthing's conflict copies are not
+  // the owner's documents.
   const visible = entries.filter(
-    (entry) => !entry.name.startsWith('.') && (entry.isDirectory() || entry.isFile()),
+    (entry) =>
+      !entry.name.startsWith('.') &&
+      !isSyncConflict(entry.name) &&
+      (entry.isDirectory() || entry.isFile()),
   );
   const listed = await Promise.all(
     visible.slice(0, MAX_ITEMS).map(async (entry): Promise<FileItem | null> => {

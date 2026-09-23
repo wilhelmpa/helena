@@ -143,16 +143,12 @@ describe('knowledge', () => {
         const document = await read(asOwner, target);
         expect(document.status).toBe(400);
         expect(JSON.stringify(document.data ?? '')).not.toContain('secret');
-        expect(
-          (await asOwner.knowledge.raw.get({ query: { path: target } })).status,
-        ).toBe(400);
+        expect((await asOwner.knowledge.raw.get({ query: { path: target } })).status).toBe(400);
       }
       expect(
         (await asOwner.knowledge.folders.get({ query: { path: 'Projects/MKT/Docs/link' } })).status,
       ).toBe(400);
-      expect(
-        (await write(asOwner, 'Projects/MKT/Docs/link/new.md', 'x')).status,
-      ).toBe(400);
+      expect((await write(asOwner, 'Projects/MKT/Docs/link/new.md', 'x')).status).toBe(400);
     });
 
     it('lists the Docs tree and a folder', async () => {
