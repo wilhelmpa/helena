@@ -2,6 +2,7 @@ import { t } from 'elysia';
 import { ActivityPayloadResponse } from '#shared/activity';
 import { DevelopmentLinkResponse } from '#modules/git/model';
 import { isoDate } from '#shared/schemas';
+import { pageQueryFields, pageResponse } from '#shared/pagination';
 
 // t.Numeric validates a numeric path param and coerces the string to a number. A
 // non-numeric id gets a 400 before it reaches the service.
@@ -91,6 +92,8 @@ export const IssueResponse = t.Object({
   // and status to filter by the running or the upcoming ones. Create and update set it
   // through cycleId.
   cycle: t.Nullable(t.Object({ id: t.Number(), name: t.String(), status: t.String() })),
+  // The area the issue belongs to, or null.
+  folderId: t.Nullable(t.Number()),
   assigneeUserId: t.Nullable(t.String()),
   delegateUserId: t.Nullable(t.String()),
   columnId: t.Number(),
@@ -317,6 +320,7 @@ export const IssueSearchHitResponse = t.Object({
   typeId: t.Nullable(t.Number()),
   initiativeId: t.Nullable(t.Number()),
   cycleId: t.Nullable(t.Number()),
+  folderId: t.Nullable(t.Number()),
   parentId: t.Nullable(t.Number()),
   assigneeUserId: t.Nullable(t.String()),
   delegateUserId: t.Nullable(t.String()),
@@ -415,6 +419,13 @@ export const createIssueBody = t.Object({
       }),
     ),
   ),
+  folderId: t.Optional(
+    t.Nullable(
+      t.Integer({
+        description: 'Area (view folder) id to put this issue in, or null for no area.',
+      }),
+    ),
+  ),
   assigneeUserId: t.Optional(
     t.Nullable(
       t.String({
@@ -461,6 +472,7 @@ export const bulkUpdateIssuesBody = t.Object({
     typeId: t.Optional(t.Nullable(t.Integer())),
     initiativeId: t.Optional(t.Nullable(t.Integer())),
     cycleId: t.Optional(t.Nullable(t.Integer())),
+    folderId: t.Optional(t.Nullable(t.Integer())),
     assigneeUserId: t.Optional(t.Nullable(t.String())),
     delegateUserId: t.Optional(t.Nullable(t.String())),
     priority: t.Optional(t.Nullable(t.String())),
@@ -503,6 +515,7 @@ export const listIssuesQuery = t.Object({
   typeId: t.Optional(t.Numeric({ description: 'Exact issue type id.' })),
   initiativeId: t.Optional(t.Numeric({ description: 'Exact initiative id.' })),
   cycleId: t.Optional(t.Numeric({ description: 'Exact cycle id.' })),
+  folderId: t.Optional(t.Numeric({ description: 'Exact area (view folder) id.' })),
   parentId: t.Optional(
     t.Numeric({ description: 'Parent issue id, to list that issue’s subtasks.' }),
   ),
@@ -549,6 +562,11 @@ export const updateIssueBody = t.Object({
         description:
           'Plan this issue into a cycle id, or null to unplan it. From list_cycles; a completed cycle is rejected.',
       }),
+    ),
+  ),
+  folderId: t.Optional(
+    t.Nullable(
+      t.Integer({ description: 'Move this issue into an area (view folder) id, or null.' }),
     ),
   ),
   assigneeUserId: t.Optional(
@@ -638,3 +656,63 @@ export const BulkDeletedResponse = t.Object({ deleted: t.Number() });
 export const BoardResponse = t.Object({ issues: t.Array(BoardIssueResponse) });
 
 export const WatchStateResponse = t.Object({ ok: t.Boolean() });
+
+// GET /issues: the issues of every project the caller may read, for the Home list.
+export const crossProjectIssuesQuery = t.Object({
+  projectKey: t.Optional(t.String({ description: 'Only the issues of this project.' })),
+  stateType: t.Optional(
+    t.Union(
+      [
+        t.Literal('open'),
+        t.Literal('backlog'),
+        t.Literal('unstarted'),
+        t.Literal('started'),
+        t.Literal('completed'),
+        t.Literal('canceled'),
+      ],
+      { description: "'open' (neither completed nor canceled), or one state type." },
+    ),
+  ),
+  assignee: t.Optional(
+    t.String({
+      description:
+        "'me', 'agents' (delegated to an agent), 'unassigned' (no assignee and no delegate), or a user id (as assignee or delegate).",
+    }),
+  ),
+  due: t.Optional(
+    t.Union([t.Literal('overdue'), t.Literal('week')], {
+      description: "'overdue' (due before today) or 'week' (due from today through 7 days).",
+    }),
+  ),
+  q: t.Optional(
+    t.String({ description: 'Case-insensitive substring of the title or the identifier.' }),
+  ),
+  ...pageQueryFields,
+});
+
+const IssuePersonResponse = t.Object({
+  userId: t.String(),
+  name: t.String(),
+  image: t.Nullable(t.String()),
+});
+
+// CrossProjectIssue from the service.
+export const CrossProjectIssueResponse = t.Object({
+  id: t.Number(),
+  sequenceNumber: t.Number(),
+  identifier: t.String(),
+  title: t.String(),
+  projectKey: t.String(),
+  projectName: t.String(),
+  areaName: t.Nullable(t.String()),
+  stateName: t.String(),
+  stateType: t.String(),
+  stateColor: t.String(),
+  assignee: t.Nullable(IssuePersonResponse),
+  delegate: t.Nullable(IssuePersonResponse),
+  priority: t.Nullable(t.String()),
+  dueDate: t.Nullable(t.String()),
+  updatedAt: t.String(),
+});
+
+export const CrossProjectIssuePageResponse = pageResponse(CrossProjectIssueResponse);

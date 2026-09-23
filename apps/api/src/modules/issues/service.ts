@@ -14,9 +14,15 @@ import {
   customFieldOption,
   initiative,
   cycle,
+  projectMember,
+  projectViewFolder,
+  teamRole,
+  user,
 } from '@repo/db';
+import { alias } from 'drizzle-orm/pg-core';
 import {
   and,
+  desc,
   eq,
   exists,
   gte,
@@ -67,7 +73,9 @@ import {
 } from '#modules/agents/core/service';
 import { getInitiativeProjectId } from '#modules/initiatives/service';
 import { cycleStatus, getCycleRef, type CycleStatus } from '#modules/cycles/service';
-import { getMembership } from '#modules/members/service';
+import { getMembership, toMemberContext, type MemberRole } from '#modules/members/service';
+import { getViewFolder } from '#modules/views/service';
+import { hasPermission } from '#shared/permissions';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
 import { startDelegatedAgentTeam } from '#modules/control-plane-workflows/agent-team';
 import { applySubtaskAutomation } from './automation';
@@ -104,6 +112,8 @@ export interface IssueRow {
   // status for filtering by the running or the upcoming ones, or null. Filled by
   // attachGroupings; mapIssue alone leaves it null.
   cycle: { id: number; name: string; status: CycleStatus } | null;
+  // The area (project_view_folder) the issue belongs to, or null.
+  folderId: number | null;
   assigneeUserId: string | null;
   delegateUserId: string | null;
   columnId: number;
@@ -157,6 +167,7 @@ function mapIssue(row: typeof issue.$inferSelect, projectKey: string): IssueRow 
     typeId: row.typeId,
     initiative: null,
     cycle: null,
+    folderId: row.folderId,
     assigneeUserId: row.assigneeUserId,
     delegateUserId: row.delegateUserId,
     columnId: row.columnId,
@@ -212,6 +223,7 @@ function snapshot(row: IssueRow): IssueSnapshot {
     typeId: row.typeId,
     initiativeId: row.initiative?.id ?? null,
     cycleId: row.cycle?.id ?? null,
+    folderId: row.folderId,
     assigneeUserId: row.assigneeUserId,
     delegateUserId: row.delegateUserId,
     priority: row.priority,
@@ -267,6 +279,7 @@ export interface IssueSearchHit {
   typeId: number | null;
   initiativeId: number | null;
   cycleId: number | null;
+  folderId: number | null;
   parentId: number | null;
   assigneeUserId: string | null;
   delegateUserId: string | null;
@@ -349,6 +362,10 @@ export async function searchIssues(
     conds.push(
       filters.cycleId === null ? isNull(issue.cycleId) : eq(issue.cycleId, filters.cycleId),
     );
+  if (filters.folderId !== undefined)
+    conds.push(
+      filters.folderId === null ? isNull(issue.folderId) : eq(issue.folderId, filters.folderId),
+    );
   if (filters.parentId !== undefined)
     conds.push(
       filters.parentId === null ? isNull(issue.parentId) : eq(issue.parentId, filters.parentId),
@@ -400,6 +417,7 @@ export async function searchIssues(
       typeId: issue.typeId,
       initiativeId: issue.initiativeId,
       cycleId: issue.cycleId,
+      folderId: issue.folderId,
       parentId: issue.parentId,
       assigneeUserId: issue.assigneeUserId,
       delegateUserId: issue.delegateUserId,
@@ -423,6 +441,7 @@ export async function searchIssues(
     typeId: r.typeId,
     initiativeId: r.initiativeId,
     cycleId: r.cycleId,
+    folderId: r.folderId,
     parentId: r.parentId,
     assigneeUserId: r.assigneeUserId,
     delegateUserId: r.delegateUserId,
@@ -433,6 +452,170 @@ export async function searchIssues(
   }));
   await attachLabels(hits);
   return hits;
+}
+
+export interface CrossProjectIssuePerson {
+  userId: string;
+  name: string;
+  image: string | null;
+}
+
+// One row of the Home list: an active issue of any project the reader may read,
+// with the names it is shown by.
+export interface CrossProjectIssue {
+  id: number;
+  sequenceNumber: number;
+  identifier: string;
+  title: string;
+  projectKey: string;
+  projectName: string;
+  areaName: string | null;
+  stateName: string;
+  stateType: string;
+  stateColor: string;
+  assignee: CrossProjectIssuePerson | null;
+  delegate: CrossProjectIssuePerson | null;
+  priority: string | null;
+  dueDate: string | null;
+  updatedAt: string;
+}
+
+export interface CrossProjectIssueFilters {
+  projectKey?: string;
+  // 'open' is every state type but completed and canceled.
+  stateType?: string;
+  // 'me', 'agents', 'unassigned', or a user id held as assignee or delegate.
+  assignee?: string;
+  due?: 'overdue' | 'week';
+  q?: string;
+}
+
+// The projects whose issues the user may read: every membership whose role grants
+// work_items read (an owner holds every permission).
+async function readableProjectIds(userId: string): Promise<number[]> {
+  const rows = await db
+    .select({
+      projectId: projectMember.projectId,
+      role: projectMember.role,
+      permissions: teamRole.permissions,
+    })
+    .from(projectMember)
+    .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
+    .where(eq(projectMember.userId, userId));
+  return rows
+    .filter((r) =>
+      hasPermission(
+        toMemberContext(r.role as MemberRole, r.permissions).permissions,
+        'work_items',
+        'read',
+      ),
+    )
+    .map((r) => r.projectId);
+}
+
+const assigneeUser = alias(user, 'assignee_user');
+const delegateUser = alias(user, 'delegate_user');
+
+// The active issues of every project the user may read, soonest due first (no due
+// date last), then the most recently updated. Backs GET /issues.
+export async function listIssuesAcrossProjects(
+  userId: string,
+  filters: CrossProjectIssueFilters,
+  window: { limit: number; offset: number },
+): Promise<{ items: CrossProjectIssue[]; total: number }> {
+  const projectIds = await readableProjectIds(userId);
+  if (projectIds.length === 0) return { items: [], total: 0 };
+
+  const conds: SQL[] = [inArray(issue.projectId, projectIds), isNull(issue.archivedAt)];
+  if (filters.projectKey) conds.push(eq(projectTable.key, filters.projectKey));
+  if (filters.stateType === 'open')
+    conds.push(notInArray(projectColumn.stateType, ['completed', 'canceled']));
+  else if (filters.stateType) conds.push(eq(projectColumn.stateType, filters.stateType));
+  if (filters.assignee === 'me') conds.push(eq(issue.assigneeUserId, userId));
+  else if (filters.assignee === 'agents') conds.push(isNotNull(issue.delegateUserId));
+  else if (filters.assignee === 'unassigned')
+    conds.push(isNull(issue.assigneeUserId), isNull(issue.delegateUserId));
+  else if (filters.assignee)
+    conds.push(
+      or(eq(issue.assigneeUserId, filters.assignee), eq(issue.delegateUserId, filters.assignee))!,
+    );
+  if (filters.due === 'overdue') conds.push(sql`${issue.dueDate} < CURRENT_DATE`);
+  if (filters.due === 'week')
+    conds.push(sql`${issue.dueDate} BETWEEN CURRENT_DATE AND CURRENT_DATE + 7`);
+  const text = filters.q?.trim();
+  if (text) {
+    const pattern = `%${escapeLike(text)}%`;
+    conds.push(
+      or(
+        ilike(issue.title, pattern),
+        ilike(sql`${projectTable.key} || '-' || ${issue.sequenceNumber}`, pattern),
+      )!,
+    );
+  }
+  const where = and(...conds);
+
+  const [rows, [{ total }]] = await Promise.all([
+    db
+      .select({
+        id: issue.id,
+        sequenceNumber: issue.sequenceNumber,
+        title: issue.title,
+        projectKey: projectTable.key,
+        projectName: projectTable.name,
+        areaName: projectViewFolder.name,
+        stateName: projectColumn.name,
+        stateType: projectColumn.stateType,
+        stateColor: projectColumn.color,
+        assigneeId: assigneeUser.id,
+        assigneeName: assigneeUser.name,
+        assigneeImage: assigneeUser.image,
+        delegateId: delegateUser.id,
+        delegateName: delegateUser.name,
+        delegateImage: delegateUser.image,
+        priority: issue.priority,
+        dueDate: issue.dueDate,
+        updatedAt: issue.updatedAt,
+      })
+      .from(issue)
+      .innerJoin(projectTable, eq(projectTable.id, issue.projectId))
+      .innerJoin(projectColumn, eq(projectColumn.id, issue.columnId))
+      .leftJoin(projectViewFolder, eq(projectViewFolder.id, issue.folderId))
+      .leftJoin(assigneeUser, eq(assigneeUser.id, issue.assigneeUserId))
+      .leftJoin(delegateUser, eq(delegateUser.id, issue.delegateUserId))
+      .where(where)
+      .orderBy(sql`${issue.dueDate} ASC NULLS LAST`, desc(issue.updatedAt), desc(issue.id))
+      .limit(window.limit)
+      .offset(window.offset),
+    db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(issue)
+      .innerJoin(projectTable, eq(projectTable.id, issue.projectId))
+      .innerJoin(projectColumn, eq(projectColumn.id, issue.columnId))
+      .where(where),
+  ]);
+
+  const person = (id: string | null, name: string | null, image: string | null) =>
+    id ? { userId: id, name: name ?? '', image } : null;
+  return {
+    total,
+    items: rows.map((r) => ({
+      id: r.id,
+      sequenceNumber: r.sequenceNumber,
+      identifier: `${r.projectKey}-${r.sequenceNumber}`,
+      title: r.title,
+      projectKey: r.projectKey,
+      projectName: r.projectName,
+      areaName: r.areaName,
+      stateName: r.stateName,
+      stateType: r.stateType,
+      stateColor: r.stateColor,
+      assignee: person(r.assigneeId, r.assigneeName, r.assigneeImage),
+      delegate: person(r.delegateId, r.delegateName, r.delegateImage),
+      priority: r.priority,
+      dueDate: r.dueDate,
+      updatedAt: iso(r.updatedAt),
+    })),
+  };
 }
 
 // Archives an issue: sets archived_at so it drops off the board and lists, keeping
@@ -620,6 +803,7 @@ async function loadSnapshot(
       typeId: issue.typeId,
       initiativeId: issue.initiativeId,
       cycleId: issue.cycleId,
+      folderId: issue.folderId,
       assigneeUserId: issue.assigneeUserId,
       delegateUserId: issue.delegateUserId,
       priority: issue.priority,
@@ -688,6 +872,7 @@ export interface NewIssueInput {
   typeId?: number | null;
   initiativeId?: number | null;
   cycleId?: number | null;
+  folderId?: number | null;
   assigneeUserId?: string | null;
   delegateUserId?: string | null;
   columnId: number;
@@ -748,6 +933,14 @@ async function assertCycle(
   if (!ref || ref.projectId !== projectId)
     throw new HttpError(400, 'Cycle must belong to this project');
   if (ref.status === 'completed') throw new HttpError(400, 'A completed cycle takes no new issues');
+}
+
+// Enforces that an area belongs to the issue's project. Throws 400 otherwise;
+// clearing the area is always allowed.
+async function assertArea(projectId: number, folderId: number | null | undefined): Promise<void> {
+  if (folderId == null) return;
+  if ((await getViewFolder(folderId))?.projectId !== projectId)
+    throw new HttpError(400, 'Area must belong to this project');
 }
 
 // Enforces that a column belongs to the issue's project — issue.column_id only
@@ -848,6 +1041,7 @@ export async function createIssue(
   await assertAssignments(project.id, input);
   await assertInitiative(project.id, input.initiativeId);
   await assertCycle(project.id, input.cycleId);
+  await assertArea(project.id, input.folderId);
   await assertColumn(project.id, input.columnId);
   await assertWipLimit(input.columnId);
   await assertIssueType(project.id, input.typeId);
@@ -877,6 +1071,7 @@ export async function createIssue(
         typeId: input.typeId ?? null,
         initiativeId: input.initiativeId ?? null,
         cycleId: input.cycleId ?? null,
+        folderId: input.folderId ?? null,
         assigneeUserId,
         delegateUserId: input.delegateUserId ?? null,
         columnId: input.columnId,
@@ -989,6 +1184,7 @@ export interface IssuePatch {
   parentId?: number | null;
   initiativeId?: number | null;
   cycleId?: number | null;
+  folderId?: number | null;
   assigneeUserId?: string | null;
   delegateUserId?: string | null;
   title?: string;
@@ -1031,6 +1227,7 @@ export async function updateIssue(
   await assertAssignments(before.projectId, patch);
   await assertInitiative(before.projectId, patch.initiativeId);
   await assertCycle(before.projectId, patch.cycleId, before.cycleId);
+  await assertArea(before.projectId, patch.folderId);
   await assertColumn(before.projectId, patch.columnId);
   const movedToColumnId =
     patch.columnId !== undefined && patch.columnId !== before.columnId ? patch.columnId : null;
@@ -1057,6 +1254,7 @@ export async function updateIssue(
   if (patch.parentId !== undefined) set.parentId = patch.parentId;
   if (patch.initiativeId !== undefined) set.initiativeId = patch.initiativeId;
   if (patch.cycleId !== undefined) set.cycleId = patch.cycleId;
+  if (patch.folderId !== undefined) set.folderId = patch.folderId;
   if (patch.assigneeUserId !== undefined) set.assigneeUserId = patch.assigneeUserId;
   else if (autoAssignee) set.assigneeUserId = autoAssignee;
   if (patch.delegateUserId !== undefined) set.delegateUserId = patch.delegateUserId;

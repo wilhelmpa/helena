@@ -6,10 +6,12 @@ import { authContext } from '#shared/auth-context';
 import { assertPermission, assertProjectOwner, requireUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
+import { paginate } from '#shared/pagination';
 import { deleteObject } from '#shared/s3';
 import {
   createIssue,
   searchIssues,
+  listIssuesAcrossProjects,
   listIssues,
   listArchivedIssues,
   getIssue,
@@ -150,6 +152,8 @@ import {
   BulkDeletedResponse,
   BoardResponse,
   WatchStateResponse,
+  crossProjectIssuesQuery,
+  CrossProjectIssuePageResponse,
 } from './model';
 
 // The subtask choice a delete or archive request carries, or undefined when it
@@ -422,6 +426,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
           typeId: posId(query.typeId),
           initiativeId: posId(query.initiativeId),
           cycleId: posId(query.cycleId),
+          folderId: posId(query.folderId),
           parentId: posId(query.parentId),
           assigneeUserId: str(query.assigneeUserId),
           delegateUserId: str(query.delegateUserId),
@@ -443,6 +448,23 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
         summary: 'List issues by filters',
         description: "List a project's issues by field filters.",
         ...mcpTool('list_issues'),
+      },
+    },
+  )
+
+  // The Home list: the active issues of every project the caller may read. The
+  // membership rows are the access check, so it needs no project guard.
+  .get(
+    '/issues',
+    ({ user, query }) =>
+      paginate(query, (window) => listIssuesAcrossProjects(requireUser(user).id, query, window)),
+    {
+      query: crossProjectIssuesQuery,
+      response: { 200: CrossProjectIssuePageResponse, ...errors(400, 401) },
+      detail: {
+        summary: 'List issues across projects',
+        description:
+          'List the active issues of every project you may read, soonest due first, then the most recently updated.',
       },
     },
   )

@@ -8,6 +8,7 @@ import {
   label,
   initiative,
   cycle,
+  projectViewFolder,
   type ActivityPayload,
   type ActivitySide,
 } from '@repo/db';
@@ -577,6 +578,14 @@ async function cycleSide(id: number | null): Promise<ActivitySide | undefined> {
   const rows = await db.select({ name: cycle.name }).from(cycle).where(eq(cycle.id, id));
   return rowSide(rows[0]?.name, id);
 }
+async function areaSide(id: number | null): Promise<ActivitySide | undefined> {
+  if (id == null) return undefined;
+  const rows = await db
+    .select({ name: projectViewFolder.name })
+    .from(projectViewFolder)
+    .where(eq(projectViewFolder.id, id));
+  return rowSide(rows[0]?.name, id);
+}
 export async function userSide(id: string | null): Promise<ActivitySide | undefined> {
   return rowSide(await userName(id), id);
 }
@@ -608,6 +617,7 @@ export interface IssueSnapshot {
   typeId: number | null;
   initiativeId: number | null;
   cycleId: number | null;
+  folderId: number | null;
   assigneeUserId: string | null;
   delegateUserId: string | null;
   priority: string | null;
@@ -668,6 +678,12 @@ export async function logIssueUpdate(
       action: 'cycle',
       from: await cycleSide(before.cycleId),
       to: await cycleSide(after.cycleId),
+    });
+  if (before.folderId !== after.folderId)
+    events.push({
+      action: 'area',
+      from: await areaSide(before.folderId),
+      to: await areaSide(after.folderId),
     });
   if (before.assigneeUserId !== after.assigneeUserId)
     events.push({

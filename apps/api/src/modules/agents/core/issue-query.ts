@@ -27,6 +27,11 @@ export const issueQuerySchema = z.object({
     .nullable()
     .optional()
     .describe('Exact cycle id from list_cycles, or null for issues outside any cycle.'),
+  folderId: z
+    .number()
+    .nullable()
+    .optional()
+    .describe('Exact area (view folder) id, or null for issues outside any area.'),
   parentId: z
     .number()
     .nullable()
