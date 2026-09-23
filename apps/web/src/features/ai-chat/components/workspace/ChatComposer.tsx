@@ -13,7 +13,6 @@ import { useVaultUpload } from '../../hooks/useVaultUpload';
 import { useChatPrompts } from '../../hooks/useChatPrompts';
 import { useChatListMutations } from '../../hooks/useChatList';
 import { useChatSummary } from '../../hooks/useChatSummary';
-import { useConcurrentChatLimit } from '../../hooks/useConcurrentChatGuard';
 import { useConcurrentChatCheck } from '../../hooks/useConcurrentChatCheck';
 import {
   parseSlashCommand,
@@ -73,7 +72,10 @@ export default function ChatComposer({
   const prompts = useChatPrompts(projectKey);
   const chatSummary = useChatSummary(threadId);
   const { rename } = useChatListMutations();
-  const [limit] = useConcurrentChatLimit(agent.id);
+  // The real, server-configured limit (ai_agent.max_concurrent_chats, an agent setting
+  // the owner sets in Helena) — not a per-browser guess, so this pre-flight check
+  // reads the same number the server enforces and cannot go stale against it.
+  const limit = agent.maxConcurrentChats;
   const checkConcurrency = useConcurrentChatCheck(agent.id, threadId);
 
   const busy = status === 'streaming' || status === 'submitted';
@@ -178,7 +180,7 @@ export default function ChatComposer({
     const text = value.trim();
     if (!text || busy) return;
     if (!(await checkConcurrency(limit))) {
-      toast.error(t('composer.concurrencyLimit', { limit }));
+      toast.error(t('composer.concurrencyLimit', { agent: agent.name, limit }));
       return;
     }
     onSend(text, {

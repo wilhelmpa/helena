@@ -544,6 +544,11 @@ export const aiAgent = pgTable(
     // to keep editing the issue after delegating it. Applies to delegation only: a
     // mention is a question already asked, and its author waits for the reply.
     delegationDelaySec: integer('delegation_delay_sec').notNull().default(120),
+    // How many of this agent's chats a member may leave answering at once. The
+    // composer checks it before sending, and sendMessage refuses (409) past it, so a
+    // runner already carrying its share of a member's turns is not asked to
+    // interleave more than the owner decided it should.
+    maxConcurrentChats: integer('max_concurrent_chats').notNull().default(3),
     // The agent's own API key, encrypted at rest (AES-256-GCM, see shared/crypto).
     // An internal agent replays it on every tool call, so unlike better-auth's
     // hashed apikey row it has to stay recoverable. Set for internal agents only:
@@ -597,6 +602,10 @@ export const aiAgent = pgTable(
     check(
       'ai_agent_delegation_delay_check',
       sql`${t.delegationDelaySec} >= 0 AND ${t.delegationDelaySec} <= 86400`,
+    ),
+    check(
+      'ai_agent_max_concurrent_chats_check',
+      sql`${t.maxConcurrentChats} >= 1 AND ${t.maxConcurrentChats} <= 20`,
     ),
     index('ai_agent_team_idx').on(t.teamId),
   ],

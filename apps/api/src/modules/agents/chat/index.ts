@@ -341,6 +341,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         attachments: await resolveAttachments(caller, body.attachments ?? {}),
         model: body.model,
         thinkingLevel: body.thinkingLevel,
+        maxConcurrentChats: agent.maxConcurrentChats,
       });
       if (!sent) throw new HttpError(404, 'Thread not found');
       return sent;
@@ -369,6 +370,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         projectId: null,
         threadId: body.threadId,
         questionId: body.questionId,
+        maxConcurrentChats: agent.maxConcurrentChats,
       });
       if (!retried) throw new HttpError(404, 'Thread not found');
       return retried;
@@ -479,6 +481,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         attachments: await resolveAttachments(caller, body.attachments ?? {}),
         model: body.model,
         thinkingLevel: body.thinkingLevel,
+        maxConcurrentChats: agent.maxConcurrentChats,
       });
       if (!sent) throw new HttpError(404, 'Thread not found');
       return sent;
@@ -512,6 +515,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         projectId: project.id,
         threadId: body.threadId,
         questionId: body.questionId,
+        maxConcurrentChats: agent.maxConcurrentChats,
       });
       if (!retried) throw new HttpError(404, 'Thread not found');
       return retried;

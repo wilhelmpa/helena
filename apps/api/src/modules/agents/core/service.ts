@@ -284,6 +284,8 @@ export interface AiAgentRow {
   fieldTriggers: FieldTriggerRead[];
   // How long a delegation run waits before it can be claimed.
   delegationDelaySec: number;
+  // How many of the agent's chats a member may leave answering at once.
+  maxConcurrentChats: number;
   // The member who created the agent, and whose runs an 'owner'-scoped runner is
   // limited to. 'team' scope lets the runner take any member's runs.
   ownerUserId: string | null;
@@ -333,6 +335,7 @@ function mapAgent(row: {
   triggerOnAssign: boolean;
   fieldTriggers: FieldTriggerRead[];
   delegationDelaySec: number;
+  maxConcurrentChats: number;
   ownerUserId: string | null;
   runnerScope: string;
   template: boolean;
@@ -368,6 +371,7 @@ function mapAgent(row: {
     triggerOnAssign: row.triggerOnAssign,
     fieldTriggers: row.fieldTriggers,
     delegationDelaySec: row.delegationDelaySec,
+    maxConcurrentChats: row.maxConcurrentChats,
     ownerUserId: row.ownerUserId,
     runnerScope: row.runnerScope as RunnerScope,
     template: row.template,
@@ -411,6 +415,7 @@ const agentColumns = {
     FieldTriggerRead[]
   >`(select coalesce(json_agg(json_build_object('fieldId', ${agentFieldTrigger.fieldId}, 'name', ${customField.name}, 'delaySec', ${agentFieldTrigger.delaySec}) order by ${customField.name}), '[]'::json) from ${agentFieldTrigger} join ${customField} on ${customField.id} = ${agentFieldTrigger.fieldId} where ${agentFieldTrigger.agentId} = ${aiAgent.id})`,
   delegationDelaySec: aiAgent.delegationDelaySec,
+  maxConcurrentChats: aiAgent.maxConcurrentChats,
   ownerUserId: aiAgent.ownerUserId,
   runnerScope: aiAgent.runnerScope,
   template: aiAgent.template,
@@ -762,6 +767,7 @@ export interface NewAgentInput {
   // The member custom fields that start a run when the agent is set into one.
   fieldTriggers?: FieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   // The projects of the team the agent works in. Empty means it works in none yet:
   // it authenticates and reaches nothing until it is attached to one.
   projectIds?: number[];
@@ -898,6 +904,7 @@ export async function createAgent(
           triggerOnMention: input.triggerOnMention ?? isInternal,
           triggerOnAssign: input.triggerOnAssign ?? false,
           delegationDelaySec: input.delegationDelaySec,
+          maxConcurrentChats: input.maxConcurrentChats,
           ownerUserId: input.ownerUserId ?? null,
           runnerScope: input.runnerScope ?? 'team',
           template: input.template ?? false,
@@ -1118,6 +1125,7 @@ export interface AgentPatch {
   triggerOnAssign?: boolean;
   fieldTriggers?: FieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   runnerScope?: RunnerScope;
   // Turning it on detaches the agent from every project.
   template?: boolean;
@@ -1164,6 +1172,7 @@ export async function updateAgent(
   if (patch.triggerOnMention !== undefined) set.triggerOnMention = patch.triggerOnMention;
   if (patch.triggerOnAssign !== undefined) set.triggerOnAssign = patch.triggerOnAssign;
   if (patch.delegationDelaySec !== undefined) set.delegationDelaySec = patch.delegationDelaySec;
+  if (patch.maxConcurrentChats !== undefined) set.maxConcurrentChats = patch.maxConcurrentChats;
   if (patch.template !== undefined) set.template = patch.template;
   // The scope and its owner are one setting: 'owner' means the runs of the member who
   // chose it, so switching to it hands the agent to them.
@@ -1251,6 +1260,7 @@ export async function copyTemplateIntoProject(
     triggerOnMention: template.triggerOnMention,
     triggerOnAssign: template.triggerOnAssign,
     delegationDelaySec: template.delegationDelaySec,
+    maxConcurrentChats: template.maxConcurrentChats,
     runnerScope: template.runnerScope,
     ownerUserId,
     projectId,

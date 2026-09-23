@@ -268,6 +268,35 @@ describe('external agent chat', () => {
     expect((await send(asOwner, agent.id, 'One too many')).status).toBe(429);
   });
 
+  it("limits how many of an agent's answers may stream for one member at once, per its maxConcurrentChats setting", async () => {
+    const { asOwner } = await setup();
+    // A queue of merely pending questions does not count (see 'limits chat sends per
+    // member and agent' above, which sends 10 with none ever claimed): only an answer
+    // the runner has actually claimed and is streaming counts against the cap.
+    const created = await createAgent(asOwner, 'MKT', {
+      name: 'Capped Bot',
+      username: 'capped',
+      kind: 'external',
+      maxConcurrentChats: 1,
+    });
+    const agent = created.data!.agent;
+    const asRunner = apiKeyApi(created.data!.apiKey!);
+
+    const first = await send(asOwner, agent.id, 'First question');
+    expect(first.status).toBe(200);
+    const claimed = (await asRunner['agent-chats'].claim.post()).data!.message!;
+
+    const blocked = await send(asOwner, agent.id, 'Second question, a fresh thread');
+    expect(blocked.status).toBe(409);
+
+    await asRunner['agent-chats']({ messageId: claimed.id }).events.post({
+      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'First answer' }],
+    });
+    await asRunner['agent-chats']({ messageId: claimed.id }).result.post({ status: 'success' });
+
+    expect((await send(asOwner, agent.id, 'Second question, tried again')).status).toBe(200);
+  });
+
   it('returns nothing when the feed is empty', async () => {
     const { asRunner } = await setup();
     const res = await asRunner['agent-chats'].claim.post();

@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { showChatVersion } from '@/lib/api/endpoints/agentChat';
+import { ApiError } from '@/lib/api/core/client';
 import { PlanChatTransport } from '../../services/planChatTransport';
 import { useChatThread } from '../../hooks/useChatThread';
 import type { Artifact } from '../../utils/artifacts';
@@ -45,6 +48,7 @@ export default function ChatThreadView({
   onToggleArtifact,
   hasArtifact,
 }: ChatThreadViewProps) {
+  const t = useTranslations('chatWorkspace');
   const thread = useChatThread(scopeKey, agent.id, threadId);
   const transport = useMemo(() => new PlanChatTransport(scopeKey, agent.id), [scopeKey, agent.id]);
   const resumedRef = useRef(false);
@@ -57,6 +61,17 @@ export default function ChatThreadView({
       if (part.type === 'data-turn') {
         const data = part.data as { threadId: string };
         onThreadCreated(data.threadId);
+      }
+    },
+    // The composer already checks the agent's chat concurrency limit before sending;
+    // this only catches the rare race where two sends (e.g. two tabs) both pass that
+    // check before either reaches the server, so the send that actually loses is still
+    // explained rather than failing silently.
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 409) {
+        toast.error(
+          t('composer.concurrencyLimit', { agent: agent.name, limit: agent.maxConcurrentChats }),
+        );
       }
     },
   });

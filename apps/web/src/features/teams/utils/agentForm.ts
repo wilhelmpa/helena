@@ -30,6 +30,9 @@ export interface AgentFormValue {
   // Minutes a delegation run waits before the agent may pick it up, as a string so
   // the input can be cleared while typing.
   delegationDelayMin: string;
+  // How many of the agent's chats a member may leave answering at once, as a string so
+  // the input can be cleared while typing.
+  maxConcurrentChats: string;
   // The projects of the team the agent works in. Its key reaches those and nothing
   // else, so an agent with none authenticates and sees no project.
   projectIds: number[];
@@ -94,6 +97,7 @@ export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFor
       delayMin: String(Math.round(trigger.delaySec / 60)),
     })),
     delegationDelayMin: String(Math.round((agent?.delegationDelaySec ?? 120) / 60)),
+    maxConcurrentChats: String(agent?.maxConcurrentChats ?? 3),
     projectIds: (agent?.projects ?? []).map((project) => project.id),
     projectId: agent ? null : (projectId ?? null),
     template: agent?.template ?? false,
@@ -108,6 +112,15 @@ export function delaySecFromMinutes(minutes: string): number {
   const n = Math.round(Number(minutes.trim()));
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.min(n, 1440) * 60;
+}
+
+// The chat concurrency limit the server stores: a blank or unparseable input falls
+// back to the server default (3), and the value is clamped to the server's 1..20
+// range.
+export function maxConcurrentChatsFromInput(value: string): number {
+  const n = Math.round(Number(value.trim()));
+  if (!Number.isFinite(n) || n <= 0) return 3;
+  return Math.min(n, 20);
 }
 
 // Parses an optional number input: blank becomes null (clears the field), a valid
@@ -147,6 +160,7 @@ function configFields(v: AgentFormValue) {
       delaySec: delaySecFromMinutes(trigger.delayMin),
     })),
     delegationDelaySec: delaySecFromMinutes(v.delegationDelayMin),
+    maxConcurrentChats: maxConcurrentChatsFromInput(v.maxConcurrentChats),
   };
   if (v.kind === 'external') {
     return {

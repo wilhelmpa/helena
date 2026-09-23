@@ -212,6 +212,15 @@ const configFields = {
       description: 'Seconds a delegation run waits before the agent may pick it up.',
     }),
   ),
+  maxConcurrentChats: t.Optional(
+    t.Integer({
+      minimum: 1,
+      maximum: 20,
+      description:
+        "How many of the agent's chats a member may leave answering at once. A send past " +
+        'the limit is refused (409) until one of the running answers finishes.',
+    }),
+  ),
   projectIds: t.Optional(
     t.Array(t.Integer(), {
       description:
@@ -269,6 +278,7 @@ export const AiAgentResponse = t.Object({
   triggerOnAssign: t.Boolean(),
   fieldTriggers: t.Array(t.Object({ fieldId: t.Number(), name: t.String(), delaySec: t.Number() })),
   delegationDelaySec: t.Number(),
+  maxConcurrentChats: t.Number(),
   ownerUserId: t.Nullable(t.String()),
   runnerScope: t.Union([t.Literal('owner'), t.Literal('team')]),
   template: t.Boolean(),

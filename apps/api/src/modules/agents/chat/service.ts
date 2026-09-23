@@ -470,6 +470,42 @@ async function assertNoLiveAnswer(tx: Tx, threadId: string) {
   }
 }
 
+// Refuses a send once the member already has maxConcurrentChats of this agent's
+// answers actively streaming across every thread — the agent-level setting the owner
+// configures in Helena (ai_agent.max_concurrent_chats, default 3), not an env ceiling.
+// Only 'streaming' counts, not 'pending': a member may queue as many questions as the
+// send-rate limit allows (assertSendRate), the runner works through them one lease at
+// a time, and it is the runner actually producing several answers in parallel — not a
+// pile of queued, unclaimed questions — that this setting bounds. Checked in the same
+// transaction as assertNoLiveAnswer so a burst of sends cannot all pass the count at
+// once.
+async function assertConcurrencyLimit(
+  tx: Tx,
+  agentId: number,
+  userId: string,
+  maxConcurrentChats: number,
+) {
+  const [live] = await tx
+    .select({ count: sql<number>`count(*)::int` })
+    .from(agentChatMessage)
+    .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
+    .where(
+      and(
+        eq(agentChatMessage.agentId, agentId),
+        eq(agentChatThread.userId, userId),
+        eq(agentChatMessage.role, 'assistant'),
+        eq(agentChatMessage.status, 'streaming'),
+      ),
+    );
+  if (Number(live?.count ?? 0) >= maxConcurrentChats) {
+    throw new HttpError(
+      409,
+      `This agent is already answering ${maxConcurrentChats} of your chats. Wait for one to ` +
+        'finish before sending another.',
+    );
+  }
+}
+
 async function assertNotPaused(agentId: number) {
   const [paused] = await db
     .select({ reason: aiAgent.pauseReason })
@@ -518,11 +554,13 @@ export async function sendMessage(input: {
   attachments?: ChatAttachment[];
   model?: string | null;
   thinkingLevel?: string | null;
+  maxConcurrentChats: number;
 }): Promise<{ threadId: string; messageId: number; userMessageId: number } | null> {
   const { agentId, userId, prompt } = input;
   await assertNotPaused(agentId);
   return db.transaction(async (tx) => {
     await assertSendRate(tx, agentId, userId);
+    await assertConcurrencyLimit(tx, agentId, userId, input.maxConcurrentChats);
     let threadId = input.threadId;
     let parentId: number | null = null;
     const settings = await validateChatSettings(agentId, input.model, input.thinkingLevel);
@@ -577,10 +615,12 @@ export async function retryMessage(input: {
   projectId: number | null;
   threadId: string;
   questionId: number;
+  maxConcurrentChats: number;
 }): Promise<{ threadId: string; messageId: number } | null> {
   await assertNotPaused(input.agentId);
   return db.transaction(async (tx) => {
     await assertSendRate(tx, input.agentId, input.userId);
+    await assertConcurrencyLimit(tx, input.agentId, input.userId, input.maxConcurrentChats);
     const thread = await scopedThread(tx, input.threadId, input.userId, input.projectId);
     if (!thread) return null;
     await assertNoLiveAnswer(tx, input.threadId);
