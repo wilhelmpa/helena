@@ -88,5 +88,20 @@
   "vault": "Vault",
   "teamSettings": "Настройки команды",
   "teamOrchestration": "Команда и оркестрация",
-  "overview": "Обзор"
+  "overview": "Обзор",
+  "projectGroups": {
+    "group": "Группа",
+    "noGroup": "Без группы",
+    "newGroup": "Новая группа…",
+    "newGroupTitle": "Новая группа",
+    "newGroupDescription": "Группа объединяет проекты в боковой панели, например компанию с её продуктами и клиентскими проектами.",
+    "groupName": "Название группы",
+    "create": "Создать",
+    "renameGroup": "Переименовать группу",
+    "deleteGroup": "Удалить группу",
+    "deleteGroupConfirm": "Удалить {name}? Проекты останутся и будут показаны без группы.",
+    "projectOptions": "Параметры проекта",
+    "groupOptions": "Параметры группы",
+    "dropUngrouped": "Перетащите сюда, чтобы убрать проект из группы"
+  }
 }

@@ -88,5 +88,20 @@
   "vault": "Vault",
   "teamSettings": "إعدادات الفريق",
   "teamOrchestration": "الفريق والتنسيق",
-  "overview": "نظرة عامة"
+  "overview": "نظرة عامة",
+  "projectGroups": {
+    "group": "المجموعة",
+    "noGroup": "بدون مجموعة",
+    "newGroup": "مجموعة جديدة…",
+    "newGroupTitle": "مجموعة جديدة",
+    "newGroupDescription": "تجمع المجموعة المشاريع في الشريط الجانبي، مثل شركة مع منتجاتها ومشاريع عملائها.",
+    "groupName": "اسم المجموعة",
+    "create": "إنشاء",
+    "renameGroup": "إعادة تسمية المجموعة",
+    "deleteGroup": "حذف المجموعة",
+    "deleteGroupConfirm": "حذف {name}؟ تبقى مشاريعها وتظهر بدون مجموعة.",
+    "projectOptions": "خيارات المشروع",
+    "groupOptions": "خيارات المجموعة",
+    "dropUngrouped": "أفلت هنا لإخراج المشروع من مجموعته"
+  }
 }

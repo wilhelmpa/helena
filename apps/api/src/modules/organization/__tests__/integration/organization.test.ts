@@ -146,6 +146,33 @@ describe('organization', () => {
     expect(coordinator).toMatchObject({ role: 'coordinator', capabilities: [], roleTitle: '' });
   });
 
+  it('groups a project under a department in the project list and keeps its instructions', async () => {
+    const { api, teamId, project } = await setup();
+    const organization = api.teams({ teamId }).organization;
+    const department = (await organization.departments.post({ name: 'Volition' })).data!;
+    const assignment = organization.projects({ projectId: project.id });
+
+    expect((await assignment.put({ instructions: 'Ship the portal.' })).status).toBe(204);
+    expect((await assignment.put({ departmentId: department.id })).status).toBe(204);
+
+    const listed = (await api.projects.get()).data!.find((entry) => entry.key === 'MKT');
+    expect(listed).toMatchObject({
+      departmentId: department.id,
+      departmentName: 'Volition',
+      teamManager: true,
+    });
+    const stored = (await organization.get()).data!.projects.find(
+      (entry) => entry.id === project.id,
+    );
+    expect(stored).toMatchObject({ departmentId: department.id, instructions: 'Ship the portal.' });
+
+    expect((await assignment.put({ departmentId: null })).status).toBe(204);
+    expect((await api.projects.get()).data!.find((entry) => entry.key === 'MKT')).toMatchObject({
+      departmentId: null,
+      departmentName: null,
+    });
+  });
+
   it('rejects an unknown team role and invalid capabilities', async () => {
     const { api, teamId, agent } = await setup();
     const assignment = api.teams({ teamId }).organization.agents({ agentId: agent.id });

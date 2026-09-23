@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Home, SquareKanban } from 'lucide-react';
+import { Home } from 'lucide-react';
 import type { Project } from '@/lib/api/endpoints/projects';
+import { projectTree } from '@/utils/projectTree';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import {
   SidebarGroup,
@@ -11,7 +13,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import ProjectTreeGroup from '@/components/layout/ProjectTreeGroup';
+import ProjectTreeItem from '@/components/layout/ProjectTreeItem';
+import ProjectUngroupDropZone from '@/components/layout/ProjectUngroupDropZone';
 
+// The projects as a tree: the organization's departments with their projects, then the
+// projects without one. The collapsed sidebar lists them flat, as icons.
 export default function ProjectList({
   projects,
   currentProjectKey,
@@ -25,6 +32,18 @@ export default function ProjectList({
   const pathname = usePathname();
   const homeChatProjectKey = runtimeEnv().workspace.homeChatProjectKey;
   const visibleProjects = projects.filter((project) => project.key !== homeChatProjectKey);
+  const { groups, ungrouped } = projectTree(visibleProjects);
+  const [dragging, setDragging] = useState(false);
+  const item = (project: Project) => (
+    <ProjectTreeItem
+      key={project.key}
+      project={project}
+      active={project.key === currentProjectKey}
+      groups={groups}
+      onSelect={onSelectProject}
+      onDragChange={setDragging}
+    />
+  );
 
   return (
     <SidebarGroup className="max-h-[45%] min-h-0 shrink-0 overflow-hidden pt-2">
@@ -44,23 +63,27 @@ export default function ProjectList({
             {t('noProjects')}
           </p>
         ) : (
-          <SidebarMenu className="mt-1 ps-3 group-data-[collapsible=icon]:ps-0">
-            {visibleProjects.map((project) => (
-              <SidebarMenuItem key={project.key}>
-                <SidebarMenuButton
-                  isActive={project.key === currentProjectKey}
-                  tooltip={`${project.name} (${project.key})`}
-                  onClick={() => onSelectProject(project.key)}
-                >
-                  <SquareKanban />
-                  <span className="min-w-0 flex-1 truncate">{project.name}</span>
-                  <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                    {project.key}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+          <>
+            <SidebarMenu className="mt-1 hidden group-data-[collapsible=icon]:flex">
+              {visibleProjects.map(item)}
+            </SidebarMenu>
+            <SidebarMenu className="mt-1 ps-3 group-data-[collapsible=icon]:hidden">
+              {groups.map((group) => (
+                <ProjectTreeGroup
+                  key={group.id}
+                  group={group}
+                  groups={groups}
+                  currentProjectKey={currentProjectKey}
+                  onSelectProject={onSelectProject}
+                  onDragChange={setDragging}
+                />
+              ))}
+              {ungrouped.map(item)}
+              {dragging && groups.length > 0 && (
+                <ProjectUngroupDropZone onDragChange={setDragging} />
+              )}
+            </SidebarMenu>
+          </>
         )}
       </SidebarGroupContent>
     </SidebarGroup>

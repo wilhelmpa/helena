@@ -88,5 +88,20 @@
   "vault": "Vault",
   "teamSettings": "Ajustes del equipo",
   "teamOrchestration": "Equipo y orquestación",
-  "overview": "Resumen"
+  "overview": "Resumen",
+  "projectGroups": {
+    "group": "Grupo",
+    "noGroup": "Sin grupo",
+    "newGroup": "Nuevo grupo…",
+    "newGroupTitle": "Nuevo grupo",
+    "newGroupDescription": "Un grupo reúne proyectos en la barra lateral, por ejemplo una empresa con sus productos y proyectos de clientes.",
+    "groupName": "Nombre del grupo",
+    "create": "Crear",
+    "renameGroup": "Renombrar grupo",
+    "deleteGroup": "Eliminar grupo",
+    "deleteGroupConfirm": "¿Eliminar {name}? Sus proyectos se conservan y aparecen sin grupo.",
+    "projectOptions": "Opciones del proyecto",
+    "groupOptions": "Opciones del grupo",
+    "dropUngrouped": "Suelta aquí para sacar el proyecto de su grupo"
+  }
 }

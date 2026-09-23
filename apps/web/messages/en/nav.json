@@ -88,5 +88,20 @@
   "vault": "Vault",
   "teamSettings": "Team settings",
   "teamOrchestration": "Team & orchestration",
-  "overview": "Overview"
+  "overview": "Overview",
+  "projectGroups": {
+    "group": "Group",
+    "noGroup": "No group",
+    "newGroup": "New group…",
+    "newGroupTitle": "New group",
+    "newGroupDescription": "A group gathers projects in the sidebar, for example a company with its products and client projects.",
+    "groupName": "Group name",
+    "create": "Create",
+    "renameGroup": "Rename group",
+    "deleteGroup": "Delete group",
+    "deleteGroupConfirm": "Delete {name}? Its projects stay and show without a group.",
+    "projectOptions": "Project options",
+    "groupOptions": "Group options",
+    "dropUngrouped": "Drop here to take the project out of its group"
+  }
 }
