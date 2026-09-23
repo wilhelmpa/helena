@@ -51,7 +51,10 @@ if changed deployment/volition-stack/optional/mastra-studio; then
   restart+=(volition-mastra.service)
 fi
 
-if changed deployment/volition-stack/native/terminal deployment/volition-stack/native/systemd/volition-terminal.service; then
+# A restart ends every open terminal session. The shell script and tmux.conf are read
+# for each new session, so only the router and the unit need one.
+if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs \
+  deployment/volition-stack/native/systemd/volition-terminal.service; then
   install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-terminal.service" /etc/systemd/system/
   systemctl daemon-reload
   restart+=(volition-terminal.service)
