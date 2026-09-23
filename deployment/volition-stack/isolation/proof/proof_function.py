@@ -379,4 +379,90 @@ def run_function_proofs(report, probe, client, keys, state) -> None:
 
 
 def run_terminal_proofs(report, sh, iso, socket, root) -> None:
-    report.add('T', 'pending', False, 'not written yet')
+    """The project terminal through the launcher: the project's user, its workspace, the
+    same sandbox as its agents, and a tmux session that outlives the browser tab."""
+    import fcntl  # noqa: PLC0415
+    import pty  # noqa: PLC0415
+    import re  # noqa: PLC0415
+    import select  # noqa: PLC0415
+    import signal  # noqa: PLC0415
+    import struct  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415
+    import termios  # noqa: PLC0415
+
+    ansi = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][0-9A-Za-z]|\x1b[=>]')
+
+    def read_for(fd: int, seconds: float) -> str:
+        output = b''
+        end = time.time() + seconds
+        while time.time() < end:
+            ready, _, _ = select.select([fd], [], [], 0.2)
+            if ready:
+                try:
+                    chunk = os.read(fd, 65536)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+                output += chunk
+        return ansi.sub('', output.decode(errors='replace'))
+
+    def attach(slug: str, rows: int = 24, cols: int = 80):
+        pid, fd = pty.fork()
+        if pid == 0:
+            os.execve('/usr/sbin/runuser', ['runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I',
+                                            f'{iso}/launch_client.py', 'terminal', slug],
+                      {'VOLITION_LAUNCHER_SOCKET': socket, 'PATH': '/usr/bin:/bin', 'TERM': 'xterm-256color'})
+        fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', rows, cols, 0, 0))
+        read_for(fd, 4)
+        return pid, fd
+
+    def type_line(fd: int, line: str, wait: float = 2.5) -> str:
+        os.write(fd, line.encode() + b'\r')
+        return read_for(fd, wait)
+
+    def detach(pid: int, fd: int) -> None:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            os.waitpid(pid, 0)
+        except ChildProcessError:
+            pass
+        os.close(fd)
+
+    pid, fd = attach('alpha')
+    try:
+        who = type_line(fd, 'echo "WHO=$(id -un) AT=$(pwd)"')
+        report.add('T', 'terminal runs as the project user in its workspace',
+                   'WHO=vpt-alpha AT=/srv/vpt-test/workspaces/projects/alpha' in who, who.strip()[-160:])
+        net = type_line(fd, 'echo "NET=$(curl -s -o /dev/null -w %{http_code} --max-time 15 https://example.com)"', 8)
+        report.add('T', 'terminal reaches the internet through the egress proxy', 'NET=200' in net, net.strip()[-120:])
+        lan = type_line(fd, 'echo "LAN=$(curl -s -o /dev/null -w %{http_code} --max-time 5 http://192.168.122.1/)"', 8)
+        report.add('T', 'terminal does not reach the LAN', 'LAN=403' in lan, lan.strip()[-120:])
+        other = type_line(fd, f'cat {root}/workspaces/projects/beta/secret-beta.txt; echo "RC=$?"')
+        report.add('T', "terminal cannot read another project's workspace", 'RC=1' in other and 'workspace of beta' not in other,
+                   other.strip()[-160:])
+        type_line(fd, 'export PERSIST=4242', 1)
+    finally:
+        detach(pid, fd)
+    host = subprocess.run(['systemctl', 'is-active', 'vpt-terminal-alpha.service'], capture_output=True, text=True).stdout.strip()
+    report.add('T', 'the session outlives the view', host == 'active', host)
+    pid, fd = attach('alpha', 30, 100)
+    try:
+        again = type_line(fd, 'echo "PERSIST=$PERSIST"')
+        report.add('T', 'reattaching finds the same shell', 'PERSIST=4242' in again, again.strip()[-120:])
+        fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
+        os.kill(pid, signal.SIGWINCH)
+        read_for(fd, 1.5)
+        size = type_line(fd, 'echo "SIZE=$(stty size)"')
+        report.add('T', 'a resize reaches the terminal', 'SIZE=40 120' in size, size.strip()[-120:])
+    finally:
+        detach(pid, fd)
+    stop = subprocess.run(['/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I', f'{iso}/launch_client.py',
+                           'terminal-stop', 'alpha'], env={'VOLITION_LAUNCHER_SOCKET': socket, 'PATH': '/usr/bin:/bin'},
+                          capture_output=True, text=True)
+    time.sleep(1)
+    host = subprocess.run(['systemctl', 'is-active', 'vpt-terminal-alpha.service'], capture_output=True, text=True).stdout.strip()
+    report.add('T', 'terminal-stop ends the project terminal', host != 'active', f'{stop.stdout.strip()} → {host}')

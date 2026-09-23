@@ -40,7 +40,7 @@ function slugFrom(value) {
 
 async function projectDirectory(slug) {
   // Home is no project of its own: its terminal opens where the Home agent works.
-  if (slug === 'home') return realpath(path.dirname(projectsRoot));
+  if (slug === 'home') return realpath(isolated ? path.join(path.dirname(projectsRoot), 'home') : path.dirname(projectsRoot));
   const root = await realpath(projectsRoot);
   const candidate = path.join(root, slug);
   const stat = await lstat(candidate);
@@ -75,10 +75,19 @@ async function removedProjects(candidates, exists = projectExists) {
   return removed;
 }
 
+// With agent isolation the project's tmux runs in a unit of its own, as the project's user;
+// only the launcher can stop it.
+const isolated = process.env.AGENT_ISOLATION === 'on';
+const launchClient = process.env.LAUNCH_CLIENT ?? '/usr/local/lib/volition-isolation/launch_client.py';
+
 async function stopProject(slug) {
   const current = sessions.get(slug);
   sessions.delete(slug);
   if (current) Promise.resolve(current).then(item => item.child.kill('SIGTERM')).catch(() => {});
+  if (isolated) {
+    await run('/usr/bin/python3', ['-I', launchClient, 'terminal-stop', slug]).catch(() => {});
+    return;
+  }
   await run(tmux, ['kill-session', '-t', `=volition-${slug}`]).catch(() => {});
 }
 
