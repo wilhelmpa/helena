@@ -1,9 +1,12 @@
 import { ensureProjectGit } from "./project-git.mjs";
 import {
+  createIsolatedProjectBrowserDeprovisioner,
+  createIsolatedProjectBrowserProvisioner,
   createProjectBrowserDeprovisioner,
   createProjectBrowserProvisioner,
   createProjectBrowserStatus,
 } from "./project-browser.mjs";
+import { createAgentLauncher } from "./agent-launcher.mjs";
 import { provisionBoards } from "./boards.mjs";
 import { presentAreas, provisionAreas, validAreas } from "./areas.mjs";
 import { writeProjectContext } from "./project-context.mjs";
@@ -40,7 +43,9 @@ function projectSlug(projectKey) {
   return projectKey === "VERV" ? "verve" : projectKey.toLowerCase();
 }
 
-async function ensureDirectory(directory, mode = 0o750) {
+// Group bits in the mode, so the default ACL of a workspace (the project's user, the runner,
+// the readers) is what decides who reaches a new folder.
+async function ensureDirectory(directory, mode = 0o770) {
   await fs.mkdir(directory, { recursive: true, mode });
   const stat = await fs.lstat(directory);
   if (!stat.isDirectory() || stat.isSymbolicLink()) {
@@ -53,6 +58,18 @@ async function ensurePrivateDirectory(directory) {
   const realPath = await ensureDirectory(directory, 0o700);
   await fs.chmod(realPath, 0o700);
   return realPath;
+}
+
+// A Hermes profile: private to whoever owns it, which with agent isolation is the project's
+// user (the launcher gives it the folder), and then not the provisioning service's to change.
+async function ensureProfileDirectory(directory) {
+  await fs.mkdir(directory, { recursive: true, mode: 0o700 });
+  const stat = await fs.lstat(directory);
+  if (!stat.isDirectory() || stat.isSymbolicLink()) {
+    throw new Error("A provisioning path is not a regular directory");
+  }
+  if (stat.uid === process.getuid?.()) await fs.chmod(directory, 0o700);
+  return fs.realpath(directory);
 }
 
 async function ensureSharedVaultDirectory(directory) {
@@ -105,11 +122,19 @@ export function createProvisioner(config, options = {}) {
   const execute = options.execute ?? execFileAsync;
   const ensurePlanCoordinatorImpl = options.ensurePlanCoordinator ?? ensurePlanCoordinator;
   const ensurePlanProjectAgentImpl = options.ensurePlanProjectAgent ?? ensurePlanProjectAgent;
+  // With agent isolation each project has a Unix user of its own, made and given its folders
+  // by the root launcher, and the browser state is the browser user's.
+  const launcher = options.launcher ?? createAgentLauncher(config);
   const ensureProjectBrowser =
-    options.ensureProjectBrowser ?? createProjectBrowserProvisioner(config, { execute });
+    options.ensureProjectBrowser ??
+    (launcher.enabled
+      ? createIsolatedProjectBrowserProvisioner(config, { execute, launcher })
+      : createProjectBrowserProvisioner(config, { execute }));
   const deprovisionProjectBrowser =
     options.deprovisionProjectBrowser ??
-    createProjectBrowserDeprovisioner(config, { execute, rename: options.rename });
+    (launcher.enabled
+      ? createIsolatedProjectBrowserDeprovisioner(config, { execute, launcher })
+      : createProjectBrowserDeprovisioner(config, { execute, rename: options.rename }));
   const projectBrowserActive =
     options.projectBrowserActive ?? createProjectBrowserStatus(config, { execute });
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
@@ -171,6 +196,30 @@ export function createProvisioner(config, options = {}) {
       throw new Error("The project workspace resolves outside its root");
     }
     return { slug, hostPath, containerPath, managed: true };
+  }
+
+  // The entry the launcher checks a project against, written before the project's first run
+  // has finished; writeRegistry completes it at the end.
+  async function ensureRegistryEntry(envelope, workspace) {
+    const registryPath = path.join(config.registryRoot, `${workspace.slug}.json`);
+    const current = await readJson(registryPath, null);
+    if (current) {
+      if (current.project?.id !== envelope.project.id) {
+        throw new ProvisioningConflictError("The project key belongs to another project id");
+      }
+      return;
+    }
+    await writeJsonAtomic(registryPath, {
+      schemaVersion: 1,
+      project: envelope.project,
+      slug: workspace.slug,
+      requestedResources: [],
+      boards: [],
+      agents: [],
+      areas: [],
+      resources: {},
+      updatedAt: new Date().toISOString(),
+    });
   }
 
   async function writeRegistry(envelope, workspace, coordinator, planCoordinator, agents, areas, files, terminal, browser) {
@@ -365,7 +414,7 @@ export function createProvisioner(config, options = {}) {
         browser,
       });
       if (runtime.descriptorChanged) runner.changed = true;
-      await ensurePrivateDirectory(runtime.hermesHome);
+      await ensureProfileDirectory(runtime.hermesHome);
       agents.push({ id: runtime.planAgentId, username: runtime.username, profile: runtime.name });
     }
     const keep = new Set(agents.map((agent) => agent.id));
@@ -391,6 +440,12 @@ export function createProvisioner(config, options = {}) {
           containerPath: `/projects/${projectSlug(envelope.project.key)}`,
           managed: false,
         };
+    if (needsWorkspace && launcher.enabled) {
+      // The project's user first: what provisioning writes below is then covered by the
+      // workspace's default ACL. The launcher only acts on a project the registry names.
+      await ensureRegistryEntry(envelope, workspace);
+      await launcher.ensureProjectUser(workspace.slug);
+    }
     if (needsWorkspace) await ensureProjectGit(workspace);
 
     const browser = requested.has("browser")
@@ -407,7 +462,7 @@ export function createProvisioner(config, options = {}) {
         }
       : null;
     if (coordinator) {
-      await ensurePrivateDirectory(coordinator.hermesHome);
+      await ensureProfileDirectory(coordinator.hermesHome);
       await writeProjectContext(
         config,
         envelope,
@@ -457,6 +512,14 @@ export function createProvisioner(config, options = {}) {
       terminal,
       browser,
     );
+    if (launcher.enabled && needsWorkspace) {
+      // Again with every folder there now: the profiles and the vault folder.
+      const profiles = [
+        ...(coordinator ? [workspace.slug] : []),
+        ...agentRuntimes.agents.map((agent) => agent.profile),
+      ];
+      await launcher.ensureProjectUser(workspace.slug, profiles);
+    }
     const resources = [resource("registry", `project:${workspace.slug}`), ...boardResources];
     if (needsWorkspace) {
       resources.unshift(
@@ -479,7 +542,7 @@ export function createProvisioner(config, options = {}) {
     for (const kind of ["boards", "workflows"]) {
       if (requested.has(kind)) {
         warnings.push(
-          `${kind} are managed inside It's a Plan and are not provisioned by this service.`,
+          `${kind} are managed inside Helena and are not provisioned by this service.`,
         );
       }
     }
@@ -601,6 +664,9 @@ export function createProvisioner(config, options = {}) {
     if (registryEntry) quarantined.push(registryEntry);
 
     const receiptPath = await writeTrashReceipt(quarantineRoot, envelope, quarantined);
+    // The project's files are in the trash under its UID, which the launcher never gives out
+    // again; the user itself goes.
+    if (launcher.enabled) await launcher.removeProjectUser(slug);
     const resources = quarantined.flatMap((item) => {
       const kind =
         item.label === "workspace"

@@ -86,6 +86,13 @@
       "loading": "Cargando el estado de la configuración…",
       "unavailable": "El estado de la configuración no está disponible.",
       "retry": "Reintentar"
+    },
+    "dangerZone": {
+      "title": "Zona de peligro",
+      "description": "Acciones irreversibles en este proyecto.",
+      "deleteTitle": "Eliminar este proyecto",
+      "deleteDescription": "Elimina permanentemente el proyecto y todo su contenido: tickets, documentos, archivos, actividad. Esto no se puede deshacer.",
+      "deleteAction": "Eliminar proyecto"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "Comando copiado. Sustituye propietario/repositorio, después ejecuútalo.",
     "nativeConnections": "Conexiones del proveedor",
     "nativeConnectionsRecommended": "Conexiones del proveedor · Recomendadas",
-    "nativeConnectionsHint": "Autoriza un proveedor Git, elige repositorios y deja que Volition configure sus webhooks.",
+    "nativeConnectionsHint": "Autoriza un proveedor Git, elige repositorios y deja que Helena configure sus webhooks.",
     "nativeConnectProvider": "Conectar {provider}",
     "nativeNoConnections": "Todavía no hay cuentas de proveedor conectadas. La configuración a mano del webhook sigue disponible abajo.",
     "nativeConnectTitle": "Conectar {provider}",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "Necesita atención",
     "nativeDisconnectProvider": "Disconnectar el proveedor",
     "nativeDisconnectRepository": "Disconnectar el repositorio",
-    "nativeDisconnectConfirm": "¿Disconnectar {provider} y quitar cada webhook gestionado por Volition?",
+    "nativeDisconnectConfirm": "¿Disconnectar {provider} y quitar cada webhook gestionado por Helena?",
     "nativeDisconnected": "{provider} disconnectedo",
     "nativeRepositoryDisconnected": "El repositorio se ha disconnectedo",
     "nativeDisconnectFailed": "No se ha podido disconnectar la integración.",
@@ -548,6 +555,69 @@
     "onOpenNone": "Ninguna acción",
     "changeState": "Cambiar el estado…",
     "noState": "Sin estado."
+  },
+  "network": {
+    "isolationNote": "Estos ajustes se aplican en cuanto el aislamiento de agentes esté activo en el servidor.",
+    "accessTitle": "Acceso",
+    "accessHint": "El tráfico saliente solo usa los puertos 80 y 443. Las direcciones locales y la red doméstica están siempre bloqueadas, en cualquier modo. Un dominio también cubre sus subdominios.",
+    "mode": {
+      "open": {
+        "label": "Internet",
+        "description": "Cualquier destino público excepto los de la lista de bloqueo."
+      },
+      "allowlist": {
+        "label": "Solo lista de permitidos",
+        "description": "Solo los destinos de la lista de permitidos. La lista de bloqueo sigue aplicando."
+      },
+      "blocked": {
+        "label": "Bloqueado",
+        "description": "Sin acceso a internet. Solo siguen accesibles la API de Helena, la pasarela del navegador y el modelo de IA del agente."
+      }
+    },
+    "allowLabel": "Lista de permitidos",
+    "allowOnlyHint": "Solo se usa en el modo «Solo lista de permitidos».",
+    "denyLabel": "Lista de bloqueo",
+    "domainsPerLine": "Un dominio por línea",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "Correo",
+    "mailPortsLabel": "Permitir puertos de correo",
+    "mailPortsHint": "También abre los puertos 465, 587 y 993 para el rol de correo.",
+    "perAgentTitle": "Por agente",
+    "perAgentHint": "Anula el modo del proyecto para un agente concreto. Las listas de permitidos y de bloqueo del proyecto se siguen aplicando: un agente en modo «Solo lista de permitidos» usa la lista de permitidos del proyecto.",
+    "followProject": "Como el proyecto ({mode})",
+    "noAgents": "Este proyecto todavía no tiene agentes.",
+    "saved": "Guardado",
+    "logTitle": "Registro",
+    "logHint": "El destino, la decisión y el volumen de datos de las conexiones recientes — nunca su contenido.",
+    "filterAll": "Todas",
+    "filterBlocked": "Solo bloqueadas",
+    "columns": {
+      "time": "Hora",
+      "agent": "Agente",
+      "target": "Destino",
+      "decision": "Decisión",
+      "connections": "Conexiones",
+      "data": "Datos"
+    },
+    "decisions": {
+      "allowed": "Permitida",
+      "blocked": "Bloqueada"
+    },
+    "reasons": {
+      "blocked": "Acceso a la red bloqueado",
+      "private-address": "Dirección privada",
+      "port": "Puerto no permitido",
+      "denylisted": "En la lista de bloqueo",
+      "not-allowlisted": "No está en la lista de permitidos",
+      "dns": "Fallo de DNS",
+      "connect-failed": "Fallo de conexión",
+      "bad-request": "Solicitud no válida"
+    },
+    "loadMore": "Cargar más",
+    "endOfLog": "Fin del registro",
+    "empty": "Aún no hay conexiones",
+    "emptyHint": "En cuanto los agentes de este proyecto establezcan conexiones, aparecerán aquí.",
+    "loadError": "No se pudo cargar el registro."
   },
   "issueTemplates": {
     "addTemplate": "Nueva plantilla",

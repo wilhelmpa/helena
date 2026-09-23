@@ -387,6 +387,7 @@
     "usernamePlaceholder": "напр. triage-bot",
     "usernameHint": "Літери, цифри, крапки, дефіси та підкреслення. До 64 символів.",
     "template": "Шаблон",
+    "templateCopyCount": "{count, plural, =0 {немає копій} one {# копія} few {# копії} many {# копій} other {# копії}}",
     "templateHint": "Шаблон ніде не запускається й не працює в жодному проєкті. Проєкти додають його копії як власних спеціалістів. Якщо ввімкнути, агента буде вилучено з його проєктів.",
     "templates": "Шаблони",
     "templatesHint": "Проєкти додають їхні копії як власних спеціалістів. Спільні знання копій зберігаються в бібліотеці навичок, кожна копія має власну пам'ять.",
@@ -406,6 +407,37 @@
     "loadingModels": "Завантаження моделей…",
     "noModels": "Моделей не знайдено.",
     "noModel": "Модель не задано",
+    "runtimePolicy": {
+      "title": "Політика середовища виконання",
+      "hint": "Політика, нейтральна до середовища виконання, застосовується підключеним адаптером",
+      "model": "Модель",
+      "agentDefault": "За замовчуванням агента",
+      "unavailable": "{value} (недоступно)",
+      "modelsLoading": "Завантаження каталогу підключеного runner…",
+      "modelsError": "Каталог runner тимчасово недоступний.",
+      "modelsEmpty": "Підключений runner ще не опублікував жодної моделі.",
+      "modelsHint": "Моделі, опубліковані провайдером підключеного runner.",
+      "reasoning": "Міркування",
+      "memory": "Пам'ять розмови",
+      "memoryWindowLabel": "Вікно повідомлень пам'яті",
+      "memoryWindowPlaceholder": "Вікно останніх повідомлень",
+      "toolAllow": "Дозволені інструменти",
+      "mcpGrants": "Дозволи MCP",
+      "keysPlaceholder": "Один ключ на рядок",
+      "managedFiles": "Керовані файли Markdown",
+      "managedFilesHint": "SOUL.md і файли під instructions/, об'єднані в SOUL.md профілю Hermes агента. Hermes сам керує своєю пам'яттю.",
+      "addFile": "Додати файл",
+      "filePathPlaceholder": "SOUL.md або instructions/тема.md",
+      "filePathLabel": "Шлях керованого файлу {index}",
+      "fileContentLabel": "Вміст керованого файлу {index}",
+      "removeFile": "Видалити керований файл {index}"
+    },
+    "runtimeConflicts": {
+      "title": "Змінено поза Helena",
+      "description": "Runtime замінив ці файли версією, що зберігається тут, і зберіг змінену версію поруч із ними.",
+      "takeOver": "Прийняти",
+      "editInLibrary": "Редагувати в бібліотеці навичок"
+    },
     "instructions": "Інструкції",
     "instructionsPlaceholder": "Як має поводитися агент і яких правил дотримуватися",
     "expandInstructions": "Розгорнути редактор інструкцій",
@@ -662,6 +694,24 @@
       "toolMemory": "Пам'ять",
       "toolSkill": "Навичка",
       "tokens": "{count} токенів"
+    },
+    "templateSync": {
+      "copyOf": "Копія «{name}»",
+      "copyOfUnknown": "Копія видаленого шаблону",
+      "overridden": "відрізняється",
+      "overriddenHint": "Змінено тут вручну і більше не слідує шаблону.",
+      "followsHint": "Слідує шаблону.",
+      "resetToTemplate": "Скинути до шаблону",
+      "resetDone": "{group}: скинуто до шаблону",
+      "groups": {
+        "skills": "Навички",
+        "tools": "Інструменти",
+        "mcpServers": "MCP-сервери",
+        "approvals": "Правила погодження",
+        "instructions": "Інструкції",
+        "model": "Модель/reasoning",
+        "budgets": "Бюджети"
+      }
     }
   },
   "members": {

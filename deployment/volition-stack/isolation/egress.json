@@ -1,0 +1,9 @@
+{
+  "modelHosts": [
+    "api.anthropic.com",
+    "console.anthropic.com",
+    "api.openai.com",
+    "auth.openai.com",
+    "chatgpt.com"
+  ]
+}

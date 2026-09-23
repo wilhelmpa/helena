@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
+import { StringDecoder } from 'node:string_decoder';
 import type { ContextUsage } from './agui';
 import { presetOf, type RunnerConfig } from './config';
+import { isolatedEnv, isolationEnabled, launch, LaunchError, type WorkKind } from './isolation';
 import { presetArgv, presetPrompt, type Preset } from './presets';
 
 // Runs one task: the command the preset builds, or the operator's own in a shell, with the
@@ -24,6 +26,8 @@ export interface Task {
   runBudgetSeconds?: number | null;
   // The toolsets Hermes is limited to, or null for the profile's own selection.
   toolsets?: string[] | null;
+  // An image the model reads with the prompt.
+  image?: string | null;
 }
 
 export interface Outcome {
@@ -56,6 +60,10 @@ class HermesResultReader {
   sessionId: string | undefined;
   toolCalls = 0;
 
+  // Told as soon as a session id is read, and again if a compression moves it to a new
+  // one, so the caller can save it well before the run itself is done.
+  constructor(private onSessionId?: (sessionId: string) => void) {}
+
   write(chunk: string): void {
     const lines = chunk.split('\n');
     for (let index = 0; index < lines.length; index++) {
@@ -75,6 +83,7 @@ class HermesResultReader {
       const value = this.oversized ? null : JSON.parse(this.line);
       if (value?.type === 'tool_use') this.toolCalls++;
       if (typeof value?.session_id === 'string' && value.session_id) {
+        if (value.session_id !== this.sessionId) this.onSessionId?.(value.session_id);
         this.sessionId = value.session_id;
       }
       if (value?.type === 'result' && typeof value.text === 'string') {
@@ -164,6 +173,7 @@ function spawnArgs(
       maxTurns: task.maxTurns,
       runBudgetSeconds: task.runBudgetSeconds,
       toolsets: task.toolsets,
+      image: task.image,
     }),
   ];
 }
@@ -175,16 +185,30 @@ function stdinText(preset: Preset | undefined, task: Task): string {
   return presetPrompt(preset, task.systemPrompt, task.prompt);
 }
 
+export interface ExecuteOptions {
+  onData?: (chunk: string) => void;
+  // Fired as soon as the command names its session, and again if it moves to a new
+  // one. Only hermes-stream-json commands report one.
+  onSessionId?: (sessionId: string) => void;
+  signal?: AbortSignal;
+  // What the command works on, which the unit of an isolated agent is named after.
+  work?: { kind: WorkKind; id: number | null };
+}
+
+// The runtimes the launcher knows as presets of its own (launcher.json).
+const ISOLATED_RUNTIMES = new Set(['hermes', 'claude', 'codex']);
+
 // `onData` sees stdout as it arrives, for a caller that reports the output while the
 // command is still running. `signal` ends the command the way the timeout does, for a
 // chat answer the member stopped.
 export async function execute(
   config: RunnerConfig,
   task: Task,
-  opts: { onData?: (chunk: string) => void; signal?: AbortSignal } = {},
+  opts: ExecuteOptions = {},
 ): Promise<Outcome> {
   const preset = presetOf(config);
   const [bin, args] = spawnArgs(config, preset, task);
+  if (isolationEnabled()) return executeIsolated(config, task, preset, args, opts);
   const child = spawn(bin, args, {
     cwd: config.cwd,
     env: childEnv(config, task),
@@ -206,7 +230,7 @@ export async function execute(
   let stdout = '';
   let stderr = '';
   const hermesResult =
-    config.outputFormat === 'hermes-stream-json' ? new HermesResultReader() : null;
+    config.outputFormat === 'hermes-stream-json' ? new HermesResultReader(opts.onSessionId) : null;
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
   child.stdout.on('data', (chunk: string) => {
@@ -222,9 +246,17 @@ export async function execute(
   child.stdin.on('error', () => {});
   child.stdin.end(stdinText(preset, task));
 
+  // 'close' also waits for the command's stdio to close, which never happens if a
+  // grandchild it left behind inherited the same pipe -- a killed command must not be
+  // able to hang the run that way. 'exit' alone can fire before the last chunk of
+  // output is delivered, so it is given a brief moment to catch a 'close' that is
+  // already on its way before it is trusted on its own.
   const exited = new Promise<{ code: number | null; signal: string | null }>((resolve, reject) => {
     child.on('error', reject);
     child.on('close', (exitCode, exitSignal) => resolve({ code: exitCode, signal: exitSignal }));
+    child.on('exit', (exitCode, exitSignal) => {
+      setTimeout(() => resolve({ code: exitCode, signal: exitSignal }), 200).unref();
+    });
   });
 
   let code: number | null;
@@ -236,6 +268,97 @@ export async function execute(
     opts.signal?.removeEventListener('abort', kill);
   }
 
+  hermesResult?.end();
+  const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
+  if (!hermesResult) return outcome;
+  return {
+    ...outcome,
+    ...(hermesResult.usage && { usage: hermesResult.usage }),
+    ...(hermesResult.sessionId && { sessionId: hermesResult.sessionId }),
+    ...(hermesResult.toolCalls > 0 && { toolCalls: hermesResult.toolCalls }),
+  };
+}
+
+// The same command, started by the launcher as the project's user in its sandbox. The
+// output is read the same way; stopping it closes the connection, and the launcher stops
+// the unit (SIGINT, SIGKILL after a grace period).
+async function executeIsolated(
+  config: RunnerConfig,
+  task: Task,
+  preset: Preset | undefined,
+  args: string[],
+  opts: ExecuteOptions,
+): Promise<Outcome> {
+  const isolation = config.isolation;
+  if (!isolation) {
+    throw new Error(
+      'Agent isolation is on and this agent has no isolated project, so it is not started',
+    );
+  }
+  if (!preset || !config.agent || !ISOLATED_RUNTIMES.has(config.agent)) {
+    throw new Error(`${config.agent ?? 'A custom command'} cannot run isolated`);
+  }
+  if (!config.cwd) throw new Error('An isolated agent needs its working directory');
+  const stop = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    stop.abort();
+  }, config.timeoutMs);
+  const onAbort = () => stop.abort();
+  opts.signal?.addEventListener('abort', onAbort, { once: true });
+  // A stop that came before the command started fires no event.
+  if (opts.signal?.aborted) stop.abort();
+
+  let stdout = '';
+  let stderr = '';
+  const hermesResult =
+    config.outputFormat === 'hermes-stream-json' ? new HermesResultReader(opts.onSessionId) : null;
+  const out = new StringDecoder('utf8');
+  const err = new StringDecoder('utf8');
+  const onStdout = (text: string) => {
+    if (!text) return;
+    stdout = tail(stdout + text, OUTPUT_LIMIT);
+    hermesResult?.write(text);
+    opts.onData?.(text);
+  };
+  let code: number | null = null;
+  let signal: string | null = null;
+  try {
+    const result = await launch(
+      {
+        slug: isolation.slug,
+        profile: isolation.profile,
+        runtime: config.agent,
+        args,
+        env: isolatedEnv(
+          config.env,
+          { ITSAPLAN_URL: config.url, ITSAPLAN_API_KEY: config.apiKey },
+          task.env,
+        ),
+        cwd: config.cwd,
+        agentId: isolation.agentId,
+        work: opts.work ?? { kind: 'run', id: null },
+        limits: { runtimeMaxSec: Math.ceil(config.timeoutMs / 1000) + 60 },
+      },
+      {
+        stdin: stdinText(preset, task),
+        onStdout: (chunk) => onStdout(out.write(chunk)),
+        onStderr: (chunk) => {
+          stderr = tail(stderr + err.write(chunk), ERROR_LIMIT);
+        },
+        signal: stop.signal,
+      },
+    );
+    code = result.code;
+  } catch (error) {
+    if (!(error instanceof LaunchError && error.code === 'aborted')) throw error;
+    signal = 'SIGINT';
+  } finally {
+    clearTimeout(timer);
+    opts.signal?.removeEventListener('abort', onAbort);
+  }
+  onStdout(out.end());
   hermesResult?.end();
   const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
   if (!hermesResult) return outcome;

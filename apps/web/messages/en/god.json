@@ -156,10 +156,15 @@
     "joined": "joined {date}"
   },
   "general": {
+    "about": "About",
     "saved": "Project defaults saved",
     "projectDefaults": "Project defaults",
     "mcpEnabled": "Enable MCP on new projects",
-    "mcpEnabledHint": "A new project is in its team's MCP reach from the moment it is created."
+    "mcpEnabledHint": "A new project is in its team's MCP reach from the moment it is created.",
+    "runResume": "Run resume",
+    "maxResumes": "Resume limit",
+    "maxResumesHint": "How many times a run may resume its coding agent session after the runner holding it died mid run, before it stops on its own and asks you to look at it. 0 turns resuming off: an interrupted run is retried fresh instead.",
+    "savedRunResume": "Resume limit saved"
   },
   "authentication": {
     "saved": "Authentication settings saved",
@@ -336,10 +341,13 @@
     "janitor": {
       "run-janitor": "Run janitor",
       "stage-janitor": "Stage janitor",
-      "workflow-schedules": "Schedule sync"
+      "workflow-schedules": "Schedule sync",
+      "resume-janitor": "Resume janitor"
     },
     "janitorRan": "ran {time} ago",
     "janitorCleaned": "{count, plural, one {cleaned up # thing} other {cleaned up # things}}",
-    "janitorNeverRan": "has not run yet"
+    "janitorNeverRan": "has not run yet",
+    "resuming": "{count, plural, one {# run is} other {# runs are}} resuming after a crash",
+    "needsResumeReview": "{count, plural, one {# run} other {# runs}} reached the resume limit and need a look"
   }
 }

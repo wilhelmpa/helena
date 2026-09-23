@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import Shell from '@/components/layout/Shell';
 import ListPager from '@/components/common/ListPager';
 import { EmptyState } from '@/components/common/page/EmptyState';
+import PageHeader from '@/components/common/page/PageHeader';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { usePaging } from '@/hooks/usePaging';
 import { useMemberRoutines } from './services/routines.service';
@@ -22,10 +23,7 @@ export default function HomeRoutinesPage() {
     <Shell globalHome globalTitle={tNav('schedules')} autoOpenGlobalChat={false}>
       <div className="h-full overflow-y-auto p-6">
         <div className="mx-auto max-w-[1600px] space-y-4">
-          <div>
-            <h1 className="text-xl font-semibold">{tNav('schedules')}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{t('homeHint')}</p>
-          </div>
+          <PageHeader title={tNav('schedules')} description={t('homeHint')} />
           {query.isError ? (
             <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
               <Button size="sm" variant="outline" onClick={() => void query.refetch()}>

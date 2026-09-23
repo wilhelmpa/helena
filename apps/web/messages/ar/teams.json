@@ -387,6 +387,7 @@
     "usernamePlaceholder": "مثل: triage-bot",
     "usernameHint": "حروف وأرقام ونقط وشرطات وشرطات سفلية، لحد 64 حرف.",
     "template": "قالب",
+    "templateCopyCount": "{count, plural, =0 {بدون نسخ} one {نسخة واحدة} other {# نسخة}}",
     "templateHint": "القالب لا يعمل في أي مكان ولا ينتمي إلى أي مشروع. تضيف المشاريع نسخًا منه كمتخصصين خاصين بها. تفعيله يُخرج الوكيل من مشاريعه.",
     "templates": "القوالب",
     "templatesHint": "تضيف المشاريع نسخًا من هذه القوالب كمتخصصين خاصين بها. المعرفة المشتركة بين النسخ مكانها مكتبة المهارات، ولكل نسخة ذاكرتها الخاصة.",
@@ -406,6 +407,37 @@
     "loadingModels": "جارٍ تحميل النماذج…",
     "noModels": "لا توجد نماذج.",
     "noModel": "لم يُحدَّد نموذج",
+    "runtimePolicy": {
+      "title": "سياسة وقت التشغيل",
+      "hint": "سياسة محايدة تجاه وقت التشغيل، يطبّقها المهايئ المتصل",
+      "model": "النموذج",
+      "agentDefault": "افتراضي الوكيل",
+      "unavailable": "{value} (غير متاح)",
+      "modelsLoading": "جارٍ تحميل كتالوج المُشغّل المتصل…",
+      "modelsError": "كتالوج المُشغّل غير متاح مؤقتًا.",
+      "modelsEmpty": "لم ينشر المُشغّل المتصل أي نماذج بعد.",
+      "modelsHint": "النماذج التي نشرها مزوّد المُشغّل المتصل.",
+      "reasoning": "الاستدلال",
+      "memory": "ذاكرة المحادثة",
+      "memoryWindowLabel": "نافذة رسائل الذاكرة",
+      "memoryWindowPlaceholder": "نافذة الرسائل الأخيرة",
+      "toolAllow": "الأدوات المسموح بها",
+      "mcpGrants": "أذونات MCP",
+      "keysPlaceholder": "مفتاح واحد في كل سطر",
+      "managedFiles": "ملفات Markdown المُدارة",
+      "managedFilesHint": "SOUL.md والملفات ضمن instructions/، تُدمج في SOUL.md الخاص بملف Hermes للوكيل. يدير Hermes ذاكرته بنفسه.",
+      "addFile": "إضافة ملف",
+      "filePathPlaceholder": "SOUL.md أو instructions/موضوع.md",
+      "filePathLabel": "مسار الملف المُدار {index}",
+      "fileContentLabel": "محتوى الملف المُدار {index}",
+      "removeFile": "إزالة الملف المُدار {index}"
+    },
+    "runtimeConflicts": {
+      "title": "تم التغيير خارج Helena",
+      "description": "استبدل وقت التشغيل هذه الملفات بالنسخة المخزّنة هنا واحتفظ بالنسخة المعدَّلة بجانبها.",
+      "takeOver": "تولّي النسخة",
+      "editInLibrary": "التعديل في مكتبة المهارات"
+    },
     "instructions": "التعليمات",
     "instructionsPlaceholder": "الوكيل يتصرّف إزاي وأي قواعد يمشي عليها",
     "expandInstructions": "توسيع محرّر التعليمات",
@@ -662,6 +694,24 @@
       "toolMemory": "الذاكرة",
       "toolSkill": "المهارة",
       "tokens": "{count} رمزًا"
+    },
+    "templateSync": {
+      "copyOf": "نسخة من {name}",
+      "copyOfUnknown": "نسخة من قالب محذوف",
+      "overridden": "يختلف",
+      "overriddenHint": "تم تغييره يدويًا هنا ولم يعد يتبع القالب.",
+      "followsHint": "يتبع القالب.",
+      "resetToTemplate": "إعادة الضبط إلى القالب",
+      "resetDone": "تمت إعادة ضبط {group} إلى القالب",
+      "groups": {
+        "skills": "المهارات",
+        "tools": "الأدوات",
+        "mcpServers": "خوادم MCP",
+        "approvals": "قواعد الموافقة",
+        "instructions": "التعليمات",
+        "model": "النموذج/الاستدلال",
+        "budgets": "الميزانيات"
+      }
     }
   },
   "members": {

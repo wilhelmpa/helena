@@ -22,6 +22,14 @@ import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
 import { normalizeOpenApiResponse } from './openapi';
 import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
 import { hermesTeamControlRoutes } from './hermes-team-control';
+import { agentEgressInternalRoutes } from './modules/agent-egress/internal';
+import {
+  agentSocketProject,
+  agentSocketRequestAllowed,
+  checkAgentSocket,
+  hasApiKey,
+} from './shared/agent-socket';
+import { HttpError } from './shared/lib';
 import pkg from '../../../package.json';
 
 const apiUrl = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
@@ -50,6 +58,25 @@ For agent clients, use the MCP endpoint at [${apiUrl}/mcp](${apiUrl}/mcp). SCIM,
 // binds the port; tests import it and pass it to Eden Treaty to drive routes in
 // memory (no network). Keep the chain unbroken so `type App` stays accurate.
 export const app = new Elysia()
+  // A request from an isolated agent (it names the agent's project, see
+  // shared/agent-socket.ts) never reaches the host's control plane or the sign-in flows,
+  // whatever the route would say about its credential.
+  .onRequest(async ({ request }) => {
+    try {
+      if (!agentSocketRequestAllowed(request, new URL(request.url).pathname)) {
+        return Response.json({ error: 'Not available to agents' }, { status: 403 });
+      }
+      // A key on the agent socket is checked here for every route, also the few outside
+      // the planner that read a key themselves (/me); authContext and /mcp check it again.
+      if (agentSocketProject(request.headers) !== null && hasApiKey(request.headers)) {
+        const session = await getSessionFromHeaders(request.headers);
+        if (session) await checkAgentSocket(request.headers, session.user.id);
+      }
+    } catch (error) {
+      const status = error instanceof HttpError ? error.status : 403;
+      return Response.json({ error: 'Not available to this agent' }, { status });
+    }
+  })
   .use(
     cors({
       origin: trustedOrigins,
@@ -63,6 +90,7 @@ export const app = new Elysia()
   )
   .use(homeAgentBootstrapRoutes)
   .use(hermesTeamControlRoutes)
+  .use(agentEgressInternalRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
   // so the UI at /docs and the spec at /docs/json are reachable without a
   // session. The spec is generated from the `t` schemas on every route.
@@ -79,7 +107,7 @@ export const app = new Elysia()
       },
       documentation: {
         info: {
-          title: 'Volition API',
+          title: 'Helena API',
           version: pkg.version,
           description: apiDescription,
         },
@@ -106,6 +134,10 @@ export const app = new Elysia()
           {
             name: 'Agent Chat',
             description: "Chat with an external agent: the member's messages and its runner's feed",
+          },
+          {
+            name: 'Chat Prompts',
+            description: "The member's saved prompts for the chat composer",
           },
           {
             name: 'Agent Tools',
@@ -384,7 +416,7 @@ export const app = new Elysia()
     },
   )
   // Root doubles as the liveness/health endpoint.
-  .get('/', () => ({ name: 'Volition api', status: 'ok' }), {
+  .get('/', () => ({ name: 'Helena api', status: 'ok' }), {
     detail: {
       tags: ['System'],
       summary: 'Check that the api is up',

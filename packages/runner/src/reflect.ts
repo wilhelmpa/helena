@@ -107,7 +107,7 @@ export async function reflect(
         toolsets,
         env: { ...runEnv(run), ...hermes.env },
       },
-      { onData: (chunk) => reader.write(chunk) },
+      { onData: (chunk) => reader.write(chunk), work: { kind: 'run', id: run.id } },
     );
     reader.end();
     report = {

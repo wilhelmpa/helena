@@ -133,6 +133,12 @@ export interface AgentRuntimeState {
 // external agent has an API key: `apiKeyStart` is the non-secret prefix for display
 // (null for internal), and the plaintext key is only returned once, on create and
 // on regenerate.
+// The field groups a template copy follows: Skills, Tools, MCP servers, approval rules
+// (toolAllow/toolDeny/mcpGrants), instructions (+ runtimePolicy.files), model +
+// reasoning standard, and budgets (token ceilings, maxTurns, runBudgetSeconds).
+export type TemplateFieldGroup =
+  'skills' | 'tools' | 'mcpServers' | 'approvals' | 'instructions' | 'model' | 'budgets';
+
 export interface AiAgent {
   id: number;
   teamId: number;
@@ -161,12 +167,26 @@ export interface AiAgent {
   fieldTriggers: AgentFieldTriggerRead[];
   // How long a delegation run waits before the agent may pick it up.
   delegationDelaySec: number;
+  // How many of this agent's chats a member may leave answering at once; a send past
+  // the limit is refused until one finishes.
+  maxConcurrentChats: number;
   // The member who created the agent, and whose runs an 'owner'-scoped runner is
   // limited to; 'team' scope serves any member's runs.
   ownerUserId: string | null;
   runnerScope: 'owner' | 'team';
   // A template runs nowhere and works in no project; a project adds a copy of it.
   template: boolean;
+  // The template this agent was copied from, or null (a template itself, or an agent
+  // nobody copied).
+  sourceTemplateId: number | null;
+  // Field groups this copy's owner changed by hand: a template sync skips them until
+  // "reset to template" clears the override.
+  templateOverrides: TemplateFieldGroup[];
+  // Last time this copy was synced from its template.
+  templateSyncedAt: string | null;
+  // Null is no ceiling. Days and months are UTC.
+  dailyTokenCeiling: number | null;
+  monthlyTokenCeiling: number | null;
   // When the agent's runner last polled, or null while none ever has.
   lastSeenAt: string | null;
   // Set while the agent takes no new work, with why.
@@ -248,6 +268,7 @@ export interface NewAiAgentInput {
   triggerOnAssign?: boolean;
   fieldTriggers?: AgentFieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   projectIds?: number[];
   // The project the agent is created in, in place of projectIds: it works there only,
   // as a specialist reporting to the project's coordinator.
@@ -272,6 +293,7 @@ export interface AiAgentPatch {
   triggerOnAssign?: boolean;
   fieldTriggers?: AgentFieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   projectIds?: number[];
   runnerScope?: 'owner' | 'team';
   template?: boolean;
@@ -322,6 +344,19 @@ export const updateAiAgent = (teamId: number, agentId: number, patch: AiAgentPat
   request<AiAgent>(`/teams/${teamId}/ai-agents/${agentId}`, {
     method: 'PATCH',
     body: JSON.stringify(patch),
+  });
+
+// Drops a copy's own override of one field group and re-applies the template's
+// current value for it right away. A no-op (still 200) when the agent is not a copy or
+// has not overridden that group.
+export const resetAiAgentToTemplate = (
+  teamId: number,
+  agentId: number,
+  group: TemplateFieldGroup,
+) =>
+  request<AiAgent | null>(`/teams/${teamId}/ai-agents/${agentId}/reset-to-template`, {
+    method: 'POST',
+    body: JSON.stringify({ group }),
   });
 
 export const regenerateAiAgentKey = (teamId: number, agentId: number) =>

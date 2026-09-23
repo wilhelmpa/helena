@@ -7,6 +7,7 @@ import { godPath } from '@/utils/paths';
 import { GOD_GROUPS, godIntegrationsIn, godSectionsIn } from '@/utils/godSections';
 import { useGodSectionText } from '@/hooks/useSectionLabels';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
+import { useAccountPreferences } from '@/services/preferences.service';
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,7 @@ import {
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarNavSubmenu from '@/components/layout/SidebarNavSubmenu';
 import SidebarBrandFooter from '@/components/brand/SidebarBrandFooter';
+import SidebarUtilityRow from '@/components/brand/SidebarUtilityRow';
 
 // The sidebar in god mode. It mirrors the project settings sidebar — a list of
 // sections plus a way back, with the integration sections folded into one item —
@@ -34,6 +36,7 @@ export default function GodSidebar() {
   const god = useGodSectionText();
   const pathname = usePathname();
   const side = useSidebarSide();
+  const { headerLayout } = useAccountPreferences();
 
   return (
     <Sidebar collapsible="icon" side={side}>
@@ -106,6 +109,12 @@ export default function GodSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        {headerLayout === 'single' && (
+          <>
+            <SidebarSeparator />
+            <SidebarUtilityRow />
+          </>
+        )}
         <SidebarSeparator />
         <SidebarBrandFooter />
       </SidebarFooter>

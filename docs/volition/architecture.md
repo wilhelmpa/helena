@@ -1,9 +1,10 @@
 # Volition architecture
 
-Volition runs Plan (this repository, a fork of It's a Plan), Mastra and Hermes natively on
-Kingston (Debian, systemd, no Docker). Each component has one responsibility. This document is
-the reference for where a feature belongs; a change that gives a second component the same
-responsibility is wrong.
+Volition runs Plan — the app is called **Helena** since 2026-09-23 (a fork of It's a Plan,
+AGPL-3.0); "Plan" below still means this app, as elsewhere in this repository's docs — Mastra
+and Hermes natively on Kingston (Debian, systemd, no Docker). Each component has one
+responsibility. This document is the reference for where a feature belongs; a change that gives
+a second component the same responsibility is wrong.
 
 ## Responsibilities
 

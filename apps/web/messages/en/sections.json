@@ -101,6 +101,10 @@
       "label": "Repositories",
       "description": "Close issues when their pull requests merge on GitHub, GitLab, Gitea, Forgejo, or Bitbucket."
     },
+    "network": {
+      "label": "Agent network",
+      "description": "Which hosts this project's isolated agents may reach on the internet. Agents can never change this themselves."
+    },
     "ai-agents": {
       "label": "AI Agents",
       "description": "AI agents working in this project."

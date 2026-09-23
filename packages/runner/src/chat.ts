@@ -55,6 +55,7 @@ export async function answer(
       model: message.model,
       thinkingLevel: message.thinkingLevel,
       toolsets: hermes?.toolsets ?? null,
+      image: message.images?.[0] ?? null,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
@@ -70,6 +71,7 @@ export async function answer(
         logins.write(chunk);
       },
       signal: stop.signal,
+      work: { kind: 'chat', id: message.id },
     },
   ).finally(() => clearInterval(flushing));
   if (stop.signal.aborted) return;
@@ -82,7 +84,11 @@ export async function answer(
   // before it broke is still the size of its session's context.
   if (outcome.status === 'success') {
     await stream.finish(outcome.output);
-    await client.chatResult(message.id, { status: 'success', usage: stream.contextUsage() });
+    await client.chatResult(message.id, {
+      status: 'success',
+      usage: stream.contextUsage(),
+      ...(stream.model() && { model: stream.model()! }),
+    });
     return;
   }
   const error = outcome.error ?? 'The command failed';
@@ -93,5 +99,10 @@ export async function answer(
     return;
   }
   await stream.fail(error, outcome.output);
-  await client.chatResult(message.id, { status: 'failed', error, usage: stream.contextUsage() });
+  await client.chatResult(message.id, {
+    status: 'failed',
+    error,
+    usage: stream.contextUsage(),
+    ...(stream.model() && { model: stream.model()! }),
+  });
 }

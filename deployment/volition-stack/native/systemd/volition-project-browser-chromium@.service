@@ -6,7 +6,15 @@ After=volition-project-browser-kasm@%i.service
 ConditionPathExists=/var/lib/volition/project-browser/projects/%i/runtime.env
 
 [Service]
+# Network: Chromium's CDP and KasmVNC listen on 127.0.0.1 only. Isolated agents cannot reach
+# them: each agent unit has a network namespace of its own (PrivateNetwork=yes), so its
+# loopback is not this one. IPAddressDeny=, RestrictNetworkInterfaces= and SocketBindDeny=
+# are not used here: they need cgroup BPF, which this nspawn container does not offer, and
+# were measured to have no effect (see isolation/README.md).
 Type=simple
+# With agent isolation the browser user alone owns the project profiles (0700): isolation.sh
+# switches this unit to volition-browser (drop-in browser-user.conf) in the same step that
+# hands it the state; a deploy alone must not, or the unit could not read its own state.
 User=volition-hermes
 Group=volition
 EnvironmentFile=/var/lib/volition/project-browser/projects/%i/runtime.env

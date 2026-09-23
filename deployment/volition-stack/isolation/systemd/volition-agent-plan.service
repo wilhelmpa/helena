@@ -1,0 +1,41 @@
+[Unit]
+Description=Volition Plan API for isolated agents (names the agent's project to Plan)
+Requires=volition-agent-plan.socket
+After=volition-agent-plan.socket volition-plan-api.service
+
+[Service]
+Type=simple
+DynamicUser=yes
+ExecStart=/usr/bin/python3 -I /usr/local/lib/volition-isolation/plan_proxy.py
+Environment=VOLITION_PLAN_UPSTREAM=127.0.0.1:3000
+Environment=VOLITION_USER_PREFIX=vp-
+Environment=VOLITION_UNIT_PREFIX=volition-agent-
+Environment=VOLITION_AGENTS_GROUP=volition-agents
+Restart=on-failure
+RestartSec=2
+LimitNOFILE=65536
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+InaccessiblePaths=-/etc/volition -/var/lib/volition -/srv/volition
+
+[Install]
+WantedBy=multi-user.target

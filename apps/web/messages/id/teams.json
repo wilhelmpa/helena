@@ -387,6 +387,7 @@
     "usernamePlaceholder": "cth. triage-bot",
     "usernameHint": "Huruf, angka, titik, tanda hubung, dan garis bawah. Hingga 64 karakter.",
     "template": "Templat",
+    "templateCopyCount": "{count, plural, other {# salinan}}",
     "templateHint": "Templat tidak berjalan di mana pun dan tidak bekerja di proyek mana pun. Proyek menambahkan salinannya sebagai spesialis mereka sendiri. Mengaktifkannya mengeluarkan agen dari proyek-proyeknya.",
     "templates": "Templat",
     "templatesHint": "Proyek menambahkan salinan templat ini sebagai spesialis mereka sendiri. Pengetahuan yang dibagikan antarsalinan disimpan di pustaka keahlian; setiap salinan memiliki memorinya sendiri.",
@@ -406,6 +407,37 @@
     "loadingModels": "Memuat model…",
     "noModels": "Model tidak ditemukan.",
     "noModel": "Belum ada model yang diatur",
+    "runtimePolicy": {
+      "title": "Kebijakan runtime",
+      "hint": "Kebijakan netral-runtime yang diterapkan oleh adaptor yang terhubung",
+      "model": "Model",
+      "agentDefault": "Default agen",
+      "unavailable": "{value} (tidak tersedia)",
+      "modelsLoading": "Memuat katalog runner yang terhubung…",
+      "modelsError": "Katalog runner untuk sementara tidak tersedia.",
+      "modelsEmpty": "Runner yang terhubung belum menerbitkan model apa pun.",
+      "modelsHint": "Model yang diterbitkan oleh penyedia runner yang terhubung.",
+      "reasoning": "Penalaran",
+      "memory": "Memori percakapan",
+      "memoryWindowLabel": "Jendela pesan memori",
+      "memoryWindowPlaceholder": "Jendela pesan terbaru",
+      "toolAllow": "Alat yang diizinkan",
+      "mcpGrants": "Pemberian akses MCP",
+      "keysPlaceholder": "Satu kunci per baris",
+      "managedFiles": "File Markdown yang dikelola",
+      "managedFilesHint": "SOUL.md dan file di bawah instructions/, digabungkan ke dalam SOUL.md profil Hermes agen. Hermes mengelola memorinya sendiri.",
+      "addFile": "Tambah file",
+      "filePathPlaceholder": "SOUL.md atau instructions/topik.md",
+      "filePathLabel": "Jalur file yang dikelola {index}",
+      "fileContentLabel": "Konten file yang dikelola {index}",
+      "removeFile": "Hapus file yang dikelola {index}"
+    },
+    "runtimeConflicts": {
+      "title": "Diubah di luar Helena",
+      "description": "Runtime mengganti file ini dengan versi yang disimpan di sini dan menyimpan versi yang diubah di sampingnya.",
+      "takeOver": "Ambil alih",
+      "editInLibrary": "Edit di pustaka skill"
+    },
     "instructions": "Instruksi",
     "instructionsPlaceholder": "Bagaimana agen harus berperilaku dan aturan apa pun yang harus diikuti",
     "expandInstructions": "Perbesar editor instruksi",
@@ -662,6 +694,24 @@
       "toolMemory": "Memori",
       "toolSkill": "Skill",
       "tokens": "{count} token"
+    },
+    "templateSync": {
+      "copyOf": "Salinan dari {name}",
+      "copyOfUnknown": "Salinan dari templat yang telah dihapus",
+      "overridden": "berbeda",
+      "overriddenHint": "Diubah secara manual di sini dan tidak lagi mengikuti templat.",
+      "followsHint": "Mengikuti templat.",
+      "resetToTemplate": "Setel ulang ke templat",
+      "resetDone": "{group} disetel ulang ke templat",
+      "groups": {
+        "skills": "Skill",
+        "tools": "Alat",
+        "mcpServers": "Server MCP",
+        "approvals": "Aturan persetujuan",
+        "instructions": "Instruksi",
+        "model": "Model/penalaran",
+        "budgets": "Anggaran"
+      }
     }
   },
   "members": {

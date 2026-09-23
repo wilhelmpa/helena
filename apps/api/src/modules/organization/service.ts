@@ -12,7 +12,7 @@ import {
 } from '@repo/db';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
-import { notHomeAgent } from '#modules/agents/core/home-agent';
+import { isHomeAgent, notHomeAgent } from '#modules/agents/core/home-agent';
 import { agentTokenUsage, projectTokenUsage } from '#modules/agents/governance';
 
 export type GoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
@@ -231,6 +231,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
         name: user.name,
         username: aiAgent.username,
         kind: aiAgent.kind,
+        template: aiAgent.template,
         departmentId: organizationAgentAssignment.departmentId,
         reportsToAgentId: organizationAgentAssignment.reportsToAgentId,
         roleTitle: organizationAgentAssignment.roleTitle,
@@ -326,6 +327,9 @@ export async function getOrganization(teamId: number, projectId?: number) {
     agents: agents.map((row) => ({
       ...row,
       kind: row.kind as 'external' | 'internal',
+      // Root of the reporting chain. It carries no organization_agent_assignment row of
+      // its own, so without this it would fall through to "unassigned" like a real orphan.
+      isHome: isHomeAgent(row.username),
       roleTitle: row.roleTitle ?? '',
       role: row.role as AgentTeamRole | null,
       capabilities: row.capabilities ?? [],

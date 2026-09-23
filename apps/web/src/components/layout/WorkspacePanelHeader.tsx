@@ -15,7 +15,8 @@ import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { Button } from '@/components/ui/button';
-import { WorkspaceHeader } from './WorkspaceHeader';
+import { cn } from '@/lib/utils';
+import { WORKSPACE_PANEL_HEADER_CLASS } from './WorkspaceHeader';
 
 export default function WorkspacePanelHeader({
   title,
@@ -62,7 +63,7 @@ export default function WorkspacePanelHeader({
   const tChat = useTranslations('aiChat');
   const tCommon = useTranslations('common');
   return (
-    <WorkspaceHeader className="gap-1 px-3">
+    <div className={cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1 px-3')}>
       {toolbar ?? <div className="min-w-0 flex-1 truncate text-sm font-medium">{title}</div>}
       {canExpandChat && (
         <Button
@@ -150,6 +151,6 @@ export default function WorkspacePanelHeader({
           </Button>
         </>
       )}
-    </WorkspaceHeader>
+    </div>
   );
 }

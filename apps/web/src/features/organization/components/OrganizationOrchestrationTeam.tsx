@@ -9,8 +9,8 @@ import { organizationAgentRole, type OrganizationAgentRole } from '../organizati
 const ROLES: OrganizationAgentRole[] = ['coordinator', 'specialist', 'reviewer', 'pool'];
 
 const statusClass = {
-  online: 'fill-emerald-500 text-emerald-500',
-  degraded: 'fill-amber-500 text-amber-500',
+  online: 'fill-status-success text-status-success',
+  degraded: 'fill-status-waiting text-status-waiting',
   offline: 'fill-muted-foreground/40 text-muted-foreground/40',
 };
 

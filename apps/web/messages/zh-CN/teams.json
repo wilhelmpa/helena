@@ -387,6 +387,7 @@
     "usernamePlaceholder": "例如：triage-bot",
     "usernameHint": "可使用字母、数字、点、连字符和下划线，最多 64 个字符。",
     "template": "模板",
+    "templateCopyCount": "{count, plural, other {# 个副本}}",
     "templateHint": "模板不会在任何地方运行，也不在任何项目中工作。项目会添加它的副本作为自己的专家。开启后，该代理将退出其所有项目。",
     "templates": "模板",
     "templatesHint": "项目会添加这些模板的副本作为自己的专家。副本共享的知识放在技能库中；每个副本保留各自的记忆。",
@@ -406,6 +407,37 @@
     "loadingModels": "正在加载模型…",
     "noModels": "未找到模型。",
     "noModel": "未设置模型",
+    "runtimePolicy": {
+      "title": "运行时策略",
+      "hint": "由所连接的适配器应用的、与运行时无关的策略",
+      "model": "模型",
+      "agentDefault": "智能体默认",
+      "unavailable": "{value}（不可用）",
+      "modelsLoading": "正在加载已连接运行器的模型目录…",
+      "modelsError": "运行器的模型目录暂时不可用。",
+      "modelsEmpty": "已连接的运行器尚未发布任何模型。",
+      "modelsHint": "由已连接的运行器提供方发布的模型。",
+      "reasoning": "推理",
+      "memory": "对话记忆",
+      "memoryWindowLabel": "记忆消息窗口",
+      "memoryWindowPlaceholder": "最近消息窗口",
+      "toolAllow": "允许的工具",
+      "mcpGrants": "MCP 授权",
+      "keysPlaceholder": "每行一个键",
+      "managedFiles": "受管理的 Markdown 文件",
+      "managedFilesHint": "SOUL.md 及 instructions/ 下的文件，会合并到智能体 Hermes 档案的 SOUL.md 中。Hermes 自行管理其记忆。",
+      "addFile": "添加文件",
+      "filePathPlaceholder": "SOUL.md 或 instructions/主题.md",
+      "filePathLabel": "受管理文件 {index} 的路径",
+      "fileContentLabel": "受管理文件 {index} 的内容",
+      "removeFile": "移除受管理文件 {index}"
+    },
+    "runtimeConflicts": {
+      "title": "在 Helena 之外被更改",
+      "description": "运行时已将这些文件替换为此处存储的版本，并将更改后的版本保留在旁边。",
+      "takeOver": "接管",
+      "editInLibrary": "在技能库中编辑"
+    },
     "instructions": "指令",
     "instructionsPlaceholder": "代理的行为方式和需要遵守的规则",
     "expandInstructions": "展开指令编辑器",
@@ -662,6 +694,24 @@
       "toolMemory": "记忆",
       "toolSkill": "技能",
       "tokens": "{count} 个令牌"
+    },
+    "templateSync": {
+      "copyOf": "复制自 {name}",
+      "copyOfUnknown": "复制自已删除的模板",
+      "overridden": "已偏离",
+      "overriddenHint": "已在此处手动更改，不再跟随模板。",
+      "followsHint": "跟随模板。",
+      "resetToTemplate": "重置为模板",
+      "resetDone": "已将{group}重置为模板",
+      "groups": {
+        "skills": "技能",
+        "tools": "工具",
+        "mcpServers": "MCP 服务器",
+        "approvals": "审批规则",
+        "instructions": "指示",
+        "model": "模型/推理",
+        "budgets": "预算"
+      }
     }
   },
   "members": {

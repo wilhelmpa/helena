@@ -28,7 +28,7 @@ export function createImapClient(settings: MailServerSettings): ImapFlow {
     logger: false,
     connectionTimeout: TIMEOUT_MS,
     greetingTimeout: TIMEOUT_MS,
-    clientInfo: { name: 'Volition' },
+    clientInfo: { name: 'Helena' },
   });
 }
 

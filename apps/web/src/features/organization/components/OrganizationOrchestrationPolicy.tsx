@@ -72,7 +72,7 @@ export default function OrganizationOrchestrationPolicy({
         warnings.map((warning) => (
           <p
             key={warning}
-            className="flex gap-2 rounded-md bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-300"
+            className="flex gap-2 rounded-md bg-status-waiting/10 p-2 text-xs text-status-waiting"
           >
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
             {warning}

@@ -18,7 +18,7 @@ export default function OrganizationTree({ organization }: { organization: Organ
       <div className="overflow-x-auto">
         <ul className="min-w-[520px] space-y-5">
           {tree.map((node) => (
-            <OrganizationDepartmentNode key={node.department?.id ?? 'unassigned'} node={node} />
+            <OrganizationDepartmentNode key={node.department?.id ?? node.kind} node={node} />
           ))}
         </ul>
       </div>

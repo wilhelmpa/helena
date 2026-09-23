@@ -16,8 +16,11 @@ export interface GeneralForm {
   // Only an owner may edit; others see the current values read-only.
   editable: boolean;
   saving: boolean;
+  dirty: boolean;
   canSave: boolean;
   save: () => Promise<void>;
+  // Back to the last saved name/description — the floating save bar's "Discard".
+  discard: () => void;
 }
 
 // Form state for the General settings page: the project name and description. The
@@ -44,6 +47,11 @@ export function useGeneralForm(project: ProjectDetail): GeneralForm {
     toast.success(t('saved'));
   }
 
+  function discard() {
+    setName(savedName);
+    setDescription(savedDescription);
+  }
+
   return {
     key,
     name,
@@ -52,7 +60,9 @@ export function useGeneralForm(project: ProjectDetail): GeneralForm {
     setDescription,
     editable: isOwner,
     saving: updateProject.isPending,
+    dirty,
     canSave,
     save,
+    discard,
   };
 }

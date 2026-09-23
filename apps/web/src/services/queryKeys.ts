@@ -51,6 +51,11 @@ export const qk = {
   // Configuration settings section).
   autoArchive: (projectKey: string) => ['autoArchive', projectKey] as const,
   subtaskAutomation: (projectKey: string) => ['subtaskAutomation', projectKey] as const,
+  // The project's agent network settings (the Network settings section) and its
+  // connection log, one page per filter.
+  agentNetworkSettings: (projectKey: string) => ['agentNetworkSettings', projectKey] as const,
+  agentNetworkEvents: (projectKey: string, decision: 'all' | 'blocked') =>
+    ['agentNetworkEvents', projectKey, decision] as const,
   // The project's repository integration settings (the Repositories settings section).
   gitSettings: (projectKey: string) => ['gitSettings', projectKey] as const,
   gitConnections: (projectKey: string) => ['gitConnections', projectKey] as const,
@@ -183,6 +188,19 @@ export const qk = {
     ['aiAgents', projectKey, agentId, 'favoriteThreads'] as const,
   agentThreadMessages: (projectKey: string, agentId: number, threadId: string) =>
     ['aiAgents', projectKey, agentId, 'threads', threadId] as const,
+  // The chat workspace (claude.ai-style full page): the caller's chats across every
+  // agent, scoped by the filters and paging window they were read with, and one chat
+  // by its thread id. `anyChatList` is the prefix a write invalidates by.
+  anyChatList: ['chatWorkspace', 'list'] as const,
+  chatList: (params: unknown) => ['chatWorkspace', 'list', params] as const,
+  // The chat's own record (title, pin, project, archive/trash) and its transcript are
+  // two different shapes kept under two different keys, even though both are read "by
+  // thread id" — sharing one key would have a rename overwrite the messages a moment
+  // later fetched into the same cache entry, or the reverse.
+  chat: (threadId: string) => ['chatWorkspace', 'chat', threadId] as const,
+  chatMessages: (threadId: string) => ['chatWorkspace', 'chatMessages', threadId] as const,
+  chatPrompts: (projectKey: string | null) => ['chatWorkspace', 'prompts', projectKey] as const,
+  issueChats: (issueId: number) => ['chatWorkspace', 'issueChats', issueId] as const,
   // Everything integration-scoped. A credential belongs to the team, so changing one
   // is invalidated at this prefix: the pickers its projects fill from go stale too.
   integrations: ['integrations'] as const,
@@ -342,6 +360,7 @@ export const qk = {
   instanceTelegramSettings: ['instanceTelegramSettings'] as const,
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
+  instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,
   // The services around Plan and the agent runs that wait or overran (Home, god only).
   systemHealth: ['systemHealth'] as const,
   // The upload limits as read by the upload UI (open to any signed-in user).

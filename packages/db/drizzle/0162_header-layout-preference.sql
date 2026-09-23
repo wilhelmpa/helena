@@ -1,0 +1,2 @@
+ALTER TABLE "user_preference" ADD COLUMN "header_layout" text DEFAULT 'single' NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_preference" ADD CONSTRAINT "user_preference_header_layout_check" CHECK ("user_preference"."header_layout" IN ('single', 'classic'));

@@ -86,6 +86,13 @@
       "loading": "جارٍ تحميل حالة الإعداد…",
       "unavailable": "حالة الإعداد غير متاحة.",
       "retry": "إعادة المحاولة"
+    },
+    "dangerZone": {
+      "title": "منطقة الخطر",
+      "description": "إجراءات لا يمكن التراجع عنها لهذا المشروع.",
+      "deleteTitle": "حذف هذا المشروع",
+      "deleteDescription": "يحذف المشروع وكل ما فيه نهائيًا: المهام والمستندات والملفات والنشاط. لا يمكن التراجع عن هذا.",
+      "deleteAction": "حذف المشروع"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "الأمر اتنسخ. حط اسم مستودعك مكان owner/repo وشغّله.",
     "nativeConnections": "اتصالات مزوّدي Git",
     "nativeConnectionsRecommended": "اتصالات مزوّدي Git · موصى به",
-    "nativeConnectionsHint": "فوّض مزوّد Git، واختر المستودعات، ودع Volition يضبط خطافات الويب تلقائيًا.",
+    "nativeConnectionsHint": "فوّض مزوّد Git، واختر المستودعات، ودع Helena يضبط خطافات الويب تلقائيًا.",
     "nativeConnectProvider": "ربط {provider}",
     "nativeNoConnections": "لم يتم ربط أي حساب مزوّد بعد. يظل الإعداد اليدوي لخطاف الويب متاحًا أدناه.",
     "nativeConnectTitle": "ربط {provider}",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "يتطلب الانتباه",
     "nativeDisconnectProvider": "فصل المزوّد",
     "nativeDisconnectRepository": "فصل المستودع",
-    "nativeDisconnectConfirm": "هل تريد فصل {provider} وإزالة كل خطافات الويب التي يديرها Volition؟",
+    "nativeDisconnectConfirm": "هل تريد فصل {provider} وإزالة كل خطافات الويب التي يديرها Helena؟",
     "nativeDisconnected": "تم فصل {provider}",
     "nativeRepositoryDisconnected": "تم فصل المستودع",
     "nativeDisconnectFailed": "تعذّر فصل التكامل.",
@@ -548,6 +555,69 @@
     "onOpenNone": "لا إجراء",
     "changeState": "تغيير الحالة…",
     "noState": "لا توجد حالة."
+  },
+  "network": {
+    "isolationNote": "تصبح هذه الإعدادات سارية بمجرد تفعيل عزل الوكلاء على الخادم.",
+    "accessTitle": "الوصول",
+    "accessHint": "تمر الاتصالات الصادرة عبر المنفذين 80 و443 فقط. العناوين المحلية وشبكة المنزل محظورة دائمًا في كل الأوضاع. يشمل النطاق نطاقاته الفرعية أيضًا.",
+    "mode": {
+      "open": {
+        "label": "الإنترنت",
+        "description": "كل وجهة عامة باستثناء ما هو مدرج في قائمة الحظر."
+      },
+      "allowlist": {
+        "label": "قائمة السماح فقط",
+        "description": "فقط الوجهات المدرجة في قائمة السماح. تظل قائمة الحظر سارية أيضًا."
+      },
+      "blocked": {
+        "label": "محظور",
+        "description": "لا وصول إلى الإنترنت. تبقى واجهة Helena البرمجية وبوابة المتصفح ونموذج الذكاء الاصطناعي الخاص بالوكيل فقط متاحة."
+      }
+    },
+    "allowLabel": "قائمة السماح",
+    "allowOnlyHint": "تُستخدم فقط في وضع «قائمة السماح فقط».",
+    "denyLabel": "قائمة الحظر",
+    "domainsPerLine": "نطاق واحد في كل سطر",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "البريد",
+    "mailPortsLabel": "السماح بمنافذ البريد",
+    "mailPortsHint": "يفتح أيضًا المنافذ 465 و587 و993 لدور البريد.",
+    "perAgentTitle": "لكل وكيل",
+    "perAgentHint": "يتجاوز وضع المشروع لوكيل واحد. تظل قائمتا السماح والحظر الخاصتان بالمشروع ساريتين — الوكيل في وضع «قائمة السماح فقط» يستخدم قائمة السماح الخاصة بالمشروع.",
+    "followProject": "كما في المشروع ({mode})",
+    "noAgents": "لا يضم هذا المشروع أي وكلاء بعد.",
+    "saved": "تم الحفظ",
+    "logTitle": "السجل",
+    "logHint": "وجهة الاتصالات الأخيرة وقرارها وحجم بياناتها — وليس محتواها أبدًا.",
+    "filterAll": "الكل",
+    "filterBlocked": "المحظورة فقط",
+    "columns": {
+      "time": "الوقت",
+      "agent": "الوكيل",
+      "target": "الوجهة",
+      "decision": "القرار",
+      "connections": "الاتصالات",
+      "data": "البيانات"
+    },
+    "decisions": {
+      "allowed": "مسموح",
+      "blocked": "محظور"
+    },
+    "reasons": {
+      "blocked": "الوصول إلى الشبكة محظور",
+      "private-address": "عنوان خاص",
+      "port": "المنفذ غير مسموح",
+      "denylisted": "مدرج في قائمة الحظر",
+      "not-allowlisted": "غير مدرج في قائمة السماح",
+      "dns": "فشل DNS",
+      "connect-failed": "فشل الاتصال",
+      "bad-request": "طلب غير صالح"
+    },
+    "loadMore": "تحميل المزيد",
+    "endOfLog": "نهاية السجل",
+    "empty": "لا توجد اتصالات بعد",
+    "emptyHint": "بمجرد أن ينشئ وكلاء هذا المشروع اتصالات، ستظهر هنا.",
+    "loadError": "تعذّر تحميل السجل."
   },
   "issueTemplates": {
     "addTemplate": "قالب جديد",

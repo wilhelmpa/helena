@@ -16,7 +16,7 @@ import pkg from '../../../../../package.json';
 const FETCH_TIMEOUT_MS = 10_000;
 const FEED_TTL_MS = 30 * 60_000;
 
-// The releases atom feed of the project this build follows. Volition is a fork that
+// The releases atom feed of the project this build follows. Helena is a fork that
 // does not follow upstream releases, so there is no default: without UPDATE_FEED_URL
 // nothing is fetched and the history comes from this build's CHANGELOG.md alone.
 function feedUrl(): string | null {

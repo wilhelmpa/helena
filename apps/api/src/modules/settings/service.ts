@@ -120,6 +120,35 @@ export async function setProjectDefaults(
   return next;
 }
 
+// Instance-wide run-resume settings (app_setting key 'run-resume'): how many times a
+// run may resume the coding agent session it already had after the runner holding it
+// died mid run, before it stops resuming on its own and asks the owner to look at it.
+// Applies to every agent; there is no per-agent override.
+
+const RUN_RESUME_SETTING_KEY = 'run-resume';
+
+export interface RunResumeSettings {
+  maxResumes: number;
+}
+
+function defaultRunResumeSettings(): RunResumeSettings {
+  return { maxResumes: 3 };
+}
+
+export async function getRunResumeSettings(): Promise<RunResumeSettings> {
+  const stored = await getSetting<Partial<RunResumeSettings>>(RUN_RESUME_SETTING_KEY);
+  return { ...defaultRunResumeSettings(), ...(stored ?? {}) };
+}
+
+export async function setRunResumeSettings(
+  patch: Partial<RunResumeSettings>,
+): Promise<RunResumeSettings> {
+  const next = { ...(await getRunResumeSettings()), ...patch };
+  next.maxResumes = Math.max(0, Math.min(20, Math.round(next.maxResumes)));
+  await setSetting(RUN_RESUME_SETTING_KEY, next);
+  return next;
+}
+
 // The instance keyboard shortcuts (app_setting key 'hotkeys'): the combination
 // each command is bound to for everyone on this instance. Only the bindings
 // changed in god mode are stored; the web app fills the rest from its built-in

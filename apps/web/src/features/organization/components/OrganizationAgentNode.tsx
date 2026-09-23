@@ -3,14 +3,15 @@
 import { Bot, Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
+import { AgentTemplateBadge } from '@/components/common/agent-chat/AgentTemplateBadge';
 import {
   organizationAgentRole,
   type OrganizationAgentNode as AgentNode,
 } from '../organizationTree';
 
 const statusClass = {
-  online: 'fill-emerald-500 text-emerald-500',
-  degraded: 'fill-amber-500 text-amber-500',
+  online: 'fill-status-success text-status-success',
+  degraded: 'fill-status-waiting text-status-waiting',
   offline: 'fill-muted-foreground/40 text-muted-foreground/40',
 };
 
@@ -38,10 +39,17 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
               </p>
             </div>
           </div>
-          <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-            <Circle className={`size-2.5 ${statusClass[agent.runtimeState.status]}`} />
-            {agent.runtimeState.adapter ?? agent.kind}
-          </span>
+          {agent.template ? (
+            // A pool template runs nowhere by design — its own runtimeState.status
+            // defaults to 'offline' the same as an agent whose runner actually dropped,
+            // which is exactly the mix-up this badge exists to avoid.
+            <AgentTemplateBadge />
+          ) : (
+            <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+              <Circle className={`size-2.5 ${statusClass[agent.runtimeState.status]}`} />
+              {agent.runtimeState.adapter ?? agent.kind}
+            </span>
+          )}
         </div>
         {agent.capabilities.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
@@ -71,7 +79,14 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
         )}
       </div>
       {node.reports.length > 0 && (
-        <ul className="ms-3 border-s pt-3">
+        // space-y-3 matches the sibling gap OrganizationDepartmentNode already uses for
+        // a department's own (flat) agent list — the one spacing step already in use
+        // for "cards of the same kind, one under another" anywhere in this tree, kept
+        // here so every level (Home's coordinators, a coordinator's specialists) reads
+        // the same. No dedicated spacing token exists in this branch's base yet
+        // (hub/helena-design, not merged here, is where that is meant to land); this
+        // is the plain Tailwind step to swap for that token once it exists.
+        <ul className="ms-3 space-y-3 border-s pt-3">
           {node.reports.map((report) => (
             <OrganizationAgentNode key={report.agent.id} node={report} />
           ))}

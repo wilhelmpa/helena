@@ -1,38 +1,79 @@
 'use client';
 
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsRow from '@/components/common/page/SettingsRow';
 import SettingsSection from '@/components/common/page/SettingsSection';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { APP_NAME, UPSTREAM_URL } from '@/utils/app';
+import { useAppVersionQuery } from '@/services/updates.service';
 import GodSectionPage from './components/GodSectionPage';
-import GodSettingsGate from './components/GodSettingsGate';
 import {
   useInstanceProjectDefaultsQuery,
+  useInstanceRunResumeSettingsQuery,
   useUpdateInstanceProjectDefaults,
+  useUpdateInstanceRunResumeSettings,
 } from './services/god.service';
 import type { ProjectDefaults } from '@/lib/api/endpoints/projects';
+import type { RunResumeSettings } from '@/lib/api/endpoints/god';
 
 export default function GodGeneralPage() {
-  const query = useInstanceProjectDefaultsQuery();
+  const projectDefaults = useInstanceProjectDefaultsQuery();
+  const runResume = useInstanceRunResumeSettingsQuery();
 
+  if (!projectDefaults.data || !runResume.data) {
+    return (
+      <GodSectionPage slug="general">
+        <ListSkeleton rows={5} rowClassName="h-12" />
+      </GodSectionPage>
+    );
+  }
   return (
-    <GodSettingsGate slug="general" data={query.data}>
-      {(defaults) => <GeneralForm defaults={defaults} />}
-    </GodSettingsGate>
+    <GeneralForm
+      key={JSON.stringify(projectDefaults.data) + JSON.stringify(runResume.data)}
+      defaults={projectDefaults.data}
+      runResume={runResume.data}
+    />
   );
 }
 
-function GeneralForm({ defaults }: { defaults: ProjectDefaults }) {
+function GeneralForm({
+  defaults,
+  runResume,
+}: {
+  defaults: ProjectDefaults;
+  runResume: RunResumeSettings;
+}) {
   const t = useTranslations('god.general');
+  const tCommon = useTranslations('common');
   const update = useUpdateInstanceProjectDefaults();
+  const updateRunResume = useUpdateInstanceRunResumeSettings();
+  const [maxResumes, setMaxResumes] = useState(String(runResume.maxResumes));
 
   // A single toggle, so it saves on change rather than behind a Save button.
   async function setMcpEnabled(mcpEnabled: boolean) {
     try {
       await update.mutateAsync({ ...defaults, mcpEnabled });
       toast.success(t('saved'));
+    } catch {
+      // The failure already surfaced through the global mutation error toast.
+    }
+  }
+
+  const parsedMaxResumes = Number(maxResumes);
+  const maxResumesValid =
+    Number.isInteger(parsedMaxResumes) && parsedMaxResumes >= 0 && parsedMaxResumes <= 20;
+
+  async function saveMaxResumes() {
+    if (!maxResumesValid) return;
+    try {
+      await updateRunResume.mutateAsync({ maxResumes: parsedMaxResumes });
+      toast.success(t('savedRunResume'));
     } catch {
       // The failure already surfaced through the global mutation error toast.
     }
@@ -55,6 +96,74 @@ function GeneralForm({ defaults }: { defaults: ProjectDefaults }) {
           />
         </SettingsCard>
       </SettingsSection>
+      <SettingsSection title={t('runResume')}>
+        <SettingsCard>
+          <SettingsRow
+            title={t('maxResumes')}
+            description={t('maxResumesHint')}
+            control={
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={20}
+                  className="w-20"
+                  value={maxResumes}
+                  disabled={updateRunResume.isPending}
+                  onChange={(e) => setMaxResumes(e.target.value)}
+                  onBlur={() => void saveMaxResumes()}
+                  aria-invalid={!maxResumesValid}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    !maxResumesValid ||
+                    updateRunResume.isPending ||
+                    parsedMaxResumes === runResume.maxResumes
+                  }
+                  onClick={() => void saveMaxResumes()}
+                >
+                  {updateRunResume.isPending ? tCommon('saving') : tCommon('save')}
+                </Button>
+              </div>
+            }
+          />
+        </SettingsCard>
+      </SettingsSection>
+      <AboutSection />
     </GodSectionPage>
+  );
+}
+
+// The AGPL-3.0 attribution the fork's licence requires, together with the running
+// product name and version. Reuses the nav menu's own basedOn copy and link (see
+// messages/*/nav.json) so the wording stays in one place.
+function AboutSection() {
+  const t = useTranslations('god.general');
+  const tNav = useTranslations('nav');
+  const { data: appVersion } = useAppVersionQuery();
+
+  return (
+    <SettingsSection title={t('about')}>
+      <SettingsCard className="space-y-1.5">
+        <div className="text-sm font-medium">
+          {APP_NAME}
+          {appVersion?.version ? (
+            <span className="ms-2 font-mono text-xs font-normal text-muted-foreground">
+              v{appVersion.version}
+            </span>
+          ) : null}
+        </div>
+        <a
+          href={UPSTREAM_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="block text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          {tNav('basedOn')}
+        </a>
+      </SettingsCard>
+    </SettingsSection>
   );
 }

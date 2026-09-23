@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import VolitionMark from '@/components/brand/VolitionMark';
-import VolitionWordmark from '@/components/brand/VolitionWordmark';
+import HelenaMark from '@/components/brand/HelenaMark';
+import HelenaWordmark from '@/components/brand/HelenaWordmark';
 import { APP_NAME } from '@/utils/app';
 import ReleaseHistory from '@/features/whats-new/components/ReleaseHistory';
 import { useSession } from '@/lib/auth-client';
@@ -37,9 +37,9 @@ export default function SidebarBrandFooter() {
 
   const content = (
     <>
-      <VolitionMark className="size-7 shrink-0" />
+      <HelenaMark className="size-7 shrink-0" />
       <div className="grid text-start leading-none group-data-[collapsible=icon]:hidden">
-        <VolitionWordmark label={APP_NAME} className="h-3.5 w-auto text-sidebar-foreground" />
+        <HelenaWordmark label={APP_NAME} className="h-3.5 w-auto text-sidebar-foreground" />
         {newerVersion ? (
           <span className="mt-1 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-primary uppercase">
             {/* A pulsing ring around the dot, so the update is noticed in a footer

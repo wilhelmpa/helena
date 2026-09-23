@@ -387,6 +387,7 @@
     "usernamePlaceholder": "z. B. triage-bot",
     "usernameHint": "Buchstaben, Ziffern, Punkte, Bindestriche und Unterstriche. Bis zu 64 Zeichen.",
     "template": "Vorlage",
+    "templateCopyCount": "{count, plural, =0 {keine Kopien} one {# Kopie} other {# Kopien}}",
     "templateHint": "Eine Vorlage läuft nirgends und arbeitet in keinem Projekt. Projekte fügen Kopien davon als eigene Spezialisten hinzu. Wenn du sie einschaltest, verlässt der Agent seine Projekte.",
     "templates": "Vorlagen",
     "templatesHint": "Projekte fügen Kopien davon als eigene Spezialisten hinzu. Wissen, das die Kopien teilen, gehört in die Skill-Bibliothek; jede Kopie hat ihr eigenes Gedächtnis.",
@@ -406,6 +407,37 @@
     "loadingModels": "Modelle werden geladen…",
     "noModels": "Keine Modelle gefunden.",
     "noModel": "Kein Modell festgelegt",
+    "runtimePolicy": {
+      "title": "Runtime-Richtlinie",
+      "hint": "Runtime-neutrale Richtlinie, angewendet vom verbundenen Adapter",
+      "model": "Modell",
+      "agentDefault": "Agent-Standard",
+      "unavailable": "{value} (nicht verfügbar)",
+      "modelsLoading": "Lädt den Modellkatalog des verbundenen Runners …",
+      "modelsError": "Der Modellkatalog des Runners ist vorübergehend nicht verfügbar.",
+      "modelsEmpty": "Der verbundene Runner hat noch keine Modelle veröffentlicht.",
+      "modelsHint": "Vom verbundenen Runner-Anbieter veröffentlichte Modelle.",
+      "reasoning": "Reasoning",
+      "memory": "Gesprächsgedächtnis",
+      "memoryWindowLabel": "Nachrichtenfenster des Gedächtnisses",
+      "memoryWindowPlaceholder": "Fenster der letzten Nachrichten",
+      "toolAllow": "Erlaubte Tools",
+      "mcpGrants": "MCP-Freigaben",
+      "keysPlaceholder": "Ein Schlüssel pro Zeile",
+      "managedFiles": "Verwaltete Markdown-Dateien",
+      "managedFilesHint": "SOUL.md und Dateien unter instructions/, zusammengeführt in die SOUL.md des Hermes-Profils des Agenten. Hermes verwaltet sein Gedächtnis selbst.",
+      "addFile": "Datei hinzufügen",
+      "filePathPlaceholder": "SOUL.md oder instructions/thema.md",
+      "filePathLabel": "Pfad der verwalteten Datei {index}",
+      "fileContentLabel": "Inhalt der verwalteten Datei {index}",
+      "removeFile": "Verwaltete Datei {index} entfernen"
+    },
+    "runtimeConflicts": {
+      "title": "Außerhalb von Helena geändert",
+      "description": "Der Runtime hat diese Dateien durch die hier gespeicherte Version ersetzt und die geänderte Version daneben behalten.",
+      "takeOver": "Übernehmen",
+      "editInLibrary": "In der Skill-Bibliothek bearbeiten"
+    },
     "instructions": "Anweisungen",
     "instructionsPlaceholder": "Wie sich der Agent verhalten soll und welche Regeln er befolgen muss",
     "expandInstructions": "Anweisungseditor vergrößern",
@@ -662,7 +694,25 @@
       "toolSkill": "Skill",
       "tokens": "{count} Tokens"
     },
-    "approvalTask": "Freigabe-Entscheidung"
+    "approvalTask": "Freigabe-Entscheidung",
+    "templateSync": {
+      "copyOf": "Kopie von {name}",
+      "copyOfUnknown": "Kopie einer gelöschten Vorlage",
+      "overridden": "weicht ab",
+      "overriddenHint": "Diese Gruppe wurde hier von Hand geändert und folgt der Vorlage nicht mehr.",
+      "followsHint": "Folgt der Vorlage.",
+      "resetToTemplate": "Auf Vorlage zurücksetzen",
+      "resetDone": "{group} auf die Vorlage zurückgesetzt",
+      "groups": {
+        "skills": "Skills",
+        "tools": "Tools",
+        "mcpServers": "MCP-Server",
+        "approvals": "Freigabe-Regeln",
+        "instructions": "Anweisungen",
+        "model": "Modell/Reasoning",
+        "budgets": "Budgets"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

@@ -23,6 +23,7 @@ import { AgentInstructionsField } from './AgentInstructionsField';
 import AgentRunnerSection from './AgentRunnerSection';
 import AgentRuntimePolicySection from './AgentRuntimePolicySection';
 import AgentAbilitiesSection from './AgentAbilitiesSection';
+import AgentTemplateDriftSection from './AgentTemplateDriftSection';
 import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
 
@@ -64,6 +65,7 @@ export default function TeamAiAgentFields({
   onSkillPromoted,
   revealedKey,
   onRevealedKey,
+  initialOpenSection,
 }: {
   value: AgentFormValue;
   onChange: (patch: Partial<AgentFormValue>) => void;
@@ -102,12 +104,16 @@ export default function TeamAiAgentFields({
   // API key section, and the way to drop it or replace it after a regenerate.
   revealedKey: string | null;
   onRevealedKey: (apiKey: string | null) => void;
+  // A section id to open in addition to the defaults, e.g. a `/skills` or `/memory`
+  // chat command that sent the member straight here to look at this agent.
+  initialOpenSection?: string;
 }) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>(
-    agent ? DEFAULT_OPEN : {},
-  );
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => ({
+    ...(agent ? DEFAULT_OPEN : {}),
+    ...(initialOpenSection ? { [initialOpenSection]: true } : {}),
+  }));
   const sectionProps = (id: string) => ({
     open: openSections[id] ?? false,
     onOpenChange: (o: boolean) => setOpenSections((s) => ({ ...s, [id]: o })),
@@ -185,6 +191,7 @@ export default function TeamAiAgentFields({
           onChange={(template) => onChange({ template })}
         />
       )}
+      {agent && <AgentTemplateDriftSection agent={agent} />}
     </div>
   );
 

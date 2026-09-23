@@ -35,6 +35,18 @@ const username = t.String({
   description: 'Mention handle (letters, digits, . _ -).',
 });
 
+// The field groups a template copy follows (template-sync.ts): Skills, Tools, MCP
+// servers, approval rules, instructions, model + reasoning, and budgets.
+export const templateFieldGroup = t.Union([
+  t.Literal('skills'),
+  t.Literal('tools'),
+  t.Literal('mcpServers'),
+  t.Literal('approvals'),
+  t.Literal('instructions'),
+  t.Literal('model'),
+  t.Literal('budgets'),
+]);
+
 export const runtimePolicy = t.Object({
   reasoningEffort: t.Nullable(t.String({ maxLength: 32 })),
   toolAllow: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
@@ -212,6 +224,15 @@ const configFields = {
       description: 'Seconds a delegation run waits before the agent may pick it up.',
     }),
   ),
+  maxConcurrentChats: t.Optional(
+    t.Integer({
+      minimum: 1,
+      maximum: 20,
+      description:
+        "How many of the agent's chats a member may leave answering at once. A send past " +
+        'the limit is refused (409) until one of the running answers finishes.',
+    }),
+  ),
   projectIds: t.Optional(
     t.Array(t.Integer(), {
       description:
@@ -269,9 +290,19 @@ export const AiAgentResponse = t.Object({
   triggerOnAssign: t.Boolean(),
   fieldTriggers: t.Array(t.Object({ fieldId: t.Number(), name: t.String(), delaySec: t.Number() })),
   delegationDelaySec: t.Number(),
+  maxConcurrentChats: t.Number(),
   ownerUserId: t.Nullable(t.String()),
   runnerScope: t.Union([t.Literal('owner'), t.Literal('team')]),
   template: t.Boolean(),
+  sourceTemplateId: t.Nullable(
+    t.Number({ description: 'The template this agent was copied from.' }),
+  ),
+  templateOverrides: t.Array(templateFieldGroup, {
+    description: "Field groups this copy's owner changed by hand; a template sync skips them.",
+  }),
+  templateSyncedAt: t.Nullable(t.String()),
+  dailyTokenCeiling: t.Nullable(t.Number()),
+  monthlyTokenCeiling: t.Nullable(t.Number()),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({
@@ -413,6 +444,23 @@ const ChatPartResponse = t.Union([
     toolName: t.String(),
     args: t.Optional(t.String()),
     result: t.Optional(t.String()),
+    isError: t.Optional(t.Boolean()),
+  }),
+]);
+
+export const ChatAttachmentResponse = t.Union([
+  t.Object({
+    kind: t.Literal('file'),
+    path: t.String({ description: 'Path relative to the vault.' }),
+    name: t.String(),
+    contentType: t.String(),
+    sizeBytes: t.Number(),
+  }),
+  t.Object({
+    kind: t.Literal('task'),
+    issueId: t.Number(),
+    identifier: t.String(),
+    title: t.String(),
   }),
 ]);
 
@@ -425,12 +473,22 @@ export const ChatMessagesResponse = t.Object({
       parts: t.Array(ChatPartResponse),
       createdAt: t.String(),
       stopped: t.Optional(t.Boolean()),
+      parentId: t.Optional(t.Nullable(t.String())),
+      siblingIds: t.Optional(t.Array(t.String())),
+      agentId: t.Optional(t.Number()),
+      attachments: t.Optional(t.Array(ChatAttachmentResponse)),
+      model: t.Optional(t.Nullable(t.String())),
+      inputTokens: t.Optional(t.Nullable(t.Number())),
+      outputTokens: t.Optional(t.Nullable(t.Number())),
+      durationMs: t.Optional(t.Nullable(t.Number())),
+      error: t.Optional(t.String()),
     }),
   ),
   nextPage: t.Nullable(t.Number()),
   activeAnswer: t.Optional(
     t.Object({
       messageId: t.Number(),
+      agentId: t.Optional(t.Number()),
       status: t.Union([t.Literal('pending'), t.Literal('streaming')]),
       createdAt: t.String(),
     }),
@@ -463,6 +521,10 @@ export const createAgentBody = t.Object({
 
 export const copyTemplateBody = t.Object({
   projectId: t.Integer({ description: 'The project of the team the copy works in.' }),
+});
+
+export const resetToTemplateBody = t.Object({
+  group: templateFieldGroup,
 });
 
 export const updateAgentBody = t.Object({

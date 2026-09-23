@@ -86,6 +86,13 @@
       "loading": "Einrichtungsstatus wird geladen…",
       "unavailable": "Der Einrichtungsstatus ist nicht verfügbar.",
       "retry": "Erneut versuchen"
+    },
+    "dangerZone": {
+      "title": "Gefahrenzone",
+      "description": "Unumkehrbare Aktionen für dieses Projekt.",
+      "deleteTitle": "Projekt löschen",
+      "deleteDescription": "Löscht das Projekt und alles darin endgültig: Aufgaben, Docs, Dateien, Aktivität. Das kann nicht rückgängig gemacht werden.",
+      "deleteAction": "Projekt löschen"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "Befehl kopiert. Ersetze owner/repo und führe ihn dann aus.",
     "nativeConnections": "Anbieterverbindungen",
     "nativeConnectionsRecommended": "Anbieterverbindungen · Empfohlen",
-    "nativeConnectionsHint": "Autorisiere einen Git-Anbieter, wähle Repositorys aus und lass Volition ihre Webhooks konfigurieren.",
+    "nativeConnectionsHint": "Autorisiere einen Git-Anbieter, wähle Repositorys aus und lass Helena ihre Webhooks konfigurieren.",
     "nativeConnectProvider": "{provider} verbinden",
     "nativeNoConnections": "Noch keine Anbieterkonten verbunden. Die manuelle Webhook-Einrichtung ist unten weiterhin verfügbar.",
     "nativeConnectTitle": "{provider} verbinden",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "Handlungsbedarf",
     "nativeDisconnectProvider": "Anbieter trennen",
     "nativeDisconnectRepository": "Repository trennen",
-    "nativeDisconnectConfirm": "{provider} trennen und alle von Volition verwalteten Webhooks entfernen?",
+    "nativeDisconnectConfirm": "{provider} trennen und alle von Helena verwalteten Webhooks entfernen?",
     "nativeDisconnected": "{provider} getrennt",
     "nativeRepositoryDisconnected": "Repository getrennt",
     "nativeDisconnectFailed": "Die Integration konnte nicht getrennt werden.",
@@ -548,6 +555,69 @@
     "onOpenNone": "Keine Aktion",
     "changeState": "Status ändern…",
     "noState": "Kein Status."
+  },
+  "network": {
+    "isolationNote": "Diese Einstellungen wirken, sobald die Agenten-Isolation auf dem Server aktiv ist.",
+    "accessTitle": "Zugriff",
+    "accessHint": "Ausgehende Verbindungen laufen nur über die Ports 80 und 443. Lokale Adressen und das Heimnetz sind in jedem Modus gesperrt. Eine Domain deckt auch ihre Subdomains ab.",
+    "mode": {
+      "open": {
+        "label": "Internet",
+        "description": "Jedes öffentliche Ziel außer denen auf der Sperrliste."
+      },
+      "allowlist": {
+        "label": "Nur Erlaubt-Liste",
+        "description": "Nur Ziele auf der Erlaubt-Liste. Die Sperrliste gilt trotzdem."
+      },
+      "blocked": {
+        "label": "Gesperrt",
+        "description": "Kein Internetzugriff. Erreichbar bleiben nur die Helena-API, das Browser-Gateway und das KI-Modell des Agenten."
+      }
+    },
+    "allowLabel": "Erlaubt-Liste",
+    "allowOnlyHint": "Wird nur im Modus „Nur Erlaubt-Liste“ verwendet.",
+    "denyLabel": "Sperrliste",
+    "domainsPerLine": "Eine Domain pro Zeile",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "Mail",
+    "mailPortsLabel": "Mail-Ports erlauben",
+    "mailPortsHint": "Öffnet zusätzlich 465, 587 und 993 für die Mail-Rolle.",
+    "perAgentTitle": "Pro Agent",
+    "perAgentHint": "Überschreibt den Projektmodus für einen einzelnen Agenten. Die Erlaubt- und Sperrliste des Projekts gelten dabei weiterhin — ein Agent im Modus „Nur Erlaubt-Liste“ nutzt die Erlaubt-Liste des Projekts.",
+    "followProject": "Wie Projekt ({mode})",
+    "noAgents": "Dieses Projekt hat noch keine Agenten.",
+    "saved": "Gespeichert",
+    "logTitle": "Protokoll",
+    "logHint": "Ziel, Entscheidung und Datenmenge der letzten Verbindungen — nie deren Inhalt.",
+    "filterAll": "Alle",
+    "filterBlocked": "Nur blockierte",
+    "columns": {
+      "time": "Zeit",
+      "agent": "Agent",
+      "target": "Ziel",
+      "decision": "Entscheidung",
+      "connections": "Verbindungen",
+      "data": "Daten"
+    },
+    "decisions": {
+      "allowed": "Erlaubt",
+      "blocked": "Blockiert"
+    },
+    "reasons": {
+      "blocked": "Netzzugang gesperrt",
+      "private-address": "Private Adresse",
+      "port": "Port nicht erlaubt",
+      "denylisted": "Auf der Sperrliste",
+      "not-allowlisted": "Nicht auf der Erlaubt-Liste",
+      "dns": "DNS-Fehler",
+      "connect-failed": "Verbindung fehlgeschlagen",
+      "bad-request": "Ungültige Anfrage"
+    },
+    "loadMore": "Mehr laden",
+    "endOfLog": "Ende des Protokolls",
+    "empty": "Noch keine Verbindungen",
+    "emptyHint": "Sobald Agenten dieses Projekts Verbindungen aufbauen, erscheinen sie hier.",
+    "loadError": "Protokoll konnte nicht geladen werden."
   },
   "issueTemplates": {
     "addTemplate": "Neue Vorlage",

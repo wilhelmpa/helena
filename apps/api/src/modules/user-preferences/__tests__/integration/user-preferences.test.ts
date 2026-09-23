@@ -21,6 +21,7 @@ describe('user preferences', () => {
       locale: 'en',
       theme: 'system',
       issueOpenMode: 'panel',
+      headerLayout: 'single',
       startPage: 'work-items',
       showChatByDefault: false,
       issueStatsOpen: true,
@@ -64,6 +65,7 @@ describe('user preferences', () => {
       locale: 'uk',
       theme: 'dark',
       issueOpenMode: 'page',
+      headerLayout: 'classic',
       startPage: 'inbox',
       showChatByDefault: true,
       issueStatsOpen: false,
@@ -80,6 +82,7 @@ describe('user preferences', () => {
       locale: 'uk',
       theme: 'dark',
       issueOpenMode: 'page',
+      headerLayout: 'classic',
       startPage: 'inbox',
       showChatByDefault: true,
       issueStatsOpen: false,
@@ -125,6 +128,16 @@ describe('user preferences', () => {
 
     const res = await authedApi(u.cookie).account.preferences.patch({
       locale: 'ja' as 'uk',
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a header layout outside the allowed set', async () => {
+    const u = await signUpTestUser();
+
+    const res = await authedApi(u.cookie).account.preferences.patch({
+      headerLayout: 'compact' as 'classic',
     });
 
     expect(res.status).toBe(400);

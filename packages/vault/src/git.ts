@@ -16,7 +16,7 @@ export interface GitAuthor {
 
 export const EXTERNAL_AUTHOR: GitAuthor = { name: 'extern', email: 'extern@volition.local' };
 
-export const PLAN_AUTHOR: GitAuthor = { name: 'Volition Plan', email: 'plan@volition.local' };
+export const PLAN_AUTHOR: GitAuthor = { name: 'Helena', email: 'helena@volition.local' };
 
 const LOCK_RETRIES = 50;
 const LOCK_RETRY_MS = 100;

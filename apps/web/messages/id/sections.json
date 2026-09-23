@@ -101,6 +101,10 @@
       "label": "Repositori",
       "description": "Tutup issue saat pull request digabungkan di GitHub, GitLab, Gitea, Forgejo, atau Bitbucket."
     },
+    "network": {
+      "label": "Jaringan agen",
+      "description": "Tujuan yang boleh diakses oleh agen terisolasi proyek ini di internet. Agen tidak pernah bisa mengubah ini sendiri."
+    },
     "ai-agents": {
       "label": "Agen AI",
       "description": "Agen AI yang bekerja dalam proyek ini."

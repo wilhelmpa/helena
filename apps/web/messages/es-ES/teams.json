@@ -387,6 +387,7 @@
     "usernamePlaceholder": "p. ej. bot-triaje",
     "usernameHint": "Letras, dígitos, puntos, guiones y barras bajas. Hasta 64 caracteres.",
     "template": "Plantilla",
+    "templateCopyCount": "{count, plural, =0 {sin copias} one {# copia} other {# copias}}",
     "templateHint": "Una plantilla no se ejecuta en ningún sitio ni trabaja en ningún proyecto. Los proyectos añaden copias de ella como sus propios especialistas. Al activarla, el agente sale de sus proyectos.",
     "templates": "Plantillas",
     "templatesHint": "Los proyectos añaden copias de estas plantillas como sus propios especialistas. El conocimiento que comparten las copias va en la biblioteca de habilidades; cada copia conserva su propia memoria.",
@@ -406,6 +407,37 @@
     "loadingModels": "Cargando modelos…",
     "noModels": "No se han encontrado modelos.",
     "noModel": "Sin modelo definido",
+    "runtimePolicy": {
+      "title": "Política de ejecución",
+      "hint": "Política neutral respecto al runtime, aplicada por el adaptador conectado",
+      "model": "Modelo",
+      "agentDefault": "Predeterminado del agente",
+      "unavailable": "{value} (no disponible)",
+      "modelsLoading": "Cargando el catálogo del runner conectado…",
+      "modelsError": "El catálogo del runner no está disponible temporalmente.",
+      "modelsEmpty": "El runner conectado aún no ha publicado ningún modelo.",
+      "modelsHint": "Modelos publicados por el proveedor del runner conectado.",
+      "reasoning": "Razonamiento",
+      "memory": "Memoria de conversación",
+      "memoryWindowLabel": "Ventana de mensajes en memoria",
+      "memoryWindowPlaceholder": "Ventana de mensajes recientes",
+      "toolAllow": "Herramientas permitidas",
+      "mcpGrants": "Concesiones MCP",
+      "keysPlaceholder": "Una clave por línea",
+      "managedFiles": "Archivos Markdown gestionados",
+      "managedFilesHint": "SOUL.md y los archivos bajo instructions/, combinados en el SOUL.md del perfil de Hermes del agente. Hermes gestiona su propia memoria.",
+      "addFile": "Añadir archivo",
+      "filePathPlaceholder": "SOUL.md o instructions/tema.md",
+      "filePathLabel": "Ruta del archivo gestionado {index}",
+      "fileContentLabel": "Contenido del archivo gestionado {index}",
+      "removeFile": "Quitar el archivo gestionado {index}"
+    },
+    "runtimeConflicts": {
+      "title": "Modificado fuera de Helena",
+      "description": "El runtime reemplazó estos archivos por la versión almacenada aquí y guardó la versión modificada junto a ellos.",
+      "takeOver": "Adoptar",
+      "editInLibrary": "Editar en la biblioteca de habilidades"
+    },
     "instructions": "Instrucciones",
     "instructionsPlaceholder": "Cómo se tiene que comportar el agente y las reglas que seguir",
     "expandInstructions": "Expandir el editor de instrucciones",
@@ -662,6 +694,24 @@
       "toolMemory": "Memoria",
       "toolSkill": "Habilidad",
       "tokens": "{count} tokens"
+    },
+    "templateSync": {
+      "copyOf": "Copia de {name}",
+      "copyOfUnknown": "Copia de una plantilla eliminada",
+      "overridden": "difiere",
+      "overriddenHint": "Se cambió aquí manualmente y ya no sigue la plantilla.",
+      "followsHint": "Sigue la plantilla.",
+      "resetToTemplate": "Restablecer a la plantilla",
+      "resetDone": "{group} restablecido a la plantilla",
+      "groups": {
+        "skills": "Habilidades",
+        "tools": "Herramientas",
+        "mcpServers": "Servidores MCP",
+        "approvals": "Reglas de aprobación",
+        "instructions": "Instrucciones",
+        "model": "Modelo/razonamiento",
+        "budgets": "Presupuestos"
+      }
     }
   },
   "members": {

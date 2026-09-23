@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useShell } from '@/context/shellContext';
+import { useShellHeaderExtra } from '@/hooks/useShellHeaderExtra';
 import { applyFilters } from '@/utils/filters';
 import { defaultsFromFilters } from '@/utils/project';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
@@ -19,7 +20,7 @@ const INITIATIVE_BOARD_STORE_KEY = 'planner_initiative_board_settings';
 // fed a project whose issues are just this initiative's, so drag/edit still hit the
 // real issues and the live board refresh keeps it current.
 export default function InitiativeIssuesBoard({ initiativeId }: { initiativeId: number }) {
-  const { project, customFields, onOpenIssue, onAddIssue } = useShell();
+  const { project, customFields, onOpenIssue, onAddIssue, headerLayout } = useShell();
   const board = useLocalBoardSettings(INITIATIVE_BOARD_STORE_KEY, initiativeId);
   const initiativeOptions = useInitiativeOptionsQuery(project?.project.key ?? null).data ?? [];
 
@@ -28,6 +29,27 @@ export default function InitiativeIssuesBoard({ initiativeId }: { initiativeId: 
     const issues = project.issues.filter((i) => i.initiative?.id === initiativeId);
     return { ...project, issues: applyFilters(issues, board.filters, project) };
   }, [project, initiativeId, board.filters]);
+
+  useShellHeaderExtra(
+    headerLayout === 'single' && project ? (
+      <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+        <FilterBar
+          filters={board.filters}
+          onChange={board.setFilters}
+          project={project}
+          customFields={customFields}
+        />
+        <DisplayPopover
+          view={board.view}
+          onViewChange={board.changeView}
+          settings={board.settings}
+          onSettingsChange={board.changeSettings}
+          customFields={customFields}
+          issueTypes={project.issueTypes}
+        />
+      </div>
+    ) : null,
+  );
 
   if (!project || !viewProject) return null;
 
@@ -54,22 +76,24 @@ export default function InitiativeIssuesBoard({ initiativeId }: { initiativeId: 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <FilterBar
-          filters={board.filters}
-          onChange={board.setFilters}
-          project={project}
-          customFields={customFields}
-        />
-        <DisplayPopover
-          view={board.view}
-          onViewChange={board.changeView}
-          settings={board.settings}
-          onSettingsChange={board.changeSettings}
-          customFields={customFields}
-          issueTypes={project.issueTypes}
-        />
-      </div>
+      {headerLayout !== 'single' && (
+        <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+          <FilterBar
+            filters={board.filters}
+            onChange={board.setFilters}
+            project={project}
+            customFields={customFields}
+          />
+          <DisplayPopover
+            view={board.view}
+            onViewChange={board.changeView}
+            settings={board.settings}
+            onSettingsChange={board.changeSettings}
+            customFields={customFields}
+            issueTypes={project.issueTypes}
+          />
+        </div>
+      )}
       <div className="relative flex-1 overflow-hidden">
         <BoardLayout
           {...viewProps}

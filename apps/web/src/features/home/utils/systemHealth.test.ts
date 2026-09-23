@@ -6,7 +6,9 @@ const quiet = {
   waiting: 0,
   oldestWaitingSince: null,
   overdue: 0,
+  resuming: 0,
   failedLastDay: 0,
+  needsResumeReview: 0,
   agentTeamStartsWaiting: 0,
   provisioningFailed: 0,
   stalledWorkflowRuns: 0,
@@ -33,6 +35,13 @@ describe('health problems', () => {
         { key: 'failedLastDay', count: 2 },
       ],
     );
+  });
+
+  test('lists resuming runs as informational, and a run past the resume limit as a problem', () => {
+    assert.deepEqual(healthProblems({ ...quiet, resuming: 2, needsResumeReview: 1 }), [
+      { key: 'resuming', count: 2 },
+      { key: 'needsResumeReview', count: 1 },
+    ]);
   });
 });
 

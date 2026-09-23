@@ -27,6 +27,7 @@
     "@mastra/memory": "^1.26.1",
     "@mastra/pg": "^1.20.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@repo/agent-naming": "workspace:*",
     "@repo/agent-tools": "workspace:*",
     "@repo/auth": "workspace:*",
     "@repo/crypto": "workspace:*",

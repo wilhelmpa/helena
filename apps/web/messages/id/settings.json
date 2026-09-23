@@ -86,6 +86,13 @@
       "loading": "Memuat status penyiapan…",
       "unavailable": "Status penyiapan tidak tersedia.",
       "retry": "Coba lagi"
+    },
+    "dangerZone": {
+      "title": "Zona berbahaya",
+      "description": "Tindakan yang tidak dapat dibatalkan pada proyek ini.",
+      "deleteTitle": "Hapus proyek ini",
+      "deleteDescription": "Menghapus proyek dan semua isinya secara permanen: issue, dokumen, file, aktivitas. Tindakan ini tidak dapat dibatalkan.",
+      "deleteAction": "Hapus proyek"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "Perintah disalin. Ganti owner/repo, lalu jalankan.",
     "nativeConnections": "Koneksi penyedia",
     "nativeConnectionsRecommended": "Koneksi penyedia · Disarankan",
-    "nativeConnectionsHint": "Otorisasi penyedia Git, pilih repositori, dan biarkan Volition mengonfigurasi webhook-nya.",
+    "nativeConnectionsHint": "Otorisasi penyedia Git, pilih repositori, dan biarkan Helena mengonfigurasi webhook-nya.",
     "nativeConnectProvider": "Hubungkan {provider}",
     "nativeNoConnections": "Belum ada akun penyedia yang terhubung. Pengaturan webhook manual tetap tersedia di bawah.",
     "nativeConnectTitle": "Hubungkan {provider}",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "Perlu perhatian",
     "nativeDisconnectProvider": "Putuskan sambungan penyedia",
     "nativeDisconnectRepository": "Putuskan sambungan repositori",
-    "nativeDisconnectConfirm": "Putuskan sambungan {provider} dan hapus setiap webhook yang dikelola oleh Volition?",
+    "nativeDisconnectConfirm": "Putuskan sambungan {provider} dan hapus setiap webhook yang dikelola oleh Helena?",
     "nativeDisconnected": "{provider} terputus",
     "nativeRepositoryDisconnected": "Repositori terputus",
     "nativeDisconnectFailed": "Gagal memutuskan integrasi.",
@@ -548,6 +555,69 @@
     "onOpenNone": "Tidak ada tindakan",
     "changeState": "Ubah status…",
     "noState": "Tidak ada status."
+  },
+  "network": {
+    "isolationNote": "Pengaturan ini berlaku setelah isolasi agen aktif di server.",
+    "accessTitle": "Akses",
+    "accessHint": "Lalu lintas keluar hanya melalui port 80 dan 443. Alamat lokal dan jaringan rumah selalu diblokir, di semua mode. Satu domain juga mencakup subdomainnya.",
+    "mode": {
+      "open": {
+        "label": "Internet",
+        "description": "Semua tujuan publik kecuali yang ada di daftar tolak."
+      },
+      "allowlist": {
+        "label": "Hanya daftar izin",
+        "description": "Hanya tujuan di daftar izin. Daftar tolak tetap berlaku."
+      },
+      "blocked": {
+        "label": "Diblokir",
+        "description": "Tanpa akses internet. Hanya API Helena, gateway browser, dan model AI agen yang tetap dapat dijangkau."
+      }
+    },
+    "allowLabel": "Daftar izin",
+    "allowOnlyHint": "Hanya dipakai pada mode \"Hanya daftar izin\".",
+    "denyLabel": "Daftar tolak",
+    "domainsPerLine": "Satu domain per baris",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "Surel",
+    "mailPortsLabel": "Izinkan port surel",
+    "mailPortsHint": "Juga membuka port 465, 587, dan 993 untuk peran surel.",
+    "perAgentTitle": "Per agen",
+    "perAgentHint": "Menimpa mode proyek untuk satu agen. Daftar izin dan daftar tolak proyek tetap berlaku — agen dengan mode \"Hanya daftar izin\" memakai daftar izin proyek.",
+    "followProject": "Ikuti proyek ({mode})",
+    "noAgents": "Proyek ini belum memiliki agen.",
+    "saved": "Tersimpan",
+    "logTitle": "Log",
+    "logHint": "Tujuan, keputusan, dan volume data dari koneksi terbaru — tidak pernah isinya.",
+    "filterAll": "Semua",
+    "filterBlocked": "Hanya yang diblokir",
+    "columns": {
+      "time": "Waktu",
+      "agent": "Agen",
+      "target": "Tujuan",
+      "decision": "Keputusan",
+      "connections": "Koneksi",
+      "data": "Data"
+    },
+    "decisions": {
+      "allowed": "Diizinkan",
+      "blocked": "Diblokir"
+    },
+    "reasons": {
+      "blocked": "Akses jaringan diblokir",
+      "private-address": "Alamat privat",
+      "port": "Port tidak diizinkan",
+      "denylisted": "Ada di daftar tolak",
+      "not-allowlisted": "Tidak ada di daftar izin",
+      "dns": "Kegagalan DNS",
+      "connect-failed": "Koneksi gagal",
+      "bad-request": "Permintaan tidak valid"
+    },
+    "loadMore": "Muat lagi",
+    "endOfLog": "Akhir log",
+    "empty": "Belum ada koneksi",
+    "emptyHint": "Begitu agen proyek ini membuat koneksi, koneksi tersebut akan muncul di sini.",
+    "loadError": "Log tidak dapat dimuat."
   },
   "issueTemplates": {
     "addTemplate": "Templat baru",

@@ -16,10 +16,10 @@ function runState(status: string): RunState {
 }
 
 const DOT: Record<RunState, string> = {
-  success: 'bg-emerald-500',
-  failed: 'bg-red-500',
+  success: 'bg-status-success',
+  failed: 'bg-status-danger',
   canceled: 'bg-muted-foreground/40',
-  running: 'bg-amber-500',
+  running: 'bg-status-running',
 };
 
 // The newest run of a routine: how it went, what it did and the task it worked on.

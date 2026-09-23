@@ -39,6 +39,62 @@ export default [
       ],
     },
   },
+  // The sidebar is the reference for every surface in the app
+  // (docs/volition-design-helena-ui.md): a page never invents its own color or size.
+  // `src/components/ui` and `src/components/common` are the building blocks that
+  // *define* the tokens and the handful of deliberate pixel values the design calls
+  // for (PageBody's 720/1080 content widths, for example); everything built out of
+  // them — every feature and every route — uses only the tokens.
+  {
+    files: ['src/features/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}'],
+    ignores: [
+      'src/**/*.test.{ts,tsx}',
+      // Content color, not chrome: these hexes are a palette the *user* picks from
+      // (a label/field color, a sticky note, an annotation stroke) or a fallback for
+      // one (a deleted column's color), not a developer's ad hoc UI choice. A sticky
+      // note also keeps fixed dark text on its own fixed pastel background by design
+      // ("Miro-style"), independent of the app's light/dark theme.
+      'src/features/settings/components/crud/SettingsColorField.tsx',
+      'src/features/notes/utils/stickerColors.ts',
+      'src/features/notes/components/StickerNode.tsx',
+      'src/features/issue/utils/annotations.ts',
+      'src/features/issue/utils/timeline.ts',
+    ],
+    rules: {
+      // 'warn', not 'error': today's known count (203) is enforced as a ceiling by
+      // src/design/lintRatchet.test.ts instead, so `bun run lint` (a hard CI gate)
+      // stays green while the color/size migration continues file by file — a
+      // failing `eslint .` here would block every other branch's merge on a
+      // pre-existing backlog these rules did not create. Drop the count in that
+      // test's BASELINE as files are migrated; raising it needs a reason in the
+      // commit, the same as lowering a real budget.
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector:
+            'Literal[value=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/], TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/]',
+          message:
+            'No raw hex/rgb() colors here — use a token (bg-accent, text-muted-foreground, --status-*, --brand, …). See docs/volition-design-helena-ui.md.',
+        },
+        {
+          selector:
+            'Literal[value=/\\b(?:bg|text|border|ring|fill|stroke|from|via|to|divide|outline|accent|caret|decoration|shadow|placeholder)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-[0-9]{2,3}\\b/], TemplateElement[value.raw=/\\b(?:bg|text|border|ring|fill|stroke|from|via|to|divide|outline|accent|caret|decoration|shadow|placeholder)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-[0-9]{2,3}\\b/]',
+          message:
+            'No raw Tailwind palette classes here (bg-blue-500, text-gray-400, …) — use a token instead. See docs/volition-design-helena-ui.md.',
+        },
+        {
+          // Scoped to the type scale and the row/control height it drives (the two
+          // cases the design doc gives, `text-[13px]` and `h-[37px]`) — not every
+          // arbitrary bracket value. A truncation width like `max-w-[220px]` is
+          // content-specific, not part of a scale, and is not what this rule is for.
+          selector:
+            'Literal[value=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/], TemplateElement[value.raw=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/]',
+          message:
+            'No arbitrary text size or row/control height here (text-[13px], h-[37px], …) — that scale lives in components/ui and components/common only. See docs/volition-design-helena-ui.md.',
+        },
+      ],
+    },
+  },
   ...namespaces.map((namespace) => ({
     files: [`messages/*/${namespace}`],
     plugins: { 'i18n-json': i18nJson },

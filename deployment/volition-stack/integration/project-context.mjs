@@ -37,8 +37,10 @@ export async function writeProjectContext(config, envelope, coordinator, workspa
     links: {plan: projectUrl, documents: projectUrl ? `${projectUrl}/docs` : null, files: projectUrl ? `${projectUrl}/files` : null, code: code?.toString() ?? null},
     ticketLinkRule: 'Use the project key and ticket sequenceNumber, never the database issue id.',
     documentLinkRule: 'Use the API-returned document id and Markdown file path. Verify both links before marking work complete.',
-  });
-  const handle = await fs.open(path.join(root, 'AGENTS.md'), constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
+  }, { mode: 0o640 });
+  // Readable by the project's agents: with agent isolation they are another user, reached
+  // through the workspace's ACL, which a mode without group bits would mask out.
+  const handle = await fs.open(path.join(root, 'AGENTS.md'), constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW, 0o640);
   try {
     const currentStat = await handle.stat();
     if (!currentStat.isFile() || currentStat.size > 128 * 1024) throw new Error('Coordinator instructions must be a bounded regular file');

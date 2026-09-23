@@ -387,6 +387,7 @@
     "usernamePlaceholder": "e.g. triage-bot",
     "usernameHint": "Letters, digits, dots, dashes, and underscores. Up to 64 characters.",
     "template": "Template",
+    "templateCopyCount": "{count, plural, =0 {no copies} one {# copy} other {# copies}}",
     "templateHint": "A template runs nowhere and works in no project. Projects add copies of it as their own specialists. Turning it on takes the agent out of its projects.",
     "templates": "Templates",
     "templatesHint": "Projects add copies of these as their own specialists. Knowledge the copies share belongs in the skills library; each copy keeps its own memory.",
@@ -406,6 +407,37 @@
     "loadingModels": "Loading models…",
     "noModels": "No models found.",
     "noModel": "No model set",
+    "runtimePolicy": {
+      "title": "Runtime policy",
+      "hint": "Runtime-neutral policy applied by the connected adapter",
+      "model": "Model",
+      "agentDefault": "Agent default",
+      "unavailable": "{value} (unavailable)",
+      "modelsLoading": "Loading the connected runner catalog…",
+      "modelsError": "The runner catalog is temporarily unavailable.",
+      "modelsEmpty": "The connected runner has not published any models yet.",
+      "modelsHint": "Models published by the connected runner provider.",
+      "reasoning": "Reasoning",
+      "memory": "Conversation memory",
+      "memoryWindowLabel": "Memory message window",
+      "memoryWindowPlaceholder": "Recent message window",
+      "toolAllow": "Allowed tools",
+      "mcpGrants": "MCP grants",
+      "keysPlaceholder": "One key per line",
+      "managedFiles": "Managed Markdown files",
+      "managedFilesHint": "SOUL.md and files below instructions/, combined into the SOUL.md of the agent's Hermes profile. Hermes keeps its memory itself.",
+      "addFile": "Add file",
+      "filePathPlaceholder": "SOUL.md or instructions/topic.md",
+      "filePathLabel": "Managed file {index} path",
+      "fileContentLabel": "Managed file {index} content",
+      "removeFile": "Remove managed file {index}"
+    },
+    "runtimeConflicts": {
+      "title": "Changed outside Helena",
+      "description": "The runtime replaced these files with the version stored here and kept the changed version next to them.",
+      "takeOver": "Take over",
+      "editInLibrary": "Edit it in the skill library"
+    },
     "instructions": "Instructions",
     "instructionsPlaceholder": "How the agent should behave and any rules to follow",
     "expandInstructions": "Expand instructions editor",
@@ -662,6 +694,24 @@
       "toolMemory": "Memory",
       "toolSkill": "Skill",
       "tokens": "{count} tokens"
+    },
+    "templateSync": {
+      "copyOf": "Copy of {name}",
+      "copyOfUnknown": "Copy of a deleted template",
+      "overridden": "differs",
+      "overriddenHint": "Changed by hand here and no longer follows the template.",
+      "followsHint": "Follows the template.",
+      "resetToTemplate": "Reset to template",
+      "resetDone": "{group} reset to the template",
+      "groups": {
+        "skills": "Skills",
+        "tools": "Tools",
+        "mcpServers": "MCP servers",
+        "approvals": "Approval rules",
+        "instructions": "Instructions",
+        "model": "Model/reasoning",
+        "budgets": "Budgets"
+      }
     }
   },
   "members": {

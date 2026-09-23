@@ -46,6 +46,7 @@ import { settingsRoutes } from './modules/settings';
 import { godRoutes } from './modules/god';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
+import { chatPromptRoutes } from './modules/chat-prompts';
 import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
 import { agentRuntimeFileRoutes } from './modules/agents/runtime-files';
 import { notificationRoutes } from './modules/notifications';
@@ -57,6 +58,7 @@ import { syncRoutes } from './modules/sync';
 import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
+import { agentNetworkRoutes } from './modules/agent-egress';
 import { approvalRoutes } from './modules/approvals';
 import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
@@ -136,6 +138,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(routineRoutes)
   .use(agentRunnerRoutes)
   .use(agentChatRoutes)
+  .use(chatPromptRoutes)
   .use(agentRuntimePolicyRoutes)
   .use(agentRuntimeFileRoutes)
   .use(dashboardRoutes)
@@ -153,6 +156,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(linkPreviewRoutes)
   .use(hubInboxRoutes)
   .use(agentActivityRoutes)
+  .use(agentNetworkRoutes)
   .use(approvalRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)

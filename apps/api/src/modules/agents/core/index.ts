@@ -23,6 +23,7 @@ import {
   copyTemplateIntoProject,
   type AgentKind,
 } from './service';
+import { resetCopyToTemplate } from './template-sync';
 import {
   AgentRunPageResponse,
   AiAgentListResponse,
@@ -38,6 +39,7 @@ import {
   copyTemplateBody,
   createAgentBody,
   projectAgentParams,
+  resetToTemplateBody,
   runBody,
   runsQuery,
   setAgentProjectsBody,
@@ -258,6 +260,32 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
           'instructions, model, runtime policy, skills and capabilities, and its name and ' +
           "handle suffixed with the project key. An external copy's API key is returned once.",
         ...mcpTool('copy_ai_agent_template'),
+      },
+    },
+  )
+
+  // "Auf Vorlage zurücksetzen": drops the copy's own edit to one field group and
+  // immediately pulls the template's current value for it. A group the agent has not
+  // overridden, or an agent that is not a copy, is a no-op (204, nothing to reset).
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/reset-to-template',
+    async ({ params, membership, body }) => {
+      await requireVisibleAgent(params.agentId, membership);
+      await resetCopyToTemplate(params.agentId, membership.teamId, body.group);
+      return getAgentById(params.agentId, membership.teamId);
+    },
+    {
+      params: agentParams,
+      body: resetToTemplateBody,
+      teamPermission: ['ai_agents', 'edit'],
+      response: { 200: t.Nullable(AiAgentResponse), ...commonErrors },
+      detail: {
+        summary: "Reset a template copy's field group to its template",
+        description:
+          "Drop a copy's own override of one field group (skills, tools, mcpServers, " +
+          "approvals, instructions, model, or budgets) and re-apply the template's " +
+          'current value for it right away.',
+        ...mcpTool('reset_ai_agent_to_template'),
       },
     },
   )

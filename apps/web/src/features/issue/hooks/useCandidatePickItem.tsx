@@ -39,7 +39,7 @@ export function useCandidatePickItem(
           className="size-4 text-[8px]"
         />
       ) : a.paused ? (
-        <span className="text-[10px] text-amber-700 dark:text-amber-400">{t('agentPaused')}</span>
+        <span className="text-[10px] text-status-waiting">{t('agentPaused')}</span>
       ) : undefined,
       tooltip: foreign ? ownerLabel : undefined,
       disabled: foreign,

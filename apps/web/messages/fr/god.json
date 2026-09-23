@@ -156,10 +156,15 @@
     "joined": "a rejoint le {date}"
   },
   "general": {
+    "about": "À propos",
     "saved": "Valeurs par défaut des projets enregistrées",
     "projectDefaults": "Valeurs par défaut des projets",
     "mcpEnabled": "Activer MCP sur les nouveaux projets",
-    "mcpEnabledHint": "Un nouveau projet est accessible via MCP dès sa création."
+    "mcpEnabledHint": "Un nouveau projet est accessible via MCP dès sa création.",
+    "runResume": "Reprise des exécutions",
+    "maxResumes": "Limite de reprises",
+    "maxResumesHint": "Combien de fois une exécution peut reprendre sa session d'agent de code après que le runner qui la tenait soit mort en cours de route, avant qu'elle ne s'arrête d'elle-même et vous demande de la regarder. 0 désactive la reprise : une exécution interrompue est réessayée à neuf à la place.",
+    "savedRunResume": "Limite de reprises enregistrée"
   },
   "authentication": {
     "saved": "Paramètres d'authentification enregistrés",
@@ -336,10 +341,13 @@
     "janitor": {
       "run-janitor": "Nettoyage des exécutions",
       "stage-janitor": "Nettoyage des étapes",
-      "workflow-schedules": "Synchronisation des plannings"
+      "workflow-schedules": "Synchronisation des plannings",
+      "resume-janitor": "Nettoyage des reprises"
     },
     "janitorRan": "exécuté il y a {time}",
     "janitorCleaned": "{count, plural, one {a nettoyé # élément} other {a nettoyé # éléments}}",
-    "janitorNeverRan": "n'a pas encore tourné"
+    "janitorNeverRan": "n'a pas encore tourné",
+    "resuming": "{count, plural, one {# exécution reprend} other {# exécutions reprennent}} après un crash",
+    "needsResumeReview": "{count, plural, one {# exécution a atteint} other {# exécutions ont atteint}} la limite de reprises et nécessitent un examen"
   }
 }

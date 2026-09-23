@@ -156,10 +156,15 @@
     "joined": "entrou em {date}"
   },
   "general": {
+    "about": "Sobre",
     "saved": "Padrões de projeto salvos",
     "projectDefaults": "Padrões de projeto",
     "mcpEnabled": "Ativar MCP em novos projetos",
-    "mcpEnabledHint": "Um novo projeto está no alcance de MCP do seu time desde o momento em que é criado."
+    "mcpEnabledHint": "Um novo projeto está no alcance de MCP do seu time desde o momento em que é criado.",
+    "runResume": "Retomada de execuções",
+    "maxResumes": "Limite de retomadas",
+    "maxResumesHint": "Quantas vezes uma execução pode retomar sua sessão do agente de código depois que o runner que a mantinha morreu no meio da execução, antes de parar sozinha e pedir para você olhar. 0 desliga a retomada: uma execução interrompida é tentada novamente do zero.",
+    "savedRunResume": "Limite de retomadas salvo"
   },
   "authentication": {
     "saved": "Configurações de autenticação salvas",
@@ -336,10 +341,13 @@
     "janitor": {
       "run-janitor": "Limpeza de execuções",
       "stage-janitor": "Limpeza de estágios",
-      "workflow-schedules": "Sincronização de agendas"
+      "workflow-schedules": "Sincronização de agendas",
+      "resume-janitor": "Limpeza de retomadas"
     },
     "janitorRan": "executado há {time}",
     "janitorCleaned": "{count, plural, one {limpou # item} other {limpou # itens}}",
-    "janitorNeverRan": "ainda não foi executado"
+    "janitorNeverRan": "ainda não foi executado",
+    "resuming": "{count, plural, one {# execução está sendo retomada} other {# execuções estão sendo retomadas}} após uma queda",
+    "needsResumeReview": "{count, plural, one {# execução atingiu} other {# execuções atingiram}} o limite de retomadas e precisam de atenção"
   }
 }
