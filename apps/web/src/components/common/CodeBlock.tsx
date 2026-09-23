@@ -5,8 +5,8 @@ import { Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
-// A copyable command or snippet. Shared: the MCP connection guide and the
-// post-upgrade screen both show one.
+// A copyable command or snippet. Shared: the MCP connection guide, the post-upgrade
+// screen and the approval requests show one.
 export default function CodeBlock({ code }: { code: string }) {
   const t = useTranslations('common');
   const [copied, setCopied] = useState(false);
