@@ -35,38 +35,32 @@ export default function HomeNeedsYou() {
     .slice(0, LIMIT);
 
   const entries: NeedsYouEntry[] = [
-    ...(approvals.data?.items ?? []).map(
-      (a): NeedsYouEntry => ({
-        key: `approval:${a.id}`,
-        href: approvalsPath(),
-        icon: CircleCheck,
-        title: `${a.agentName} · ${a.action}`,
-        detail: a.issueIdentifier ? `${a.issueIdentifier} · ${a.projectName}` : a.projectName,
-      }),
-    ),
-    ...(gates.data?.items ?? []).map(
-      (g): NeedsYouEntry => ({
-        key: `gate:${g.projectKey}:${g.workflowId}:${g.runId}`,
-        href: projectPath(g.projectKey),
-        icon: Workflow,
-        title: g.workflowName,
-        detail: g.summary ?? g.reason ?? g.projectName,
-      }),
-    ),
-    ...failed.map(
-      (entry): NeedsYouEntry => ({
-        key: `run:${entry.id}`,
-        href:
-          entry.issue && entry.project
-            ? issuePath(entry.project.key, entry.issue.sequenceNumber)
-            : entry.project
-              ? projectPath(entry.project.key)
-              : approvalsPath(),
-        icon: AlertTriangle,
-        title: entry.agent?.name ?? tActivity(`kinds.${entry.kind}`),
-        detail: entry.issue?.title ?? entry.project?.name ?? tActivity('status.failed'),
-      }),
-    ),
+    ...(approvals.data?.items ?? []).map((a): NeedsYouEntry => ({
+      key: `approval:${a.id}`,
+      href: approvalsPath(),
+      icon: CircleCheck,
+      title: `${a.agentName} · ${a.action}`,
+      detail: a.issueIdentifier ? `${a.issueIdentifier} · ${a.projectName}` : a.projectName,
+    })),
+    ...(gates.data?.items ?? []).map((g): NeedsYouEntry => ({
+      key: `gate:${g.projectKey}:${g.workflowId}:${g.runId}`,
+      href: projectPath(g.projectKey),
+      icon: Workflow,
+      title: g.workflowName,
+      detail: g.summary ?? g.reason ?? g.projectName,
+    })),
+    ...failed.map((entry): NeedsYouEntry => ({
+      key: `run:${entry.id}`,
+      href:
+        entry.issue && entry.project
+          ? issuePath(entry.project.key, entry.issue.sequenceNumber)
+          : entry.project
+            ? projectPath(entry.project.key)
+            : approvalsPath(),
+      icon: AlertTriangle,
+      title: entry.agent?.name ?? tActivity(`kinds.${entry.kind}`),
+      detail: entry.issue?.title ?? entry.project?.name ?? tActivity('status.failed'),
+    })),
   ].slice(0, LIMIT);
 
   return (
