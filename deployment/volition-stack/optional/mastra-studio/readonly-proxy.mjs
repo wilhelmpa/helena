@@ -61,7 +61,7 @@ function apiWriteAllowed(method, path) {
   if (/^\/schedules\/[A-Za-z0-9_-]+(?:\/(?:pause|resume|run))?$/.test(path)) return true;
   const cancel = path.match(/^\/workflows\/([a-z0-9-]+)\/runs\/([a-zA-Z0-9_-]+)\/cancel$/);
   if (cancel) return workflowIds.has(cancel[1]);
-  const match = path.match(/^\/workflows\/([a-z0-9-]+)\/(create-run|start|start-async|stream|resume|resume-async|resume-no-wait|resume-stream|restart-async)$/);
+  const match = path.match(/^\/workflows\/([a-z0-9-]+)\/(create-run|start|start-async|stream|resume|resume-async|resume-no-wait|resume-stream|restart-async|time-travel)$/);
   return Boolean(match && workflowIds.has(match[1]));
 }
 async function readBody(req, limit = 128 * 1024) {
