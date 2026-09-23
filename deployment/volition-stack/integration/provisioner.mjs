@@ -16,6 +16,7 @@ import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
 
 const execFileAsync = promisify(execFile);
 const PROVISIONER_REVISION = 17;
+const LEDGER_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const VAULT_PROJECT_FOLDERS = ["Docs", "Files", "Assets", "Inbox"];
 
 export class ProvisioningConflictError extends Error {}
@@ -518,6 +519,12 @@ export function createProvisioner(config, options = {}) {
       typeof ledger.entries !== "object"
     ) {
       throw new Error("The provisioning ledger has an unsupported format");
+    }
+    // The worker sends a new event id for every new run, so an old entry is never
+    // needed again. Without an entry an event is simply run again.
+    const cutoff = Date.now() - LEDGER_RETENTION_MS;
+    for (const [eventId, entry] of Object.entries(ledger.entries)) {
+      if (!(Date.parse(entry?.updatedAt) >= cutoff)) delete ledger.entries[eventId];
     }
     const existing = ledger.entries[envelope.eventId];
     if (existing?.requestHash !== undefined && existing.requestHash !== hash) {

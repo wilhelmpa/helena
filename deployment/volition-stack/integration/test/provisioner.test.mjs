@@ -326,6 +326,28 @@ describe("createProvisioner", () => {
     assert.deepEqual(checked, ["demo"]);
   });
 
+  it("drops ledger entries older than 30 days", async () => {
+    const provisioner = createProvisioner(config(), { execute: async () => ({ stdout: "", stderr: "" }) });
+    const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+    await fs.mkdir(path.join(root, "state"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "state/ledger.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        entries: {
+          "823e4567-e89b-42d3-a456-426614174007": { status: "succeeded", updatedAt: old },
+          "923e4567-e89b-42d3-a456-426614174008": { status: "failed", updatedAt: new Date().toISOString() },
+        },
+      }),
+    );
+    const request = envelope();
+    request.requestedResources = ["workspace"];
+    await provisioner.provision(request);
+
+    const ledger = JSON.parse(await fs.readFile(path.join(root, "state/ledger.json"), "utf8"));
+    assert.deepEqual(Object.keys(ledger.entries).sort(), [eventId, "923e4567-e89b-42d3-a456-426614174008"]);
+  });
+
   it("rejects reuse of an event id with another request", async () => {
     const provisioner = createProvisioner(config(), {
       ensurePlanCoordinator: fakeCoordinator([]),

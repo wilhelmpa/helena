@@ -71,6 +71,18 @@ workspace, vault folder, Hermes profile, browser state, and registry entry to
 `/srv/volition/trash/projects/<event-id>/` with a `receipt.json`. The terminal router stops
 the project's Wetty process and tmux session once its workspace directory is gone. A
 failed job is retried with `POST /teams/:teamId/project-deprovisioning/:jobId/retry`.
+A deleted board's workspace and vault folders move to the trash the same way on the next
+provisioning run.
+
+`volition-trash-purge.timer` runs `integration/purge-trash.mjs` daily. It deletes each
+trash entry whose receipt `purgeAfter` (30 days after the move) has passed. The
+provisioning ledger drops entries older than 30 days, and the worker removes finished
+deprovisioning jobs after 30 days.
+
+Every ten minutes the worker reads `GET /api/provision/state` and compares it with the
+database. A provisioned project whose registry entry is missing, whose browser units are
+not active, or whose boards differ is provisioned again; a registry entry without a
+project is deprovisioned.
 
 Mastra coordinates `agent-team` through `/run/volition-ipc/hermes-team.sock`. The bridge
 submits project-bound work to Plan's external-agent queue. The Hermes runner claims that
