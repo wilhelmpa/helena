@@ -134,6 +134,10 @@ export const app = new Elysia()
           { name: 'Share', description: 'Public read-only sharing of issues and views' },
           { name: 'Actions', description: 'Project automation actions' },
           { name: 'Workflows', description: 'Project-bound Mastra workflows and runs' },
+          {
+            name: 'Workflow builder',
+            description: 'Workflows members put together in Plan, which Mastra runs',
+          },
           { name: 'Webhooks', description: 'Outgoing webhook subscriptions' },
           {
             name: 'Git',

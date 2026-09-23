@@ -55,6 +55,7 @@ import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { approvalRoutes } from './modules/approvals';
+import { pipelineRoutes } from './modules/pipelines';
 import { projectMailAccountRoutes } from './modules/project-mail-accounts';
 
 // The planner API: projects and their columns, issue types, labels, AI agents,
@@ -146,6 +147,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(hubInboxRoutes)
   .use(agentActivityRoutes)
   .use(approvalRoutes)
+  .use(pipelineRoutes)
   .use(projectMailAccountRoutes)
   .use(organizationRoutes)
   .use(connectionsRoutes)

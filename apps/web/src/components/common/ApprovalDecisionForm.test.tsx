@@ -4,7 +4,7 @@ import { act } from 'react';
 import type { Root } from 'react-dom/client';
 import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
-import approvals from '../../../../messages/en/approvals.json';
+import approvals from '../../../messages/en/approvals.json';
 import type { ApprovalDecision } from '@/lib/api/endpoints/approvals';
 import ApprovalDecisionForm from './ApprovalDecisionForm';
 

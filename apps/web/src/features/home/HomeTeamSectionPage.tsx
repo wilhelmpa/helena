@@ -10,7 +10,7 @@ import TeamAgentToolsSection from '@/features/teams/components/agent-tools/TeamA
 import TeamMcpSection from '@/features/teams/components/mcp/TeamMcpSection';
 import { useTeamsQuery } from '@/services/teams.service';
 import { manageTeamsPath } from '@/utils/paths';
-import { soleTeamId } from './homeTeamScope';
+import { soleTeamId } from '@/utils/homeTeamScope';
 
 export type HomeTeamSection = 'agents' | 'mcps' | 'tools' | 'skills';
 

@@ -186,6 +186,26 @@ carries `teamMcpEnabled` from the join it already makes. The team guards check t
 switch through `assertTeamMcpAllowed`, which is what covers the resources no project
 flag reaches: the agents, the skills, the tools, the roles and the credentials.
 
+## Workflow builder
+
+`modules/pipelines/` stores the workflows members put together (`pipeline`, versions in
+`pipeline_version`, a project's use in `project_pipeline`) and their runs
+(`pipeline_run`, `pipeline_run_step`). Mastra's `plan-pipeline` runs them. Three things a
+reader would otherwise get wrong:
+
+- **The definition body is `t.Any()`.** `definition.ts` reads and checks it and names every
+  problem with its step and field, which the editor shows inline; a `t` schema would answer
+  a draft with one generic 400. A save refuses any problem; the problems of a project
+  (`project-context.ts`: roles no agent fills, unknown status names) refuse enabling.
+- **Plan writes a run before Mastra starts it.** A task event plans a `pending` run and
+  `drainPendingStarts` in `background.ts` starts it, so the write that fired the event never
+  waits for Mastra. A task change made by a workflow (the system actor `Workflow`) starts no
+  workflow.
+- **Mastra decides the next step, Plan does the step.** `control.ts` holds the operations
+  Mastra calls through the bridge (`/internal/orchestration/pipeline`); each answers a
+  repeated call for the same step execution with what the first one did. The contract is
+  in `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
+
 ## SCIM
 
 `modules/scim/` serves SCIM 2.0 (RFC 7643 / 7644) at `/scim/v2` for an identity provider

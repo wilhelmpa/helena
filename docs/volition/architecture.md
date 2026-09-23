@@ -9,7 +9,7 @@ feature belongs; a change that gives a second component the same responsibility 
 | | Hermes | Mastra | Plan |
 |---|---|---|---|
 | Role | Executes agent work | Decides what runs, when, by whom and in which order | Stores all configuration and results; the only user interface |
-| Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Workflows, event ingress, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, run history. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, secrets, connections, mail accounts, browser logins, approvals, activity. |
+| Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Workflows, event ingress, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, run history. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, the definitions and run history of builder workflows, secrets, connections, mail accounts, browser logins, approvals, activity. |
 | Does not | Schedule business work (Hermes cron is limited to Hermes maintenance). Delegate inside automated runs, apart from a coordinator's sub-agents (see Agent structure). Hold its own configuration: profiles are generated from Plan. | Call an LLM provider directly. Serve a user interface (Studio is a debugging tool). Store project or agent data of its own. | Run agents itself. Schedule work. Contain workflow logic beyond simple issue rules. |
 | Stores | Sessions, memory, learned skills | Run state: runs and checkpoints for 90 days, schedules | Configuration and results |
 
@@ -28,14 +28,18 @@ and makes no decisions.
   Mastra; a Mastra workflow queues Hermes stages in Plan; results are written back to Plan.
   A schedule is a routine: a Mastra schedule of the `agent-routine` workflow, which has
   Plan create or reopen a task and delegate it to an agent. The delegation queues the
-  Hermes run, or starts `agent-team` for a coordinator.
+  Hermes run, or starts `agent-team` for a coordinator. A workflow a member put
+  together in Plan's workflow builder runs as `plan-pipeline`, started by hand, by a
+  task event of its project or by its schedule.
 
 ## Interfaces
 
 1. **Plan → Mastra**: events (`event-ingress`) and the control API (start, cancel, retry,
    schedules, runs).
 2. **Mastra → Plan**: Mastra queues Hermes stages in Plan's run queue, synchronizes results
-   to the issue, and creates or reopens the tasks of routines. Mastra never calls Hermes
+   to the issue, and creates or reopens the tasks of routines. For a builder workflow it
+   decides which step runs next, and Plan evaluates, applies and records each step
+   through its pipeline control API. Mastra never calls Hermes
    directly, so every run is visible in Plan. A canceled workflow run cancels the queued run
    of the stage it waits for.
 3. **Plan ↔ Hermes**: the runner claims queued work and chat messages, sends heartbeats and

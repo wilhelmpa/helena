@@ -158,7 +158,8 @@ Plan controls the workflow through the Mastra control API:
 - `catalog` lists definitions and ownership.
 - `start` creates a project-scoped run with the event ID as run ID and starts it without waiting for it to finish.
 - `runs` and `run` expose stored status, checkpoints and history for one project. `runs` with a `taskRef` returns the runs whose payload names that task, searched among the project's 200 newest runs of the workflow.
-- `retry` runs a failed run again from its failed step with Mastra time travel (`/workflows/:id/time-travel`). The steps before it keep their stored results. Like `start`, it does not wait for the run.
+- `retry` runs a failed run again from its failed step with Mastra time travel (`/workflows/:id/time-travel`), with the input the step failed with: a step of a loop ran with the output of its previous iteration. The steps before it keep their stored results. Like `start`, it does not wait for the run.
+- `resume` continues a run suspended at an approval with `{ approved, decidedBy, note }`, in the step the run is suspended in (`approval-gate` when the run names none). Like `start`, it does not wait for the run.
 - `cancel` stops a non-terminal run and cancels the Plan run of the stage it waits for (see Cancellation).
 - `delete-project-schedules` deletes the schedules of every workflow of one project. Plan's worker calls it for a deleted project before provisioning moves the project to the trash, and retries the deletion while it fails.
 - schedule operations create, read, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key. The fires of a schedule Plan creates are real runs, in Europe/Berlin unless the schedule names another time zone. `schedules` lists the schedules of one project (`projectRef`) or of several (`projectRefs`), each with `lastRun`: its newest fire, a manual run included, with run id, fire time, status, output and error. `schedule` reads one schedule of the project and workflow. `update-schedule` changes the cron and the time zone and, with `payload`, the input of the fires.
@@ -166,6 +167,37 @@ Plan controls the workflow through the Mastra control API:
 When Mastra starts, it continues the runs that were active when it stopped, each from the step it was in (`restartActiveRuns` in `src/mastra/index.ts`). The built server does not do this on its own. A continued stage asks the bridge for the same idempotency key.
 
 Business schedules exist only in Mastra. Hermes cron is limited to Hermes-internal maintenance and must not start Plan workflows.
+
+## Workflow builder
+
+`plan-pipeline` runs the workflows members put together in Plan (Home → Workflows, and the Workflows page of a project). Plan stores a workflow in versions: a trigger, the roles its agent steps name, and an ordered list of steps (agent, approval, condition, task action, wait); a condition holds a lane of steps for each answer. A project uses a template of the team's library or its own workflow and names the agents of its roles. The definition and its validation are in `apps/api/src/modules/pipelines/definition.ts`; Mastra reads only what decides where a run goes (`src/mastra/pipeline-contracts.ts`).
+
+Plan writes every run it starts, by hand, as a test run or for a task event (task created, assigned, moved to a status, given a label), before it calls `start` with the run id as event id and `{ "schemaVersion": 1, "pipelineId": 12 }` as payload. A start the control plane does not accept is retried by the api's background loop. A workflow with a schedule trigger has a Mastra schedule of `plan-pipeline` per project while it is enabled there (`scheduleKey` `pipeline-<id>`); each fire carries the same payload, and a fire that starts more than ten minutes late is skipped.
+
+The workflow has three steps:
+
+1. `prepare-pipeline` asks Plan to `begin` the run. Plan answers the task and the definition of the version the run pinned; for a schedule fire it creates the task and the run first, once per run id.
+2. `run-pipeline-step` is a loop that executes one step per iteration. Every iteration is a checkpoint: Mastra continues a run after a restart in the step it was in, and a retry starts at the step that failed. A run executes at most 200 steps.
+3. `finish-pipeline` tells Plan that the run succeeded or ended at a rejected approval.
+
+Plan evaluates and applies every step and records its result; Mastra decides which step follows and never touches Plan's data. It calls `POST /internal/hermes/team/pipeline` on the bridge, which passes `{ "schemaVersion": 1, "operation", "runId", "projectRef", "stepId", "iteration", "seq", ... }` unchanged to `POST /internal/orchestration/pipeline` in Plan. `iteration` counts the executions of the step in the run (a rework loop reaches a step again), `seq` the step executions of the run. Plan answers an operation asked again for the same execution with what the first one did:
+
+| Operation | Plan does | Answer |
+|---|---|---|
+| `begin` | Marks the run running | `{ run: { id, pipelineId, pipelineName, version, taskRef, dryRun }, definition }` |
+| `agent` | Resolves the agent of the step's role in the project, renders the instruction with the task and the recorded results, and records the step as running. A failed or canceled execution asked again is a new attempt; the queued run of the old one is canceled. | `{ dryRun, attempt, idempotencyKey, agentRef, taskRef, prompt, timeoutSeconds, policy }` |
+| `condition` | Evaluates the outcome of the previous agent, approval or action step, a keyword in its summary, or a field of the task | `{ matched }` |
+| `action` | Sets the status, labels or assignee, adds a comment or creates a subtask, as the system actor `Workflow`. A change a workflow makes starts no workflow. | `{ summary }` |
+| `approval` | `phase: wait` records the step as waiting with its rendered message; `phase: decided` records the decision and its note | `{ message }` |
+| `wait` | Fixes the wake time at the first request: after a delay, or at the step's time of day (Berlin) on the task's due or start date | `{ wakeAt }`, null to go on at once |
+| `record` | Records the result of an agent or wait execution, or the failure of any step | `{}` |
+| `finish` | Marks the run succeeded, rejected or failed; a canceled run stays canceled | `{}` |
+
+An agent step asks `agent`, then `POST /internal/hermes/team/pipeline-agent` with `{ idempotencyKey, projectRef, taskRef, agentRef, prompt, timeoutSeconds, policy }`. The bridge queues the Plan run through `/internal/orchestration/agent-run` with that key, waits for it like a stage and answers `{ agentRunId, outcome, summary }`: `success` with the end of the agent's answer, `blocked` with the question the agent asked, or `failed`. The idempotency key is the SHA-256 of run, step, iteration and attempt, so a continued step waits for the same Plan run and a retried one queues a new one. `policy` carries the step's `maxTurns` and `runBudgetSeconds`, lowered to the agent's own limits, and its `model`; Plan stores them on the run and accepts only a model an agent of the team runs. The pause and the token ceilings of Plan refuse the run like a stage. A step that times out, or whose Mastra run is canceled, cancels its Plan run. A failed or blocked agent step fails the Mastra run unless the next step is a condition on the outcome.
+
+An approval step suspends the run in `run-pipeline-step`. Plan lists the waiting step on its Approvals page; the person's decision reaches Mastra through `resume`, and the resumed step records it with `approval` (`phase: decided`). A rejection ends the run, or sends it back to an earlier step on its path until the step's `maxLoops` are used up. The note is available to the later steps as `{{step.<id>.note}}`.
+
+A wait step sleeps in the step until its wake time; a continued run sleeps what is left. A test run (`dryRun`) records every step and evaluates conditions, simulates agent steps, task actions and approvals, and does not wait.
 
 ## Retention
 

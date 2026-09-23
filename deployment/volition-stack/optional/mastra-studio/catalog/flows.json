@@ -69,6 +69,26 @@
         { "id": "dispatch-routine", "title": "Create or reopen the task", "description": "Ask Plan through the private bridge to create the task, or reopen the named one, and delegate it to the agent. Plan changes nothing while the task of the routine is still open.", "sourceRefs": ["src/mastra/routine-workflow.ts"] }
       ],
       "currentLimits": ["Routines are created and changed on the Schedules page of a Plan project. A fire that starts more than ten minutes after its time is skipped."]
+    },
+    {
+      "id": "plan-pipeline",
+      "name": "Workflow builder",
+      "description": "Run a workflow a member put together in Plan: agent steps, approvals, conditions, task actions and waits.",
+      "capabilityRefs": [],
+      "externalEffects": false,
+      "triggers": [],
+      "ownership": {
+        "workflowState": "mastra",
+        "agentRuntime": "hermes",
+        "humanTaskState": "plan",
+        "schedules": "mastra"
+      },
+      "steps": [
+        { "id": "prepare-pipeline", "title": "Take the run", "description": "Ask Plan for the task and the pinned version of the workflow. A schedule fire gets a task and a run of its own; one that starts more than ten minutes late is skipped.", "sourceRefs": ["src/mastra/pipeline-workflow.ts"] },
+        { "id": "run-pipeline-step", "title": "Run one step", "description": "A loop that executes one step per iteration: an agent step through the Plan run queue, an approval that suspends until a person decides it in Plan, a condition or task action Plan evaluates, or a wait.", "sourceRefs": ["src/mastra/pipeline-workflow.ts", "src/mastra/adapters/plan-pipeline.ts"] },
+        { "id": "finish-pipeline", "title": "Finish", "description": "Record in Plan that the run succeeded or ended at a rejected approval.", "sourceRefs": ["src/mastra/pipeline-workflow.ts"] }
+      ],
+      "currentLimits": ["Workflows are built, started and decided in Plan. Plan records every step; a failed run is retried from its failed step."]
     }
   ]
 }

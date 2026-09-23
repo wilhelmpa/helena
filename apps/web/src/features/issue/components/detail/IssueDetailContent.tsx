@@ -14,6 +14,7 @@ import IssueChecklistsPanel from './IssueChecklistsPanel';
 import IssueLinksPanel from './IssueLinksPanel';
 import IssueDevelopmentPanel from './IssueDevelopmentPanel';
 import IssueAgentTeamPanel from './IssueAgentTeamPanel';
+import IssuePipelinesPanel from './IssuePipelinesPanel';
 import IssueDocumentsPanel from './IssueDocumentsPanel';
 import IssueWorklogPanel from './IssueWorklogPanel';
 import IssueSubtasksPanel from './IssueSubtasksPanel';
@@ -193,6 +194,10 @@ export default function IssueDetailContent({
 
       {canReadWorkflows && (
         <IssueAgentTeamPanel project={project} issueId={issue.id} canEdit={canEdit} />
+      )}
+
+      {canReadWorkflows && (
+        <IssuePipelinesPanel project={project} issueId={issue.id} canEdit={canEdit} />
       )}
 
       <IssueDevelopmentPanel

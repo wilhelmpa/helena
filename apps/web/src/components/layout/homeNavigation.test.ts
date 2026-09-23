@@ -27,6 +27,7 @@ describe('home sidebar navigation', () => {
       { id: 'organization', group: 'agents', href: '/organization' },
       { id: 'agentActivity', group: 'agents', href: '/activity' },
       { id: 'schedules', group: 'agents', href: '/schedules' },
+      { id: 'workflows', group: 'agents', href: '/workflows' },
       { id: 'skills', group: 'globalSettings', href: '/skills' },
       { id: 'tools', group: 'globalSettings', href: '/tools' },
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },

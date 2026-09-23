@@ -7,6 +7,7 @@ import {
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
+  pipelinesPath,
   schedulesPath,
   skillsPath,
   tasksPath,
@@ -23,6 +24,7 @@ export type HomeNavigationId =
   | 'organization'
   | 'agentActivity'
   | 'schedules'
+  | 'workflows'
   | 'skills'
   | 'tools'
   | 'mcps'
@@ -41,7 +43,8 @@ export interface HomeNavigationItem {
 }
 
 // The entries that need a single team to point at are left out without one. The
-// schedules read across every project, like the tasks, and need none.
+// schedules read across every project, like the tasks, and need none. The workflows are
+// the team's library of templates.
 export function homeNavigation(teamId: number | null, vaultEnabled = true): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
@@ -56,6 +59,7 @@ export function homeNavigation(teamId: number | null, vaultEnabled = true): Home
     { id: 'agentActivity', group: 'agents', href: globalAgentActivityPath() },
     { id: 'schedules', group: 'agents', href: schedulesPath() },
     ...teamOnly([
+      { id: 'workflows', group: 'agents', href: pipelinesPath() },
       { id: 'skills', group: 'globalSettings', href: skillsPath() },
       { id: 'tools', group: 'globalSettings', href: toolsPath() },
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },
