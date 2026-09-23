@@ -24,10 +24,7 @@ export default function DocumentTrashList({ root, canEdit }: { root: string; can
   return (
     <ul className="space-y-px">
       {trash.data.map((item) => (
-        <li
-          key={item.path}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/65"
-        >
+        <li key={item.path} className="flex items-center gap-2 rounded-md px-2 py-1.5">
           <FileText className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm" dir="auto" title={item.path}>

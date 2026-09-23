@@ -549,6 +549,15 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   }
 }
 
+/* Without a hover there is nothing to reveal a row's hover-only actions (remove, edit,
+   drag): on a touch screen they are simply shown. */
+@media (hover: none) {
+  [class*='group-hover:opacity-100'],
+  [class*='group-hover/'][class*=':opacity-100'] {
+    opacity: 1;
+  }
+}
+
 /* The shell reaches under the notch and the home indicator (viewport-fit=cover in
    app/layout.tsx) and pads itself back here, so no control ever sits under them. In a
    layer, so a sheet that sets its own padding keeps it. */
