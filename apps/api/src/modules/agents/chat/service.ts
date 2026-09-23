@@ -428,10 +428,9 @@ export async function deleteThread(threadId: string, userId: string): Promise<bo
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-// Refuses a send the member is making too fast, and one into a thread whose answer is
-// still being produced. Held under the member's lock on the agent, so two sends in the
-// same moment are counted one after the other.
-async function assertMaySend(tx: Tx, agentId: number, userId: string, threadId?: string) {
+// Refuses a send the member is making too fast. Held under the member's lock on the
+// agent, so two sends in the same moment are counted one after the other.
+async function assertSendRate(tx: Tx, agentId: number, userId: string) {
   await tx.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${`agent-chat-send:${agentId}:${userId}`}, 0))`,
   );
@@ -451,7 +450,10 @@ async function assertMaySend(tx: Tx, agentId: number, userId: string, threadId?:
   if (Number(recent?.count ?? 0) >= agentChatConfig.sendLimit()) {
     throw new HttpError(429, 'Too many chat messages. Wait before sending another.');
   }
-  if (!threadId) return;
+}
+
+// Refuses a send into a thread whose answer is still being produced.
+async function assertNoLiveAnswer(tx: Tx, threadId: string) {
   const [live] = await tx
     .select({ count: sql<number>`count(*)::int` })
     .from(agentChatMessage)
@@ -519,13 +521,14 @@ export async function sendMessage(input: {
   const { agentId, userId, prompt } = input;
   await assertNotPaused(agentId);
   return db.transaction(async (tx) => {
-    await assertMaySend(tx, agentId, userId, input.threadId);
+    await assertSendRate(tx, agentId, userId);
     let threadId = input.threadId;
     let parentId: number | null = null;
     const settings = await validateChatSettings(agentId, input.model, input.thinkingLevel);
     if (threadId) {
       const thread = await scopedThread(tx, threadId, userId, input.projectId);
       if (!thread) return null;
+      await assertNoLiveAnswer(tx, threadId);
       parentId = input.parentId === undefined ? thread.activeMessageId : input.parentId;
       if (parentId != null && !(await isMessageOf(tx, threadId, parentId))) {
         throw new HttpError(400, 'The message to continue from is not part of this chat');
@@ -576,9 +579,10 @@ export async function retryMessage(input: {
 }): Promise<{ threadId: string; messageId: number } | null> {
   await assertNotPaused(input.agentId);
   return db.transaction(async (tx) => {
-    await assertMaySend(tx, input.agentId, input.userId, input.threadId);
+    await assertSendRate(tx, input.agentId, input.userId);
     const thread = await scopedThread(tx, input.threadId, input.userId, input.projectId);
     if (!thread) return null;
+    await assertNoLiveAnswer(tx, input.threadId);
     const [question] = await tx
       .select({ role: agentChatMessage.role })
       .from(agentChatMessage)
