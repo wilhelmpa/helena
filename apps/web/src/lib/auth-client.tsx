@@ -1,3 +1,4 @@
+import { createContext, useContext, type ReactNode } from 'react';
 import { createAuthClient } from 'better-auth/react';
 import { inferAdditionalFields } from 'better-auth/client/plugins';
 import { genericOAuthClient, magicLinkClient, usernameClient } from 'better-auth/client/plugins';
@@ -38,7 +39,9 @@ export const authClient = createAuthClient({
 export const {
   signIn,
   signUp,
-  useSession,
+  // Not exported: every reader goes through useSession below, one shared
+  // subscription instead of one per caller (see the comment on SessionProvider).
+  useSession: useBetterAuthSession,
   getSession,
   passkey,
   apiKey,
@@ -64,3 +67,25 @@ export async function signOut() {
 }
 
 export type SessionUser = typeof authClient.$Infer.Session.user;
+
+type SessionState = ReturnType<typeof useBetterAuthSession>;
+
+const SessionContext = createContext<SessionState | null>(null);
+
+// The one better-auth session subscription for the whole app. Every reader used to
+// call the client's own useSession() directly — the sidebar, the header, every page,
+// every list row with an assignee or a watcher — which is one subscriber per
+// component rather than one per app: a page that mounts many of them at once (the
+// chat workspace, a board full of issue cards) turned into a burst of duplicate
+// GET /auth/get-session requests on load. Mounted once in Providers; everything below
+// reads the same fetch through useSession.
+export function SessionProvider({ children }: { children: ReactNode }) {
+  const session = useBetterAuthSession();
+  return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
+}
+
+export function useSession(): SessionState {
+  const session = useContext(SessionContext);
+  if (!session) throw new Error('useSession must be used within SessionProvider');
+  return session;
+}
