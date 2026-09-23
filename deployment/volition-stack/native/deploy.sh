@@ -130,6 +130,14 @@ if changed deployment/volition-stack/browser deployment/volition-stack/native/sy
   restart+=(volition-project-browser-router.service)
 fi
 
+# Agent isolation (isolation.sh): an installed launcher, egress proxy and Plan socket get the
+# checkout's code and units. Installing and switching it on is `isolation.sh apply`.
+if changed deployment/volition-stack/isolation deployment/volition-stack/native/isolation.sh \
+  deployment/volition-stack/integration/project-browser.mjs \
+  deployment/volition-stack/integration/project-browser-state.mjs; then
+  "$live/deployment/volition-stack/native/isolation.sh" sync
+fi
+
 if ((${#restart[@]} > 0)); then
   echo "restarting ${restart[*]}"
   systemctl restart "${restart[@]}"
