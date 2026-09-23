@@ -9,7 +9,8 @@ import { workflowIds, type WorkEnvelope } from '../src/mastra/contracts.ts';
 import { idempotencyKey, planEffects } from '../src/mastra/effects.ts';
 import { workflowRegistry } from '../src/mastra/registry.ts';
 import { eventTriggerRegistry, workflowForEvent } from '../src/mastra/triggers.ts';
-import { mastra, restartActiveRuns } from '../src/mastra/index.ts';
+import { createClient } from '@libsql/client';
+import { mastra, pruneStorage, restartActiveRuns } from '../src/mastra/index.ts';
 import { privateClassifierAdapter } from '../src/mastra/adapters/classifier.ts';
 import { withBackoff } from '../src/mastra/adapters/hermes-team.ts';
 
@@ -216,4 +217,23 @@ test('the Mastra API answers only requests that carry the token of the proxy', a
   }
   const listed = await app.request('/mastra/api/workflows', { headers: { authorization: `Bearer ${token}` } });
   assert.equal(listed.status, 200);
+});
+
+test('pruning deletes runs unchanged for 90 days and keeps newer ones', async () => {
+  for (const runId of ['prune-old', 'prune-new']) {
+    const run = await mastra.getWorkflow('inbox-triage').createRun({ runId });
+    await run.start({ inputData: { ...envelope(true), eventId: runId } });
+  }
+  const database = createClient({ url: process.env.STUDIO_DATABASE_URL! });
+  await database.execute({
+    sql: 'UPDATE mastra_workflow_snapshot SET updatedAt = ? WHERE run_id = ?',
+    args: [new Date(Date.now() - 91 * 24 * 60 * 60_000).toISOString(), 'prune-old'],
+  });
+  database.close();
+
+  await pruneStorage();
+
+  const workflows = await mastra.getStorage()!.getStore('workflows');
+  assert.equal(await workflows!.getWorkflowRunById({ runId: 'prune-old', workflowName: 'inbox-triage' }), null);
+  assert.ok(await workflows!.getWorkflowRunById({ runId: 'prune-new', workflowName: 'inbox-triage' }));
 });

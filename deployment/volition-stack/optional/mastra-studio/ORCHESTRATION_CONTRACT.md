@@ -147,7 +147,7 @@ Plan answers `{ "idempotencyKey": "...", "outcome": "created | reopened | skippe
 
 The delegation goes through Plan's delegation path: it queues a run of the agent, or starts `agent-team` when the agent is a coordinator of a project that runs it. The agent has to react to delegation. The task is created or reopened for the actor while they are a member of the project. A repeated idempotency key answers what the first request did; the key with another request is refused with 409.
 
-The run output is `{ "workflowId": "agent-routine", "correlationId", "projectRef", "status": "created | reopened | skipped | dry-run-complete", "taskRef", "skipReason": "task-open | missed | null" }`. Every finished fire records the routine's task, a skipped one included, so later fires keep skipping while that task is open.
+The run output is `{ "workflowId": "agent-routine", "correlationId", "projectRef", "status": "created | reopened | skipped | dry-run-complete", "taskRef", "skipReason": "task-open | missed | null" }`. Every finished fire records the routine's task, a skipped one included, so later fires keep skipping while that task is open. Fires older than 90 days are deleted (see Retention), so a `new` routine whose fires are more than 90 days apart does not find the task of its previous fire and creates a task on every fire.
 
 The other scheduled workflows get the same per-fire ids: `agent-team` takes its event id, correlation id and time from the run id of a schedule fire and writes the project as its resource id. The evented engine, which runs schedule fires, stores the result record of the last step as the run result; mastra-control answers the output of such a run like that of any other.
 
@@ -166,6 +166,10 @@ Plan controls the workflow through the Mastra control API:
 When Mastra starts, it continues the runs that were active when it stopped, each from the step it was in (`restartActiveRuns` in `src/mastra/index.ts`). The built server does not do this on its own. A continued stage asks the bridge for the same idempotency key.
 
 Business schedules exist only in Mastra. Hermes cron is limited to Hermes-internal maintenance and must not start Plan workflows.
+
+## Retention
+
+Mastra deletes workflow runs whose last change is more than 90 days old and the fire records of schedules older than 90 days (`retention` of the store in `src/mastra/index.ts`). It prunes when it starts and then once a day, at most 100000 rows per table and call; a larger backlog is deleted over the following days. Schedules themselves are kept. Plan lists only the runs Mastra still holds; the results of agent-team runs and routines are stored in Plan's tasks. LibSQL reuses the freed pages, so the database file stops growing but does not shrink; a `VACUUM` of the stopped database returns the space.
 
 ## Trust model
 
