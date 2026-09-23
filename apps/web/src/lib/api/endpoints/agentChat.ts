@@ -292,6 +292,7 @@ export interface AiChatModel {
   reasoning: boolean;
   thinkingLevels: string[];
   thinkingDefault: string | null;
+  provider?: string;
 }
 
 export interface AiChatCatalog {

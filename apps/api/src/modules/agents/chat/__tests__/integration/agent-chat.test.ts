@@ -195,6 +195,14 @@ describe('external agent chat', () => {
         thinkingLevels: ['low', 'high'],
         thinkingDefault: 'high',
       },
+      {
+        id: 'claude-sonnet-5',
+        name: 'Claude Sonnet 5',
+        reasoning: true,
+        thinkingLevels: ['low', 'high'],
+        thinkingDefault: null,
+        provider: 'anthropic',
+      },
     ];
     expect((await asRunner['agent-chats'].catalog.post({ models })).status).toBe(204);
     expect((await chatOf(asOwner, agent.id).chat.catalog.get()).data!.models).toEqual(models);

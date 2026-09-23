@@ -124,6 +124,15 @@ function stopGroup(pid: number): void {
   setTimeout(() => signalGroup(pid, 'SIGKILL'), KILL_GRACE_MS).unref();
 }
 
+// A model the catalog lists under another provider runs there; the agent's default
+// model and any model the catalog does not know run on the runner's own provider.
+export function modelProvider(
+  config: RunnerConfig,
+  model: string | null | undefined,
+): string | undefined {
+  return config.models.find((entry) => entry.id === model)?.provider ?? config.provider;
+}
+
 // A preset is spawned directly, with no shell in between: the session id and the
 // operator's arguments reach the command as they are, with nothing to quote. The
 // operator's own command goes through a shell, which is what it was written for.
@@ -136,7 +145,7 @@ function spawnArgs(
   return [
     preset.bin,
     presetArgv(preset, task.sessionId ?? null, task.systemPrompt, config.args, task.prompt, {
-      provider: config.provider,
+      provider: modelProvider(config, task.model),
       model: task.model,
       thinkingLevel: task.thinkingLevel,
       maxTurns: task.maxTurns,

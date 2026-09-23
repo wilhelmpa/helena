@@ -140,6 +140,48 @@ def discover_catalog(provider: str) -> list[dict[str, Any]]:
 
 
 
+# Providers besides the configured one whose models the catalog also lists once Hermes
+# holds a login for them, so each agent can run on either.
+ADDITIONAL_PROVIDERS = ('anthropic',)
+
+
+def logged_in(provider: str) -> bool:
+    from agent.credential_pool import load_pool
+
+    return load_pool(provider).has_credentials()
+
+
+def catalog_models(provider: str) -> list[dict[str, Any]]:
+    """The configured provider's models, then those of each additional provider Hermes is
+    logged in to, each marked with its provider. An additional provider that cannot be read
+    is left out, so it never stops the runner from starting."""
+    sources = [(provider, discover_catalog)] if provider else []
+    for extra in ADDITIONAL_PROVIDERS:
+        if extra == provider:
+            continue
+        try:
+            if logged_in(extra):
+                sources.append((extra, discover_catalog))
+        except Exception as exc:  # noqa: BLE001 - reported and skipped
+            print(f'Hermes catalog: skipping {extra}: {exc}', file=sys.stderr)
+    models: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for name, discover in sources:
+        try:
+            entries = discover(name)
+        except Exception as exc:  # noqa: BLE001 - only the configured provider is required
+            if name == provider:
+                raise
+            print(f'Hermes catalog: skipping {name}: {exc}', file=sys.stderr)
+            continue
+        for entry in entries:
+            if entry['id'] in seen or len(models) == MAX_MODELS:
+                continue
+            seen.add(entry['id'])
+            models.append({**entry, 'provider': name})
+    return models
+
+
 def private_file(file_path: Path, label: str) -> None:
     metadata = file_path.lstat()
     if not stat.S_ISREG(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode) or metadata.st_mode & 0o077:
@@ -313,10 +355,9 @@ def write_runtime(
     provider, _default_model = configured_route()
     if provider:
         payload['provider'] = provider
-        payload['models'] = discover_catalog(provider)
     else:
         payload.pop('provider', None)
-        payload['models'] = []
+    payload['models'] = catalog_models(provider)
 
     home_key = os.environ.get('ITSAPLAN_API_KEY', '').strip()
     if len(home_key) < 16 or len(home_key) > 2048 or '\n' in home_key:

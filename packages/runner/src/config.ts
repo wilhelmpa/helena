@@ -44,6 +44,8 @@ export interface ChatCatalogModel {
   reasoning: boolean;
   thinkingLevels: string[];
   thinkingDefault: string | null;
+  // The provider that serves the model, when the catalog lists more than one.
+  provider?: string;
 }
 
 const OUTPUT_FORMATS = [
@@ -139,6 +141,7 @@ function modelsFrom(value: unknown): ChatCatalogModel[] {
       reasoning: model.reasoning === true,
       thinkingLevels: levels as string[],
       thinkingDefault: (thinkingDefault as string | null | undefined) ?? null,
+      ...(textOf(model.provider) ? { provider: textOf(model.provider) } : {}),
     };
   });
 }

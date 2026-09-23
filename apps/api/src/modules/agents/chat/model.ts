@@ -127,6 +127,8 @@ const chatModel = t.Object({
   reasoning: t.Boolean(),
   thinkingLevels: t.Array(t.String({ minLength: 1, maxLength: 40 }), { maxItems: 20 }),
   thinkingDefault: t.Nullable(t.String({ maxLength: 40 })),
+  // The provider that serves the model when the runner lists more than one.
+  provider: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
 });
 
 export const chatCatalogBody = t.Object({ models: t.Array(chatModel, { maxItems: 200 }) });

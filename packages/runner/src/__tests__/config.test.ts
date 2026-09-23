@@ -70,11 +70,13 @@ describe('one agent', () => {
           reasoning: true,
           thinkingLevels: ['low', 'medium', 'high'],
           thinkingDefault: 'medium',
+          provider: 'anthropic',
         },
       ],
     });
     expect(config.models).toHaveLength(1);
     expect(config.models[0]?.thinkingDefault).toBe('medium');
+    expect(config.models[0]?.provider).toBe('anthropic');
 
     await expect(
       load({

@@ -3,7 +3,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { RunnerConfig } from '../config';
-import { execute } from '../execute';
+import { execute, modelProvider } from '../execute';
 
 const dirs: string[] = [];
 
@@ -165,5 +165,38 @@ describe('Hermes subprocess adapter', () => {
     expect(argv[argv.lastIndexOf('--reasoning') + 1]).toBe('high');
     expect(argv[argv.indexOf('--max-turns') + 1]).toBe('25');
     expect(argv[argv.indexOf('--run-budget') + 1]).toBe('600');
+  });
+});
+
+describe('modelProvider', () => {
+  const config = {
+    provider: 'openai-codex',
+    models: [
+      {
+        id: 'gpt-5.5',
+        name: 'GPT 5.5',
+        reasoning: true,
+        thinkingLevels: [],
+        thinkingDefault: null,
+      },
+      {
+        id: 'claude-sonnet-5',
+        name: 'Claude Sonnet 5',
+        reasoning: true,
+        thinkingLevels: [],
+        thinkingDefault: null,
+        provider: 'anthropic',
+      },
+    ],
+  } as unknown as RunnerConfig;
+
+  it('runs a model the catalog lists under another provider on that provider', () => {
+    expect(modelProvider(config, 'claude-sonnet-5')).toBe('anthropic');
+  });
+
+  it("runs the default model and unknown models on the runner's provider", () => {
+    expect(modelProvider(config, null)).toBe('openai-codex');
+    expect(modelProvider(config, 'gpt-5.5')).toBe('openai-codex');
+    expect(modelProvider(config, 'unknown')).toBe('openai-codex');
   });
 });

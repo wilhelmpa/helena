@@ -31,6 +31,7 @@ export type ChatCatalogModel = {
   reasoning: boolean;
   thinkingLevels: string[];
   thinkingDefault: string | null;
+  provider?: string;
 };
 
 // Chat with an external agent. The answer is produced by a runner on the operator's
