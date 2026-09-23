@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
 import { useIssueBySeqQuery } from '@/services/issues.service';
 import { useAccountPreferences } from '@/services/preferences.service';
@@ -111,12 +111,20 @@ export default function Shell({
     setOpen: setWorkspaceOpen,
   } = workspacePanel;
 
+  // A page that already is a tool (code, inbox, chat) does not also show that tool in
+  // the panel beside it — two chats side by side, one of them not the page's.
+  const pathname = usePathname();
   useEffect(() => {
-    const routedTool = route.sub === 'code' || route.sub === 'inbox' ? route.sub : null;
+    const routedTool =
+      route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
+        ? route.sub
+        : pathname === '/chat'
+          ? 'chat'
+          : null;
     if (routedTool && workspaceOpen && activeWorkspaceTool === routedTool) {
       setWorkspaceOpen(false);
     }
-  }, [activeWorkspaceTool, route.sub, setWorkspaceOpen, workspaceOpen]);
+  }, [activeWorkspaceTool, route.sub, pathname, setWorkspaceOpen, workspaceOpen]);
 
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.
