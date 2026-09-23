@@ -499,7 +499,59 @@
     "chatNeedsProject": "Asocia el agente de IA a un proyecto para probarlo aquí.",
     "triggerFieldsTitle": "Campos personalizados que empiezan una ejecución",
     "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions"
+    "noProjectInstructions": "No project-specific instructions",
+    "abilities": {
+      "title": "Capacidades",
+      "hint": "Lo que el agente puede hacer en Hermes: conjuntos de herramientas, servidores MCP, habilidades y memoria",
+      "notReported": "El ejecutor aún no ha informado de lo que puede hacer el agente.",
+      "toolsets": "Conjuntos de herramientas",
+      "toolsetsHint": "Desactiva un conjunto y guarda para que el agente no lo use en chats ni ejecuciones.",
+      "toolsetsReadOnly": "Solo los miembros que pueden editar agentes pueden desactivar conjuntos de herramientas.",
+      "noToolsets": "El ejecutor no ha informado de ningún conjunto de herramientas.",
+      "mcpServers": "Servidores MCP",
+      "mcpServersHint": "Siempre disponibles para el agente. Se configuran en el perfil de Hermes.",
+      "noMcpServers": "Ninguno",
+      "skills": "Habilidades",
+      "skillsHint": "En el perfil de Hermes del agente: {count}. Solo lectura.",
+      "searchSkills": "Filtrar habilidades",
+      "noSkills": "El perfil aún no tiene habilidades.",
+      "uncategorized": "Sin categoría",
+      "origin": {
+        "agent": "Creada por el agente",
+        "hub": "Del Skills Hub",
+        "plan": "De Plan"
+      },
+      "memory": "Memoria",
+      "memoryHint": "Hermes escribe esta memoria por sí mismo. Se muestra tal como la informó el ejecutor por última vez.",
+      "memoryNotes": "Notas del agente",
+      "memoryUser": "Sobre el usuario",
+      "memoryEmpty": "Vacío",
+      "memoryTruncated": "Solo se muestran los primeros 16 KB.",
+      "toolset": {
+        "browser": "Abre páginas web en un navegador, hace clic, escribe y se desplaza.",
+        "clarify": "Hace una pregunta aclaratoria a la persona.",
+        "code_execution": "Ejecuta scripts de Python que pueden llamar a las demás herramientas.",
+        "computer_use": "Controla el escritorio con el ratón y el teclado.",
+        "connections": "Usa cuentas conectadas y conectores remotos.",
+        "context_engine": "Herramientas del motor de contexto activo.",
+        "cronjob": "Crea y gestiona tareas programadas.",
+        "delegation": "Encarga subtareas a subagentes.",
+        "file": "Lee, escribe, edita y busca archivos.",
+        "image_gen": "Genera imágenes.",
+        "kanban": "Trabaja en el tablero de tareas de Hermes.",
+        "memory": "Guarda notas que se conservan entre sesiones.",
+        "session_search": "Busca en conversaciones anteriores.",
+        "skills": "Lista, lee, crea y edita habilidades.",
+        "terminal": "Ejecuta comandos de shell y procesos en segundo plano.",
+        "todo": "Lleva una lista de tareas de la sesión actual.",
+        "tts": "Convierte texto en voz.",
+        "video": "Analiza vídeos.",
+        "video_gen": "Genera vídeos.",
+        "vision": "Analiza imágenes.",
+        "web": "Busca en la web y lee páginas.",
+        "x_search": "Busca publicaciones en X (Twitter)."
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",
@@ -515,12 +567,14 @@
     "access": "Acceso de MCP",
     "accessHint": "Apagar cierra todo el equipo a MCP.",
     "managerOnly": "Solo un propietario o administrador del equipo puede cambiar esto.",
-    "statusOn": "Activado",
-    "statusOff": "Apagado",
     "toggleAria": "Alternar el acceso de MCP para el equipo",
     "projects": "Proyectos que MCP puede alcanzar",
     "projectsHint": "Un proyecto nuevo empieza con el valor por defecto de la instancia.",
     "noProjects": "Este equipo todavía no tiene proyectos.",
     "projectToggleAria": "Alternar el acceso de MCP para {project}"
+  },
+  "settingState": {
+    "on": "Activado",
+    "off": "Apagado"
   }
 }

@@ -173,7 +173,6 @@ export default function AgentRuntimePolicySection({
       {(
         [
           ['toolAllow', 'Allowed tools'],
-          ['toolDeny', 'Denied tools'],
           ['mcpGrants', 'MCP grants'],
         ] as const
       ).map(([key, label]) => (
