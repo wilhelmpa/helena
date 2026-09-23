@@ -7,6 +7,7 @@ import {
   allowedToolsets,
   HermesPolicyMaterializer,
   HermesPolicySynchronizer,
+  type RuntimeMcpServer,
   type RuntimePolicyClient,
   type RuntimePolicySnapshot,
   type RuntimeStatus,
@@ -18,11 +19,50 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 
-async function fixture() {
+async function fixture(globalMcpServers?: string[]) {
   const root = await mkdtemp(join(tmpdir(), 'itsaplan-policy-'));
   roots.push(root);
   const hermesHome = join(root, 'hermes');
-  return { root, hermesHome, materializer: new HermesPolicyMaterializer({ hermesHome }) };
+  return {
+    root,
+    hermesHome,
+    materializer: new HermesPolicyMaterializer({ hermesHome, globalMcpServers }),
+  };
+}
+
+const jevBrowser: RuntimeMcpServer = {
+  name: 'jev-browser',
+  transport: 'stdio',
+  command: 'npx',
+  args: ['-y', '@jkudish/jev-browser'],
+  url: null,
+  env: [
+    { name: 'TYPESAFE_API_KEY', secret: 7 },
+    { name: 'JEV_BROWSER_MODEL', value: 'jev-latest' },
+  ],
+  headers: [],
+};
+
+const docs: RuntimeMcpServer = {
+  name: 'docs',
+  transport: 'sse',
+  command: null,
+  args: [],
+  url: 'https://mcp.example.com/sse',
+  env: [],
+  headers: [{ name: 'Authorization', secret: 8 }],
+};
+
+function withServers(
+  revision: string,
+  mcpServers: RuntimeMcpServer[],
+  toolDeny: string[] = [],
+): RuntimePolicySnapshot {
+  return { revision, runtimePolicy: { files: [], toolDeny }, skills: [], mcpServers };
+}
+
+async function managedConfig(hermesHome: string): Promise<unknown> {
+  return JSON.parse(await readFile(join(hermesHome, 'run/itsaplan-managed/config.yaml'), 'utf8'));
 }
 
 function snapshot(
@@ -55,7 +95,7 @@ describe('Hermes runtime policy materializer', () => {
       ]),
     );
 
-    expect(result).toEqual({ revision: 'sha256:first', conflicts: [] });
+    expect(result).toEqual({ revision: 'sha256:first', conflicts: [], mcpSecrets: null });
     expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Soul');
     expect(await readFile(join(hermesHome, 'skills/plan-managed/plan-7/SKILL.md'), 'utf8')).toBe(
       '# Skill',
@@ -196,8 +236,63 @@ describe('Hermes runtime policy materializer', () => {
   });
 });
 
+describe('Hermes managed MCP servers', () => {
+  it("writes the agent's servers, secrets as variables, and turns denied servers off", async () => {
+    const { hermesHome, materializer } = await fixture(['itsaplan', 'browser-harness']);
+    const result = await materializer.apply(
+      withServers('sha256:one', [jevBrowser, docs], ['browser-harness', 'terminal']),
+    );
+
+    expect(result.mcpSecrets).toEqual([7, 8]);
+    expect(await managedConfig(hermesHome)).toEqual({
+      mcp_servers: {
+        'jev-browser': {
+          command: 'npx',
+          args: ['-y', '@jkudish/jev-browser'],
+          env: { TYPESAFE_API_KEY: '${ITSAPLAN_MCP_SECRET_7}', JEV_BROWSER_MODEL: 'jev-latest' },
+        },
+        docs: {
+          url: 'https://mcp.example.com/sse',
+          transport: 'sse',
+          headers: { Authorization: '${ITSAPLAN_MCP_SECRET_8}' },
+        },
+        'browser-harness': { enabled: false },
+      },
+    });
+    const file = join(hermesHome, 'run/itsaplan-managed/config.yaml');
+    expect((await lstat(file)).mode & 0o077).toBe(0);
+  });
+
+  it('removes the managed configuration once there is nothing to put in it', async () => {
+    const { hermesHome, materializer } = await fixture(['itsaplan']);
+    await materializer.apply(withServers('sha256:one', [jevBrowser]));
+    const result = await materializer.apply(withServers('sha256:two', [], ['web']));
+
+    expect(result.mcpSecrets).toBeNull();
+    expect(await readdir(join(hermesHome, 'run/itsaplan-managed'))).toEqual([]);
+  });
+
+  it('refuses a server named like one of the Hermes configuration, or not named at all', async () => {
+    const { hermesHome, materializer } = await fixture(['itsaplan']);
+    await expect(
+      materializer.apply(withServers('sha256:one', [{ ...jevBrowser, name: 'itsaplan' }])),
+    ).rejects.toThrow('MCP server itsaplan is also configured in Hermes');
+    await expect(
+      materializer.apply(withServers('sha256:one', [{ ...jevBrowser, name: '../x' }])),
+    ).rejects.toThrow('invalid MCP server name');
+    await expect(
+      materializer.apply(withServers('sha256:one', [jevBrowser, jevBrowser])),
+    ).rejects.toThrow('invalid MCP server name');
+    await expect(readFile(join(hermesHome, 'run/itsaplan-managed/config.yaml'))).rejects.toThrow();
+  });
+});
+
 describe('Hermes runtime policy synchronizer', () => {
-  function client(values: RuntimePolicySnapshot[], statuses: RuntimeStatus[]): RuntimePolicyClient {
+  function client(
+    values: RuntimePolicySnapshot[],
+    statuses: RuntimeStatus[],
+    secrets: Record<string, string>[] = [],
+  ): RuntimePolicyClient {
     return {
       runtimePolicy: async () => {
         const next = values.shift();
@@ -206,6 +301,11 @@ describe('Hermes runtime policy synchronizer', () => {
       },
       reportRuntimeStatus: async (status) => {
         statuses.push(status);
+      },
+      mcpSecrets: async () => {
+        const next = secrets.shift();
+        if (!next) throw new Error('no secrets expected');
+        return next;
       },
     };
   }
@@ -245,6 +345,7 @@ describe('Hermes runtime policy synchronizer', () => {
       'reasoning',
       'managed-markdown',
       'managed-skills',
+      'managed-mcp-servers',
     ]);
     expect(JSON.stringify(statuses)).not.toContain('provider-secret-value');
     expect(statuses.at(-1)?.detail).toBe(
@@ -361,6 +462,37 @@ describe('Hermes runtime policy synchronizer', () => {
     await sync.ensure();
     expect(sync.toolsets()).toEqual(['file', 'web', 'itsaplan']);
   });
+
+  it('hands each run the managed configuration and the current values of its secrets', async () => {
+    const { materializer } = await fixture(['itsaplan']);
+    const profile = { toolsets: ['file', 'web'], mcpServers: ['itsaplan'] };
+    const sync = new HermesPolicySynchronizer(
+      client(
+        [withServers('sha256:one', [jevBrowser], ['web']), withServers('sha256:two', [])],
+        [],
+        [{ '7': 'first-value' }, {}],
+      ),
+      materializer,
+      { profile },
+    );
+
+    expect(await sync.runSettings()).toEqual({ toolsets: null, env: {} });
+    await sync.ensure();
+    const settings = {
+      toolsets: ['file', 'itsaplan', 'jev-browser'],
+      env: { HERMES_MANAGED_DIR: materializer.managedDir, ITSAPLAN_MCP_SECRET_7: 'first-value' },
+    };
+    expect(await sync.runSettings()).toEqual(settings);
+    // A secret deleted in Plan since.
+    expect(await sync.runSettings()).toEqual({
+      ...settings,
+      env: { ...settings.env, ITSAPLAN_MCP_SECRET_7: '' },
+    });
+
+    // Without servers there is nothing to read from Plan.
+    await sync.ensure();
+    expect(await sync.runSettings()).toEqual({ toolsets: null, env: {} });
+  });
 });
 
 describe('Hermes toolset restriction', () => {
@@ -372,9 +504,15 @@ describe('Hermes toolset restriction', () => {
     expect(allowedToolsets(undefined, ['terminal'])).toBeNull();
   });
 
-  it('names the remaining toolsets and every MCP server', () => {
+  it('names the remaining toolsets and the MCP servers that stay on', () => {
     expect(allowedToolsets(profile, ['terminal'])).toEqual(['browser', 'file', 'itsaplan']);
     expect(allowedToolsets(profile, ['browser', 'file', 'terminal'])).toEqual(['itsaplan']);
+    expect(allowedToolsets(profile, ['terminal', 'itsaplan'], ['shopify-dev'])).toEqual([
+      'browser',
+      'file',
+      'shopify-dev',
+    ]);
+    expect(allowedToolsets(profile, [], ['shopify-dev'])).toBeNull();
   });
 
   it('refuses a list Hermes would read as no selection', () => {

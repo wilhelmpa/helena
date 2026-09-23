@@ -154,9 +154,9 @@ Enforced declaratively through macros, never imperative calls in handlers.
 ## Team-owned agents
 
 Agents, the skill library, the configured tools, the MCP server library and the
-integration credentials belong to the team; the routes are under `:teamId` and use the `teamPermission` guard. What
-stays under `:projectKey` is what happens in one project: an agent's chat, its runs and
-the routines that hand it work. `packages/db/AGENTS.md` has the schema side.
+integration credentials belong to the team; the routes are under `:teamId` and use the
+`teamPermission` guard. What stays under `:projectKey` is what happens in one project: an
+agent's chat, its runs and the routines that hand it work. `packages/db/AGENTS.md` has the schema side.
 
 Two decisions a reader would otherwise propose again:
 

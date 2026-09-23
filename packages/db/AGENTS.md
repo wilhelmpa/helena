@@ -43,8 +43,8 @@ agent and no flag on `user` marking a non-human identity, so anything that has t
 enumerate agents does it through `ai_agent`.
 
 What the team owns with it: `agent_skill`, `agent_tool`, `agent_mcp_server` and
-`integration_credential` all carry a `team_id` and are shared by every project of the team. `agent_run` carries a
-`project_id` — a run happens in one project.
+`integration_credential` all carry a `team_id` and are shared by every project of the team.
+`agent_run` carries a `project_id` — a run happens in one project.
 
 The projects an agent works in are its bot user's `project_member` rows, the same as for
 a person, and the `role_id` on each of them is what its requests are checked against —
