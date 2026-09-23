@@ -11,7 +11,8 @@
   "grant": {
     "active": "Terminal diizinkan hingga {time}",
     "expired": "Izin terminal telah berakhir.",
-    "end": "Akhiri"
+    "end": "Akhiri",
+    "lan": "Terminal terbuka tanpa kode (LAN)"
   },
   "kinds": {
     "shell": "Shell",

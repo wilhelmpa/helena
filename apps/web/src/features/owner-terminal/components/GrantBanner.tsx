@@ -11,8 +11,24 @@ function formatTime(iso: string): string {
 
 // "Terminal freigegeben bis 08:14 · Beenden" (design §2): the grant is always
 // visible while it is open, and always revocable in one click from here, not
-// just from Home -> Security.
-export default function GrantBanner({ expiresAt }: { expiresAt: string }) {
+// just from Home -> Security. No expiry means the owner turned the step-up off
+// for the LAN (Administrator -> Sicherheit): there is no grant to end, so the
+// banner only says so.
+export default function GrantBanner({ expiresAt }: { expiresAt: string | null }) {
+  if (!expiresAt) return <LanBanner />;
+  return <TimedGrantBanner expiresAt={expiresAt} />;
+}
+
+function LanBanner() {
+  const t = useTranslations('ownerTerminal.grant');
+  return (
+    <div className="flex h-8 shrink-0 items-center border-b px-3 text-xs text-muted-foreground">
+      {t('lan')}
+    </div>
+  );
+}
+
+function TimedGrantBanner({ expiresAt }: { expiresAt: string }) {
   const t = useTranslations('ownerTerminal.grant');
   const revoke = useRevokeOwnerTerminalGrant();
   const [expired, setExpired] = useState(() => new Date(expiresAt).getTime() <= Date.now());

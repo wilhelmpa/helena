@@ -11,7 +11,8 @@
   "grant": {
     "active": "终端已授权至 {time}",
     "expired": "终端授权已过期。",
-    "end": "结束"
+    "end": "结束",
+    "lan": "终端已开启，无需验证码（局域网）"
   },
   "kinds": {
     "shell": "Shell",

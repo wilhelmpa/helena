@@ -107,7 +107,7 @@ describe('owner terminal', () => {
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const result = await api['owner-terminal']['step-up']['totp'].post({ code: '000000' });
-      expect(result.status).toBe(401);
+      expect(result.status).toBe(400);
     }
     const locked = await api['owner-terminal']['step-up']['totp'].post({ code: '000000' });
     expect(locked.status).toBe(429);
@@ -201,5 +201,33 @@ describe('owner terminal', () => {
       sudoPasswordRequired: true,
       recordOutput: { shell: true },
     });
+  });
+
+  it('opens the terminal from the LAN without a code once step-up is off, never from loopback', async () => {
+    const user = await signUpTestUser();
+    const lan = authedApi(user.cookie, { ...ORIGIN, 'x-real-ip': '192.168.122.1' });
+    const loopback = authedApi(user.cookie, { ...ORIGIN, 'x-real-ip': '127.0.0.1' });
+
+    expect((await lan['owner-terminal'].grant.get()).data).toMatchObject({ active: false });
+    expect((await lan.auth.verify['owner-terminal']({ kind: 'shell' }).get()).status).toBe(403);
+
+    await lan['owner-terminal'].settings.patch({ stepUpRequired: false });
+
+    expect((await lan['owner-terminal'].grant.get()).data).toMatchObject({
+      active: true,
+      method: null,
+      expiresAt: null,
+    });
+    const token = await lan.auth.verify['owner-terminal']({ kind: 'shell' }).get();
+    expect(token.status).toBe(204);
+    expect(token.response.headers.get('x-owner-terminal-token')).toBeTruthy();
+    const start = await lan['owner-terminal'].sessions.start.post({ kind: 'shell', name: 'main' });
+    expect(start.status).toBe(204);
+
+    // Loopback is where the Cloudflare tunnel arrives: the setting never reaches it.
+    expect((await loopback['owner-terminal'].grant.get()).data).toMatchObject({ active: false });
+    expect((await loopback.auth.verify['owner-terminal']({ kind: 'shell' }).get()).status).toBe(
+      403,
+    );
   });
 });

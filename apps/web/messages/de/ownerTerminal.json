@@ -11,7 +11,8 @@
   "grant": {
     "active": "Terminal freigegeben bis {time}",
     "expired": "Die Terminal-Freigabe ist abgelaufen.",
-    "end": "Beenden"
+    "end": "Beenden",
+    "lan": "Terminal ohne Code (LAN)"
   },
   "kinds": {
     "shell": "Shell",

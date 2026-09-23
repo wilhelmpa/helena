@@ -11,7 +11,8 @@
   "grant": {
     "active": "Terminal granted until {time}",
     "expired": "The terminal grant has expired.",
-    "end": "End"
+    "end": "End",
+    "lan": "Terminal open without a code (LAN)"
   },
   "kinds": {
     "shell": "Shell",

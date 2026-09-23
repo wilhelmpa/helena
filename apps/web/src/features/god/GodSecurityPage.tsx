@@ -51,9 +51,19 @@ export default function GodSecurityPage() {
         </SettingsCard>
       </SettingsSection>
 
-      <SettingsSection title={t('stepUpTitle')} description={t('stepUpDescription')}>
+      <SettingsSection
+        title={t('stepUpTitle')}
+        description={t('stepUpDescription')}
+        action={
+          <EnabledSwitch
+            checked={settings.data?.stepUpRequired ?? true}
+            onChange={(checked) => updateSettings.mutate({ stepUpRequired: checked })}
+            disabled={!settings.data || updateSettings.isPending}
+          />
+        }
+      >
         <SettingsCard className="p-4 text-sm text-muted-foreground">
-          {t('stepUpMethod')}
+          {settings.data?.stepUpRequired === false ? t('stepUpOffHint') : t('stepUpMethod')}
         </SettingsCard>
       </SettingsSection>
 

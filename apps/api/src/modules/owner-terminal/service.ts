@@ -33,11 +33,21 @@ export interface OwnerTerminalSettings {
   // audit first, rather than presenting a security setting that quietly does
   // less than it says until someone performs a separate, undocumented step.
   sudoPasswordRequired: boolean;
+  // false: an owner session coming from the LAN opens the terminal without a
+  // TOTP code (owner, 2026-09-24, while the instance is still being built).
+  // Loopback -- where the Cloudflare tunnel will arrive -- and any other public
+  // address always need the code, whatever this says; see lanBypass below.
+  stepUpRequired: boolean;
   recordOutput: Partial<Record<OwnerTerminalKind, boolean>>;
 }
 
 function defaultSettings(): OwnerTerminalSettings {
-  return { stepUpMethods: ['totp'], sudoPasswordRequired: false, recordOutput: {} };
+  return {
+    stepUpMethods: ['totp'],
+    sudoPasswordRequired: false,
+    stepUpRequired: true,
+    recordOutput: {},
+  };
 }
 
 export async function getOwnerTerminalSettings(): Promise<OwnerTerminalSettings> {
@@ -71,6 +81,26 @@ async function requireSession(request: Request): Promise<RequestSession> {
   const session = await getSessionFromHeaders(request.headers);
   if (!session) throw new HttpError(401, 'Authentication required');
   return { userId: session.user.id, sessionId: session.session.id };
+}
+
+// Private LAN ranges only. 127.0.0.0/8 and ::1 are deliberately not here: the
+// Cloudflare tunnel will reach nginx over loopback, so "no step-up" must never
+// extend to it.
+export function isLanAddress(ip: string): boolean {
+  const v4 = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+  const parts = v4.split('.').map(Number);
+  if (parts.length === 4 && parts.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
+    const [a, b] = parts as [number, number, number, number];
+    return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  }
+  return /^f[cd][0-9a-f]{2}:/i.test(ip);
+}
+
+// True when this request may use the terminal without a grant: the owner turned
+// the step-up off (Administrator -> Sicherheit) and the request comes from the LAN.
+async function lanBypass(request: Request): Promise<boolean> {
+  const settings = await getOwnerTerminalSettings();
+  return !settings.stepUpRequired && isLanAddress(clientIp(request));
 }
 
 function deviceLabel(request: Request): string {
@@ -174,7 +204,9 @@ export async function stepUpWithTotp(
     await auth.api.verifyTOTP({ headers: request.headers, body: { code } });
   } catch {
     await writeAudit({ userId, event: 'step_up_fail', device, ipAddress });
-    throw new HttpError(401, 'The code was not accepted');
+    // 400, not 401: the web client treats any 401 as "session gone" and signs the
+    // owner out, which is what a mistyped code did until 2026-09-24.
+    throw new HttpError(400, 'The code was not accepted');
   }
 
   const expiresAt = new Date(Date.now() + GRANT_HOURS * 60 * 60 * 1000);
@@ -200,6 +232,15 @@ export async function stepUpWithTotp(
 export async function grantStatus(request: Request): Promise<OwnerTerminalGrantDto> {
   const { userId, sessionId } = await requireSession(request);
   const row = await currentGrantRow(userId, sessionId);
+  if (!row && (await lanBypass(request))) {
+    return {
+      active: true,
+      method: null,
+      expiresAt: null,
+      device: deviceLabel(request),
+      ipAddress: clientIp(request),
+    };
+  }
   if (!row) return { active: false, method: null, expiresAt: null, device: null, ipAddress: null };
   return {
     active: true,
@@ -276,8 +317,10 @@ export async function recordSessionEvent(
 ): Promise<void> {
   const { userId, sessionId } = await requireSession(request);
   const grant = await currentGrantRow(userId, sessionId);
-  if (!grant) throw new HttpError(403, 'No active terminal grant');
+  const bypass = !grant && (await lanBypass(request));
+  if (!grant && !bypass) throw new HttpError(403, 'No active terminal grant');
   await writeAudit({
+    detail: bypass ? 'lan_without_step_up' : null,
     userId,
     event,
     kind,
@@ -293,6 +336,6 @@ export async function recordSessionEvent(
 export async function issueProxyToken(request: Request, kind: OwnerTerminalKind): Promise<string> {
   const { userId, sessionId } = await requireSession(request);
   const grant = await currentGrantRow(userId, sessionId);
-  if (!grant) throw new HttpError(403, 'No active terminal grant');
+  if (!grant && !(await lanBypass(request))) throw new HttpError(403, 'No active terminal grant');
   return mintOwnerTerminalToken(sessionId, kind);
 }

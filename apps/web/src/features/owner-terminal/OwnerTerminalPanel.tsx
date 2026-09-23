@@ -20,8 +20,14 @@ export interface OpenTerminalTab {
   name: string;
 }
 
-const STORAGE_KEY = 'owner-terminal:tabs';
-const DEFAULT_TABS: OpenTerminalTab[] = [{ kind: 'shell', name: 'main' }];
+// v2: Shell, Claude Code and Codex are open from the start (owner, 2026-09-24);
+// the new key drops the Shell-only lists v1 saved before that.
+const STORAGE_KEY = 'owner-terminal:tabs:v2';
+const DEFAULT_TABS: OpenTerminalTab[] = [
+  { kind: 'shell', name: 'main' },
+  { kind: 'claude', name: 'main' },
+  { kind: 'codex', name: 'main' },
+];
 
 // The list of open tabs is a per-browser convenience, not the source of truth:
 // the tmux session a tab points at (owner-<kind>-<name> on the host) is what
@@ -100,7 +106,7 @@ export default function OwnerTerminalPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <GrantBanner expiresAt={grant.data.expiresAt!} />
+      <GrantBanner expiresAt={grant.data.expiresAt} />
       <TerminalTabBar
         tabs={tabs}
         activeKey={activeKey}

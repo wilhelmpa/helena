@@ -56,6 +56,7 @@ export const OwnerTerminalAuditResponse = t.Array(OwnerTerminalAuditEntry);
 export const OwnerTerminalSettingsResponse = t.Object({
   stepUpMethods: t.Array(t.Union([t.Literal('totp'), t.Literal('passkey')])),
   sudoPasswordRequired: t.Boolean(),
+  stepUpRequired: t.Boolean(),
   recordOutput: t.Record(t.String(), t.Boolean()),
 });
 

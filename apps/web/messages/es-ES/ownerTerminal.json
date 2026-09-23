@@ -11,7 +11,8 @@
   "grant": {
     "active": "Terminal concedida hasta las {time}",
     "expired": "La concesión de la terminal ha caducado.",
-    "end": "Finalizar"
+    "end": "Finalizar",
+    "lan": "Terminal abierto sin código (LAN)"
   },
   "kinds": {
     "shell": "Shell",
