@@ -1135,6 +1135,13 @@
       "when": 1790195396287,
       "tag": "0161_run_resume",
       "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1790197526902,
+      "tag": "0162_agent_pool_template_sync",
+      "breakpoints": true
     }
   ]
 }
