@@ -24,7 +24,7 @@ Mastra or Plan.
 | Provisioning and Hermes runner | `volition-hermes` | enabled and active |
 | Hermes team bridge and Mastra | `volition-mastra` | enabled and active |
 | code-server and project terminal | `volition-hermes` | enabled and active |
-| Project browser router and instances | `volition-browser` | enabled; instances start per project |
+| Project browser router and instances | `volition-hermes`; `volition-browser` once `isolation.sh apply` ran | enabled; instances start per project |
 | Agent launcher (isolation) | `root`, socket for `volition-launcher` | socket-activated once `isolation.sh apply` ran |
 | Agent egress proxy, Plan socket for agents | `volition-egress`, dynamic user | socket-activated once `isolation.sh apply` ran |
 | Isolated agent runs, profile helper, project terminal | `vp-<slug>` per project (`vp-home`) | transient units with `AGENT_ISOLATION=on` (`isolation/README.md`) |

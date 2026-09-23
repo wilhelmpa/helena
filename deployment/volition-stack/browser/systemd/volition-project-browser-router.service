@@ -10,9 +10,10 @@ Wants=network.target
 # are not used here: they need cgroup BPF, which this nspawn container does not offer, and
 # were measured to have no effect (see isolation/README.md).
 Type=simple
-# The browser user alone owns the project profiles (0700): no agent and not the runner
-# can read their cookies and sessions.
-User=volition-browser
+# With agent isolation the browser user alone owns the project profiles (0700): isolation.sh
+# switches this unit to volition-browser (drop-in browser-user.conf) in the same step that
+# hands it the state; a deploy alone must not, or the unit could not read its own state.
+User=volition-hermes
 Group=volition
 Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
 Environment=PROJECT_BROWSER_ROUTER_PORT=6082

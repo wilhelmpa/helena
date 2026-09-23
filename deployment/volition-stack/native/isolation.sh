@@ -141,14 +141,14 @@ switch() { # on|off
   done
   for unit in chromium@ kasm@ router; do
     local name=volition-project-browser-$unit.service
-    local dropin=$units/${name}.d/rollback.conf
-    if [[ $1 == off ]]; then
-      if [[ ! -f $dropin ]]; then
-        say "run $name as volition-hermes again"
-        ((dry_run)) || { install -d -m 0755 "$(dirname "$dropin")"; printf '[Service]\nUser=volition-hermes\n' > "$dropin"; }
+    local dropin=$units/${name}.d/browser-user.conf
+    if [[ $1 == on ]]; then
+      if ! cmp -s "$source_dir/systemd/browser-user.conf" "$dropin"; then
+        say "run $name as volition-browser"
+        ((dry_run)) || install -D -m 0644 "$source_dir/systemd/browser-user.conf" "$dropin"
       fi
     elif [[ -f $dropin ]]; then
-      say "run $name as volition-browser"
+      say "run $name as volition-hermes again"
       run rm -f "$dropin"
     fi
   done

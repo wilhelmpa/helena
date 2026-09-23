@@ -61,7 +61,9 @@ launcher's and egress's state), `InaccessiblePaths=` for `/etc/volition`, `/var/
 - Home gets `profiles/home` (a copy of the Home agent's state in the global home, databases
   through SQLite's backup) and `/srv/volition/workspaces/home`.
 - Browser state (`/var/lib/volition/project-browser`) belongs to `volition-browser`; Chromium,
-  KasmVNC and the router run as that user.
+  KasmVNC and the router run as that user through the drop-in `systemd/browser-user.conf`,
+  which `isolation.sh` installs in the step that hands the state over (the units themselves keep
+  `volition-hermes`, so a deploy alone never leaves them unable to read their state).
 
 ## Network modes (Helena: project settings → agent network)
 

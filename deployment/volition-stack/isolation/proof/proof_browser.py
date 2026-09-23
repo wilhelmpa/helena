@@ -42,6 +42,12 @@ def run_browser_proofs(report, sh, root: str, state: dict) -> None:
         return
     port = json.loads(made.stdout.decode().strip().splitlines()[-1])['state']['cdpPort']
 
+    def dropin_user() -> str:
+        # The user isolation.sh gives the browser units, from the drop-in it installs.
+        with open(os.path.join(source, 'systemd', 'browser-user.conf'), encoding='utf-8') as handle:
+            user = next(line.split('=', 1)[1].strip() for line in handle if line.startswith('User='))
+        return user.replace('volition-browser', 'vpt-browser')
+
     def start(user: str) -> None:
         for name in ('kasm', 'chromium'):
             unit_file = os.path.join(source, '..', 'native', 'systemd', f'volition-project-browser-{name}@.service')
@@ -59,7 +65,7 @@ def run_browser_proofs(report, sh, root: str, state: dict) -> None:
                     if section != 'Service':
                         continue
                     line = (line.replace('%i', SLUG).replace('/var/lib/volition/project-browser/projects', browser_root)
-                            .replace('User=volition-browser', f'User={user}')
+                            .replace('User=volition-hermes', f'User={user}')
                             .replace('/usr/local/libexec/volition-wait-for-x', '/usr/bin/true'))
                     key, _, value = line.partition('=')
                     if key == 'ExecStart':
@@ -112,7 +118,7 @@ def run_browser_proofs(report, sh, root: str, state: dict) -> None:
     report.add('7', 'migration hands the browser state to the browser user', migrate.returncode == 0,
                migrate.stdout.decode().strip().splitlines()[-1][:200] if migrate.stdout else migrate.stderr.decode()[-200:])
     try:
-        start('vpt-browser')
+        start(dropin_user())
         answer = cdp('get', 'vpt_login')
         report.add('7', 'the login is still there after the migration',
                    answer.get('value') == 'proof-session-4242', json.dumps(answer))
