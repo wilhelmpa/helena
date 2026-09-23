@@ -9,12 +9,12 @@ import { EnvFile } from './env-file.ts';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const file = (name: string) => join(root, name);
 
-const answer = <T>(value: T | symbol): T => {
+const answer = <T>(value: T): Exclude<T, symbol> => {
   if (p.isCancel(value)) {
     p.cancel('Setup cancelled.');
     process.exit(0);
   }
-  return value as T;
+  return value as Exclude<T, symbol>;
 };
 
 // Output is captured rather than inherited: docker and drizzle write while a spinner

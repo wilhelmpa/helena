@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
@@ -16,10 +16,14 @@ export default function WorkspaceBrowserBar({
   base,
   view,
   onViewChange,
+  followAgent,
+  onToggleFollowAgent,
 }: {
   base: string;
   view: BrowserView;
   onViewChange: (view: BrowserView) => void;
+  followAgent: boolean;
+  onToggleFollowAgent: () => void;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
   const { tabs, active, act } = useBrowserControl(base);
@@ -96,6 +100,19 @@ export default function WorkspaceBrowserBar({
         onClose={(tabId) => act({ action: 'close', id: tabId })}
         onNew={() => act({ action: 'new' })}
       />
+      {view === 'live' && (
+        <Button
+          variant={followAgent ? 'secondary' : 'ghost'}
+          size="icon"
+          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-pressed={followAgent}
+          onClick={onToggleFollowAgent}
+          title={followAgent ? t('followAgentOn') : t('followAgentOff')}
+          aria-label={followAgent ? t('followAgentOn') : t('followAgentOff')}
+        >
+          <Bot />
+        </Button>
+      )}
       <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
     </div>
   );

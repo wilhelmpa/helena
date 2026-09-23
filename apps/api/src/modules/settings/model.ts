@@ -11,6 +11,17 @@ export const ProjectDefaultsSchema = t.Object({
   mcpEnabled: t.Boolean(),
 });
 
+export const RunResumeSettingsSchema = t.Object({
+  maxResumes: t.Number({
+    minimum: 0,
+    maximum: 20,
+    description:
+      'How many times a run may resume its coding agent session after the runner ' +
+      'holding it died mid run, before it stops on its own and asks the owner to look ' +
+      'at it. 0 turns resuming off: an interrupted run is retried fresh instead.',
+  }),
+});
+
 // A command id bound to a combination written as modifier tokens plus a key
 // ('mod+k', 'n'). The set of commands lives in the web app (its lib/hotkeys), so
 // the API checks the shape and stores the map as given.

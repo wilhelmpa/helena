@@ -167,6 +167,9 @@ export interface AiAgent {
   fieldTriggers: AgentFieldTriggerRead[];
   // How long a delegation run waits before the agent may pick it up.
   delegationDelaySec: number;
+  // How many of this agent's chats a member may leave answering at once; a send past
+  // the limit is refused until one finishes.
+  maxConcurrentChats: number;
   // The member who created the agent, and whose runs an 'owner'-scoped runner is
   // limited to; 'team' scope serves any member's runs.
   ownerUserId: string | null;
@@ -265,6 +268,7 @@ export interface NewAiAgentInput {
   triggerOnAssign?: boolean;
   fieldTriggers?: AgentFieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   projectIds?: number[];
   // The project the agent is created in, in place of projectIds: it works there only,
   // as a specialist reporting to the project's coordinator.
@@ -289,6 +293,7 @@ export interface AiAgentPatch {
   triggerOnAssign?: boolean;
   fieldTriggers?: AgentFieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   projectIds?: number[];
   runnerScope?: 'owner' | 'team';
   template?: boolean;

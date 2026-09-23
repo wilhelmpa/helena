@@ -2,9 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { Mastra } from '@mastra/core/mastra';
+import { computeNextFireAt } from '@mastra/core/workflows';
 import { LibSQLStore } from '@mastra/libsql';
 import type { WorkEnvelope } from '../src/mastra/contracts.ts';
-import type { PlanRoutineAdapter, RoutineRequest } from '../src/mastra/adapters/plan-routine.ts';
+import {
+  routineIdempotencyKey,
+  type PlanRoutineAdapter,
+  type RoutineRequest,
+} from '../src/mastra/adapters/plan-routine.ts';
 import type { AgentRoutineOutput, RoutineAnswer } from '../src/mastra/routine-contracts.ts';
 import { buildAgentRoutineWorkflow, MISSED_FIRE_MS } from '../src/mastra/routine-workflow.ts';
 import { fireEnvelope, runOutput } from '../src/mastra/scheduled-runs.ts';
@@ -134,6 +139,33 @@ test('every fire of a schedule sends Plan its own idempotency key and is listed 
     await mastra.schedules.delete(schedule.id);
     await mastra.stopWorkers();
   }
+});
+
+// The scheduler takes the next fire strictly after the moment it fired, which is how
+// these are asked. Europe/Berlin repeats 02:00-03:00 on the last Sunday of October and
+// skips it on the last Sunday of March.
+test('a schedule in Europe/Berlin fires once across both clock changes', () => {
+  const berlin = (cron: string, after: string) =>
+    new Date(computeNextFireAt(cron, { timezone: 'Europe/Berlin', after: Date.parse(after) + 5 }))
+      .toISOString();
+  // 02:30 CEST fires; the repeated 02:30 CET an hour later does not.
+  assert.equal(berlin('30 2 * * *', '2026-10-25T00:30:00.000Z'), '2026-10-26T01:30:00.000Z');
+  // The skipped 02:30 fires once, at 03:30 CEST.
+  assert.equal(berlin('30 2 * * *', '2026-03-28T01:30:00.000Z'), '2026-03-29T01:30:00.000Z');
+  assert.equal(berlin('30 2 * * *', '2026-03-29T01:30:00.000Z'), '2026-03-30T00:30:00.000Z');
+});
+
+test('a fire started twice asks Plan with the same key, which Plan answers once', () => {
+  const fire = 'sched_weekly_1790000000000';
+  const envelope = fireEnvelope(
+    { eventId: 'schedule-input', correlationId: 'schedule-input' } as WorkEnvelope,
+    fire,
+  );
+  assert.equal(routineIdempotencyKey(envelope), routineIdempotencyKey({ eventId: fire }));
+  assert.notEqual(
+    routineIdempotencyKey(envelope),
+    routineIdempotencyKey({ eventId: 'sched_weekly_1790604800000' }),
+  );
 });
 
 test('a fire skips while the task the routine created last is still open', async () => {

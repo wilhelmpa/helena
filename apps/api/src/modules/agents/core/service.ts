@@ -19,7 +19,7 @@ import {
   integrationCredential,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
-import { auth } from '@repo/auth';
+import { API_KEY_MAX_NAME_LENGTH, auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { getCredentialById } from '../integrations/service';
 import { integrationKind } from '../integrations/catalog';
@@ -289,6 +289,8 @@ export interface AiAgentRow {
   fieldTriggers: FieldTriggerRead[];
   // How long a delegation run waits before it can be claimed.
   delegationDelaySec: number;
+  // How many of the agent's chats a member may leave answering at once.
+  maxConcurrentChats: number;
   // The member who created the agent, and whose runs an 'owner'-scoped runner is
   // limited to. 'team' scope lets the runner take any member's runs.
   ownerUserId: string | null;
@@ -353,6 +355,7 @@ function mapAgent(row: {
   triggerOnAssign: boolean;
   fieldTriggers: FieldTriggerRead[];
   delegationDelaySec: number;
+  maxConcurrentChats: number;
   ownerUserId: string | null;
   runnerScope: string;
   template: boolean;
@@ -393,6 +396,7 @@ function mapAgent(row: {
     triggerOnAssign: row.triggerOnAssign,
     fieldTriggers: row.fieldTriggers,
     delegationDelaySec: row.delegationDelaySec,
+    maxConcurrentChats: row.maxConcurrentChats,
     ownerUserId: row.ownerUserId,
     runnerScope: row.runnerScope as RunnerScope,
     template: row.template,
@@ -443,6 +447,7 @@ const agentColumns = {
     FieldTriggerRead[]
   >`(select coalesce(json_agg(json_build_object('fieldId', ${agentFieldTrigger.fieldId}, 'name', ${customField.name}, 'delaySec', ${agentFieldTrigger.delaySec}) order by ${customField.name}), '[]'::json) from ${agentFieldTrigger} join ${customField} on ${customField.id} = ${agentFieldTrigger.fieldId} where ${agentFieldTrigger.agentId} = ${aiAgent.id})`,
   delegationDelaySec: aiAgent.delegationDelaySec,
+  maxConcurrentChats: aiAgent.maxConcurrentChats,
   ownerUserId: aiAgent.ownerUserId,
   runnerScope: aiAgent.runnerScope,
   template: aiAgent.template,
@@ -799,6 +804,7 @@ export interface NewAgentInput {
   // The member custom fields that start a run when the agent is set into one.
   fieldTriggers?: FieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   // The projects of the team the agent works in. Empty means it works in none yet:
   // it authenticates and reaches nothing until it is attached to one.
   projectIds?: number[];
@@ -887,9 +893,24 @@ async function assertUsernameFree(
 // rotated by its operator through regenerate-key. The plugin puts its default on
 // every key it creates, so the expiry is cleared on the row afterwards.
 async function issueKey(userId: string, name: string): Promise<{ key: string; id: string }> {
-  const created = await auth.api.createApiKey({ body: { userId, name: `agent:${name}` } });
+  const created = await auth.api.createApiKey({ body: { userId, name: agentKeyName(name) } });
   await db.update(apikey).set({ expiresAt: null }).where(eq(apikey.id, created.id));
   return { key: created.key, id: created.id };
+}
+
+// The name of an agent's key: "agent:" and the agent's display name. It only labels
+// the row; the agent is found through the key's owner, its bot user. The plugin
+// refuses a name over API_KEY_MAX_NAME_LENGTH, and a display name has no such limit
+// (a template's copy appends the project key, a coordinator carries it), so the
+// display name is cut to fit instead of failing the agent's creation or re-key. The
+// cut falls between characters, never inside one.
+function agentKeyName(name: string): string {
+  let keyName = 'agent:';
+  for (const { segment } of new Intl.Segmenter().segment(name.trim())) {
+    if (keyName.length + segment.length > API_KEY_MAX_NAME_LENGTH) break;
+    keyName += segment;
+  }
+  return keyName.trimEnd();
 }
 
 // Creates an agent: a bot user, the ai_agent config row, its team and project
@@ -947,6 +968,7 @@ export async function createAgent(
           triggerOnMention: input.triggerOnMention ?? isInternal,
           triggerOnAssign: input.triggerOnAssign ?? false,
           delegationDelaySec: input.delegationDelaySec,
+          maxConcurrentChats: input.maxConcurrentChats,
           ownerUserId: input.ownerUserId ?? null,
           runnerScope: input.runnerScope ?? 'team',
           template: input.template ?? false,
@@ -1188,6 +1210,7 @@ export interface AgentPatch {
   triggerOnAssign?: boolean;
   fieldTriggers?: FieldTrigger[];
   delegationDelaySec?: number;
+  maxConcurrentChats?: number;
   runnerScope?: RunnerScope;
   // Turning it on detaches the agent from every project.
   template?: boolean;
@@ -1256,6 +1279,7 @@ export async function updateAgent(
   if (patch.triggerOnMention !== undefined) set.triggerOnMention = patch.triggerOnMention;
   if (patch.triggerOnAssign !== undefined) set.triggerOnAssign = patch.triggerOnAssign;
   if (patch.delegationDelaySec !== undefined) set.delegationDelaySec = patch.delegationDelaySec;
+  if (patch.maxConcurrentChats !== undefined) set.maxConcurrentChats = patch.maxConcurrentChats;
   if (patch.template !== undefined) set.template = patch.template;
   // The scope and its owner are one setting: 'owner' means the runs of the member who
   // chose it, so switching to it hands the agent to them.
@@ -1351,6 +1375,7 @@ export async function copyTemplateIntoProject(
     triggerOnMention: template.triggerOnMention,
     triggerOnAssign: template.triggerOnAssign,
     delegationDelaySec: template.delegationDelaySec,
+    maxConcurrentChats: template.maxConcurrentChats,
     runnerScope: template.runnerScope,
     ownerUserId,
     projectId,

@@ -321,6 +321,7 @@
     "agentStarted": "استلم المهمة",
     "agentFinished": "أنهى العمل على المهمة",
     "agentFailed": "لم يتمكن من إنهاء المهمة",
+    "workflowRunLimited": "بلغ حد التشغيل الخاص به وتخطى <v>{workflow}</v>",
     "pullRequestMerged": "دمج طلب السحب <v>{pr}</v>",
     "pullRequestOpened": "فتح طلب السحب <v>{pr}</v>",
     "worklogAdded": "سجّل <v>{time}</v> ليوم <v>{date}</v>",

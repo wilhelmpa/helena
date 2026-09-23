@@ -315,3 +315,67 @@ export const InstanceTeamMemberPageResponse = pageResponse(
     joinedAt: t.String(),
   }),
 );
+
+export const SystemHealthResponse = t.Object({
+  services: t.Array(
+    t.Object({
+      service: t.Union([
+        t.Literal('runner'),
+        t.Literal('mastra'),
+        t.Literal('bridge'),
+        t.Literal('provisioning'),
+        t.Literal('worker'),
+      ]),
+      state: t.Union([t.Literal('ok'), t.Literal('down'), t.Literal('unknown')], {
+        description: 'unknown: the service has never been seen.',
+      }),
+      lastSeenAt: t.Nullable(t.String({ description: 'When it was last seen working.' })),
+      error: t.Nullable(t.String({ description: 'Why the last check failed.' })),
+    }),
+  ),
+  runs: t.Object({
+    waiting: t.Number({ description: 'Agent runs due and not claimed.' }),
+    oldestWaitingSince: t.Nullable(t.String()),
+    overdue: t.Number({ description: 'Claimed runs still running past their time limit.' }),
+    resuming: t.Number({
+      description:
+        'Runs waiting to resume, or already resumed, the coding agent session of a ' +
+        'runner that died mid run.',
+    }),
+    failedLastDay: t.Number(),
+    needsResumeReview: t.Number({
+      description: 'Runs that reached the resume limit and need the owner to look at them.',
+    }),
+    agentTeamStartsWaiting: t.Number({ description: 'Agent-team starts waiting for Mastra.' }),
+    provisioningFailed: t.Number({ description: 'Provisioning jobs that gave up.' }),
+    stalledWorkflowRuns: t.Nullable(
+      t.Number({
+        description:
+          'Active agent-team runs Mastra has not moved on for 15 minutes that wait on no ' +
+          'stage run in Plan. Null while Mastra cannot be asked.',
+      }),
+    ),
+  }),
+  janitors: t.Array(
+    t.Object({
+      job: t.Union([
+        t.Literal('run-janitor'),
+        t.Literal('stage-janitor'),
+        t.Literal('workflow-schedules'),
+        t.Literal('resume-janitor'),
+      ]),
+      state: t.Union([t.Literal('ok'), t.Literal('down'), t.Literal('unknown')], {
+        description: 'unknown: the job has never run.',
+      }),
+      ranAt: t.Nullable(t.String({ description: 'When it last ran.' })),
+      cleaned: t.Nullable(
+        t.Number({
+          description:
+            'What it cleaned up that run. Stays at the last run that had a count while the ' +
+            'most recent run failed before counting anything.',
+        }),
+      ),
+      error: t.Nullable(t.String({ description: 'Why the last run failed.' })),
+    }),
+  ),
+});

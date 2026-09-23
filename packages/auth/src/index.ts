@@ -271,6 +271,11 @@ const DAY_SEC = 24 * 60 * 60;
 export const API_KEY_DEFAULT_EXPIRES_IN_SEC = 90 * DAY_SEC;
 export const API_KEY_MAX_EXPIRES_IN_DAYS = 365;
 
+// The longest name the plugin accepts on a key, in UTF-16 code units (it compares
+// `name.length`). A longer one is refused with INVALID_NAME_LENGTH. This is the
+// plugin's own default, held here so apps/api can fit an agent's key name to it.
+export const API_KEY_MAX_NAME_LENGTH = 32;
+
 export const auth = betterAuth({
   baseURL: `${baseURL.replace(/\/+$/, '')}/api/auth`,
   basePath: `${new URL(baseURL).pathname.replace(/\/+$/, '')}/api/auth`,
@@ -589,6 +594,7 @@ export const auth = betterAuth({
       // Brand prefix so a leaked key is identifiable by secret scanners and in logs.
       // The trailing underscore separates it from the random part (itp_<64 chars>).
       defaultPrefix: 'itp_',
+      maximumNameLength: API_KEY_MAX_NAME_LENGTH,
       // A key is a full-account credential, so one that was forgotten stops working
       // on its own. The caller may pick a shorter or longer life up to the maximum;
       // an agent's key is the exception, cleared where it is issued in apps/api.

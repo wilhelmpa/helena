@@ -1,5 +1,6 @@
 {
   "inbox": "Bandeja de entrada",
+  "chat": "Chat",
   "files": "Archivos",
   "approvals": "Aprobaciones",
   "dashboards": "Paneles",
@@ -74,9 +75,15 @@
       "liveTitle": "Vista en directo de la pestaña en primer plano",
       "desktop": "Escritorio",
       "desktopTitle": "Escritorio (VNC)",
+      "followAgentOn": "Siguiendo la pestaña del agente",
+      "followAgentOff": "Seguir la pestaña del agente",
       "liveKeyboard": "Navegador en directo. Las teclas van a la página mientras la vista tiene el foco.",
+      "controlAgent": "El agente está actuando",
       "connecting": "Conectando con el navegador…",
-      "reconnecting": "Se perdió la conexión con el navegador. Reconectando…"
+      "reconnecting": "Se perdió la conexión con el navegador. Reconectando…",
+      "dialogTitle": "La página pregunta",
+      "dialogOk": "Aceptar",
+      "dialogCancel": "Cancelar"
     }
   },
   "groups": {

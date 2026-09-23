@@ -1,5 +1,6 @@
 {
   "inbox": "Kotak masuk",
+  "chat": "Obrolan",
   "files": "Berkas",
   "approvals": "Persetujuan",
   "dashboards": "Dasbor",
@@ -74,9 +75,15 @@
       "liveTitle": "Tampilan langsung tab di depan",
       "desktop": "Desktop",
       "desktopTitle": "Desktop (VNC)",
+      "followAgentOn": "Mengikuti tab agen",
+      "followAgentOff": "Ikuti tab agen",
       "liveKeyboard": "Browser langsung. Tombol dikirim ke halaman selama tampilan ini memiliki fokus.",
+      "controlAgent": "Agen sedang bertindak",
       "connecting": "Menghubungkan ke browser…",
-      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…"
+      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…",
+      "dialogTitle": "Halaman bertanya",
+      "dialogOk": "OK",
+      "dialogCancel": "Batal"
     }
   },
   "groups": {

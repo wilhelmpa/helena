@@ -2,6 +2,7 @@ import { db, label, pipeline, pipelineVersion, projectColumn, projectPipeline } 
 import { and, eq, inArray } from 'drizzle-orm';
 import { actorId, type ActivityActor } from '#modules/issues/activity';
 import type { PipelineDefinition, PipelineTrigger } from './definition';
+import { checkPipelineRunLimit } from './rate-limit';
 import { createRun } from './runs';
 
 // Task events that start the workflows a project runs on them. A run is planned in
@@ -49,7 +50,12 @@ export async function queuePipelineTriggers(
   if (events.length === 0 || isWorkflow(actor)) return;
   try {
     const enabled = await db
-      .select({ pipelineId: pipeline.id, definition: pipelineVersion.definition })
+      .select({
+        pipelineId: pipeline.id,
+        versionId: pipelineVersion.id,
+        pipelineName: pipeline.name,
+        definition: pipelineVersion.definition,
+      })
       .from(projectPipeline)
       .innerJoin(pipeline, eq(pipeline.id, projectPipeline.pipelineId))
       .innerJoin(
@@ -60,10 +66,16 @@ export async function queuePipelineTriggers(
         ),
       )
       .where(and(eq(projectPipeline.projectId, task.projectId), eq(projectPipeline.enabled, true)));
-    for (const { pipelineId, definition } of enabled) {
+    for (const { pipelineId, versionId, pipelineName, definition } of enabled) {
       const { trigger } = definition as PipelineDefinition;
       for (const event of events) {
         if (!(await matches(trigger, event))) continue;
+        const allowed = await checkPipelineRunLimit(
+          { id: pipelineId, versionId, name: pipelineName },
+          task,
+          event.type,
+        );
+        if (!allowed) break;
         await createRun({
           pipelineId,
           projectId: task.projectId,

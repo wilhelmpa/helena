@@ -12,6 +12,9 @@ export const RunnerRunResponse = t.Object({
   prompt: t.String(),
   systemPrompt: t.String(),
   attempts: t.Number(),
+  claim: t.Number({
+    description: 'Names this claim on the heartbeats, the result and a release of the run.',
+  }),
   issueId: t.Nullable(t.Number()),
   issueIdentifier: t.Nullable(t.String()),
   sourceActivityId: t.Nullable(t.Number()),
@@ -20,6 +23,13 @@ export const RunnerRunResponse = t.Object({
   maxTurns: t.Nullable(t.Number()),
   runBudgetSeconds: t.Nullable(t.Number()),
   workdir: t.Nullable(t.String()),
+  sessionId: t.Nullable(
+    t.String({
+      description:
+        'The coding agent session to resume: the runner that held this run before died ' +
+        'mid run and reported one. Null for a run claimed for the first time.',
+    }),
+  ),
 });
 
 // The claim result. The run is wrapped so an empty queue is an explicit null rather
@@ -28,11 +38,31 @@ export const ClaimResponse = t.Object({ run: t.Nullable(RunnerRunResponse) });
 
 export const runParams = t.Object({ runId: t.Numeric() });
 
+// The claim the runner holds, from the claimed run. With it the server refuses a
+// heartbeat, result or release of a runner whose run was claimed again.
+export const runClaimQuery = t.Object({
+  claim: t.Optional(t.Numeric({ minimum: 1, description: 'The claim of the claimed run.' })),
+});
+
+export const releaseQuery = t.Object({
+  claim: t.Numeric({ minimum: 1, description: 'The claim of the claimed run.' }),
+});
+
+export const sessionBody = t.Object({
+  sessionId: t.String({
+    minLength: 1,
+    maxLength: 200,
+    description: "The run's coding agent session, as soon as the runner reads it.",
+  }),
+});
+
 // The heartbeat's answer. The server has no connection to the runner, so the cancel
 // is returned on the call the runner already makes.
 export const RunAckResponse = t.Object({
   canceled: t.Boolean({
-    description: 'The run was canceled: kill the command and report nothing for it.',
+    description:
+      'The run was canceled, or claimed again after the named claim: kill the command ' +
+      'and report nothing for it.',
   }),
 });
 

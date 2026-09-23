@@ -15,7 +15,14 @@ export type AgUiEvent =
   | { type: 'TOOL_CALL_START'; toolCallId: string; toolCallName: string; parentMessageId: string }
   | { type: 'TOOL_CALL_ARGS'; toolCallId: string; delta: string }
   | { type: 'TOOL_CALL_END'; toolCallId: string }
-  | { type: 'TOOL_CALL_RESULT'; messageId: string; toolCallId: string; content: string };
+  | {
+      type: 'TOOL_CALL_RESULT';
+      messageId: string;
+      toolCallId: string;
+      content: string;
+      // Not part of AG-UI: the tool failed and `content` is its error.
+      isError?: boolean;
+    };
 
 // What one model call of the answer read and wrote, normalised across the commands: the
 // tokens read include the ones read from cache, which several of them report apart. It
@@ -50,6 +57,8 @@ export class AnswerStream {
   // Most formats name their session on the line that opens the stream; Copilot names it
   // on the one that closes it, so it reaches the server with the last batch of events.
   private sessionId: string | null = null;
+  // The model the command named on its opening line.
+  private reportedModel: string | null = null;
   // opencode re-sends a growing part rather than the delta, so the last text seen says
   // how much of the next one is new. A tool is re-sent as it runs, both by opencode and
   // by Antigravity, hence the sets: one for the call already reported, one for the result
@@ -92,6 +101,10 @@ export class AnswerStream {
   // Null for a format that reports no session, and for a run that printed nothing.
   startedSession(): string | null {
     return this.sessionId;
+  }
+
+  model(): string | null {
+    return this.reportedModel;
   }
 
   // The size of the conversation's context after this answer, as the reader saw it.
@@ -236,6 +249,7 @@ export class AnswerStream {
 
   private readHermesLine(message: HermesLine): void {
     if (message.session_id) this.sessionId ??= message.session_id;
+    if (message.type === 'system' && message.model) this.reportedModel ??= message.model;
     if (message.type === 'text' && typeof message.text === 'string') {
       this.sawPartialText = true;
       this.appendText(message.text);
@@ -262,7 +276,7 @@ export class AnswerStream {
       : this.hermesOpenTools.findIndex((tool) => tool.name === (message.name ?? 'tool'));
     const open = openIndex >= 0 ? this.hermesOpenTools.splice(openIndex, 1)[0] : undefined;
     const id = message.tool_call_id ?? open?.id;
-    if (id) this.pushToolResult(id, message.output ?? '');
+    if (id) this.pushToolResult(id, message.output ?? '', message.is_error === true);
   }
 
   // The answer arrives as deltas that the assistant message then repeats whole, and a
@@ -445,13 +459,14 @@ export class AnswerStream {
     );
   }
 
-  private pushToolResult(toolCallId: string, content: string): void {
+  private pushToolResult(toolCallId: string, content: string, isError = false): void {
     this.drainText();
     this.queued.push({
       type: 'TOOL_CALL_RESULT',
       messageId: this.messageId,
       toolCallId,
       content: tail(content, TOOL_TEXT_LIMIT),
+      ...(isError && { isError }),
     });
   }
 }
@@ -712,6 +727,8 @@ interface CopilotLine {
 interface HermesLine {
   type?: string;
   session_id?: string;
+  model?: string;
+  is_error?: boolean;
   text?: string;
   name?: string;
   tool_call_id?: string;

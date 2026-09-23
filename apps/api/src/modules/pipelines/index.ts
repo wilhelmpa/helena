@@ -20,6 +20,7 @@ import {
   PipelineContextResponse,
   pipelineParams,
   PipelineResponse,
+  PipelineRunLimitResponse,
   pipelineRunParams,
   PipelineRunPageResponse,
   PipelineRunResponse,
@@ -34,9 +35,11 @@ import {
   startRunBody,
   teamParams,
   updatePipelineBody,
+  updatePipelineRunLimitBody,
   validateBody,
   ValidationResponse,
 } from './model';
+import { getPipelineRunLimit, setPipelineRunLimit } from './rate-limit';
 import {
   cancelRun,
   decideApproval,
@@ -232,6 +235,33 @@ export const pipelineRoutes = new Elysia({
         description:
           'Every problem of the definition, and what keeps it from running in the project ' +
           'with the given role mapping.',
+      },
+    },
+  )
+  .get(
+    '/projects/:projectKey/pipeline-run-limit',
+    ({ project }) => getPipelineRunLimit(project.id),
+    {
+      permission: ['actions', 'read'],
+      response: { 200: PipelineRunLimitResponse, ...accessErrors },
+      detail: {
+        summary: "Get a project's workflow run limit",
+        description:
+          'The guard against workflows re-triggering each other without end: at most maxRuns ' +
+          'runs of any workflow may start on one task within windowMinutes.',
+      },
+    },
+  )
+  .patch(
+    '/projects/:projectKey/pipeline-run-limit',
+    ({ project, body }) => setPipelineRunLimit(project.id, body.maxRuns),
+    {
+      permission: ['actions', 'edit'],
+      body: updatePipelineRunLimitBody,
+      response: { 200: PipelineRunLimitResponse, ...commonErrors },
+      detail: {
+        summary: "Update a project's workflow run limit",
+        description: 'Changes maxRuns; the window stays a fixed hour.',
       },
     },
   )

@@ -13,7 +13,7 @@ import { RoutineField } from './RoutineField';
 
 // The agent a routine delegates its task to. Only an agent that runs when it is
 // delegated to can take one — and only a real agent: a pool template runs nowhere, so
-// it is filtered out here the same way AiChatAgentMenu filters it out of chat, even
+// it is filtered out here the same way chat's agent pickers filter it out, even
 // though a routine's own agent list is normally project-scoped already (a template
 // joins no project) and so would not carry one in practice.
 export function RoutineAgentField({

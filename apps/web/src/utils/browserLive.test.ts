@@ -44,8 +44,8 @@ describe('live view frames', () => {
     );
   });
 
-  it('reads the page size in CSS pixels in front of the JPEG', async () => {
-    const data = new Uint8Array([0x03, 0x20, 0x02, 0x01, 0xff, 0xd8]).buffer;
+  it('reads the viewport in CSS pixels in front of the JPEG', async () => {
+    const data = new Uint8Array([0, 0x03, 0x20, 0x02, 0x01, 0xff, 0xd8]).buffer;
     const { size, jpeg } = readFrame(data);
     assert.deepEqual(size, { width: 800, height: 513 });
     assert.equal(jpeg.type, 'image/jpeg');

@@ -8,7 +8,7 @@ import { revScope } from '@/utils/revScopes';
 export default function SidebarApprovalsRefresh({ teamId }: { teamId: number }) {
   useLiveRefresh({
     scope: revScope.approvals(teamId),
-    targets: [qk.approvalsPendingCount, qk.approvalLists, qk.pipelineApprovals],
+    targets: [qk.approvalsPendingCountAll, qk.approvalLists, qk.pipelineApprovals],
   });
   return null;
 }

@@ -74,7 +74,10 @@ import { cycleStatus, getCycleRef, type CycleStatus } from '#modules/cycles/serv
 import { getMembership, projectIdsWithPermission } from '#modules/members/service';
 import { getViewFolder } from '#modules/views/service';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
-import { startDelegatedAgentTeam } from '#modules/control-plane-workflows/agent-team';
+import {
+  delegationPrompt,
+  startDelegatedAgentTeam,
+} from '#modules/control-plane-workflows/agent-team-starts';
 import { queuePipelineTriggers } from '#modules/pipelines/triggers';
 import { applySubtaskAutomation } from './automation';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
@@ -1325,7 +1328,7 @@ export async function enqueueDelegateRun(after: IssueRow, actor?: ActivityActor)
     projectId: after.projectId,
     issueId: after.id,
     sourceActivityId: null,
-    prompt: `Work item ${after.identifier}: "${after.title}" has been delegated to you. Review it and take the appropriate next step.`,
+    prompt: delegationPrompt(after.identifier, after.title),
     delaySeconds: agent.delegationDelaySec,
   });
 }

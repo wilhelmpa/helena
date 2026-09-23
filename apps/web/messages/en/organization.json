@@ -110,6 +110,7 @@
     "description": "Provisioned code, terminal, browser, files, and agent resources for this project.",
     "loading": "Loading project resources…",
     "unavailable": "Project resource status is unavailable.",
+    "boardDeleted": "Board #{id} (deleted)",
     "status": {
       "pending": "Provisioning",
       "succeeded": "Ready",

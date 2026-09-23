@@ -159,7 +159,11 @@
     "saved": "Project defaults saved",
     "projectDefaults": "Project defaults",
     "mcpEnabled": "Enable MCP on new projects",
-    "mcpEnabledHint": "A new project is in its team's MCP reach from the moment it is created."
+    "mcpEnabledHint": "A new project is in its team's MCP reach from the moment it is created.",
+    "runResume": "Run resume",
+    "maxResumes": "Resume limit",
+    "maxResumesHint": "How many times a run may resume its coding agent session after the runner holding it died mid run, before it stops on its own and asks you to look at it. 0 turns resuming off: an interrupted run is retried fresh instead.",
+    "savedRunResume": "Resume limit saved"
   },
   "authentication": {
     "saved": "Authentication settings saved",
@@ -313,5 +317,36 @@
       "remove": "Remove project",
       "saved": "Group access saved"
     }
+  },
+  "systemHealth": {
+    "title": "Services",
+    "service": {
+      "runner": "Hermes runner",
+      "mastra": "Mastra",
+      "bridge": "Hermes team bridge",
+      "provisioning": "Provisioning",
+      "worker": "Worker"
+    },
+    "seen": "seen {time} ago",
+    "lastSeen": "last seen {time} ago",
+    "neverSeen": "not seen yet",
+    "waiting": "{count, plural, one {# run waits} other {# runs wait}} to be claimed, the oldest for {time}",
+    "overdue": "{count, plural, one {# run is} other {# runs are}} still running past the time limit",
+    "agentTeamStartsWaiting": "{count, plural, one {# agent-team start waits} other {# agent-team starts wait}} for Mastra",
+    "stalledWorkflowRuns": "{count, plural, one {# agent-team run has} other {# agent-team runs have}} made no progress for 15 minutes",
+    "failedLastDay": "{count, plural, one {# run} other {# runs}} failed in the last 24 hours",
+    "provisioningFailed": "{count, plural, one {# provisioning job} other {# provisioning jobs}} failed",
+    "janitorsTitle": "Janitors",
+    "janitor": {
+      "run-janitor": "Run janitor",
+      "stage-janitor": "Stage janitor",
+      "workflow-schedules": "Schedule sync",
+      "resume-janitor": "Resume janitor"
+    },
+    "janitorRan": "ran {time} ago",
+    "janitorCleaned": "{count, plural, one {cleaned up # thing} other {cleaned up # things}}",
+    "janitorNeverRan": "has not run yet",
+    "resuming": "{count, plural, one {# run is} other {# runs are}} resuming after a crash",
+    "needsResumeReview": "{count, plural, one {# run} other {# runs}} reached the resume limit and need a look"
   }
 }

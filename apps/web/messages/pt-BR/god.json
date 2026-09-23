@@ -159,7 +159,11 @@
     "saved": "Padrões de projeto salvos",
     "projectDefaults": "Padrões de projeto",
     "mcpEnabled": "Ativar MCP em novos projetos",
-    "mcpEnabledHint": "Um novo projeto está no alcance de MCP do seu time desde o momento em que é criado."
+    "mcpEnabledHint": "Um novo projeto está no alcance de MCP do seu time desde o momento em que é criado.",
+    "runResume": "Retomada de execuções",
+    "maxResumes": "Limite de retomadas",
+    "maxResumesHint": "Quantas vezes uma execução pode retomar sua sessão do agente de código depois que o runner que a mantinha morreu no meio da execução, antes de parar sozinha e pedir para você olhar. 0 desliga a retomada: uma execução interrompida é tentada novamente do zero.",
+    "savedRunResume": "Limite de retomadas salvo"
   },
   "authentication": {
     "saved": "Configurações de autenticação salvas",
@@ -313,5 +317,36 @@
       "remove": "Remover projeto",
       "saved": "Acesso do grupo salvo"
     }
+  },
+  "systemHealth": {
+    "title": "Serviços",
+    "service": {
+      "runner": "Executor do Hermes",
+      "mastra": "Mastra",
+      "bridge": "Ponte da equipe Hermes",
+      "provisioning": "Provisionamento",
+      "worker": "Worker"
+    },
+    "seen": "visto há {time}",
+    "lastSeen": "visto pela última vez há {time}",
+    "neverSeen": "ainda não visto",
+    "waiting": "{count, plural, one {# execução aguarda} other {# execuções aguardam}} para ser assumida, a mais antiga há {time}",
+    "overdue": "{count, plural, one {# execução continua} other {# execuções continuam}} rodando além do limite de tempo",
+    "agentTeamStartsWaiting": "{count, plural, one {# início de agent-team aguarda} other {# inícios de agent-team aguardam}} o Mastra",
+    "stalledWorkflowRuns": "{count, plural, one {# execução de agent-team não avançou} other {# execuções de agent-team não avançaram}} em 15 minutos",
+    "failedLastDay": "{count, plural, one {# execução falhou} other {# execuções falharam}} nas últimas 24 horas",
+    "provisioningFailed": "{count, plural, one {# tarefa de provisionamento falhou} other {# tarefas de provisionamento falharam}}",
+    "janitorsTitle": "Tarefas de limpeza",
+    "janitor": {
+      "run-janitor": "Limpeza de execuções",
+      "stage-janitor": "Limpeza de estágios",
+      "workflow-schedules": "Sincronização de agendas",
+      "resume-janitor": "Limpeza de retomadas"
+    },
+    "janitorRan": "executado há {time}",
+    "janitorCleaned": "{count, plural, one {limpou # item} other {limpou # itens}}",
+    "janitorNeverRan": "ainda não foi executado",
+    "resuming": "{count, plural, one {# execução está sendo retomada} other {# execuções estão sendo retomadas}} após uma queda",
+    "needsResumeReview": "{count, plural, one {# execução atingiu} other {# execuções atingiram}} o limite de retomadas e precisam de atenção"
   }
 }

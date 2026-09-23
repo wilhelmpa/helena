@@ -1,8 +1,11 @@
 [Unit]
 Description=Volition Mastra to Hermes project-team bridge
 After=network-online.target volition-plan-api.service volition-hermes-runner.service
-Wants=network-online.target
-Requires=volition-plan-api.service
+# Wants rather than Requires: systemd restarts a service with the service it requires,
+# and this one rides out the API being down.
+Wants=network-online.target volition-plan-api.service
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -18,8 +21,10 @@ Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
 Environment=HERMES_TEAM_SOCKET=/run/volition-ipc/hermes-team.sock
 Environment=PLAN_INTERNAL_URL=http://127.0.0.1:3000
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/hermes-team-bridge.mjs
-Restart=on-failure
+Restart=always
 RestartSec=3
+RestartSteps=5
+RestartMaxDelaySec=60
 TimeoutStopSec=20
 UMask=0077
 NoNewPrivileges=yes

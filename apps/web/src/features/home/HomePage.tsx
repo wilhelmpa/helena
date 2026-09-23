@@ -6,6 +6,7 @@ import Shell from '@/components/layout/Shell';
 import { useProjectsQuery } from '@/services/projects.service';
 import HomeOpenTasks from './components/home/HomeOpenTasks';
 import HomeProjectCard from './components/home/HomeProjectCard';
+import HomeSystemHealth from './components/home/HomeSystemHealth';
 
 export default function HomePage() {
   const t = useTranslations('nav');
@@ -22,6 +23,7 @@ export default function HomePage() {
             </div>
           </div>
           <HomeOpenTasks />
+          <HomeSystemHealth />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-3">
             {projects.data?.map((project) => (
               <HomeProjectCard key={project.id} project={project} />

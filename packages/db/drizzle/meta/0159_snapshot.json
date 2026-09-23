@@ -1,6 +1,6 @@
 {
-  "id": "696113bf-ccc7-4fa8-b27c-e8b4f333be25",
-  "prevId": "0170733e-dc30-4828-bd3b-ebd46725e8fd",
+  "id": "f1423f1c-1275-4ac4-b7ae-79344f5f8993",
+  "prevId": "a9068a33-de72-439e-aba2-ee32c11dcb9f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2076,6 +2076,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "claims": {
+          "name": "claims",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "finished_at": {
           "name": "finished_at",
           "type": "timestamp with time zone",
@@ -2506,154 +2519,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.agent_template_sync_log": {
-      "name": "agent_template_sync_log",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "team_id": {
-          "name": "team_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "template_id": {
-          "name": "template_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "copy_id": {
-          "name": "copy_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "groups": {
-          "name": "groups",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "synced_at": {
-          "name": "synced_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_template_sync_log_team_idx": {
-          "name": "agent_template_sync_log_team_idx",
-          "columns": [
-            {
-              "expression": "team_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_template_sync_log_template_idx": {
-          "name": "agent_template_sync_log_template_idx",
-          "columns": [
-            {
-              "expression": "template_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "synced_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_template_sync_log_copy_idx": {
-          "name": "agent_template_sync_log_copy_idx",
-          "columns": [
-            {
-              "expression": "copy_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "synced_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_template_sync_log_team_id_team_id_fk": {
-          "name": "agent_template_sync_log_team_id_team_id_fk",
-          "tableFrom": "agent_template_sync_log",
-          "tableTo": "team",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_template_sync_log_template_id_ai_agent_id_fk": {
-          "name": "agent_template_sync_log_template_id_ai_agent_id_fk",
-          "tableFrom": "agent_template_sync_log",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_template_sync_log_copy_id_ai_agent_id_fk": {
-          "name": "agent_template_sync_log_copy_id_ai_agent_id_fk",
-          "tableFrom": "agent_template_sync_log",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "copy_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.agent_tool": {
       "name": "agent_tool",
       "schema": "",
@@ -3006,25 +2871,6 @@
           "notNull": true,
           "default": false
         },
-        "source_template_id": {
-          "name": "source_template_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "template_overrides": {
-          "name": "template_overrides",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "template_synced_at": {
-          "name": "template_synced_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "last_seen_at": {
           "name": "last_seen_at",
           "type": "timestamp with time zone",
@@ -3099,21 +2945,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "ai_agent_source_template_idx": {
-          "name": "ai_agent_source_template_idx",
-          "columns": [
-            {
-              "expression": "source_template_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -3168,19 +2999,6 @@
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
-        },
-        "ai_agent_source_template_id_ai_agent_id_fk": {
-          "name": "ai_agent_source_template_id_ai_agent_id_fk",
-          "tableFrom": "ai_agent",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "source_template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3206,10 +3024,6 @@
         "ai_agent_delegation_delay_check": {
           "name": "ai_agent_delegation_delay_check",
           "value": "\"ai_agent\".\"delegation_delay_sec\" >= 0 AND \"ai_agent\".\"delegation_delay_sec\" <= 86400"
-        },
-        "ai_agent_template_no_source_check": {
-          "name": "ai_agent_template_no_source_check",
-          "value": "NOT (\"ai_agent\".\"template\" AND \"ai_agent\".\"source_template_id\" IS NOT NULL)"
         }
       },
       "isRLSEnabled": false
@@ -8258,6 +8072,44 @@
       },
       "isRLSEnabled": false
     },
+    "public.janitor_run": {
+      "name": "janitor_run",
+      "schema": "",
+      "columns": {
+        "job": {
+          "name": "job",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ran_at": {
+          "name": "ran_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "cleaned": {
+          "name": "cleaned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.label": {
       "name": "label",
       "schema": "",
@@ -10541,6 +10393,44 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.service_heartbeat": {
+      "name": "service_heartbeat",
+      "schema": "",
+      "columns": {
+        "service": {
+          "name": "service",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.team": {
       "name": "team",
       "schema": "",
@@ -11967,6 +11857,206 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.agent_team_start": {
+      "name": "agent_team_start",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issue_id": {
+          "name": "issue_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "agent_team_start_due_idx": {
+          "name": "agent_team_start_due_idx",
+          "columns": [
+            {
+              "expression": "next_attempt_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_team_start\".\"status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_team_start_issue_idx": {
+          "name": "agent_team_start_issue_idx",
+          "columns": [
+            {
+              "expression": "issue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "agent_team_start_project_id_project_id_fk": {
+          "name": "agent_team_start_project_id_project_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_team_start_issue_id_issue_id_fk": {
+          "name": "agent_team_start_issue_id_issue_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "issue",
+          "columnsFrom": [
+            "issue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_team_start_agent_id_ai_agent_id_fk": {
+          "name": "agent_team_start_agent_id_ai_agent_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_team_start_actor_user_id_user_id_fk": {
+          "name": "agent_team_start_actor_user_id_user_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "user",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agent_team_start_event_id_unique": {
+          "name": "agent_team_start_event_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "agent_team_start_status_check": {
+          "name": "agent_team_start_status_check",
+          "value": "\"agent_team_start\".\"status\" IN ('pending', 'started', 'refused', 'superseded')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.project_action_run_step": {

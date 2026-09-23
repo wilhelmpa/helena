@@ -159,7 +159,11 @@
     "saved": "Pengaturan bawaan proyek disimpan",
     "projectDefaults": "Pengaturan bawaan proyek",
     "mcpEnabled": "Aktifkan MCP pada proyek baru",
-    "mcpEnabledHint": "Proyek baru berada dalam jangkauan MCP timnya sejak saat dibuat."
+    "mcpEnabledHint": "Proyek baru berada dalam jangkauan MCP timnya sejak saat dibuat.",
+    "runResume": "Pelanjutan run",
+    "maxResumes": "Batas pelanjutan",
+    "maxResumesHint": "Berapa kali sebuah run boleh melanjutkan sesi agen coding-nya setelah runner yang memegangnya mati di tengah jalan, sebelum berhenti sendiri dan meminta Anda memeriksanya. 0 mematikan pelanjutan: run yang terputus dicoba ulang dari awal.",
+    "savedRunResume": "Batas pelanjutan disimpan"
   },
   "authentication": {
     "saved": "Pengaturan autentikasi disimpan",
@@ -313,5 +317,36 @@
       "remove": "Hapus proyek",
       "saved": "Akses grup disimpan"
     }
+  },
+  "systemHealth": {
+    "title": "Layanan",
+    "service": {
+      "runner": "Runner Hermes",
+      "mastra": "Mastra",
+      "bridge": "Jembatan tim Hermes",
+      "provisioning": "Penyediaan",
+      "worker": "Worker"
+    },
+    "seen": "terlihat {time} lalu",
+    "lastSeen": "terakhir terlihat {time} lalu",
+    "neverSeen": "belum terlihat",
+    "waiting": "{count, plural, other {# run menunggu}} untuk diambil, yang tertua sejak {time}",
+    "overdue": "{count, plural, other {# run}} masih berjalan melewati batas waktu",
+    "agentTeamStartsWaiting": "{count, plural, other {# start agent-team menunggu}} Mastra",
+    "stalledWorkflowRuns": "{count, plural, other {# run agent-team}} tidak maju selama 15 menit",
+    "failedLastDay": "{count, plural, other {# run}} gagal dalam 24 jam terakhir",
+    "provisioningFailed": "{count, plural, other {# tugas penyediaan}} gagal",
+    "janitorsTitle": "Tugas pembersihan",
+    "janitor": {
+      "run-janitor": "Pembersih proses",
+      "stage-janitor": "Pembersih tahap",
+      "workflow-schedules": "Sinkronisasi jadwal",
+      "resume-janitor": "Pembersih pelanjutan"
+    },
+    "janitorRan": "berjalan {time} lalu",
+    "janitorCleaned": "{count, plural, other {membersihkan # item}}",
+    "janitorNeverRan": "belum pernah berjalan",
+    "resuming": "{count, plural, other {# run sedang dilanjutkan}} setelah crash",
+    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa"
   }
 }

@@ -26,6 +26,7 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { paginate } from '#shared/pagination';
 import { noContent } from '#shared/http';
 import { deleteProject } from '#modules/projects/service';
+import { systemHealth } from './system-health';
 import {
   deleteInstanceUser,
   getInstanceProject,
@@ -58,6 +59,7 @@ import {
   InstanceTeamResponse,
   InstanceUserDetailResponse,
   InstanceUserPageResponse,
+  SystemHealthResponse,
   OidcSettingsBody,
   OidcSettingsResponse,
   ScimGroupMappingsBody,
@@ -86,11 +88,14 @@ import {
   setHotkeySettings,
   getProjectDefaults,
   setProjectDefaults,
+  getRunResumeSettings,
+  setRunResumeSettings,
 } from '#modules/settings/service';
 import { getUpdateStatus } from '#modules/settings/updates';
 import {
   HotkeyCombosSchema,
   ProjectDefaultsSchema,
+  RunResumeSettingsSchema,
   StorageSettingsSchema,
   UpdateStatusSchema,
 } from '#modules/settings/model';
@@ -127,6 +132,17 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
   // once here instead of per route.
   .onBeforeHandle(({ user }) => {
     requireGod(user);
+  })
+
+  .get('/god/system-health', () => systemHealth(), {
+    response: { 200: SystemHealthResponse, ...errors(401, 403) },
+    detail: {
+      summary: 'Read the health of the services',
+      description:
+        'The last time the Hermes runner, Mastra, the Hermes team bridge, the provisioning ' +
+        'service and the worker were seen working, the agent runs that wait or overran, and ' +
+        'when the janitor loops last ran and what they cleaned up.',
+    },
   })
 
   .get(
@@ -414,6 +430,25 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       summary: 'Update project defaults',
       description:
         'Update what a newly created project starts with. Projects that already exist are untouched; each setting stays editable per project.',
+    },
+  })
+
+  .get('/god/run-resume-settings', () => getRunResumeSettings(), {
+    response: { 200: RunResumeSettingsSchema, ...errors(401, 403) },
+    detail: {
+      summary: 'Get the run-resume limit',
+      description:
+        'Get how many times a run may resume its coding agent session after the runner ' +
+        'holding it died, before it stops on its own and asks the owner to look at it.',
+    },
+  })
+
+  .put('/god/run-resume-settings', ({ body }) => setRunResumeSettings(body), {
+    body: RunResumeSettingsSchema,
+    response: { 200: RunResumeSettingsSchema, ...errors(400, 401, 403) },
+    detail: {
+      summary: 'Update the run-resume limit',
+      description: 'Update how many times a run may resume its coding agent session.',
     },
   })
 
