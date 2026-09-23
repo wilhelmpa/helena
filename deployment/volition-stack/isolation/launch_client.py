@@ -165,6 +165,11 @@ def main() -> int:
     term.add_argument('slug')
     stop = commands.add_parser('terminal-stop')
     stop.add_argument('slug')
+    browser = commands.add_parser('browser-state')
+    browser.add_argument('action', choices=['ensure', 'remove'])
+    browser.add_argument('slug')
+    browser.add_argument('project_id', type=int)
+    browser.add_argument('event_id', nargs='?')
     runner = commands.add_parser('run')
     runner.add_argument('--slug', required=True)
     runner.add_argument('--runtime', required=True)
@@ -185,6 +190,9 @@ def main() -> int:
         return single({'op': 'remove-project-user', 'slug': args.slug})
     if args.command == 'terminal-stop':
         return single({'op': 'terminal-stop', 'slug': args.slug})
+    if args.command == 'browser-state':
+        return single({'op': 'browser-state', 'action': args.action, 'slug': args.slug,
+                       'projectId': args.project_id, **({'eventId': args.event_id} if args.event_id else {})})
     if args.command == 'terminal':
         return terminal(args)
     if args.args[:1] == ['--']:

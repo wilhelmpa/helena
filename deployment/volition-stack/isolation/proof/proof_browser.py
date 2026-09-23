@@ -140,3 +140,31 @@ def run_browser_proofs(report, sh, root: str, state: dict) -> None:
                    bool(results) and not any(value['ok'] for value in results.values()), json.dumps(results)[:240])
     finally:
         stop()
+
+
+def run_browser_state_proofs(report, sh, root: str) -> None:
+    """Provisioning with isolation: the launcher writes and removes a project's browser state
+    as the browser user, for a project the registry names."""
+    iso = f'{root}/isolation'
+    env = {'VOLITION_LAUNCHER_SOCKET': '/run/vpt-launcher/launch.sock', 'PATH': '/usr/bin:/bin'}
+
+    def ask(*args: str):
+        return sh('/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I', f'{iso}/launch_client.py',
+                  'browser-state', *args, env=env, check=False)
+
+    done = ask('ensure', 'beta', '2')
+    answer = done.stdout.decode().strip()
+    state_dir = f'{root}/project-browser/projects/beta'
+    owner = pwd.getpwuid(os.stat(state_dir).st_uid).pw_name if os.path.isdir(state_dir) else 'missing'
+    report.add('7', 'launcher writes a browser state as the browser user',
+               done.returncode == 0 and '"slug": "beta"' in answer.replace('"slug":"beta"', '"slug": "beta"')
+               and owner == 'vpt-browser', f'{answer[:160]} owner={owner}')
+    refused = ask('ensure', 'beta', '99')
+    report.add('7', 'launcher refuses a browser state for another project id', refused.returncode != 0,
+               refused.stdout.decode().strip()[:160])
+    removed = ask('remove', 'beta', '2', '323e4567-e89b-42d3-a456-426614174000')
+    trash = f'{root}/project-browser/trash/323e4567-e89b-42d3-a456-426614174000'
+    receipt = os.path.isfile(f'{trash}/receipt.json')
+    report.add('7', "launcher moves it to the browser user's trash with a receipt",
+               removed.returncode == 0 and not os.path.exists(state_dir) and receipt,
+               f'{removed.stdout.decode().strip()[:160]} receipt={receipt}')

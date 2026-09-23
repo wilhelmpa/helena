@@ -1074,7 +1074,7 @@ class Launcher:
         state_root = os.path.dirname(browser['root'])
         args = [action, slug, str(project_id)] + ([event_id] if event_id else [])
         command = [
-            self.config.systemd_run, f'--unit=volition-browser-state-{secrets.token_hex(6)}', '--quiet',
+            self.config.systemd_run, f'--unit={self.config.unit_prefix}browser-state-{secrets.token_hex(6)}', '--quiet',
             '--collect', '--wait', '--pipe', '--service-type=exec', f'--uid={account.pw_uid}',
             f'--gid={account.pw_gid}', '--property=NoNewPrivileges=yes', '--property=PrivateNetwork=yes',
             '--property=PrivateTmp=yes', '--property=ProtectSystem=strict', '--property=ProtectHome=yes',

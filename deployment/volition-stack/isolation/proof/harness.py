@@ -107,6 +107,11 @@ def test_config(source: str) -> dict:
             'hermes', 'workspaces', 'vault', 'provisioning', 'secrets', 'project-browser',
             'launcher-state', 'proof', 'hermes-global')],
     })
+    config['browser'] = {
+        'user': 'vpt-browser', 'root': f'{ROOT}/project-browser/projects', 'trash': f'{ROOT}/project-browser/trash',
+        'script': f'{ISO}/browser/project-browser-state.mjs', 'node': '/usr/local/bin/node',
+        'bases': {'display': 260, 'cdp': 19260, 'vnc': 15960, 'noVnc': 16160},
+    }
     config['runtimes'] = {
         'probe': {
             'exec': '/usr/bin/python3',
@@ -703,9 +708,10 @@ def prove_6_launcher_refuses(report: Report) -> None:
 
 def prove_7_browser(report: Report) -> None:
     """Browser units run as the browser user and keep their logins through the migration."""
-    from proof_browser import run_browser_proofs  # noqa: PLC0415
+    from proof_browser import run_browser_proofs, run_browser_state_proofs  # noqa: PLC0415
 
     run_browser_proofs(report, sh, ROOT, load_state())
+    run_browser_state_proofs(report, sh, ROOT)
 
 
 def prove_modes(report: Report) -> None:
