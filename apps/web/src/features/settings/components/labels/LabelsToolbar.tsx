@@ -24,6 +24,7 @@ import {
   serializeLabels,
   type LabelsImportPlan,
 } from '../../utils/labelsTransfer';
+import { copyText, readClipboardText } from '@/utils/clipboard';
 
 // The Labels page header actions: copy the project's labels and groups to the
 // clipboard and paste them from it (with Cmd/Ctrl+C/V shortcuts). Adding labels is
@@ -54,7 +55,7 @@ export default function LabelsToolbar({
       return;
     }
     try {
-      await navigator.clipboard.writeText(serializeLabels(groups, labels));
+      await copyText(serializeLabels(groups, labels));
       toast.success(t('copied', { count: labels.length }));
     } catch {
       toast.error(tTransfer('copyFailed'));
@@ -64,7 +65,7 @@ export default function LabelsToolbar({
   const pasteLabels = useCallback(async () => {
     let text: string;
     try {
-      text = await navigator.clipboard.readText();
+      text = await readClipboardText();
     } catch {
       toast.error(tTransfer('readFailed'));
       return;

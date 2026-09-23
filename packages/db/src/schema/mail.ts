@@ -17,7 +17,7 @@ import {
   timestamp,
   unique,
 } from 'drizzle-orm/pg-core';
-import { approvalRequest, issue, project, team } from './app';
+import { approvalRequest, integrationCredential, issue, project, team } from './app';
 import { user } from './auth';
 
 export interface MailAddressRow {
@@ -41,7 +41,8 @@ const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull(
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 
 // A mailbox Plan imports and sends through. project_id NULL makes it a Home account.
-// The password is encrypted with APP_ENCRYPTION_KEY (@repo/crypto) and never returned.
+// The password is a 'secret' credential of the credential store (credential_id), so the
+// Credentials page lists it with every other secret; without one the account is idle.
 // sync_status is written by the worker: 'importing' until every folder is imported
 // once, 'synced' after, 'error' with sync_error while it cannot connect.
 export const mailAccount = pgTable(
@@ -61,9 +62,9 @@ export const mailAccount = pgTable(
     smtpPort: integer('smtp_port').notNull().default(465),
     smtpTls: boolean('smtp_tls').notNull().default(true),
     username: text('username').notNull(),
-    passwordCiphertext: text('password_ciphertext'),
-    passwordIv: text('password_iv'),
-    passwordAuthTag: text('password_auth_tag'),
+    credentialId: integer('credential_id').references(() => integrationCredential.id, {
+      onDelete: 'set null',
+    }),
     enabled: boolean('enabled').notNull().default(true),
     syncTrash: boolean('sync_trash').notNull().default(false),
     syncSpam: boolean('sync_spam').notNull().default(false),

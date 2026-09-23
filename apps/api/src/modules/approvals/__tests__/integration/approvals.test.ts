@@ -78,6 +78,7 @@ describe('approval requests', () => {
       kind: 'send',
       action: 'Send the offer to jane@example.com',
       details: 'Subject: Offer\n\nHello Jane, ...',
+      command: null,
       status: 'pending',
       decidedByUserId: null,
       note: null,
@@ -95,6 +96,22 @@ describe('approval requests', () => {
     expect(again.data!.id).toBe(first.data!.id);
 
     const other = await requestApproval(asAgent, { action: 'Send the invoice' });
+    expect(other.status).toBe(201);
+    expect(other.data!.id).not.toBe(first.data!.id);
+  });
+
+  it('keeps the command apart when the same action is asked with another one', async () => {
+    const { asOwner, asAgent, columnId } = await setup();
+    await startRun(asOwner, asAgent, columnId);
+    const ask = (command: string) =>
+      requestApproval(asAgent, { kind: 'delete', action: 'Clean the build', command });
+
+    const first = await ask('  rm -rf build\n');
+    expect(first.status).toBe(201);
+    expect(first.data!.command).toBe('rm -rf build');
+    expect((await ask('rm -rf build')).data!.id).toBe(first.data!.id);
+
+    const other = await ask('rm -rf dist');
     expect(other.status).toBe(201);
     expect(other.data!.id).not.toBe(first.data!.id);
   });
@@ -134,6 +151,15 @@ describe('approval requests', () => {
     expect((await requestApproval(asAgent, { action: 'x'.repeat(301) })).status).toBe(400);
     expect((await requestApproval(asAgent, { action: 'x'.repeat(300) })).status).toBe(201);
     expect((await requestApproval(asAgent, { details: 'x'.repeat(8001) })).status).toBe(400);
+    expect((await requestApproval(asAgent, { command: '' })).status).toBe(400);
+    expect((await requestApproval(asAgent, { command: 'x'.repeat(32001) })).status).toBe(400);
+    // At the limit, and longer than a b-tree index entry can hold even compressed.
+    const script = Array.from({ length: 3000 }, (_, i) => `print(${i * 7919})`)
+      .join('\n')
+      .slice(0, 32000);
+    expect((await requestApproval(asAgent, { action: 'Run it', command: script })).status).toBe(
+      201,
+    );
 
     await asOwner.projects.post({ key: 'OPS', name: 'Ops' });
     const view = await asOwner.projects({ projectKey: 'OPS' }).get();
@@ -269,6 +295,17 @@ describe('approval requests', () => {
     expect(next.prompt).not.toContain('add_comment');
   });
 
+  it('puts the command into the prompt of the run with the decision', async () => {
+    const { asOwner, asAgent } = await setup();
+    const created = (
+      await requestApproval(asAgent, { kind: 'delete', command: 'git push --force' })
+    ).data!;
+    await asOwner.approvals({ approvalId: created.id }).decision.post({ approved: true });
+
+    const next = (await asAgent['agent-runs'].claim.post()).data!.run!;
+    expect(next.prompt).toContain('Command:\ngit push --force');
+  });
+
   it('leaves the decision to the people who may decide', async () => {
     const { asOwner, asAgent, agent } = await setup();
     const asMember = await addProjectMember(asOwner, 'MKT');
@@ -292,6 +329,67 @@ describe('approval requests', () => {
       ).status,
     ).toBe(400);
     expect((await decide(asOwner)).status).toBe(200);
+  });
+});
+
+describe('approved commands of a run', () => {
+  beforeEach(async () => {
+    await resetDb();
+    controlPlane.reset();
+  });
+
+  // Asks for three commands in one run and decides them, which queues one follow-up run
+  // per decision.
+  async function decided() {
+    const context = await setup();
+    const { asOwner, asAgent, columnId } = context;
+    const { run } = await startRun(asOwner, asAgent, columnId);
+    const ask = (action: string, command?: string) =>
+      requestApproval(asAgent, { kind: 'delete', action, command }).then((res) => res.data!);
+    const approved = await ask('Clean the build', 'rm -rf build');
+    const rejected = await ask('Clean the cache', 'rm -rf .cache');
+    const withoutCommand = await ask('Delete the draft');
+    const decide = (id: number, approvedDecision: boolean) =>
+      asOwner
+        .approvals({ approvalId: id })
+        .decision.post({ approved: approvedDecision })
+        .then((res) => res.data!.followUpRunId!);
+    return {
+      ...context,
+      run,
+      approvedRun: await decide(approved.id, true),
+      rejectedRun: await decide(rejected.id, false),
+      withoutCommandRun: await decide(withoutCommand.id, true),
+    };
+  }
+
+  function approvedCommands(api: Api, runId: number) {
+    return api['agent-runs']({ runId })['approved-commands'].get();
+  }
+
+  it('lists the approved command for the run its decision started', async () => {
+    const { asAgent, run, approvedRun, rejectedRun, withoutCommandRun } = await decided();
+
+    const res = await approvedCommands(asAgent, approvedRun);
+    expect(res.status).toBe(200);
+    expect(res.data).toEqual(['rm -rf build']);
+    expect((await approvedCommands(asAgent, rejectedRun)).data).toEqual([]);
+    expect((await approvedCommands(asAgent, withoutCommandRun)).data).toEqual([]);
+    // The run that asked is not the run that got the approval.
+    expect((await approvedCommands(asAgent, run.id)).data).toEqual([]);
+  });
+
+  it('answers only the agent the run belongs to', async () => {
+    const { asOwner, approvedRun } = await decided();
+    const other = await createAgent(asOwner, 'MKT', {
+      name: 'Other Bot',
+      username: 'other',
+      kind: 'external',
+    });
+    const asOther = apiKeyApi(other.data!.apiKey!);
+
+    expect((await approvedCommands(asOther, approvedRun)).data).toEqual([]);
+    expect((await approvedCommands(asOwner, approvedRun)).status).toBe(403);
   });
 });
 

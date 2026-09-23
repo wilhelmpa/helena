@@ -7,6 +7,7 @@ import type { DevelopmentLink } from '@/lib/api/endpoints/git';
 import type { StateType } from '@/lib/api/endpoints/columns';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import { dayKey } from '@/utils/dates';
+import { uuid } from '@/utils/uuid';
 
 // The subtask disposition as the delete route takes it: a query string, since a
 // DELETE carries no body.
@@ -369,7 +370,7 @@ export const listIssueAgentTeamRuns = (id: number) =>
 export const startIssueAgentTeam = (id: number) =>
   request<{ runId: string; status: string; taskRef: string }>(`/issues/${id}/agent-team`, {
     method: 'POST',
-    body: JSON.stringify({ idempotencyKey: crypto.randomUUID() }),
+    body: JSON.stringify({ idempotencyKey: uuid() }),
   });
 
 export const updateIssue = (id: number, patch: IssuePatch) =>

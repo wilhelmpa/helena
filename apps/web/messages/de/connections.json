@@ -20,51 +20,5 @@
     "check": "Prüfen",
     "reconnect": "Erneut verbinden",
     "openPairing": "Kopplung öffnen"
-  },
-  "secrets": {
-    "title": "Runtime-Zugangsdaten",
-    "description": "Zentrale Secret-Referenzen, die von der Automatisierungs-Runtime verwaltet werden. Werte können nur geschrieben und nie angezeigt werden.",
-    "name": "Name des Secrets",
-    "value": "Neuer Wert des Secrets",
-    "hosts": "Erlaubte Hosts für die Ersetzung (durch Kommas getrennt)",
-    "noHosts": "Keine Host-Einschränkung",
-    "empty": "Keine Secret-Referenzen gespeichert.",
-    "save": "Secret speichern",
-    "rotate": "Secret ersetzen",
-    "saving": "Wird gespeichert…",
-    "saved": "Secret im Zugangsdatenspeicher der Runtime gespeichert. Nur seine Metadaten sind sichtbar.",
-    "failed": "Der Secret-Speicher ist nicht verfügbar oder die Anfrage ist fehlgeschlagen. Es wird kein Wert zurückgegeben.",
-    "rotateNotice": "Das ersetzt den bestehenden Wert sofort. Dienste, die diese Referenz nutzen, müssen eventuell neu geladen werden."
-  },
-  "vault": {
-    "title": "Vault",
-    "description": "Zugangsdaten von Personen und Berechtigungen für Automatisierungen bleiben in getrennten Sicherheitsbereichen.",
-    "accessTitle": "Zugriff auf Vaultwarden",
-    "accessDescription": "Der Passwort-Vault für Personen öffnet sich über das geschützte Zugangs-Gateway.",
-    "open": "Vaultwarden öffnen",
-    "status": {
-      "protected": "Geschützter Zugriff verfügbar",
-      "reachable": "Zugangsroute erreichbar",
-      "unavailable": "Zugangsroute nicht verfügbar",
-      "unconfigured": "Zugangsroute nicht konfiguriert"
-    },
-    "statusScope": "Hier wird nur die geschützte Zugangsroute geprüft. Der Zustand des Vaultwarden-Backends wird Plan bewusst nicht offengelegt.",
-    "checked": "Geprüft am {time}",
-    "boundaryTitle": "Trennung der Secrets",
-    "humanVault": "Vault für Personen",
-    "humanVaultDescription": "Vaultwarden speichert Zugangsdaten, die Personen interaktiv verwenden.",
-    "automationVault": "Zugangsdaten für Automatisierungen",
-    "automationVaultDescription": "Für Agenten und Dienste bleiben die abgegrenzten Zugangsdatenspeicher von systemd, Docker und der Runtime maßgeblich.",
-    "boundaryRule": "Werte von Secrets werden nie in Plan, Prompts, Logs oder diese Seite kopiert.",
-    "connectionsTitle": "Verbindungsmetadaten",
-    "connectionsDescription": "Maskierter Verbindungsstatus der Runtime, der dem Inhaber bei interaktiver Nutzung bereits zur Verfügung steht.",
-    "grantsTitle": "Berechtigungen für Automatisierungen",
-    "grantsDescription": "Namen, Aktualisierungszeiten und erlaubte Hosts aus dem bestehenden maskierten Bestand. Werte können weiterhin nur geschrieben werden.",
-    "noConnections": "Keine Verbindungsmetadaten verfügbar.",
-    "noGrants": "Keine Berechtigungen für Automatisierungen registriert.",
-    "allowedHosts": "Erlaubte Hosts",
-    "updated": "Aktualisiert am {time}",
-    "never": "Nie",
-    "loadError": "Die Vault-Metadaten konnten nicht geladen werden."
   }
 }

@@ -11,7 +11,9 @@ import { AI_PROVIDERS } from './llm-providers';
 //              @repo/agent-tools. Their credential schema and tool list come from the
 //              package.
 // The credential form and, for tool integrations, the tool picker are built from a
-// descriptor on the frontend.
+// descriptor on the frontend. The web logins, API keys, SSH keys and secrets of the
+// Credentials page are stored in the same table but are not integrations (see
+// modules/agents/credentials).
 
 export type IntegrationKind = 'llm' | 'tool';
 

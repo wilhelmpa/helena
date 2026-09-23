@@ -1,6 +1,7 @@
 import { decryptSecret } from '@repo/crypto';
 import {
   db,
+  integrationCredential,
   mailAccount,
   mailAction,
   mailFolder,
@@ -9,7 +10,7 @@ import {
   project,
 } from '@repo/db';
 import type { FolderRole, MailServerSettings } from '@repo/mail';
-import { and, asc, eq, inArray, isNotNull, lt, notExists, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt, notExists, sql } from 'drizzle-orm';
 
 export interface SyncAccount {
   id: number;
@@ -19,50 +20,76 @@ export interface SyncAccount {
   syncTrash: boolean;
   syncSpam: boolean;
   triageEnabled: boolean;
-  // Changes when the owner edits the account; the worker then reconnects.
+  // Changes when the owner edits the account or its password; the worker then reconnects.
   version: string;
   settings: MailServerSettings;
 }
 
 export type FolderRow = typeof mailFolder.$inferSelect;
 
+type AccountRow = typeof mailAccount.$inferSelect;
+type CredentialRow = Pick<
+  typeof integrationCredential.$inferSelect,
+  'ciphertext' | 'iv' | 'authTag' | 'updatedAt'
+>;
+
+// The server settings of an account, with the password read from its credential (a
+// 'secret' of the credential store, whose value is the password).
+export function accountSettings(row: AccountRow, credential: CredentialRow): MailServerSettings {
+  const secret = JSON.parse(decryptSecret(credential)) as { value?: string };
+  if (!secret.value) throw new Error('The credential holds no value');
+  return {
+    imapHost: row.imapHost,
+    imapPort: row.imapPort,
+    imapTls: row.imapTls,
+    smtpHost: row.smtpHost,
+    smtpPort: row.smtpPort,
+    smtpTls: row.smtpTls,
+    username: row.username,
+    password: secret.value,
+  };
+}
+
+const credentialColumns = {
+  ciphertext: integrationCredential.ciphertext,
+  iv: integrationCredential.iv,
+  authTag: integrationCredential.authTag,
+  updatedAt: integrationCredential.updatedAt,
+};
+
+export async function accountWithCredential(accountId: number) {
+  const [row] = await db
+    .select({ account: mailAccount, credential: credentialColumns })
+    .from(mailAccount)
+    .innerJoin(integrationCredential, eq(integrationCredential.id, mailAccount.credentialId))
+    .where(eq(mailAccount.id, accountId));
+  return row ?? null;
+}
+
 // The accounts the worker keeps a connection to: enabled and with a password.
 export async function loadSyncAccounts(): Promise<SyncAccount[]> {
   const rows = await db
-    .select()
+    .select({ account: mailAccount, credential: credentialColumns })
     .from(mailAccount)
-    .where(and(eq(mailAccount.enabled, true), isNotNull(mailAccount.passwordCiphertext)));
-  return rows.flatMap((row) => {
+    .innerJoin(integrationCredential, eq(integrationCredential.id, mailAccount.credentialId))
+    .where(eq(mailAccount.enabled, true));
+  return rows.flatMap(({ account, credential }) => {
     try {
-      const password = decryptSecret({
-        ciphertext: row.passwordCiphertext!,
-        iv: row.passwordIv!,
-        authTag: row.passwordAuthTag!,
-      });
       return [
         {
-          id: row.id,
-          teamId: row.teamId,
-          projectId: row.projectId,
-          address: row.address,
-          syncTrash: row.syncTrash,
-          syncSpam: row.syncSpam,
-          triageEnabled: row.triageEnabled,
-          version: row.updatedAt.toISOString(),
-          settings: {
-            imapHost: row.imapHost,
-            imapPort: row.imapPort,
-            imapTls: row.imapTls,
-            smtpHost: row.smtpHost,
-            smtpPort: row.smtpPort,
-            smtpTls: row.smtpTls,
-            username: row.username,
-            password,
-          },
+          id: account.id,
+          teamId: account.teamId,
+          projectId: account.projectId,
+          address: account.address,
+          syncTrash: account.syncTrash,
+          syncSpam: account.syncSpam,
+          triageEnabled: account.triageEnabled,
+          version: `${account.updatedAt.toISOString()} ${credential.updatedAt.toISOString()}`,
+          settings: accountSettings(account, credential),
         },
       ];
     } catch {
-      console.error(`[mail] the password of account ${row.id} cannot be decrypted`);
+      console.error(`[mail] the password of account ${account.id} cannot be read`);
       return [];
     }
   });

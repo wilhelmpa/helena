@@ -2,6 +2,8 @@ import { AnswerStream } from './agui';
 import type { ChatMessage, Client } from './client';
 import { presetOf, type RunnerConfig } from './config';
 import { execute } from './execute';
+import { LoginUseReader } from './logins';
+import type { HermesRunSettings } from './policy';
 
 // The command is the same one that handles a queued run; what differs is that its output
 // is reported while it is still being written, so the person waiting in the chat reads the
@@ -25,7 +27,7 @@ export async function answer(
   client: Client,
   message: ChatMessage,
   stop: AbortController,
-  toolsets: string[] | null,
+  hermes: HermesRunSettings | null,
 ): Promise<void> {
   // Reported once: repeating it on every batch is a field the server has to ignore.
   let reported = message.sessionId !== null;
@@ -43,6 +45,7 @@ export async function answer(
   const flushing = setInterval(() => {
     void stream.flush().catch(() => {});
   }, FLUSH_MS);
+  const logins = new LoginUseReader(hermes?.logins ?? new Map());
   const outcome = await execute(
     config,
     {
@@ -51,18 +54,29 @@ export async function answer(
       sessionId: message.sessionId,
       model: message.model,
       thinkingLevel: message.thinkingLevel,
-      toolsets,
+      toolsets: hermes?.toolsets ?? null,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
         ITSAPLAN_THREAD_ID: message.threadId,
         ITSAPLAN_MESSAGE_ID: String(message.id),
         ITSAPLAN_SESSION_ID: message.sessionId ?? '',
+        ...hermes?.env,
       },
     },
-    { onData: (chunk) => stream.write(chunk), signal: stop.signal },
+    {
+      onData: (chunk) => {
+        stream.write(chunk);
+        logins.write(chunk);
+      },
+      signal: stop.signal,
+    },
   ).finally(() => clearInterval(flushing));
   if (stop.signal.aborted) return;
+  const uses = logins.uses();
+  if (uses.length > 0) {
+    await client.reportLoginUses({ messageId: message.id }, uses).catch(() => {});
+  }
   // The context size is read after the stream is closed, which is where the last line of
   // the output is parsed. An answer that failed reports it too: what the command read
   // before it broke is still the size of its session's context.

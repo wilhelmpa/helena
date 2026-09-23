@@ -23,6 +23,7 @@ import {
   serializeStates,
   type PlannedState,
 } from '../../utils/statesTransfer';
+import { copyText, readClipboardText } from '@/utils/clipboard';
 
 // The States page header actions: copy the project's states to the clipboard and
 // paste states from it (with Cmd/Ctrl+C/V shortcuts). Shown to users who can create
@@ -47,7 +48,7 @@ export default function StatesToolbar({
       return;
     }
     try {
-      await navigator.clipboard.writeText(serializeStates(columns));
+      await copyText(serializeStates(columns));
       toast.success(t('copied', { count: columns.length }));
     } catch {
       toast.error(tTransfer('copyFailed'));
@@ -57,7 +58,7 @@ export default function StatesToolbar({
   const pasteStates = useCallback(async () => {
     let text: string;
     try {
-      text = await navigator.clipboard.readText();
+      text = await readClipboardText();
     } catch {
       toast.error(tTransfer('readFailed'));
       return;

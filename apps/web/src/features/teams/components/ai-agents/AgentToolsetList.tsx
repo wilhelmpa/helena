@@ -3,14 +3,21 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { isHermesToolset, toggleToolset } from '../../utils/agentAbilities';
 import { TeamSettingState } from '../TeamSettingState';
 
-// The Hermes toolsets of the agent's profile. A toolset switched off lands in the runtime
-// policy's toolDeny, and the runner leaves it out of the agent's chats and runs.
+// The Hermes toolsets, or the MCP servers, of the agent's profile. One switched off lands
+// in the runtime policy's toolDeny, and the runner leaves it out of the agent's chats and
+// runs.
 export default function AgentToolsetList({
+  title,
+  hint,
+  empty,
   toolsets,
   denied,
   canEdit,
   onChange,
 }: {
+  title: string;
+  hint: string;
+  empty: string;
   toolsets: string[];
   denied: string[];
   canEdit: boolean;
@@ -21,13 +28,11 @@ export default function AgentToolsetList({
   return (
     <div className="space-y-2">
       <div>
-        <p className="text-sm font-medium">{t('toolsets')}</p>
-        <p className="text-xs text-muted-foreground">
-          {canEdit ? t('toolsetsHint') : t('toolsetsReadOnly')}
-        </p>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{hint}</p>
       </div>
       {toolsets.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('noToolsets')}</p>
+        <p className="text-sm text-muted-foreground">{empty}</p>
       ) : (
         <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
           {toolsets.map((name) => {

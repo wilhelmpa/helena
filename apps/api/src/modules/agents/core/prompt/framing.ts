@@ -17,8 +17,10 @@ export interface RunForPrompt {
   issueId: number | null;
   issueIdentifier: string | null;
   issueTitle: string | null;
-  // The name of the area the issue belongs to, null outside any area.
+  // The name of the area the issue belongs to and its folder, relative to the project
+  // workspace; both null outside any area.
   issueArea: string | null;
+  issueAreaFolder: string | null;
   // The issue's assignee and, on a mention run, the author of the comment behind it:
   // the name they are called by and the handle they are tagged by.
   assigneeName: string | null;
@@ -74,7 +76,7 @@ export function framePrompt(run: RunForPrompt): string {
 }
 
 function areaLine(run: RunForPrompt): string[] {
-  return run.issueArea ? [`Area: ${run.issueArea}`] : [];
+  return run.issueArea ? [`Area: ${run.issueArea} (folder ${run.issueAreaFolder})`] : [];
 }
 
 function frameDelegation(run: RunForPrompt, titled: string): string {

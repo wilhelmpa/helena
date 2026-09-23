@@ -376,7 +376,7 @@ export async function queueDraft(draftId: number) {
     throw new HttpError(400, 'Add a recipient');
   }
   const [account] = await db.select().from(mailAccount).where(eq(mailAccount.id, row.accountId));
-  if (!account?.passwordCiphertext) throw new HttpError(400, 'The account has no password');
+  if (account?.credentialId == null) throw new HttpError(400, 'The account has no password');
   if (!account.enabled) throw new HttpError(400, 'The account is switched off');
   const [updated] = await db
     .update(mailDraft)

@@ -82,12 +82,6 @@ export const getWorkflowRun = (projectKey: string, workflowId: string, runId: st
     `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs/${runId}`,
   );
 
-export const startWorkflow = (projectKey: string, workflowId: string) =>
-  request<WorkflowRun>(`/projects/${projectKey}/control-plane/workflows/${workflowId}/runs`, {
-    method: 'POST',
-    body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), dryRun: true, payload: {} }),
-  });
-
 export const decideWorkflow = (
   projectKey: string,
   workflowId: string,

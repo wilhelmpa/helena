@@ -10,7 +10,7 @@ import {
   user,
 } from '@repo/db';
 import { alias } from 'drizzle-orm/pg-core';
-import { and, desc, eq, inArray, isNotNull, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
 import { listMemberContexts, toMemberContext, type MemberRole } from '#modules/members/service';
 import { notifyApprovalRequested } from '#modules/notifications/service';
@@ -36,6 +36,7 @@ export interface ApprovalDto {
   kind: ApprovalKind;
   action: string;
   details: string;
+  command: string | null;
   status: ApprovalStatus;
   decidedByUserId: string | null;
   decidedByName: string | null;
@@ -68,6 +69,7 @@ function selectApprovals() {
       kind: approvalRequest.kind,
       action: approvalRequest.action,
       details: approvalRequest.details,
+      command: approvalRequest.command,
       status: approvalRequest.status,
       decidedByUserId: approvalRequest.decidedByUserId,
       decidedByName: decider.name,
@@ -201,6 +203,7 @@ export async function createApprovalRequest(input: {
   kind: ApprovalKind;
   action: string;
   details?: string;
+  command?: string;
   issueId?: number;
 }): Promise<{ approval: ApprovalDto; created: boolean }> {
   if (input.issueId != null) {
@@ -213,6 +216,7 @@ export async function createApprovalRequest(input: {
   const run = await askingRun(input.agent.id, input.projectId, input.issueId);
   const issueId = input.issueId ?? run?.issueId ?? null;
   const action = input.action.trim();
+  const command = input.command?.trim() || null;
 
   let id: number;
   try {
@@ -226,6 +230,7 @@ export async function createApprovalRequest(input: {
         kind: input.kind,
         action,
         details: input.details?.trim() ?? '',
+        command,
       })
       .returning({ id: approvalRequest.id });
     id = created!.id;
@@ -240,6 +245,7 @@ export async function createApprovalRequest(input: {
           eq(approvalRequest.status, 'pending'),
           eq(approvalRequest.kind, input.kind),
           eq(approvalRequest.action, action),
+          command == null ? isNull(approvalRequest.command) : eq(approvalRequest.command, command),
         ),
       );
     return { approval: (await getApproval(existing!.id))!, created: false };
@@ -259,12 +265,14 @@ export async function createApprovalRequest(input: {
 
 // The prompt of the run a decision queues. framePrompt adds what to do with it.
 function decisionPrompt(
-  request: { id: number; kind: string; action: string; details: string },
+  request: { id: number; kind: string; action: string; details: string; command: string | null },
   decision: { approved: boolean; deciderName: string; note: string | null },
 ): string {
   return [
     `Approval request #${request.id} (${request.kind}): ${request.action}`,
-    ...(request.details ? ['', 'Details:', request.details, ''] : []),
+    ...(request.details ? ['', 'Details:', request.details] : []),
+    ...(request.command ? ['', 'Command:', request.command] : []),
+    '',
     `Decision: ${decision.approved ? 'approved' : 'rejected'} by ${decision.deciderName}`,
     ...(decision.note ? [`Note: ${decision.note}`] : []),
   ].join('\n');
@@ -315,6 +323,24 @@ export async function decideApprovalRequest(
       .where(eq(approvalRequest.id, id));
   });
   return (await getApproval(id))!;
+}
+
+// What Hermes' approval guard lets a run execute: the commands of the calling agent's
+// approved requests whose decision queued this run.
+export async function listApprovedCommands(agentId: number, runId: number): Promise<string[]> {
+  const rows = await db
+    .select({ command: approvalRequest.command })
+    .from(approvalRequest)
+    .where(
+      and(
+        eq(approvalRequest.agentId, agentId),
+        eq(approvalRequest.followUpRunId, runId),
+        eq(approvalRequest.status, 'approved'),
+        isNotNull(approvalRequest.command),
+      ),
+    )
+    .orderBy(approvalRequest.id);
+  return rows.map((row) => row.command!);
 }
 
 // The requests of the projects in which the user may decide, or null for none.

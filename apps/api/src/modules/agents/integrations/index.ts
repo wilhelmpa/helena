@@ -7,7 +7,7 @@ import { accessErrors, commonErrors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import { paginate } from '#shared/pagination';
 import { teamParams } from '#modules/teams/model';
-import { INTEGRATION_CATALOG, integrationKind } from './catalog';
+import { INTEGRATION_CATALOG } from './catalog';
 import { listModelsForProvider } from './provider-models';
 import {
   CredentialPageResponse,
@@ -24,7 +24,7 @@ import {
 } from './model';
 import {
   listCredentials,
-  listAllCredentials,
+  listCredentialOptions,
   createCredential,
   updateCredential,
   deleteCredential,
@@ -86,14 +86,10 @@ export const integrationRoutes = new Elysia({
   // integrations admin view and may grow fields this one must not carry.
   .get(
     '/teams/:teamId/integrations/options',
-    async ({ membership, query }) => {
-      const credentials = await listAllCredentials(membership.teamId);
-      return credentials.flatMap((c) => {
-        const kind = integrationKind(c.integrationKey);
-        if (!kind || (query.kind && kind !== query.kind)) return [];
-        return [{ id: c.id, integrationKey: c.integrationKey, kind, label: c.label }];
-      });
-    },
+    async ({ membership, query }) =>
+      (await listCredentialOptions(membership.teamId)).filter(
+        (option) => !query.kind || option.kind === query.kind,
+      ),
     {
       params: teamParams,
       query: integrationOptionsQuery,
@@ -102,7 +98,8 @@ export const integrationRoutes = new Elysia({
       detail: {
         summary: 'List integration options',
         description:
-          "The team's connected integrations as picker options: id, key, kind and label.",
+          "The team's connected integrations as picker options: id, key, kind and label. " +
+          "Kind 'secret' lists the team's secrets and API keys an MCP server may name.",
       },
     },
   )

@@ -33,17 +33,12 @@ Environment=PROJECT_BROWSER_SYSTEMCTL_SCOPE=system
 Environment=SYSTEMCTL_SCOPE=system
 Environment=ITSAPLAN_MCP_BEARER_FILE=%d/plan_api_key
 Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
-Environment=MASTRA_CONTROL_ENABLED=true
-Environment=MASTRA_CONTROL_URL=http://127.0.0.1:4111/mastra/api/
-Environment=MASTRA_CONTROL_TOKEN_FILE=%d/plan_control_token
-Environment=MASTRA_CONTROL_OWNER_EMAIL=patrick.wilhelm@volition.one
 Environment=PLAN_INTERNAL_URL=http://127.0.0.1:3000
 Environment=PLAN_PUBLIC_URL=http://kingston-server.local/
 Environment=PROJECT_BROWSER_PUBLIC_URL=http://kingston-server.local/browser/
 Environment=CODE_PUBLIC_URL=http://kingston-server.local/code/
 Environment=TERMINAL_PUBLIC_URL=http://kingston-server.local/focus/terminal-project/
 Environment=CONNECTIONS_ENABLED=false
-Environment=ARTIFACT_SYNC_ENABLED=false
 Environment=MASTRA_EVENT_INGRESS_ENABLED=false
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/server.mjs
 Restart=on-failure

@@ -42,12 +42,20 @@ export interface ViewPatch {
   display?: SavedViewDisplay;
 }
 
+// An area of the project. `folder` is its directory, relative to the project
+// workspace and to the project's folder on the Files page.
 export interface ViewFolder {
   id: number;
   projectId: number;
   name: string;
+  folder: string;
   position: number;
   createdAt: string;
+}
+
+export interface ViewFolderInput {
+  name: string;
+  folder: string;
 }
 
 export const listViews = (projectKey: string, signal?: AbortSignal) =>
@@ -74,16 +82,16 @@ export const reorderViews = (projectKey: string, folderId: number | null, ordere
 export const listViewFolders = (projectKey: string, signal?: AbortSignal) =>
   request<ViewFolder[]>(`/projects/${encodeURIComponent(projectKey)}/view-folders`, { signal });
 
-export const createViewFolder = (projectKey: string, name: string) =>
+export const createViewFolder = (projectKey: string, input: ViewFolderInput) =>
   request<ViewFolder>(`/projects/${encodeURIComponent(projectKey)}/view-folders`, {
     method: 'POST',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(input),
   });
 
-export const updateViewFolder = (folderId: number, name: string) =>
+export const updateViewFolder = (folderId: number, input: ViewFolderInput) =>
   request<ViewFolder>(`/view-folders/${folderId}`, {
     method: 'PATCH',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(input),
   });
 
 export const deleteViewFolder = (folderId: number) =>

@@ -10,11 +10,21 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import type { MailAccount, MailAccountInput } from '@/lib/api/endpoints/mail';
 import { useSaveMailAccount, useTestMailConnection } from '@/services/mail.service';
+import MailPasswordField from './MailPasswordField';
 import MailProjectSelect from './MailProjectSelect';
 import MailServerFields from './MailServerFields';
 import { GOOGLE_PRESET, isGooglePreset } from './mailPresets';
 
 type Form = Omit<MailAccountInput, 'password'> & { password: string };
+
+// The account's current secret is kept unless another is picked or a password typed.
+function passwordInput(form: Form, account: MailAccount | null): Partial<MailAccountInput> {
+  const { password, credentialId, ...rest } = form;
+  if (password) return { ...rest, password };
+  if (credentialId != null && credentialId !== account?.credentialId)
+    return { ...rest, credentialId };
+  return rest;
+}
 
 function initial(account: MailAccount | null, projectId: number | null): Form {
   if (!account)
@@ -35,6 +45,8 @@ function initial(account: MailAccount | null, projectId: number | null): Form {
     projectKey: _key,
     projectName: _name,
     hasPassword: _has,
+    credentialId: _credentialId,
+    credentialLabel: _credentialLabel,
     syncStatus: _status,
     syncError: _error,
     lastSyncAt: _at,
@@ -70,12 +82,11 @@ export default function MailAccountDialog({
     form.imapHost &&
     form.smtpHost &&
     form.username &&
-    (account || form.password);
+    (account?.hasPassword || form.password || form.credentialId != null);
 
   const submit = () => {
-    const { password, ...rest } = form;
     save.mutate(
-      { id: account?.id ?? null, input: password ? { ...rest, password } : rest },
+      { id: account?.id ?? null, input: passwordInput(form, account) },
       {
         onSuccess: () => {
           toast.success(t(account ? 'saved' : 'added', { address: form.address }));
@@ -154,17 +165,15 @@ export default function MailAccountDialog({
         ) : (
           <MailServerFields value={form} onChange={set} />
         )}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="mail-password">{google ? t('appPassword') : t('password')}</Label>
-          <Input
-            id="mail-password"
-            type="password"
-            autoComplete="new-password"
-            value={form.password}
-            placeholder={account?.hasPassword ? t('passwordKept') : undefined}
-            onChange={(event) => set({ password: event.target.value })}
-          />
-        </div>
+        <MailPasswordField
+          teamId={teamId}
+          projectId={form.projectId}
+          label={google ? t('appPassword') : t('password')}
+          password={form.password}
+          credentialId={form.credentialId}
+          storedLabel={account?.credentialLabel ?? null}
+          onChange={set}
+        />
         <div className="flex flex-col gap-2 text-sm">
           {(['enabled', 'syncTrash', 'syncSpam'] as const).map((key) => (
             <label key={key} className="flex items-center gap-2">
@@ -194,7 +203,7 @@ export default function MailAccountDialog({
               test.isPending ||
               !form.imapHost ||
               !form.smtpHost ||
-              !(form.password || account?.hasPassword)
+              !(form.password || form.credentialId != null || account?.hasPassword)
             }
             onClick={() =>
               test.mutate(
@@ -207,6 +216,7 @@ export default function MailAccountDialog({
                   smtpTls: form.smtpTls,
                   username: form.username,
                   password: form.password || undefined,
+                  credentialId: form.password ? undefined : form.credentialId,
                   accountId: account?.id,
                 },
                 { onSuccess: setResult },

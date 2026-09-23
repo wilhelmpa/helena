@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { copyText } from '@/utils/clipboard';
 
 // A labelled read-only value with a copy button: the payload URL and secret the
 // user pastes into the repository's webhook form. `masked` hides the value until
@@ -24,7 +25,7 @@ export default function GitCopyField({
   const [revealed, setRevealed] = useState(false);
 
   async function copy() {
-    await navigator.clipboard.writeText(value);
+    await copyText(value);
     toast.success(t('copied', { label }));
   }
 

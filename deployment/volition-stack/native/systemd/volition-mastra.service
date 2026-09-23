@@ -11,7 +11,8 @@ Group=volition
 WorkingDirectory=/srv/volition/source/plan/deployment/volition-stack/optional/mastra-studio
 StateDirectory=volition/mastra
 LoadCredential=hermes_team_token:/etc/volition/hermes-team.token
-LoadCredential=plan_control_token:/etc/volition/plan-control.token
+LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
+LoadCredential=mastra_gateway_token:/etc/volition/mastra-gateway.token
 Environment=NODE_ENV=production
 Environment=MASTRA_TELEMETRY_DISABLED=true
 Environment=DO_NOT_TRACK=1
@@ -25,9 +26,8 @@ Environment=STUDIO_PROXY_HOST=127.0.0.1
 Environment=STUDIO_DATABASE_URL=file:/var/lib/volition/mastra/mastra.db
 Environment=HERMES_TEAM_TOKEN_FILE=%d/hermes_team_token
 Environment=HERMES_TEAM_SOCKET=/run/volition-ipc/hermes-team.sock
-Environment=INBOX_ADAPTER_TOKEN_FILE=%d/plan_control_token
-Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
-Environment=STUDIO_OWNER_EMAIL=patrick.wilhelm@volition.one
+Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
+Environment=STUDIO_GATEWAY_TOKEN_FILE=%d/mastra_gateway_token
 ExecStart=/usr/local/bin/node start.mjs
 Restart=on-failure
 RestartSec=5

@@ -1,6 +1,7 @@
 import { encryptSecret } from '@repo/crypto';
 import {
   db,
+  integrationCredential,
   mailAccount,
   mailAttachment,
   mailFolder,
@@ -21,7 +22,11 @@ export async function insertMailAccount(
   projectId: number | null,
   address = 'me@home.example',
 ): Promise<{ accountId: number; inboxId: number; sentId: number }> {
-  const secret = encryptSecret('app-password');
+  const secret = encryptSecret(JSON.stringify({ value: 'app-password' }));
+  const [credential] = await db
+    .insert(integrationCredential)
+    .values({ teamId, projectId, integrationKey: 'secret', label: `Mail: ${address}`, ...secret })
+    .returning();
   const [account] = await db
     .insert(mailAccount)
     .values({
@@ -32,9 +37,7 @@ export async function insertMailAccount(
       imapHost: '203.0.113.10',
       smtpHost: '203.0.113.10',
       username: address,
-      passwordCiphertext: secret.ciphertext,
-      passwordIv: secret.iv,
-      passwordAuthTag: secret.authTag,
+      credentialId: credential!.id,
     })
     .returning();
   const [inbox] = await db

@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ChevronLeft, File, Folder } from 'lucide-react';
 import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
-import { listProjectFiles } from '@/lib/api/endpoints/projectFiles';
+import { listFiles } from '@/lib/api/endpoints/projectFiles';
 import { useProjectsQuery } from '@/services/projects.service';
 
 // Browses a project's vault folder to attach one of its files.
@@ -26,7 +26,7 @@ export default function VaultFilePicker({
   const key = projectKey ?? projects[0]?.key ?? null;
   const listing = useQuery({
     queryKey: ['projectFiles', key, path],
-    queryFn: () => listProjectFiles(key!, path),
+    queryFn: () => listFiles({ kind: 'project', projectKey: key!, root: 'vault' }, path),
     enabled: key != null,
   });
 

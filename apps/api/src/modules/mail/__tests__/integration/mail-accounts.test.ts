@@ -48,6 +48,17 @@ describe('mail accounts', () => {
       progress: { synced: 0, total: 0 },
     });
     expect(JSON.stringify(created.data)).not.toContain('app-password');
+    expect(created.data!.credentialLabel).toBe('Mail: me@home.example');
+
+    const secrets = await asOwner.teams({ teamId }).credentials.get({ query: { kind: 'secret' } });
+    expect(secrets.data!.items).toMatchObject([
+      {
+        id: created.data!.credentialId,
+        label: 'Mail: me@home.example',
+        projectId: project.id,
+        secrets: ['value'],
+      },
+    ]);
 
     const listed = await asOwner.teams({ teamId }).mail.accounts.get();
     expect(listed.data).toHaveLength(1);
@@ -73,6 +84,61 @@ describe('mail accounts', () => {
     expect(wrongProject.status).toBe(400);
     const badPort = await asOwner.teams({ teamId }).mail.accounts.post({ ...account, imapPort: 0 });
     expect(badPort.status).toBe(400);
+  });
+
+  it('takes the password from a secret of the Credentials page', async () => {
+    const { asOwner, teamId, project } = await setup();
+    const other = (await asOwner.projects.post({ key: 'OTH', name: 'Other' })).data!;
+    const secret = (
+      await asOwner.teams({ teamId }).credentials.post({
+        kind: 'secret',
+        label: 'Gmail app password',
+        value: 'app-password',
+      })
+    ).data!;
+    const limited = (
+      await asOwner.teams({ teamId }).credentials.post({
+        kind: 'secret',
+        label: 'Other project',
+        projectId: other.id,
+        value: 'x',
+      })
+    ).data!;
+    const login = (
+      await asOwner.teams({ teamId }).credentials.post({
+        kind: 'api_key',
+        label: 'Key',
+        value: 'x',
+      })
+    ).data!;
+    const { password: _password, ...withoutPassword } = account;
+
+    expect((await asOwner.teams({ teamId }).mail.accounts.post(withoutPassword)).status).toBe(400);
+    for (const credentialId of [login.id, limited.id, 999999]) {
+      const refused = await asOwner
+        .teams({ teamId })
+        .mail.accounts.post({ ...withoutPassword, projectId: project.id, credentialId });
+      expect(refused.status).toBe(400);
+    }
+    const created = await asOwner
+      .teams({ teamId })
+      .mail.accounts.post({ ...withoutPassword, projectId: project.id, credentialId: secret.id });
+    expect(created.data).toMatchObject({
+      credentialId: secret.id,
+      credentialLabel: 'Gmail app password',
+      hasPassword: true,
+    });
+
+    await asOwner
+      .teams({ teamId })
+      .mail.accounts({ accountId: created.data!.id })
+      .patch({ password: 'new-app-password' });
+    const secrets = await asOwner.teams({ teamId }).credentials.get({ query: { kind: 'secret' } });
+    expect(secrets.data!.items).toHaveLength(2);
+
+    await asOwner.teams({ teamId }).credentials({ credentialId: secret.id }).delete();
+    const [row] = (await asOwner.teams({ teamId }).mail.accounts.get()).data!;
+    expect(row).toMatchObject({ credentialId: null, hasPassword: false });
   });
 
   it('changes an account, keeps the password when none is given and removes it', async () => {

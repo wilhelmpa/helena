@@ -25,6 +25,7 @@ import {
   serializeIssueTypes,
   type PlannedIssueType,
 } from '../../utils/issueTypesTransfer';
+import { copyText, readClipboardText } from '@/utils/clipboard';
 
 // The Issue types page header actions: a copy/paste menu (like States) and the primary
 // "Add type" button (which opens the inline add form in the list via onAdd).
@@ -52,7 +53,7 @@ export default function IssueTypesToolbar({
       return;
     }
     try {
-      await navigator.clipboard.writeText(serializeIssueTypes(types));
+      await copyText(serializeIssueTypes(types));
       toast.success(t('copied', { count: types.length }));
     } catch {
       toast.error(tTransfer('copyFailed'));
@@ -62,7 +63,7 @@ export default function IssueTypesToolbar({
   const pasteTypes = useCallback(async () => {
     let text: string;
     try {
-      text = await navigator.clipboard.readText();
+      text = await readClipboardText();
     } catch {
       toast.error(tTransfer('readFailed'));
       return;

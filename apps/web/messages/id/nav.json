@@ -1,5 +1,6 @@
 {
   "inbox": "Kotak masuk",
+  "files": "Berkas",
   "approvals": "Persetujuan",
   "dashboards": "Dasbor",
   "workItems": "Item pekerjaan",
@@ -31,6 +32,7 @@
   "newTeam": "Tim baru",
   "manageTeams": "Kelola tim",
   "role": "Peran: {role}",
+  "basedOn": "Berbasis It’s a Plan (AGPL-3.0)",
   "search": "Cari atau jalankan perintah…",
   "searchHint": "Cari atau jalankan perintah ({key})",
   "newIssueHint": "Issue baru ({key})",
@@ -65,7 +67,15 @@
       "reload": "Muat ulang",
       "tabs": "Tab",
       "newTab": "Tab baru",
-      "closeTab": "Tutup tab"
+      "closeTab": "Tutup tab",
+      "view": "Tampilan browser",
+      "live": "Langsung",
+      "liveTitle": "Tampilan langsung tab di depan",
+      "desktop": "Desktop",
+      "desktopTitle": "Desktop (VNC)",
+      "liveKeyboard": "Browser langsung. Tombol dikirim ke halaman selama tampilan ini memiliki fokus.",
+      "connecting": "Menghubungkan ke browser…",
+      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…"
     }
   },
   "groups": {
@@ -89,7 +99,8 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault",
+  "credentials": "Kredensial",
+  "devices": "Perangkat & Obsidian",
   "teamSettings": "Pengaturan tim",
   "teamOrchestration": "Tim & orkestrasi",
   "overview": "Ikhtisar",

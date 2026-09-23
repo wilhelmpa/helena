@@ -148,5 +148,36 @@ class HermesProfileCatalogTest(unittest.TestCase):
             CATALOG.require_browser_toolset({"toolsets": ["file"], "mcpServers": ["browser"]})
 
 
+class HermesApprovalGuardCatalogTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.home = Path(self.temp.name) / "home"
+        self.home.mkdir()
+        self.plugins = Path(__file__).parents[1] / "hermes-plugins"
+
+    def test_links_the_guard_from_the_checkout_into_a_home(self):
+        CATALOG.link_plan_plugins(self.home, self.plugins)
+        CATALOG.link_plan_plugins(self.home, self.plugins)
+        link = self.home / "plugins" / "plan-approval-guard"
+        self.assertEqual(link.readlink(), self.plugins / "plan-approval-guard")
+        self.assertTrue((link / "plugin.yaml").is_file())
+
+    def test_rejects_another_plugin_in_the_guard_place(self):
+        (self.home / "plugins" / "plan-approval-guard").mkdir(parents=True)
+        with self.assertRaisesRegex(RuntimeError, "conflicts"):
+            CATALOG.link_plan_plugins(self.home, self.plugins)
+
+    def test_requires_the_guard_to_exist(self):
+        with self.assertRaisesRegex(RuntimeError, "missing"):
+            CATALOG.link_plan_plugins(self.home, Path(self.temp.name) / "nowhere")
+
+    def test_requires_the_guard_when_hermes_approves_single_query_commands(self):
+        CATALOG.require_approval_guard({"singleQueryMode": "approve", "plugins": ["plan-approval-guard"]})
+        CATALOG.require_approval_guard({"singleQueryMode": "deny", "plugins": []})
+        with self.assertRaisesRegex(RuntimeError, "plugins.enabled"):
+            CATALOG.require_approval_guard({"singleQueryMode": "approve", "plugins": ["disk-cleanup"]})
+
+
 if __name__ == "__main__":
     unittest.main()

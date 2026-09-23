@@ -1,5 +1,6 @@
 import type { AgUiEvent, ContextUsage } from './agui';
 import type { RunnerConfig } from './config';
+import type { LoginUse, WebLogin, WorkRef } from './logins';
 import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
 
 // The agent's API key is the whole authorization: it identifies the agent, and the server
@@ -17,6 +18,9 @@ export interface Run {
   // Absent on a server that predates run limits.
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
+  // The folder of the issue's area below `cwd`, where the run starts. Absent on a server
+  // that predates area folders.
+  workdir?: string | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -95,6 +99,30 @@ export class Client {
     return (await (await this.get('/agent-runtime/policy')).json()) as RuntimePolicySnapshot;
   }
 
+  // The values of the secrets the agent's MCP servers name, by secret id. Named with the
+  // run or chat answer they are for, the read is recorded in Plan's audit log.
+  async mcpSecrets(work?: WorkRef): Promise<Record<string, string>> {
+    const query = work ? `?${new URLSearchParams(workParams(work))}` : '';
+    const body = (await (await this.get(`/agent-runtime/mcp-secrets${query}`)).json()) as {
+      secrets?: Record<string, string>;
+    };
+    return body.secrets ?? {};
+  }
+
+  // The website logins granted to the agent, for the run or chat answer it holds.
+  async webLogins(work: WorkRef): Promise<WebLogin[]> {
+    const path =
+      'runId' in work
+        ? `/agent-runs/${work.runId}/web-logins`
+        : `/agent-chats/${work.messageId}/web-logins`;
+    const body = (await (await this.get(path)).json()) as { logins?: WebLogin[] };
+    return body.logins ?? [];
+  }
+
+  async reportLoginUses(work: WorkRef, uses: LoginUse[]): Promise<void> {
+    await this.post('/agent-runtime/credential-uses', { ...work, uses });
+  }
+
   async reportRuntimeStatus(status: RuntimeStatus): Promise<void> {
     await this.post('/agent-runtime/status', status);
   }
@@ -165,6 +193,10 @@ export class Client {
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);
   }
+}
+
+function workParams(work: WorkRef): Record<string, string> {
+  return 'runId' in work ? { runId: String(work.runId) } : { messageId: String(work.messageId) };
 }
 
 // An instance too old to know about stopping answers this with 204 and no body, which

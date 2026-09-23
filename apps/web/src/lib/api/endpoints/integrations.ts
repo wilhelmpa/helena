@@ -16,6 +16,10 @@ export interface ConfigField {
 // integration whose `tools` are configured on a credential.
 export type IntegrationKind = 'llm' | 'tool';
 
+// A picker option's kind: an integration's, or 'secret' for a secret or an API key of the
+// Credentials page that an MCP server may name.
+export type IntegrationOptionKind = IntegrationKind | 'secret';
+
 // An integration the team can store a credential for (server-side catalog).
 export interface IntegrationMeta {
   key: string;
@@ -47,7 +51,7 @@ export interface IntegrationCredential {
 export interface IntegrationOption {
   id: number;
   integrationKey: string;
-  kind: IntegrationKind;
+  kind: IntegrationOptionKind;
   label: string | null;
 }
 
@@ -75,7 +79,7 @@ export const listIntegrationModels = (teamId: number, provider: string) =>
 export const listCredentials = (teamId: number, params: PageParams) =>
   request<Page<IntegrationCredential>>(`/teams/${teamId}/integrations${pageQuery(params)}`);
 
-export const listIntegrationOptions = (teamId: number, kind?: IntegrationKind) =>
+export const listIntegrationOptions = (teamId: number, kind?: IntegrationOptionKind) =>
   request<IntegrationOption[]>(
     `/teams/${teamId}/integrations/options${kind ? `?kind=${kind}` : ''}`,
   );

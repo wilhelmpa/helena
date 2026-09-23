@@ -49,7 +49,7 @@ docker compose --env-file .env -f compose.apps.yml up -d --build
 docker compose --env-file .env -f compose.apps.yml ps
 ```
 
-`nextcloud-init` is an idempotent one-shot service. It enables the `user_saml` mapping and disables Nextcloud's `firstrunwizard`, so an embedded Files view does not reopen onboarding for each fresh frame. A successful deployment shows it as exited with status 0. Persistent data is held in five distinct named volumes: editor home, Nextcloud application/config, Nextcloud user data, PostgreSQL data and Redis data.
+`nextcloud-init` is an idempotent one-shot service. It enables the `user_saml` mapping and disables Nextcloud's `firstrunwizard`. A successful deployment shows it as exited with status 0. Persistent data is held in five distinct named volumes: editor home, Nextcloud application/config, Nextcloud user data, PostgreSQL data and Redis data.
 
 The Redis Docker secret remains root-owned at `/run/secrets/redis_password`. Each Nextcloud container copies it during startup to `/run/volition-secrets/redis_password` with mode `0400` and ownership `www-data:www-data`; the configured `REDIS_HOST_PASSWORD_FILE` always points to that runtime copy. This makes Apache, cron, and later `docker exec --user www-data ... occ` calls use the same readable path without widening the source secret's permissions.
 

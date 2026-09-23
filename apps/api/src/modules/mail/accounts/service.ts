@@ -1,9 +1,23 @@
-import { decryptSecret, encryptSecret } from '@repo/crypto';
-import { db, mailAccount, mailFolder, mailRule, mailMessage, mailThread, project } from '@repo/db';
+import { decryptSecret } from '@repo/crypto';
+import {
+  db,
+  integrationCredential,
+  mailAccount,
+  mailFolder,
+  mailRule,
+  mailMessage,
+  mailThread,
+  project,
+} from '@repo/db';
 import { testImapConnection, testSmtpConnection, type MailServerSettings } from '@repo/mail';
 import { assertPublicHttpUrl, UrlNotAllowedError } from '@repo/net';
 import { deleteObjectFolder } from '@repo/storage';
 import { and, asc, eq, inArray, isNull, ne, or, sql, type SQL } from 'drizzle-orm';
+import {
+  createCredentialEntry,
+  getCredentialEntry,
+  updateCredentialEntry,
+} from '#modules/agents/credentials/service';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
 import { moveThread } from '../threads/move';
 
@@ -20,7 +34,10 @@ export interface NewAccountInput {
   smtpPort: number;
   smtpTls: boolean;
   username: string;
-  password: string;
+  // The password: typed here, it is stored as a new secret of the Credentials page;
+  // credentialId picks a secret that is there already.
+  password?: string;
+  credentialId?: number;
   enabled?: boolean;
   syncTrash?: boolean;
   syncSpam?: boolean;
@@ -51,9 +68,18 @@ async function toDto(rows: AccountRow[]) {
     .select({ id: project.id, key: project.key, name: project.name })
     .from(project)
     .where(eq(project.teamId, rows[0]!.teamId));
+  const credentialIds = rows.flatMap((row) => (row.credentialId ? [row.credentialId] : []));
+  const credentials =
+    credentialIds.length === 0
+      ? []
+      : await db
+          .select({ id: integrationCredential.id, label: integrationCredential.label })
+          .from(integrationCredential)
+          .where(inArray(integrationCredential.id, credentialIds));
   return rows.map((row) => {
     const owner = projects.find((item) => item.id === row.projectId);
     const counts = progress.find((item) => item.accountId === row.id);
+    const credential = credentials.find((item) => item.id === row.credentialId);
     return {
       id: row.id,
       teamId: row.teamId,
@@ -69,7 +95,9 @@ async function toDto(rows: AccountRow[]) {
       smtpPort: row.smtpPort,
       smtpTls: row.smtpTls,
       username: row.username,
-      hasPassword: row.passwordCiphertext != null,
+      hasPassword: row.credentialId != null,
+      credentialId: row.credentialId,
+      credentialLabel: credential?.label ?? null,
       enabled: row.enabled,
       syncTrash: row.syncTrash,
       syncSpam: row.syncSpam,
@@ -127,29 +155,55 @@ async function assertTeamProject(teamId: number, projectId: number | null | unde
   if (!row) throw new HttpError(400, 'The project must belong to this team');
 }
 
-function passwordColumns(password: string) {
-  const secret = encryptSecret(password);
-  return {
-    passwordCiphertext: secret.ciphertext,
-    passwordIv: secret.iv,
-    passwordAuthTag: secret.authTag,
-  };
+// A secret of the Credentials page may hold the password when it belongs to the team and
+// is not limited to another project.
+async function assertMailCredential(
+  teamId: number,
+  credentialId: number,
+  projectId: number | null,
+): Promise<void> {
+  const entry = await getCredentialEntry(credentialId, teamId);
+  if (!entry || entry.kind !== 'secret') {
+    throw new HttpError(400, 'Choose a secret of the Credentials page');
+  }
+  if (entry.projectId != null && entry.projectId !== projectId) {
+    throw new HttpError(400, 'The secret is limited to another project');
+  }
+}
+
+function passwordCredential(
+  teamId: number,
+  address: string,
+  projectId: number | null,
+  password: string,
+) {
+  return createCredentialEntry(teamId, {
+    kind: 'secret',
+    label: `Mail: ${address}`,
+    projectId,
+    value: password,
+  });
 }
 
 export async function createAccount(teamId: number, input: NewAccountInput) {
   await assertTeamProject(teamId, input.projectId);
   await assertMailHost(input.imapHost);
   await assertMailHost(input.smtpHost);
-  const { password, ...fields } = input;
+  const { password, credentialId, ...fields } = input;
+  const address = input.address.toLowerCase();
+  if (credentialId != null) await assertMailCredential(teamId, credentialId, input.projectId);
+  else if (!password) throw new HttpError(400, 'Enter the password or choose a secret');
+  const [taken] = await db
+    .select({ id: mailAccount.id })
+    .from(mailAccount)
+    .where(and(eq(mailAccount.teamId, teamId), eq(mailAccount.address, address)));
+  if (taken) throw new HttpError(409, 'A mail account with this address already exists.');
+  const credential =
+    credentialId ?? (await passwordCredential(teamId, address, input.projectId, password!)).id;
   try {
     const [row] = await db
       .insert(mailAccount)
-      .values({
-        ...fields,
-        teamId,
-        address: input.address.toLowerCase(),
-        ...passwordColumns(password),
-      })
+      .values({ ...fields, teamId, address, credentialId: credential })
       .returning();
     return (await toDto([row!]))[0]!;
   } catch (error) {
@@ -162,16 +216,35 @@ export async function updateAccount(teamId: number, accountId: number, input: Ac
   await assertTeamProject(teamId, input.projectId);
   if (input.imapHost && input.imapHost !== current.imapHost) await assertMailHost(input.imapHost);
   if (input.smtpHost && input.smtpHost !== current.smtpHost) await assertMailHost(input.smtpHost);
-  const { password, ...fields } = input;
+  const { password, credentialId: chosen, ...fields } = input;
+  const projectId = input.projectId === undefined ? current.projectId : input.projectId;
+  const address = fields.address?.toLowerCase() ?? current.address;
+  if (chosen != null) await assertMailCredential(teamId, chosen, projectId);
+  let credentialId = chosen ?? current.credentialId;
+  const linked = credentialId == null ? null : await getCredentialEntry(credentialId, teamId);
+  if (password) {
+    if (linked?.kind === 'secret')
+      await updateCredentialEntry(linked.id, teamId, { value: password });
+    else credentialId = (await passwordCredential(teamId, address, projectId, password)).id;
+  }
+  // The secret made for the account moves along when the account changes project.
+  if (
+    linked?.kind === 'secret' &&
+    linked.projectId != null &&
+    linked.projectId === current.projectId &&
+    projectId !== current.projectId
+  ) {
+    await updateCredentialEntry(linked.id, teamId, { projectId });
+  }
   try {
     const [row] = await db
       .update(mailAccount)
       .set({
         ...fields,
-        ...(fields.address ? { address: fields.address.toLowerCase() } : {}),
-        ...(password ? passwordColumns(password) : {}),
+        address,
+        credentialId,
         // A new setting is a reason to connect again, so an old error no longer holds.
-        ...(password || fields.imapHost || fields.imapPort || fields.username
+        ...(password || chosen || fields.imapHost || fields.imapPort || fields.username
           ? { syncStatus: 'idle', syncError: null }
           : {}),
         updatedAt: new Date(),
@@ -193,36 +266,43 @@ export async function deleteAccount(teamId: number, accountId: number): Promise<
   });
 }
 
-export function accountSettings(row: AccountRow): MailServerSettings | null {
-  if (!row.passwordCiphertext || !row.passwordIv || !row.passwordAuthTag) return null;
-  return {
-    imapHost: row.imapHost,
-    imapPort: row.imapPort,
-    imapTls: row.imapTls,
-    smtpHost: row.smtpHost,
-    smtpPort: row.smtpPort,
-    smtpTls: row.smtpTls,
-    username: row.username,
-    password: decryptSecret({
-      ciphertext: row.passwordCiphertext,
-      iv: row.passwordIv,
-      authTag: row.passwordAuthTag,
-    }),
-  };
+// The password a secret of the credential store holds.
+async function secretValue(credentialId: number): Promise<string | null> {
+  const [credential] = await db
+    .select({
+      ciphertext: integrationCredential.ciphertext,
+      iv: integrationCredential.iv,
+      authTag: integrationCredential.authTag,
+    })
+    .from(integrationCredential)
+    .where(eq(integrationCredential.id, credentialId));
+  if (!credential) return null;
+  return (JSON.parse(decryptSecret(credential)) as { value?: string }).value ?? null;
 }
 
 export async function testConnection(
   teamId: number,
-  input: Omit<MailServerSettings, 'password'> & { password?: string; accountId?: number },
+  input: Omit<MailServerSettings, 'password'> & {
+    password?: string;
+    credentialId?: number;
+    accountId?: number;
+  },
 ): Promise<{ imap: string | null; smtp: string | null }> {
+  const { credentialId: chosen, accountId, ...servers } = input;
   let password = input.password;
-  if (!password && input.accountId) {
-    password = accountSettings(await accountRow(teamId, input.accountId))?.password;
+  let credentialId = chosen;
+  if (!password && credentialId == null && accountId) {
+    credentialId = (await accountRow(teamId, accountId)).credentialId ?? undefined;
+  } else if (!password && credentialId != null) {
+    const entry = await getCredentialEntry(credentialId, teamId);
+    if (entry?.kind !== 'secret')
+      throw new HttpError(400, 'Choose a secret of the Credentials page');
   }
+  if (!password && credentialId != null) password = (await secretValue(credentialId)) ?? undefined;
   if (!password) throw new HttpError(400, 'Enter the password');
   await assertMailHost(input.imapHost);
   await assertMailHost(input.smtpHost);
-  const settings = { ...input, password };
+  const settings = { ...servers, password };
   const [imap, smtp] = await Promise.all([
     testImapConnection(settings),
     testSmtpConnection(settings),

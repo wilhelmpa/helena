@@ -12,6 +12,7 @@ import { type ContextUsage } from '../chat-usage';
 import { enforceAgentLimits } from '../governance';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
+import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy, type AgentKind } from '../core/service';
 import type { AgentRunTrigger } from '../model';
 import { MAX_RUN_OUTPUT_BYTES } from './model';
@@ -133,6 +134,9 @@ export interface RunnerRun {
   // Handed to Hermes as --max-turns and --run-budget; null leaves Hermes' own default.
   maxTurns: number | null;
   runBudgetSeconds: number | null;
+  // The folder of the issue's area, relative to the working directory of the agent's
+  // runtime, which is the project workspace. The runner starts the run there.
+  workdir: string | null;
 }
 
 // The claim's raw row, before framing. The extra people columns exist only to build
@@ -146,6 +150,7 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
   agentProjectInstructions: string;
   issueTitle: string | null;
   issueArea: string | null;
+  issueAreaFolder: string | null;
   assigneeName: string | null;
   assigneeUsername: string | null;
   requesterName: string | null;
@@ -233,6 +238,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       (SELECT title FROM issue i WHERE i.id = r.issue_id) AS "issueTitle",
       (SELECT f.name FROM issue i JOIN project_view_folder f ON f.id = i.folder_id
          WHERE i.id = r.issue_id) AS "issueArea",
+      (SELECT f.folder FROM issue i JOIN project_view_folder f ON f.id = i.folder_id
+         WHERE i.id = r.issue_id) AS "issueAreaFolder",
       (SELECT u.name FROM issue i JOIN "user" u ON u.id = i.assignee_user_id
          WHERE i.id = r.issue_id) AS "assigneeName",
       (SELECT COALESCE(u.username, ag.username)
@@ -273,7 +280,15 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     thinkingLevel: agent.thinkingLevel,
     maxTurns: row.maxTurns ?? agent.maxTurns,
     runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
+    workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,
   };
+}
+
+// The runtime of an agent that works in one project runs in that project's workspace.
+// The Home agent and an agent of several projects share one working directory outside
+// any project, where an area folder does not exist.
+function worksInProjectWorkspace(agent: RunnerAgent): boolean {
+  return agent.projects.length === 1 && !isHomeAgent(agent.username);
 }
 
 // What the agent is told about the run before the task itself: the project the run

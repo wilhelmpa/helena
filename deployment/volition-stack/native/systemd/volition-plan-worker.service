@@ -19,6 +19,8 @@ Environment=PROJECT_PROVISIONING_TOKEN_FILE=%d/provisioning_token
 Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
 Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
 UMask=0007
+LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
+Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/worker/src/index.ts
 Restart=on-failure
 RestartSec=2

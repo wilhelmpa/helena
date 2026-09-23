@@ -19,7 +19,7 @@
   "moveFolderUp": "Mover para cima",
   "moveFolderDown": "Mover para baixo",
   "deleteFolder": "Excluir área",
-  "deleteFolderConfirm": "Excluir {name}? As visualizações e os itens de trabalho continuam no projeto sem área.",
+  "deleteFolderConfirm": "Excluir {name}? As visualizações e os itens de trabalho continuam no projeto sem área. As pastas da área vão para a lixeira do projeto.",
   "moveToFolder": "Mover para área",
   "noFolder": "Sem área",
   "newBoard": "Novo quadro",
@@ -27,5 +27,10 @@
   "areaOptions": "Opções da área",
   "newFolderDescription": "Uma área agrupa tarefas com quadros próprios, para planejar uma parte do projeto separadamente.",
   "newBoardDescription": "O quadro mostra apenas as tarefas de {name}.",
-  "create": "Criar"
+  "create": "Criar",
+  "areaFolderLabel": "Pasta",
+  "areaFolderHint": "Letras minúsculas, dígitos e hifens. Os agentes trabalham nas tarefas desta área nesta pasta do workspace do projeto, e Files tem uma pasta com o mesmo nome.",
+  "areaFolderReserved": "O projeto usa {folder} para os próprios arquivos. Escolha outra pasta.",
+  "areaFolderTaken": "Outra área deste projeto já usa esta pasta.",
+  "openFolder": "Abrir pasta"
 }

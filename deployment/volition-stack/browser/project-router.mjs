@@ -9,6 +9,8 @@ import {
   readJsonBody,
   startWindowKeeper,
 } from "./project-browser-control.mjs";
+import { joinScreencast } from "./project-browser-screencast.mjs";
+import { acceptWebSocket } from "./websocket.mjs";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const ROUTE = /^\/projects\/([a-z0-9][a-z0-9-]{0,31})(\/.*)?$/;
@@ -111,6 +113,17 @@ export function isPrivateGatewayHeader(name) {
   );
 }
 
+// A WebSocket handshake from a page carries its origin; one from another site is refused.
+export function isSameOrigin(request) {
+  const origin = request.headers.origin;
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === request.headers.host;
+  } catch {
+    return false;
+  }
+}
+
 function proxyHeaders(headers) {
   return Object.fromEntries(
     Object.entries(headers).filter(
@@ -120,9 +133,47 @@ function proxyHeaders(headers) {
   );
 }
 
+function refuse(socket, status) {
+  socket.end(`HTTP/1.1 ${status}\r\nConnection: close\r\n\r\n`);
+}
+
+// api/screencast is the live view's WebSocket; every other WebSocket is the display's.
+async function handleUpgrade(root, request, socket, head) {
+  // Node leaves an upgraded socket without an error listener, and an unhandled error ends
+  // the process.
+  socket.on("error", () => socket.destroy());
+  let target;
+  try {
+    target = await resolveProjectBrowser(root, request.url || "/");
+  } catch {
+    return refuse(socket, "404 Not Found");
+  }
+  if (target.api !== null) {
+    if (target.api !== "screencast") return refuse(socket, "404 Not Found");
+    if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
+    const connection = acceptWebSocket(request, socket, head);
+    if (connection) joinScreencast(target.cdpPort, connection);
+    return;
+  }
+  const upstream = net.connect({ host: "127.0.0.1", port: target.port }, () => {
+    const headers = Object.entries(request.headers)
+      .filter(
+        ([name, value]) =>
+          value !== undefined && !isPrivateGatewayHeader(name) && name.toLowerCase() !== "host",
+      )
+      .map(([name, value]) => `${name}: ${Array.isArray(value) ? value.join(", ") : value}`);
+    headers.push(`host: 127.0.0.1:${target.port}`);
+    upstream.write(`${request.method} ${target.url} HTTP/1.1\r\n${headers.join("\r\n")}\r\n\r\n`);
+    if (head.length) upstream.write(head);
+    socket.pipe(upstream).pipe(socket);
+  });
+  upstream.on("error", () => socket.destroy());
+  socket.on("error", () => upstream.destroy());
+}
+
 export function createProjectBrowserRouter(options = {}) {
   const root = options.root ?? "/var/lib/volition/project-browser/projects";
-  return http.createServer(async (request, response) => {
+  const server = http.createServer(async (request, response) => {
     try {
       const target = await resolveProjectBrowser(root, request.url || "/");
       if (target.api !== null) return await handleControl(request, response, target);
@@ -155,37 +206,15 @@ export function createProjectBrowserRouter(options = {}) {
       response.end("Browser unavailable");
     }
   });
+  server.on("upgrade", (request, socket, head) => void handleUpgrade(root, request, socket, head));
+  return server;
 }
 
 if (import.meta.main) {
   const port = Number(process.env.PROJECT_BROWSER_ROUTER_PORT || 6082);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid router port");
-  const server = createProjectBrowserRouter({ root: process.env.PROJECT_BROWSER_ROOT });
-  server.on("upgrade", async (request, socket, head) => {
-    try {
-      const target = await resolveProjectBrowser(
-        process.env.PROJECT_BROWSER_ROOT || "/var/lib/volition/project-browser/projects",
-        request.url || "/",
-      );
-      const upstream = net.connect({ host: "127.0.0.1", port: target.port }, () => {
-        const headers = Object.entries(request.headers)
-          .filter(
-            ([name, value]) =>
-              value !== undefined && !isPrivateGatewayHeader(name) && name.toLowerCase() !== "host",
-          )
-          .map(([name, value]) => `${name}: ${Array.isArray(value) ? value.join(", ") : value}`);
-        headers.push(`host: 127.0.0.1:${target.port}`);
-        upstream.write(`${request.method} ${target.url} HTTP/1.1\r\n${headers.join("\r\n")}\r\n\r\n`);
-        if (head.length) upstream.write(head);
-        socket.pipe(upstream).pipe(socket);
-      });
-      upstream.on("error", () => socket.destroy());
-      socket.on("error", () => upstream.destroy());
-    } catch {
-      socket.end("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
-    }
-  });
   const root = process.env.PROJECT_BROWSER_ROOT || "/var/lib/volition/project-browser/projects";
+  const server = createProjectBrowserRouter({ root });
   const stopKeeper = startWindowKeeper({
     listBrowsers: () => listProjectBrowsers(root),
     log: (message) => console.log(message),

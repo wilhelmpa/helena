@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   db,
   project,
@@ -24,7 +27,51 @@ beforeEach(async () => {
 afterEach(() => {
   server?.stop(true);
   server = null;
+  delete process.env.MASTRA_CONTROL_URL;
+  delete process.env.MASTRA_CONTROL_TOKEN_FILE;
 });
+
+const MASTRA_CONTROL_TOKEN = 'integration-test-mastra-control-token-0123456789';
+
+// Points the worker at a stand-in for the provisioning service and Mastra's control
+// endpoint that answers Mastra with `mastraStatus` and records every request.
+function serveDeletion(mastraStatus: number) {
+  const requests: { path: string; authorization: string | null; body: unknown }[] = [];
+  server = Bun.serve({
+    port: 0,
+    fetch: async (incoming) => {
+      const path = new URL(incoming.url).pathname;
+      requests.push({
+        path,
+        authorization: incoming.headers.get('authorization'),
+        body: await incoming.json(),
+      });
+      if (path === '/internal/mastra/control')
+        return Response.json({ deleted: 1 }, { status: mastraStatus });
+      return Response.json({ resources: [] });
+    },
+  });
+  const tokenFile = join(mkdtempSync(join(tmpdir(), 'worker-mastra-')), 'token');
+  writeFileSync(tokenFile, MASTRA_CONTROL_TOKEN, { mode: 0o600 });
+  process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+  process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
+  process.env.MASTRA_CONTROL_URL = `http://127.0.0.1:${server.port}/internal/mastra/control`;
+  process.env.MASTRA_CONTROL_TOKEN_FILE = tokenFile;
+  return requests;
+}
+
+async function deletedProjectJob() {
+  const [owner] = await db.insert(team).values({ name: 'Schedule cleanup' }).returning();
+  const [job] = await db
+    .insert(projectDeprovisioningJob)
+    .values({
+      projectId: 7332,
+      project: { id: 7332, teamId: owner.id, key: 'GONE', name: 'Deleted', description: '' },
+      requestedResources: ['workspace'],
+    })
+    .returning();
+  return job;
+}
 
 describe('project provisioning', () => {
   it('sends the external agents that work only in the project', async () => {
@@ -62,6 +109,46 @@ describe('project provisioning', () => {
     expect(receivedBody.agents).toEqual([coder, writer]);
   });
 
+  it('sends every area of the project with its folder', async () => {
+    let receivedBody: { areas?: unknown } = {};
+    server = Bun.serve({
+      port: 0,
+      fetch: async (incoming) => {
+        receivedBody = (await incoming.json()) as { areas?: unknown };
+        return Response.json({ resources: [] });
+      },
+    });
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
+    const [owner] = await db.insert(team).values({ name: 'Area provisioning' }).returning();
+    const [created, other] = await db
+      .insert(project)
+      .values([
+        { teamId: owner.id, key: `ARE${owner.id}`, name: 'Areas' },
+        { teamId: owner.id, key: `OTA${owner.id}`, name: 'Other' },
+      ])
+      .returning();
+    const [backend, design] = await db
+      .insert(projectViewFolder)
+      .values([
+        { projectId: created.id, name: 'Backend', folder: 'backend' },
+        { projectId: created.id, name: 'Design & UX', folder: 'ux' },
+        { projectId: other.id, name: 'Elsewhere', folder: 'elsewhere' },
+      ])
+      .returning();
+    await db.insert(projectProvisioningJob).values([
+      { projectId: created.id, requestedResources: ['workspace'] },
+      { projectId: other.id, requestedResources: ['workspace'], status: 'succeeded' },
+    ]);
+
+    await processProjectProvisioning();
+
+    expect(receivedBody.areas).toEqual([
+      { id: backend.id, name: 'Backend', folder: 'backend' },
+      { id: design.id, name: 'Design & UX', folder: 'ux' },
+    ]);
+  });
+
   it('includes bounded project-owned board metadata for requested view ids', async () => {
     let receivedBody: { boards?: unknown } = {};
     server = Bun.serve({
@@ -80,7 +167,7 @@ describe('project provisioning', () => {
       .returning();
     const [folder] = await db
       .insert(projectViewFolder)
-      .values({ projectId: created.id, name: 'Leadership & Ops' })
+      .values({ projectId: created.id, name: 'Leadership & Ops', folder: 'leadership-ops' })
       .returning();
     const [view] = await db
       .insert(projectView)
@@ -339,6 +426,45 @@ describe('project provisioning', () => {
       attempts: 1,
       lastError: null,
       result: { resources: [{ kind: 'workspace', id: 'quarantine:event:workspace' }] },
+    });
+  });
+
+  it("deletes the project's Mastra schedules before provisioning removes the project", async () => {
+    const requests = serveDeletion(200);
+    const job = await deletedProjectJob();
+
+    await processProjectProvisioning();
+
+    expect(requests.map((request) => request.path)).toEqual([
+      '/internal/mastra/control',
+      '/api/provision',
+    ]);
+    expect(requests[0]).toMatchObject({
+      authorization: `Bearer ${MASTRA_CONTROL_TOKEN}`,
+      body: { schemaVersion: 1, operation: 'delete-project-schedules', projectRef: 'project:GONE' },
+    });
+    const [stored] = await db
+      .select()
+      .from(projectDeprovisioningJob)
+      .where(eq(projectDeprovisioningJob.id, job.id));
+    expect(stored).toMatchObject({ status: 'succeeded', lastError: null });
+  });
+
+  it('keeps the job for a retry while Mastra cannot delete the schedules', async () => {
+    const requests = serveDeletion(502);
+    const job = await deletedProjectJob();
+
+    await processProjectProvisioning();
+
+    expect(requests.map((request) => request.path)).toEqual(['/internal/mastra/control']);
+    const [stored] = await db
+      .select()
+      .from(projectDeprovisioningJob)
+      .where(eq(projectDeprovisioningJob.id, job.id));
+    expect(stored).toMatchObject({
+      status: 'pending',
+      attempts: 1,
+      lastError: 'Mastra control HTTP 502',
     });
   });
 

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "mastra build --studio",
     "start": "node start.mjs",
-    "test": "STUDIO_DATABASE_URL=file:/tmp/mastra-control-plane-test-$$.db node --experimental-strip-types --test --test-concurrency=1 tests/*.test.*"
+    "test": "MASTRA_UPSTREAM_TOKEN=test-upstream-token-0123456789abcdef0123456789 STUDIO_DATABASE_URL=file:/tmp/mastra-control-plane-test-$$.db node --experimental-strip-types --test --test-concurrency=1 tests/*.test.*"
   },
   "dependencies": {
     "@mastra/core": "1.67.0",

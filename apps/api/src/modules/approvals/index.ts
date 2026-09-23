@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { mcpTool } from '#mcp/generate';
 import { isAgentUser } from '#modules/agents/core/service';
+import { runnerAuth } from '#modules/agents/runner-auth';
 import { authContext } from '#shared/auth-context';
 import {
   assertMcpEnabled,
@@ -16,9 +17,11 @@ import { commonErrors, errors } from '#shared/responses';
 import {
   ApprovalPageResponse,
   ApprovalResponse,
+  ApprovedCommandsResponse,
   PendingCountResponse,
   WorkflowGateListResponse,
   approvalParams,
+  approvedCommandsParams,
   createApprovalBody,
   decisionBody,
   listApprovalsQuery,
@@ -32,6 +35,7 @@ import {
   getApprovalAccess,
   getCallingAgent,
   listApprovals,
+  listApprovedCommands,
 } from './service';
 import { listWorkflowGates } from './workflow-gates';
 
@@ -42,6 +46,7 @@ export const approvalRoutes = new Elysia({
   detail: { tags: ['Approvals'] },
 })
   .use(authContext)
+  .use(runnerAuth)
   .macro({
     // The agent calling a :projectKey route, which must be one of the project's team.
     requestingAgent(_enabled: boolean) {
@@ -100,10 +105,28 @@ export const approvalRoutes = new Elysia({
           'message or email, publishing, paying, or deleting something. Describe the action ' +
           'in one line and give every detail the person needs to decide. Then end your run ' +
           'without taking the action: Plan starts a new run of yours with the decision and ' +
-          'its note once the request is approved or rejected. Returns the request with its ' +
-          'id and status; asking again for the same action in the same run returns the ' +
-          'existing request.',
+          'its note once the request is approved or rejected. When a terminal command or ' +
+          'execute_code call was blocked for approval, pass exactly what it was about to run ' +
+          'in command: the run with the approval may run exactly that. Returns the request ' +
+          'with its id and status; asking again for the same action in the same run returns ' +
+          'the existing request.',
         ...mcpTool('request_approval'),
+      },
+    },
+  )
+  .get(
+    '/agent-runs/:runId/approved-commands',
+    ({ agent, params }) => listApprovedCommands(agent.id, params.runId),
+    {
+      runnerAgent: true,
+      params: approvedCommandsParams,
+      response: { 200: ApprovedCommandsResponse, ...commonErrors },
+      detail: {
+        summary: 'List the approved commands of a run',
+        description:
+          "The commands of the calling agent's approved requests whose decision started " +
+          "this run. Hermes' approval guard runs a command it would otherwise block only " +
+          'when it is in this list.',
       },
     },
   )

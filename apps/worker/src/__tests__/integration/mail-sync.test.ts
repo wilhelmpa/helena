@@ -7,6 +7,7 @@ import {
   approvalRequest,
   db,
   hubInboxEvent,
+  integrationCredential,
   mailAccount,
   mailAction,
   mailAttachment,
@@ -79,7 +80,16 @@ async function createAccount(
     .insert(project)
     .values({ teamId: owner!.id, key: 'VOL', name: 'Volition' })
     .returning();
-  const secret = encryptSecret('app-password');
+  const secret = encryptSecret(JSON.stringify({ value: 'app-password' }));
+  const [credential] = await db
+    .insert(integrationCredential)
+    .values({
+      teamId: owner!.id,
+      integrationKey: 'secret',
+      label: 'Mail: me@home.example',
+      ...secret,
+    })
+    .returning();
   await db.insert(mailAccount).values({
     teamId: owner!.id,
     projectId: home!.id,
@@ -88,9 +98,7 @@ async function createAccount(
     imapHost: 'imap.gmail.com',
     smtpHost: 'smtp.gmail.com',
     username: 'me@home.example',
-    passwordCiphertext: secret.ciphertext,
-    passwordIv: secret.iv,
-    passwordAuthTag: secret.authTag,
+    credentialId: credential!.id,
     ...overrides,
   });
   const [account] = await loadSyncAccounts();
@@ -407,6 +415,27 @@ describe('mail import', () => {
     await pass(account);
     expect(await locations('INBOX')).toEqual(['<kept@x.example>']);
     expect(server.sourceFetches).toBe(fetched);
+  });
+});
+
+describe('mail accounts', () => {
+  it('reads the password from the credential and reconnects when it changes', async () => {
+    const account = await createAccount();
+    expect(account.settings.password).toBe('app-password');
+    const [row] = await db.select().from(mailAccount);
+    await db
+      .update(integrationCredential)
+      .set({
+        ...encryptSecret(JSON.stringify({ value: 'new-password' })),
+        updatedAt: new Date(Date.now() + 1000),
+      })
+      .where(eq(integrationCredential.id, row!.credentialId!));
+    const [changed] = await loadSyncAccounts();
+    expect(changed!.settings.password).toBe('new-password');
+    expect(changed!.version).not.toBe(account.version);
+
+    await db.delete(integrationCredential).where(eq(integrationCredential.id, row!.credentialId!));
+    expect(await loadSyncAccounts()).toEqual([]);
   });
 });
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -57,6 +57,30 @@ describe('queued run', () => {
     const outcome = await perform(config, client, run, new AbortController());
     expect(outcome).toMatchObject({ status: 'success', output: 'done' });
     expect(reports).toEqual([expect.objectContaining({ status: 'success', output: 'done' })]);
+  });
+
+  it("hands the command the environment of the agent's Hermes settings", async () => {
+    const { config, client } = await setup('echo "$HERMES_MANAGED_DIR $ITSAPLAN_MCP_SECRET_7"');
+    const outcome = await perform(config, client, run, new AbortController(), {
+      toolsets: null,
+      env: { HERMES_MANAGED_DIR: '/hermes/run/itsaplan-managed', ITSAPLAN_MCP_SECRET_7: 'value' },
+    });
+    expect(outcome).toMatchObject({ output: '/hermes/run/itsaplan-managed value' });
+  });
+
+  it('runs the command in the folder of the issue area', async () => {
+    const { config, client } = await setup('pwd');
+    await mkdir(join(config.cwd!, 'backend'));
+    const outcome = await perform(
+      config,
+      client,
+      { ...run, workdir: 'backend' },
+      new AbortController(),
+    );
+    expect(outcome).toMatchObject({
+      status: 'success',
+      output: join(await realpath(config.cwd!), 'backend'),
+    });
   });
 
   it('kills the command of a canceled run and reports nothing for it', async () => {

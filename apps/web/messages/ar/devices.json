@@ -1,0 +1,80 @@
+{
+  "title": "الأجهزة وObsidian",
+  "description": "يزامن Syncthing ملاحظات وملفات Home والمشاريع وPrivate/ مع Obsidian على جهاز Mac والهاتف: مباشرةً في المنزل، وعبر مرحّلات مشفّرة أثناء التنقل.",
+  "loadError": "تعذّرت قراءة حالة المزامنة.",
+  "ownerOnly": "مالك المثيل وحده يدير الأجهزة.",
+  "unavailable": {
+    "unconfiguredTitle": "لم يتم إعداد Syncthing",
+    "unconfigured": "لا يملك Plan مفتاحًا صالحًا لـ Syncthing على هذا الخادم. ثبّت حزمة Debian ‏syncthing ثم شغّل <code>deployment/volition-stack/native/syncthing/setup.sh</code> بصلاحيات root.",
+    "unreachableTitle": "تعذّر الوصول إلى Syncthing",
+    "unreachable": "Syncthing غير مثبّت على هذا الخادم، أو أن الخدمة <code>volition-syncthing</code> لا تعمل."
+  },
+  "server": {
+    "title": "هذا الخادم",
+    "hint": "أضف معرّف الجهاز هذا في Syncthing على جهازك: امسح الرمز أو انسخ المعرّف.",
+    "qrAlt": "رمز QR لمعرّف جهاز هذا الخادم",
+    "copied": "تم نسخ معرّف الجهاز",
+    "copyFailed": "تعذّر النسخ. حدّد المعرّف وانسخه يدويًا.",
+    "version": "Syncthing {version}",
+    "discoveryOn": "الاكتشاف العام والمرحّلات مفعّلة. يعثر الجهاز خارج المنزل على هذا الخادم عبر خوادم الاكتشاف في Syncthing، ويتصل عبر مرحّل عندما يتعذّر الاتصال المباشر. تبقى الملفات مشفّرة من طرف إلى طرف.",
+    "discoveryOff": "الاكتشاف العام أو المرحّلات معطّلة. لا يتصل الجهاز إلا إذا وصل إلى هذا الخادم مباشرةً."
+  },
+  "folder": {
+    "title": "حالة المزامنة",
+    "notSetUp": "المجلد Volition غير موجود في Syncthing. شغّل إعداد Syncthing على هذا الخادم مرة أخرى.",
+    "state": {
+      "idle": "محدَّث",
+      "scanning": "جارٍ الفحص",
+      "syncing": "جارٍ المزامنة",
+      "error": "خطأ"
+    },
+    "lastFile": "آخر ملف مستلَم",
+    "lastFileValue": "{time}: {name}",
+    "lastScan": "آخر فحص",
+    "never": "أبدًا",
+    "needItems": "ملفات متبقية للمزامنة: {count}",
+    "fileErrors": "ملفات تعذّرت مزامنتها: {count}",
+    "error": "خطأ في المجلد: {error}"
+  },
+  "devices": {
+    "title": "الأجهزة",
+    "empty": "لا يوجد جهاز يزامن بعد. يوضّح الدليل أدناه كيفية إضافة جهاز.",
+    "connected": "متصل",
+    "disconnected": "غير متصل",
+    "paused": "متوقف مؤقتًا",
+    "lastSeen": "آخر ظهور {time}",
+    "neverSeen": "لم يظهر بعد",
+    "notShared": "المجلد Volition غير مشارَك مع هذا الجهاز.",
+    "remove": "إزالة",
+    "removeTitle": "إزالة {name}؟",
+    "removeBody": "يتوقف الجهاز عن المزامنة مع هذا الخادم. تبقى الملفات على الجهاز."
+  },
+  "pending": {
+    "title": "أجهزة تطلب الاتصال",
+    "hint": "اقبل أجهزتك فقط: يتلقى الجهاز المقبول كل الملاحظات والملفات، بما فيها Private/.",
+    "requested": "طُلب {time} من {address}",
+    "accept": "قبول",
+    "accepted": "تم قبول {name}. اقبل الآن المجلد Volition على الجهاز."
+  },
+  "conflicts": {
+    "title": "التعارضات",
+    "hint": "يحتفظ Syncthing بنسخة تعارض عندما يتغيّر ملف على جهازين قبل أن يتزامنا. افتح الملفين في Obsidian، وانقل ما تريد الاحتفاظ به إلى الملف الأصلي، ثم احذف نسخة التعارض؛ يصل الحذف إلى كل جهاز.",
+    "empty": "لا توجد تعارضات.",
+    "loadError": "تعذّرت قراءة التعارضات.",
+    "original": "الأصل: {path}",
+    "modified": "تغيّر {time}"
+  },
+  "guide": {
+    "title": "إعداد جهاز",
+    "step1": "ثبّت Syncthing وObsidian على الجهاز. Mac: تطبيق Syncthing من syncthing.net. iPhone: ‏Möbius Sync من App Store. Android: ‏Syncthing-Fork من F-Droid أو Google Play.",
+    "step2": "في Syncthing، أضف جهازًا وأدخل معرّف جهاز هذا الخادم، أو امسح رمز QR.",
+    "step2Lan": "للمزامنة المباشرة في المنزل، أدخل <code>{address}, dynamic</code> عناوينَ للجهاز.",
+    "step3": "يظهر الجهاز بعدها في الأعلى ضمن «أجهزة تطلب الاتصال». اختر «قبول».",
+    "step4": "على الجهاز، اقبل المجلد Volition في مجلد اسمه Volition: <code>~/Volition</code> على Mac، و<code>Volition</code> في وحدة التخزين الداخلية على Android، وخزنة Obsidian ‏Volition على iPhone.",
+    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث»، ثم افتح المجلد Volition كخزنة في Obsidian. تفتح الروابط من Plan الخزنة Volition.",
+    "iphoneTitle": "iPhone",
+    "iphone": "على iPhone لا يفتح Obsidian إلا مجلداته. أنشئ أولًا الخزنة Volition في Obsidian (على iPhone، لا في iCloud) ثم أغلق Obsidian. بعد ذلك، في Möbius Sync، ضع المجلد Volition في «على iPhone» › Obsidian › Volition. يكتب Obsidian إعداداته الخاصة عند إنشاء خزنة، لذا قد تظهر تعارضات في <code>.obsidian</code> بعد المزامنة الأولى؛ وتحتوي نسخ التعارض على الإعدادات الافتراضية لهذا الخادم. يزامن Möbius Sync ما دام التطبيق مفتوحًا أو سمح له iOS بالعمل في الخلفية.",
+    "spaceTitle": "توفير المساحة على الهاتف (اختياري)",
+    "space": "تنطبق أنماط التجاهل على الجهاز الذي أُدخلت فيه فقط. لكي لا تُحمَّل ملفات البريد على الهاتف، افتح المجلد Volition في Möbius Sync أو Syncthing-Fork، وأضف السطر <code>Files/Mail</code> ضمن أنماط التجاهل واحفظ، ويُفضَّل فعل ذلك مباشرةً بعد قبول المجلد. تبقى الملفات على هذا الخادم وعلى الأجهزة الأخرى."
+  }
+}

@@ -16,11 +16,9 @@ function names(list: MailAddress[]): string {
 export default function MailMessageCard({
   message,
   threadId,
-  projectKey,
 }: {
   message: MailMessage;
   threadId: number;
-  projectKey: string | null;
 }) {
   const t = useTranslations('mail.thread');
   const remote = useRemoteImages(threadId);
@@ -68,9 +66,7 @@ export default function MailMessageCard({
           </p>
         )}
       </div>
-      {message.attachments.length > 0 && (
-        <MailAttachmentChips attachments={message.attachments} projectKey={projectKey} />
-      )}
+      {message.attachments.length > 0 && <MailAttachmentChips attachments={message.attachments} />}
     </article>
   );
 }

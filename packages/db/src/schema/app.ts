@@ -687,6 +687,9 @@ export const approvalRequest = pgTable(
     kind: text('kind').notNull(),
     action: text('action').notNull(),
     details: text('details').notNull().default(''),
+    // The exact command a blocked tool call asked to run. Hermes' approval guard lets the
+    // follow-up run execute exactly this command once the request is approved.
+    command: text('command'),
     status: text('status').notNull().default('pending'),
     decidedByUserId: text('decided_by_user_id').references(() => user.id, {
       onDelete: 'set null',
@@ -706,10 +709,11 @@ export const approvalRequest = pgTable(
     check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
     index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),
     index('approval_request_agent_idx').on(t.agentId),
-    // One pending request per action of a run, so a repeated tool call cannot queue the
-    // same outward action twice.
+    // One pending request per action and command of a run, so a repeated tool call cannot
+    // queue the same outward action twice. The command is indexed by its hash: a long one
+    // exceeds the size of a b-tree index entry.
     uniqueIndex('approval_request_pending_run_uq')
-      .on(t.runId, t.kind, t.action)
+      .on(t.runId, t.kind, t.action, sql`md5(coalesce(${t.command}, ''))`)
       .where(sql`${t.status} = 'pending' AND ${t.runId} IS NOT NULL`),
   ],
 );
@@ -868,6 +872,12 @@ export const agentChatFavorite = pgTable(
 // object with secret fields masked, kept in plaintext for a masked display. The
 // secret is never returned to the client. A team may hold several credentials per
 // integration (e.g. two Jina keys), told apart by `label`.
+//
+// The credentials of the Credentials page (integration keys 'web_login', 'api_key',
+// 'ssh_key' and 'secret') use the same table: their ciphertext holds only the secret
+// fields, `redacted` the other fields and `true` for every secret field that is set.
+// Only they are limited to one project (`project_id`) and granted to agents
+// (integration_credential_grant).
 export const integrationCredential = pgTable(
   'integration_credential',
   {
@@ -877,6 +887,8 @@ export const integrationCredential = pgTable(
       .references(() => team.id, { onDelete: 'cascade' }),
     integrationKey: text('integration_key').notNull(),
     label: text('label'),
+    // Null for a credential of the whole team.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
     ciphertext: text('ciphertext').notNull(),
     iv: text('iv').notNull(),
     authTag: text('auth_tag').notNull(),
@@ -884,8 +896,64 @@ export const integrationCredential = pgTable(
     // the store, derived from the integration's credential schema.
     redacted: jsonb('redacted').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // The runner replaces a login it delivered once this moves.
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('integration_credential_team_idx').on(t.teamId)],
+  (t) => [
+    index('integration_credential_team_idx').on(t.teamId),
+    index('integration_credential_project_idx').on(t.projectId),
+  ],
+);
+
+// The agents that may use a credential of the Credentials page. A credential limited to
+// a project is granted only to agents working in that project.
+export const integrationCredentialGrant = pgTable(
+  'integration_credential_grant',
+  {
+    credentialId: integer('credential_id')
+      .notNull()
+      .references(() => integrationCredential.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.credentialId, t.agentId] }),
+    index('integration_credential_grant_agent_idx').on(t.agentId),
+  ],
+);
+
+// The audit log of the Credentials page: every credential an agent's runner received
+// ('delivered') and every login the agent filled with it ('used'). The label and the
+// agent's name are copied, so an entry outlives the credential, the agent and the run.
+export const integrationCredentialUse = pgTable(
+  'integration_credential_use',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    credentialId: integer('credential_id').references(() => integrationCredential.id, {
+      onDelete: 'set null',
+    }),
+    credentialLabel: text('credential_label').notNull(),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    agentName: text('agent_name').notNull(),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    chatMessageId: integer('chat_message_id').references(() => agentChatMessage.id, {
+      onDelete: 'set null',
+    }),
+    action: text('action').notNull(),
+    // What the credential served: the Hermes vault or an MCP server for a delivery, the
+    // tool and the site for a use.
+    purpose: text('purpose').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('integration_credential_use_action_check', sql`${t.action} IN ('delivered', 'used')`),
+    index('integration_credential_use_credential_idx').on(t.credentialId, t.createdAt),
+    index('integration_credential_use_team_idx').on(t.teamId, t.createdAt),
+  ],
 );
 
 export const gitProviderConnection = pgTable(
@@ -1159,6 +1227,53 @@ export const agentToolLink = pgTable(
   (t) => [
     primaryKey({ columns: [t.agentId, t.agentToolId] }),
     index('agent_tool_link_tool_idx').on(t.agentToolId),
+  ],
+);
+
+// An MCP server of the team's library, which an external agent's Hermes profile starts
+// once the server is enabled on the agent (agent_mcp_server_link). `name` is the key of
+// the server in Hermes' mcp_servers and the name of its toolset. A stdio server has
+// `command` and `args`, an http or sse server `url`. `env` (stdio) and `headers`
+// (http, sse) hold [{ name, value }] for a literal, or [{ name, credentialId }] for the
+// value of a team secret (an integration_credential of the 'secret' integration),
+// which only the agent's runner receives.
+export const agentMcpServer = pgTable(
+  'agent_mcp_server',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    transport: text('transport').notNull(),
+    command: text('command'),
+    args: jsonb('args').notNull().default([]),
+    url: text('url'),
+    env: jsonb('env').notNull().default([]),
+    headers: jsonb('headers').notNull().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.teamId, t.name),
+    check('agent_mcp_server_transport_check', sql`${t.transport} IN ('stdio', 'http', 'sse')`),
+    index('agent_mcp_server_team_idx').on(t.teamId),
+  ],
+);
+
+export const agentMcpServerLink = pgTable(
+  'agent_mcp_server_link',
+  {
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    mcpServerId: integer('mcp_server_id')
+      .notNull()
+      .references(() => agentMcpServer.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.agentId, t.mcpServerId] }),
+    index('agent_mcp_server_link_server_idx').on(t.mcpServerId),
   ],
 );
 
@@ -1652,9 +1767,11 @@ export const issueFieldOption = pgTable(
   (t) => [primaryKey({ columns: [t.issueId, t.fieldId, t.optionId] })],
 );
 
-// File attachments on issues. Bytes live in the S3-compatible object store;
-// this table holds metadata and the object key. public_id is the unguessable id
-// used in the public download URL.
+// File attachments on issues. The file is in the vault (vault_path, relative to
+// PROJECT_VAULT_ROOT), or, for a row not yet moved there, in the object store
+// (s3_key). sha256 finds the file again after it was moved outside Plan. A linked
+// row points at a vault file that existed before it and is never deleted with it.
+// public_id is the unguessable id used in the public download URL.
 export const issueAttachment = pgTable(
   'issue_attachment',
   {
@@ -1663,13 +1780,20 @@ export const issueAttachment = pgTable(
     issueId: integer('issue_id')
       .notNull()
       .references(() => issue.id, { onDelete: 'cascade' }),
-    s3Key: text('s3_key').notNull(),
+    s3Key: text('s3_key'),
+    vaultPath: text('vault_path'),
+    sha256: text('sha256'),
+    linked: boolean('linked').notNull().default(false),
     filename: text('filename').notNull(),
     contentType: text('content_type').notNull(),
     sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('issue_attachment_issue_idx').on(t.issueId)],
+  (t) => [
+    index('issue_attachment_issue_idx').on(t.issueId),
+    index('issue_attachment_vault_path_idx').on(t.vaultPath),
+    check('issue_attachment_storage_check', sql`(${t.s3Key} IS NULL) <> (${t.vaultPath} IS NULL)`),
+  ],
 );
 
 export const issueDevelopmentLink = pgTable(
@@ -1923,11 +2047,15 @@ export const projectViewFolder = pgTable(
       .notNull()
       .references(() => project.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    // The area's directory, relative to the project workspace and to the project's
+    // vault folder. The integration service creates, moves and trashes both.
+    folder: text('folder').notNull(),
     position: doublePrecision('position').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     unique('project_view_folder_project_name_unique').on(t.projectId, t.name),
+    unique('project_view_folder_project_folder_unique').on(t.projectId, t.folder),
     index('project_view_folder_project_idx').on(t.projectId, t.position),
   ],
 );

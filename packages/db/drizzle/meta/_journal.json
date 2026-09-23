@@ -1048,8 +1048,43 @@
     {
       "idx": 149,
       "version": "7",
-      "when": 1790170128605,
-      "tag": "0149_mail_imap",
+      "when": 1790167108920,
+      "tag": "0149_agent_mcp_servers",
+      "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1790169964027,
+      "tag": "0150_area_folders",
+      "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1790170207981,
+      "tag": "0151_approval_command",
+      "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1790172043506,
+      "tag": "0152_issue_attachment_vault",
+      "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1790173166321,
+      "tag": "0153_credential_store",
+      "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1790180790158,
+      "tag": "0154_mail_imap",
       "breakpoints": true
     }
   ]

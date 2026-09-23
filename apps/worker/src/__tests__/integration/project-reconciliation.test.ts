@@ -5,6 +5,7 @@ import {
   projectDeprovisioningJob,
   projectProvisioningJob,
   projectView,
+  projectViewFolder,
   team,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
@@ -133,6 +134,40 @@ describe('project reconciliation', () => {
 
     expect(await jobOf(intact.id)).toMatchObject({ id: intact.job.id, status: 'succeeded' });
     for (const drifted of [joined, left]) {
+      const job = await jobOf(drifted.id);
+      expect(job).toMatchObject({ status: 'pending', attempts: 0 });
+      expect(job.id).not.toBe(drifted.job.id);
+    }
+  });
+
+  it('provisions a project again when its area folders drifted', async () => {
+    const intact = await provisionedProject('AREA');
+    const missing = await provisionedProject('MISS');
+    const moved = await provisionedProject('MOVE');
+    const removed = await provisionedProject('DROP');
+    const areas = await db
+      .insert(projectViewFolder)
+      .values([
+        { projectId: intact.id, name: 'Backend', folder: 'backend' },
+        { projectId: missing.id, name: 'Backend', folder: 'backend' },
+        { projectId: moved.id, name: 'Backend', folder: 'server' },
+      ])
+      .returning();
+    const folder = (index: number, name = areas[index].folder) => ({
+      id: areas[index].id,
+      folder: name,
+    });
+    serveState([
+      { ...intact.entry, areas: [folder(0)] },
+      missing.entry,
+      { ...moved.entry, areas: [folder(2, 'backend')] },
+      { ...removed.entry, areas: [{ id: areas[2].id + 100, folder: 'old' }] },
+    ]);
+
+    await reconcileProjectProvisioning();
+
+    expect(await jobOf(intact.id)).toMatchObject({ id: intact.job.id, status: 'succeeded' });
+    for (const drifted of [missing, moved, removed]) {
       const job = await jobOf(drifted.id);
       expect(job).toMatchObject({ status: 'pending', attempts: 0 });
       expect(job.id).not.toBe(drifted.job.id);

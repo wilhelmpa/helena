@@ -18,19 +18,23 @@ export const createAccountBody = t.Object({
   address: t.String({ format: 'email', maxLength: 320 }),
   projectId: t.Nullable(t.Integer({ minimum: 1 })),
   ...connectionFields,
-  password: t.String({ minLength: 1, maxLength: 1000 }),
+  // Stored as a new secret of the Credentials page, labelled "Mail: <address>".
+  password: t.Optional(t.String({ minLength: 1, maxLength: 1000 })),
+  // A secret of the Credentials page holding the password, instead of typing it.
+  credentialId: t.Optional(t.Integer({ minimum: 1 })),
   enabled: t.Optional(t.Boolean()),
   syncTrash: t.Optional(t.Boolean()),
   syncSpam: t.Optional(t.Boolean()),
 });
 
-// A password left out keeps the stored one.
+// A password left out keeps the stored one; a new one replaces the value of its secret.
 export const updateAccountBody = t.Partial(createAccountBody);
 
 export const testConnectionBody = t.Object({
   ...connectionFields,
   password: t.Optional(t.String({ minLength: 1, maxLength: 1000 })),
-  // The stored password of this account is used when none is given.
+  // Without a password: the value of this secret, else the stored password of the account.
+  credentialId: t.Optional(t.Integer({ minimum: 1 })),
   accountId: t.Optional(t.Integer({ minimum: 1 })),
 });
 
@@ -56,6 +60,8 @@ export const MailAccountResponse = t.Object({
   smtpTls: t.Boolean(),
   username: t.String(),
   hasPassword: t.Boolean(),
+  credentialId: t.Nullable(t.Number()),
+  credentialLabel: t.Nullable(t.String()),
   enabled: t.Boolean(),
   syncTrash: t.Boolean(),
   syncSpam: t.Boolean(),

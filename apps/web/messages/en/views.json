@@ -19,7 +19,7 @@
   "moveFolderUp": "Move up",
   "moveFolderDown": "Move down",
   "deleteFolder": "Delete area",
-  "deleteFolderConfirm": "Delete {name}? Its views and tasks stay in the project without an area.",
+  "deleteFolderConfirm": "Delete {name}? Its views and tasks stay in the project without an area. Its folders move to the project's trash.",
   "moveToFolder": "Move to area",
   "noFolder": "No area",
   "newBoard": "New board",
@@ -27,5 +27,10 @@
   "areaOptions": "Area options",
   "newFolderDescription": "An area bundles tasks with boards of their own, so a part of the project can be planned separately.",
   "newBoardDescription": "The board shows only the tasks of {name}.",
-  "create": "Create"
+  "create": "Create",
+  "areaFolderLabel": "Folder",
+  "areaFolderHint": "Lowercase letters, digits and hyphens. Agents work on the tasks of this area in this folder of the project workspace, and Files has a folder of the same name.",
+  "areaFolderReserved": "The project uses {folder} for its own files. Choose another folder.",
+  "areaFolderTaken": "Another area of this project uses this folder.",
+  "openFolder": "Open folder"
 }

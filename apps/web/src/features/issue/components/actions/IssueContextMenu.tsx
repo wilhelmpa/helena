@@ -52,6 +52,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { copyText } from '@/utils/clipboard';
 
 // Trailing check on the currently-selected row in a single-select submenu.
 function SelectedCheck({ selected }: { selected: boolean }) {
@@ -118,7 +119,7 @@ export default function IssueContextMenu({
   }
 
   async function copyPrompt() {
-    await navigator.clipboard.writeText(buildIssuePrompt(issue, project, session?.user));
+    await copyText(buildIssuePrompt(issue, project, session?.user));
     toast.success(t('promptCopied'));
   }
 

@@ -29,7 +29,7 @@ export default function CodePage() {
       <WorkspacePageHeader title={t('code')} />
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {code.url ? (
-          <WorkspaceFrame url={code.url} title={t('code')} tool="code" active />
+          <WorkspaceFrame url={code.url} title={t('code')} active />
         ) : (
           <WorkspaceUnavailable tool={t('code')} />
         )}

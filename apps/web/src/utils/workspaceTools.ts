@@ -6,7 +6,6 @@ export const WORKSPACE_TOOL_IDS = [
   'terminal',
   'code',
   'browser',
-  'files',
   'inbox',
   'mail',
   'connections',
@@ -101,6 +100,15 @@ function codeUrl(
   }
 }
 
+// code-server opened on one folder of the server: a project workspace or a vault folder.
+export function codeFolderUrl(config: WorkspaceRuntimeEnv, folder: string): string {
+  const base = frameUrl(config.codeUrl);
+  if (!base || !folder.startsWith('/')) return '';
+  const url = new URL(base);
+  url.searchParams.set('folder', folder);
+  return url.toString();
+}
+
 function terminalUrl(
   config: WorkspaceRuntimeEnv,
   projectKey: string | null,
@@ -136,7 +144,6 @@ export function workspaceTools(
   resources: ProvisionedProjectResource[] = [],
 ): Record<WorkspaceToolId, WorkspaceTool> {
   const browser = provisionedResource(resources, 'browser');
-  const files = provisionedResource(resources, 'files');
   const tools = {
     chat: { id: 'chat', url: '', advancedUrl: '' },
     terminal: {
@@ -148,11 +155,6 @@ export function workspaceTools(
     browser: {
       id: 'browser',
       url: trustedResourceUrl(browser?.url, [config.browserUrl]) || frameUrl(config.browserUrl),
-      advancedUrl: '',
-    },
-    files: {
-      id: 'files',
-      url: trustedResourceUrl(files?.url, [config.filesUrl]) || frameUrl(config.filesUrl),
       advancedUrl: '',
     },
     mail: { id: 'mail', url: '', advancedUrl: '' },
@@ -167,7 +169,6 @@ export function workspaceFrameOrigins(config: WorkspaceRuntimeEnv): string[] {
     config.terminalUrl,
     config.codeUrl,
     config.browserUrl,
-    config.filesUrl,
     config.inboxUrl,
     config.connectionsUrl,
   ];

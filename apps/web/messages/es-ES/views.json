@@ -19,7 +19,7 @@
   "moveFolderUp": "Mover arriba",
   "moveFolderDown": "Mover abajo",
   "deleteFolder": "Eliminar área",
-  "deleteFolderConfirm": "¿Eliminar {name}? Sus vistas y elementos de trabajo seguirán en el proyecto sin área.",
+  "deleteFolderConfirm": "¿Eliminar {name}? Sus vistas y elementos de trabajo seguirán en el proyecto sin área. Sus carpetas se moverán a la papelera del proyecto.",
   "moveToFolder": "Mover al área",
   "noFolder": "Sin área",
   "newBoard": "Nuevo tablero",
@@ -27,5 +27,10 @@
   "areaOptions": "Opciones del área",
   "newFolderDescription": "Un área agrupa tareas con tableros propios, para planificar una parte del proyecto por separado.",
   "newBoardDescription": "El tablero muestra solo las tareas de {name}.",
-  "create": "Crear"
+  "create": "Crear",
+  "areaFolderLabel": "Carpeta",
+  "areaFolderHint": "Letras minúsculas, dígitos y guiones. Los agentes trabajan en las tareas de esta área en esta carpeta del espacio de trabajo del proyecto, y Files tiene una carpeta con el mismo nombre.",
+  "areaFolderReserved": "El proyecto usa {folder} para sus propios archivos. Elige otra carpeta.",
+  "areaFolderTaken": "Otra área de este proyecto usa esta carpeta.",
+  "openFolder": "Abrir carpeta"
 }

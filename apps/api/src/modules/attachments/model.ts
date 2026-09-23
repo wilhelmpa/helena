@@ -12,6 +12,19 @@ export const AttachmentResponse = t.Object({
 
 export const AttachmentListResponse = t.Array(AttachmentResponse);
 
+// An issue attachment's file is in the vault: `vaultPath` is where, `linked` says the
+// file was there before the attachment, `missing` that it is no longer found.
+export const IssueAttachmentResponse = t.Composite([
+  AttachmentResponse,
+  t.Object({
+    vaultPath: t.Nullable(t.String()),
+    linked: t.Boolean(),
+    missing: t.Boolean(),
+  }),
+]);
+
+export const IssueAttachmentListResponse = t.Array(IssueAttachmentResponse);
+
 export const issueParams = t.Object({ issueId: t.Numeric() });
 
 // The public id is a UUID column. Validating its format here turns a malformed id
@@ -26,5 +39,8 @@ export const importAttachmentBody = t.Object({
   contentBase64: t.Optional(t.String()),
   contentType: t.Optional(t.String()),
 });
+
+// A path relative to the project's vault folder, as the Files page lists it.
+export const linkAttachmentBody = t.Object({ path: t.String({ minLength: 1, maxLength: 1024 }) });
 
 export const rawAttachmentQuery = t.Object({ download: t.Optional(t.String()) });

@@ -1,4 +1,5 @@
 import {
+  agentMcpServer,
   agentSkill,
   agentTool,
   aiAgent,
@@ -14,9 +15,10 @@ import {
   teamRole,
   user,
 } from '@repo/db';
-import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
+import { CREDENTIAL_KINDS } from '#modules/agents/credentials/kinds';
 import { defaultMemberPermissions, fullPermissions, type Permissions } from '#shared/permissions';
 import {
   getMemberContext,
@@ -217,6 +219,7 @@ async function loadTeamRows(userId: string, teamId?: number): Promise<TeamRow[]>
     agentCounts,
     skillCounts,
     toolCounts,
+    mcpServerCounts,
   ] = await Promise.all([
     db
       .select({
@@ -248,7 +251,12 @@ async function loadTeamRows(userId: string, teamId?: number): Promise<TeamRow[]>
     db
       .select({ teamId: integrationCredential.teamId, count: sql<number>`count(*)::int` })
       .from(integrationCredential)
-      .where(inArray(integrationCredential.teamId, ids))
+      .where(
+        and(
+          inArray(integrationCredential.teamId, ids),
+          notInArray(integrationCredential.integrationKey, [...CREDENTIAL_KINDS]),
+        ),
+      )
       .groupBy(integrationCredential.teamId),
     db
       .select({ teamId: aiAgent.teamId, count: sql<number>`count(*)::int` })
@@ -265,6 +273,11 @@ async function loadTeamRows(userId: string, teamId?: number): Promise<TeamRow[]>
       .from(agentTool)
       .where(inArray(agentTool.teamId, ids))
       .groupBy(agentTool.teamId),
+    db
+      .select({ teamId: agentMcpServer.teamId, count: sql<number>`count(*)::int` })
+      .from(agentMcpServer)
+      .where(inArray(agentMcpServer.teamId, ids))
+      .groupBy(agentMcpServer.teamId),
   ]);
   const projects = new Map(projectCounts.map((r) => [r.teamId, r]));
   const members = new Map(memberCounts.map((r) => [r.teamId, r]));
@@ -273,6 +286,7 @@ async function loadTeamRows(userId: string, teamId?: number): Promise<TeamRow[]>
   const agents = new Map(agentCounts.map((r) => [r.teamId, r.count]));
   const skills = new Map(skillCounts.map((r) => [r.teamId, r.count]));
   const tools = new Map(toolCounts.map((r) => [r.teamId, r.count]));
+  const mcpServers = new Map(mcpServerCounts.map((r) => [r.teamId, r.count]));
 
   return rows.map((row) => {
     const standing = row.role as TeamStanding;
@@ -291,7 +305,7 @@ async function loadTeamRows(userId: string, teamId?: number): Promise<TeamRow[]>
       integrationCount: integrations.get(row.id) ?? 0,
       agentCount: agents.get(row.id) ?? 0,
       skillCount: skills.get(row.id) ?? 0,
-      toolCount: tools.get(row.id) ?? 0,
+      toolCount: (tools.get(row.id) ?? 0) + (mcpServers.get(row.id) ?? 0),
       createdAt: iso(row.createdAt),
     };
   });

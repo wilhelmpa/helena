@@ -9,7 +9,7 @@ Rules and invariants for this package below; read the code for the walkthrough.
   `index.ts` (controller), `model.ts` (schemas), `service.ts` (Drizzle). Cross-cutting
   code in `shared/`. See `src/modules/` for the current set.
 - Features nest one level deeper only where they already call each other:
-  `modules/agents/{core,chat,runner,skills,tools}`, where `core` holds the
+  `modules/agents/{core,chat,runner,skills,tools,mcp-servers,credentials}`, where `core` holds the
   agent itself and its runtime. A feature whose links to its neighbours run one way
   stays flat. A schema several of the nested features share sits in the parent's
   `model.ts` and is re-exported from each child's (`agentParams`).
@@ -78,7 +78,8 @@ Rules and invariants for this package below; read the code for the walkthrough.
 - **`position` is a sparse float** (`MAX(position) + 1000`); do not assume contiguous
   integers.
 - **Deletes cascade in the DB** (every project/issue-scoped FK is `ON DELETE CASCADE`).
-  `deleteIssue` still reads attachment rows first to purge their objects.
+  `deleteIssue` still reads attachment rows first to purge their files (an issue
+  attachment's file moves to the vault trash, a legacy one's object is deleted).
 - **Object-store deletes are best-effort** — log a failed `deleteObject`, do not fail
   the request.
 - **A list route either pages or answers with the whole list, never both.** A paged
@@ -153,10 +154,10 @@ Enforced declaratively through macros, never imperative calls in handlers.
 
 ## Team-owned agents
 
-Agents, the skill library, the configured tools and the integration credentials belong
-to the team; the routes are under `:teamId` and use the `teamPermission` guard. What
-stays under `:projectKey` is what happens in one project: an agent's chat, its runs and
-the routines that hand it work. `packages/db/AGENTS.md` has the schema side.
+Agents, the skill library, the configured tools, the MCP server library and the
+integration credentials belong to the team; the routes are under `:teamId` and use the
+`teamPermission` guard. What stays under `:projectKey` is what happens in one project: an
+agent's chat, its runs and the routines that hand it work. `packages/db/AGENTS.md` has the schema side.
 
 Two decisions a reader would otherwise propose again:
 
@@ -196,6 +197,9 @@ rules a reader would otherwise redraw:
   NULL is Home, which only the team's owners and managers reach. Project mail needs the
   `mail` permission there (`modules/mail/access.ts`). An agent's MCP tools are the
   `:projectKey` routes, so an agent reaches only the threads filed under its project.
+- **The password is a secret of the credential store.** `mail_account.credential_id`
+  points at an `integration_credential` of kind `secret`; a typed password becomes one
+  labelled `Mail: <address>`, so the Credentials page lists every mail password.
 - **An agent never sends.** The send route refuses an agent; `request_mail_send` files an
   approval request and parks the draft in `pending_approval`, and the worker queues it once
   the request is approved.
@@ -250,6 +254,11 @@ gets — a name missing from a later sync is never removed by this path, only by
 - **`GET /attachments/:publicId/raw` is public and unauthenticated** (used in
   `<img>`/`<video>`). Preserve its defenses if you touch it: `X-Content-Type-Options:
 nosniff`, forced download outside a strict media allowlist, locked-down CSP.
+- The Files routes (`project-files/`) read and write the vault on disk. Every path goes
+  through `relativePath` and `assertNoSymlinks` of `paths.ts`; the viewer allowlist in
+  `serve.ts` opens PDF, raster images, audio, video and text (as `text/plain`) inline
+  and serves everything else as a sandboxed download. `Private/` is for `god` only and is
+  never created by the API: its group keeps the agents out.
 
 ## Tests
 

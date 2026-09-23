@@ -1,5 +1,6 @@
 {
   "inbox": "صندوق الوارد",
+  "files": "الملفات",
   "approvals": "الموافقات",
   "dashboards": "لوحات المعلومات",
   "workItems": "عناصر العمل (work items)",
@@ -31,6 +32,7 @@
   "newTeam": "فريق جديد",
   "manageTeams": "إدارة الفرق",
   "role": "الدور: {role}",
+  "basedOn": "مبني على It’s a Plan (AGPL-3.0)",
   "search": "ابحث أو نفّذ أمرًا…",
   "searchHint": "ابحث أو نفّذ أمرًا ({key})",
   "newIssueHint": "مهمة جديدة ({key})",
@@ -65,7 +67,15 @@
       "reload": "إعادة التحميل",
       "tabs": "علامات التبويب",
       "newTab": "علامة تبويب جديدة",
-      "closeTab": "إغلاق علامة التبويب"
+      "closeTab": "إغلاق علامة التبويب",
+      "view": "عرض المتصفح",
+      "live": "مباشر",
+      "liveTitle": "عرض مباشر لعلامة التبويب الأمامية",
+      "desktop": "سطح المكتب",
+      "desktopTitle": "سطح المكتب (VNC)",
+      "liveKeyboard": "متصفح مباشر. تُرسل المفاتيح إلى الصفحة ما دام العرض في حالة التركيز.",
+      "connecting": "جارٍ الاتصال بالمتصفح…",
+      "reconnecting": "انقطع الاتصال بالمتصفح. جارٍ إعادة الاتصال…"
     }
   },
   "groups": {
@@ -89,7 +99,8 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault",
+  "credentials": "بيانات الدخول",
+  "devices": "الأجهزة وObsidian",
   "teamSettings": "إعدادات الفريق",
   "teamOrchestration": "الفريق والتنسيق",
   "overview": "نظرة عامة",

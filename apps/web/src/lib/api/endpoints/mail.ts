@@ -23,6 +23,9 @@ export interface MailAccount {
   smtpTls: boolean;
   username: string;
   hasPassword: boolean;
+  // The secret of the Credentials page that holds the password.
+  credentialId: number | null;
+  credentialLabel: string | null;
   enabled: boolean;
   syncTrash: boolean;
   syncSpam: boolean;
@@ -46,7 +49,9 @@ export interface MailAccountInput extends MailServerInput {
   name: string;
   address: string;
   projectId: number | null;
-  password: string;
+  // A typed password becomes a new secret of the Credentials page; credentialId picks one.
+  password?: string;
+  credentialId?: number;
   enabled?: boolean;
   syncTrash?: boolean;
   syncSpam?: boolean;
@@ -256,7 +261,7 @@ export const deleteMailAccount = (teamId: number, accountId: number) =>
 
 export const testMailConnection = (
   teamId: number,
-  input: MailServerInput & { password?: string; accountId?: number },
+  input: MailServerInput & { password?: string; credentialId?: number; accountId?: number },
 ) =>
   request<{ imap: string | null; smtp: string | null }>(`/teams/${teamId}/mail/accounts/test`, {
     method: 'POST',

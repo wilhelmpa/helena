@@ -1,5 +1,5 @@
 import { db, integrationCredential } from '@repo/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, notInArray, sql } from 'drizzle-orm';
 import {
   coerceConfig,
   redactConfig,
@@ -9,14 +9,22 @@ import {
 } from '@repo/agent-tools';
 import { iso, HttpError } from '#shared/lib';
 import { encryptSecret, decryptSecret } from '@repo/crypto';
-import { credentialSchemaFor } from './catalog';
+import { CREDENTIAL_KINDS } from '../credentials/kinds';
+import { credentialSchemaFor, integrationKind, type IntegrationKind } from './catalog';
 
 // Data access for integration credentials. They belong to the team, so a
 // project-scoped caller resolves its team id first. The full credential object is
 // encrypted at rest (AES-256-GCM) as one JSON blob; `redacted` holds the same object
 // with secret fields masked, in plaintext, for a masked display. The plaintext
 // credential is only read by the runtime through getCredentialSecret, never returned
-// over HTTP.
+// over HTTP. The rows of the Credentials page share the table and are left out here.
+
+function integrationsOf(teamId: number) {
+  return and(
+    eq(integrationCredential.teamId, teamId),
+    notInArray(integrationCredential.integrationKey, [...CREDENTIAL_KINDS]),
+  );
+}
 
 export interface CredentialRow {
   id: number;
@@ -74,7 +82,7 @@ export async function listCredentials(
   teamId: number,
   window: { limit: number; offset: number },
 ): Promise<{ items: CredentialRow[]; total: number }> {
-  const where = eq(integrationCredential.teamId, teamId);
+  const where = integrationsOf(teamId);
   const [rows, counted] = await Promise.all([
     db
       .select(dtoColumns)
@@ -91,22 +99,46 @@ export async function listCredentials(
   return { items: rows.map(mapRow), total: counted[0]?.count ?? 0 };
 }
 
-// Every credential of the team, by integration key. What the options route narrows
-// into picker entries.
-export async function listAllCredentials(teamId: number): Promise<CredentialRow[]> {
+export interface CredentialOption {
+  id: number;
+  integrationKey: string;
+  kind: IntegrationKind | 'secret';
+  label: string | null;
+}
+
+// The team's credentials as picker entries, by integration key: its integrations, and
+// as kind 'secret' the secrets and API keys of the Credentials page that an MCP server
+// may name (those not limited to a project).
+export async function listCredentialOptions(teamId: number): Promise<CredentialOption[]> {
   const rows = await db
-    .select(dtoColumns)
+    .select({
+      id: integrationCredential.id,
+      integrationKey: integrationCredential.integrationKey,
+      label: integrationCredential.label,
+    })
     .from(integrationCredential)
-    .where(eq(integrationCredential.teamId, teamId))
+    .where(
+      and(
+        eq(integrationCredential.teamId, teamId),
+        isNull(integrationCredential.projectId),
+        notInArray(integrationCredential.integrationKey, ['web_login', 'ssh_key']),
+      ),
+    )
     .orderBy(integrationCredential.integrationKey);
-  return rows.map(mapRow);
+  return rows.flatMap((row) => {
+    const kind =
+      row.integrationKey === 'secret' || row.integrationKey === 'api_key'
+        ? 'secret'
+        : integrationKind(row.integrationKey);
+    return kind ? [{ ...row, kind }] : [];
+  });
 }
 
 export async function getCredentialById(id: number, teamId: number): Promise<CredentialRow | null> {
   const rows = await db
     .select(dtoColumns)
     .from(integrationCredential)
-    .where(and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId)));
+    .where(and(eq(integrationCredential.id, id), integrationsOf(teamId)));
   return rows[0] ? mapRow(rows[0]) : null;
 }
 

@@ -40,7 +40,7 @@
     },
     "agentTools": {
       "title": "Tools",
-      "description": "Tools agents can call, each connected to an integration credential."
+      "description": "MCP servers the team's Hermes agents start, and tools on an integration credential."
     },
     "agents": {
       "title": "AI Agents",
@@ -294,6 +294,8 @@
     "noAccess": "You do not have access to the skills of this team."
   },
   "tools": {
+    "title": "Integration tools",
+    "hint": "Tools the internal agents call with one of the team's integration credentials.",
     "add": "Add tool",
     "delete": "Delete tool",
     "back": "Back to tools",
@@ -317,6 +319,49 @@
     "continue": "Continue",
     "alreadyAdded": "{count, plural, one {# tool is already on this credential and is skipped.} other {# tools are already on this credential and are skipped.}}",
     "noAccess": "You do not have access to the tools of this team."
+  },
+  "mcpServers": {
+    "title": "MCP servers",
+    "hint": "Servers the team's Hermes agents start. Enable a server on an agent's page.",
+    "managerOnly": "Only the team's owners and managers can add or change a server.",
+    "add": "Add MCP server",
+    "edit": "Edit MCP server",
+    "delete": "Delete MCP server",
+    "deleteMessage": "Delete {name}? The agents it is enabled on lose its tools.",
+    "empty": "No MCP servers yet",
+    "emptyHint": "Add a server once, then enable it on the agents that need it.",
+    "saved": "{name} saved",
+    "custom": "Another server",
+    "customHint": "A command Hermes starts, or the URL of a remote server",
+    "presets": {
+      "shopify-dev": "Searches Shopify's documentation and API schemas and validates GraphQL, Liquid and extension code. Needs no credentials.",
+      "jev-browser": "Navigates a headless browser with TypeSafe's Jev model. Needs a TypeSafe API key as the secret TYPESAFE_API_KEY."
+    },
+    "name": "Name",
+    "nameHint": "Lowercase letters, digits, - and _. Hermes names the server's toolset after it.",
+    "description": "Description",
+    "transport": "Transport",
+    "transports": {
+      "stdio": "Command (stdio)",
+      "http": "HTTP",
+      "sse": "SSE"
+    },
+    "command": "Command",
+    "args": "Arguments",
+    "argsHint": "One argument per line.",
+    "url": "URL",
+    "env": "Environment variables",
+    "headers": "Headers",
+    "valueName": "Name",
+    "valueKind": "Kind of value",
+    "literal": "Value",
+    "secret": "Secret",
+    "chooseSecret": "Choose a secret",
+    "noSecrets": "The team has no secrets yet. Add one under Credentials.",
+    "secretHint": "A secret's value reaches only the runner of an agent the server is enabled on, never this page.",
+    "missingSecret": "deleted secret",
+    "addValue": "Add",
+    "removeValue": "Remove"
   },
   "agents": {
     "newAgent": "New AI agent",
@@ -514,8 +559,14 @@
       "toolsetsReadOnly": "Only members who can edit agents can turn toolsets off.",
       "noToolsets": "The runner reported no toolsets.",
       "mcpServers": "MCP servers",
-      "mcpServersHint": "Always available to the agent. They are set in the Hermes profile.",
+      "mcpServersHint": "From the Hermes configuration. Turn one off and save to keep the agent from using it.",
+      "mcpServersReadOnly": "From the Hermes configuration. Only members who can edit agents can turn one off.",
       "noMcpServers": "None",
+      "libraryMcpServers": "MCP servers of the team",
+      "libraryMcpServersHint": "An enabled server starts with the agent's chats and runs once you save.",
+      "libraryMcpServersReadOnly": "Only members who can edit tools can change them.",
+      "noLibraryMcpServers": "The team has no MCP servers yet",
+      "noLibraryMcpServersHint": "Add them on the Tools page, then enable them here.",
       "skills": "Skills",
       "skillsHint": "In the agent's Hermes profile: {count}. Read-only.",
       "searchSkills": "Filter skills",
@@ -539,7 +590,6 @@
         "computer_use": "Controls the desktop with the mouse and keyboard.",
         "connections": "Uses connected accounts and remote connectors.",
         "context_engine": "Tools of the active context engine.",
-        "cronjob": "Creates and manages scheduled jobs.",
         "delegation": "Hands subtasks to subagents.",
         "file": "Reads, writes, edits and searches files.",
         "image_gen": "Generates images.",

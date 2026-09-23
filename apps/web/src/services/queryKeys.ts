@@ -199,6 +199,17 @@ export const qk = {
   configuredToolOptions: (teamId: number) => ['configuredTools', teamId, 'options'] as const,
   agentToolLinks: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'tool-configs'] as const,
+  // The team's MCP server library, and the servers enabled on one agent.
+  mcpServers: (teamId: number) => ['mcpServers', teamId] as const,
+  // The team's credentials. A write invalidates at the team prefix, which also reloads
+  // an open audit log.
+  credentials: (teamId: number) => ['credentials', teamId] as const,
+  credentialPage: (teamId: number, params: unknown, kind?: string) =>
+    ['credentials', teamId, 'page', params, kind ?? 'all'] as const,
+  credentialUses: (teamId: number, id: number, params: unknown) =>
+    ['credentials', teamId, 'uses', id, params] as const,
+  agentMcpServers: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'mcp-servers'] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,

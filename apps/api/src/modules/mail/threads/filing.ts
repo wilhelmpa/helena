@@ -59,11 +59,11 @@ export function threadHref(projectKey: string | null, threadId: number): string 
   return `${projectKey ? `/project/${projectKey}` : ''}/inbox?thread=${threadId}`;
 }
 
-// The Files page of the project, opened at the folder of a vault path.
+// The Files page of the project with the file of a vault path open in its viewer.
 function filesHref(projectKey: string, vaultPath: string): string {
-  const inProject = vaultPath.replace(/^Projects\/[^/]+\//, '');
-  const folder = inProject.slice(0, inProject.lastIndexOf('/'));
-  return `/project/${projectKey}/files?path=${encodeURIComponent(folder)}`;
+  const file = vaultPath.replace(/^Projects\/[^/]+\//, '');
+  const query = new URLSearchParams({ path: file.slice(0, file.lastIndexOf('/')), file });
+  return `/project/${projectKey}/files?${query}`;
 }
 
 // A task in the thread's project, made from the thread and linked to it. A task for

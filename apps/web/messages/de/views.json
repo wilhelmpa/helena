@@ -19,7 +19,7 @@
   "moveFolderUp": "Nach oben verschieben",
   "moveFolderDown": "Nach unten verschieben",
   "deleteFolder": "Bereich löschen",
-  "deleteFolderConfirm": "{name} löschen? Die zugehörigen Ansichten und Aufgaben bleiben ohne Bereich im Projekt.",
+  "deleteFolderConfirm": "{name} löschen? Die zugehörigen Ansichten und Aufgaben bleiben ohne Bereich im Projekt. Die Ordner des Bereichs werden in den Papierkorb des Projekts verschoben.",
   "moveToFolder": "In Bereich verschieben",
   "noFolder": "Kein Bereich",
   "newBoard": "Neues Board",
@@ -27,5 +27,10 @@
   "areaOptions": "Bereichsoptionen",
   "newFolderDescription": "Ein Bereich bündelt Aufgaben mit eigenen Boards, sodass ein Teil des Projekts separat geplant werden kann.",
   "newBoardDescription": "Das Board zeigt nur die Aufgaben aus {name}.",
-  "create": "Erstellen"
+  "create": "Erstellen",
+  "areaFolderLabel": "Ordner",
+  "areaFolderHint": "Kleinbuchstaben, Ziffern und Bindestriche. Agenten bearbeiten die Aufgaben dieses Bereichs in diesem Ordner des Projekt-Workspace, und unter Dateien gibt es einen Ordner mit demselben Namen.",
+  "areaFolderReserved": "Das Projekt verwendet {folder} für seine eigenen Dateien. Wähle einen anderen Ordner.",
+  "areaFolderTaken": "Ein anderer Bereich dieses Projekts verwendet diesen Ordner.",
+  "openFolder": "Ordner öffnen"
 }

@@ -178,6 +178,11 @@ priority over both. An `agents` entry has priority over all three, for the field
 | `outputFormat`   | `ITSAPLAN_OUTPUT_FORMAT`    | the preset's       | How the runner reads a chat answer                                     |
 | `models`         |                             | `[]`               | Models and reasoning levels available in the chat selector             |
 
+A queued run of an issue in an area can name the area's folder (`workdir` in the claim). The
+runner starts that run in the folder of that name below `cwd` when it exists, and in `cwd`
+itself when it does not. A folder that resolves outside `cwd`, also through a symbolic link,
+fails the run. Chat answers always start in `cwd`.
+
 Set `agent` or `command`. With the environment you need no file at all:
 
 ```bash
@@ -210,9 +215,47 @@ filled in from the profile by whatever sets the runner up:
 "hermes": { "toolsets": ["browser", "file", "terminal", "web"], "mcpServers": ["itsaplan"] }
 ```
 
-A toolset turned off for the agent in Plan is left out of `--toolsets`, which then names the
-remaining toolsets and every MCP server. While nothing is turned off, Hermes uses the profile's
-own selection. Without the `hermes` field no toolsets are reported and none can be turned off.
+A toolset or an MCP server of the profile turned off for the agent in Plan is left out of
+`--toolsets`, which then names everything else the profile enables and the agent's own MCP
+servers. While nothing is turned off, Hermes uses the profile's own selection. Without the
+`hermes` field no toolsets are reported and none can be turned off.
+
+### MCP servers
+
+The MCP servers enabled on the agent from the team's library, and the servers of `config.yaml`
+turned off for it, are written to `HERMES_HOME/run/itsaplan-managed/config.yaml`. Every run and
+chat answer starts Hermes with `HERMES_MANAGED_DIR` pointing at that directory, and Hermes merges
+its `mcp_servers` over those of `config.yaml`; a server turned off gets `enabled: false`. The
+agent's homes share one `config.yaml`, which the runner never writes, and a value Hermes read
+from the managed directory cannot be changed from inside Hermes.
+
+A value that names one of the team's secrets is written as `${ITSAPLAN_MCP_SECRET_<id>}`. Before
+each run and chat answer the runner reads the values from `GET /agent-runtime/mcp-secrets` and
+passes them to Hermes in those variables, so they are never written to disk. They are part of
+the environment of the Hermes process for that run, which its tools inherit. A server named like
+a toolset or a server of the profile fails the sync.
+Every run and chat answer gets `--toolsets` with these toolsets and every MCP server. A toolset
+turned off for the agent in Plan is left out, and so is `cronjob`, Hermes' own scheduler: Plan
+schedules work through its routines, and a Hermes job would run it a second time. Without the
+`hermes` field no toolsets are reported, none can be turned off, and Hermes uses the profile's
+own selection.
+
+### Website logins
+
+Plan tells the runner in the policy whether website logins are granted to the agent. Before
+each run and chat answer the runner then reads them from `GET /agent-runs/:runId/web-logins` or
+`GET /agent-chats/:messageId/web-logins`, which answer only for the work the runner holds, and
+makes the vault of the agent's profile (`HERMES_HOME/vault`) hold exactly those logins: one item
+per origin a login may be filled on, with its authenticator key when it has one. It writes them
+with Hermes' own `agent.vault_store` in Hermes' Python (`python3`, or `HERMES_PYTHON`), which
+receives the values on stdin. `HERMES_HOME/run/itsaplan-vault-manifest.json` lists the items the
+runner wrote, without values; a login changed in Plan is replaced, a revoked one removed, and an
+item the runner did not write is left alone. A failed update fails the run, so a revoked login is
+never left in the vault for it. An agent with logins keeps the `browser` toolset, which carries
+Hermes' vault tools, even where the toolset is otherwise turned off for it.
+
+`browser_vault_fill` and `browser_vault_enter_code` calls on those items that succeed are read
+from Hermes' output and reported to `POST /agent-runtime/credential-uses` for the audit log.
 
 ## What the coding agent receives
 

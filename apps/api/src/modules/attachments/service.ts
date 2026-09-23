@@ -7,15 +7,18 @@ import {
   stripAttachmentEmbeds,
 } from './storage';
 
-// Data access for issue attachments. File bytes live in the S3-compatible object
-// store (#shared/s3); these rows hold the metadata and the object key. publicId is
-// the unguessable id used in the public download URL.
+// Data access for issue attachments. The file is in the project's vault folder
+// (vaultPath) or, for a row stored before that, in the object store (s3Key); these rows
+// hold the metadata. publicId is the unguessable id used in the public download URL.
 
 export interface AttachmentRow {
   id: number;
   publicId: string;
   issueId: number;
-  s3Key: string;
+  s3Key: string | null;
+  vaultPath: string | null;
+  sha256: string | null;
+  linked: boolean;
   filename: string;
   contentType: string;
   sizeBytes: number;
@@ -28,6 +31,9 @@ export function mapAttachment(row: typeof issueAttachment.$inferSelect): Attachm
     publicId: row.publicId,
     issueId: row.issueId,
     s3Key: row.s3Key,
+    vaultPath: row.vaultPath,
+    sha256: row.sha256,
+    linked: row.linked,
     filename: row.filename,
     contentType: row.contentType,
     sizeBytes: num(row.sizeBytes),
@@ -35,22 +41,32 @@ export function mapAttachment(row: typeof issueAttachment.$inferSelect): Attachm
   };
 }
 
-export async function createAttachment(input: {
-  projectId: number;
-  issueId: number;
-  s3Key: string;
+export interface AttachmentFile {
+  vaultPath: string;
+  sha256: string;
+  linked: boolean;
   filename: string;
   contentType: string;
   sizeBytes: number;
-}): Promise<AttachmentRow> {
+}
+
+// A linked file was in the vault before the attachment, so it does not count towards
+// the storage quota.
+export async function createAttachment(
+  input: AttachmentFile & { projectId: number; issueId: number },
+): Promise<AttachmentRow> {
   return db.transaction(async (tx) => {
-    await lockAttachmentStorage(tx, input.projectId);
-    await assertAttachmentStorageCapacity(input.projectId, input.sizeBytes, 0, tx);
+    if (!input.linked) {
+      await lockAttachmentStorage(tx, input.projectId);
+      await assertAttachmentStorageCapacity(input.projectId, input.sizeBytes, 0, tx);
+    }
     const [row] = await tx
       .insert(issueAttachment)
       .values({
         issueId: input.issueId,
-        s3Key: input.s3Key,
+        vaultPath: input.vaultPath,
+        sha256: input.sha256,
+        linked: input.linked,
         filename: input.filename,
         contentType: input.contentType,
         sizeBytes: input.sizeBytes,
@@ -69,17 +85,6 @@ export async function listAttachments(issueId: number): Promise<AttachmentRow[]>
   return rows.map(mapAttachment);
 }
 
-// Bytes currently stored for a project, across every issue in it. Read before an
-// upload to enforce the instance project quota.
-export async function getProjectAttachmentBytes(projectId: number): Promise<number> {
-  const rows = await db
-    .select({ total: sql<string>`coalesce(sum(${issueAttachment.sizeBytes}), 0)` })
-    .from(issueAttachment)
-    .innerJoin(issue, eq(issue.id, issueAttachment.issueId))
-    .where(eq(issue.projectId, projectId));
-  return num(rows[0]?.total ?? 0);
-}
-
 export async function getAttachmentByPublicId(publicId: string): Promise<AttachmentRow | null> {
   const rows = await db
     .select()
@@ -88,14 +93,15 @@ export async function getAttachmentByPublicId(publicId: string): Promise<Attachm
   return rows[0] ? mapAttachment(rows[0]) : null;
 }
 
-// Points an attachment at new bytes, keeping its row and its publicId. An embed
-// of it in a description keeps working and shows the new file, which is what
-// makes editing an attachment in place possible. Returns null if no row matched.
-export async function replaceAttachmentContent(
+// Points an attachment at another file, keeping its row and its publicId. An embed
+// of it in a description keeps working and shows the new file, which is what makes
+// editing an attachment in place possible. Returns the row as it was before, whose
+// file the caller removes, or null if no row matched.
+export async function replaceAttachmentFile(
   publicId: string,
   projectId: number,
-  input: { s3Key: string; filename: string; contentType: string; sizeBytes: number },
-): Promise<{ attachment: AttachmentRow; replacedS3Key: string } | null> {
+  input: AttachmentFile,
+): Promise<{ attachment: AttachmentRow; replaced: AttachmentRow } | null> {
   return db.transaction(async (tx) => {
     await lockAttachmentStorage(tx, projectId);
     const [current] = await tx
@@ -104,23 +110,22 @@ export async function replaceAttachmentContent(
       .innerJoin(issue, eq(issue.id, issueAttachment.issueId))
       .where(and(eq(issueAttachment.publicId, publicId), eq(issue.projectId, projectId)));
     if (!current) return null;
-    await assertAttachmentStorageCapacity(
-      projectId,
-      input.sizeBytes,
-      num(current.attachment.sizeBytes),
-      tx,
-    );
+    if (!input.linked) {
+      const replacedBytes = current.attachment.linked ? 0 : num(current.attachment.sizeBytes);
+      await assertAttachmentStorageCapacity(projectId, input.sizeBytes, replacedBytes, tx);
+    }
     const rows = await tx
       .update(issueAttachment)
-      .set(input)
+      .set({ ...input, s3Key: null })
       .where(eq(issueAttachment.id, current.attachment.id))
       .returning();
     if (!rows[0]) return null;
-    return {
-      attachment: mapAttachment(rows[0]),
-      replacedS3Key: current.attachment.s3Key,
-    };
+    return { attachment: mapAttachment(rows[0]), replaced: mapAttachment(current.attachment) };
   });
+}
+
+export async function setAttachmentVaultPath(id: number, vaultPath: string): Promise<void> {
+  await db.update(issueAttachment).set({ vaultPath }).where(eq(issueAttachment.id, id));
 }
 
 // Deletes the row and returns it (with its s3Key) so the caller can remove the

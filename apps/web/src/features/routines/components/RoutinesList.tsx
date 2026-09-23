@@ -24,6 +24,7 @@ import {
 } from '../services/routines.service';
 import { RoutineDialog } from './RoutineDialog';
 import { RoutinesTable } from './RoutinesTable';
+import { uuid } from '@/utils/uuid';
 
 // The routines of the project, with the dialogs that create, change and delete them.
 export function RoutinesList({
@@ -50,7 +51,7 @@ export function RoutinesList({
   const [editing, setEditing] = useState<Routine | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Routine | null>(null);
   // A new routine is created once, however often a failed save is retried.
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => uuid());
   useLiveRefresh({
     scope: revScope.controlPlane(project.project.id),
     targets: [qk.routines(projectKey)],
@@ -59,7 +60,7 @@ export function RoutinesList({
   // The "New schedule" button lives in the page header; opening is signalled here.
   useEffect(() => {
     if (!requestNew) return;
-    setIdempotencyKey(crypto.randomUUID());
+    setIdempotencyKey(uuid());
     setEditing('new');
     onNewHandled();
   }, [requestNew, onNewHandled]);

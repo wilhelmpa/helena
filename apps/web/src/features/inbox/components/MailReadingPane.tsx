@@ -67,12 +67,7 @@ export default function MailReadingPane({
         <MailDraftChips drafts={data.drafts} />
         <div className="mt-4 flex flex-col gap-3">
           {data.messages.map((message) => (
-            <MailMessageCard
-              key={message.id}
-              message={message}
-              threadId={data.id}
-              projectKey={data.projectKey}
-            />
+            <MailMessageCard key={message.id} message={message} threadId={data.id} />
           ))}
         </div>
         <div ref={endRef} />

@@ -40,7 +40,7 @@
     },
     "agentTools": {
       "title": "Tools",
-      "description": "Tools, die Agenten aufrufen können, jeweils mit den Zugangsdaten einer Integration verbunden."
+      "description": "MCP-Server, die die Hermes-Agenten des Teams starten, und Tools mit Zugangsdaten einer Integration."
     },
     "agents": {
       "title": "KI-Agenten",
@@ -294,6 +294,8 @@
     "noAccess": "Du hast keinen Zugriff auf die Skills dieses Teams."
   },
   "tools": {
+    "title": "Integrations-Tools",
+    "hint": "Tools, die interne Agenten mit Zugangsdaten einer Integration des Teams aufrufen.",
     "add": "Tool hinzufügen",
     "delete": "Tool löschen",
     "back": "Zurück zu den Tools",
@@ -317,6 +319,49 @@
     "continue": "Weiter",
     "alreadyAdded": "{count, plural, one {# Tool ist bereits mit diesen Zugangsdaten verbunden und wird übersprungen.} other {# Tools sind bereits mit diesen Zugangsdaten verbunden und werden übersprungen.}}",
     "noAccess": "Du hast keinen Zugriff auf die Tools dieses Teams."
+  },
+  "mcpServers": {
+    "title": "MCP-Server",
+    "hint": "Server, die die Hermes-Agenten des Teams starten. Aktiviere einen Server auf der Seite eines Agenten.",
+    "managerOnly": "Nur Eigentümer und Manager des Teams können Server hinzufügen oder ändern.",
+    "add": "MCP-Server hinzufügen",
+    "edit": "MCP-Server bearbeiten",
+    "delete": "MCP-Server löschen",
+    "deleteMessage": "{name} löschen? Die Agenten, für die er aktiviert ist, verlieren seine Tools.",
+    "empty": "Noch keine MCP-Server",
+    "emptyHint": "Füge einen Server einmal hinzu und aktiviere ihn dann für die Agenten, die ihn brauchen.",
+    "saved": "{name} gespeichert",
+    "custom": "Anderer Server",
+    "customHint": "Ein Befehl, den Hermes startet, oder die URL eines entfernten Servers",
+    "presets": {
+      "shopify-dev": "Durchsucht die Dokumentation und API-Schemas von Shopify und prüft GraphQL-, Liquid- und Extension-Code. Braucht keine Zugangsdaten.",
+      "jev-browser": "Steuert einen Headless-Browser mit dem Jev-Modell von TypeSafe. Braucht einen TypeSafe-API-Schlüssel als Secret TYPESAFE_API_KEY."
+    },
+    "name": "Name",
+    "nameHint": "Kleinbuchstaben, Ziffern, - und _. Hermes benennt das Toolset des Servers danach.",
+    "description": "Beschreibung",
+    "transport": "Transport",
+    "transports": {
+      "stdio": "Befehl (stdio)",
+      "http": "HTTP",
+      "sse": "SSE"
+    },
+    "command": "Befehl",
+    "args": "Argumente",
+    "argsHint": "Ein Argument pro Zeile.",
+    "url": "URL",
+    "env": "Umgebungsvariablen",
+    "headers": "Header",
+    "valueName": "Name",
+    "valueKind": "Art des Werts",
+    "literal": "Wert",
+    "secret": "Secret",
+    "chooseSecret": "Secret wählen",
+    "noSecrets": "Das Team hat noch keine Secrets. Füge eines unter Zugänge hinzu.",
+    "secretHint": "Der Wert eines Secrets erreicht nur den Runner eines Agenten, für den der Server aktiviert ist, nie diese Seite.",
+    "missingSecret": "gelöschtes Secret",
+    "addValue": "Hinzufügen",
+    "removeValue": "Entfernen"
   },
   "agents": {
     "newAgent": "Neuer KI-Agent",
@@ -513,8 +558,14 @@
       "toolsetsReadOnly": "Nur Mitglieder, die Agenten bearbeiten dürfen, können Toolsets deaktivieren.",
       "noToolsets": "Der Runner hat keine Toolsets gemeldet.",
       "mcpServers": "MCP-Server",
-      "mcpServersHint": "Stehen dem Agenten immer zur Verfügung. Sie werden im Hermes-Profil festgelegt.",
+      "mcpServersHint": "Aus der Hermes-Konfiguration. Deaktiviere einen und speichere, damit der Agent ihn nicht nutzt.",
+      "mcpServersReadOnly": "Aus der Hermes-Konfiguration. Nur Mitglieder, die Agenten bearbeiten dürfen, können einen deaktivieren.",
       "noMcpServers": "Keine",
+      "libraryMcpServers": "MCP-Server des Teams",
+      "libraryMcpServersHint": "Ein aktivierter Server startet nach dem Speichern mit den Chats und Läufen des Agenten.",
+      "libraryMcpServersReadOnly": "Nur Mitglieder, die Tools bearbeiten dürfen, können sie ändern.",
+      "noLibraryMcpServers": "Das Team hat noch keine MCP-Server",
+      "noLibraryMcpServersHint": "Füge sie auf der Seite Tools hinzu und aktiviere sie dann hier.",
       "skills": "Skills",
       "skillsHint": "Im Hermes-Profil des Agenten: {count}. Schreibgeschützt.",
       "searchSkills": "Skills filtern",
@@ -538,7 +589,6 @@
         "computer_use": "Steuert den Desktop mit Maus und Tastatur.",
         "connections": "Nutzt verbundene Konten und Remote-Connectors.",
         "context_engine": "Tools der aktiven Context Engine.",
-        "cronjob": "Erstellt und verwaltet geplante Jobs.",
         "delegation": "Gibt Unteraufgaben an Subagenten ab.",
         "file": "Liest, schreibt, bearbeitet und durchsucht Dateien.",
         "image_gen": "Erzeugt Bilder.",

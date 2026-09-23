@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { decryptSecret } from '@repo/crypto';
-import { db, mailAccount, mailDraft, mailFolder, mailMessage, type MailAddressRow } from '@repo/db';
+import { db, mailDraft, mailFolder, mailMessage, type MailAddressRow } from '@repo/db';
 import {
   buildMime,
   connectionError,
@@ -12,6 +11,7 @@ import {
 import { deleteObject, getObject } from '@repo/storage';
 import { and, eq, lt, sql } from 'drizzle-orm';
 import { importRawMessage } from './import';
+import { accountSettings, accountWithCredential } from './store';
 import { mailTransport } from './transport';
 
 const STALE_SENDING_MS = 10 * 60_000;
@@ -70,24 +70,6 @@ export async function sendDueDrafts(): Promise<number> {
   return claimed.length;
 }
 
-function settingsOf(account: typeof mailAccount.$inferSelect): MailServerSettings | null {
-  if (!account.passwordCiphertext || !account.passwordIv || !account.passwordAuthTag) return null;
-  return {
-    imapHost: account.imapHost,
-    imapPort: account.imapPort,
-    imapTls: account.imapTls,
-    smtpHost: account.smtpHost,
-    smtpPort: account.smtpPort,
-    smtpTls: account.smtpTls,
-    username: account.username,
-    password: decryptSecret({
-      ciphertext: account.passwordCiphertext,
-      iv: account.passwordIv,
-      authTag: account.passwordAuthTag,
-    }),
-  };
-}
-
 async function fail(draftId: number, error: string): Promise<void> {
   await db
     .update(mailDraft)
@@ -108,12 +90,16 @@ function addresses(rows: MailAddressRow[]) {
 async function sendDraft(draftId: number): Promise<void> {
   const [draft] = await db.select().from(mailDraft).where(eq(mailDraft.id, draftId));
   if (!draft) return;
-  const [account] = await db.select().from(mailAccount).where(eq(mailAccount.id, draft.accountId));
-  const settings = account ? settingsOf(account) : null;
-  if (!account || !settings) {
+  const found = await accountWithCredential(draft.accountId);
+  let settings: MailServerSettings;
+  try {
+    if (!found) throw new Error('No password');
+    settings = accountSettings(found.account, found.credential);
+  } catch {
     await fail(draftId, 'The account has no password.');
     return;
   }
+  const { account } = found;
   const [parent] = draft.replyToMessageId
     ? await db.select().from(mailMessage).where(eq(mailMessage.id, draft.replyToMessageId))
     : [];

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { copyText } from '@/utils/clipboard';
 
 // A lightweight, monochrome JSON tree viewer. Objects and arrays collapse/expand;
 // leaves render inline. Accepts an object or a string that contains JSON (parsed
@@ -14,7 +15,7 @@ export function JsonViewer({ value }: { value: unknown }) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(isJson ? safeStringify(data) : String(data));
+      await copyText(isJson ? safeStringify(data) : String(data));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

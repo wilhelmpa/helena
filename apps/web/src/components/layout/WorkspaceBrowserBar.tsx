@@ -4,13 +4,23 @@ import { useState } from 'react';
 import { ArrowLeft, ArrowRight, RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
+import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
+import WorkspaceBrowserViewSwitch from './WorkspaceBrowserViewSwitch';
 
-// The project browser's toolbar: back, forward, reload, the address of the tab in front
-// and the tab list. It acts on the same browser the agent works in, so the address follows
-// the agent's navigation as well as the person's.
-export default function WorkspaceBrowserBar({ base }: { base: string }) {
+// The project browser's toolbar: back, forward, reload, the address of the tab in front,
+// the tab list and the choice of view. It acts on the same browser the agent works in, so
+// the address follows the agent's navigation as well as the person's.
+export default function WorkspaceBrowserBar({
+  base,
+  view,
+  onViewChange,
+}: {
+  base: string;
+  view: BrowserView;
+  onViewChange: (view: BrowserView) => void;
+}) {
   const t = useTranslations('nav.workspace.browserBar');
   const { tabs, active, act } = useBrowserControl(base);
   // What the person is typing; null while the field shows the tab's own address.
@@ -86,6 +96,7 @@ export default function WorkspaceBrowserBar({ base }: { base: string }) {
         onClose={(tabId) => act({ action: 'close', id: tabId })}
         onNew={() => act({ action: 'new' })}
       />
+      <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
     </div>
   );
 }
