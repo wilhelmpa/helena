@@ -250,5 +250,5 @@ export function useDecidePipelineApproval() {
   });
 }
 
-export const usePipelineApprovals = () =>
-  useQuery({ queryKey: qk.pipelineApprovals, queryFn: listPipelineApprovals });
+export const usePipelineApprovals = (enabled = true) =>
+  useQuery({ queryKey: qk.pipelineApprovals, queryFn: listPipelineApprovals, enabled });

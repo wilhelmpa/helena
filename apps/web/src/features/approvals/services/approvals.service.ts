@@ -14,10 +14,14 @@ import { decideWorkflow } from '@/lib/api/endpoints/controlPlaneWorkflows';
 import { qk } from '@/services/queryKeys';
 import { withoutGate } from '../utils/workflowGates';
 
-export const useApprovals = (status: ApprovalListStatus, params: PageParams) =>
+export const useApprovals = (
+  status: ApprovalListStatus,
+  params: PageParams,
+  projectKey?: string,
+) =>
   useQuery({
-    queryKey: qk.approvals(status, params),
-    queryFn: () => listApprovals(params, status),
+    queryKey: qk.approvals(status, params, projectKey),
+    queryFn: () => listApprovals(params, status, projectKey),
   });
 
 // The decided card leaves the list before a caller's own onSuccess would run, so the
@@ -32,7 +36,7 @@ export function useDecideApproval() {
       toast.success(t(decision.approved ? 'approvedToast' : 'rejectedToast'));
       return Promise.all([
         client.invalidateQueries({ queryKey: qk.approvalLists }),
-        client.invalidateQueries({ queryKey: qk.approvalsPendingCount }),
+        client.invalidateQueries({ queryKey: qk.approvalsPendingCountAll }),
       ]);
     },
   });
