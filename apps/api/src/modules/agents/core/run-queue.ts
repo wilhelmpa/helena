@@ -123,6 +123,7 @@ export interface ClaimedRun {
   issueIdentifier: string | null;
   issueTitle: string | null;
   issueArea: string | null;
+  issueAreaFolder: string | null;
   // The issue's assignee (the responsible human) and, for a mention run, the author of
   // the comment that mentioned the agent (from the source activity's name snapshot).
   // Each carries the handle the agent tags them by. Any may be null: no assignee, a
@@ -178,6 +179,8 @@ export async function claimDueRuns(): Promise<ClaimedRun[]> {
       (SELECT title FROM issue i WHERE i.id = r.issue_id) AS "issueTitle",
       (SELECT f.name FROM issue i JOIN project_view_folder f ON f.id = i.folder_id
          WHERE i.id = r.issue_id) AS "issueArea",
+      (SELECT f.folder FROM issue i JOIN project_view_folder f ON f.id = i.folder_id
+         WHERE i.id = r.issue_id) AS "issueAreaFolder",
       (SELECT u.name FROM issue i JOIN "user" u ON u.id = i.assignee_user_id
          WHERE i.id = r.issue_id) AS "assigneeName",
       (SELECT COALESCE(u.username, ag.username)

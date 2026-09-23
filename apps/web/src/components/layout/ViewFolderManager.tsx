@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
-import NameDialog from '@/components/common/overlay/NameDialog';
+import AreaDialog from '@/components/layout/AreaDialog';
 
 type FolderDialog =
   | { kind: 'create' }
@@ -92,22 +92,22 @@ export default function ViewFolderManager({
         </DropdownMenuContent>
       </DropdownMenu>
       {dialog?.kind === 'create' && (
-        <NameDialog
+        <AreaDialog
           title={t('newFolder')}
           description={t('newFolderDescription')}
-          label={t('folderNamePrompt')}
           submitLabel={t('create')}
-          onSubmit={(name) => createFolder.mutateAsync(name)}
+          areas={folders}
+          onSubmit={(input) => createFolder.mutateAsync(input)}
           onClose={() => setDialog(null)}
         />
       )}
       {dialog?.kind === 'rename' && (
-        <NameDialog
+        <AreaDialog
           title={t('renameFolder')}
-          label={t('folderNamePrompt')}
-          initialName={dialog.folder.name}
           submitLabel={tCommon('save')}
-          onSubmit={(name) => updateFolder.mutateAsync({ id: dialog.folder.id, name })}
+          area={dialog.folder}
+          areas={folders}
+          onSubmit={(input) => updateFolder.mutateAsync({ id: dialog.folder.id, ...input })}
           onClose={() => setDialog(null)}
         />
       )}

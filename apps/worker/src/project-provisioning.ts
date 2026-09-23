@@ -172,6 +172,7 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
     const requestedResources = withCoordinator(job.requestedResources);
     const boards = await requestedBoards(job);
     const agents = (await projectAgentIds([job.projectId])).get(job.projectId) ?? [];
+    const areas = await projectAreas(job.projectId);
     const response = await fetch(config.projectProvisioningUrl!, {
       method: 'POST',
       signal: controller.signal,
@@ -195,6 +196,7 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
         requestedResources,
         ...(boards.length ? { boards } : {}),
         ...(agents.length ? { agents } : {}),
+        ...(areas.length ? { areas } : {}),
         createdAt: new Date(job.createdAt).toISOString(),
       }),
     });
@@ -305,6 +307,21 @@ export async function projectAgentIds(projectIds?: number[]): Promise<Map<number
     byProject.set(projectId, [...(byProject.get(projectId) ?? []), agentId]);
   }
   return byProject;
+}
+
+// Every area of the project with its folder. The integration service creates the
+// folders of new areas, moves those whose folder changed and moves the folders of an
+// area missing from the list to the trash.
+async function projectAreas(projectId: number) {
+  return db
+    .select({
+      id: projectViewFolder.id,
+      name: projectViewFolder.name,
+      folder: projectViewFolder.folder,
+    })
+    .from(projectViewFolder)
+    .where(eq(projectViewFolder.projectId, projectId))
+    .orderBy(asc(projectViewFolder.id));
 }
 
 async function requestedBoards(job: ClaimedProvisioningJob) {

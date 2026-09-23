@@ -17,6 +17,9 @@ export interface Run {
   // Absent on a server that predates run limits.
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
+  // The folder of the issue's area below `cwd`, where the run starts. Absent on a server
+  // that predates area folders.
+  workdir?: string | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,

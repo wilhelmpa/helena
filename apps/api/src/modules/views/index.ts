@@ -4,7 +4,7 @@ import { guards, entityGuard } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
 import { requireUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
-import { accessErrors, commonErrors } from '#shared/responses';
+import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import {
   ViewFolderResponse,
@@ -13,6 +13,7 @@ import {
   reorderViewsBody,
   updateViewBody,
   viewParams,
+  updateViewFolderBody,
   viewFolderBody,
   viewFolderParams,
   reorderViewFoldersBody,
@@ -61,12 +62,12 @@ export const viewRoutes = new Elysia({ name: 'views', detail: { tags: ['Views'] 
     '/projects/:projectKey/view-folders',
     async ({ project, body, set }) => {
       set.status = 201;
-      return createViewFolder(project.id, body.name);
+      return createViewFolder(project.id, body);
     },
     {
       body: viewFolderBody,
       permission: ['views', 'create'],
-      response: { 201: ViewFolderResponse, ...commonErrors },
+      response: { 201: ViewFolderResponse, ...commonErrors, ...errors(409) },
       detail: { summary: 'Create a saved view folder' },
     },
   )
@@ -85,16 +86,16 @@ export const viewRoutes = new Elysia({ name: 'views', detail: { tags: ['Views'] 
   .patch(
     '/view-folders/:folderId',
     async ({ params, body }) => {
-      const folder = await updateViewFolder(params.folderId, body.name);
+      const folder = await updateViewFolder(params.folderId, body);
       if (!folder) throw new HttpError(404, 'View folder not found');
       return folder;
     },
     {
       params: viewFolderParams,
-      body: viewFolderBody,
+      body: updateViewFolderBody,
       savedViewFolder: 'edit',
-      response: { 200: ViewFolderResponse, ...commonErrors },
-      detail: { summary: 'Rename a saved view folder' },
+      response: { 200: ViewFolderResponse, ...commonErrors, ...errors(409) },
+      detail: { summary: 'Rename a saved view folder or change its folder' },
     },
   )
 

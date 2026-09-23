@@ -178,6 +178,11 @@ priority over both. An `agents` entry has priority over all three, for the field
 | `outputFormat`   | `ITSAPLAN_OUTPUT_FORMAT`    | the preset's       | How the runner reads a chat answer                                     |
 | `models`         |                             | `[]`               | Models and reasoning levels available in the chat selector             |
 
+A queued run of an issue in an area can name the area's folder (`workdir` in the claim). The
+runner starts that run in the folder of that name below `cwd` when it exists, and in `cwd`
+itself when it does not. A folder that resolves outside `cwd`, also through a symbolic link,
+fails the run. Chat answers always start in `cwd`.
+
 Set `agent` or `command`. With the environment you need no file at all:
 
 ```bash
