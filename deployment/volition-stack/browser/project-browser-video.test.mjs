@@ -112,7 +112,30 @@ describe("quality tiers", () => {
 
   it("keeps the same tier when the numbers still afford it", () => {
     const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
-    assert.equal(chooseTier({ downlinkKbps: 1500, rttMs: 100, bufferedBytes: 0 }, mediumIndex), mediumIndex);
+    const medium = TIERS[mediumIndex];
+    assert.equal(
+      chooseTier({ downlinkKbps: medium.maxKbps + 500, rttMs: 100, bufferedBytes: 0 }, mediumIndex),
+      mediumIndex,
+    );
+  });
+
+  it("does not call a capped tier affordable once the downlink itself is under its cap", () => {
+    // An RTT that would otherwise afford "medium" (cap 2500 kbps) is not enough on its own: a
+    // 1.5 Mbit connection's round trip can still look fine, but it cannot carry medium's own
+    // peak, so it is capped at "low" (cap 700 kbps) instead of being kept on a tier whose
+    // bitrate it cannot actually receive.
+    const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 1500, rttMs: 100, bufferedBytes: 0 }, mediumIndex)].name,
+      "low",
+    );
+    // An unmeasured downlink (0, before the first real report) never excludes a tier by
+    // itself: the round trip alone still governs a fresh connection.
+    const lowIndex = TIERS.findIndex((tier) => tier.name === "low");
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 0, rttMs: 20, bufferedBytes: 0 }, lowIndex)].name,
+      "medium",
+    );
   });
 });
 
@@ -164,6 +187,21 @@ describe("encoderArguments", () => {
     assert.match(scale, /^scale=\d+:\d+$/);
     const [, width, height] = /^scale=(\d+):(\d+)$/.exec(scale);
     assert.ok(Math.max(Number(width), Number(height)) <= low.scaleMax);
+  });
+
+  it("caps a constrained tier's peak bitrate with a VBV window, on top of its CRF", () => {
+    const medium = TIERS.find((tier) => tier.name === "medium");
+    const args = encoderArguments({ display: 87, x: 0, y: 0, width: 1280, height: 800 }, medium);
+    assert.equal(args[args.indexOf("-crf") + 1], String(medium.crf));
+    assert.equal(args[args.indexOf("-maxrate") + 1], `${medium.maxKbps}k`);
+    assert.equal(args[args.indexOf("-bufsize") + 1], `${medium.bufKbps}k`);
+  });
+
+  it("leaves high uncapped: a LAN or the local kiosk should spend the bandwidth it has", () => {
+    const high = TIERS.find((tier) => tier.name === "high");
+    const args = encoderArguments({ display: 87, x: 0, y: 32, width: 1280, height: 800 }, high);
+    assert.ok(!args.includes("-maxrate"));
+    assert.ok(!args.includes("-bufsize"));
   });
 });
 

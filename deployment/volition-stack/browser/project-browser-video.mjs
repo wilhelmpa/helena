@@ -20,10 +20,19 @@ const XRANDR_TIMEOUT_MS = 5_000;
 // next keyframe — after a stall, after a keyframe request's minimum interval, after joining
 // — matters more for them than the modest extra bytes a keyframe costs over a delta frame at
 // their own already-reduced resolution.
+// medium and low also cap their own peak bitrate (maxKbps, with bufKbps the VBV window that
+// enforces it — see encoderArguments): CRF alone targets a constant *quality*, not a bitrate,
+// so a busy moment can make even "medium" burst well past what the constrained connection it
+// exists for can carry in real time — measured on a 5 Mbit link, this was the actual cause of
+// multi-second stalls despite the ack-based backpressure and keyframe requests below reacting
+// correctly. high has no cap: on a LAN or the local kiosk it is bandwidth that should be spent,
+// not saved. bufKbps is kept well under a second of maxKbps, so the cap bounds latency as well
+// as throughput; combined with libx264's own -crf, this keeps quality where content is simple
+// (most of a UI) and only gives up detail once the cap is actually reached.
 export const TIERS = [
   { name: "high", scaleMax: null, frameRate: 60, crf: 18, keyframeSeconds: 2, threads: 4 },
-  { name: "medium", scaleMax: 1280, frameRate: 30, crf: 24, keyframeSeconds: 1, threads: 2 },
-  { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 0.5, threads: 1 },
+  { name: "medium", scaleMax: 1280, frameRate: 30, crf: 24, keyframeSeconds: 1, threads: 2, maxKbps: 2500, bufKbps: 600 },
+  { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 0.5, threads: 1, maxKbps: 700, bufKbps: 250 },
 ];
 
 // The round trip a tier needs to be worth trying (see chooseTier). Node's own bufferedAmount
@@ -43,6 +52,13 @@ const MEANINGFUL_ENCODE_KBPS = 150;
 // tier's own bitrate is never proof a better one is out of reach — only a shortfall against
 // what is actually being asked of the connection right now is.
 const SHORTFALL_RATIO = 0.6;
+// A capped tier (medium, low — see TIERS) is only affordable once the viewer's own measured
+// downlink at least reaches its cap: an acceptable round trip is not proof of enough
+// throughput, and without this, a connection with a fine RTT but well under a tier's own
+// maxKbps (measured on a 1.5 Mbit link, RTT alone would still call "medium" — cap 2500 kbps —
+// affordable) could sit on a tier whose cap it cannot carry until the reactive shortfall check
+// above happens to catch it, which this ceiling makes unnecessary. A downlink of exactly 0 is
+// "not measured yet", not "no bandwidth", so it never excludes a tier by itself.
 // A viewer whose last stats report is older than this, despite being on a video tier, is
 // assumed congested: the report that would say so travels the same connection as the video
 // and can itself be stuck behind the backlog it would describe.
@@ -72,7 +88,9 @@ export function chooseTier(measurement, currentIndex = null) {
   }
   let affordable = TIERS.length - 1;
   for (let index = 0; index < TIERS.length; index++) {
-    if (rttMs <= RTT_MS[TIERS[index].name]) {
+    const tier = TIERS[index];
+    const bandwidthOk = !tier.maxKbps || downlinkKbps === 0 || downlinkKbps >= tier.maxKbps;
+    if (rttMs <= RTT_MS[tier.name] && bandwidthOk) {
       affordable = index;
       break;
     }
@@ -104,6 +122,10 @@ export function sameArea(a, b) {
 export function encoderArguments({ x, y, width, height, display }, tier) {
   const size = scaledSize(width, height, tier.scaleMax);
   const scale = size.width === width && size.height === height ? [] : ["-vf", `scale=${size.width}:${size.height}`];
+  // A VBV cap (maxrate+bufsize) on top of CRF: quality stays constant-target where content is
+  // simple, but a peak that would otherwise burst past what the tier's own connection affords
+  // is held to it instead, at the cost of quality only right where the cap actually binds.
+  const cap = tier.maxKbps ? ["-maxrate", `${tier.maxKbps}k`, "-bufsize", `${tier.bufKbps}k`] : [];
   return [
     "-hide_banner",
     "-loglevel",
@@ -130,6 +152,7 @@ export function encoderArguments({ x, y, width, height, display }, tier) {
     "zerolatency",
     "-crf",
     String(tier.crf),
+    ...cap,
     "-bf",
     "0",
     // Multiple threads default to x264's frame-parallel mode, which pipelines several frames
