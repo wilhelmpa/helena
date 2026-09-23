@@ -231,6 +231,16 @@ channel and is read only for a claim, not for authentication. Both funnel into
 gets — a name missing from a later sync is never removed by this path, only by an explicit
 `PATCH /Groups/:id` or an unmapping in god mode.
 
+## Knowledge vault
+
+`modules/knowledge/` serves the vault (`packages/vault/AGENTS.md`): Docs notes and the
+other files, addressed by vault-relative path, not by project key. Its routes use the
+`vault` guard (`guard.ts`) instead of the project guards: it resolves the caller's reach
+once (`scope.ts`: the project role's Docs permission per project, the owner for Home,
+Templates and Private, the agent rules on top) and checks every path field the route
+names. Lists and search filter by the same reach in SQL (`readableEntries`). A note is
+written with the sha256 it was read at; a stale one is a 409 with `code: 'conflict'`.
+
 ## Security
 
 - **`GET /attachments/:publicId/raw` is public and unauthenticated** (used in

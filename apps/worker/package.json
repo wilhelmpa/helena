@@ -14,6 +14,7 @@
     "@repo/db": "workspace:*",
     "@repo/mailer": "workspace:*",
     "@repo/net": "workspace:*",
+    "@repo/vault": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

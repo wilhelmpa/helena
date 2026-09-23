@@ -27,6 +27,15 @@ own service (own Dockerfile), separate from `apps/api`. See root `AGENTS.md`.
   from the database and decrypted here (`notification-send.ts`), so the process
   needs `APP_ENCRYPTION_KEY`.
 
+- Watches the knowledge vault when `PROJECT_VAULT_ROOT` is set (`startVaultWatcher` from
+  `@repo/vault`): a recursive watch indexes each change into `vault_entry`/`vault_link`, a
+  rescan every 10 minutes repairs what the watch missed, changes made outside Plan are
+  committed to the vault's git history once the vault has been quiet for 10 seconds, and
+  the text of PDFs, scans, images and office files is extracted from a queue. It runs here
+  because there is one worker and there may be several api replicas: one process watches
+  and commits, and the extraction's CPU time stays out of the api's requests. The api
+  indexes and commits its own writes itself (see `packages/vault/AGENTS.md`).
+
 ## Invariants
 
 - **Reads/writes `@repo/db` directly, never the API over HTTP.** It is a DB

@@ -1051,6 +1051,13 @@
       "when": 1790167635326,
       "tag": "0149_area_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1790169985156,
+      "tag": "0150_vault_knowledge",
+      "breakpoints": true
     }
   ]
 }

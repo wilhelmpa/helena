@@ -141,7 +141,7 @@ export const app = new Elysia()
             description: 'Tasks created or reopened for an agent on a schedule, run by Mastra',
           },
           { name: 'Dashboards', description: 'Saved analytics dashboards' },
-          { name: 'Documents', description: 'Shared project Docs pages' },
+          { name: 'Knowledge', description: 'The knowledge vault: Docs notes, files and search' },
           {
             name: 'Files',
             description: 'Project-scoped files backed by the restricted workspace bridge',

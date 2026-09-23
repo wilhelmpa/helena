@@ -88,7 +88,7 @@ describe('attachments', () => {
     expect(res.status).toBe(400);
   });
 
-  it('serializes the shared project quota across issue, chat, and document uploads', async () => {
+  it('serializes the shared project quota across issue and chat uploads', async () => {
     const { asOwner, issueId } = await setupIssue();
     await asOwner.god['storage-settings'].put({ projectQuotaMb: 1 });
     const initial = 'x'.repeat(256 * 1024);
@@ -105,29 +105,18 @@ describe('attachments', () => {
         })
       ).status,
     ).toBe(201);
-    const page = (
-      await asOwner.projects({ projectKey: 'MKT' }).documents.post({ title: 'Handbook' })
-    ).data!;
-    expect(
-      (
-        await asOwner
-          .projects({ projectKey: 'MKT' })
-          .documents({ documentId: page.id })
-          .assets.post({
-            file: new File([initial], 'document.txt', { type: 'text/plain' }),
-          })
-      ).status,
-    ).toBe(201);
+    expect((await uploadFile(asOwner, issueId, 'second.txt', 'text/plain', initial)).status).toBe(
+      201,
+    );
 
     const contender = 'y'.repeat(200 * 1024);
     const results = await Promise.all([
       uploadFile(asOwner, issueId, 'parallel-issue.txt', 'text/plain', contender),
-      asOwner
-        .projects({ projectKey: 'MKT' })
-        .documents({ documentId: page.id })
-        .assets.post({
-          file: new File([contender], 'parallel-document.txt', { type: 'text/plain' }),
-        }),
+      asOwner.projects({ projectKey: 'MKT' })['chat-attachments'].post({
+        filename: 'parallel-chat.txt',
+        contentType: 'text/plain',
+        contentBase64: Buffer.from(contender).toString('base64'),
+      }),
     ]);
     expect(results.map((result) => result.status).sort()).toEqual([201, 413]);
   });

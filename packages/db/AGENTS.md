@@ -9,6 +9,8 @@ See root `AGENTS.md` for monorepo-wide rules.
 - `src/schema/auth.ts` — **generated** by better-auth CLI. Do NOT edit by hand;
   regenerate with `bun run auth:generate` (from the auth package / root).
 - `src/schema/app.ts` — hand-written application tables. Add domain tables here.
+- `src/schema/vault.ts` — the index of the knowledge vault, derived from its files and
+  maintained by `@repo/vault` (see `packages/vault/AGENTS.md`).
 - `src/schema/index.ts` — re-exports every table; `drizzle.config.ts` points at it.
 - `src/permissions.ts` — the permission matrix stored in `team_role.permissions`: the
   resource/action catalog, the default member role, and the normalizer. It lives here
