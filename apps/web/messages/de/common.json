@@ -209,6 +209,5 @@
     "page": "Seite {number}",
     "perPage": "pro Seite",
     "range": "{first}-{last} von {total}"
-  },
-  "themeSyncPartial": "Design in Plan aktualisiert, aber {count, plural, one {ein verbundener Dienst konnte nicht aktualisiert werden} other {# verbundene Dienste konnten nicht aktualisiert werden}}."
+  }
 }

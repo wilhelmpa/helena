@@ -14,7 +14,6 @@ const config: WorkspaceRuntimeEnv = {
   codeUrl: 'https://plan.example.com/workspace/code/',
   projectWorkspacePaths: { VERV: '/workspace/verve' },
   browserUrl: 'https://browser.example.com/',
-  filesUrl: 'https://files.example.com/',
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
   vaultEnabled: true,
@@ -73,11 +72,6 @@ describe('workspaceTools', () => {
         url: 'https://plan.example.com/focus/terminal-project/?arg=demo',
       },
       {
-        kind: 'files',
-        id: '/Projects/demo',
-        url: 'https://files.example.com/apps/files/files?dir=%2FProjects%2Fdemo',
-      },
-      {
         kind: 'browser',
         id: 'demo-coordinator:volition-browser',
         url: 'https://browser.example.com/focus/dashboard/demo-coordinator',
@@ -91,10 +85,6 @@ describe('workspaceTools', () => {
       'https://plan.example.com/workspace/code/?folder=%2Fprojects%2Fdemo',
     );
     assert.equal(tools.terminal.url, 'https://plan.example.com/focus/terminal-project/demo');
-    assert.equal(
-      tools.files.url,
-      'https://files.example.com/apps/files/files?dir=%2FProjects%2Fdemo',
-    );
     assert.equal(tools.browser.url, 'https://browser.example.com/focus/dashboard/demo-coordinator');
   });
 
@@ -129,14 +119,12 @@ describe('workspaceTools', () => {
 
   it('rejects a provisioned resource outside its configured service origin', () => {
     const tools = workspaceTools(config, 'DEMO', [
-      { kind: 'files', id: '/Projects/demo', url: 'https://attacker.example/demo' },
       {
         kind: 'browser',
         id: 'demo-coordinator:volition-browser',
         url: 'https://attacker.example/focus/dashboard/demo-coordinator',
       },
     ]);
-    assert.equal(tools.files.url, 'https://files.example.com/');
     assert.equal(tools.browser.url, 'https://browser.example.com/');
   });
 
@@ -144,7 +132,6 @@ describe('workspaceTools', () => {
     assert.deepEqual(workspaceFrameOrigins(config), [
       'https://plan.example.com',
       'https://browser.example.com',
-      'https://files.example.com',
       'https://inbox.example.com',
     ]);
   });

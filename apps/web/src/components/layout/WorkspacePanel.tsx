@@ -96,7 +96,6 @@ export default function WorkspacePanel({
       terminal: t('terminal'),
       code: t('code'),
       browser: t('browser'),
-      files: t('files'),
       inbox: t('inbox'),
       mail: t('mail'),
       connections: t('connections'),
@@ -295,7 +294,6 @@ export default function WorkspacePanel({
               key={frame.key}
               url={frame.url}
               title={frame.title}
-              tool={frame.tool}
               active={open && side !== undefined}
               className={cn(split && 'h-full w-full', placement(side))}
               reloadToken={frameReloads[frame.key] ?? 0}

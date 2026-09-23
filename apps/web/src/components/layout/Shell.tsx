@@ -87,8 +87,7 @@ export default function Shell({
   } = workspacePanel;
 
   useEffect(() => {
-    const routedTool =
-      route.sub === 'code' || route.sub === 'files' || route.sub === 'inbox' ? route.sub : null;
+    const routedTool = route.sub === 'code' || route.sub === 'inbox' ? route.sub : null;
     if (routedTool && workspaceOpen && activeWorkspaceTool === routedTool) {
       setWorkspaceOpen(false);
     }

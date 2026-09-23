@@ -28,7 +28,6 @@ OVERRIDES = {
 DROP = {
     'TERMINAL_URL',
     'CODE_URL',
-    'FILES_URL',
     'HERMES_URL',
     'HERMES_COORDINATOR_ID',
 }

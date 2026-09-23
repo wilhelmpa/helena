@@ -268,7 +268,6 @@ export function loadConfig(env = process.env) {
     ),
     connectionsEnabled: env.CONNECTIONS_ENABLED === "true",
     mailEnabled: env.MAIL_ENABLED === "true",
-    artifactSyncEnabled: env.ARTIFACT_SYNC_ENABLED === "true",
     registryRoot: absolutePath(
       env.PROVISIONING_REGISTRY_ROOT,
       path.join(provisioningStateRoot, "projects"),
@@ -278,7 +277,6 @@ export function loadConfig(env = process.env) {
       path.join(provisioningStateRoot, "provisioning-ledger.json"),
     ),
     planUrl: publicUrl(env.PLAN_PUBLIC_URL),
-    planPublicUrl: publicUrl(env.PLAN_PUBLIC_URL),
     planInternalUrl: privateServiceBaseUrl(
       env.PLAN_INTERNAL_URL,
       "http://127.0.0.1:3000",
@@ -300,10 +298,6 @@ export function loadConfig(env = process.env) {
     ),
     codeUrl: publicUrl(env.CODE_PUBLIC_URL),
     terminalUrl: publicUrl(env.TERMINAL_PUBLIC_URL),
-    codeSettingsPath: absolutePath(
-      env.CODE_SETTINGS_PATH,
-      path.join(home, ".local/share/code-server/User/settings.json"),
-    ),
     projectBrowserRoot: absolutePath(
       env.PROJECT_BROWSER_ROOT,
       "/var/lib/volition/project-browser/projects",
@@ -334,18 +328,7 @@ export function loadConfig(env = process.env) {
     systemctlUser: env.SYSTEMCTL_SCOPE !== "system",
     mcookieBin: absolutePath(env.MCOOKIE_BIN, "/usr/bin/mcookie"),
     xauthBin: absolutePath(env.XAUTH_BIN, "/usr/bin/xauth"),
-    filesUrl: publicUrl(env.FILES_PUBLIC_URL),
     nextcloudInternalUrl: nextcloudInternalUrl(env.NEXTCLOUD_INTERNAL_URL),
-    artifactSyncStatePath: absolutePath(
-      env.ARTIFACT_SYNC_STATE_PATH,
-      path.join(integrationStateRoot, "volition/artifact-sync.json"),
-    ),
-    nextcloudHost: hostname(env.NEXTCLOUD_HOST, "cloud.volition.one", "NEXTCLOUD_HOST"),
-    nextcloudUser: env.NEXTCLOUD_USER?.trim() || "owner@example.com",
-    nextcloudPasswordFile: absolutePath(
-      env.NEXTCLOUD_APP_PASSWORD_FILE,
-      "/run/credentials/volition-provisioning.service/nextcloud_app_password",
-    ),
     inboxAccounts: Object.keys(jsonStringRecord(env.INBOX_BASELINES, "INBOX_BASELINES")),
     inboxBaselines: jsonStringRecord(env.INBOX_BASELINES, "INBOX_BASELINES"),
     inboxQueuePath: absolutePath(
@@ -448,9 +431,6 @@ export async function loadServerSecrets(config) {
   const planControlToken = config.planControlTokenFile
     ? await privateSecret(config.planControlTokenFile, "PLAN_CONTROL_TOKEN_FILE")
     : "";
-  const artifactSecrets = config.artifactSyncEnabled || config.connectionsEnabled
-    ? await loadArtifactSyncSecrets(config)
-    : {};
   const mastraControlToken = config.mastraControlEnabled
     ? await privateSecret(config.mastraControlTokenFile, "MASTRA_CONTROL_TOKEN_FILE")
     : "";
@@ -460,7 +440,7 @@ export async function loadServerSecrets(config) {
   const connectionsIntegrationToken = config.connectionsEnabled || config.mailEnabled
     ? await privateSecret(config.connectionsIntegrationTokenFile, "CONNECTIONS_INTEGRATION_TOKEN_FILE") : "";
   if (config.inboxAccounts.length === 0) {
-    return { ...config, token, planApiKey, planControlToken, mastraControlToken, mastraEventToken, connectionsIntegrationToken, ...artifactSecrets };
+    return { ...config, token, planApiKey, planControlToken, mastraControlToken, mastraEventToken, connectionsIntegrationToken };
   }
   const [inboxIntegrationToken, inboxPushToken, gogKeyringPassword, mastraInboxToken] =
     await Promise.all([
@@ -471,7 +451,6 @@ export async function loadServerSecrets(config) {
     ]);
   return {
     ...config,
-    ...artifactSecrets,
     token,
     planApiKey,
     planControlToken,
@@ -483,15 +462,6 @@ export async function loadServerSecrets(config) {
     gogKeyringPassword,
     mastraInboxToken,
   };
-}
-
-export async function loadArtifactSyncSecrets(config) {
-  if (!config.artifactSyncEnabled && !config.connectionsEnabled) return {};
-  const nextcloudPassword = await privateCredential(
-    config.nextcloudPasswordFile,
-    "NEXTCLOUD_APP_PASSWORD_FILE",
-  );
-  return { nextcloudPassword };
 }
 
 export function assertServerConfig(config) {
@@ -528,24 +498,6 @@ export function assertServerConfig(config) {
     }
     if (Buffer.byteLength(config.mastraEventToken || "") < 32) {
       throw new Error("MASTRA_EVENT_TOKEN must contain at least 32 bytes");
-    }
-  }
-  if (config.artifactSyncEnabled) {
-    for (const [name, value] of [
-      ["ITSAPLAN_MCP_BEARER", config.planApiKey],
-      ["NEXTCLOUD_APP_PASSWORD", config.nextcloudPassword],
-    ]) {
-      if (!value) throw new Error(`${name} is required when artifact sync is enabled`);
-    }
-    if (!config.planPublicUrl || !config.filesUrl) {
-      throw new Error("Artifact sync public URLs are required when artifact sync is enabled");
-    }
-  }
-  if (config.connectionsEnabled) {
-    for (const [name, value] of [
-      ["NEXTCLOUD_APP_PASSWORD", config.nextcloudPassword],
-    ]) {
-      if (!value) throw new Error(`${name} is required when connections are enabled`);
     }
   }
 }

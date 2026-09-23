@@ -209,6 +209,5 @@
     "page": "الصفحة {number}",
     "perPage": "لكل صفحة",
     "range": "{first}-{last} من {total}"
-  },
-  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
+  }
 }
