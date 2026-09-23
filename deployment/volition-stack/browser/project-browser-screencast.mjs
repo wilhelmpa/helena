@@ -177,6 +177,10 @@ class Viewer {
     // report has had time to arrive.
     this.videoStartedAt = 0;
     this.lastKeyframeRequestAt = 0;
+    // When chooseTier last dropped this viewer straight to the worst tier (a real backlog,
+    // stale feedback, or a shortfall — see chooseTier's droppedAgoMs): 0 (long before any real
+    // timestamp) until the first one, so the cooldown it starts never applies before then.
+    this.lastDroppedAt = 0;
   }
 
   ready() {
@@ -417,6 +421,7 @@ class ScreencastStream {
         : viewer.socket.bufferedAmount,
       feedbackAgeMs: Date.now() - viewer.lastStatsAt,
       encodedKbps: viewer.tierIndex === null ? 0 : (this.tiers.get(TIERS[viewer.tierIndex].name)?.kbps() ?? 0),
+      droppedAgoMs: Date.now() - viewer.lastDroppedAt,
     };
   }
 
@@ -536,7 +541,14 @@ class ScreencastStream {
     if (!this.videoArea) return;
     for (const viewer of this.viewers) {
       if (!viewer.viewport?.video || viewer.hidden) continue;
-      viewer.tierIndex = chooseTier(this.connectionOf(viewer), viewer.tierIndex);
+      const before = viewer.tierIndex;
+      viewer.tierIndex = chooseTier(this.connectionOf(viewer), before);
+      // A straight drop to the worst tier is chooseTier's hard-drop path (a real backlog,
+      // stale feedback, or a shortfall), never the ordinary one-step kind: recorded here, not
+      // inside chooseTier, so it stays a pure function of one measurement and an index.
+      if (viewer.tierIndex === TIERS.length - 1 && before !== TIERS.length - 1) {
+        viewer.lastDroppedAt = Date.now();
+      }
     }
     this.syncTierEncoders();
   }

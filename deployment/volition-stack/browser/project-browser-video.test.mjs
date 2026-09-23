@@ -119,23 +119,25 @@ describe("quality tiers", () => {
     );
   });
 
-  it("does not call a capped tier affordable once the downlink itself is under its cap", () => {
-    // An RTT that would otherwise afford "medium" (cap 2500 kbps) is not enough on its own: a
-    // 1.5 Mbit connection's round trip can still look fine, but it cannot carry medium's own
-    // peak, so it is capped at "low" (cap 700 kbps) instead of being kept on a tier whose
-    // bitrate it cannot actually receive.
-    const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
-    assert.equal(
-      TIERS[chooseTier({ downlinkKbps: 1500, rttMs: 100, bufferedBytes: 0 }, mediumIndex)].name,
-      "low",
-    );
-    // An unmeasured downlink (0, before the first real report) never excludes a tier by
-    // itself: the round trip alone still governs a fresh connection.
+  it("does not retry a tier just dropped from until the cooldown clears", () => {
     const lowIndex = TIERS.findIndex((tier) => tier.name === "low");
+    const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
+    // Numbers that would otherwise afford "medium" right away still keep a viewer on "low"
+    // while the drop that put it there is recent: retrying at once, on every reassessment,
+    // would either repeat the very shortfall it was just dropped for, or thrash a connection
+    // sitting right at a tier's cap back and forth every couple of reports.
     assert.equal(
-      TIERS[chooseTier({ downlinkKbps: 0, rttMs: 20, bufferedBytes: 0 }, lowIndex)].name,
-      "medium",
+      chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0, droppedAgoMs: 1_000 }, lowIndex),
+      lowIndex,
     );
+    // The same numbers reach "medium" once the cooldown has cleared.
+    assert.equal(
+      chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0, droppedAgoMs: 9_000 }, lowIndex),
+      mediumIndex,
+    );
+    // A viewer that has never been dropped (the default, an unmeasured droppedAgoMs) is
+    // governed by the round trip alone, exactly as before this existed.
+    assert.equal(chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0 }, lowIndex), mediumIndex);
   });
 });
 

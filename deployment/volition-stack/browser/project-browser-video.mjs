@@ -50,19 +50,22 @@ const MEANINGFUL_ENCODE_KBPS = 150;
 // A connection genuinely struggling receives well under what its own tier is sending it: this
 // ratio, not a fixed table, is what argues for dropping on throughput grounds, because a lower
 // tier's own bitrate is never proof a better one is out of reach — only a shortfall against
-// what is actually being asked of the connection right now is.
+// what is actually being asked of the connection right now is. Comparing against a capped
+// tier's own maxKbps instead of what it is actually sending was tried and reverted: a quiet
+// page's downlink reading is just as low as its encoder's, for the same harmless reason, and
+// judging it against the cap read that as a shortfall on a perfectly good connection.
 const SHORTFALL_RATIO = 0.6;
-// A capped tier (medium, low — see TIERS) is only affordable once the viewer's own measured
-// downlink at least reaches its cap: an acceptable round trip is not proof of enough
-// throughput, and without this, a connection with a fine RTT but well under a tier's own
-// maxKbps (measured on a 1.5 Mbit link, RTT alone would still call "medium" — cap 2500 kbps —
-// affordable) could sit on a tier whose cap it cannot carry until the reactive shortfall check
-// above happens to catch it, which this ceiling makes unnecessary. A downlink of exactly 0 is
-// "not measured yet", not "no bandwidth", so it never excludes a tier by itself.
 // A viewer whose last stats report is older than this, despite being on a video tier, is
 // assumed congested: the report that would say so travels the same connection as the video
 // and can itself be stuck behind the backlog it would describe.
 const FEEDBACK_TIMEOUT_MS = 8_000;
+// How long a tier a viewer was just dropped from (for a real backlog, stale feedback, or a
+// shortfall) stays off the table for rising back into: round trip alone would otherwise call
+// it affordable again on the very next reassessment — chooseTier runs on every stats report,
+// far more often than a connection's own throughput actually changes — and immediately trying
+// it again would either repeat the same shortfall it was just dropped for, or, on a connection
+// sitting right at a tier's cap, thrash between the two every couple of reports.
+const RETRY_COOLDOWN_MS = 5_000;
 
 // The tier a viewer's connection affords, given its last measurement and the tier index it is
 // on now (null for a viewer joining fresh, which starts on a safe middle tier before its
@@ -71,30 +74,39 @@ const FEEDBACK_TIMEOUT_MS = 8_000;
 // rises only one step at a time, so a connection that looks better for one sample does not
 // swing the picture straight to the heaviest tier.
 //
-// The round trip alone sets the ceiling for rising: a live H.264 stream's own bitrate swings
-// hugely with how much the page is changing, so the tier a viewer is already on is never proof
-// a better one is unaffordable, and only trying it can tell. A genuine shortfall — reported
-// downlink well under what the current tier is actually sending — argues for dropping instead,
-// on the same terms a stall does: it is evidence the connection cannot keep up with the demand
-// actually being placed on it right now, not with some fixed idea of what a tier "needs".
+// The round trip sets the ceiling for rising, since a live H.264 stream's own bitrate swings
+// hugely with how much the page is changing: the tier a viewer is already on is never proof a
+// better one is unaffordable, and only trying it can tell — but a tier just dropped from stays
+// off the table until droppedAgoMs clears RETRY_COOLDOWN_MS (see there), so "trying it" means
+// actually waiting to see, not retrying every couple of reassessments. A genuine shortfall —
+// reported downlink well under what the current tier is actually sending — argues for
+// dropping instead, on the same terms a stall does: it is evidence the connection cannot keep
+// up with the demand actually being placed on it right now, not with some fixed idea of what
+// a tier "needs".
 export function chooseTier(measurement, currentIndex = null) {
   if (currentIndex === null || currentIndex === undefined) {
     return TIERS.findIndex((tier) => tier.name === "medium");
   }
-  const { downlinkKbps = 0, rttMs = 0, bufferedBytes = 0, encodedKbps = 0, feedbackAgeMs = 0 } = measurement;
+  const {
+    downlinkKbps = 0,
+    rttMs = 0,
+    bufferedBytes = 0,
+    encodedKbps = 0,
+    feedbackAgeMs = 0,
+    droppedAgoMs = Infinity,
+  } = measurement;
   const strained = encodedKbps > MEANINGFUL_ENCODE_KBPS && downlinkKbps < encodedKbps * SHORTFALL_RATIO;
   if (bufferedBytes > CONGESTED_BYTES || feedbackAgeMs > FEEDBACK_TIMEOUT_MS || strained) {
     return TIERS.length - 1;
   }
   let affordable = TIERS.length - 1;
   for (let index = 0; index < TIERS.length; index++) {
-    const tier = TIERS[index];
-    const bandwidthOk = !tier.maxKbps || downlinkKbps === 0 || downlinkKbps >= tier.maxKbps;
-    if (rttMs <= RTT_MS[tier.name] && bandwidthOk) {
+    if (rttMs <= RTT_MS[TIERS[index].name]) {
       affordable = index;
       break;
     }
   }
+  if (droppedAgoMs < RETRY_COOLDOWN_MS) affordable = Math.max(affordable, currentIndex);
   // A lower index is a better tier. Dropping to a worse or equal one (a higher or same index)
   // applies at once; rising to a better one (a lower index) moves at most one step closer.
   if (affordable >= currentIndex) return affordable;
