@@ -19,7 +19,7 @@ interface CatalogFlow {
 }
 
 const CONTROL_URL =
-  process.env.MASTRA_CONTROL_URL?.trim() || 'http://172.30.254.1:18800/internal/mastra/control';
+  process.env.MASTRA_CONTROL_URL?.trim() || 'http://127.0.0.1:4111/internal/mastra/control';
 const CONTROL_TOKEN_FILE =
   process.env.MASTRA_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/mastra_control_token';
 let tokenPromise: Promise<string> | null = null;
