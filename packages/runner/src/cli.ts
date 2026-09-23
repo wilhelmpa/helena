@@ -4,6 +4,7 @@ import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
 import { hermesPolicySynchronizer, type HermesPolicySynchronizer } from './policy';
+import { reflect } from './reflect';
 import { perform } from './run';
 
 // The runner holds no state — the queue is the server's. A runner stopped by its service
@@ -15,6 +16,7 @@ import { perform } from './run';
 // several agents runs that pair for each of them, in the one process.
 
 const HEARTBEAT_MS = 60_000;
+const noSettings = { toolsets: null, env: {} };
 const ERROR_BACKOFF_MS = 5_000;
 const CATALOG_RETRY_MS = 30_000;
 
@@ -72,7 +74,7 @@ async function handle(
     const hermes = stop.signal.aborted
       ? null
       : ((await policy?.runSettings({ runId: run.id })) ?? null);
-    const outcome = stop.signal.aborted
+    const performed = stop.signal.aborted
       ? null
       : await withHeartbeat(
           log,
@@ -84,8 +86,16 @@ async function handle(
           },
           perform(config, client, run, stop, hermes, { lost: lost.signal }),
         );
-    if (outcome) log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
-    else if (state.releasing && run.claim !== undefined)
+    if (performed) {
+      const { outcome, reflection } = performed;
+      log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
+      // The run is finished and reported, so a reflection has no lease to keep alive.
+      if (reflection && outcome.sessionId) {
+        await reflect(config, client, run, outcome.sessionId, reflection, hermes ?? noSettings)
+          .then((done) => log(`${label}: reflection ${done.status}, ${done.saved.length} saved`))
+          .catch((err) => log(`${label}: reflection not reported — ${String(err)}`));
+      }
+    } else if (state.releasing && run.claim !== undefined)
       await client.release(run.id, run.claim).then(
         () => log(`${label}: handed back to the queue`),
         (err: unknown) => log(`${label}: could not be handed back — ${String(err)}`),

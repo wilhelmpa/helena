@@ -10,12 +10,22 @@ StartLimitIntervalSec=0
 Type=simple
 User=volition-plan
 Group=volition
+# The worker watches and indexes the whole vault, Private/ included, and commits the
+# changes made outside Plan to its git history.
+SupplementaryGroups=volition-private
+UMask=0007
 WorkingDirectory=/srv/volition/source/plan
 EnvironmentFile=/etc/volition/plan.env
 Environment=NODE_ENV=production
+Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
 LoadCredential=provisioning_token:/etc/volition/provisioning.token
 Environment=PROJECT_PROVISIONING_URL=http://127.0.0.1:18800/api/provision
 Environment=PROJECT_PROVISIONING_TOKEN_FILE=%d/provisioning_token
+# The mail import stores raw messages in STORAGE_ROOT and attachments in the vault,
+# group-writable like everything else there.
+Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
+Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
+UMask=0007
 LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
 Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/worker/src/index.ts
@@ -27,7 +37,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
-ReadWritePaths=/var/lib/volition/plan
+ReadWritePaths=/var/lib/volition/plan /srv/volition/vault
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 TasksMax=infinity
 

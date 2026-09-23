@@ -10,6 +10,10 @@ StartLimitIntervalSec=0
 Type=simple
 User=volition-plan
 Group=volition
+# Private/ of the vault belongs to volition-private. The umask keeps what the API writes
+# into the vault readable and writable for its group.
+SupplementaryGroups=volition-private
+UMask=0007
 WorkingDirectory=/srv/volition/source/plan
 EnvironmentFile=/etc/volition/plan.env
 # In production the auth cookies are marked Secure, and a browser drops those over plain
@@ -20,6 +24,9 @@ Environment=API_PORT=3000
 Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
 Environment=PROJECT_WORKSPACE_ROOT=/srv/volition/workspaces/projects
 Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
+# Files it writes into the vault (mail notes, moved mail attachments) stay writable for
+# the volition group.
+UMask=0007
 LoadCredential=plan_control_token:/etc/volition/plan-control.token
 LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
 Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token

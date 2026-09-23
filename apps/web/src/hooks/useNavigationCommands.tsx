@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation';
 import {
+  AtSign,
   Bell,
   Building2,
   Code2,
@@ -20,6 +21,7 @@ import {
   aiAgentsPath,
   aiTeamPath,
   connectionsPath,
+  mailAccountsPath,
   dashboardsPath,
   filesPath,
   codePath,
@@ -134,6 +136,7 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
     add('nav.mcp', t('mcpServer'), <Server />, mcpServerPath(key), 'model context protocol');
   } else {
     add('nav.connections', t('connections'), <Server />, connectionsPath(), 'accounts health');
+    add('nav.mail-accounts', t('mailAccounts'), <AtSign />, mailAccountsPath(), 'mail imap smtp');
   }
 
   add(

@@ -85,6 +85,8 @@ export function createHermesTeamHandler({ bridgeToken }, service) {
         '/internal/hermes/team/stages/cancel': () => service.cancelStage(body),
         '/internal/hermes/team/synchronize': () => service.synchronize(body),
         '/internal/hermes/team/routine': () => service.routine(body),
+        '/internal/hermes/team/pipeline': () => service.pipeline(body),
+        '/internal/hermes/team/pipeline-agent': () => service.executePipelineAgent(body, abandoned.signal),
       };
       const result = Object.hasOwn(routes, request.url) ? await routes[request.url]() : null;
       if (!result) throw new HermesTeamError(404, 'not_found', 'Not found');
@@ -109,6 +111,7 @@ export async function startHermesTeamBridge() {
     cancel: body => planRequest('/internal/orchestration/agent-run/cancel', body, planToken),
     synchronize: body => planRequest('/internal/orchestration/task-sync', body, planToken),
     routine: body => planRequest('/internal/orchestration/routine', body, planToken),
+    pipeline: body => planRequest('/internal/orchestration/pipeline', body, planToken),
   };
   // Plan's health overview shows when the bridge was last seen.
   const heartbeat = () => planRequest('/internal/orchestration/heartbeat', { service: 'bridge' }, planToken).catch(() => {});

@@ -391,13 +391,11 @@
       "skipped": "Ignoré"
     }
   },
-  "documents": {
-    "title": "Docs",
-    "add": "Lier une page Docs",
-    "empty": "Aucune page Docs liée.",
-    "loadFailed": "Impossible de charger les pages liées. Cliquez pour réessayer.",
-    "remove": "Dissocier {title}",
-    "untitled": "Sans titre"
+  "knowledge": {
+    "title": "Connaissances",
+    "create": "Nouvelle note sur cette tâche",
+    "empty": "Aucune note ne renvoie encore à cette tâche. Une note y renvoie avec {link}.",
+    "loadFailed": "Impossible de charger les notes. Cliquez pour réessayer."
   },
   "archived": "Archivé",
   "activityHeading": "Activité",

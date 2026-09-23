@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { AgentRun, AiAgent } from '@/lib/api/endpoints/agents';
+import type { AgentRun, AiAgent, ReflectionView } from '@/lib/api/endpoints/agents';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { formatDateTime } from '@/utils/dates';
 import { useAgentRuns } from '@/services/aiAgents.service';
@@ -150,6 +150,7 @@ function RunItem({ run: r }: { run: AgentRun }) {
             <DetailBlock label={t('error')} value={r.lastError} />
           )}
           {r.output && <DetailBlock label={t('result')} value={r.output} />}
+          {r.reflection && <ReflectionBlock reflection={r.reflection} />}
           {r.status === 'pending' && (
             <DetailBlock
               label={t('queue')}
@@ -159,6 +160,55 @@ function RunItem({ run: r }: { run: AgentRun }) {
           {outcome && <p className="text-xs text-muted-foreground">{outcome}</p>}
         </div>
       )}
+    </div>
+  );
+}
+
+// The follow-up turn in which the agent kept what the run taught it: why it happened,
+// how it went, and what it saved.
+function ReflectionBlock({ reflection }: { reflection: ReflectionView }) {
+  const t = useTranslations('teams.agents.reflection');
+  const reason = t(
+    reflection.reason === 'failure'
+      ? 'reasonFailure'
+      : reflection.reason === 'rework'
+        ? 'reasonRework'
+        : 'reasonComplex',
+  );
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+        <span>{t('title')}</span>
+        <span>·</span>
+        <span>{t(reflection.status)}</span>
+        <span>·</span>
+        <span>{reason}</span>
+        {reflection.tokens !== undefined && (
+          <>
+            <span>·</span>
+            <span>{t('tokens', { count: reflection.tokens })}</span>
+          </>
+        )}
+      </div>
+      <div className="rounded-md bg-muted/50 p-2.5 text-xs">
+        {reflection.saved.length > 0 ? (
+          <ul className="list-inside list-disc space-y-0.5">
+            {reflection.saved.map((item, index) => (
+              <li key={index}>
+                {t(item.tool === 'memory' ? 'toolMemory' : 'toolSkill')} · {item.action} ·{' '}
+                {item.target}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground">
+            {reflection.status === 'failed' && reflection.error
+              ? reflection.error
+              : t('nothingSaved')}
+          </p>
+        )}
+        {reflection.summary && <p className="mt-1 text-muted-foreground">{reflection.summary}</p>}
+      </div>
     </div>
   );
 }

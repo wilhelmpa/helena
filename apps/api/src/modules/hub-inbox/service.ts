@@ -135,7 +135,7 @@ export async function listHubInboxThreads(filters: HubInboxFilters) {
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit).map((row) => ({
     ...row,
-    externalUrl: exactSourceUrl(row.channel, row.account, row.externalThreadId),
+    externalUrl: exactSourceUrl(row.channel, row.externalThreadId),
     channel: row.channel as 'mail' | 'whatsapp',
     status: row.status as 'new' | 'assigned' | 'waiting' | 'done',
     priority: row.priority as 'low' | 'medium' | 'high' | 'urgent' | null,
@@ -245,7 +245,9 @@ export function parseHubInboxCursor(value?: string): HubInboxCursor | null {
   }
 }
 
-export function exactSourceUrl(channel: string, account: string, threadId: string): string | null {
-  if (channel !== 'mail') return null;
-  return `https://mail.google.com/mail/u/${encodeURIComponent(account)}/#all/${encodeURIComponent(threadId)}`;
+// The thread in Plan's inbox a mail event came from; the mail importer names it
+// "mail-thread:<id>".
+export function exactSourceUrl(channel: string, threadId: string): string | null {
+  const match = channel === 'mail' ? /^mail-thread:(\d+)$/.exec(threadId) : null;
+  return match ? `/inbox?thread=${match[1]}` : null;
 }

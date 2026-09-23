@@ -1,0 +1,449 @@
+{
+  "kinds": {
+    "agent": "وكيل",
+    "approval": "موافقة",
+    "condition": "شرط",
+    "action": "إجراء على المهمة",
+    "wait": "انتظار"
+  },
+  "kindHints": {
+    "agent": "وكيل يعمل على المهمة",
+    "approval": "شخص يوافق عليها أو يعيدها",
+    "condition": "يقسم التشغيل إلى نعم ولا",
+    "action": "يغيّر المهمة",
+    "wait": "يوقف التشغيل مؤقتًا"
+  },
+  "triggers": {
+    "manual": "بدء يدوي",
+    "task_created": "إنشاء مهمة",
+    "task_assigned": "إسناد مهمة",
+    "status_changed": "تغيّر الحالة",
+    "label_added": "إضافة وسم",
+    "schedule": "جدولة"
+  },
+  "triggerSummary": {
+    "statusTo": "تتغيّر الحالة إلى {status}",
+    "label": "يُضاف الوسم {label}",
+    "schedule": "جدولة {cron}"
+  },
+  "library": {
+    "hint": "قوالب سير العمل الخاصة بفريقك. يفعّل المشروع القالب ويسمّي وكلاء أدواره.",
+    "newTemplate": "قالب جديد",
+    "newTemplateDescription": "يبدأ القالب بخطوة وكيل واحدة. تبنيه في المحرر.",
+    "name": "الاسم",
+    "create": "إنشاء",
+    "templates": "القوالب",
+    "empty": "لا توجد قوالب بعد",
+    "emptyHint": "أضف قالبًا جاهزًا أدناه أو أنشئ قالبًا جديدًا.",
+    "builtins": "القوالب الجاهزة",
+    "builtinsHint": "إضافة قالب تنسخه إلى مكتبتك بلغتك، حيث يمكنك تغييره.",
+    "addToLibrary": "إضافة إلى المكتبة",
+    "added": "أُضيف {name} إلى المكتبة.",
+    "steps": "{count, plural, zero {لا خطوات} one {خطوة واحدة} two {خطوتان} few {# خطوات} many {# خطوةً} other {# خطوة}}",
+    "version": "الإصدار {version}",
+    "delete": "حذف",
+    "deleteTitle": "حذف القالب",
+    "deleteConfirm": "حذف {name}؟ تُحذف إصداراته وتشغيلاته، ويتوقف كل مشروع يستخدمه عن تشغيله.",
+    "loadFailed": "تعذّر تحميل القوالب.",
+    "tryAgain": "أعد المحاولة",
+    "noAccess": "قد لا ترى سير عمل هذا الفريق.",
+    "readOnly": "الأعضاء القادرون على إنشاء سير العمل هم من يضيفون القوالب هنا."
+  },
+  "starter": {
+    "name": "سير عمل جديد",
+    "role": "المنسق",
+    "step": "العمل على المهمة",
+    "instruction": "اعمل على المهمة {identifier} “{title}”.\n\n{description}"
+  },
+  "builtin": {
+    "agent-team": {
+      "name": "فريق الوكلاء (افتراضي)",
+      "description": "المنسق يخطط، والمتخصص ينجز العمل، ثم يراجعه المنسق، وتنتقل المهمة إلى المراجعة.",
+      "roles": {
+        "coordinator": "المنسق",
+        "specialist": "المتخصص"
+      },
+      "steps": {
+        "plan": "المنسق يخطط للعمل",
+        "implement": "المتخصص ينجز العمل",
+        "review": "المنسق يراجع النتيجة",
+        "accepted": "هل قُبلت المراجعة؟",
+        "report-accepted": "الإبلاغ عن النتيجة المقبولة",
+        "report-changes": "الإبلاغ عن التغييرات المطلوبة",
+        "to-review": "نقل المهمة إلى المراجعة"
+      }
+    },
+    "release-notes": {
+      "name": "التنفيذ، الموافقة، ملاحظات الإصدار",
+      "description": "يُنفّذ مبرمج المهمة، وتوافق عليها أو تعيدها، ثم يكتب وكيل المحتوى ملاحظات الإصدار.",
+      "roles": {
+        "coder": "المبرمج",
+        "writer": "وكيل المحتوى"
+      },
+      "steps": {
+        "implement": "المبرمج ينفّذ",
+        "approve": "موافقة",
+        "release-notes": "وكيل المحتوى يكتب ملاحظات الإصدار",
+        "post-notes": "نشر ملاحظات الإصدار"
+      }
+    }
+  },
+  "editor": {
+    "back": "سير العمل",
+    "template": "قالب",
+    "projectWorkflow": "سير عمل المشروع",
+    "version": "الإصدار {version}",
+    "unsaved": "تغييرات غير محفوظة",
+    "save": "حفظ",
+    "saved": "تم حفظ {name}.",
+    "blocked": "أصلح الأخطاء لتتمكن من الحفظ.",
+    "tabs": {
+      "build": "البناء",
+      "runs": "التشغيلات",
+      "versions": "الإصدارات"
+    },
+    "name": "الاسم",
+    "description": "الوصف",
+    "descriptionPlaceholder": "ما الذي يقوم به سير العمل",
+    "noDescription": "لا يوجد وصف",
+    "readOnly": "يمكنك قراءة سير العمل هذا. الأعضاء القادرون على تعديل سير العمل هم من يغيّرونه.",
+    "loadFailed": "تعذّر تحميل سير العمل.",
+    "templateElsewhere": "سير العمل هذا قالب من مكتبة الفريق. يُعدَّل من الرئيسية.",
+    "openTemplate": "فتح القالب",
+    "issuesTitle": "{count, plural, zero {لا مشاكل} one {مشكلة واحدة} two {مشكلتان} few {# مشاكل} many {# مشكلةً} other {# مشكلة}}",
+    "warningsTitle": "{count, plural, zero {لا مشاكل في هذا المشروع} one {مشكلة واحدة في هذا المشروع} two {مشكلتان في هذا المشروع} few {# مشاكل في هذا المشروع} many {# مشكلةً في هذا المشروع} other {# مشكلة في هذا المشروع}}",
+    "warningsHint": "يمكن حفظ سير العمل، لكن لا يمكن تفعيله في المشروع حتى تُصلَح هذه المشكلات."
+  },
+  "trigger": {
+    "title": "المشغّل",
+    "type": "يبدأ عند",
+    "status": "الحالة",
+    "anyStatus": "أي حالة",
+    "statusHint": "اتركه فارغًا ليبدأ عند كل تغيّر في الحالة.",
+    "label": "الوسم",
+    "cron": "تعبير Cron",
+    "cronHint": "الدقيقة، الساعة، يوم الشهر، الشهر، ويوم الأسبوع. 0 9 * * 1-5 يعمل أيام الأسبوع الساعة 9:00.",
+    "timezone": "المنطقة الزمنية",
+    "taskTitle": "عنوان المهمة",
+    "taskTitleHint": "كل تشغيل ينشئ مهمة بهذا العنوان ويشغّل سير العمل عليها."
+  },
+  "roles": {
+    "title": "الأدوار",
+    "hint": "خطوة الوكيل تسمّي دورًا. يسمّي المشروع وكيل كل دور، أو تجده القاعدة أدناه.",
+    "add": "إضافة دور",
+    "newRole": "دور جديد",
+    "name": "الاسم",
+    "match": "يُوجَد بواسطة",
+    "matchTypes": {
+      "coordinator": "منسق المشروع",
+      "capability": "وكيل بقدرة معيّنة",
+      "template": "نسخة من وكيل قالب",
+      "none": "مُسمّى في المشروع"
+    },
+    "capability": "القدرة",
+    "templateAgent": "وكيل القالب",
+    "chooseAgent": "اختر وكيلًا",
+    "remove": "إزالة الدور",
+    "empty": "لا توجد أدوار بعد."
+  },
+  "steps": {
+    "title": "الخطوات",
+    "add": "خطوة",
+    "addHere": "أضف خطوة هنا",
+    "empty": "لا توجد خطوات بعد.",
+    "drag": "اسحب لإعادة الترتيب",
+    "yes": "نعم",
+    "no": "لا",
+    "endsRun": "ينتهي التشغيل بعد هذه الخطوة",
+    "limit": "يحتوي سير العمل على {max} خطوة كحد أقصى.",
+    "problems": "{count, plural, zero {لا مشاكل} one {مشكلة واحدة} two {مشكلتان} few {# مشاكل} many {# مشكلةً} other {# مشكلة}}"
+  },
+  "summary": {
+    "agentRole": "الدور {role}",
+    "agentDirect": "@{username}",
+    "noInstruction": "لا توجد تعليمات بعد",
+    "approvalEnd": "مرفوض: ينتهي التشغيل",
+    "approvalGoto": "مرفوض: عودة إلى {step}",
+    "outcome": "النتيجة هي {outcomes}",
+    "keyword": "النتيجة تحتوي على {keyword}",
+    "taskIs": "{field} هو {values}",
+    "taskIsNot": "{field} ليس {values}",
+    "setStatus": "ضبط الحالة على {status}",
+    "addLabels": "إضافة {labels}",
+    "removeLabels": "إزالة {labels}",
+    "assignRole": "الإسناد إلى الدور {role}",
+    "assignMember": "الإسناد إلى {name}",
+    "unassign": "إزالة المسؤول",
+    "comment": "تعليق: {text}",
+    "subtask": "مهمة فرعية: {title}",
+    "waitDelay": "انتظار {duration}",
+    "waitUntil": "حتى {field} الساعة {time}"
+  },
+  "duration": {
+    "minutes": "{count, plural, zero {لا دقائق} one {دقيقة واحدة} two {دقيقتان} few {# دقائق} many {# دقيقةً} other {# دقيقة}}",
+    "hours": "{count, plural, zero {لا ساعات} one {ساعة واحدة} two {ساعتان} few {# ساعات} many {# ساعةً} other {# ساعة}}",
+    "days": "{count, plural, zero {لا أيام} one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}"
+  },
+  "inspector": {
+    "title": "الخطوة",
+    "empty": "اختر خطوة لتغييرها.",
+    "name": "الاسم",
+    "delete": "حذف الخطوة",
+    "insertVariable": "إدراج متغيّر",
+    "variableGroups": {
+      "task": "المهمة",
+      "previous": "الخطوة السابقة",
+      "step": "الخطوة {name}"
+    },
+    "variables": {
+      "title": "العنوان",
+      "description": "الوصف",
+      "identifier": "المعرّف",
+      "status": "الحالة",
+      "summary": "النتيجة",
+      "outcome": "المحصّلة",
+      "note": "ملاحظة الموافقة"
+    },
+    "agent": {
+      "assignee": "المسؤول",
+      "roles": "الأدوار",
+      "agents": "وكلاء المشروع",
+      "instruction": "التعليمات",
+      "instructionPlaceholder": "ما الذي يجب أن يفعله الوكيل. تُمرَّر المتغيرات من المهمة والنتائج السابقة.",
+      "timeout": "المهلة بالدقائق",
+      "maxTurns": "الجولات كحد أقصى",
+      "runBudget": "الدقائق كحد أقصى",
+      "noLimit": "حد الوكيل",
+      "model": "النموذج",
+      "agentModel": "نموذج الوكيل",
+      "limitsHint": "يمكن للخطوة خفض حدود الوكيل الخاصة، لا رفعها."
+    },
+    "approval": {
+      "message": "الرسالة",
+      "messagePlaceholder": "ما الذي يجب أن يتحقق منه الموافِق",
+      "onReject": "عند الرفض",
+      "end": "إنهاء التشغيل",
+      "goto": "العودة إلى خطوة سابقة",
+      "target": "العودة إلى",
+      "chooseStep": "اختر خطوة",
+      "maxLoops": "بحد أقصى هذا العدد من المرات",
+      "noEarlierSteps": "لا توجد خطوة سابقة للعودة إليها."
+    },
+    "condition": {
+      "kind": "يتحقق من",
+      "kinds": {
+        "outcome": "نتيجة الخطوة السابقة",
+        "keyword": "كلمة في النتيجة السابقة",
+        "task": "حقل من المهمة"
+      },
+      "outcomes": {
+        "success": "نجاح",
+        "failed": "فشل",
+        "blocked": "محظور"
+      },
+      "keyword": "الكلمة",
+      "keywordHint": "نعم عندما تحتوي نتيجة الخطوة السابقة عليها، بغضّ النظر عن حالة الأحرف.",
+      "field": "الحقل",
+      "fields": {
+        "status": "الحالة",
+        "statusType": "نوع الحالة",
+        "labels": "الوسوم",
+        "area": "المجال",
+        "priority": "الأولوية"
+      },
+      "op": "المقارنة",
+      "ops": {
+        "is": "يساوي",
+        "is_not": "لا يساوي"
+      },
+      "values": "القيم",
+      "namesHint": "أسماء مفصولة بفواصل. يسمّيها المشروع بالطريقة نفسها.",
+      "choose": "اختر"
+    },
+    "action": {
+      "kind": "الإجراء",
+      "kinds": {
+        "set_status": "ضبط الحالة",
+        "add_labels": "إضافة وسوم",
+        "remove_labels": "إزالة وسوم",
+        "set_assignee": "تعيين المسؤول",
+        "comment": "كتابة تعليق",
+        "create_subtask": "إنشاء مهمة فرعية"
+      },
+      "status": "الحالة",
+      "labels": "الوسوم",
+      "assignee": "المسؤول",
+      "nobody": "لا أحد",
+      "roles": "الأدوار",
+      "members": "أعضاء المشروع",
+      "body": "التعليق",
+      "title": "العنوان",
+      "description": "الوصف"
+    },
+    "wait": {
+      "kind": "الانتظار",
+      "kinds": {
+        "delay": "لمدة معيّنة",
+        "until": "حتى تاريخ من المهمة"
+      },
+      "amount": "المدة",
+      "unit": "الوحدة",
+      "units": {
+        "minutes": "دقائق",
+        "hours": "ساعات",
+        "days": "أيام"
+      },
+      "field": "التاريخ",
+      "fields": {
+        "dueDate": "تاريخ الاستحقاق",
+        "startDate": "تاريخ البدء"
+      },
+      "time": "الوقت",
+      "timeHint": "الوقت بتوقيت Europe/Berlin."
+    }
+  },
+  "issues": {
+    "invalid": "القيمة غير صالحة.",
+    "required": "هذا الحقل مطلوب.",
+    "too_long": "بحد أقصى {max} حرفًا.",
+    "too_many": "بحد أقصى {max} عنصرًا.",
+    "out_of_range": "بين {min} و{max}.",
+    "too_deep": "تتداخل الشروط بحد أقصى {max} مستويات.",
+    "invalid_cron": "تعبير Cron غير صالح.",
+    "invalid_timezone": "المنطقة الزمنية غير صالحة.",
+    "no_steps": "سير العمل لا يحتوي على خطوات.",
+    "duplicate_role_key": "دوران يشتركان في المفتاح نفسه.",
+    "duplicate_step_id": "خطوتان تشتركان في المعرّف نفسه.",
+    "unknown_role": "الدور {role} غير موجود.",
+    "agent_in_template": "القالب يسمّي أدوارًا، لا وكلاء.",
+    "member_in_template": "لا يمكن للقالب تسمية عضو.",
+    "invalid_rework_target": "يجب أن تأتي الخطوة المُعاد إليها قبل هذه الموافقة.",
+    "unknown_variable": "المتغيّر {variable} غير موجود.",
+    "unknown_step_variable": "{variable} يسمّي خطوة غير موجودة.",
+    "step_variable_not_before": "{variable} يسمّي خطوة لا تعمل قبل هذه الخطوة.",
+    "no_previous_step": "لا توجد خطوة قبل هذه تترك نتيجة لـ {variable}.",
+    "unreachable_step": "لا يصل أي تشغيل إلى هذه الخطوة: كلا فرعي الشرط قبلها ينهيان التشغيل.",
+    "role_unresolved": "لا يوجد وكيل في المشروع يشغل الدور {role}.",
+    "agent_not_in_project": "الوكيل لا يعمل في هذا المشروع.",
+    "member_not_in_project": "العضو ليس في هذا المشروع.",
+    "unknown_status": "لا يوجد في المشروع حالة باسم {name}.",
+    "unknown_label": "لا يوجد في المشروع وسم باسم {name}.",
+    "unknown_area": "لا يوجد في المشروع مجال باسم {name}.",
+    "model_not_allowed": "لا يوجد وكيل في الفريق يشغّل النموذج {model}.",
+    "schedule_too_frequent": "الجدولة تعمل بتكرار أكبر مما يسمح به الفريق."
+  },
+  "runs": {
+    "status": {
+      "pending": "في الانتظار",
+      "running": "قيد التشغيل",
+      "waiting": "بانتظار",
+      "succeeded": "نجح",
+      "failed": "فشل",
+      "canceled": "أُلغي",
+      "rejected": "رُفض"
+    },
+    "stepStatus": {
+      "running": "قيد التشغيل",
+      "waiting": "بانتظار",
+      "succeeded": "مكتملة",
+      "failed": "فشلت",
+      "canceled": "أُلغيت",
+      "simulated": "محاكاة"
+    },
+    "outcomes": {
+      "success": "نجاح",
+      "failed": "فشل",
+      "blocked": "محظور",
+      "approved": "مقبول",
+      "rejected": "مرفوض",
+      "true": "نعم",
+      "false": "لا"
+    },
+    "agentRunStatus": {
+      "pending": "في الانتظار",
+      "running": "قيد التشغيل",
+      "success": "اكتمل",
+      "failed": "فشل",
+      "canceled": "أُلغي"
+    },
+    "testRun": "تشغيل تجريبي",
+    "version": "الإصدار {version}",
+    "trigger": "المشغّل: {trigger}",
+    "startedBy": "بدأه {name}",
+    "iteration": "الجولة {iteration}",
+    "attempt": "المحاولة {attempt}",
+    "agentRun": "تشغيل الوكيل رقم #{id}",
+    "showResult": "إظهار النتيجة",
+    "hideResult": "إخفاء النتيجة",
+    "note": "ملاحظة: {note}",
+    "decidedBy": "قرّره {name}",
+    "wakeAt": "يتابع في {time}",
+    "cancel": "إلغاء التشغيل",
+    "retry": "إعادة المحاولة",
+    "approvedToast": "تمت الموافقة. يستمر سير العمل.",
+    "rejectedToast": "تم الرفض. يتبع سير العمل مسار الرفض.",
+    "empty": "لا توجد تشغيلات بعد.",
+    "loadFailed": "تعذّر تحميل التشغيلات.",
+    "allStatuses": "كل الحالات",
+    "allRuns": "كل التشغيلات",
+    "onlyTestRuns": "التشغيلات التجريبية",
+    "onlyRealRuns": "التشغيلات الفعلية",
+    "allProjects": "كل المشاريع"
+  },
+  "versions": {
+    "empty": "لا توجد إصدارات.",
+    "current": "الحالي",
+    "createdBy": "بواسطة {name}",
+    "open": "فتح",
+    "viewing": "الإصدار {version} من {date}. للقراءة فقط.",
+    "back": "العودة إلى الإصدارات"
+  },
+  "testRun": {
+    "button": "تشغيل تجريبي",
+    "saveFirst": "احفظ تغييراتك أولًا. يشغّل التشغيل التجريبي الإصدار المحفوظ.",
+    "title": "تشغيل تجريبي",
+    "hint": "تُحاكى خطوات الوكيل، وتُقيَّم الشروط، ولا يتغيّر شيء في المهمة.",
+    "project": "المشروع",
+    "chooseProject": "اختر مشروعًا",
+    "task": "المهمة",
+    "search": "ابحث في المهام",
+    "noMatches": "لا توجد مهام مطابقة",
+    "typeToSearch": "اكتب للبحث في مهام المشروع",
+    "start": "بدء التشغيل التجريبي",
+    "again": "بدء تشغيل آخر"
+  },
+  "project": {
+    "title": "مُنشئ سير العمل",
+    "hint": "قوالب مكتبة الفريق وسير عمل هذا المشروع الخاص. فعّل أحدها، وسمِّ وكلاء أدواره، فيعمل عند تشغيل المُشغِّل الخاص به.",
+    "create": "إنشاء سير عمل",
+    "createDescription": "سير عمل خاص بهذا المشروع وحده. يبدأ بخطوة وكيل واحدة.",
+    "name": "الاسم",
+    "empty": "لا يوجد سير عمل بعد. أضف قوالب إلى المكتبة من الرئيسية أو أنشئ سير عمل هنا.",
+    "loadFailed": "تعذّر تحميل سير العمل.",
+    "template": "قالب",
+    "own": "سير عمل المشروع",
+    "enabled": "مفعَّل",
+    "disabled": "معطَّل",
+    "readOnly": "الأعضاء القادرون على تعديل سير العمل هم من يفعّلونه ويسمّون وكلاء أدواره.",
+    "roles": "وكلاء الأدوار",
+    "automatic": "تلقائي ({agent})",
+    "automaticPlain": "تلقائي",
+    "nobody": "لا أحد",
+    "open": "فتح",
+    "runs": "التشغيلات",
+    "problems": "سبب تعذّر تشغيله هنا"
+  },
+  "issuePanel": {
+    "title": "سير العمل",
+    "start": "بدء سير العمل",
+    "empty": "لم يعمل أي سير عمل على هذه المهمة بعد.",
+    "unavailable": "تعذّر تحميل تشغيلات سير العمل الآن.",
+    "showMore": "{count, plural, zero {عرض # تشغيل إضافي} one {عرض تشغيل إضافي واحد} two {عرض تشغيلين إضافيين} few {عرض # تشغيلات إضافية} many {عرض # تشغيلًا إضافيًا} other {عرض # تشغيل إضافي}}",
+    "showLess": "إظهار تشغيلات أقل"
+  },
+  "approvals": {
+    "of": "{workflow} في {project}",
+    "step": "الخطوة: {step}",
+    "waitingSince": "بانتظار منذ {time}"
+  }
+}

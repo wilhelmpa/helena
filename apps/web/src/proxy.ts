@@ -15,7 +15,7 @@ const PUBLIC_PATHS = ['/login', '/register'];
 // anyone with the link, signed in or not.
 // `/media` streams avatars and attachments from the api, which serves them without
 // a session — a share page opened by a logged-out visitor shows them too.
-// `/protected-media` is intentionally absent: document assets carry private project
+// `/protected-media` is intentionally absent: vault files carry private project
 // content and must pass this session gate before their route forwards the cookie.
 const OPEN_PATHS = ['/invite', '/forgot-password', '/reset-password', '/share', '/media'];
 

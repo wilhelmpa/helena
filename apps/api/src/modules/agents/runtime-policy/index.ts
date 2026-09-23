@@ -52,6 +52,6 @@ export const agentRuntimePolicyRoutes = new Elysia({
   .post('/agent-runtime/status', ({ agent, body }) => reportRuntimeState(agent.id, body), {
     runnerAgent: true,
     body: RuntimeStateBody,
-    response: { 200: RuntimeStateResponse, ...errors(401, 403) },
+    response: { 200: RuntimeStateResponse, ...errors(401, 403, 413) },
     detail: { summary: "Report the calling agent's runtime adapter status" },
   });

@@ -21,6 +21,7 @@ import initiatives from '../../messages/en/initiatives.json';
 import invite from '../../messages/en/invite.json';
 import issue from '../../messages/en/issue.json';
 import issueLinks from '../../messages/en/issueLinks.json';
+import mail from '../../messages/en/mail.json';
 import mcp from '../../messages/en/mcp.json';
 import members from '../../messages/en/members.json';
 import meta from '../../messages/en/meta.json';
@@ -29,6 +30,7 @@ import newProject from '../../messages/en/newProject.json';
 import notes from '../../messages/en/notes.json';
 import palette from '../../messages/en/palette.json';
 import permissions from '../../messages/en/permissions.json';
+import pipelines from '../../messages/en/pipelines.json';
 import projects from '../../messages/en/projects.json';
 import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
@@ -62,6 +64,7 @@ const defaultMessages = {
   apiKeys,
   invite,
   mcp,
+  mail,
   projects,
   aiChat,
   inbox,
@@ -84,6 +87,7 @@ const defaultMessages = {
   credentials,
   agentActivity,
   routines,
+  pipelines,
   devices,
 };
 

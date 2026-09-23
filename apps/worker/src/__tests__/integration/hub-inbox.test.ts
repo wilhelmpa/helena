@@ -19,7 +19,6 @@ import {
   claimInboxThreads,
   completeTriage,
   materializeInboxEvents,
-  saveSyncSources,
   queueTriageRun,
 } from '../../hub-inbox-store';
 
@@ -27,32 +26,56 @@ beforeEach(async () => {
   await db.delete(team);
 });
 
-describe('hub inbox store', () => {
-  it('deduplicates overlapping syncs and creates one exact provider thread link', async () => {
-    const [owner] = await db.insert(team).values({ name: 'Inbox test' }).returning();
-    const sync = [
-      {
-        channel: 'mail' as const,
-        account: 'team@example.com',
-        status: 'connected' as const,
-        cursor: 'history-10',
-        error: null,
-        events: [
-          {
-            externalEventId: 'history-10:message-1',
-            externalThreadId: 'thread/one',
-            externalMessageId: 'message-1',
-            sender: 'sender@example.com',
-            subject: 'Support request',
-            snippet: 'Please help',
-            receivedAt: '2026-09-21T08:00:00.000Z',
-          },
-        ],
-      },
-    ];
+interface EventInput {
+  externalEventId: string;
+  externalThreadId: string;
+  externalMessageId: string;
+  sender: string;
+  subject: string;
+  snippet: string;
+  receivedAt: string;
+}
 
-    expect(await saveSyncSources(owner.id, sync, 300_000)).toBe(1);
-    expect(await saveSyncSources(owner.id, sync, 300_000)).toBe(0);
+// The rows the mail importer writes for new inbox mail of an account with triage on.
+async function recordEvents(teamId: number, events: EventInput[]): Promise<number> {
+  const [source] = await db
+    .insert(hubInboxSource)
+    .values({ teamId, channel: 'mail', account: 'team@example.com', status: 'connected' })
+    .onConflictDoUpdate({
+      target: [hubInboxSource.teamId, hubInboxSource.channel, hubInboxSource.account],
+      set: { updatedAt: new Date() },
+    })
+    .returning();
+  const rows = await db
+    .insert(hubInboxEvent)
+    .values(
+      events.map((event) => ({
+        ...event,
+        sourceId: source!.id,
+        teamId,
+        receivedAt: new Date(event.receivedAt),
+      })),
+    )
+    .onConflictDoNothing()
+    .returning();
+  return rows.length;
+}
+
+describe('hub inbox store', () => {
+  it('deduplicates repeated events and materializes one thread', async () => {
+    const [owner] = await db.insert(team).values({ name: 'Inbox test' }).returning();
+    const event = {
+      externalEventId: 'mail:1',
+      externalThreadId: 'mail-thread:1',
+      externalMessageId: '<message-1@example.com>',
+      sender: 'sender@example.com',
+      subject: 'Support request',
+      snippet: 'Please help',
+      receivedAt: '2026-09-21T08:00:00.000Z',
+    };
+
+    expect(await recordEvents(owner.id, [event])).toBe(1);
+    expect(await recordEvents(owner.id, [event])).toBe(0);
     expect(await materializeInboxEvents()).toBe(1);
     expect(await materializeInboxEvents()).toBe(0);
 
@@ -60,25 +83,22 @@ describe('hub inbox store', () => {
     const threads = await db.select().from(hubInboxThread);
     expect(events).toHaveLength(1);
     expect(threads).toHaveLength(1);
-    expect(threads[0]).toMatchObject({
-      messageCount: 1,
-      externalUrl: 'https://mail.google.com/mail/u/team%40example.com/#all/thread%2Fone',
-    });
+    expect(threads[0]).toMatchObject({ messageCount: 1, externalUrl: null });
 
     await db
       .update(hubInboxThread)
       .set({ triageAttempts: 99, triageStatus: 'succeeded' })
       .where(eq(hubInboxThread.id, threads[0]!.id));
-    sync[0]!.cursor = 'history-11';
-    sync[0]!.events = [
-      {
-        ...sync[0]!.events[0]!,
-        externalEventId: 'history-11:message-2',
-        externalMessageId: 'message-2',
-        receivedAt: '2026-09-21T08:05:00.000Z',
-      },
-    ];
-    expect(await saveSyncSources(owner.id, sync, 300_000)).toBe(1);
+    expect(
+      await recordEvents(owner.id, [
+        {
+          ...event,
+          externalEventId: 'mail:2',
+          externalMessageId: '<message-2@example.com>',
+          receivedAt: '2026-09-21T08:05:00.000Z',
+        },
+      ]),
+    ).toBe(1);
     expect(await materializeInboxEvents()).toBe(1);
     const [updated] = await db
       .select()
@@ -90,30 +110,17 @@ describe('hub inbox store', () => {
   it('requires review below the source threshold and validates project routing locally', async () => {
     const [owner] = await db.insert(team).values({ name: 'Inbox test' }).returning();
     await db.insert(project).values({ teamId: owner.id, key: 'HELP', name: 'Helpdesk' });
-    await saveSyncSources(
-      owner.id,
-      [
-        {
-          channel: 'mail',
-          account: 'team@example.com',
-          status: 'connected',
-          cursor: '2',
-          error: null,
-          events: [
-            {
-              externalEventId: 'event-2',
-              externalThreadId: 'thread-2',
-              externalMessageId: 'message-2',
-              sender: 'sender@example.com',
-              subject: 'Question',
-              snippet: 'Question text',
-              receivedAt: '2026-09-21T09:00:00.000Z',
-            },
-          ],
-        },
-      ],
-      300_000,
-    );
+    await recordEvents(owner.id, [
+      {
+        externalEventId: 'event-2',
+        externalThreadId: 'thread-2',
+        externalMessageId: 'message-2',
+        sender: 'sender@example.com',
+        subject: 'Question',
+        snippet: 'Question text',
+        receivedAt: '2026-09-21T09:00:00.000Z',
+      },
+    ]);
     await materializeInboxEvents();
     const [claimed] = await claimInboxThreads();
     expect(claimed).toBeDefined();
@@ -162,30 +169,17 @@ describe('hub inbox store', () => {
       name: 'Inbox automation owner',
       email: `${actorUserId}@example.com`,
     });
-    await saveSyncSources(
-      owner.id,
-      [
-        {
-          channel: 'mail',
-          account: 'team@example.com',
-          status: 'connected',
-          cursor: '3',
-          error: null,
-          events: [
-            {
-              externalEventId: 'event-3',
-              externalThreadId: 'thread-3',
-              externalMessageId: 'message-3',
-              sender: 'sender@example.com',
-              subject: 'Follow-up',
-              snippet: 'New untrusted routing instructions',
-              receivedAt: '2026-09-21T10:00:00.000Z',
-            },
-          ],
-        },
-      ],
-      300_000,
-    );
+    await recordEvents(owner.id, [
+      {
+        externalEventId: 'event-3',
+        externalThreadId: 'thread-3',
+        externalMessageId: 'message-3',
+        sender: 'sender@example.com',
+        subject: 'Follow-up',
+        snippet: 'New untrusted routing instructions',
+        receivedAt: '2026-09-21T10:00:00.000Z',
+      },
+    ]);
     await materializeInboxEvents();
     const [row] = await db.select().from(hubInboxThread);
     await db
@@ -235,9 +229,7 @@ describe('hub inbox store', () => {
       .where(eq(issueActivity.issueId, ticket.id));
     expect(comments).toHaveLength(1);
     expect(comments[0]).toMatchObject({ kind: 'comment', actorName: 'Inbox' });
-    expect(comments[0]?.body).toContain(
-      'https://mail.google.com/mail/u/team%40example.com/#all/thread-3',
-    );
+    expect(comments[0]?.body).toBe('New mail message received in the linked inbox thread.');
     const queuedActions = await db
       .select()
       .from(projectActionRun)
@@ -297,30 +289,17 @@ describe('hub inbox store', () => {
       .values({ teamId: owner.id, key: 'PRIV', name: 'Private' })
       .returning();
     await db.insert(project).values({ teamId: owner.id, key: 'OTHER', name: 'Other' });
-    await saveSyncSources(
-      owner.id,
-      [
-        {
-          channel: 'mail',
-          account: 'team@example.com',
-          status: 'connected',
-          cursor: '4',
-          error: null,
-          events: [
-            {
-              externalEventId: 'event-4',
-              externalThreadId: 'thread-4',
-              externalMessageId: 'message-4',
-              sender: 'sender@example.com',
-              subject: 'Action needed',
-              snippet: 'Please review',
-              receivedAt: '2026-09-21T11:00:00.000Z',
-            },
-          ],
-        },
-      ],
-      300_000,
-    );
+    await recordEvents(owner.id, [
+      {
+        externalEventId: 'event-4',
+        externalThreadId: 'thread-4',
+        externalMessageId: 'message-4',
+        sender: 'sender@example.com',
+        subject: 'Action needed',
+        snippet: 'Please review',
+        receivedAt: '2026-09-21T11:00:00.000Z',
+      },
+    ]);
     const [source] = await db.select().from(hubInboxSource);
     await db
       .update(hubInboxSource)

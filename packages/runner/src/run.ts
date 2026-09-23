@@ -1,6 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { UsageReader } from './agui';
-import { isTransient, RequestError, type Client, type Run } from './client';
+import { isTransient, RequestError, type Client, type ReflectionRequest, type Run } from './client';
 import type { RunnerConfig } from './config';
 import { execute, type Outcome } from './execute';
 import { LoginUseReader } from './logins';
@@ -17,6 +17,16 @@ import { runCwd } from './workdir';
 const REPORT_RETRY_MS = [1_000, 2_000, 5_000, 10_000, 30_000];
 const SERVER_ERROR_RETRIES = 20;
 
+export function runEnv(run: Run): Record<string, string> {
+  return {
+    ITSAPLAN_RUN_ID: String(run.id),
+    ITSAPLAN_TRIGGER: run.trigger,
+    ITSAPLAN_SYSTEM_PROMPT: run.systemPrompt,
+    ITSAPLAN_ISSUE: run.issueIdentifier ?? '',
+    ITSAPLAN_ISSUE_ID: run.issueId == null ? '' : String(run.issueId),
+  };
+}
+
 function taskOf(run: Run) {
   return {
     prompt: run.prompt,
@@ -25,14 +35,14 @@ function taskOf(run: Run) {
     thinkingLevel: run.thinkingLevel,
     maxTurns: run.maxTurns,
     runBudgetSeconds: run.runBudgetSeconds,
-    env: {
-      ITSAPLAN_RUN_ID: String(run.id),
-      ITSAPLAN_TRIGGER: run.trigger,
-      ITSAPLAN_SYSTEM_PROMPT: run.systemPrompt,
-      ITSAPLAN_ISSUE: run.issueIdentifier ?? '',
-      ITSAPLAN_ISSUE_ID: run.issueId == null ? '' : String(run.issueId),
-    },
+    env: runEnv(run),
   };
+}
+
+export interface Performed {
+  outcome: Outcome;
+  // The reflection Plan asked for in its answer to the result.
+  reflection: ReflectionRequest | null;
 }
 
 // Null when the run was canceled.
@@ -46,7 +56,7 @@ export async function perform(
     lost?: AbortSignal;
     wait?: (ms: number, signal: AbortSignal) => Promise<unknown>;
   } = {},
-): Promise<Outcome | null> {
+): Promise<Performed | null> {
   // Read as the command writes, not off the outcome: only the tail of the output is
   // kept, and the line carrying the counts can fall outside it. A command that reports
   // the totals of the run has them on the outcome, and those are what the run cost.
@@ -72,10 +82,11 @@ export async function perform(
   const result = { ...outcome, usage: outcome.usage ?? usage.value() };
   // A result sent under a claim this runner has since replaced is refused; it is sent
   // again under the new one.
+  let reflection: ReflectionRequest | null = null;
   const send = async () => {
     const claim = run.claim;
     try {
-      await client.report(run.id, claim, result);
+      reflection = await client.report(run.id, claim, result);
     } catch (err) {
       if (err instanceof RequestError && err.status === 404 && claim !== run.claim)
         throw new Error('claimed again while reporting');
@@ -83,7 +94,7 @@ export async function perform(
     }
   };
   await reportUntilTaken(send, options.lost ?? stop.signal, options.wait);
-  return outcome;
+  return { outcome, reflection };
 }
 
 // The command has done its work, so its result is sent again while the server cannot

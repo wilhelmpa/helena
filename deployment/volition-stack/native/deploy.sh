@@ -13,7 +13,27 @@ branch=${1:-volition/hub}
 owner=$(stat -c %U "$live")
 as_owner() { runuser -u "$owner" -- "$@"; }
 
-before=$(as_owner git -C "$live" rev-parse HEAD)
+# Edits made in the live checkout itself would be lost to a later reset, and a fast-forward
+# would ship them untested; they belong on a branch. Untracked files are only named.
+if [[ -n $(as_owner git -C "$live" status --porcelain --untracked-files=no) ]]; then
+  echo "deploy.sh: the live checkout has uncommitted changes; commit them to a branch first:" >&2
+  as_owner git -C "$live" status --short --untracked-files=no >&2
+  exit 1
+fi
+untracked=$(as_owner git -C "$live" status --porcelain --untracked-files=normal | sed -n 's/^?? //p')
+[[ -z $untracked ]] || printf 'deploy.sh: untracked in the live checkout (left alone): %s\n' $untracked >&2
+
+# The commit the last complete deploy shipped. A deploy that stopped halfway leaves the
+# checkout ahead of it, so the next one compares against this and repeats every step.
+state_dir=/var/lib/volition/deploy
+install -d -m 0755 "$state_dir"
+deployed=$(cat "$state_dir/deployed" 2>/dev/null || true)
+head=$(as_owner git -C "$live" rev-parse HEAD)
+if [[ -n $deployed ]] && as_owner git -C "$live" merge-base --is-ancestor "$deployed" "$head"; then
+  before=$deployed
+else
+  before=$head
+fi
 as_owner git -C "$live" merge --ff-only --quiet "$branch"
 after=$(as_owner git -C "$live" rev-parse HEAD)
 if [[ $before == "$after" ]]; then
@@ -28,7 +48,14 @@ if changed bun.lock; then
   as_owner bash -c "cd '$live' && bun install --frozen-lockfile >/dev/null"
 fi
 
+# The vault's layout, groups, permissions and git history; idempotent.
+"$live/deployment/volition-stack/native/vault-setup.sh"
+
 if changed packages/db/drizzle; then
+  # The Docs pages still stored in the database become files in the vault before the
+  # migration drops their tables; the script does nothing once they are gone.
+  runuser -u volition-plan -- env PROJECT_VAULT_ROOT=/srv/volition/vault \
+    bash -c "cd '$live' && /usr/local/bin/bun --env-file=/etc/volition/plan.env apps/api/src/scripts/convert-documents-to-vault.ts"
   echo "migrating the database"
   systemctl start volition-plan-migrate.service
 fi
@@ -154,4 +181,7 @@ for url in http://127.0.0.1:3000/docs http://127.0.0.1:3001/login; do
   fi
 done
 as_owner git -C "$live" log --oneline "$before..$after"
+if ((failed == 0)); then
+  echo "$after" >"$state_dir/deployed.tmp" && mv "$state_dir/deployed.tmp" "$state_dir/deployed"
+fi
 exit "$failed"

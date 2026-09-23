@@ -78,6 +78,7 @@ import {
   delegationPrompt,
   startDelegatedAgentTeam,
 } from '#modules/control-plane-workflows/agent-team-starts';
+import { queuePipelineTriggers } from '#modules/pipelines/triggers';
 import { applySubtaskAutomation } from './automation';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
 import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
@@ -1015,6 +1016,8 @@ export async function createIssue(
       tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
       issueId: number,
     ) => Promise<void>;
+    // A task a workflow creates starts no workflow.
+    fromWorkflow?: boolean;
   },
 ): Promise<IssueRow> {
   await assertAssignments(project.id, input);
@@ -1084,6 +1087,8 @@ export async function createIssue(
   // assignment notification below, the same as a later assignment does.
   await autoWatchIssue(project.id, issueId, [actorUserId]);
   await emitWebhookEvent(project.id, 'issue.created', created);
+  if (!opts?.fromWorkflow)
+    await queuePipelineTriggers(created, [{ type: 'task_created' }], actorUserId);
   // An issue created already delegated to an agent enqueues a run, the same as
   // delegating one later does.
   await enqueueDelegateRun(created, actorUserId);
@@ -1289,6 +1294,18 @@ export async function updateIssue(
         await emitWebhookEvent(after.projectId, 'issue.state_changed', after);
         await applySubtaskAutomation(after, actor);
       }
+      await queuePipelineTriggers(
+        after,
+        [
+          ...(after.assigneeUserId && before.assigneeUserId !== after.assigneeUserId
+            ? [{ type: 'task_assigned' as const }]
+            : []),
+          ...(before.columnId !== after.columnId
+            ? [{ type: 'status_changed' as const, columnId: after.columnId }]
+            : []),
+        ],
+        actor,
+      );
     }
   }
   return after;
@@ -1354,7 +1371,7 @@ export async function setIssueLabels(
   projectId: number,
   issueId: number,
   labelIds: number[],
-  actorUserId?: string | null,
+  actor?: ActivityActor,
   emitEvent = true,
 ): Promise<void> {
   await assertIssueLabels(projectId, labelIds);
@@ -1391,11 +1408,15 @@ export async function setIssueLabels(
     events.push({ action: 'label_add', to: rowSide(names.get(labelId), labelId) });
   for (const labelId of removed)
     events.push({ action: 'label_remove', from: rowSide(names.get(labelId), labelId) });
-  await recordActivity(issueId, events, actorUserId);
+  await recordActivity(issueId, events, actor);
 
   if (emitEvent && (added.length > 0 || removed.length > 0)) {
     const issueRow = await getIssue(issueId);
-    if (issueRow) await emitWebhookEvent(issueRow.projectId, 'issue.label_changed', issueRow);
+    if (issueRow) {
+      await emitWebhookEvent(issueRow.projectId, 'issue.label_changed', issueRow);
+      if (added.length > 0)
+        await queuePipelineTriggers(issueRow, [{ type: 'label_added', labelIds: added }], actor);
+    }
   }
 }
 

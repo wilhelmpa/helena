@@ -22,6 +22,7 @@ import { agentSkillRoutes } from './modules/agents/skills';
 import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
 import { credentialRoutes } from './modules/agents/credentials';
+import { agentLearningRoutes } from './modules/agents/learning';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
 import { issueRoutes } from './modules/issues';
@@ -38,7 +39,7 @@ import { webhookRoutes } from './modules/webhooks';
 import { gitSettingsRoutes } from './modules/git';
 import { dashboardRoutes } from './modules/dashboards';
 import { noteBoardRoutes } from './modules/note-boards';
-import { documentRoutes } from './modules/documents';
+import { knowledgeRoutes } from './modules/knowledge';
 import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
@@ -57,7 +58,10 @@ import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { approvalRoutes } from './modules/approvals';
-import { projectMailAccountRoutes } from './modules/project-mail-accounts';
+import { pipelineRoutes } from './modules/pipelines';
+import { mailAccountRoutes } from './modules/mail/accounts';
+import { mailDraftRoutes } from './modules/mail/drafts';
+import { mailThreadRoutes } from './modules/mail/threads';
 
 // The planner API: projects and their columns, issue types, labels, AI agents,
 // custom fields, issues, attachments, saved views, and actions. Mounted on the
@@ -112,6 +116,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentToolRoutes)
   .use(agentMcpServerRoutes)
   .use(credentialRoutes)
+  .use(agentLearningRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)
@@ -135,7 +140,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentRuntimeFileRoutes)
   .use(dashboardRoutes)
   .use(noteBoardRoutes)
-  .use(documentRoutes)
+  .use(knowledgeRoutes)
   .use(projectFileRoutes)
   .use(analyticsRoutes)
   .use(chartRoutes)
@@ -149,7 +154,10 @@ export const planner = new Elysia({ name: 'planner' })
   .use(hubInboxRoutes)
   .use(agentActivityRoutes)
   .use(approvalRoutes)
-  .use(projectMailAccountRoutes)
+  .use(pipelineRoutes)
+  .use(mailAccountRoutes)
+  .use(mailThreadRoutes)
+  .use(mailDraftRoutes)
   .use(organizationRoutes)
   .use(connectionsRoutes)
   .use(deviceSyncRoutes)

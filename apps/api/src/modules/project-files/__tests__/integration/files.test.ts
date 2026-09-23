@@ -166,6 +166,16 @@ describe('project files', () => {
     expect((await files.move.post({ from: 'x.txt', to: '.x.txt' })).status).toBe(400);
   });
 
+  it('leaves out Syncthing conflict copies of an otherwise listed file', async () => {
+    const { files } = await setup();
+    mkdirSync(vaultFile('Projects/MKT'), { recursive: true });
+    writeFileSync(vaultFile('Projects/MKT/Note.md'), 'a');
+    writeFileSync(vaultFile('Projects/MKT/Note.sync-conflict-20260923-101500-ABCDEF7.md'), 'b');
+    expect((await files.get({ query: {} })).data!.items.map((item) => item.name)).toEqual([
+      'Note.md',
+    ]);
+  });
+
   it('opens safe kinds inline and everything else as a download', async () => {
     const { owner, files } = await setup();
     await files.upload.post({

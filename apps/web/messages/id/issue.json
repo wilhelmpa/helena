@@ -391,13 +391,11 @@
       "skipped": "Dilewati"
     }
   },
-  "documents": {
-    "title": "Dokumen",
-    "add": "Tautkan halaman Dokumen",
-    "empty": "Belum ada Dokumen yang ditautkan.",
-    "loadFailed": "Tidak dapat memuat Dokumen yang ditautkan. Klik untuk mencoba lagi.",
-    "remove": "Putuskan tautan {title}",
-    "untitled": "Tanpa judul"
+  "knowledge": {
+    "title": "Pengetahuan",
+    "create": "Catatan baru tentang tugas ini",
+    "empty": "Belum ada catatan yang menautkan tugas ini. Catatan menautkannya dengan {link}.",
+    "loadFailed": "Tidak dapat memuat catatan. Klik untuk mencoba lagi."
   },
   "archived": "Diarsipkan",
   "activityHeading": "Aktivitas",

@@ -376,10 +376,12 @@ export function createMastraControlService(config, options = {}) {
         if (typeof input.approved !== 'boolean') throw new MastraControlError(400, 'Approval decision is required');
         const note = input.note === undefined ? undefined : String(input.note);
         if (note !== undefined && note.length > 2000) throw new MastraControlError(400, 'Approval note is too long');
-        return call(`workflows/${workflowId}/resume-async?runId=${encodeURIComponent(runId)}`, {
+        // The step the run is suspended in; like a start, the resumed run is not waited for.
+        const step = Object.entries(run.steps ?? {}).find(([, result]) => result?.status === 'suspended')?.[0] ?? 'approval-gate';
+        return call(`workflows/${workflowId}/resume?runId=${encodeURIComponent(runId)}`, {
           method: 'POST',
           body: JSON.stringify({
-            step: 'approval-gate',
+            step,
             resumeData: {
               approved: input.approved,
               decidedBy: string(input.decidedBy, /^[A-Za-z0-9._:@-]{1,200}$/, 'decidedBy'),
@@ -396,13 +398,18 @@ export function createMastraControlService(config, options = {}) {
       if (input.operation === 'retry') {
         if (run.status !== 'failed') throw new MastraControlError(409, 'Only failed workflow runs can be retried');
         // Mastra's restart answers a failed run with its stored failure. Time travel runs
-        // the failed step again with the stored results of the steps before it. Like a
-        // start, it is not waited for.
-        const step = Object.entries(run.steps ?? {}).find(([, result]) => result?.status === 'failed')?.[0];
+        // the failed step again with the stored results of the steps before it, and with
+        // the input the step failed with: a step of a loop ran with the output of its
+        // previous iteration. Like a start, it is not waited for.
+        const [step, failed] = Object.entries(run.steps ?? {}).find(([, result]) => result?.status === 'failed') ?? [];
         if (!step) throw new MastraControlError(409, 'Workflow run has no failed step');
         await call(`workflows/${workflowId}/time-travel?runId=${encodeURIComponent(runId)}`, {
           method: 'POST',
-          body: JSON.stringify({ step, requestContext: { projectRef } }),
+          body: JSON.stringify({
+            step,
+            ...(failed?.payload === undefined ? {} : { inputData: failed.payload }),
+            requestContext: { projectRef },
+          }),
         });
         return { runId, resourceId: projectRef, status: 'running' };
       }

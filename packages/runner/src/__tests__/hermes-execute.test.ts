@@ -48,6 +48,25 @@ describe('Hermes subprocess adapter', () => {
     expect(outcome).toEqual({ status: 'success', output: answer });
   });
 
+  it('names the session of the run and counts its tool calls', async () => {
+    const outcome = await streamOutcome(
+      [
+        JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-1' }),
+        JSON.stringify({ type: 'tool_use', name: 'terminal', input: { command: 'ls' } }),
+        JSON.stringify({ type: 'tool_result', name: 'terminal', output: 'a' }),
+        JSON.stringify({ type: 'tool_use', name: 'read_file', input: { path: 'a' } }),
+        // A compression moved the session to a new id before the run ended.
+        JSON.stringify({ type: 'result', text: 'Done', exit_code: 0, session_id: 'sess-2' }),
+      ].join('\n'),
+    );
+    expect(outcome).toEqual({
+      status: 'success',
+      output: 'Done',
+      sessionId: 'sess-2',
+      toolCalls: 2,
+    });
+  });
+
   it('rejects a successful process that never emits a final result', async () => {
     const outcome = await streamOutcome('{"type":"text","text":"Incomplete"}\n');
     expect(outcome.status).toBe('failed');

@@ -157,11 +157,7 @@ services:
       MASTRA_CONTROL_TOKEN_FILE: ${MASTRA_CONTROL_TOKEN_FILE:-}
       INBOX_INTEGRATION_URL: ${INBOX_INTEGRATION_URL:-}
       INBOX_INTEGRATION_TOKEN: ${INBOX_INTEGRATION_TOKEN:-}
-      INBOX_TEAM_ID: ${INBOX_TEAM_ID:-}
-      INBOX_ACCOUNTS: ${INBOX_ACCOUNTS:-}
-      INBOX_SYNC_INTERVAL_MS: ${INBOX_SYNC_INTERVAL_MS:-300000}
       INBOX_INTEGRATION_TIMEOUT_MS: ${INBOX_INTEGRATION_TIMEOUT_MS:-30000}
-      INBOX_WAKE_PORT: ${INBOX_WAKE_PORT:-18801}
       DATABASE_URL: postgres://${POSTGRES_USER:-itsaplan}:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/${POSTGRES_DB:-itsaplan}
       # Notification delivery sends email and Telegram messages itself, with the
       # provider credentials stored in the database — encrypted with this key, the

@@ -196,7 +196,7 @@ For the `hermes` preset, configure a dedicated absolute `cwd` and expose an abso
 `HERMES_HOME` through `env` or the runner process environment. Before starting work and while
 waiting for new work, the runner fetches the agent's revisioned policy from Plan. It materializes
 `SOUL.md` under `HERMES_HOME` and linked skills under `HERMES_HOME/skills/plan-managed`. Memory
-belongs to Hermes.
+and the skills the agent creates belong to Hermes.
 
 The runner records only paths and content hashes in a private manifest. It updates or removes only
 files that still match that manifest. A byte-identical existing file can be adopted; a differing
@@ -204,16 +204,49 @@ unmanaged file, path traversal, or symlink makes the sync fail closed. Content a
 are not included in runtime status. Do not pass `--ignore-rules`: the runner rejects it because it
 would stop Hermes from loading the Plan-managed policy.
 
+Every minute and after every run and chat answer the runner applies the applied revision again.
+A managed file the agent changed or removed is put back, a changed one is kept next to it as
+`<file>.outside-<time>`, and the status lists both. Hermes' own review and curator never change
+these skills: they only touch skills whose Hermes usage record says the review created them,
+and the runner writes none.
+
 With its status the runner reports what the agent can do: the toolsets and MCP servers of the
-profile, its skills and its memory. Plan shows them read-only. The runner reads the skills under
-`HERMES_HOME/skills` and `MEMORY.md` and `USER.md` under `HERMES_HOME/memories` again every
-minute and after every run and chat answer, and reports them when they changed. It does not
-parse `config.yaml`, so the toolsets and MCP servers come from the `hermes` field of the config,
-filled in from the profile by whatever sets the runner up:
+profile, its skills and its memory. The runner reads the skills under `HERMES_HOME/skills` and
+`MEMORY.md` and `USER.md` under `HERMES_HOME/memories` again every minute and after every run
+and chat answer, and reports them when they changed, with the content of the skills the agent
+created and the number of jobs in Hermes' own scheduler. It does not parse `config.yaml`, so the
+toolsets and MCP servers come from the `hermes` field of the config, filled in from the profile
+by whatever sets the runner up. `plugins` names the Hermes plugins every home has to link to:
 
 ```json
-"hermes": { "toolsets": ["browser", "file", "terminal", "web"], "mcpServers": ["itsaplan"] }
+"hermes": {
+  "toolsets": ["browser", "file", "terminal", "web"],
+  "mcpServers": ["itsaplan"],
+  "plugins": { "plan-approval-guard": "/srv/plan/hermes-plugins/plan-approval-guard" }
+}
 ```
+
+Before every run and chat answer, and with each check, the runner makes sure
+`HERMES_HOME/plugins/<name>` is a link to that directory. A link the agent removed is put back;
+whatever took its place is moved to `HERMES_HOME/run/`. A link that cannot be put back fails the
+run instead of running it without the plugin.
+
+### Learning
+
+The policy says whether the agent learns and whether Hermes' curator runs. Learning on, the
+agent keeps `MEMORY.md` and `USER.md` and creates skills with `skill_manage` in its own turns,
+whose tokens are in the counts the run reports. Learning off, the managed configuration turns
+memory off, leaves the `memory` toolset out, and has Hermes keep a skill write as a pending
+proposal instead. The curator's switch is the `paused` flag of `HERMES_HOME/skills/.curator_state`,
+which every Hermes process that runs the curator reads. The managed configuration always turns
+off Hermes' post-turn review and its model-written session titles: a one-shot `hermes chat`
+ends before the review thread finishes, and neither shows in the token counts Plan receives.
+
+The policy also carries the owner's actions on what the agent learned: discard a skill it
+created (moved to `HERMES_HOME/skills/.archive`), pin or unpin one in Hermes'
+`skills/.usage.json`, and write a memory file. A memory write names the digest of the version
+it was made on and fails when the file changed since. The runner carries out the actions of a
+revision once, after it applied, and reports each result with its status.
 
 A toolset or an MCP server of the profile turned off for the agent in Plan is left out of
 `--toolsets`, which then names everything else the profile enables and the agent's own MCP
@@ -223,9 +256,10 @@ servers. While nothing is turned off, Hermes uses the profile's own selection. W
 ### MCP servers
 
 The MCP servers enabled on the agent from the team's library, and the servers of `config.yaml`
-turned off for it, are written to `HERMES_HOME/run/itsaplan-managed/config.yaml`. Every run and
-chat answer starts Hermes with `HERMES_MANAGED_DIR` pointing at that directory, and Hermes merges
-its `mcp_servers` over those of `config.yaml`; a server turned off gets `enabled: false`. The
+turned off for it, are written to `HERMES_HOME/run/itsaplan-managed/config.yaml` with the
+learning settings. Every run and chat answer starts Hermes with `HERMES_MANAGED_DIR` pointing at
+that directory, and Hermes merges it over `config.yaml`; a server turned off gets
+`enabled: false`. The
 agent's homes share one `config.yaml`, which the runner never writes, and a value Hermes read
 from the managed directory cannot be changed from inside Hermes.
 

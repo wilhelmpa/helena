@@ -70,6 +70,24 @@ export const qk = {
     ['controlPlaneWorkflows', projectKey, workflowId, 'runs', runId] as const,
   controlPlaneWorkflowSchedules: (projectKey: string, workflowId: string) =>
     ['controlPlaneWorkflows', projectKey, workflowId, 'schedules'] as const,
+  // The workflow builder: the team's library, a project's workflows, one workflow with
+  // its versions, the editor's pickers and validation, and the runs. Saving a workflow
+  // refreshes every list under 'pipelines'.
+  anyPipelines: ['pipelines'] as const,
+  pipelineTemplates: (teamId: number) => ['pipelines', 'team', teamId] as const,
+  pipelineBuiltins: (teamId: number) => ['pipelineBuiltins', teamId] as const,
+  projectPipelines: (projectKey: string) => ['pipelines', 'project', projectKey] as const,
+  pipeline: (pipelineId: number) => ['pipeline', pipelineId] as const,
+  pipelineVersions: (pipelineId: number) => ['pipeline', pipelineId, 'versions'] as const,
+  pipelineVersion: (pipelineId: number, version: number) =>
+    ['pipeline', pipelineId, 'versions', version] as const,
+  pipelineContext: (scope: string) => ['pipelineContext', scope] as const,
+  pipelineValidation: (scope: string, draft: string) =>
+    ['pipelineValidation', scope, draft] as const,
+  anyPipelineRuns: ['pipelineRuns'] as const,
+  pipelineRuns: (pipelineId: number, params: unknown, filters: unknown) =>
+    ['pipelineRuns', 'pipeline', pipelineId, params, filters] as const,
+  pipelineRun: (runId: string) => ['pipelineRuns', 'run', runId] as const,
   // The agent timeline of a project, or of Home when the key is null: one filter's
   // pages, and every filter's for a live refresh.
   agentActivity: (projectKey: string | null, filters: unknown) =>
@@ -82,21 +100,17 @@ export const qk = {
   // widgets. `kind` names the metric (stats/pulse/throughput/breakdown/...) and
   // `params` scopes it to the widget's query (window, filters).
   dashboards: (projectKey: string) => ['dashboards', projectKey] as const,
-  documents: (projectKey: string, q = '', archived = false) =>
-    ['documents', projectKey, 'list', archived ? 'archived' : 'active', q] as const,
-  documentListsForProject: (projectKey: string) => ['documents', projectKey, 'list'] as const,
-  document: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId] as const,
-  documentRevisions: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'revisions'] as const,
-  documentAssets: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'assets'] as const,
-  documentIssueLinks: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'issues'] as const,
-  issueDocumentLinks: (projectKey: string, issueId: number) =>
-    ['documents', projectKey, 'issue', issueId] as const,
-  initiativeDocumentLinks: (projectKey: string, initiativeId: number) =>
-    ['documents', projectKey, 'initiative', initiativeId] as const,
+  // The knowledge vault, addressed by vault-relative path. `knowledge` is the
+  // invalidation base for all of it: a write can move a note between lists.
+  knowledge: ['knowledge'] as const,
+  knowledgeTree: (root: string) => ['knowledge', 'tree', root] as const,
+  knowledgeDocument: (path: string) => ['knowledge', 'document', path] as const,
+  knowledgeBacklinks: (path: string) => ['knowledge', 'backlinks', path] as const,
+  knowledgeTaskNotes: (identifier: string) => ['knowledge', 'task', identifier] as const,
+  knowledgeTrash: (root: string) => ['knowledge', 'trash', root] as const,
+  knowledgeConflicts: (root: string) => ['knowledge', 'conflicts', root] as const,
+  knowledgeHistory: (path: string) => ['knowledge', 'history', path] as const,
+  knowledgeSearch: (q: string, folder = '') => ['knowledge', 'search', folder, q] as const,
   // Note boards (the notes canvases). `noteBoardsForProject` is the invalidation
   // base for every list/search variant; `noteBoardsSearch` is one paged switcher
   // query (scoped by search text); `noteBoard` is a single board with its canvas.
@@ -210,6 +224,11 @@ export const qk = {
     ['credentials', teamId, 'uses', id, params] as const,
   agentMcpServers: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'mcp-servers'] as const,
+  // What an agent learned: the actions waiting for its runner, and one learned skill.
+  agentRuntimeActions: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
+  learnedSkill: (teamId: number, agentId: number, path: string) =>
+    ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,
@@ -221,6 +240,9 @@ export const qk = {
   issueCycles: (id: number) => ['issue', id, 'cycles'] as const,
   // Under the issue prefix, so the issue's live refresh also reloads the team runs.
   issueAgentTeamRuns: (id: number) => ['issue', id, 'agent-team'] as const,
+  // The workflows to start on an issue and its workflow runs, under the issue prefix too.
+  issuePipelines: (id: number) => ['issue', id, 'pipelines'] as const,
+  issuePipelineRuns: (id: number) => ['issue', id, 'pipeline-runs'] as const,
   anyIssue: ['issue'] as const,
   // Resolving an issue by its project-scoped number (the identifier-based URL).
   issueBySeq: (projectKey: string, seq: number) => ['issueBySeq', projectKey, seq] as const,
@@ -276,9 +298,18 @@ export const qk = {
   approvals: (status: string, params: unknown) => ['approvals', 'list', status, params] as const,
   approvalsPendingCount: ['approvals', 'pendingCount'] as const,
   workflowGates: ['approvals', 'workflowGates'] as const,
-  hubInboxSources: (teamId: number) => ['hubInbox', teamId, 'sources'] as const,
-  hubInboxThreads: (teamId: number, filters: unknown) =>
-    ['hubInbox', teamId, 'threads', filters] as const,
+  pipelineApprovals: ['approvals', 'pipelines'] as const,
+  mail: (teamId: number) => ['mail', teamId] as const,
+  mailAccounts: (teamId: number) => ['mail', teamId, 'accounts'] as const,
+  projectMailAccounts: (projectKey: string) => ['mail', 'project', projectKey, 'accounts'] as const,
+  mailRules: (teamId: number) => ['mail', teamId, 'rules'] as const,
+  mailFolders: (teamId: number, accountId?: number) =>
+    ['mail', teamId, 'folders', accountId ?? null] as const,
+  mailThreads: (teamId: number, filters: unknown) => ['mail', teamId, 'threads', filters] as const,
+  mailThread: (threadId: number) => ['mail', 'thread', threadId] as const,
+  mailDrafts: (teamId: number) => ['mail', teamId, 'drafts'] as const,
+  mailDraft: (draftId: number) => ['mail', 'draft', draftId] as const,
+  issueMailThreads: (issueId: number) => ['mail', 'issue', issueId] as const,
   // The signed-in user's WebAuthn passkeys (account security page).
   passkeys: ['passkeys'] as const,
   // The signed-in user's connected external accounts (accounts page): the linked

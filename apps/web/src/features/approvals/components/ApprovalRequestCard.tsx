@@ -8,7 +8,7 @@ import { issuePath } from '@/utils/paths';
 import { Badge } from '@/components/ui/badge';
 import CodeBlock from '@/components/common/CodeBlock';
 import { useDecideApproval } from '../services/approvals.service';
-import ApprovalDecisionForm from './ApprovalDecisionForm';
+import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
 import ApprovalDecisionSummary from './ApprovalDecisionSummary';
 
 // One agent's request: what it wants to do, who asks and for which task, and either the

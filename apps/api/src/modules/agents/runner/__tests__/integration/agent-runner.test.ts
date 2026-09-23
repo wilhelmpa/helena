@@ -507,7 +507,9 @@ describe('agent runner queue', () => {
       status: 'success',
       output: 'Opened PR #12',
     });
-    expect(res.status).toBe(204);
+    expect(res.status).toBe(200);
+    // No session, so there is nothing for a reflection to continue.
+    expect(res.data).toEqual({ reflection: null });
 
     const history = await asOwner
       .teams({ teamId: await teamOf(asOwner, 'MKT') })
@@ -780,5 +782,232 @@ describe('agent runner queue', () => {
   it('refuses a caller that is not an agent', async () => {
     const { asOwner } = await setup();
     expect((await asOwner['agent-runs'].claim.post()).status).toBe(403);
+  });
+});
+
+// A reflection is a short follow-up turn, in the run's own session, in which the agent
+// keeps what the run taught it. Plan decides whether one is worth it from the agent's
+// policy and the run, and the runner reports it back on its own route.
+describe('run reflection', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  const basePolicy = {
+    reasoningEffort: null,
+    toolAllow: [],
+    toolDeny: [],
+    mcpGrants: [],
+    files: [],
+  };
+
+  async function setPolicy(
+    asOwner: Api,
+    teamId: number,
+    agentId: number,
+    patch: Record<string, unknown>,
+  ) {
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId })
+      .patch({ runtimePolicy: { ...basePolicy, ...patch } });
+  }
+
+  it('asks for a reflection after a run of many tool calls, the default mode', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+
+    const res = await asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      output: 'Done',
+      sessionId: 'sess-1',
+      toolCalls: 10,
+    });
+    expect(res.data!.reflection).toEqual({
+      prompt: expect.any(String),
+      maxTurns: 8,
+      runBudgetSeconds: 120,
+    });
+
+    const history = await asOwner
+      .teams({ teamId: await teamOf(asOwner, 'MKT') })
+      ['ai-agents']({ agentId: agent.id })
+      .runs.get({ query: {} });
+    expect(history.data!.items[0].reflection).toMatchObject({
+      status: 'pending',
+      reason: 'complex',
+      saved: [],
+    });
+  });
+
+  it('asks for none after a short, successful run with no session', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+
+    const res = await asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      toolCalls: 2,
+    });
+    expect(res.data!.reflection).toBeNull();
+  });
+
+  it('asks for a reflection after a failed run that made a tool call, never for one that made none', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const providerFailure = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const failedAtWork = await asRunner['agent-runs']({ runId: providerFailure.id }).result.post({
+      status: 'failed',
+      error: 'network error',
+      sessionId: 'sess-2',
+      toolCalls: 0,
+    });
+    expect(failedAtWork.data!.reflection).toBeNull();
+
+    await queueRun(asOwner, columnId, agent.username);
+    const failed = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const res = await asRunner['agent-runs']({ runId: failed.id }).result.post({
+      status: 'failed',
+      error: 'wrote the wrong file',
+      sessionId: 'sess-3',
+      toolCalls: 1,
+    });
+    expect(res.data!.reflection).not.toBeNull();
+  });
+
+  it('asks for a reflection on rework, in failure mode too, whatever the tool calls', async () => {
+    const { asOwner, asRunner, agent, columnId, teamId } = await setup();
+    await setPolicy(asOwner, teamId, agent.id, { reflection: 'failure' });
+    const issue = await queueRun(asOwner, columnId, agent.username);
+    const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await asRunner['agent-runs']({ runId: first.id }).result.post({
+      status: 'success',
+      sessionId: 'sess-4',
+      toolCalls: 1,
+    });
+
+    await asOwner.issues({ issueId: issue.id }).comments.post({
+      body: `please try again @${agent.username}`,
+    });
+    const rework = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const res = await asRunner['agent-runs']({ runId: rework.id }).result.post({
+      status: 'success',
+      sessionId: 'sess-5',
+      toolCalls: 1,
+    });
+    expect(res.data!.reflection).not.toBeNull();
+
+    // 'failure' mode never reflects on a merely long, successful first run.
+    const other = await queueRun(asOwner, columnId, agent.username);
+    const long = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const longRes = await asRunner['agent-runs']({ runId: long.id }).result.post({
+      status: 'success',
+      sessionId: 'sess-6',
+      toolCalls: 50,
+    });
+    expect(longRes.data!.reflection).toBeNull();
+    void other;
+  });
+
+  it("asks for none with the agent's policy set to 'off'", async () => {
+    const { asOwner, asRunner, agent, columnId, teamId } = await setup();
+    await setPolicy(asOwner, teamId, agent.id, { reflection: 'off' });
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+
+    const res = await asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      sessionId: 'sess-7',
+      toolCalls: 50,
+    });
+    expect(res.data!.reflection).toBeNull();
+  });
+
+  it("asks for none with the agent's own learning turned off", async () => {
+    const { asOwner, asRunner, agent, columnId, teamId } = await setup();
+    await setPolicy(asOwner, teamId, agent.id, { learning: false });
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+
+    const res = await asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      sessionId: 'sess-8',
+      toolCalls: 50,
+    });
+    expect(res.data!.reflection).toBeNull();
+  });
+
+  it('records what the runner reports back, and adds its tokens to the run', async () => {
+    const { asOwner, asRunner, agent, columnId, teamId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      sessionId: 'sess-9',
+      toolCalls: 10,
+      usage: { inputTokens: 1000, outputTokens: 200 },
+    });
+
+    const res = await asRunner['agent-runs']({ runId: run.id }).reflection.post({
+      status: 'success',
+      usage: { inputTokens: 300, outputTokens: 40 },
+      saved: [{ tool: 'memory', action: 'write', target: 'MEMORY.md' }],
+      summary: 'Saved a note about the API shape.',
+    });
+    expect(res.status).toBe(204);
+
+    const history = await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .runs.get({ query: {} });
+    const found = history.data!.items[0];
+    expect(found.reflection).toMatchObject({
+      status: 'success',
+      saved: [{ tool: 'memory', action: 'write', target: 'MEMORY.md' }],
+      summary: 'Saved a note about the API shape.',
+      tokens: 340,
+    });
+    // The reflection's tokens are added to the run's own.
+    expect(found.contextTokens).toBe(1000 + 200 + 300 + 40);
+  });
+
+  it('refuses a second report of the same reflection, and one that was never asked for', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+
+    // Never asked: the run finished with no session for a reflection to continue.
+    await asRunner['agent-runs']({ runId: run.id }).result.post({ status: 'success' });
+    expect(
+      (
+        await asRunner['agent-runs']({ runId: run.id }).reflection.post({
+          status: 'success',
+          usage: null,
+          saved: [],
+        })
+      ).status,
+    ).toBe(404);
+
+    await queueRun(asOwner, columnId, agent.username);
+    const other = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await asRunner['agent-runs']({ runId: other.id }).result.post({
+      status: 'success',
+      sessionId: 'sess-10',
+      toolCalls: 10,
+    });
+    const first = await asRunner['agent-runs']({ runId: other.id }).reflection.post({
+      status: 'success',
+      usage: null,
+      saved: [],
+    });
+    expect(first.status).toBe(204);
+    const second = await asRunner['agent-runs']({ runId: other.id }).reflection.post({
+      status: 'failed',
+      usage: null,
+      saved: [],
+      error: 'too late',
+    });
+    expect(second.status).toBe(404);
   });
 });

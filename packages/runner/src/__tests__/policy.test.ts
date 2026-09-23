@@ -1,8 +1,21 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { lstat, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  readlink,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { HermesInventory, HermesProfile } from '../inventory';
+import { readHermesInventory, type HermesInventory, type HermesProfile } from '../inventory';
+import { RequestError } from '../client';
+import { readLearnedSkills } from '../learning';
 import {
   allowedToolsets,
   HermesPolicyMaterializer,
@@ -61,9 +74,17 @@ function withServers(
   return { revision, runtimePolicy: { files: [], toolDeny }, skills: [], mcpServers };
 }
 
-async function managedConfig(hermesHome: string): Promise<unknown> {
+async function managedConfig(hermesHome: string): Promise<Record<string, unknown>> {
   return JSON.parse(await readFile(join(hermesHome, 'run/itsaplan-managed/config.yaml'), 'utf8'));
 }
+
+// What every managed configuration holds, whatever else Plan sets.
+const alwaysOff = {
+  auxiliary: {
+    background_review: { enabled: false },
+    title_generation: { model_upgrade_enabled: false },
+  },
+};
 
 function snapshot(
   revision: string,
@@ -95,7 +116,12 @@ describe('Hermes runtime policy materializer', () => {
       ]),
     );
 
-    expect(result).toEqual({ revision: 'sha256:first', conflicts: [], mcpSecrets: null });
+    expect(result).toEqual({
+      revision: 'sha256:first',
+      conflicts: [],
+      restored: [],
+      mcpSecrets: null,
+    });
     expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Soul');
     expect(await readFile(join(hermesHome, 'skills/plan-managed/plan-7/SKILL.md'), 'utf8')).toBe(
       '# Skill',
@@ -248,6 +274,7 @@ describe('Hermes managed MCP servers', () => {
 
     expect(result.mcpSecrets).toEqual([7, 8]);
     expect(await managedConfig(hermesHome)).toEqual({
+      ...alwaysOff,
       mcp_servers: {
         'jev-browser': {
           command: 'npx',
@@ -266,13 +293,13 @@ describe('Hermes managed MCP servers', () => {
     expect((await lstat(file)).mode & 0o077).toBe(0);
   });
 
-  it('removes the managed configuration once there is nothing to put in it', async () => {
+  it('drops the servers from the managed configuration once the agent has none', async () => {
     const { hermesHome, materializer } = await fixture({ toolsets: [], mcpServers: ['itsaplan'] });
     await materializer.apply(withServers('sha256:one', [jevBrowser]));
     const result = await materializer.apply(withServers('sha256:two', [], ['web']));
 
     expect(result.mcpSecrets).toBeNull();
-    expect(await readdir(join(hermesHome, 'run/itsaplan-managed'))).toEqual([]);
+    expect(await managedConfig(hermesHome)).toEqual(alwaysOff);
   });
 
   it('refuses a server named like a toolset or server of the profile, or badly', async () => {
@@ -357,6 +384,7 @@ describe('Hermes runtime policy synchronizer', () => {
       'managed-markdown',
       'managed-skills',
       'managed-mcp-servers',
+      'learning',
     ]);
     expect(JSON.stringify(statuses)).not.toContain('provider-secret-value');
     expect(statuses.at(-1)?.detail).toBe(
@@ -415,7 +443,8 @@ describe('Hermes runtime policy synchronizer', () => {
       toolsets: ['file', 'web'],
       mcpServers: ['itsaplan'],
       skills: [],
-      memory: [{ file: 'MEMORY.md', content: memory, truncated: false }],
+      memory: [{ file: 'MEMORY.md', content: memory, truncated: false, sha256: '', chars: 0 }],
+      cronJobs: 0,
     });
     let now = 0;
     const same = () => snapshot('sha256:one', soul('# Plan soul'));
@@ -487,7 +516,11 @@ describe('Hermes runtime policy synchronizer', () => {
       { profile },
     );
 
-    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web', 'itsaplan'], env: {} });
+    const managed = { HERMES_MANAGED_DIR: materializer.managedDir };
+    expect(await sync.runSettings()).toEqual({
+      toolsets: ['file', 'web', 'itsaplan'],
+      env: managed,
+    });
     await sync.ensure();
     const settings = {
       toolsets: ['file', 'itsaplan', 'jev-browser'],
@@ -508,7 +541,39 @@ describe('Hermes runtime policy synchronizer', () => {
 
     // Without servers there is nothing to read from Plan.
     await sync.ensure();
-    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web', 'itsaplan'], env: {} });
+    expect(await sync.runSettings()).toEqual({
+      toolsets: ['file', 'web', 'itsaplan'],
+      env: managed,
+    });
+  });
+
+  it('hands the vault paths of the latest policy to Hermes in the environment', async () => {
+    const { materializer } = await fixture();
+    const vaultAccess = {
+      root: '/srv/volition/vault',
+      read: ['/srv/volition/vault/Projects/VOL', '/srv/volition/vault/Templates'],
+      write: ['/srv/volition/vault/Projects/VOL'],
+      deny: ['/srv/volition/vault/Private'],
+    };
+    const sync = new HermesPolicySynchronizer(
+      client(
+        [
+          {
+            revision: 'sha256:one',
+            runtimePolicy: { files: [{ kind: 'instructions', path: 'SOUL.md', content: 'x' }] },
+            skills: [],
+            vaultAccess,
+          },
+        ],
+        [],
+      ),
+      materializer,
+    );
+
+    expect((await sync.runSettings()).env.VOLITION_VAULT_ACCESS).toBeUndefined();
+    await sync.ensure();
+    const { env } = await sync.runSettings();
+    expect(JSON.parse(env.VOLITION_VAULT_ACCESS!)).toEqual(vaultAccess);
   });
 });
 
@@ -551,5 +616,292 @@ describe('Hermes toolset restriction', () => {
     expect(() => allowedToolsets({ toolsets: ['file'], mcpServers: [] }, ['file'])).toThrow(
       'Every Hermes toolset and MCP server of the agent is turned off',
     );
+  });
+});
+
+describe('Hermes learning and protected state', () => {
+  const triage = {
+    id: 7,
+    slug: 'plan-7',
+    name: 'Triage',
+    description: 'Triage work',
+    markdown: '# Triage',
+    files: [{ path: 'refs/checklist.md', content: '# Checklist' }],
+  };
+
+  function sequence(values: RuntimePolicySnapshot[], statuses: RuntimeStatus[]) {
+    let last: RuntimePolicySnapshot | undefined;
+    return {
+      runtimePolicy: async () => (last = values.shift() ?? last)!,
+      reportRuntimeStatus: async (status: RuntimeStatus) => {
+        statuses.push(status);
+      },
+      mcpSecrets: async () => ({}),
+      webLogins: async () => [],
+    } satisfies RuntimePolicyClient;
+  }
+
+  it('turns learning on or off in the managed configuration and pauses the curator', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await materializer.apply({
+      ...snapshot('sha256:off'),
+      learning: { enabled: false, curator: false },
+    });
+
+    expect(await managedConfig(hermesHome)).toEqual({
+      ...alwaysOff,
+      memory: { memory_enabled: false, user_profile_enabled: false },
+      skills: { write_approval: true },
+    });
+    expect(JSON.parse(await readFile(join(hermesHome, 'skills/.curator_state'), 'utf8'))).toEqual({
+      paused: true,
+    });
+
+    await materializer.apply({
+      ...snapshot('sha256:on'),
+      learning: { enabled: true, curator: true },
+    });
+    expect(await managedConfig(hermesHome)).toMatchObject({
+      memory: { memory_enabled: true, user_profile_enabled: true },
+      skills: { write_approval: false },
+    });
+    expect(
+      JSON.parse(await readFile(join(hermesHome, 'skills/.curator_state'), 'utf8')).paused,
+    ).toBe(false);
+  });
+
+  it('leaves the memory tool out of the toolsets of an agent that does not learn', async () => {
+    const profile = { toolsets: ['file', 'memory', 'skills'], mcpServers: [] };
+    const { materializer } = await fixture(profile);
+    const sync = new HermesPolicySynchronizer(
+      sequence([{ ...snapshot('sha256:off'), learning: { enabled: false, curator: false } }], []),
+      materializer,
+      { profile },
+    );
+
+    await sync.ensure();
+
+    expect(sync.toolsets()).toEqual(['file', 'skills']);
+  });
+
+  it('puts back a managed skill the agent changed or removed, and reports it', async () => {
+    const { hermesHome, materializer } = await fixture();
+    const statuses: RuntimeStatus[] = [];
+    let now = 0;
+    const sync = new HermesPolicySynchronizer(
+      sequence([snapshot('sha256:one', soul('# Soul'), [triage])], statuses),
+      materializer,
+      { now: () => now },
+    );
+    await sync.ensure();
+    const skillFile = join(hermesHome, 'skills/plan-managed/plan-7/SKILL.md');
+    await writeFile(skillFile, '# Patched by the agent');
+    await rm(join(hermesHome, 'skills/plan-managed/plan-7/refs/checklist.md'));
+
+    // Within the interval nothing is checked; after a run it is.
+    now = 10_000;
+    await sync.ensure();
+    expect(statuses).toHaveLength(1);
+    sync.inventoryChanged();
+    await sync.ensure();
+
+    expect(await readFile(skillFile, 'utf8')).toBe('# Triage');
+    expect(
+      await readFile(join(hermesHome, 'skills/plan-managed/plan-7/refs/checklist.md'), 'utf8'),
+    ).toBe('# Checklist');
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'online',
+      restored: [
+        'skills/plan-managed/plan-7/SKILL.md',
+        'skills/plan-managed/plan-7/refs/checklist.md',
+      ],
+      conflicts: [{ path: 'skills/plan-7/SKILL.md', content: '# Patched by the agent' }],
+    });
+
+    // Nothing changed since: nothing more to report.
+    sync.inventoryChanged();
+    await sync.ensure();
+    expect(statuses).toHaveLength(2);
+  });
+
+  it('keeps the plugin links Plan requires, before every run and at each check', async () => {
+    const { root, hermesHome } = await fixture();
+    const guard = join(root, 'plan/hermes-plugins/plan-approval-guard');
+    await mkdir(guard, { recursive: true });
+    const profile = {
+      toolsets: ['file'],
+      mcpServers: [],
+      plugins: { 'plan-approval-guard': guard },
+    };
+    const materializer = new HermesPolicyMaterializer({ hermesHome, profile });
+    const statuses: RuntimeStatus[] = [];
+    let now = 0;
+    const sync = new HermesPolicySynchronizer(
+      sequence([snapshot('sha256:one', soul('# Soul'))], statuses),
+      materializer,
+      { profile, now: () => now },
+    );
+    const link = join(hermesHome, 'plugins/plan-approval-guard');
+
+    // A home that never had the link gets it before the first run, also when two runs
+    // start together.
+    await Promise.all([sync.runSettings(), sync.runSettings()]);
+    expect(await readlink(link)).toBe(guard);
+    await sync.ensure();
+    expect(statuses[0]?.restored).toEqual(['plugins/plan-approval-guard']);
+
+    // The agent replaced the link with a plugin of its own.
+    await rm(link);
+    await mkdir(link);
+    await writeFile(join(link, '__init__.py'), 'def register(ctx): pass');
+    now = 60_000;
+    await sync.ensure();
+
+    expect(await readlink(link)).toBe(guard);
+    const moved = (await readdir(join(hermesHome, 'run'))).filter((name) =>
+      name.startsWith('plugin-plan-approval-guard.outside-'),
+    );
+    expect(moved).toHaveLength(1);
+    expect(statuses.at(-1)).toMatchObject({
+      detail: expect.stringContaining('plugin links changed outside Plan were restored'),
+      restored: ['plugins/plan-approval-guard'],
+    });
+  });
+
+  it('carries out the actions of a revision once and reports their results', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await mkdir(join(hermesHome, 'memories'), { recursive: true });
+    await writeFile(join(hermesHome, 'memories/MEMORY.md'), 'old');
+    const statuses: RuntimeStatus[] = [];
+    const withActions: RuntimePolicySnapshot = {
+      ...snapshot('sha256:one'),
+      actions: [
+        { id: 3, kind: 'write-memory', file: 'MEMORY.md', content: 'new', baseSha256: 'x' },
+        {
+          id: 4,
+          kind: 'write-memory',
+          file: 'MEMORY.md',
+          content: 'edited',
+          baseSha256: createHash('sha256').update('old').digest('hex'),
+        },
+      ],
+    };
+    let reachable = false;
+    const values = [withActions, withActions, withActions, snapshot('sha256:two')];
+    const sync = new HermesPolicySynchronizer(
+      {
+        runtimePolicy: async () => values.shift()!,
+        reportRuntimeStatus: async (status) => {
+          if (!reachable) throw new Error('server unreachable');
+          statuses.push(status);
+        },
+        mcpSecrets: async () => ({}),
+        webLogins: async () => [],
+      },
+      materializer,
+    );
+
+    await sync.ensure();
+    // The report did not arrive, so the next sync sends it again, and the same revision
+    // does not run its actions a second time.
+    reachable = true;
+    await sync.ensure();
+    await sync.ensure();
+    await sync.ensure();
+
+    expect(await readFile(join(hermesHome, 'memories/MEMORY.md'), 'utf8')).toBe('edited');
+    expect(statuses.map((status) => status.actions)).toEqual([
+      [
+        { id: 3, error: 'The memory changed since it was read; reload it and edit again' },
+        { id: 4, error: null },
+      ],
+      [],
+    ]);
+  });
+
+  it('reports the content of the skills the agent created with the inventory', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await mkdir(join(hermesHome, 'skills/notes'), { recursive: true });
+    await writeFile(join(hermesHome, 'skills/notes/SKILL.md'), '---\nname: notes\n---\n# Notes');
+    const statuses: RuntimeStatus[] = [];
+    const sync = new HermesPolicySynchronizer(
+      sequence([snapshot('sha256:one')], statuses),
+      materializer,
+      {
+        inventory: () => readHermesInventory(hermesHome, undefined),
+        learned: (skills) => readLearnedSkills(hermesHome, skills),
+      },
+    );
+
+    await sync.ensure();
+
+    expect(statuses[0]?.learnedSkills).toEqual([
+      {
+        path: 'notes',
+        name: 'notes',
+        markdown: '---\nname: notes\n---\n# Notes',
+        files: [],
+        otherFiles: 0,
+        truncated: false,
+      },
+    ]);
+  });
+
+  it('keeps saying that a revision failed when it restores a plugin link meanwhile', async () => {
+    const { root, hermesHome } = await fixture();
+    const guard = join(root, 'plan-approval-guard');
+    await mkdir(guard, { recursive: true });
+    const profile = {
+      toolsets: ['file'],
+      mcpServers: [],
+      plugins: { 'plan-approval-guard': guard },
+    };
+    const materializer = new HermesPolicyMaterializer({ hermesHome, profile });
+    const statuses: RuntimeStatus[] = [];
+    const bad = snapshot('sha256:bad', [{ kind: 'instructions', path: 'AGENTS.md', content: 'x' }]);
+    const sync = new HermesPolicySynchronizer(sequence([bad], statuses), materializer, {
+      profile,
+    });
+
+    await sync.ensure();
+    // The home has no link yet: the run that starts puts it there.
+    await sync.runSettings();
+    await sync.ensure();
+
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'degraded',
+      detail: expect.stringContaining('Runtime policy sync failed'),
+      restored: ['plugins/plan-approval-guard'],
+    });
+  });
+
+  it('sends a report again only when it did not arrive, not when Plan refused it', async () => {
+    const { materializer } = await fixture();
+    const sent: RuntimeStatus[] = [];
+    let answer: Error | null = new RequestError(400, 'refused');
+    const sync = new HermesPolicySynchronizer(
+      {
+        runtimePolicy: async () => snapshot('sha256:one', soul('# Soul')),
+        reportRuntimeStatus: async (status) => {
+          sent.push(status);
+          if (answer) throw answer;
+        },
+        mcpSecrets: async () => ({}),
+        webLogins: async () => [],
+      },
+      materializer,
+    );
+
+    await sync.ensure();
+    await sync.ensure();
+    expect(sent).toHaveLength(1);
+
+    answer = new Error('connection refused');
+    await rm(join(materializer.hermesHome, 'SOUL.md'));
+    sync.inventoryChanged();
+    await sync.ensure();
+    answer = null;
+    await sync.ensure();
+    expect(sent).toHaveLength(3);
   });
 });

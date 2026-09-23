@@ -41,9 +41,7 @@ Environment=PLAN_PUBLIC_URL=http://kingston-server.local/
 Environment=PROJECT_BROWSER_PUBLIC_URL=http://kingston-server.local/browser/
 Environment=CODE_PUBLIC_URL=http://kingston-server.local/code/
 Environment=TERMINAL_PUBLIC_URL=http://kingston-server.local/focus/terminal-project/
-Environment=INBOX_BASELINES={}
 Environment=CONNECTIONS_ENABLED=false
-Environment=MAIL_ENABLED=false
 Environment=MASTRA_EVENT_INGRESS_ENABLED=false
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/server.mjs
 Restart=always

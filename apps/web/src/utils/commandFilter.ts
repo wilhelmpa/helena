@@ -6,6 +6,9 @@
 // colon does that instead, since a command id never contains one.
 export const ISSUE_PREFIX = 'issue-hit:';
 
+// The same for the notes and files of the knowledge search, listed after the issues.
+export const KNOWLEDGE_PREFIX = 'knowledge-hit:';
+
 // Match/rank the static action items. cmdk's default scorer is a fuzzy
 // subsequence match; this requires the typed text to appear as a substring. The
 // score is the number of occurrences of the query in the value, with a fractional
@@ -15,6 +18,10 @@ export function substringFilter(value: string, search: string): number {
   if (value.startsWith(ISSUE_PREFIX)) {
     const index = Number(value.slice(ISSUE_PREFIX.length));
     return 1 - index / 1e6;
+  }
+  if (value.startsWith(KNOWLEDGE_PREFIX)) {
+    const index = Number(value.slice(KNOWLEDGE_PREFIX.length));
+    return 0.5 - index / 1e6;
   }
   // cmdk calls this at item registration with the current (on open: empty)
   // search. An empty needle has length 0, which would make the count loop below

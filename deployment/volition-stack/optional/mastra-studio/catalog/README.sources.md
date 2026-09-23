@@ -13,6 +13,8 @@ The executable contracts and safety boundaries are defined in:
 - `src/mastra/team-contracts.ts`: project team, lease, evidence and history schemas
 - `src/mastra/adapters/hermes-team.ts`: private Hermes execution and idempotent Plan synchronization adapter
 - `src/mastra/routine-workflow.ts`: routines that create or reopen a Plan task on a schedule
+- `src/mastra/pipeline-workflow.ts`: the workflows of Plan's workflow builder, one step per loop iteration
+- `src/mastra/pipeline-contracts.ts` and `src/mastra/adapters/plan-pipeline.ts`: the run state and Plan's pipeline control API
 - `src/mastra/triggers.ts`: event-to-workflow registry
 - `src/mastra/adapters/classifier.ts`: provider-neutral, capability-scoped classifier adapter
 

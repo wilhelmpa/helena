@@ -154,13 +154,5 @@
     "download": "Download",
     "downloadFile": "Download {name}",
     "deleteFile": "Delete {name}"
-  },
-  "documents": {
-    "title": "Docs",
-    "add": "Link a Doc",
-    "empty": "No linked Docs yet.",
-    "loadFailed": "Could not load the linked Docs. Retry.",
-    "untitled": "Untitled",
-    "remove": "Unlink {title}"
   }
 }

@@ -1,9 +1,23 @@
 import { useTranslations } from 'next-intl';
-import Markdown from '@/components/common/Markdown';
+import type { RuntimeAction } from '@/lib/api/endpoints/agentLearning';
 import type { AgentInventoryMemory } from '@/lib/api/endpoints/agents';
+import AgentMemoryEntry from './AgentMemoryEntry';
 
-// The memory Hermes keeps for the agent. Hermes writes it, so Plan only shows it.
-export default function AgentMemoryFiles({ memory }: { memory: AgentInventoryMemory[] }) {
+// What the owner can do about the agent's memory, when its runner carries it out.
+export interface MemoryControls {
+  agentId: number;
+  actions: RuntimeAction[] | undefined;
+}
+
+// The memory Hermes keeps for the agent, as its runner last reported it. The owner
+// edits or clears a file here; the runner writes it on its next sync.
+export default function AgentMemoryFiles({
+  memory,
+  controls,
+}: {
+  memory: AgentInventoryMemory[];
+  controls: MemoryControls | null;
+}) {
   const t = useTranslations('teams.agents.abilities');
 
   return (
@@ -13,22 +27,7 @@ export default function AgentMemoryFiles({ memory }: { memory: AgentInventoryMem
         <p className="text-xs text-muted-foreground">{t('memoryHint')}</p>
       </div>
       {memory.map((entry) => (
-        <div key={entry.file} className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">
-            {t(entry.file === 'MEMORY.md' ? 'memoryNotes' : 'memoryUser')} ·{' '}
-            <code>{entry.file}</code>
-          </p>
-          {entry.content.trim() ? (
-            <div className="max-h-72 overflow-y-auto rounded-md bg-muted/40 px-3 py-2 text-sm">
-              <Markdown>{entry.content}</Markdown>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t('memoryEmpty')}</p>
-          )}
-          {entry.truncated && (
-            <p className="text-xs text-muted-foreground">{t('memoryTruncated')}</p>
-          )}
-        </div>
+        <AgentMemoryEntry key={entry.file} entry={entry} controls={controls} />
       ))}
     </div>
   );

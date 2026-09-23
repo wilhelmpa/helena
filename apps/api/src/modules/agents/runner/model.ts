@@ -65,4 +65,41 @@ export const resultBody = t.Object({
   ),
   error: t.Optional(t.Nullable(t.String({ description: 'Why the run failed.' }))),
   usage: contextUsageBody,
+  sessionId: t.Optional(
+    t.String({
+      minLength: 1,
+      maxLength: 200,
+      description: "The agent's session of the run, which a reflection continues.",
+    }),
+  ),
+  toolCalls: t.Optional(
+    t.Integer({ minimum: 0, description: 'How many tool calls the agent made in the run.' }),
+  ),
+});
+
+// The answer to a run result: a reflection the runner starts in the run's session, or
+// null. Plan decides it from the agent's settings and the run.
+export const ResultResponse = t.Object({
+  reflection: t.Nullable(
+    t.Object({
+      prompt: t.String(),
+      maxTurns: t.Number(),
+      runBudgetSeconds: t.Number(),
+    }),
+  ),
+});
+
+// What the agent saved in a reflection, one entry per memory or skill write that succeeded.
+export const reflectionSaved = t.Object({
+  tool: t.Union([t.Literal('memory'), t.Literal('skill')]),
+  action: t.String({ minLength: 1, maxLength: 40 }),
+  target: t.String({ maxLength: 200 }),
+});
+
+export const reflectionBody = t.Object({
+  status: t.Union([t.Literal('success'), t.Literal('failed')]),
+  usage: contextUsageBody,
+  saved: t.Array(reflectionSaved, { maxItems: 50 }),
+  summary: t.Optional(t.Nullable(t.String({ maxLength: 2000 }))),
+  error: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
 });

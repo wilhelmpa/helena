@@ -10,14 +10,19 @@ responsibility is wrong.
 | | Hermes | Mastra | Plan |
 |---|---|---|---|
 | Role | Executes agent work | Decides what runs, when, by whom and in which order | Stores all configuration and results; the only user interface |
-| Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Workflows, event ingress, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, run history. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, secrets, connections, mail accounts, browser logins, approvals, activity. |
+| Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Workflows, event ingress, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, run history. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, the definitions and run history of builder workflows, secrets, connections, mail accounts, browser logins, approvals, activity. |
 | Does not | Schedule business work (Hermes cron is limited to Hermes maintenance). Delegate inside automated runs, apart from a coordinator's sub-agents (see Agent structure). Hold its own configuration: profiles are generated from Plan. | Call an LLM provider directly. Serve a user interface (Studio is a debugging tool). Store project or agent data of its own. | Run agents itself. Schedule work. Contain workflow logic beyond simple issue rules. |
 | Stores | Sessions, memory, learned skills | Run state: runs and checkpoints for 90 days, schedules | Configuration and results |
 
 The Kingston integration service (`deployment/volition-stack/integration/server.mjs`) is the
 only component that changes operating-system resources: project workspaces, browser units,
-terminal sessions, Hermes profiles, the Gmail API and inbound mail. It has no user interface
-and makes no decisions.
+terminal sessions and Hermes profiles. It has no user interface and makes no decisions.
+
+Plan imports mail over IMAP in its worker and sends mail over SMTP after the owner confirms
+it. For an account with triage switched on, the worker hands new inbox mail to the Mastra
+`inbox-triage` workflow through the integration service's triage route
+(`POST /api/inbox/triage`). Hermes reads and drafts mail through Plan's MCP tools
+`search_mail`, `read_mail`, `draft_reply` and `request_mail_send`.
 
 ## Two paths
 
@@ -29,14 +34,18 @@ and makes no decisions.
   Mastra; a Mastra workflow queues Hermes stages in Plan; results are written back to Plan.
   A schedule is a routine: a Mastra schedule of the `agent-routine` workflow, which has
   Plan create or reopen a task and delegate it to an agent. The delegation queues the
-  Hermes run, or starts `agent-team` for a coordinator.
+  Hermes run, or starts `agent-team` for a coordinator. A workflow a member put
+  together in Plan's workflow builder runs as `plan-pipeline`, started by hand, by a
+  task event of its project or by its schedule.
 
 ## Interfaces
 
 1. **Plan → Mastra**: events (`event-ingress`) and the control API (start, cancel, retry,
    schedules, runs).
 2. **Mastra → Plan**: Mastra queues Hermes stages in Plan's run queue, synchronizes results
-   to the issue, and creates or reopens the tasks of routines. Mastra never calls Hermes
+   to the issue, and creates or reopens the tasks of routines. For a builder workflow it
+   decides which step runs next, and Plan evaluates, applies and records each step
+   through its pipeline control API. Mastra never calls Hermes
    directly, so every run is visible in Plan. A canceled workflow run cancels the queued run
    of the stage it waits for.
 3. **Plan ↔ Hermes**: the runner claims queued work and chat messages, sends heartbeats and
@@ -47,9 +56,7 @@ and makes no decisions.
    on the Approvals page, next to the Mastra runs held at an approval gate. A command
    Hermes flags as dangerous goes the same way in a run: Hermes' `plan-approval-guard`
    plugin blocks it until Plan lists it as approved for that run.
-4. **Plan and Mastra → integration service**: provisioning, sending mail after the owner
-   confirms it, browser control. The integration service reports inbound mail to Mastra as
-   an event.
+4. **Plan and Mastra → integration service**: provisioning, inbox triage, browser control.
 
 ```
           owner
@@ -82,6 +89,38 @@ and makes no decisions.
 - A coordinator may split one run across Hermes sub-agents (the `delegation` toolset). They
   are not Plan agents and Plan does not show them. Longer or specialist work goes to the
   project's specialists through the agent team.
+
+## Knowledge vault
+
+The knowledge is Markdown and other files in the vault (`/srv/volition/vault`); the files
+are the source of truth. Plan's Docs page is an editor and a view on them, Obsidian edits
+the same files through Syncthing, and agents read and write them through Plan's MCP tools.
+Plan keeps only an index of them in Postgres (`vault_entry`, `vault_link`, `vault_move`).
+
+- **Layout:** `Home/`, `Projects/<KEY>/` (Docs, Files, Assets, Inbox, the area folders),
+  `Templates/`, `Private/` (the owner's, group `volition-private`, never an agent's),
+  `.trash/` (a trashed path keeps its relative path below it), `.obsidian/`.
+- **One index, built by Plan.** The worker watches the whole vault, indexes every file
+  (notes with frontmatter and links, the extracted text of PDFs, scans, images and office
+  files) and repairs drift with a periodic rescan. The API indexes its own writes at once.
+  Nobody else builds an index; other writers just write files.
+- **History:** the vault is a git repository of its text files, `Private/` a second one. A
+  save in Plan commits at once as the person or agent who made it; changes made outside
+  Plan are committed by the watcher as `extern` once the vault is quiet.
+- **Links:** `[[Note]]` links a note, `[[VOL-12]]` a task (the task lists the notes that
+  link it under "Wissen"). A reference to a file stores its path and sha256 and finds the
+  file again after a move through `GET /knowledge/resolve`.
+- **Addresses:** the Docs page opens a note by vault-relative path,
+  `/project/<KEY>/docs?path=<path>` (Home: `/docs?path=<path>`); Obsidian opens it as
+  `obsidian://open?vault=Volition&file=<encoded path>`.
+- **Reach:** a person reaches `Projects/<KEY>/` by their Docs permission in the project;
+  `Home/`, `Templates/` and `Private/` are the owner's. A project agent reads and writes its
+  project and reads `Templates/`; the Home agent reads everything but `Private/` and writes
+  `Home/`. The knowledge MCP tools (`search_knowledge`, `read_document`, `write_note`,
+  `list_folder`, `backlinks`) enforce this. For Hermes' own file tools the runtime policy
+  carries the same reach as `vaultAccess` (`{ root, read, write, deny }`, absolute paths),
+  which the runner hands to Hermes as `VOLITION_VAULT_ACCESS` for the approval plugin to
+  enforce.
 
 ## Rules that keep the boundaries
 
@@ -127,9 +166,30 @@ and makes no decisions.
   owner as an approval request: the owner signs in in the project's live browser, whose
   profile keeps the session, and the approval starts the agent's next run.
 - Configuration files (`AGENTS.md`, `SOUL.md`, instruction files, managed skills, toolsets,
-  MCP grants, model) are owned by Plan. A change Hermes makes to one of them is imported
-  into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are
-  shown read-only in Plan.
+  MCP grants, model) are owned by Plan. The runner puts back a managed file Hermes changed or
+  removed, every minute and after every run, and Plan shows the changed version so it can be
+  taken over. The same holds for the plugin links Plan requires in every Hermes home, such as
+  `plan-approval-guard`; a run whose link cannot be put back fails.
+- Memory and the skills an agent creates are stored by Hermes in the agent's profile. Whether
+  an agent learns is set per agent in Plan (on unless turned off), and so is Hermes' curator
+  (off unless turned on). The owner reads what an agent learned in Plan, edits or clears its
+  memory, and pins, discards or takes a learned skill into the team's library, where it
+  becomes one of Plan's skills; the runner carries each action out on its next sync. An
+  agent learns in its own turns, so what learning costs is in the tokens its runs report:
+  the runner turns off Hermes' post-turn review and its model-written session titles, which a
+  one-shot run would pay for without Plan counting them. Hermes' review and curator only
+  change skills the review created, never Plan's.
+- After a run finishes, Plan may ask the runner for a reflection: a short, counted follow-up
+  turn in the run's own session, started right after it, in which the agent keeps only what
+  that run taught it. Its only tools are memory and skills, so it cannot continue the task and
+  has no path to SOUL.md, approvals, or any other setting of its own; a plan-managed skill it
+  reaches through those tools is put back like any other managed file. It runs under the same
+  approval guard as the run itself, never with `--yolo`, bounded to 8 turns and 120 seconds so
+  it ends on its own or is stopped. Plan decides whether one is worth it from the agent's own
+  setting — off, after a failure or rework, or also after a run of many tool calls, the default
+  — and never for an agent that does not learn. The runner reports what the reflection saved
+  and its tokens, which are added to the run's own and count toward the agent's ceilings; Plan
+  shows the outcome, why it ran, and what was saved on the run in its history.
 - An agent has the MCP servers of Hermes' `config.yaml` that the owner did not turn off for
   it, and the servers of the team's library enabled on it. Both are stored in Plan; the runner
   writes them to a managed configuration of the agent's profile, never to `config.yaml`.

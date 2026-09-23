@@ -10,6 +10,6 @@ export const revScope = {
   actionRuns: (projectId: number) => `actionRuns:${projectId}`,
   controlPlane: (projectId: number) => `controlPlane:${projectId}`,
   agentRuns: (projectId: number) => `agentRuns:${projectId}`,
-  hubInbox: (teamId: number) => `hubInbox:${teamId}`,
   approvals: (teamId: number) => `approvals:${teamId}`,
+  mail: (teamId: number) => `mail:${teamId}`,
 };

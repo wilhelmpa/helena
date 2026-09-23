@@ -1,8 +1,8 @@
-import { RefreshCw } from 'lucide-react';
+import { GitCompareArrows } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 
-export default function DocumentConflictBanner({ onReload }: { onReload: () => void }) {
+export default function DocumentConflictBanner({ onReview }: { onReview: () => void }) {
   const t = useTranslations('documents');
 
   return (
@@ -10,9 +10,9 @@ export default function DocumentConflictBanner({ onReload }: { onReload: () => v
       className="flex shrink-0 items-center justify-between gap-3 border-b border-amber-500/25 bg-amber-500/10 px-4 py-2 text-xs text-amber-800 dark:text-amber-200"
       role="alert"
     >
-      <span>{t('conflict')}</span>
-      <Button type="button" variant="ghost" size="sm" onClick={onReload}>
-        <RefreshCw />
+      <span>{t('conflictNotice')}</span>
+      <Button type="button" variant="ghost" size="sm" onClick={onReview}>
+        <GitCompareArrows />
         {t('reviewConflict')}
       </Button>
     </div>

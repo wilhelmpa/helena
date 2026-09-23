@@ -391,13 +391,11 @@
       "skipped": "Übersprungen"
     }
   },
-  "documents": {
-    "title": "Dokumente",
-    "add": "Dokument verknüpfen",
-    "empty": "Noch keine verknüpften Dokumente.",
-    "loadFailed": "Verknüpfte Dokumente konnten nicht geladen werden. Klicke, um es erneut zu versuchen.",
-    "remove": "Verknüpfung mit {title} aufheben",
-    "untitled": "Ohne Titel"
+  "knowledge": {
+    "title": "Wissen",
+    "create": "Neue Notiz zu dieser Aufgabe",
+    "empty": "Noch keine Notiz verlinkt diese Aufgabe. Eine Notiz verlinkt sie mit {link}.",
+    "loadFailed": "Die Notizen konnten nicht geladen werden. Klicke, um es erneut zu versuchen."
   },
   "archived": "Archiviert",
   "activityHeading": "Aktivität",

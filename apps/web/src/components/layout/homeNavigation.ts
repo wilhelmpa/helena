@@ -5,10 +5,13 @@ import {
   devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
+  homeDocsPath,
   homeFilesPath,
+  mailAccountsPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
+  pipelinesPath,
   schedulesPath,
   skillsPath,
   tasksPath,
@@ -22,14 +25,17 @@ export type HomeNavigationId =
   | 'inbox'
   | 'files'
   | 'approvals'
+  | 'docs'
   | 'agentPool'
   | 'organization'
   | 'agentActivity'
   | 'schedules'
+  | 'workflows'
   | 'skills'
   | 'tools'
   | 'mcps'
   | 'connections'
+  | 'mailAccounts'
   | 'credentials'
   | 'devices'
   | 'teamSettings';
@@ -45,8 +51,9 @@ export interface HomeNavigationItem {
 }
 
 // The entries that need a single team to point at are left out without one. The
-// schedules read across every project, like the tasks, and need none.
-export function homeNavigation(teamId: number | null): HomeNavigationItem[] {
+// schedules read across every project, like the tasks, and need none. The workflows are
+// the team's library of templates. Home's Docs are the instance owner's own notes.
+export function homeNavigation(teamId: number | null, isOwner = false): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
     { id: 'overview', group: 'work', href: '/' },
@@ -54,6 +61,7 @@ export function homeNavigation(teamId: number | null): HomeNavigationItem[] {
     { id: 'inbox', group: 'work', href: globalInboxPath() },
     { id: 'files', group: 'work', href: homeFilesPath() },
     { id: 'approvals', group: 'work', href: approvalsPath() },
+    ...(isOwner ? [{ id: 'docs' as const, group: 'work' as const, href: homeDocsPath() }] : []),
     ...teamOnly([
       { id: 'agentPool', group: 'agents', href: agentsPath() },
       { id: 'organization', group: 'agents', href: teamOrganizationPath() },
@@ -61,11 +69,13 @@ export function homeNavigation(teamId: number | null): HomeNavigationItem[] {
     { id: 'agentActivity', group: 'agents', href: globalAgentActivityPath() },
     { id: 'schedules', group: 'agents', href: schedulesPath() },
     ...teamOnly([
+      { id: 'workflows', group: 'agents', href: pipelinesPath() },
       { id: 'skills', group: 'globalSettings', href: skillsPath() },
       { id: 'tools', group: 'globalSettings', href: toolsPath() },
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },
     ]),
     { id: 'connections', group: 'globalSettings', href: connectionsPath() },
+    { id: 'mailAccounts', group: 'globalSettings', href: mailAccountsPath() },
     ...teamOnly([{ id: 'credentials', group: 'globalSettings', href: credentialsPath() }]),
     { id: 'devices', group: 'globalSettings', href: devicesPath() },
     { id: 'teamSettings', group: 'globalSettings', href: manageTeamsPath() },
