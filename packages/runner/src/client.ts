@@ -10,6 +10,10 @@ export interface Run {
   trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
   prompt: string;
   systemPrompt: string;
+  // How often the run was claimed, this claim included. The runner names it on every
+  // heartbeat, result and release, so the server can tell it that the run was claimed
+  // again after its lease ran out. It is raised when this runner claims the run again.
+  attempts: number;
   issueId: number | null;
   issueIdentifier: string | null;
   model: string | null;
@@ -116,16 +120,24 @@ export class Client {
     return body.run;
   }
 
-  // True when the run was canceled, for instance with the workflow run of its stage.
-  async heartbeat(runId: number): Promise<boolean> {
-    return canceled(await this.post(`/agent-runs/${runId}/heartbeat`));
+  // True when the run was canceled, for instance with the workflow run of its stage, or
+  // is no longer this runner's: claimed again, finished, or deleted.
+  async heartbeat(runId: number, attempt: number): Promise<boolean> {
+    return gone(() => this.post(`/agent-runs/${runId}/heartbeat?attempt=${attempt}`));
+  }
+
+  // Hands a run back to the queue without spending its attempt, for a runner that stops.
+  async release(runId: number, attempt: number): Promise<void> {
+    await this.post(`/agent-runs/${runId}/release?attempt=${attempt}`);
   }
 
   // `usage` is what the run read and wrote: its totals where the command reports them
   // (Hermes), otherwise its last model call. Left out where the command reported
   // nothing about it, which stores the run without counts.
+  // A 404 means the run is no longer this runner's to report.
   async report(
     runId: number,
+    attempt: number,
     result: {
       status: 'success' | 'failed';
       output?: string;
@@ -133,7 +145,7 @@ export class Client {
       usage?: ContextUsage | null;
     },
   ): Promise<void> {
-    await this.post(`/agent-runs/${runId}/result`, result);
+    await this.post(`/agent-runs/${runId}/result?attempt=${attempt}`, result);
   }
 
   async claimChat(): Promise<ChatMessage | null> {
@@ -160,7 +172,7 @@ export class Client {
   // True when the member stopped the answer. This is how a command that is writing
   // nothing learns of the stop.
   async chatHeartbeat(messageId: number): Promise<boolean> {
-    return canceled(await this.post(`/agent-chats/${messageId}/heartbeat`));
+    return gone(() => this.post(`/agent-chats/${messageId}/heartbeat`));
   }
 
   // `usage` is the size of the context the answer left behind. Left out where the
@@ -183,4 +195,21 @@ export class Client {
 async function canceled(res: Response): Promise<boolean> {
   const body = (await res.json().catch(() => ({}))) as { canceled?: boolean };
   return body.canceled === true;
+}
+
+// A heartbeat the server answers with 404 names work that is not there any more: it was
+// finished, or deleted with its agent or issue. The command is stopped as for a cancel.
+async function gone(send: () => Promise<Response>): Promise<boolean> {
+  try {
+    return await canceled(await send());
+  } catch (err) {
+    if (err instanceof RequestError && err.status === 404) return true;
+    throw err;
+  }
+}
+
+// A request the server may answer differently later: it was not reached, or failed on
+// its side. A 4xx answer is final.
+export function isTransient(err: unknown): boolean {
+  return !(err instanceof RequestError) || err.status >= 500 || err.status === 429;
 }

@@ -1,5 +1,6 @@
 import { intEnv } from '#shared/lib';
 import { agentRunConfig } from '#modules/agents/core/run-queue';
+import { expireExhaustedRuns } from '#modules/agents/runner/service';
 import { processAgentRuns } from '#modules/agents/core/run-poller';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
 import { processActionRuns } from '#modules/actions/runner';
@@ -20,6 +21,14 @@ export function startBackgroundJobs(): void {
   // Archiving is not time-sensitive, so the sweep runs far less often than the queue
   // is drained.
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));
+  startLoop('run-janitor', runJanitor, () => intEnv('RUN_JANITOR_INTERVAL_MS', 60_000));
+}
+
+// Ends what nobody else ends: a run of an external agent whose runner stopped reporting
+// is otherwise failed only when that agent's runner claims again.
+async function runJanitor(): Promise<void> {
+  const failed = await expireExhaustedRuns();
+  if (failed > 0) console.log(`[background] failed ${failed} runs their runner did not finish`);
 }
 
 async function autoArchive(): Promise<void> {

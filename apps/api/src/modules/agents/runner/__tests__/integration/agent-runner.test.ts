@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { afterEach, describe, it, expect, beforeEach } from 'bun:test';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
 import { controlApi } from '#tests/helpers/control';
 import { db, organizationProjectAssignment } from '@repo/db';
+import { expireExhaustedRuns } from '../../service';
 
 // The runner queue: a process on the operator's machine authenticates with the
 // external agent's API key, claims one run at a time, and reports the result. Runs
@@ -638,6 +639,121 @@ describe('agent runner queue', () => {
       ['ai-agents']({ agentId: agent.id })
       .get();
     expect(after.data!.lastSeenAt).not.toBeNull();
+  });
+
+  describe('leases', () => {
+    // A lease of one second, waited out, is how these tests make a claimed run claimable
+    // again without waiting for a real lease.
+    function withShortLease(maxAttempts = '3') {
+      process.env.AGENT_RUN_LEASE_SECONDS = '1';
+      process.env.AGENT_RUN_MAX_ATTEMPTS = maxAttempts;
+    }
+    const leaseRunsOut = () => Bun.sleep(1_100);
+    afterEach(() => {
+      delete process.env.AGENT_RUN_LEASE_SECONDS;
+      delete process.env.AGENT_RUN_MAX_ATTEMPTS;
+    });
+
+    it('stops a runner whose run was claimed again, and takes the result of the new claim', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      await queueRun(asOwner, columnId, agent.username);
+      withShortLease();
+      const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      await leaseRunsOut();
+      const second = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      expect(second).toMatchObject({ id: first.id, attempts: 2 });
+      const runs = asRunner['agent-runs']({ runId: first.id });
+
+      const stale = await runs.heartbeat.post(undefined, { query: { attempt: 1 } });
+      expect(stale.data).toEqual({ canceled: true });
+      const late = await runs.result.post({ status: 'success' }, { query: { attempt: 1 } });
+      expect(late.status).toBe(404);
+      const current = await runs.result.post(
+        { status: 'success', output: 'Done once' },
+        { query: { attempt: 2 } },
+      );
+      expect(current.status).toBe(204);
+    });
+
+    it('extends a lease that ran out while nobody claimed the run', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      await queueRun(asOwner, columnId, agent.username);
+      withShortLease();
+      const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      await leaseRunsOut();
+      delete process.env.AGENT_RUN_LEASE_SECONDS;
+
+      const beat = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post(undefined, {
+        query: { attempt: 1 },
+      });
+      expect(beat.data).toEqual({ canceled: false });
+      expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+    });
+
+    it('stops a runner whose run finished under another claim', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      await queueRun(asOwner, columnId, agent.username);
+      const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      await asRunner['agent-runs']({ runId: run.id }).result.post({ status: 'success' });
+
+      const beat = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post(undefined, {
+        query: { attempt: 1 },
+      });
+      expect(beat.data).toEqual({ canceled: true });
+    });
+
+    it('hands a released run back at once without counting the attempt', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      await queueRun(asOwner, columnId, agent.username);
+      const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      const runs = asRunner['agent-runs']({ runId: run.id });
+
+      expect((await runs.release.post({}, { query: { attempt: 2 } })).status).toBe(404);
+      expect((await runs.release.post({}, { query: { attempt: 1 } })).status).toBe(204);
+      const again = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      expect(again).toMatchObject({ id: run.id, attempts: 1 });
+      expect(again.systemPrompt).not.toContain('Interrupted run');
+    });
+
+    it('tells the agent that an earlier attempt was interrupted', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      await queueRun(asOwner, columnId, agent.username);
+      withShortLease();
+      const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      await leaseRunsOut();
+      const second = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      expect(first.systemPrompt).not.toContain('Interrupted run');
+      expect(second.systemPrompt).toContain('Interrupted run');
+    });
+
+    it('fails a run whose runner never came back', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      const issue = await queueRun(asOwner, columnId, agent.username);
+      withShortLease('1');
+      await asRunner['agent-runs'].claim.post();
+      await leaseRunsOut();
+
+      expect(await expireExhaustedRuns()).toBe(1);
+      const history = await asOwner
+        .teams({ teamId: await teamOf(asOwner, 'MKT') })
+        ['ai-agents']({ agentId: agent.id })
+        .runs.get({ query: {} });
+      expect(history.data!.items[0]).toMatchObject({
+        issueId: issue.id,
+        status: 'failed',
+        lastError: 'Runner did not report a result',
+      });
+      expect(await expireExhaustedRuns()).toBe(0);
+    });
+
+    it('lets one of two runners claiming at once take the run', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      await queueRun(asOwner, columnId, agent.username);
+      const claims = await Promise.all(
+        Array.from({ length: 4 }, () => asRunner['agent-runs'].claim.post()),
+      );
+      expect(claims.filter((claim) => claim.data!.run !== null)).toHaveLength(1);
+    });
   });
 
   it('refuses a caller that is not an agent', async () => {

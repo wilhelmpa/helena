@@ -115,8 +115,10 @@ describe('runner gateway client', () => {
   });
 
   it('reads a canceled run off its heartbeat, and no body as not canceled', async () => {
+    const paths: string[] = [];
     server = createServer((request, response) => {
-      if (request.url === '/agent-runs/1/heartbeat') {
+      paths.push(request.url ?? '');
+      if (request.url === '/agent-runs/1/heartbeat?attempt=1') {
         response.setHeader('content-type', 'application/json');
         response.end(JSON.stringify({ canceled: true }));
         return;
@@ -132,7 +134,35 @@ describe('runner gateway client', () => {
       apiKey: 'runner-secret',
     } as RunnerConfig);
 
-    expect(await client.heartbeat(1)).toBe(true);
-    expect(await client.heartbeat(2)).toBe(false);
+    expect(await client.heartbeat(1, 1)).toBe(true);
+    expect(await client.heartbeat(2, 3)).toBe(false);
+    expect(paths).toEqual([
+      '/agent-runs/1/heartbeat?attempt=1',
+      '/agent-runs/2/heartbeat?attempt=3',
+    ]);
+  });
+
+  it('stops work the server no longer has, and names the attempt on result and release', async () => {
+    const paths: string[] = [];
+    server = createServer((request, response) => {
+      paths.push(request.url ?? '');
+      response.statusCode = request.url?.includes('/9/') ? 404 : 204;
+      response.end();
+    });
+    await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+    const client = new Client({
+      url: `http://127.0.0.1:${address.port}`,
+      apiKey: 'runner-secret',
+    } as RunnerConfig);
+
+    expect(await client.heartbeat(9, 2)).toBe(true);
+    expect(await client.chatHeartbeat(9)).toBe(true);
+    await client.report(4, 2, { status: 'success', output: 'done' });
+    await client.release(4, 2);
+    await expect(client.report(9, 2, { status: 'success' })).rejects.toMatchObject({ status: 404 });
+    expect(paths).toContain('/agent-runs/4/result?attempt=2');
+    expect(paths).toContain('/agent-runs/4/release?attempt=2');
   });
 });

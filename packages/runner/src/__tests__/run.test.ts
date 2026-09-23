@@ -4,9 +4,9 @@ import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import type { Client, Run } from '../client';
+import { RequestError, type Client, type Run } from '../client';
 import type { RunnerConfig } from '../config';
-import { perform } from '../run';
+import { perform, reportUntilTaken } from '../run';
 
 const dirs: string[] = [];
 
@@ -19,6 +19,7 @@ const run: Run = {
   trigger: 'manual',
   prompt: 'Do the stage.',
   systemPrompt: '',
+  attempts: 1,
   issueId: null,
   issueIdentifier: null,
   model: null,
@@ -44,7 +45,7 @@ async function setup(command: string) {
   };
   const reports: unknown[] = [];
   const client = {
-    report: async (_runId: number, result: unknown) => {
+    report: async (_runId: number, _attempt: number, result: unknown) => {
       reports.push(result);
     },
   } as unknown as Client;
@@ -94,5 +95,56 @@ describe('queued run', () => {
     stop.abort();
     expect(await performing).toBeNull();
     expect(reports).toEqual([]);
+  });
+});
+
+describe('result report', () => {
+  const noWait = () => Promise.resolve();
+
+  it('sends a result again until the server takes it, with the attempt it was claimed at', async () => {
+    const { config } = await setup('echo done');
+    const sent: { attempt: number; result: unknown }[] = [];
+    let unreachable = 2;
+    const client = {
+      report: async (_runId: number, attempt: number, result: unknown) => {
+        if (unreachable-- > 0) throw new TypeError('fetch failed');
+        sent.push({ attempt, result });
+      },
+    } as unknown as Client;
+    const outcome = await perform(
+      config,
+      client,
+      { ...run, attempts: 2 },
+      new AbortController(),
+      null,
+      noWait,
+    );
+    expect(outcome).toMatchObject({ status: 'success' });
+    expect(sent).toEqual([{ attempt: 2, result: expect.objectContaining({ output: 'done' }) }]);
+  });
+
+  it('gives up on an answer that is final, and when the run is taken away', async () => {
+    let calls = 0;
+    const gone = reportUntilTaken(
+      async () => {
+        calls++;
+        throw new RequestError(404, 'POST /agent-runs/7/result failed with 404');
+      },
+      new AbortController().signal,
+      noWait,
+    );
+    await expect(gone).rejects.toMatchObject({ status: 404 });
+    expect(calls).toBe(1);
+
+    const stop = new AbortController();
+    const stopped = reportUntilTaken(
+      async () => {
+        stop.abort();
+        throw new RequestError(502, 'POST /agent-runs/7/result failed with 502');
+      },
+      stop.signal,
+      noWait,
+    );
+    await expect(stopped).rejects.toMatchObject({ status: 502 });
   });
 });

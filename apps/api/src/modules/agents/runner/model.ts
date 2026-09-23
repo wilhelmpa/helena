@@ -28,11 +28,23 @@ export const ClaimResponse = t.Object({ run: t.Nullable(RunnerRunResponse) });
 
 export const runParams = t.Object({ runId: t.Numeric() });
 
+// The attempt count of the claim the runner holds, from the claimed run. With it the
+// server refuses a heartbeat, result or release of a runner whose run was claimed again.
+export const runAttemptQuery = t.Object({
+  attempt: t.Optional(t.Numeric({ minimum: 1, description: 'The attempts of the claimed run.' })),
+});
+
+export const releaseQuery = t.Object({
+  attempt: t.Numeric({ minimum: 1, description: 'The attempts of the claimed run.' }),
+});
+
 // The heartbeat's answer. The server has no connection to the runner, so the cancel
 // is returned on the call the runner already makes.
 export const RunAckResponse = t.Object({
   canceled: t.Boolean({
-    description: 'The run was canceled: kill the command and report nothing for it.',
+    description:
+      'The run was canceled, or claimed again after the named attempt: kill the command ' +
+      'and report nothing for it.',
   }),
 });
 

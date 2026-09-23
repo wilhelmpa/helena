@@ -287,6 +287,21 @@ Sessions below.
 Exit code `0` is a success. Any other code is a failure. The end of stderr then becomes
 the error. Stdout becomes the run's output in both cases.
 
+A result the instance cannot take, because it is unreachable or answers with a server
+error, is sent again until it is taken. The runner keeps the run's lease meanwhile.
+
+### Stopping and restarts
+
+- Ctrl-C lets the runs and answers in flight finish; a second Ctrl-C quits at once.
+- `SIGTERM`, which a service manager such as systemd sends, stops the commands in flight
+  and hands their runs back to the queue. They are claimed again at once, and the stop does
+  not count as a failed attempt.
+- A run whose runner dies is claimed again when its lease of five minutes runs out. The
+  agent is told that an earlier attempt was interrupted. After three claims without a
+  result the run fails.
+- A run claimed again belongs to the new claim. The earlier runner learns it on its next
+  heartbeat and stops its command, so one run never executes twice at the same time.
+
 ## Chat
 
 The runner streams the answer to the chat while the command runs. It reports the tool
