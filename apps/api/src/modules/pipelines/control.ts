@@ -409,19 +409,6 @@ async function agent(input: Json) {
       : projectAgents.agents.find(
           (candidate) => 'agentId' in step.assignee && candidate.id === step.assignee.agentId,
         );
-  if (!agentRow) {
-    const reason =
-      'role' in step.assignee
-        ? `No agent of the project fills the role ${step.assignee.role}`
-        : 'The agent of the step does not work in this project';
-    await writeStep(context, step, at, {
-      status: 'failed',
-      attempt,
-      error: reason,
-      finishedAt: new Date(),
-    });
-    throw new HttpError(409, reason);
-  }
   const instruction = renderTemplate(step.instruction, await renderContext(context, at.seq));
   const prompt = [
     `Workflow "${context.pipelineName}", step "${step.name}", on task ${context.task.identifier}.`,
@@ -429,6 +416,33 @@ async function agent(input: Json) {
     'End your answer with a short summary of what you did. The workflow passes it to its next steps.',
   ].join('\n\n');
   const key = agentRunKey(context.run.id, at, attempt);
+  if (!agentRow) {
+    const reason =
+      'role' in step.assignee
+        ? `No agent of the project fills the role ${step.assignee.role}`
+        : 'The agent of the step does not work in this project';
+    // A test run of a template the project does not use yet shows what is missing and
+    // goes on.
+    await writeStep(context, step, at, {
+      status: context.run.dryRun ? 'simulated' : 'failed',
+      attempt,
+      outcome: context.run.dryRun ? 'success' : 'failed',
+      summary: context.run.dryRun ? clip(instruction) : null,
+      error: reason,
+      finishedAt: new Date(),
+    });
+    if (!context.run.dryRun) throw new HttpError(409, reason);
+    return {
+      dryRun: true,
+      attempt,
+      idempotencyKey: key,
+      agentRef: 'agent:none',
+      taskRef: taskRef(context),
+      prompt,
+      timeoutSeconds: step.timeoutMinutes * 60,
+      policy: {},
+    };
+  }
   const started = !existing || existing.attempt !== attempt;
   if (existing?.idempotencyKey && started)
     await cancelQueuedRun(context.project.id, existing.idempotencyKey);

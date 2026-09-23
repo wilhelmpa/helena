@@ -342,6 +342,21 @@ describe('workflow runs', () => {
     expect(disabled.status).toBe(409);
     const test = await startRun(ctx, task.id, created.id, true);
     expect(test).toMatchObject({ dryRun: true, status: 'running', trigger: 'manual' });
+    // The project has not named the coder yet: a test run shows it and goes on.
+    const simulated = await control({
+      operation: 'agent',
+      runId: test.id,
+      projectRef: 'project:MKT',
+      stepId: 'implement',
+      iteration: 1,
+      seq: 1,
+    });
+    expect(simulated.data).toMatchObject({ dryRun: true, agentRef: 'agent:none' });
+    expect(
+      (await ctx.asOwner['pipeline-runs']({ runId: test.id }).get()).data!.steps,
+    ).toMatchObject([
+      { status: 'simulated', error: 'No agent of the project fills the role coder' },
+    ]);
 
     await enable(ctx, created.id, { coder: ctx.coder.id });
     expect((await ctx.asOwner.issues({ issueId: task.id }).pipelines.get()).data).toEqual([
