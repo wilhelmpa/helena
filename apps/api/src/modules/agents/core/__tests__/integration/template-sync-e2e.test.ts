@@ -6,8 +6,19 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { loadProjectContext, resolveRoles } from '#modules/pipelines/project-context';
 import { bootstrapHomeAgent } from '../../../../../scripts/bootstrap-home-agent';
+import { getRunnerAgent } from '../../../runner/service';
 import { runtimePolicySnapshot } from '../../../runtime-policy/service';
 import { getAgentById } from '../../service';
+
+// The runtime-policy route builds its snapshot from a RunnerAgent (the shape the
+// agent's own API key resolves to), not from the plain AiAgentResponse the management
+// API returns — a RunnerProject carries a project description the management response
+// does not. This is exactly what the runner calls before every poll/run/chat.
+async function runnerSnapshot(userId: string) {
+  const runnerAgent = await getRunnerAgent(userId);
+  if (!runnerAgent) throw new Error('Runner agent not found');
+  return runtimePolicySnapshot(runnerAgent);
+}
 
 // End to end: Helena is the source of truth for a template and its copies (the owner's
 // requirement), so a change to a template must reach, in order: the copy's own row,
@@ -64,7 +75,7 @@ describe('template sync end to end', () => {
 
     // The copy's own runtime policy snapshot (what the runner would project into
     // Hermes) already carries the template's skill from the copy itself.
-    const before = await runtimePolicySnapshot(copy);
+    const before = await runnerSnapshot(copy.userId);
     expect(before.skills.map((s) => s.name)).toEqual(['Base']);
 
     // The template changes: a second skill is added.
@@ -87,7 +98,7 @@ describe('template sync end to end', () => {
 
     // The copy's runtime policy now contains the change: the exact thing the runner
     // hands Hermes for this agent.
-    const after = await runtimePolicySnapshot(copyAfter!);
+    const after = await runnerSnapshot(copyAfter!.userId);
     expect(after.skills.map((s) => s.name).sort()).toEqual(['Added', 'Base']);
 
     // Mastra's deterministic role resolution (a workflow step with a 'template' role,
@@ -102,7 +113,7 @@ describe('template sync end to end', () => {
     expect(resolved.source).toBe('match');
     expect(resolved.agent?.id).toBe(copy.id);
     const resolvedFull = await getAgentById(resolved.agent!.id, teamId);
-    const resolvedSnapshot = await runtimePolicySnapshot(resolvedFull!);
+    const resolvedSnapshot = await runnerSnapshot(resolvedFull!.userId);
     expect(resolvedSnapshot.skills.map((s) => s.name).sort()).toEqual(['Added', 'Base']);
   });
 
@@ -146,7 +157,7 @@ describe('template sync end to end', () => {
     });
     const copyStillDiverged = await getAgentById(copy.id, teamId);
     expect(copyStillDiverged!.templateOverrides).toEqual(['skills']);
-    const stillDivergedSnapshot = await runtimePolicySnapshot(copyStillDiverged!);
+    const stillDivergedSnapshot = await runnerSnapshot(copyStillDiverged!.userId);
     expect(stillDivergedSnapshot.skills.map((s) => s.name).sort()).toEqual(['Base', 'CopyOnly']);
 
     // "Auf Vorlage zurücksetzen": the override is dropped and the template's current
@@ -157,7 +168,7 @@ describe('template sync end to end', () => {
     expect(resetRes.status).toBe(200);
     const copyAfterReset = await getAgentById(copy.id, teamId);
     expect(copyAfterReset!.templateOverrides).toEqual([]);
-    const afterResetSnapshot = await runtimePolicySnapshot(copyAfterReset!);
+    const afterResetSnapshot = await runnerSnapshot(copyAfterReset!.userId);
     expect(afterResetSnapshot.skills.map((s) => s.name).sort()).toEqual(['Base', 'TemplateOnly']);
   });
 });
