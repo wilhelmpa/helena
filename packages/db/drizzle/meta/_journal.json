@@ -1079,6 +1079,13 @@
       "when": 1790173166321,
       "tag": "0153_credential_store",
       "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1790180509217,
+      "tag": "0154_chat_workspace",
+      "breakpoints": true
     }
   ]
 }
