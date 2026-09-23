@@ -120,7 +120,8 @@ export async function withFileState(row: AttachmentRow) {
 }
 
 // Removes the files of deleted attachment rows: an object from the store, a stored
-// vault file to the trash. A linked file stays. Best-effort: the rows are gone already.
+// vault file to the trash. A linked file stays, and a file that is gone already is
+// skipped. Best-effort: the rows are gone already.
 export async function purgeAttachmentFiles(rows: AttachmentRow[]): Promise<void> {
   for (const row of rows) {
     if (row.s3Key) {
@@ -136,6 +137,7 @@ export async function purgeAttachmentFiles(rows: AttachmentRow[]): Promise<void>
         await rmdir(path.join(vaultDirectory(), folder)).catch(() => {});
       }
     } catch (error) {
+      if (error instanceof HttpError && error.status === 404) continue;
       console.error(
         `[planner] failed to move ${row.vaultPath} to the trash:`,
         error instanceof Error ? error.message : error,

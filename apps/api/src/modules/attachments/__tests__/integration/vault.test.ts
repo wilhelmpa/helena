@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { beforeEach, describe, expect, it } from 'bun:test';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { db, issueAttachment } from '@repo/db';
 import { eq } from 'drizzle-orm';
@@ -10,6 +9,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
+import { freshVault } from '#tests/helpers/vault';
 import { moveAttachmentsToVault } from '../../vault-migration';
 
 // Issue attachments stored in the project's vault folder: where they are written, how
@@ -17,16 +17,10 @@ import { moveAttachmentsToVault } from '../../vault-migration';
 // the attachments still in the object store.
 
 let vault: string;
-const originalVault = process.env.PROJECT_VAULT_ROOT;
 
 beforeEach(async () => {
   await resetDb();
-  vault = mkdtempSync(path.join(tmpdir(), 'attachments-vault-'));
-  process.env.PROJECT_VAULT_ROOT = vault;
-});
-
-afterEach(() => {
-  process.env.PROJECT_VAULT_ROOT = originalVault;
+  vault = freshVault();
 });
 
 async function setupIssue() {

@@ -15,25 +15,23 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
+import { freshVault } from '#tests/helpers/vault';
 
 // The Files routes over a vault and a workspace of their own per test, so nothing one
 // test writes is seen by the next.
 
 let vault: string;
 let workspaces: string;
-const originalVault = process.env.PROJECT_VAULT_ROOT;
 const originalWorkspaces = process.env.PROJECT_WORKSPACE_ROOT;
 
 beforeEach(async () => {
   await resetDb();
-  vault = mkdtempSync(path.join(tmpdir(), 'files-vault-'));
+  vault = freshVault();
   workspaces = mkdtempSync(path.join(tmpdir(), 'files-workspaces-'));
-  process.env.PROJECT_VAULT_ROOT = vault;
   process.env.PROJECT_WORKSPACE_ROOT = workspaces;
 });
 
 afterEach(() => {
-  process.env.PROJECT_VAULT_ROOT = originalVault;
   process.env.PROJECT_WORKSPACE_ROOT = originalWorkspaces;
 });
 
@@ -91,8 +89,8 @@ describe('project files', () => {
 
   it('makes an uploaded name safe for every synced system', async () => {
     const { files } = await setup();
-    const uploaded = await files.upload.post({ files: [file('x', '..hidden: "a"?.txt')] });
-    expect(uploaded.data![0].name).toBe('hidden_ _a__.txt');
+    const uploaded = await files.upload.post({ files: [file('x', '..hidden: a?*.txt ')] });
+    expect(uploaded.data![0].name).toBe('hidden_ a__.txt');
   });
 
   it('refuses a file past the upload limit', async () => {
