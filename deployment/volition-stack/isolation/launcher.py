@@ -834,12 +834,17 @@ class Launcher:
 
     def allocate_uid(self, name: str) -> int:
         """A UID of the isolated range that no project user ever had: a removed project's
-        files keep its UID in the trash, and a new project must not inherit them."""
+        files keep its UID in the trash, and a new project must not inherit them. The ledger
+        keeps every UID it gave out, and each user's earlier ones."""
         ledger = self.read_ledger()
-        used = {int(v['uid']) for v in ledger['users'].values() if isinstance(v, dict) and 'uid' in v}
+        allocated = set(ledger.setdefault('allocated', []))
+        for entry in ledger['users'].values():
+            if isinstance(entry, dict):
+                allocated.add(int(entry.get('uid', -1)))
+                allocated.update(int(v) for v in entry.get('previous', []))
         low, high = self.config.uid_range
         for uid in range(low, high + 1):
-            if uid in used:
+            if uid in allocated:
                 continue
             try:
                 pwd.getpwuid(uid)
@@ -851,10 +856,20 @@ class Launcher:
                 continue
             except KeyError:
                 pass
-            ledger['users'][name] = {'uid': uid, 'createdAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
+            before = ledger['users'].get(name) if isinstance(ledger['users'].get(name), dict) else None
+            previous = [*before.get('previous', []), before['uid']] if before else []
+            ledger['users'][name] = {'uid': uid, 'previous': previous,
+                                     'createdAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
+            ledger['allocated'] = sorted(allocated | {uid})
             self.write_ledger(ledger)
             return uid
         raise IsolationError('user', 'no free UID in the isolated range')
+
+    def earlier_uids(self, name: str) -> set[int]:
+        """The UIDs a project user had before it was removed and made again: what it left in
+        place (a workspace that is not moved to the trash) is still the project's."""
+        entry = self.read_ledger()['users'].get(name)
+        return {int(v) for v in entry.get('previous', [])} if isinstance(entry, dict) else set()
 
     async def command(self, *argv: str) -> None:
         process = await asyncio.create_subprocess_exec(
@@ -930,6 +945,7 @@ class Launcher:
         account = self.project_account(slug)
         runner = pwd.getpwnam(config.runner_user).pw_uid
         readers = grp.getgrnam(config.readers_group).gr_gid
+        earlier = self.earlier_uids(name)
         rwx, rx = 7, 5
 
         workspace = self.workspace(slug)
@@ -949,7 +965,7 @@ class Launcher:
             finally:
                 os.close(parent)
         done = {
-            'workspace': self.grant_directory(workspace, account, own=True, owners={runner}, named={
+            'workspace': self.grant_directory(workspace, account, own=True, owners={runner, *earlier}, named={
                 (ACL_USER, account.pw_uid): rwx, (ACL_USER, runner): rwx, (ACL_GROUP, readers): rx}),
         }
         # Profiles are the agents' alone: the runner reaches them only through helper runs.
@@ -963,7 +979,7 @@ class Launcher:
                 fd = os.open(profile, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=profile_root)
                 try:
                     info = os.fstat(fd)
-                    if info.st_uid not in (account.pw_uid, runner, 0):
+                    if info.st_uid not in {account.pw_uid, runner, 0, *earlier}:
                         raise IsolationError('path', f'profile {profile} belongs to someone else')
                     if info.st_uid != account.pw_uid or info.st_gid != account.pw_gid:
                         os.fchown(fd, account.pw_uid, account.pw_gid)
