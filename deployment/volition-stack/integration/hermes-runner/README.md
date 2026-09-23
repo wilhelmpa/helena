@@ -55,6 +55,26 @@ is not set is not passed, so Hermes applies its own default. Chat answers have n
 `timeoutMs` in `itsaplan-runner.json` is still the hard stop of the runner, so it has to be
 larger than the largest run budget.
 
+## Dangerous commands
+
+The runner starts Hermes without `--yolo`. `approvals.single_query_mode: approve` in `config.yaml`
+lets a `hermes chat` query run a command that Hermes' pattern detection flags as dangerous, and the
+`plan-approval-guard` plugin (`../hermes-plugins/plan-approval-guard`) decides instead:
+
+- In a run (`ITSAPLAN_RUN_ID` is set), a terminal command that Hermes flags as dangerous and every
+  execute_code script are blocked until a person approved exactly that text in Plan. The plugin reads
+  `GET /agent-runs/:runId/approved-commands` with the agent's key. The block message tells the agent
+  to call `request_approval` with the text in `command` and to end its run; the decision queues a new
+  run, and in that run the approved text runs.
+- A command on Hermes' hard block list is always blocked, and so is every flagged call while Plan
+  cannot be reached.
+- A chat has no run id. Its commands run without an approval, because Plan has no way to ask the
+  person in the chat.
+
+The catalog script links the plugin from the live checkout into the `plugins` directory of every
+Hermes home, and it stops the runner start when `single_query_mode` is `approve` but the plugin is
+not in `plugins.enabled`.
+
 ## Secret boundary
 
 The external-agent API key exists only at

@@ -43,7 +43,9 @@ and makes no decisions.
    runner then stops Hermes. Hermes reads and writes Plan data through Plan's MCP server
    (issues, mail drafts, secret names). Before an agent sends, publishes, pays or deletes
    anything outside Plan it calls `request_approval` and ends its run; the owner decides
-   on the Approvals page, next to the Mastra runs held at an approval gate.
+   on the Approvals page, next to the Mastra runs held at an approval gate. A command
+   Hermes flags as dangerous goes the same way in a run: Hermes' `plan-approval-guard`
+   plugin blocks it until Plan lists it as approved for that run.
 4. **Plan and Mastra → integration service**: provisioning, sending mail after the owner
    confirms it, browser control. The integration service reports inbound mail to Mastra as
    an event.
