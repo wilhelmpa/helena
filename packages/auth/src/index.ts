@@ -667,7 +667,12 @@ export const auth = betterAuth({
     // mounts email/SMS OTP and backup-code endpoints; nothing in the app calls
     // them (no sendOTP is configured, so a call to /two-factor/send-otp fails
     // rather than silently doing nothing), and the account UI offers TOTP only.
-    twoFactor({ issuer: 'Volition' }),
+    // allowPasswordless: the owner may not have a password credential (LAN
+    // auto-login and the local-owner endpoint do not require setting one) --
+    // shouldRequirePassword then only asks for the password on an account that
+    // has one to check it against, rather than making TOTP enrollment
+    // unreachable for an account with none.
+    twoFactor({ issuer: 'Volition', totpOptions: { allowPasswordless: true } }),
     // OpenAPI reference for the better-auth handler. Serves a Scalar UI at
     // /api/auth/reference and the raw schema at /api/auth/open-api/generate-schema.
     // The schema is built from every active plugin, so the passkey and apiKey

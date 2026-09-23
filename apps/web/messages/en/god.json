@@ -195,6 +195,31 @@
   "hotkeys": {
     "saved": "Keyboard shortcuts saved"
   },
+  "security": {
+    "grantTitle": "Terminal grant",
+    "grantDescription": "The 12-hour window a step-up opens for Shell, Claude Code and Codex sessions.",
+    "grantActive": "Granted until {time}",
+    "grantInactive": "No active grant.",
+    "grantRevoke": "Revoke",
+    "stepUpTitle": "Step-up method",
+    "stepUpDescription": "What proves it is the owner opening the terminal, every time, even on the LAN.",
+    "stepUpMethod": "TOTP (an authenticator app), enrolled at Account -> Security. Passkey takes over once this instance runs behind HTTPS.",
+    "sudoTitle": "Sudo in the browser terminal asks for a password",
+    "sudoDescription": "Off makes every sudo command in the owner terminal passwordless, the same way SSH automation already is. On, by default, only the reviewed automation commands stay passwordless.",
+    "sudoHint": "Takes effect on the next deploy: the deploy script reads this setting when it installs the sudoers policy, since sudo authorizes by Unix account and cannot tell a browser session apart from an SSH one at runtime.",
+    "auditTitle": "Audit trail",
+    "auditDescription": "Every step-up attempt, grant change and terminal session, newest first. No keystrokes.",
+    "auditEmpty": "No events yet.",
+    "event": {
+      "step_up_ok": "Step-up succeeded",
+      "step_up_fail": "Step-up failed",
+      "rate_limited": "Rate limited",
+      "grant_revoked": "Grant revoked",
+      "session_start": "Session started",
+      "session_end": "Session ended",
+      "token_rejected": "Token rejected"
+    }
+  },
   "storage": {
     "saved": "Storage settings saved",
     "fileSize": "File size",
