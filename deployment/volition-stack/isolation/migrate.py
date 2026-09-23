@@ -76,6 +76,26 @@ def walk(root: str, visit) -> None:
         top = open_path_nofollow(root)
     except FileNotFoundError:
         return
+    except IsolationError:
+        # A single file: opened from its folder, without following a link.
+        try:
+            parent = open_path_nofollow(os.path.dirname(root))
+        except FileNotFoundError:
+            return
+        try:
+            fd = os.open(os.path.basename(root), os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY,
+                         dir_fd=parent)
+        except FileNotFoundError:
+            return
+        finally:
+            os.close(parent)
+        try:
+            info = os.fstat(fd)
+            if stat.S_ISREG(info.st_mode):
+                visit(root, fd, info)
+        finally:
+            os.close(fd)
+        return
     try:
         visit(root, top, os.fstat(top))
         for directory, _dirs, files, dir_fd in os.fwalk(dir_fd=top, follow_symlinks=False):
