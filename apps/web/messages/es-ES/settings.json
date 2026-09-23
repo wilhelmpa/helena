@@ -129,7 +129,26 @@
       "documents": "Documentación del proyecto compartida, organizada en páginas."
     },
     "featureOn": "{feature} se ha activado",
-    "featureOff": "{feature} se ha desactivado"
+    "featureOff": "{feature} se ha desactivado",
+    "setup": {
+      "title": "Configuración inicial",
+      "description": "El espacio de trabajo, los archivos, el coordinador, la terminal y el navegador que necesita este proyecto. Un propietario del proyecto, o un propietario o responsable del equipo, puede reintentar una configuración fallida; una limpieza fallida la reintenta un propietario o responsable del equipo.",
+      "provisioning": "Configuración del proyecto",
+      "provisioningHint": "Crea el espacio de trabajo, las carpetas del almacén, el coordinador, la terminal y el navegador.",
+      "cleanup": "Limpieza de un proyecto eliminado",
+      "cleanupHint": "Un proyecto eliminado de este equipo tenía la misma clave. Sus recursos se eliminan antes de poder configurar este proyecto.",
+      "status": {
+        "pending": "En curso",
+        "succeeded": "Hecho",
+        "failed": "Fallido"
+      },
+      "meta": "{attempts, plural, =0 {Sin intentos todavía} one {# intento} other {# intentos}} · cambiado {ago}",
+      "lastError": "Último error: {error}",
+      "missing": "Este proyecto no tiene ninguna tarea de configuración.",
+      "loading": "Cargando el estado de la configuración…",
+      "unavailable": "El estado de la configuración no está disponible.",
+      "retry": "Reintentar"
+    }
   },
   "configuration": {
     "saved": "Los cambios se han guardado",

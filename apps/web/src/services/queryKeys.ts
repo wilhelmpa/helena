@@ -31,6 +31,7 @@ export const qk = {
   // The board scaffold (columns/types/labels/fields/viewer) for a project.
   project: (projectKey: string) => ['workItems', projectKey] as const,
   projectProvisioning: (projectKey: string) => ['projectProvisioning', projectKey] as const,
+  projectSetup: (projectKey: string) => ['projectSetup', projectKey] as const,
   // Every project scaffold, for a write outside the project that changes what one
   // of them shows (a team setting the project inherits).
   anyProject: ['workItems'] as const,

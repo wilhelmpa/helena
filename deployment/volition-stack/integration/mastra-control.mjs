@@ -122,6 +122,22 @@ export function createMastraControlService(config, options = {}) {
   }
 
   return {
+    // Removes the project's workflow schedules when the project is deleted.
+    async deleteProjectSchedules(projectRef) {
+      string(projectRef, PROJECT_REF, 'projectRef');
+      const result = object(await call('schedules'), 'Mastra schedules');
+      const owned = Array.isArray(result.schedules)
+        ? result.schedules.filter((item) => item?.workflowId != null && item.requestContext?.projectRef === projectRef)
+        : [];
+      for (const schedule of owned) {
+        const scheduleId = string(schedule.id, SCHEDULE_ID, 'scheduleId');
+        await call(`schedules/${scheduleId}`, { method: 'DELETE' }).catch((error) => {
+          if (!(error instanceof MastraControlError && error.status === 404)) throw error;
+        });
+      }
+      return owned.length;
+    },
+
     async execute(raw) {
       const input = object(raw, 'Control request');
       if (input.schemaVersion !== 1 || typeof input.operation !== 'string') {

@@ -66,11 +66,16 @@ export const homeAgentBootstrapRoutes = new Elysia({ name: 'home-agent-bootstrap
   .post('/internal/bootstrap/project-coordinator', async ({ request, body }) => {
     const denied = await authorizeControlRequest(request);
     if (denied) return denied;
-    const projectId = Number((body as { projectId?: unknown } | null)?.projectId);
+    const input = body as { projectId?: unknown; apiKey?: unknown } | null;
+    const projectId = Number(input?.projectId);
     if (!Number.isSafeInteger(projectId) || projectId < 1) {
       return new Response('Invalid project', { status: 400 });
     }
-    const result = await bootstrapProjectCoordinator(projectId);
+    const apiKey = input?.apiKey;
+    if (apiKey !== undefined && (typeof apiKey !== 'string' || apiKey.length > 2048)) {
+      return new Response('Invalid key', { status: 400 });
+    }
+    const result = await bootstrapProjectCoordinator(projectId, apiKey);
     if (!result) return new Response('Project not found', { status: 404 });
     return new Response(JSON.stringify(result), {
       status: 200,

@@ -1,30 +1,23 @@
 #!/bin/sh
 set -eu
 
-credential_dir=${CREDENTIALS_DIRECTORY:?systemd credentials are unavailable}
-credential_file="$credential_dir/itsaplan_api_key"
-template_file=${ITSAPLAN_RUNNER_TEMPLATE:-/home/pw/services/volition-stack/integration/hermes-runner/itsaplan-runner.json}
-runtime_file=${ITSAPLAN_RUNNER_CONFIG:-/home/pw/services/volition-stack/data/hermes/run/itsaplan-runner.json}
-catalog_script=/home/pw/services/volition-stack/integration/scripts/volition-hermes-catalog.py
-descriptor_root=${HERMES_RUNNER_DESCRIPTOR_ROOT:-/home/pw/services/volition-stack/data/hermes/run/agents}
+credential_file="${CREDENTIALS_DIRECTORY:?systemd credentials are unavailable}/itsaplan_api_key"
+template_file=/etc/volition/runner/itsaplan-runner.json
+runtime_file=/var/lib/volition/hermes/run/itsaplan-runner.json
+catalog_script=/usr/local/libexec/volition-hermes-catalog.py
+descriptor_root=/var/lib/volition/hermes/run/agents
 
-if [ ! -r "$credential_file" ]; then
-  echo "The Plan runner credential is unavailable." >&2
-  exit 1
-fi
-
+[ -s "$credential_file" ] || { echo "The Plan runner credential is unavailable." >&2; exit 1; }
 ITSAPLAN_API_KEY=$(cat "$credential_file")
-if [ -z "$ITSAPLAN_API_KEY" ]; then
-  echo "The Plan runner credential is empty." >&2
-  exit 1
-fi
+[ -n "$ITSAPLAN_API_KEY" ] || { echo "The Plan runner credential is empty." >&2; exit 1; }
 
 export ITSAPLAN_API_KEY
 export HERMES_RUNNER_DESCRIPTOR_ROOT="$descriptor_root"
-export HERMES_PROJECT_BROWSER_ROOT=${HERMES_PROJECT_BROWSER_ROOT:-/var/lib/volition/project-browser/projects}
-export HERMES_HOME=${HERMES_HOME:-/home/pw/services/volition-stack/data/hermes}
-export PYTHONPATH=/home/pw/services/hermes-agent
-export PATH="$HERMES_HOME/node:/home/pw/services/hermes-agent/venv/bin:/usr/local/bin:/usr/bin:/bin"
+export HERMES_PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
+export HERMES_HOME=/var/lib/volition/hermes
+export HOME=/var/lib/volition/hermes
+export PYTHONPATH=/srv/volition/source/hermes
+export PATH=/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin
 
-/home/pw/services/hermes-agent/venv/bin/python "$catalog_script" "$template_file" "$runtime_file"
-exec /usr/bin/node /home/pw/services/itsaplan/packages/runner/dist/cli.js "$runtime_file"
+/var/lib/volition/hermes/venv/bin/python "$catalog_script" "$template_file" "$runtime_file"
+exec /usr/bin/node /srv/volition/source/plan/packages/runner/dist/cli.js "$runtime_file"

@@ -60,6 +60,8 @@ import {
   getNotificationPreferences,
   setNotificationPreferences,
 } from '@/lib/api/endpoints/notificationPreferences';
+import { getProjectSetup, retryProjectProvisioning } from '@/lib/api/endpoints/projects';
+import { retryProjectDeprovisioning } from '@/lib/api/endpoints/teams';
 import { useInvalidateProject } from '@/services/projects.service';
 import { qk } from '@/services/queryKeys';
 
@@ -196,6 +198,38 @@ export function useUpdateEstimates(projectKey: string) {
 }
 
 // Repository section: the inbound webhook connection and its pull request automations.
+// The setup state of the project. It is read again while a job is still running.
+export function useProjectSetupQuery(projectKey: string) {
+  return useQuery({
+    queryKey: qk.projectSetup(projectKey),
+    queryFn: () => getProjectSetup(projectKey),
+    refetchInterval: (query) =>
+      query.state.data?.provisioning?.status === 'pending' ||
+      query.state.data?.deprovisioning?.status === 'pending'
+        ? 5_000
+        : false,
+  });
+}
+
+export function useRetryProjectProvisioning(projectKey: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => retryProjectProvisioning(projectKey),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.projectSetup(projectKey) });
+      void qc.invalidateQueries({ queryKey: qk.projectProvisioning(projectKey) });
+    },
+  });
+}
+
+export function useRetryProjectDeprovisioning(projectKey: string, teamId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (jobId: string) => retryProjectDeprovisioning(teamId, jobId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.projectSetup(projectKey) }),
+  });
+}
+
 export function useGitSettingsQuery(projectKey: string) {
   return useQuery({
     queryKey: qk.gitSettings(projectKey),

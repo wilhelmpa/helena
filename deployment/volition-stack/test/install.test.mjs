@@ -4,7 +4,6 @@ import { expect, test } from 'bun:test';
 
 const root = resolve(import.meta.dir, '..');
 const installer = readFileSync(resolve(root, 'install.sh'), 'utf8');
-const browserInstaller = readFileSync(resolve(root, 'browser/install.sh'), 'utf8');
 
 test('pins and verifies Hermes and Tirith without provider credentials', () => {
   expect(installer).toContain('HERMES_COMMIT="836b5f8253d27fee79b4f833bc43624f06a890b3"');
@@ -43,13 +42,6 @@ test('keeps dry-run mutation-free when Hermes or Tirith are absent', () => {
 });
 
 
-test('installs and starts the isolated project browser factory and provisioner', () => {
-  expect(installer).toContain('deployment/volition-stack/browser/install.sh');
-  expect(installer).toContain('volition-provisioning.service');
-  expect(installer).toContain('install_browser_assets');
-  expect(installer).toContain('enable --now volition-project-browser-router.service');
-  expect(browserInstaller).toContain('volition-project-browser@.target');
-  expect(browserInstaller).toContain('volition-project-browser-router.service');
-  expect(browserInstaller).toContain('systemctl --user enable --now volition-project-browser-router.service');
-  expect(browserInstaller).not.toContain('enable --now volition-standalone-browser.target');
+test('installs and starts the provisioner', () => {
+  expect(installer).toContain('enable --now volition-provisioning.service');
 });

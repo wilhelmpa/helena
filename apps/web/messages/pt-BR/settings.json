@@ -129,7 +129,26 @@
       "documents": "Documentação compartilhada do projeto organizada em páginas."
     },
     "featureOn": "{feature} ativado",
-    "featureOff": "{feature} desativado"
+    "featureOff": "{feature} desativado",
+    "setup": {
+      "title": "Configuração inicial",
+      "description": "O espaço de trabalho, os arquivos, o coordenador, o terminal e o navegador de que este projeto precisa. Um proprietário do projeto, ou um proprietário ou gerente da equipe, pode tentar de novo uma configuração que falhou; uma limpeza que falhou é repetida por um proprietário ou gerente da equipe.",
+      "provisioning": "Configuração do projeto",
+      "provisioningHint": "Cria o espaço de trabalho, as pastas do cofre, o coordenador, o terminal e o navegador.",
+      "cleanup": "Limpeza de um projeto excluído",
+      "cleanupHint": "Um projeto excluído desta equipe tinha a mesma chave. Os recursos dele são removidos antes que este projeto possa ser configurado.",
+      "status": {
+        "pending": "Em andamento",
+        "succeeded": "Concluído",
+        "failed": "Falhou"
+      },
+      "meta": "{attempts, plural, =0 {Nenhuma tentativa ainda} one {# tentativa} other {# tentativas}} · alterado {ago}",
+      "lastError": "Último erro: {error}",
+      "missing": "Este projeto não tem nenhuma tarefa de configuração.",
+      "loading": "Carregando o estado da configuração…",
+      "unavailable": "O estado da configuração não está disponível.",
+      "retry": "Tentar novamente"
+    }
   },
   "configuration": {
     "saved": "Alterações salvas",

@@ -42,6 +42,8 @@ export interface WorkerConfig {
   projectProvisioningToken: string | null;
   // legacy runtime and WebDAV setup can take longer than a regular webhook.
   projectProvisioningTimeoutMs: number;
+  // How often the provisioned state is compared with the projects in the database.
+  projectReconcileIntervalMs: number;
 }
 
 let cached: WorkerConfig | null = null;
@@ -60,6 +62,7 @@ export function workerConfig(): WorkerConfig {
     projectProvisioningUrl: process.env.PROJECT_PROVISIONING_URL?.trim() || null,
     projectProvisioningToken: projectProvisioningToken(),
     projectProvisioningTimeoutMs: intEnv('PROJECT_PROVISIONING_TIMEOUT_MS', 120_000),
+    projectReconcileIntervalMs: intEnv('PROJECT_RECONCILE_INTERVAL_MS', 600_000),
   };
   return cached;
 }

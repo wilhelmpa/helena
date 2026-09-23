@@ -4,7 +4,11 @@ import { processNotificationDeliveries } from './notification-delivery';
 import { equalJitterBackoffMs } from './backoff';
 import { startPollLoop, type WorkerHandle } from './poll-loop';
 import { TELEMETRY_CHECK_EVERY_TICKS, processTelemetry } from './telemetry';
-import { processProjectProvisioning } from './project-provisioning';
+import {
+  processProjectProvisioning,
+  pruneFinishedDeprovisioningJobs,
+} from './project-provisioning';
+import { reconcileProjectProvisioning } from './project-reconciliation';
 import {
   type ClaimedDelivery,
   claimDueDeliveries,
@@ -18,14 +22,15 @@ import {
 let ticksSinceCleanup = 0;
 // Starts due, so an install is visible even if the instance is removed minutes later.
 let ticksSinceTelemetry = TELEMETRY_CHECK_EVERY_TICKS;
+let lastProjectReconcileAt = 0;
 
 export function startWorker(): WorkerHandle {
   return startPollLoop('worker', tick, () => workerConfig().pollIntervalMs);
 }
 
 // One poll: claim a batch of due deliveries, send them concurrently, record each
-// outcome, then run the delivery cleanup and the telemetry check on their own tick
-// intervals.
+// outcome, then run the project reconciliation, the cleanup and the telemetry check
+// on their own intervals.
 async function tick(): Promise<void> {
   const cfg = workerConfig();
   const claimed = await claimDueDeliveries();
@@ -34,10 +39,21 @@ async function tick(): Promise<void> {
   }
   await processNotificationDeliveries();
   await processProjectProvisioning();
+  if (Date.now() - lastProjectReconcileAt >= cfg.projectReconcileIntervalMs) {
+    lastProjectReconcileAt = Date.now();
+    // An unreachable integration service must not read as a failed tick.
+    try {
+      await reconcileProjectProvisioning();
+    } catch (error) {
+      console.error('[worker] project reconciliation failed:', error);
+    }
+  }
   if (++ticksSinceCleanup >= cfg.cleanupEveryTicks) {
     ticksSinceCleanup = 0;
     const removed = await cleanupOldDeliveries();
     if (removed > 0) console.log(`[worker] cleaned up ${removed} old deliveries`);
+    const cleanups = await pruneFinishedDeprovisioningJobs();
+    if (cleanups > 0) console.log(`[worker] pruned ${cleanups} finished project cleanups`);
   }
   if (++ticksSinceTelemetry >= TELEMETRY_CHECK_EVERY_TICKS) {
     ticksSinceTelemetry = 0;

@@ -1,0 +1,42 @@
+[Unit]
+Description=Volition Plan Hermes agent runner
+After=network-online.target volition-plan-api-dev.service volition-hermes-gateway.service
+Wants=network-online.target
+Requires=volition-plan-api-dev.service
+ConditionPathExists=/srv/volition/source/plan/packages/runner/dist/cli.js
+ConditionPathExists=/etc/volition/hermes-plan-key
+
+[Service]
+Type=simple
+User=volition-hermes
+Group=volition-hermes-secrets
+SupplementaryGroups=volition
+WorkingDirectory=/srv/volition/workspaces
+Environment=HOME=/var/lib/volition/hermes
+Environment=HERMES_HOME=/var/lib/volition/hermes
+LoadCredential=itsaplan_api_key:/etc/volition/hermes-plan-key
+ExecStart=/usr/local/libexec/volition-hermes-runner
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillMode=mixed
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/volition/hermes /srv/volition/workspaces
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+TasksMax=infinity
+
+[Install]
+WantedBy=multi-user.target

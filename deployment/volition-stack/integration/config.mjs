@@ -209,18 +209,18 @@ async function privateCredential(filePath, name) {
 }
 
 export function loadConfig(env = process.env) {
-  const home = absolutePath(env.HOME, "/home/pw");
+  const home = absolutePath(env.HOME, "/var/lib/volition/hermes");
+  const provisioningStateRoot = absolutePath(
+    env.PROVISIONING_STATE_ROOT,
+    "/var/lib/volition/provisioning",
+  );
   const integrationStateRoot = absolutePath(
     env.INTEGRATION_STATE_ROOT,
-    "/home/pw/services/volition-workspaces/.state/integration",
+    path.join(provisioningStateRoot, "integration"),
   );
   const projectsRoot = absolutePath(
     env.PROJECTS_ROOT,
-    "/home/pw/services/volition-workspaces/projects",
-  );
-  const provisioningStateRoot = absolutePath(
-    env.PROVISIONING_STATE_ROOT,
-    path.join(path.dirname(projectsRoot), ".state"),
+    "/srv/volition/workspaces/projects",
   );
   return {
     host: bindHost(env.PROVISIONING_HOST, env.PROVISIONING_ALLOW_WILDCARD_BIND === "true"),
@@ -242,23 +242,23 @@ export function loadConfig(env = process.env) {
     workspaceRuntimeRoot: absolutePath(env.WORKSPACE_RUNTIME_ROOT, "/projects"),
     verveProjectPath: absolutePath(
       env.VERVE_PROJECT_PATH,
-      "/home/pw/Projekte/Shopify/v1-cart-suite",
+      path.join(projectsRoot, "verve"),
     ),
     hermesBin: absolutePath(
       env.HERMES_BIN,
-      path.join(home, ".local/bin/hermes"),
+      "/var/lib/volition/hermes/venv/bin/hermes",
     ),
     hermesHome: absolutePath(
       env.HERMES_HOME,
-      "/home/pw/services/volition-stack/data/hermes",
+      "/var/lib/volition/hermes",
     ),
     hermesAgentsRoot: absolutePath(
       env.HERMES_AGENTS_ROOT,
-      "/home/pw/services/volition-stack/data/hermes/agents",
+      "/var/lib/volition/hermes/agents",
     ),
     hermesRunnerDescriptorRoot: absolutePath(
       env.HERMES_RUNNER_DESCRIPTOR_ROOT,
-      "/home/pw/services/volition-stack/data/hermes/run/agents",
+      "/var/lib/volition/hermes/run/agents",
     ),
     hermesRunnerService: env.HERMES_RUNNER_SERVICE?.trim() || "volition-hermes-runner.service",
     inboxTriageControlPlane: triageControlPlane(env.INBOX_TRIAGE_CONTROL_PLANE),
@@ -302,7 +302,7 @@ export function loadConfig(env = process.env) {
     terminalUrl: publicUrl(env.TERMINAL_PUBLIC_URL),
     codeSettingsPath: absolutePath(
       env.CODE_SETTINGS_PATH,
-      "/home/pw/services/volition-stack/.state/code-user-settings/settings.json",
+      path.join(home, ".local/share/code-server/User/settings.json"),
     ),
     projectBrowserRoot: absolutePath(
       env.PROJECT_BROWSER_ROOT,
@@ -344,7 +344,7 @@ export function loadConfig(env = process.env) {
     nextcloudUser: env.NEXTCLOUD_USER?.trim() || "owner@example.com",
     nextcloudPasswordFile: absolutePath(
       env.NEXTCLOUD_APP_PASSWORD_FILE,
-      "/home/pw/services/volition-stack/.secrets/nextcloud_patrick_app_password",
+      "/run/credentials/volition-provisioning.service/nextcloud_app_password",
     ),
     inboxAccounts: Object.keys(jsonStringRecord(env.INBOX_BASELINES, "INBOX_BASELINES")),
     inboxBaselines: jsonStringRecord(env.INBOX_BASELINES, "INBOX_BASELINES"),
@@ -366,7 +366,7 @@ export function loadConfig(env = process.env) {
     ),
     inboxPushTokenFile: absolutePath(
       env.INBOX_PUSH_TOKEN_FILE,
-      "/home/pw/services/volition-stack/.secrets/inbox_push_token",
+      "/run/credentials/volition-provisioning.service/inbox_push_token",
     ),
     mastraInboxUrl: privateServiceUrl(
       env.MASTRA_INBOX_URL,

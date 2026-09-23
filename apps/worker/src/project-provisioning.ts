@@ -5,7 +5,7 @@ import {
   projectView,
   projectViewFolder,
 } from '@repo/db';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, lt, sql } from 'drizzle-orm';
 import { equalJitterBackoffMs } from './backoff';
 import { workerConfig } from './config';
 
@@ -60,6 +60,21 @@ export async function processProjectProvisioning(): Promise<void> {
     ...provisioning.map((job) => deliverProvisioningJob(job)),
     ...deprovisioning.map((job) => deliverDeprovisioningJob(job)),
   ]);
+}
+
+// A provisioning job is one row per live project and goes with it. A deprovisioning
+// row outlives its project, so a finished one is removed after 30 days.
+export async function pruneFinishedDeprovisioningJobs(): Promise<number> {
+  const removed = await db
+    .delete(projectDeprovisioningJob)
+    .where(
+      and(
+        eq(projectDeprovisioningJob.status, 'succeeded'),
+        lt(projectDeprovisioningJob.completedAt, sql`now() - interval '30 days'`),
+      ),
+    )
+    .returning({ id: projectDeprovisioningJob.id });
+  return removed.length;
 }
 
 async function claimProvisioningJobs(): Promise<ClaimedProvisioningJob[]> {

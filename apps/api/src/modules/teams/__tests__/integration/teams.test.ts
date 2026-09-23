@@ -1,4 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
+import { db, projectDeprovisioningJob } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { api as anonApi, apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -634,6 +636,86 @@ describe('teams', () => {
           .delete();
         expect(deleted.status).toBe(404);
         expect((await other.api.projects.get()).data).toHaveLength(1);
+      });
+    });
+
+    describe('deprovisioning retry', () => {
+      // Deletes a project and reads its cleanup job through a new project with the key.
+      async function deletedProjectCleanup(api: Api, teamId: number) {
+        const project = await api.teams({ teamId }).projects.post({ key: 'OLD', name: 'Old' });
+        await api.teams({ teamId }).projects({ projectId: project.data!.id }).delete();
+        await api.teams({ teamId }).projects.post({ key: 'OLD', name: 'New' });
+        return (await api.projects({ projectKey: 'OLD' }).setup.get()).data!.deprovisioning!;
+      }
+
+      async function fail(jobId: string) {
+        await db
+          .update(projectDeprovisioningJob)
+          .set({ status: 'failed', attempts: 8, lastError: 'HTTP 500' })
+          .where(eq(projectDeprovisioningJob.id, jobId));
+      }
+
+      it('queues a failed cleanup again and refuses one that has not failed', async () => {
+        const { api } = await signUpClient();
+        const teamId = await ownTeamId(api);
+        const cleanup = await deletedProjectCleanup(api, teamId);
+        const retry = api.teams({ teamId })['project-deprovisioning']({ jobId: cleanup.id }).retry;
+
+        expect((await retry.post()).status).toBe(409);
+
+        await fail(cleanup.id);
+        const retried = await retry.post();
+        expect(retried.status).toBe(200);
+        expect(retried.data).toMatchObject({
+          id: cleanup.id,
+          status: 'pending',
+          attempts: 0,
+          lastError: null,
+        });
+      });
+
+      it('404s for an unknown job and for a job of another team', async () => {
+        const { api } = await signUpClient();
+        const teamId = await ownTeamId(api);
+        const cleanup = await deletedProjectCleanup(api, teamId);
+        await fail(cleanup.id);
+        const other = await signUpClient();
+        const otherTeamId = await ownTeamId(other.api);
+
+        const unknown = await api
+          .teams({ teamId })
+          ['project-deprovisioning']({ jobId: crypto.randomUUID() })
+          .retry.post();
+        expect(unknown.status).toBe(404);
+        const foreign = await other.api
+          .teams({ teamId: otherTeamId })
+          ['project-deprovisioning']({ jobId: cleanup.id })
+          .retry.post();
+        expect(foreign.status).toBe(404);
+      });
+
+      it('400s for a malformed job id', async () => {
+        const { api } = await signUpClient();
+        const teamId = await ownTeamId(api);
+        const res = await api
+          .teams({ teamId })
+          ['project-deprovisioning']({ jobId: 'not-a-uuid' })
+          .retry.post();
+        expect(res.status).toBe(400);
+      });
+
+      it('403s for a member who does not run the team', async () => {
+        const owner = await signUpClient();
+        const teamId = await ownTeamId(owner.api);
+        const cleanup = await deletedProjectCleanup(owner.api, teamId);
+        await fail(cleanup.id);
+        const member = await addTeamMember(owner, teamId, 'member');
+
+        const res = await member.api
+          .teams({ teamId })
+          ['project-deprovisioning']({ jobId: cleanup.id })
+          .retry.post();
+        expect(res.status).toBe(403);
       });
     });
   });

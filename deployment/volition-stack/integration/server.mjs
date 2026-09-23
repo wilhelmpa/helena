@@ -517,6 +517,20 @@ export function createRequestHandler(
       }
       return;
     }
+    if (request.method === "GET" && pathname === "/api/provision/state") {
+      if (!authorized(firstHeader(request.headers.authorization), config.token)) {
+        response.setHeader("WWW-Authenticate", "Bearer");
+        json(response, 401, { error: "unauthorized" });
+        return;
+      }
+      try {
+        json(response, 200, await provisioner.state());
+      } catch (error) {
+        console.error("Reading the provisioning state failed", error);
+        json(response, 500, { error: "state_failed" });
+      }
+      return;
+    }
     if (request.method !== "POST" || request.url !== "/api/provision") {
       json(response, 404, { error: "not_found" });
       return;
@@ -577,7 +591,13 @@ export function createRequestHandler(
 
 export function createProvisioningServer(config, options = {}) {
   assertServerConfig(config);
-  const provisioner = options.provisioner ?? createProvisioner(config, options);
+  const mastraControl =
+    options.mastraControl ??
+    (config.mastraControlEnabled
+      ? createMastraControlService(config, options)
+      : null);
+  const provisioner =
+    options.provisioner ?? createProvisioner(config, { ...options, mastraControl });
   const inbox =
     options.inbox ??
     (config.inboxAccounts?.length ? createInboxService(config, options) : null);
@@ -609,11 +629,6 @@ export function createProvisioningServer(config, options = {}) {
   const secrets =
     options.secrets ??
     (config.connectionsEnabled ? createSecretStore(config, options) : null);
-  const mastraControl =
-    options.mastraControl ??
-    (config.mastraControlEnabled
-      ? createMastraControlService(config, options)
-      : null);
   const files =
     options.files ??
     (config.connectionsEnabled

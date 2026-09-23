@@ -129,7 +129,26 @@
       "documents": "Documentation partagée du projet, organisée en pages."
     },
     "featureOn": "Section {feature} activée",
-    "featureOff": "Section {feature} désactivée"
+    "featureOff": "Section {feature} désactivée",
+    "setup": {
+      "title": "Mise en place",
+      "description": "L’espace de travail, les fichiers, le coordinateur, le terminal et le navigateur dont ce projet a besoin. Un propriétaire du projet, ou un propriétaire ou responsable de l’équipe, peut relancer une mise en place en échec ; un nettoyage en échec est relancé par un propriétaire ou responsable de l’équipe.",
+      "provisioning": "Mise en place du projet",
+      "provisioningHint": "Crée l’espace de travail, les dossiers du coffre, le coordinateur, le terminal et le navigateur.",
+      "cleanup": "Nettoyage d’un projet supprimé",
+      "cleanupHint": "Un projet supprimé de cette équipe avait la même clé. Ses ressources sont retirées avant que ce projet puisse être mis en place.",
+      "status": {
+        "pending": "En cours",
+        "succeeded": "Terminé",
+        "failed": "Échec"
+      },
+      "meta": "{attempts, plural, =0 {Aucune tentative pour l’instant} one {# tentative} other {# tentatives}} · modifié {ago}",
+      "lastError": "Dernière erreur : {error}",
+      "missing": "Ce projet n’a aucune tâche de mise en place.",
+      "loading": "Chargement de l’état de la mise en place…",
+      "unavailable": "L’état de la mise en place n’est pas disponible.",
+      "retry": "Relancer"
+    }
   },
   "configuration": {
     "saved": "Modifications enregistrées",

@@ -50,6 +50,7 @@ function fakeCoordinator(calls) {
       planAgentUserId: "agent-user",
       username: id,
       hermesIdentity: id,
+      descriptorChanged: calls.length === 1,
       organization: { departmentId: 4, reportsToAgentId: null, projectInstructions: "Project scope" },
     };
   };
@@ -85,6 +86,24 @@ describe("createProvisioner", () => {
     assert.equal("apiKey" in registry.resources.coordinator, false);
     const context = JSON.parse(await fs.readFile(path.join(root, "projects/demo/PROJECT.json"), "utf8"));
     assert.equal(context.coordinatorId, "hermes-demo-coordinator");
+  });
+
+  it("restarts the runner only when a provisioning run changed the runner descriptor", async () => {
+    const coordinatorCalls = [];
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator(coordinatorCalls),
+      ensureFiles: async (slug) => ({ kind: "files", id: "/Projects/" + slug }),
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+    await provisioner.provision(envelope());
+    await provisioner.provision({ ...envelope(), eventId: "323e4567-e89b-42d3-a456-426614174002" });
+
+    assert.equal(coordinatorCalls.length, 2);
+    assert.equal(restarts.length, 1);
   });
 
   it("provisions the browser before reloading Hermes and exposes no CDP details", async () => {
@@ -196,6 +215,172 @@ describe("createProvisioner", () => {
     assert.equal(await fs.stat(path.join(root, "vault/Home")).then((stat) => stat.isDirectory()), true);
     assert.equal(await fs.stat(path.join(root, "vault/Templates")).then((stat) => stat.isDirectory()), true);
     assert.ok(commandCalls.some(({ args }) => args.includes("restart")));
+  });
+
+  it("deletes the runner descriptor and the project's Mastra schedules on deprovision", async () => {
+    const scheduleRefs = [];
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      mastraControl: {
+        deleteProjectSchedules: async (projectRef) => {
+          scheduleRefs.push(projectRef);
+          return 2;
+        },
+      },
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+    const request = envelope();
+    request.requestedResources = ["workspace"];
+    await provisioner.provision(request);
+    const descriptor = path.join(root, "hermes/run/agents/demo.json");
+    await fs.mkdir(path.dirname(descriptor), { recursive: true });
+    await fs.writeFile(descriptor, "{}", { mode: 0o600 });
+
+    const deletion = {
+      ...request,
+      eventId: "423e4567-e89b-42d3-a456-426614174003",
+      eventType: "project.deprovision",
+    };
+    await provisioner.deprovision(deletion);
+
+    await assert.rejects(fs.lstat(descriptor), { code: "ENOENT" });
+    const quarantine = path.join(root, "trash/projects", deletion.eventId);
+    assert.deepEqual((await fs.readdir(quarantine)).sort(), ["receipt.json", "registry.json", "workspace"]);
+    const receipt = JSON.parse(await fs.readFile(path.join(quarantine, "receipt.json"), "utf8"));
+    assert.equal(receipt.mastraSchedulesDeleted, 2);
+    assert.deepEqual(scheduleRefs, ["project:DEMO"]);
+    assert.equal(restarts.length, 1);
+  });
+
+  it("moves the folders of a deleted board to the trash and keeps the others", async () => {
+    const provisioner = createProvisioner(config(), { execute: async () => ({ stdout: "", stderr: "" }) });
+    const board = (id) => ({ resource: `board:${id}`, id, name: `Board ${id}`, slug: `board-${id}`, folder: null });
+    const request = envelope();
+    request.requestedResources = ["workspace", "files", "board:1", "board:2"];
+    request.boards = [board(1), board(2)];
+    await provisioner.provision(request);
+    await fs.writeFile(path.join(root, "vault/Projects/DEMO/Files/Boards/board-2/report.md"), "done");
+
+    const later = {
+      ...request,
+      eventId: "523e4567-e89b-42d3-a456-426614174004",
+      requestedResources: ["workspace", "files", "board:1"],
+      boards: [board(1)],
+    };
+    await provisioner.provision(later);
+    await provisioner.provision({ ...later, eventId: "623e4567-e89b-42d3-a456-426614174005" });
+
+    const trash = path.join(root, "trash/projects", later.eventId);
+    assert.deepEqual((await fs.readdir(trash)).sort(), ["board-2-files", "board-2-workspace", "receipt.json"]);
+    assert.equal(await fs.readFile(path.join(trash, "board-2-files/report.md"), "utf8"), "done");
+    assert.deepEqual(await fs.readdir(path.join(root, "projects/demo/boards")), ["board-1"]);
+    assert.deepEqual(await fs.readdir(path.join(root, "vault/Projects/DEMO/Files/Boards")), ["board-1"]);
+    const registry = JSON.parse(await fs.readFile(path.join(root, "state/projects/demo.json"), "utf8"));
+    assert.deepEqual(registry.boards.map((item) => item.id), [1]);
+    await assert.rejects(fs.lstat(path.join(root, "trash/projects/623e4567-e89b-42d3-a456-426614174005")));
+  });
+
+  it("reports each registered project with its boards and browser state", async () => {
+    const checked = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensureProjectBrowser: async (_project, slug) => ({
+        id: `project-browser:${slug}`,
+        name: "project-browser",
+        profile: `project:7:${slug}`,
+      }),
+      projectBrowserActive: async (slug) => {
+        checked.push(slug);
+        return false;
+      },
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    assert.deepEqual(await provisioner.state(), { projects: [] });
+
+    const request = envelope();
+    request.requestedResources = ["workspace", "browser", "board:4"];
+    request.boards = [{ resource: "board:4", id: 4, name: "Board", slug: "board", folder: null }];
+    await provisioner.provision(request);
+    await provisioner.provision({
+      ...envelope({ id: 8, key: "PLAIN" }),
+      eventId: "723e4567-e89b-42d3-a456-426614174006",
+      requestedResources: ["workspace"],
+    });
+
+    const state = await provisioner.state();
+    assert.deepEqual(
+      state.projects.map(({ project, boards, browserActive, requestedResources }) => ({
+        id: project.id,
+        boards,
+        browserActive,
+        requestedResources,
+      })),
+      [
+        { id: 7, boards: [4], browserActive: false, requestedResources: request.requestedResources },
+        { id: 8, boards: [], browserActive: null, requestedResources: ["workspace"] },
+      ],
+    );
+    assert.deepEqual(checked, ["demo"]);
+  });
+
+  it("drops ledger entries older than 30 days", async () => {
+    const provisioner = createProvisioner(config(), { execute: async () => ({ stdout: "", stderr: "" }) });
+    const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+    await fs.mkdir(path.join(root, "state"), { recursive: true });
+    await fs.writeFile(
+      path.join(root, "state/ledger.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        entries: {
+          "823e4567-e89b-42d3-a456-426614174007": { status: "succeeded", updatedAt: old },
+          "923e4567-e89b-42d3-a456-426614174008": { status: "failed", updatedAt: new Date().toISOString() },
+        },
+      }),
+    );
+    const request = envelope();
+    request.requestedResources = ["workspace"];
+    await provisioner.provision(request);
+
+    const ledger = JSON.parse(await fs.readFile(path.join(root, "state/ledger.json"), "utf8"));
+    assert.deepEqual(Object.keys(ledger.entries).sort(), [eventId, "923e4567-e89b-42d3-a456-426614174008"]);
+  });
+
+  it("moves the resources of a deleted project into the trash across mount points", async () => {
+    const trash = path.join(root, "trash/projects");
+    // Like the provisioning unit, where every writable path is a mount of its own.
+    const rename = async (source, destination) => {
+      if (!source.startsWith(trash)) throw Object.assign(new Error("cross-device"), { code: "EXDEV" });
+      return fs.rename(source, destination);
+    };
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      execute: async () => ({ stdout: "", stderr: "" }),
+      rename,
+    });
+    const request = envelope();
+    request.requestedResources = ["workspace", "coordinator", "files"];
+    await provisioner.provision(request);
+    await fs.writeFile(path.join(root, "vault/Projects/DEMO/Docs/plan.md"), "kept in the trash");
+
+    const deletion = {
+      ...request,
+      eventId: "a23e4567-e89b-42d3-a456-426614174009",
+      eventType: "project.deprovision",
+    };
+    await provisioner.deprovision(deletion);
+
+    const quarantine = path.join(trash, deletion.eventId);
+    assert.deepEqual(
+      (await fs.readdir(quarantine)).sort(),
+      ["hermes-profile", "receipt.json", "registry.json", "vault", "workspace"],
+    );
+    assert.equal(await fs.readFile(path.join(quarantine, "vault/Docs/plan.md"), "utf8"), "kept in the trash");
+    assert.equal(await fs.stat(path.join(quarantine, "workspace/.git")).then((stat) => stat.isDirectory()), true);
+    await assert.rejects(fs.lstat(path.join(root, "projects/demo")), { code: "ENOENT" });
+    await assert.rejects(fs.lstat(path.join(root, "vault/Projects/DEMO")), { code: "ENOENT" });
   });
 
   it("rejects reuse of an event id with another request", async () => {

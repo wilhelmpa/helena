@@ -10,11 +10,17 @@ import { isMcpRequest } from '#shared/mcp-request';
 import { mcpTool } from '#mcp/generate';
 import {
   ProjectResponse,
+  SetupJobResponse,
   copyProjectBody,
   createProjectBody,
   updateProjectBody,
 } from '#modules/projects/model';
-import { createProject, deleteProject, updateProject } from '#modules/projects/service';
+import {
+  createProject,
+  deleteProject,
+  retryDeprovisioningJob,
+  updateProject,
+} from '#modules/projects/service';
 import { copyProject } from '#modules/projects/copy';
 import {
   TeamDetailResponse,
@@ -28,6 +34,7 @@ import {
   TeamResponse,
   createTeamBody,
   setTeamMemberRoleBody,
+  teamDeprovisioningParams,
   teamMemberParams,
   teamParams,
   teamProjectListQuery,
@@ -356,6 +363,22 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
         summary: 'Delete a project of the team',
         description:
           'Permanently delete a project the team owns and everything in it. Irreversible.',
+      },
+    },
+  )
+
+  .post(
+    '/teams/:teamId/project-deprovisioning/:jobId/retry',
+    ({ membership, params }) => retryDeprovisioningJob(membership.teamId, params.jobId),
+    {
+      teamManager: true,
+      params: teamDeprovisioningParams,
+      response: { 200: SetupJobResponse, ...errors(400, 401, 403, 404, 409) },
+      detail: {
+        summary: "Retry a deleted project's failed cleanup",
+        description:
+          'Queue the failed deprovisioning job of a deleted project of the team again. It ' +
+          'removes the workspace, files, runtime and schedules the project left behind.',
       },
     },
   )

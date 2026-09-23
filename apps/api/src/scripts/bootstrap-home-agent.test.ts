@@ -4,11 +4,15 @@ import { aiAgent, db, teamMember } from '@repo/db';
 import { eq } from 'drizzle-orm';
 
 import { signUpTestUser } from '#tests/helpers/auth';
-import { authedApi } from '#tests/helpers/app';
+import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
 import type { AgentRuntimePolicy } from '#modules/agents/core/service';
 
-import { bootstrapHomeAgent, HOME_AGENT_SOUL } from './bootstrap-home-agent';
+import {
+  bootstrapHomeAgent,
+  bootstrapProjectCoordinator,
+  HOME_AGENT_SOUL,
+} from './bootstrap-home-agent';
 
 describe('Home agent bootstrap', () => {
   beforeEach(resetDb);
@@ -84,5 +88,54 @@ describe('Home agent bootstrap', () => {
     expect(threads.status).toBe(200);
     expect(threads.data?.items).toHaveLength(1);
     expect(threads.data?.items[0]?.title).toBe('Richte mein System ein');
+  });
+});
+
+describe('Project coordinator bootstrap', () => {
+  beforeEach(resetDb);
+
+  async function createdProject() {
+    const owner = await signUpTestUser();
+    const created = await authedApi(owner.cookie).projects.post({ key: 'COORD', name: 'Coord' });
+    expect(created.status).toBe(201);
+    return created.data!;
+  }
+
+  async function keyWorks(apiKey: string) {
+    return (await apiKeyApi(apiKey).projects.get()).status === 200;
+  }
+
+  it('keeps a valid key and issues a new one only for a missing or rejected key', async () => {
+    const project = await createdProject();
+
+    const first = await bootstrapProjectCoordinator(project.id);
+    expect(first?.agent.username).toBe('hermes-coord-coordinator');
+    const issued = first!.apiKey!;
+    expect(await keyWorks(issued)).toBe(true);
+
+    const reused = await bootstrapProjectCoordinator(project.id, issued);
+    expect(reused?.agent.id).toBe(first!.agent.id);
+    expect(reused?.apiKey).toBeNull();
+    expect(await keyWorks(issued)).toBe(true);
+
+    const replaced = await bootstrapProjectCoordinator(project.id, 'itp_not-a-valid-key');
+    expect(replaced?.apiKey).toEqual(expect.any(String));
+    expect(replaced?.apiKey).not.toBe(issued);
+    expect(await keyWorks(issued)).toBe(false);
+    expect(await keyWorks(replaced!.apiKey!)).toBe(true);
+  });
+
+  it("does not accept another agent's key as the coordinator's", async () => {
+    const project = await createdProject();
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
+
+    const result = await bootstrapProjectCoordinator(project.id, home.apiKey);
+    expect(result?.apiKey).toEqual(expect.any(String));
+    expect(await keyWorks(home.apiKey)).toBe(true);
+  });
+
+  it('reports a missing project', async () => {
+    expect(await bootstrapProjectCoordinator(999_999)).toBeNull();
   });
 });

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { writeJsonAtomic } from "./atomic-json.mjs";
+import { movePath } from "./move-path.mjs";
 
 const PROJECT_SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const MAX_PROJECT_BROWSERS = 128;
@@ -158,10 +159,6 @@ async function stopProjectBrowserUnits(config, execute, slug) {
     `volition-project-browser@${slug}.target`,
     `volition-project-browser-chromium@${slug}.service`,
     `volition-project-browser-kasm@${slug}.service`,
-    // Cleanup compatibility for project browsers created before KasmVNC.
-    `volition-project-browser-xvfb@${slug}.service`,
-    `volition-project-browser-vnc@${slug}.service`,
-    `volition-project-browser-novnc@${slug}.service`,
   ];
   for (const unit of units) {
     try {
@@ -174,6 +171,32 @@ async function stopProjectBrowserUnits(config, execute, slug) {
       if (!unitNotInstalled(error)) throw error;
     }
   }
+}
+
+export function createProjectBrowserStatus(config, options = {}) {
+  const execute = options.execute;
+  if (typeof execute !== "function") throw new Error("Project browser command runner is required");
+
+  return async function projectBrowserActive(slug) {
+    if (!PROJECT_SLUG.test(slug)) return false;
+    const systemctlPrefix = config.projectBrowserSystemctlUser !== false ? ["--user"] : [];
+    try {
+      const { stdout } = await execute(
+        config.systemctlBin,
+        [
+          ...systemctlPrefix,
+          "is-active",
+          `volition-project-browser-kasm@${slug}.service`,
+          `volition-project-browser-chromium@${slug}.service`,
+        ],
+        { timeout: 10_000, maxBuffer: 4_096, encoding: "utf8" },
+      );
+      return stdout.split("\n").filter(Boolean).every((line) => line.trim() === "active");
+    } catch {
+      // systemctl is-active exits non-zero when a unit is not active.
+      return false;
+    }
+  };
 }
 
 export function createProjectBrowserProvisioner(config, options = {}) {
@@ -347,7 +370,7 @@ export function createProjectBrowserDeprovisioner(config, options = {}) {
     } catch (error) {
       if (error?.code !== "ENOENT") throw error;
     }
-    await fs.rename(projectRoot, destination);
+    await movePath(projectRoot, destination, { rename: options.rename });
     return destination;
   };
 }

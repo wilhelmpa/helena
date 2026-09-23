@@ -129,7 +129,26 @@
       "documents": "Dokumentasi proyek bersama yang diorganisasikan ke dalam halaman."
     },
     "featureOn": "{feature} diaktifkan",
-    "featureOff": "{feature} dinonaktifkan"
+    "featureOff": "{feature} dinonaktifkan",
+    "setup": {
+      "title": "Penyiapan",
+      "description": "Ruang kerja, berkas, koordinator, terminal, dan peramban yang dibutuhkan proyek ini. Pemilik proyek, atau pemilik atau manajer tim, dapat mencoba ulang penyiapan yang gagal; pembersihan yang gagal dicoba ulang oleh pemilik atau manajer tim.",
+      "provisioning": "Penyiapan proyek",
+      "provisioningHint": "Membuat ruang kerja, folder brankas, koordinator, terminal, dan peramban.",
+      "cleanup": "Pembersihan proyek yang dihapus",
+      "cleanupHint": "Proyek yang dihapus di tim ini memakai kunci yang sama. Sumber dayanya dihapus sebelum proyek ini dapat disiapkan.",
+      "status": {
+        "pending": "Sedang berjalan",
+        "succeeded": "Selesai",
+        "failed": "Gagal"
+      },
+      "meta": "{attempts, plural, =0 {Belum ada percobaan} other {# percobaan}} · diubah {ago}",
+      "lastError": "Galat terakhir: {error}",
+      "missing": "Proyek ini tidak memiliki tugas penyiapan.",
+      "loading": "Memuat status penyiapan…",
+      "unavailable": "Status penyiapan tidak tersedia.",
+      "retry": "Coba lagi"
+    }
   },
   "configuration": {
     "saved": "Perubahan disimpan",

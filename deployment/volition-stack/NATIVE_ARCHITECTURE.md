@@ -61,7 +61,28 @@ copy.
 
 Project creation writes one idempotent provisioning job. Provisioning creates the
 workspace, vault folders, Hermes profile, terminal resource, code link, browser state,
-coordinator assignment, and registry entry. A retry reuses those resources.
+coordinator assignment, and registry entry. A retry reuses those resources. Plan issues a
+new coordinator API key only when the runner descriptor holds none that still works, and
+the Hermes runner is restarted only when a descriptor was created or changed.
+
+Project deletion writes one deprovisioning job. Deprovisioning deletes the project's Mastra
+workflow schedules and its runner descriptor, stops the browser units, and moves the
+workspace, vault folder, Hermes profile, browser state, and registry entry to
+`/srv/volition/trash/projects/<event-id>/` with a `receipt.json`. The terminal router stops
+the project's Wetty process and tmux session once its workspace directory is gone. A
+failed job is retried with `POST /teams/:teamId/project-deprovisioning/:jobId/retry`.
+A deleted board's workspace and vault folders move to the trash the same way on the next
+provisioning run.
+
+`volition-trash-purge.timer` runs `integration/purge-trash.mjs` daily. It deletes each
+trash entry whose receipt `purgeAfter` (30 days after the move) has passed. The
+provisioning ledger drops entries older than 30 days, and the worker removes finished
+deprovisioning jobs after 30 days.
+
+Every ten minutes the worker reads `GET /api/provision/state` and compares it with the
+database. A provisioned project whose registry entry is missing, whose browser units are
+not active, or whose boards differ is provisioned again; a registry entry without a
+project is deprovisioned.
 
 Mastra coordinates `agent-team` through `/run/volition-ipc/hermes-team.sock`. The bridge
 submits project-bound work to Plan's external-agent queue. The Hermes runner claims that
@@ -90,7 +111,9 @@ All routes use the Plan origin and require a valid Plan session.
 The terminal compatibility URL redirects to the project path and then Wetty's slashless
 canonical path. The verified chain terminates after two redirects with HTTP 200. The
 router validates host, same-origin WebSocket, slug, and resolved workspace. It starts one
-Wetty child per requested project on a private Unix socket. Nginx and the router remove
+Wetty child per requested project on a private Unix socket. On every request and every
+minute it stops the Wetty child and the `volition-<slug>` tmux session of a project whose
+workspace directory no longer exists. Nginx and the router remove
 Cookie and Authorization headers before Wetty. New projects become available after their
 workspace directory is created.
 
@@ -101,9 +124,11 @@ instance preserves its profile directory.
 The project coordinator receives the matching `BROWSER_CDP_URL`. In Browser Use mode,
 `browser_exec` should use `session="project"` to keep its tab visible in Plan's Browser panel
 between calls. The generated project instructions specify this session.
-The container-era browser paths and units under `deployment/volition-stack/browser/` are
-legacy references. Kingston uses `/var/lib/volition/project-browser/projects/<slug>` and
-the native units under `deployment/volition-stack/native/systemd/`.
+`deployment/volition-stack/browser/` holds the loopback router
+(`/usr/local/libexec/volition-project-browser-router.mjs`) and the display wait helper
+(`/usr/local/libexec/volition-wait-for-x`). The KasmVNC and Chromium units are in
+`deployment/volition-stack/native/systemd/`, and the state is in
+`/var/lib/volition/project-browser/projects/<slug>`.
 
 ## Security invariants
 

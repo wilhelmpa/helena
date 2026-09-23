@@ -20,7 +20,7 @@ import {
   teamMember,
   user,
 } from '@repo/db';
-import { and, eq, getTableColumns } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import {
   defaultMemberPermissions,
@@ -493,6 +493,97 @@ export async function retryProvisioningJob(projectId: number): Promise<Provision
     throw new HttpError(404, 'Provisioning job not found');
   }
   return mapProvisioningJob(row);
+}
+
+export interface SetupJobRow {
+  id: string;
+  status: 'pending' | 'succeeded' | 'failed';
+  attempts: number;
+  lastError: string | null;
+  updatedAt: string;
+}
+
+export interface ProjectSetupRow {
+  provisioning: SetupJobRow | null;
+  // The cleanup of the latest deleted project of the team with the same key. It
+  // works on the same workspace and runtime paths, and until it has finished the
+  // provisioner refuses to set this project up.
+  deprovisioning: SetupJobRow | null;
+}
+
+function mapSetupJob(row: {
+  id: string;
+  status: string;
+  attempts: number;
+  lastError: string | null;
+  updatedAt: Date;
+}): SetupJobRow {
+  return {
+    id: row.id,
+    status: row.status as SetupJobRow['status'],
+    attempts: row.attempts,
+    lastError: row.lastError,
+    updatedAt: iso(row.updatedAt),
+  };
+}
+
+function deprovisioningInTeam(teamId: number) {
+  return sql`(${projectDeprovisioningJob.project}->>'teamId')::integer = ${teamId}`;
+}
+
+export async function getProjectSetup(target: {
+  id: number;
+  teamId: number;
+  key: string;
+}): Promise<ProjectSetupRow> {
+  const [[provisioning], [deprovisioning]] = await Promise.all([
+    db.select().from(projectProvisioningJob).where(eq(projectProvisioningJob.projectId, target.id)),
+    db
+      .select()
+      .from(projectDeprovisioningJob)
+      .where(
+        and(
+          deprovisioningInTeam(target.teamId),
+          sql`${projectDeprovisioningJob.project}->>'key' = ${target.key}`,
+        ),
+      )
+      .orderBy(desc(projectDeprovisioningJob.createdAt))
+      .limit(1),
+  ]);
+  return {
+    provisioning: provisioning ? mapSetupJob(provisioning) : null,
+    deprovisioning: deprovisioning ? mapSetupJob(deprovisioning) : null,
+  };
+}
+
+// The project of a deprovisioning job no longer exists, so the job is addressed
+// through the team that owned it.
+export async function retryDeprovisioningJob(teamId: number, jobId: string): Promise<SetupJobRow> {
+  const [row] = await db
+    .update(projectDeprovisioningJob)
+    .set({
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: new Date(),
+      lastError: null,
+      completedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(projectDeprovisioningJob.id, jobId),
+        eq(projectDeprovisioningJob.status, 'failed'),
+        deprovisioningInTeam(teamId),
+      ),
+    )
+    .returning();
+  if (row) return mapSetupJob(row);
+  const [existing] = await db
+    .select({ id: projectDeprovisioningJob.id })
+    .from(projectDeprovisioningJob)
+    .where(and(eq(projectDeprovisioningJob.id, jobId), deprovisioningInTeam(teamId)));
+  if (existing) throw new HttpError(409, 'Only failed deprovisioning jobs can be retried');
+  throw new HttpError(404, 'Deprovisioning job not found');
 }
 
 export async function createProject(

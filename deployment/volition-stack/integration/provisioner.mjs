@@ -2,6 +2,7 @@ import { ensureProjectGit } from "./project-git.mjs";
 import {
   createProjectBrowserDeprovisioner,
   createProjectBrowserProvisioner,
+  createProjectBrowserStatus,
 } from "./project-browser.mjs";
 import { provisionBoards } from "./boards.mjs";
 import { writeProjectContext } from "./project-context.mjs";
@@ -12,9 +13,11 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
+import { movePath } from "./move-path.mjs";
 
 const execFileAsync = promisify(execFile);
 const PROVISIONER_REVISION = 17;
+const LEDGER_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const VAULT_PROJECT_FOLDERS = ["Docs", "Files", "Assets", "Inbox"];
 
 export class ProvisioningConflictError extends Error {}
@@ -81,15 +84,10 @@ function resource(kind, id, url) {
   return url ? { kind, id, url } : { kind, id };
 }
 
-function mergeBoards(existing, incoming) {
-  const merged = new Map();
-  for (const board of [
-    ...(Array.isArray(existing) ? existing : []),
-    ...(Array.isArray(incoming) ? incoming : []),
-  ]) {
-    if (board && Number.isSafeInteger(board.id) && board.id > 0) merged.set(board.id, board);
-  }
-  return [...merged.values()];
+function validBoards(boards) {
+  return (Array.isArray(boards) ? boards : []).filter(
+    (board) => board && Number.isSafeInteger(board.id) && board.id > 0,
+  );
 }
 
 export function createProvisioner(config, options = {}) {
@@ -99,11 +97,23 @@ export function createProvisioner(config, options = {}) {
     options.ensureProjectBrowser ?? createProjectBrowserProvisioner(config, { execute });
   const deprovisionProjectBrowser =
     options.deprovisionProjectBrowser ??
-    createProjectBrowserDeprovisioner(config, { execute });
+    createProjectBrowserDeprovisioner(config, { execute, rename: options.rename });
+  const projectBrowserActive =
+    options.projectBrowserActive ?? createProjectBrowserStatus(config, { execute });
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
   const ensureBoardFiles =
     options.ensureBoardFiles ?? ensureLocalBoardFiles;
+  const mastraControl = options.mastraControl ?? null;
   let queue = Promise.resolve();
+
+  // The runner reads the descriptors only when it starts.
+  async function restartHermesRunner() {
+    await execute(
+      config.systemctlBin,
+      [...(config.systemctlUser !== false ? ["--user"] : []), "restart", config.hermesRunnerService],
+      { timeout: 60_000, maxBuffer: 64 * 1024, encoding: "utf8" },
+    );
+  }
 
   async function ensureProjectVault(_slug, project) {
     const vaultRoot = await ensureSharedVaultDirectory(config.vaultRoot);
@@ -163,7 +173,7 @@ export function createProvisioner(config, options = {}) {
       project: envelope.project,
       slug: workspace.slug,
       requestedResources: envelope.requestedResources,
-      boards: mergeBoards(current?.boards, envelope.boards),
+      boards: validBoards(envelope.boards),
       resources: {
         ...(current?.resources ?? {}),
         ...(workspace.hostPath
@@ -208,6 +218,51 @@ export function createProvisioner(config, options = {}) {
       updatedAt: new Date().toISOString(),
     });
     return registryPath;
+  }
+
+  async function writeTrashReceipt(quarantineRoot, envelope, quarantined, details = {}) {
+    const receiptPath = path.join(quarantineRoot, "receipt.json");
+    await writeJsonAtomic(receiptPath, {
+      schemaVersion: 1,
+      eventId: envelope.eventId,
+      project: envelope.project,
+      retentionDays: config.projectTrashRetentionDays,
+      purgeAfter: new Date(
+        Date.now() + config.projectTrashRetentionDays * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      quarantined,
+      ...details,
+      completedAt: new Date().toISOString(),
+    });
+    return receiptPath;
+  }
+
+  // The registry lists the boards of the last successful run. A board missing from
+  // this request was deleted in Plan, so its folders move to the trash.
+  async function quarantineRemovedBoards(envelope, workspace) {
+    const registry = await readJson(path.join(config.registryRoot, `${workspace.slug}.json`), null);
+    if (registry?.project?.id !== envelope.project.id) return;
+    const kept = new Set(validBoards(envelope.boards).map((board) => board.id));
+    const removed = validBoards(registry.boards).filter((board) => !kept.has(board.id));
+    const quarantineRoot = path.join(config.projectTrashRoot, envelope.eventId);
+    const boardFilesRoot = path.join(config.vaultRoot, "Projects", envelope.project.key, "Files", "Boards");
+    const quarantined = [];
+    for (const { id } of removed) {
+      const name = `board-${id}`;
+      const folders = [
+        ...(workspace.hostPath ? [[path.join(workspace.hostPath, "boards"), "workspace"]] : []),
+        [boardFilesRoot, "files"],
+      ];
+      for (const [root, kind] of folders) {
+        const source = path.join(root, name);
+        const exists = await fs.lstat(source).then(() => true, () => false);
+        const moved = exists
+          ? await quarantinePath({ source, allowedRoot: root, quarantineRoot, label: `${name}-${kind}` })
+          : null;
+        if (moved) quarantined.push(moved);
+      }
+    }
+    if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
   }
 
   async function provisionResources(envelope) {
@@ -262,17 +317,8 @@ export function createProvisioner(config, options = {}) {
           terminalUrl(config, workspace.slug),
         )
       : null;
-    if (coordinator || browser) {
-      await execute(config.systemctlBin, [
-        ...(config.systemctlUser !== false ? ["--user"] : []),
-        "restart",
-        config.hermesRunnerService,
-      ], {
-        timeout: 60_000,
-        maxBuffer: 64 * 1024,
-        encoding: "utf8",
-      });
-    }
+    if (planCoordinator?.descriptorChanged) await restartHermesRunner();
+    await quarantineRemovedBoards(envelope, workspace);
     const boardResources = await provisionBoards(config, envelope, workspace, ensureBoardFiles);
     const registryPath = await writeRegistry(envelope, workspace, coordinator, planCoordinator, files, terminal, browser);
     const resources = [resource("registry", `project:${workspace.slug}`), ...boardResources];
@@ -331,7 +377,7 @@ export function createProvisioner(config, options = {}) {
     if (sourceStat.isSymbolicLink()) throw new Error(`The ${label} path is a symbolic link`);
     if (destinationStat) throw new Error(`The ${label} quarantine destination already exists`);
     await ensurePrivateDirectory(quarantineRoot);
-    await fs.rename(candidate, destination);
+    await movePath(candidate, destination, { rename: options.rename });
     return { label, destination, state: "quarantined" };
   }
 
@@ -345,6 +391,9 @@ export function createProvisioner(config, options = {}) {
       throw new ProvisioningConflictError("The project registry belongs to another project id");
     }
     const quarantined = [];
+    const mastraSchedulesDeleted = mastraControl
+      ? await mastraControl.deleteProjectSchedules(`project:${envelope.project.key}`)
+      : 0;
 
     if (envelope.requestedResources.includes("browser") || registry?.resources?.browser) {
       const browserDestination = await deprovisionProjectBrowser(
@@ -361,13 +410,16 @@ export function createProvisioner(config, options = {}) {
       }
     }
 
-    const descriptor = await quarantinePath({
-      source: path.join(config.hermesRunnerDescriptorRoot, `${slug}.json`),
-      allowedRoot: config.hermesRunnerDescriptorRoot,
-      quarantineRoot,
-      label: "hermes-runner.json",
-    });
-    if (descriptor) quarantined.push(descriptor);
+    // The descriptor holds the coordinator's API key, so it is deleted rather than kept in the trash.
+    const descriptorRemoved = await fs
+      .unlink(path.join(config.hermesRunnerDescriptorRoot, `${slug}.json`))
+      .then(
+        () => true,
+        (error) => {
+          if (error?.code === "ENOENT") return false;
+          throw error;
+        },
+      );
     const hermesAgent = await quarantinePath({
       source: path.join(config.hermesAgentsRoot, slug),
       allowedRoot: config.hermesAgentsRoot,
@@ -382,17 +434,7 @@ export function createProvisioner(config, options = {}) {
       label: "hermes-profile",
     });
     if (hermesProfile) quarantined.push(hermesProfile);
-    if (descriptor || hermesAgent || hermesProfile) {
-      await execute(
-        config.systemctlBin,
-        [
-          ...(config.systemctlUser !== false ? ["--user"] : []),
-          "restart",
-          config.hermesRunnerService,
-        ],
-        { timeout: 60_000, maxBuffer: 64 * 1024, encoding: "utf8" },
-      );
-    }
+    if (descriptorRemoved || hermesAgent || hermesProfile) await restartHermesRunner();
 
     const workspaceManaged =
       registry?.resources?.workspace?.managed === true || envelope.project.key !== "VERV";
@@ -420,19 +462,9 @@ export function createProvisioner(config, options = {}) {
     });
     if (registryEntry) quarantined.push(registryEntry);
 
-    const receipt = {
-      schemaVersion: 1,
-      eventId: envelope.eventId,
-      project: envelope.project,
-      retentionDays: config.projectTrashRetentionDays,
-      purgeAfter: new Date(
-        Date.now() + config.projectTrashRetentionDays * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      quarantined,
-      completedAt: new Date().toISOString(),
-    };
-    const receiptPath = path.join(quarantineRoot, "receipt.json");
-    await writeJsonAtomic(receiptPath, receipt);
+    const receiptPath = await writeTrashReceipt(quarantineRoot, envelope, quarantined, {
+      mastraSchedulesDeleted,
+    });
     const resources = quarantined.flatMap((item) => {
       const kind =
         item.label === "workspace"
@@ -449,6 +481,33 @@ export function createProvisioner(config, options = {}) {
     return { resources, registryPath: receiptPath };
   }
 
+  // What the registry says is provisioned, for the worker's reconciliation.
+  async function provisionedState() {
+    let names;
+    try {
+      names = await fs.readdir(config.registryRoot);
+    } catch (error) {
+      if (error?.code === "ENOENT") return { projects: [] };
+      throw error;
+    }
+    const projects = [];
+    for (const name of names.filter((item) => item.endsWith(".json")).sort()) {
+      const registry = await readJson(path.join(config.registryRoot, name), null);
+      if (registry?.schemaVersion !== 1 || !Number.isSafeInteger(registry.project?.id)) continue;
+      projects.push({
+        project: registry.project,
+        requestedResources: Array.isArray(registry.requestedResources)
+          ? registry.requestedResources
+          : [],
+        boards: validBoards(registry.boards).map((board) => board.id),
+        browserActive: registry.resources?.browser
+          ? await projectBrowserActive(registry.slug)
+          : null,
+      });
+    }
+    return { projects };
+  }
+
   async function provisionLocked(envelope) {
     const hash = requestHash(envelope);
     const ledger = await readJson(config.ledgerPath, {
@@ -461,6 +520,12 @@ export function createProvisioner(config, options = {}) {
       typeof ledger.entries !== "object"
     ) {
       throw new Error("The provisioning ledger has an unsupported format");
+    }
+    // The worker sends a new event id for every new run, so an old entry is never
+    // needed again. Without an entry an event is simply run again.
+    const cutoff = Date.now() - LEDGER_RETENTION_MS;
+    for (const [eventId, entry] of Object.entries(ledger.entries)) {
+      if (!(Date.parse(entry?.updatedAt) >= cutoff)) delete ledger.entries[eventId];
     }
     const existing = ledger.entries[envelope.eventId];
     if (existing?.requestHash !== undefined && existing.requestHash !== hash) {
@@ -516,6 +581,7 @@ export function createProvisioner(config, options = {}) {
   }
 
   return {
+    state: provisionedState,
     provision(envelope) {
       const operation = queue.then(
         () => provisionLocked(envelope),

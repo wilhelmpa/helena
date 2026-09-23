@@ -42,6 +42,9 @@ beforeEach(async () => {
             resources: [{ kind: "workspace", id: `quarantine:${envelope.project.key}` }],
           };
         },
+        async state() {
+          return { projects: [{ project: { id: 7 }, requestedResources: [], boards: [], browserActive: null }] };
+        },
       },
       inbox: {
         async recordPush(value) {
@@ -127,6 +130,16 @@ describe("provisioning server", () => {
       resources: [{ kind: "workspace", id: "quarantine:DEMO" }],
     });
     assert.equal(calls, 1);
+  });
+
+  it("reports the provisioned projects to an authenticated caller only", async () => {
+    const denied = await fetch(`${origin}/api/provision/state`);
+    assert.equal(denied.status, 401);
+    const response = await fetch(`${origin}/api/provision/state`, {
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual((await response.json()).projects.map((entry) => entry.project.id), [7]);
   });
 
   it("rejects missing authentication before parsing the request", async () => {

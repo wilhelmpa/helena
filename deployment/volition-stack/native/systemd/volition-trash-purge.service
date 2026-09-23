@@ -1,0 +1,28 @@
+[Unit]
+Description=Delete expired Volition project trash
+After=local-fs.target
+
+# Root with only the file capabilities: a trash entry holds files of Plan and Hermes
+# whose directories the other user cannot write. Only the trash root is writable.
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/volition/source/plan/deployment/volition-stack/integration
+Environment=PROJECT_TRASH_ROOT=/srv/volition/trash/projects
+ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/purge-trash.mjs
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_FOWNER
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/volition/trash/projects
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
