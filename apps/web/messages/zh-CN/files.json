@@ -46,6 +46,7 @@
   "moved": "已移动到 {folder}",
   "trashed": "{name} 已移到回收站",
   "pathCopied": "路径已复制",
+  "copyFailed": "无法复制路径",
   "actions": {
     "more": "{name} 的操作",
     "download": "下载",

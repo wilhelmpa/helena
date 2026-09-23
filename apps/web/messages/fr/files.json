@@ -46,6 +46,7 @@
   "moved": "Déplacé vers {folder}",
   "trashed": "{name} a été mis à la corbeille",
   "pathCopied": "Chemin copié",
+  "copyFailed": "Le chemin n'a pas pu être copié",
   "actions": {
     "more": "Actions pour {name}",
     "download": "Télécharger",

@@ -46,6 +46,7 @@
   "moved": "Перемещено в {folder}",
   "trashed": "{name} перемещено в корзину",
   "pathCopied": "Путь скопирован",
+  "copyFailed": "Не удалось скопировать путь",
   "actions": {
     "more": "Действия для {name}",
     "download": "Скачать",

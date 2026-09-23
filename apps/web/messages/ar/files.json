@@ -46,6 +46,7 @@
   "moved": "نُقل إلى {folder}",
   "trashed": "نُقل {name} إلى سلة المهملات",
   "pathCopied": "تم نسخ المسار",
+  "copyFailed": "تعذر نسخ المسار",
   "actions": {
     "more": "إجراءات {name}",
     "download": "تنزيل",

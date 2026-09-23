@@ -46,6 +46,7 @@
   "moved": "Переміщено до {folder}",
   "trashed": "{name} переміщено до кошика",
   "pathCopied": "Шлях скопійовано",
+  "copyFailed": "Не вдалося скопіювати шлях",
   "actions": {
     "more": "Дії для {name}",
     "download": "Завантажити файл",

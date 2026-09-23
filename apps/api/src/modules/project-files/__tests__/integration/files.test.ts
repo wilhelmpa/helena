@@ -147,8 +147,8 @@ describe('project files', () => {
   });
 
   it('keeps every path inside the project folder', async () => {
-    const { files } = await setup();
-    for (const bad of ['../KEY', '/etc', 'a/../../b', 'a//b', 'back\\slash']) {
+    const { owner, files } = await setup();
+    for (const bad of ['../KEY', '/etc', 'a/../../b', 'a//b', 'back\\slash', '.git', 'a/.env']) {
       expect((await files.get({ query: { path: bad } })).status).toBe(400);
     }
     mkdirSync(vaultFile('Projects/MKT'), { recursive: true });
@@ -159,9 +159,11 @@ describe('project files', () => {
       (await files.upload.post({ files: [file('x', 'x.txt')] }, { query: { path: 'link' } }))
         .status,
     ).toBe(400);
-    // Neither the link nor a hidden entry is listed.
+    // Neither the link nor a hidden entry is listed, and a hidden entry cannot be named.
     writeFileSync(vaultFile('Projects/MKT/.hidden'), 'x');
     expect((await files.get({ query: {} })).data!.items).toEqual([]);
+    expect((await raw(owner.cookie, '/projects/MKT/files/raw?path=.hidden')).status).toBe(400);
+    expect((await files.move.post({ from: 'x.txt', to: '.x.txt' })).status).toBe(400);
   });
 
   it('opens safe kinds inline and everything else as a download', async () => {
@@ -206,6 +208,7 @@ describe('project files', () => {
 
   it('reads the workspace but never writes it', async () => {
     const { owner, files } = await setup();
+    expect((await files.get({ query: { root: 'code' } })).status).toBe(404);
     mkdirSync(path.join(workspaces, 'mkt', 'src'), { recursive: true });
     writeFileSync(path.join(workspaces, 'mkt', 'src', 'index.ts'), 'export {}');
 
@@ -285,6 +288,7 @@ describe('home files', () => {
 
   it('keeps Private to the owner and never creates it', async () => {
     const { god, godCookie, person } = await users();
+    expect((await god.files.get({ query: { root: 'private' } })).status).toBe(404);
     expect(
       (
         await god.files.upload.post(

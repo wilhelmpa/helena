@@ -46,6 +46,7 @@
   "moved": "Movido para {folder}",
   "trashed": "{name} foi movido para a lixeira",
   "pathCopied": "Caminho copiado",
+  "copyFailed": "Não foi possível copiar o caminho",
   "actions": {
     "more": "Ações para {name}",
     "download": "Baixar",

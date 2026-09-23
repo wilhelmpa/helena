@@ -28,7 +28,9 @@ function hasControlCharacter(value: string): boolean {
 }
 
 // A path below a file root, as the client sends it: segments joined by "/", no
-// leading slash, no "." or "..". The empty path is the root itself.
+// leading slash, no "." or "..". The empty path is the root itself. A segment starting
+// with a dot is refused as well: hidden entries (.env, .git, .trash, .obsidian) are not
+// listed, and they are not reachable by name either.
 export function relativePath(value = ''): string {
   if (
     typeof value !== 'string' ||
@@ -41,8 +43,7 @@ export function relativePath(value = ''): string {
   if (
     parts.length > MAX_DEPTH ||
     parts.some(
-      (part) =>
-        !part || part === '.' || part === '..' || part.length > 255 || hasControlCharacter(part),
+      (part) => !part || part.startsWith('.') || part.length > 255 || hasControlCharacter(part),
     )
   ) {
     throw new HttpError(400, 'File path is invalid');

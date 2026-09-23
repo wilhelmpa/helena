@@ -91,8 +91,10 @@ export function fileRawUrl(scope: FileScope, path: string, download = false): st
   return `${prefix}?${query}`;
 }
 
-// The text the vault index extracted from an office file or a scan. The index and
-// this route come with the vault knowledge work; until then there is none.
+// The text the vault index extracted from an office file or a scan; null when there is
+// none. The only caller of the index for this, so the route changes here alone.
+// TODO(hub/vault-knowledge): point this at the extracted-text route of the vault index
+// once that branch is merged; /vault/text is a placeholder and answers 404 until then.
 export async function extractedText(vaultPath: string): Promise<string | null> {
   const res = await fetch(`${API_URL}/vault/text?${new URLSearchParams({ path: vaultPath })}`, {
     credentials: 'include',

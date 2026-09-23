@@ -46,6 +46,7 @@
   "moved": "Nach {folder} verschoben",
   "trashed": "{name} in den Papierkorb verschoben",
   "pathCopied": "Pfad kopiert",
+  "copyFailed": "Der Pfad konnte nicht kopiert werden",
   "actions": {
     "more": "Aktionen für {name}",
     "download": "Herunterladen",

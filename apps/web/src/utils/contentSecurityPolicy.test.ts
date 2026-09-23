@@ -41,11 +41,11 @@ describe('contentSecurityPolicy', () => {
     process.env.CODE_URL = 'https://code.example.com/';
     assert.match(
       contentSecurityPolicy(),
-      /frame-src https:\/\/terminal\.example\.com https:\/\/code\.example\.com;/,
+      /frame-src 'self' https:\/\/terminal\.example\.com https:\/\/code\.example\.com;/,
     );
   });
 
-  it('disables external frames when no workspace is configured', () => {
-    assert.match(contentSecurityPolicy(), /frame-src 'none';/);
+  it('allows same-origin frames only when no workspace is configured', () => {
+    assert.match(contentSecurityPolicy(), /frame-src 'self';/);
   });
 });

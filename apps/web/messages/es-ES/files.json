@@ -46,6 +46,7 @@
   "moved": "Movido a {folder}",
   "trashed": "{name} se movió a la papelera",
   "pathCopied": "Ruta copiada",
+  "copyFailed": "No se pudo copiar la ruta",
   "actions": {
     "more": "Acciones para {name}",
     "download": "Descargar",

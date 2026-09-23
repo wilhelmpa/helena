@@ -7,6 +7,7 @@ import {
   type FileList,
   type FileScope,
 } from '@/lib/api/endpoints/projectFiles';
+import { copyText } from '@/utils/clipboard';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { fileViewKind } from '@/utils/fileKinds';
 import { childPath, docsFileUrl, obsidianUrl } from '@/utils/vaultLinks';
@@ -61,8 +62,12 @@ export function useFileActions({
       return folder ? codeFolderUrl(workspace, folder) : '';
     },
     async copyPath(item: FileItem) {
-      await navigator.clipboard.writeText(absolutePath(item));
-      toast.success(t('pathCopied'));
+      try {
+        await copyText(absolutePath(item));
+        toast.success(t('pathCopied'));
+      } catch {
+        toast.error(t('copyFailed'));
+      }
     },
   };
 }

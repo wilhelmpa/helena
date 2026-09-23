@@ -46,6 +46,7 @@
   "moved": "Dipindahkan ke {folder}",
   "trashed": "{name} dipindahkan ke tempat sampah",
   "pathCopied": "Jalur disalin",
+  "copyFailed": "Jalur tidak dapat disalin",
   "actions": {
     "more": "Tindakan untuk {name}",
     "download": "Unduh",
