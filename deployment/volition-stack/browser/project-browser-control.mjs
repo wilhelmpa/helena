@@ -1,8 +1,8 @@
 // Controls the project browsers over the Chrome DevTools Protocol. The project display
 // has no window manager, so nothing sizes Chromium's windows: the window keeper fits them
-// to the page size of the live view while someone watches it, and to the screen
-// otherwise, which changes size with the desktop view's panel. The control routes serve
-// the tab list and the navigation the Plan toolbar uses.
+// to the page size the live view asks for, and to the screen otherwise, which changes size
+// with the desktop view's panel. The control routes serve the tab list and the navigation
+// the Plan toolbar uses.
 
 const TARGET_ID = /^[A-Fa-f0-9]{16,64}$/;
 const MAX_BODY = 8 * 1024;
@@ -59,12 +59,15 @@ export function fittedBounds(bounds, size) {
   return fits ? null : fitted;
 }
 
-// The window size that shows a live view's page size: the page plus the browser's own
-// tab strip and toolbar. Without a live view a window fills the screen.
+// The window size that shows a live view's page: the page in window pixels, which is its CSS
+// size times the device pixel ratio the live view emulates, plus the browser's own tab strip
+// and toolbar. Without a live view a window fills the screen.
 export function windowSize(screen, chrome, live) {
-  return live
-    ? { width: live.width + chrome.width, height: live.height + chrome.height }
-    : screen;
+  if (!live) return screen;
+  return {
+    width: Math.round(live.width * live.ratio) + chrome.width,
+    height: Math.round(live.height * live.ratio) + chrome.height,
+  };
 }
 
 // One DevTools websocket, with the commands in flight matched to their answers and the
@@ -216,7 +219,8 @@ class BrowserLink {
 }
 
 const links = new Map();
-// The page size of each browser's live view, by DevTools port, while one is watched.
+// The page size each browser's live view asked for, by DevTools port: CSS pixels and the
+// window pixels per CSS pixel.
 const liveViewports = new Map();
 
 function linkFor(port) {
@@ -317,8 +321,8 @@ export async function readJsonBody(request) {
   }
 }
 
-// Sets the page size of a browser's live view, or clears it with null, and fits the
-// windows to it at once.
+// Sets the page size of a browser's live view ({width, height, ratio}), or clears it with
+// null so the windows fill the screen again, and fits the windows at once.
 export async function setLiveViewport(port, viewport) {
   if (viewport) liveViewports.set(port, viewport);
   else liveViewports.delete(port);
@@ -387,6 +391,7 @@ export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () =
         if (!ports.has(port)) {
           link.close();
           links.delete(port);
+          liveViewports.delete(port);
         }
       }
       for (const { cdpPort } of current) {

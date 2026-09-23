@@ -69,10 +69,11 @@ const BEHIND = "B".repeat(32);
 
 // A browser window on a 1920x1080 screen with 87 pixels of tab strip and toolbar, showing
 // the first of its tabs that is visible. A tab behind it reports the sizes it had when it
-// was last shown. The browser records every DevTools command and answers a screencast with
-// one frame.
+// was last shown. The browser records every DevTools command, answers a screencast with one
+// frame, and sends the events a test emits to every connection.
 function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
   const commands = [];
+  const connections = new Set();
   let bounds = { left: 0, top: 0, width: 1920, height: 1080, windowState: "normal" };
   const server = http.createServer((request, response) => {
     response.writeHead(200, { "content-type": "application/json" });
@@ -86,11 +87,13 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
     }
     response.end("{}");
   });
-  const browser = { server, commands, connections: 0 };
+  // lastInput is the time of the last trusted input the router's activity world reports.
+  const browser = { server, commands, connections: 0, lastInput: 0 };
   server.on("upgrade", (request, socket, head) => {
     upgraded.add(socket);
     browser.connections++;
     const connection = acceptWebSocket(request, socket, head);
+    connections.add(connection);
     connection.on("message", (data) => {
       const message = JSON.parse(data.toString());
       commands.push(message);
@@ -105,7 +108,12 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
         case "Browser.setWindowBounds":
           bounds = { ...bounds, ...message.params.bounds };
           return reply();
+        case "Page.getFrameTree":
+          return reply({ frameTree: { frame: { id: PAGE } } });
+        case "Page.createIsolatedWorld":
+          return reply({ executionContextId: 5 });
         case "Runtime.evaluate": {
+          if (message.params.contextId) return reply({ result: { value: browser.lastInput } });
           const tab = tabs.find(({ id }) => message.sessionId === `S-${id}`);
           const sizes = tab.visible ? ["visible", 1920, 1080, 0, 87] : ["hidden", 1920, 1080, 0, 0];
           const visibilityOnly = message.params.expression === "document.visibilityState";
@@ -130,6 +138,10 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
     });
   });
   browser.sent = (method) => commands.filter((command) => command.method === method);
+  browser.emit = (method, params) => {
+    const event = JSON.stringify({ method, params, sessionId: `S-${PAGE}` });
+    for (const connection of connections) connection.send(event);
+  };
   return browser;
 }
 
@@ -148,6 +160,7 @@ function upgradeStatus(port, path, headers) {
       },
     });
     request.on("response", (response) => resolve(response.statusCode));
+    request.on("error", () => resolve(null));
     request.on("upgrade", (response, socket) => {
       socket.destroy();
       resolve(response.statusCode);
@@ -297,17 +310,72 @@ describe("project browser router", () => {
     assert.deepEqual([mouse.params.type, mouse.params.x, mouse.params.y], ["mousePressed", 10, 20]);
     assert.equal(browser.sent("Page.navigate").length, 0);
 
-    // The window takes the view's size plus the browser's own toolbar, and goes back to the
-    // screen's size once nobody watches.
-    viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 513 }));
-    await until(() => browser.sent("Browser.setWindowBounds").length === 1);
+    // A retina view: the window takes the view's size in window pixels plus the browser's
+    // own toolbar, and the tab is drawn at pixel ratio 2. The page's CSS size is pinned while
+    // the window changes.
+    viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 900, dpr: 2 }));
+    await until(() => browser.sent("Emulation.setDeviceMetricsOverride").length === 2);
     assert.deepEqual(browser.sent("Browser.setWindowBounds")[0].params, {
       windowId: 1,
-      bounds: { left: 0, top: 0, width: 800, height: 600 },
+      bounds: { left: 0, top: 0, width: 1600, height: 1887 },
     });
-    viewer.close();
+    assert.deepEqual(
+      browser.sent("Emulation.setDeviceMetricsOverride").map((command) => command.params),
+      [
+        { width: 800, height: 900, deviceScaleFactor: 2, mobile: false },
+        { width: 0, height: 0, deviceScaleFactor: 2, scale: 2, mobile: false },
+      ],
+    );
+    const frames = () => received.filter((message) => message instanceof ArrayBuffer);
+    viewer.send(JSON.stringify({ type: "ack" }));
+    browser.emit("Page.screencastFrame", {
+      data: Buffer.from("sharp").toString("base64"),
+      metadata: { deviceWidth: 1600, deviceHeight: 1800 },
+      sessionId: 8,
+    });
+    await until(() => frames().length === 2);
+    const sharp = Buffer.from(frames()[1]);
+    assert.deepEqual([sharp.readUInt16BE(0), sharp.readUInt16BE(2)], [800, 900]);
+
+    // A dialog is shown to the viewer, who can answer it.
+    browser.emit("Page.javascriptDialogOpening", { type: "confirm", message: "Sure?", url: "https://a.test/" });
+    await until(() => received.some((message) => typeof message === "string" && message.includes("Sure?")));
+    viewer.send(JSON.stringify({ type: "dialog", accept: true }));
+    await until(() => browser.sent("Page.handleJavaScriptDialog").length === 1);
+    assert.deepEqual(browser.sent("Page.handleJavaScriptDialog")[0].params, { accept: true });
+    browser.emit("Page.javascriptDialogClosed", { result: true });
+    await until(() => received.includes(JSON.stringify({ type: "dialog", open: false })));
+
+    // While the agent acts on the page, the page keeps its CSS size and is drawn at ratio 1
+    // and quality 75, and a new CSS size waits. Trusted input on the page more than a second
+    // after the viewer's own is the agent's.
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    const clears = browser.sent("Emulation.clearDeviceMetricsOverride").length;
+    browser.lastInput = Date.now();
     await until(() => browser.sent("Browser.setWindowBounds").length === 2);
     assert.deepEqual(browser.sent("Browser.setWindowBounds")[1].params.bounds, {
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 987,
+    });
+    await until(() => browser.sent("Emulation.clearDeviceMetricsOverride").length === clears + 1);
+    assert.deepEqual(
+      browser.sent("Page.startScreencast").map((command) => command.params.quality),
+      [90, 75],
+    );
+    viewer.send(JSON.stringify({ type: "viewport", width: 900, height: 900, dpr: 2 }));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.equal(browser.sent("Browser.setWindowBounds").length, 2);
+
+    // Once nobody watches, the page keeps its CSS size at the display's pixel ratio; a desktop
+    // (VNC) viewer then has the window fill the screen again.
+    viewer.close();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const routerPort = router.address().port;
+    await upgradeStatus(routerPort, "/projects/demo/websockify", {});
+    await until(() => browser.sent("Browser.setWindowBounds").length === 3);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds")[2].params.bounds, {
       left: 0,
       top: 0,
       width: 1920,
@@ -324,8 +392,8 @@ describe("project browser router", () => {
     const port = await listen(upstream);
     // Two callers at once share one DevTools connection.
     await Promise.all([
-      setLiveViewport(port, { width: 800, height: 513 }),
-      setLiveViewport(port, { width: 800, height: 513 }),
+      setLiveViewport(port, { width: 800, height: 513, ratio: 1 }),
+      setLiveViewport(port, { width: 800, height: 513, ratio: 1 }),
     ]);
     assert.equal(browser.connections, 1);
     assert.deepEqual(browser.sent("Browser.setWindowBounds")[0].params.bounds, {
@@ -403,7 +471,15 @@ describe("project browser control", () => {
   it("sizes a window to the live view's page plus the browser's toolbar while one is watched", () => {
     const screen = { width: 1920, height: 1080 };
     const chrome = { width: 0, height: 87 };
-    assert.deepEqual(windowSize(screen, chrome, { width: 800, height: 513 }), { width: 800, height: 600 });
+    assert.deepEqual(windowSize(screen, chrome, { width: 800, height: 513, ratio: 1 }), {
+      width: 800,
+      height: 600,
+    });
+    // A retina viewer's page is drawn at twice as many window pixels.
+    assert.deepEqual(windowSize(screen, chrome, { width: 800, height: 513, ratio: 2 }), {
+      width: 1600,
+      height: 1113,
+    });
     assert.deepEqual(windowSize(screen, chrome, undefined), screen);
   });
 });

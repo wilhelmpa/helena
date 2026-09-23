@@ -9,7 +9,7 @@ import {
   readJsonBody,
   startWindowKeeper,
 } from "./project-browser-control.mjs";
-import { joinScreencast } from "./project-browser-screencast.mjs";
+import { joinScreencast, noteViewerAction, watchDesktop } from "./project-browser-screencast.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
@@ -90,6 +90,7 @@ async function handleControl(request, response, target) {
     }
     if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
     const body = await readJsonBody(request);
+    noteViewerAction(target.cdpPort);
     return sendJson(response, 200, await controlBrowser(target.cdpPort, target.api, body));
   } catch (error) {
     const status = error instanceof BrowserControlError ? error.status : 502;
@@ -155,6 +156,7 @@ async function handleUpgrade(root, request, socket, head) {
     if (connection) joinScreencast(target.cdpPort, connection);
     return;
   }
+  watchDesktop(target.cdpPort, socket);
   const upstream = net.connect({ host: "127.0.0.1", port: target.port }, () => {
     const headers = Object.entries(request.headers)
       .filter(
