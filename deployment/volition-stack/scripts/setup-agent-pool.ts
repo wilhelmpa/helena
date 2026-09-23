@@ -403,18 +403,26 @@ const NEW_TEMPLATES: TemplateSeed[] = [
   },
 ];
 
+// id: -1 is a --dry-run placeholder for a template this run would create but has not
+// (nothing calls the API with it) — it lets ensureCopies still report the copies that
+// depend on it instead of silently skipping them because the id does not exist yet.
+interface TemplateRef {
+  id: number;
+  username: string;
+}
+
 async function ensureTemplates(
   teamId: number,
   skillIds: Map<string, number>,
-): Promise<Map<string, number>> {
+): Promise<Map<string, TemplateRef>> {
   log('\n== Templates ==');
-  const ids = new Map<string, number>();
+  const refs = new Map<string, TemplateRef>();
   for (const key of ['coder', 'content']) {
     const agents = await listAgents(teamId);
     const found = byUsername(agents, key);
     if (found?.template) {
       already(`template "${key}" (existing, left untouched)`);
-      ids.set(key, found.id);
+      refs.set(key, { id: found.id, username: found.username });
     } else {
       log(`[WARN] template "${key}" not found — expected it to exist already, skipping`);
     }
@@ -424,7 +432,7 @@ async function ensureTemplates(
     const found = byUsername(agents, seed.username);
     if (found) {
       already(`template "${seed.username}"`);
-      ids.set(seed.key, found.id);
+      refs.set(seed.key, { id: found.id, username: found.username });
       if (!DRY_RUN) {
         await ensureAgentSkills(teamId, found.id, seed.username, seed.skills, skillIds);
       }
@@ -472,9 +480,9 @@ async function ensureTemplates(
         return agentId;
       },
     );
-    if (result != null) ids.set(seed.key, result);
+    refs.set(seed.key, { id: result ?? -1, username: seed.username });
   }
-  return ids;
+  return refs;
 }
 
 // ---------------------------------------------------------------------------
@@ -519,37 +527,39 @@ const COPIES: CopySeed[] = [
 async function ensureCopies(
   teamId: number,
   projects: ProjectSummary[],
-  templateIds: Map<string, number>,
+  templates: Map<string, TemplateRef>,
 ): Promise<void> {
   log('\n== Project copies (closing the Section C gaps) ==');
   for (const copy of COPIES) {
-    const templateId = templateIds.get(copy.templateKey);
-    if (templateId == null) {
+    const template = templates.get(copy.templateKey);
+    if (!template) {
       log(`[WARN] template "${copy.templateKey}" not available, skipping its ${copy.projectKey} copy`);
       continue;
     }
     const pid = projectId(projects, copy.projectKey);
-    const agents = await listAgents(teamId);
-    const alreadyCopied = agents.some(
-      (a) => a.sourceTemplateId === templateId && !a.template,
-      // Username suffix would also work, but sourceTemplateId is the actual link
-      // template-sync.ts introduced and is exact regardless of naming.
-    );
-    // The exact copy for *this* project specifically: copyTemplateIntoProject's
-    // deterministic username (template username + "-" + project key) tells copies of
-    // the same template in different projects apart.
+    // The exact copy for *this* project: copyTemplateIntoProject's deterministic
+    // username (template username + "-" + project key) tells copies of the same
+    // template in different projects apart. sourceTemplateId (template-sync.ts) would
+    // also identify "a copy of this template", but not which project it is in, so the
+    // username is the check that actually answers "is VOL covered".
     const suffix = `-${copy.projectKey.toLowerCase()}`;
-    const template = agents.find((a) => a.id === templateId)!;
     const copyUsername = `${template.username.slice(0, 64 - suffix.length)}${suffix}`;
+    const noteSuffix = copy.note ? ` — ${copy.note}` : '';
+    if (template.id === -1) {
+      // The template itself is only a --dry-run promise (id -1, not created yet), so
+      // there is nothing to list or copy against; still report the copy that would
+      // follow once it exists, which is the whole point of a dry run.
+      plan(`copy "${copy.templateKey}" into ${copy.projectKey}${noteSuffix} (${copyUsername})`);
+      continue;
+    }
+    const agents = await listAgents(teamId);
     const existingCopy = byUsername(agents, copyUsername);
     if (existingCopy) {
       already(`copy of "${copy.templateKey}" in ${copy.projectKey} (${copyUsername})`);
       continue;
     }
-    void alreadyCopied; // computed for readability of the check above; existingCopy is authoritative
-    const noteSuffix = copy.note ? ` — ${copy.note}` : '';
     await write(`copy "${copy.templateKey}" into ${copy.projectKey}${noteSuffix}`, () =>
-      api('POST', `/teams/${teamId}/ai-agents/${templateId}/copy`, { projectId: pid }),
+      api('POST', `/teams/${teamId}/ai-agents/${template.id}/copy`, { projectId: pid }),
     );
   }
 }
