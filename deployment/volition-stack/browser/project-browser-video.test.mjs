@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { fragment, initSegment, readFlvTags } from "./project-browser-mp4.mjs";
 import {
   chooseTier,
   codecOf,
   encoderArguments,
   isKeyframe,
-  readBoxes,
   sameArea,
   scaledSize,
   screenSizes,
@@ -179,6 +179,10 @@ describe("encoderArguments", () => {
     assert.equal(args[args.indexOf("-bf") + 1], "0");
     // More than one thread must not cost latency: sliced, not frame, parallelism.
     assert.equal(args[args.indexOf("-x264-params") + 1], "sliced-threads=1:rc-lookahead=0:sync-lookahead=0");
+    // No probe backlog behind a live grab, and every frame out the moment it is encoded.
+    assert.equal(args[args.indexOf("-fflags") + 1], "nobuffer");
+    assert.ok(args.indexOf("-fflags") < args.indexOf("-i"));
+    assert.equal(args[args.indexOf("-f", args.indexOf("-i")) + 1], "flv");
   });
 
   it("scales a lower tier's output down and still grabs the full area", () => {
@@ -208,14 +212,6 @@ describe("encoderArguments", () => {
 });
 
 describe("MP4 box reading", () => {
-  it("reads complete top-level boxes and keeps the trailing bytes", () => {
-    const ftyp = box("ftyp", "isom");
-    const moov = box("moov", "x");
-    const { boxes, rest } = readBoxes(Buffer.concat([ftyp, moov, Buffer.from([1, 2, 3])]));
-    assert.deepEqual(boxes.map((b) => b.type), ["ftyp", "moov"]);
-    assert.deepEqual([...rest], [1, 2, 3]);
-  });
-
   it("reads the codec string from an avcC box's profile, compatibility and level", () => {
     const avcC = box("avcC", Buffer.from([0x01, 0x64, 0x00, 0x1f, 0xff]));
     const init = Buffer.concat([box("ftyp", "isom"), box("moov", avcC)]);
@@ -223,10 +219,66 @@ describe("MP4 box reading", () => {
   });
 
   it("finds a keyframe by its NAL unit type, not by position", () => {
-    const idr = Buffer.concat([nal(1), nal(5), nal(1)]);
-    const notIdr = Buffer.concat([nal(1), nal(7), nal(1)]);
-    assert.ok(isKeyframe(box("mdat", idr)));
-    assert.ok(!isKeyframe(box("mdat", notIdr)));
+    assert.ok(isKeyframe(Buffer.concat([nal(1), nal(5), nal(1)])));
+    assert.ok(!isKeyframe(Buffer.concat([nal(1), nal(7), nal(1)])));
+  });
+});
+
+// One FLV tag: type, 24-bit size, 24+8-bit time, stream id, payload, previous tag size.
+function flvTag(type, time, payload) {
+  const head = Buffer.alloc(11);
+  head[0] = type;
+  head.writeUIntBE(payload.length, 1, 3);
+  head.writeUIntBE(time & 0xffffff, 4, 3);
+  head[7] = time >>> 24;
+  const tail = Buffer.alloc(4);
+  tail.writeUInt32BE(11 + payload.length, 0);
+  return Buffer.concat([head, payload, tail]);
+}
+const FLV_HEADER = Buffer.from([0x46, 0x4c, 0x56, 1, 1, 0, 0, 0, 9, 0, 0, 0, 0]);
+
+describe("FLV in, fragmented MP4 out", () => {
+  const config = Buffer.from([0x01, 0x42, 0xc0, 0x1f, 0xff, 0xe1]);
+  const frame = Buffer.concat([nal(5), nal(1)]);
+
+  it("reads the AVC sequence header and each frame as soon as its tag is complete", () => {
+    const stream = Buffer.concat([
+      FLV_HEADER,
+      flvTag(18, 0, Buffer.from("script")),
+      flvTag(9, 0, Buffer.concat([Buffer.from([0x17, 0, 0, 0, 0]), config])),
+      flvTag(9, 17, Buffer.concat([Buffer.from([0x17, 1, 0, 0, 0]), frame])),
+    ]);
+    const partial = readFlvTags(stream.subarray(0, stream.length - 3), true);
+    assert.equal(partial.tags.length, 1);
+    assert.deepEqual([...partial.tags[0].config], [...config]);
+    const { tags, rest } = readFlvTags(stream, true);
+    assert.equal(tags.length, 2);
+    assert.equal(tags[1].keyframe, true);
+    assert.equal(tags[1].time, 17);
+    assert.deepEqual([...tags[1].sample], [...frame]);
+    assert.equal(rest.length, 0);
+  });
+
+  it("writes an initialization segment whose codec string and size the viewers read", () => {
+    const init = initSegment({ width: 2560, height: 1600, avcC: config });
+    assert.equal(init.toString("latin1", 4, 8), "ftyp");
+    assert.equal(codecOf(init), "avc1.42c01f");
+    const at = init.indexOf("avc1", init.indexOf("stsd", 0, "latin1"), "latin1");
+    assert.equal(init.readUInt16BE(at + 4 + 24), 2560);
+    assert.equal(init.readUInt16BE(at + 4 + 26), 1600);
+  });
+
+  it("writes one frame as moof+mdat with the data offset pointing at the frame", () => {
+    const out = fragment({ sequence: 3, decodeTime: 4500, duration: 1500, keyframe: true, sample: frame });
+    const moofSize = out.readUInt32BE(0);
+    assert.equal(out.toString("latin1", 4, 8), "moof");
+    assert.equal(out.toString("latin1", moofSize + 4, moofSize + 8), "mdat");
+    const trun = out.indexOf("trun", 0, "latin1");
+    const dataOffset = out.readUInt32BE(trun + 12);
+    assert.equal(dataOffset, moofSize + 8);
+    assert.deepEqual([...out.subarray(dataOffset)], [...frame]);
+    assert.equal(out.readUInt32BE(trun + 16), 1500);
+    assert.equal(out.readUInt32BE(trun + 24), 0x02000000);
   });
 });
 

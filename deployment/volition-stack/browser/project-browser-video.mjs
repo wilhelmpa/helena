@@ -4,6 +4,7 @@
 // a secure context.
 import { execFile, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
+import { fragment, initSegment, readFlvTags, TIMESCALE } from "./project-browser-mp4.mjs";
 
 const XRANDR_TIMEOUT_MS = 5_000;
 
@@ -132,9 +133,17 @@ export function sameArea(a, b) {
 }
 
 // The ffmpeg arguments for grabbing an area of a display and encoding it at a tier's frame
-// rate, quality and thread limit, with the least delay: no B-frames and no lookahead, and a
-// fragment written per frame. The tier's keyframe interval bounds how long a viewer who joins
-// mid-stream, or misses frames to a stall, waits for the next one.
+// rate, quality and thread limit, with the least delay: no B-frames and no lookahead, and each
+// frame written out the moment it is encoded. The tier's keyframe interval bounds how long a
+// viewer who joins mid-stream, or misses frames to a stall, waits for the next one.
+//
+// Measured on the bench (README, "Latency"): ffmpeg reads the first frames of an input to learn
+// what it holds, and keeps them. From a live grab those frames never drain: every later frame
+// waits behind them for as long as the encoder runs, which was 2 frames at 1280x800 and up to
+// 21 for a small area (350 ms at 60 fps). -fflags nobuffer drops them instead, and a probe of
+// 32 bytes and no analysis time keeps the probing itself to the first frame. The FLV output
+// frames each packet with its size, so a frame leaves at once, where ffmpeg's fragmented MP4
+// waited for the next frame (see project-browser-mp4.mjs).
 export function encoderArguments({ x, y, width, height, display }, tier) {
   const size = scaledSize(width, height, tier.scaleMax);
   const scale = size.width === width && size.height === height ? [] : ["-vf", `scale=${size.width}:${size.height}`];
@@ -147,6 +156,12 @@ export function encoderArguments({ x, y, width, height, display }, tier) {
     "-loglevel",
     "error",
     "-nostdin",
+    "-fflags",
+    "nobuffer",
+    "-probesize",
+    "32",
+    "-analyzeduration",
+    "0",
     "-f",
     "x11grab",
     "-draw_mouse",
@@ -158,6 +173,9 @@ export function encoderArguments({ x, y, width, height, display }, tier) {
     "-i",
     `:${display}+${x},${y}`,
     ...scale,
+    // Every grabbed frame as it comes: no frames duplicated or dropped to hold a fixed rate.
+    "-fps_mode",
+    "passthrough",
     "-c:v",
     "libx264",
     "-threads",
@@ -183,27 +201,13 @@ export function encoderArguments({ x, y, width, height, display }, tier) {
     "-g",
     String(Math.max(1, Math.round(tier.frameRate * tier.keyframeSeconds))),
     "-f",
-    "mp4",
-    "-movflags",
-    "empty_moov+default_base_moof+frag_every_frame",
+    "flv",
+    "-flvflags",
+    "no_duration_filesize+no_metadata",
     "-flush_packets",
     "1",
     "-",
   ];
-}
-
-// The complete top-level MP4 boxes at the start of a buffer, and the bytes after them.
-export function readBoxes(buffer) {
-  const boxes = [];
-  let offset = 0;
-  while (buffer.length - offset >= 8) {
-    const size = buffer.readUInt32BE(offset);
-    if (size < 8) throw new Error("Unsupported MP4 box");
-    if (buffer.length - offset < size) break;
-    boxes.push({ type: buffer.toString("latin1", offset + 4, offset + 8), data: buffer.subarray(offset, offset + size) });
-    offset += size;
-  }
-  return { boxes, rest: buffer.subarray(offset) };
 }
 
 // The codec string of the H.264 stream an initialization segment describes, from the profile,
@@ -214,12 +218,12 @@ export function codecOf(init) {
   return `avc1.${init.subarray(at + 5, at + 8).toString("hex")}`;
 }
 
-// Whether a fragment's sample holds an IDR picture, which a decoder can start from. The mdat
-// payload is the sample: NAL units, each after its length in four bytes.
-export function isKeyframe(mdat) {
-  for (let offset = 8; offset + 5 <= mdat.length; ) {
-    const length = mdat.readUInt32BE(offset);
-    if ((mdat[offset + 4] & 0x1f) === 5) return true;
+// Whether a frame holds an IDR picture, which a decoder can start from: its NAL units, each
+// after its length in four bytes.
+export function isKeyframe(sample) {
+  for (let offset = 0; offset + 5 <= sample.length; ) {
+    const length = sample.readUInt32BE(offset);
+    if ((sample[offset + 4] & 0x1f) === 5) return true;
     offset += 4 + length;
   }
   return false;
@@ -262,10 +266,12 @@ export class AreaEncoder extends EventEmitter {
     this.environment = { PATH: process.env.PATH, DISPLAY: `:${display}`, XAUTHORITY: xauthority };
     this.area = { display, x, y, width, height };
     this.tier = tier;
+    this.size = scaledSize(width, height, tier.scaleMax);
     this.process = null;
     this.buffer = Buffer.alloc(0);
-    this.init = [];
-    this.moof = null;
+    this.header = true;
+    this.sequence = 0;
+    this.decodeTime = 0;
     this.stopped = false;
   }
 
@@ -284,17 +290,20 @@ export class AreaEncoder extends EventEmitter {
   }
 
   read(chunk) {
-    const { boxes, rest } = readBoxes(this.buffer.length ? Buffer.concat([this.buffer, chunk]) : chunk);
-    this.buffer = rest;
-    for (const { type, data } of boxes) {
-      if (type === "ftyp") this.init = [data];
-      else if (type === "moov") {
-        const init = Buffer.concat([...this.init, data]);
+    const { tags, rest, header } = readFlvTags(this.buffer.length ? Buffer.concat([this.buffer, chunk]) : chunk, this.header);
+    this.buffer = rest.length ? Buffer.from(rest) : Buffer.alloc(0);
+    this.header = header;
+    // Every frame is given the tier's nominal duration: a live player needs only the order.
+    const duration = Math.round(TIMESCALE / this.tier.frameRate);
+    for (const tag of tags) {
+      if (tag.config) {
+        const init = initSegment({ ...this.size, avcC: tag.config });
         this.emit("init", init, codecOf(init));
-      } else if (type === "moof") this.moof = data;
-      else if (type === "mdat" && this.moof) {
-        this.emit("fragment", Buffer.concat([this.moof, data]), isKeyframe(data));
-        this.moof = null;
+      } else {
+        const keyframe = tag.keyframe || isKeyframe(tag.sample);
+        this.sequence += 1;
+        this.emit("fragment", fragment({ sequence: this.sequence, decodeTime: this.decodeTime, duration, keyframe, sample: tag.sample }), keyframe);
+        this.decodeTime += duration;
       }
     }
   }

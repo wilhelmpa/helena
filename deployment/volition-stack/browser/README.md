@@ -15,7 +15,8 @@ This directory holds the router and the display wait helper:
 | `project-router.mjs` | the loopback router on `127.0.0.1:6082`, run by `volition-project-browser-router.service` from the checkout with the modules next to it |
 | `project-browser-control.mjs` | DevTools connection, window keeper, tab list and toolbar actions |
 | `project-browser-screencast.mjs` | the live view: video and screencast frames out, page size, quality tiers, agent activity, dialogs |
-| `project-browser-video.mjs` | the H.264 encoder (ffmpeg) and its quality tiers, and the MP4 box reading the fragments need |
+| `project-browser-video.mjs` | the H.264 encoder (ffmpeg) and its quality tiers |
+| `project-browser-mp4.mjs` | ffmpeg's FLV output read tag by tag and written out as fragmented MP4, one fragment per frame |
 | `project-browser-input.mjs` | the viewers' messages and the order their input reaches the page in |
 | `websocket.mjs` | the server side of WebSocket for the live view |
 | `bin/wait-for-x` | `/usr/local/libexec/volition-wait-for-x`, the `ExecStartPre` of the Chromium unit |
@@ -57,7 +58,11 @@ wheel turns that arrive while the page is busy are merged. A viewer that stops a
 for 30 seconds is dropped. The router refuses a WebSocket whose `Origin` is another host.
 
 When every viewer's browser can play it, the router streams H.264 video instead: ffmpeg grabs
-the page's area of the display and encodes it as fragmented MP4, one fragment per frame, which
+the page's area of the display and encodes it as FLV, which the router rewrites as fragmented
+MP4 the moment each frame arrives, one fragment per frame (ffmpeg's own MP4 muxer held every
+frame back until the next one; and ffmpeg's input probing kept its first frames queued in front
+of every later one, 2 frames at 1280x800 and up to 21 for small areas, until `-fflags nobuffer`
+dropped them — together 45 -> 22 ms from the page's paint to a WebCodecs viewer on the bench), which
 a viewer plays with Media Source Extensions (plain HTTP, the LAN today) or decodes itself with
 WebCodecs (a secure context — HTTPS, or Chromium's `--unsafely-treat-insecure-origin-as-secure`
 for a test origin — which the Cloudflare tunnel will make of the live one later); the client
