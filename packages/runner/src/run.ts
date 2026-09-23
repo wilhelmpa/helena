@@ -24,6 +24,10 @@ export function runEnv(run: Run): Record<string, string> {
     ITSAPLAN_SYSTEM_PROMPT: run.systemPrompt,
     ITSAPLAN_ISSUE: run.issueIdentifier ?? '',
     ITSAPLAN_ISSUE_ID: run.issueId == null ? '' : String(run.issueId),
+    // Set when this run is resuming: an operator command with no preset can use it to
+    // pick its own session back up, the way the preset commands already do through
+    // their --resume flag.
+    ITSAPLAN_SESSION_ID: run.sessionId ?? '',
   };
 }
 
@@ -31,6 +35,10 @@ function taskOf(run: Run) {
   return {
     prompt: run.prompt,
     systemPrompt: run.systemPrompt,
+    // Set only when the server sent one: the run is being resumed after the runner
+    // that held it before died mid run, and the command picks the session back up
+    // instead of starting a new one.
+    sessionId: run.sessionId ?? null,
     model: run.model,
     thinkingLevel: run.thinkingLevel,
     maxTurns: run.maxTurns,
@@ -63,6 +71,9 @@ export async function perform(
   const usage = new UsageReader(config.outputFormat);
   const logins = new LoginUseReader(hermes?.logins ?? new Map());
   const task = taskOf(run);
+  // Reported as soon as it is known, not only with the result: a crash before the run
+  // reports keeps this session for the next claim to resume. Best effort -- a stale
+  // claim or a server that predates this route is not fatal to the run itself.
   const outcome = await execute(
     { ...config, cwd: runCwd(config.cwd, run.workdir) },
     { ...task, toolsets: hermes?.toolsets ?? null, env: { ...task.env, ...hermes?.env } },
@@ -70,6 +81,16 @@ export async function perform(
       onData: (chunk) => {
         usage.write(chunk);
         logins.write(chunk);
+      },
+      onSessionId: (sessionId) => {
+        // Best effort, and never allowed to disrupt reading the run's own output: a
+        // client that cannot take this report, or a server that predates the route,
+        // is not fatal to the run.
+        try {
+          void client.reportSession(run.id, run.claim, sessionId).catch(() => {});
+        } catch {
+          // Ignored for the same reason.
+        }
       },
       signal: stop.signal,
     },

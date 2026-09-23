@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { StorageSettingsPatch } from '@/lib/api/endpoints/settings';
+import type { RunResumeSettings } from '@/lib/api/endpoints/god';
 import type { ProjectDefaults } from '@/lib/api/endpoints/projects';
 import { nextPageParam, type PageParams } from '@/lib/api/core/paging';
 import { DEFAULT_PAGE_SIZE } from '@/hooks/usePaging';
@@ -33,6 +34,8 @@ import {
   updateInstanceProjectDefaults,
   getInstanceStorageSettings,
   updateInstanceStorageSettings,
+  getInstanceRunResumeSettings,
+  updateInstanceRunResumeSettings,
   listInstanceUsers,
   getInstanceUser,
   deleteInstanceUser,
@@ -218,6 +221,23 @@ export function useUpdateInstanceProjectDefaults() {
   return useMutation({
     mutationFn: (body: ProjectDefaults) => updateInstanceProjectDefaults(body),
     onSuccess: (data) => qc.setQueryData(qk.instanceProjectDefaults, data),
+  });
+}
+
+// How many times a run may resume its coding agent session after the runner holding
+// it died mid run, before it stops on its own and asks the owner to look at it.
+export function useInstanceRunResumeSettingsQuery() {
+  return useQuery({
+    queryKey: qk.instanceRunResumeSettings,
+    queryFn: () => getInstanceRunResumeSettings(),
+  });
+}
+
+export function useUpdateInstanceRunResumeSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: RunResumeSettings) => updateInstanceRunResumeSettings(body),
+    onSuccess: (data) => qc.setQueryData(qk.instanceRunResumeSettings, data),
   });
 }
 
