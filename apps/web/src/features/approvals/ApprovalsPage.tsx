@@ -65,11 +65,19 @@ export default function ApprovalsPage() {
               <TabsTrigger value="decided">{t('decided')}</TabsTrigger>
             </TabsList>
             <TabsContent value="pending" className="space-y-8 pt-2">
-              <ApprovalRequestList key={`pending:${projectKey ?? ''}`} status="pending" projectKey={projectKey} />
+              <ApprovalRequestList
+                key={`pending:${projectKey ?? ''}`}
+                status="pending"
+                projectKey={projectKey}
+              />
               <WorkflowApprovalList projectKey={projectKey} />
             </TabsContent>
             <TabsContent value="decided" className="pt-2">
-              <ApprovalRequestList key={`decided:${projectKey ?? ''}`} status="decided" projectKey={projectKey} />
+              <ApprovalRequestList
+                key={`decided:${projectKey ?? ''}`}
+                status="decided"
+                projectKey={projectKey}
+              />
             </TabsContent>
           </Tabs>
         </div>
