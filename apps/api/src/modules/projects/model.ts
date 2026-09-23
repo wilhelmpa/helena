@@ -62,6 +62,19 @@ export const ProvisioningJobResponse = t.Object({
   updatedAt: t.String(),
 });
 
+export const SetupJobResponse = t.Object({
+  id: t.String(),
+  status: t.Union([t.Literal('pending'), t.Literal('succeeded'), t.Literal('failed')]),
+  attempts: t.Number(),
+  lastError: t.Nullable(t.String()),
+  updatedAt: t.String(),
+});
+
+export const ProjectSetupResponse = t.Object({
+  provisioning: t.Nullable(SetupJobResponse),
+  deprovisioning: t.Nullable(SetupJobResponse),
+});
+
 // Copy adds an optional selection of which parts of the source project to carry over.
 // Omitted → the source project's structure (states, types, labels, custom fields,
 // views, dashboards, documents, actions). Each flag maps to a project section

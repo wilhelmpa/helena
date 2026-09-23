@@ -269,6 +269,41 @@ describe('projects', () => {
       });
     });
 
+    it('reports the setup state of a new project', async () => {
+      const { api } = await signUpClient();
+      await api.projects.post({ key: 'MKT', name: 'Marketing' });
+
+      const setup = await api.projects({ projectKey: 'MKT' }).setup.get();
+      expect(setup.status).toBe(200);
+      expect(setup.data).toMatchObject({
+        provisioning: { status: 'pending', attempts: 0, lastError: null },
+        deprovisioning: null,
+      });
+      expect(setup.data?.provisioning?.updatedAt).toBeInstanceOf(Date);
+    });
+
+    it('reports the cleanup of a deleted project with the same key', async () => {
+      const { api } = await signUpClient();
+      await api.projects.post({ key: 'MKT', name: 'Marketing' });
+      await api.projects({ projectKey: 'MKT' }).delete();
+      await api.projects.post({ key: 'MKT', name: 'Marketing again' });
+
+      const setup = await api.projects({ projectKey: 'MKT' }).setup.get();
+      expect(setup.data).toMatchObject({
+        provisioning: { status: 'pending' },
+        deprovisioning: { status: 'pending', attempts: 0, lastError: null },
+      });
+    });
+
+    it('denies the setup state to a non-member with 403', async () => {
+      const owner = await signUpClient();
+      await owner.api.projects.post({ key: 'MKT', name: 'Marketing' });
+
+      const outsider = await signUpClient();
+      const res = await outsider.api.projects({ projectKey: 'MKT' }).setup.get();
+      expect(res.status).toBe(403);
+    });
+
     it('denies a project member whose rank in the team is member', async () => {
       const owner = await signUpClient();
       await owner.api.projects.post({ key: 'SRC', name: 'Source' });

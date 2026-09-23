@@ -13,6 +13,11 @@ export const teamProjectParams = t.Object({ teamId: t.Numeric(), projectId: t.Nu
 
 export const teamMemberParams = t.Object({ teamId: t.Numeric(), userId: t.String() });
 
+export const teamDeprovisioningParams = t.Object({
+  teamId: t.Numeric(),
+  jobId: t.String({ format: 'uuid' }),
+});
+
 export const setTeamMemberRoleBody = t.Object({
   role: t.Union([t.Literal('owner'), t.Literal('manager'), t.Literal('member')]),
 });

@@ -22,6 +22,7 @@ import {
   ProjectListResponse,
   ProjectResponse,
   ProjectSettingsResponse,
+  ProjectSetupResponse,
   ProvisioningJobResponse,
   SubtaskAutomationResponse,
   copyProjectBody,
@@ -47,6 +48,7 @@ import {
   setSubtaskAutomationSettings,
   setEstimateSettings,
   getProvisioningJob,
+  getProjectSetup,
   retryProvisioningJob,
 } from './service';
 import { copyProject } from './copy';
@@ -241,6 +243,18 @@ export const projectRoutes = new Elysia({ name: 'projects', detail: { tags: ['Pr
       detail: { summary: "Get a project's provisioning status" },
     },
   )
+
+  .get('/projects/:projectKey/setup', ({ project }) => getProjectSetup(project), {
+    projectMember: true,
+    response: { 200: ProjectSetupResponse, ...accessErrors },
+    detail: {
+      summary: "Get a project's setup state",
+      description:
+        'The latest provisioning job of the project and the cleanup job of an earlier ' +
+        'deleted project of the team with the same key: status, attempts, last error and ' +
+        'the time of the last change.',
+    },
+  })
 
   .post(
     '/projects/:projectKey/provisioning/retry',
