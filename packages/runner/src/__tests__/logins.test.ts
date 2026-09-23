@@ -193,6 +193,31 @@ describe('web login vault', () => {
     const vault = new WebLoginVault(hermesHome, pythonVaultStore(hermesHome, python, {}));
     await expect(vault.sync([shop])).rejects.toThrow('Hermes vault update failed with 3');
   });
+
+  it('survives a Python that exits before reading what it is sent', async () => {
+    const hermesHome = await home();
+    const vault = new WebLoginVault(hermesHome, pythonVaultStore(hermesHome, 'false', {}));
+    const many = Array.from({ length: 400 }, (_, index) => ({
+      ...shop,
+      id: index,
+      password: 'x'.repeat(1024),
+    }));
+    await expect(vault.sync(many)).rejects.toThrow('Hermes vault update failed with 1');
+    await expect(
+      new WebLoginVault(hermesHome, pythonVaultStore(hermesHome, '/nonexistent/python', {})).sync(
+        many,
+      ),
+    ).rejects.toThrow(/^Hermes vault: .*ENOENT/);
+  });
+
+  it('stops a Python that does not finish in time', async () => {
+    const hermesHome = await home();
+    const python = join(hermesHome, '..', 'python');
+    await writeFile(python, '#!/bin/sh\nexec sleep 30\n');
+    await chmod(python, 0o755);
+    const vault = new WebLoginVault(hermesHome, pythonVaultStore(hermesHome, python, {}, 200));
+    await expect(vault.sync([shop])).rejects.toThrow('Hermes vault update was stopped by SIGKILL');
+  });
 });
 
 describe('login use reader', () => {

@@ -241,6 +241,7 @@ describe('credentials', () => {
       .teams({ teamId })
       .integrations.options.get({ query: { kind: 'secret' } });
     expect(options.data!.map((option) => option.id).sort()).toEqual([secret, apiKey].sort());
+    expect((await asOwner.teams({ teamId }).get()).data).toMatchObject({ integrationCount: 1 });
   });
 
   it('grants a credential to agents of the team that run in Hermes', async () => {

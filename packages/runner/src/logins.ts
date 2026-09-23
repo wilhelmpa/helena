@@ -74,10 +74,15 @@ for item in request["items"]:
 json.dump({"handles": handles}, sys.stdout)
 `;
 
+// Runs before the heartbeat of the run starts, so a Python that hangs, for instance on
+// the vault's file lock, has to be stopped well within the run's lease.
+const VAULT_TIMEOUT_MS = 60_000;
+
 export function pythonVaultStore(
   hermesHome: string,
   python: string,
   env: Record<string, string>,
+  timeoutMs = VAULT_TIMEOUT_MS,
 ): HermesVaultStore {
   return {
     apply: (change) =>
@@ -85,13 +90,19 @@ export function pythonVaultStore(
         const child = spawn(python, ['-c', VAULT_SCRIPT], {
           env: { ...process.env, ...env, HERMES_HOME: hermesHome },
           stdio: ['pipe', 'pipe', 'ignore'],
+          timeout: timeoutMs,
+          killSignal: 'SIGKILL',
         });
         let output = '';
         child.stdout.setEncoding('utf8');
         child.stdout.on('data', (chunk: string) => (output += chunk));
         child.on('error', (error) => reject(new Error(`Hermes vault: ${error.message}`)));
+        // A Python that exits before it reads its input breaks the pipe; the exit code
+        // reports that failure.
+        child.stdin.on('error', () => {});
         // Hermes' errors can name a login, so only the exit code is passed on.
-        child.on('close', (code) => {
+        child.on('close', (code, signal) => {
+          if (signal) return reject(new Error(`Hermes vault update was stopped by ${signal}`));
           if (code !== 0) return reject(new Error(`Hermes vault update failed with ${code}`));
           try {
             resolve((JSON.parse(output) as { handles: Record<string, string> }).handles);
