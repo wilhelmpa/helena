@@ -17,6 +17,7 @@ export interface PresetTaskSettings {
   provider?: string | null;
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
+  toolsets?: string[] | null;
 }
 
 export interface Preset {
@@ -142,12 +143,13 @@ export const PRESETS: Record<PresetName, Preset> = {
       '--accept-hooks',
       ...(sessionId ? ['--resume', sessionId] : []),
     ],
-    taskArgs: ({ model, thinkingLevel, provider, maxTurns, runBudgetSeconds }) => [
+    taskArgs: ({ model, thinkingLevel, provider, maxTurns, runBudgetSeconds, toolsets }) => [
       ...(provider ? ['--provider', provider] : []),
       ...(model ? ['--model', model] : []),
       ...(thinkingLevel ? ['--reasoning', thinkingLevel] : []),
       ...(maxTurns ? ['--max-turns', String(maxTurns)] : []),
       ...(runBudgetSeconds ? ['--run-budget', String(runBudgetSeconds)] : []),
+      ...(toolsets ? ['--toolsets', toolsets.join(',')] : []),
     ],
     tail: [],
     sessionLost: (error) => error.includes('Session not found'),

@@ -63,8 +63,12 @@ mcp_servers:
   working directory and available tools before using it.
 - For Hermes, set `cwd` and `HERMES_HOME` to dedicated absolute directories. Before a claim,
   the runner fetches Plan's revisioned runtime policy and atomically materializes its managed
-  `AGENTS.md`, `SOUL.md`, memory and linked skills. A private hash manifest prevents changes to
-  foreign files. `--ignore-rules` is rejected because it would stop Hermes from loading this policy.
+  `SOUL.md` and linked skills. A private hash manifest prevents changes to foreign files.
+  `--ignore-rules` is rejected because it would stop Hermes from loading this policy.
+- `hermes` lists the toolsets and MCP servers the profile's `config.yaml` enables for the cli
+  platform: `{ "toolsets": ["file", "web"], "mcpServers": ["itsaplan"] }`. The runner reports
+  them to Plan with the profile's skills and memory. A toolset turned off in Plan is left out of
+  the `--toolsets` the runner passes; without this field no toolset can be turned off.
 - `models` publishes the chat selector catalog. It does not store provider credentials. List only
   model IDs that the selected Hermes profile can use.
 

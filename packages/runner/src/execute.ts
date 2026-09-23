@@ -22,6 +22,8 @@ export interface Task {
   // Limits of a queued run; a chat answer has none.
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
+  // The toolsets Hermes is limited to, or null for the profile's own selection.
+  toolsets?: string[] | null;
 }
 
 export interface Outcome {
@@ -141,6 +143,7 @@ function spawnArgs(
       thinkingLevel: task.thinkingLevel,
       maxTurns: task.maxTurns,
       runBudgetSeconds: task.runBudgetSeconds,
+      toolsets: task.toolsets,
     }),
   ];
 }

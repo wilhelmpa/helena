@@ -190,14 +190,29 @@ npx -y @itsaplan/runner --agent claude
 For the `hermes` preset, configure a dedicated absolute `cwd` and expose an absolute
 `HERMES_HOME` through `env` or the runner process environment. Before starting work and while
 waiting for new work, the runner fetches the agent's revisioned policy from Plan. It materializes
-`AGENTS.md` and nested instructions under `cwd`, `SOUL.md` under `HERMES_HOME`, memory under
-`HERMES_HOME/memories`, and linked skills under `HERMES_HOME/skills/plan-managed`.
+`SOUL.md` under `HERMES_HOME` and linked skills under `HERMES_HOME/skills/plan-managed`. Memory
+belongs to Hermes.
 
 The runner records only paths and content hashes in a private manifest. It updates or removes only
 files that still match that manifest. A byte-identical existing file can be adopted; a differing
 unmanaged file, path traversal, or symlink makes the sync fail closed. Content and provider secrets
 are not included in runtime status. Do not pass `--ignore-rules`: the runner rejects it because it
 would stop Hermes from loading the Plan-managed policy.
+
+With its status the runner reports what the agent can do: the toolsets and MCP servers of the
+profile, its skills and its memory. Plan shows them read-only. The runner reads the skills under
+`HERMES_HOME/skills` and `MEMORY.md` and `USER.md` under `HERMES_HOME/memories` again every
+minute and after every run and chat answer, and reports them when they changed. It does not
+parse `config.yaml`, so the toolsets and MCP servers come from the `hermes` field of the config,
+filled in from the profile by whatever sets the runner up:
+
+```json
+"hermes": { "toolsets": ["browser", "file", "terminal", "web"], "mcpServers": ["itsaplan"] }
+```
+
+A toolset turned off for the agent in Plan is left out of `--toolsets`, which then names the
+remaining toolsets and every MCP server. While nothing is turned off, Hermes uses the profile's
+own selection. Without the `hermes` field no toolsets are reported and none can be turned off.
 
 ## What the coding agent receives
 

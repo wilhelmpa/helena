@@ -92,6 +92,26 @@ describe('one agent', () => {
     ).rejects.toThrow('thinkingDefault must be one of thinkingLevels');
   });
 
+  it("reads the Hermes profile's toolsets and MCP servers, which every agent inherits", async () => {
+    const hermes = { toolsets: ['file', 'web'], mcpServers: ['itsaplan'] };
+    const [first, second] = await load({
+      ...base,
+      agent: 'hermes',
+      hermes,
+      agents: [{ apiKey: 'key-a' }, { apiKey: 'key-b' }],
+    });
+    expect(first.hermes).toEqual(hermes);
+    expect(second.hermes).toEqual(hermes);
+    expect((await load({ ...base, apiKey: 'key-a' }))[0].hermes).toBeUndefined();
+
+    await expect(
+      load({ ...base, apiKey: 'key-a', hermes: { toolsets: ['file'], mcpServers: 'itsaplan' } }),
+    ).rejects.toThrow('hermes.mcpServers must be an array of strings');
+    await expect(load({ ...base, apiKey: 'key-a', hermes: ['file'] })).rejects.toThrow(
+      'hermes must be an object',
+    );
+  });
+
   it('refuses to disable Hermes rule loading while Plan policy sync is enabled', async () => {
     await expect(
       load({

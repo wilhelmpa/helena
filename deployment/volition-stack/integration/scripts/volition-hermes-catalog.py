@@ -73,12 +73,25 @@ def reasoning_levels(provider: str, model_id: str) -> list[str]:
     return _main_model_reasoning_efforts(model_id, provider) or []
 
 
-def require_browser_toolset() -> None:
-    from hermes_cli.config import load_config_readonly
-    from hermes_cli.tools_config import _get_platform_tools
+def split_profile(enabled: set[str], mcp_servers: set[str]) -> dict[str, list[str]]:
+    """Hermes lists the enabled MCP servers among the platform toolsets; the runner keeps them apart."""
+    return {
+        'toolsets': sorted(name for name in enabled if name not in mcp_servers),
+        'mcpServers': sorted(name for name in enabled if name in mcp_servers),
+    }
 
-    configured = set(_get_platform_tools(load_config_readonly(), 'cli'))
-    if 'browser' not in configured:
+
+def hermes_profile() -> dict[str, list[str]]:
+    """What Hermes enables for the cli platform. Every agent home links the global config.yaml."""
+    from hermes_cli.config import load_config_readonly
+    from hermes_cli.tools_config import _get_platform_tools, enabled_mcp_server_names
+
+    config = load_config_readonly()
+    return split_profile(set(_get_platform_tools(config, 'cli')), enabled_mcp_server_names(config))
+
+
+def require_browser_toolset(profile: dict[str, list[str]]) -> None:
+    if 'browser' not in profile['toolsets']:
         raise RuntimeError('The Hermes browser toolset must be enabled for Plan project agents')
 
 
@@ -307,9 +320,11 @@ def write_runtime(
     output_path: Path,
     descriptor_root: Path,
     global_home: Path,
+    profile: dict[str, list[str]],
     browser_root: Path | None = None,
 ) -> tuple[str, int, int]:
     payload = json.loads(template_path.read_text(encoding='utf-8'))
+    payload['hermes'] = profile
     provider, _default_model = configured_route()
     if provider:
         payload['provider'] = provider
@@ -361,9 +376,10 @@ def main(argv: list[str]) -> int:
         '/var/lib/volition/project-browser/projects',
     ).strip()
     browser_root = Path(browser_root_value) if browser_root_value else None
-    require_browser_toolset()
+    profile = hermes_profile()
+    require_browser_toolset(profile)
     provider, count, agents = write_runtime(
-        Path(argv[1]), Path(argv[2]), descriptor_root, global_home, browser_root
+        Path(argv[1]), Path(argv[2]), descriptor_root, global_home, profile, browser_root
     )
     print(f'Hermes catalog: provider={provider or "unconfigured"}, models={count}, agents={agents}')
     return 0

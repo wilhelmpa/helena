@@ -5,7 +5,7 @@ import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
 import { execute } from './execute';
-import { hermesPolicySynchronizer } from './policy';
+import { hermesPolicySynchronizer, type HermesPolicySynchronizer } from './policy';
 
 // The runner holds no state — the queue is the server's — so stopping it mid-task only
 // means that task's lease expires and another runner picks it up.
@@ -59,7 +59,13 @@ function taskOf(run: Run) {
   };
 }
 
-async function handle(config: RunnerConfig, client: Client, log: Log, run: Run): Promise<void> {
+async function handle(
+  config: RunnerConfig,
+  client: Client,
+  log: Log,
+  run: Run,
+  policy: HermesPolicySynchronizer | null,
+): Promise<void> {
   const label = run.issueIdentifier ?? `run ${run.id}`;
   log(`${label}: started (${run.trigger})`);
   try {
@@ -70,7 +76,11 @@ async function handle(config: RunnerConfig, client: Client, log: Log, run: Run):
     const outcome = await withHeartbeat(
       log,
       () => client.heartbeat(run.id),
-      execute(config, taskOf(run), { onData: (chunk) => usage.write(chunk) }),
+      execute(
+        config,
+        { ...taskOf(run), toolsets: policy?.toolsets() ?? null },
+        { onData: (chunk) => usage.write(chunk) },
+      ),
     );
     usage.end();
     await client.report(run.id, { ...outcome, usage: outcome.usage ?? usage.value() });
@@ -92,6 +102,7 @@ async function handleChat(
   client: Client,
   log: Log,
   message: ChatMessage,
+  policy: HermesPolicySynchronizer | null,
 ): Promise<void> {
   log(`chat ${message.id}: answering`);
   const stop = new AbortController();
@@ -101,7 +112,7 @@ async function handleChat(
       async () => {
         if (await client.chatHeartbeat(message.id)) stop.abort();
       },
-      answer(config, client, message, stop),
+      answer(config, client, message, stop, policy?.toolsets() ?? null),
     );
   } catch (err) {
     // Without a reported failure the chat waits for an answer that is no longer coming.
@@ -226,7 +237,8 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
       },
       async (run) => {
         await policy?.ensure();
-        return handle(config, client, log, run);
+        await handle(config, client, log, run, policy);
+        policy?.inventoryChanged();
       },
       async () => {
         await sleep(config.pollIntervalMs);
@@ -255,7 +267,8 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
       },
       async (message) => {
         await policy?.ensure();
-        return handleChat(config, client, log, message);
+        await handleChat(config, client, log, message, policy);
+        policy?.inventoryChanged();
       },
       () => Promise.resolve(chatSupported),
     ),
