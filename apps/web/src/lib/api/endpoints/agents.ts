@@ -323,6 +323,11 @@ export const listAiAgents = (teamId: number, projectId?: number) =>
     `/teams/${teamId}/ai-agents${projectId != null ? `?projectId=${projectId}` : ''}`,
   );
 
+// One agent by id, with its full config — the same shape listAiAgents' items carry.
+// 404s when the agent is not of this team or not visible to the caller.
+export const getAiAgent = (teamId: number, agentId: number) =>
+  request<AiAgent>(`/teams/${teamId}/ai-agents/${agentId}`);
+
 export const listAgentTools = (teamId: number) =>
   request<AgentTool[]>(`/teams/${teamId}/ai-agents/tools`);
 

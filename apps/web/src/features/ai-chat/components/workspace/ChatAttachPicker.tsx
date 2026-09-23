@@ -31,7 +31,14 @@ export default function ChatAttachPicker({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" aria-label={t('composer.attach')}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground hover:text-foreground"
+            aria-label={t('composer.attach')}
+            title={t('composer.attach')}
+          >
             <Paperclip className="size-4" />
           </Button>
         </DropdownMenuTrigger>

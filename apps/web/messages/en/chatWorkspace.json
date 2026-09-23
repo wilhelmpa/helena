@@ -44,8 +44,9 @@
     "purged": "Chat deleted for good."
   },
   "empty": {
-    "title": "No chat open",
-    "description": "Pick an agent to start a new chat. Each chat is with one agent — to talk with another, start a new one."
+    "noAgentsTitle": "No agent to chat with",
+    "noAgentsDescription": "This place has no agent a chat can be started with yet. Add one, or give an existing one access to this project.",
+    "manageAgents": "Manage agents"
   },
   "messages": {
     "transcript": "Messages",
@@ -72,7 +73,11 @@
     "noteSaveFailed": "Could not save the chat as a note.",
     "noteQuestion": "Question",
     "noteAnswer": "{agent}’s answer",
-    "noteSource": "Chat with {agent}, saved {date}"
+    "noteSource": "Chat with {agent}, saved {date}",
+    "waitingForRunner": "Waiting for {agent} — its runner is offline. The answer starts once it is back.",
+    "restoreFailedTitle": "This chat could not be loaded",
+    "restoreFailed": "Its messages could not be read. Check the connection and try again.",
+    "retry": "Try again"
   },
   "composer": {
     "placeholder": "Message {agent}…",
@@ -108,7 +113,9 @@
       "approvals": "Approval commands aren’t run from chat — use the approval card or the Approvals page.",
       "config": "This changes the agent’s own configuration — use the agent’s settings in Helena instead.",
       "outside": "This isn’t something the chat can do."
-    }
+    },
+    "reasoning": "Reasoning effort",
+    "reasoningDefault": "default"
   },
   "artifact": {
     "title": "Artifact",
@@ -146,5 +153,46 @@
     "approvedBy": "Approved by {name}",
     "rejectedBy": "Rejected by {name}",
     "loading": "Loading the request…"
+  },
+  "newChat": {
+    "title": "New chat with {agent}",
+    "offlineHint": "Its runner is not connected right now. A message waits in its queue and is answered once it is back.",
+    "pickAgent": "Pick the agent for this chat"
+  },
+  "agents": {
+    "status": {
+      "running": "Working",
+      "waiting": "Waiting for you",
+      "ready": "Ready",
+      "offline": "Offline",
+      "never": "Never connected",
+      "paused": "Paused",
+      "template": "Template — add it to a project to chat with it"
+    },
+    "runtimeExternal": "External",
+    "switch": "Chatting with {agent} — start a new chat with another agent",
+    "newChatWith": "New chat with …"
+  },
+  "interrupted": {
+    "lost": "The connection to the answer was lost. {agent} may still be working on it.",
+    "stopped": "The answer was stopped.",
+    "failed": "The answer broke off before it was finished.",
+    "sendFailed": "The message could not be sent.",
+    "reconnect": "Reconnect",
+    "continue": "Continue",
+    "continuePrompt": "Please continue where you were interrupted.",
+    "resend": "Send again"
+  },
+  "commands": {
+    "new": "Start a new chat",
+    "retry": "Answer the last question again",
+    "undo": "Remove the last exchange",
+    "title": "Rename this chat",
+    "model": "Pick the model",
+    "reasoning": "Set the reasoning effort",
+    "skills": "Open the agent's skills",
+    "memory": "Open the agent's memory",
+    "usage": "Show this chat's token usage",
+    "stop": "Stop the answer"
   }
 }

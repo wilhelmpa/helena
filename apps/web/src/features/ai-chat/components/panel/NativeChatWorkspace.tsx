@@ -1,6 +1,7 @@
 'use client';
 
 import { useContext, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ShellCtx } from '@/context/shellContext';
 import type { WorkspaceContentProps } from '@/context/workspaceContents';
 import { runtimeEnv } from '@/utils/runtimeEnv';
@@ -17,6 +18,7 @@ import ChatWorkspace, { type ChatLocation } from '../workspace/ChatWorkspace';
 // Home uses the member's sole team, so a fresh installation can talk to its global
 // master before the first project exists.
 export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProps) {
+  const t = useTranslations('chatWorkspace');
   const config = runtimeEnv().workspace;
   const shell = useContext(ShellCtx);
   const chatProjectKey = projectKey ? nativeChatProjectKey(config, projectKey) : null;
@@ -47,7 +49,7 @@ export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProp
   if (!scope.scopeKey) {
     return (
       <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
-        Home chat is waiting for the first account.
+        {t('waitingForTeam')}
       </div>
     );
   }
@@ -55,6 +57,7 @@ export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProp
   return (
     <ChatWorkspace
       scopeKey={scope.scopeKey}
+      teamId={scope.teamId}
       projectKey={chatProjectKey}
       agents={scope.agents}
       location={location}

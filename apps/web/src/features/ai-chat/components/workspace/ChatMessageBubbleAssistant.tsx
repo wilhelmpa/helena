@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import type { AiAgent } from '@/lib/api/endpoints/agents';
 import Markdown from '@/components/common/Markdown';
 import { Marker, MarkerContent } from '@/components/ui/marker';
 import { useTranslations } from 'next-intl';
@@ -16,6 +17,10 @@ import ChatSourcesFooter from './ChatSourcesFooter';
 export interface ChatMessageBubbleAssistantProps {
   message: PlanUIMessage;
   streaming: boolean;
+  agent: AiAgent;
+  // Whether the agent's runner is there to pick the answer up; a question to an agent
+  // that is not waits in its queue, which the status line says instead of "thinking".
+  agentOnline: boolean;
   projectKey: string | null;
   onShowArtifact: (artifact: Artifact) => void;
 }
@@ -27,6 +32,8 @@ export interface ChatMessageBubbleAssistantProps {
 export default function ChatMessageBubbleAssistant({
   message,
   streaming,
+  agent,
+  agentOnline,
   projectKey,
   onShowArtifact,
 }: ChatMessageBubbleAssistantProps) {
@@ -39,15 +46,20 @@ export default function ChatMessageBubbleAssistant({
   const error = message.metadata?.error;
 
   if (blocks.length === 0 && !error) {
+    if (!streaming) return null;
     return (
       <Marker role="status">
-        <MarkerContent className="shimmer">{t('messages.thinking')}</MarkerContent>
+        <MarkerContent className={agentOnline ? 'shimmer' : undefined}>
+          {agentOnline
+            ? t('messages.thinking')
+            : t('messages.waitingForRunner', { agent: agent.name })}
+        </MarkerContent>
       </Marker>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 text-sm leading-relaxed">
       {blocks.map((block, index) => {
         if (block.kind === 'reasoning') {
           return (

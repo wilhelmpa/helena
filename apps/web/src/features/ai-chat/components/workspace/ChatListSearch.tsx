@@ -27,7 +27,7 @@ export default function ChatListSearch({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t('list.search')}
         aria-label={t('list.search')}
-        className="ps-8"
+        className="h-8 bg-background ps-8 shadow-none"
         dir="auto"
       />
     </div>

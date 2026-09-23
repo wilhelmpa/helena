@@ -1,5 +1,5 @@
-import ChatWorkspaceRoot from '@/features/ai-chat/components/workspace/ChatWorkspaceRoot';
+import HomeChatPage from '@/features/ai-chat/components/workspace/HomeChatPage';
 
 export default function Page() {
-  return <ChatWorkspaceRoot projectKey={null} />;
+  return <HomeChatPage />;
 }
