@@ -36,6 +36,7 @@ import {
   useUnlinkDocumentIssue,
   useUploadDocumentAsset,
 } from '../services/documents.service';
+import { copyText } from '@/utils/clipboard';
 
 type OutlineItem = { level: number; position: number; text: string };
 
@@ -122,8 +123,12 @@ export default function DocumentSidePanel({
   };
 
   const copyAsset = async (url: string) => {
-    const copied = await copyText(new URL(url, window.location.origin).toString());
-    if (copied) toast.success(t('assetLinkCopied'));
+    try {
+      await copyText(new URL(url, window.location.origin).toString());
+      toast.success(t('assetLinkCopied'));
+    } catch {
+      // The browser refused to copy; there is nothing more to offer.
+    }
   };
 
   return (
@@ -455,25 +460,4 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
-
-async function copyText(value: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(value);
-    return true;
-  } catch {
-    const input = window.document.createElement('textarea');
-    input.value = value;
-    input.style.position = 'fixed';
-    input.style.opacity = '0';
-    try {
-      window.document.body.append(input);
-      input.select();
-      return window.document.execCommand('copy');
-    } catch {
-      return false;
-    } finally {
-      input.remove();
-    }
-  }
 }

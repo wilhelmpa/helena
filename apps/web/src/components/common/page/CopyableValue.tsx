@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { copyText } from '@/utils/clipboard';
 
 // A value the reader copies out rather than fills in: a redirect URI to register
 // with an identity provider, an endpoint to paste into one. Read-only on purpose, so
@@ -22,7 +23,7 @@ export default function CopyableValue({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

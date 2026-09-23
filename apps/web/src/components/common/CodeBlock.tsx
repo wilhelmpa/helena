@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { copyText } from '@/utils/clipboard';
 
 // A copyable command or snippet. Shared: the MCP connection guide and the
 // post-upgrade screen both show one.
@@ -12,7 +13,7 @@ export default function CodeBlock({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
-    await navigator.clipboard.writeText(code);
+    await copyText(code);
     setCopied(true);
     toast.success(t('copied'));
     setTimeout(() => setCopied(false), 1500);

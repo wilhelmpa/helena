@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import ShareDialog from '@/components/common/share/ShareDialog';
 import { useTranslations } from 'next-intl';
+import { copyText } from '@/utils/clipboard';
 
 // The issue detail Actions: the manual actions whose condition matches this
 // issue, plus Copy Prompt and a delete button. Owns the delete/apply
@@ -81,7 +82,7 @@ export default function IssueActionsBar({
   const issueActions = canEdit ? matchedActions(actionsQuery.data ?? [], project, issue) : [];
 
   async function copyPrompt() {
-    await navigator.clipboard.writeText(buildIssuePrompt(issue, project, session?.user));
+    await copyText(buildIssuePrompt(issue, project, session?.user));
     setCopied(true);
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
     copiedTimer.current = setTimeout(() => setCopied(false), 1500);
@@ -89,12 +90,12 @@ export default function IssueActionsBar({
 
   // The issue's short identifier link (/IAP-62) redirects to the canonical page URL.
   async function copyLink() {
-    await navigator.clipboard.writeText(`${window.location.origin}/${issue.identifier}`);
+    await copyText(`${window.location.origin}/${issue.identifier}`);
     toast.success(t('shortLinkCopied'));
   }
 
   async function copyBranch() {
-    await navigator.clipboard.writeText(buildIssueBranchName(issue, session?.user));
+    await copyText(buildIssueBranchName(issue, session?.user));
     toast.success(t('branchCopied'));
   }
 
