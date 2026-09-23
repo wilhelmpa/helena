@@ -26,7 +26,10 @@ to the JPEG screencast below, for as long as the page's size stays the same.
 
 The KasmVNC and Chromium units and the polkit rule that lets `volition-hermes` start, stop and
 restart them are in `../native/systemd/`; `../native/install-browser.sh` installs KasmVNC and
-those units.
+those units. They run as `volition-browser`, which alone owns the profiles; with agent isolation
+the provisioning service has the launcher write the state as that user
+(`../integration/project-browser-state.mjs`), and isolated agents reach neither CDP nor the
+profiles (`../isolation/README.md`).
 
 The router accepts only validated project slugs and reads the private runtime state without
 exposing paths, ports, cookies or tokens. Chromium CDP, the display and the router listen on
