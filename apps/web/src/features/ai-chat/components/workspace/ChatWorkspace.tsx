@@ -46,6 +46,20 @@ export default function ChatWorkspace({
   const agentId = location.agentId ?? agents[0]?.id ?? null;
   const threadId = location.threadId;
 
+  // The thread view is remounted for every other chat, but not when a new chat is given
+  // its thread id by its own first answer: remounting then would drop the answer that is
+  // streaming in, and closing its stream tells the API to stop it.
+  const [adoptedThreadId, setAdoptedThreadId] = useState<string | null>(null);
+  const [view, setView] = useState({ agentId, threadId, session: 0 });
+  if (view.agentId !== agentId || view.threadId !== threadId) {
+    const adopted =
+      view.agentId === agentId &&
+      view.threadId == null &&
+      threadId != null &&
+      threadId === adoptedThreadId;
+    setView({ agentId, threadId, session: adopted ? view.session : view.session + 1 });
+  }
+
   const go = useCallback(
     (next: Partial<ChatLocation>) => {
       onNavigate({
@@ -78,7 +92,9 @@ export default function ChatWorkspace({
 
   const onThreadCreated = useCallback(
     (newThreadId: string) => {
-      if (newThreadId !== threadId) go({ threadId: newThreadId });
+      if (newThreadId === threadId) return;
+      setAdoptedThreadId(newThreadId);
+      go({ threadId: newThreadId });
     },
     [go, threadId],
   );
@@ -107,7 +123,7 @@ export default function ChatWorkspace({
       <div className="flex min-w-0 flex-1 flex-col">
         {selectedAgent ? (
           <ChatThreadView
-            key={`${agentId}:${threadId ?? 'new'}`}
+            key={`${agentId}:${view.session}`}
             scopeKey={scopeKey}
             projectKey={projectKey}
             agent={selectedAgent}
