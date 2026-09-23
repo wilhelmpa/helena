@@ -1,7 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["bun"]
+    "types": ["bun"],
+    // DOM types are for the strings this package evaluates inside a page (snapshot
+    // tagging, credential-field covering, ...), not for anything running in this Node
+    // process — see session.ts for where they're actually used.
+    "lib": ["ES2022", "DOM"]
   },
   "include": ["src"]
 }
