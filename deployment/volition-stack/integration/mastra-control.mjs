@@ -210,6 +210,8 @@ export function createMastraControlService(config, options = {}) {
       const projectRef = string(input.projectRef, PROJECT_REF, 'projectRef');
 
       if (input.operation === 'runs') {
+        // A project keeps its assignment of a workflow that left the catalog.
+        if (!config.catalog.flows.some((flow) => flow.id === workflowId)) return { runs: [], total: 0 };
         const currentPage = page(input.page, 0, 10_000);
         const pageSize = page(input.pageSize, 20, 100);
         const withStatus = (run) => ({

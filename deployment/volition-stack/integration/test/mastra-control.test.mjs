@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createMastraControlService, MastraControlError } from '../mastra-control.mjs';
 
-const catalog = { flows: [{ id: 'agent-team' }] };
+const catalog = { flows: [{ id: 'inbox-triage' }, { id: 'agent-team' }, { id: 'agent-routine' }] };
 
 function service(handler) {
   return createMastraControlService(
@@ -28,6 +28,14 @@ test('every Mastra request carries the upstream token and no identity headers', 
 test('the catalog is answered without a Mastra request', async () => {
   const control = service(async () => assert.fail('Mastra was called'));
   assert.deepEqual(await control.execute({ schemaVersion: 1, operation: 'catalog' }), { catalog });
+});
+
+test('a workflow outside the catalog has no runs and Mastra is not asked', async () => {
+  const control = service(async () => assert.fail('Mastra was called'));
+  assert.deepEqual(
+    await control.execute({ schemaVersion: 1, operation: 'runs', workflowId: 'support', projectRef: 'project:PRIV' }),
+    { runs: [], total: 0 },
+  );
 });
 
 test('start creates the run in the project and starts it without waiting for it', async () => {

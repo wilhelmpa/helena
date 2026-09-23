@@ -2,7 +2,6 @@ import { aiAgent, db, issue, user } from '@repo/db';
 import { and, eq, inArray, or, sql } from 'drizzle-orm';
 import { agentTeamStages, record, text } from '#modules/control-plane-workflows/agent-team';
 import { listWorkflowRuns } from '#modules/control-plane-workflows/service';
-import { HttpError } from '#shared/lib';
 import { emptyEntry, isBefore, type ActivityEntry, type ActivityFilters } from './entry';
 
 // The Mastra runs of a timeline. Mastra stores them, not Plan, and filters them by
@@ -61,11 +60,7 @@ async function scan(
       page,
       SCAN_PAGE_SIZE,
       TIMEOUT_MS,
-    ).catch((error: unknown) => {
-      // A project keeps its assignment of a workflow Mastra no longer registers.
-      if (error instanceof HttpError && error.status === 404) return { runs: [] };
-      throw error;
-    });
+    );
     const runs = (Array.isArray(result?.runs) ? result.runs : []).map(record);
     for (const run of runs) {
       const at = isoOf(run.createdAt);

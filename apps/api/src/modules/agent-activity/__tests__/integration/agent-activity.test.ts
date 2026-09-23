@@ -319,21 +319,6 @@ describe('agent activity', () => {
     expect(res.data!.notice).toBe('workflow-runs-unavailable');
   });
 
-  it('leaves out a workflow that Mastra no longer registers without a notice', async () => {
-    const { asOwner } = await fullTimeline();
-    controlPlane.answer = (request) =>
-      request.operation !== 'runs'
-        ? {}
-        : request.workflowId === 'support'
-          ? Response.json({ message: 'Mastra rejected the control request' }, { status: 404 })
-          : { runs: [], total: 0 };
-
-    const res = await activity(asOwner);
-    expect(res.status).toBe(200);
-    expect(res.data!.items.map((item) => item.kind)).toEqual(['chat', 'agent-run', 'agent-run']);
-    expect(res.data!.notice).toBeNull();
-  });
-
   it('says so when older workflow runs lie beyond the pages it reads', async () => {
     const { asOwner } = await setup();
     await enableWorkflow(asOwner, 'support', []);
