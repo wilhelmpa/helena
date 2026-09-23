@@ -142,7 +142,7 @@ export async function handleGitEvent(
         providerKey,
         event.repo,
         event.number,
-        `Linked to ${items.length === 1 ? 'an issue' : 'issues'} in Volition:\n\n${items.join('\n')}`,
+        `Linked to ${items.length === 1 ? 'an issue' : 'issues'} in Helena:\n\n${items.join('\n')}`,
       );
     } catch {
       // Development linking is the primary action. A revoked provider token must

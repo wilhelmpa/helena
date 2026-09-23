@@ -116,7 +116,7 @@ export async function vaultScope(caller: AuthUser, viaMcp: boolean): Promise<Vau
     agent: agent ? { username: agent.username } : null,
     author: agent
       ? { name: person?.name || agent.username, email: `${agent.username}@agents.volition.local` }
-      : { name: person?.name || 'Plan', email: person?.email || 'plan@volition.local' },
+      : { name: person?.name || 'Helena', email: person?.email || 'helena@volition.local' },
   };
 }
 

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type {
   AccountPreferencesPatch,
+  HeaderLayout,
   IssueActivityView,
   IssueOpenMode,
   IssueStatsView,
@@ -27,6 +28,7 @@ import AccountPreferencesNav from './components/preferences/AccountPreferencesNa
 import AccountPreferencesSaveState from './components/preferences/AccountPreferencesSaveState';
 
 const THEMES: ThemePreference[] = ['system', 'light', 'dark'];
+const HEADER_LAYOUTS: HeaderLayout[] = ['single', 'classic'];
 const ISSUE_OPEN_MODES: IssueOpenMode[] = ['panel', 'page'];
 const ISSUE_STATS_VIEWS: IssueStatsView[] = ['compact', 'timeline'];
 const ISSUE_ACTIVITY_VIEWS: IssueActivityView[] = ['flat', 'grouped'];
@@ -71,6 +73,17 @@ export default function AccountPreferencesPage() {
             value={prefs.locale}
             options={localeOptions}
             onChange={(locale) => save({ locale })}
+            disabled={disabled}
+          />
+        </AccountPreferenceRow>
+        <AccountPreferenceRow label={t('headerLayout')} description={t('headerLayoutDescription')}>
+          <AccountPreferenceSelect
+            value={prefs.headerLayout}
+            options={HEADER_LAYOUTS.map((value) => ({
+              value,
+              label: t(`headerLayoutOptions.${value}`),
+            }))}
+            onChange={(headerLayout) => save({ headerLayout })}
             disabled={disabled}
           />
         </AccountPreferenceRow>

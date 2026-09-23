@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
+import { useAccountPreferences } from '@/services/preferences.service';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -33,6 +34,10 @@ export default function GodShell({
   useEffect(() => setMounted(true), []);
   const isGod = mounted && session?.user.role === 'god';
   const sessionSettled = mounted && !isPending;
+  // 'classic' keeps language/theme/account in this header, exactly as before;
+  // 'single' (the default) moves them to the sidebar footer, the same as the main
+  // Shell — see SidebarUtilityRow in GodSidebar.
+  const { headerLayout } = useAccountPreferences();
 
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen} className="h-svh overflow-hidden">
@@ -42,11 +47,13 @@ export default function GodShell({
           <SidebarTrigger />
           <Separator orientation="vertical" className="mr-1 h-4" />
           <div className="min-w-0 truncate text-sm font-medium">{t('godMode')}</div>
-          <div className="ml-auto flex items-center gap-2">
-            <LocaleToggle />
-            <ThemeToggle />
-            <UserMenu />
-          </div>
+          {headerLayout !== 'single' && (
+            <div className="ml-auto flex items-center gap-2">
+              <LocaleToggle />
+              <ThemeToggle />
+              <UserMenu />
+            </div>
+          )}
         </header>
 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">

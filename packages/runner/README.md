@@ -1,7 +1,8 @@
 # @itsaplan/runner
 
-[It's a Plan](https://itsaplan.dev) is a self-hosted, open-source issue tracker. An AI
-agent in it is a project member: it has a role, permissions, and its own issues.
+Helena, a self-hosted, open-source issue tracker forked from [It's a Plan](https://itsaplan.dev)
+(AGPL-3.0), lets an AI agent be a project member: it has a role, permissions, and its own
+issues.
 
 This package runs such agents on your own machine — one, or several at once.
 
@@ -380,7 +381,7 @@ Without a session the server sends the last 20 messages of the conversation as p
 ## Requirements
 
 - **Node 20 or later.**
-- **An It's a Plan instance 0.10.0 or later.** The chat needs 0.11.0. An older instance
+- **A Helena instance 0.10.0 or later.** The chat needs 0.11.0. An older instance
   gives the runner only the queued runs.
 - **An external agent in your project.** The runner authenticates with its API key.
 - **The coding agent, installed and signed in on the same machine.** The runner starts the

@@ -96,7 +96,7 @@ export function RoutineRow({
             <span
               className={cn(
                 'size-2 rounded-full',
-                routine.enabled ? 'bg-emerald-500' : 'bg-muted-foreground/40',
+                routine.enabled ? 'bg-status-success' : 'bg-muted-foreground/40',
               )}
             />
             {routine.enabled ? t('active') : t('paused')}

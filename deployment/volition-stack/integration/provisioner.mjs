@@ -542,7 +542,7 @@ export function createProvisioner(config, options = {}) {
     for (const kind of ["boards", "workflows"]) {
       if (requested.has(kind)) {
         warnings.push(
-          `${kind} are managed inside It's a Plan and are not provisioned by this service.`,
+          `${kind} are managed inside Helena and are not provisioned by this service.`,
         );
       }
     }

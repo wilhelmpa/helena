@@ -156,6 +156,7 @@
     "joined": "bergabung {date}"
   },
   "general": {
+    "about": "Tentang",
     "saved": "Pengaturan bawaan proyek disimpan",
     "projectDefaults": "Pengaturan bawaan proyek",
     "mcpEnabled": "Aktifkan MCP pada proyek baru",

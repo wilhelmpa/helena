@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useApprovalProjects } from '@/services/approvals.service';
+import PageHeader from '@/components/common/page/PageHeader';
 import ApprovalRequestList from './components/ApprovalRequestList';
 import WorkflowApprovalList from './components/WorkflowApprovalList';
 
@@ -33,30 +34,32 @@ export default function ApprovalsPage() {
     <Shell globalHome globalTitle={tNav('approvals')} autoOpenGlobalChat={false}>
       <div className="h-full overflow-y-auto p-6">
         <div className="mx-auto max-w-4xl space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="text-xl font-semibold">{tNav('approvals')}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{t('hint')}</p>
-            </div>
-            {projects.length > 1 && (
-              <Select
-                value={projectKey ?? ALL_PROJECTS}
-                onValueChange={(value) => setProjectKey(value === ALL_PROJECTS ? undefined : value)}
-              >
-                <SelectTrigger className="w-[220px]" aria-label={t('filterProject')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL_PROJECTS}>{t('filterProjectAll')}</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.key}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          <PageHeader
+            title={tNav('approvals')}
+            description={t('hint')}
+            actions={
+              projects.length > 1 ? (
+                <Select
+                  value={projectKey ?? ALL_PROJECTS}
+                  onValueChange={(value) =>
+                    setProjectKey(value === ALL_PROJECTS ? undefined : value)
+                  }
+                >
+                  <SelectTrigger className="w-[220px]" aria-label={t('filterProject')}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_PROJECTS}>{t('filterProjectAll')}</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.key}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : undefined
+            }
+          />
           <Tabs defaultValue="pending">
             <TabsList>
               <TabsTrigger value="pending">{t('pending')}</TabsTrigger>

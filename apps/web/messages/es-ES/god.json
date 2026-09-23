@@ -156,6 +156,7 @@
     "joined": "Se unió {date}"
   },
   "general": {
+    "about": "Acerca de",
     "saved": "Los valores por defecto del proyecto se han guardado",
     "projectDefaults": "Valores por defecto del proyecto",
     "mcpEnabled": "Activar MCP en los proyectos nuevos",

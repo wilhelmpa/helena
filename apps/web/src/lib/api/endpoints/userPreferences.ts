@@ -12,6 +12,12 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 
 export type IssueOpenMode = 'panel' | 'page';
 
+// 'single' merges the app header and the page's view tabs/filters into one row and
+// moves the language/theme/account controls into the sidebar footer (the default,
+// docs/volition-design-helena-ui.md); 'classic' is today's two-row header with those
+// controls in it — a full, kept fallback, not a deprecated path.
+export type HeaderLayout = 'single' | 'classic';
+
 export type StartPage = 'inbox' | 'dashboard' | 'work-items' | 'initiatives';
 
 export type IssueStatsView = 'compact' | 'timeline';
@@ -25,6 +31,7 @@ export interface AccountPreferences {
   locale: Locale;
   theme: ThemePreference;
   issueOpenMode: IssueOpenMode;
+  headerLayout: HeaderLayout;
   startPage: StartPage;
   showChatByDefault: boolean;
   // How the status stats section of an issue starts out, and the shape its activity

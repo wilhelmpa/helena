@@ -1,5 +1,5 @@
-import VolitionMark from '@/components/brand/VolitionMark';
-import VolitionWordmark from '@/components/brand/VolitionWordmark';
+import HelenaMark from '@/components/brand/HelenaMark';
+import HelenaWordmark from '@/components/brand/HelenaWordmark';
 import { APP_NAME } from '@/utils/app';
 
 // The header over a public shared page (a board or an issue). It shows the project
@@ -30,8 +30,8 @@ export default function PublicShareHeader({
         )}
       </div>
       <div className="ms-auto flex shrink-0 items-center gap-2 text-muted-foreground">
-        <VolitionMark className="size-5" />
-        <VolitionWordmark label={APP_NAME} className="h-3 w-auto" />
+        <HelenaMark className="size-5" />
+        <HelenaWordmark label={APP_NAME} className="h-3 w-auto" />
       </div>
     </header>
   );

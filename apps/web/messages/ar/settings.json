@@ -86,6 +86,13 @@
       "loading": "جارٍ تحميل حالة الإعداد…",
       "unavailable": "حالة الإعداد غير متاحة.",
       "retry": "إعادة المحاولة"
+    },
+    "dangerZone": {
+      "title": "منطقة الخطر",
+      "description": "إجراءات لا يمكن التراجع عنها لهذا المشروع.",
+      "deleteTitle": "حذف هذا المشروع",
+      "deleteDescription": "يحذف المشروع وكل ما فيه نهائيًا: المهام والمستندات والملفات والنشاط. لا يمكن التراجع عن هذا.",
+      "deleteAction": "حذف المشروع"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "الأمر اتنسخ. حط اسم مستودعك مكان owner/repo وشغّله.",
     "nativeConnections": "اتصالات مزوّدي Git",
     "nativeConnectionsRecommended": "اتصالات مزوّدي Git · موصى به",
-    "nativeConnectionsHint": "فوّض مزوّد Git، واختر المستودعات، ودع Volition يضبط خطافات الويب تلقائيًا.",
+    "nativeConnectionsHint": "فوّض مزوّد Git، واختر المستودعات، ودع Helena يضبط خطافات الويب تلقائيًا.",
     "nativeConnectProvider": "ربط {provider}",
     "nativeNoConnections": "لم يتم ربط أي حساب مزوّد بعد. يظل الإعداد اليدوي لخطاف الويب متاحًا أدناه.",
     "nativeConnectTitle": "ربط {provider}",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "يتطلب الانتباه",
     "nativeDisconnectProvider": "فصل المزوّد",
     "nativeDisconnectRepository": "فصل المستودع",
-    "nativeDisconnectConfirm": "هل تريد فصل {provider} وإزالة كل خطافات الويب التي يديرها Volition؟",
+    "nativeDisconnectConfirm": "هل تريد فصل {provider} وإزالة كل خطافات الويب التي يديرها Helena؟",
     "nativeDisconnected": "تم فصل {provider}",
     "nativeRepositoryDisconnected": "تم فصل المستودع",
     "nativeDisconnectFailed": "تعذّر فصل التكامل.",

@@ -249,6 +249,12 @@ export const userPreference = pgTable(
     locale: text('locale').notNull().default('en'),
     theme: text('theme').notNull().default('system'),
     issueOpenMode: text('issue_open_mode').notNull().default('panel'),
+    // 'single' merges the app header and the page's view tabs/filters into the one
+    // row docs/volition-design-helena-ui.md calls for, and moves the language/theme/
+    // account controls into the sidebar footer; 'classic' is today's two-row header
+    // with those controls in it, kept as a full fallback (an owner decision, not a
+    // deprecation: see CLAUDE.md).
+    headerLayout: text('header_layout').notNull().default('single'),
     startPage: text('start_page').notNull().default('work-items'),
     showChatByDefault: boolean('show_chat_by_default').notNull().default(false),
     issueStatsOpen: boolean('issue_stats_open').notNull().default(true),
@@ -271,6 +277,7 @@ export const userPreference = pgTable(
   (t) => [
     check('user_preference_theme_check', sql`${t.theme} IN ('light', 'dark', 'system')`),
     check('user_preference_issue_open_mode_check', sql`${t.issueOpenMode} IN ('panel', 'page')`),
+    check('user_preference_header_layout_check', sql`${t.headerLayout} IN ('single', 'classic')`),
     check(
       'user_preference_start_page_check',
       sql`${t.startPage} IN ('inbox', 'dashboard', 'work-items', 'initiatives')`,

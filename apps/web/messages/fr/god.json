@@ -156,6 +156,7 @@
     "joined": "a rejoint le {date}"
   },
   "general": {
+    "about": "À propos",
     "saved": "Valeurs par défaut des projets enregistrées",
     "projectDefaults": "Valeurs par défaut des projets",
     "mcpEnabled": "Activer MCP sur les nouveaux projets",

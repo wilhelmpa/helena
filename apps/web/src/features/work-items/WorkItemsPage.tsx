@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
+import { useShellHeaderExtra } from '@/hooks/useShellHeaderExtra';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useGroupLabels } from '@/hooks/useGroupLabels';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
@@ -41,8 +42,16 @@ interface TimelineCollapseState {
 export default function WorkItemsPage() {
   const t = useTranslations('workItems');
   const tCommon = useTranslations('common');
-  const { project, filteredProject, views, editor, customFields, onOpenIssue, onAddIssue } =
-    useShell();
+  const {
+    project,
+    filteredProject,
+    views,
+    editor,
+    customFields,
+    onOpenIssue,
+    onAddIssue,
+    headerLayout,
+  } = useShell();
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
   const features = useProjectFeatures();
@@ -58,6 +67,40 @@ export default function WorkItemsPage() {
     scope: project ? revScope.board(project.project.id) : null,
     targets: [qk.boardIssues(projectKey)],
   });
+
+  // In the single-row header this page's saved-view tabs merge into the Shell's own
+  // header instead of a second row; in 'classic' layout this stays null and the tabs
+  // render inline below, exactly as before. Called unconditionally (before the
+  // `!project` return) because it is a hook; there is nothing to show yet either way
+  // while the project has not loaded.
+  useShellHeaderExtra(
+    headerLayout === 'single' && project ? (
+      <ViewTabs
+        embedded
+        views={views}
+        projectKey={project.project.key}
+        activeViewId={editor.activeViewId}
+        onSelect={editor.selectView}
+        onNewView={editor.beginNewView}
+        onEdit={editor.beginEditView}
+        onDelete={(v) => void editor.deleteView(v)}
+        onReorder={editor.reorderView}
+        onToggleFilter={editor.toggleFilters}
+        displayControl={
+          <DisplayPopover
+            view={editor.view}
+            onViewChange={editor.changeView}
+            settings={withoutHiddenSections(editor.settings, features)}
+            onSettingsChange={(next) =>
+              editor.changeSettings(restoreHiddenSections(next, editor.settings, features))
+            }
+            customFields={customFields}
+            issueTypes={project.issueTypes}
+          />
+        }
+      />
+    ) : null,
+  );
 
   if (!project || !filteredProject) return null;
 
@@ -164,18 +207,23 @@ export default function WorkItemsPage() {
 
   return (
     <>
-      <ViewTabs
-        views={views}
-        projectKey={project.project.key}
-        activeViewId={editor.activeViewId}
-        onSelect={editor.selectView}
-        onNewView={editor.beginNewView}
-        onEdit={editor.beginEditView}
-        onDelete={(v) => void editor.deleteView(v)}
-        onReorder={editor.reorderView}
-        onToggleFilter={editor.toggleFilters}
-        displayControl={<DisplayPopover {...displayProps} />}
-      />
+      {/* In 'single' header layout this same bar already rendered into the Shell's
+          header above, via useShellHeaderExtra; rendering it again here would show
+          it twice. */}
+      {headerLayout !== 'single' && (
+        <ViewTabs
+          views={views}
+          projectKey={project.project.key}
+          activeViewId={editor.activeViewId}
+          onSelect={editor.selectView}
+          onNewView={editor.beginNewView}
+          onEdit={editor.beginEditView}
+          onDelete={(v) => void editor.deleteView(v)}
+          onReorder={editor.reorderView}
+          onToggleFilter={editor.toggleFilters}
+          displayControl={<DisplayPopover {...displayProps} />}
+        />
+      )}
 
       {/* The filter row applies to the current screen only; it never writes to a
           view. The edit bar above it (icon picker + name input + Cancel/Save)

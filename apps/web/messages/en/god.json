@@ -156,6 +156,7 @@
     "joined": "joined {date}"
   },
   "general": {
+    "about": "About",
     "saved": "Project defaults saved",
     "projectDefaults": "Project defaults",
     "mcpEnabled": "Enable MCP on new projects",

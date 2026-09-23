@@ -156,6 +156,7 @@
     "joined": "entrou em {date}"
   },
   "general": {
+    "about": "Sobre",
     "saved": "Padrões de projeto salvos",
     "projectDefaults": "Padrões de projeto",
     "mcpEnabled": "Ativar MCP em novos projetos",
