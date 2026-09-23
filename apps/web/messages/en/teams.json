@@ -242,18 +242,12 @@
       "tool": {
         "title": "Tools",
         "hint": "Integrations an agent can call as tools"
-      },
-      "secret": {
-        "title": "Secrets",
-        "hint": "Named values the MCP servers of the team's agents read"
       }
     },
     "columns": {
       "integration": "Integration",
       "credentials": "Credentials"
-    },
-    "secretName": "Name",
-    "secretNameHint": "MCP servers pick the secret by this name. The value is stored encrypted and never shown again."
+    }
   },
   "skills": {
     "newSkill": "New skill",
@@ -363,7 +357,7 @@
     "literal": "Value",
     "secret": "Secret",
     "chooseSecret": "Choose a secret",
-    "noSecrets": "The team has no secrets yet. Add one under Integrations.",
+    "noSecrets": "The team has no secrets yet. Add one under Credentials.",
     "secretHint": "A secret's value reaches only the runner of an agent the server is enabled on, never this page.",
     "missingSecret": "deleted secret",
     "addValue": "Add",

@@ -1,4 +1,5 @@
 import connections from '../../messages/en/connections.json';
+import credentials from '../../messages/en/credentials.json';
 import organization from '../../messages/en/organization.json';
 import account from '../../messages/en/account.json';
 import agentActivity from '../../messages/en/agentActivity.json';
@@ -77,6 +78,7 @@ const defaultMessages = {
   whatsNew,
   organization,
   connections,
+  credentials,
   agentActivity,
   routines,
 };

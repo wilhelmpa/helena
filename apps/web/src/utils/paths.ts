@@ -31,7 +31,7 @@ export const toolsPath = () => '/tools';
 
 export const skillsPath = () => '/skills';
 
-export const vaultPath = () => '/vault';
+export const credentialsPath = () => '/credentials';
 
 // The Home pages that read across every project: the task list, the inbox and the
 // agent activity, the approvals and the schedules.
