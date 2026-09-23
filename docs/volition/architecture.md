@@ -105,9 +105,19 @@ and makes no decisions.
   for one run as environment variables, website logins as entries of the profile's Hermes
   vault, and SSH keys as files of the profile. The model sees secret names only.
 - Configuration files (`AGENTS.md`, `SOUL.md`, instruction files, managed skills, toolsets,
-  MCP grants, model) are owned by Plan. A change Hermes makes to one of them is imported
-  into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are
-  shown read-only in Plan.
+  MCP grants, model) are owned by Plan. The runner puts back a managed file Hermes changed or
+  removed, every minute and after every run, and Plan shows the changed version so it can be
+  taken over. The same holds for the plugin links Plan requires in every Hermes home, such as
+  `plan-approval-guard`; a run whose link cannot be put back fails.
+- Memory and the skills an agent creates are stored by Hermes in the agent's profile. Whether
+  an agent learns is set per agent in Plan (on unless turned off), and so is Hermes' curator
+  (off unless turned on). The owner reads what an agent learned in Plan, edits or clears its
+  memory, and pins, discards or takes a learned skill into the team's library, where it
+  becomes one of Plan's skills; the runner carries each action out on its next sync. An
+  agent learns in its own turns, so what learning costs is in the tokens its runs report:
+  the runner turns off Hermes' post-turn review and its model-written session titles, which a
+  one-shot run would pay for without Plan counting them. Hermes' review and curator only
+  change skills the review created, never Plan's.
 - An agent has the MCP servers of Hermes' `config.yaml` that the owner did not turn off for
   it, and the servers of the team's library enabled on it. Both are stored in Plan; the runner
   writes them to a managed configuration of the agent's profile, never to `config.yaml`.
