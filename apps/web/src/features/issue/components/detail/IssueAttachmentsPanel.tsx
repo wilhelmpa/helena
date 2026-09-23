@@ -155,7 +155,6 @@ export default function IssueAttachmentsPanel({
             // Images and videos play from the public url like their embeds; the rest
             // opens through the session-checked view.
             url: isImage(viewing) || isVideo(viewing) ? viewing.url : attachmentViewUrl(viewing.id),
-            downloadUrl: `${viewing.url}?download=1`,
             vaultPath: viewing.vaultPath ?? null,
           }}
           actions={<IssueAttachmentViewerActions attachment={viewing} />}

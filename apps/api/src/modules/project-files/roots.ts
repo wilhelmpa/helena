@@ -83,14 +83,8 @@ export function homeRoot(name: HomeRootName): FileRoot {
   return vaultRoot(name, HOME_FOLDERS[name], name !== 'private');
 }
 
-// Splits a vault-relative path into the root it belongs to and the path below it.
-export function rootOfVaultPath(vaultPath: string): { root: FileRoot; relative: string } | null {
-  const [first, second, ...rest] = vaultPath.split('/');
-  if (first === 'Projects' && second) {
-    return { root: projectRoot(second), relative: rest.join('/') };
-  }
-  const home = HOME_ROOTS.find((name) => HOME_FOLDERS[name] === first);
-  return home
-    ? { root: homeRoot(home), relative: [second, ...rest].filter(Boolean).join('/') }
-    : null;
+// Splits the vault path of a project file into the project's root and the path below it.
+export function projectRootOf(vaultPath: string): { root: FileRoot; relative: string } | null {
+  const [top, key, ...rest] = vaultPath.split('/');
+  return top === 'Projects' && key ? { root: projectRoot(key), relative: rest.join('/') } : null;
 }

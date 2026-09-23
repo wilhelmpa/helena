@@ -22,7 +22,7 @@ export default function FileListRow({
   drag: FileEntryDrag;
   highlighted: boolean;
 }) {
-  const format = useTranslations('files');
+  const t = useTranslations('files');
   return (
     <li
       {...drag.source(item)}
@@ -48,7 +48,7 @@ export default function FileListRow({
         {item.name}
       </button>
       <span className="hidden w-36 shrink-0 text-xs text-muted-foreground sm:block">
-        {item.updatedAt ? format('modified', { date: new Date(item.updatedAt) }) : ''}
+        {item.updatedAt ? t('modified', { date: new Date(item.updatedAt) }) : ''}
       </span>
       <span className="w-20 shrink-0 text-end text-xs text-muted-foreground">
         {item.sizeBytes !== null ? formatSize(item.sizeBytes) : ''}

@@ -55,8 +55,8 @@ export const relinkAttachment = (publicId: string, path: string) =>
 
 // The attachment for the viewer, through the session-checked proxy: unlike the public
 // url it opens a PDF or a text file in the page.
-export const attachmentViewUrl = (publicId: string, download = false) =>
-  `/protected-media/attachments/${publicId}/view${download ? '?download=1' : ''}`;
+export const attachmentViewUrl = (publicId: string) =>
+  `/protected-media/attachments/${publicId}/view`;
 
 export const listInitiativeAttachments = (initiativeId: number) =>
   request<Attachment[]>(`/initiatives/${initiativeId}/attachments`).then((rows) =>

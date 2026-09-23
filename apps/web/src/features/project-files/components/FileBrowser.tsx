@@ -130,7 +130,6 @@ export default function FileBrowser({
             contentType: viewing.contentType,
             sizeBytes: viewing.sizeBytes,
             url: fileRawUrl(scope, viewing.path),
-            downloadUrl: fileRawUrl(scope, viewing.path, true),
             vaultPath: actions.vaultPath(viewing),
           }}
           actions={<FileViewerActions item={viewing} actions={actions} />}

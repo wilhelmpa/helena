@@ -36,7 +36,7 @@ import { fileSha256 } from './resolver';
 import {
   projectFilesSlug,
   projectRoot,
-  rootOfVaultPath,
+  projectRootOf,
   vaultDirectory,
   type FileRoot,
 } from './roots';
@@ -386,7 +386,7 @@ export async function describeVaultFile(root: FileRoot, relative: string) {
 }
 
 function vaultEntry(vaultPath: string) {
-  const entry = rootOfVaultPath(relativePath(vaultPath));
+  const entry = projectRootOf(relativePath(vaultPath));
   if (!entry?.relative) throw new HttpError(400, 'File path is invalid');
   return entry;
 }

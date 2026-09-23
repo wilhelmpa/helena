@@ -7,9 +7,8 @@ export interface ViewerFile {
   name: string;
   contentType: string | null;
   sizeBytes: number | null;
-  // Opens the file in the page; downloadUrl saves it.
+  // Opens the file in the page.
   url: string;
-  downloadUrl: string;
   // Where the file is in the vault, for the extracted text; null outside the vault.
   vaultPath: string | null;
 }
