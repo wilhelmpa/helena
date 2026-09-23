@@ -1,8 +1,6 @@
-import { notFound } from 'next/navigation';
-import VaultPage from '@/features/vault/VaultPage';
-import { serverRuntimeEnv } from '@/utils/runtimeEnv';
+import { redirect } from 'next/navigation';
+import { credentialsPath } from '@/utils/paths';
 
 export default function Page() {
-  if (!serverRuntimeEnv().workspace.vaultEnabled) notFound();
-  return <VaultPage />;
+  redirect(credentialsPath());
 }

@@ -29,11 +29,6 @@ import {
   MastraEventError,
 } from "./mastra-events.mjs";
 
-import {
-  createSecretStore,
-  SecretStoreValidationError,
-} from "./secret-store.mjs";
-
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_EVENT_BODY_BYTES = 64 * 1024;
 
@@ -111,7 +106,6 @@ export function createRequestHandler(
   triage = null,
   connections = null,
   mail = null,
-  secrets = null,
   mastraEvents = null,
 ) {
   return async function handle(request, response) {
@@ -237,13 +231,9 @@ export function createRequestHandler(
       request.method === "GET" && pathname === "/api/connections";
     const connectionAction =
       request.method === "POST" && pathname === "/api/connections/actions";
-    const secretList = request.method === "GET" && pathname === "/api/secrets";
-    const secretSet = request.method === "POST" && pathname === "/api/secrets";
-    const secretRoute = secretList || secretSet;
     const mailRoute = pathname.startsWith("/api/mail/");
-    if (connectionList || connectionAction || mailRoute || secretRoute) {
+    if (connectionList || connectionAction || mailRoute) {
       if (
-        (!secrets && secretRoute) ||
         (!connections && (connectionList || connectionAction)) ||
         (!mail && mailRoute)
       ) {
@@ -270,14 +260,6 @@ export function createRequestHandler(
         return;
       }
       try {
-        if (secretList) {
-          json(response, 200, await secrets.list());
-          return;
-        }
-        if (secretSet) {
-          json(response, 200, await secrets.set(await requestBody(request)));
-          return;
-        }
         if (connectionList) {
           json(response, 200, await connections.snapshot());
           return;
@@ -315,13 +297,7 @@ export function createRequestHandler(
         if (pathname === "/api/mail/attachment") attachment(response, result);
         else json(response, 200, result);
       } catch (error) {
-        if (secretRoute && !(error instanceof SecretStoreValidationError)) {
-          json(response, 502, {
-            error: "secret_store_failed",
-            message: "Native secret store operation failed",
-          });
-        } else if (
-          error instanceof SecretStoreValidationError ||
+        if (
           error instanceof ConnectionsValidationError ||
           error instanceof MailValidationError
         ) {
@@ -510,9 +486,6 @@ export function createProvisioningServer(config, options = {}) {
     (config.inboxAccounts?.length && config.mailEnabled
       ? createMailService(config, options)
       : null);
-  const secrets =
-    options.secrets ??
-    (config.connectionsEnabled ? createSecretStore(config, options) : null);
   const mastraEvents =
     options.mastraEvents ??
     (config.mastraEventIngressEnabled && config.mastraEventToken
@@ -525,7 +498,6 @@ export function createProvisioningServer(config, options = {}) {
     triage,
     connections,
     mail,
-    secrets,
     mastraEvents,
   );
   const server = http.createServer(handler);

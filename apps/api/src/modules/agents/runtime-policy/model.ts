@@ -44,6 +44,12 @@ export const RuntimePolicySnapshotResponse = t.Object({
     }),
     { description: 'The MCP servers of the team library enabled on the agent.' },
   ),
+  webLogins: t.Boolean({
+    description:
+      'Whether website logins are granted to the agent. Its runner then reads them for each ' +
+      'run and chat answer from GET /agent-runs/:runId/web-logins or ' +
+      '/agent-chats/:messageId/web-logins.',
+  }),
   learning: t.Object({
     enabled: t.Boolean({ description: 'The agent keeps memory and creates skills.' }),
     curator: t.Boolean({

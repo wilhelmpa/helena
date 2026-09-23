@@ -116,6 +116,10 @@ export const app = new Elysia()
             description: "The team's MCP server library and the servers enabled on each agent",
           },
           {
+            name: 'Credentials',
+            description: "The team's web logins, API keys, SSH keys and secrets, and their grants",
+          },
+          {
             name: 'Agent Learning',
             description:
               'What an external agent learned in its runtime, and the actions its runner ' +

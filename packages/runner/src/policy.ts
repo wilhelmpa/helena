@@ -19,6 +19,7 @@ import {
   type RuntimeActionResult,
   type RuntimeLearning,
 } from './learning';
+import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 
 export interface RuntimePolicyFile {
   kind: 'instructions';
@@ -64,6 +65,8 @@ export interface RuntimePolicySnapshot {
   skills: RuntimeSkill[];
   // The MCP servers of the team library enabled on the agent. An older server sends none.
   mcpServers?: RuntimeMcpServer[];
+  // Whether website logins are granted to the agent. An older server sends none.
+  webLogins?: boolean;
   // Whether the agent learns. An older server sends none, and Hermes' own settings apply.
   learning?: RuntimeLearning;
   // The owner's decisions on what the agent learned, not carried out yet.
@@ -96,13 +99,16 @@ export interface RuntimeStatus {
 export interface RuntimePolicyClient {
   runtimePolicy(): Promise<RuntimePolicySnapshot>;
   reportRuntimeStatus(status: RuntimeStatus): Promise<void>;
-  mcpSecrets(): Promise<Record<string, string>>;
+  mcpSecrets(work?: WorkRef): Promise<Record<string, string>>;
+  webLogins(work: WorkRef): Promise<WebLogin[]>;
 }
 
-// What a run or a chat answer hands Hermes besides the task.
+// What a run or a chat answer hands Hermes besides the task. `logins` names the Plan
+// credential of each vault handle the runner wrote, for a run or chat answer.
 export interface HermesRunSettings {
   toolsets: string[] | null;
   env: Record<string, string>;
+  logins?: Map<string, number>;
 }
 
 type ManifestEntry =
@@ -523,6 +529,18 @@ export function allowedToolsets(
   return toolsets;
 }
 
+// The browser toolset carries Hermes' vault tools, so an agent with website logins keeps
+// it whatever else is turned off for it.
+export function toolsetsWithBrowser(
+  profile: HermesProfile | undefined,
+  denied: string[],
+  ownMcpServers: string[] = [],
+): string[] | null {
+  const kept = denied.filter((name) => name !== 'browser');
+  const toolsets = allowedToolsets(profile, kept, ownMcpServers);
+  return toolsets && !toolsets.includes('browser') ? [...toolsets, 'browser'] : toolsets;
+}
+
 type ReportedState = Pick<
   RuntimeStatus,
   'status' | 'detail' | 'conflicts' | 'restored' | 'actions'
@@ -534,6 +552,8 @@ export interface SynchronizerOptions {
   learned?: (skills: InventorySkill[]) => Promise<LearnedSkill[]>;
   profile?: HermesProfile;
   now?: () => number;
+  // The agent's Hermes vault, which receives its website logins.
+  vault?: WebLoginVault;
 }
 
 // Each path once, the most recent last.
@@ -561,6 +581,7 @@ export class HermesPolicySynchronizer {
   private unreported = false;
   private deniedToolsets: string[] = [];
   private learning: RuntimeLearning | undefined;
+  private webLogins = false;
   // The agent's own MCP servers and the secrets they name, as the last applied revision
   // wrote them. mcpSecrets is null while the managed configuration names no secret.
   private mcpServerNames: string[] = [];
@@ -595,31 +616,47 @@ export class HermesPolicySynchronizer {
     this.checkedAt = -Infinity;
   }
 
-  // An agent that does not learn has no memory tool.
   toolsets(): string[] | null {
-    const denied =
-      this.learning?.enabled === false ? [...this.deniedToolsets, 'memory'] : this.deniedToolsets;
-    return allowedToolsets(this.options.profile, denied, this.mcpServerNames);
+    return allowedToolsets(this.options.profile, this.denied(), this.mcpServerNames);
+  }
+
+  // An agent that does not learn has no memory tool.
+  private denied(): string[] {
+    return this.learning?.enabled === false
+      ? [...this.deniedToolsets, 'memory']
+      : this.deniedToolsets;
   }
 
   // Read before each run and chat answer, so a secret changed in Plan applies at once.
   // Plan answers with the secrets of the agent's current servers, which also covers a
-  // revision the other feed applies before Hermes reads the managed configuration. A
-  // required plugin that cannot be put back throws, which fails the run instead of running
-  // it without the plugin.
-  async runSettings(): Promise<HermesRunSettings> {
+  // revision the other feed applies before Hermes reads the managed configuration. For a
+  // run or chat answer the vault is brought to the logins granted now; a login revoked in
+  // Plan is removed from it before Hermes starts. A required plugin that cannot be put
+  // back throws, which fails the run instead of running it without the plugin.
+  async runSettings(work?: WorkRef): Promise<HermesRunSettings> {
     const restored = await this.materializer.ensurePlugins();
     if (restored.length > 0) this.noteRestored(restored, []);
-    const toolsets = this.toolsets();
+    const settings = { toolsets: this.toolsets(), env: await this.mcpEnv(work) };
+    if (!work || !this.options.vault) return settings;
+    const granted = this.webLogins ? await this.client.webLogins(work) : [];
+    const logins = await this.options.vault.sync(granted);
+    if (logins.size === 0) return { ...settings, logins };
+    const toolsets = toolsetsWithBrowser(this.options.profile, this.denied(), this.mcpServerNames);
+    return { ...settings, toolsets, logins };
+  }
+
+  // Hermes reads the managed configuration from HERMES_MANAGED_DIR, and the values of the
+  // secrets its MCP servers name from the environment.
+  private async mcpEnv(work?: WorkRef): Promise<Record<string, string>> {
     const env: Record<string, string> = { HERMES_MANAGED_DIR: this.materializer.managedDir };
-    if (this.mcpSecrets === null) return { toolsets, env };
-    const values = await this.client.mcpSecrets();
+    if (this.mcpSecrets === null) return env;
+    const values = await this.client.mcpSecrets(work);
     for (const [id, value] of Object.entries(values)) {
       if (/^\d+$/.test(id)) env[mcpSecretVariable(Number(id))] = value;
     }
     // A secret deleted in Plan reaches its server empty.
     for (const id of this.mcpSecrets) env[mcpSecretVariable(id)] ??= '';
-    return { toolsets, env };
+    return env;
   }
 
   private async sync(): Promise<void> {
@@ -633,6 +670,7 @@ export class HermesPolicySynchronizer {
     // The restriction writes no file, so it holds even while a revision fails to apply.
     this.deniedToolsets = snapshot.runtimePolicy?.toolDeny ?? [];
     this.learning = snapshot.learning;
+    this.webLogins = snapshot.webLogins === true;
     const applied = await this.apply(snapshot);
     let changed = applied;
     if (applied || this.now() - this.checkedAt >= CHECK_INTERVAL_MS) {
@@ -772,10 +810,15 @@ export function hermesPolicySynchronizer(
   const hermesHome = config.env.HERMES_HOME ?? process.env.HERMES_HOME;
   if (!hermesHome) throw new Error('Hermes policy sync requires HERMES_HOME');
   const materializer = new HermesPolicyMaterializer({ hermesHome, profile: config.hermes });
+  const python = config.env.HERMES_PYTHON ?? process.env.HERMES_PYTHON ?? 'python3';
   return new HermesPolicySynchronizer(client, materializer, {
     inventory: async () =>
       readHermesInventory(materializer.hermesHome, config.hermes, await materializer.planSkills()),
     learned: (skills) => readLearnedSkills(materializer.hermesHome, skills),
     profile: config.hermes,
+    vault: new WebLoginVault(
+      materializer.hermesHome,
+      pythonVaultStore(materializer.hermesHome, python, config.env),
+    ),
   });
 }

@@ -1,12 +1,17 @@
 import { db, agentMcpServer, agentMcpServerLink, integrationCredential } from '@repo/db';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { decryptSecret } from '@repo/crypto';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
-import { SECRET_INTEGRATION_KEY } from '../integrations/catalog';
 
 // The team's library of MCP servers and the servers enabled on each agent. An env or
-// header value is a literal or the id of one of the team's secrets; a secret's value is
-// decrypted only for the runner of an agent the server is enabled on.
+// header value is a literal or the id of one of the team's secrets: a secret or an API
+// key of the Credentials page that is not limited to a project. Its value is decrypted
+// only for the runner of an agent the server is enabled on.
+
+const teamSecret = and(
+  inArray(integrationCredential.integrationKey, ['secret', 'api_key']),
+  isNull(integrationCredential.projectId),
+);
 
 export type McpTransport = 'stdio' | 'http' | 'sse';
 
@@ -55,12 +60,7 @@ async function secretLabels(teamId: number): Promise<Map<number, string | null>>
   const rows = await db
     .select({ id: integrationCredential.id, label: integrationCredential.label })
     .from(integrationCredential)
-    .where(
-      and(
-        eq(integrationCredential.teamId, teamId),
-        eq(integrationCredential.integrationKey, SECRET_INTEGRATION_KEY),
-      ),
-    );
+    .where(and(eq(integrationCredential.teamId, teamId), teamSecret));
   return new Map(rows.map((row) => [row.id, row.label]));
 }
 
@@ -331,19 +331,27 @@ export async function agentRuntimeMcpServers(agentId: number): Promise<RuntimeMc
   }));
 }
 
+// The names of the agent's MCP servers that reference each secret, by secret id.
+export async function mcpSecretServers(agentId: number): Promise<Map<number, string[]>> {
+  const servers = new Map<number, string[]>();
+  for (const row of await linkedRecords(agentId)) {
+    for (const entry of [...stored(row.env), ...stored(row.headers)]) {
+      if (entry.credentialId === undefined) continue;
+      const names = servers.get(entry.credentialId) ?? [];
+      if (!names.includes(row.name)) servers.set(entry.credentialId, [...names, row.name]);
+    }
+  }
+  return servers;
+}
+
 // The values of the secrets the agent's MCP servers reference, by secret id. A secret
 // deleted since is left out.
 export async function agentMcpSecrets(
   agentId: number,
   teamId: number,
 ): Promise<Record<string, string>> {
-  const ids = new Set<number>();
-  for (const row of await linkedRecords(agentId)) {
-    for (const entry of [...stored(row.env), ...stored(row.headers)]) {
-      if (entry.credentialId !== undefined) ids.add(entry.credentialId);
-    }
-  }
-  if (ids.size === 0) return {};
+  const ids = [...(await mcpSecretServers(agentId)).keys()];
+  if (ids.length === 0) return {};
   const rows = await db
     .select({
       id: integrationCredential.id,
@@ -355,8 +363,8 @@ export async function agentMcpSecrets(
     .where(
       and(
         eq(integrationCredential.teamId, teamId),
-        eq(integrationCredential.integrationKey, SECRET_INTEGRATION_KEY),
-        inArray(integrationCredential.id, [...ids]),
+        teamSecret,
+        inArray(integrationCredential.id, ids),
       ),
     );
   return Object.fromEntries(

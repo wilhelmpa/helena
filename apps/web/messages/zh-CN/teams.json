@@ -242,18 +242,12 @@
       "tool": {
         "title": "工具",
         "hint": "代理可以作为工具调用的集成"
-      },
-      "secret": {
-        "title": "密钥",
-        "hint": "团队代理的 MCP 服务器读取的命名值"
       }
     },
     "columns": {
       "integration": "集成",
       "credentials": "凭据"
-    },
-    "secretName": "名称",
-    "secretNameHint": "MCP 服务器按此名称选择密钥。值会加密存储，之后不再显示。"
+    }
   },
   "skills": {
     "newSkill": "新建技能",
@@ -363,7 +357,7 @@
     "literal": "值",
     "secret": "密钥",
     "chooseSecret": "选择密钥",
-    "noSecrets": "团队还没有密钥。请在集成中添加。",
+    "noSecrets": "团队还没有密钥。请在凭据中添加。",
     "secretHint": "密钥的值只会发送给启用了该服务器的代理的运行器，绝不会发送到此页面。",
     "missingSecret": "已删除的密钥",
     "addValue": "添加",

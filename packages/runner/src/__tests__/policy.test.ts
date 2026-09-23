@@ -342,6 +342,9 @@ describe('Hermes runtime policy synchronizer', () => {
         if (!next) throw new Error('no secrets expected');
         return next;
       },
+      webLogins: async () => {
+        throw new Error('no logins expected');
+      },
     };
   }
 
@@ -605,6 +608,7 @@ describe('Hermes learning and protected state', () => {
         statuses.push(status);
       },
       mcpSecrets: async () => ({}),
+      webLogins: async () => [],
     } satisfies RuntimePolicyClient;
   }
 
@@ -763,6 +767,7 @@ describe('Hermes learning and protected state', () => {
           statuses.push(status);
         },
         mcpSecrets: async () => ({}),
+        webLogins: async () => [],
       },
       materializer,
     );
@@ -853,6 +858,7 @@ describe('Hermes learning and protected state', () => {
           if (answer) throw answer;
         },
         mcpSecrets: async () => ({}),
+        webLogins: async () => [],
       },
       materializer,
     );

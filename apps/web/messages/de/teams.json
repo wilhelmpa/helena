@@ -242,18 +242,12 @@
       "tool": {
         "title": "Tools",
         "hint": "Integrationen, die ein Agent als Tools aufrufen kann"
-      },
-      "secret": {
-        "title": "Secrets",
-        "hint": "Benannte Werte, die die MCP-Server der Agenten des Teams lesen"
       }
     },
     "columns": {
       "integration": "Integration",
       "credentials": "Zugangsdaten"
-    },
-    "secretName": "Name",
-    "secretNameHint": "MCP-Server wählen das Secret über diesen Namen. Der Wert wird verschlüsselt gespeichert und nie wieder angezeigt."
+    }
   },
   "skills": {
     "newSkill": "Neuer Skill",
@@ -363,7 +357,7 @@
     "literal": "Wert",
     "secret": "Secret",
     "chooseSecret": "Secret wählen",
-    "noSecrets": "Das Team hat noch keine Secrets. Füge eines unter Integrationen hinzu.",
+    "noSecrets": "Das Team hat noch keine Secrets. Füge eines unter Zugänge hinzu.",
     "secretHint": "Der Wert eines Secrets erreicht nur den Runner eines Agenten, für den der Server aktiviert ist, nie diese Seite.",
     "missingSecret": "gelöschtes Secret",
     "addValue": "Hinzufügen",

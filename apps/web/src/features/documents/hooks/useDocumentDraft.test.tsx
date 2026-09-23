@@ -115,7 +115,6 @@ beforeEach(async () => {
       browserUrl: '',
       inboxUrl: '',
       connectionsUrl: '',
-      vaultEnabled: true,
       obsidianVault: 'Volition',
     },
   };

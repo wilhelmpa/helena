@@ -19,7 +19,6 @@ export interface WorkspaceRuntimeEnv {
   browserUrl: string;
   inboxUrl: string;
   connectionsUrl: string;
-  vaultEnabled: boolean;
   // The name the owner's Obsidian knows the vault by, for obsidian:// links.
   obsidianVault: string;
 }
@@ -55,12 +54,6 @@ function readJsonRecord(name: string): Record<string, string> {
   }
 }
 
-function readBoolean(name: string, fallback: boolean): boolean {
-  const value = readOrigin(name).trim().toLowerCase();
-  if (!value) return fallback;
-  return value === 'true' || value === '1' || value === 'yes';
-}
-
 const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   homeChatProjectKey: '',
   terminalUrl: '',
@@ -69,7 +62,6 @@ const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   browserUrl: '',
   inboxUrl: '',
   connectionsUrl: '',
-  vaultEnabled: true,
   obsidianVault: 'Volition',
 });
 
@@ -87,7 +79,6 @@ export function serverRuntimeEnv(): RuntimeEnv {
       browserUrl: readOrigin('BROWSER_URL'),
       inboxUrl: readOrigin('INBOX_URL'),
       connectionsUrl: readOrigin('CONNECTIONS_URL'),
-      vaultEnabled: readBoolean('VAULT_UI_ENABLED', true),
       obsidianVault: readOrigin('OBSIDIAN_VAULT_NAME') || 'Volition',
     },
   };

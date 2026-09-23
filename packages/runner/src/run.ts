@@ -2,6 +2,7 @@ import { UsageReader } from './agui';
 import type { Client, Run } from './client';
 import type { RunnerConfig } from './config';
 import { execute, type Outcome } from './execute';
+import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
 import { runCwd } from './workdir';
 
@@ -38,17 +39,24 @@ export async function perform(
   // kept, and the line carrying the counts can fall outside it. A command that reports
   // the totals of the run has them on the outcome, and those are what the run cost.
   const usage = new UsageReader(config.outputFormat);
+  const logins = new LoginUseReader(hermes?.logins ?? new Map());
   const task = taskOf(run);
   const outcome = await execute(
     { ...config, cwd: runCwd(config.cwd, run.workdir) },
     { ...task, toolsets: hermes?.toolsets ?? null, env: { ...task.env, ...hermes?.env } },
     {
-      onData: (chunk) => usage.write(chunk),
+      onData: (chunk) => {
+        usage.write(chunk);
+        logins.write(chunk);
+      },
       signal: stop.signal,
     },
   );
   if (stop.signal.aborted) return null;
   usage.end();
+  const uses = logins.uses();
+  // The audit log misses these uses when the report fails; the run itself does not.
+  if (uses.length > 0) await client.reportLoginUses({ runId: run.id }, uses).catch(() => {});
   await client.report(run.id, { ...outcome, usage: outcome.usage ?? usage.value() });
   return outcome;
 }
