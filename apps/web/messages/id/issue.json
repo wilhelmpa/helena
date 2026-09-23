@@ -226,7 +226,8 @@
     "edited": "diedit",
     "deleteComment": "Hapus komentar",
     "deleteCommentTitle": "Hapus komentar ini?",
-    "deleteCommentConfirmation": "Komentar dan balasannya akan dihapus secara permanen."
+    "deleteCommentConfirmation": "Komentar dan balasannya akan dihapus secara permanen.",
+    "agentPaused": "Dijeda"
   },
   "stats": {
     "title": "Statistik",
@@ -428,7 +429,8 @@
     "noCandidates": "Tidak ada yang dapat dipilih.",
     "area": "Area",
     "noArea": "Tanpa area",
-    "changeArea": "Pindah ke area…"
+    "changeArea": "Pindah ke area…",
+    "agentPaused": "Dijeda"
   },
   "watchers": {
     "watch": "Ikuti",

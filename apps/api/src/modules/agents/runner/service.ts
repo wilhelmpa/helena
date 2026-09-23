@@ -6,9 +6,10 @@ import {
   project,
   projectMember,
 } from '@repo/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, lte, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { type ContextUsage } from '../chat-usage';
+import { enforceAgentLimits } from '../governance';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
 import { normalizeRuntimePolicy, type AgentKind } from '../core/service';
@@ -179,12 +180,26 @@ async function expireExhaustedRuns(agent: RunnerAgent): Promise<void> {
     await recordAgentRunFinished({ ...row, agentUserId: agent.userId }, 'failed');
 }
 
-// Claims the agent's next due run, or null when it has none. FOR UPDATE SKIP LOCKED
-// keeps two runners on the same key from taking the same run.
+// Claims the agent's next due run, or null when it has none or may not start it: a
+// paused agent's runs wait in the queue. FOR UPDATE SKIP LOCKED keeps two runners on
+// the same key from taking the same run.
 export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | null> {
   const agentId = agent.id;
   await expireExhaustedRuns(agent);
   await touchRunner(agentId);
+  const [next] = await db
+    .select({ projectId: agentRun.projectId, issueId: agentRun.issueId })
+    .from(agentRun)
+    .where(
+      and(
+        eq(agentRun.agentId, agentId),
+        eq(agentRun.status, 'pending'),
+        lte(agentRun.nextAttemptAt, sql`now()`),
+      ),
+    )
+    .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id))
+    .limit(1);
+  if (!next || (await enforceAgentLimits(agentId, next.projectId, next.issueId))) return null;
   const rows = await db.execute(sql`
     UPDATE agent_run r
     SET attempts = r.attempts + 1,
@@ -312,8 +327,11 @@ export async function heartbeatRun(agentId: number, runId: number): Promise<RunA
 }
 
 // Records the outcome the runner reports. A failure is terminal: the runner ran the
-// command and it failed, so re-serving the same run would just repeat it. False when
-// the run is not this agent's, or was already finished.
+// command and it failed, so re-serving the same run would just repeat it. A run in
+// which the agent reported itself blocked ends as a success whatever the command did
+// afterwards. The tokens it used may reach a ceiling, which pauses the agent now rather
+// than at its next run. False when the run is not this agent's, or was already
+// finished.
 export async function finishRun(
   agent: RunnerAgent,
   runId: number,
@@ -328,12 +346,14 @@ export async function finishRun(
     throw new HttpError(413, 'Run output exceeds 128 KiB');
   }
   await touchRunner(agent.id);
+  const error = result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Run failed') : null;
+  const blocked = sql`${agentRun.blockedQuestion} IS NOT NULL`;
   const rows = await db
     .update(agentRun)
     .set({
-      status: result.status,
+      status: sql`CASE WHEN ${blocked} THEN 'success' ELSE ${result.status} END`,
       output: result.output ?? null,
-      lastError: result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Run failed') : null,
+      lastError: sql`CASE WHEN ${blocked} THEN NULL ELSE ${error}::text END`,
       inputTokens: result.usage?.inputTokens ?? null,
       outputTokens: result.usage?.outputTokens ?? null,
       finishedAt: new Date(),
@@ -341,9 +361,17 @@ export async function finishRun(
     .where(
       and(eq(agentRun.id, runId), eq(agentRun.agentId, agent.id), eq(agentRun.status, 'pending')),
     )
-    .returning({ issueId: agentRun.issueId });
+    .returning({
+      issueId: agentRun.issueId,
+      projectId: agentRun.projectId,
+      status: agentRun.status,
+    });
   const row = rows[0];
   if (!row) return false;
-  await recordAgentRunFinished({ ...row, agentUserId: agent.userId }, result.status);
+  await recordAgentRunFinished(
+    { issueId: row.issueId, agentUserId: agent.userId },
+    row.status as 'success' | 'failed',
+  );
+  await enforceAgentLimits(agent.id, row.projectId, row.issueId);
   return true;
 }

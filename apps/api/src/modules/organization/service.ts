@@ -13,6 +13,7 @@ import {
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
 import { notHomeAgent } from '#modules/agents/core/home-agent';
+import { agentTokenUsage, projectTokenUsage } from '#modules/agents/governance';
 
 export type GoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
 export type AgentTeamRole = 'coordinator' | 'specialist' | 'reviewer';
@@ -237,6 +238,10 @@ export async function getOrganization(teamId: number, projectId?: number) {
         capabilities: organizationAgentAssignment.capabilities,
         runtimeAgentId: organizationAgentAssignment.runtimeAgentId,
         runtimeState: aiAgent.runtimeState,
+        pausedAt: aiAgent.pausedAt,
+        pauseReason: aiAgent.pauseReason,
+        dailyTokenCeiling: aiAgent.dailyTokenCeiling,
+        monthlyTokenCeiling: aiAgent.monthlyTokenCeiling,
       })
       .from(aiAgent)
       .innerJoin(user, eq(user.id, aiAgent.userId))
@@ -280,6 +285,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
         description: project.description,
         departmentId: organizationProjectAssignment.departmentId,
         instructions: organizationProjectAssignment.instructions,
+        monthlyTokenCeiling: project.monthlyTokenCeiling,
       })
       .from(project)
       .leftJoin(
@@ -293,6 +299,10 @@ export async function getOrganization(teamId: number, projectId?: number) {
       .orderBy(asc(project.key)),
   ]);
 
+  const [agentUsage, projectUsage] = await Promise.all([
+    agentTokenUsage(agents.map((row) => row.id)),
+    projectTokenUsage(projects.map((row) => row.id)),
+  ]);
   const projectsByAgent = new Map<number, typeof agentProjects>();
   for (const entry of agentProjects) {
     const values = projectsByAgent.get(entry.agentId) ?? [];
@@ -321,8 +331,15 @@ export async function getOrganization(teamId: number, projectId?: number) {
       capabilities: row.capabilities ?? [],
       runtimeState: normalizeOrganizationRuntimeState(row.runtimeState),
       projects: (projectsByAgent.get(row.id) ?? []).map(({ agentId: _agentId, ...entry }) => entry),
+      pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
+      tokensToday: agentUsage.get(row.id)?.today ?? 0,
+      tokensThisMonth: agentUsage.get(row.id)?.month ?? 0,
     })),
-    projects: projects.map((row) => ({ ...row, instructions: row.instructions ?? '' })),
+    projects: projects.map((row) => ({
+      ...row,
+      instructions: row.instructions ?? '',
+      tokensThisMonth: projectUsage.get(row.id) ?? 0,
+    })),
   };
 }
 
@@ -579,11 +596,13 @@ export async function setProjectAssignment(
         departmentId: input.departmentId ?? null,
         instructions: input.instructions?.trim() ?? '',
       })
+      // A field the update leaves out keeps its stored value, so moving a project to
+      // another department keeps its instructions.
       .onConflictDoUpdate({
         target: [organizationProjectAssignment.teamId, organizationProjectAssignment.projectId],
         set: {
-          departmentId: input.departmentId ?? null,
-          instructions: input.instructions?.trim() ?? '',
+          ...(input.departmentId !== undefined ? { departmentId: input.departmentId } : {}),
+          ...(input.instructions !== undefined ? { instructions: input.instructions.trim() } : {}),
           updatedAt: new Date(),
         },
       })

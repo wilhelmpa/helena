@@ -2,7 +2,11 @@ import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile } from 'node:fs/promises';
 import { Elysia } from 'elysia';
 
-import { bootstrapHomeAgent, bootstrapProjectCoordinator } from './scripts/bootstrap-home-agent';
+import {
+  bootstrapHomeAgent,
+  bootstrapProjectAgent,
+  bootstrapProjectCoordinator,
+} from './scripts/bootstrap-home-agent';
 
 let tokenPromise: Promise<string> | null = null;
 
@@ -33,6 +37,25 @@ function sameSecret(given: string, expected: string): boolean {
   const left = Buffer.from(given);
   const right = Buffer.from(expected);
   return left.length === right.length && timingSafeEqual(left, right);
+}
+
+function positiveId(value: unknown): number | null {
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id >= 1 ? id : null;
+}
+
+function validKey(value: unknown): value is string | undefined {
+  return value === undefined || (typeof value === 'string' && value.length <= 2048);
+}
+
+function privateJson(value: unknown): Response {
+  return new Response(JSON.stringify(value), {
+    status: 200,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  });
 }
 
 export async function authorizeControlRequest(request: Request): Promise<Response | null> {
@@ -69,21 +92,24 @@ export const homeAgentBootstrapRoutes = new Elysia({ name: 'home-agent-bootstrap
     const denied = await authorizeControlRequest(request);
     if (denied) return denied;
     const input = body as { projectId?: unknown; apiKey?: unknown } | null;
-    const projectId = Number(input?.projectId);
-    if (!Number.isSafeInteger(projectId) || projectId < 1) {
-      return new Response('Invalid project', { status: 400 });
-    }
+    const projectId = positiveId(input?.projectId);
+    if (!projectId) return new Response('Invalid project', { status: 400 });
     const apiKey = input?.apiKey;
-    if (apiKey !== undefined && (typeof apiKey !== 'string' || apiKey.length > 2048)) {
-      return new Response('Invalid key', { status: 400 });
-    }
+    if (!validKey(apiKey)) return new Response('Invalid key', { status: 400 });
     const result = await bootstrapProjectCoordinator(projectId, apiKey);
     if (!result) return new Response('Project not found', { status: 404 });
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-        'cache-control': 'no-store',
-      },
-    });
+    return privateJson(result);
+  })
+  .post('/internal/bootstrap/project-agent', async ({ request, body }) => {
+    const denied = await authorizeControlRequest(request);
+    if (denied) return denied;
+    const input = body as { projectId?: unknown; agentId?: unknown; apiKey?: unknown } | null;
+    const projectId = positiveId(input?.projectId);
+    const agentId = positiveId(input?.agentId);
+    if (!projectId || !agentId) return new Response('Invalid project or agent', { status: 400 });
+    const apiKey = input?.apiKey;
+    if (!validKey(apiKey)) return new Response('Invalid key', { status: 400 });
+    const result = await bootstrapProjectAgent(projectId, agentId, apiKey);
+    if (!result) return new Response('Agent not found in this project', { status: 404 });
+    return privateJson(result);
   });

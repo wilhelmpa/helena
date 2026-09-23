@@ -164,10 +164,11 @@ describe('agent run history', () => {
     const { asOwner, columnId, teamId } = await setup();
     const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
     await agents(asOwner, teamId)({ agentId: agent.id }).patch({ triggerOnAssign: true });
-    const issue = (await createIssue(asOwner, columnId)).data!;
+    const delegated = (await createIssue(asOwner, columnId)).data!;
+    const mentioned = (await createIssue(asOwner, columnId, 'Other')).data!;
 
-    await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: agent.userId });
-    await mentionAgent(asOwner, issue.id, agent.username);
+    await asOwner.issues({ issueId: delegated.id }).patch({ delegateUserId: agent.userId });
+    await mentionAgent(asOwner, mentioned.id, agent.username);
 
     const res = await agents(asOwner, teamId)({ agentId: agent.id }).runs.get();
     const byTrigger = new Map(res.data!.items.map((r) => [r.trigger, r]));
@@ -210,14 +211,16 @@ describe('agent run history', () => {
         { fieldId: later.id, delaySec: 600 },
       ],
     });
-    const issue = (await createIssue(asOwner, columnId)).data!;
+    // One issue each: an agent has one pending run per issue at a time.
+    const first = (await createIssue(asOwner, columnId)).data!;
+    const second = (await createIssue(asOwner, columnId, 'Other')).data!;
 
     await asOwner
-      .issues({ issueId: issue.id })
+      .issues({ issueId: first.id })
       .fields({ fieldId: now.id })
       .put({ value: agent.userId });
     await asOwner
-      .issues({ issueId: issue.id })
+      .issues({ issueId: second.id })
       .fields({ fieldId: later.id })
       .put({ value: agent.userId });
 
@@ -272,10 +275,10 @@ describe('agent run history', () => {
   it('paginates newest first with a keyset cursor', async () => {
     const { asOwner, columnId, teamId } = await setup();
     const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
-    const issue = (await createIssue(asOwner, columnId)).data!;
-    await mentionAgent(asOwner, issue.id, agent.username);
-    await mentionAgent(asOwner, issue.id, agent.username);
-    await mentionAgent(asOwner, issue.id, agent.username);
+    for (const title of ['One', 'Two', 'Three']) {
+      const issue = (await createIssue(asOwner, columnId, title)).data!;
+      await mentionAgent(asOwner, issue.id, agent.username);
+    }
 
     const first = await agents(
       asOwner,

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type AgentAssignmentInput,
+  type AgentTokenCeilings,
   type DepartmentInput,
   type GoalInput,
   type ProjectAssignmentInput,
@@ -11,9 +12,13 @@ import {
   deleteDepartment,
   deleteGoal,
   getOrganization,
+  pauseAgent,
+  resumeAgent,
   setAgentAssignment,
   setAgentProjectInstructions,
+  setAgentTokenCeilings,
   setProjectAssignment,
+  setProjectTokenCeiling,
   updateDepartment,
   updateGoal,
 } from '@/lib/api/endpoints/organization';
@@ -95,5 +100,40 @@ export function useSetAgentProjectInstructions(teamId: number) {
     teamId,
     ({ agentId, projectId, instructions }) =>
       setAgentProjectInstructions(teamId, agentId, projectId, instructions),
+  );
+}
+
+// A pause shows in the team's agent lists as well as in the organization.
+function usePauseMutation(teamId: number, mutationFn: (agentId: number) => Promise<unknown>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: qk.organization(teamId) }),
+        queryClient.invalidateQueries({ queryKey: qk.teamAiAgents(teamId) }),
+      ]),
+  });
+}
+
+export function usePauseAgent(teamId: number) {
+  return usePauseMutation(teamId, (id) => pauseAgent(teamId, id));
+}
+
+export function useResumeAgent(teamId: number) {
+  return usePauseMutation(teamId, (id) => resumeAgent(teamId, id));
+}
+
+export function useSetAgentTokenCeilings(teamId: number) {
+  return useOrganizationMutation<{ id: number; ceilings: AgentTokenCeilings }>(
+    teamId,
+    ({ id, ceilings }) => setAgentTokenCeilings(teamId, id, ceilings),
+  );
+}
+
+export function useSetProjectTokenCeiling(teamId: number) {
+  return useOrganizationMutation<{ projectId: number; monthly: number | null }>(
+    teamId,
+    ({ projectId, monthly }) => setProjectTokenCeiling(teamId, projectId, monthly),
   );
 }

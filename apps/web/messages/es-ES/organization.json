@@ -57,6 +57,32 @@
     "capabilitiesHint": "Palabras en minúsculas separadas por comas. Una tarea cuyas etiquetas coinciden con las capacidades de un solo especialista va a ese especialista sin el plan del coordinador.",
     "saved": "{name} guardado"
   },
+  "governance": {
+    "title": "Trabajo y límites de tokens",
+    "active": "Acepta trabajo nuevo.",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "paused": "{name} está en pausa",
+    "resumed": "{name} vuelve a aceptar trabajo"
+  },
+  "tokens": {
+    "today": "Hoy",
+    "thisMonth": "Este mes",
+    "dailyCeiling": "Límite diario",
+    "monthlyCeiling": "Límite mensual",
+    "noCeiling": "Sin límite",
+    "usedOfCeiling": "{used, number} de {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "Tokens de las ejecuciones del agente en todos los proyectos, contados por día y mes en UTC. Alcanzar un límite pausa al agente y avisa a su propietario.",
+    "invalid": "Introduce un número entero de al menos 1, o deja el campo vacío para no tener límite.",
+    "save": "Guardar límites",
+    "saved": "Límites de tokens de {name} guardados",
+    "projectTitle": "Presupuesto de tokens",
+    "projectDescription": "Tokens de las ejecuciones de agentes de este proyecto este mes (UTC). Alcanzar el límite pausa al agente cuya ejecución empezaría a continuación y avisa a los propietarios del proyecto.",
+    "projectSaved": "Límite de tokens de {name} guardado",
+    "agentsTitle": "Agentes",
+    "agentsHint": "Se cuentan en todos los proyectos del equipo. Define los límites de un agente en la pestaña Agentes."
+  },
   "projects": {
     "empty": "This team has no projects.",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions."

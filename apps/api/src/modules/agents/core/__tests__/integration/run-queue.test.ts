@@ -63,6 +63,22 @@ describe('agent_run queue store', () => {
     expect(await readRun(runId)).toMatchObject({ status: 'pending', attempts: 0, lastError: null });
   });
 
+  it('queues no second run of the agent on an issue while one is pending', async () => {
+    const { asOwner, columnId } = await setup();
+    const { agent, issue } = await enqueueRun(asOwner, columnId);
+    const again = () =>
+      enqueueAgentRun({
+        agentId: agent.id,
+        projectId: agent.projects[0].id,
+        issueId: issue.id,
+        sourceActivityId: null,
+        prompt: 'again',
+      });
+
+    await Promise.all([again(), again()]);
+    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, issue.id))).toHaveLength(1);
+  });
+
   it('claims a due run, bumps attempts, and holds the lease so it is not re-claimed', async () => {
     const { asOwner, columnId } = await setup();
     const { runId } = await enqueueRun(asOwner, columnId);
@@ -81,20 +97,19 @@ describe('agent_run queue store', () => {
 
   it('counts the in-flight runs a run waits behind', async () => {
     const { asOwner, columnId } = await setup();
-    const { agent, issue, runId } = await enqueueRun(asOwner, columnId);
+    const { agent, runId } = await enqueueRun(asOwner, columnId);
+    const other = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Other' })
+    ).data!;
     await enqueueAgentRun({
       agentId: agent.id,
       projectId: agent.projects[0].id,
-      issueId: issue.id,
+      issueId: other.id,
       sourceActivityId: null,
       prompt: 'again',
     });
     const teamId = await teamOf(asOwner, 'MKT');
-    const [, second] = await db
-      .select()
-      .from(agentRun)
-      .where(eq(agentRun.issueId, issue.id))
-      .orderBy(agentRun.id);
+    const [second] = await db.select().from(agentRun).where(eq(agentRun.issueId, other.id));
 
     // Queued but unclaimed runs are not under way.
     expect(await countRunsAhead(teamId, second.id)).toBe(0);

@@ -88,5 +88,20 @@
   "vault": "Vault",
   "teamSettings": "团队设置",
   "teamOrchestration": "团队与编排",
-  "overview": "概览"
+  "overview": "概览",
+  "projectGroups": {
+    "group": "分组",
+    "noGroup": "无分组",
+    "newGroup": "新建分组…",
+    "newGroupTitle": "新建分组",
+    "newGroupDescription": "分组会在侧边栏中汇总项目，例如一家公司及其产品和客户项目。",
+    "groupName": "分组名称",
+    "create": "创建",
+    "renameGroup": "重命名分组",
+    "deleteGroup": "删除分组",
+    "deleteGroupConfirm": "删除 {name}？其项目会保留，并显示为无分组。",
+    "projectOptions": "项目选项",
+    "groupOptions": "分组选项",
+    "dropUngrouped": "拖放到此处可将项目移出分组"
+  }
 }

@@ -17,13 +17,24 @@ from pathlib import Path
 from typing import Any
 
 MAX_MODELS = 200
+COORDINATOR_DESCRIPTOR = re.compile(r'[a-z0-9][a-z0-9-]{0,63}')
+PROJECT_AGENT_DESCRIPTOR = re.compile(r'([a-z0-9][a-z0-9-]{0,31})_([1-9][0-9]{0,9})')
+PLAN_USERNAME = re.compile(r'[A-Za-z0-9._-]{1,64}')
 
 
 def model_name(model_id: str) -> str:
     leaf = model_id.rsplit('/', 1)[-1]
-    words = re.split(r'[-_]+', leaf)
-    rendered: list[str] = []
+    # A trailing release date (claude-opus-4-20250514) is left out, and adjacent version
+    # numbers are one version (claude-opus-4-5 is Opus 4.5).
+    words = [word for word in re.split(r'[-_]+', leaf) if not re.fullmatch(r'\d{8}', word)]
+    merged: list[str] = []
     for word in words:
+        if merged and word.isdigit() and re.fullmatch(r'\d+(\.\d+)*', merged[-1]):
+            merged[-1] = f'{merged[-1]}.{word}'
+        else:
+            merged.append(word)
+    rendered: list[str] = []
+    for word in merged:
         lower = word.lower()
         if lower == 'gpt':
             rendered.append('GPT')
@@ -187,10 +198,14 @@ def catalog_models(provider: str) -> list[dict[str, Any]]:
                 raise
             print(f'Hermes catalog: skipping {name}: {exc}', file=sys.stderr)
             continue
+        # A provider can list one model under two ids (claude-fable-5-1, claude-fable-5.1);
+        # the first keeps the name.
+        names: set[str] = set()
         for entry in entries:
-            if entry['id'] in seen or len(models) == MAX_MODELS:
+            if entry['id'] in seen or entry['name'] in names or len(models) == MAX_MODELS:
                 continue
             seen.add(entry['id'])
+            names.add(entry['name'])
             models.append({**entry, 'provider': name})
     return models
 
@@ -274,6 +289,23 @@ def project_browser_env(
     }
 
 
+def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | None:
+    """The project slug and Plan username a descriptor must carry, from its file name:
+    `<slug>` is the project's coordinator, `<slug>_<agentId>` another agent of the project."""
+    if COORDINATOR_DESCRIPTOR.fullmatch(name):
+        return name, f'hermes-{name}-coordinator'
+    match = PROJECT_AGENT_DESCRIPTOR.fullmatch(name)
+    username = item.get('username')
+    if (
+        match
+        and item.get('planAgentId') == int(match.group(2))
+        and isinstance(username, str)
+        and PLAN_USERNAME.fullmatch(username)
+    ):
+        return match.group(1), username
+    return None
+
+
 def descriptor_entries(root: Path, global_home: Path, browser_root: Path | None = None) -> list[dict[str, Any]]:
     private_directory(root)
     entries: list[dict[str, Any]] = []
@@ -287,9 +319,11 @@ def descriptor_entries(root: Path, global_home: Path, browser_root: Path | None 
             raise RuntimeError('Hermes runner descriptor is invalid') from exc
         if not isinstance(item, dict):
             raise RuntimeError('Hermes runner descriptor is invalid')
-        slug = descriptor_path.stem
-        username = f'hermes-{slug}-coordinator'
-        home = profiles_root / slug
+        identity = descriptor_identity(descriptor_path.stem, item)
+        if identity is None:
+            raise RuntimeError('Hermes runner descriptor conflicts with its project')
+        slug, username = identity
+        home = profiles_root / descriptor_path.stem
         expected = {
             'schemaVersion': 1,
             'username': username,

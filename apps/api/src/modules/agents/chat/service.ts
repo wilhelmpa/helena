@@ -5,8 +5,9 @@ import {
   agentChatFavorite,
   agentChatMessage,
   agentChatThread,
+  aiAgent,
 } from '@repo/db';
-import { and, asc, desc, eq, gt, inArray, notExists, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNotNull, notExists, sql } from 'drizzle-orm';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { HttpError, intEnv, iso } from '#shared/lib';
 import { deleteContextUsage, recordContextUsage, type ContextUsage } from '../chat-usage';
@@ -375,7 +376,8 @@ export async function deleteThread(threadId: string, userId: string): Promise<bo
 
 // Stores the member's message and queues the answer next to it. A thread id continues
 // that conversation; without one a thread is created, titled after the message. Null
-// when the thread named is not the caller's.
+// when the thread named is not the caller's. A paused agent takes no message: the
+// member would wait for an answer that does not come.
 export async function sendMessage(input: {
   agentId: number;
   userId: string;
@@ -385,6 +387,12 @@ export async function sendMessage(input: {
   thinkingLevel?: string | null;
 }): Promise<{ threadId: string; messageId: number } | null> {
   const { agentId, userId, prompt } = input;
+  const [paused] = await db
+    .select({ reason: aiAgent.pauseReason })
+    .from(aiAgent)
+    .where(and(eq(aiAgent.id, agentId), isNotNull(aiAgent.pausedAt)));
+  if (paused)
+    throw new HttpError(409, `The agent is paused${paused.reason ? `: ${paused.reason}` : '.'}`);
   return db.transaction(async (tx) => {
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`agent-chat-send:${agentId}:${userId}`}, 0))`,
@@ -519,9 +527,9 @@ export async function claimNextMessage(agent: RunnerAgent): Promise<ClaimedChat 
   }
 }
 
-// Takes the agent's next due answer, or null when it has none. Claiming clears whatever
-// a previous attempt produced: the answer is generated again from the start, and the
-// browser would otherwise read the abandoned half twice.
+// Takes the agent's next due answer, or null when it has none. A paused agent's answers
+// wait. Claiming clears whatever a previous attempt produced: the answer is generated
+// again from the start, and the browser would otherwise read the abandoned half twice.
 async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const rows = await db.execute(sql`
     UPDATE agent_chat_message m
@@ -536,6 +544,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
         AND q.role = 'assistant'
         AND q.status IN ('pending', 'streaming')
         AND q.next_attempt_at <= now()
+        AND (SELECT paused_at FROM ai_agent a WHERE a.id = q.agent_id) IS NULL
       ORDER BY q.next_attempt_at, q.id
       FOR UPDATE SKIP LOCKED
       LIMIT 1

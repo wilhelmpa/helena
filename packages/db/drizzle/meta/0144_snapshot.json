@@ -1,5 +1,5 @@
 {
-  "id": "1611652e-c4b5-4d5f-96a4-323d9ef5c121",
+  "id": "c83ee74c-cdab-4020-9b46-276c27bfa9dc",
   "prevId": "f10123e5-9328-4042-9f67-5870caed9a9c",
   "version": "7",
   "dialect": "postgresql",
@@ -1860,6 +1860,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "blocked_question": {
+          "name": "blocked_question",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "started_at": {
           "name": "started_at",
           "type": "timestamp with time zone",
@@ -1943,6 +1949,27 @@
           "columns": [
             {
               "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_run_agent_finished_idx": {
+          "name": "agent_run_agent_finished_idx",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "finished_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2746,16 +2773,33 @@
           "notNull": true,
           "default": "'team'"
         },
-        "template": {
-          "name": "template",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "last_seen_at": {
           "name": "last_seen_at",
           "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paused_at": {
+          "name": "paused_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pause_reason": {
+          "name": "pause_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daily_token_ceiling": {
+          "name": "daily_token_ceiling",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monthly_token_ceiling": {
+          "name": "monthly_token_ceiling",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -8231,6 +8275,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "monthly_token_ceiling": {
+          "name": "monthly_token_ceiling",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

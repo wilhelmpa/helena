@@ -555,7 +555,11 @@
         "web": "搜索网页并阅读页面。",
         "x_search": "搜索 X（Twitter）上的帖子。"
       }
-    }
+    },
+    "paused": "已暂停",
+    "pausedNoReason": "已暂停。未提供原因。",
+    "blocked": "受阻",
+    "blockedQuestion": "问题"
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

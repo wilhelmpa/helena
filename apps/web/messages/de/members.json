@@ -1,0 +1,107 @@
+{
+  "title": "Mitglieder",
+  "description": "Personen mit Zugriff auf dieses Projekt.",
+  "add": {
+    "action": "Mitglied hinzufügen",
+    "title": "Mitglied hinzufügen",
+    "personLabel": "Teammitglied oder E-Mail-Adresse",
+    "pickPlaceholder": "Person auswählen",
+    "searchPlaceholder": "Team durchsuchen oder E-Mail-Adresse eingeben",
+    "searchTeamPlaceholder": "Team durchsuchen",
+    "fromTeam": "Aus dem Team",
+    "byEmail": "Per E-Mail einladen",
+    "inviteEmail": "{email} einladen",
+    "alreadyInvited": "{email} ist bereits eingeladen",
+    "alreadyMember": "{email} ist bereits in diesem Projekt",
+    "alreadyInTeam": "{email} ist bereits im Team – wähle die Person oben in der Liste aus",
+    "refused": "{email} konnte nicht hinzugefügt werden",
+    "typeEmail": "Niemand gefunden. Gib eine vollständige E-Mail-Adresse ein, um die Person einzuladen.",
+    "noCandidates": "Alle im Team sind bereits in diesem Projekt.",
+    "willJoinTeam": "Tritt dem Team {teamName} und diesem Projekt bei",
+    "roleLabel": "Rolle im Projekt",
+    "rolePlaceholder": "Rolle",
+    "submit": "Zum Projekt hinzufügen",
+    "sendInvite": "Einladung senden"
+  },
+  "columns": {
+    "member": "Mitglied",
+    "role": "Rolle",
+    "timezone": "Zeitzone",
+    "joined": "Beigetreten",
+    "actions": "Aktionen"
+  },
+  "profileHeading": "Profil",
+  "you": "(du)",
+  "aiAgent": "KI-Agent",
+  "tabs": {
+    "all": "Alle",
+    "people": "Personen",
+    "agents": "KI-Agenten",
+    "label": "Anzeigen"
+  },
+  "leaveProject": "Projekt verlassen",
+  "revokeAccess": "Zugriff entziehen",
+  "lastOwner": "Ein Projekt braucht mindestens einen Inhaber",
+  "leaveTitle": "Dieses Projekt verlassen",
+  "leaveDescription": "Du verlierst den Zugriff auf dieses Projekt und seine Aufgaben. Ein Inhaber kann dich später wieder einladen.",
+  "revokeTitle": "Zugriff für {name} entziehen",
+  "revokeDescription": "{name} verliert den Zugriff auf dieses Projekt und kann später wieder eingeladen werden.",
+  "selectRole": "Rolle auswählen",
+  "editDescription": "Beschreibung bearbeiten",
+  "descriptionQuestionSelf": "Was machst du in diesem Projekt?",
+  "descriptionQuestionOther": "Was macht diese Person in diesem Projekt?",
+  "descriptionPlaceholder": "z. B. Backend-Entwicklung, verantwortlich für API und Integrationen",
+  "invites": {
+    "pendingCount": "{count, plural, one {# ausstehende Einladung} other {# ausstehende Einladungen}}",
+    "copyLink": "Link kopieren",
+    "copied": "Kopiert",
+    "emailQueued": "Einladungs-E-Mail in die Warteschlange gestellt",
+    "emailUnavailable": "Einladung erstellt, aber die E-Mail wurde nicht in die Warteschlange gestellt. Kopiere den Link, um ihn zu teilen.",
+    "resendUnavailable": "E-Mail ist nicht konfiguriert. Kopiere den Einladungslink, um ihn zu teilen.",
+    "resendEmail": "E-Mail senden",
+    "resendingEmail": "Wird eingereiht…",
+    "revokeAction": "Einladung widerrufen",
+    "removeAction": "Einladung entfernen",
+    "invitedBy": "Eingeladen von {name} · ",
+    "createdAt": "erstellt am {date}",
+    "respondedAt": "{status, select, accepted {angenommen} rejected {abgelehnt} other {aktualisiert}} am {date}",
+    "status": {
+      "pending": "Ausstehend",
+      "accepted": "Angenommen",
+      "rejected": "Abgelehnt"
+    },
+    "revokeTitle": "Einladung für {email} widerrufen",
+    "revokeConfirm": "Einladung widerrufen",
+    "revokeDescription": "Der Einladungslink funktioniert dann nicht mehr. Du kannst diese E-Mail-Adresse später erneut einladen."
+  },
+  "promoted": "Mitglied zum Inhaber ernannt",
+  "roleUpdated": "Rolle des Mitglieds aktualisiert",
+  "descriptionUpdated": "Beschreibung des Mitglieds aktualisiert",
+  "added": "Mitglied hinzugefügt",
+  "provisioned": "Über SCIM verwaltet",
+  "search": {
+    "all": "Mitglieder suchen",
+    "people": "Personen suchen",
+    "agents": "KI-Agenten suchen"
+  },
+  "empty": {
+    "all": {
+      "title": "Noch keine Mitglieder",
+      "description": "Personen und KI-Agenten erscheinen hier, sobald sie beitreten."
+    },
+    "human": {
+      "title": "Noch keine Personen",
+      "description": "Personen erscheinen hier, sobald sie beitreten."
+    },
+    "agent": {
+      "title": "Noch keine KI-Agenten",
+      "description": "KI-Agenten erscheinen hier, sobald sie hinzugefügt wurden."
+    },
+    "search": {
+      "title": "Nichts gefunden",
+      "all": "Kein Mitglied entspricht dieser Suche.",
+      "human": "Keine Person entspricht dieser Suche.",
+      "agent": "Kein KI-Agent entspricht dieser Suche."
+    }
+  }
+}

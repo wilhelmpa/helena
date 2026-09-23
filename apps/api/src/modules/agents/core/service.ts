@@ -7,6 +7,7 @@ import {
   projectColumn,
   projectMember,
   organizationAgentAssignment,
+  projectProvisioningJob,
   organizationProjectAssignment,
   teamMember,
   teamRole,
@@ -16,7 +17,7 @@ import {
   customField,
   integrationCredential,
 } from '@repo/db';
-import { and, asc, eq, inArray, ne, notInArray, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
 import { auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { getCredentialById } from '../integrations/service';
@@ -265,6 +266,9 @@ export interface AiAgentRow {
   // When a runner last polled for this agent, which is what presence is derived
   // from. Null until a runner connects.
   lastSeenAt: string | null;
+  // Set while the agent takes no new work, with why.
+  pausedAt: string | null;
+  pauseReason: string | null;
   createdAt: string;
   // The agent's current API key, for display only — the secret is never returned
   // after creation. start is the key's leading characters kept for identification.
@@ -306,6 +310,8 @@ function mapAgent(row: {
   runnerScope: string;
   template: boolean;
   lastSeenAt: Date | null;
+  pausedAt: Date | null;
+  pauseReason: string | null;
   createdAt: Date;
   apiKeyStart: string | null;
   modelProvider: string | null;
@@ -339,6 +345,8 @@ function mapAgent(row: {
     runnerScope: row.runnerScope as RunnerScope,
     template: row.template,
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
+    pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
+    pauseReason: row.pauseReason,
     createdAt: iso(row.createdAt),
     apiKeyStart: row.apiKeyStart,
     modelProvider: row.modelProvider,
@@ -380,6 +388,8 @@ const agentColumns = {
   runnerScope: aiAgent.runnerScope,
   template: aiAgent.template,
   lastSeenAt: aiAgent.lastSeenAt,
+  pausedAt: aiAgent.pausedAt,
+  pauseReason: aiAgent.pauseReason,
   createdAt: aiAgent.createdAt,
   apiKeyStart: apikey.start,
   modelProvider: integrationCredential.integrationKey,
@@ -539,7 +549,7 @@ export async function canTriggerAgent(agentId: number, actorUserId: string): Pro
 // to mentions. Turns the user ids parsed from a comment's mentions into the agents that
 // should run for the comment's author. An agent of the team that is not a member of
 // this project is left out: a mention must not pull a key into a project the team
-// never opened it to.
+// never opened it to. A paused agent is left out too: it takes no new work.
 export async function listMentionTriggerAgents(
   projectId: number,
   userIds: string[],
@@ -553,6 +563,7 @@ export async function listMentionTriggerAgents(
       and(
         inProject(projectId),
         eq(aiAgent.triggerOnMention, true),
+        isNull(aiAgent.pausedAt),
         inArray(aiAgent.userId, userIds),
       ),
     );
@@ -563,7 +574,7 @@ export async function listMentionTriggerAgents(
 
 // The agent working in the project whose bot user is userId and that reacts to being
 // delegated to, or null. Turns a new delegate into the agent that should run on
-// delegation.
+// delegation. Null for a paused agent.
 export async function getAssignTriggerAgent(
   projectId: number,
   userId: string,
@@ -576,7 +587,14 @@ export async function getAssignTriggerAgent(
       ...triggerScopeColumns,
     })
     .from(aiAgent)
-    .where(and(eq(aiAgent.userId, userId), eq(aiAgent.triggerOnAssign, true), inProject(projectId)))
+    .where(
+      and(
+        eq(aiAgent.userId, userId),
+        eq(aiAgent.triggerOnAssign, true),
+        isNull(aiAgent.pausedAt),
+        inProject(projectId),
+      ),
+    )
     .limit(1);
   const row = rows[0];
   if (!row || !isTriggerableBy(row, actorUserId)) return null;
@@ -585,7 +603,7 @@ export async function getAssignTriggerAgent(
 
 // The agent working in the project whose bot user is userId and that reacts to being
 // set into that member field, or null. The counterpart of getAssignTriggerAgent for a
-// custom field.
+// custom field, and null for a paused agent the same way.
 export async function getFieldTriggerAgent(
   projectId: number,
   userId: string,
@@ -601,7 +619,12 @@ export async function getFieldTriggerAgent(
     .from(aiAgent)
     .innerJoin(agentFieldTrigger, eq(agentFieldTrigger.agentId, aiAgent.id))
     .where(
-      and(eq(aiAgent.userId, userId), eq(agentFieldTrigger.fieldId, fieldId), inProject(projectId)),
+      and(
+        eq(aiAgent.userId, userId),
+        eq(agentFieldTrigger.fieldId, fieldId),
+        isNull(aiAgent.pausedAt),
+        inProject(projectId),
+      ),
     )
     .limit(1);
   const row = rows[0];
@@ -890,8 +913,48 @@ export async function createAgent(
   // connection, so it cannot join this one.
   const apiKey = await issueKey(userId, input.name);
   if (isInternal) await storeAgentKey(agentId, apiKey);
+  else await queueAgentRuntime(userId);
   const agent = (await getAgentById(agentId, teamId))!;
   return { agent, apiKey: isInternal ? null : apiKey };
+}
+
+// Queues the provisioning of these projects again, so the integration service creates
+// or removes the Hermes runtimes of their agents. The new id makes it a new request for
+// the service's ledger.
+async function queueRuntimeProvisioning(projectIds: number[]): Promise<void> {
+  const ids = [...new Set(projectIds)];
+  if (ids.length === 0) return;
+  await db
+    .update(projectProvisioningJob)
+    .set({
+      id: sql`gen_random_uuid()`,
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: new Date(),
+      lastError: null,
+      result: null,
+      completedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(inArray(projectProvisioningJob.projectId, ids));
+}
+
+// An external agent has a Hermes runtime only while it works in exactly one project,
+// so a change to its projects queues all of them and the ones it left.
+export async function queueAgentRuntime(
+  userId: string,
+  leftProjectIds: number[] = [],
+): Promise<void> {
+  const rows = await db
+    .select({ kind: aiAgent.kind, projectId: projectMember.projectId })
+    .from(aiAgent)
+    .leftJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
+    .where(eq(aiAgent.userId, userId));
+  if (rows[0]?.kind !== 'external') return;
+  await queueRuntimeProvisioning([
+    ...leftProjectIds,
+    ...rows.flatMap((row) => (row.projectId == null ? [] : [row.projectId])),
+  ]);
 }
 
 // Replaces the projects the agent works in. Membership is what gives its key access,
@@ -1088,11 +1151,19 @@ export async function updateAgent(
   }
   // The projects go first, so a field trigger of a project the same call attaches is
   // kept rather than dropped as unknown.
+  const previousProjectIds = agent.projects.map((p) => p.id);
   const wanted = template ? [] : patch.projectIds;
   const projectIds =
-    wanted !== undefined ? await setAgentProjects(agent, wanted) : agent.projects.map((p) => p.id);
+    wanted !== undefined ? await setAgentProjects(agent, wanted) : previousProjectIds;
   if (patch.fieldTriggers !== undefined) {
     await setFieldTriggers(id, projectIds, patch.fieldTriggers);
+  }
+  const projectsChanged =
+    projectIds.length !== previousProjectIds.length ||
+    projectIds.some((projectId) => !previousProjectIds.includes(projectId));
+  // The runner descriptor names the agent by its username.
+  if (projectsChanged || (patch.username !== undefined && patch.username !== agent.username)) {
+    await queueAgentRuntime(agent.userId, previousProjectIds);
   }
 
   return getAgentById(id, teamId);
@@ -1175,6 +1246,7 @@ export async function deleteAgent(id: number, teamId: number): Promise<boolean> 
   await deleteThreadsWhere({ agentId: id });
   await db.delete(apikey).where(eq(apikey.referenceId, agent.userId));
   await deleteAccount(agent.userId);
+  if (agent.kind === 'external') await queueRuntimeProvisioning(agent.projects.map((p) => p.id));
   return true;
 }
 

@@ -76,6 +76,10 @@ and makes no decisions.
 ## Rules that keep the boundaries
 
 - Plan has one agent kind: an external agent driven by the Hermes runner.
+- Every external agent of a project runs in a Hermes profile of its own, with the
+  project's workspace and browser. The integration service provisions it with the
+  project. An agent that works in several projects has no runtime, because the runner
+  claims an agent's runs from all of its projects with one working directory.
 - Plan does not queue automated agent runs itself. Assignment, field triggers and trigger
   rules send an event to Mastra.
 - Business schedules exist only in Mastra; Plan's schedule pages manage them through the
@@ -88,3 +92,12 @@ and makes no decisions.
   into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are
   shown read-only in Plan.
 - Automated runs use the toolsets of the agent's role. In chat, Hermes may delegate freely.
+- Whether an agent takes work is stored and enforced in Plan, at its run queue: a paused
+  agent's runs and chat answers are not claimed, a mention or a delegation queues nothing,
+  and an agent-team stage for it is refused, which fails the Mastra run with the reason.
+  Token ceilings (per agent per UTC day and month, per project per month) count the tokens
+  the runs report; reaching one pauses the agent. Mastra's own budgets are the limits of
+  one workflow run.
+- An agent that needs a person's answer calls Plan's `mark_issue_blocked` tool: the issue
+  gets the Blocked label and the question as a comment to the person the agent reports to,
+  and the run ends as a success marked blocked.

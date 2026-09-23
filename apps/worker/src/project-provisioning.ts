@@ -1,11 +1,13 @@
 import {
+  aiAgent,
   db,
   projectDeprovisioningJob,
+  projectMember,
   projectProvisioningJob,
   projectView,
   projectViewFolder,
 } from '@repo/db';
-import { and, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt, ne, sql } from 'drizzle-orm';
 import { equalJitterBackoffMs } from './backoff';
 import { workerConfig } from './config';
 
@@ -169,6 +171,7 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
   try {
     const requestedResources = withCoordinator(job.requestedResources);
     const boards = await requestedBoards(job);
+    const agents = (await projectAgentIds([job.projectId])).get(job.projectId) ?? [];
     const response = await fetch(config.projectProvisioningUrl!, {
       method: 'POST',
       signal: controller.signal,
@@ -191,6 +194,7 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
         },
         requestedResources,
         ...(boards.length ? { boards } : {}),
+        ...(agents.length ? { agents } : {}),
         createdAt: new Date(job.createdAt).toISOString(),
       }),
     });
@@ -273,6 +277,34 @@ function withCoordinator(resources: readonly string[]): string[] {
   return browser < 0
     ? [...resources, 'coordinator']
     : [...resources.slice(0, browser), 'coordinator', ...resources.slice(browser)];
+}
+
+// The external agents of each project that run in a Hermes runtime of their own, by
+// project id. The Home agent and the coordinators have theirs already, and an agent that
+// works in several projects has none: the runner claims an agent's runs from all of its
+// projects with one working directory. The api checks the same rule before it issues
+// an agent's key.
+export async function projectAgentIds(projectIds?: number[]): Promise<Map<number, number[]>> {
+  if (projectIds?.length === 0) return new Map();
+  const rows = await db
+    .select({ projectId: projectMember.projectId, agentId: aiAgent.id })
+    .from(aiAgent)
+    .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
+    .where(
+      and(
+        eq(aiAgent.kind, 'external'),
+        ne(aiAgent.username, 'master'),
+        sql`${aiAgent.username} !~ '^hermes-[a-z0-9_-]+-coordinator$'`,
+        sql`(select count(*) from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId}) = 1`,
+        projectIds ? inArray(projectMember.projectId, projectIds) : undefined,
+      ),
+    )
+    .orderBy(asc(aiAgent.id));
+  const byProject = new Map<number, number[]>();
+  for (const { projectId, agentId } of rows) {
+    byProject.set(projectId, [...(byProject.get(projectId) ?? []), agentId]);
+  }
+  return byProject;
 }
 
 async function requestedBoards(job: ClaimedProvisioningJob) {

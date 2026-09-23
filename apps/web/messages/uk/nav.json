@@ -88,5 +88,20 @@
   "vault": "Vault",
   "teamSettings": "Налаштування команди",
   "teamOrchestration": "Команда й оркестрація",
-  "overview": "Огляд"
+  "overview": "Огляд",
+  "projectGroups": {
+    "group": "Група",
+    "noGroup": "Без групи",
+    "newGroup": "Нова група…",
+    "newGroupTitle": "Нова група",
+    "newGroupDescription": "Група об’єднує проєкти на бічній панелі, наприклад компанію з її продуктами та клієнтськими проєктами.",
+    "groupName": "Назва групи",
+    "create": "Створити",
+    "renameGroup": "Перейменувати групу",
+    "deleteGroup": "Видалити групу",
+    "deleteGroupConfirm": "Видалити {name}? Проєкти залишаться й показуватимуться без групи.",
+    "projectOptions": "Параметри проєкту",
+    "groupOptions": "Параметри групи",
+    "dropUngrouped": "Перетягніть сюди, щоб вилучити проєкт із групи"
+  }
 }

@@ -1013,8 +1013,15 @@
     {
       "idx": 144,
       "version": "7",
-      "when": 1790163048958,
-      "tag": "0144_agent_structure",
+      "when": 1790161703244,
+      "tag": "0144_agent_governance",
+      "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1790165132608,
+      "tag": "0145_agent_structure",
       "breakpoints": true
     }
   ]

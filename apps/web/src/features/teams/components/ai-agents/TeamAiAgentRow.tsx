@@ -1,5 +1,6 @@
 import { History, MessageSquare, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ export function TeamAiAgentRow({
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span className="truncate text-sm font-medium">{agent.name}</span>
               <span className="truncate text-xs text-muted-foreground">@{agent.username}</span>
+              <AgentPausedBadge agent={agent} />
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-1">
               {agent.projects.length === 0 ? (

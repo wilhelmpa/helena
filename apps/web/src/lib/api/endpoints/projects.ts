@@ -16,6 +16,11 @@ export interface Project {
   id: number;
   teamId: number;
   teamName: string;
+  // From the project list: the organization department the sidebar groups the project
+  // under, and whether the caller may change that grouping.
+  departmentId?: number | null;
+  departmentName?: string | null;
+  teamManager?: boolean;
   key: string;
   name: string;
   description: string;
@@ -67,6 +72,8 @@ export interface Assignee {
   // Whether this person may read issues and can therefore receive watcher
   // notifications without leaking work-item content.
   canReadWorkItems: boolean;
+  // An agent that takes no new work: mentioning or delegating to it starts nothing.
+  paused: boolean;
 }
 
 // The caller's own role in a project (owner/member). Returned with the project;

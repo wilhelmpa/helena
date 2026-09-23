@@ -1,0 +1,46 @@
+{
+  "title": "MCP-Server",
+  "description": "Verbinde KI-Agenten über das Model Context Protocol mit diesem Projekt. Ein Agent sieht, was sein API-Schlüssel erlaubt.",
+  "disabled": "Deaktiviert",
+  "offForTeam": "MCP ist für das Team {team} deaktiviert.",
+  "offForProject": "Im Team {team} ist MCP aktiviert, aber für dieses Projekt deaktiviert.",
+  "openTeamSettings": "MCP-Einstellungen des Teams öffnen",
+  "askManager": "Bitte einen Inhaber oder Manager des Teams, MCP zu aktivieren:",
+  "keyHint": "Erstelle auf der Seite <link>API-Schlüssel</link> einen Schlüssel und ersetze dann <code>{apiKey}</code> im Snippet.",
+  "endpoint": "MCP-Endpunkt",
+  "clientTabsAria": "Client",
+  "addToFile": "Zu <code>{file}</code> hinzufügen",
+  "notes": {
+    "claudeCode": "Führe das in deinem Terminal aus.",
+    "vscode": "Erfordert GitHub Copilot.",
+    "claudeDesktop": "Claude Desktop verbindet sich über die mcp-remote-Bridge mit Remote-Servern. Erfordert Node.js.",
+    "other": "Jeder Client, der MCP über Streamable HTTP unterstützt, funktioniert. Richte ihn auf den Endpunkt aus und sende einen Header Authorization: Bearer {apiKey}."
+  },
+  "clients": {
+    "other": "Andere"
+  },
+  "oauth": {
+    "configuration": "So verbindest du dich",
+    "methodTabsAria": "Verbindungsmethode",
+    "method": "OAuth",
+    "personalKey": "API-Schlüssel",
+    "description": "Nutze diese Methode für jeden MCP-Client, der OAuth unterstützt, z. B. ChatGPT oder Claude. Du meldest dich mit deinem Volition-One-Konto an. Der Client erhält nie einen API-Schlüssel.",
+    "discovery": "OAuth-Discovery",
+    "steps": {
+      "add": "Füge in deinem Client eine MCP-App hinzu.",
+      "paste": "Füge den MCP-Endpunkt ein.",
+      "choose": "Wähle OAuth, wenn der Client nach der Anmeldemethode fragt.",
+      "signIn": "Melde dich bei Volition One an und gib den Zugriff frei."
+    },
+    "security": "OAuth verwendet PKCE (S256), dynamische Client-Registrierung und Zugriffstokens, die auf dein Volition-One-Konto beschränkt sind.",
+    "consent": {
+      "title": "Volition One autorisieren",
+      "description": "Erlaube diesem MCP-Client, mit den Berechtigungen deines Volition-One-Kontos zu handeln.",
+      "missingCode": "Dieser Autorisierungsanfrage fehlt der Zustimmungscode.",
+      "cancel": "Abbrechen",
+      "pending": "Wird autorisiert…",
+      "authorize": "Autorisieren",
+      "failed": "Die OAuth-Autorisierung konnte nicht abgeschlossen werden."
+    }
+  }
+}

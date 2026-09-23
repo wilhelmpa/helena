@@ -9,6 +9,8 @@ import {
   issueType,
   aiAgent,
   organizationAgentAssignment,
+  organizationDepartment,
+  organizationProjectAssignment,
   project,
   projectColumn,
   projectDeprovisioningJob,
@@ -94,6 +96,12 @@ export interface ProjectFeatures {
 // actions like deletion; the API still enforces the permission on every request.
 export interface ProjectListItem extends ProjectRow {
   role: 'owner' | 'member';
+  // The organization department the project is grouped under in the sidebar.
+  departmentId: number | null;
+  departmentName: string | null;
+  // Whether the caller owns or manages the project's team, which is what changing the
+  // grouping takes.
+  teamManager: boolean;
   // The caller's resolved permission matrix in this project. Present only when the
   // list is requested with permissions (opts.withPermissions); omitted otherwise.
   permissions?: Permissions;
@@ -158,27 +166,50 @@ export async function listProjects(
       ...projectWithTeam,
       memberRole: projectMember.role,
       rolePermissions: teamRole.permissions,
+      departmentId: organizationDepartment.id,
+      departmentName: organizationDepartment.name,
+      teamRank: teamMember.role,
     })
     .from(project)
     .innerJoin(team, eq(team.id, project.teamId))
     .innerJoin(projectMember, eq(projectMember.projectId, project.id))
     .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
+    .leftJoin(
+      organizationProjectAssignment,
+      and(
+        eq(organizationProjectAssignment.projectId, project.id),
+        eq(organizationProjectAssignment.teamId, project.teamId),
+      ),
+    )
+    .leftJoin(
+      organizationDepartment,
+      eq(organizationDepartment.id, organizationProjectAssignment.departmentId),
+    )
+    .leftJoin(teamMember, and(eq(teamMember.teamId, project.teamId), eq(teamMember.userId, userId)))
     .where(where)
     .orderBy(project.key);
   return Promise.all(
-    rows.map(async ({ memberRole, rolePermissions, ...row }) => {
-      const role = memberRole === 'owner' ? 'owner' : 'member';
-      const item: ProjectListItem = { ...(await mapProject(row)), role };
-      if (opts.withPermissions) {
-        item.permissions =
-          role === 'owner'
-            ? fullPermissions()
-            : rolePermissions
-              ? normalizePermissions(rolePermissions)
-              : defaultMemberPermissions();
-      }
-      return item;
-    }),
+    rows.map(
+      async ({ memberRole, rolePermissions, departmentId, departmentName, teamRank, ...row }) => {
+        const role = memberRole === 'owner' ? 'owner' : 'member';
+        const item: ProjectListItem = {
+          ...(await mapProject(row)),
+          role,
+          departmentId,
+          departmentName,
+          teamManager: teamRank === 'owner' || teamRank === 'manager',
+        };
+        if (opts.withPermissions) {
+          item.permissions =
+            role === 'owner'
+              ? fullPermissions()
+              : rolePermissions
+                ? normalizePermissions(rolePermissions)
+                : defaultMemberPermissions();
+        }
+        return item;
+      },
+    ),
   );
 }
 
@@ -337,6 +368,8 @@ export const DEFAULT_PROVISIONING_RESOURCES = [
   'browser',
 ] as const;
 
+const HERMES_PROJECT_COORDINATOR = /^hermes-[a-z0-9_-]+-coordinator$/;
+
 // A project coordinator is a real external agent, not a deployment-side record.
 // The deterministic, reserved handle makes it unique per project key (which is
 // instance-wide unique), while the normal agent rows remain the source of truth for
@@ -344,6 +377,10 @@ export const DEFAULT_PROVISIONING_RESOURCES = [
 export function hermesProjectCoordinatorUsername(projectKey: string): string {
   const slug = projectKey === 'VERV' ? 'verve' : projectKey.toLowerCase();
   return `hermes-${slug}-coordinator`;
+}
+
+export function isHermesProjectCoordinatorUsername(username: string): boolean {
+  return HERMES_PROJECT_COORDINATOR.test(username);
 }
 
 // The bot users of the agents a new project of the team starts with, beside its own
@@ -509,10 +546,13 @@ export async function getProvisioningJob(projectId: number): Promise<Provisionin
   return row ? mapProvisioningJob(row) : null;
 }
 
+// A retry is a new request: the agents and boards it sends may differ from the failed
+// one, and the integration service refuses a known id with another request.
 export async function retryProvisioningJob(projectId: number): Promise<ProvisioningJobRow> {
   const [row] = await db
     .update(projectProvisioningJob)
     .set({
+      id: crypto.randomUUID(),
       status: 'pending',
       attempts: 0,
       nextAttemptAt: new Date(),

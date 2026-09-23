@@ -229,6 +229,14 @@ export const AiAgentResponse = t.Object({
   runnerScope: t.Union([t.Literal('owner'), t.Literal('team')]),
   template: t.Boolean(),
   lastSeenAt: t.Nullable(t.String()),
+  pausedAt: t.Nullable(
+    t.String({
+      description:
+        'When the agent was paused. A paused agent takes no new work: its queued runs and ' +
+        'chat answers wait, and a mention or a delegation does not start it.',
+    }),
+  ),
+  pauseReason: t.Nullable(t.String()),
   createdAt: t.String(),
   apiKeyStart: t.Nullable(t.String()),
   modelProvider: t.Nullable(t.String()),
@@ -266,6 +274,13 @@ export const AgentRunResponse = t.Object({
   lastError: t.Nullable(t.String()),
   output: t.Nullable(t.String()),
   contextTokens: runContextTokens,
+  blockedQuestion: t.Nullable(
+    t.String({
+      description:
+        'The question the agent asked when it reported itself blocked during the run, which ' +
+        'then ended as a success. Null for a run that was not blocked.',
+    }),
+  ),
   nextAttemptAt: t.String(),
   createdAt: t.String(),
 });

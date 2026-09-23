@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm';
 import { resetWorkerConfigForTests } from '../../config';
 import { pruneFinishedDeprovisioningJobs } from '../../project-provisioning';
 import { reconcileProjectProvisioning } from '../../project-reconciliation';
+import { insertAgent } from '../helpers/agents';
 
 let server: ReturnType<typeof Bun.serve> | null = null;
 let teamId = 0;
@@ -70,6 +71,7 @@ async function provisionedProject(key: string, status = 'succeeded') {
     project: { id: created.id, teamId, key: created.key, name: key, description: '' },
     requestedResources: job.requestedResources,
     boards: views.map((view) => view.id),
+    agents: [] as number[],
     browserActive: true,
   };
   return { id: created.id, views, job, entry };
@@ -113,6 +115,28 @@ describe('project reconciliation', () => {
       'browser',
       `board:${deletedBoard.views[0].id}`,
     ]);
+  });
+
+  it('provisions a project again when its agent runtimes drifted', async () => {
+    const intact = await provisionedProject('RUN');
+    const joined = await provisionedProject('JOIN');
+    const left = await provisionedProject('LEFT');
+    const agentId = await insertAgent(teamId, 'coder', [intact.id]);
+    await insertAgent(teamId, 'writer', [joined.id]);
+    serveState([
+      { ...intact.entry, agents: [agentId] },
+      joined.entry,
+      { ...left.entry, agents: [agentId + 100] },
+    ]);
+
+    await reconcileProjectProvisioning();
+
+    expect(await jobOf(intact.id)).toMatchObject({ id: intact.job.id, status: 'succeeded' });
+    for (const drifted of [joined, left]) {
+      const job = await jobOf(drifted.id);
+      expect(job).toMatchObject({ status: 'pending', attempts: 0 });
+      expect(job.id).not.toBe(drifted.job.id);
+    }
   });
 
   it('deprovisions a registry entry whose project no longer exists', async () => {

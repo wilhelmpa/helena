@@ -9,6 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
 import { agentModelLabel } from '../../utils/agentModelLabel';
 
@@ -36,7 +37,10 @@ export function AiChatAgentMenu({
         <DropdownMenuItem key={agent.id} onSelect={() => onSelect(agent.id)} className="gap-2">
           <Bot className="size-4 shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm">{agent.name}</div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate text-sm">{agent.name}</span>
+              <AgentPausedBadge agent={agent} />
+            </div>
             <div className="truncate text-xs text-muted-foreground">
               {agent.kind === 'external' ? (
                 <AgentRunnerStatus agent={agent} compact />

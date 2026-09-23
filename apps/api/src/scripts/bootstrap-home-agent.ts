@@ -8,13 +8,14 @@ import {
   teamMember,
   user,
 } from '@repo/db';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 
-import { HOME_AGENT_USERNAME } from '#modules/agents/core/home-agent';
+import { HOME_AGENT_USERNAME, isHomeAgent } from '#modules/agents/core/home-agent';
 import { createAgent, regenerateKey } from '#modules/agents/core/service';
 import {
   createHermesProjectCoordinator,
   hermesProjectCoordinatorUsername,
+  isHermesProjectCoordinatorUsername,
 } from '#modules/projects/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 
@@ -47,13 +48,24 @@ export interface ProjectCoordinatorBootstrapResult {
   agentInstructions: string;
 }
 
-async function isCoordinatorKey(userId: string, apiKey: string): Promise<boolean> {
+async function isAgentKey(userId: string, apiKey: string): Promise<boolean> {
   const verified = await auth.api.verifyApiKey({ body: { key: apiKey } });
   return verified.valid && verified.key?.referenceId === userId;
 }
 
 // A key is issued only when the caller holds none that still works, because issuing
 // one revokes the key the Hermes runner is using.
+async function currentOrNewKey(
+  agent: { id: number; userId: string },
+  teamId: number,
+  currentApiKey: string | undefined,
+): Promise<string | null> {
+  if (currentApiKey && (await isAgentKey(agent.userId, currentApiKey))) return null;
+  const apiKey = await regenerateKey(agent.id, teamId);
+  if (!apiKey) throw new Error('The agent could not be keyed');
+  return apiKey;
+}
+
 export async function bootstrapProjectCoordinator(
   projectId: number,
   currentApiKey?: string,
@@ -102,11 +114,7 @@ export async function bootstrapProjectCoordinator(
       .limit(1);
   }
   if (!agent) throw new Error('The project coordinator could not be created');
-  let apiKey: string | null = null;
-  if (!currentApiKey || !(await isCoordinatorKey(agent.userId, currentApiKey))) {
-    apiKey = await regenerateKey(agent.id, target.teamId);
-    if (!apiKey) throw new Error('The project coordinator could not be keyed');
-  }
+  const apiKey = await currentOrNewKey(agent, target.teamId, currentApiKey);
   const [full] = await db
     .select({ instructions: aiAgent.instructions })
     .from(aiAgent)
@@ -124,6 +132,53 @@ export async function bootstrapProjectCoordinator(
     apiKey,
     projectInstructions: '',
     agentInstructions: full?.instructions ?? '',
+  };
+}
+
+export interface ProjectAgentBootstrapResult {
+  agent: { id: number; userId: string; username: string };
+  // Null when the caller's current key is still valid for the agent.
+  apiKey: string | null;
+}
+
+// An external agent of the project with a Hermes runtime of its own. The Home agent and
+// the coordinators have theirs already. An agent that works in another project as well
+// has none, because the runner claims an agent's runs from all of its projects with one
+// working directory. The worker picks the agents by the same rule.
+export async function bootstrapProjectAgent(
+  projectId: number,
+  agentId: number,
+  currentApiKey?: string,
+): Promise<ProjectAgentBootstrapResult | null> {
+  const [agent] = await db
+    .select({
+      id: aiAgent.id,
+      userId: aiAgent.userId,
+      username: aiAgent.username,
+      teamId: aiAgent.teamId,
+      kind: aiAgent.kind,
+      projects: sql<number>`(select count(*)::int from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId})`,
+    })
+    .from(aiAgent)
+    .innerJoin(
+      projectMember,
+      and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, projectId)),
+    )
+    .innerJoin(project, and(eq(project.id, projectId), eq(project.teamId, aiAgent.teamId)))
+    .where(eq(aiAgent.id, agentId))
+    .limit(1);
+  if (
+    !agent ||
+    agent.kind !== 'external' ||
+    isHomeAgent(agent.username) ||
+    isHermesProjectCoordinatorUsername(agent.username) ||
+    agent.projects !== 1
+  ) {
+    return null;
+  }
+  return {
+    agent: { id: agent.id, userId: agent.userId, username: agent.username },
+    apiKey: await currentOrNewKey(agent, agent.teamId, currentApiKey),
   };
 }
 

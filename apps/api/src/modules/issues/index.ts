@@ -42,6 +42,7 @@ import {
   type FeedCursor,
 } from './activity';
 import { listStatusTimeline } from './status-history';
+import { markIssueBlocked } from './blocked';
 import { addIssueLink, attachBoardLinks, listIssueLinks, removeIssueLink } from './links';
 import {
   attachSubtaskCounts,
@@ -144,6 +145,8 @@ import {
   updateChecklistItemBody,
   feedRangeQuery,
   createCommentBody,
+  markBlockedBody,
+  MarkBlockedResponse,
   updateCommentBody,
   commentParams,
   archiveIssueBody,
@@ -1383,6 +1386,35 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
           '@username in the body notifies that member or AI agent; the handles are ' +
           'the usernames in get_project.assignees.',
         ...mcpTool('add_comment'),
+      },
+    },
+  )
+
+  .post(
+    '/issues/:issueId/blocked',
+    async ({ params, body, user, projectId, set }) => {
+      set.status = 201;
+      return markIssueBlocked({
+        issueId: params.issueId,
+        projectId,
+        actorUserId: requireUser(user).id,
+        question: body.question,
+      });
+    },
+    {
+      body: markBlockedBody,
+      params: issueParams,
+      workItem: 'edit',
+      response: { 201: MarkBlockedResponse, ...commonErrors },
+      detail: {
+        summary: 'Mark an issue blocked',
+        description:
+          "For an agent that cannot continue the issue it works on without a person's " +
+          'answer. Adds the Blocked label, posts the question as a comment that notifies ' +
+          'the person the agent reports to (the owner of the agent it reports to in the ' +
+          'organization, otherwise the project owners), and ends your run on the issue as ' +
+          'blocked. Stop working on the issue after calling it. Only an agent may call it.',
+        ...mcpTool('mark_issue_blocked'),
       },
     },
   )

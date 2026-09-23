@@ -30,12 +30,14 @@ Markdown file created by one service remains editable by the others.
 /var/lib/volition/provisioning
 /var/lib/volition/hermes
 /var/lib/volition/hermes/profiles/<slug>
+/var/lib/volition/hermes/profiles/<slug>_<agentId>
 /var/lib/volition/mastra
 /var/lib/volition/project-browser/projects/<slug>
 ```
 
-`/var/lib/volition/hermes/profiles/<slug>` is the runtime home for the matching project
-agent. Shared Hermes authentication remains in the global Hermes home and is resolved by
+`/var/lib/volition/hermes/profiles/<slug>` is the runtime home of the project's coordinator,
+and `/var/lib/volition/hermes/profiles/<slug>_<agentId>` that of each other agent of the
+project. Shared Hermes authentication remains in the global Hermes home and is resolved by
 the runner.
 
 ## Private configuration
@@ -56,6 +58,13 @@ sudo find /srv/volition/vault -type f -exec chmod 0660 {} +
 
 Apply those commands only to the dedicated Vault root. Do not broaden permissions on
 `/srv/volition`, project source, runtime profiles, or credentials.
+
+Plan stores uploaded files (attachments, document assets, skill files, avatars) on the
+local disk below `/var/lib/volition/plan/storage`. `volition-plan-api.service` sets
+`STORAGE_ROOT` to that directory, so `plan.env` needs no `S3_*` variables and no object
+store runs. The API creates the directory on the first upload, owned by `volition-plan`
+with mode `0700`. Only the API reads and writes it; the worker does not. Back it up
+together with the Plan database.
 
 ## Build and install
 

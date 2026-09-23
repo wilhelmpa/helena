@@ -129,6 +129,9 @@ export interface AiAgent {
   template: boolean;
   // When the agent's runner last polled, or null while none ever has.
   lastSeenAt: string | null;
+  // Set while the agent takes no new work, with why.
+  pausedAt: string | null;
+  pauseReason: string | null;
   createdAt: string;
   apiKeyStart: string | null;
   // The integration key of the model credential (the provider, e.g. "openai"), or
@@ -162,6 +165,8 @@ export interface AgentRun {
   // otherwise its last model call. Absent for a run that finished before this was
   // recorded and for one whose agent reports no counts.
   contextTokens?: number;
+  // The question the agent asked when it marked its issue blocked during the run.
+  blockedQuestion: string | null;
   nextAttemptAt: string;
   createdAt: string;
 }

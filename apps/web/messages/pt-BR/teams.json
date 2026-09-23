@@ -555,7 +555,11 @@
         "web": "Pesquisa na web e lê páginas.",
         "x_search": "Pesquisa publicações no X (Twitter)."
       }
-    }
+    },
+    "paused": "Pausado",
+    "pausedNoReason": "Pausado. Nenhum motivo foi informado.",
+    "blocked": "Bloqueado",
+    "blockedQuestion": "Pergunta"
   },
   "members": {
     "roleSaved": "{name} agora é {role}",

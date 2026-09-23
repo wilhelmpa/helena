@@ -8,20 +8,22 @@ import {
 } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { workerConfig } from './config';
+import { projectAgentIds } from './project-provisioning';
 
 interface ProvisionedProject {
   project: { id: number; teamId: number; key: string; name: string; description: string };
   requestedResources: string[];
   boards: number[];
+  agents: number[];
   // Null when the project has no browser.
   browserActive: boolean | null;
 }
 
 // Compares what the integration service has provisioned with the projects in the
 // database and queues the idempotent run that repairs a difference: a project whose
-// registry entry, browser units or board folders do not match is provisioned again,
-// and a registry entry without a project is deprovisioned. Pending and failed jobs are
-// left to their own retries and to the retry routes.
+// registry entry, browser units, board folders or agent runtimes do not match is
+// provisioned again, and a registry entry without a project is deprovisioned. Pending
+// and failed jobs are left to their own retries and to the retry routes.
 export async function reconcileProjectProvisioning(): Promise<void> {
   const config = workerConfig();
   if (!config.projectProvisioningUrl || !config.projectProvisioningToken) return;
@@ -31,7 +33,7 @@ export async function reconcileProjectProvisioning(): Promise<void> {
     `${config.projectProvisioningUrl.replace(/\/+$/, '')}/state`,
     config.projectProvisioningToken,
   );
-  const [projects, jobs, views] = await Promise.all([
+  const [projects, jobs, views, agents] = await Promise.all([
     db.select({ id: project.id }).from(project),
     db
       .select({
@@ -41,6 +43,7 @@ export async function reconcileProjectProvisioning(): Promise<void> {
       })
       .from(projectProvisioningJob),
     db.select({ id: projectView.id, projectId: projectView.projectId }).from(projectView),
+    projectAgentIds(),
   ]);
   const byProject = new Map(provisioned.map((entry) => [entry.project.id, entry]));
   const liveViews = new Set(views.map((view) => `${view.projectId}:${view.id}`));
@@ -54,7 +57,8 @@ export async function reconcileProjectProvisioning(): Promise<void> {
       entry &&
       entry.browserActive !== false &&
       boards.length === requested.length &&
-      sameIds(entry.boards, boards)
+      sameIds(entry.boards, boards) &&
+      sameIds(entry.agents, agents.get(job.projectId) ?? [])
     ) {
       continue;
     }
@@ -103,6 +107,7 @@ async function readProvisionedProjects(url: string, token: string): Promise<Prov
           ? entry.requestedResources.filter((item): item is string => typeof item === 'string')
           : [],
         boards: Array.isArray(entry.boards) ? entry.boards.filter(Number.isSafeInteger) : [],
+        agents: Array.isArray(entry.agents) ? entry.agents.filter(Number.isSafeInteger) : [],
         browserActive: typeof entry.browserActive === 'boolean' ? entry.browserActive : null,
       },
     ];

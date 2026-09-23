@@ -266,6 +266,31 @@ describe('agent team', () => {
     });
   });
 
+  it('leaves a paused specialist out and refuses a paused coordinator', async () => {
+    const { asOwner, teamId, columnId, organization, coordinator } = await setup();
+    const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
+    const writer = await specialist(asOwner, teamId, 'writer', ['docs']);
+    await enableAgentTeam(asOwner);
+    const issue = await createIssue(asOwner, columnId);
+    const start = () => asOwner.issues({ issueId: issue.id })['agent-team'].post({});
+
+    await organization.agents({ agentId: writer.id }).pause.post({});
+    expect((await start()).status).toBe(200);
+    expect(controlPlane.started()[0]).toMatchObject({
+      payload: { specialists: [{ agentRef: `agent:${designer.username}` }] },
+    });
+    expect(
+      (controlPlane.started()[0].payload as { specialists: unknown[] }).specialists,
+    ).toHaveLength(1);
+
+    await organization.agents({ agentId: coordinator.id }).pause.post({});
+    const refused = await start();
+    expect(refused.status).toBe(409);
+    expect(refused.error?.value).toMatchObject({
+      error: 'The coordinator @hermes-mkt-coordinator is paused',
+    });
+  });
+
   it('needs the delegate to choose between several coordinators', async () => {
     const { asOwner, teamId, columnId } = await setup();
     const second = (

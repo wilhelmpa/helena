@@ -148,14 +148,22 @@ async function request(
         else chunks.push(chunk);
       });
       response.on('end', () => {
-        if ((response.statusCode ?? 500) < 200 || (response.statusCode ?? 500) >= 300) {
-          return reject(new Error(`Hermes team bridge returned HTTP ${response.statusCode ?? 500}`));
-        }
+        let body: unknown;
         try {
-          resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+          body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
         } catch {
-          reject(new Error('Hermes team bridge returned invalid JSON'));
+          body = undefined;
         }
+        const status = response.statusCode ?? 500;
+        if (status < 200 || status >= 300) {
+          // The bridge names why Plan refused, e.g. that the stage's agent is paused.
+          const message = (body as { message?: unknown } | undefined)?.message;
+          return reject(new Error(
+            `Hermes team bridge returned HTTP ${status}${typeof message === 'string' ? `: ${message.slice(0, 1_000)}` : ''}`,
+          ));
+        }
+        if (body === undefined) return reject(new Error('Hermes team bridge returned invalid JSON'));
+        resolve(body);
       });
     });
     call.setTimeout(timeoutMs, () => call.destroy(new Error('Hermes team bridge timed out')));

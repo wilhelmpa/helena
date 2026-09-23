@@ -135,6 +135,9 @@ export const ProjectListResponse = t.Array(
     t.Object({
       role: t.Union([t.Literal('owner'), t.Literal('member')]),
       permissions: t.Optional(PermissionMatrixSchema),
+      departmentId: t.Nullable(t.Integer()),
+      departmentName: t.Nullable(t.String()),
+      teamManager: t.Boolean(),
     }),
   ]),
 );
@@ -151,6 +154,9 @@ const AssigneeCandidateResponse = t.Object({
   agentKind: t.Nullable(t.Union([t.Literal('external'), t.Literal('internal')])),
   restrictedToUserId: t.Nullable(t.String()),
   canReadWorkItems: t.Boolean(),
+  paused: t.Boolean({
+    description: 'An agent that takes no new work: mentioning or delegating to it starts nothing.',
+  }),
 });
 
 // The caller's own role in a project (from MemberContext in members/service). The

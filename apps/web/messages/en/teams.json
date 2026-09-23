@@ -555,7 +555,11 @@
         "web": "Searches the web and reads pages.",
         "x_search": "Searches posts on X (Twitter)."
       }
-    }
+    },
+    "paused": "Paused",
+    "pausedNoReason": "Paused. No reason was given.",
+    "blocked": "Blocked",
+    "blockedQuestion": "Question"
   },
   "members": {
     "roleSaved": "{name} is now {role}",

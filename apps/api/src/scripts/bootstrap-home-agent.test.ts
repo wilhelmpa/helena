@@ -4,12 +4,15 @@ import { aiAgent, db, teamMember } from '@repo/db';
 import { eq } from 'drizzle-orm';
 
 import { signUpTestUser } from '#tests/helpers/auth';
-import { apiKeyApi, authedApi } from '#tests/helpers/app';
+import { createAgent } from '#tests/helpers/agents';
+import { api as anonymous, apiKeyApi, authedApi } from '#tests/helpers/app';
+import { controlApi } from '#tests/helpers/control';
 import { resetDb } from '#tests/helpers/db';
 import type { AgentRuntimePolicy } from '#modules/agents/core/service';
 
 import {
   bootstrapHomeAgent,
+  bootstrapProjectAgent,
   bootstrapProjectCoordinator,
   HOME_AGENT_SOUL,
 } from './bootstrap-home-agent';
@@ -151,5 +154,93 @@ describe('Project coordinator bootstrap', () => {
 
   it('reports a missing project', async () => {
     expect(await bootstrapProjectCoordinator(999_999)).toBeNull();
+  });
+});
+
+describe('Project agent bootstrap', () => {
+  beforeEach(resetDb);
+
+  async function setup() {
+    const owner = await signUpTestUser();
+    const api = authedApi(owner.cookie);
+    const created = await api.projects.post({ key: 'CODE', name: 'Code' });
+    const other = await api.projects.post({
+      key: 'OTHER',
+      name: 'Other',
+      autoAssignTeamAgents: false,
+    });
+    const agent = await createAgent(api, 'CODE', {
+      name: 'Coder',
+      username: 'coder',
+      kind: 'external',
+    });
+    return { api, project: created.data!, other: other.data!, agent: agent.data!.agent };
+  }
+
+  async function keyWorks(apiKey: string) {
+    return (await apiKeyApi(apiKey).projects.get()).status === 200;
+  }
+
+  it('keeps a valid key and issues a new one only for a missing or rejected key', async () => {
+    const { project, agent } = await setup();
+
+    const first = await bootstrapProjectAgent(project.id, agent.id);
+    expect(first?.agent).toEqual({ id: agent.id, userId: agent.userId, username: 'coder' });
+    const issued = first!.apiKey!;
+    expect(await keyWorks(issued)).toBe(true);
+
+    const reused = await bootstrapProjectAgent(project.id, agent.id, issued);
+    expect(reused?.apiKey).toBeNull();
+    expect(await keyWorks(issued)).toBe(true);
+
+    const replaced = await bootstrapProjectAgent(project.id, agent.id, 'itp_not-a-valid-key');
+    expect(replaced?.apiKey).toEqual(expect.any(String));
+    expect(await keyWorks(issued)).toBe(false);
+    expect(await keyWorks(replaced!.apiKey!)).toBe(true);
+  });
+
+  it('gives no runtime to an agent outside the project, in two projects, the coordinator or Home', async () => {
+    const { api, project, other, agent } = await setup();
+    expect(await bootstrapProjectAgent(other.id, agent.id)).toBeNull();
+
+    const coordinator = await bootstrapProjectCoordinator(project.id);
+    expect(await bootstrapProjectAgent(project.id, coordinator!.agent.id)).toBeNull();
+
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
+    await api
+      .teams({ teamId: project.teamId })
+      ['ai-agents']({ agentId: home.agentId })
+      .projects.put({ projectIds: [project.id] });
+    expect(await bootstrapProjectAgent(project.id, home.agentId)).toBeNull();
+
+    await api
+      .teams({ teamId: project.teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .projects.put({ projectIds: [project.id, other.id] });
+    expect(await bootstrapProjectAgent(project.id, agent.id)).toBeNull();
+  });
+
+  it('answers the provisioning service only with the control token', async () => {
+    const { project, agent } = await setup();
+    const route = () => controlApi().internal.bootstrap['project-agent'];
+
+    const denied = await anonymous.internal.bootstrap['project-agent'].post({
+      projectId: project.id,
+      agentId: agent.id,
+    });
+    expect(denied.status).toBe(401);
+    expect((await route().post({ projectId: project.id })).status).toBe(400);
+    expect(
+      (await route().post({ projectId: project.id, agentId: agent.id, apiKey: 7 })).status,
+    ).toBe(400);
+    expect((await route().post({ projectId: project.id, agentId: 999_999 })).status).toBe(404);
+
+    const answered = await route().post({ projectId: project.id, agentId: agent.id });
+    expect(answered.status).toBe(200);
+    expect(answered.data).toMatchObject({
+      agent: { id: agent.id, username: 'coder' },
+      apiKey: expect.any(String),
+    });
   });
 });

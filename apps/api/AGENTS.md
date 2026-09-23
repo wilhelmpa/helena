@@ -252,9 +252,10 @@ bun run db:migrate:test               # migrate it (repo root)
 bun run test                          # from apps/api, or at root via turbo
 ```
 
-The `test` script loads `--env-file=../../.env.test`. The attachments test also needs
-MinIO + `S3_*` in `.env.test` (`docker compose -f docker-compose.dev.yml up -d` creates
-the bucket); the Docker test gate starts its own throwaway MinIO.
+The `test` script loads `--env-file=../../.env.test`. The preload
+(`src/__tests__/helpers/preload.ts`) points `PROJECT_VAULT_ROOT` and `STORAGE_ROOT` at
+temporary directories whatever the env file says, so uploads are stored on the local disk
+and no object store is needed.
 
 **Layout.** Tests colocated under `__tests__/`, `integration/` (Treaty vs running app +
 test DB, one file per feature) or `unit/` (pure functions, no session/HTTP/DB — import

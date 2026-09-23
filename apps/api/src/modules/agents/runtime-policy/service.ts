@@ -93,6 +93,7 @@ function soul(
     ...agent.projects.map((project) => projectInstructionsPreamble(project).trim()),
     structure,
     chatPreamble().trim(),
+    blockedPreamble(),
     chartPreamble().trim(),
     attachmentPreamble().trim(),
   ]
@@ -109,6 +110,17 @@ function chatPreamble(): string {
     'A message without a run frame comes from a person chatting with you in the app who is',
     'waiting for your reply. Answer them directly and keep it short. Ask a clarifying',
     'question when you genuinely need one; in an autonomous run nobody is there to answer it.',
+  ].join('\n');
+}
+
+function blockedPreamble(): string {
+  return [
+    '## When you are blocked',
+    'When a task cannot go on without a decision or information only a person can give, call',
+    'mark_issue_blocked on its issue with one clear question instead of guessing. It adds the',
+    'Blocked label, posts the question and notifies the person you report to, and your run ends',
+    'as blocked. Then stop and end your turn. A reply to that comment starts you again; remove',
+    'the Blocked label when you continue. Do not use it for a problem you can solve yourself.',
   ].join('\n');
 }
 

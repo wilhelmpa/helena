@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ensurePlanCoordinator, PlanCoordinatorError } from "../plan-coordinator.mjs";
+import {
+  ensurePlanCoordinator,
+  ensurePlanProjectAgent,
+  PlanCoordinatorError,
+} from "../plan-coordinator.mjs";
 
 const project = { id: 7, teamId: 1, key: "SYSQA", name: "System QA" };
 const workspace = { slug: "sysqa", hostPath: "/work/projects/sysqa", containerPath: "/projects/sysqa" };
@@ -212,5 +216,103 @@ describe("ensurePlanCoordinator with the Plan control token", () => {
     state.descriptor = { projectId: 99, username: "hermes-sysqa-coordinator", apiKey: "other-project-key-1234567890" };
     await ensurePlanCoordinator(controlConfig, project, options);
     assert.deepEqual(state.offered, [null]);
+  });
+});
+
+describe("ensurePlanProjectAgent", () => {
+  const controlConfig = {
+    planInternalUrl: "http://127.0.0.1:3000",
+    planControlToken: "control-token-value-with-at-least-32-bytes",
+    hermesHome: "/data/hermes",
+    hermesAgentsRoot: "/data/hermes/agents",
+    hermesRunnerDescriptorRoot: "/data/hermes/run/agents",
+  };
+
+  function agentRuntime({ answeredId = 31 } = {}) {
+    const state = { validKey: null, issued: 0, offered: [], writes: [], descriptor: null };
+    const fetchImpl = async (url, init) => {
+      assert.equal(new URL(url).pathname, "/internal/bootstrap/project-agent");
+      assert.equal(init.headers.Authorization, `Bearer ${controlConfig.planControlToken}`);
+      const body = JSON.parse(init.body);
+      assert.deepEqual([body.projectId, body.agentId], [project.id, 31]);
+      state.offered.push(body.apiKey ?? null);
+      let apiKey = null;
+      if (!body.apiKey || body.apiKey !== state.validKey) {
+        state.issued += 1;
+        apiKey = `agent-key-value-${state.issued}-1234567890`;
+        state.validKey = apiKey;
+      }
+      return json(200, { agent: { id: answeredId, userId: "coder-user", username: "Coder.Bot" }, apiKey });
+    };
+    const descriptorStore = {
+      read: async () => structuredClone(state.descriptor),
+      write: async (filePath, value) => {
+        state.writes.push(filePath);
+        state.descriptor = structuredClone(value);
+      },
+    };
+    return {
+      state,
+      options: { fetchImpl, descriptorStore, workspace, browser: { cdpUrl: "http://127.0.0.1:19201" } },
+    };
+  }
+
+  it("writes a descriptor with its own profile, the project's workspace and browser", async () => {
+    const { state, options } = agentRuntime();
+    const result = await ensurePlanProjectAgent(controlConfig, project, 31, options);
+
+    assert.deepEqual(result, {
+      planAgentId: 31,
+      username: "Coder.Bot",
+      name: "sysqa_31",
+      hermesHome: "/data/hermes/profiles/sysqa_31",
+      descriptorChanged: true,
+    });
+    assert.deepEqual(state.writes, ["/data/hermes/run/agents/sysqa_31.json"]);
+    assert.deepEqual(state.descriptor, {
+      schemaVersion: 1,
+      projectId: 7,
+      teamId: 1,
+      planAgentId: 31,
+      username: "Coder.Bot",
+      cwd: workspace.hostPath,
+      hermesHome: "/data/hermes/profiles/sysqa_31",
+      globalHermesHome: "/data/hermes",
+      browserCdpUrl: "http://127.0.0.1:19201",
+      apiKey: state.validKey,
+    });
+  });
+
+  it("keeps a valid key and an unchanged descriptor", async () => {
+    const { state, options } = agentRuntime();
+    await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    const key = state.validKey;
+
+    const result = await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    assert.equal(result.descriptorChanged, false);
+    assert.deepEqual(state.offered, [null, key]);
+    assert.equal(state.writes.length, 1);
+  });
+
+  it("never offers the key of another agent's descriptor", async () => {
+    const { state, options } = agentRuntime();
+    state.descriptor = { projectId: 7, planAgentId: 32, username: "other", apiKey: "other-agent-key-1234567890" };
+    await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    assert.deepEqual(state.offered, [null]);
+  });
+
+  it("fails closed for another agent in the answer or without the control token", async () => {
+    await assert.rejects(
+      ensurePlanProjectAgent(controlConfig, project, 31, agentRuntime({ answeredId: 32 }).options),
+      PlanCoordinatorError,
+    );
+    await assert.rejects(
+      ensurePlanProjectAgent({ ...controlConfig, planControlToken: "" }, project, 31, agentRuntime().options),
+      /control token/,
+    );
+    await assert.rejects(
+      ensurePlanProjectAgent(controlConfig, project, 0, agentRuntime().options),
+      PlanCoordinatorError,
+    );
   });
 });

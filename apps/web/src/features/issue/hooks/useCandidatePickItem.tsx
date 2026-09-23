@@ -8,7 +8,8 @@ import { isForeignAgent } from '../utils/delegates';
 // Builds the row one candidate gets in a picker over the project's people and agents,
 // shared by the controls that write such a candidate to an issue. An agent bound to
 // someone else runs nothing for you, so it is listed with its owner's avatar and
-// cannot be picked.
+// cannot be picked. A paused agent is marked: picking it starts nothing until it is
+// resumed.
 export function useCandidatePickItem(
   assignees: Assignee[],
   value: string | null,
@@ -37,6 +38,8 @@ export function useCandidatePickItem(
           image={owner?.image ?? null}
           className="size-4 text-[8px]"
         />
+      ) : a.paused ? (
+        <span className="text-[10px] text-amber-700 dark:text-amber-400">{t('agentPaused')}</span>
       ) : undefined,
       tooltip: foreign ? ownerLabel : undefined,
       disabled: foreign,
