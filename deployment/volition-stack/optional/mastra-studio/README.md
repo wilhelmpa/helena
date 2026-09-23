@@ -4,7 +4,7 @@
 
 `MASTRA_FRESH_MODE=true` starts Studio with no registered workflows. It is an explicit reset mode. The deployment default registers the control-plane workflows. Stored runs are cleared separately during a fresh reset.
 
-This project exposes seven typed Mastra 1.67 workflows in Studio:
+This project exposes eight typed Mastra 1.67 workflows in Studio:
 
 - `inbox-triage`
 - `career-research`
@@ -13,6 +13,7 @@ This project exposes seven typed Mastra 1.67 workflows in Studio:
 - `system-audit`
 - `document-filing`
 - `agent-team`
+- `agent-routine`
 
 Each workflow accepts the shared envelope in `src/mastra/contracts.ts`, builds a
 deterministic effect plan, and passes it through an approval gate. With
@@ -35,6 +36,11 @@ coordinator and specialist stages through a private Unix-socket bridge. Plan
 owns the exact task and receives the reviewed summary, evidence and final
 `Review` or `Done` state. The complete request and response contract is in
 `ORCHESTRATION_CONTRACT.md`.
+
+`agent-routine` runs the routines of Plan's Schedules pages. Each fire asks Plan,
+through the same bridge, to create a task delegated to an agent or to reopen the
+routine's task, and is skipped while that task is open or when it starts more than
+ten minutes late. Its contract is in `ORCHESTRATION_CONTRACT.md` as well.
 
 ## Private event ingress
 
@@ -68,9 +74,8 @@ projects, event types or payloads returns `409`. Concurrent identical requests
 share one start operation. The bearer is read by the front proxy from a mounted
 secret and is never forwarded into Mastra or the workflow envelope.
 
-This endpoint is additive and shadow-safe. Existing inbox, Plan Action and
-Plan Agent Schedule paths continue unchanged until a separately verified
-migration.
+This endpoint is additive and shadow-safe. Existing inbox and Plan Action paths
+continue unchanged until a separately verified migration.
 
 ## Verification
 

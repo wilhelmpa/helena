@@ -4,6 +4,29 @@ Each release that removes or moves an API path is listed here, newest first. A s
 or an MCP client that calls the API by path needs the replacement. The web app is
 released with the API and needs no change.
 
+## Agent schedules become routines
+
+Plan runs no schedules of its own. A schedule is a routine: a Mastra schedule that
+creates a task delegated to an agent, or reopens one, on its cron.
+
+| Removed | Replacement |
+| --- | --- |
+| `GET /projects/:projectKey/agent-schedules` | `GET /projects/:projectKey/routines` |
+| `POST /projects/:projectKey/agent-schedules` | `POST /projects/:projectKey/routines` |
+| `PATCH /projects/:projectKey/agent-schedules/:scheduleId` | `PATCH /projects/:projectKey/routines/:routineId` |
+| `DELETE /projects/:projectKey/agent-schedules/:scheduleId` | `DELETE /projects/:projectKey/routines/:routineId` |
+| `POST /projects/:projectKey/agent-schedules/:scheduleId/run` | `POST /projects/:projectKey/routines/:routineId/run` |
+| `GET /projects/:projectKey/agent-schedules/:scheduleId/runs` and the two `.../cancel` routes | none: the work of a routine is a task, and its runs are the runs of that task |
+
+A routine takes `agentId`, `title`, `instructions`, `mode` (`new`, or `reopen` with
+`taskId`), `cron` and `timezone` (default `Europe/Berlin`); a create also takes an
+`idempotencyKey`. Its id is a string. `GET /routines` lists the routines of every project
+whose agents you may read. Over MCP, `list_routines`, `create_routine`, `update_routine`,
+`delete_routine` and `run_routine` replace the eight `*_agent_schedule*` tools.
+
+A project copy no longer takes `include.schedules`. The schedules of a project workflow
+run for real, and their `timezone` is optional with the same default.
+
 ## MCP access moves to the team
 
 Whether MCP reaches a project is now set on the team that owns it, not on the project.
