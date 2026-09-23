@@ -73,6 +73,11 @@ describe('ChatClarificationCard', () => {
       'value',
     )!.set!;
     act(() => {
+      // React's own change-value tracking (ChangeEventPlugin) keys off the document's
+      // actually-focused element; a value set on a field that was never focused can
+      // read as a change on whatever element a previous test in this run last left
+      // focused, in another JSDOM document react-dom has no way to know is gone.
+      textarea.focus();
       setValue.call(textarea, '  Yes, go ahead.  ');
       textarea.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
     });
@@ -92,6 +97,7 @@ describe('ChatClarificationCard', () => {
       'value',
     )!.set!;
     act(() => {
+      textarea.focus();
       setValue.call(textarea, 'ok');
       textarea.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
     });
