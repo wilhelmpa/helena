@@ -5,6 +5,7 @@ import { useWorkspaceContents } from '@/context/workspaceContents';
 import { useTranslations } from 'next-intl';
 import { Direction } from 'radix-ui';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
 import { usePersistedWidth } from '@/hooks/usePersistedWidth';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { browserControlBase } from '@/utils/browserControl';
@@ -15,6 +16,7 @@ import { HEADER_WORKSPACE_TOOLS, workspaceTools } from '@/utils/workspaceTools';
 import { cn } from '@/lib/utils';
 import ResizeGrip from '@/components/common/ResizeGrip';
 import WorkspaceBrowserBar from './WorkspaceBrowserBar';
+import WorkspaceBrowserLive from './WorkspaceBrowserLive';
 import WorkspaceFrame from './WorkspaceFrame';
 import WorkspacePanelHeader from './WorkspacePanelHeader';
 import WorkspaceSplitHeader from './WorkspaceSplitHeader';
@@ -28,7 +30,6 @@ const MAX_WIDTH = 1200;
 const SPLIT_DEFAULT_WIDTH = 1180;
 const SPLIT_MIN_WIDTH = 720;
 const SPLIT_MAX_WIDTH = 2400;
-const BROWSER_LOSSLESS_STORAGE_KEY = 'workspace:browser:lossless';
 
 function browserStreamUrl(url: string, lossless: boolean) {
   const parsed = new URL(url);
@@ -104,27 +105,32 @@ export default function WorkspacePanel({
     [t],
   );
   const [advanced, setAdvanced] = useState(false);
-  const [browserLossless, setBrowserLossless] = useState(false);
-  const [browserPreferenceReady, setBrowserPreferenceReady] = useState(false);
+  const browserPreferences = useBrowserPreferences();
+  const browserBase = tools.browser.url ? browserControlBase(tools.browser.url) : null;
+  // The live view needs the browser router's control routes next to the VNC stream.
+  const browserLive = browserPreferences.view === 'live' && browserBase !== null;
   const [frames, setFrames] = useState<
-    { key: string; url: string; title: string; tool: WorkspaceToolId }[]
+    { key: string; url: string; title: string; tool: WorkspaceToolId; live: boolean }[]
   >([]);
   const [frameReloads, setFrameReloads] = useState<Record<string, number>>({});
   const [visitedContents, setVisitedContents] = useState<WorkspaceToolId[]>([]);
 
   // What a visible tool shows: its own view where one is registered, else a frame. The
-  // advanced chat view is a frame, and only the active tool offers it.
+  // advanced chat view is a frame, and only the active tool offers it. The browser's frame
+  // is its live view or the VNC desktop.
   const visible = useMemo(() => {
     const describe = (id: WorkspaceToolId, side: Side) => {
       const withAdvanced = side === 'primary' && id === 'chat' && advanced;
       const content = withAdvanced ? undefined : contents[id];
       const entry = tools[id];
+      const live = id === 'browser' && browserLive;
       let url: string | null = withAdvanced ? entry.advancedUrl : entry.url;
       if (id === 'browser' && url) {
-        url = browserPreferenceReady ? browserStreamUrl(url, browserLossless) : null;
+        if (!browserPreferences.ready) url = null;
+        else if (!live) url = browserStreamUrl(url, browserPreferences.lossless);
       }
-      const key = `${id}:${id === 'browser' ? `${entry.url}:${toolSession}` : url}`;
-      return { id, side, content, url: content ? null : url, key, label: labels[id] };
+      const key = `${id}:${id === 'browser' ? `${entry.url}:${toolSession}:${live}` : url}`;
+      return { id, side, content, url: content ? null : url, key, label: labels[id], live };
     };
     return [
       describe(activeTool, 'primary'),
@@ -133,8 +139,9 @@ export default function WorkspacePanel({
   }, [
     activeTool,
     advanced,
-    browserLossless,
-    browserPreferenceReady,
+    browserLive,
+    browserPreferences.lossless,
+    browserPreferences.ready,
     contents,
     labels,
     secondaryTool,
@@ -148,15 +155,6 @@ export default function WorkspacePanel({
   );
 
   useEffect(() => setAdvanced(false), [activeTool, contextProjectKey]);
-  useEffect(() => {
-    try {
-      setBrowserLossless(localStorage.getItem(BROWSER_LOSSLESS_STORAGE_KEY) === 'true');
-    } catch {
-      setBrowserLossless(false);
-    } finally {
-      setBrowserPreferenceReady(true);
-    }
-  }, []);
   useEffect(() => {
     if (!open) return;
     const shown = visible.filter((entry) => entry.content).map((entry) => entry.id);
@@ -179,7 +177,7 @@ export default function WorkspacePanel({
             (frame) =>
               frame.key !== entry.key && (entry.id !== 'browser' || frame.tool !== 'browser'),
           ),
-          { key: entry.key, url: entry.url, title: entry.label, tool: entry.id },
+          { key: entry.key, url: entry.url, title: entry.label, tool: entry.id, live: entry.live },
         ];
       }
       if (next === current) return current;
@@ -193,8 +191,13 @@ export default function WorkspacePanel({
     });
   }, [open, visible]);
 
-  const browserBase = tools.browser.url ? browserControlBase(tools.browser.url) : null;
-  const browserBar = browserBase ? <WorkspaceBrowserBar base={browserBase} /> : undefined;
+  const browserBar = browserBase ? (
+    <WorkspaceBrowserBar
+      base={browserBase}
+      view={browserPreferences.view}
+      onViewChange={browserPreferences.setView}
+    />
+  ) : undefined;
   const overlay = isMobile || mode === 'overlay';
   const title = advanced ? t('advanced') : labels[activeTool];
   const split = secondaryTool !== null;
@@ -232,9 +235,10 @@ export default function WorkspacePanel({
         canExpandChat={activeTool === 'chat' && !!tool.advancedUrl}
         canToggleBrowserLossless={
           visible.some((entry) => entry.id === 'browser' && !!tools.browser.url) &&
-          browserPreferenceReady
+          browserPreferences.ready &&
+          !browserLive
         }
-        browserLossless={browserLossless}
+        browserLossless={browserPreferences.lossless}
         externalUrl={primary.content ? null : primary.url}
         isMobile={isMobile}
         fullscreen={fullscreen}
@@ -251,17 +255,7 @@ export default function WorkspacePanel({
           )
         }
         onToggleAdvanced={() => setAdvanced((current) => !current)}
-        onToggleBrowserLossless={() =>
-          setBrowserLossless((current) => {
-            const next = !current;
-            try {
-              localStorage.setItem(BROWSER_LOSSLESS_STORAGE_KEY, String(next));
-            } catch {
-              // The current view can still use the selected mode without persistent storage.
-            }
-            return next;
-          })
-        }
+        onToggleBrowserLossless={browserPreferences.toggleLossless}
         onToggleMode={onToggleMode}
         onToggleFullscreen={onToggleFullscreen}
         onReload={() =>
@@ -290,15 +284,21 @@ export default function WorkspacePanel({
         )}
         {frames.map((frame) => {
           const side = sideOfFrame.get(frame.key);
-          return (
+          const liveBase = frame.live ? browserControlBase(frame.url) : null;
+          const props = {
+            active: open && side !== undefined,
+            className: cn(split && 'h-full w-full', placement(side)),
+            reloadToken: frameReloads[frame.key] ?? 0,
+          };
+          return liveBase ? (
+            <WorkspaceBrowserLive key={frame.key} base={liveBase} {...props} />
+          ) : (
             <WorkspaceFrame
               key={frame.key}
               url={frame.url}
               title={frame.title}
               tool={frame.tool}
-              active={open && side !== undefined}
-              className={cn(split && 'h-full w-full', placement(side))}
-              reloadToken={frameReloads[frame.key] ?? 0}
+              {...props}
             />
           );
         })}
@@ -322,7 +322,9 @@ export default function WorkspacePanel({
           visible
             .filter(
               (entry) =>
-                !entry.content && !entry.url && (entry.id !== 'browser' || browserPreferenceReady),
+                !entry.content &&
+                !entry.url &&
+                (entry.id !== 'browser' || browserPreferences.ready),
             )
             .map((entry) => (
               <div key={entry.id} className={cn('flex min-h-0 flex-1', placement(entry.side))}>

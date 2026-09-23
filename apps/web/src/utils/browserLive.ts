@@ -1,0 +1,216 @@
+// The browser tool's live view: the frames the browser router streams and the input the
+// view sends back. The router's side, with the message formats, is
+// deployment/volition-stack/browser/project-browser-screencast.mjs.
+
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export type LiveMessage =
+  | { type: 'viewport'; width: number; height: number }
+  | { type: 'ack' }
+  | {
+      type: 'mouse';
+      event: 'move' | 'down' | 'up' | 'click';
+      x: number;
+      y: number;
+      button: MouseButton;
+      buttons?: number;
+      clickCount?: number;
+      modifiers: number;
+    }
+  | { type: 'wheel'; x: number; y: number; deltaX: number; deltaY: number; modifiers: number }
+  | KeyMessage
+  | { type: 'text'; text: string };
+
+export interface KeyMessage {
+  type: 'key';
+  event: 'down' | 'up';
+  key: string;
+  code: string;
+  keyCode: number;
+  location: number;
+  autoRepeat: boolean;
+  modifiers: number;
+  text?: string;
+}
+
+export type MouseButton = 'none' | 'left' | 'middle' | 'right' | 'back' | 'forward';
+
+// The DevTools modifier bits.
+const ALT = 1;
+const CONTROL = 2;
+const META = 4;
+const SHIFT = 8;
+
+// The live view's WebSocket next to the control routes (`.../browser/projects/<slug>/api`).
+export function screencastUrl(controlBase: string): string {
+  return `${controlBase.replace(/^http/, 'ws')}/screencast`;
+}
+
+// A frame message: the page's size in CSS pixels, then the JPEG.
+export function readFrame(data: ArrayBuffer): { size: Size; jpeg: Blob } {
+  const header = new DataView(data, 0, 4);
+  return {
+    size: { width: header.getUint16(0), height: header.getUint16(2) },
+    jpeg: new Blob([new Uint8Array(data, 4)], { type: 'image/jpeg' }),
+  };
+}
+
+// Where a frame is drawn in a box: scaled to fit and centred, as object-fit: contain does.
+export function containedRect(box: Size, frame: Size) {
+  const scale = Math.min(box.width / frame.width, box.height / frame.height);
+  const width = frame.width * scale;
+  const height = frame.height * scale;
+  return { left: (box.width - width) / 2, top: (box.height - height) / 2, width, height };
+}
+
+// The page point, in the page's CSS pixels, under a point of the view given relative to the
+// view's top left corner. A point beside the drawn frame is moved onto its edge.
+export function pagePoint(point: Point, box: Size, frame: Size): Point {
+  const drawn = containedRect(box, frame);
+  const clamp = (value: number, max: number) => Math.min(max, Math.max(0, value));
+  return {
+    x: clamp(((point.x - drawn.left) / drawn.width) * frame.width, frame.width),
+    y: clamp(((point.y - drawn.top) / drawn.height) * frame.height, frame.height),
+  };
+}
+
+interface ModifierKeys {
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+}
+
+// The project browser runs on Linux, where the shortcuts a Mac takes with Command use
+// Control, so Command is sent as Control from a Mac.
+export function modifiers(event: ModifierKeys, mac: boolean): number {
+  return (
+    (event.altKey ? ALT : 0) |
+    (event.ctrlKey || (mac && event.metaKey) ? CONTROL : 0) |
+    (event.metaKey && !mac ? META : 0) |
+    (event.shiftKey ? SHIFT : 0)
+  );
+}
+
+const BUTTONS: MouseButton[] = ['left', 'middle', 'right', 'back', 'forward'];
+
+// A pointer event's button (0 left, 1 middle, 2 right, 3 back, 4 forward).
+export function mouseButton(button: number): MouseButton {
+  return BUTTONS[button] ?? 'none';
+}
+
+// The button held during a move, from the pressed-buttons bit set.
+export function heldButton(buttons: number): MouseButton {
+  if (buttons & 1) return 'left';
+  if (buttons & 4) return 'middle';
+  if (buttons & 2) return 'right';
+  return 'none';
+}
+
+export interface Press extends Point {
+  time: number;
+  button: number;
+  count: number;
+}
+
+const MULTI_CLICK_MS = 500;
+const MULTI_CLICK_DISTANCE = 4;
+
+// Pointer events carry no click count, so a press soon after and near the last one of the
+// same button counts as a double or triple click.
+export function clickCount(previous: Press | null, next: Omit<Press, 'count'>): number {
+  if (
+    !previous ||
+    previous.button !== next.button ||
+    next.time - previous.time > MULTI_CLICK_MS ||
+    Math.abs(next.x - previous.x) > MULTI_CLICK_DISTANCE ||
+    Math.abs(next.y - previous.y) > MULTI_CLICK_DISTANCE
+  ) {
+    return 1;
+  }
+  return Math.min(3, previous.count + 1);
+}
+
+// The router takes at most 64 KiB of text per message; 16384 code points stay below that.
+const TEXT_CHUNK = 16_384;
+
+// Pasted or composed text as the messages that insert it, split so a long paste fits.
+export function textMessages(text: string): LiveMessage[] {
+  const characters = [...text];
+  const messages: LiveMessage[] = [];
+  for (let start = 0; start < characters.length; start += TEXT_CHUNK) {
+    messages.push({ type: 'text', text: characters.slice(start, start + TEXT_CHUNK).join('') });
+  }
+  return messages;
+}
+
+// Line and page scrolling (Firefox) as pixels.
+export function wheelDelta(
+  event: { deltaX: number; deltaY: number; deltaMode: number },
+  pageHeight: number,
+) {
+  const scale = event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? pageHeight : 1;
+  return { deltaX: event.deltaX * scale, deltaY: event.deltaY * scale };
+}
+
+export interface KeyInput extends ModifierKeys {
+  key: string;
+  code: string;
+  keyCode: number;
+  location: number;
+  repeat: boolean;
+  isComposing: boolean;
+  // AltGr, which types characters such as @ on many layouts outside the US.
+  altGraph: boolean;
+}
+
+// The paste shortcuts, by key code so that they are found on every layout (Control+V gives
+// the key м on a Russian one): Control+V and Shift+Insert.
+const V_KEY = 86;
+const INSERT_KEY = 45;
+
+// The message for a key event, or null for one the page must not get as a key: a key of
+// an IME composition, whose result is sent as text when it ends, and a paste shortcut,
+// whose clipboard text the paste event sends.
+export function keyMessage(event: KeyInput, type: 'down' | 'up', mac: boolean): KeyMessage | null {
+  if (
+    event.isComposing ||
+    event.keyCode === 229 ||
+    event.key === 'Dead' ||
+    event.key === 'Unidentified'
+  ) {
+    return null;
+  }
+  const printable = [...event.key].length === 1;
+  // Option on a Mac and AltGr elsewhere type a character rather than a shortcut.
+  const typesCharacter =
+    printable && (event.altGraph || (mac && event.altKey && !event.metaKey && !event.ctrlKey));
+  const pressed = typesCharacter ? (event.shiftKey ? SHIFT : 0) : modifiers(event, mac);
+  const paste =
+    (event.keyCode === V_KEY && (pressed & ~SHIFT) === CONTROL) ||
+    (event.keyCode === INSERT_KEY && pressed === SHIFT);
+  if (paste) return null;
+  const command = mac && event.key === 'Meta';
+  const key = command ? 'Control' : event.key;
+  const typed = key === 'Enter' ? '\r' : printable ? key : undefined;
+  const text = type === 'down' && (pressed & (CONTROL | META)) === 0 ? typed : undefined;
+  return {
+    type: 'key',
+    event: type,
+    key,
+    code: command ? event.code.replace('Meta', 'Control') : event.code,
+    keyCode: command ? 17 : event.keyCode,
+    location: event.location,
+    autoRepeat: event.repeat,
+    modifiers: pressed,
+    ...(text && { text }),
+  };
+}
