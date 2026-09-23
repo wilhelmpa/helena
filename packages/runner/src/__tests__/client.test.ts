@@ -91,6 +91,29 @@ describe('runner gateway client', () => {
     expect(JSON.stringify(requests[0]?.body)).not.toContain('runner-secret');
   });
 
+  it('reads the secrets of the MCP servers with the agent key', async () => {
+    let apiKey: string | undefined;
+    server = createServer((request, response) => {
+      apiKey = request.headers['x-api-key'] as string | undefined;
+      response.setHeader('content-type', 'application/json');
+      response.end(
+        JSON.stringify(
+          request.url === '/agent-runtime/mcp-secrets' ? { secrets: { '7': 'value' } } : {},
+        ),
+      );
+    });
+    await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+    const client = new Client({
+      url: `http://127.0.0.1:${address.port}`,
+      apiKey: 'runner-secret',
+    } as RunnerConfig);
+
+    expect(await client.mcpSecrets()).toEqual({ '7': 'value' });
+    expect(apiKey).toBe('runner-secret');
+  });
+
   it('reads a canceled run off its heartbeat, and no body as not canceled', async () => {
     server = createServer((request, response) => {
       if (request.url === '/agent-runs/1/heartbeat') {

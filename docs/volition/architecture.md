@@ -101,6 +101,9 @@ and makes no decisions.
   MCP grants, model) are owned by Plan. A change Hermes makes to one of them is imported
   into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are
   shown read-only in Plan.
+- An agent has the MCP servers of Hermes' `config.yaml` that the owner did not turn off for
+  it, and the servers of the team's library enabled on it. Both are stored in Plan; the runner
+  writes them to a managed configuration of the agent's profile, never to `config.yaml`.
 - Automated runs use the toolsets of the agent's role. In chat, Hermes may delegate freely.
 - Whether an agent takes work is stored and enforced in Plan, at its run queue: a paused
   agent's runs and chat answers are not claimed, a mention or a delegation queues nothing,

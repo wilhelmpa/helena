@@ -40,7 +40,7 @@
     },
     "agentTools": {
       "title": "Alat",
-      "description": "Alat yang dapat dipanggil agen, masing-masing terhubung ke kredensial integrasi."
+      "description": "Server MCP yang dijalankan agen Hermes tim, dan alat yang memakai kredensial integrasi."
     },
     "agents": {
       "title": "Agen AI",
@@ -242,12 +242,18 @@
       "tool": {
         "title": "Alat",
         "hint": "Integrasi yang dapat dipanggil agen sebagai alat"
+      },
+      "secret": {
+        "title": "Rahasia",
+        "hint": "Nilai bernama yang dibaca server MCP milik agen tim"
       }
     },
     "columns": {
       "integration": "Integrasi",
       "credentials": "Kredensial"
-    }
+    },
+    "secretName": "Nama",
+    "secretNameHint": "Server MCP memilih rahasia berdasarkan nama ini. Nilainya disimpan terenkripsi dan tidak pernah ditampilkan lagi."
   },
   "skills": {
     "newSkill": "Keahlian baru",
@@ -294,6 +300,8 @@
     "noAccess": "Anda tidak memiliki akses ke keahlian tim ini."
   },
   "tools": {
+    "title": "Alat integrasi",
+    "hint": "Alat yang dipanggil agen internal dengan kredensial integrasi tim.",
     "add": "Tambah alat",
     "delete": "Hapus alat",
     "back": "Kembali ke alat",
@@ -317,6 +325,49 @@
     "continue": "Lanjutkan",
     "alreadyAdded": "{count, plural, one {# alat sudah menggunakan kredensial ini dan dilewati.} other {# alat sudah menggunakan kredensial ini dan dilewati.}}",
     "noAccess": "Anda tidak memiliki akses ke alat tim ini."
+  },
+  "mcpServers": {
+    "title": "Server MCP",
+    "hint": "Server yang dijalankan agen Hermes tim. Aktifkan server di halaman agen.",
+    "managerOnly": "Hanya pemilik dan manajer tim yang dapat menambah atau mengubah server.",
+    "add": "Tambah server MCP",
+    "edit": "Edit server MCP",
+    "delete": "Hapus server MCP",
+    "deleteMessage": "Hapus {name}? Agen yang mengaktifkannya kehilangan alat-alatnya.",
+    "empty": "Belum ada server MCP",
+    "emptyHint": "Tambahkan server sekali, lalu aktifkan pada agen yang membutuhkannya.",
+    "saved": "{name} disimpan",
+    "custom": "Server lain",
+    "customHint": "Perintah yang dijalankan Hermes, atau URL server jarak jauh",
+    "presets": {
+      "shopify-dev": "Mencari di dokumentasi dan skema API Shopify serta memvalidasi kode GraphQL, Liquid, dan ekstensi. Tidak memerlukan kredensial.",
+      "jev-browser": "Mengendalikan browser tanpa antarmuka dengan model Jev dari TypeSafe. Memerlukan kunci API TypeSafe sebagai rahasia TYPESAFE_API_KEY."
+    },
+    "name": "Nama",
+    "nameHint": "Huruf kecil, angka, - dan _. Hermes menamai toolset server dengan nama ini.",
+    "description": "Deskripsi",
+    "transport": "Transport",
+    "transports": {
+      "stdio": "Perintah (stdio)",
+      "http": "HTTP",
+      "sse": "SSE"
+    },
+    "command": "Perintah",
+    "args": "Argumen",
+    "argsHint": "Satu argumen per baris.",
+    "url": "URL",
+    "env": "Variabel lingkungan",
+    "headers": "Header",
+    "valueName": "Nama",
+    "valueKind": "Jenis nilai",
+    "literal": "Nilai",
+    "secret": "Rahasia",
+    "chooseSecret": "Pilih rahasia",
+    "noSecrets": "Tim belum memiliki rahasia. Tambahkan di Integrasi.",
+    "secretHint": "Nilai rahasia hanya dikirim ke runner agen yang mengaktifkan server ini, tidak pernah ke halaman ini.",
+    "missingSecret": "rahasia terhapus",
+    "addValue": "Tambah",
+    "removeValue": "Hapus"
   },
   "agents": {
     "newAgent": "Agen AI baru",
@@ -514,8 +565,14 @@
       "toolsetsReadOnly": "Hanya anggota yang dapat mengedit agen yang dapat mematikan toolset.",
       "noToolsets": "Runner tidak melaporkan toolset apa pun.",
       "mcpServers": "Server MCP",
-      "mcpServersHint": "Selalu tersedia untuk agen. Diatur di profil Hermes.",
+      "mcpServersHint": "Dari konfigurasi Hermes. Matikan salah satu lalu simpan agar agen tidak menggunakannya.",
+      "mcpServersReadOnly": "Dari konfigurasi Hermes. Hanya anggota yang boleh mengedit agen yang dapat mematikannya.",
       "noMcpServers": "Tidak ada",
+      "libraryMcpServers": "Server MCP tim",
+      "libraryMcpServersHint": "Server yang diaktifkan berjalan bersama chat dan eksekusi agen setelah Anda menyimpan.",
+      "libraryMcpServersReadOnly": "Hanya anggota yang boleh mengedit alat yang dapat mengubahnya.",
+      "noLibraryMcpServers": "Tim belum memiliki server MCP",
+      "noLibraryMcpServersHint": "Tambahkan di halaman Alat, lalu aktifkan di sini.",
       "skills": "Keahlian",
       "skillsHint": "Di profil Hermes agen: {count}. Hanya baca.",
       "searchSkills": "Saring keahlian",

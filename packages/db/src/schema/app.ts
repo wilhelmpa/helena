@@ -1178,6 +1178,53 @@ export const agentToolLink = pgTable(
   ],
 );
 
+// An MCP server of the team's library, which an external agent's Hermes profile starts
+// once the server is enabled on the agent (agent_mcp_server_link). `name` is the key of
+// the server in Hermes' mcp_servers and the name of its toolset. A stdio server has
+// `command` and `args`, an http or sse server `url`. `env` (stdio) and `headers`
+// (http, sse) hold [{ name, value }] for a literal, or [{ name, credentialId }] for the
+// value of a team secret (an integration_credential of the 'secret' integration),
+// which only the agent's runner receives.
+export const agentMcpServer = pgTable(
+  'agent_mcp_server',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    transport: text('transport').notNull(),
+    command: text('command'),
+    args: jsonb('args').notNull().default([]),
+    url: text('url'),
+    env: jsonb('env').notNull().default([]),
+    headers: jsonb('headers').notNull().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.teamId, t.name),
+    check('agent_mcp_server_transport_check', sql`${t.transport} IN ('stdio', 'http', 'sse')`),
+    index('agent_mcp_server_team_idx').on(t.teamId),
+  ],
+);
+
+export const agentMcpServerLink = pgTable(
+  'agent_mcp_server_link',
+  {
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    mcpServerId: integer('mcp_server_id')
+      .notNull()
+      .references(() => agentMcpServer.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.agentId, t.mcpServerId] }),
+    index('agent_mcp_server_link_server_idx').on(t.mcpServerId),
+  ],
+);
+
 // Custom fields. Always scoped to a project. A NULL issue_type_id applies the
 // field to every issue in that project; a non-null issue_type_id scopes it to
 // that one type.

@@ -111,6 +111,10 @@ export const app = new Elysia()
             name: 'Agent Tools',
             description: 'Tools configured on a credential and given to agents',
           },
+          {
+            name: 'Agent MCP Servers',
+            description: "The team's MCP server library and the servers enabled on each agent",
+          },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
           { name: 'Issues', description: 'Issues, their fields, feed, and comments' },
