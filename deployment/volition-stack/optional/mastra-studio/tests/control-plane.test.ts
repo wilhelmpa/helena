@@ -3,6 +3,7 @@ import test from 'node:test';
 import { Mastra } from '@mastra/core/mastra';
 import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { LibSQLStore } from '@mastra/libsql';
+import { createHonoServer } from '@mastra/deployer/server';
 import { z } from 'zod';
 import { workflowIds, type WorkEnvelope } from '../src/mastra/contracts.ts';
 import { idempotencyKey, planEffects } from '../src/mastra/effects.ts';
@@ -221,4 +222,20 @@ test('runs that were active when Mastra stopped continue from the step they were
   assert.equal(stored?.status, 'success');
   assert.deepEqual(stored?.result, { value: 20 });
   assert.deepEqual(executed, ['first', 'second']);
+});
+
+test('the Mastra API answers only requests that carry the token of the proxy', async () => {
+  const app = await createHonoServer(mastra, { tools: {} });
+  const token = process.env.MASTRA_UPSTREAM_TOKEN;
+  for (const headers of [{}, { authorization: `Bearer ${'x'.repeat(48)}` }]) {
+    assert.equal((await app.request('/mastra/api/workflows', { headers })).status, 401);
+    const start = await app.request('/mastra/api/workflows/agent-team/create-run', {
+      method: 'POST',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: '{}',
+    });
+    assert.equal(start.status, 401);
+  }
+  const listed = await app.request('/mastra/api/workflows', { headers: { authorization: `Bearer ${token}` } });
+  assert.equal(listed.status, 200);
 });

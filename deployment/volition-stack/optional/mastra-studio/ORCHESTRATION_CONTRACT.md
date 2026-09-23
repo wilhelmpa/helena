@@ -160,8 +160,25 @@ Plan controls the workflow through the Mastra control API:
 - `runs` and `run` expose stored status, checkpoints and history for one project. `runs` with a `taskRef` returns the runs whose payload names that task, searched among the project's 200 newest runs of the workflow.
 - `retry` runs a failed run again from its failed step with Mastra time travel (`/workflows/:id/time-travel`). The steps before it keep their stored results. Like `start`, it does not wait for the run.
 - `cancel` stops a non-terminal run and cancels the Plan run of the stage it waits for (see Cancellation).
+- `delete-project-schedules` deletes the schedules of every workflow of one project. Plan's worker calls it for a deleted project before provisioning moves the project to the trash, and retries the deletion while it fails.
 - schedule operations create, read, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key. The fires of a schedule Plan creates are real runs, in Europe/Berlin unless the schedule names another time zone. `schedules` lists the schedules of one project (`projectRef`) or of several (`projectRefs`), each with `lastRun`: its newest fire, a manual run included, with run id, fire time, status, output and error. `schedule` reads one schedule of the project and workflow. `update-schedule` changes the cron and the time zone and, with `payload`, the input of the fires.
 
 When Mastra starts, it continues the runs that were active when it stopped, each from the step it was in (`restartActiveRuns` in `src/mastra/index.ts`). The built server does not do this on its own. A continued stage asks the bridge for the same idempotency key.
 
 Business schedules exist only in Mastra. Hermes cron is limited to Hermes-internal maintenance and must not start Plan workflows.
+
+## Trust model
+
+A request is not trusted because it comes from the same host. Every request that reaches Mastra carries a token, and each token is readable only by the Unix users of the services that need it.
+
+| Listener | Accepts | Token holders |
+|---|---|---|
+| Mastra, `127.0.0.1:4112` | `Authorization: Bearer <upstream token>` on every `/mastra/api/*` route and the Studio control routes (`server.auth` with `SimpleAuth`). The Studio page and its static files need no token and hold no data. | `start.mjs` creates the upstream token on every start and passes it in the environment to the Mastra server and the proxy, both `volition-mastra`. It is never written to disk. |
+| Proxy `127.0.0.1:4111`, `/internal/mastra/control` | `Authorization: Bearer` with `/etc/volition/mastra-control.token` | Plan API and Plan worker (`volition-plan`) |
+| Proxy, `/internal/events` and `/internal/inbox/triage` | `Authorization: Bearer` with the token of `INBOX_ADAPTER_TOKEN_FILE`. Without that variable both routes are closed, as on Kingston. | none on Kingston |
+| Proxy, Studio below `/mastra/` | `X-Volition-Gateway-Token` equal to `/etc/volition/mastra-gateway.token` | Nginx, which adds it to `/mastra/` requests after Plan's `/auth/verify/owner` accepted the session of the instance owner |
+| Hermes bridge, `/run/volition-ipc/hermes-team.sock` | `Authorization: Bearer` with `/etc/volition/hermes-team.token`; the socket is `0600 volition-mastra` | Mastra and the bridge (`volition-mastra`) |
+
+The proxy compares tokens in constant time and ignores identity headers such as `X-Volition-Auth` and `X-Auth-Request-Email`. It forwards only the upstream token to Mastra, never cookies, the gateway token or other credentials of the request. The control route calls the Mastra API directly with the upstream token; it does not pass through the Studio route checks.
+
+The token files in `/etc/volition` are `0600 root`, and systemd delivers them with `LoadCredential=` to `/run/credentials/<unit>/`, which only the unit's user can read. Hermes runs, provisioning and the Hermes runner are `volition-hermes`, so no process of that user holds a Mastra token: a Hermes tool call can connect to `:4111` and `:4112` and both refuse it. For the same reason provisioning holds no Mastra token and the worker deletes the schedules of a deleted project. `plan-control.token`, the bearer of Plan's internal orchestration routes, is a separate token; provisioning holds it for the bootstrap routes.

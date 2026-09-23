@@ -1,8 +1,14 @@
 import { Mastra } from '@mastra/core/mastra';
+import { SimpleAuth } from '@mastra/core/server';
 import { LibSQLStore } from '@mastra/libsql';
 import { workflowRegistry } from './registry.ts';
 
 const workflows = process.env.MASTRA_FRESH_MODE === 'true' ? {} : workflowRegistry;
+
+// start.mjs creates this token for every start and gives it to the proxy alone, so no
+// other local process can call the API.
+const upstreamToken = process.env.MASTRA_UPSTREAM_TOKEN ?? '';
+if (upstreamToken.length < 32) throw new Error('MASTRA_UPSTREAM_TOKEN is required');
 
 export const mastra = new Mastra({
   workflows,
@@ -17,6 +23,11 @@ export const mastra = new Mastra({
     apiPrefix: '/mastra/api',
     cors: false,
     build: { swaggerUI: false, openAPIDocs: false, apiReqLogs: false },
+    // Mastra protects `/api/*` by default, which does not cover the prefix above.
+    auth: new SimpleAuth({
+      tokens: { [upstreamToken]: { id: 'studio-proxy' } },
+      protected: ['/mastra/api/*'],
+    }),
   },
 });
 

@@ -72,7 +72,8 @@ as the Mastra run ID, and checks every registered workflow before starting.
 An identical retry returns the existing run with `replayed: true`; reuse across
 projects, event types or payloads returns `409`. Concurrent identical requests
 share one start operation. The bearer is read by the front proxy from a mounted
-secret and is never forwarded into Mastra or the workflow envelope.
+secret (`INBOX_ADAPTER_TOKEN_FILE`) and is never forwarded into Mastra or the
+workflow envelope. Without that variable the ingress is closed.
 
 This endpoint is additive and shadow-safe. Existing inbox and Plan Action paths
 continue unchanged until a separately verified migration.
@@ -85,9 +86,11 @@ bun run build
 docker build -t volition/mastra-studio:control-plane-test .
 ```
 
-The front proxy requires the authenticated owner headers, limits workflow POST
-bodies to 128 KiB, and permits POST only for registered workflow start/resume
-routes. Other mutation routes remain blocked.
+The Mastra server accepts only the token `start.mjs` gives the front proxy. The
+proxy serves Studio only with the gateway token Nginx adds for the instance owner,
+limits workflow POST bodies to 128 KiB, and permits POST only for registered
+workflow start/resume routes. Other mutation routes remain blocked. The trust model
+is in `ORCHESTRATION_CONTRACT.md`.
 
 Building this directory does not update the live Compose service. Deployment is
 a separate operation.

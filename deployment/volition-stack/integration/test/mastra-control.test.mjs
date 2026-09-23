@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createMastraControlService, MastraControlError } from '../mastra-control.mjs';
 
+const catalog = { flows: [{ id: 'agent-team' }] };
+
 function service(handler) {
   return createMastraControlService(
-    { mastraControlUrl: 'http://172.30.95.2:4111/mastra/api/', mastraControlOwnerEmail: 'owner@example.test' },
+    { mastraApiUrl: 'http://127.0.0.1:4112/mastra/api/', mastraApiToken: 'upstream-token', catalog },
     { fetch: handler },
   );
 }
@@ -12,6 +14,21 @@ function service(handler) {
 function json(value, status = 200) {
   return new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 }
+
+test('every Mastra request carries the upstream token and no identity headers', async () => {
+  const calls = [];
+  const control = service(async (url, init) => {
+    calls.push(init.headers);
+    return json({ runs: [] });
+  });
+  await control.execute({ schemaVersion: 1, operation: 'runs', workflowId: 'agent-team', projectRef: 'project:PRIV' });
+  assert.deepEqual(calls, [{ accept: 'application/json', authorization: 'Bearer upstream-token' }]);
+});
+
+test('the catalog is answered without a Mastra request', async () => {
+  const control = service(async () => assert.fail('Mastra was called'));
+  assert.deepEqual(await control.execute({ schemaVersion: 1, operation: 'catalog' }), { catalog });
+});
 
 test('start creates the run in the project and starts it without waiting for it', async () => {
   const calls = [];
@@ -456,7 +473,8 @@ test("deleting a project's schedules leaves other projects and agent schedules a
       ],
     });
   });
-  assert.equal(await control.deleteProjectSchedules('project:PRIV'), 2);
+  const request = { schemaVersion: 1, operation: 'delete-project-schedules' };
+  assert.deepEqual(await control.execute({ ...request, projectRef: 'project:PRIV' }), { deleted: 2 });
   assert.deepEqual(deleted, ['daily', 'gone']);
-  await assert.rejects(control.deleteProjectSchedules('PRIV'), MastraControlError);
+  await assert.rejects(control.execute({ ...request, projectRef: 'PRIV' }), MastraControlError);
 });

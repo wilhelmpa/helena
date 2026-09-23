@@ -237,16 +237,9 @@ describe("createProvisioner", () => {
     assert.ok(commandCalls.some(({ args }) => args.includes("restart")));
   });
 
-  it("deletes the runner descriptor and the project's Mastra schedules on deprovision", async () => {
-    const scheduleRefs = [];
+  it("deletes the runner descriptor on deprovision", async () => {
     const restarts = [];
     const provisioner = createProvisioner(config(), {
-      mastraControl: {
-        deleteProjectSchedules: async (projectRef) => {
-          scheduleRefs.push(projectRef);
-          return 2;
-        },
-      },
       execute: async (_bin, args) => {
         if (args.includes("restart")) restarts.push(args);
         return { stdout: "", stderr: "" };
@@ -269,9 +262,6 @@ describe("createProvisioner", () => {
     await assert.rejects(fs.lstat(descriptor), { code: "ENOENT" });
     const quarantine = path.join(root, "trash/projects", deletion.eventId);
     assert.deepEqual((await fs.readdir(quarantine)).sort(), ["receipt.json", "registry.json", "workspace"]);
-    const receipt = JSON.parse(await fs.readFile(path.join(quarantine, "receipt.json"), "utf8"));
-    assert.equal(receipt.mastraSchedulesDeleted, 2);
-    assert.deepEqual(scheduleRefs, ["project:DEMO"]);
     assert.equal(restarts.length, 1);
   });
 

@@ -94,6 +94,12 @@ and makes no decisions.
   fire of a schedule gets its own event id from its Mastra run id and is listed with the
   runs of its project. A fire that starts more than ten minutes late is skipped, and so is
   one whose routine task is still open.
+- A local process is not trusted for being local. Mastra answers only its proxy, which
+  holds a token created on every start. The proxy accepts control requests with a token
+  only Plan's API and worker hold, and Studio requests only with a token Nginx adds after
+  Plan confirmed the instance owner. No process of the Unix user Hermes runs as can read
+  either token. The complete trust model is in
+  `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
 - Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
   for one run as environment variables, website logins as entries of the profile's Hermes
   vault, and SSH keys as files of the profile. The model sees secret names only.

@@ -114,7 +114,6 @@ export function createProvisioner(config, options = {}) {
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
   const ensureBoardFiles =
     options.ensureBoardFiles ?? ensureLocalBoardFiles;
-  const mastraControl = options.mastraControl ?? null;
   let queue = Promise.resolve();
 
   // The runner reads the descriptors only when it starts.
@@ -232,7 +231,7 @@ export function createProvisioner(config, options = {}) {
     return registryPath;
   }
 
-  async function writeTrashReceipt(quarantineRoot, envelope, quarantined, details = {}) {
+  async function writeTrashReceipt(quarantineRoot, envelope, quarantined) {
     const receiptPath = path.join(quarantineRoot, "receipt.json");
     await writeJsonAtomic(receiptPath, {
       schemaVersion: 1,
@@ -243,7 +242,6 @@ export function createProvisioner(config, options = {}) {
         Date.now() + config.projectTrashRetentionDays * 24 * 60 * 60 * 1000,
       ).toISOString(),
       quarantined,
-      ...details,
       completedAt: new Date().toISOString(),
     });
     return receiptPath;
@@ -497,9 +495,6 @@ export function createProvisioner(config, options = {}) {
       throw new ProvisioningConflictError("The project registry belongs to another project id");
     }
     const quarantined = [];
-    const mastraSchedulesDeleted = mastraControl
-      ? await mastraControl.deleteProjectSchedules(`project:${envelope.project.key}`)
-      : 0;
 
     if (envelope.requestedResources.includes("browser") || registry?.resources?.browser) {
       const browserDestination = await deprovisionProjectBrowser(
@@ -570,9 +565,7 @@ export function createProvisioner(config, options = {}) {
     });
     if (registryEntry) quarantined.push(registryEntry);
 
-    const receiptPath = await writeTrashReceipt(quarantineRoot, envelope, quarantined, {
-      mastraSchedulesDeleted,
-    });
+    const receiptPath = await writeTrashReceipt(quarantineRoot, envelope, quarantined);
     const resources = quarantined.flatMap((item) => {
       const kind =
         item.label === "workspace"

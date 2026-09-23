@@ -300,6 +300,13 @@ export const app = new Elysia()
     if (!session || session.user.active === false) return status(401);
     return status(204);
   })
+  // The same check for Mastra Studio, which shows the runs of every project and is open
+  // to the instance owner only.
+  .get('/auth/verify/owner', async ({ request, status }) => {
+    const session = await getSessionFromHeaders(request.headers);
+    if (!session || session.user.active === false) return status(401);
+    return status(session.user.role === 'god' ? 204 : 403);
+  })
   // What the sign-in and sign-up screens need before there is a session: whether
   // registration is open, invite-only, or closed, and which sign-in methods are
   // offered. Public on purpose — the screens are reached logged out. It carries no
