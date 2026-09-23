@@ -686,7 +686,7 @@ def prove_migration(report: Report) -> None:
     report.add('G', 'dry run lists each change', dry.count('would chown') > 5 and 'would setfacl' in dry,
                f'{dry.count("would chown")} chown, {dry.count("would setfacl")} setfacl lines')
     with open(f'{PROOF}/migrate-again.txt', encoding='utf-8') as handle:
-        again = json.loads(handle.read().strip().splitlines()[-1])
+        again = json.loads(next(line for line in handle.read().splitlines() if line.startswith('{"changes"')))
     report.add('G', 'second run changes nothing', again['changes'] == 0, json.dumps(again)[:200])
     info = os.stat(f'{ROOT}/workspaces/projects/alpha/secret-alpha.txt')
     report.add('G', 'workspace file belongs to the project', info.st_uid == uid('vpt-alpha'), f'uid={info.st_uid}')
