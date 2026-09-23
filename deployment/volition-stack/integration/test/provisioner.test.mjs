@@ -255,6 +255,34 @@ describe("createProvisioner", () => {
     assert.equal(restarts.length, 1);
   });
 
+  it("moves the folders of a deleted board to the trash and keeps the others", async () => {
+    const provisioner = createProvisioner(config(), { execute: async () => ({ stdout: "", stderr: "" }) });
+    const board = (id) => ({ resource: `board:${id}`, id, name: `Board ${id}`, slug: `board-${id}`, folder: null });
+    const request = envelope();
+    request.requestedResources = ["workspace", "files", "board:1", "board:2"];
+    request.boards = [board(1), board(2)];
+    await provisioner.provision(request);
+    await fs.writeFile(path.join(root, "vault/Projects/DEMO/Files/Boards/board-2/report.md"), "done");
+
+    const later = {
+      ...request,
+      eventId: "523e4567-e89b-42d3-a456-426614174004",
+      requestedResources: ["workspace", "files", "board:1"],
+      boards: [board(1)],
+    };
+    await provisioner.provision(later);
+    await provisioner.provision({ ...later, eventId: "623e4567-e89b-42d3-a456-426614174005" });
+
+    const trash = path.join(root, "trash/projects", later.eventId);
+    assert.deepEqual((await fs.readdir(trash)).sort(), ["board-2-files", "board-2-workspace", "receipt.json"]);
+    assert.equal(await fs.readFile(path.join(trash, "board-2-files/report.md"), "utf8"), "done");
+    assert.deepEqual(await fs.readdir(path.join(root, "projects/demo/boards")), ["board-1"]);
+    assert.deepEqual(await fs.readdir(path.join(root, "vault/Projects/DEMO/Files/Boards")), ["board-1"]);
+    const registry = JSON.parse(await fs.readFile(path.join(root, "state/projects/demo.json"), "utf8"));
+    assert.deepEqual(registry.boards.map((item) => item.id), [1]);
+    await assert.rejects(fs.lstat(path.join(root, "trash/projects/623e4567-e89b-42d3-a456-426614174005")));
+  });
+
   it("rejects reuse of an event id with another request", async () => {
     const provisioner = createProvisioner(config(), {
       ensurePlanCoordinator: fakeCoordinator([]),

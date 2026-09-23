@@ -81,15 +81,10 @@ function resource(kind, id, url) {
   return url ? { kind, id, url } : { kind, id };
 }
 
-function mergeBoards(existing, incoming) {
-  const merged = new Map();
-  for (const board of [
-    ...(Array.isArray(existing) ? existing : []),
-    ...(Array.isArray(incoming) ? incoming : []),
-  ]) {
-    if (board && Number.isSafeInteger(board.id) && board.id > 0) merged.set(board.id, board);
-  }
-  return [...merged.values()];
+function validBoards(boards) {
+  return (Array.isArray(boards) ? boards : []).filter(
+    (board) => board && Number.isSafeInteger(board.id) && board.id > 0,
+  );
 }
 
 export function createProvisioner(config, options = {}) {
@@ -173,7 +168,7 @@ export function createProvisioner(config, options = {}) {
       project: envelope.project,
       slug: workspace.slug,
       requestedResources: envelope.requestedResources,
-      boards: mergeBoards(current?.boards, envelope.boards),
+      boards: validBoards(envelope.boards),
       resources: {
         ...(current?.resources ?? {}),
         ...(workspace.hostPath
@@ -218,6 +213,51 @@ export function createProvisioner(config, options = {}) {
       updatedAt: new Date().toISOString(),
     });
     return registryPath;
+  }
+
+  async function writeTrashReceipt(quarantineRoot, envelope, quarantined, details = {}) {
+    const receiptPath = path.join(quarantineRoot, "receipt.json");
+    await writeJsonAtomic(receiptPath, {
+      schemaVersion: 1,
+      eventId: envelope.eventId,
+      project: envelope.project,
+      retentionDays: config.projectTrashRetentionDays,
+      purgeAfter: new Date(
+        Date.now() + config.projectTrashRetentionDays * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      quarantined,
+      ...details,
+      completedAt: new Date().toISOString(),
+    });
+    return receiptPath;
+  }
+
+  // The registry lists the boards of the last successful run. A board missing from
+  // this request was deleted in Plan, so its folders move to the trash.
+  async function quarantineRemovedBoards(envelope, workspace) {
+    const registry = await readJson(path.join(config.registryRoot, `${workspace.slug}.json`), null);
+    if (registry?.project?.id !== envelope.project.id) return;
+    const kept = new Set(validBoards(envelope.boards).map((board) => board.id));
+    const removed = validBoards(registry.boards).filter((board) => !kept.has(board.id));
+    const quarantineRoot = path.join(config.projectTrashRoot, envelope.eventId);
+    const boardFilesRoot = path.join(config.vaultRoot, "Projects", envelope.project.key, "Files", "Boards");
+    const quarantined = [];
+    for (const { id } of removed) {
+      const name = `board-${id}`;
+      const folders = [
+        ...(workspace.hostPath ? [[path.join(workspace.hostPath, "boards"), "workspace"]] : []),
+        [boardFilesRoot, "files"],
+      ];
+      for (const [root, kind] of folders) {
+        const source = path.join(root, name);
+        const exists = await fs.lstat(source).then(() => true, () => false);
+        const moved = exists
+          ? await quarantinePath({ source, allowedRoot: root, quarantineRoot, label: `${name}-${kind}` })
+          : null;
+        if (moved) quarantined.push(moved);
+      }
+    }
+    if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
   }
 
   async function provisionResources(envelope) {
@@ -273,6 +313,7 @@ export function createProvisioner(config, options = {}) {
         )
       : null;
     if (planCoordinator?.descriptorChanged) await restartHermesRunner();
+    await quarantineRemovedBoards(envelope, workspace);
     const boardResources = await provisionBoards(config, envelope, workspace, ensureBoardFiles);
     const registryPath = await writeRegistry(envelope, workspace, coordinator, planCoordinator, files, terminal, browser);
     const resources = [resource("registry", `project:${workspace.slug}`), ...boardResources];
@@ -416,20 +457,9 @@ export function createProvisioner(config, options = {}) {
     });
     if (registryEntry) quarantined.push(registryEntry);
 
-    const receipt = {
-      schemaVersion: 1,
-      eventId: envelope.eventId,
-      project: envelope.project,
-      retentionDays: config.projectTrashRetentionDays,
-      purgeAfter: new Date(
-        Date.now() + config.projectTrashRetentionDays * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      quarantined,
+    const receiptPath = await writeTrashReceipt(quarantineRoot, envelope, quarantined, {
       mastraSchedulesDeleted,
-      completedAt: new Date().toISOString(),
-    };
-    const receiptPath = path.join(quarantineRoot, "receipt.json");
-    await writeJsonAtomic(receiptPath, receipt);
+    });
     const resources = quarantined.flatMap((item) => {
       const kind =
         item.label === "workspace"

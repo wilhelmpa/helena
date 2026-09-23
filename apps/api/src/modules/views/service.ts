@@ -275,7 +275,13 @@ export async function updateView(
 }
 
 export async function deleteView(id: number): Promise<void> {
-  await db.delete(projectView).where(eq(projectView.id, id));
+  await db.transaction(async (tx) => {
+    const [row] = await tx
+      .delete(projectView)
+      .where(eq(projectView.id, id))
+      .returning({ projectId: projectView.projectId });
+    if (row) await enqueueBoardProvisioning(tx, row.projectId, []);
+  });
 }
 
 export async function reorderViews(
@@ -446,14 +452,15 @@ export async function enqueueBoardProvisioning(
   viewIds: number[],
 ): Promise<void> {
   const resources = [...new Set(viewIds)].map((id) => `board:${id}`);
-  if (!resources.length) return;
   const [job] = await tx
     .select()
     .from(projectProvisioningJob)
     .where(eq(projectProvisioningJob.projectId, projectId))
     .for('update');
   if (!job) {
-    await tx.insert(projectProvisioningJob).values({ projectId, requestedResources: resources });
+    if (resources.length) {
+      await tx.insert(projectProvisioningJob).values({ projectId, requestedResources: resources });
+    }
     return;
   }
   const existingBoardIds = job.requestedResources.flatMap((resource) => {
@@ -474,6 +481,14 @@ export async function enqueueBoardProvisioning(
     ...liveBoards.map(({ id }) => `board:${id}`),
   ];
   if (requestedResources.length > 256) throw new HttpError(409, 'Too many provisioning resources');
+  // Without a changed or new board there is nothing for the provisioner to do.
+  if (
+    !resources.length &&
+    requestedResources.length === job.requestedResources.length &&
+    requestedResources.every((resource) => job.requestedResources.includes(resource))
+  ) {
+    return;
+  }
   await tx
     .update(projectProvisioningJob)
     .set({

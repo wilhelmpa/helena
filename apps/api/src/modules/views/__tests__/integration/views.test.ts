@@ -198,6 +198,26 @@ describe('views', () => {
       expect(provisioning.data?.requestedResources).toContain(`board:${created.data!.id}`);
     });
 
+    it('requeues provisioning without a deleted board', async () => {
+      const { asOwner, projectId } = await setupOwnerProject();
+      const scope = asOwner.projects({ projectKey: 'MKT' });
+      const kept = await scope.views.post({ name: 'Kept' });
+      const removed = await scope.views.post({ name: 'Removed' });
+      await db
+        .update(projectProvisioningJob)
+        .set({ status: 'succeeded', result: { resources: [] }, completedAt: new Date() })
+        .where(eq(projectProvisioningJob.projectId, projectId));
+      const delivered = await scope.provisioning.get();
+
+      await asOwner.views({ viewId: removed.data!.id }).delete();
+
+      const provisioning = await scope.provisioning.get();
+      expect(provisioning.data).toMatchObject({ status: 'pending', result: null });
+      expect(provisioning.data?.id).not.toBe(delivered.data?.id);
+      expect(provisioning.data?.requestedResources).toContain(`board:${kept.data!.id}`);
+      expect(provisioning.data?.requestedResources).not.toContain(`board:${removed.data!.id}`);
+    });
+
     it('sets and clears the icon', async () => {
       const { asOwner } = await setupOwnerProject();
       const id = (
