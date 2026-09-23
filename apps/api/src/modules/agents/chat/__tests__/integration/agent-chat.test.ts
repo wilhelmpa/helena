@@ -147,7 +147,7 @@ describe('external agent chat', () => {
       error: 'Session not found: sess-gone',
       sessionLost: true,
     });
-    expect(lost.status).toBe(200);
+    expect(lost.status).toBe(204);
 
     const again = (await asRunner['agent-chats'].claim.post()).data!.message!;
     expect(again).toMatchObject({ id: resumed.id, sessionId: null, attempts: 2 });
