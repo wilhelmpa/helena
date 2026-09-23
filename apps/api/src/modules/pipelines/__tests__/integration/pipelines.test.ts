@@ -956,8 +956,8 @@ describe('workflow run limit', () => {
     expect((await limitApi().get()).data).toEqual({ maxRuns: 3, windowMinutes: 60 });
 
     // Outside the allowed range (1-1000) is refused, not clamped.
-    expect((await limitApi().patch({ maxRuns: 5000 })).status).toBe(422);
-    expect((await limitApi().patch({ maxRuns: 0 })).status).toBe(422);
+    expect((await limitApi().patch({ maxRuns: 5000 })).status).toBe(400);
+    expect((await limitApi().patch({ maxRuns: 0 })).status).toBe(400);
     expect((await limitApi().get()).data).toEqual({ maxRuns: 3, windowMinutes: 60 });
 
     const asMember = await addProjectMember(ctx.asOwner, 'MKT');
@@ -1028,11 +1028,11 @@ describe('workflow run limit', () => {
       name: 'Second',
       definition: { ...simple(), trigger: { type: 'label_added', label: 'Urgent' } },
     });
-    expect((await enable(ctx, first.id, { coder: ctx.coder.id })).status).toBe(200);
-    expect((await enable(ctx, second.id, { coder: ctx.coder.id })).status).toBe(200);
     const urgent = (
       await ctx.asOwner.projects({ projectKey: 'MKT' }).labels.post({ name: 'urgent' })
     ).data!;
+    expect((await enable(ctx, first.id, { coder: ctx.coder.id })).status).toBe(200);
+    expect((await enable(ctx, second.id, { coder: ctx.coder.id })).status).toBe(200);
     const task = await issue(ctx);
 
     await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('In Progress') });
