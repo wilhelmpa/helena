@@ -272,6 +272,10 @@ def project_browser_env(
         root_metadata = browser_root.lstat()
     except FileNotFoundError:
         return {}
+    if root_metadata.st_uid != os.geteuid():
+        # The browser state belongs to the browser user (agent isolation): its endpoints are
+        # not the runner's to hand out.
+        return {}
     if (
         not stat.S_ISDIR(root_metadata.st_mode)
         or stat.S_ISLNK(root_metadata.st_mode)
@@ -341,7 +345,21 @@ def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | No
     return None
 
 
-def descriptor_entries(root: Path, global_home: Path, browser_root: Path | None = None) -> list[dict[str, Any]]:
+def isolation_enabled() -> bool:
+    return os.environ.get('AGENT_ISOLATION', '').strip() == 'on'
+
+
+# Where the Home agent works when agents are isolated: a workspace of its own, since the
+# parent of every project's workspace is no longer one it may see.
+HOME_WORKSPACE = os.environ.get('HERMES_HOME_WORKSPACE', '/srv/volition/workspaces/home')
+
+
+def descriptor_entries(
+    root: Path,
+    global_home: Path,
+    browser_root: Path | None = None,
+    isolated: bool = False,
+) -> list[dict[str, Any]]:
     private_directory(root)
     entries: list[dict[str, Any]] = []
     global_home = global_home.resolve(strict=True)
@@ -384,6 +402,23 @@ def descriptor_entries(root: Path, global_home: Path, browser_root: Path | None 
             or item['planAgentId'] < 1
         ):
             raise RuntimeError('Hermes runner descriptor conflicts with its project')
+        if isolated:
+            # The profile belongs to the project's user; the sandbox links what Hermes needs
+            # into it, and the project browser is reached through the gateway, not over CDP.
+            entries.append(
+                {
+                    'name': username,
+                    'apiKey': item['apiKey'],
+                    'cwd': item['cwd'],
+                    'env': {'HERMES_HOME': str(home)},
+                    'isolation': {
+                        'slug': slug,
+                        'profile': descriptor_path.stem,
+                        'agentId': item['planAgentId'],
+                    },
+                }
+            )
+            continue
         materialize_agent_home(home, global_home)
         entries.append(
             {
@@ -447,16 +482,29 @@ def write_runtime(
     home_key = os.environ.get('ITSAPLAN_API_KEY', '').strip()
     if len(home_key) < 16 or len(home_key) > 2048 or '\n' in home_key:
         raise RuntimeError('The Home runner credential is unavailable')
-    home = {
-        'name': 'hermes-home-master',
-        'apiKey': home_key,
-        'env': {'HERMES_HOME': str(global_home)},
-    }
+    isolated = isolation_enabled()
+    if isolated:
+        # Home runs as Home's user in a profile of its own (the migration copied its state
+        # there); the global home holds the runner's keys and is nobody's profile.
+        home = {
+            'name': 'hermes-home-master',
+            'apiKey': home_key,
+            'cwd': HOME_WORKSPACE,
+            'env': {'HERMES_HOME': str(global_home / 'profiles' / 'home')},
+            'isolation': {'slug': 'home', 'profile': 'home', 'agentId': None},
+        }
+    else:
+        home = {
+            'name': 'hermes-home-master',
+            'apiKey': home_key,
+            'env': {'HERMES_HOME': str(global_home)},
+        }
     agents = [home]
-    for entry in descriptor_entries(descriptor_root, global_home, browser_root):
+    for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated):
         agents.append({**payload, **entry, 'env': {**payload.get('env', {}), **entry['env']}})
-    for agent in agents:
-        link_plan_plugins(Path(agent['env']['HERMES_HOME']), plugin_root)
+    if not isolated:
+        for agent in agents:
+            link_plan_plugins(Path(agent['env']['HERMES_HOME']), plugin_root)
     payload.pop('apiKey', None)
     payload['agents'] = agents
 

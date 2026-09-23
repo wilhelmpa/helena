@@ -87,6 +87,8 @@ class Config:
     tmux_conf: str
     limits: dict[str, Any]
     runtimes: dict[str, Runtime]
+    # Where the browser user's state lives and the script that writes it (browser-state).
+    browser: dict[str, Any] | None = None
     systemd_run: str = '/usr/bin/systemd-run'
     systemctl: str = '/usr/bin/systemctl'
     useradd: str = '/usr/sbin/useradd'
@@ -227,8 +229,30 @@ def load_config(path: str, *, require_root: bool = True) -> Config:
         runtimes={name: _runtime(name, value) for name, value in runtimes.items()},
         systemd_run=_absolute(raw.get('systemdRun', '/usr/bin/systemd-run'), 'systemdRun'),
         systemctl=_absolute(raw.get('systemctl', '/usr/bin/systemctl'), 'systemctl'),
+        browser=_browser(raw.get('browser')),
         extra={k: v for k, v in raw.items() if k in {'test'}},
     )
+
+
+def _browser(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict) or not isinstance(value.get('user'), str):
+        raise IsolationError('config', 'browser is invalid')
+    bases = value.get('bases') or {}
+    names = {'display': 'PROJECT_BROWSER_DISPLAY_BASE', 'cdp': 'PROJECT_BROWSER_CDP_PORT_BASE',
+             'vnc': 'PROJECT_BROWSER_VNC_PORT_BASE', 'noVnc': 'PROJECT_BROWSER_NOVNC_PORT_BASE'}
+    if not isinstance(bases, dict) or set(bases) - set(names) or not all(
+            isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 65535 for v in bases.values()):
+        raise IsolationError('config', 'browser bases are invalid')
+    return {
+        'user': value['user'],
+        'root': _absolute(value.get('root'), 'browser root'),
+        'trash': _absolute(value.get('trash'), 'browser trash'),
+        'script': _absolute(value.get('script'), 'browser script'),
+        'node': _absolute(value.get('node', '/usr/local/bin/node'), 'browser node'),
+        'env': {names[k]: str(v) for k, v in bases.items()},
+    }
 
 
 # ── Names ────────────────────────────────────────────────────────────────────────────────

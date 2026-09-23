@@ -324,6 +324,13 @@ export function loadConfig(env = process.env) {
       "PROJECT_BROWSER_NOVNC_PORT_BASE",
     ),
     projectBrowserSystemctlUser: env.PROJECT_BROWSER_SYSTEMCTL_SCOPE === "user",
+    // Agent isolation (deployment/volition-stack/isolation): projects get Unix users of their
+    // own and the browser state belongs to the browser user, both through the root launcher.
+    agentIsolation: env.AGENT_ISOLATION === "on",
+    agentLauncherSocket: absolutePath(
+      env.VOLITION_LAUNCHER_SOCKET,
+      "/run/volition-agent-launcher/launch.sock",
+    ),
     systemctlBin: absolutePath(env.SYSTEMCTL_BIN, "/usr/bin/systemctl"),
     systemctlUser: env.SYSTEMCTL_SCOPE !== "system",
     mcookieBin: absolutePath(env.MCOOKIE_BIN, "/usr/bin/mcookie"),

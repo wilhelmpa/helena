@@ -4,7 +4,7 @@ import { writeJsonAtomic } from './atomic-json.mjs';
 
 async function safeChild(parent, name) {
   const target = path.join(parent, name);
-  await fs.mkdir(target, { recursive: true, mode: 0o750 });
+  await fs.mkdir(target, { recursive: true, mode: 0o770 });
   const stat = await fs.lstat(target);
   if (!stat.isDirectory() || stat.isSymbolicLink() || await fs.realpath(target) !== target) {
     throw new Error('Board workspace must be a real project-owned directory');

@@ -86,6 +86,7 @@ REQUEST_KEYS = {
     'terminal-stop': {'v', 'op', 'slug'},
     'ensure-project-user': {'v', 'op', 'slug', 'profiles'},
     'remove-project-user': {'v', 'op', 'slug'},
+    'browser-state': {'v', 'op', 'action', 'slug', 'projectId', 'eventId'},
 }
 REQUIRED_KEYS = {
     'ping': {'v', 'op'},
@@ -94,7 +95,9 @@ REQUIRED_KEYS = {
     'terminal-stop': {'v', 'op', 'slug'},
     'ensure-project-user': {'v', 'op', 'slug'},
     'remove-project-user': {'v', 'op', 'slug'},
+    'browser-state': {'v', 'op', 'action', 'slug', 'projectId'},
 }
+EVENT_ID = __import__('re').compile(r'^[A-Za-z0-9-]{1,64}$')
 
 
 def log(message: str) -> None:
@@ -246,6 +249,8 @@ class Launcher:
                 await self.ensure_project_user(request, writer, caller)
             elif op == 'remove-project-user':
                 await self.remove_project_user(request, writer, caller)
+            elif op == 'browser-state':
+                await self.browser_state(request, writer, caller)
         except IsolationError as error:
             try:
                 writer.write(json_frame(T_ERROR, {'error': error.code, 'message': error.message}))
@@ -1042,6 +1047,66 @@ class Launcher:
             pass
         log(f'{caller}: removed {name} ({account.pw_uid}); the UID stays reserved')
         writer.write(json_frame(T_RESULT, {'user': name, 'removed': True, 'uid': account.pw_uid}))
+
+    # ── browser state ──────────────────────────────────────────────────────────────────
+
+    async def browser_state(self, request: dict, writer, caller: str) -> None:
+        """Writes or removes a project's browser state as the browser user, whose alone it
+        is: the provisioning service no longer opens browser profiles."""
+        browser = self.config.browser
+        if not browser:
+            raise IsolationError('browser', 'no browser user is configured')
+        action = request['action']
+        slug = request['slug']
+        project_id = _int_or_none(request.get('projectId'), 'projectId', 1, 2**31 - 1)
+        event_id = request.get('eventId')
+        if action not in ('ensure', 'remove') or not valid_slug(slug) or project_id is None:
+            raise IsolationError('request', 'invalid browser request')
+        if (action == 'remove') != (event_id is not None) or (
+                event_id is not None and (not isinstance(event_id, str) or not EVENT_ID.match(event_id))):
+            raise IsolationError('request', 'invalid browser request')
+        registry = self.registry_entry(slug)
+        if registry is None or registry.get('project', {}).get('id') != project_id:
+            raise IsolationError('slug', 'the project is not provisioned')
+        account = pwd.getpwnam(browser['user'])
+        state_root = os.path.dirname(browser['root'])
+        args = [action, slug, str(project_id)] + ([event_id] if event_id else [])
+        command = [
+            self.config.systemd_run, f'--unit=volition-browser-state-{secrets.token_hex(6)}', '--quiet',
+            '--collect', '--wait', '--pipe', '--service-type=exec', f'--uid={account.pw_uid}',
+            f'--gid={account.pw_gid}', '--property=NoNewPrivileges=yes', '--property=PrivateNetwork=yes',
+            '--property=PrivateTmp=yes', '--property=ProtectSystem=strict', '--property=ProtectHome=yes',
+            '--property=CapabilityBoundingSet=', '--property=UMask=0077',
+            f'--property=ReadWritePaths={_safe_path(state_root, "browser state")}',
+            f'--setenv=PROJECT_BROWSER_ROOT={browser["root"]}', f'--setenv=PROJECT_BROWSER_TRASH_ROOT={browser["trash"]}',
+            *[f'--setenv={k}={v}' for k, v in browser['env'].items()],
+            '--', browser['node'], browser['script'], *args,
+        ]
+        process = await asyncio.create_subprocess_exec(
+            *command, stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+        out, error = await asyncio.wait_for(process.communicate(), 120)
+        if process.returncode != 0:
+            log(f'{caller}: browser state {action} {slug} failed: {error.decode(errors="replace")[-300:]}')
+            raise IsolationError('browser', 'the browser state could not be written')
+        try:
+            answer = json.loads(out.decode().strip().splitlines()[-1])
+        except (ValueError, IndexError):
+            raise IsolationError('browser', 'the browser state script answered nothing readable') from None
+        writer.write(json_frame(T_RESULT, answer))
+
+    def registry_entry(self, slug: str) -> dict | None:
+        try:
+            self.registry_key(slug)
+        except IsolationError:
+            return None
+        fd = open_path_nofollow(self.config.registry_root)
+        try:
+            file_fd = os.open(f'{slug}.json', os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=fd)
+            with os.fdopen(file_fd, 'rb') as handle:
+                return json.loads(handle.read(1_048_576))
+        finally:
+            os.close(fd)
 
     # ── start ──────────────────────────────────────────────────────────────────────────
 

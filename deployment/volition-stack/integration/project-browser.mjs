@@ -199,22 +199,14 @@ export function createProjectBrowserStatus(config, options = {}) {
   };
 }
 
-export function createProjectBrowserProvisioner(config, options = {}) {
-  const execute = options.execute;
-  if (typeof execute !== "function") throw new Error("Project browser command runner is required");
-  const probeCdp =
-    options.probeCdp ??
-    ((port) =>
-      waitForProjectBrowserCdp(port, {
-        fetchImpl: options.fetchImpl,
-        delay: options.delay,
-      }));
-
-  return async function ensureProjectBrowser(project, slug) {
-    if (!Number.isSafeInteger(project.id) || project.id < 1 || !PROJECT_SLUG.test(slug)) {
-      throw new Error("Project browser identity is invalid");
-    }
-    const root = await privateDirectory(config.projectBrowserRoot);
+// The files of a project's browser: its folders, its slot, its X authority and the unit
+// environment. Written by whoever owns the browser state: the provisioning service, or with
+// agent isolation the browser user (project-browser-state.mjs, started by the launcher).
+export async function writeProjectBrowserState(config, execute, project, slug, reservedSlots) {
+  if (!Number.isSafeInteger(project.id) || project.id < 1 || !PROJECT_SLUG.test(slug)) {
+    throw new Error("Project browser identity is invalid");
+  }
+  const root = await privateDirectory(config.projectBrowserRoot);
     const projectRoot = path.resolve(root, slug);
     if (!inside(root, projectRoot)) throw new Error("Project browser path escapes its root");
     await privateDirectory(projectRoot);
@@ -226,7 +218,7 @@ export function createProjectBrowserProvisioner(config, options = {}) {
       throw new Error("Project browser slot conflicts with another project");
     }
     const selectedSlot = slot ?? Array.from({ length: MAX_PROJECT_BROWSERS }, (_, index) => index + 1).find(
-          (candidate) => !occupied.has(candidate) && !options.reservedSlots?.has(candidate),
+          (candidate) => !occupied.has(candidate) && !reservedSlots?.has(candidate),
         );
     if (!selectedSlot) throw new Error("No project browser slots are available");
     const endpoint = endpoints(config, selectedSlot);
@@ -298,7 +290,11 @@ export function createProjectBrowserProvisioner(config, options = {}) {
       "",
     ].join("\n");
     await atomicPrivateText(path.join(projectRoot, "runtime.env"), environment);
+    return state;
+}
 
+async function startProjectBrowser(config, execute, probeCdp, project, slug, state) {
+    const endpoint = state;
     const kasmUnit = `volition-project-browser-kasm@${slug}.service`;
     const chromiumUnit = `volition-project-browser-chromium@${slug}.service`;
     const systemctlPrefix = config.projectBrowserSystemctlUser !== false ? ["--user"] : [];
@@ -325,7 +321,93 @@ export function createProjectBrowserProvisioner(config, options = {}) {
       cdpUrl: `http://127.0.0.1:${endpoint.cdpPort}`,
       url: publicBrowserUrl(config.projectBrowserPublicUrl, slug),
     };
+}
+
+function cdpProbe(options) {
+  return (
+    options.probeCdp ??
+    ((port) =>
+      waitForProjectBrowserCdp(port, {
+        fetchImpl: options.fetchImpl,
+        delay: options.delay,
+      }))
+  );
+}
+
+export function createProjectBrowserProvisioner(config, options = {}) {
+  const execute = options.execute;
+  if (typeof execute !== "function") throw new Error("Project browser command runner is required");
+  const probeCdp = cdpProbe(options);
+  return async function ensureProjectBrowser(project, slug) {
+    const state = await writeProjectBrowserState(config, execute, project, slug, options.reservedSlots);
+    return startProjectBrowser(config, execute, probeCdp, project, slug, state);
   };
+}
+
+// With agent isolation the browser state belongs to the browser user, so the launcher writes
+// it as that user; the units are started as before.
+export function createIsolatedProjectBrowserProvisioner(config, options = {}) {
+  const execute = options.execute;
+  const launcher = options.launcher;
+  if (typeof execute !== "function" || !launcher) {
+    throw new Error("Project browser command runner and launcher are required");
+  }
+  const probeCdp = cdpProbe(options);
+  return async function ensureProjectBrowser(project, slug) {
+    if (!Number.isSafeInteger(project.id) || project.id < 1 || !PROJECT_SLUG.test(slug)) {
+      throw new Error("Project browser identity is invalid");
+    }
+    const answer = await launcher.browserState("ensure", slug, project.id);
+    const state = answer?.state;
+    if (!state || state.slug !== slug || state.projectId !== project.id) {
+      throw new Error("Project browser state conflicts with the project");
+    }
+    return startProjectBrowser(config, execute, probeCdp, project, slug, endpoints(config, state.slot));
+  };
+}
+
+export function createIsolatedProjectBrowserDeprovisioner(config, options = {}) {
+  const execute = options.execute;
+  const launcher = options.launcher;
+  if (typeof execute !== "function" || !launcher) {
+    throw new Error("Project browser command runner and launcher are required");
+  }
+  return async function deprovisionProjectBrowser(project, slug, quarantineRoot) {
+    if (!Number.isSafeInteger(project.id) || project.id < 1 || !PROJECT_SLUG.test(slug)) {
+      throw new Error("Project browser identity is invalid");
+    }
+    await stopProjectBrowserUnits(config, execute, slug);
+    const eventId = path.basename(quarantineRoot);
+    const answer = await launcher.browserState("remove", slug, project.id, eventId);
+    return answer?.destination ?? null;
+  };
+}
+
+// The browser state's own trash: the browser user keeps what it removed, apart from the
+// provisioning trash it cannot write to.
+export async function moveProjectBrowserState(config, project, slug, trashRoot, eventId, options = {}) {
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(eventId)) throw new Error("Project browser trash name is invalid");
+  const root = await privateDirectory(config.projectBrowserRoot);
+  const projectRoot = path.resolve(root, slug);
+  if (!inside(root, projectRoot)) throw new Error("Project browser path escapes its root");
+  const trash = await privateDirectory(trashRoot);
+  const quarantineRoot = path.resolve(trash, eventId);
+  if (!inside(trash, quarantineRoot)) throw new Error("Project browser trash path is invalid");
+  const destination = path.join(quarantineRoot, slug);
+  let sourceState = null;
+  try {
+    sourceState = await readState(path.join(projectRoot, "runtime.json"));
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  if (!sourceState) {
+    const moved = await fs.lstat(destination).then(() => true, () => false);
+    return moved ? destination : null;
+  }
+  checkedState(sourceState, slug, project.id);
+  await privateDirectory(quarantineRoot);
+  await movePath(projectRoot, destination, { rename: options.rename });
+  return destination;
 }
 
 export function createProjectBrowserDeprovisioner(config, options = {}) {
