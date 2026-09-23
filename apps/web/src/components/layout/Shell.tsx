@@ -16,6 +16,7 @@ import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
 import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
 import { projectPath, issuePath } from '@/utils/paths';
+import { useKioskDisplay } from '@/utils/kioskDisplay';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
 import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/shellContext';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -66,9 +67,12 @@ export default function Shell({
   const initiativeOptions = useInitiativeOptionsQuery(projectKey).data ?? [];
   const { issueOpenMode } = useAccountPreferences();
   const overlays = useOverlays();
+  // On the kiosk's two screens the tool panel fills the second one.
+  const kioskDual = useKioskDisplay() === 'dual';
   const workspacePanel = useWorkspacePanel({
     defaultOpen: globalHome && autoOpenGlobalChat,
     projectKey,
+    pinned: kioskDual,
   });
   const navigation = useWorkspaceNavigation(projectKey, defaultSidebarOpen);
   // The Shell renders the context provider, so its own permission check reads the
@@ -241,6 +245,7 @@ export default function Shell({
               fullscreen={workspacePanel.fullscreen}
               onToggleMode={workspacePanel.toggleMode}
               onToggleFullscreen={workspacePanel.toggleFullscreen}
+              pinned={workspacePanel.pinned}
               onClose={() => workspacePanel.setOpen(false)}
             />
           </div>

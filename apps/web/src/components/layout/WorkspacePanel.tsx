@@ -53,6 +53,7 @@ export default function WorkspacePanel({
   fullscreen,
   onToggleMode,
   onToggleFullscreen,
+  pinned = false,
   onClose,
 }: {
   open: boolean;
@@ -65,6 +66,8 @@ export default function WorkspacePanel({
   fullscreen: boolean;
   onToggleMode: () => void;
   onToggleFullscreen: () => void;
+  // Fills the second of two kiosk screens: half the window, no resizing, no closing.
+  pinned?: boolean;
   onClose: () => void;
 }) {
   const t = useTranslations('nav.workspace');
@@ -218,9 +221,9 @@ export default function WorkspacePanel({
                 : 'relative shrink-0',
             ),
       )}
-      style={fullscreen ? undefined : { width: isMobile ? '100%' : width }}
+      style={fullscreen ? undefined : { width: isMobile ? '100%' : pinned ? '50vw' : width }}
     >
-      {!isMobile && !fullscreen && (
+      {!isMobile && !fullscreen && !pinned && (
         <ResizeGrip
           label={tChat('resizePanel')}
           className="absolute inset-y-0 start-0 z-10"
@@ -242,6 +245,7 @@ export default function WorkspacePanel({
         isMobile={isMobile}
         fullscreen={fullscreen}
         mode={mode}
+        pinned={pinned}
         toolbar={activeTool === 'browser' ? browserBar : undefined}
         splitControl={
           isMobile ? null : (

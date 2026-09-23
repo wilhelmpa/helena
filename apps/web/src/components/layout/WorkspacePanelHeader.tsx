@@ -27,6 +27,7 @@ export default function WorkspacePanelHeader({
   isMobile,
   fullscreen,
   mode,
+  pinned = false,
   splitControl,
   toolbar,
   onToggleAdvanced,
@@ -45,6 +46,8 @@ export default function WorkspacePanelHeader({
   isMobile: boolean;
   fullscreen: boolean;
   mode: WorkspacePanelMode;
+  // A pinned panel offers no pin, fullscreen or close buttons.
+  pinned?: boolean;
   splitControl: ReactNode;
   // Shown in place of the title, such as the browser's address bar.
   toolbar?: ReactNode;
@@ -112,7 +115,7 @@ export default function WorkspacePanelHeader({
         </>
       )}
       {splitControl}
-      {!isMobile && !fullscreen && (
+      {!isMobile && !fullscreen && !pinned && (
         <Button
           variant="ghost"
           size="icon"
@@ -124,25 +127,29 @@ export default function WorkspacePanelHeader({
           {mode === 'push' ? <PinOff /> : <Pin />}
         </Button>
       )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-muted-foreground hover:text-foreground"
-        onClick={onToggleFullscreen}
-        title={tCommon(fullscreen ? 'exitFullscreen' : 'fullscreen')}
-        aria-pressed={fullscreen}
-      >
-        {fullscreen ? <Minimize2 /> : <Maximize2 />}
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-muted-foreground hover:text-foreground"
-        onClick={onClose}
-        title={tCommon('close')}
-      >
-        <X />
-      </Button>
+      {!pinned && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-foreground"
+            onClick={onToggleFullscreen}
+            title={tCommon(fullscreen ? 'exitFullscreen' : 'fullscreen')}
+            aria-pressed={fullscreen}
+          >
+            {fullscreen ? <Minimize2 /> : <Maximize2 />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-foreground"
+            onClick={onClose}
+            title={tCommon('close')}
+          >
+            <X />
+          </Button>
+        </>
+      )}
     </WorkspaceHeader>
   );
 }
