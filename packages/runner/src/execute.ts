@@ -200,6 +200,8 @@ export async function execute(
     kill();
   }, config.timeoutMs);
   opts.signal?.addEventListener('abort', kill, { once: true });
+  // A stop that came before the command started fires no event.
+  if (opts.signal?.aborted) kill();
 
   let stdout = '';
   let stderr = '';

@@ -113,6 +113,7 @@ export function createMastraControlService(config, options = {}) {
   const request = options.fetch ?? fetch;
   const base = new URL(config.mastraApiUrl);
   const pendingScheduleCreates = new Map();
+  const pendingStarts = new Map();
 
   async function call(path, init = {}) {
     const response = await request(new URL(path, base), {
@@ -205,7 +206,21 @@ export function createMastraControlService(config, options = {}) {
         const owned = Array.isArray(result.schedules)
           ? result.schedules.filter((item) => projects.has(item?.requestContext?.projectRef))
           : [];
+        // `lastRun: false` leaves out the newest fire of each schedule, which costs two
+        // more Mastra calls per schedule.
+        if (input.lastRun === false) return { schedules: owned };
         return { schedules: await Promise.all(owned.map((schedule) => withLastRun(workflowId, schedule))) };
+      }
+      // The running and waiting runs of the workflow in every project, for Plan's health
+      // overview.
+      if (input.operation === 'active-runs') {
+        const runs = [];
+        for (const status of ['running', 'waiting']) {
+          const result = object(await call(`workflows/${workflowId}/runs?status=${status}&perPage=50`), 'Mastra runs');
+          for (const run of Array.isArray(result.runs) ? result.runs : [])
+            runs.push({ runId: run?.runId ?? null, resourceId: run?.resourceId ?? null, status, updatedAt: run?.updatedAt ?? null });
+        }
+        return { runs };
       }
       const projectRef = string(input.projectRef, PROJECT_REF, 'projectRef');
 
@@ -242,38 +257,50 @@ export function createMastraControlService(config, options = {}) {
       }
       if (input.operation === 'start') {
         const eventId = string(input.eventId, RUN_ID, 'eventId');
-        const existing = await call(`workflows/${workflowId}/runs/${eventId}`).catch((error) => {
-          if (error instanceof MastraControlError && error.status === 404) return null;
-          throw error;
-        });
-        if (existing) {
-          if (existing.resourceId !== projectRef) throw new MastraControlError(409, 'Idempotency key is already in use');
-          return existing;
+        // Concurrent starts of one event share one pair of Mastra calls.
+        const current = pendingStarts.get(eventId);
+        if (current) return current;
+        const pending = (async () => {
+          const existing = await call(`workflows/${workflowId}/runs/${eventId}`).catch((error) => {
+            if (error instanceof MastraControlError && error.status === 404) return null;
+            throw error;
+          });
+          if (existing && existing.resourceId !== projectRef)
+            throw new MastraControlError(409, 'Idempotency key is already in use');
+          // A run still `pending` was created by a start that failed before it started the
+          // run, and Mastra continues no such run by itself. It is started now.
+          if (existing && existing.status !== 'pending') return existing;
+          const organizationRef = string(input.organizationRef, ORGANIZATION_REF, 'organizationRef');
+          const capabilityRefs = refs(input.capabilityRefs, CAPABILITY_REF, 'capabilityRefs');
+          const connectionRefs = refs(input.connectionRefs, CONNECTION_REF, 'connectionRefs');
+          const envelope = {
+            eventId,
+            correlationId: typeof input.correlationId === 'string' && input.correlationId.length <= 200 ? input.correlationId : eventId,
+            occurredAt: timestamp(input.occurredAt),
+            source: 'itsaplan-ui',
+            actor: { type: 'human', id: string(input.actorId, /^[A-Za-z0-9._:@-]{1,200}$/, 'actorId') },
+            context: { organizationRef, projectRef, capabilityRefs, connectionRefs },
+            dryRun: input.dryRun === true,
+            payload: object(input.payload, 'payload'),
+          };
+          // The run is created first and started without waiting for it: a workflow can
+          // run far longer than any caller waits for a response.
+          const created = existing ?? await call(`workflows/${workflowId}/create-run?runId=${encodeURIComponent(eventId)}`, {
+            method: 'POST',
+            body: JSON.stringify({ resourceId: projectRef }),
+          });
+          await call(`workflows/${workflowId}/start?runId=${encodeURIComponent(eventId)}`, {
+            method: 'POST',
+            body: JSON.stringify({ inputData: envelope, requestContext: envelope.context }),
+          });
+          return { runId: created?.runId ?? eventId, resourceId: projectRef, status: 'running' };
+        })();
+        pendingStarts.set(eventId, pending);
+        try {
+          return await pending;
+        } finally {
+          if (pendingStarts.get(eventId) === pending) pendingStarts.delete(eventId);
         }
-        const organizationRef = string(input.organizationRef, ORGANIZATION_REF, 'organizationRef');
-        const capabilityRefs = refs(input.capabilityRefs, CAPABILITY_REF, 'capabilityRefs');
-        const connectionRefs = refs(input.connectionRefs, CONNECTION_REF, 'connectionRefs');
-        const envelope = {
-          eventId,
-          correlationId: typeof input.correlationId === 'string' && input.correlationId.length <= 200 ? input.correlationId : eventId,
-          occurredAt: timestamp(input.occurredAt),
-          source: 'itsaplan-ui',
-          actor: { type: 'human', id: string(input.actorId, /^[A-Za-z0-9._:@-]{1,200}$/, 'actorId') },
-          context: { organizationRef, projectRef, capabilityRefs, connectionRefs },
-          dryRun: input.dryRun === true,
-          payload: object(input.payload, 'payload'),
-        };
-        // The run is created first and started without waiting for it: a workflow can
-        // run far longer than any caller waits for a response.
-        const created = await call(`workflows/${workflowId}/create-run?runId=${encodeURIComponent(eventId)}`, {
-          method: 'POST',
-          body: JSON.stringify({ resourceId: projectRef }),
-        });
-        await call(`workflows/${workflowId}/start?runId=${encodeURIComponent(eventId)}`, {
-          method: 'POST',
-          body: JSON.stringify({ inputData: envelope, requestContext: envelope.context }),
-        });
-        return { runId: created?.runId ?? eventId, resourceId: projectRef, status: 'running' };
       }
 
       if (input.operation === 'create-schedule') {

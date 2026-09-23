@@ -14,7 +14,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
-import { project, projectActionRun, team } from './app';
+import { aiAgent, issue, project, projectActionRun, team } from './app';
 
 export interface ProjectWorkflowConfiguration {
   instructions?: string;
@@ -50,6 +50,48 @@ export const projectWorkflowAssignment = pgTable(
       sql`${t.workflowId} ~ '^[a-z0-9][a-z0-9-]{0,63}$'`,
     ),
     index('project_workflow_assignment_project_idx').on(t.projectId, t.enabled, t.workflowId),
+  ],
+);
+
+// The start of the agent-team workflow for an issue delegated to a coordinator. The row
+// is written before the control plane is asked, so a start that Mastra did not answer is
+// asked for again with the same event id, which is the run id of the start in Mastra.
+// pending -> started | refused | superseded. A refused start queues a run of the
+// coordinator instead; a superseded one was dropped because the issue no longer waits
+// for it.
+export const agentTeamStart = pgTable(
+  'agent_team_start',
+  {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    issueId: integer('issue_id')
+      .notNull()
+      .references(() => issue.id, { onDelete: 'cascade' }),
+    // The coordinator the issue was delegated to.
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    actorUserId: text('actor_user_id').references(() => user.id, { onDelete: 'set null' }),
+    eventId: text('event_id').notNull().unique(),
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    lastError: text('last_error'),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'agent_team_start_status_check',
+      sql`${t.status} IN ('pending', 'started', 'refused', 'superseded')`,
+    ),
+    index('agent_team_start_due_idx')
+      .on(t.nextAttemptAt)
+      .where(sql`${t.status} = 'pending'`),
+    index('agent_team_start_issue_idx').on(t.issueId, t.id),
   ],
 );
 

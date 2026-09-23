@@ -3,6 +3,8 @@ Description=Volition Plan web
 After=network-online.target volition-plan-api.service
 Wants=network-online.target
 ConditionPathExists=/srv/volition/releases/web/current/apps/web/server.js
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -15,8 +17,10 @@ Environment=NODE_ENV=production
 Environment=PORT=3001
 Environment=HOSTNAME=127.0.0.1
 ExecStart=/usr/local/bin/node server.js
-Restart=on-failure
+Restart=always
 RestartSec=2
+RestartSteps=5
+RestartMaxDelaySec=60
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes
