@@ -232,18 +232,23 @@ describe('isolated execution', () => {
   it('runs the preset through the launcher as the project', async () => {
     const { path, seen } = await fakeLauncher((socket) => {
       socket.write(
-        frame(0x11, `${JSON.stringify({ type: 'result', text: 'done', exit_code: 0 })}\n`),
+        frame(
+          0x11,
+          `${JSON.stringify({ type: 'result', text: 'done', exit_code: 0, session_id: 's-1' })}\n`,
+        ),
       );
       socket.end(frame(0x13, JSON.stringify({ code: 0 })));
     });
     process.env.AGENT_ISOLATION = 'on';
     process.env.VOLITION_LAUNCHER_SOCKET = path;
+    const sessions: string[] = [];
     const outcome = await execute(
       config(),
       { prompt: 'the task', systemPrompt: '', env: { ITSAPLAN_RUN_ID: '12' } },
-      { work: { kind: 'run', id: 12 } },
+      { work: { kind: 'run', id: 12 }, onSessionId: (id) => sessions.push(id) },
     );
-    expect(outcome).toEqual({ status: 'success', output: 'done' });
+    expect(outcome).toMatchObject({ status: 'success', output: 'done', sessionId: 's-1' });
+    expect(sessions).toEqual(['s-1']);
     const sent = seen.request as Record<string, unknown>;
     expect(sent).toMatchObject({
       slug: 'alpha',
