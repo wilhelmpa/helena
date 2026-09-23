@@ -768,9 +768,12 @@ export async function finishMessage(
     status: 'success' | 'failed';
     error?: string | null;
     usage?: ContextUsage | null;
+    sessionLost?: boolean;
   },
 ): Promise<boolean> {
   await touchRunner(agentId);
+  if (result.status === 'failed' && result.sessionLost)
+    return requeueWithoutSession(agentId, messageId);
   const rows = await db
     .update(agentChatMessage)
     .set({
@@ -795,6 +798,26 @@ export async function finishMessage(
   // Stopped from the chat while the command was ending: the answer is already closed,
   // so there is nothing to record and nothing wrong.
   return wasCanceled(agentId, messageId);
+}
+
+// The session a thread was bound to no longer exists on the runner's machine. The thread
+// is unbound and the answer handed out again at once, so the next claim sends the
+// conversation to a fresh session. The attempts it already used still count, which ends
+// a thread whose runner keeps failing.
+async function requeueWithoutSession(agentId: number, messageId: number): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .update(agentChatMessage)
+      .set({ status: 'pending', nextAttemptAt: new Date() })
+      .where(liveAnswer(agentId, messageId))
+      .returning({ threadId: agentChatMessage.threadId });
+    if (rows.length === 0) return wasCanceled(agentId, messageId);
+    await tx
+      .update(agentChatThread)
+      .set({ cliSessionId: null })
+      .where(eq(agentChatThread.id, rows[0].threadId));
+    return true;
+  });
 }
 
 // What a runner is told on every report: whether the answer it is producing was stopped.

@@ -151,7 +151,12 @@ export class Client {
   // command reported nothing about it, which keeps the number the thread already has.
   async chatResult(
     messageId: number,
-    result: { status: 'success' | 'failed'; error?: string; usage?: ContextUsage | null },
+    result: {
+      status: 'success' | 'failed';
+      error?: string;
+      usage?: ContextUsage | null;
+      sessionLost?: boolean;
+    },
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);
   }

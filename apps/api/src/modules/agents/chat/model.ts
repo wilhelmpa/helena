@@ -214,6 +214,13 @@ export const chatResultBody = t.Object({
   status: t.Union([t.Literal('success'), t.Literal('failed')]),
   error: t.Optional(t.Nullable(t.String())),
   usage: contextUsageBody,
+  sessionLost: t.Optional(
+    t.Boolean({
+      description:
+        'The resumed session no longer exists. The thread is unbound and the answer is ' +
+        'queued again with the conversation in its prompt.',
+    }),
+  ),
 });
 
 // The answer of every runner call that reports progress. `canceled` is how the stop

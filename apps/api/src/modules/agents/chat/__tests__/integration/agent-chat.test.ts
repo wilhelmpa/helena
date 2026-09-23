@@ -129,6 +129,32 @@ describe('external agent chat', () => {
     expect(claimed.data!.message).toMatchObject({ model: 'openai/gpt-5.5', thinkingLevel: 'high' });
   });
 
+  it('queues the answer again with the conversation when its session is lost', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    const first = await send(asOwner, agent.id, 'Who owns the launch?');
+    const answered = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    await asRunner['agent-chats']({ messageId: answered.id }).events.post({
+      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Maria does.' }],
+      sessionId: 'sess-gone',
+    });
+    await asRunner['agent-chats']({ messageId: answered.id }).result.post({ status: 'success' });
+
+    await send(asOwner, agent.id, 'And the launch date?', first.data!.threadId);
+    const resumed = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(resumed.sessionId).toBe('sess-gone');
+    const lost = await asRunner['agent-chats']({ messageId: resumed.id }).result.post({
+      status: 'failed',
+      error: 'Session not found: sess-gone',
+      sessionLost: true,
+    });
+    expect(lost.status).toBe(200);
+
+    const again = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(again).toMatchObject({ id: resumed.id, sessionId: null, attempts: 2 });
+    expect(again.prompt).toContain('You: Maria does.');
+    expect(again.prompt).toEndWith('And the launch date?');
+  });
+
   it('sends the earlier turns when the thread has no Hermes session', async () => {
     const { asOwner, asRunner, agent } = await setup();
     const first = await send(asOwner, agent.id, 'Who owns the launch?');

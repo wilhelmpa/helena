@@ -1,6 +1,6 @@
 import { AnswerStream } from './agui';
 import type { ChatMessage, Client } from './client';
-import type { RunnerConfig } from './config';
+import { presetOf, type RunnerConfig } from './config';
 import { execute } from './execute';
 
 // The command is the same one that handles a queued run; what differs is that its output
@@ -70,6 +70,12 @@ export async function answer(
     return;
   }
   const error = outcome.error ?? 'The command failed';
+  // The server unbinds the session and queues the answer again, with the conversation
+  // framed into its prompt, so the person sees no failure for it.
+  if (message.sessionId !== null && presetOf(config)?.sessionLost?.(error)) {
+    await client.chatResult(message.id, { status: 'failed', error, sessionLost: true });
+    return;
+  }
   await stream.fail(error, outcome.output);
   await client.chatResult(message.id, { status: 'failed', error, usage: stream.contextUsage() });
 }

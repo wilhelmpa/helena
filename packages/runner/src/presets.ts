@@ -31,6 +31,9 @@ export interface Preset {
   taskArgs?: (settings: PresetTaskSettings) => string[];
   // The arguments after the operator's own: a stdin marker, or the flag the prompt follows.
   tail: string[];
+  // Whether a failure says the resumed session no longer exists, which a fresh session
+  // given the conversation again can answer.
+  sessionLost?: (error: string) => boolean;
 }
 
 export const PRESETS: Record<PresetName, Preset> = {
@@ -143,6 +146,7 @@ export const PRESETS: Record<PresetName, Preset> = {
       ...(thinkingLevel ? ['--reasoning', thinkingLevel] : []),
     ],
     tail: [],
+    sessionLost: (error) => error.includes('Session not found'),
   },
 };
 

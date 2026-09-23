@@ -101,4 +101,13 @@ describe('preset arguments', () => {
       '--append-system-prompt',
     );
   });
+
+  it('recognizes a Hermes session that no longer exists', () => {
+    const lost = PRESETS.hermes.sessionLost!;
+    expect(lost('Session not found: 20260923_101234\nUse a session ID from a previous run')).toBe(
+      true,
+    );
+    expect(lost('No Codex credentials stored.')).toBe(false);
+    expect(PRESETS.claude.sessionLost).toBeUndefined();
+  });
 });
