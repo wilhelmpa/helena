@@ -174,13 +174,17 @@ export async function openBrowser(port) {
 // A pixel ratio emulation belongs to the session that set it: a clear from any session ends
 // it, and so does the setting session's end. So only this connection emulates, and it is the
 // last one to close.
-class BrowserLink {
+export class BrowserLink {
   constructor(port) {
     this.port = port;
     this.connection = null;
     this.opening = null;
     this.sessions = new Map();
-    // The pixel ratio each page is drawn at where it is not 1, and 0 while it is pinned.
+    // The pixel ratio this link has itself set each page to, and 0 while it is pinned. Every
+    // page it has touched has an entry, ratio 1 included: a page this link has never touched
+    // may already be emulated from before this process started (the router restarted with a
+    // live view still open, say), and only an explicit ratio here, not its absence, says the
+    // page is already known to be at that ratio.
     this.ratios = new Map();
     // The tab strip and toolbar of the window last fitted, in window pixels.
     this.chrome = null;
@@ -217,9 +221,11 @@ class BrowserLink {
     return result?.value;
   }
 
-  // Draws a page at a pixel ratio, with the CSS size of its window divided by the ratio.
+  // Draws a page at a pixel ratio, with the CSS size of its window divided by the ratio. Runs
+  // the CDP call the first time this link touches a page even when ratio is 1, in case the
+  // page is left emulated from before — an absent ratio is not read as "already there".
   async emulate(targetId, ratio) {
-    if ((this.ratios.has(targetId) ? this.ratios.get(targetId) : 1) === ratio) return;
+    if (this.ratios.get(targetId) === ratio) return;
     if (ratio === 1) await this.send(targetId, "Emulation.clearDeviceMetricsOverride", {});
     else {
       await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
@@ -230,8 +236,7 @@ class BrowserLink {
         mobile: false,
       });
     }
-    if (ratio === 1) this.ratios.delete(targetId);
-    else this.ratios.set(targetId, ratio);
+    this.ratios.set(targetId, ratio);
   }
 
   // Holds a page at a CSS size while its window changes, so its layout changes once.
@@ -423,6 +428,11 @@ export async function fitWindows(link) {
         bounds: { windowState: "normal" },
       });
     }
+    // Applied before the chrome below is read from this pass's own measurement, so a page
+    // left emulated from before this link's session — a restart while a live view was open,
+    // say — cannot keep that measurement wrong forever: it corrects itself, and the next pass
+    // reads a page actually at the ratio this link expects.
+    for (const tab of tabs) await link.emulate(tab, live?.ratio ?? 1);
     if (!sizes) continue;
     const [, width, height, chromeWidth, chromeHeight] = sizes.value;
     if (!sizes.pinned && chromeWidth >= 0 && chromeHeight >= 0 && chromeHeight < MAX_CHROME) {
@@ -435,7 +445,6 @@ export async function fitWindows(link) {
       if (live) for (const tab of tabs) await link.pin(tab, live);
       await connection.send("Browser.setWindowBounds", { windowId, bounds: fitted });
     }
-    for (const tab of tabs) await link.emulate(tab, live?.ratio ?? 1);
   }
 }
 

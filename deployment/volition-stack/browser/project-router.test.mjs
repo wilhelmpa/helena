@@ -12,7 +12,9 @@ import {
   resolveProjectBrowser,
 } from "./project-router.mjs";
 import {
+  BrowserLink,
   fittedBounds,
+  fitWindows,
   navigableUrl,
   setLiveViewport,
   targetId,
@@ -331,8 +333,11 @@ describe("project browser router", () => {
     assert.deepEqual(
       browser.sent("Emulation.setDeviceMetricsOverride").slice(priorMetrics).map((command) => command.params),
       [
-        { width: 800, height: 900, deviceScaleFactor: 2, mobile: false },
+        // The plain ratio change runs first, so a page left emulated from before a restart
+        // is corrected even on a pass whose own chrome measurement it would otherwise still
+        // be wrong for; pinning the exact CSS size for the resize follows it.
         { width: 0, height: 0, deviceScaleFactor: 2, scale: 2, mobile: false },
+        { width: 800, height: 900, deviceScaleFactor: 2, mobile: false },
       ],
     );
     const frames = () => received.filter((message) => message instanceof ArrayBuffer);
@@ -418,6 +423,41 @@ describe("project browser router", () => {
       width: 1920,
       height: 1080,
     });
+  });
+
+  it("resets a page's pixel ratio even when it has never set one itself", async () => {
+    // A fresh BrowserLink, as the router starts with after a restart, has no record of what
+    // ratio a page is at: if a live view was open when it stopped, the page can still be
+    // emulated from before. Asking for ratio 1 must still run the CDP call, not skip it
+    // because an unset ratio looks the same as one already known to be 1.
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const link = new BrowserLink(port);
+    await link.emulate(PAGE, 1);
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
+    // Once this link has itself set a page to a ratio, asking for the same one again is a
+    // no-op, as it always was.
+    await link.emulate(PAGE, 1);
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
+    await link.emulate(PAGE, 2);
+    assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 1);
+    await link.emulate(PAGE, 2);
+    assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 1);
+  });
+
+  it("corrects a page's pixel ratio before reading its chrome, not after", async () => {
+    // fitWindows reads a window's chrome (its tab strip and toolbar) from the page's own
+    // outerWidth/innerWidth/devicePixelRatio; a page left emulated at the wrong ratio from
+    // before this link's session throws that off. The fix must run early enough in the same
+    // pass to still matter, not only after a measurement that pass already got wrong.
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const link = new BrowserLink(port);
+    await fitWindows(link);
+    const emulateCalls = browser.sent("Emulation.clearDeviceMetricsOverride").length;
+    assert.ok(emulateCalls > 0, "a fresh link corrects the ratio on its very first pass");
   });
 
   it("accepts the live view's WebSocket from the Plan origin only", async () => {
