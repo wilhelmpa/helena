@@ -4,15 +4,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, ClipboardEvent, DragEvent, KeyboardEvent } from 'react';
 import type { ChatStatus } from 'ai';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { ArrowUp, Paperclip, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import { teamSectionPath } from '@/utils/paths';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useVaultUpload } from '../../hooks/useVaultUpload';
 import { useChatPrompts } from '../../hooks/useChatPrompts';
 import { useChatListMutations } from '../../hooks/useChatList';
 import { useChatSummary } from '../../hooks/useChatSummary';
+import { useChatCatalog } from '../../hooks/useChatCatalog';
 import { useConcurrentChatCheck } from '../../hooks/useConcurrentChatCheck';
 import {
   parseSlashCommand,
@@ -41,6 +44,12 @@ export interface ChatComposerProps {
   onStop: () => void;
   onNewChat: () => void;
   onRetryLast: () => void;
+  // Drops the last exchange (the last question and its answer) from view and reports
+  // whether there was one to drop, for the `/undo` command. Nothing is sent, so this is
+  // a client-side branch point: it only becomes durable once the member sends the next
+  // message, which then continues from before the exchange, same as editing an earlier
+  // question does. Reloading before that shows the exchange again.
+  onUndo: () => boolean;
 }
 
 // The claude.ai-style composer: an auto-sizing textarea, drag & drop and pasted images
@@ -56,12 +65,15 @@ export default function ChatComposer({
   onStop,
   onNewChat,
   onRetryLast,
+  onUndo,
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
+  const router = useRouter();
   const [value, setValue] = useState('');
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [model, setModel] = useState<string | null>(null);
   const [thinkingLevel, setThinkingLevel] = useState<string | null>(null);
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [renaming, setRenaming] = useState(false);
@@ -71,6 +83,7 @@ export default function ChatComposer({
   const upload = useVaultUpload(scopeKey);
   const prompts = useChatPrompts(projectKey);
   const chatSummary = useChatSummary(threadId);
+  const catalog = useChatCatalog(scopeKey, agent.id);
   const { rename } = useChatListMutations();
   // The real, server-configured limit (ai_agent.max_concurrent_chats, an agent setting
   // the owner sets in Helena) — not a per-browser guess, so this pre-flight check
@@ -143,7 +156,83 @@ export default function ChatComposer({
     }
   }
 
+  // `/model [name]`: with no name, opens the same menu the picker button does; with
+  // one, matches it against the runner's published catalog (id or name, exact first
+  // then a loose match) and sets it directly. A reasoning model picks up its own
+  // recommended level, so `/model` alone is enough to use it.
+  function applyModelCommand(query: string) {
+    const models = catalog.data?.models ?? [];
+    const q = query.trim();
+    if (!q) {
+      setModelPickerOpen(true);
+      return;
+    }
+    const lower = q.toLowerCase();
+    const match =
+      models.find((entry) => entry.id.toLowerCase() === lower) ??
+      models.find((entry) => entry.name.toLowerCase() === lower) ??
+      models.find(
+        (entry) =>
+          entry.id.toLowerCase().includes(lower) || entry.name.toLowerCase().includes(lower),
+      );
+    if (!match) {
+      toast.error(t('composer.modelNotFound', { query: q }));
+      return;
+    }
+    setModel(match.id);
+    setThinkingLevel(
+      match.reasoning ? (match.thinkingDefault ?? match.thinkingLevels[0] ?? null) : null,
+    );
+    toast.success(t('composer.modelSet', { model: match.name }));
+  }
+
+  // `/reasoning [level]`: only meaningful once a specific model is picked (see
+  // applyModelCommand) — the server itself refuses a thinking level on "Agent
+  // default" since it does not know which model that resolves to.
+  function applyReasoningCommand(query: string) {
+    const selected = (catalog.data?.models ?? []).find((entry) => entry.id === model);
+    if (!selected || !selected.reasoning || selected.thinkingLevels.length === 0) {
+      toast.error(t('composer.reasoningNeedsModel'));
+      return;
+    }
+    const q = query.trim();
+    if (!q) {
+      setModelPickerOpen(true);
+      return;
+    }
+    const lower = q.toLowerCase();
+    const level =
+      selected.thinkingLevels.find((entry) => entry.toLowerCase() === lower) ??
+      selected.thinkingLevels.find((entry) => entry.toLowerCase().startsWith(lower));
+    if (!level) {
+      toast.error(t('composer.reasoningNotFound', { query: q, model: selected.name }));
+      return;
+    }
+    setThinkingLevel(level);
+    toast.success(t('composer.reasoningSet', { level }));
+  }
+
+  // `/usage`: the chat's own token count (see useChatSummary), the only figure this
+  // chat's data actually carries — no cost is tracked anywhere in Plan, so none is
+  // shown rather than made up.
+  function showUsage() {
+    const tokens = chatSummary.data?.contextTokens;
+    toast.info(tokens == null ? t('composer.usageNone') : t('composer.usage', { tokens }));
+  }
+
+  // `/skills` and `/memory`: the agent's settings sheet is a team-level page regardless
+  // of where the chat runs, so this always sends the member to the team's AI agents
+  // list — never a dead end — with the agent and section named in the query string;
+  // TeamAiAgents reads them, opens that agent's sheet on that section and drops the
+  // params right away.
+  function openAgentSection(section: 'skills' | 'abilities') {
+    router.push(
+      `${teamSectionPath(agent.teamId, 'ai-agents')}?agent=${agent.id}&section=${section}`,
+    );
+  }
+
   function runAction(action: ChatCommandAction) {
+    const args = slash?.args ?? '';
     setValue('');
     switch (action) {
       case 'new':
@@ -157,6 +246,26 @@ export default function ChatComposer({
         return;
       case 'retry':
         onRetryLast();
+        return;
+      case 'undo': {
+        const undone = onUndo();
+        toast[undone ? 'success' : 'info'](t(undone ? 'composer.undoDone' : 'composer.undoNone'));
+        return;
+      }
+      case 'model':
+        applyModelCommand(args);
+        return;
+      case 'reasoning':
+        applyReasoningCommand(args);
+        return;
+      case 'usage':
+        showUsage();
+        return;
+      case 'skills':
+        openAgentSection('skills');
+        return;
+      case 'memory':
+        openAgentSection('abilities');
         return;
       default:
         toast.info(t('composer.commandNotAvailable'));
@@ -293,6 +402,8 @@ export default function ChatComposer({
                 setModel(nextModel);
                 setThinkingLevel(nextLevel);
               }}
+              open={modelPickerOpen}
+              onOpenChange={setModelPickerOpen}
             />
             <div className="flex-1" />
             {busy ? (

@@ -28,6 +28,11 @@ export interface ChatSummary {
   match?: ThreadMatch;
   createdAt: string;
   updatedAt: string;
+  // The context size after the chat's last completed answer (see the agent_chat_usage
+  // comment in the schema): absent while no answer has completed, null where the agent
+  // reports no usable counts. The `/usage` command is the one reader of this on a
+  // single chat; the list itself does not show it.
+  contextTokens?: number | null;
 }
 
 export interface ChatFilter {
@@ -61,6 +66,8 @@ interface ChatRow {
   rank: number | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  hasUsage: boolean;
+  contextTokens: number | null;
 }
 
 const iso = (value: Date | string) => new Date(value).toISOString();
@@ -87,6 +94,7 @@ function summary(row: ChatRow): ChatSummary {
     ...(row.rank != null ? { match: (['title', 'user', 'assistant'] as const)[row.rank - 1] } : {}),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
+    ...(row.hasUsage ? { contextTokens: row.contextTokens } : {}),
   };
 }
 
@@ -159,7 +167,10 @@ async function readChats(
            hit.snippet,
            ${rank} AS rank,
            t.created_at AS "createdAt",
-           t.updated_at AS "updatedAt"
+           t.updated_at AS "updatedAt",
+           cu.thread_id IS NOT NULL AS "hasUsage",
+           CASE WHEN cu.input_tokens IS NULL THEN NULL
+                ELSE cu.input_tokens + COALESCE(cu.output_tokens, 0) END AS "contextTokens"
     FROM agent_chat_thread t
     JOIN ai_agent a ON a.id = t.agent_id
     JOIN "user" u ON u.id = a.user_id
@@ -167,6 +178,7 @@ async function readChats(
     LEFT JOIN issue i ON i.id = t.issue_id
     LEFT JOIN project ip ON ip.id = i.project_id
     LEFT JOIN agent_chat_favorite f ON f.thread_id = t.id AND f.user_id = t.user_id
+    LEFT JOIN agent_chat_usage cu ON cu.thread_id = t.id
     ${hit}
     WHERE ${where}
     ORDER BY ${order}

@@ -448,6 +448,9 @@ export interface ChatSummary {
   match?: 'title' | 'user' | 'assistant';
   createdAt: string;
   updatedAt: string;
+  // The context size after the chat's last completed answer: absent while no answer
+  // has completed, null where the agent reports no counts that can be read as one.
+  contextTokens?: number | null;
 }
 
 // The scope a chat's agent routes take: its project, or the team for a Home chat.

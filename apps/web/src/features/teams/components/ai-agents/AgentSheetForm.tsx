@@ -57,12 +57,14 @@ export function AgentSheetForm({
   projectId,
   expanded = false,
   onCreated,
+  initialOpenSection,
 }: {
   agent: AiAgent | null;
   // The project a new agent is created in, set when the sheet is opened from inside one.
   projectId?: number;
   expanded?: boolean;
   onCreated: (agent: AiAgent) => void;
+  initialOpenSection?: string;
 }) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
@@ -340,6 +342,7 @@ export function AgentSheetForm({
       onSkillPromoted={addPromotedSkill}
       revealedKey={revealedKey}
       onRevealedKey={setRevealedKey}
+      initialOpenSection={initialOpenSection}
     />
   );
 

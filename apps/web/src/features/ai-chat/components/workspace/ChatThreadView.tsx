@@ -143,6 +143,12 @@ export default function ChatThreadView({
         onStop={() => void chat.stop()}
         onNewChat={onNewChat}
         onRetryLast={() => chat.regenerate()}
+        onUndo={() => {
+          const index = chat.messages.findLastIndex((message) => message.role === 'user');
+          if (index === -1) return false;
+          chat.setMessages((messages) => messages.slice(0, index));
+          return true;
+        }}
       />
     </div>
   );

@@ -22,6 +22,11 @@ export interface ChatModelPickerProps {
   model: string | null;
   thinkingLevel: string | null;
   onChange: (model: string | null, thinkingLevel: string | null) => void;
+  // Lets the `/model` and `/reasoning` commands open the same menu instead of setting
+  // up a second way to pick a model. Uncontrolled (Radix's own open state) when left
+  // out, which is what the composer's own trigger click still uses.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 // Picks the model and, when the model supports it, its reasoning effort — or leaves
@@ -34,6 +39,8 @@ export default function ChatModelPicker({
   model,
   thinkingLevel,
   onChange,
+  open,
+  onOpenChange,
 }: ChatModelPickerProps) {
   const t = useTranslations('chatWorkspace');
   const catalog = useChatCatalog(scopeKey, agentId);
@@ -42,7 +49,7 @@ export default function ChatModelPicker({
   const label = model == null ? t('composer.modelDefault') : (selected?.name ?? model);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5">
           <Sparkles className="size-3.5" />

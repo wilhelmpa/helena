@@ -321,6 +321,16 @@ export const ChatSummaryResponse = t.Object({
   match: t.Optional(t.UnionEnum(['title', 'user', 'assistant'])),
   createdAt: t.String(),
   updatedAt: t.String(),
+  contextTokens: t.Optional(
+    t.Nullable(
+      t.Number({
+        description:
+          'The tokens the chat’s last completed answer read and wrote, which is the size of ' +
+          'its context. Absent while no answer has completed; null where the agent reports ' +
+          'no counts that can be read as a context size.',
+      }),
+    ),
+  ),
 });
 
 export const ChatListResponse = pageResponse(ChatSummaryResponse);

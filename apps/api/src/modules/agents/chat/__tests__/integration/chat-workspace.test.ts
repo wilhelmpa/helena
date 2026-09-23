@@ -218,6 +218,25 @@ describe('chat list', () => {
     expect((await chat.patch({ issueId: null })).status).toBe(204);
     expect((await asOwner.issues({ issueId: task.data!.id }).chats.get()).data).toEqual([]);
   });
+
+  // The `/usage` chat command reads this single-chat route rather than the list, so it
+  // carries the same context size the thread list shows (see "keeps the context size
+  // the runner reported with the answer" for that one).
+  it('carries the context size of its last completed answer', async () => {
+    const { asOwner, asMia, mia } = await setup();
+    const sent = await chatOf(asOwner, 'MKT', mia.id).chat.post({ prompt: 'Status?' });
+    const chat = asOwner.chats({ threadId: sent.data!.threadId });
+
+    expect((await chat.get()).data!.contextTokens).toBeUndefined();
+
+    const claimed = (await asMia['agent-chats'].claim.post()).data!.message!;
+    await asMia['agent-chats']({ messageId: claimed.id }).result.post({
+      status: 'success',
+      usage: { inputTokens: 900, outputTokens: 100 },
+    });
+
+    expect((await chat.get()).data!.contextTokens).toBe(1000);
+  });
 });
 
 describe('chat versions', () => {
