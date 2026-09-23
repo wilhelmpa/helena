@@ -95,9 +95,9 @@
     "refusedCommand": "Not available here",
     "concurrencyLimit": "{agent} is already answering {limit} chats. Wait for one to finish, or open it in the chat list.",
     "refusal": {
-      "schedules": "Hermes’ own scheduling commands aren’t run from chat — use Plan’s routines instead.",
+      "schedules": "Hermes’ own scheduling commands aren’t run from chat — use Helena’s routines instead.",
       "approvals": "Approval commands aren’t run from chat — use the approval card or the Approvals page.",
-      "config": "This changes the agent’s own configuration — use the agent’s settings in Plan instead.",
+      "config": "This changes the agent’s own configuration — use the agent’s settings in Helena instead.",
       "outside": "This isn’t something the chat can do."
     }
   },
