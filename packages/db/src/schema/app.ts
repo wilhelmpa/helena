@@ -277,10 +277,7 @@ export const userPreference = pgTable(
   (t) => [
     check('user_preference_theme_check', sql`${t.theme} IN ('light', 'dark', 'system')`),
     check('user_preference_issue_open_mode_check', sql`${t.issueOpenMode} IN ('panel', 'page')`),
-    check(
-      'user_preference_header_layout_check',
-      sql`${t.headerLayout} IN ('single', 'classic')`,
-    ),
+    check('user_preference_header_layout_check', sql`${t.headerLayout} IN ('single', 'classic')`),
     check(
       'user_preference_start_page_check',
       sql`${t.startPage} IN ('inbox', 'dashboard', 'work-items', 'initiatives')`,

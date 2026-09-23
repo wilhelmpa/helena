@@ -76,10 +76,7 @@ export default function AccountPreferencesPage() {
             disabled={disabled}
           />
         </AccountPreferenceRow>
-        <AccountPreferenceRow
-          label={t('headerLayout')}
-          description={t('headerLayoutDescription')}
-        >
+        <AccountPreferenceRow label={t('headerLayout')} description={t('headerLayoutDescription')}>
           <AccountPreferenceSelect
             value={prefs.headerLayout}
             options={HEADER_LAYOUTS.map((value) => ({
