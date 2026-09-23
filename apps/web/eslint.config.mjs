@@ -61,8 +61,15 @@ export default [
       'src/features/issue/utils/timeline.ts',
     ],
     rules: {
+      // 'warn', not 'error': today's known count (203) is enforced as a ceiling by
+      // src/design/lintRatchet.test.ts instead, so `bun run lint` (a hard CI gate)
+      // stays green while the color/size migration continues file by file — a
+      // failing `eslint .` here would block every other branch's merge on a
+      // pre-existing backlog these rules did not create. Drop the count in that
+      // test's BASELINE as files are migrated; raising it needs a reason in the
+      // commit, the same as lowering a real budget.
       'no-restricted-syntax': [
-        'error',
+        'warn',
         {
           selector:
             'Literal[value=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/], TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/]',
