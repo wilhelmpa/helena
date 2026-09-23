@@ -13,8 +13,10 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
+import type { AgentRuntimeConflict } from '@/lib/api/endpoints/agents';
 import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
+import AgentRuntimeConflicts from './AgentRuntimeConflicts';
 import { runtimeSelectionForModel } from './AgentRuntimePolicySection.logic';
 
 const AGENT_DEFAULT = '__agent_default__';
@@ -31,6 +33,7 @@ export default function AgentRuntimePolicySection({
   models,
   modelsLoading,
   modelsError,
+  conflicts,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,6 +42,7 @@ export default function AgentRuntimePolicySection({
   models: AiChatModel[];
   modelsLoading: boolean;
   modelsError: boolean;
+  conflicts: AgentRuntimeConflict[];
 }) {
   const policy = value.runtimePolicy;
   const selectedModel = models.find((entry) => entry.id === value.model);
@@ -48,6 +52,13 @@ export default function AgentRuntimePolicySection({
     (!selectedModel || !selectedModel.thinkingLevels.includes(policy.reasoningEffort));
   const patchPolicy = (patch: Partial<typeof policy>) =>
     onChange({ runtimePolicy: { ...policy, ...patch } });
+  const takeOverSoul = (content: string) =>
+    patchPolicy({
+      files: [
+        ...policy.files.filter((file) => file.path !== 'SOUL.md'),
+        { kind: 'instructions', path: 'SOUL.md', content },
+      ],
+    });
 
   const selectModel = (nextValue: string) => {
     const next = runtimeSelectionForModel(
@@ -185,7 +196,8 @@ export default function AgentRuntimePolicySection({
           <div>
             <p className="text-sm font-medium">Managed Markdown files</p>
             <p className="text-xs text-muted-foreground">
-              Instruction and memory files, synced by the runtime adapter.
+              SOUL.md and files below instructions/, combined into the SOUL.md of the agent&apos;s
+              Hermes profile. Hermes keeps its memory itself.
             </p>
           </div>
           <Button
@@ -201,27 +213,13 @@ export default function AgentRuntimePolicySection({
             <Plus className="me-1 size-3.5" /> Add file
           </Button>
         </div>
+        <AgentRuntimeConflicts conflicts={conflicts} onTakeOver={takeOverSoul} />
         {policy.files.map((file, index) => (
           <div key={`${index}-${file.path}`} className="space-y-2 rounded-md border p-3">
             <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  const files = [...policy.files];
-                  files[index] = {
-                    ...file,
-                    kind: file.kind === 'instructions' ? 'memory' : 'instructions',
-                  };
-                  patchPolicy({ files });
-                }}
-              >
-                {file.kind}
-              </Button>
               <Input
                 aria-label={`Managed file ${index + 1} path`}
-                placeholder={file.kind === 'memory' ? 'memory/topic.md' : 'AGENTS.md'}
+                placeholder="SOUL.md or instructions/topic.md"
                 value={file.path}
                 onChange={(event) => {
                   const files = [...policy.files];

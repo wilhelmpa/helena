@@ -60,6 +60,7 @@ export const agentChatConfig = {
   claimWaitMs: () => intEnv('AGENT_CHAT_CLAIM_WAIT_MS', 25_000),
   claimPollMs: () => intEnv('AGENT_CHAT_CLAIM_POLL_MS', 500),
   streamPollMs: () => intEnv('AGENT_CHAT_STREAM_POLL_MS', 300),
+  historyMessages: () => intEnv('AGENT_CHAT_HISTORY_MESSAGES', 20),
 };
 
 const PAGE_SIZE = 25;
@@ -544,16 +545,24 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
   await db.delete(agentChatEvent).where(eq(agentChatEvent.messageId, row.id));
-  const question = await readQuestion(row.threadId, row.id);
+  // The agent's instructions reach Hermes through the SOUL.md of its profile, so the
+  // message carries no system prompt. A thread bound to a live session needs only the
+  // new message; one without a session gets the earlier turns, which Hermes lost.
+  const resumed = row.sessionId !== null;
+  const history = await readHistory(row.threadId, row.id, resumed);
+  const question = history.pop()?.content ?? '';
+  // A thread without its own model follows the agent's settings, the way a run does.
+  const settings = row.model
+    ? { model: row.model, thinkingLevel: row.thinkingLevel }
+    : { model: agent.model, thinkingLevel: agent.thinkingLevel };
   return {
     id: row.id,
     threadId: row.threadId,
-    prompt: question,
+    prompt: history.length > 0 ? frameChatPrompt(history, question) : question,
     systemPrompt: '',
     attempts: row.attempts,
     sessionId: row.sessionId,
-    model: row.model,
-    thinkingLevel: row.thinkingLevel,
+    ...settings,
   };
 }
 
@@ -607,12 +616,16 @@ async function validateChatSettings(
   return { model, thinkingLevel: thinkingLevel ?? null };
 }
 
-// Binds a thread to the session its runner started, addressed through the answer being
-// produced so the runner needs no separate lookup. The first report wins: a retry of the
-// same answer starts a new session, and rebinding would strand the one already recorded.
-async function readQuestion(threadId: string, beforeMessageId: number): Promise<string> {
+// The turns before the claimed answer, oldest first, capped at the configured depth. The
+// last of them is the message being answered. `questionOnly` takes just that one, for a
+// thread whose session already holds everything before it.
+async function readHistory(
+  threadId: string,
+  beforeMessageId: number,
+  questionOnly: boolean,
+): Promise<{ role: string; content: string }[]> {
   const rows = await db
-    .select({ content: agentChatMessage.content })
+    .select({ role: agentChatMessage.role, content: agentChatMessage.content })
     .from(agentChatMessage)
     .where(
       and(
@@ -622,8 +635,15 @@ async function readQuestion(threadId: string, beforeMessageId: number): Promise<
       ),
     )
     .orderBy(desc(agentChatMessage.id))
-    .limit(1);
-  return rows[0]?.content ?? '';
+    .limit(questionOnly ? 1 : agentChatConfig.historyMessages());
+  return rows.reverse();
+}
+
+function frameChatPrompt(history: { role: string; content: string }[], prompt: string): string {
+  const lines = ['Earlier in this conversation:', ''];
+  for (const m of history) lines.push(`${m.role === 'user' ? 'Person' : 'You'}: ${m.content}`, '');
+  lines.push('The person writes:', '', prompt);
+  return lines.join('\n');
 }
 
 // When a claimed answer falls back to the feed unless the runner reports again.

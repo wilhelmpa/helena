@@ -59,7 +59,12 @@ export interface AgentRuntimePolicy {
   toolAllow: string[];
   toolDeny: string[];
   mcpGrants: string[];
-  files: { kind: 'instructions' | 'memory'; path: string; content: string }[];
+  files: { kind: 'instructions'; path: string; content: string }[];
+}
+
+export interface AgentRuntimeConflict {
+  path: string;
+  content: string;
 }
 
 export interface AgentRuntimeState {
@@ -68,6 +73,7 @@ export interface AgentRuntimeState {
   appliedRevision: string | null;
   capabilities: string[];
   detail: string | null;
+  conflicts: AgentRuntimeConflict[];
   reportedAt: string | null;
 }
 
@@ -85,6 +91,7 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   appliedRevision: null,
   capabilities: [],
   detail: null,
+  conflicts: [],
   reportedAt: null,
 };
 
@@ -104,6 +111,15 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
       : [],
     detail:
       typeof state.detail === 'string' && state.detail.trim() ? state.detail.slice(0, 500) : null,
+    conflicts: Array.isArray(state.conflicts)
+      ? state.conflicts.filter(
+          (conflict): conflict is AgentRuntimeConflict =>
+            !!conflict &&
+            typeof conflict === 'object' &&
+            typeof conflict.path === 'string' &&
+            typeof conflict.content === 'string',
+        )
+      : [],
     reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
   };
 }
@@ -127,7 +143,7 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
         (file): file is AgentRuntimePolicy['files'][number] =>
           !!file &&
           typeof file === 'object' &&
-          (file.kind === 'instructions' || file.kind === 'memory') &&
+          file.kind === 'instructions' &&
           typeof file.path === 'string' &&
           runtimeFileKind(file.path) === file.kind &&
           typeof file.content === 'string',

@@ -4,7 +4,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { RunnerConfig } from './config';
 
 export interface RuntimePolicyFile {
-  kind: 'instructions' | 'memory';
+  kind: 'instructions';
   path: string;
   content: string;
 }
@@ -31,12 +31,20 @@ export interface RuntimePolicySnapshot {
   skills: RuntimeSkill[];
 }
 
+// A managed file that was changed outside Plan. Plan's version replaced it; the changed
+// content is kept next to it and reported, so it can be taken over in Plan.
+export interface RuntimeConflict {
+  path: string;
+  content: string;
+}
+
 export interface RuntimeStatus {
   adapter: string;
   status: 'online' | 'degraded';
   appliedRevision: string | null;
   capabilities: string[];
   detail: string | null;
+  conflicts?: RuntimeConflict[];
 }
 
 export interface RuntimePolicyClient {
@@ -61,15 +69,19 @@ interface DesiredEntry {
   content: string;
 }
 
-const RUNTIME_PATH =
-  /^(?:AGENTS\.md|SOUL\.md|MEMORY\.md|(?:instructions|memory)\/(?:[A-Za-z0-9][A-Za-z0-9._-]*\/){0,6}[A-Za-z0-9][A-Za-z0-9._-]*\.md)$/;
+// Plan sends the agent's identity and instructions as one SOUL.md. Memory belongs to
+// Hermes, and the AGENTS.md in the working directory belongs to the project.
+const RUNTIME_PATH = /^SOUL\.md$/;
 const SKILL_SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SKILL_PATH =
   /^(?:SKILL\.md|(?:[A-Za-z0-9][A-Za-z0-9._-]*\/){0,7}[A-Za-z0-9][A-Za-z0-9._-]*\.(?:md|markdown))$/i;
 const SHA256 = /^[a-f0-9]{64}$/;
 const MAX_RUNTIME_BYTES = 128 * 1024;
 const MAX_SKILL_BYTES = 1024 * 1024;
+const MAX_CONFLICT_BYTES = 64 * 1024;
 const CAPABILITIES = ['model', 'reasoning', 'managed-markdown', 'managed-skills'];
+// A revision that failed to apply is tried again after this long, not on every claim.
+const RETRY_FAILED_MS = 60_000;
 
 function digest(content: string | Buffer): string {
   return createHash('sha256').update(content).digest('hex');
@@ -157,19 +169,9 @@ async function atomicWrite(root: string, target: string, content: string): Promi
   }
 }
 
-function runtimeTarget(
-  path: string,
-  cwd: string,
-  hermesHome: string,
-): { root: string; target: string } {
+function runtimeTarget(path: string, hermesHome: string): { root: string; target: string } {
   if (!RUNTIME_PATH.test(path)) throw new Error('runtime policy contains an unsafe path');
-  if (path === 'AGENTS.md' || path.startsWith('instructions/')) {
-    return { root: cwd, target: join(cwd, path) };
-  }
-  if (path === 'SOUL.md') return { root: hermesHome, target: join(hermesHome, path) };
-  const memoryPath = path === 'MEMORY.md' ? 'MEMORY.md' : path.slice('memory/'.length);
-  const root = join(hermesHome, 'memories');
-  return { root, target: join(root, memoryPath) };
+  return { root: hermesHome, target: join(hermesHome, path) };
 }
 
 function skillTarget(
@@ -188,29 +190,23 @@ function entryKey(entry: ManifestEntry): string {
   return entry.source === 'runtime' ? `runtime:${entry.path}` : `skill:${entry.slug}:${entry.path}`;
 }
 
-function targetOf(entry: ManifestEntry, cwd: string, hermesHome: string) {
+function targetOf(entry: ManifestEntry, hermesHome: string) {
   return entry.source === 'runtime'
-    ? runtimeTarget(entry.path, cwd, hermesHome)
+    ? runtimeTarget(entry.path, hermesHome)
     : skillTarget(entry.slug, entry.path, hermesHome);
 }
 
-function desiredEntries(
-  snapshot: RuntimePolicySnapshot,
-  cwd: string,
-  hermesHome: string,
-): DesiredEntry[] {
+function desiredEntries(snapshot: RuntimePolicySnapshot, hermesHome: string): DesiredEntry[] {
   if (!snapshot.revision || !Array.isArray(snapshot.runtimePolicy?.files)) {
     throw new Error('runtime policy snapshot is invalid');
   }
   const desired: DesiredEntry[] = [];
   for (const file of snapshot.runtimePolicy.files) {
-    const mapped = runtimeTarget(file.path, cwd, hermesHome);
+    const mapped = runtimeTarget(file.path, hermesHome);
     if (!byteLengthWithin(file.content, MAX_RUNTIME_BYTES)) {
       throw new Error('runtime policy file is too large');
     }
-    const expectedKind =
-      file.path === 'MEMORY.md' || file.path.startsWith('memory/') ? 'memory' : 'instructions';
-    if (file.kind !== expectedKind)
+    if (file.kind !== 'instructions')
       throw new Error('runtime policy file kind does not match its path');
     desired.push({
       ...mapped,
@@ -250,11 +246,7 @@ function desiredEntries(
   return desired;
 }
 
-async function loadManifest(
-  path: string,
-  cwd: string,
-  hermesHome: string,
-): Promise<Manifest | null> {
+async function loadManifest(path: string, hermesHome: string): Promise<Manifest | null> {
   try {
     const info = await lstat(path);
     if (info.isSymbolicLink() || !info.isFile() || (info.mode & 0o077) !== 0) {
@@ -268,15 +260,19 @@ async function loadManifest(
     ) {
       throw new Error('runtime policy manifest is invalid');
     }
-    const entries = value.entries as ManifestEntry[];
+    const entries: ManifestEntry[] = [];
     const keys = new Set<string>();
-    for (const entry of entries) {
+    for (const entry of value.entries as ManifestEntry[]) {
       if (!entry || !SHA256.test(entry.sha256))
         throw new Error('runtime policy manifest is invalid');
-      targetOf(entry, cwd, hermesHome);
+      // A path this runner no longer writes (an AGENTS.md or memory file of an older
+      // version) is left alone on disk and dropped from management.
+      if (entry.source === 'runtime' && !RUNTIME_PATH.test(entry.path)) continue;
+      targetOf(entry, hermesHome);
       const key = entryKey(entry);
       if (keys.has(key)) throw new Error('runtime policy manifest has duplicate paths');
       keys.add(key);
+      entries.push(entry);
     }
     return { schemaVersion: 1, revision: value.revision, entries };
   } catch (error) {
@@ -285,62 +281,60 @@ async function loadManifest(
   }
 }
 
+function conflictPath(entry: ManifestEntry): string {
+  return entry.source === 'runtime' ? entry.path : `skills/${entry.slug}/${entry.path}`;
+}
+
+// The message of an error the materializer raises names a rule, never file content; an
+// operating-system error is reduced to its code and path.
+function describeFailure(error: unknown): string {
+  const failure = error as NodeJS.ErrnoException;
+  if (failure?.code) return `${failure.code}${failure.path ? ` ${failure.path}` : ''}`;
+  return error instanceof Error ? error.message.slice(0, 200) : 'unknown error';
+}
+
 export class HermesPolicyMaterializer {
-  readonly cwd: string;
   readonly hermesHome: string;
   readonly manifestPath: string;
 
-  constructor(options: { cwd: string; hermesHome: string }) {
-    this.cwd = assertRoot(options.cwd, 'Hermes cwd');
+  constructor(options: { hermesHome: string }) {
     this.hermesHome = assertRoot(options.hermesHome, 'HERMES_HOME');
     this.manifestPath = join(this.hermesHome, 'run', 'itsaplan-policy-manifest.json');
   }
 
-  async apply(snapshot: RuntimePolicySnapshot): Promise<string> {
-    await ensureRoot(this.cwd);
+  // Plan's version always wins. A file found changed outside Plan (an existing SOUL.md on
+  // first sync, or one Hermes edited since) is kept next to it and returned as a conflict.
+  async apply(
+    snapshot: RuntimePolicySnapshot,
+  ): Promise<{ revision: string; conflicts: RuntimeConflict[] }> {
     await ensureRoot(this.hermesHome);
     await ensureSafeParent(this.hermesHome, this.manifestPath);
-    const previous = await loadManifest(this.manifestPath, this.cwd, this.hermesHome);
-    const desired = desiredEntries(snapshot, this.cwd, this.hermesHome);
+    const previous = await loadManifest(this.manifestPath, this.hermesHome);
+    const desired = desiredEntries(snapshot, this.hermesHome);
     const oldByKey = new Map((previous?.entries ?? []).map((entry) => [entryKey(entry), entry]));
     const desiredByKey = new Map(desired.map((entry) => [entryKey(entry.manifest), entry]));
-
-    for (const entry of desired) {
-      const old = oldByKey.get(entryKey(entry.manifest));
-      const current = await existingHash(entry.target);
-      if (
-        current !== null &&
-        current !== entry.manifest.sha256 &&
-        (!old || current !== old.sha256)
-      ) {
-        throw new Error('refusing to replace an unmanaged runtime file');
-      }
-    }
-    for (const old of previous?.entries ?? []) {
-      if (desiredByKey.has(entryKey(old))) continue;
-      const { target } = targetOf(old, this.cwd, this.hermesHome);
-      const current = await existingHash(target);
-      if (current !== null && current !== old.sha256) {
-        throw new Error('refusing to remove a modified runtime file');
-      }
-    }
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const conflicts: RuntimeConflict[] = [];
 
     for (const entry of desired) {
       const current = await existingHash(entry.target);
       if (current === entry.manifest.sha256) continue;
       const old = oldByKey.get(entryKey(entry.manifest));
-      if (current !== null && (!old || current !== old.sha256)) {
-        throw new Error('refusing to replace an unmanaged runtime file');
+      if (current !== null && current !== old?.sha256) {
+        const content = await readFile(entry.target, 'utf8');
+        await atomicWrite(entry.root, `${entry.target}.outside-${stamp}`, content);
+        conflicts.push({
+          path: conflictPath(entry.manifest),
+          content: content.slice(0, MAX_CONFLICT_BYTES),
+        });
       }
       await atomicWrite(entry.root, entry.target, entry.content);
     }
     for (const old of previous?.entries ?? []) {
       if (desiredByKey.has(entryKey(old))) continue;
-      const { target } = targetOf(old, this.cwd, this.hermesHome);
-      const current = await existingHash(target);
-      if (current === null) continue;
-      if (current !== old.sha256) throw new Error('refusing to remove a modified runtime file');
-      await unlink(target);
+      const { target } = targetOf(old, this.hermesHome);
+      // A file changed outside Plan stays where it is and is no longer managed.
+      if ((await existingHash(target)) === old.sha256) await unlink(target);
     }
 
     const manifest: Manifest = {
@@ -349,19 +343,23 @@ export class HermesPolicyMaterializer {
       entries: desired.map(({ manifest }) => manifest),
     };
     await atomicWrite(this.hermesHome, this.manifestPath, `${JSON.stringify(manifest)}\n`);
-    return snapshot.revision;
+    return { revision: snapshot.revision, conflicts };
   }
 }
 
 export class HermesPolicySynchronizer {
   private appliedRevision: string | null = null;
+  private failed: { revision: string; at: number } | null = null;
   private active: Promise<void> | null = null;
 
   constructor(
     private readonly client: RuntimePolicyClient,
     private readonly materializer: HermesPolicyMaterializer,
+    private readonly now: () => number = Date.now,
   ) {}
 
+  // Never throws: the agent keeps working with the policy it applied last, and Plan
+  // shows why a newer one did not apply.
   async ensure(): Promise<void> {
     if (this.active) return this.active;
     this.active = this.sync().finally(() => {
@@ -371,30 +369,54 @@ export class HermesPolicySynchronizer {
   }
 
   private async sync(): Promise<void> {
+    let snapshot: RuntimePolicySnapshot;
     try {
-      const snapshot = await this.client.runtimePolicy();
-      if (snapshot.revision === this.appliedRevision) return;
-      const revision = await this.materializer.apply(snapshot);
-      await this.client.reportRuntimeStatus({
-        adapter: 'hermes',
-        status: 'online',
-        appliedRevision: revision,
-        capabilities: CAPABILITIES,
-        detail: null,
-      });
-      this.appliedRevision = revision;
+      snapshot = await this.client.runtimePolicy();
     } catch {
-      await this.client
-        .reportRuntimeStatus({
-          adapter: 'hermes',
-          status: 'degraded',
-          appliedRevision: this.appliedRevision,
-          capabilities: CAPABILITIES,
-          detail: 'Runtime policy sync failed',
-        })
-        .catch(() => {});
-      throw new Error('Hermes runtime policy sync failed');
+      // The claim that follows reports a server that cannot be reached.
+      return;
     }
+    if (snapshot.revision === this.appliedRevision) return;
+    if (
+      this.failed?.revision === snapshot.revision &&
+      this.now() - this.failed.at < RETRY_FAILED_MS
+    ) {
+      return;
+    }
+    let result: { revision: string; conflicts: RuntimeConflict[] };
+    try {
+      result = await this.materializer.apply(snapshot);
+    } catch (error) {
+      this.failed = { revision: snapshot.revision, at: this.now() };
+      await this.report('degraded', `Runtime policy sync failed: ${describeFailure(error)}`, []);
+      return;
+    }
+    this.appliedRevision = result.revision;
+    this.failed = null;
+    await this.report(
+      'online',
+      result.conflicts.length > 0
+        ? 'Files changed outside Plan were replaced; the changed versions are kept next to them.'
+        : null,
+      result.conflicts,
+    );
+  }
+
+  private async report(
+    status: RuntimeStatus['status'],
+    detail: string | null,
+    conflicts: RuntimeConflict[],
+  ): Promise<void> {
+    await this.client
+      .reportRuntimeStatus({
+        adapter: 'hermes',
+        status,
+        appliedRevision: this.appliedRevision,
+        capabilities: CAPABILITIES,
+        detail,
+        conflicts,
+      })
+      .catch(() => {});
   }
 }
 
@@ -403,8 +425,7 @@ export function hermesPolicySynchronizer(
   client: RuntimePolicyClient,
 ): HermesPolicySynchronizer | null {
   if (config.agent !== 'hermes') return null;
-  const cwd = config.cwd;
   const hermesHome = config.env.HERMES_HOME ?? process.env.HERMES_HOME;
-  if (!cwd || !hermesHome) throw new Error('Hermes policy sync requires cwd and HERMES_HOME');
-  return new HermesPolicySynchronizer(client, new HermesPolicyMaterializer({ cwd, hermesHome }));
+  if (!hermesHome) throw new Error('Hermes policy sync requires HERMES_HOME');
+  return new HermesPolicySynchronizer(client, new HermesPolicyMaterializer({ hermesHome }));
 }

@@ -1,6 +1,6 @@
 import { t } from 'elysia';
 
-import { runtimePolicy, runtimeState } from '../core/model';
+import { runtimeConflict, runtimePolicy, runtimeState } from '../core/model';
 
 export const RuntimePolicySnapshotResponse = t.Object({
   revision: t.String(),
@@ -33,6 +33,7 @@ export const RuntimeStateBody = t.Object({
   appliedRevision: t.Nullable(t.String({ maxLength: 128 })),
   capabilities: t.Array(t.String({ minLength: 1, maxLength: 80 }), { maxItems: 64 }),
   detail: t.Nullable(t.String({ maxLength: 500 })),
+  conflicts: t.Optional(t.Array(runtimeConflict, { maxItems: 8 })),
 });
 
 export const RuntimeStateResponse = runtimeState;

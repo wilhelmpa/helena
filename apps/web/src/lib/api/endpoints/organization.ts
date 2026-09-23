@@ -48,6 +48,7 @@ export interface OrganizationAgent {
     appliedRevision: string | null;
     capabilities: string[];
     detail: string | null;
+    conflicts: { path: string; content: string }[];
     reportedAt: string | null;
   };
   projects: OrganizationAgentProject[];

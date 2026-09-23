@@ -104,7 +104,7 @@ describe('ai agents', () => {
         toolAllow: ['browser'],
         toolDeny: ['message.send'],
         mcpGrants: ['itsaplan__get_issue'],
-        files: [{ kind: 'instructions', path: 'AGENTS.md', content: '# Agent' }],
+        files: [{ kind: 'instructions', path: 'SOUL.md', content: '# Agent' }],
       },
     });
     expect(res.status).toBe(201);
@@ -120,7 +120,7 @@ describe('ai agents', () => {
         toolAllow: ['browser'],
         toolDeny: ['message.send'],
         mcpGrants: ['itsaplan__get_issue'],
-        files: [{ kind: 'instructions', path: 'AGENTS.md', content: '# Agent' }],
+        files: [{ kind: 'instructions', path: 'SOUL.md', content: '# Agent' }],
       },
     });
   });

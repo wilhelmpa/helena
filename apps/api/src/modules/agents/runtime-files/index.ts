@@ -39,7 +39,7 @@ export const agentRuntimeFileRoutes = new Elysia({
       detail: {
         summary: "List an external agent's managed Markdown files",
         description:
-          'List non-secret instruction and memory Markdown stored in the agent runtime policy.',
+          'List the SOUL.md and instruction Markdown stored in the agent runtime policy.',
         ...mcpTool('list_agent_runtime_files', { readOnlyHint: true }),
       },
     },
@@ -65,7 +65,7 @@ export const agentRuntimeFileRoutes = new Elysia({
       detail: {
         summary: "Create or update an external agent's managed Markdown file",
         description:
-          'Upsert AGENTS.md, SOUL.md, MEMORY.md, or a Markdown file below instructions/ or memory/.',
+          'Upsert SOUL.md or a Markdown file below instructions/. Both reach the agent in the SOUL.md of its Hermes profile.',
         ...mcpTool('upsert_agent_runtime_file'),
       },
     },

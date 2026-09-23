@@ -14,10 +14,7 @@ function sorted(files: AgentRuntimeFile[]): AgentRuntimeFile[] {
 function validatePath(path: string): { path: string; kind: AgentRuntimeFile['kind'] } {
   const kind = runtimeFileKind(path);
   if (!kind) {
-    throw new HttpError(
-      400,
-      'Runtime file path must be AGENTS.md, SOUL.md, MEMORY.md, or Markdown below instructions/ or memory/',
-    );
+    throw new HttpError(400, 'Runtime file path must be SOUL.md or Markdown below instructions/');
   }
   return { path, kind };
 }

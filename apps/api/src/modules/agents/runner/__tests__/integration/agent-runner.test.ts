@@ -80,7 +80,7 @@ describe('agent runner queue', () => {
           toolAllow: ['browser'],
           toolDeny: [],
           mcpGrants: ['itsaplan__get_issue'],
-          files: [{ kind: 'memory', path: 'memory/team.md', content: '# Team memory' }],
+          files: [{ kind: 'instructions', path: 'instructions/team.md', content: '# Team rules' }],
         },
       });
 
@@ -119,6 +119,13 @@ describe('agent runner queue', () => {
     });
     expect(JSON.stringify(policy.data)).not.toContain('apiKey');
     expect(JSON.stringify(policy.data)).not.toContain('s3Key');
+    // Every managed file reaches Hermes folded into the one SOUL.md of its profile.
+    expect(policy.data!.runtimePolicy.files).toEqual([
+      { kind: 'instructions', path: 'SOUL.md', content: expect.any(String) },
+    ]);
+    expect(policy.data!.runtimePolicy.files[0].content).toContain(
+      '## instructions/team.md\n\n# Team rules',
+    );
 
     const reported = await asRunner['agent-runtime'].status.post({
       adapter: 'agent_runtime',
@@ -126,6 +133,7 @@ describe('agent runner queue', () => {
       appliedRevision: policy.data!.revision,
       capabilities: ['model', 'reasoning', 'managed-markdown'],
       detail: null,
+      conflicts: [{ path: 'SOUL.md', content: '# Edited in Hermes' }],
     });
     expect(reported.status).toBe(200);
     expect(reported.data).toMatchObject({ adapter: 'agent_runtime', status: 'online' });
@@ -135,7 +143,40 @@ describe('agent runner queue', () => {
       adapter: 'agent_runtime',
       status: 'online',
       appliedRevision: policy.data!.revision,
+      conflicts: [{ path: 'SOUL.md', content: '# Edited in Hermes' }],
     });
+  });
+
+  it("builds the profile's SOUL.md from the agent, its projects and its own SOUL.md", async () => {
+    const { asOwner, asRunner, agent, teamId } = await setup();
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({
+        instructions: 'Always answer in German.',
+        runtimePolicy: {
+          reasoningEffort: null,
+          toolAllow: [],
+          toolDeny: [],
+          mcpGrants: [],
+          files: [{ kind: 'instructions', path: 'SOUL.md', content: 'You are the release agent.' }],
+        },
+      });
+
+    const first = await asRunner['agent-runtime'].policy.get();
+    const soul = first.data!.runtimePolicy.files[0].content;
+    expect(soul).toStartWith('You are the release agent.');
+    expect(soul).toContain('## Instructions\n\nAlways answer in German.');
+    expect(soul).toContain('(key MKT)');
+    expect(soul).toContain('## Chat');
+
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({ instructions: 'Always answer in English.' });
+    const second = await asRunner['agent-runtime'].policy.get();
+    expect(second.data!.revision).not.toBe(first.data!.revision);
+    expect(second.data!.runtimePolicy.files[0].content).toContain('Always answer in English.');
   });
 
   it('hands the configured external model and reasoning to each queued run', async () => {

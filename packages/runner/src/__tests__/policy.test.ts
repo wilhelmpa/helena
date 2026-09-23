@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -19,10 +19,8 @@ afterEach(async () => {
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'itsaplan-policy-'));
   roots.push(root);
-  const cwd = join(root, 'work');
   const hermesHome = join(root, 'hermes');
-  await mkdir(cwd);
-  return { root, cwd, hermesHome, materializer: new HermesPolicyMaterializer({ cwd, hermesHome }) };
+  return { root, hermesHome, materializer: new HermesPolicyMaterializer({ hermesHome }) };
 }
 
 function snapshot(
@@ -33,37 +31,30 @@ function snapshot(
   return { revision, runtimePolicy: { files }, skills };
 }
 
+const soul = (content: string) => [{ kind: 'instructions' as const, path: 'SOUL.md', content }];
+
+async function outsideCopies(hermesHome: string): Promise<string[]> {
+  return (await readdir(hermesHome)).filter((name) => name.startsWith('SOUL.md.outside-'));
+}
+
 describe('Hermes runtime policy materializer', () => {
-  it('writes managed instructions, memories, and linked skills atomically', async () => {
-    const { cwd, hermesHome, materializer } = await fixture();
-    await materializer.apply(
-      snapshot(
-        'sha256:first',
-        [
-          { kind: 'instructions', path: 'AGENTS.md', content: '# Agent' },
-          { kind: 'instructions', path: 'SOUL.md', content: '# Soul' },
-          { kind: 'instructions', path: 'instructions/review.md', content: '# Review' },
-          { kind: 'memory', path: 'MEMORY.md', content: '# Memory' },
-          { kind: 'memory', path: 'memory/team/context.md', content: '# Team' },
-        ],
-        [
-          {
-            id: 7,
-            slug: 'plan-7',
-            name: 'Triage',
-            description: 'Triage work',
-            markdown: '# Skill',
-            files: [{ path: 'refs/checklist.md', content: '# Checklist' }],
-          },
-        ],
-      ),
+  it('writes the SOUL.md and linked skills atomically', async () => {
+    const { hermesHome, materializer } = await fixture();
+    const result = await materializer.apply(
+      snapshot('sha256:first', soul('# Soul'), [
+        {
+          id: 7,
+          slug: 'plan-7',
+          name: 'Triage',
+          description: 'Triage work',
+          markdown: '# Skill',
+          files: [{ path: 'refs/checklist.md', content: '# Checklist' }],
+        },
+      ]),
     );
 
-    expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).toBe('# Agent');
-    expect(await readFile(join(cwd, 'instructions/review.md'), 'utf8')).toBe('# Review');
+    expect(result).toEqual({ revision: 'sha256:first', conflicts: [] });
     expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Soul');
-    expect(await readFile(join(hermesHome, 'memories/MEMORY.md'), 'utf8')).toBe('# Memory');
-    expect(await readFile(join(hermesHome, 'memories/team/context.md'), 'utf8')).toBe('# Team');
     expect(await readFile(join(hermesHome, 'skills/plan-managed/plan-7/SKILL.md'), 'utf8')).toBe(
       '# Skill',
     );
@@ -72,92 +63,105 @@ describe('Hermes runtime policy materializer', () => {
     ).toBe('# Checklist');
     const manifest = join(hermesHome, 'run/itsaplan-policy-manifest.json');
     expect((await lstat(manifest)).mode & 0o077).toBe(0);
-    expect(await readFile(manifest, 'utf8')).not.toContain('# Agent');
+    expect(await readFile(manifest, 'utf8')).not.toContain('# Soul');
   });
 
   it('updates and removes only files owned by the private manifest', async () => {
-    const { cwd, hermesHome, materializer } = await fixture();
+    const { hermesHome, materializer } = await fixture();
     await materializer.apply(
-      snapshot(
-        'sha256:first',
-        [
-          { kind: 'instructions', path: 'AGENTS.md', content: 'old' },
-          { kind: 'memory', path: 'MEMORY.md', content: 'remove me' },
-        ],
-        [
-          {
-            id: 2,
-            slug: 'plan-2',
-            name: 'Skill',
-            description: '',
-            markdown: 'remove skill',
-            files: [],
-          },
-        ],
-      ),
+      snapshot('sha256:first', soul('old'), [
+        {
+          id: 2,
+          slug: 'plan-2',
+          name: 'Skill',
+          description: '',
+          markdown: 'remove skill',
+          files: [],
+        },
+      ]),
     );
-    await writeFile(join(cwd, 'unmanaged.md'), 'keep');
     const unmanagedSkill = join(hermesHome, 'skills/plan-managed/unmanaged');
     await mkdir(unmanagedSkill, { recursive: true });
     await writeFile(join(unmanagedSkill, 'note.md'), 'keep skill');
 
-    await materializer.apply(
-      snapshot('sha256:second', [{ kind: 'instructions', path: 'AGENTS.md', content: 'new' }]),
-    );
+    await materializer.apply(snapshot('sha256:second', soul('new')));
 
-    expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).toBe('new');
-    expect(await readFile(join(cwd, 'unmanaged.md'), 'utf8')).toBe('keep');
+    expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('new');
     expect(await readFile(join(unmanagedSkill, 'note.md'), 'utf8')).toBe('keep skill');
-    await expect(readFile(join(hermesHome, 'memories/MEMORY.md'), 'utf8')).rejects.toThrow();
     await expect(
       readFile(join(hermesHome, 'skills/plan-managed/plan-2/SKILL.md'), 'utf8'),
     ).rejects.toThrow();
-  });
-
-  it('adopts a byte-identical existing SOUL.md and owns its later removal', async () => {
-    const { hermesHome, materializer } = await fixture();
-    await mkdir(hermesHome, { recursive: true });
-    await writeFile(join(hermesHome, 'SOUL.md'), '# Existing soul');
-
-    await materializer.apply(
-      snapshot('sha256:adopt', [
-        { kind: 'instructions', path: 'SOUL.md', content: '# Existing soul' },
-      ]),
-    );
-
-    const manifest = JSON.parse(
-      await readFile(join(hermesHome, 'run/itsaplan-policy-manifest.json'), 'utf8'),
-    ) as { entries: Array<{ source: string; path: string; sha256: string }> };
-    expect(manifest.entries).toContainEqual({
-      source: 'runtime',
-      path: 'SOUL.md',
-      sha256: expect.any(String),
-    });
 
     await materializer.apply(snapshot('sha256:removed'));
     await expect(readFile(join(hermesHome, 'SOUL.md'), 'utf8')).rejects.toThrow();
   });
 
-  it('refuses to adopt a differing unmanaged SOUL.md', async () => {
+  it('takes over an existing SOUL.md and keeps and reports its content', async () => {
     const { hermesHome, materializer } = await fixture();
     await mkdir(hermesHome, { recursive: true });
-    await writeFile(join(hermesHome, 'SOUL.md'), '# Foreign soul');
+    await writeFile(join(hermesHome, 'SOUL.md'), '# Hermes default');
 
-    await expect(
-      materializer.apply(
-        snapshot('sha256:conflict', [
-          { kind: 'instructions', path: 'SOUL.md', content: '# Plan soul' },
-        ]),
-      ),
-    ).rejects.toThrow('refusing to replace an unmanaged runtime file');
-    expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Foreign soul');
+    const result = await materializer.apply(snapshot('sha256:adopt', soul('# Plan soul')));
+
+    expect(result.conflicts).toEqual([{ path: 'SOUL.md', content: '# Hermes default' }]);
+    expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Plan soul');
+    const [copy] = await outsideCopies(hermesHome);
+    expect(await readFile(join(hermesHome, copy!), 'utf8')).toBe('# Hermes default');
   });
 
-  it('rejects traversal, unsafe skill slugs, symlinks, and modified managed files', async () => {
-    const { root, cwd, materializer } = await fixture();
+  it('replaces a SOUL.md edited outside Plan and reports the edit', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await materializer.apply(snapshot('sha256:one', soul('# Plan soul')));
+    await writeFile(join(hermesHome, 'SOUL.md'), '# Edited by Hermes');
+
+    const result = await materializer.apply(snapshot('sha256:two', soul('# Plan soul v2')));
+
+    expect(result.conflicts).toEqual([{ path: 'SOUL.md', content: '# Edited by Hermes' }]);
+    expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Plan soul v2');
+    expect(await outsideCopies(hermesHome)).toHaveLength(1);
+  });
+
+  it('leaves a file edited outside Plan in place when Plan stops managing it', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await materializer.apply(snapshot('sha256:owned', soul('owned')));
+    await writeFile(join(hermesHome, 'SOUL.md'), 'changed outside');
+
+    const result = await materializer.apply(snapshot('sha256:released'));
+
+    expect(result.conflicts).toEqual([]);
+    expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('changed outside');
+  });
+
+  it('drops files of an older manifest it no longer writes without touching them', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await mkdir(join(hermesHome, 'run'), { recursive: true });
+    await writeFile(join(hermesHome, 'AGENTS.md'), 'project file');
+    await writeFile(
+      join(hermesHome, 'run/itsaplan-policy-manifest.json'),
+      JSON.stringify({
+        schemaVersion: 1,
+        revision: 'sha256:old',
+        entries: [{ source: 'runtime', path: 'AGENTS.md', sha256: 'a'.repeat(64) }],
+      }),
+      { mode: 0o600 },
+    );
+
+    await materializer.apply(snapshot('sha256:new', soul('# Soul')));
+
+    expect(await readFile(join(hermesHome, 'AGENTS.md'), 'utf8')).toBe('project file');
+    expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Soul');
+  });
+
+  it('rejects traversal, other paths, unsafe skill slugs and symlinks', async () => {
+    const { root, hermesHome, materializer } = await fixture();
     await expect(
       materializer.apply(
         snapshot('sha256:bad', [{ kind: 'instructions', path: '../config.yaml', content: 'bad' }]),
+      ),
+    ).rejects.toThrow('unsafe path');
+    await expect(
+      materializer.apply(
+        snapshot('sha256:memory', [{ kind: 'instructions', path: 'MEMORY.md', content: 'x' }]),
       ),
     ).rejects.toThrow('unsafe path');
     await expect(
@@ -181,52 +185,53 @@ describe('Hermes runtime policy materializer', () => {
 
     const outside = join(root, 'outside');
     await writeFile(outside, 'outside');
-    await symlink(outside, join(cwd, 'AGENTS.md'));
-    await expect(
-      materializer.apply(
-        snapshot('sha256:symlink', [
-          { kind: 'instructions', path: 'AGENTS.md', content: 'replace' },
-        ]),
-      ),
-    ).rejects.toThrow('unsafe');
+    await mkdir(hermesHome, { recursive: true });
+    await symlink(outside, join(hermesHome, 'SOUL.md'));
+    await expect(materializer.apply(snapshot('sha256:symlink', soul('replace')))).rejects.toThrow(
+      'unsafe',
+    );
     expect(await readFile(outside, 'utf8')).toBe('outside');
-    await rm(join(cwd, 'AGENTS.md'));
-
-    await materializer.apply(
-      snapshot('sha256:owned', [{ kind: 'instructions', path: 'AGENTS.md', content: 'owned' }]),
-    );
-    await writeFile(join(cwd, 'AGENTS.md'), 'changed outside');
-    await expect(materializer.apply(snapshot('sha256:remove'))).rejects.toThrow(
-      'refusing to remove a modified runtime file',
-    );
-    expect(await readFile(join(cwd, 'AGENTS.md'), 'utf8')).toBe('changed outside');
   });
 });
 
 describe('Hermes runtime policy synchronizer', () => {
-  it('reports applied revisions and a secret-free degraded status', async () => {
-    const { materializer } = await fixture();
-    const values = [
-      snapshot('sha256:one', [{ kind: 'instructions', path: 'AGENTS.md', content: 'one' }]),
-      snapshot('sha256:one', [{ kind: 'instructions', path: 'AGENTS.md', content: 'one' }]),
-      snapshot('sha256:two', [{ kind: 'instructions', path: 'AGENTS.md', content: 'two' }]),
-      snapshot('sha256:bad', [
-        { kind: 'instructions', path: '../secret-token.md', content: 'provider-secret-value' },
-      ]),
-    ];
-    const statuses: RuntimeStatus[] = [];
-    const client: RuntimePolicyClient = {
-      runtimePolicy: async () => values.shift()!,
+  function client(values: RuntimePolicySnapshot[], statuses: RuntimeStatus[]): RuntimePolicyClient {
+    return {
+      runtimePolicy: async () => {
+        const next = values.shift();
+        if (!next) throw new Error('server unreachable');
+        return next;
+      },
       reportRuntimeStatus: async (status) => {
         statuses.push(status);
       },
     };
-    const sync = new HermesPolicySynchronizer(client, materializer);
+  }
+
+  it('reports applied revisions and a secret-free degraded status without throwing', async () => {
+    const { materializer } = await fixture();
+    const statuses: RuntimeStatus[] = [];
+    const sync = new HermesPolicySynchronizer(
+      client(
+        [
+          snapshot('sha256:one', soul('one')),
+          snapshot('sha256:one', soul('one')),
+          snapshot('sha256:two', soul('two')),
+          snapshot('sha256:bad', [
+            { kind: 'instructions', path: '../secret-token.md', content: 'provider-secret-value' },
+          ]),
+        ],
+        statuses,
+      ),
+      materializer,
+    );
 
     await sync.ensure();
     await sync.ensure();
     await sync.ensure();
-    await expect(sync.ensure()).rejects.toThrow('Hermes runtime policy sync failed');
+    await sync.ensure();
+    // An unreachable server leaves the applied policy in place.
+    await sync.ensure();
 
     expect(statuses.map(({ status, appliedRevision }) => ({ status, appliedRevision }))).toEqual([
       { status: 'online', appliedRevision: 'sha256:one' },
@@ -240,6 +245,49 @@ describe('Hermes runtime policy synchronizer', () => {
       'managed-skills',
     ]);
     expect(JSON.stringify(statuses)).not.toContain('provider-secret-value');
-    expect(statuses.at(-1)?.detail).toBe('Runtime policy sync failed');
+    expect(statuses.at(-1)?.detail).toBe(
+      'Runtime policy sync failed: runtime policy contains an unsafe path',
+    );
+  });
+
+  it('retries a failed revision only after a pause', async () => {
+    const { materializer } = await fixture();
+    const statuses: RuntimeStatus[] = [];
+    const bad = () =>
+      snapshot('sha256:bad', [{ kind: 'instructions', path: 'AGENTS.md', content: 'x' }]);
+    let now = 0;
+    const sync = new HermesPolicySynchronizer(
+      client([bad(), bad(), bad()], statuses),
+      materializer,
+      () => now,
+    );
+
+    await sync.ensure();
+    now = 30_000;
+    await sync.ensure();
+    now = 61_000;
+    await sync.ensure();
+
+    expect(statuses.map(({ status }) => status)).toEqual(['degraded', 'degraded']);
+  });
+
+  it('reports the files it replaced', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await mkdir(hermesHome, { recursive: true });
+    await writeFile(join(hermesHome, 'SOUL.md'), '# Hermes default');
+    const statuses: RuntimeStatus[] = [];
+    const sync = new HermesPolicySynchronizer(
+      client([snapshot('sha256:one', soul('# Plan soul'))], statuses),
+      materializer,
+    );
+
+    await sync.ensure();
+
+    expect(statuses).toEqual([
+      expect.objectContaining({
+        status: 'online',
+        conflicts: [{ path: 'SOUL.md', content: '# Hermes default' }],
+      }),
+    ]);
   });
 });

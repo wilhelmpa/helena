@@ -10,6 +10,7 @@ const offlineRuntime = {
   appliedRevision: null,
   capabilities: [],
   detail: null,
+  conflicts: [],
   reportedAt: null,
 };
 const organization: Organization = {

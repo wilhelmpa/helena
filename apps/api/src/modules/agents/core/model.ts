@@ -1,7 +1,7 @@
 import { t } from 'elysia';
 
 import { agentRunTrigger, runContextTokens } from '../model';
-import { instructionsRuntimeFile, memoryRuntimeFile } from '../runtime-files/model';
+import { instructionsRuntimeFile } from '../runtime-files/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -35,14 +35,19 @@ const username = t.String({
   description: 'Mention handle (letters, digits, . _ -).',
 });
 
-const runtimeFile = t.Union([instructionsRuntimeFile, memoryRuntimeFile]);
-
 export const runtimePolicy = t.Object({
   reasoningEffort: t.Nullable(t.String({ maxLength: 32 })),
   toolAllow: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
   toolDeny: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
   mcpGrants: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
-  files: t.Array(runtimeFile, { maxItems: 32 }),
+  files: t.Array(instructionsRuntimeFile, { maxItems: 32 }),
+});
+
+// A managed file the runtime found changed outside Plan. The runtime kept a copy and
+// wrote Plan's version; the changed content is shown so it can be taken over.
+export const runtimeConflict = t.Object({
+  path: t.String({ minLength: 1, maxLength: 200 }),
+  content: t.String({ maxLength: 65536 }),
 });
 
 export const runtimeState = t.Object({
@@ -51,6 +56,7 @@ export const runtimeState = t.Object({
   appliedRevision: t.Nullable(t.String()),
   capabilities: t.Array(t.String()),
   detail: t.Nullable(t.String()),
+  conflicts: t.Array(runtimeConflict),
   reportedAt: t.Nullable(t.String()),
 });
 

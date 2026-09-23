@@ -108,6 +108,50 @@ describe('external agent chat', () => {
     });
   });
 
+  it("follows the agent's model and reasoning when the thread has none of its own", async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    await asOwner
+      .teams({ teamId: await teamOf(asOwner, 'MKT') })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({
+        model: 'openai/gpt-5.5',
+        runtimePolicy: {
+          reasoningEffort: 'high',
+          toolAllow: [],
+          toolDeny: [],
+          mcpGrants: [],
+          files: [],
+        },
+      });
+    await send(asOwner, agent.id, 'Status?');
+
+    const claimed = await asRunner['agent-chats'].claim.post();
+    expect(claimed.data!.message).toMatchObject({ model: 'openai/gpt-5.5', thinkingLevel: 'high' });
+  });
+
+  it('sends the earlier turns when the thread has no Hermes session', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    const first = await send(asOwner, agent.id, 'Who owns the launch?');
+    await answer(asRunner, 'Maria does.');
+
+    await send(asOwner, agent.id, 'And the launch date?', first.data!.threadId);
+    const second = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(second.sessionId).toBeNull();
+    expect(second.prompt).toBe(
+      [
+        'Earlier in this conversation:',
+        '',
+        'Person: Who owns the launch?',
+        '',
+        'You: Maria does.',
+        '',
+        'The person writes:',
+        '',
+        'And the launch date?',
+      ].join('\n'),
+    );
+  });
+
   it('validates and retains the model and thinking choice for a chat thread', async () => {
     const { asOwner, asRunner, agent } = await setup();
     const models = [
@@ -169,23 +213,6 @@ describe('external agent chat', () => {
         })
       ).status,
     ).toBe(400);
-  });
-
-  it('does not frame conversation history into the next task', async () => {
-    const { asOwner, asRunner, agent } = await setup();
-    const first = await send(asOwner, agent.id, 'Who owns the launch?');
-    const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
-    await asRunner['agent-chats']({ messageId: answer.id }).events.post({
-      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Maria does.' }],
-    });
-    await asRunner['agent-chats']({ messageId: answer.id }).result.post({
-      status: 'success',
-    });
-
-    await send(asOwner, agent.id, 'And the launch date?', first.data!.threadId);
-    const second = (await asRunner['agent-chats'].claim.post()).data!.message!;
-    expect(second.threadId).toBe(first.data!.threadId);
-    expect(second.prompt).toBe('And the launch date?');
   });
 
   it('keeps one live answer per thread', async () => {

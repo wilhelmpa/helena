@@ -49,16 +49,14 @@ describe('agent runtime files', () => {
     const files = runtimeFiles(asOwner, teamId, agentId);
 
     expect((await files.get()).data).toEqual([]);
-    const first = await files.put({ path: 'AGENTS.md', content: '# Instructions' });
+    const first = await files.put({ path: 'SOUL.md', content: '# Soul' });
     expect(first.status).toBe(200);
-    expect(first.data).toEqual([
-      { path: 'AGENTS.md', kind: 'instructions', content: '# Instructions' },
-    ]);
-    await files.put({ path: 'MEMORY.md', content: '# Memory' });
-    const updated = await files.put({ path: 'AGENTS.md', content: '# Updated' });
+    expect(first.data).toEqual([{ path: 'SOUL.md', kind: 'instructions', content: '# Soul' }]);
+    await files.put({ path: 'instructions/review.md', content: '# Review' });
+    const updated = await files.put({ path: 'SOUL.md', content: '# Updated' });
     expect(updated.data).toEqual([
-      { path: 'AGENTS.md', kind: 'instructions', content: '# Updated' },
-      { path: 'MEMORY.md', kind: 'memory', content: '# Memory' },
+      { path: 'instructions/review.md', kind: 'instructions', content: '# Review' },
+      { path: 'SOUL.md', kind: 'instructions', content: '# Updated' },
     ]);
 
     const policy = await asRunner['agent-runtime'].policy.get();
@@ -67,23 +65,30 @@ describe('agent runtime files', () => {
       toolAllow: ['browser'],
       toolDeny: ['message.send'],
       mcpGrants: ['itsaplan__get_issue'],
-      files: updated.data,
     });
+    const soul = policy.data!.runtimePolicy.files[0].content;
+    expect(soul).toStartWith('# Updated');
+    expect(soul).toContain('## instructions/review.md\n\n# Review');
     expect(JSON.stringify(policy.data)).not.toContain('apiKey');
     expect(JSON.stringify(policy.data)).not.toContain('credential');
 
-    expect((await files.delete({}, { query: { path: 'MEMORY.md' } })).status).toBe(204);
+    expect((await files.delete({}, { query: { path: 'instructions/review.md' } })).status).toBe(
+      204,
+    );
     expect((await files.get()).data).toEqual([
-      { path: 'AGENTS.md', kind: 'instructions', content: '# Updated' },
+      { path: 'SOUL.md', kind: 'instructions', content: '# Updated' },
     ]);
   });
 
-  it('rejects traversal, non-Markdown files, and instruction-memory mismatches', async () => {
+  it('rejects traversal, non-Markdown files, memory and project files', async () => {
     const { asOwner, teamId, agentId } = await setup();
     const files = runtimeFiles(asOwner, teamId, agentId);
 
     expect((await files.put({ path: '../config.yaml', content: 'secret: no' })).status).toBe(400);
-    expect((await files.put({ path: 'memory/token.json', content: '{}' })).status).toBe(400);
+    expect((await files.put({ path: 'instructions/token.json', content: '{}' })).status).toBe(400);
+    // Memory belongs to Hermes and a project's AGENTS.md to the project.
+    expect((await files.put({ path: 'MEMORY.md', content: '# Memory' })).status).toBe(400);
+    expect((await files.put({ path: 'AGENTS.md', content: '# Project' })).status).toBe(400);
 
     const patched = await asOwner
       .teams({ teamId })
@@ -94,7 +99,7 @@ describe('agent runtime files', () => {
           toolAllow: [],
           toolDeny: [],
           mcpGrants: [],
-          files: [{ kind: 'memory', path: 'AGENTS.md', content: '# Wrong kind' }],
+          files: [{ kind: 'instructions', path: 'memory/team.md', content: '# Wrong path' }],
         },
       });
     expect(patched.status).toBe(400);
@@ -130,6 +135,6 @@ describe('agent runtime files', () => {
     expect((await runtimeFiles(asMember, teamId, agentId).get()).status).toBe(200);
     const hidden = runtimeFiles(asMember, teamId, ops.data!.agent.id);
     expect((await hidden.get()).status).toBe(404);
-    expect((await hidden.put({ path: 'AGENTS.md', content: '# Hidden' })).status).toBe(404);
+    expect((await hidden.put({ path: 'SOUL.md', content: '# Hidden' })).status).toBe(404);
   });
 });

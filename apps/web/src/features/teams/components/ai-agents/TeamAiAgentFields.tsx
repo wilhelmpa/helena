@@ -215,6 +215,7 @@ export default function TeamAiAgentFields({
       models={chatModels}
       modelsLoading={chatModelsLoading}
       modelsError={chatModelsError}
+      conflicts={agent?.runtimeState.conflicts ?? []}
     />
   );
 

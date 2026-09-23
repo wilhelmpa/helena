@@ -24,7 +24,7 @@ export interface AgentProject {
 }
 
 export interface AgentRuntimeFile {
-  kind: 'instructions' | 'memory';
+  kind: 'instructions';
   path: string;
   content: string;
 }
@@ -37,12 +37,20 @@ export interface AgentRuntimePolicy {
   files: AgentRuntimeFile[];
 }
 
+// A managed file the runtime found changed outside Plan. It wrote Plan's version and kept
+// the changed one, whose content is shown so it can be taken over.
+export interface AgentRuntimeConflict {
+  path: string;
+  content: string;
+}
+
 export interface AgentRuntimeState {
   adapter: string | null;
   status: 'offline' | 'online' | 'degraded';
   appliedRevision: string | null;
   capabilities: string[];
   detail: string | null;
+  conflicts: AgentRuntimeConflict[];
   reportedAt: string | null;
 }
 

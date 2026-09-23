@@ -9,6 +9,7 @@ const offline = {
   appliedRevision: null,
   capabilities: [],
   detail: null,
+  conflicts: [],
   reportedAt: null,
 };
 

@@ -88,12 +88,22 @@ function childEnv(config: RunnerConfig, task: Task): Record<string, string> {
 // reach it — the runner promises to finish what is in flight. The timeout and the
 // member's stop then have to kill that group themselves, or a command that is a
 // pipeline leaves its children behind.
-function killGroup(pid: number): void {
+// How long a stopped command gets to end its turn before its process group is killed.
+const KILL_GRACE_MS = 5_000;
+
+function signalGroup(pid: number, signal: NodeJS.Signals): void {
   try {
-    process.kill(-pid, 'SIGKILL');
+    process.kill(-pid, signal);
   } catch {
     // Already gone.
   }
+}
+
+// An interrupt lets Hermes end the turn and save its session; the kill that follows
+// covers a command, or a process it started, that ignores it.
+function stopGroup(pid: number): void {
+  signalGroup(pid, 'SIGINT');
+  setTimeout(() => signalGroup(pid, 'SIGKILL'), KILL_GRACE_MS).unref();
 }
 
 // A preset is spawned directly, with no shell in between: the session id and the
@@ -139,7 +149,7 @@ export async function execute(
   });
 
   const kill = () => {
-    if (child.pid !== undefined) killGroup(child.pid);
+    if (child.pid !== undefined) stopGroup(child.pid);
   };
   let timedOut = false;
   const timer = setTimeout(() => {

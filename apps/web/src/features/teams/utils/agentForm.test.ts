@@ -15,7 +15,7 @@ describe('external agent runtime policy form', () => {
         toolAllow: ['browser'],
         toolDeny: [],
         mcpGrants: ['itsaplan__get_issue'],
-        files: [{ kind: 'memory', path: 'memory/team.md', content: '# Team' }],
+        files: [{ kind: 'instructions', path: 'instructions/team.md', content: '# Team' }],
       },
       projects: [],
       fieldTriggers: [],
@@ -33,7 +33,7 @@ describe('external agent runtime policy form', () => {
     } as never);
 
     assert.equal(value.model, 'openai/gpt-5.6-sol');
-    assert.equal(value.runtimePolicy.files[0].path, 'memory/team.md');
+    assert.equal(value.runtimePolicy.files[0].path, 'instructions/team.md');
   });
 
   it('normalizes grants and drops an empty managed file before save', () => {
@@ -48,8 +48,8 @@ describe('external agent runtime policy form', () => {
       toolDeny: [],
       mcpGrants: [' plan__get_issue '],
       files: [
-        { kind: 'instructions', path: ' AGENTS.md ', content: '# Agent' },
-        { kind: 'memory', path: ' ', content: 'draft' },
+        { kind: 'instructions', path: ' SOUL.md ', content: '# Agent' },
+        { kind: 'instructions', path: ' ', content: 'draft' },
       ],
     };
 
@@ -60,7 +60,7 @@ describe('external agent runtime policy form', () => {
       toolAllow: ['browser'],
       toolDeny: [],
       mcpGrants: ['plan__get_issue'],
-      files: [{ kind: 'instructions', path: 'AGENTS.md', content: '# Agent' }],
+      files: [{ kind: 'instructions', path: 'SOUL.md', content: '# Agent' }],
     });
   });
 });
