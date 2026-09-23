@@ -587,6 +587,7 @@ class ScreencastStream {
         announcement: {
           type: "video",
           codec,
+          tier: tier.name,
           width: Math.round(size.width / this.zoom),
           height: Math.round(size.height / this.zoom),
         },

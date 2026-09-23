@@ -34,9 +34,23 @@ export default function WorkspaceBrowserLive({
   const canvas = useRef<HTMLCanvasElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const keyboard = useRef<HTMLTextAreaElement>(null);
-  const { status, mode, playback, hasFrame, frameSize, dialog, controlBy, send, setViewport } =
-    useBrowserScreencast(base, active, reloadToken, canvas, video, followAgent);
+  const {
+    status,
+    mode,
+    playback,
+    hasFrame,
+    frameSize,
+    dialog,
+    controlBy,
+    send,
+    setViewport,
+    videoPreference,
+  } = useBrowserScreencast(base, active, reloadToken, canvas, video, followAgent);
   const inVideoElement = mode === 'video' && playback === 'mse';
+  // "auto" chose single frames itself (the connection is slow enough that video's own extra
+  // latency would make it the worse choice, see useBrowserScreencast's AUTO_JPEG_RTT_MS) —
+  // distinct from a browser that cannot play video at all, which never claims to prefer it.
+  const autoFallback = videoPreference === 'auto' && mode === 'jpeg' && playback !== null;
   const { pointer, keys } = useBrowserLiveInput(view, keyboard, frameSize, send);
   const dpr = useDevicePixelRatio();
 
@@ -102,6 +116,17 @@ export default function WorkspaceBrowserLive({
       {controlBy === 'agent' && (
         <div className="pointer-events-none absolute start-2 top-2 rounded-full bg-background/80 px-2 py-0.5 text-xs text-muted-foreground shadow-sm">
           {t('controlAgent')}
+        </div>
+      )}
+      {/* "auto" (the default) fell back to single frames on its own: a manual video/single-frame
+          toggle, and a fuller quality indicator (tier, fps, latency), belong with the browser
+          panel's own redesign; this stays a plain, unobtrusive notice until then. */}
+      {autoFallback && (
+        <div
+          className="pointer-events-none absolute end-2 top-2 rounded-full bg-background/80 px-2 py-0.5 text-xs text-muted-foreground shadow-sm"
+          title={t('videoAutoFallback')}
+        >
+          {t('videoAutoFallback')}
         </div>
       )}
       {notice && (

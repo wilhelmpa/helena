@@ -38,16 +38,28 @@ const THROUGHPUT_WINDOW_MS = 4_000;
 // A decoder this far behind what has arrived gives up on the gap and asks the router for a
 // fresh keyframe rather than wait out its tier's own keyframe interval.
 const REQUEST_KEYFRAME_LAG_MS = 800;
+// A round trip video's own pipeline (encode, transport, decode) this long makes worse to
+// control through than the single-frame JPEG screencast, whose latency is close to the round
+// trip alone: "auto" then asks for JPEG instead. Recovery uses a lower threshold than falling
+// back does (a Schmitt trigger), so a round trip hovering right at one number does not flip
+// the mode back and forth on every stats report.
+const AUTO_JPEG_RTT_MS = 300;
+const AUTO_VIDEO_RTT_MS = 180;
 
 type ServerText =
   | ({ type: 'dialog'; open: boolean } & LiveDialog)
-  | { type: 'video'; codec: string; width: number; height: number }
+  | { type: 'video'; codec: string; tier?: string; width: number; height: number }
   | { type: 'tab' }
   | { type: 'pong'; t: number }
   | { type: 'control'; by: 'agent' | 'owner' };
 
 // Who last acted on the page, purely informational (see the router's ScreencastStream).
 export type LiveControl = 'agent' | 'owner';
+
+// video and jpeg force that stream regardless of the measured round trip; auto (the default)
+// follows it, preferring video but falling back to JPEG on a connection where video's own
+// extra latency would make it the worse choice (see AUTO_JPEG_RTT_MS).
+export type VideoPreference = 'auto' | 'video' | 'jpeg';
 
 // The live view's connection to the browser router. Video is played as it arrives: on the
 // canvas with WebCodecs, or in the video element with Media Source Extensions where WebCodecs
@@ -71,6 +83,15 @@ export function useBrowserScreencast(
   const [hasFrame, setHasFrame] = useState(false);
   const [dialog, setDialog] = useState<LiveDialog | null>(null);
   const [controlBy, setControlBy] = useState<LiveControl>('owner');
+  // video and jpeg force that stream; auto (the default) follows the measured round trip (see
+  // AUTO_JPEG_RTT_MS below). Read from a ref inside the stats timer so changing it does not
+  // itself reconnect the socket; autoWantsVideo tracks what "auto" currently prefers, so a
+  // caller can tell an automatic fallback (videoPreference is "auto" but mode is "jpeg", with
+  // playback not null: the browser can play video, the connection is why it is not) from
+  // asking for JPEG outright, or from a browser that cannot play video at all.
+  const [videoPreference, setVideoPreferenceState] = useState<VideoPreference>('auto');
+  const videoPreferenceRef = useRef<VideoPreference>('auto');
+  const autoWantsVideo = useRef(true);
   const socket = useRef<WebSocket | null>(null);
   // The page size of the frame shown, which pointer positions are mapped to.
   const frameSize = useRef<Size | null>(null);
@@ -80,7 +101,7 @@ export function useBrowserScreencast(
   const drawing = useRef(false);
   const shown = useRef(active);
   const video = useRef<LiveVideo | null>(null);
-  const announced = useRef<{ codec: string; size: Size } | null>(null);
+  const announced = useRef<{ codec: string; tier?: string; size: Size } | null>(null);
   const waitingForKeyframe = useRef(true);
   const playback = useRef(videoPlayback());
   // The connection's last measured round trip and the bytes received in the trailing window,
@@ -104,11 +125,31 @@ export function useBrowserScreencast(
     if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify(message));
   }, []);
 
+  // A browser that cannot play video at all asks for JPEG regardless of preference; video and
+  // jpeg force their stream; auto follows what the round trip currently prefers.
+  const wantsVideo = useCallback(() => {
+    if (playback.current === null) return false;
+    if (videoPreferenceRef.current === 'video') return true;
+    if (videoPreferenceRef.current === 'jpeg') return false;
+    return autoWantsVideo.current;
+  }, []);
+
   const sendViewport = useCallback(() => {
     if (viewport.current && shown.current) {
-      send({ type: 'viewport', ...viewport.current, video: playback.current !== null });
+      send({ type: 'viewport', ...viewport.current, video: wantsVideo() });
     }
-  }, [send]);
+  }, [send, wantsVideo]);
+
+  // Exposed so a caller can offer a manual video/JPEG toggle; changing it re-sends the
+  // viewport at once rather than waiting for the next resize or stats report.
+  const setVideoPreference = useCallback(
+    (next: VideoPreference) => {
+      videoPreferenceRef.current = next;
+      setVideoPreferenceState(next);
+      sendViewport();
+    },
+    [sendViewport],
+  );
 
   const draw = useCallback(async () => {
     if (drawing.current || !shown.current) return;
@@ -162,7 +203,11 @@ export function useBrowserScreencast(
         // The router keeps sending JPEG frames to a view that shows no video.
       }
       waitingForKeyframe.current = true;
-      waitingSinceMs.current = null;
+      // Starts the stall clock from the moment a fresh video is expected, not only once a
+      // (still-gated) fragment actually arrives: on a badly congested connection, nothing may
+      // arrive at all for a while, and that silence is itself the stall a keyframe request is
+      // meant to cut short, not just a gap between otherwise-flowing fragments.
+      waitingSinceMs.current = performance.now();
       // The router's own count for this viewer starts over with every fresh video too (see
       // Viewer.startVideo, which does not count the init segment either), so the ack stays
       // meaningful across a tier or area change instead of comparing against bytes sent under
@@ -267,6 +312,10 @@ export function useBrowserScreencast(
         rttMs.current = 0;
         pingSentAt.current = null;
         received.current = [];
+        // A fresh connection (the first one, or a reconnect) starts "auto" preferring video
+        // again, the same as rttMs above starting over as if the round trip were excellent:
+        // both are corrected within one stats report if that turns out to be wrong.
+        autoWantsVideo.current = true;
         // A fresh connection's first real round trip is measured right away rather than
         // waiting out the first interval: until it arrives, rttMs stays 0, which chooseTier
         // reads as an excellent connection, so a slow one would otherwise be let onto a tier
@@ -293,6 +342,21 @@ export function useBrowserScreencast(
             waitingSinceMs.current = 0;
             send({ type: 'requestKeyframe' });
           }
+          // "auto" follows the round trip either way: it is measured by ping/pong, which
+          // keeps running regardless of which stream is playing, so a connection that has
+          // recovered is noticed even while showing JPEG. The two thresholds (see
+          // AUTO_JPEG_RTT_MS/AUTO_VIDEO_RTT_MS) keep a round trip that hovers near one number
+          // from flipping the mode back and forth on every report.
+          if (videoPreferenceRef.current === 'auto') {
+            const rtt = rttMs.current;
+            const nextWantsVideo = autoWantsVideo.current
+              ? rtt <= AUTO_JPEG_RTT_MS
+              : rtt < AUTO_VIDEO_RTT_MS;
+            if (nextWantsVideo !== autoWantsVideo.current) {
+              autoWantsVideo.current = nextWantsVideo;
+              sendViewport();
+            }
+          }
         }, STATS_INTERVAL_MS);
       };
       current.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
@@ -306,6 +370,7 @@ export function useBrowserScreencast(
         else if (message.type === 'video') {
           announced.current = {
             codec: message.codec,
+            tier: message.tier,
             size: { width: message.width, height: message.height },
           };
           if (video.current) frameSize.current = announced.current.size;
@@ -371,5 +436,7 @@ export function useBrowserScreencast(
     controlBy,
     send,
     setViewport,
+    videoPreference,
+    setVideoPreference,
   };
 }
