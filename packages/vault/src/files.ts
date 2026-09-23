@@ -22,7 +22,7 @@ import {
 
 export const MAX_NOTE_BYTES = 2 * 1024 * 1024;
 
-async function assertNoSymlink(relative: string): Promise<void> {
+export async function assertNoSymlink(relative: string): Promise<void> {
   let current = '';
   for (const part of relative.split('/').filter(Boolean)) {
     current = joinVaultPath(current, part);

@@ -24,6 +24,7 @@ export {
   type VaultEntryRow,
 } from './store';
 export {
+  assertNoSymlink,
   copyVaultFolder,
   createVaultFolder,
   listSyncConflicts,

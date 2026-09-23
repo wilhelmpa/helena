@@ -222,7 +222,7 @@ export const knowledgeRoutes = new Elysia({
       },
     },
   )
-  .get('/knowledge/conflicts', ({ scope, paths }) => listConflicts(scope, paths.root), {
+  .get('/knowledge/conflicts', ({ scope, paths }) => vaultCall(() => listConflicts(scope, paths.root)), {
     vault: { action: 'read', fields: ['root'] },
     query: treeQuery,
     response: { 200: ConflictListResponse, ...commonErrors },
@@ -252,7 +252,8 @@ export const knowledgeRoutes = new Elysia({
   })
   .get(
     '/knowledge/raw',
-    ({ paths, query, request }) => rawFile(paths.path, request, query.download !== undefined),
+    ({ paths, query, request }) =>
+      vaultCall(() => rawFile(paths.path, request, query.download !== undefined)),
     {
       vault: { action: 'read', fields: ['path'] },
       query: rawQuery,

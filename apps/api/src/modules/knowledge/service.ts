@@ -5,6 +5,7 @@ import { and, asc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import { db, vaultEntry, vaultLink } from '@repo/db';
 import {
   absoluteVaultPath,
+  assertNoSymlink,
   assetsFolderFor,
   baseName,
   commitVaultPaths,
@@ -99,6 +100,7 @@ export async function readDocument(relative: string, maxChars = DEFAULT_MAX_CHAR
       obsidianUrl: obsidianUrl(relative),
     };
   }
+  await assertNoSymlink(relative);
   let info;
   try {
     info = await lstat(absoluteVaultPath(relative));
@@ -200,6 +202,7 @@ async function titlesBelow(folder: string) {
 // The notes and folders below a Docs root, read from disk, with their titles from the
 // index. Sorted by path, so a client builds the tree in one pass.
 export async function listTree(scope: VaultScope, root: string) {
+  await assertNoSymlink(root);
   const paths = (await walkVault(root)).filter(
     (relative) => canAccess(scope, relative, 'read') && !isIgnoredPath(relative),
   );
@@ -225,6 +228,7 @@ export async function listTree(scope: VaultScope, root: string) {
 }
 
 export async function listFolder(scope: VaultScope, folder: string) {
+  await assertNoSymlink(folder);
   let entries;
   try {
     entries = await readdir(absoluteVaultPath(folder), { withFileTypes: true });
@@ -462,6 +466,7 @@ export async function listTrashed(root: string) {
 // The Syncthing conflict copies below a Docs root: two devices changed a note at the
 // same time, and the owner decides which version stays.
 export async function listConflicts(scope: VaultScope, root: string) {
+  await assertNoSymlink(root);
   return (await listSyncConflicts(root))
     .filter((conflict) => canAccess(scope, conflict.path, 'read'))
     .map((conflict) => ({
@@ -487,9 +492,10 @@ export async function noteVersion(relative: string, commit: string) {
 }
 
 export async function rawFile(relative: string, request: Request, download: boolean) {
+  await assertNoSymlink(relative);
   let info;
   try {
-    info = await stat(absoluteVaultPath(relative));
+    info = await lstat(absoluteVaultPath(relative));
   } catch {
     throw new HttpError(404, 'File not found');
   }

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { apiKeyApi, app, authedApi, type Api } from '#tests/helpers/app';
 import { createAgent } from '#tests/helpers/agents';
@@ -125,6 +126,33 @@ describe('knowledge', () => {
       expect((await write(asOwner, 'Projects/MKT/Docs/notes.txt', 'x')).status).toBe(400);
       expect((await write(asOwner, 'Projects/MKT/.obsidian/app.md', 'x')).status).toBe(403);
       expect((await read(asOwner, 'Projects/MKT/Docs/missing.md')).status).toBe(404);
+    });
+
+    it('refuses to follow a symbolic link out of the vault', async () => {
+      const { asOwner } = await setup();
+      const outside = await mkdtemp(path.join(os.tmpdir(), 'vault-outside-'));
+      await writeFile(path.join(outside, 'secret.txt'), 'secret');
+      await mkdir(path.join(root(), 'Projects/MKT/Docs'), { recursive: true });
+      await symlink(outside, path.join(root(), 'Projects/MKT/Docs/link'));
+      await symlink(
+        path.join(outside, 'secret.txt'),
+        path.join(root(), 'Projects/MKT/Docs/secret.txt'),
+      );
+
+      for (const target of ['Projects/MKT/Docs/link/secret.txt', 'Projects/MKT/Docs/secret.txt']) {
+        const document = await read(asOwner, target);
+        expect(document.status).toBe(400);
+        expect(JSON.stringify(document.data ?? '')).not.toContain('secret');
+        expect(
+          (await asOwner.knowledge.raw.get({ query: { path: target } })).status,
+        ).toBe(400);
+      }
+      expect(
+        (await asOwner.knowledge.folders.get({ query: { path: 'Projects/MKT/Docs/link' } })).status,
+      ).toBe(400);
+      expect(
+        (await write(asOwner, 'Projects/MKT/Docs/link/new.md', 'x')).status,
+      ).toBe(400);
     });
 
     it('lists the Docs tree and a folder', async () => {
