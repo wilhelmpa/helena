@@ -29,6 +29,10 @@ install -m 0640 -o root -g "$dev_user" "$tmp" "$env_file"
   printf 'map $host $volition_dev_owner_token {\n    default "%s";\n}\n' "$token" >"$token_conf"
 )
 install -m 0644 "$here/nginx-dev.conf" "$site"
+# A socket left behind by an unclean shutdown would keep nginx from starting on boot.
+install -d -m 0755 /etc/systemd/system/nginx.service.d
+install -m 0644 "$here/systemd/nginx.service.d/volition-stale-socket.conf" /etc/systemd/system/nginx.service.d/
+systemctl daemon-reload
 nginx -t
 systemctl reload nginx
 
