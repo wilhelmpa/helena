@@ -19,3 +19,24 @@ export const mastra = new Mastra({
     build: { swaggerUI: false, openAPIDocs: false, apiReqLogs: false },
   },
 });
+
+// Continues the runs that were active when the process stopped, each from the step it
+// was in. The built server does not do this, only `mastra dev` does, and Mastra's
+// restartAllActiveWorkflowRuns() waits for each run to finish before it restarts the
+// next. A stage that runs again replays the Plan run of its idempotency key.
+export async function restartActiveRuns(instance: Mastra): Promise<void> {
+  const { runs } = await instance.listActiveWorkflowRuns();
+  await Promise.all(
+    runs.map(async ({ workflowName, runId }) => {
+      try {
+        await (await instance.getWorkflowById(workflowName).createRun({ runId })).restart();
+      } catch (error) {
+        instance.getLogger().error('Failed to restart workflow run', { workflowName, runId, error });
+      }
+    }),
+  );
+}
+
+restartActiveRuns(mastra).catch((error) =>
+  mastra.getLogger().error('Failed to restart active workflow runs', { error }),
+);

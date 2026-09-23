@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { Mastra } from '@mastra/core/mastra';
+import { createStep, createWorkflow } from '@mastra/core/workflows';
+import { LibSQLStore } from '@mastra/libsql';
+import { z } from 'zod';
 import { workflowIds, type WorkEnvelope } from '../src/mastra/contracts.ts';
 import { idempotencyKey, planEffects } from '../src/mastra/effects.ts';
 import { workflowDefinitions, workflowRegistry } from '../src/mastra/registry.ts';
 import { eventTriggerRegistry, workflowForEvent } from '../src/mastra/triggers.ts';
-import { mastra } from '../src/mastra/index.ts';
+import { mastra, restartActiveRuns } from '../src/mastra/index.ts';
 import { privateClassifierAdapter } from '../src/mastra/adapters/classifier.ts';
 import { withBackoff } from '../src/mastra/adapters/hermes-team.ts';
 
@@ -163,4 +167,58 @@ test('production inbox triage uses the provider-neutral classifier adapter', asy
   } finally {
     privateClassifierAdapter.classify = original;
   }
+});
+
+test('runs that were active when Mastra stopped continue from the step they were in', async () => {
+  const value = z.object({ value: z.number() });
+  const executed: string[] = [];
+  let reachedSecond: () => void = () => {};
+  const stopped = new Promise<void>((resolve) => {
+    reachedSecond = resolve;
+  });
+  const instance = (second: (input: { value: number }) => Promise<{ value: number }>) =>
+    new Mastra({
+      workflows: {
+        probe: createWorkflow({ id: 'recovery-probe', inputSchema: value, outputSchema: value })
+          .then(
+            createStep({
+              id: 'first',
+              inputSchema: value,
+              outputSchema: value,
+              execute: async ({ inputData }) => {
+                executed.push('first');
+                return { value: inputData.value + 1 };
+              },
+            }),
+          )
+          .then(
+            createStep({
+              id: 'second',
+              inputSchema: value,
+              outputSchema: value,
+              execute: ({ inputData }) => second(inputData),
+            }),
+          )
+          .commit(),
+      },
+      storage: new LibSQLStore({ id: 'recovery-probe', url: process.env.STUDIO_DATABASE_URL! }),
+    });
+
+  const before = instance(() => {
+    reachedSecond();
+    return new Promise(() => {});
+  });
+  const run = await before.getWorkflow('probe').createRun();
+  void run.start({ inputData: { value: 1 } });
+  await stopped;
+
+  const after = instance(async (input) => {
+    executed.push('second');
+    return { value: input.value * 10 };
+  });
+  await restartActiveRuns(after);
+  const stored = await after.getWorkflow('probe').getWorkflowRunById(run.runId);
+  assert.equal(stored?.status, 'success');
+  assert.deepEqual(stored?.result, { value: 20 });
+  assert.deepEqual(executed, ['first', 'second']);
 });
