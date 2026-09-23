@@ -90,6 +90,16 @@ describe('preset arguments', () => {
     expect(unlimited).not.toContain('--run-budget');
   });
 
+  it('limits Hermes to a toolset list only when one is given', () => {
+    const restricted = presetArgv(PRESETS.hermes, null, '', [], 'do it', {
+      toolsets: ['file', 'web', 'itsaplan'],
+    });
+    expect(restricted.slice(-2)).toEqual(['--toolsets', 'file,web,itsaplan']);
+
+    const unrestricted = presetArgv(PRESETS.hermes, null, '', [], 'do it', { toolsets: null });
+    expect(unrestricted).not.toContain('--toolsets');
+  });
+
   it("appends the operator's arguments after the preset's, so a repeated flag wins", () => {
     const argv = presetArgv(PRESETS.claude, null, '', ['--permission-mode', 'plan'], 'do it');
     expect(argv.lastIndexOf('--permission-mode')).toBeGreaterThan(

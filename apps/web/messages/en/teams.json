@@ -499,7 +499,59 @@
     "chatNeedsProject": "Attach the AI agent to a project to test it here.",
     "triggerFieldsTitle": "Custom fields that start a run",
     "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions"
+    "noProjectInstructions": "No project-specific instructions",
+    "abilities": {
+      "title": "Abilities",
+      "hint": "What the agent can do in Hermes: toolsets, MCP servers, skills and memory",
+      "notReported": "The runner has not reported what the agent can do yet.",
+      "toolsets": "Toolsets",
+      "toolsetsHint": "Turn a toolset off and save to keep the agent from using it in chats and runs.",
+      "toolsetsReadOnly": "Only members who can edit agents can turn toolsets off.",
+      "noToolsets": "The runner reported no toolsets.",
+      "mcpServers": "MCP servers",
+      "mcpServersHint": "Always available to the agent. They are set in the Hermes profile.",
+      "noMcpServers": "None",
+      "skills": "Skills",
+      "skillsHint": "In the agent's Hermes profile: {count}. Read-only.",
+      "searchSkills": "Filter skills",
+      "noSkills": "The profile has no skills yet.",
+      "uncategorized": "Without category",
+      "origin": {
+        "agent": "Created by the agent",
+        "hub": "From the Skills Hub",
+        "plan": "From Plan"
+      },
+      "memory": "Memory",
+      "memoryHint": "Hermes writes this memory itself. It is shown as the runner last reported it.",
+      "memoryNotes": "The agent's notes",
+      "memoryUser": "About the user",
+      "memoryEmpty": "Empty",
+      "memoryTruncated": "Only the first 16 KB are shown.",
+      "toolset": {
+        "browser": "Opens web pages in a browser, clicks, types and scrolls.",
+        "clarify": "Asks the person a clarifying question.",
+        "code_execution": "Runs Python scripts that can call the other tools.",
+        "computer_use": "Controls the desktop with the mouse and keyboard.",
+        "connections": "Uses connected accounts and remote connectors.",
+        "context_engine": "Tools of the active context engine.",
+        "cronjob": "Creates and manages scheduled jobs.",
+        "delegation": "Hands subtasks to subagents.",
+        "file": "Reads, writes, edits and searches files.",
+        "image_gen": "Generates images.",
+        "kanban": "Works on the Hermes task board.",
+        "memory": "Keeps notes that last across sessions.",
+        "session_search": "Searches earlier conversations.",
+        "skills": "Lists, reads, creates and edits skills.",
+        "terminal": "Runs shell commands and background processes.",
+        "todo": "Keeps a task list for the current session.",
+        "tts": "Turns text into speech.",
+        "video": "Analyzes videos.",
+        "video_gen": "Generates videos.",
+        "vision": "Analyzes images.",
+        "web": "Searches the web and reads pages.",
+        "x_search": "Searches posts on X (Twitter)."
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} is now {role}",
@@ -515,12 +567,14 @@
     "access": "MCP access",
     "accessHint": "Off closes the whole team to MCP.",
     "managerOnly": "Only a team owner or manager can change this.",
-    "statusOn": "On",
-    "statusOff": "Off",
     "toggleAria": "Toggle MCP access for the team",
     "projects": "Projects MCP can reach",
     "projectsHint": "A new project starts with the instance default.",
     "noProjects": "This team has no projects yet.",
     "projectToggleAria": "Toggle MCP access for {project}"
+  },
+  "settingState": {
+    "on": "On",
+    "off": "Off"
   }
 }

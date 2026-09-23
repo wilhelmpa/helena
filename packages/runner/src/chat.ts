@@ -25,6 +25,7 @@ export async function answer(
   client: Client,
   message: ChatMessage,
   stop: AbortController,
+  toolsets: string[] | null,
 ): Promise<void> {
   // Reported once: repeating it on every batch is a field the server has to ignore.
   let reported = message.sessionId !== null;
@@ -50,6 +51,7 @@ export async function answer(
       sessionId: message.sessionId,
       model: message.model,
       thinkingLevel: message.thinkingLevel,
+      toolsets,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,

@@ -499,7 +499,59 @@
     "chatNeedsProject": "将 AI 代理加入项目后即可在此测试。",
     "triggerFieldsTitle": "触发运行的自定义字段",
     "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions"
+    "noProjectInstructions": "No project-specific instructions",
+    "abilities": {
+      "title": "能力",
+      "hint": "代理在 Hermes 中能做的事：工具集、MCP 服务器、技能和记忆",
+      "notReported": "运行器尚未报告代理能做什么。",
+      "toolsets": "工具集",
+      "toolsetsHint": "关闭某个工具集并保存后，代理在聊天和运行中将不再使用它。",
+      "toolsetsReadOnly": "只有可以编辑代理的成员才能关闭工具集。",
+      "noToolsets": "运行器没有报告任何工具集。",
+      "mcpServers": "MCP 服务器",
+      "mcpServersHint": "始终对代理可用，在 Hermes 配置文件中设置。",
+      "noMcpServers": "无",
+      "skills": "技能",
+      "skillsHint": "代理的 Hermes 配置文件中共 {count} 个，只读。",
+      "searchSkills": "筛选技能",
+      "noSkills": "配置文件中还没有技能。",
+      "uncategorized": "未分类",
+      "origin": {
+        "agent": "由代理创建",
+        "hub": "来自 Skills Hub",
+        "plan": "来自 Plan"
+      },
+      "memory": "记忆",
+      "memoryHint": "这份记忆由 Hermes 自行写入，这里显示的是运行器最近一次报告的内容。",
+      "memoryNotes": "代理的笔记",
+      "memoryUser": "关于用户",
+      "memoryEmpty": "空",
+      "memoryTruncated": "仅显示前 16 KB。",
+      "toolset": {
+        "browser": "在浏览器中打开网页，点击、输入和滚动。",
+        "clarify": "向对方提出澄清问题。",
+        "code_execution": "运行可调用其他工具的 Python 脚本。",
+        "computer_use": "用鼠标和键盘控制桌面。",
+        "connections": "使用已连接的账号和远程连接器。",
+        "context_engine": "当前上下文引擎提供的工具。",
+        "cronjob": "创建和管理定时任务。",
+        "delegation": "把子任务交给子代理。",
+        "file": "读取、写入、编辑和搜索文件。",
+        "image_gen": "生成图片。",
+        "kanban": "使用 Hermes 任务看板。",
+        "memory": "保存跨会话保留的笔记。",
+        "session_search": "搜索以前的对话。",
+        "skills": "列出、读取、创建和编辑技能。",
+        "terminal": "运行 shell 命令和后台进程。",
+        "todo": "维护当前会话的任务列表。",
+        "tts": "把文字转换为语音。",
+        "video": "分析视频。",
+        "video_gen": "生成视频。",
+        "vision": "分析图片。",
+        "web": "搜索网页并阅读页面。",
+        "x_search": "搜索 X（Twitter）上的帖子。"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",
@@ -515,12 +567,14 @@
     "access": "MCP 访问",
     "accessHint": "关闭后，整个团队都无法通过 MCP 访问。",
     "managerOnly": "只有团队所有者或管理者可以修改。",
-    "statusOn": "已开启",
-    "statusOff": "已关闭",
     "toggleAria": "切换团队的 MCP 访问",
     "projects": "MCP 可访问的项目",
     "projectsHint": "新项目创建时采用实例的默认设置。",
     "noProjects": "该团队还没有项目。",
     "projectToggleAria": "切换 {project} 的 MCP 访问"
+  },
+  "settingState": {
+    "on": "已开启",
+    "off": "已关闭"
   }
 }

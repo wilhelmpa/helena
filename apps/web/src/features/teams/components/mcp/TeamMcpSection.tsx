@@ -1,22 +1,12 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Check, Minus } from 'lucide-react';
 import { useTeam, useTeamProjectOptionsQuery, useUpdateTeamMcp } from '@/services/teams.service';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Switch } from '@/components/ui/switch';
 import McpConnectionGuide from '@/features/mcp/components/McpConnectionGuide';
-
-function McpStatus({ on }: { on: boolean }) {
-  const t = useTranslations('teams.mcp');
-  return (
-    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      {on ? <Check className="size-4 text-green-500" /> : <Minus className="size-4" />}
-      {t(on ? 'statusOn' : 'statusOff')}
-    </span>
-  );
-}
+import { TeamSettingState } from '../TeamSettingState';
 
 // The team's MCP settings: the switch that opens the team to MCP clients at all, and
 // which of its projects that reach covers. Owners and managers set both; a plain
@@ -50,7 +40,7 @@ export default function TeamMcpSection({ teamId }: { teamId: number }) {
               aria-label={t('toggleAria')}
             />
           ) : (
-            <McpStatus on={enabled} />
+            <TeamSettingState on={enabled} />
           )}
         </div>
 
@@ -89,7 +79,7 @@ export default function TeamMcpSection({ teamId }: { teamId: number }) {
                           aria-label={t('projectToggleAria', { project: project.name })}
                         />
                       ) : (
-                        <McpStatus on={project.mcpEnabled} />
+                        <TeamSettingState on={project.mcpEnabled} />
                       )}
                     </li>
                   ))}

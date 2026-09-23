@@ -32,6 +32,7 @@ export interface AgentRuntimeFile {
 export interface AgentRuntimePolicy {
   reasoningEffort: string | null;
   toolAllow: string[];
+  // Hermes toolsets the agent may not use in chats and runs.
   toolDeny: string[];
   mcpGrants: string[];
   files: AgentRuntimeFile[];
@@ -48,6 +49,32 @@ export interface AgentRuntimeConflict {
   content: string;
 }
 
+// 'bundled' ships with Hermes, 'hub' was installed from the Skills Hub, 'plan' is one of
+// Plan's skills, 'agent' was created by the agent.
+export type AgentSkillOrigin = 'bundled' | 'hub' | 'plan' | 'agent';
+
+export interface AgentInventorySkill {
+  name: string;
+  category: string | null;
+  description: string;
+  origin: AgentSkillOrigin;
+}
+
+export interface AgentInventoryMemory {
+  file: 'MEMORY.md' | 'USER.md';
+  content: string;
+  truncated: boolean;
+}
+
+// What the agent can do in Hermes, as its runner last reported it. Hermes owns all of it;
+// only the toolsets can be turned off, through the runtime policy's toolDeny.
+export interface AgentRuntimeInventory {
+  toolsets: string[];
+  mcpServers: string[];
+  skills: AgentInventorySkill[];
+  memory: AgentInventoryMemory[];
+}
+
 export interface AgentRuntimeState {
   adapter: string | null;
   status: 'offline' | 'online' | 'degraded';
@@ -55,6 +82,8 @@ export interface AgentRuntimeState {
   capabilities: string[];
   detail: string | null;
   conflicts: AgentRuntimeConflict[];
+  // Null until a runner that reads it reports one.
+  inventory: AgentRuntimeInventory | null;
   reportedAt: string | null;
 }
 

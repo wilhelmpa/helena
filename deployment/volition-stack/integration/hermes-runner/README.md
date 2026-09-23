@@ -40,6 +40,11 @@ existing local Codex CLI login without persisting it. Actual runs use Hermes' ow
 store; credentials are never embedded in the image or repository. Restarting
 `volition-hermes-runner.service` refreshes the catalog after a provider or account change.
 
+The catalog script also writes the `hermes` field of the runner config: the toolsets and MCP
+servers `config.yaml` enables for the cli platform, names only. The runner reports them to Plan
+with each agent's skills and memory, and builds `--toolsets` from them when the owner turns a
+toolset off for an agent. A change to `config.yaml` reaches Plan with the next runner restart.
+
 ## Run limits
 
 A queued run carries two limits that the runner passes to `hermes chat`: `--max-turns`

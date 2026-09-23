@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { chmod, lstat, mkdir, open, readFile, rename, rm, unlink } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { RunnerConfig } from './config';
+import { readHermesInventory, type HermesInventory, type HermesProfile } from './inventory';
 
 export interface RuntimePolicyFile {
   kind: 'instructions';
@@ -27,6 +28,8 @@ export interface RuntimePolicySnapshot {
   revision: string;
   runtimePolicy: {
     files: RuntimePolicyFile[];
+    // The Hermes toolsets the agent may not use.
+    toolDeny?: string[];
   };
   skills: RuntimeSkill[];
 }
@@ -45,6 +48,7 @@ export interface RuntimeStatus {
   capabilities: string[];
   detail: string | null;
   conflicts?: RuntimeConflict[];
+  inventory?: HermesInventory;
 }
 
 export interface RuntimePolicyClient {
@@ -82,6 +86,9 @@ const MAX_CONFLICT_BYTES = 64 * 1024;
 const CAPABILITIES = ['model', 'reasoning', 'managed-markdown', 'managed-skills'];
 // A revision that failed to apply is tried again after this long, not on every claim.
 const RETRY_FAILED_MS = 60_000;
+// Skills and memory change while the agent works. They are read again after this long, and
+// after every run and chat answer.
+const INVENTORY_INTERVAL_MS = 60_000;
 
 function digest(content: string | Buffer): string {
   return createHash('sha256').update(content).digest('hex');
@@ -347,16 +354,53 @@ export class HermesPolicyMaterializer {
   }
 }
 
+// The `--toolsets` list for Hermes: the profile's toolsets without the denied ones, plus
+// every MCP server, which an explicit list has to name to keep. Null while nothing the
+// profile enables is denied, which leaves Hermes on the profile's own selection. Without
+// the profile the runner reports no toolsets, so Plan offers none to turn off.
+export function allowedToolsets(
+  profile: HermesProfile | undefined,
+  denied: string[],
+): string[] | null {
+  if (!profile) return null;
+  const kept = profile.toolsets.filter((name) => !denied.includes(name));
+  if (kept.length === profile.toolsets.length) return null;
+  const toolsets = [...kept, ...profile.mcpServers];
+  // Hermes reads an empty list as no selection and enables every toolset.
+  if (toolsets.length === 0) {
+    throw new Error('Every Hermes toolset is turned off and the profile has no MCP server');
+  }
+  return toolsets;
+}
+
+type ReportedState = Pick<RuntimeStatus, 'status' | 'detail' | 'conflicts'>;
+
+export interface SynchronizerOptions {
+  inventory?: () => Promise<HermesInventory>;
+  profile?: HermesProfile;
+  now?: () => number;
+}
+
 export class HermesPolicySynchronizer {
   private appliedRevision: string | null = null;
   private failed: { revision: string; at: number } | null = null;
   private active: Promise<void> | null = null;
+  // What the last applied or failed revision reported. A changed inventory is reported
+  // with it again, since a report replaces the whole state Plan keeps.
+  private state: ReportedState | null = null;
+  private deniedToolsets: string[] = [];
+  private inventory: HermesInventory | undefined;
+  private inventoryDigest: string | null = null;
+  private inventoryReadAt = -Infinity;
+  private readonly now: () => number;
 
   constructor(
     private readonly client: RuntimePolicyClient,
     private readonly materializer: HermesPolicyMaterializer,
-    private readonly now: () => number = Date.now,
-  ) {}
+    private readonly options: SynchronizerOptions = {},
+  ) {
+    this.now = options.now ?? Date.now;
+  }
 
   // Never throws: the agent keeps working with the policy it applied last, and Plan
   // shows why a newer one did not apply.
@@ -368,6 +412,16 @@ export class HermesPolicySynchronizer {
     return this.active;
   }
 
+  // A run or a chat answer may have changed the skills or the memory, so the next sync
+  // reads them again.
+  inventoryChanged(): void {
+    this.inventoryReadAt = -Infinity;
+  }
+
+  toolsets(): string[] | null {
+    return allowedToolsets(this.options.profile, this.deniedToolsets);
+  }
+
   private async sync(): Promise<void> {
     let snapshot: RuntimePolicySnapshot;
     try {
@@ -376,45 +430,71 @@ export class HermesPolicySynchronizer {
       // The claim that follows reports a server that cannot be reached.
       return;
     }
-    if (snapshot.revision === this.appliedRevision) return;
+    // The restriction writes no file, so it holds even while a revision fails to apply.
+    this.deniedToolsets = snapshot.runtimePolicy?.toolDeny ?? [];
+    const applied = await this.apply(snapshot);
+    const inventoryChanged = await this.readInventory();
+    if ((applied || inventoryChanged) && this.state) await this.report(this.state);
+  }
+
+  // True when the revision was applied or failed to apply, either of which is reported.
+  private async apply(snapshot: RuntimePolicySnapshot): Promise<boolean> {
+    if (snapshot.revision === this.appliedRevision) return false;
     if (
       this.failed?.revision === snapshot.revision &&
       this.now() - this.failed.at < RETRY_FAILED_MS
     ) {
-      return;
+      return false;
     }
-    let result: { revision: string; conflicts: RuntimeConflict[] };
     try {
-      result = await this.materializer.apply(snapshot);
+      const result = await this.materializer.apply(snapshot);
+      this.appliedRevision = result.revision;
+      this.failed = null;
+      this.state = {
+        status: 'online',
+        detail:
+          result.conflicts.length > 0
+            ? 'Files changed outside Plan were replaced; the changed versions are kept next to them.'
+            : null,
+        conflicts: result.conflicts,
+      };
     } catch (error) {
       this.failed = { revision: snapshot.revision, at: this.now() };
-      await this.report('degraded', `Runtime policy sync failed: ${describeFailure(error)}`, []);
-      return;
+      this.state = {
+        status: 'degraded',
+        detail: `Runtime policy sync failed: ${describeFailure(error)}`,
+        conflicts: [],
+      };
     }
-    this.appliedRevision = result.revision;
-    this.failed = null;
-    await this.report(
-      'online',
-      result.conflicts.length > 0
-        ? 'Files changed outside Plan were replaced; the changed versions are kept next to them.'
-        : null,
-      result.conflicts,
-    );
+    return true;
   }
 
-  private async report(
-    status: RuntimeStatus['status'],
-    detail: string | null,
-    conflicts: RuntimeConflict[],
-  ): Promise<void> {
+  // True when the inventory was read and differs from the one reported last.
+  private async readInventory(): Promise<boolean> {
+    if (!this.options.inventory || this.now() - this.inventoryReadAt < INVENTORY_INTERVAL_MS) {
+      return false;
+    }
+    this.inventoryReadAt = this.now();
+    try {
+      this.inventory = await this.options.inventory();
+    } catch {
+      // Plan keeps showing the inventory it received last.
+      return false;
+    }
+    const inventoryDigest = digest(JSON.stringify(this.inventory));
+    if (inventoryDigest === this.inventoryDigest) return false;
+    this.inventoryDigest = inventoryDigest;
+    return true;
+  }
+
+  private async report(state: ReportedState): Promise<void> {
     await this.client
       .reportRuntimeStatus({
         adapter: 'hermes',
-        status,
+        ...state,
         appliedRevision: this.appliedRevision,
         capabilities: CAPABILITIES,
-        detail,
-        conflicts,
+        ...(this.inventory && { inventory: this.inventory }),
       })
       .catch(() => {});
   }
@@ -427,5 +507,9 @@ export function hermesPolicySynchronizer(
   if (config.agent !== 'hermes') return null;
   const hermesHome = config.env.HERMES_HOME ?? process.env.HERMES_HOME;
   if (!hermesHome) throw new Error('Hermes policy sync requires HERMES_HOME');
-  return new HermesPolicySynchronizer(client, new HermesPolicyMaterializer({ hermesHome }));
+  const materializer = new HermesPolicyMaterializer({ hermesHome });
+  return new HermesPolicySynchronizer(client, materializer, {
+    inventory: () => readHermesInventory(materializer.hermesHome, config.hermes),
+    profile: config.hermes,
+  });
 }

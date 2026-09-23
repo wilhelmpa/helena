@@ -110,7 +110,7 @@ describe('Hermes subprocess adapter', () => {
     });
   });
 
-  it('passes the prompt on stdin and the session, model, reasoning, limits and profile as argv', async () => {
+  it('passes the prompt on stdin and the session, model, reasoning, limits, toolsets and profile as argv', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'itsaplan-hermes-'));
     dirs.push(dir);
     const argvFile = join(dir, 'argv');
@@ -149,6 +149,7 @@ describe('Hermes subprocess adapter', () => {
       thinkingLevel: 'high',
       maxTurns: 25,
       runBudgetSeconds: 600,
+      toolsets: ['file', 'web', 'itsaplan'],
       env: {},
     });
 
@@ -165,6 +166,7 @@ describe('Hermes subprocess adapter', () => {
     expect(argv[argv.lastIndexOf('--reasoning') + 1]).toBe('high');
     expect(argv[argv.indexOf('--max-turns') + 1]).toBe('25');
     expect(argv[argv.indexOf('--run-budget') + 1]).toBe('600');
+    expect(argv[argv.indexOf('--toolsets') + 1]).toBe('file,web,itsaplan');
   });
 });
 

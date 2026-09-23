@@ -45,6 +45,14 @@ if changed deployment/volition-stack/integration; then
   restart+=(volition-provisioning.service volition-hermes-team-bridge.service)
 fi
 
+# The runner's start script runs an installed copy of the catalog script, which writes the
+# runner config from the Hermes profile.
+if changed deployment/volition-stack/integration/scripts/volition-hermes-catalog.py; then
+  install -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-catalog.py" \
+    /usr/local/libexec/volition-hermes-catalog.py
+  restart+=(volition-hermes-runner.service)
+fi
+
 if changed deployment/volition-stack/optional/mastra-studio; then
   echo "building Mastra"
   as_owner bash -c "cd '$live/deployment/volition-stack/optional/mastra-studio' && bun install --frozen-lockfile >/dev/null && bun run build >/dev/null"

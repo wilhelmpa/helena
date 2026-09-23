@@ -499,7 +499,59 @@
     "chatNeedsProject": "Anexe o agente de IA a um projeto para testá-lo aqui.",
     "triggerFieldsTitle": "Campos personalizados que iniciam uma execução",
     "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions"
+    "noProjectInstructions": "No project-specific instructions",
+    "abilities": {
+      "title": "Capacidades",
+      "hint": "O que o agente pode fazer no Hermes: conjuntos de ferramentas, servidores MCP, habilidades e memória",
+      "notReported": "O runner ainda não informou o que o agente pode fazer.",
+      "toolsets": "Conjuntos de ferramentas",
+      "toolsetsHint": "Desligue um conjunto e salve para que o agente não o use em chats e execuções.",
+      "toolsetsReadOnly": "Só membros que podem editar agentes podem desligar conjuntos de ferramentas.",
+      "noToolsets": "O runner não informou nenhum conjunto de ferramentas.",
+      "mcpServers": "Servidores MCP",
+      "mcpServersHint": "Sempre disponíveis para o agente. São definidos no perfil do Hermes.",
+      "noMcpServers": "Nenhum",
+      "skills": "Habilidades",
+      "skillsHint": "No perfil do Hermes do agente: {count}. Somente leitura.",
+      "searchSkills": "Filtrar habilidades",
+      "noSkills": "O perfil ainda não tem habilidades.",
+      "uncategorized": "Sem categoria",
+      "origin": {
+        "agent": "Criada pelo agente",
+        "hub": "Do Skills Hub",
+        "plan": "Do Plan"
+      },
+      "memory": "Memória",
+      "memoryHint": "O Hermes escreve essa memória sozinho. Ela aparece como o runner a informou por último.",
+      "memoryNotes": "Notas do agente",
+      "memoryUser": "Sobre o usuário",
+      "memoryEmpty": "Vazio",
+      "memoryTruncated": "Só os primeiros 16 KB são exibidos.",
+      "toolset": {
+        "browser": "Abre páginas da web em um navegador, clica, digita e rola.",
+        "clarify": "Faz uma pergunta de esclarecimento à pessoa.",
+        "code_execution": "Executa scripts Python que podem chamar as outras ferramentas.",
+        "computer_use": "Controla a área de trabalho com o mouse e o teclado.",
+        "connections": "Usa contas conectadas e conectores remotos.",
+        "context_engine": "Ferramentas do mecanismo de contexto ativo.",
+        "cronjob": "Cria e gerencia tarefas agendadas.",
+        "delegation": "Passa subtarefas para subagentes.",
+        "file": "Lê, grava, edita e pesquisa arquivos.",
+        "image_gen": "Gera imagens.",
+        "kanban": "Trabalha no quadro de tarefas do Hermes.",
+        "memory": "Guarda notas que duram entre sessões.",
+        "session_search": "Pesquisa conversas anteriores.",
+        "skills": "Lista, lê, cria e edita habilidades.",
+        "terminal": "Executa comandos de shell e processos em segundo plano.",
+        "todo": "Mantém uma lista de tarefas da sessão atual.",
+        "tts": "Converte texto em fala.",
+        "video": "Analisa vídeos.",
+        "video_gen": "Gera vídeos.",
+        "vision": "Analisa imagens.",
+        "web": "Pesquisa na web e lê páginas.",
+        "x_search": "Pesquisa publicações no X (Twitter)."
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} agora é {role}",
@@ -515,12 +567,14 @@
     "access": "Acesso MCP",
     "accessHint": "Desligado fecha o time inteiro para MCP.",
     "managerOnly": "Só um dono ou gerente do time pode mudar isto.",
-    "statusOn": "Ligado",
-    "statusOff": "Desligado",
     "toggleAria": "Alternar acesso MCP do time",
     "projects": "Projetos que MCP pode alcançar",
     "projectsHint": "Um novo projeto começa com o padrão da instância.",
     "noProjects": "Este time ainda não tem projetos.",
     "projectToggleAria": "Alternar acesso MCP para {project}"
+  },
+  "settingState": {
+    "on": "Ligado",
+    "off": "Desligado"
   }
 }

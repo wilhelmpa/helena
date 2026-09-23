@@ -22,6 +22,7 @@ import AgentTriggersSection from './AgentTriggersSection';
 import { AgentInstructionsField } from './AgentInstructionsField';
 import AgentRunnerSection from './AgentRunnerSection';
 import AgentRuntimePolicySection from './AgentRuntimePolicySection';
+import AgentAbilitiesSection from './AgentAbilitiesSection';
 import { useTranslations } from 'next-intl';
 
 // Which sections open when an existing agent is opened for editing, so the form reads
@@ -219,6 +220,16 @@ export default function TeamAiAgentFields({
     />
   );
 
+  const abilitiesSection = (
+    <AgentAbilitiesSection
+      key="abilities"
+      {...sectionProps('abilities')}
+      agent={agent}
+      value={value}
+      onChange={onChange}
+    />
+  );
+
   const modelSection = (
     <AgentModelSection
       key="model"
@@ -359,6 +370,7 @@ export default function TeamAiAgentFields({
           basicsSection,
           projectsSection,
           runtimePolicySection,
+          abilitiesSection,
           skillsSection,
           toolsSection,
           tokenSection,

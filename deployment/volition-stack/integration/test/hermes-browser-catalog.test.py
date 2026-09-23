@@ -93,5 +93,16 @@ class HermesProjectBrowserCatalogTest(unittest.TestCase):
             CATALOG.descriptor_entries(self.descriptors, self.home, self.browsers)
 
 
+class HermesProfileCatalogTest(unittest.TestCase):
+    def test_reports_mcp_servers_apart_from_toolsets(self):
+        profile = CATALOG.split_profile({"web", "browser", "itsaplan", "file"}, {"itsaplan", "disabled"})
+        self.assertEqual(profile, {"toolsets": ["browser", "file", "web"], "mcpServers": ["itsaplan"]})
+
+    def test_requires_the_browser_toolset(self):
+        CATALOG.require_browser_toolset({"toolsets": ["browser"], "mcpServers": []})
+        with self.assertRaisesRegex(RuntimeError, "browser toolset"):
+            CATALOG.require_browser_toolset({"toolsets": ["file"], "mcpServers": ["browser"]})
+
+
 if __name__ == "__main__":
     unittest.main()

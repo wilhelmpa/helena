@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { lstat, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { HermesInventory } from '../inventory';
 import {
+  allowedToolsets,
   HermesPolicyMaterializer,
   HermesPolicySynchronizer,
   type RuntimePolicyClient,
@@ -259,7 +261,7 @@ describe('Hermes runtime policy synchronizer', () => {
     const sync = new HermesPolicySynchronizer(
       client([bad(), bad(), bad()], statuses),
       materializer,
-      () => now,
+      { now: () => now },
     );
 
     await sync.ensure();
@@ -289,5 +291,95 @@ describe('Hermes runtime policy synchronizer', () => {
         conflicts: [{ path: 'SOUL.md', content: '# Hermes default' }],
       }),
     ]);
+  });
+
+  it('reports the inventory with the status, and again only once it changed', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await mkdir(hermesHome, { recursive: true });
+    await writeFile(join(hermesHome, 'SOUL.md'), '# Hermes default');
+    const statuses: RuntimeStatus[] = [];
+    let memory = '';
+    const inventory = async (): Promise<HermesInventory> => ({
+      toolsets: ['file', 'web'],
+      mcpServers: ['itsaplan'],
+      skills: [],
+      memory: [{ file: 'MEMORY.md', content: memory, truncated: false }],
+    });
+    let now = 0;
+    const same = () => snapshot('sha256:one', soul('# Plan soul'));
+    const sync = new HermesPolicySynchronizer(
+      client([same(), same(), same(), same(), same()], statuses),
+      materializer,
+      { inventory, now: () => now },
+    );
+
+    await sync.ensure();
+    memory = 'Prefers short answers.';
+    // Within the interval the profile is not read again.
+    now = 30_000;
+    await sync.ensure();
+    now = 60_000;
+    await sync.ensure();
+    // Unchanged since the last read: nothing to report.
+    sync.inventoryChanged();
+    await sync.ensure();
+    memory = 'Prefers German.';
+    sync.inventoryChanged();
+    await sync.ensure();
+
+    expect(statuses.map((status) => status.inventory?.memory[0]?.content)).toEqual([
+      '',
+      'Prefers short answers.',
+      'Prefers German.',
+    ]);
+    // A report replaces the whole state Plan keeps, so the conflicts come along again.
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'online',
+      appliedRevision: 'sha256:one',
+      conflicts: [{ path: 'SOUL.md', content: '# Hermes default' }],
+      inventory: { toolsets: ['file', 'web'], mcpServers: ['itsaplan'] },
+    });
+  });
+
+  it('restricts the toolsets as the latest policy says, even one that failed to apply', async () => {
+    const { materializer } = await fixture();
+    const profile = { toolsets: ['file', 'terminal', 'web'], mcpServers: ['itsaplan'] };
+    const withDeny = (revision: string, toolDeny: string[], path = 'SOUL.md') => ({
+      revision,
+      runtimePolicy: { files: [{ kind: 'instructions' as const, path, content: 'x' }], toolDeny },
+      skills: [],
+    });
+    const sync = new HermesPolicySynchronizer(
+      client([withDeny('sha256:one', []), withDeny('sha256:two', ['terminal'], 'AGENTS.md')], []),
+      materializer,
+      { profile },
+    );
+
+    expect(sync.toolsets()).toBeNull();
+    await sync.ensure();
+    expect(sync.toolsets()).toBeNull();
+    await sync.ensure();
+    expect(sync.toolsets()).toEqual(['file', 'web', 'itsaplan']);
+  });
+});
+
+describe('Hermes toolset restriction', () => {
+  const profile = { toolsets: ['browser', 'file', 'terminal'], mcpServers: ['itsaplan'] };
+
+  it('leaves Hermes on its own selection while nothing it enables is denied', () => {
+    expect(allowedToolsets(profile, [])).toBeNull();
+    expect(allowedToolsets(profile, ['message.send', 'itsaplan'])).toBeNull();
+    expect(allowedToolsets(undefined, ['terminal'])).toBeNull();
+  });
+
+  it('names the remaining toolsets and every MCP server', () => {
+    expect(allowedToolsets(profile, ['terminal'])).toEqual(['browser', 'file', 'itsaplan']);
+    expect(allowedToolsets(profile, ['browser', 'file', 'terminal'])).toEqual(['itsaplan']);
+  });
+
+  it('refuses a list Hermes would read as no selection', () => {
+    expect(() => allowedToolsets({ toolsets: ['file'], mcpServers: [] }, ['file'])).toThrow(
+      'Every Hermes toolset is turned off',
+    );
   });
 });

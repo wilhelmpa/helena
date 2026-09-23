@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import type { HermesProfile } from './inventory';
 import { PRESETS, PRESET_NAMES, isPresetName, type Preset, type PresetName } from './presets';
 
 // Two ways to say what to run. `agent` names a CLI the runner knows (see presets.ts) and
@@ -36,6 +37,9 @@ export interface RunnerConfig {
   // calls it makes and the session it started.
   outputFormat: OutputFormat;
   models: ChatCatalogModel[];
+  // What the Hermes profile enables, as the deployment reads it from its config.yaml.
+  // Reported to Plan, and the list a toolset restriction is taken from.
+  hermes?: HermesProfile;
 }
 
 export interface ChatCatalogModel {
@@ -144,6 +148,22 @@ function modelsFrom(value: unknown): ChatCatalogModel[] {
       ...(textOf(model.provider) ? { provider: textOf(model.provider) } : {}),
     };
   });
+}
+
+function hermesFrom(value: unknown): HermesProfile | undefined {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('hermes must be an object');
+  }
+  const profile = value as Record<string, unknown>;
+  const list = (field: keyof HermesProfile) => {
+    const items = profile[field];
+    if (!Array.isArray(items) || items.some((item) => typeof item !== 'string')) {
+      throw new Error(`hermes.${field} must be an array of strings`);
+    }
+    return items as string[];
+  };
+  return { toolsets: list('toolsets'), mcpServers: list('mcpServers') };
 }
 
 function required(value: unknown, field: string): string {
@@ -261,6 +281,7 @@ function configFrom(fields: Fields, name: string, extraArgs: string[]): RunnerCo
     timeoutMs: intFrom(fields.timeoutMs, DEFAULTS.timeoutMs),
     outputFormat: outputFormatFrom(fields.outputFormat, presetOf({ agent, command })),
     models: modelsFrom(fields.models),
+    hermes: hermesFrom(fields.hermes),
   };
 }
 

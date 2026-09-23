@@ -499,7 +499,59 @@
     "chatNeedsProject": "Lampirkan agen AI ke sebuah proyek untuk mengujinya di sini.",
     "triggerFieldsTitle": "Bidang kustom yang memulai eksekusi",
     "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions"
+    "noProjectInstructions": "No project-specific instructions",
+    "abilities": {
+      "title": "Kemampuan",
+      "hint": "Apa yang dapat dilakukan agen di Hermes: toolset, server MCP, keahlian, dan memori",
+      "notReported": "Runner belum melaporkan apa yang dapat dilakukan agen.",
+      "toolsets": "Toolset",
+      "toolsetsHint": "Matikan toolset lalu simpan agar agen tidak menggunakannya dalam chat dan eksekusi.",
+      "toolsetsReadOnly": "Hanya anggota yang dapat mengedit agen yang dapat mematikan toolset.",
+      "noToolsets": "Runner tidak melaporkan toolset apa pun.",
+      "mcpServers": "Server MCP",
+      "mcpServersHint": "Selalu tersedia untuk agen. Diatur di profil Hermes.",
+      "noMcpServers": "Tidak ada",
+      "skills": "Keahlian",
+      "skillsHint": "Di profil Hermes agen: {count}. Hanya baca.",
+      "searchSkills": "Saring keahlian",
+      "noSkills": "Profil belum memiliki keahlian.",
+      "uncategorized": "Tanpa kategori",
+      "origin": {
+        "agent": "Dibuat oleh agen",
+        "hub": "Dari Skills Hub",
+        "plan": "Dari Plan"
+      },
+      "memory": "Memori",
+      "memoryHint": "Hermes menulis memori ini sendiri. Ditampilkan seperti yang terakhir dilaporkan runner.",
+      "memoryNotes": "Catatan agen",
+      "memoryUser": "Tentang pengguna",
+      "memoryEmpty": "Kosong",
+      "memoryTruncated": "Hanya 16 KB pertama yang ditampilkan.",
+      "toolset": {
+        "browser": "Membuka halaman web di browser, mengeklik, mengetik, dan menggulir.",
+        "clarify": "Mengajukan pertanyaan klarifikasi kepada orang tersebut.",
+        "code_execution": "Menjalankan skrip Python yang dapat memanggil alat lainnya.",
+        "computer_use": "Mengendalikan desktop dengan mouse dan keyboard.",
+        "connections": "Menggunakan akun yang terhubung dan konektor jarak jauh.",
+        "context_engine": "Alat dari mesin konteks yang aktif.",
+        "cronjob": "Membuat dan mengelola tugas terjadwal.",
+        "delegation": "Menyerahkan subtugas kepada subagen.",
+        "file": "Membaca, menulis, mengedit, dan mencari file.",
+        "image_gen": "Membuat gambar.",
+        "kanban": "Bekerja di papan tugas Hermes.",
+        "memory": "Menyimpan catatan yang bertahan antarsesi.",
+        "session_search": "Mencari percakapan sebelumnya.",
+        "skills": "Menampilkan, membaca, membuat, dan mengedit keahlian.",
+        "terminal": "Menjalankan perintah shell dan proses latar belakang.",
+        "todo": "Menyimpan daftar tugas untuk sesi saat ini.",
+        "tts": "Mengubah teks menjadi suara.",
+        "video": "Menganalisis video.",
+        "video_gen": "Membuat video.",
+        "vision": "Menganalisis gambar.",
+        "web": "Mencari di web dan membaca halaman.",
+        "x_search": "Mencari postingan di X (Twitter)."
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",
@@ -515,12 +567,14 @@
     "access": "Akses MCP",
     "accessHint": "Jika dinonaktifkan, seluruh tim tidak dapat diakses melalui MCP.",
     "managerOnly": "Hanya pemilik atau manajer tim yang dapat mengubah ini.",
-    "statusOn": "Aktif",
-    "statusOff": "Nonaktif",
     "toggleAria": "Aktifkan atau nonaktifkan akses MCP untuk tim",
     "projects": "Proyek yang dapat dijangkau MCP",
     "projectsHint": "Proyek baru dimulai dengan pengaturan bawaan instance.",
     "noProjects": "Tim ini belum memiliki proyek.",
     "projectToggleAria": "Aktifkan atau nonaktifkan akses MCP untuk {project}"
+  },
+  "settingState": {
+    "on": "Aktif",
+    "off": "Nonaktif"
   }
 }
