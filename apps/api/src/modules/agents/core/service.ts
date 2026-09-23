@@ -19,7 +19,7 @@ import {
   integrationCredential,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
-import { auth } from '@repo/auth';
+import { API_KEY_MAX_NAME_LENGTH, auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { getCredentialById } from '../integrations/service';
 import { integrationKind } from '../integrations/catalog';
@@ -838,9 +838,24 @@ async function assertUsernameFree(
 // rotated by its operator through regenerate-key. The plugin puts its default on
 // every key it creates, so the expiry is cleared on the row afterwards.
 async function issueKey(userId: string, name: string): Promise<string> {
-  const created = await auth.api.createApiKey({ body: { userId, name: `agent:${name}` } });
+  const created = await auth.api.createApiKey({ body: { userId, name: agentKeyName(name) } });
   await db.update(apikey).set({ expiresAt: null }).where(eq(apikey.id, created.id));
   return created.key;
+}
+
+// The name of an agent's key: "agent:" and the agent's display name. It only labels
+// the row; the agent is found through the key's owner, its bot user. The plugin
+// refuses a name over API_KEY_MAX_NAME_LENGTH, and a display name has no such limit
+// (a template's copy appends the project key, a coordinator carries it), so the
+// display name is cut to fit instead of failing the agent's creation or re-key. The
+// cut falls between characters, never inside one.
+function agentKeyName(name: string): string {
+  let keyName = 'agent:';
+  for (const { segment } of new Intl.Segmenter().segment(name.trim())) {
+    if (keyName.length + segment.length > API_KEY_MAX_NAME_LENGTH) break;
+    keyName += segment;
+  }
+  return keyName.trimEnd();
 }
 
 // Creates an agent: a bot user, the ai_agent config row, its team and project
