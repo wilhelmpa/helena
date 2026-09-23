@@ -90,6 +90,14 @@ if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs
   restart+=(volition-terminal.service)
 fi
 
+# Chromium reads its managed policies from this directory; a running project browser applies
+# a change when it reloads its policies, at the latest when it restarts. The project browsers
+# keep no passwords: logins come from Plan through Hermes' vault.
+chromium_policy=deployment/volition-stack/native/chromium/volition-project-browser.json
+if changed "$chromium_policy"; then
+  install -D -m 0644 "$live/$chromium_policy" /etc/chromium/policies/managed/volition-project-browser.json
+fi
+
 # The router runs from this checkout; its unit is installed from here as well.
 if changed deployment/volition-stack/browser deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
   install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
