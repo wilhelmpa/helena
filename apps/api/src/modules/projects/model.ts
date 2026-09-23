@@ -135,6 +135,9 @@ export const ProjectListResponse = t.Array(
     t.Object({
       role: t.Union([t.Literal('owner'), t.Literal('member')]),
       permissions: t.Optional(PermissionMatrixSchema),
+      departmentId: t.Nullable(t.Integer()),
+      departmentName: t.Nullable(t.String()),
+      teamManager: t.Boolean(),
     }),
   ]),
 );

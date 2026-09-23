@@ -89,5 +89,20 @@
   "vault": "Vault",
   "teamSettings": "Pengaturan tim",
   "teamOrchestration": "Tim & orkestrasi",
-  "overview": "Ikhtisar"
+  "overview": "Ikhtisar",
+  "projectGroups": {
+    "group": "Grup",
+    "noGroup": "Tanpa grup",
+    "newGroup": "Grup baru…",
+    "newGroupTitle": "Grup baru",
+    "newGroupDescription": "Grup mengumpulkan proyek di sidebar, misalnya perusahaan dengan produk dan proyek kliennya.",
+    "groupName": "Nama grup",
+    "create": "Buat",
+    "renameGroup": "Ganti nama grup",
+    "deleteGroup": "Hapus grup",
+    "deleteGroupConfirm": "Hapus {name}? Proyeknya tetap ada dan tampil tanpa grup.",
+    "projectOptions": "Opsi proyek",
+    "groupOptions": "Opsi grup",
+    "dropUngrouped": "Lepaskan di sini untuk mengeluarkan proyek dari grupnya"
+  }
 }

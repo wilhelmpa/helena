@@ -11,6 +11,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { processProjectProvisioning } from '../../project-provisioning';
 import { resetWorkerConfigForTests } from '../../config';
+import { insertAgent } from '../helpers/agents';
 
 let server: ReturnType<typeof Bun.serve> | null = null;
 
@@ -26,6 +27,41 @@ afterEach(() => {
 });
 
 describe('project provisioning', () => {
+  it('sends the external agents that work only in the project', async () => {
+    let receivedBody: { agents?: unknown } = {};
+    server = Bun.serve({
+      port: 0,
+      fetch: async (incoming) => {
+        receivedBody = (await incoming.json()) as { agents?: unknown };
+        return Response.json({ resources: [] });
+      },
+    });
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
+    const [owner] = await db.insert(team).values({ name: 'Agent provisioning' }).returning();
+    const [created, other] = await db
+      .insert(project)
+      .values([
+        { teamId: owner.id, key: `AGT${owner.id}`, name: 'Agents' },
+        { teamId: owner.id, key: `OTH${owner.id}`, name: 'Other' },
+      ])
+      .returning();
+    const coder = await insertAgent(owner.id, 'coder', [created.id]);
+    const writer = await insertAgent(owner.id, 'writer', [created.id]);
+    await insertAgent(owner.id, 'shared', [created.id, other.id]);
+    await insertAgent(owner.id, 'internal', [created.id], 'internal');
+    await insertAgent(owner.id, 'master', [created.id]);
+    await insertAgent(owner.id, `hermes-agt${owner.id}-coordinator`, [created.id]);
+    await insertAgent(owner.id, 'elsewhere', [other.id]);
+    await db
+      .insert(projectProvisioningJob)
+      .values({ projectId: created.id, requestedResources: ['workspace'] });
+
+    await processProjectProvisioning();
+
+    expect(receivedBody.agents).toEqual([coder, writer]);
+  });
+
   it('includes bounded project-owned board metadata for requested view ids', async () => {
     let receivedBody: { boards?: unknown } = {};
     server = Bun.serve({

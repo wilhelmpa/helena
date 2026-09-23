@@ -583,11 +583,13 @@ export async function setProjectAssignment(
         departmentId: input.departmentId ?? null,
         instructions: input.instructions?.trim() ?? '',
       })
+      // A field the update leaves out keeps its stored value, so moving a project to
+      // another department keeps its instructions.
       .onConflictDoUpdate({
         target: [organizationProjectAssignment.teamId, organizationProjectAssignment.projectId],
         set: {
-          departmentId: input.departmentId ?? null,
-          instructions: input.instructions?.trim() ?? '',
+          ...(input.departmentId !== undefined ? { departmentId: input.departmentId } : {}),
+          ...(input.instructions !== undefined ? { instructions: input.instructions.trim() } : {}),
           updatedAt: new Date(),
         },
       })

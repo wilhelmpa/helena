@@ -6,6 +6,7 @@ import {
   project,
   projectColumn,
   projectMember,
+  projectProvisioningJob,
   organizationProjectAssignment,
   teamMember,
   teamRole,
@@ -847,8 +848,48 @@ export async function createAgent(
   // connection, so it cannot join this one.
   const apiKey = await issueKey(userId, input.name);
   if (isInternal) await storeAgentKey(agentId, apiKey);
+  else await queueAgentRuntime(userId);
   const agent = (await getAgentById(agentId, teamId))!;
   return { agent, apiKey: isInternal ? null : apiKey };
+}
+
+// Queues the provisioning of these projects again, so the integration service creates
+// or removes the Hermes runtimes of their agents. The new id makes it a new request for
+// the service's ledger.
+async function queueRuntimeProvisioning(projectIds: number[]): Promise<void> {
+  const ids = [...new Set(projectIds)];
+  if (ids.length === 0) return;
+  await db
+    .update(projectProvisioningJob)
+    .set({
+      id: sql`gen_random_uuid()`,
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: new Date(),
+      lastError: null,
+      result: null,
+      completedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(inArray(projectProvisioningJob.projectId, ids));
+}
+
+// An external agent has a Hermes runtime only while it works in exactly one project,
+// so a change to its projects queues all of them and the ones it left.
+export async function queueAgentRuntime(
+  userId: string,
+  leftProjectIds: number[] = [],
+): Promise<void> {
+  const rows = await db
+    .select({ kind: aiAgent.kind, projectId: projectMember.projectId })
+    .from(aiAgent)
+    .leftJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
+    .where(eq(aiAgent.userId, userId));
+  if (rows[0]?.kind !== 'external') return;
+  await queueRuntimeProvisioning([
+    ...leftProjectIds,
+    ...rows.flatMap((row) => (row.projectId == null ? [] : [row.projectId])),
+  ]);
 }
 
 // Replaces the projects the agent works in. Membership is what gives its key access,
@@ -1035,12 +1076,20 @@ export async function updateAgent(
   }
   // The projects go first, so a field trigger of a project the same call attaches is
   // kept rather than dropped as unknown.
+  const previousProjectIds = agent.projects.map((p) => p.id);
   const projectIds =
     patch.projectIds !== undefined
       ? await setAgentProjects(agent, patch.projectIds)
-      : agent.projects.map((p) => p.id);
+      : previousProjectIds;
   if (patch.fieldTriggers !== undefined) {
     await setFieldTriggers(id, projectIds, patch.fieldTriggers);
+  }
+  const projectsChanged =
+    projectIds.length !== previousProjectIds.length ||
+    projectIds.some((projectId) => !previousProjectIds.includes(projectId));
+  // The runner descriptor names the agent by its username.
+  if (projectsChanged || (patch.username !== undefined && patch.username !== agent.username)) {
+    await queueAgentRuntime(agent.userId, previousProjectIds);
   }
 
   return getAgentById(id, teamId);
@@ -1069,6 +1118,7 @@ export async function deleteAgent(id: number, teamId: number): Promise<boolean> 
   await deleteThreadsWhere({ agentId: id });
   await db.delete(apikey).where(eq(apikey.referenceId, agent.userId));
   await deleteAccount(agent.userId);
+  if (agent.kind === 'external') await queueRuntimeProvisioning(agent.projects.map((p) => p.id));
   return true;
 }
 

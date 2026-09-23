@@ -6,7 +6,11 @@ import {
 } from "./project-browser.mjs";
 import { provisionBoards } from "./boards.mjs";
 import { writeProjectContext } from "./project-context.mjs";
-import { ensurePlanCoordinator } from "./plan-coordinator.mjs";
+import {
+  ensurePlanCoordinator,
+  ensurePlanProjectAgent,
+  projectAgentRuntimeName,
+} from "./plan-coordinator.mjs";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -16,7 +20,7 @@ import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
 import { movePath } from "./move-path.mjs";
 
 const execFileAsync = promisify(execFile);
-const PROVISIONER_REVISION = 17;
+const PROVISIONER_REVISION = 18;
 const LEDGER_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const VAULT_PROJECT_FOLDERS = ["Docs", "Files", "Assets", "Inbox"];
 
@@ -84,6 +88,12 @@ function resource(kind, id, url) {
   return url ? { kind, id, url } : { kind, id };
 }
 
+function registeredAgentIds(registry) {
+  return (Array.isArray(registry?.agents) ? registry.agents : [])
+    .map((agent) => agent?.id)
+    .filter((id) => Number.isSafeInteger(id) && id > 0);
+}
+
 function validBoards(boards) {
   return (Array.isArray(boards) ? boards : []).filter(
     (board) => board && Number.isSafeInteger(board.id) && board.id > 0,
@@ -93,6 +103,7 @@ function validBoards(boards) {
 export function createProvisioner(config, options = {}) {
   const execute = options.execute ?? execFileAsync;
   const ensurePlanCoordinatorImpl = options.ensurePlanCoordinator ?? ensurePlanCoordinator;
+  const ensurePlanProjectAgentImpl = options.ensurePlanProjectAgent ?? ensurePlanProjectAgent;
   const ensureProjectBrowser =
     options.ensureProjectBrowser ?? createProjectBrowserProvisioner(config, { execute });
   const deprovisionProjectBrowser =
@@ -162,7 +173,7 @@ export function createProvisioner(config, options = {}) {
     return { slug, hostPath, containerPath, managed: true };
   }
 
-  async function writeRegistry(envelope, workspace, coordinator, planCoordinator, files, terminal, browser) {
+  async function writeRegistry(envelope, workspace, coordinator, planCoordinator, agents, files, terminal, browser) {
     const registryPath = path.join(config.registryRoot, `${workspace.slug}.json`);
     const current = await readJson(registryPath, null);
     if (current && current.project?.id !== envelope.project.id) {
@@ -174,6 +185,7 @@ export function createProvisioner(config, options = {}) {
       slug: workspace.slug,
       requestedResources: envelope.requestedResources,
       boards: validBoards(envelope.boards),
+      agents,
       resources: {
         ...(current?.resources ?? {}),
         ...(workspace.hostPath
@@ -241,7 +253,7 @@ export function createProvisioner(config, options = {}) {
   // this request was deleted in Plan, so its folders move to the trash.
   async function quarantineRemovedBoards(envelope, workspace) {
     const registry = await readJson(path.join(config.registryRoot, `${workspace.slug}.json`), null);
-    if (registry?.project?.id !== envelope.project.id) return;
+    if (registry?.project?.id !== envelope.project.id) return [];
     const kept = new Set(validBoards(envelope.boards).map((board) => board.id));
     const removed = validBoards(registry.boards).filter((board) => !kept.has(board.id));
     const quarantineRoot = path.join(config.projectTrashRoot, envelope.eventId);
@@ -262,7 +274,74 @@ export function createProvisioner(config, options = {}) {
         if (moved) quarantined.push(moved);
       }
     }
-    if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
+    return quarantined;
+  }
+
+  // Removes the runtime of each agent of the project that is not in `keep`: the
+  // descriptor is deleted because it holds the agent's API key, and the profile moves
+  // to the trash. The registry names the agents of the last successful run, so a retry
+  // still finds a profile an earlier attempt already moved. `runner.changed` is set as
+  // soon as the running runner no longer matches the descriptors.
+  async function removeAgentRuntimes(envelope, slug, keep, quarantineRoot, runner) {
+    const registry = await readJson(path.join(config.registryRoot, `${slug}.json`), null);
+    const profilesRoot = path.join(config.hermesHome, "profiles");
+    const pattern = new RegExp(`^${slug}_([1-9][0-9]{0,9})(\\.json)?$`);
+    const listed = async (directory) =>
+      (await fs.readdir(directory).catch((error) => {
+        if (error?.code === "ENOENT") return [];
+        throw error;
+      })).flatMap((name) => {
+        const match = pattern.exec(name);
+        return match ? [Number(match[1])] : [];
+      });
+    const ids = new Set([
+      ...(registry?.project?.id === envelope.project.id ? registeredAgentIds(registry) : []),
+      ...(await listed(config.hermesRunnerDescriptorRoot)),
+      ...(await listed(profilesRoot)),
+    ]);
+    const quarantined = [];
+    for (const id of [...ids].filter((candidate) => !keep.has(candidate)).sort((a, b) => a - b)) {
+      const name = projectAgentRuntimeName(slug, id);
+      await fs.unlink(path.join(config.hermesRunnerDescriptorRoot, `${name}.json`)).then(
+        () => {
+          runner.changed = true;
+        },
+        (error) => {
+          if (error?.code !== "ENOENT") throw error;
+        },
+      );
+      const profile = await quarantinePath({
+        source: path.join(profilesRoot, name),
+        allowedRoot: profilesRoot,
+        quarantineRoot,
+        label: `hermes-profile-${name}`,
+      });
+      if (profile) {
+        runner.changed = true;
+        quarantined.push(profile);
+      }
+    }
+    return quarantined;
+  }
+
+  // Each agent in the request gets a Hermes profile and a runner descriptor of its own.
+  // Plan issues their keys only against the control token; without it the runtimes are
+  // left as they are.
+  async function provisionAgentRuntimes(envelope, workspace, browser, quarantineRoot, runner) {
+    if (!config.planControlToken) return { agents: [], quarantined: [] };
+    const agents = [];
+    for (const agentId of envelope.agents ?? []) {
+      const runtime = await ensurePlanProjectAgentImpl(config, envelope.project, agentId, {
+        workspace,
+        browser,
+      });
+      if (runtime.descriptorChanged) runner.changed = true;
+      await ensurePrivateDirectory(runtime.hermesHome);
+      agents.push({ id: runtime.planAgentId, username: runtime.username, profile: runtime.name });
+    }
+    const keep = new Set(agents.map((agent) => agent.id));
+    const quarantined = await removeAgentRuntimes(envelope, workspace.slug, keep, quarantineRoot, runner);
+    return { agents, quarantined };
   }
 
   async function provisionResources(envelope) {
@@ -272,7 +351,8 @@ export function createProvisioner(config, options = {}) {
       requested.has("coordinator") ||
       requested.has("terminal") ||
       requested.has("browser") ||
-      (envelope.boards?.length ?? 0) > 0;
+      (envelope.boards?.length ?? 0) > 0 ||
+      (envelope.agents?.length ?? 0) > 0;
     const workspace = needsWorkspace
       ? await projectWorkspace(envelope.project)
       : {
@@ -307,6 +387,17 @@ export function createProvisioner(config, options = {}) {
       );
     }
 
+    const quarantineRoot = path.join(config.projectTrashRoot, envelope.eventId);
+    const runner = { changed: planCoordinator?.descriptorChanged === true };
+    let agentRuntimes;
+    try {
+      agentRuntimes = await provisionAgentRuntimes(envelope, workspace, browser, quarantineRoot, runner);
+    } finally {
+      // A retry finds the descriptors this run already wrote unchanged, so a run that
+      // fails here still loads them.
+      if (runner.changed) await restartHermesRunner();
+    }
+
     const files = requested.has("files")
       ? await ensureFiles(workspace.slug, envelope.project)
       : null;
@@ -317,10 +408,22 @@ export function createProvisioner(config, options = {}) {
           terminalUrl(config, workspace.slug),
         )
       : null;
-    if (planCoordinator?.descriptorChanged) await restartHermesRunner();
-    await quarantineRemovedBoards(envelope, workspace);
+    const quarantined = [
+      ...agentRuntimes.quarantined,
+      ...(await quarantineRemovedBoards(envelope, workspace)),
+    ];
+    if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
     const boardResources = await provisionBoards(config, envelope, workspace, ensureBoardFiles);
-    const registryPath = await writeRegistry(envelope, workspace, coordinator, planCoordinator, files, terminal, browser);
+    const registryPath = await writeRegistry(
+      envelope,
+      workspace,
+      coordinator,
+      planCoordinator,
+      agentRuntimes.agents,
+      files,
+      terminal,
+      browser,
+    );
     const resources = [resource("registry", `project:${workspace.slug}`), ...boardResources];
     if (needsWorkspace) {
       resources.unshift(
@@ -337,6 +440,9 @@ export function createProvisioner(config, options = {}) {
     if (browser) resources.push(resource("browser", browser.id, browser.url));
 
     const warnings = [];
+    if (!config.planControlToken && envelope.agents?.length) {
+      warnings.push("Project agents get no Hermes runtime without the Plan control token.");
+    }
     for (const kind of ["boards", "workflows"]) {
       if (requested.has(kind)) {
         warnings.push(
@@ -434,7 +540,9 @@ export function createProvisioner(config, options = {}) {
       label: "hermes-profile",
     });
     if (hermesProfile) quarantined.push(hermesProfile);
-    if (descriptorRemoved || hermesAgent || hermesProfile) await restartHermesRunner();
+    const runner = { changed: descriptorRemoved || Boolean(hermesAgent || hermesProfile) };
+    quarantined.push(...(await removeAgentRuntimes(envelope, slug, new Set(), quarantineRoot, runner)));
+    if (runner.changed) await restartHermesRunner();
 
     const workspaceManaged =
       registry?.resources?.workspace?.managed === true || envelope.project.key !== "VERV";
@@ -500,6 +608,7 @@ export function createProvisioner(config, options = {}) {
           ? registry.requestedResources
           : [],
         boards: validBoards(registry.boards).map((board) => board.id),
+        agents: registeredAgentIds(registry),
         browserActive: registry.resources?.browser
           ? await projectBrowserActive(registry.slug)
           : null,

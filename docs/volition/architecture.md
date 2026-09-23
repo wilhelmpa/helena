@@ -64,6 +64,10 @@ and makes no decisions.
 ## Rules that keep the boundaries
 
 - Plan has one agent kind: an external agent driven by the Hermes runner.
+- Every external agent of a project runs in a Hermes profile of its own, with the
+  project's workspace and browser. The integration service provisions it with the
+  project. An agent that works in several projects has no runtime, because the runner
+  claims an agent's runs from all of its projects with one working directory.
 - Plan does not queue automated agent runs itself. Assignment, field triggers and trigger
   rules send an event to Mastra.
 - Business schedules exist only in Mastra; Plan has no scheduler of its own. The Schedules

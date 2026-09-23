@@ -30,12 +30,14 @@ Markdown file created by one service remains editable by the others.
 /var/lib/volition/provisioning
 /var/lib/volition/hermes
 /var/lib/volition/hermes/profiles/<slug>
+/var/lib/volition/hermes/profiles/<slug>_<agentId>
 /var/lib/volition/mastra
 /var/lib/volition/project-browser/projects/<slug>
 ```
 
-`/var/lib/volition/hermes/profiles/<slug>` is the runtime home for the matching project
-agent. Shared Hermes authentication remains in the global Hermes home and is resolved by
+`/var/lib/volition/hermes/profiles/<slug>` is the runtime home of the project's coordinator,
+and `/var/lib/volition/hermes/profiles/<slug>_<agentId>` that of each other agent of the
+project. Shared Hermes authentication remains in the global Hermes home and is resolved by
 the runner.
 
 ## Private configuration
