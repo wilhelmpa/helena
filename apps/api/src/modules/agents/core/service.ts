@@ -33,6 +33,11 @@ import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
 import { isHomeAgent, notHomeAgent } from './home-agent';
+import {
+  onTemplateRelevantChange,
+  runtimePolicyGroupsChanged,
+  type TemplateFieldGroup,
+} from './template-sync';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -290,6 +295,15 @@ export interface AiAgentRow {
   runnerScope: RunnerScope;
   // A template runs nowhere and works in no project; a project adds a copy of it.
   template: boolean;
+  // The template this row was copied from (copyTemplateIntoProject). Null for a
+  // template itself and for an agent nobody copied.
+  sourceTemplateId: number | null;
+  // Field groups (see template-sync.ts) this copy's owner changed by hand, so the next
+  // template sync leaves them alone. Always [] for a template or a plain agent.
+  templateOverrides: TemplateFieldGroup[];
+  // Last time this copy was synced from its template; null for a template or a plain
+  // agent.
+  templateSyncedAt: string | null;
   // When a runner last polled for this agent, which is what presence is derived
   // from. Null until a runner connects.
   lastSeenAt: string | null;
@@ -336,6 +350,9 @@ function mapAgent(row: {
   ownerUserId: string | null;
   runnerScope: string;
   template: boolean;
+  sourceTemplateId: number | null;
+  templateOverrides: unknown;
+  templateSyncedAt: Date | null;
   lastSeenAt: Date | null;
   pausedAt: Date | null;
   pauseReason: string | null;
@@ -371,6 +388,11 @@ function mapAgent(row: {
     ownerUserId: row.ownerUserId,
     runnerScope: row.runnerScope as RunnerScope,
     template: row.template,
+    sourceTemplateId: row.sourceTemplateId,
+    templateOverrides: Array.isArray(row.templateOverrides)
+      ? (row.templateOverrides as TemplateFieldGroup[])
+      : [],
+    templateSyncedAt: row.templateSyncedAt ? iso(row.templateSyncedAt) : null,
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
     pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
     pauseReason: row.pauseReason,
@@ -414,6 +436,9 @@ const agentColumns = {
   ownerUserId: aiAgent.ownerUserId,
   runnerScope: aiAgent.runnerScope,
   template: aiAgent.template,
+  sourceTemplateId: aiAgent.sourceTemplateId,
+  templateOverrides: aiAgent.templateOverrides,
+  templateSyncedAt: aiAgent.templateSyncedAt,
   lastSeenAt: aiAgent.lastSeenAt,
   pausedAt: aiAgent.pausedAt,
   pauseReason: aiAgent.pauseReason,
@@ -775,10 +800,16 @@ export interface NewAgentInput {
   capabilities?: string[];
   skillIds?: number[];
   mcpServerIds?: number[];
+  // The team's configured tools (agent_tool, not the tool registry keys in `tools`) to
+  // carry over. Only copyTemplateIntoProject sets this today.
+  agentToolIds?: number[];
   // External-agent runner scope (default: any member's runs).
   runnerScope?: RunnerScope;
   // The member creating the agent, who owns its runner.
   ownerUserId?: string | null;
+  // Set by copyTemplateIntoProject only: links this new row to the template it came
+  // from, so a later change to the template can be synced into it (template-sync.ts).
+  sourceTemplateId?: number;
 }
 
 // The coordinator that leads the project's agent team, or null when it has none.
@@ -901,6 +932,8 @@ export async function createAgent(
           ownerUserId: input.ownerUserId ?? null,
           runnerScope: input.runnerScope ?? 'team',
           template: input.template ?? false,
+          sourceTemplateId: input.sourceTemplateId ?? null,
+          templateSyncedAt: input.sourceTemplateId != null ? new Date() : null,
         })
         .returning({ id: aiAgent.id });
       // The agent belongs to the team's member list like a person does, on a standing
@@ -930,6 +963,11 @@ export async function createAgent(
         await tx
           .insert(agentMcpServerLink)
           .values(input.mcpServerIds.map((mcpServerId) => ({ agentId: row.id, mcpServerId })));
+      }
+      if (input.agentToolIds?.length) {
+        await tx
+          .insert(agentToolLink)
+          .values(input.agentToolIds.map((agentToolId) => ({ agentId: row.id, agentToolId })));
       }
       return row.id;
     } catch (err) {
@@ -1146,6 +1184,25 @@ export async function updateAgent(
     await db.update(user).set({ name: patch.name }).where(eq(user.id, agent.userId));
   }
 
+  // Which template field groups this patch touches (template-sync.ts), gathered before
+  // `set` is written so the runtimePolicy comparison still has the agent's previous
+  // value to diff against.
+  const changedGroups: TemplateFieldGroup[] = [];
+  if (patch.instructions !== undefined && patch.instructions !== agent.instructions) {
+    changedGroups.push('instructions');
+  }
+  if (
+    (patch.model !== undefined && patch.model !== agent.model) ||
+    (patch.modelCredentialId !== undefined && patch.modelCredentialId !== agent.modelCredentialId)
+  ) {
+    changedGroups.push('model');
+  }
+  if (patch.runtimePolicy !== undefined) {
+    changedGroups.push(
+      ...runtimePolicyGroupsChanged(agent.runtimePolicy, normalizeRuntimePolicy(patch.runtimePolicy)),
+    );
+  }
+
   const set: Partial<typeof aiAgent.$inferInsert> = {};
   if (patch.username !== undefined) {
     await assertUsernameFree(teamId, patch.username, id);
@@ -1199,6 +1256,10 @@ export async function updateAgent(
     await queueAgentRuntime(agent.userId, previousProjectIds);
   }
 
+  if (changedGroups.length > 0) {
+    await onTemplateRelevantChange(id, [...new Set(changedGroups)]);
+  }
+
   return getAgentById(id, teamId);
 }
 
@@ -1217,7 +1278,7 @@ export async function copyTemplateIntoProject(
     .where(and(eq(project.id, projectId), eq(project.teamId, template.teamId)));
   if (!target) throw new HttpError(400, 'Project not found in this team');
   const suffix = `-${target.key.toLowerCase()}`;
-  const [assignment, skills, mcpServers] = await Promise.all([
+  const [assignment, skills, mcpServers, agentTools] = await Promise.all([
     db
       .select({
         roleTitle: organizationAgentAssignment.roleTitle,
@@ -1234,6 +1295,10 @@ export async function copyTemplateIntoProject(
       .select({ mcpServerId: agentMcpServerLink.mcpServerId })
       .from(agentMcpServerLink)
       .where(eq(agentMcpServerLink.agentId, template.id)),
+    db
+      .select({ agentToolId: agentToolLink.agentToolId })
+      .from(agentToolLink)
+      .where(eq(agentToolLink.agentId, template.id)),
   ]);
   return createAgent(template.teamId, {
     name: `${template.name} ${target.key}`,
@@ -1258,6 +1323,8 @@ export async function copyTemplateIntoProject(
     capabilities: assignment?.capabilities,
     skillIds: skills.map(({ skillId }) => skillId),
     mcpServerIds: mcpServers.map(({ mcpServerId }) => mcpServerId),
+    agentToolIds: agentTools.map(({ agentToolId }) => agentToolId),
+    sourceTemplateId: template.id,
   });
 }
 

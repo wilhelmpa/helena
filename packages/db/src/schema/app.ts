@@ -1334,6 +1334,34 @@ export const agentMcpServerLink = pgTable(
   ],
 );
 
+// One row per field-group actually propagated from a template into one of its copies
+// (see agents/core/template-sync.ts), so a copy's page can show "picked up <groups>
+// from the template <when>" and a template's page can show its last fan-out. A group a
+// copy has overridden is skipped and logs nothing. This is a narrow, template-specific
+// trail, not the team's general activity feed.
+export const agentTemplateSyncLog = pgTable(
+  'agent_template_sync_log',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    templateId: integer('template_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    copyId: integer('copy_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    groups: jsonb('groups').notNull().$type<string[]>(),
+    syncedAt: timestamp('synced_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('agent_template_sync_log_team_idx').on(t.teamId),
+    index('agent_template_sync_log_template_idx').on(t.templateId, t.syncedAt),
+    index('agent_template_sync_log_copy_idx').on(t.copyId, t.syncedAt),
+  ],
+);
+
 // Custom fields. Always scoped to a project. A NULL issue_type_id applies the
 // field to every issue in that project; a non-null issue_type_id scopes it to
 // that one type.

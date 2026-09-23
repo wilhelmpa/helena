@@ -4,6 +4,7 @@ import { getTool, type ToolConfig } from '@repo/agent-tools';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { decryptSecret } from '@repo/crypto';
 import { getCredentialById } from '../integrations/service';
+import { onTemplateRelevantChange } from '../core/template-sync';
 
 // Data access for configured tools, shared by every project the team owns. A
 // configured tool binds a catalog tool (tool_key) to one integration_credential of the
@@ -172,4 +173,5 @@ export async function setAgentTools(
       await tx.insert(agentToolLink).values(valid.map((agentToolId) => ({ agentId, agentToolId })));
     }
   });
+  await onTemplateRelevantChange(agentId, ['tools']);
 }
