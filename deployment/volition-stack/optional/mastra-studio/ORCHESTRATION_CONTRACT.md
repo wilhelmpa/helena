@@ -30,7 +30,7 @@ Mastra owns workflow definitions, event triggers, schedules, retries, checkpoint
 
 | Policy field | Default | Meaning |
 |---|---|---|
-| `maxAttempts`, `initialBackoffMs`, `maxBackoffMs`, `backoffMultiplier` | 3, 1000, 30000, 2 | Retries of one bridge request with the same idempotency key. |
+| `maxAttempts`, `initialBackoffMs`, `maxBackoffMs`, `backoffMultiplier` | 3, 1000, 30000, 2 | Retries of one bridge request with the same idempotency key. These are the only retries of a stage: the steps that run stages have no Mastra retries of their own. |
 | `leaseSeconds`, `heartbeatSeconds` | 300, 60 | Bounds of the execution lease Hermes reports. Plan rejects bounds its runner cannot honor before it queues paid agent work. |
 | `timeoutSeconds` | 900 | How long the bridge waits for one stage, queue time included (30–7200). With `runBudgetSeconds` set, Mastra raises it to at least the budget plus 300 seconds, up to 7200. |
 | `reviewRequired` | true | Whether the coordinator reviews the specialist results. |
@@ -59,7 +59,7 @@ The workflow persists five stages in Mastra:
 4. `review` asks the coordinator to evaluate the evidence against every acceptance criterion. It is skipped when `reviewRequired` is false.
 5. `synchronize-plan` writes the summary and evidence to the exact task and sets Review, or Done under autonomy `done` with an accepted review. Without a review the summary is the specialist summaries.
 
-Every Hermes stage uses a SHA-256 idempotency key derived from event, correlation, phase and assignment. Retries reuse the key. The bridge must return its execution ID, attempt, timestamps and a bounded lease containing `claimedAt`, `heartbeatAt` and `expiresAt`. Mastra rejects stale or mismatched responses. Mastra step outputs are the durable checkpoints and its stored run is the canonical run history.
+Every Hermes stage uses a SHA-256 idempotency key derived from event, correlation, phase and assignment. Retries reuse the key. Plan queues the run of a key again when the key is asked for after the run failed or was canceled, so a retried or continued stage executes again; a finished run answers with its outcome. The bridge must return its execution ID, attempt, timestamps and a bounded lease containing `claimedAt`, `heartbeatAt` and `expiresAt`. Mastra rejects stale or mismatched responses. Mastra step outputs are the durable checkpoints and its stored run is the canonical run history.
 
 ## Private Hermes bridge
 
@@ -95,7 +95,7 @@ A canceled workflow run fires the abort signal of the running step. Mastra abort
 { "runId": 7, "projectRef": "project:KEY" }
 ```
 
-It requires the same bearer as the other internal orchestration routes. Plan sets a `pending` run to `canceled` with `finishedAt` and moves the project's control-plane revision; a finished run keeps its outcome. The answer is the same status document `/internal/orchestration/agent-run/status` returns, so a repeated cancel gets the same answer. A runner executing the run learns of the cancel from its next heartbeat, which answers `{ "canceled": true }`: it interrupts the Hermes process group, kills it after five seconds, and reports nothing for the run.
+It requires the same bearer as the other internal orchestration routes. Plan sets a `pending` run to `canceled` with `finishedAt` and moves the project's control-plane revision; a finished run keeps its outcome. The answer is the same status document `/internal/orchestration/agent-run/status` returns, so a repeated cancel gets the same answer. A runner executing the run learns of the cancel from its next heartbeat, which answers `{ "canceled": true }`: it interrupts the Hermes process group, kills it after five seconds, and reports nothing for the run. A stopping Mastra process closes the connection as well; the canceled run is queued again when Mastra continues the stage after its start.
 
 `POST /internal/hermes/team/synchronize` accepts the exact project and task references, target state, summary, evidence and idempotency key. It returns the same idempotency key and `synchronizedAt`. The bridge must reject cross-project task references.
 
@@ -106,8 +106,10 @@ Plan controls the workflow through the Mastra control API:
 - `catalog` lists definitions and ownership.
 - `start` creates a project-scoped run with the event ID as run ID and starts it without waiting for it to finish.
 - `runs` and `run` expose stored status, checkpoints and history for one project. `runs` with a `taskRef` returns the runs whose payload names that task, searched among the project's 200 newest runs of the workflow.
-- `retry` restarts only failed runs with the same run ID.
+- `retry` runs a failed run again from its failed step with Mastra time travel (`/workflows/:id/time-travel`). The steps before it keep their stored results. Like `start`, it does not wait for the run.
 - `cancel` stops a non-terminal run and cancels the Plan run of the stage it waits for (see Cancellation).
 - schedule operations create, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key.
+
+When Mastra starts, it continues the runs that were active when it stopped, each from the step it was in (`restartActiveRuns` in `src/mastra/index.ts`). The built server does not do this on its own. A continued stage asks the bridge for the same idempotency key.
 
 Business schedules exist only in Mastra. Hermes cron is limited to Hermes-internal maintenance and must not start Plan workflows.
