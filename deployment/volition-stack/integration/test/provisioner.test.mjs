@@ -348,6 +348,41 @@ describe("createProvisioner", () => {
     assert.deepEqual(Object.keys(ledger.entries).sort(), [eventId, "923e4567-e89b-42d3-a456-426614174008"]);
   });
 
+  it("moves the resources of a deleted project into the trash across mount points", async () => {
+    const trash = path.join(root, "trash/projects");
+    // Like the provisioning unit, where every writable path is a mount of its own.
+    const rename = async (source, destination) => {
+      if (!source.startsWith(trash)) throw Object.assign(new Error("cross-device"), { code: "EXDEV" });
+      return fs.rename(source, destination);
+    };
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      execute: async () => ({ stdout: "", stderr: "" }),
+      rename,
+    });
+    const request = envelope();
+    request.requestedResources = ["workspace", "coordinator", "files"];
+    await provisioner.provision(request);
+    await fs.writeFile(path.join(root, "vault/Projects/DEMO/Docs/plan.md"), "kept in the trash");
+
+    const deletion = {
+      ...request,
+      eventId: "a23e4567-e89b-42d3-a456-426614174009",
+      eventType: "project.deprovision",
+    };
+    await provisioner.deprovision(deletion);
+
+    const quarantine = path.join(trash, deletion.eventId);
+    assert.deepEqual(
+      (await fs.readdir(quarantine)).sort(),
+      ["hermes-profile", "receipt.json", "registry.json", "vault", "workspace"],
+    );
+    assert.equal(await fs.readFile(path.join(quarantine, "vault/Docs/plan.md"), "utf8"), "kept in the trash");
+    assert.equal(await fs.stat(path.join(quarantine, "workspace/.git")).then((stat) => stat.isDirectory()), true);
+    await assert.rejects(fs.lstat(path.join(root, "projects/demo")), { code: "ENOENT" });
+    await assert.rejects(fs.lstat(path.join(root, "vault/Projects/DEMO")), { code: "ENOENT" });
+  });
+
   it("rejects reuse of an event id with another request", async () => {
     const provisioner = createProvisioner(config(), {
       ensurePlanCoordinator: fakeCoordinator([]),

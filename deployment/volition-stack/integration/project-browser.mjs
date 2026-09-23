@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { writeJsonAtomic } from "./atomic-json.mjs";
+import { movePath } from "./move-path.mjs";
 
 const PROJECT_SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const MAX_PROJECT_BROWSERS = 128;
@@ -369,7 +370,7 @@ export function createProjectBrowserDeprovisioner(config, options = {}) {
     } catch (error) {
       if (error?.code !== "ENOENT") throw error;
     }
-    await fs.rename(projectRoot, destination);
+    await movePath(projectRoot, destination, { rename: options.rename });
     return destination;
   };
 }

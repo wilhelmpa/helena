@@ -13,6 +13,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
+import { movePath } from "./move-path.mjs";
 
 const execFileAsync = promisify(execFile);
 const PROVISIONER_REVISION = 17;
@@ -96,7 +97,7 @@ export function createProvisioner(config, options = {}) {
     options.ensureProjectBrowser ?? createProjectBrowserProvisioner(config, { execute });
   const deprovisionProjectBrowser =
     options.deprovisionProjectBrowser ??
-    createProjectBrowserDeprovisioner(config, { execute });
+    createProjectBrowserDeprovisioner(config, { execute, rename: options.rename });
   const projectBrowserActive =
     options.projectBrowserActive ?? createProjectBrowserStatus(config, { execute });
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
@@ -376,7 +377,7 @@ export function createProvisioner(config, options = {}) {
     if (sourceStat.isSymbolicLink()) throw new Error(`The ${label} path is a symbolic link`);
     if (destinationStat) throw new Error(`The ${label} quarantine destination already exists`);
     await ensurePrivateDirectory(quarantineRoot);
-    await fs.rename(candidate, destination);
+    await movePath(candidate, destination, { rename: options.rename });
     return { label, destination, state: "quarantined" };
   }
 
