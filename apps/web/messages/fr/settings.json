@@ -556,6 +556,69 @@
     "changeState": "Changer l'état…",
     "noState": "Aucun état."
   },
+  "network": {
+    "isolationNote": "Ces réglages s'appliquent dès que l'isolation des agents est active sur le serveur.",
+    "accessTitle": "Accès",
+    "accessHint": "Le trafic sortant passe uniquement par les ports 80 et 443. Les adresses locales et le réseau domestique sont toujours bloqués, quel que soit le mode. Un domaine couvre aussi ses sous-domaines.",
+    "mode": {
+      "open": {
+        "label": "Internet",
+        "description": "Toute destination publique, sauf celles de la liste de refus."
+      },
+      "allowlist": {
+        "label": "Liste d'autorisation uniquement",
+        "description": "Uniquement les destinations de la liste d'autorisation. La liste de refus s'applique quand même."
+      },
+      "blocked": {
+        "label": "Bloqué",
+        "description": "Aucun accès à Internet. Seuls l’API Helena, la passerelle du navigateur et le modèle d’IA de l’agent restent accessibles."
+      }
+    },
+    "allowLabel": "Liste d'autorisation",
+    "allowOnlyHint": "Utilisée uniquement en mode « Liste d'autorisation uniquement ».",
+    "denyLabel": "Liste de refus",
+    "domainsPerLine": "Un domaine par ligne",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "Messagerie",
+    "mailPortsLabel": "Autoriser les ports de messagerie",
+    "mailPortsHint": "Ouvre aussi les ports 465, 587 et 993 pour le rôle de messagerie.",
+    "perAgentTitle": "Par agent",
+    "perAgentHint": "Remplace le mode du projet pour un agent donné. Les listes d'autorisation et de refus du projet s'appliquent toujours — un agent en mode « Liste d'autorisation uniquement » utilise la liste d'autorisation du projet.",
+    "followProject": "Comme le projet ({mode})",
+    "noAgents": "Ce projet n'a pas encore d'agents.",
+    "saved": "Enregistré",
+    "logTitle": "Journal",
+    "logHint": "La destination, la décision et le volume de données des connexions récentes — jamais leur contenu.",
+    "filterAll": "Toutes",
+    "filterBlocked": "Bloquées uniquement",
+    "columns": {
+      "time": "Heure",
+      "agent": "Agent",
+      "target": "Destination",
+      "decision": "Décision",
+      "connections": "Connexions",
+      "data": "Données"
+    },
+    "decisions": {
+      "allowed": "Autorisée",
+      "blocked": "Bloquée"
+    },
+    "reasons": {
+      "blocked": "Accès réseau bloqué",
+      "private-address": "Adresse privée",
+      "port": "Port non autorisé",
+      "denylisted": "Sur la liste de refus",
+      "not-allowlisted": "Absente de la liste d'autorisation",
+      "dns": "Échec DNS",
+      "connect-failed": "Échec de connexion",
+      "bad-request": "Requête invalide"
+    },
+    "loadMore": "Charger plus",
+    "endOfLog": "Fin du journal",
+    "empty": "Pas encore de connexions",
+    "emptyHint": "Dès que les agents de ce projet établiront des connexions, elles apparaîtront ici.",
+    "loadError": "Le journal n'a pas pu être chargé."
+  },
   "issueTemplates": {
     "addTemplate": "Nouveau modèle",
     "editTemplate": "Modifier le modèle",

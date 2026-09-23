@@ -58,6 +58,7 @@ import { syncRoutes } from './modules/sync';
 import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
+import { agentNetworkRoutes } from './modules/agent-egress';
 import { approvalRoutes } from './modules/approvals';
 import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
@@ -155,6 +156,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(linkPreviewRoutes)
   .use(hubInboxRoutes)
   .use(agentActivityRoutes)
+  .use(agentNetworkRoutes)
   .use(approvalRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)

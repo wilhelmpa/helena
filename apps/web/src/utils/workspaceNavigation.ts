@@ -45,6 +45,7 @@ const PROJECT_SETTINGS_SECTIONS = new Set([
   'issue-templates',
   'issue-types',
   'labels',
+  'network',
   'states',
   'webhooks',
 ]);
