@@ -7,8 +7,10 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import {
   createProjectBrowserRouter,
   isPrivateGatewayHeader,
+  listProjectBrowsers,
   resolveProjectBrowser,
 } from "./project-router.mjs";
+import { fittedBounds, navigableUrl, targetId } from "./project-browser-control.mjs";
 
 let root;
 let upstream;
@@ -29,12 +31,12 @@ afterEach(async () => {
   upstream = null;
 });
 
-async function state(slug, port) {
+async function state(slug, port, cdpPort = 19200) {
   const directory = path.join(root, slug);
   await fs.mkdir(directory, { recursive: true, mode: 0o700 });
   await fs.writeFile(
     path.join(directory, "runtime.json"),
-    JSON.stringify({ schemaVersion: 1, slug, noVncPort: port }),
+    JSON.stringify({ schemaVersion: 1, slug, noVncPort: port, cdpPort }),
     { mode: 0o600 },
   );
 }
@@ -97,5 +99,96 @@ describe("project browser router", () => {
     await fs.writeFile(path.join(root, "foreign"), "{}", { mode: 0o600 });
     await fs.symlink(path.join(root, "foreign"), path.join(root, "demo/runtime.json"));
     await assert.rejects(resolveProjectBrowser(root, "/projects/demo/vnc.html"));
+  });
+
+  it("serves the tab list and toolbar actions from the project's DevTools endpoint", async () => {
+    const seen = [];
+    upstream = http.createServer((request, response) => {
+      seen.push(`${request.method} ${request.url}`);
+      response.writeHead(200, { "content-type": "application/json" });
+      if (request.url === "/json/list") {
+        response.end(
+          JSON.stringify([
+            { id: "A".repeat(32), type: "page", title: "Front", url: "https://a.test/" },
+            { id: "B".repeat(32), type: "service_worker", title: "", url: "https://a.test/sw.js" },
+            { id: "C".repeat(32), type: "page", title: "", url: "https://c.test/" },
+          ]),
+        );
+      } else response.end("{}");
+    });
+    const cdpPort = await listen(upstream);
+    await state("demo", 16000, cdpPort);
+    router = createProjectBrowserRouter({ root });
+    const base = `http://127.0.0.1:${await listen(router)}/projects/demo/api`;
+
+    const tabs = await (await fetch(`${base}/tabs`)).json();
+    assert.deepEqual(tabs, {
+      tabs: [
+        { id: "A".repeat(32), title: "Front", url: "https://a.test/", active: true },
+        { id: "C".repeat(32), title: "https://c.test/", url: "https://c.test/", active: false },
+      ],
+    });
+
+    const activated = await fetch(`${base}/activate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "C".repeat(32) }),
+    });
+    assert.equal(activated.status, 200);
+    assert.ok(seen.includes(`GET /json/activate/${"C".repeat(32)}`));
+
+    // A form on another site cannot send JSON, so anything else is refused.
+    const form = await fetch(`${base}/close`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: `id=${"C".repeat(32)}`,
+    });
+    assert.equal(form.status, 415);
+    const unknown = await fetch(`${base}/activate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "../json/version" }),
+    });
+    assert.equal(unknown.status, 400);
+    assert.equal((await fetch(`${base}/unknown`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })).status, 404);
+  });
+
+  it("lists the project browsers with a valid state for the window keeper", async () => {
+    await state("demo", 16000, 19201);
+    await fs.mkdir(path.join(root, "broken"), { mode: 0o700 });
+    assert.deepEqual(await listProjectBrowsers(root), [{ slug: "demo", cdpPort: 19201 }]);
+  });
+});
+
+describe("project browser control", () => {
+  it("opens web addresses only", () => {
+    assert.equal(navigableUrl("example.com/path"), "https://example.com/path");
+    assert.equal(navigableUrl(" http://intranet.local "), "http://intranet.local/");
+    assert.equal(navigableUrl("about:blank"), "about:blank");
+    for (const refused of ["javascript:alert(1)", "file:///etc/passwd", "chrome://settings", ""]) {
+      assert.throws(() => navigableUrl(refused));
+    }
+  });
+
+  it("accepts DevTools target ids only", () => {
+    assert.equal(targetId("E9FA2045DECEE97DB2160D8A482371FF"), "E9FA2045DECEE97DB2160D8A482371FF");
+    assert.throws(() => targetId("../json/version"));
+  });
+
+  it("fits a window to its screen unless it already fills it", () => {
+    const screen = { width: 1280, height: 800 };
+    assert.equal(
+      fittedBounds({ windowState: "normal", left: 0, top: 0, width: 1280, height: 800 }, screen),
+      null,
+    );
+    assert.deepEqual(
+      fittedBounds({ windowState: "normal", left: 10, top: 10, width: 1920, height: 1080 }, screen),
+      { left: 0, top: 0, width: 1280, height: 800 },
+    );
+    assert.deepEqual(
+      fittedBounds({ windowState: "maximized", left: 0, top: 0, width: 1280, height: 800 }, screen),
+      { left: 0, top: 0, width: 1280, height: 800 },
+    );
+    assert.equal(fittedBounds({ windowState: "normal" }, { width: 0, height: 0 }), null);
   });
 });

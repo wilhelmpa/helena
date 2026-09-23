@@ -55,6 +55,13 @@ if changed deployment/volition-stack/native/terminal; then
   restart+=(volition-terminal.service)
 fi
 
+# The router runs from this checkout; its unit is installed from here as well.
+if changed deployment/volition-stack/browser deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
+  install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
+  systemctl daemon-reload
+  restart+=(volition-project-browser-router.service)
+fi
+
 if ((${#restart[@]} > 0)); then
   echo "restarting ${restart[*]}"
   systemctl restart "${restart[@]}"
@@ -64,7 +71,8 @@ fi
 # entry have to answer.
 failed=0
 for unit in volition-plan-api-dev volition-plan-web-dev volition-plan-worker-dev \
-  volition-hermes-runner volition-mastra volition-provisioning volition-terminal; do
+  volition-hermes-runner volition-mastra volition-provisioning volition-terminal \
+  volition-project-browser-router; do
   if ! systemctl is-active --quiet "$unit.service"; then
     echo "deploy.sh: $unit is not running" >&2
     failed=1

@@ -1,0 +1,39 @@
+[Unit]
+Description=Volition project browser loopback router
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=volition-hermes
+Group=volition
+Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
+Environment=PROJECT_BROWSER_ROUTER_PORT=6082
+ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/browser/project-router.mjs
+Restart=on-failure
+RestartSec=2
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/volition/project-browser/projects
+IPAddressDeny=any
+IPAddressAllow=localhost
+RestrictAddressFamilies=AF_UNIX AF_INET
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

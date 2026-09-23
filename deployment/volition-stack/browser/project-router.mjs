@@ -2,6 +2,13 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
 import path from "node:path";
+import {
+  BrowserControlError,
+  controlBrowser,
+  listTabs,
+  readJsonBody,
+  startWindowKeeper,
+} from "./project-browser-control.mjs";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const ROUTE = /^\/projects\/([a-z0-9][a-z0-9-]{0,31})(\/.*)?$/;
@@ -25,7 +32,10 @@ async function privateState(root, slug) {
     state.slug !== slug ||
     !Number.isInteger(state.noVncPort) ||
     state.noVncPort < 1024 ||
-    state.noVncPort > 65535
+    state.noVncPort > 65535 ||
+    !Number.isInteger(state.cdpPort) ||
+    state.cdpPort < 1024 ||
+    state.cdpPort > 65535
   ) {
     throw new Error("Invalid browser route");
   }
@@ -39,7 +49,52 @@ export async function resolveProjectBrowser(root, requestUrl) {
   const slug = match[1];
   const state = await privateState(root, slug);
   const pathname = match[2] || "/";
-  return { slug, port: state.noVncPort, url: `${pathname}${parsed.search}` };
+  return {
+    slug,
+    port: state.noVncPort,
+    cdpPort: state.cdpPort,
+    url: `${pathname}${parsed.search}`,
+    api: pathname.startsWith("/api/") ? pathname.slice("/api/".length) : null,
+  };
+}
+
+// Every project browser that has a valid runtime state, for the window keeper.
+export async function listProjectBrowsers(root) {
+  const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => []);
+  const browsers = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || !SLUG.test(entry.name)) continue;
+    try {
+      const state = await privateState(root, entry.name);
+      browsers.push({ slug: entry.name, cdpPort: state.cdpPort });
+    } catch {
+      // A project whose browser is being set up or removed has no valid state yet.
+    }
+  }
+  return browsers;
+}
+
+function sendJson(response, status, body) {
+  response.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
+  response.end(JSON.stringify(body));
+}
+
+// The toolbar's routes: GET api/tabs lists the tabs, POST api/<action> acts on one. Only a
+// JSON body is accepted, which a form on another site cannot send.
+async function handleControl(request, response, target) {
+  try {
+    if (target.api === "tabs" && request.method === "GET") {
+      return sendJson(response, 200, { tabs: await listTabs(target.cdpPort) });
+    }
+    if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
+    const body = await readJsonBody(request);
+    return sendJson(response, 200, await controlBrowser(target.cdpPort, target.api, body));
+  } catch (error) {
+    const status = error instanceof BrowserControlError ? error.status : 502;
+    return sendJson(response, status, {
+      error: error instanceof BrowserControlError ? error.message : "The browser did not answer",
+    });
+  }
 }
 
 export function isPrivateGatewayHeader(name) {
@@ -69,8 +124,9 @@ export function createProjectBrowserRouter(options = {}) {
   const root = options.root ?? "/var/lib/volition/project-browser/projects";
   return http.createServer(async (request, response) => {
     try {
-      if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
       const target = await resolveProjectBrowser(root, request.url || "/");
+      if (target.api !== null) return await handleControl(request, response, target);
+      if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
       const upstream = http.request(
         {
           host: "127.0.0.1",
@@ -129,6 +185,14 @@ if (import.meta.main) {
       socket.end("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
     }
   });
+  const root = process.env.PROJECT_BROWSER_ROOT || "/var/lib/volition/project-browser/projects";
+  const stopKeeper = startWindowKeeper({
+    listBrowsers: () => listProjectBrowsers(root),
+    log: (message) => console.log(message),
+  });
   server.listen(port, "127.0.0.1", () => console.log("Project browser router ready on loopback"));
-  process.on("SIGTERM", () => server.close(() => process.exit(0)));
+  process.on("SIGTERM", () => {
+    stopKeeper();
+    server.close(() => process.exit(0));
+  });
 }
