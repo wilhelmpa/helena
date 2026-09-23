@@ -22,6 +22,7 @@ export const scopeKind: Record<string, ScopeKind> = {
   documents: { key: (projectId) => `documents:${projectId}`, resource: 'documents' },
   actionRuns: { key: (projectId) => `action-runs:${projectId}`, resource: 'actions' },
   controlPlane: { key: (projectId) => `control-plane:${projectId}`, resource: 'actions' },
+  agentRuns: { key: (projectId) => `agent-runs:${projectId}`, resource: 'ai_agents' },
   issue: { key: (issueId) => `issue:${issueId}`, resource: 'work_items' },
   initiative: {
     key: (initiativeId) => `initiative:${initiativeId}`,
