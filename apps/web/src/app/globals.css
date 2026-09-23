@@ -896,7 +896,7 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
 [dir='rtl'] [data-slot='dialog-close'],
 [dir='rtl'] [data-slot='sheet-close'] {
   right: auto;
-  inset-inline-end: calc(var(--spacing) * 4);
+  inset-inline-end: calc(var(--spacing) * 2.5);
 }
 /* `translate-x` has no logical form, so the checked position is mirrored
    explicitly: the thumb travels towards the end of the track either way. */

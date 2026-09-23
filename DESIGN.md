@@ -1,6 +1,6 @@
 # DESIGN.md
 
-Design tokens and principles for the Volition web app (`apps/web`). Extracted from
+Design tokens and principles for the Helena web app (`apps/web`). Extracted from
 the established system in `apps/web/src/app/globals.css` (Tailwind v4 `@theme` +
 `:root`/`.dark` OKLCH variables). Those CSS variables are the source of truth; this
 file mirrors them. When a token changes in `globals.css`, update it here in the same
@@ -15,12 +15,19 @@ clarity over cleverness; no decoration that does not aid comprehension.
 
 ## Brand
 
-- **Name:** Volition. `APP_NAME` in `apps/web/src/utils/app.ts` is the one place the web
-  app reads it from.
-- **Monogram:** a lowercase v in a rounded square (`components/brand/VolitionMark.tsx`,
-  `app/icon.svg`). The v's right arm is a little taller, so it also reads as a check.
-- **Wordmark:** "volition" drawn as monoline paths with round caps
-  (`components/brand/VolitionWordmark.tsx`), so it needs no font.
+- **Name:** Helena – by Volition. Helena is the app; Volition is the company and the whole
+  system. `APP_NAME` (and `APP_BYLINE`) in `apps/web/src/utils/app.ts` are the one place the
+  web app reads them from.
+- **Mark:** a lowercase h with a warm point of light over its arch, on a petrol tile
+  (`components/brand/HelenaMark.tsx`, `app/icon.svg`, `public/brand/helena-mark.svg`).
+  Helena means "the bright one"; the pair also reads as a friendly "hi". Fixed colours,
+  the same in light and dark: tile `#15808f → #0e6f81`, glyph `#fbfaf7`, light `#f4c56a`.
+  App icons (`app/apple-icon.png`, `public/brand/icon-192/512.png`, a maskable 512) are
+  rendered from the same drawing. Two alternative concepts are kept in
+  `public/brand/variants/` (knoten, bruecke).
+- **Wordmark:** "Helena" in Inter SemiBold as outlines, tracking −0.02em
+  (`components/brand/HelenaWordmark.tsx`, `public/brand/helena-wordmark.svg`); lockups in
+  `public/brand/helena-logo(-dark).svg`.
 - **Accent (`brand`):** petrol blue, `#0e6f81` in light and `#62becd` in dark. It is
   clearly apart from the red, amber and green of the status colours, so it never reads
   as a state, and a cool accent on warm neutrals stays quiet. It marks focus, links,
@@ -65,15 +72,22 @@ dark are both first-class (`.dark` class toggles; the app ships a theme switch).
 
 ## Scale & shape
 
-- **Type:** Inter Variable (`--font-sans`, also `--font-heading`). Weight and size carry
-  hierarchy — do not add display faces. UI text is 13–14px (sidebar rows 13px), page
-  titles 20px semibold, section labels 11–12px muted in sentence case. Counts, dates and
-  keys take `tabular-nums` where they are set; it is not global, because Inter's tabular
-  set also widens the hyphen.
-- **Line-height:** the `--text-*--line-height` tokens in `globals.css` replace Tailwind's
-  defaults, which are tuned for 16px prose and leave `text-xs`/`text-sm` cramped. Body sizes
-  run 1.5–1.6; headings tighten as they grow (1.25 at `2xl` down to 1.1 at `4xl`) and take
-  negative tracking from `2xl` up.
+- **Type:** Inter Variable (`--font-sans`, also `--font-heading`), the sidebar's font, at
+  the sidebar's size. One scale, each step one job (`globals.css`): 12 `text-xs` labels,
+  meta, descriptions, badges, IDs · **13 `text-sm` the standard** (every row, cell,
+  control, menu, paragraph — the sidebar's row text) · 14 `text-md` section/panel/dialog
+  titles · 16 `text-base` the one title a page may carry, text fields on touch · 20/24/30
+  only for figures and the sign-in title. Weights regular/medium/semibold. `text-lg`,
+  `text-4xl`+, bracket sizes and bold are off the scale (lint rule + ratchet). Counts,
+  dates and keys take `tabular-nums`; IDs and keys are monospace `text-xs`, muted.
+- **Line-height:** every step on the 4px grid (16/20/20/24/28/32/36).
+- **Rows and controls:** the sidebar row is the unit — 32px high (`h-8`), 8px padding,
+  16px icons, hover `sidebar-accent`. Buttons, inputs, selects, tabs and table rows default
+  to it; lists in the main area use `RowList`/`RowLink`/`SectionLabel`
+  (`components/common/page/RowList.tsx`). On a touch screen every control is 40px.
+- **Header:** one row (`AppHeader`): sidebar toggle + breadcrumb title | the page's tabs,
+  filters or actions (header slot) | search, new task and the tool panels. A page never
+  adds a second title row in the default layout.
 - **Radius:** base `--radius: 0.625rem`; scale `sm .6 · md .8 · lg 1 · xl 1.4 · 2xl 1.8`.
   Controls use `md` (8px), overlays and cards `lg` (10px), items inside a menu `sm`.
   Keep `padding ≥ radius`.

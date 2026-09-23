@@ -23,7 +23,7 @@ const MAX_WIDTH = {
   xl: 'sm:max-w-[860px]',
 } as const;
 
-const CONTROL_CLASS = 'size-7 text-muted-foreground hover:text-foreground';
+const CONTROL_CLASS = 'size-8 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground';
 
 // The fullscreen props of a dialog whose body adapts to fullscreen. On a phone
 // there is no room for anything else, so it is always fullscreen and the toggle
@@ -133,7 +133,7 @@ export default function Modal({
         </div>
         {/* After the body: Radix focuses the first tabbable node on open, which
             should be a field of the body, not a control. */}
-        <div className="absolute end-3 top-3 flex items-center gap-1">
+        <div className="absolute end-2.5 top-2.5 flex items-center gap-0.5">
           {onToggleFullscreen && (
             <Button
               variant="ghost"
