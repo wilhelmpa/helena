@@ -18,7 +18,7 @@ as_owner() { runuser -u "$owner" -- "$@"; }
 # The build writes into .next as the checkout's owner. A development server's own
 # .next/dev is left to whoever runs it.
 mkdir -p "$web/.next"
-chown "$owner" "$web/.next"
+chown "$owner" "$web/.next" "$web/next-env.d.ts"
 find "$web/.next" -mindepth 1 -maxdepth 1 ! -name dev -exec chown -R "$owner" {} +
 log=$(mktemp)
 if ! as_owner bash -c "cd '$web' && bun run build" >"$log" 2>&1; then
