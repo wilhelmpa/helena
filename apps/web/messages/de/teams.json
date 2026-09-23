@@ -613,6 +613,11 @@
         "enabledHint": "Der Agent speichert Gedächtnis und legt Skills an, während er chattet und arbeitet; die Tokens dafür zählen zu seinem Verbrauch. Aus: Er speichert nichts Neues, und sein Gedächtnis wird nicht geladen.",
         "curator": "Kurator",
         "curatorHint": "Der Kurator von Hermes archiviert gelernte Skills, die 30 Tage nicht genutzt wurden. Er läuft in der Wartung von Hermes, etwa im Hermes-Dashboard, nicht in Chats und Läufen aus Plan.",
+        "reflectionTitle": "Reflexion",
+        "reflectionHint": "Ein kurzer Folge-Turn in derselben Sitzung des Laufs, direkt nach dessen Ende, in dem der Agent nur festhält, was dieser Lauf ihn gelehrt hat. Seine Tokens zählen zum Verbrauch des Laufs.",
+        "reflectionOff": "Aus",
+        "reflectionFailure": "Nach einem fehlgeschlagenen Lauf oder Nacharbeit",
+        "reflectionComplex": "Auch nach einem Lauf mit vielen Schritten",
         "restored": "Plan hat zurückgesetzt, was außerhalb von Plan geändert wurde:",
         "cronJobs": "{count, plural, one {# Auftrag im eigenen Zeitplaner von Hermes läuft} other {# Aufträge im eigenen Zeitplaner von Hermes laufen}} außerhalb von Plan. Entferne sie in Hermes und nutze stattdessen eine Routine.",
         "waiting": "Wartet auf den Runner",
@@ -643,6 +648,20 @@
     "pausedNoReason": "Pausiert. Es wurde kein Grund angegeben.",
     "blocked": "Blockiert",
     "blockedQuestion": "Frage",
+    "reflection": {
+      "title": "Reflexion",
+      "pending": "Reflektiert über den Lauf …",
+      "success": "Über den Lauf reflektiert",
+      "failed": "Reflexion fehlgeschlagen",
+      "lost": "Reflexion verloren: ihr Runner hat sie nie gemeldet",
+      "reasonFailure": "weil der Lauf fehlgeschlagen ist",
+      "reasonRework": "weil das Nacharbeit war",
+      "reasonComplex": "weil der Lauf viele Schritte brauchte",
+      "nothingSaved": "Nichts gespeichert",
+      "toolMemory": "Gedächtnis",
+      "toolSkill": "Skill",
+      "tokens": "{count} Tokens"
+    },
     "approvalTask": "Freigabe-Entscheidung"
   },
   "members": {

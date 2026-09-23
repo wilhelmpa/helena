@@ -43,6 +43,32 @@ export interface AgentRuntimePolicy {
   // Unset, the agent learns and the curator stays off.
   learning?: boolean;
   curator?: boolean;
+  // When a learning agent reflects on a run in a short follow-up turn of the same
+  // session: 'failure' after a failed run and after rework on an issue, 'complex' also
+  // after a run of many tool calls. Unset, 'complex'.
+  reflection?: ReflectionMode;
+}
+
+export type ReflectionMode = 'off' | 'failure' | 'complex';
+
+// One thing the agent's reflection kept: a memory write, or a skill it created or
+// patched.
+export interface ReflectionSaved {
+  tool: 'memory' | 'skill';
+  action: string;
+  target: string;
+}
+
+// The follow-up turn in which the agent kept what a run taught it: 'lost' when its
+// runner never reported it. Its tokens are part of the run's own. Null for a run
+// without one.
+export interface ReflectionView {
+  status: 'pending' | 'success' | 'failed' | 'lost';
+  reason: 'failure' | 'rework' | 'complex';
+  saved: ReflectionSaved[];
+  summary: string | null;
+  error: string | null;
+  tokens?: number;
 }
 
 // A managed file the runtime found changed outside Plan. It wrote Plan's version and kept
@@ -181,6 +207,7 @@ export interface AgentRun {
   contextTokens?: number;
   // The question the agent asked when it marked its issue blocked during the run.
   blockedQuestion: string | null;
+  reflection: ReflectionView | null;
   nextAttemptAt: string;
   createdAt: string;
 }

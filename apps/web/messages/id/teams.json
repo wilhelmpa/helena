@@ -614,6 +614,11 @@
         "enabledHint": "Agen menyimpan memori dan membuat skill selama chat dan run; token yang dipakai untuk itu dihitung dalam pemakaiannya. Jika nonaktif, agen tidak menyimpan hal baru dan memorinya tidak dimuat.",
         "curator": "Kurator",
         "curatorHint": "Kurator Hermes mengarsipkan skill hasil belajar yang tidak dipakai selama 30 hari. Kurator berjalan dalam pemeliharaan Hermes sendiri, seperti dasbor Hermes, bukan dalam chat dan run dari Plan.",
+        "reflectionTitle": "Refleksi",
+        "reflectionHint": "Giliran lanjutan singkat dalam sesi run yang sama, tepat setelah run berakhir, saat agen hanya menyimpan apa yang diajarkan run tersebut. Token yang dipakai dihitung dalam pemakaian run.",
+        "reflectionOff": "Nonaktif",
+        "reflectionFailure": "Setelah run gagal atau pengerjaan ulang",
+        "reflectionComplex": "Juga setelah run dengan banyak langkah",
         "restored": "Plan mengembalikan apa yang diubah di luar Plan:",
         "cronJobs": "{count, plural, other {# tugas di penjadwal Hermes sendiri berjalan}} di luar Plan. Hapus tugas itu di Hermes dan gunakan rutinitas sebagai gantinya.",
         "waiting": "Menunggu runner",
@@ -643,7 +648,21 @@
     "paused": "Dijeda",
     "pausedNoReason": "Dijeda. Tidak ada alasan yang diberikan.",
     "blocked": "Terhambat",
-    "blockedQuestion": "Pertanyaan"
+    "blockedQuestion": "Pertanyaan",
+    "reflection": {
+      "title": "Refleksi",
+      "pending": "Merefleksikan run…",
+      "success": "Merefleksikan run",
+      "failed": "Refleksi gagal",
+      "lost": "Refleksi hilang: runner-nya tidak pernah melaporkannya",
+      "reasonFailure": "karena run gagal",
+      "reasonRework": "karena ini pengerjaan ulang",
+      "reasonComplex": "karena run mengambil banyak langkah",
+      "nothingSaved": "Tidak ada yang disimpan",
+      "toolMemory": "Memori",
+      "toolSkill": "Skill",
+      "tokens": "{count} token"
+    }
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

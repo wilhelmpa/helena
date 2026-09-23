@@ -614,6 +614,11 @@
         "enabledHint": "The agent saves memory and creates skills during its chats and runs; the tokens it spends on that count toward its usage. Off, it saves nothing new and its memory is not loaded.",
         "curator": "Curator",
         "curatorHint": "Hermes' curator archives learned skills that were not used for 30 days. It runs in Hermes' own maintenance, such as the Hermes dashboard, not in chats and runs from Plan.",
+        "reflectionTitle": "Reflection",
+        "reflectionHint": "A short follow-up turn in the run's own session, right after it ends, in which the agent keeps only what that run taught it. Its tokens count toward the run's usage.",
+        "reflectionOff": "Off",
+        "reflectionFailure": "After a failed run or rework",
+        "reflectionComplex": "Also after a run of many steps",
         "restored": "Plan put back what was changed outside Plan:",
         "cronJobs": "{count, plural, one {# job in Hermes' own scheduler runs} other {# jobs in Hermes' own scheduler run}} outside Plan. Remove them in Hermes and use a routine instead.",
         "waiting": "Waiting for the runner",
@@ -643,7 +648,21 @@
     "paused": "Paused",
     "pausedNoReason": "Paused. No reason was given.",
     "blocked": "Blocked",
-    "blockedQuestion": "Question"
+    "blockedQuestion": "Question",
+    "reflection": {
+      "title": "Reflection",
+      "pending": "Reflecting on the run…",
+      "success": "Reflected on the run",
+      "failed": "Reflection failed",
+      "lost": "Reflection lost: its runner never reported it",
+      "reasonFailure": "because the run failed",
+      "reasonRework": "because this was rework",
+      "reasonComplex": "because the run took many steps",
+      "nothingSaved": "Nothing saved",
+      "toolMemory": "Memory",
+      "toolSkill": "Skill",
+      "tokens": "{count} tokens"
+    }
   },
   "members": {
     "roleSaved": "{name} is now {role}",

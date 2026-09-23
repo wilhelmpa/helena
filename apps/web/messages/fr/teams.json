@@ -614,6 +614,11 @@
         "enabledHint": "L'agent enregistre de la mémoire et crée des compétences pendant ses chats et ses exécutions ; les tokens qu'il y consacre comptent dans sa consommation. Désactivé, il n'enregistre rien de nouveau et sa mémoire n'est pas chargée.",
         "curator": "Curateur",
         "curatorHint": "Le curateur de Hermes archive les compétences apprises qui n'ont pas servi depuis 30 jours. Il tourne dans la maintenance propre à Hermes, comme le tableau de bord Hermes, pas dans les chats et exécutions lancés par Plan.",
+        "reflectionTitle": "Réflexion",
+        "reflectionHint": "Un court tour de suivi dans la même session que l'exécution, juste après sa fin, où l'agent ne retient que ce que cette exécution lui a appris. Ses tokens comptent dans la consommation de l'exécution.",
+        "reflectionOff": "Désactivée",
+        "reflectionFailure": "Après une exécution échouée ou une reprise",
+        "reflectionComplex": "Aussi après une exécution à nombreuses étapes",
         "restored": "Plan a rétabli ce qui avait été modifié en dehors de Plan :",
         "cronJobs": "{count, plural, one {# tâche du planificateur de Hermes s'exécute} other {# tâches du planificateur de Hermes s'exécutent}} en dehors de Plan. Supprimez-les dans Hermes et utilisez plutôt une routine.",
         "waiting": "En attente du runner",
@@ -643,7 +648,21 @@
     "paused": "En pause",
     "pausedNoReason": "En pause. Aucune raison indiquée.",
     "blocked": "Bloqué",
-    "blockedQuestion": "Question"
+    "blockedQuestion": "Question",
+    "reflection": {
+      "title": "Réflexion",
+      "pending": "Réflexion sur l'exécution…",
+      "success": "A réfléchi sur l'exécution",
+      "failed": "Échec de la réflexion",
+      "lost": "Réflexion perdue : son runner ne l'a jamais signalée",
+      "reasonFailure": "parce que l'exécution a échoué",
+      "reasonRework": "parce que c'était une reprise",
+      "reasonComplex": "parce que l'exécution a pris de nombreuses étapes",
+      "nothingSaved": "Rien enregistré",
+      "toolMemory": "Mémoire",
+      "toolSkill": "Compétence",
+      "tokens": "{count} tokens"
+    }
   },
   "members": {
     "roleSaved": "{name} est maintenant {role}",

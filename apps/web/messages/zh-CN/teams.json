@@ -614,6 +614,11 @@
         "enabledHint": "代理会在聊天和运行中保存记忆并创建技能，由此消耗的令牌计入其用量。关闭后，它不再保存新内容，也不会加载已有记忆。",
         "curator": "整理器",
         "curatorHint": "Hermes 的整理器会归档 30 天未使用的已学技能。它在 Hermes 自身的维护中运行（例如 Hermes 仪表盘），不在 Plan 发起的聊天和运行中运行。",
+        "reflectionTitle": "反思",
+        "reflectionHint": "运行结束后，在同一会话中进行的一轮简短后续对话，代理只保留这次运行教给它的内容，所耗令牌计入该次运行的用量。",
+        "reflectionOff": "关闭",
+        "reflectionFailure": "在运行失败或返工后",
+        "reflectionComplex": "在步骤较多的运行后也会进行",
         "restored": "Plan 已恢复在 Plan 之外被修改的内容：",
         "cronJobs": "Hermes 自带调度器中有 {count, plural, other {# 个任务}}在 Plan 之外运行。请在 Hermes 中删除它们，改用例程。",
         "waiting": "等待运行器",
@@ -643,7 +648,21 @@
     "paused": "已暂停",
     "pausedNoReason": "已暂停。未提供原因。",
     "blocked": "受阻",
-    "blockedQuestion": "问题"
+    "blockedQuestion": "问题",
+    "reflection": {
+      "title": "反思",
+      "pending": "正在反思此次运行…",
+      "success": "已反思此次运行",
+      "failed": "反思失败",
+      "lost": "反思丢失：其运行器从未报告",
+      "reasonFailure": "因为运行失败了",
+      "reasonRework": "因为这是一次返工",
+      "reasonComplex": "因为运行经历了很多步骤",
+      "nothingSaved": "未保存任何内容",
+      "toolMemory": "记忆",
+      "toolSkill": "技能",
+      "tokens": "{count} 个令牌"
+    }
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

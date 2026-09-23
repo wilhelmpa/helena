@@ -614,6 +614,11 @@
         "enabledHint": "El agente guarda memoria y crea habilidades durante sus chats y ejecuciones; los tokens que gasta en ello cuentan en su consumo. Desactivado, no guarda nada nuevo y su memoria no se carga.",
         "curator": "Curador",
         "curatorHint": "El curador de Hermes archiva las habilidades aprendidas que no se usaron en 30 días. Se ejecuta en el mantenimiento propio de Hermes, como el panel de Hermes, no en los chats y ejecuciones de Plan.",
+        "reflectionTitle": "Reflexión",
+        "reflectionHint": "Un breve turno de seguimiento en la misma sesión de la ejecución, justo después de que termine, en el que el agente solo guarda lo que esa ejecución le enseñó. Sus tokens cuentan en el consumo de la ejecución.",
+        "reflectionOff": "Desactivada",
+        "reflectionFailure": "Tras una ejecución fallida o un retrabajo",
+        "reflectionComplex": "También tras una ejecución con muchos pasos",
         "restored": "Plan restauró lo que se cambió fuera de Plan:",
         "cronJobs": "{count, plural, one {# tarea del programador propio de Hermes se ejecuta} other {# tareas del programador propio de Hermes se ejecutan}} fuera de Plan. Elimínalas en Hermes y usa una rutina en su lugar.",
         "waiting": "Esperando al ejecutor",
@@ -643,7 +648,21 @@
     "paused": "En pausa",
     "pausedNoReason": "En pausa. No se indicó ningún motivo.",
     "blocked": "Bloqueado",
-    "blockedQuestion": "Pregunta"
+    "blockedQuestion": "Pregunta",
+    "reflection": {
+      "title": "Reflexión",
+      "pending": "Reflexionando sobre la ejecución…",
+      "success": "Reflexionó sobre la ejecución",
+      "failed": "La reflexión falló",
+      "lost": "Reflexión perdida: su ejecutor nunca la informó",
+      "reasonFailure": "porque la ejecución falló",
+      "reasonRework": "porque esto fue un retrabajo",
+      "reasonComplex": "porque la ejecución tuvo muchos pasos",
+      "nothingSaved": "Nada guardado",
+      "toolMemory": "Memoria",
+      "toolSkill": "Habilidad",
+      "tokens": "{count} tokens"
+    }
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",

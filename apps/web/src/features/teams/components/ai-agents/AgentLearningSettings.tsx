@@ -1,11 +1,22 @@
 import { useTranslations } from 'next-intl';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { AgentRuntimePolicy } from '@/lib/api/endpoints/agents';
 import { learningOf } from '../../utils/agentLearning';
 import { TeamSettingState } from '../TeamSettingState';
 
-// Whether the agent learns in its chats and runs, and whether Hermes' curator may
-// archive what it learned. Saved with the agent; the runner applies both on its next sync.
+const REFLECTION_MODES = ['off', 'failure', 'complex'] as const;
+
+// Whether the agent learns in its chats and runs, whether Hermes' curator may archive
+// what it learned, and when it reflects on a run: a short follow-up turn of the run's
+// own session, right after it ends. Saved with the agent; the runner applies all three
+// on its next sync.
 export default function AgentLearningSettings({
   policy,
   canEdit,
@@ -58,6 +69,47 @@ export default function AgentLearningSettings({
             </li>
           );
         })}
+        <li className="flex items-start justify-between gap-4">
+          <span className="min-w-0">
+            <span className="text-sm">{t('reflectionTitle')}</span>
+            <span className="block text-xs text-muted-foreground">{t('reflectionHint')}</span>
+          </span>
+          {canEdit ? (
+            <Select
+              value={current.reflection}
+              onValueChange={(value) =>
+                onChange({ ...policy, reflection: value as AgentRuntimePolicy['reflection'] })
+              }
+            >
+              <SelectTrigger className="w-44 shrink-0" aria-label={t('reflectionTitle')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REFLECTION_MODES.map((mode) => (
+                  <SelectItem key={mode} value={mode}>
+                    {t(
+                      mode === 'off'
+                        ? 'reflectionOff'
+                        : mode === 'failure'
+                          ? 'reflectionFailure'
+                          : 'reflectionComplex',
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className="shrink-0 text-sm text-muted-foreground">
+              {t(
+                current.reflection === 'off'
+                  ? 'reflectionOff'
+                  : current.reflection === 'failure'
+                    ? 'reflectionFailure'
+                    : 'reflectionComplex',
+              )}
+            </span>
+          )}
+        </li>
       </ul>
     </div>
   );

@@ -2,9 +2,16 @@ import type { AgentRuntimePolicy, AgentRuntimeState } from '@/lib/api/endpoints/
 import type { RuntimeAction } from '@/lib/api/endpoints/agentLearning';
 
 // The agent's learning switches with their defaults: an agent learns unless it is told
-// not to, and the curator stays off until it is turned on.
-export function learningOf(policy: AgentRuntimePolicy): { learning: boolean; curator: boolean } {
-  return { learning: policy.learning ?? true, curator: policy.curator ?? false };
+// not to, the curator stays off until it is turned on, and it reflects on a failed run,
+// rework, or a run of many steps unless reflection is turned off or down to failures only.
+export function learningOf(
+  policy: AgentRuntimePolicy,
+): { learning: boolean; curator: boolean; reflection: NonNullable<AgentRuntimePolicy['reflection']> } {
+  return {
+    learning: policy.learning ?? true,
+    curator: policy.curator ?? false,
+    reflection: policy.reflection ?? 'complex',
+  };
 }
 
 // Whether the agent's runner carries out the owner's actions on what it learned. An older

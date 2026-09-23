@@ -614,6 +614,11 @@
         "enabledHint": "O agente salva memória e cria skills durante chats e execuções; os tokens gastos nisso contam no consumo dele. Desligado, ele não salva nada novo e sua memória não é carregada.",
         "curator": "Curador",
         "curatorHint": "O curador do Hermes arquiva skills aprendidas que não foram usadas por 30 dias. Ele roda na manutenção do próprio Hermes, como o painel do Hermes, não nos chats e execuções do Plan.",
+        "reflectionTitle": "Reflexão",
+        "reflectionHint": "Um breve turno de acompanhamento na mesma sessão da execução, logo após ela terminar, no qual o agente guarda apenas o que essa execução lhe ensinou. Os tokens dele contam no consumo da execução.",
+        "reflectionOff": "Desligada",
+        "reflectionFailure": "Após uma execução falhada ou retrabalho",
+        "reflectionComplex": "Também após uma execução com muitos passos",
         "restored": "O Plan restaurou o que foi alterado fora do Plan:",
         "cronJobs": "{count, plural, one {# tarefa do agendador do próprio Hermes roda} other {# tarefas do agendador do próprio Hermes rodam}} fora do Plan. Remova-as no Hermes e use uma rotina no lugar.",
         "waiting": "Aguardando o runner",
@@ -643,7 +648,21 @@
     "paused": "Pausado",
     "pausedNoReason": "Pausado. Nenhum motivo foi informado.",
     "blocked": "Bloqueado",
-    "blockedQuestion": "Pergunta"
+    "blockedQuestion": "Pergunta",
+    "reflection": {
+      "title": "Reflexão",
+      "pending": "Refletindo sobre a execução…",
+      "success": "Refletiu sobre a execução",
+      "failed": "A reflexão falhou",
+      "lost": "Reflexão perdida: o runner nunca a reportou",
+      "reasonFailure": "porque a execução falhou",
+      "reasonRework": "porque isso foi retrabalho",
+      "reasonComplex": "porque a execução teve muitos passos",
+      "nothingSaved": "Nada salvo",
+      "toolMemory": "Memória",
+      "toolSkill": "Skill",
+      "tokens": "{count} tokens"
+    }
   },
   "members": {
     "roleSaved": "{name} agora é {role}",
