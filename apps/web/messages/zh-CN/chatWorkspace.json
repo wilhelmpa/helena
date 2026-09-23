@@ -113,7 +113,9 @@
       "approvals": "审批命令不能从聊天中运行——请使用审批卡片或“审批”页面。",
       "config": "这会更改代理自身的配置——请在 Helena 中使用代理设置进行更改。",
       "outside": "这不是聊天能做的事。"
-    }
+    },
+    "reasoning": "推理强度",
+    "reasoningDefault": "默认"
   },
   "artifact": {
     "title": "产物",
@@ -181,5 +183,17 @@
     "continue": "继续",
     "continuePrompt": "请从被打断的地方继续。",
     "resend": "重新发送"
+  },
+  "commands": {
+    "new": "开始新对话",
+    "retry": "重新回答上一个问题",
+    "undo": "移除最后一轮对话",
+    "title": "重命名此对话",
+    "model": "选择模型",
+    "reasoning": "设置推理强度",
+    "skills": "打开智能体的技能",
+    "memory": "打开智能体的记忆",
+    "usage": "显示此对话的 token 用量",
+    "stop": "停止回答"
   }
 }

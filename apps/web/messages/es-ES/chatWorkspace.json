@@ -113,7 +113,9 @@
       "approvals": "Los comandos de aprobación no se ejecutan desde el chat — usa la tarjeta de aprobación o la página de Aprobaciones.",
       "config": "Esto cambia la configuración del propio agente — usa los ajustes del agente en Helena.",
       "outside": "Esto no es algo que el chat pueda hacer."
-    }
+    },
+    "reasoning": "Esfuerzo de razonamiento",
+    "reasoningDefault": "predeterminado"
   },
   "artifact": {
     "title": "Artefacto",
@@ -181,5 +183,17 @@
     "continue": "Continuar",
     "continuePrompt": "Por favor, continúa donde te interrumpieron.",
     "resend": "Enviar de nuevo"
+  },
+  "commands": {
+    "new": "Empezar un chat nuevo",
+    "retry": "Responder de nuevo a la última pregunta",
+    "undo": "Quitar el último intercambio",
+    "title": "Cambiar el nombre de este chat",
+    "model": "Elegir el modelo",
+    "reasoning": "Ajustar el esfuerzo de razonamiento",
+    "skills": "Abrir las habilidades del agente",
+    "memory": "Abrir la memoria del agente",
+    "usage": "Mostrar el uso de tokens de este chat",
+    "stop": "Detener la respuesta"
   }
 }

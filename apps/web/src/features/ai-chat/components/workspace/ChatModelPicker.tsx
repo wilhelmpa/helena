@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -14,7 +15,27 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
 import { useChatCatalog } from '../../hooks/useChatCatalog';
+
+// Who makes the models a runner offers, by the provider key its catalog names — product
+// names, the same in every language.
+const PROVIDER_NAME: Record<string, string> = {
+  anthropic: 'Claude · Anthropic',
+  'openai-codex': 'Codex · OpenAI',
+  openai: 'OpenAI',
+  google: 'Gemini · Google',
+};
+
+// The catalog's models by provider, in the order the runner listed them.
+function groupByProvider(models: AiChatModel[]): [string, AiChatModel[]][] {
+  const groups = new Map<string, AiChatModel[]>();
+  for (const entry of models) {
+    const key = entry.provider ?? '';
+    groups.set(key, [...(groups.get(key) ?? []), entry]);
+  }
+  return [...groups];
+}
 
 export interface ChatModelPickerProps {
   scopeKey: string;
@@ -69,32 +90,53 @@ export default function ChatModelPicker({
           {model == null && <Check className="size-4" />}
           <span className={model == null ? '' : 'ps-6'}>{t('composer.modelDefault')}</span>
         </DropdownMenuItem>
-        {models.length > 0 && <DropdownMenuSeparator />}
-        {models.map((entry) =>
-          entry.reasoning && entry.thinkingLevels.length > 0 ? (
-            <DropdownMenuSub key={entry.id}>
-              <DropdownMenuSubTrigger>
-                {entry.id === model && <Check className="size-4" />}
-                <span className={entry.id === model ? '' : 'ps-6'}>{entry.name}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {entry.thinkingLevels.map((level) => (
-                  <DropdownMenuItem key={level} onSelect={() => onChange(entry.id, level)}>
-                    {entry.id === model && thinkingLevel === level && <Check className="size-4" />}
-                    <span className={entry.id === model && thinkingLevel === level ? '' : 'ps-6'}>
-                      {level}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          ) : (
-            <DropdownMenuItem key={entry.id} onSelect={() => onChange(entry.id, null)}>
-              {entry.id === model && <Check className="size-4" />}
-              <span className={entry.id === model ? '' : 'ps-6'}>{entry.name}</span>
-            </DropdownMenuItem>
-          ),
-        )}
+        {groupByProvider(models).map(([provider, entries]) => (
+          <DropdownMenuGroup key={provider}>
+            <DropdownMenuSeparator />
+            {provider && (
+              <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                {PROVIDER_NAME[provider] ?? provider}
+              </DropdownMenuLabel>
+            )}
+            {entries.map((entry) =>
+              entry.reasoning && entry.thinkingLevels.length > 0 ? (
+                <DropdownMenuSub key={entry.id}>
+                  <DropdownMenuSubTrigger>
+                    {entry.id === model && <Check className="size-4" />}
+                    <span className={entry.id === model ? '' : 'ps-6'}>{entry.name}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                      {t('composer.reasoning')}
+                    </DropdownMenuLabel>
+                    {entry.thinkingLevels.map((level) => (
+                      <DropdownMenuItem key={level} onSelect={() => onChange(entry.id, level)}>
+                        {entry.id === model && thinkingLevel === level && (
+                          <Check className="size-4" />
+                        )}
+                        <span
+                          className={entry.id === model && thinkingLevel === level ? '' : 'ps-6'}
+                        >
+                          {level}
+                          {level === entry.thinkingDefault && (
+                            <span className="ms-1.5 text-xs text-muted-foreground">
+                              {t('composer.reasoningDefault')}
+                            </span>
+                          )}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              ) : (
+                <DropdownMenuItem key={entry.id} onSelect={() => onChange(entry.id, null)}>
+                  {entry.id === model && <Check className="size-4" />}
+                  <span className={entry.id === model ? '' : 'ps-6'}>{entry.name}</span>
+                </DropdownMenuItem>
+              ),
+            )}
+          </DropdownMenuGroup>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

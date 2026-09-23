@@ -113,7 +113,9 @@
       "approvals": "Perintah persetujuan tidak dijalankan dari obrolan — gunakan kartu persetujuan atau halaman Persetujuan.",
       "config": "Ini mengubah konfigurasi agen itu sendiri — gunakan pengaturan agen di Helena.",
       "outside": "Ini bukan sesuatu yang bisa dilakukan obrolan."
-    }
+    },
+    "reasoning": "Upaya penalaran",
+    "reasoningDefault": "bawaan"
   },
   "artifact": {
     "title": "Artefak",
@@ -181,5 +183,17 @@
     "continue": "Lanjutkan",
     "continuePrompt": "Silakan lanjutkan dari bagian saat kamu terputus.",
     "resend": "Kirim lagi"
+  },
+  "commands": {
+    "new": "Mulai chat baru",
+    "retry": "Jawab ulang pertanyaan terakhir",
+    "undo": "Hapus percakapan terakhir",
+    "title": "Ganti nama chat ini",
+    "model": "Pilih model",
+    "reasoning": "Atur upaya penalaran",
+    "skills": "Buka skill agen",
+    "memory": "Buka memori agen",
+    "usage": "Tampilkan penggunaan token chat ini",
+    "stop": "Hentikan jawaban"
   }
 }

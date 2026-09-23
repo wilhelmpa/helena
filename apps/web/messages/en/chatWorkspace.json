@@ -113,7 +113,9 @@
       "approvals": "Approval commands aren’t run from chat — use the approval card or the Approvals page.",
       "config": "This changes the agent’s own configuration — use the agent’s settings in Helena instead.",
       "outside": "This isn’t something the chat can do."
-    }
+    },
+    "reasoning": "Reasoning effort",
+    "reasoningDefault": "default"
   },
   "artifact": {
     "title": "Artifact",
@@ -181,5 +183,17 @@
     "continue": "Continue",
     "continuePrompt": "Please continue where you were interrupted.",
     "resend": "Send again"
+  },
+  "commands": {
+    "new": "Start a new chat",
+    "retry": "Answer the last question again",
+    "undo": "Remove the last exchange",
+    "title": "Rename this chat",
+    "model": "Pick the model",
+    "reasoning": "Set the reasoning effort",
+    "skills": "Open the agent's skills",
+    "memory": "Open the agent's memory",
+    "usage": "Show this chat's token usage",
+    "stop": "Stop the answer"
   }
 }

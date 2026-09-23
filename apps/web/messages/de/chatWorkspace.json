@@ -113,7 +113,9 @@
       "approvals": "Freigabe-Befehle laufen nicht über den Chat — nutze die Freigabe-Karte oder die Freigaben-Seite.",
       "config": "Das ändert die Konfiguration des Agenten selbst — nutze dafür die Agenten-Einstellungen in Helena.",
       "outside": "Das kann der Chat nicht."
-    }
+    },
+    "reasoning": "Denkaufwand",
+    "reasoningDefault": "Standard"
   },
   "artifact": {
     "title": "Artefakt",
@@ -181,5 +183,17 @@
     "continue": "Fortsetzen",
     "continuePrompt": "Bitte mach dort weiter, wo du unterbrochen wurdest.",
     "resend": "Erneut senden"
+  },
+  "commands": {
+    "new": "Neuen Chat beginnen",
+    "retry": "Letzte Frage neu beantworten",
+    "undo": "Letzten Austausch entfernen",
+    "title": "Chat umbenennen",
+    "model": "Modell wählen",
+    "reasoning": "Denkaufwand einstellen",
+    "skills": "Skills des Agenten öffnen",
+    "memory": "Gedächtnis des Agenten öffnen",
+    "usage": "Token-Verbrauch dieses Chats zeigen",
+    "stop": "Antwort stoppen"
   }
 }

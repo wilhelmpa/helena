@@ -26,12 +26,16 @@ export default function ChatSlashMenu({
     <div
       role="listbox"
       aria-label={t('composer.slashMenu')}
-      className="absolute bottom-full z-10 mb-2 max-h-72 w-full overflow-y-auto rounded-lg border bg-popover p-1 shadow-md"
+      className="absolute bottom-full z-10 mb-2 max-h-72 w-full scrollbar-thin overflow-y-auto rounded-lg border bg-popover p-1 shadow-md"
     >
       {items.map((item, index) => {
         const key =
           item.kind === 'prompt' ? `prompt-${item.prompt.id}` : `command-${item.command.name}`;
         const label = item.kind === 'prompt' ? item.prompt.title : `/${item.command.name}`;
+        const description =
+          item.kind === 'command' && item.command.action
+            ? t(`commands.${item.command.action}`)
+            : undefined;
         const meta =
           item.kind === 'prompt'
             ? `/${item.prompt.command}`
@@ -49,7 +53,7 @@ export default function ChatSlashMenu({
             onMouseEnter={() => onHighlight(index)}
             onClick={() => onSelect(item)}
             className={cn(
-              'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm',
+              'flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm',
               index === highlight ? 'bg-accent' : 'hover:bg-accent/60',
             )}
           >
@@ -58,8 +62,11 @@ export default function ChatSlashMenu({
             ) : (
               <Slash className="size-3.5 shrink-0 text-muted-foreground" />
             )}
-            <span dir="auto" className="min-w-0 flex-1 truncate">
+            <span dir="auto" className={item.kind === 'command' ? 'shrink-0' : 'min-w-0 truncate'}>
               {label}
+            </span>
+            <span dir="auto" className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {description}
             </span>
             {meta && (
               <span dir="ltr" className="shrink-0 text-xs text-muted-foreground">

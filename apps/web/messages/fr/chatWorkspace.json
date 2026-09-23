@@ -113,7 +113,9 @@
       "approvals": "Les commandes d’approbation ne s’exécutent pas depuis le chat — utilisez la carte d’approbation ou la page Approbations.",
       "config": "Cela modifie la configuration propre de l’agent — utilisez les paramètres de l’agent dans Helena.",
       "outside": "Le chat ne peut pas faire cela."
-    }
+    },
+    "reasoning": "Effort de réflexion",
+    "reasoningDefault": "par défaut"
   },
   "artifact": {
     "title": "Artefact",
@@ -181,5 +183,17 @@
     "continue": "Continuer",
     "continuePrompt": "Merci de reprendre là où tu as été interrompu.",
     "resend": "Renvoyer"
+  },
+  "commands": {
+    "new": "Démarrer une nouvelle discussion",
+    "retry": "Répondre à nouveau à la dernière question",
+    "undo": "Retirer le dernier échange",
+    "title": "Renommer cette discussion",
+    "model": "Choisir le modèle",
+    "reasoning": "Régler l’effort de réflexion",
+    "skills": "Ouvrir les compétences de l’agent",
+    "memory": "Ouvrir la mémoire de l’agent",
+    "usage": "Afficher les jetons utilisés par cette discussion",
+    "stop": "Arrêter la réponse"
   }
 }

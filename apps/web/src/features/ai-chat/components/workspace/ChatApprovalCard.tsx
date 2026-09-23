@@ -69,9 +69,9 @@ export default function ChatApprovalCard({ tool }: { tool: DynamicToolUIPart }) 
   const request = query.data;
 
   return (
-    <div className="max-w-md space-y-2.5 rounded-lg border bg-card p-3.5">
+    <div className="max-w-md space-y-2.5 rounded-lg border border-status-waiting/40 bg-background p-3">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ShieldQuestion className="size-4 shrink-0" />
+        <ShieldQuestion className="size-4 shrink-0 text-status-waiting" />
         {request ? (
           <Badge variant="outline">{t(`approval.kind.${request.kind}`)}</Badge>
         ) : (
