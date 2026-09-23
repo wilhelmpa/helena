@@ -1,78 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import HelenaMark from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
 import { APP_NAME } from '@/utils/app';
-import ReleaseHistory from '@/features/whats-new/components/ReleaseHistory';
-import { useSession } from '@/lib/auth-client';
-import { cn } from '@/lib/utils';
-import { useAppVersionQuery, useUpdateStatusQuery } from '@/services/updates.service';
 
-// The product mark at the bottom of both sidebars, with the running version under
-// it. Collapses to the mark alone when the sidebar is in icon mode.
-//
-// The instance owner also sees whether a newer release is published and opens the
-// release notes from here — they are the one who upgrades the instance, so the
-// check is theirs alone (GET /god/updates). Everyone else sees the version only.
+// The product mark at the bottom of both sidebars. Collapses to the mark alone when the
+// sidebar is in icon mode. No version and no release notes here: the owner wants the
+// footer quiet.
 export default function SidebarBrandFooter() {
-  const { data: session } = useSession();
-  // The session store can already be filled by the time React hydrates, while the
-  // server rendered without it. Reading it only after mount keeps the server and
-  // the first client render identical.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const isGod = mounted && session?.user.role === 'god';
-
-  const { data: appVersion } = useAppVersionQuery();
-  const { data: status } = useUpdateStatusQuery(isGod);
-  const [showUpdates, setShowUpdates] = useState(false);
-
-  const version = appVersion?.version ?? status?.currentVersion;
-  // The version to offer, or null when the running one is the newest known.
-  const newerVersion = status?.updateAvailable ? status.latestVersion : null;
-
-  const layout =
-    'flex w-full items-center gap-2.5 px-2 pt-2 pb-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0';
-
-  const content = (
-    <>
+  return (
+    <div className="flex w-full items-center gap-2.5 px-2 pt-2 pb-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
       <HelenaMark className="size-7 shrink-0" />
       <div className="grid text-start leading-none group-data-[collapsible=icon]:hidden">
         <HelenaWordmark label={APP_NAME} className="h-3.5 w-auto text-sidebar-foreground" />
-        {newerVersion ? (
-          <span className="mt-1 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-primary uppercase">
-            {/* A pulsing ring around the dot, so the update is noticed in a footer
-                nobody looks at. */}
-            <span className="relative flex size-1.5" aria-hidden>
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-success" />
-            </span>
-            {`v${newerVersion} available`}
-          </span>
-        ) : (
-          <span className="mt-1 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-            {version ? `v${version}` : 'Self-hosted'}
-          </span>
-        )}
       </div>
-    </>
-  );
-
-  // Without the owner's release data there is nothing to open, so the footer stays
-  // the plain mark it is for everyone else.
-  if (!status) return <div className={layout}>{content}</div>;
-
-  return (
-    <>
-      <button
-        type="button"
-        className={cn(layout, 'rounded-md hover:bg-sidebar-accent')}
-        onClick={() => setShowUpdates(true)}
-      >
-        {content}
-      </button>
-      {showUpdates && <ReleaseHistory status={status} onClose={() => setShowUpdates(false)} />}
-    </>
+    </div>
   );
 }

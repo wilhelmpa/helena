@@ -22,7 +22,7 @@
       "email": "Email"
     },
     "registered": "bergabung {date}",
-    "roleGod": "God",
+    "roleGod": "Administrator",
     "roleUser": "Pengguna",
     "agent": "Agen",
     "noProviders": "tidak ada",

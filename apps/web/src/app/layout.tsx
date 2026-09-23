@@ -4,7 +4,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Providers } from '@/components/providers';
 import RuntimeEnvScript from '@/components/runtime-env-script';
-import WhatsNew from '@/features/whats-new/WhatsNew';
 import { localeDirection, type Locale } from '@/i18n/locales';
 import './globals.css';
 import WorkspaceToolsProvider from './WorkspaceToolsProvider';
@@ -38,7 +37,6 @@ export default async function RootLayout({
           <NextIntlClientProvider>
             <Providers>
               <WorkspaceToolsProvider>{children}</WorkspaceToolsProvider>
-              <WhatsNew />
             </Providers>
           </NextIntlClientProvider>
         </ThemeProvider>

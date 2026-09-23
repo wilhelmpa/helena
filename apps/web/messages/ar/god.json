@@ -22,7 +22,7 @@
       "email": "البريد الإلكتروني"
     },
     "registered": "انضم في {date}",
-    "roleGod": "المشرف الأعلى",
+    "roleGod": "المسؤول",
     "roleUser": "مستخدم",
     "agent": "وكيل",
     "noProviders": "لا شيء",
