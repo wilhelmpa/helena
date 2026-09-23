@@ -41,7 +41,10 @@ export function AgentRunnerStatus({
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
       <Radio
-        className={cn('size-3 shrink-0', online ? 'text-emerald-500' : 'text-muted-foreground/60')}
+        className={cn(
+          'size-3 shrink-0',
+          online ? 'text-status-success' : 'text-muted-foreground/60',
+        )}
       />
       {label}
       {/* How long it has been gone is the useful half of "offline", so it survives

@@ -63,7 +63,7 @@ export default function TeamInfoSection({ teamId }: { teamId: number }) {
         ) : undefined
       }
     >
-      <div className="space-y-10">
+      <div className="space-y-6">
         <SettingsSection title={t('team')} description={t('teamHint')}>
           <SettingsCard className="space-y-4 p-4">
             {isOwner ? (

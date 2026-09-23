@@ -75,9 +75,9 @@ export function ToolPicker({
         />
       </div>
 
-      <div className="max-h-[55vh] space-y-5 overflow-y-auto pe-1">
+      <div className="max-h-[55vh] space-y-4 overflow-y-auto pe-1">
         {matches.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">
+          <p className="py-4 text-center text-sm text-muted-foreground">
             {t('noMatches', { query: query.trim() })}
           </p>
         )}
@@ -92,9 +92,7 @@ export function ToolPicker({
                   integration={{ label: integrationLabel, kind: 'tool' }}
                   className="size-5"
                 />
-                <h3 className="text-xs font-semibold tracking-wide text-foreground uppercase">
-                  {integrationLabel}
-                </h3>
+                <h3 className="text-xs font-semibold text-foreground">{integrationLabel}</h3>
                 <button
                   type="button"
                   disabled={disabled}
@@ -124,14 +122,12 @@ export function ToolPicker({
                       <span className="block text-xs text-muted-foreground">{o.description}</span>
                       {o.scopes.length > 0 && (
                         <span className="mt-1.5 flex flex-wrap items-center gap-1">
-                          <span className="text-[10px] tracking-wide text-muted-foreground uppercase">
-                            {t('scopesUpper')}
-                          </span>
+                          <span className="text-xs text-muted-foreground">{t('scopesUpper')}</span>
                           {o.scopes.map((s) => (
                             <Badge
                               key={s}
                               variant="secondary"
-                              className="font-mono text-[10px] font-normal"
+                              className="font-mono text-xs font-normal"
                             >
                               {s}
                             </Badge>

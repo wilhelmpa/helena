@@ -31,7 +31,7 @@ export default function GodScimGroupList() {
           ))}
         </ItemGroup>
       ) : (
-        <p className="py-6 text-sm text-muted-foreground">{t('groupsEmpty')}</p>
+        <p className="py-4 text-sm text-muted-foreground">{t('groupsEmpty')}</p>
       )}
 
       {editing && <GodScimGroupMappingDialog group={editing} onClose={() => setEditing(null)} />}

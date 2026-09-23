@@ -6,9 +6,13 @@ import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import CycleBreadcrumb from '@/components/layout/CycleBreadcrumb';
 import InitiativeBreadcrumb from '@/components/layout/InitiativeBreadcrumb';
 import IssueBreadcrumb from '@/components/layout/IssueBreadcrumb';
+import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
+import { projectPath, settingsPath } from '@/utils/paths';
 
-// The header title: a breadcrumb on an issue, initiative or cycle page, otherwise
-// the page's own label.
+// The header title: a breadcrumb on an issue, initiative or cycle page; on any other
+// page below the board, "project › page" (settings: "project › settings › section"),
+// so the header says where the page sits and the page's own title bar under it does
+// not repeat the same word in the same row. The board itself is just the project.
 export default function ShellHeaderTitle({
   route,
   projectName,
@@ -63,5 +67,23 @@ export default function ShellHeaderTitle({
   if (route.routeCycleId != null) {
     return <CycleBreadcrumb projectKey={route.projectKey} cycleId={route.routeCycleId} />;
   }
-  return <>{pageLabel()}</>;
+  const label = pageLabel();
+  if (!route.projectKey || label === projectName) return <>{label}</>;
+  const project = { label: projectName, href: projectPath(route.projectKey) };
+  if (route.section) {
+    const first = SETTINGS_SECTIONS[0]?.slug;
+    return (
+      <HeaderCrumbs
+        items={[
+          project,
+          {
+            label: t('settings'),
+            href: first ? settingsPath(route.projectKey, first) : undefined,
+          },
+          { label },
+        ]}
+      />
+    );
+  }
+  return <HeaderCrumbs items={[project, { label }]} />;
 }

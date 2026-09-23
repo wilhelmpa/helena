@@ -36,7 +36,7 @@ function ItemRow({
       {meta && <span className="shrink-0 text-xs text-muted-foreground">{meta}</span>}
       <Badge
         variant={action === 'unchanged' ? 'outline' : 'secondary'}
-        className="shrink-0 px-1.5 py-0 text-[10px] font-normal"
+        className="shrink-0 px-1.5 py-0 text-xs font-normal"
       >
         {actionLabel(action)}
       </Badge>
@@ -122,9 +122,7 @@ export default function LabelsImportDialog({
 
         {plan.groups.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-              {t('groups')}
-            </p>
+            <p className="text-xs font-medium text-muted-foreground">{t('groups')}</p>
             <div className="divide-y divide-border/60 overflow-hidden rounded-md border border-border/60">
               {plan.groups.map((g) => (
                 <ItemRow key={g.name} color={g.color} name={g.name} action={g.action} />
@@ -135,9 +133,7 @@ export default function LabelsImportDialog({
 
         {plan.labels.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-              {t('labels')}
-            </p>
+            <p className="text-xs font-medium text-muted-foreground">{t('labels')}</p>
             <div className="max-h-[40vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
               {plan.labels.map((l) => (
                 <ItemRow

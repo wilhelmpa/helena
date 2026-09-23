@@ -104,7 +104,7 @@ export default function RoleEditorPanel({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="ml-auto flex h-full w-full flex-col border-l bg-card sm:w-[680px] sm:max-w-[92vw]">
-        <div className="flex shrink-0 items-center justify-between gap-3 bg-muted/30 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-3 bg-muted/30 px-4 py-4">
           <h2 className="min-w-0 truncate text-base font-semibold">
             {role ? t('editorTitleEdit') : t('editorTitleNew')}
           </h2>
@@ -119,7 +119,7 @@ export default function RoleEditorPanel({
           </Button>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
           <div className="space-y-1.5">
             <Label htmlFor="role-name">{tCommon('name')}</Label>
             <Input
@@ -141,7 +141,7 @@ export default function RoleEditorPanel({
                   return (
                     <th key={action} className="px-1 py-2">
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-[11px] font-medium text-muted-foreground">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {actionLabel(action)}
                         </span>
                         <MatrixCheckbox
@@ -225,7 +225,7 @@ export default function RoleEditorPanel({
           </table>
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t px-6 py-3">
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {tCommon('cancel')}
           </Button>

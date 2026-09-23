@@ -24,7 +24,7 @@ export default function WebhookHealthWidget({
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">{t('lastDays', { days })}</p>
-      <div className="text-4xl font-semibold tracking-tight tabular-nums">{data.total}</div>
+      <div className="text-3xl font-semibold tabular-nums">{data.total}</div>
       <p className="text-xs text-muted-foreground">{t('webhookHealth.deliveries')}</p>
       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground tabular-nums">
         {data.failed > 0 && (

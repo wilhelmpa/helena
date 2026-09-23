@@ -95,9 +95,7 @@ export default function TeamSectionNav({ team }: { team: Team }) {
 
   return (
     <div className="space-y-2">
-      <h2 className="truncate px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {team.name}
-      </h2>
+      <h2 className="truncate px-2 text-xs font-medium text-muted-foreground">{team.name}</h2>
       <div className="space-y-0.5">
         <SectionNav sections={top} activeId={activeId} label={team.name} />
         {ai.length > 0 && (

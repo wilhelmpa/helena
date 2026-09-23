@@ -13,10 +13,10 @@ export default function OrganizationTree({ organization }: { organization: Organ
     return <p className="text-sm text-muted-foreground">{t('map.empty')}</p>;
   }
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-3 pb-6">
       <OrganizationSummary agents={organization.agents} />
       <div className="overflow-x-auto">
-        <ul className="min-w-[520px] space-y-5">
+        <ul className="min-w-0 space-y-2">
           {tree.map((node) => (
             <OrganizationDepartmentNode key={node.department?.id ?? node.kind} node={node} />
           ))}

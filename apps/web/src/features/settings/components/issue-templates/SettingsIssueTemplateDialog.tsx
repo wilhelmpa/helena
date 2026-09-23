@@ -36,7 +36,7 @@ export default function SettingsIssueTemplateDialog({
   return (
     <Modal title={t(initial ? 'editTemplate' : 'addTemplate')} onClose={onClose} wide>
       <form
-        className="space-y-8"
+        className="space-y-6"
         onSubmit={(event) => {
           event.preventDefault();
           if (values.name.trim()) onSubmit(values);
@@ -68,7 +68,7 @@ export default function SettingsIssueTemplateDialog({
           </div>
         </div>
 
-        <div className="space-y-4 border-t border-border/50 pt-5">
+        <div className="space-y-4 border-t border-border/50 pt-4">
           <div className="space-y-1.5">
             <Label htmlFor="issue-template-title">{t('issueTitle')}</Label>
             <Input
@@ -94,11 +94,11 @@ export default function SettingsIssueTemplateDialog({
           </div>
         </div>
 
-        <div className="border-t border-border/50 pt-5">
+        <div className="border-t border-border/50 pt-4">
           <IssueTemplateProperties project={project} values={values} onChange={change} />
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border/50 pt-5">
+        <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
           <Button type="button" variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>

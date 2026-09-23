@@ -30,13 +30,13 @@ export default function PermissionMatrix({
     <table className="w-full border-collapse text-sm">
       <thead>
         <tr className="border-b">
-          <th className="py-1.5 pr-2 text-left text-[11px] font-medium text-muted-foreground">
+          <th className="py-1.5 pr-2 text-left text-xs font-medium text-muted-foreground">
             {t('resourceColumn')}
           </th>
           {actions.map((action) => (
             <th
               key={action}
-              className="px-1 py-1.5 text-center text-[11px] font-medium text-muted-foreground"
+              className="px-1 py-1.5 text-center text-xs font-medium text-muted-foreground"
             >
               {actionLabel(action)}
             </th>

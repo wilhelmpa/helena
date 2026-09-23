@@ -17,7 +17,7 @@ export default function AccountSection({
   children: ReactNode;
 }) {
   return (
-    <section className="border-t py-6 first:border-t-0 first:pt-0">
+    <section className="border-t py-4 first:border-t-0 first:pt-0">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-medium">{title}</h2>

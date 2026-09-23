@@ -33,7 +33,7 @@ export default function DelegateSelect({
       trigger={
         <Pill active={!!delegate}>
           {delegate ? (
-            <Avatar name={delegate.name} image={delegate.image} className="size-4 text-[8px]" />
+            <Avatar name={delegate.name} image={delegate.image} className="size-4" />
           ) : (
             <CircleDashed />
           )}

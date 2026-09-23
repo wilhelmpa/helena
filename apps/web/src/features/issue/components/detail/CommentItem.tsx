@@ -46,7 +46,7 @@ export default function CommentItem({
     // The id is the scroll target of the last-comment bubble.
     <div id={`feed-item-${item.id}`} className="group/comment">
       <div className="flex items-center gap-2">
-        <Avatar name={author} image={image} className="size-5 shrink-0 text-[10px]" />
+        <Avatar name={author} image={image} className="size-5 shrink-0" />
         <span className="truncate text-sm font-medium">{author}</span>
         <span className="shrink-0 text-xs text-muted-foreground">
           · {relativeTime(item.createdAt)}

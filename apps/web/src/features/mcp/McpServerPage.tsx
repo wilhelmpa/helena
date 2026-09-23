@@ -13,13 +13,8 @@ export default function McpServerPage() {
   const reachable = detail != null && detail.mcpEnabled && detail.teamMcpEnabled;
 
   return (
-    <SectionPageView
-      title={t('title')}
-      description={t('description')}
-      wide
-      widthClassName="min-w-[600px] max-w-[60%]"
-    >
-      <div className="space-y-10">
+    <SectionPageView title={t('title')} description={t('description')}>
+      <div className="space-y-6">
         {detail && !reachable && (
           <McpAccessNotice
             teamId={detail.teamId}

@@ -43,7 +43,7 @@ export function CredentialRow({
         {fields.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {fields.map(([k, v]) => (
-              <Badge key={k} variant="outline" className="font-mono text-[10px] font-normal">
+              <Badge key={k} variant="outline" className="font-mono text-xs font-normal">
                 {k}: {String(v)}
               </Badge>
             ))}

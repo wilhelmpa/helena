@@ -105,7 +105,7 @@ export default function IssueDetailContent({
     <>
       <div className="flex items-start gap-2">
         {issue.archivedAt && (
-          <span className="mt-1 shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase">
+          <span className="mt-1 shrink-0 rounded border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
             {t('archived')}
           </span>
         )}
@@ -117,7 +117,7 @@ export default function IssueDetailContent({
             // Laid out by the script the title is written in, not the interface
             // language, so an Arabic title reads correctly in an English session.
             dir="auto"
-            className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-lg leading-snug font-semibold outline-none placeholder:text-muted-foreground"
+            className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
             rows={1}
             placeholder={t('titlePlaceholder')}
             defaultValue={issue.title}
@@ -135,7 +135,7 @@ export default function IssueDetailContent({
             }}
           />
         ) : (
-          <h1 dir="auto" className="min-w-0 flex-1 text-lg leading-snug font-semibold">
+          <h1 dir="auto" className="min-w-0 flex-1 text-base font-semibold">
             {issue.title}
           </h1>
         )}
@@ -342,7 +342,7 @@ export default function IssueDetailContent({
     // wraps the flex row rather than being it — an element cannot query itself.
     return (
       <div className="@container">
-        <div className="flex gap-8">
+        <div className="flex gap-6">
           <div className="min-w-0 flex-1">
             <div className="@3xl:hidden">{actions}</div>
             {heading}

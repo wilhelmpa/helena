@@ -14,7 +14,7 @@ export default function MailAccountsPage() {
   const current = teamId ?? teams.data?.[0]?.id ?? null;
   return (
     <Shell globalHome globalTitle={t('mailAccounts')} autoOpenGlobalChat={false}>
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 overflow-y-auto p-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 overflow-y-auto p-4">
         {(teams.data?.length ?? 0) > 1 && (
           <select
             className="h-8 self-start rounded-md border bg-background px-2 text-sm"

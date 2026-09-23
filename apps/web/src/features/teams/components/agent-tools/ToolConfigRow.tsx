@@ -44,7 +44,7 @@ export function ToolConfigRow({
         {scopes.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {scopes.map((s) => (
-              <Badge key={s} variant="secondary" className="font-mono text-[10px] font-normal">
+              <Badge key={s} variant="secondary" className="font-mono text-xs font-normal">
                 {s}
               </Badge>
             ))}

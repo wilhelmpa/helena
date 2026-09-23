@@ -28,9 +28,7 @@ export default function DocumentProperties({
 
   return (
     <section className="space-y-4">
-      <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {t('properties')}
-      </h3>
+      <h3 className="text-xs font-semibold text-muted-foreground">{t('properties')}</h3>
       <div className="space-y-1.5">
         <Label>{t('tags')}</Label>
         <DocumentTagsInput

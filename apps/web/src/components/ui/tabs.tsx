@@ -34,10 +34,10 @@ function TabsList({
         data-variant={variant}
         className={cn(
           variant === 'line'
-            ? 'inline-flex h-9 w-full items-center justify-start gap-4 border-b text-muted-foreground'
+            ? 'inline-flex h-8 w-full items-center justify-start gap-4 border-b text-muted-foreground'
             : variant === 'toolbar'
               ? 'inline-flex w-fit items-center justify-start gap-1'
-              : 'inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground',
+              : 'inline-flex h-8 w-fit items-center justify-center rounded-lg bg-muted p-0.5 text-muted-foreground',
           className,
         )}
         {...props}

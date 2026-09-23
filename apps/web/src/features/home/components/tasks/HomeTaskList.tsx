@@ -48,7 +48,7 @@ export default function HomeTaskList({
 }) {
   const stateLabel = byKey(useTranslations('display.stateTypes'));
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {groupTasks(issues, grouping, stateLabel).map((group) => (
         <section key={group.key}>
           <h2 className="mb-1 px-2 text-xs font-medium text-muted-foreground">

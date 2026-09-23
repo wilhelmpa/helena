@@ -41,7 +41,7 @@ export default function InviteAcceptPage({ token }: { token: string }) {
       subtitle = t('closedSubtitle', { status: invite.status });
     }
     body = (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <InviteInfo invite={invite} />
         <InviteStep token={token} invite={invite} />
       </div>
@@ -49,13 +49,13 @@ export default function InviteAcceptPage({ token }: { token: string }) {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-4 md:p-10">
       <div className="w-full max-w-sm md:max-w-4xl">
         <Card className="overflow-hidden p-0">
           <CardContent className="grid p-0 md:grid-cols-2">
-            <div className="p-6 md:p-8">
+            <div className="p-4 md:p-6">
               <div className="mb-6 flex flex-col gap-1 text-center">
-                <h1 className="text-2xl font-bold">{title}</h1>
+                <h1 className="text-2xl font-semibold">{title}</h1>
                 <p className="text-sm text-balance text-muted-foreground">{subtitle}</p>
               </div>
               {body}

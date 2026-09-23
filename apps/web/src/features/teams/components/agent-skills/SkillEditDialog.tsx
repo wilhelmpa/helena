@@ -127,9 +127,9 @@ export function SkillEditDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="top-0 left-0 grid h-screen w-screen max-w-none translate-x-0 translate-y-0 grid-rows-[auto_1fr] gap-0 rounded-none border-0 p-0 sm:max-w-none"
+        className="top-0 left-0 grid h-screen w-screen max-w-none translate-x-0 translate-y-0 grid-rows-[auto_1fr] gap-0 rounded-none border-0 p-0"
       >
-        <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3">
+        <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
           <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
             {teamName}
           </span>
@@ -154,7 +154,7 @@ export function SkillEditDialog({
         </header>
 
         <div className="grid min-h-0 grid-cols-[minmax(0,17rem)_1fr]">
-          <aside className="flex min-h-0 flex-col gap-5 overflow-y-auto border-e border-border/60 p-4">
+          <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto border-e border-border/60 p-4">
             <div className="space-y-1.5">
               <Label>{tCommon('name')}</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} />
@@ -180,10 +180,10 @@ export function SkillEditDialog({
           </aside>
 
           <section className="grid min-h-0 grid-rows-[auto_1fr]">
-            <div className="flex items-center gap-2 border-b border-border/60 px-5 py-2.5">
+            <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2.5">
               <span className="font-mono text-xs text-foreground">{selected}</span>
               {dirtyPaths.has(selected) && (
-                <span className="text-[11px] text-muted-foreground">· unsaved</span>
+                <span className="text-xs text-muted-foreground">· unsaved</span>
               )}
             </div>
             <textarea
@@ -193,7 +193,7 @@ export function SkillEditDialog({
               spellCheck={false}
               placeholder={loading ? tCommon('loading') : ''}
               className={cn(
-                'h-full w-full resize-none bg-transparent px-5 py-4 focus-visible:ring-ring/40',
+                'h-full w-full resize-none bg-transparent px-4 py-4 focus-visible:ring-ring/40',
                 'font-mono text-xs leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-inset',
               )}
             />

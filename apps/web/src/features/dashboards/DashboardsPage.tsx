@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useDashboardEditor } from './hooks/useDashboardEditor';
 import DashboardTabs from './components/DashboardTabs';
+import { cn } from '@/lib/utils';
+import { PAGE_GUTTER_CLASS } from '@/components/common/page/SectionPageView';
 import WidgetGrid from './components/WidgetGrid';
 import AddWidgetDialog from './components/AddWidgetDialog';
 
@@ -41,7 +43,7 @@ export default function DashboardsPage() {
 
   if (!project || isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-6">
+      <div className="flex-1 space-y-4 p-4">
         <Skeleton className="h-8 w-full max-w-md" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -114,7 +116,7 @@ export default function DashboardsPage() {
       />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
+        <div className={cn('w-full', PAGE_GUTTER_CLASS)}>
           <WidgetGrid projectKey={projectKey} project={project} editor={editor} editing={editing} />
         </div>
       </div>

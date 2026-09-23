@@ -56,7 +56,7 @@ export default function GodTeamProjects({ teamId }: { teamId: number }) {
                 <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
                 <Badge
                   variant={p.mcpEnabled ? 'secondary' : 'outline'}
-                  className="px-1.5 py-0 text-[10px] font-medium"
+                  className="px-1.5 py-0 text-xs font-medium"
                 >
                   {t(p.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
                 </Badge>

@@ -26,7 +26,7 @@ export default function GodGoogleSettings({ form }: { form: GodGoogleForm }) {
         />
       }
     >
-      <SettingsCard className="space-y-6 p-4">
+      <SettingsCard className="space-y-4 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="google-client-id">{t('clientId')}</Label>

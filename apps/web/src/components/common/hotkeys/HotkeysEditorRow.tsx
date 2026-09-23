@@ -61,7 +61,7 @@ export default function HotkeysEditorRow({
         )}
       </div>
       <kbd
-        className={`w-24 shrink-0 rounded px-1.5 py-1 text-center font-mono text-[11px] ${
+        className={`w-24 shrink-0 rounded px-1.5 py-1 text-center font-mono text-xs ${
           recording ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'
         }`}
       >

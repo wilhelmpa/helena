@@ -52,7 +52,7 @@ export default function AgentRunsWidget({
       );
     }
     if (items.length === 0) {
-      return <p className="py-6 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+      return <p className="py-4 text-center text-sm text-muted-foreground">{t('empty')}</p>;
     }
     return (
       <ul className="space-y-2">

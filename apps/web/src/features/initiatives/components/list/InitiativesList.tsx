@@ -48,7 +48,7 @@ export default function InitiativesList({
   const t = useTranslations('initiatives');
   const ownerById = new Map(project.assignees.map((a) => [a.userId, a]));
 
-  if (isLoading) return <ListSkeleton className="px-4 py-6" rowClassName="h-12" />;
+  if (isLoading) return <ListSkeleton className="px-4 py-4" rowClassName="h-12" />;
 
   if (initiatives.length === 0) {
     if (statusTab)

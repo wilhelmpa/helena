@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { ListTodo } from 'lucide-react';
 import { tasksPath } from '@/utils/paths';
+import { RowEmpty, RowList, SectionLabel } from '@/components/common/page/RowList';
 import { useCrossProjectIssuesQuery } from '../../services/tasks.service';
 import HomeTaskRow from '../HomeTaskRow';
 
@@ -17,26 +19,26 @@ export default function HomeOpenTasks() {
   if (query.isPending) return null;
 
   return (
-    <section className="mb-6">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-semibold">
-          {t('myOpenTasks')} · {total}
-        </h2>
-        <Link href={tasksPath()} className="text-xs text-muted-foreground hover:text-foreground">
-          {t('viewAll')}
-        </Link>
-      </div>
-      {issues.length === 0 ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
-          {t('noOpenTasks')}
-        </p>
-      ) : (
-        <div className="rounded-lg border bg-card p-1">
-          {issues.map((issue) => (
-            <HomeTaskRow key={issue.id} issue={issue} />
-          ))}
-        </div>
-      )}
+    <section className="min-w-0">
+      <SectionLabel
+        trailing={
+          <Link
+            href={tasksPath()}
+            className="rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t('viewAll')}
+          </Link>
+        }
+      >
+        {t('myOpenTasks')} · <span className="font-mono tabular-nums">{total}</span>
+      </SectionLabel>
+      <RowList>
+        {issues.length === 0 ? (
+          <RowEmpty icon={<ListTodo />}>{t('noOpenTasks')}</RowEmpty>
+        ) : (
+          issues.map((issue) => <HomeTaskRow key={issue.id} issue={issue} />)
+        )}
+      </RowList>
     </section>
   );
 }

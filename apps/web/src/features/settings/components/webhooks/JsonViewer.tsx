@@ -38,7 +38,7 @@ export function JsonViewer({ value }: { value: unknown }) {
           keeps its direction, and its tree disclosure chevrons keep pointing right. */}
       <div
         dir="ltr"
-        className="max-h-72 overflow-auto rounded-md bg-muted/50 p-2 pe-8 text-start font-mono text-[11px] leading-relaxed"
+        className="max-h-72 overflow-auto rounded-md bg-muted/50 p-2 pe-8 text-start font-mono text-xs leading-relaxed"
       >
         {isJson ? (
           <JsonNode value={data} depth={0} isLast />

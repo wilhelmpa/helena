@@ -59,7 +59,7 @@ export default function ProjectTreeGroup({
             <span className="min-w-0 flex-1 truncate font-medium">{group.name}</span>
             <span
               className={cn(
-                'shrink-0 text-[10px] text-muted-foreground tabular-nums',
+                'shrink-0 text-xs text-muted-foreground tabular-nums',
                 manage && 'group-hover/menu-item:invisible',
               )}
             >

@@ -17,7 +17,7 @@ export function CredentialUseRow({ use }: { use: CredentialUse }) {
     <li className="flex items-start gap-3 py-2.5">
       <Badge
         variant={use.action === 'used' ? 'default' : 'secondary'}
-        className="mt-0.5 shrink-0 text-[10px] font-normal"
+        className="mt-0.5 shrink-0 text-xs font-normal"
       >
         {t(`actions.${use.action}`)}
       </Badge>

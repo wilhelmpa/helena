@@ -58,7 +58,7 @@ export default function MailThreadRow({
       </span>
       <span className="flex items-center gap-1.5 ps-4 text-xs text-muted-foreground">
         {showProject && (
-          <span className="shrink-0 rounded border px-1 font-mono text-[10px] leading-4">
+          <span className="shrink-0 rounded border px-1 font-mono text-xs leading-4">
             {row.projectKey ?? t('home')}
           </span>
         )}

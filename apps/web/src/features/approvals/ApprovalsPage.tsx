@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useApprovalProjects } from '@/services/approvals.service';
-import PageHeader from '@/components/common/page/PageHeader';
+import SectionPageView from '@/components/common/page/SectionPageView';
 import ApprovalRequestList from './components/ApprovalRequestList';
 import WorkflowApprovalList from './components/WorkflowApprovalList';
 
@@ -32,40 +32,38 @@ export default function ApprovalsPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('approvals')} autoOpenGlobalChat={false}>
-      <div className="h-full overflow-y-auto p-6">
-        <div className="mx-auto max-w-4xl space-y-4">
-          <PageHeader
-            title={tNav('approvals')}
-            description={t('hint')}
-            actions={
-              projects.length > 1 ? (
-                <Select
-                  value={projectKey ?? ALL_PROJECTS}
-                  onValueChange={(value) =>
-                    setProjectKey(value === ALL_PROJECTS ? undefined : value)
-                  }
-                >
-                  <SelectTrigger className="w-[220px]" aria-label={t('filterProject')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_PROJECTS}>{t('filterProjectAll')}</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.key}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : undefined
-            }
-          />
+      <SectionPageView
+        title={tNav('approvals')}
+        description={t('hint')}
+        widthClassName="mx-auto w-full max-w-4xl"
+        actions={
+          projects.length > 1 ? (
+            <Select
+              value={projectKey ?? ALL_PROJECTS}
+              onValueChange={(value) => setProjectKey(value === ALL_PROJECTS ? undefined : value)}
+            >
+              <SelectTrigger className="w-44 max-sm:w-32" aria-label={t('filterProject')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_PROJECTS}>{t('filterProjectAll')}</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.key}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : undefined
+        }
+      >
+        <div className="flex flex-col gap-4">
           <Tabs defaultValue="pending">
             <TabsList>
               <TabsTrigger value="pending">{t('pending')}</TabsTrigger>
               <TabsTrigger value="decided">{t('decided')}</TabsTrigger>
             </TabsList>
-            <TabsContent value="pending" className="space-y-8 pt-2">
+            <TabsContent value="pending" className="space-y-6 pt-2">
               <ApprovalRequestList
                 key={`pending:${projectKey ?? ''}`}
                 status="pending"
@@ -82,7 +80,7 @@ export default function ApprovalsPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
+      </SectionPageView>
     </Shell>
   );
 }

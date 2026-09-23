@@ -30,7 +30,7 @@ export default function NewProjectForm({
   const t = useTranslations('newProject');
 
   return (
-    <div className="grid gap-6 sm:grid-cols-[1.15fr_1fr]">
+    <div className="grid gap-4 sm:grid-cols-[1.15fr_1fr]">
       {/* The description field takes the leftover height so both columns end on
           the same line. */}
       <div className="flex flex-col gap-3">

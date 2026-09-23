@@ -28,7 +28,7 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
   });
 
   return (
-    <section className="space-y-3 border-t pt-5">
+    <section className="space-y-3 border-t pt-4">
       <div>
         <h2 className="text-sm font-medium">{t('runHistory')}</h2>
         <p className="text-xs text-muted-foreground">{t('runHistoryHint')}</p>

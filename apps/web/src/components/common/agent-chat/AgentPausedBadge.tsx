@@ -20,7 +20,7 @@ export function AgentPausedBadge({
       <TooltipTrigger asChild>
         <Badge
           variant="outline"
-          className="shrink-0 gap-1 border-amber-500/50 text-amber-700 dark:text-amber-400"
+          className="shrink-0 gap-1 border-status-waiting/50 text-status-waiting"
         >
           <CirclePause className="size-3" />
           {t('paused')}

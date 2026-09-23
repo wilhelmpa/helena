@@ -94,7 +94,7 @@ export default function GodTeamsTable({
             <TableCell className="px-3 py-3">
               <Badge
                 variant={team.mcpEnabled ? 'secondary' : 'outline'}
-                className="px-1.5 py-0 text-[10px] font-medium"
+                className="px-1.5 py-0 text-xs font-medium"
               >
                 {t(team.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
               </Badge>

@@ -29,17 +29,13 @@ export function useCandidatePickItem(
     return {
       key: a.userId,
       search: a.name,
-      icon: <Avatar name={a.name} image={a.image} className="size-4 text-[8px]" />,
+      icon: <Avatar name={a.name} image={a.image} className="size-4" />,
       label: a.name,
       selected: a.userId === value,
       trailing: foreign ? (
-        <Avatar
-          name={owner?.name ?? ''}
-          image={owner?.image ?? null}
-          className="size-4 text-[8px]"
-        />
+        <Avatar name={owner?.name ?? ''} image={owner?.image ?? null} className="size-4" />
       ) : a.paused ? (
-        <span className="text-[10px] text-status-waiting">{t('agentPaused')}</span>
+        <span className="text-xs text-status-waiting">{t('agentPaused')}</span>
       ) : undefined,
       tooltip: foreign ? ownerLabel : undefined,
       disabled: foreign,

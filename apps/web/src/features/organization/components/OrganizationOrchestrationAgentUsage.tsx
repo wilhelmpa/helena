@@ -17,9 +17,7 @@ export default function OrganizationOrchestrationAgentUsage({
   return (
     <div className="space-y-2">
       <div>
-        <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {t('agentsTitle')}
-        </h3>
+        <h3 className="text-xs font-medium text-muted-foreground">{t('agentsTitle')}</h3>
         <p className="text-xs text-muted-foreground">{t('agentsHint')}</p>
       </div>
       <ul className="space-y-3">

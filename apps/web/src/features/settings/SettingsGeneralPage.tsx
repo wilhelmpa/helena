@@ -37,7 +37,7 @@ function GeneralPage({ project }: { project: ProjectDetail }) {
     <SectionPageView title={sectionText.label} description={sectionText.description}>
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
-          <div className="space-y-10 pb-16">
+          <div className="space-y-6 pb-16">
             <SettingsGeneral form={form} />
             <SettingsFeatures form={features} />
             <SettingsSetup project={project} />

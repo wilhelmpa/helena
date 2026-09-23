@@ -87,7 +87,7 @@ export default function NotesPage() {
 
   if (!project || seedQuery.isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-6">
+      <div className="flex-1 space-y-4 p-4">
         <Skeleton className="h-8 w-full max-w-md" />
         <Skeleton className="h-96 w-full" />
       </div>

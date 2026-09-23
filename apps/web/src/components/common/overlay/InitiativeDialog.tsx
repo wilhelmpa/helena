@@ -106,7 +106,7 @@ export default function InitiativeDialog({
           // `auto` once there is something to read, so a title keeps the script it
           // was typed in.
           dir={title ? 'auto' : undefined}
-          className="w-full bg-transparent text-lg font-semibold outline-none placeholder:text-muted-foreground"
+          className="w-full bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
           placeholder={t('form.titlePlaceholder')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -160,7 +160,7 @@ export default function InitiativeDialog({
           )}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>

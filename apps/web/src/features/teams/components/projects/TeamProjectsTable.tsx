@@ -70,7 +70,7 @@ export default function TeamProjectsTable({
                 <div className="flex min-w-0 items-center gap-2.5">
                   <Badge
                     variant="outline"
-                    className="w-12 shrink-0 justify-center rounded px-1 py-0 font-mono text-[10px] text-muted-foreground"
+                    className="w-12 shrink-0 justify-center rounded px-1 py-0 font-mono text-xs text-muted-foreground"
                   >
                     {project.key}
                   </Badge>

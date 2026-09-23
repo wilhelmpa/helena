@@ -10,7 +10,7 @@ import Shell from '@/components/layout/Shell';
 import ListPager from '@/components/common/ListPager';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import PageHeader from '@/components/common/page/PageHeader';
+import SectionPageView from '@/components/common/page/SectionPageView';
 import { useCrossProjectIssuesQuery } from './services/tasks.service';
 import HomeTasksFilters, { type HomeTaskGrouping } from './components/tasks/HomeTasksFilters';
 import HomeTaskList from './components/tasks/HomeTaskList';
@@ -33,9 +33,12 @@ export default function HomeTasksPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('allWorkItems')} autoOpenGlobalChat={false}>
-      <div className="h-full overflow-y-auto p-6">
-        <div className="mx-auto max-w-5xl space-y-4">
-          <PageHeader title={tNav('allWorkItems')} description={t('hint')} />
+      <SectionPageView
+        title={tNav('allWorkItems')}
+        description={t('hint')}
+        widthClassName="mx-auto w-full max-w-5xl"
+      >
+        <div className="flex flex-col gap-4">
           <HomeTasksFilters
             projects={projects}
             filters={filters}
@@ -62,7 +65,7 @@ export default function HomeTasksPage() {
             </>
           )}
         </div>
-      </div>
+      </SectionPageView>
     </Shell>
   );
 }

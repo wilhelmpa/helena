@@ -30,7 +30,7 @@ export default function AgentHealthWidget({
         <p className="py-3 text-sm text-muted-foreground">{t('agentHealth.empty')}</p>
       ) : (
         <>
-          <div className="text-4xl font-semibold tracking-tight tabular-nums">
+          <div className="text-3xl font-semibold tabular-nums">
             {rate == null ? '—' : `${rate}%`}
           </div>
           <p className="text-xs text-muted-foreground">{t('agentHealth.successRate')}</p>

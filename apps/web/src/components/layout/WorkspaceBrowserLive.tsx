@@ -107,7 +107,7 @@ export default function WorkspaceBrowserLive({
       {notice && (
         <div
           aria-live="polite"
-          className="absolute inset-0 flex items-center justify-center bg-background/80 p-6 text-center text-sm text-muted-foreground"
+          className="absolute inset-0 flex items-center justify-center bg-background/80 p-4 text-center text-sm text-muted-foreground"
         >
           {notice}
         </div>

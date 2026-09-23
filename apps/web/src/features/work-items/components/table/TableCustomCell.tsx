@@ -51,7 +51,7 @@ export function TableCustomCell({
     if (!member) return <div>{DASH}</div>;
     return (
       <div className="flex min-w-0 items-center gap-1.5 text-xs">
-        <Avatar name={member.name} image={member.image} className="size-4 text-[8px]" />
+        <Avatar name={member.name} image={member.image} className="size-4" />
         <span className="truncate">{member.name}</span>
       </div>
     );

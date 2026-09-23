@@ -64,7 +64,7 @@ function ConfigurationPage({ project }: { project: ProjectDetail }) {
     >
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
-          <div className="space-y-10">
+          <div className="space-y-6">
             {features.subtasks && <SettingsSubtaskAutomation form={subtasks} />}
             <SettingsEstimates form={estimates} />
             <SettingsAutoArchive form={archive} />

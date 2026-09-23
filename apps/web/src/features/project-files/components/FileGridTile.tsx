@@ -57,7 +57,7 @@ export default function FileGridTile({
           <p className="truncate text-xs font-medium" dir="auto" title={item.name}>
             {item.name}
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {item.sizeBytes !== null ? formatSize(item.sizeBytes) : ' '}
           </p>
         </div>

@@ -67,6 +67,10 @@ export const devicesPath = () => '/devices';
 export const tasksPath = () => '/tasks';
 export const globalInboxPath = () => '/inbox';
 export const globalAgentActivityPath = () => '/activity';
+// The timeline narrowed to one agent (see activityFiltersFromSearch), in a project or
+// across every project.
+export const agentActivityForAgentPath = (agentId: number, projectKey?: string | null) =>
+  `${projectKey ? agentActivityPath(projectKey) : globalAgentActivityPath()}?${new URLSearchParams({ agent: String(agentId) })}`;
 export const approvalsPath = () => '/approvals';
 export const schedulesPath = () => '/schedules';
 

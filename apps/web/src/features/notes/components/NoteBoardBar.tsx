@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
-import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
+import { ShellHeaderRow } from '@/components/layout/WorkspaceHeader';
 import type { MruEntry } from '../hooks/useNoteBoardMru';
 import type { NewBoardVisibility } from '../utils/visibility';
 import NoteBoardNameDialog from './NoteBoardNameDialog';
@@ -43,7 +43,7 @@ export default function NoteBoardBar({
   }
 
   return (
-    <WorkspaceHeader className="gap-1 px-2 sm:px-3">
+    <ShellHeaderRow className="gap-1 px-2 sm:px-3">
       {canCreate && (
         <button
           type="button"
@@ -85,6 +85,6 @@ export default function NoteBoardBar({
           setDialog(null);
         }}
       />
-    </WorkspaceHeader>
+    </ShellHeaderRow>
   );
 }

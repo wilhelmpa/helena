@@ -39,7 +39,7 @@ export default function ThroughputWidget({
   function chart() {
     if (isLoading) return <Skeleton className="h-[180px] w-full" />;
     if (chartData.length === 0) {
-      return <p className="py-10 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+      return <p className="py-6 text-center text-sm text-muted-foreground">{t('empty')}</p>;
     }
     // Recharts draws to absolute SVG coordinates and does not read the document
     // direction, so a mirrored chart would put its axes and series out of step with

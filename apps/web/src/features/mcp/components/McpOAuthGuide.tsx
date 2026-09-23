@@ -13,7 +13,7 @@ export default function McpOAuthGuide({ mcpUrl, discoveryUrl }: McpOAuthGuidePro
   const t = useTranslations('mcp');
 
   return (
-    <SettingsCard className="space-y-5 p-5">
+    <SettingsCard className="space-y-4 p-4">
       <p className="text-sm text-muted-foreground">{t('oauth.description')}</p>
 
       <div className="grid gap-4 sm:grid-cols-2">

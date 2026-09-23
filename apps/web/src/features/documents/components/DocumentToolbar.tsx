@@ -46,7 +46,7 @@ export default function DocumentToolbar({
 
   if (!editor) {
     return (
-      <div className="flex h-12 items-center gap-2 px-3 md:px-5" aria-hidden>
+      <div className="flex h-12 items-center gap-2 px-3 md:px-4" aria-hidden>
         <div className="h-8 w-28 animate-pulse rounded-lg bg-muted/60" />
         <div className="h-8 w-48 animate-pulse rounded-lg bg-muted/40" />
       </div>
@@ -121,7 +121,7 @@ export default function DocumentToolbar({
 
   return (
     <div
-      className="flex h-12 min-w-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-3 md:px-5 [&::-webkit-scrollbar]:hidden"
+      className="flex h-12 min-w-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-3 md:px-4 [&::-webkit-scrollbar]:hidden"
       role="toolbar"
       aria-label={t('label')}
     >

@@ -20,9 +20,7 @@ export default function NewIssueBodyFields({
     <div className="space-y-4">
       {defs.map((def) => (
         <div key={def.id}>
-          <h3 className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {def.name}
-          </h3>
+          <h3 className="mb-1 text-xs font-medium text-muted-foreground">{def.name}</h3>
           <IssueCustomFieldPill
             def={def}
             value={values[def.id]}

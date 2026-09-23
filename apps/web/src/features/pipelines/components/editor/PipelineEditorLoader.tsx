@@ -26,12 +26,12 @@ export default function PipelineEditorLoader({
   const usage = useProjectPipelines(projectKey);
   const { can } = usePermissions();
 
-  if (pipeline.isPending) return <ListSkeleton rows={4} rowClassName="h-14" className="p-6" />;
-  if (pipeline.isError) return <p className="p-6 text-sm text-destructive">{t('loadFailed')}</p>;
+  if (pipeline.isPending) return <ListSkeleton rows={4} rowClassName="h-14" className="p-4" />;
+  if (pipeline.isError) return <p className="p-4 text-sm text-destructive">{t('loadFailed')}</p>;
   const data = pipeline.data;
   if (projectKey && data.projectId === null)
     return (
-      <div className="space-y-3 p-6 text-sm">
+      <div className="space-y-3 p-4 text-sm">
         <p className="text-muted-foreground">{t('templateElsewhere')}</p>
         <Button asChild size="sm" variant="outline">
           <Link href={pipelinePath(data.id)}>{t('openTemplate')}</Link>

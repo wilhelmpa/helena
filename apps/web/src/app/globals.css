@@ -1,9 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 /* The upstream Inter build, not the Fontsource one: Google Fonts strips the
-   character variants, and cv05/cv08/zero are what make l, I, 1 and 0 tell
-   apart at the 12–14px this UI is mostly set in. It also carries the opsz
-   axis, so small text gets the wider-spaced optical master. */
+   character variants, and cv05/cv08 are what make l, I and 1 tell apart at the
+   12–14px this UI is set in. It also carries the opsz axis, so small text gets the
+   wider-spaced optical master. The sidebar's typeface — and so the whole app's
+   (owner, 2026-09-24: "Schriftart so wie in der Sidebar"). */
 @import 'inter-ui/inter-variable.css';
 
 @custom-variant dark (&:is(.dark *));
@@ -104,19 +105,40 @@
   --shadow-xs: 0 0 #0000;
   --shadow-sm: 0 1px 2px 0 rgb(40 30 20 / 0.06);
   --default-transition-duration: 140ms;
-  /* Tailwind's default line-heights are tuned for prose at 16px; the app runs on
-     text-xs/text-sm, where they leave multi-line text cramped. Body sizes get 1.5+,
-     headings tighten as they grow. */
-  --text-xs--line-height: 1.5;
-  --text-sm--line-height: 1.5;
-  --text-base--line-height: 1.6;
-  --text-lg--line-height: 1.55;
-  --text-xl--line-height: 1.4;
-  --text-xl--letter-spacing: -0.011em;
-  --text-2xl--line-height: 1.25;
-  --text-2xl--letter-spacing: -0.015em;
-  --text-3xl--line-height: 1.15;
-  --text-3xl--letter-spacing: -0.02em;
+  /* The one type scale (docs/volition-design-helena-ui.md), set in the sidebar's font
+     at the sidebar's size (owner, 2026-09-24: "Schriftart so wie in der Sidebar und
+     auch die Größe" — the sidebar's rows have always been 13px Inter): 12 · 13 · 14 ·
+     16 · 20 · 24 · 30, every line height on the 4px grid. Each step has one job:
+       text-xs    12/16  label, group label, meta, description, badge, ID/key (mono)
+       text-sm    13/20  the standard: every row, cell, control, menu and paragraph,
+                         exactly the sidebar's row text
+       text-md    14/20  a section, panel, card or dialog title (semibold)
+       text-base  16/24  the one title a page may carry (Home greeting, a task's
+                         title), and text fields on a touch screen (no iOS zoom)
+       text-xl    20/28  a figure that is the point of its tile
+       text-2xl   24/32  the sign-in title
+       text-3xl   30/36  a dashboard's hero number
+     text-lg (18), text-4xl and up, and bracket sizes (text-[13px]) are off the scale;
+     the lint rule in eslint.config.mjs flags them in features and routes. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-md: 0.875rem;
+  --text-md--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-base--letter-spacing: -0.006em;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-xl--letter-spacing: -0.012em;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-2xl--letter-spacing: -0.018em;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-3xl--letter-spacing: -0.022em;
   --text-4xl--line-height: 1.1;
   --text-4xl--letter-spacing: -0.025em;
 }
@@ -345,7 +367,7 @@
 }
 [data-slot='dialog-title'],
 [data-slot='sheet-title'] {
-  font-size: var(--text-base);
+  font-size: var(--text-md);
   line-height: 1.4;
   letter-spacing: -0.006em;
 }
@@ -386,7 +408,8 @@
   letter-spacing: 0;
 }
 [data-slot='empty-description'] {
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
 }
 [data-slot='empty-icon'][data-variant='icon'] {
   color: var(--muted-foreground);
@@ -398,12 +421,6 @@
 [data-sidebar='menu-button'] {
   transition-property: color, background-color, width, height, padding;
   transition-duration: var(--default-transition-duration);
-}
-[data-sidebar='menu-button'][data-size='default'] {
-  font-size: 0.8125rem;
-}
-[data-sidebar='menu-sub-button'][data-size='md'] {
-  font-size: 0.8125rem;
 }
 [data-sidebar='menu-button']:not([data-size='lg'], [data-active='true']):hover,
 [data-sidebar='menu-sub-button']:not([data-active='true']):hover {
@@ -499,6 +516,82 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   background-color: var(--kanban-card-selected);
 }
 
+/* Touch screens (docs/volition-design-helena-ui.md "Mobil"): the compact 32px rows
+   and controls are sized for a mouse; under a finger every interactive control gets a
+   40px target. Keyed on the pointer, not the width, so a narrow desktop window stays
+   compact and a tablet in landscape still gets finger-sized targets. Text fields go to
+   16px there too, which keeps iOS from zooming the page when one is focused. */
+@media (pointer: coarse) {
+  [data-slot='button'],
+  [data-slot='select-trigger'],
+  [data-slot='tabs-trigger'],
+  [data-slot='dropdown-menu-item'],
+  [data-slot='dropdown-menu-checkbox-item'],
+  [data-slot='dropdown-menu-radio-item'],
+  [data-slot='dropdown-menu-sub-trigger'],
+  [data-slot='context-menu-item'],
+  [data-slot='select-item'],
+  [data-slot='command-item'],
+  [data-sidebar='menu-button'],
+  [data-sidebar='menu-sub-button'],
+  [data-sidebar='menu-action'] {
+    min-height: 2.5rem;
+  }
+  [data-slot='button']:is([data-size='icon'], [data-size='icon-sm'], [data-size='icon-xs']),
+  [data-sidebar='menu-action'] {
+    min-width: 2.5rem;
+  }
+  [data-slot='input'],
+  [data-slot='textarea'],
+  [data-slot='select-trigger'] {
+    min-height: 2.5rem;
+    font-size: var(--text-base);
+  }
+}
+
+/* Without a hover there is nothing to reveal a row's hover-only actions (remove, edit,
+   drag): on a touch screen they are simply shown. */
+@media (hover: none) {
+  [class*='group-hover:opacity-100'],
+  [class*='group-hover/'][class*=':opacity-100'] {
+    opacity: 1;
+  }
+}
+
+/* The shell reaches under the notch and the home indicator (viewport-fit=cover in
+   app/layout.tsx) and pads itself back here, so no control ever sits under them. In a
+   layer, so a sheet that sets its own padding keeps it. */
+@layer base {
+  [data-slot='sidebar-wrapper'] {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  [data-slot='sheet-content'] {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* A person's initials scale with their avatar: 40% of its size, whatever size-* the
+   caller gives it, so no call site carries its own text size for them. */
+[data-slot='avatar'] {
+  container-type: size;
+}
+[data-slot='avatar-initials'] {
+  font-size: 40cqh;
+  line-height: 1;
+}
+/* The runtime code on an agent's avatar corner (HE, CL, CX) is a glyph of the avatar,
+   not running text, so it scales with the avatar the same way, from 8px up. */
+[data-slot='agent-avatar'] {
+  container-type: size;
+}
+[data-slot='agent-avatar-runtime'] {
+  font-size: max(0.5rem, 32cqh);
+}
+
 /* Uniform thin scrollbar across the app. Native scrollbars are styled directly
    rather than through a scroll-area component, so every scroll region — board
    views, panels, menus — looks the same, and the virtualized views keep the
@@ -536,12 +629,13 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+  /* cv05/cv08 tell l, I and 1 apart at small sizes. No slashed zero: it read as "Ø"
+     in the Home figures. */
   html {
     @apply font-sans;
     font-feature-settings:
       'cv05' 1,
-      'cv08' 1,
-      'zero' 1;
+      'cv08' 1;
   }
 }
 
@@ -603,6 +697,11 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   color: var(--brand);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+/* A [[wikilink]] in a document: a chip sized relative to the prose around it, like
+   inline code, so it fits a heading as well as body text. */
+.wikilink-chip {
+  font-size: 0.85em;
 }
 /* Mention chips: an @username in the text is rendered as its own node (see
    lib/tiptap-mention.ts) and styled as a pill. */
@@ -806,7 +905,7 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
 [dir='rtl'] [data-slot='dialog-close'],
 [dir='rtl'] [data-slot='sheet-close'] {
   right: auto;
-  inset-inline-end: calc(var(--spacing) * 4);
+  inset-inline-end: calc(var(--spacing) * 2.5);
 }
 /* `translate-x` has no logical form, so the checked position is mirrored
    explicitly: the thumb travels towards the end of the track either way. */

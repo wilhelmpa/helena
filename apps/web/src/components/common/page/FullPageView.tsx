@@ -39,10 +39,7 @@ export default function FullPageView({
         <span className="text-sm font-medium">{label}</span>
       </header>
       <div
-        className={cn(
-          'mx-auto flex w-full gap-10 px-8 py-10',
-          nav ? 'max-w-[1000px]' : 'max-w-3xl',
-        )}
+        className={cn('mx-auto flex w-full gap-6 px-6 py-6', nav ? 'max-w-[1000px]' : 'max-w-3xl')}
       >
         {nav}
         <div className="w-full max-w-3xl min-w-0">

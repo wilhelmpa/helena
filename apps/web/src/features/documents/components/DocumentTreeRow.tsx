@@ -41,7 +41,7 @@ export default function DocumentTreeRow({
     <li role="treeitem" aria-expanded={folder ? open : undefined} aria-selected={active}>
       <div
         className={cn(
-          'group/row flex h-8 items-center rounded-md pe-1 text-[13px] transition-colors',
+          'group/row flex h-8 items-center rounded-md pe-1 text-sm transition-colors',
           active
             ? 'bg-accent font-medium text-accent-foreground'
             : 'focus-within:bg-muted/65 hover:bg-muted/65',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/page/EmptyState';
@@ -15,6 +16,19 @@ import AgentActivityRow from './AgentActivityRow';
 // One sync request reads at most 20 scopes for the whole screen, two per project here.
 const WATCHED_PROJECTS = 6;
 
+const KIND_VALUES = new Set(['chat', 'agent-run', 'agent-team-run', 'workflow-run']);
+
+// The filters a link into the timeline can set (?agent=12&kind=agent-run): Home's
+// "Agenten gerade" opens the timeline on the one agent it names.
+export function activityFiltersFromSearch(params: URLSearchParams): Filters {
+  const agentId = Number(params.get('agent'));
+  const kind = params.get('kind');
+  return {
+    ...(Number.isInteger(agentId) && agentId > 0 ? { agentId } : {}),
+    ...(kind && KIND_VALUES.has(kind) ? { kind: kind as Filters['kind'] } : {}),
+  };
+}
+
 // The agent timeline of a project, or of Home when projectKey is null, newest first.
 export default function AgentActivityTimeline({
   projectKey,
@@ -27,7 +41,10 @@ export default function AgentActivityTimeline({
 }) {
   const t = useTranslations('agentActivity');
   const tCommon = useTranslations('common');
-  const [filters, setFilters] = useState<Filters>({});
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState<Filters>(() =>
+    activityFiltersFromSearch(new URLSearchParams(searchParams.toString())),
+  );
   const feed = useAgentActivityFeed(projectKey, filters);
   const pages = feed.data?.pages ?? [];
   const items = pages.flatMap((page) => page.items);

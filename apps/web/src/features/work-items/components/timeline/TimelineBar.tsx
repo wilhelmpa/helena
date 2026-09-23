@@ -72,7 +72,7 @@ export function TimelineBar({
           style={{ background: 'rgba(255,255,255,0.4)' }}
         />
       )}
-      <span className="truncate text-[11px] leading-none">{issue.title}</span>
+      <span className="truncate text-xs leading-none">{issue.title}</span>
       {!readOnly && (
         <span
           onPointerDown={(e) => onBeginDrag(e, issue, 'end')}

@@ -47,10 +47,10 @@ export default function NoteBoardAccessList({
               key={person.userId}
               className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
             >
-              <Avatar name={person.name} image={person.image} className="size-6 text-[10px]" />
+              <Avatar name={person.name} image={person.image} className="size-6" />
               <span className="truncate">{person.name}</span>
               {(person.userId === ownerUserId || person.kind === 'agent') && (
-                <Badge variant="secondary" className="ml-auto px-1.5 py-0 text-[10px]">
+                <Badge variant="secondary" className="ml-auto px-1.5 py-0 text-xs">
                   {person.userId === ownerUserId ? tCommon('owner') : t('agent')}
                 </Badge>
               )}

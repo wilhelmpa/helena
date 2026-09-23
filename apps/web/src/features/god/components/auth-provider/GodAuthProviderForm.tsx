@@ -48,7 +48,7 @@ export default function GodAuthProviderForm({
         </Button>
       }
     >
-      <div className="space-y-10">
+      <div className="space-y-6">
         <GodOidcSettings form={oidc} />
         <GodGoogleSettings form={google} />
       </div>

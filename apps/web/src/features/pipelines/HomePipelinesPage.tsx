@@ -19,11 +19,11 @@ export default function HomePipelinesPage() {
   return (
     <Shell globalHome globalTitle={t('workflows')} autoOpenGlobalChat={false}>
       {teams.isPending ? (
-        <div className="p-6 text-sm text-muted-foreground">{t('loading')}</div>
+        <div className="p-4 text-sm text-muted-foreground">{t('loading')}</div>
       ) : teamId == null ? (
-        <div className="flex h-full items-center justify-center p-6">
-          <div className="max-w-md rounded-lg border bg-card p-6 text-center">
-            <h1 className="text-lg font-semibold">{t('teamScopeRequired')}</h1>
+        <div className="flex h-full items-center justify-center p-4">
+          <div className="max-w-md rounded-lg border bg-card p-4 text-center">
+            <h1 className="text-base font-semibold">{t('teamScopeRequired')}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{t('teamScopeRequiredHint')}</p>
             <Button asChild className="mt-4">
               <Link href={manageTeamsPath()}>{t('manageTeams')}</Link>

@@ -19,7 +19,7 @@ export default function ManageTeamsIndex() {
   }, [first, router]);
 
   return (
-    <div className="flex min-w-0 flex-1 items-center justify-center p-8">
+    <div className="flex min-w-0 flex-1 items-center justify-center p-6">
       {data?.length === 0 && <p className="text-sm text-muted-foreground">{t('empty')}</p>}
     </div>
   );

@@ -33,7 +33,7 @@ export default function CyclesList({
 }) {
   const t = useTranslations('cycles');
 
-  if (isLoading) return <ListSkeleton className="px-4 py-6" rowClassName="h-12" />;
+  if (isLoading) return <ListSkeleton className="px-4 py-4" rowClassName="h-12" />;
 
   const newCycleButton = canCreate && (
     <Button size="sm" onClick={onCreate}>

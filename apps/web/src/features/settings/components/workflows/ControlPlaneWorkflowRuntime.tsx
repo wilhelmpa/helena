@@ -62,7 +62,7 @@ export default function ControlPlaneWorkflowRuntime({
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="space-y-2">
         <h4 className="text-sm font-medium">{t('graph')}</h4>
         <ol className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -72,7 +72,7 @@ export default function ControlPlaneWorkflowRuntime({
               className="rounded-lg border bg-muted/20 p-3"
             >
               <div className="flex items-center gap-2 text-sm font-medium">
-                <span className="grid size-5 place-items-center rounded-full bg-primary text-[11px] text-primary-foreground">
+                <span className="grid size-5 place-items-center rounded-full bg-primary text-xs text-primary-foreground">
                   {index + 1}
                 </span>
                 {step.title}

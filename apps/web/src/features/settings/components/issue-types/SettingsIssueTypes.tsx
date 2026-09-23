@@ -165,7 +165,7 @@ export default function SettingsIssueTypes({
                     {colorDot(type.color)}
                     <span className="truncate text-sm font-medium">{type.name}</span>
                     {type.isDefault && (
-                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[11px] font-medium text-secondary-foreground">
+                      <span className="rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
                         {t('default')}
                       </span>
                     )}

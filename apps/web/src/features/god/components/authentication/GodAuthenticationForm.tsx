@@ -48,7 +48,7 @@ export default function GodAuthenticationForm({
         </Button>
       }
     >
-      <div className="space-y-10">
+      <div className="space-y-6">
         <SettingsSection title={t('registration')} description={t('registrationHint')}>
           <SettingsCard className="divide-y divide-border/60">
             <RegistrationModePicker

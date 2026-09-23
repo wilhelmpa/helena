@@ -41,7 +41,7 @@ export default function TeamMemberRow({
     <TableRow className={onOpen ? 'cursor-pointer' : 'hover:bg-transparent'} onClick={onOpen}>
       <TableCell className="px-3 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <Avatar name={displayName} image={member.image} className="size-8 shrink-0 text-[11px]" />
+          <Avatar name={displayName} image={member.image} className="size-8 shrink-0" />
           <div className="min-w-0">
             <p className="flex items-center gap-2 truncate text-sm font-medium">
               <span className="truncate">{displayName}</span>

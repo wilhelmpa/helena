@@ -107,7 +107,7 @@ export function IssueCardBody({
               <TooltipTrigger asChild>
                 <Badge
                   variant="outline"
-                  className="rounded-full px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                  className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
                 >
                   <Timer className="size-2.5" />
                   {formatDurationShort(issue.statusSince)}
@@ -136,7 +136,7 @@ export function IssueCardBody({
           {has('type') && type && (
             <Badge
               variant="outline"
-              className="rounded-full px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
             >
               <span
                 className="inline-block h-1.5 w-1.5 rounded-full"
@@ -148,7 +148,7 @@ export function IssueCardBody({
           {has('initiative') && initiative && (
             <Badge
               variant="outline"
-              className="max-w-full rounded-full px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              className="max-w-full rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
             >
               <Target className="size-2.5 shrink-0" />
               <span className="truncate">{initiative.title}</span>
@@ -157,7 +157,7 @@ export function IssueCardBody({
           {has('cycle') && cycle && (
             <Badge
               variant="outline"
-              className="max-w-full rounded-full px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              className="max-w-full rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
             >
               <RefreshCw className="size-2.5 shrink-0" />
               <span className="truncate">{cycle.name}</span>
@@ -166,7 +166,7 @@ export function IssueCardBody({
           {has('estimatePoints') && issue.estimatePoints != null && (
             <Badge
               variant="outline"
-              className="rounded-full px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
             >
               <Hash className="size-2.5" />
               {issue.estimatePoints}
@@ -175,7 +175,7 @@ export function IssueCardBody({
           {has('estimateTime') && issue.estimateMinutes != null && (
             <Badge
               variant="outline"
-              className="rounded-full px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
             >
               <Clock className="size-2.5" />
               {formatMinutes(issue.estimateMinutes)}
@@ -192,7 +192,7 @@ export function IssueCardBody({
 
       {footerShown && (
         <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-muted-foreground/70">
+          <span className="text-xs text-muted-foreground/70">
             {has('created') && t('createdOn', { date: formatShortDate(issue.createdAt) })}
             {has('created') && has('updated') && ' · '}
             {has('updated') && t('updatedOn', { date: formatShortDate(issue.updatedAt) })}

@@ -65,7 +65,7 @@ export default function DocumentBlockTypeMenu({ editor }: { editor: Editor }) {
             className="h-9 gap-3 rounded-md px-2.5"
             onSelect={() => select(block)}
           >
-            <span className="w-7 shrink-0 font-mono text-[11px] font-semibold text-muted-foreground">
+            <span className="w-7 shrink-0 font-mono text-xs font-semibold text-muted-foreground">
               {block.preview}
             </span>
             <span className="flex-1">{t(block.key)}</span>

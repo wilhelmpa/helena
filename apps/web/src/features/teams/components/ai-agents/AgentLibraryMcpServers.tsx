@@ -50,7 +50,7 @@ export default function AgentLibraryMcpServers({
           const on = selected.includes(server.id);
           const label = (
             <span className="min-w-0">
-              <span className="font-mono text-[13px]">{server.name}</span>
+              <span className="font-mono text-xs">{server.name}</span>
               {server.description && (
                 <span className="block text-xs text-muted-foreground">{server.description}</span>
               )}

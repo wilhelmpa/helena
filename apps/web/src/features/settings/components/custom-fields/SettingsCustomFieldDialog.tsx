@@ -102,7 +102,7 @@ export default function SettingsCustomFieldDialog({
   return (
     <Modal title={t(initial ? 'editField' : 'addField')} crumb={group} onClose={onClose} wide>
       <form
-        className="space-y-8"
+        className="space-y-6"
         onSubmit={(event) => {
           event.preventDefault();
           submit();
@@ -193,7 +193,7 @@ export default function SettingsCustomFieldDialog({
           )}
         </div>
 
-        <div className="border-t border-border/50 pt-5">
+        <div className="border-t border-border/50 pt-4">
           <label className="flex cursor-pointer items-center justify-between gap-4">
             <span>
               <span className="text-sm">{t('mainInfo')}</span>
@@ -203,7 +203,7 @@ export default function SettingsCustomFieldDialog({
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border/50 pt-5">
+        <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
           <Button type="button" variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>

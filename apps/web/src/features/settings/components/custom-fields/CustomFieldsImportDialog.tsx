@@ -100,7 +100,7 @@ export default function CustomFieldsImportDialog({
               </span>
               <Badge
                 variant={field.action === 'skip' ? 'outline' : 'secondary'}
-                className="w-14 shrink-0 justify-center px-1.5 py-0 text-[10px] font-normal"
+                className="w-14 shrink-0 justify-center px-1.5 py-0 text-xs font-normal"
               >
                 {t(field.action === 'create' ? 'actionNew' : 'actionExists')}
               </Badge>

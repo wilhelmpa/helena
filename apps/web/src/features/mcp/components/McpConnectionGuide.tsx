@@ -17,7 +17,7 @@ export default function McpConnectionGuide() {
     c.labelKey ? t(`clients.${c.labelKey}`) : c.label;
 
   return (
-    <SettingsCard className="space-y-5 p-5">
+    <SettingsCard className="space-y-4 p-4">
       <p className="text-sm text-muted-foreground">
         {t.rich('keyHint', {
           apiKey: API_KEY_PLACEHOLDER,

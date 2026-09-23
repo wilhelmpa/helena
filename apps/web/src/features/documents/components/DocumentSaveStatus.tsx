@@ -38,7 +38,7 @@ export default function DocumentSaveStatus({
     <>
       <div
         className={cn(
-          'me-1 flex h-7 items-center gap-1.5 px-1 text-[11px]',
+          'me-1 flex h-7 items-center gap-1.5 px-1 text-xs',
           status === 'error'
             ? 'text-destructive'
             : status === 'conflict'

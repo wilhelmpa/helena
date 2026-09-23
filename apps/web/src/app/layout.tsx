@@ -1,10 +1,11 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from 'next-themes';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Providers } from '@/components/providers';
 import RuntimeEnvScript from '@/components/runtime-env-script';
 import { localeDirection, type Locale } from '@/i18n/locales';
+import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from '@/utils/app';
 import './globals.css';
 import WorkspaceToolsProvider from './WorkspaceToolsProvider';
 
@@ -12,6 +13,19 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
   return { title: t('title'), description: t('description') };
 }
+
+// The page reaches under the notch and the home indicator (viewport-fit=cover); the
+// shell pads itself back with the safe-area insets where it meets an edge. The theme
+// color follows the page background, so the phone's status bar blends into it.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: THEME_COLOR_LIGHT },
+    { media: '(prefers-color-scheme: dark)', color: THEME_COLOR_DARK },
+  ],
+};
 
 export default async function RootLayout({
   children,

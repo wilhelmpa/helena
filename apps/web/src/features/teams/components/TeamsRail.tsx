@@ -28,9 +28,7 @@ export default function TeamsRail({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 px-2">
-        <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {t('teams')}
-        </h2>
+        <h2 className="text-xs font-medium text-muted-foreground">{t('teams')}</h2>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

@@ -56,7 +56,7 @@ function NetworkPage({ projectKey }: { projectKey: string }) {
     >
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
-          <div className="space-y-10">
+          <div className="space-y-6">
             <SettingsNetworkForm form={form} />
             <SettingsNetworkLog projectKey={projectKey} />
           </div>

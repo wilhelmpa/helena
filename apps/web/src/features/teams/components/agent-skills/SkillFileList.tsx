@@ -34,9 +34,7 @@ export function SkillFileList({
   const t = useTranslations('teams.skills');
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="px-1 pb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-        {t('files')}
-      </div>
+      <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">{t('files')}</div>
       <div className="flex-1 space-y-0.5 overflow-y-auto">
         {files.map((f) => {
           const active = f.path === selected;
@@ -65,7 +63,7 @@ export function SkillFileList({
                 )}
               </button>
               {f.size != null && (
-                <span className="text-[10px] text-muted-foreground tabular-nums">
+                <span className="text-xs text-muted-foreground tabular-nums">
                   {Math.max(1, Math.ceil(f.size / 1024))} KB
                 </span>
               )}

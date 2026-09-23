@@ -63,7 +63,7 @@ export default function MemberAccessCard({
       trailing={actions && <div className="flex shrink-0 items-center gap-1 pe-2">{actions}</div>}
       header={
         <>
-          <Avatar name={displayName} image={member.image} className="size-8 shrink-0 text-[11px]" />
+          <Avatar name={displayName} image={member.image} className="size-8 shrink-0" />
           <span className="min-w-0 flex-1">
             <span className="flex min-w-0 items-center gap-1.5">
               {member.isAgent && (
@@ -80,7 +80,7 @@ export default function MemberAccessCard({
           </span>
           <Badge
             variant={isOwner ? 'default' : 'secondary'}
-            className="px-1.5 py-0 text-[10px] font-medium"
+            className="px-1.5 py-0 text-xs font-medium"
           >
             {isOwner ? tCommon('owner') : (member.roleName ?? tCommon('member'))}
           </Badge>

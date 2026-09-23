@@ -418,12 +418,12 @@ export default function TeamAiAgentFields({
   // the sheet's header and footer stay put.
   if (expanded) {
     return (
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-10 sm:px-6 sm:pt-2">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-10 sm:pt-2">
         <div className={`mx-auto w-full space-y-8 ${AGENT_EXPANDED_WIDTH}`}>{stack}</div>
       </div>
     );
   }
 
   // Compact side panel: the same sections stacked in one column.
-  return <div className="space-y-8">{stack}</div>;
+  return <div className="space-y-6">{stack}</div>;
 }

@@ -62,7 +62,7 @@ export function CredentialDialog({
   return (
     <Modal title={current ? t('edit') : t(`new.${kind}`)} onClose={onClose} wide>
       <form
-        className="space-y-5"
+        className="space-y-4"
         autoComplete="off"
         onSubmit={(event) => {
           event.preventDefault();

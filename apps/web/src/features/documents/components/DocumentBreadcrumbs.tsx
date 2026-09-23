@@ -9,7 +9,7 @@ export default function DocumentBreadcrumbs({ root, path }: { root: string; path
 
   return (
     <nav
-      className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-[12px] text-muted-foreground"
+      className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-xs text-muted-foreground"
       aria-label={t('breadcrumb')}
     >
       <span className="shrink-0 px-1 py-0.5 font-medium">{t('title')}</span>

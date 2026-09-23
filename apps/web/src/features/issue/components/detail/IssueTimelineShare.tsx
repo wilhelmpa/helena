@@ -59,7 +59,7 @@ export default function IssueTimelineShare({
       >
         {(fixed || share >= LABEL_MIN_PCT) && (
           <span
-            className={`px-1.5 text-[11px] font-medium text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.35)] ${fixed ? 'whitespace-nowrap' : 'truncate'}`}
+            className={`px-1.5 text-xs font-medium text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.35)] ${fixed ? 'whitespace-nowrap' : 'truncate'}`}
           >
             {label}
           </span>

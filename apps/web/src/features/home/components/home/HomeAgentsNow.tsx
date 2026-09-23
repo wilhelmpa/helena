@@ -1,10 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { issuePath, projectPath } from '@/utils/paths';
+import { Bot } from 'lucide-react';
+import { agentActivityForAgentPath, issuePath } from '@/utils/paths';
 import Avatar from '@/components/common/Avatar';
 import StatusBadge, { type Status } from '@/components/common/page/StatusBadge';
+import { RowEmpty, RowLink, RowList, SectionLabel } from '@/components/common/page/RowList';
 import { useHomeActiveActivity, HOME_ACTIVE_STATUSES } from '../../services/homeKpis.service';
 
 const LIMIT = 6;
@@ -19,7 +20,8 @@ function statusOf(raw: string): Status {
 
 // "Agenten gerade" (docs/volition-design-helena-ui.md "Start"): a live list of who
 // is working on what, across every project — the same recent-activity read
-// useHomeRunningAgentsCount uses for the KPI number, so the two never disagree.
+// useHomeRunningAgentsCount uses for the KPI number, so the two never disagree. A row
+// opens the task the agent works on, or else that agent's timeline.
 export default function HomeAgentsNow() {
   const t = useTranslations('nav');
   const tActivity = useTranslations('agentActivity');
@@ -30,39 +32,41 @@ export default function HomeAgentsNow() {
     .slice(0, LIMIT);
 
   return (
-    <section>
-      <h2 className="mb-2 text-sm font-semibold">{t('agentsNow')}</h2>
-      {running.length === 0 ? (
-        <div className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
-          {t('agentsNowEmpty')}
-        </div>
-      ) : (
-        <div className="divide-y divide-border rounded-lg border bg-card">
-          {running.map((entry) => {
-            const href = entry.issue
-              ? issuePath(entry.project!.key, entry.issue.sequenceNumber)
-              : entry.project
-                ? projectPath(entry.project.key)
-                : '#';
+    <section className="min-w-0">
+      <SectionLabel
+        trailing={
+          running.length > 0 ? (
+            <span className="font-mono text-xs tabular-nums">{running.length}</span>
+          ) : null
+        }
+      >
+        {t('agentsNow')}
+      </SectionLabel>
+      <RowList>
+        {running.length === 0 ? (
+          <RowEmpty icon={<Bot />}>{t('agentsNowEmpty')}</RowEmpty>
+        ) : (
+          running.map((entry) => {
+            const agent = entry.agent!;
+            const href =
+              entry.issue && entry.project
+                ? issuePath(entry.project.key, entry.issue.sequenceNumber)
+                : agentActivityForAgentPath(agent.id, entry.project?.key);
             return (
-              <Link
+              <RowLink
                 key={entry.id}
                 href={href}
-                className="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-accent"
-              >
-                <Avatar name={entry.agent!.name} className="size-6 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{entry.agent!.name}</div>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {entry.issue?.title ?? entry.project?.name ?? tActivity(`kinds.${entry.kind}`)}
-                  </div>
-                </div>
-                <StatusBadge status={statusOf(entry.status)} dotOnly className="shrink-0" />
-              </Link>
+                icon={<Avatar name={agent.name} className="size-5" />}
+                title={agent.name}
+                detail={
+                  entry.issue?.title ?? entry.project?.name ?? tActivity(`kinds.${entry.kind}`)
+                }
+                trailing={<StatusBadge status={statusOf(entry.status)} dotOnly />}
+              />
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </RowList>
     </section>
   );
 }

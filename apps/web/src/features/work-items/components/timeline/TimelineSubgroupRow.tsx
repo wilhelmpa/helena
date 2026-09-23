@@ -65,7 +65,7 @@ export function TimelineSubgroupRow({
       <div className="relative" style={{ width: trackWidth }}>
         {collapsed && aggregateRect && (
           <div
-            className="absolute top-1/2 flex h-3.5 -translate-y-1/2 cursor-default items-center overflow-hidden rounded px-1.5 text-[10px] text-white select-none"
+            className="absolute top-1/2 flex h-3.5 -translate-y-1/2 cursor-default items-center overflow-hidden rounded px-1.5 text-xs text-white select-none"
             style={{
               left: aggregateRect.left,
               width: aggregateRect.width,

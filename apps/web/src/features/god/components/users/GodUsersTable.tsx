@@ -76,11 +76,7 @@ export default function GodUsersTable({
           >
             <TableCell className="px-3 py-3 align-top whitespace-normal">
               <div className="flex min-w-0 items-start gap-2.5">
-                <Avatar
-                  name={u.name || u.email}
-                  image={u.image}
-                  className="size-8 shrink-0 text-[11px]"
-                />
+                <Avatar name={u.name || u.email} image={u.image} className="size-8 shrink-0" />
                 <div className="flex min-w-0 flex-col gap-0.5 pt-0.5">
                   <span className="truncate text-sm font-medium">{u.name || u.email}</span>
                   <span className="truncate text-xs text-muted-foreground">{u.email}</span>
@@ -94,17 +90,17 @@ export default function GodUsersTable({
             <TableCell className="px-3 py-3 align-top">
               <div className="flex flex-wrap gap-1">
                 {u.role === 'god' ? (
-                  <Badge className="gap-1 px-1.5 py-0 text-[10px] font-medium">
+                  <Badge className="gap-1 px-1.5 py-0 text-xs font-medium">
                     <Shield className="size-3" />
                     {t('roleGod')}
                   </Badge>
                 ) : (
-                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
+                  <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                     {t('roleUser')}
                   </Badge>
                 )}
                 {u.isAgent && (
-                  <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-[10px] font-medium">
+                  <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs font-medium">
                     <Bot className="size-3" />
                     {t('agent')}
                   </Badge>
@@ -124,11 +120,11 @@ export default function GodUsersTable({
 
             <TableCell className="px-3 py-3 align-top">
               {u.emailVerified ? (
-                <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
+                <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                   {t('verified')}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium">
+                <Badge variant="outline" className="px-1.5 py-0 text-xs font-medium">
                   {t('notVerified')}
                 </Badge>
               )}

@@ -217,7 +217,7 @@ export function SkillCreateDialog({
 
           <div className="max-h-80 space-y-1 overflow-y-auto">
             {filteredCandidates.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
+              <p className="py-6 text-center text-sm text-muted-foreground">
                 {t('noMatches', { query: query.trim() })}
               </p>
             ) : (
