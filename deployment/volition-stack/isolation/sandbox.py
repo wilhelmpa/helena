@@ -133,7 +133,16 @@ async def forward(client_reader, client_writer, socket_path: str) -> None:
                 pass
 
 
-async def serve_forwards(forwards: dict[int, str], ready_fd: int) -> None:
+async def follow_parent(parent: int) -> None:
+    """The forwarders live exactly as long as the runtime: when it exits, this process is
+    handed to another parent and ends too, so the unit stops at once."""
+    while os.getppid() == parent:
+        await asyncio.sleep(0.25)
+    os._exit(0)
+
+
+async def serve_forwards(forwards: dict[int, str], ready_fd: int, parent: int) -> None:
+    asyncio.ensure_future(follow_parent(parent))
     servers = []
     for port, socket_path in forwards.items():
         handler = lambda r, w, p=socket_path: forward(r, w, p)  # noqa: E731
@@ -153,6 +162,7 @@ def start_forwards(forwards: dict[int, str]) -> None:
     if not forwards:
         return
     read_end, write_end = os.pipe()
+    parent = os.getpid()
     pid = os.fork()
     if pid == 0:
         os.close(read_end)
@@ -160,10 +170,11 @@ def start_forwards(forwards: dict[int, str]) -> None:
         os.dup2(devnull, 0)
         os.dup2(devnull, 1)
         os.close(devnull)
-        # The runtime is the unit's main process; this one only lives as long as it does.
+        # The runtime is the unit's main process. A stop interrupts it, and it may still need
+        # the network while it ends its turn; this process follows it out (follow_parent).
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
-            asyncio.run(serve_forwards(forwards, write_end))
+            asyncio.run(serve_forwards(forwards, write_end, parent))
         except BaseException as error:  # noqa: BLE001
             print(f'volition-agent-sandbox: forwarder stopped: {error}', file=sys.stderr, flush=True)
         os._exit(0)
