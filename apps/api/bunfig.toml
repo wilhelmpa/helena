@@ -2,6 +2,8 @@
 # Writes an lcov file to coverage/lcov.info (read by CI and the VSCode
 # Coverage Gutters extension) and prints the text summary to the terminal.
 [test]
+# Keeps every test run away from the live project vault (see the file).
+preload = ["./src/__tests__/helpers/preload.ts"]
 coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
 # Exclude test files and everything under any __tests__ folder (helpers, fixtures)
