@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import type { PageParams } from '@/lib/api/core/paging';
 import {
   decideApproval,
@@ -18,17 +20,27 @@ export const useApprovals = (status: ApprovalListStatus, params: PageParams) =>
     queryFn: () => listApprovals(params, status),
   });
 
+// The decided card leaves the list before a caller's own onSuccess would run, so the
+// confirmation is shown here.
 export function useDecideApproval() {
   const client = useQueryClient();
+  const t = useTranslations('approvals');
   return useMutation({
     mutationFn: ({ id, decision }: { id: number; decision: ApprovalDecision }) =>
       decideApproval(id, decision),
-    onSuccess: () => client.invalidateQueries({ queryKey: qk.anyApprovals }),
+    onSuccess: (_, { decision }) => {
+      toast.success(t(decision.approved ? 'approvedToast' : 'rejectedToast'));
+      return Promise.all([
+        client.invalidateQueries({ queryKey: qk.approvalLists }),
+        client.invalidateQueries({ queryKey: qk.approvalsPendingCount }),
+      ]);
+    },
   });
 }
 
 export function useDecideWorkflowGate() {
   const client = useQueryClient();
+  const t = useTranslations('approvals');
   return useMutation({
     mutationFn: ({ gate, decision }: { gate: WorkflowGate; decision: ApprovalDecision }) =>
       decideWorkflow(
@@ -38,7 +50,8 @@ export function useDecideWorkflowGate() {
         decision.approved,
         decision.note,
       ),
-    onSuccess: (_, { gate }) => {
+    onSuccess: (_, { gate, decision }) => {
+      toast.success(t(decision.approved ? 'gateApprovedToast' : 'gateRejectedToast'));
       client.setQueryData<WorkflowGateList>(qk.workflowGates, (list) => withoutGate(list, gate));
       return client.invalidateQueries({
         queryKey: qk.controlPlaneWorkflowRuns(gate.projectKey, gate.workflowId),

@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import type { ApprovalRequest } from '@/lib/api/endpoints/approvals';
 import { formatDateTime } from '@/utils/dates';
 import { issuePath } from '@/utils/paths';
@@ -50,15 +49,7 @@ export default function ApprovalRequestCard({ request }: { request: ApprovalRequ
       {request.status === 'pending' ? (
         <ApprovalDecisionForm
           pending={decide.isPending}
-          onDecide={(decision) =>
-            decide.mutate(
-              { id: request.id, decision },
-              {
-                onSuccess: () =>
-                  toast.success(t(decision.approved ? 'approvedToast' : 'rejectedToast')),
-              },
-            )
-          }
+          onDecide={(decision) => decide.mutate({ id: request.id, decision })}
         />
       ) : (
         <ApprovalDecisionSummary request={request} />

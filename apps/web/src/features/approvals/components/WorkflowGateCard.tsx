@@ -2,7 +2,6 @@
 
 import { Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import type { WorkflowGate } from '@/lib/api/endpoints/approvals';
 import { formatDateTime } from '@/utils/dates';
 import { useDecideWorkflowGate } from '../services/approvals.service';
@@ -36,15 +35,7 @@ export default function WorkflowGateCard({ gate }: { gate: WorkflowGate }) {
       )}
       <ApprovalDecisionForm
         pending={decide.isPending}
-        onDecide={(decision) =>
-          decide.mutate(
-            { gate, decision },
-            {
-              onSuccess: () =>
-                toast.success(t(decision.approved ? 'gateApprovedToast' : 'gateRejectedToast')),
-            },
-          )
-        }
+        onDecide={(decision) => decide.mutate({ gate, decision })}
       />
     </article>
   );

@@ -7,7 +7,6 @@ import type { ApprovalDecision } from '@/lib/api/endpoints/approvals';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-// The note travels with the decision to whoever acts on it next.
 export default function ApprovalDecisionForm({
   pending,
   onDecide,
