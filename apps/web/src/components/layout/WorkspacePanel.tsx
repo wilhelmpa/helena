@@ -7,12 +7,14 @@ import { Direction } from 'radix-ui';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePersistedWidth } from '@/hooks/usePersistedWidth';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
+import { browserControlBase } from '@/utils/browserControl';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import { HEADER_WORKSPACE_TOOLS, workspaceTools } from '@/utils/workspaceTools';
 import { cn } from '@/lib/utils';
 import ResizeGrip from '@/components/common/ResizeGrip';
+import WorkspaceBrowserBar from './WorkspaceBrowserBar';
 import WorkspaceFrame from './WorkspaceFrame';
 import WorkspacePanelHeader from './WorkspacePanelHeader';
 import WorkspaceSplitHeader from './WorkspaceSplitHeader';
@@ -191,6 +193,8 @@ export default function WorkspacePanel({
     });
   }, [open, visible]);
 
+  const browserBase = tools.browser.url ? browserControlBase(tools.browser.url) : null;
+  const browserBar = browserBase ? <WorkspaceBrowserBar base={browserBase} /> : undefined;
   const overlay = isMobile || mode === 'overlay';
   const title = advanced ? t('advanced') : labels[activeTool];
   const split = secondaryTool !== null;
@@ -235,6 +239,7 @@ export default function WorkspacePanel({
         isMobile={isMobile}
         fullscreen={fullscreen}
         mode={mode}
+        toolbar={activeTool === 'browser' ? browserBar : undefined}
         splitControl={
           isMobile ? null : (
             <WorkspaceSplitMenu
@@ -278,6 +283,7 @@ export default function WorkspacePanel({
           <div className="col-start-2 row-start-1">
             <WorkspaceSplitHeader
               title={labels[secondaryTool]}
+              toolbar={secondaryTool === 'browser' ? browserBar : undefined}
               onClose={() => onSplitToolChange(null)}
             />
           </div>

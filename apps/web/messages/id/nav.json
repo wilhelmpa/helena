@@ -55,7 +55,16 @@
     "unavailableDescription": "Administrator dapat menghubungkan ruang kerja ini untuk instans.",
     "mail": "Mail",
     "openBeside": "Buka di samping",
-    "closeSplit": "Tutup tampilan terbagi"
+    "closeSplit": "Tutup tampilan terbagi",
+    "browserBar": {
+      "address": "Alamat",
+      "back": "Kembali",
+      "forward": "Maju",
+      "reload": "Muat ulang",
+      "tabs": "Tab",
+      "newTab": "Tab baru",
+      "closeTab": "Tutup tab"
+    }
   },
   "groups": {
     "project": "Proyek",

@@ -55,7 +55,16 @@
     "unavailableDescription": "Um administrador pode conectar este espaço de trabalho à instância.",
     "mail": "Mail",
     "openBeside": "Abrir ao lado",
-    "closeSplit": "Fechar visualização dividida"
+    "closeSplit": "Fechar visualização dividida",
+    "browserBar": {
+      "address": "Endereço",
+      "back": "Voltar",
+      "forward": "Avançar",
+      "reload": "Recarregar",
+      "tabs": "Abas",
+      "newTab": "Nova aba",
+      "closeTab": "Fechar aba"
+    }
   },
   "groups": {
     "project": "Projeto",

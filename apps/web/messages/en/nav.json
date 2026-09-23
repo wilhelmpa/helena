@@ -58,7 +58,16 @@
     "unavailableDescription": "An administrator can connect this workspace for the instance.",
     "mail": "Mail",
     "openBeside": "Open beside",
-    "closeSplit": "Close split view"
+    "closeSplit": "Close split view",
+    "browserBar": {
+      "address": "Address",
+      "back": "Back",
+      "forward": "Forward",
+      "reload": "Reload",
+      "tabs": "Tabs",
+      "newTab": "New tab",
+      "closeTab": "Close tab"
+    }
   },
   "groups": {
     "project": "Project",

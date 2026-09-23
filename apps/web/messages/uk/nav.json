@@ -55,7 +55,16 @@
     "unavailableDescription": "Адміністратор може підключити цей робочий простір до інстансу.",
     "mail": "Mail",
     "openBeside": "Відкрити поруч",
-    "closeSplit": "Закрити розділений вигляд"
+    "closeSplit": "Закрити розділений вигляд",
+    "browserBar": {
+      "address": "Адреса",
+      "back": "Назад",
+      "forward": "Вперед",
+      "reload": "Оновити",
+      "tabs": "Вкладки",
+      "newTab": "Нова вкладка",
+      "closeTab": "Закрити вкладку"
+    }
   },
   "groups": {
     "project": "Проєкт",

@@ -55,7 +55,16 @@
     "unavailableDescription": "管理员可以为此实例连接该工作区。",
     "mail": "Mail",
     "openBeside": "在旁边打开",
-    "closeSplit": "关闭分屏"
+    "closeSplit": "关闭分屏",
+    "browserBar": {
+      "address": "地址",
+      "back": "后退",
+      "forward": "前进",
+      "reload": "重新加载",
+      "tabs": "标签页",
+      "newTab": "新标签页",
+      "closeTab": "关闭标签页"
+    }
   },
   "groups": {
     "project": "项目",

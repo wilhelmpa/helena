@@ -28,6 +28,7 @@ export default function WorkspacePanelHeader({
   fullscreen,
   mode,
   splitControl,
+  toolbar,
   onToggleAdvanced,
   onToggleBrowserLossless,
   onToggleMode,
@@ -45,6 +46,8 @@ export default function WorkspacePanelHeader({
   fullscreen: boolean;
   mode: WorkspacePanelMode;
   splitControl: ReactNode;
+  // Shown in place of the title, such as the browser's address bar.
+  toolbar?: ReactNode;
   onToggleAdvanced: () => void;
   onToggleBrowserLossless: () => void;
   onToggleMode: () => void;
@@ -57,7 +60,7 @@ export default function WorkspacePanelHeader({
   const tCommon = useTranslations('common');
   return (
     <WorkspaceHeader className="gap-1 px-3">
-      <div className="min-w-0 flex-1 truncate text-sm font-medium">{title}</div>
+      {toolbar ?? <div className="min-w-0 flex-1 truncate text-sm font-medium">{title}</div>}
       {canExpandChat && (
         <Button
           variant={advanced ? 'secondary' : 'ghost'}

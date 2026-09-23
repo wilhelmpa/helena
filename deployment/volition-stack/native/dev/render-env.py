@@ -18,13 +18,14 @@ OVERRIDES = {
     'NODE_ENV': 'development',
     'MASTRA_CONTROL_URL': 'http://127.0.0.1:4211/internal/mastra/control',
     'MASTRA_CONTROL_TOKEN_FILE': '/etc/volition/dev/plan-control.token',
+    'BROWSER_URL': f'{DEV_ORIGIN}/browser/projects/home/vnc.html?autoconnect=1&resize=remote'
+    '&path=browser%2Fprojects%2Fhome%2Fwebsockify',
 }
-# Tool frames belong to the live instance only; the control plane is the development
-# Mastra instance set above.
+# Most tool frames belong to the live instance only; the browser and the control plane
+# are set above.
 DROP = {
     'TERMINAL_URL',
     'CODE_URL',
-    'BROWSER_URL',
     'FILES_URL',
     'HERMES_URL',
     'HERMES_COORDINATOR_ID',
