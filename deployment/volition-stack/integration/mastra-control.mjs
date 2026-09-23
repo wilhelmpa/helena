@@ -107,9 +107,11 @@ async function responseJson(response) {
   return value;
 }
 
+// Plan's control operations on the Mastra API at `mastraApiUrl`, which accepts only
+// `mastraApiToken`. `catalog` is the workflow catalog the `catalog` operation answers.
 export function createMastraControlService(config, options = {}) {
   const request = options.fetch ?? fetch;
-  const base = new URL(config.mastraControlUrl);
+  const base = new URL(config.mastraApiUrl);
   const pendingScheduleCreates = new Map();
 
   async function call(path, init = {}) {
@@ -119,8 +121,7 @@ export function createMastraControlService(config, options = {}) {
       signal: AbortSignal.timeout(330_000),
       headers: {
         accept: 'application/json',
-        'x-volition-auth': 'verified',
-        'x-auth-request-email': config.mastraControlOwnerEmail,
+        authorization: `Bearer ${config.mastraApiToken}`,
         ...(init.body ? { 'content-type': 'application/json' } : {}),
       },
     }).catch(() => {
@@ -167,30 +168,32 @@ export function createMastraControlService(config, options = {}) {
     return schedule;
   }
 
-  return {
-    // Removes the project's workflow schedules when the project is deleted.
-    async deleteProjectSchedules(projectRef) {
-      string(projectRef, PROJECT_REF, 'projectRef');
-      const result = object(await call('schedules'), 'Mastra schedules');
-      const owned = Array.isArray(result.schedules)
-        ? result.schedules.filter((item) => item?.workflowId != null && item.requestContext?.projectRef === projectRef)
-        : [];
-      for (const schedule of owned) {
-        const scheduleId = string(schedule.id, SCHEDULE_ID, 'scheduleId');
-        await call(`schedules/${scheduleId}`, { method: 'DELETE' }).catch((error) => {
-          if (!(error instanceof MastraControlError && error.status === 404)) throw error;
-        });
-      }
-      return owned.length;
-    },
+  // The schedules of every workflow of a deleted project.
+  async function deleteProjectSchedules(projectRef) {
+    const result = object(await call('schedules'), 'Mastra schedules');
+    const owned = Array.isArray(result.schedules)
+      ? result.schedules.filter((item) => item?.workflowId != null && item.requestContext?.projectRef === projectRef)
+      : [];
+    for (const schedule of owned) {
+      const scheduleId = string(schedule.id, SCHEDULE_ID, 'scheduleId');
+      await call(`schedules/${scheduleId}`, { method: 'DELETE' }).catch((error) => {
+        if (!(error instanceof MastraControlError && error.status === 404)) throw error;
+      });
+    }
+    return owned.length;
+  }
 
+  return {
     async execute(raw) {
       const input = object(raw, 'Control request');
       if (input.schemaVersion !== 1 || typeof input.operation !== 'string') {
         throw new MastraControlError(400, 'Control request is invalid');
       }
       if (input.operation === 'catalog') {
-        return { catalog: await call('control-plane-catalog') };
+        return { catalog: config.catalog };
+      }
+      if (input.operation === 'delete-project-schedules') {
+        return { deleted: await deleteProjectSchedules(string(input.projectRef, PROJECT_REF, 'projectRef')) };
       }
 
       const workflowId = string(input.workflowId, WORKFLOW_ID, 'workflowId');
@@ -207,6 +210,8 @@ export function createMastraControlService(config, options = {}) {
       const projectRef = string(input.projectRef, PROJECT_REF, 'projectRef');
 
       if (input.operation === 'runs') {
+        // A project keeps its assignment of a workflow that left the catalog.
+        if (!config.catalog.flows.some((flow) => flow.id === workflowId)) return { runs: [], total: 0 };
         const currentPage = page(input.page, 0, 10_000);
         const pageSize = page(input.pageSize, 20, 100);
         const withStatus = (run) => ({

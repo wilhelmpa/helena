@@ -70,8 +70,9 @@ changed or deleted. Creating, attaching, detaching, rekeying or deleting an exte
 queues the provisioning of its projects again; the runtime of an agent that left is
 removed.
 
-Project deletion writes one deprovisioning job. Deprovisioning deletes the project's Mastra
-workflow schedules and its runner descriptors, stops the browser units, and moves the
+Project deletion writes one deprovisioning job. Before the worker delivers it, the worker
+deletes the project's Mastra workflow schedules through the control endpoint. Deprovisioning
+deletes the project's runner descriptors, stops the browser units, and moves the
 workspace, vault folder, Hermes profiles, browser state, and registry entry to
 `/srv/volition/trash/projects/<event-id>/` with a `receipt.json`. The terminal router stops
 the project's Wetty process and tmux session once its workspace directory is gone. A
@@ -97,7 +98,7 @@ request of the stage it waits for; the bridge then cancels that Plan run, and a 
 executing it stops Hermes on its next heartbeat.
 
 ```text
-Plan API -> provisioning control :18800 -> Mastra proxy :4111
+Plan API and worker -> Mastra proxy :4111 -> Mastra :4112
 Mastra -> Hermes team Unix socket -> Plan internal orchestration API :3000
 Plan agent queue -> Hermes runner -> /var/lib/volition/hermes/profiles/<slug>[_<id>]
 ```
@@ -114,7 +115,7 @@ All routes use the Plan origin and require a valid Plan session.
 | Terminal, canonical form | `http://kingston-server.local/focus/terminal-project/<slug>` |
 | Browser | `http://kingston-server.local/browser/projects/<slug>/vnc.html?autoconnect=1&resize=scale&path=browser%2Fprojects%2F<slug>%2Fwebsockify` |
 | Browser live view (WebSocket) | `ws://kingston-server.local/browser/projects/<slug>/api/screencast` |
-| Mastra diagnostics | `http://kingston-server.local/mastra/workflows` |
+| Mastra diagnostics (instance owner only) | `http://kingston-server.local/mastra/workflows` |
 
 The terminal compatibility URL redirects to the project path and then Wetty's slashless
 canonical path. The verified chain terminates after two redirects with HTTP 200. The
@@ -144,6 +145,9 @@ default; the VNC display stays available in the tool. The KasmVNC and Chromium u
 
 - The dedicated LAN hostname forwards application routes to authenticated Nginx.
 - Internal TCP services bind to loopback or Unix sockets.
+- Mastra accepts only the token of its proxy. The proxy accepts Plan's control token and,
+  for Studio, a token Nginx adds for the instance owner (see the trust model in
+  `optional/mastra-studio/ORCHESTRATION_CONTRACT.md`).
 - Embedded tools require a valid Plan session.
 - Nginx does not forward Plan cookies or Authorization headers to tool upstreams.
 - Runtime credentials are root-owned private files delivered with systemd credentials.

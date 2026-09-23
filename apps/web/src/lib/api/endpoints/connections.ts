@@ -112,22 +112,6 @@ export const sendMailDraft = (account: string, draftId: string, confirmationToke
     body: JSON.stringify({ account, draftId, confirmationToken }),
   });
 
-export interface ThemeSyncResult {
-  theme: 'light' | 'dark';
-  results: Array<{
-    service: 'agent_runtime' | 'code' | 'nextcloud';
-    status: 'updated' | 'failed';
-    attempts: number;
-    error?: string;
-  }>;
-}
-
-export const syncWorkspaceTheme = (theme: 'light' | 'dark') =>
-  request<ThemeSyncResult>('/theme/sync', {
-    method: 'POST',
-    body: JSON.stringify({ theme }),
-  });
-
 export async function downloadMailAttachment(input: {
   account: string;
   messageId: string;

@@ -1,5 +1,5 @@
 {
-  "id": "ad9459c4-2b78-4cab-8c83-43c82978390c",
+  "id": "1cd5909c-c9ad-43a3-bc3f-2465f139d0ea",
   "prevId": "85594fee-9984-4cd1-8324-1a9667a3e999",
   "version": "7",
   "dialect": "postgresql",
@@ -2206,104 +2206,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.agent_runtime_action": {
-      "name": "agent_runtime_action",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target": {
-          "name": "target",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "payload": {
-          "name": "payload",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        },
-        "error": {
-          "name": "error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_runtime_action_agent_idx": {
-          "name": "agent_runtime_action_agent_idx",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_runtime_action_agent_id_ai_agent_id_fk": {
-          "name": "agent_runtime_action_agent_id_ai_agent_id_fk",
-          "tableFrom": "agent_runtime_action",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "agent_runtime_action_kind_check": {
-          "name": "agent_runtime_action_kind_check",
-          "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory')"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.agent_skill": {
       "name": "agent_skill",
       "schema": "",
@@ -2818,13 +2720,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
-        },
-        "runtime_learned_skills": {
-          "name": "runtime_learned_skills",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
         },
         "owner_user_id": {
           "name": "owner_user_id",
@@ -5980,7 +5875,26 @@
           "name": "s3_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "vault_path": {
+          "name": "vault_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linked": {
+          "name": "linked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "filename": {
           "name": "filename",
@@ -6023,6 +5937,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "issue_attachment_vault_path_idx": {
+          "name": "issue_attachment_vault_path_idx",
+          "columns": [
+            {
+              "expression": "vault_path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -6051,7 +5980,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "issue_attachment_storage_check": {
+          "name": "issue_attachment_storage_check",
+          "value": "(\"issue_attachment\".\"s3_key\" IS NULL) <> (\"issue_attachment\".\"vault_path\" IS NULL)"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.issue_checklist": {

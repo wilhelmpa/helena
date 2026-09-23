@@ -17,10 +17,11 @@ export interface WorkspaceRuntimeEnv {
   codeUrl: string;
   projectWorkspacePaths: Record<string, string>;
   browserUrl: string;
-  filesUrl: string;
   inboxUrl: string;
   connectionsUrl: string;
   vaultEnabled: boolean;
+  // The name the owner's Obsidian knows the vault by, for obsidian:// links.
+  obsidianVault: string;
 }
 
 declare global {
@@ -66,10 +67,10 @@ const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   codeUrl: '',
   projectWorkspacePaths: {},
   browserUrl: '',
-  filesUrl: '',
   inboxUrl: '',
   connectionsUrl: '',
   vaultEnabled: true,
+  obsidianVault: 'Volition',
 });
 
 export function serverRuntimeEnv(): RuntimeEnv {
@@ -84,10 +85,10 @@ export function serverRuntimeEnv(): RuntimeEnv {
       codeUrl: readOrigin('CODE_URL'),
       projectWorkspacePaths: readJsonRecord('PROJECT_WORKSPACE_PATHS'),
       browserUrl: readOrigin('BROWSER_URL'),
-      filesUrl: readOrigin('FILES_URL'),
       inboxUrl: readOrigin('INBOX_URL'),
       connectionsUrl: readOrigin('CONNECTIONS_URL'),
       vaultEnabled: readBoolean('VAULT_UI_ENABLED', true),
+      obsidianVault: readOrigin('OBSIDIAN_VAULT_NAME') || 'Volition',
     },
   };
 }

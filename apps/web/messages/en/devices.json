@@ -1,0 +1,80 @@
+{
+  "title": "Devices & Obsidian",
+  "description": "Syncthing keeps the notes and files of Home, the projects and Private/ in sync with Obsidian on your Mac and phone: directly at home, through encrypted relays on the road.",
+  "loadError": "The sync status could not be read.",
+  "ownerOnly": "Only the instance owner manages the devices.",
+  "unavailable": {
+    "unconfiguredTitle": "Syncthing is not set up",
+    "unconfigured": "Plan has no working key for Syncthing on this server. Install the Debian package syncthing and run <code>deployment/volition-stack/native/syncthing/setup.sh</code> as root.",
+    "unreachableTitle": "Syncthing is not reachable",
+    "unreachable": "Syncthing is not installed on this server, or the service <code>volition-syncthing</code> is not running."
+  },
+  "server": {
+    "title": "This server",
+    "hint": "Add this device ID in Syncthing on your device: scan the code or copy the ID.",
+    "qrAlt": "QR code of this server's device ID",
+    "copied": "Device ID copied",
+    "copyFailed": "Could not copy. Select the ID and copy it by hand.",
+    "version": "Syncthing {version}",
+    "discoveryOn": "Global discovery and relays are on. A device away from home finds this server through the Syncthing discovery servers and connects through a relay when no direct connection is possible. The files stay end-to-end encrypted.",
+    "discoveryOff": "Global discovery or relays are off. A device connects only when it reaches this server directly."
+  },
+  "folder": {
+    "title": "Sync status",
+    "notSetUp": "The folder Volition is missing in Syncthing. Run the Syncthing setup on this server again.",
+    "state": {
+      "idle": "Up to date",
+      "scanning": "Scanning",
+      "syncing": "Syncing",
+      "error": "Error"
+    },
+    "lastFile": "Last file received",
+    "lastFileValue": "{time}: {name}",
+    "lastScan": "Last scan",
+    "never": "Never",
+    "needItems": "{count, plural, one {# file} other {# files}} still to sync",
+    "fileErrors": "{count, plural, one {# file} other {# files}} could not be synced",
+    "error": "Folder error: {error}"
+  },
+  "devices": {
+    "title": "Devices",
+    "empty": "No device syncs yet. The guide below shows how to add one.",
+    "connected": "Connected",
+    "disconnected": "Not connected",
+    "paused": "Paused",
+    "lastSeen": "Last seen {time}",
+    "neverSeen": "Not seen yet",
+    "notShared": "The folder Volition is not shared with this device.",
+    "remove": "Remove",
+    "removeTitle": "Remove {name}?",
+    "removeBody": "The device stops syncing with this server. The files on the device stay there."
+  },
+  "pending": {
+    "title": "Devices asking to connect",
+    "hint": "Accept only your own devices: an accepted device receives every note and file, Private/ included.",
+    "requested": "Asked {time} from {address}",
+    "accept": "Accept",
+    "accepted": "{name} accepted. Now accept the folder Volition on the device."
+  },
+  "conflicts": {
+    "title": "Conflicts",
+    "hint": "Syncthing keeps a conflict copy when a file was changed on two devices before they synced. Open both files in Obsidian, carry what you want to keep into the original and delete the conflict copy; the deletion reaches every device.",
+    "empty": "No conflicts.",
+    "loadError": "The conflicts could not be read.",
+    "original": "Original: {path}",
+    "modified": "Changed {time}"
+  },
+  "guide": {
+    "title": "Set up a device",
+    "step1": "Install Syncthing and Obsidian on the device. Mac: the app Syncthing from syncthing.net. iPhone: Möbius Sync from the App Store. Android: Syncthing-Fork from F-Droid or Google Play.",
+    "step2": "In Syncthing, add a device and enter this server's device ID, or scan the QR code.",
+    "step2Lan": "For direct syncing at home, enter <code>{address}, dynamic</code> as the device's addresses.",
+    "step3": "The device then appears above under “Devices asking to connect”. Choose Accept.",
+    "step4": "On the device, accept the folder Volition into a folder named Volition: <code>~/Volition</code> on the Mac, <code>Volition</code> in the internal storage on Android, the Obsidian vault Volition on the iPhone.",
+    "step5": "Wait until the folder shows “Up to date” on the device, then open the folder Volition in Obsidian as a vault. Links from Plan open the vault Volition.",
+    "iphoneTitle": "iPhone",
+    "iphone": "Obsidian on the iPhone only opens its own folders. First create the vault Volition in Obsidian (on the iPhone, not in iCloud) and close Obsidian. Then, in Möbius Sync, put the folder Volition into On My iPhone › Obsidian › Volition. Obsidian writes its own settings when it creates a vault, so conflicts in <code>.obsidian</code> can appear after the first sync; their conflict copies hold this server's defaults. Möbius Sync syncs while the app is open or iOS lets it run in the background.",
+    "spaceTitle": "Save space on the phone (optional)",
+    "space": "Ignore patterns apply only on the device where they are entered. To keep the mail files off the phone, open the folder Volition in Möbius Sync or Syncthing-Fork, add the line <code>Files/Mail</code> under Ignore Patterns and save, best right after accepting the folder. The files stay on this server and the other devices."
+  }
+}

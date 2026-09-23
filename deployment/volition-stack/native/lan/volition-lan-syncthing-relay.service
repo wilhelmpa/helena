@@ -1,0 +1,23 @@
+[Unit]
+Description=Volition LAN Syncthing relay to native Debian
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Syncthing keeps a connection open and pings it every 90 seconds.
+ExecStart=%h/.local/bin/volition-lan-ssh-relay --bind-host 192.168.2.220 --bind-port 22000 --allow-source 192.168.2.0/24 --target-host 192.168.122.58 --target-port 22000 --connect-timeout 5 --idle-timeout 900 --max-lifetime 604800 --max-connections 32
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+RestrictAddressFamilies=AF_INET
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryMax=64M
+TasksMax=64
+
+[Install]
+WantedBy=default.target

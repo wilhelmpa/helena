@@ -1,0 +1,80 @@
+{
+  "title": "设备与 Obsidian",
+  "description": "Syncthing 将 Home、各项目和 Private/ 中的笔记与文件同步到你 Mac 和手机上的 Obsidian：在家时直接同步，外出时通过加密中继同步。",
+  "loadError": "无法读取同步状态。",
+  "ownerOnly": "只有实例所有者可以管理设备。",
+  "unavailable": {
+    "unconfiguredTitle": "Syncthing 尚未设置",
+    "unconfigured": "Plan 在此服务器上没有可用的 Syncthing 密钥。请安装 Debian 软件包 syncthing，并以 root 身份运行 <code>deployment/volition-stack/native/syncthing/setup.sh</code>。",
+    "unreachableTitle": "无法连接 Syncthing",
+    "unreachable": "此服务器上未安装 Syncthing，或服务 <code>volition-syncthing</code> 未运行。"
+  },
+  "server": {
+    "title": "此服务器",
+    "hint": "在你设备上的 Syncthing 中添加此设备 ID：扫描二维码或复制 ID。",
+    "qrAlt": "此服务器设备 ID 的二维码",
+    "copied": "设备 ID 已复制",
+    "copyFailed": "无法复制。请选中 ID 手动复制。",
+    "version": "Syncthing {version}",
+    "discoveryOn": "全局发现和中继已开启。离家的设备会通过 Syncthing 发现服务器找到此服务器，无法直连时通过中继连接。文件始终保持端到端加密。",
+    "discoveryOff": "全局发现或中继已关闭。设备只有能直接访问此服务器时才会连接。"
+  },
+  "folder": {
+    "title": "同步状态",
+    "notSetUp": "Syncthing 中缺少文件夹 Volition。请在此服务器上重新运行 Syncthing 设置。",
+    "state": {
+      "idle": "最新",
+      "scanning": "扫描中",
+      "syncing": "同步中",
+      "error": "错误"
+    },
+    "lastFile": "最近收到的文件",
+    "lastFileValue": "{time}：{name}",
+    "lastScan": "最近一次扫描",
+    "never": "从未",
+    "needItems": "还有 {count} 个文件待同步",
+    "fileErrors": "{count} 个文件无法同步",
+    "error": "文件夹错误：{error}"
+  },
+  "devices": {
+    "title": "设备",
+    "empty": "还没有设备在同步。下方指南介绍如何添加设备。",
+    "connected": "已连接",
+    "disconnected": "未连接",
+    "paused": "已暂停",
+    "lastSeen": "最后在线 {time}",
+    "neverSeen": "尚未出现",
+    "notShared": "文件夹 Volition 未共享给此设备。",
+    "remove": "移除",
+    "removeTitle": "移除 {name}？",
+    "removeBody": "该设备将不再与此服务器同步。设备上的文件会保留。"
+  },
+  "pending": {
+    "title": "请求连接的设备",
+    "hint": "只接受你自己的设备：被接受的设备会收到所有笔记和文件，包括 Private/。",
+    "requested": "{time} 从 {address} 请求",
+    "accept": "接受",
+    "accepted": "已接受 {name}。现在请在该设备上接受文件夹 Volition。"
+  },
+  "conflicts": {
+    "title": "冲突",
+    "hint": "当一个文件在两台设备同步之前都被修改时，Syncthing 会保留一份冲突副本。在 Obsidian 中打开两个文件，把要保留的内容合并到原文件，然后删除冲突副本；删除会同步到每台设备。",
+    "empty": "没有冲突。",
+    "loadError": "无法读取冲突。",
+    "original": "原文件：{path}",
+    "modified": "修改于 {time}"
+  },
+  "guide": {
+    "title": "设置设备",
+    "step1": "在设备上安装 Syncthing 和 Obsidian。Mac：来自 syncthing.net 的 Syncthing 应用。iPhone：App Store 中的 Möbius Sync。Android：F-Droid 或 Google Play 中的 Syncthing-Fork。",
+    "step2": "在 Syncthing 中添加设备，输入此服务器的设备 ID，或扫描二维码。",
+    "step2Lan": "如需在家直接同步，请将设备地址填写为 <code>{address}, dynamic</code>。",
+    "step3": "随后该设备会出现在上方的“请求连接的设备”中。选择“接受”。",
+    "step4": "在设备上将文件夹 Volition 接受到名为 Volition 的文件夹：Mac 上为 <code>~/Volition</code>，Android 上为内部存储中的 <code>Volition</code>，iPhone 上为 Obsidian 仓库 Volition。",
+    "step5": "等待设备上的文件夹显示“最新”，然后在 Obsidian 中将文件夹 Volition 作为仓库打开。Plan 中的链接会打开仓库 Volition。",
+    "iphoneTitle": "iPhone",
+    "iphone": "在 iPhone 上，Obsidian 只能打开自己的文件夹。请先在 Obsidian 中创建仓库 Volition（存放在 iPhone 上，不要放在 iCloud），然后关闭 Obsidian。接着在 Möbius Sync 中把文件夹 Volition 放到“我的 iPhone › Obsidian › Volition”。Obsidian 创建仓库时会写入自己的设置，因此首次同步后 <code>.obsidian</code> 中可能出现冲突；这些冲突副本包含此服务器的默认设置。Möbius Sync 在应用打开或 iOS 允许其后台运行时进行同步。",
+    "spaceTitle": "节省手机空间（可选）",
+    "space": "忽略模式只在填写它的设备上生效。如不想把邮件文件下载到手机，请在 Möbius Sync 或 Syncthing-Fork 中打开文件夹 Volition，在忽略模式中添加一行 <code>Files/Mail</code> 并保存，最好在接受文件夹后立即进行。这些文件仍保留在此服务器和其他设备上。"
+  }
+}

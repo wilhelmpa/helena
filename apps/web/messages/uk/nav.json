@@ -1,5 +1,6 @@
 {
   "inbox": "Вхідні",
+  "files": "Файли",
   "approvals": "Погодження",
   "dashboards": "Дашборди",
   "workItems": "Задачі",
@@ -31,6 +32,7 @@
   "newTeam": "Нова команда",
   "manageTeams": "Керування командами",
   "role": "Роль: {role}",
+  "basedOn": "Базується на It’s a Plan (AGPL-3.0)",
   "search": "Пошук або команда…",
   "searchHint": "Пошук або команда ({key})",
   "newIssueHint": "Нова задача ({key})",
@@ -97,6 +99,7 @@
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
+  "devices": "Пристрої та Obsidian",
   "teamSettings": "Налаштування команди",
   "teamOrchestration": "Команда й оркестрація",
   "overview": "Огляд",

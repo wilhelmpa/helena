@@ -201,13 +201,13 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       }
 
       const body = emailBody(
-        "This test confirms that It's a Plan can send email through the configured provider.",
+        'This test confirms that Volition can send email through the configured provider.',
       );
       const result = await sendEmail(
         { ...config, smtp: { ...config.smtp, timeout: config.smtp.timeout ?? 15 } },
         {
           to: current.email,
-          subject: "It's a Plan email test",
+          subject: 'Volition email test',
           ...body,
         },
       );

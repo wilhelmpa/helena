@@ -97,7 +97,6 @@ export default function WorkspacePanel({
       terminal: t('terminal'),
       code: t('code'),
       browser: t('browser'),
-      files: t('files'),
       inbox: t('inbox'),
       mail: t('mail'),
       connections: t('connections'),
@@ -293,13 +292,7 @@ export default function WorkspacePanel({
           return liveBase ? (
             <WorkspaceBrowserLive key={frame.key} base={liveBase} {...props} />
           ) : (
-            <WorkspaceFrame
-              key={frame.key}
-              url={frame.url}
-              title={frame.title}
-              tool={frame.tool}
-              {...props}
-            />
+            <WorkspaceFrame key={frame.key} url={frame.url} title={frame.title} {...props} />
           );
         })}
         {visitedContents.map((id) => {

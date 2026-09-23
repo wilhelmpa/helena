@@ -7,7 +7,7 @@ import { assertPermission, assertProjectOwner, requireUser } from '#shared/acces
 import { HttpError } from '#shared/lib';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { paginate } from '#shared/pagination';
-import { deleteObject } from '#shared/s3';
+import { purgeAttachmentFiles } from '#modules/attachments/vault';
 import {
   createIssue,
   searchIssues,
@@ -166,21 +166,6 @@ function disposition(
 ): SubtaskDisposition | undefined {
   if (!input?.subtasks) return undefined;
   return { mode: input.subtasks, newParentId: input.newParentId };
-}
-
-// Removes the deleted issues' attachment objects. A failed object delete only
-// orphans bytes, so it does not fail the request.
-async function purgeObjects(attachments: { s3Key: string }[]): Promise<void> {
-  await Promise.all(
-    attachments.map((a) =>
-      deleteObject(a.s3Key).catch((err) => {
-        console.error(
-          `[planner] failed to delete object ${a.s3Key}:`,
-          err instanceof Error ? err.message : err,
-        );
-      }),
-    ),
-  );
 }
 
 // The cursor travels as JSON in the query string. A malformed one gives null, which
@@ -368,7 +353,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
         requireUser(user).id,
       );
       const { deleted, attachments } = await bulkDeleteIssues(project.id, body.ids);
-      await purgeObjects([...fromSubtasks, ...attachments]);
+      await purgeAttachmentFiles([...fromSubtasks, ...attachments]);
       return { deleted };
     },
     {
@@ -768,7 +753,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       );
       const attachments = await deleteIssue(params.issueId);
       if (!attachments) throw new HttpError(404, 'Issue not found');
-      await purgeObjects([...fromSubtasks, ...attachments]);
+      await purgeAttachmentFiles([...fromSubtasks, ...attachments]);
       return noContent();
     },
     {

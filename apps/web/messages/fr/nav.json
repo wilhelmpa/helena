@@ -1,5 +1,6 @@
 {
   "inbox": "Boîte de réception",
+  "files": "Fichiers",
   "approvals": "Approbations",
   "dashboards": "Tableaux de bord",
   "workItems": "Tickets",
@@ -31,6 +32,7 @@
   "newTeam": "Nouvelle équipe",
   "manageTeams": "Gérer les équipes",
   "role": "Rôle : {role}",
+  "basedOn": "Basé sur It’s a Plan (AGPL-3.0)",
   "search": "Rechercher ou lancer une commande…",
   "searchHint": "Rechercher ou lancer une commande ({key})",
   "newIssueHint": "Nouveau ticket ({key})",
@@ -97,6 +99,7 @@
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
+  "devices": "Appareils et Obsidian",
   "teamSettings": "Paramètres de l'équipe",
   "teamOrchestration": "Équipe et orchestration",
   "overview": "Vue d'ensemble",

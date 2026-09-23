@@ -1,0 +1,111 @@
+{
+  "title": "Archivos",
+  "projectDescription": "Documentos, adjuntos y código de este proyecto",
+  "roots": {
+    "label": "Carpetas",
+    "vault": "Conocimiento",
+    "code": "Código",
+    "home": "Inicio",
+    "private": "Privado",
+    "templates": "Plantillas",
+    "projects": "Proyectos"
+  },
+  "toolbar": {
+    "filter": "Filtrar por nombre",
+    "sort": "Ordenar",
+    "sortName": "Nombre",
+    "sortModified": "Modificado",
+    "sortSize": "Tamaño",
+    "ascending": "Ascendente",
+    "descending": "Descendente",
+    "list": "Lista",
+    "grid": "Cuadrícula",
+    "upload": "Subir",
+    "newFolder": "Nueva carpeta",
+    "newFile": "Nueva nota",
+    "openInCode": "Abrir en VS Code"
+  },
+  "breadcrumb": "Ruta de la carpeta",
+  "modified": "{date, date, medium}",
+  "empty": {
+    "folder": "Esta carpeta está vacía.",
+    "folderHint": "Suelta archivos aquí o usa Subir.",
+    "filter": "Ninguna entrada coincide con «{filter}».",
+    "readOnly": "Plan muestra esta carpeta en solo lectura."
+  },
+  "unreadable": {
+    "title": "Plan no puede leer esta carpeta",
+    "body": "El espacio de trabajo pertenece al usuario de los agentes en el servidor. Ábrelo en VS Code.",
+    "missing": "Esta carpeta no existe en el servidor."
+  },
+  "loadError": "No se pudo cargar la carpeta.",
+  "retry": "Reintentar",
+  "truncated": "Solo se muestran las primeras {count} entradas.",
+  "dropToUpload": "Suelta para subir a {folder}",
+  "uploaded": "{count, plural, one {# archivo subido} other {# archivos subidos}}",
+  "moved": "Movido a {folder}",
+  "trashed": "{name} se movió a la papelera",
+  "pathCopied": "Ruta copiada",
+  "copyFailed": "No se pudo copiar la ruta",
+  "actions": {
+    "more": "Acciones para {name}",
+    "download": "Descargar",
+    "rename": "Renombrar",
+    "move": "Mover",
+    "copyPath": "Copiar ruta",
+    "openInObsidian": "Abrir en Obsidian",
+    "openInCode": "Abrir en VS Code",
+    "openInDocs": "Abrir en Docs",
+    "linkToTask": "Vincular a una tarea",
+    "trash": "Mover a la papelera",
+    "showInFolder": "Mostrar en la carpeta"
+  },
+  "dialog": {
+    "newFolder": "Nueva carpeta",
+    "newFile": "Nueva nota",
+    "rename": "Renombrar",
+    "name": "Nombre",
+    "folderName": "Nueva carpeta",
+    "fileName": "Nota.md",
+    "fileHint": "Un archivo .md o .txt. Una nota Markdown se abre en Docs.",
+    "create": "Crear",
+    "save": "Guardar",
+    "cancel": "Cancelar"
+  },
+  "moveDialog": {
+    "title": "Mover {name}",
+    "description": "Abre la carpeta de destino.",
+    "here": "Mover aquí"
+  },
+  "trashDialog": {
+    "title": "¿Mover {name} a la papelera?",
+    "description": "Se mueve a la carpeta de papelera del vault y puede restaurarse desde allí.",
+    "confirm": "Mover a la papelera"
+  },
+  "linkDialog": {
+    "title": "Vincular a una tarea",
+    "prompt": "Buscar tareas",
+    "linked": "Vinculado a {identifier}"
+  },
+  "viewer": {
+    "loading": "Cargando…",
+    "tooLarge": "El archivo es demasiado grande para mostrarlo. Descárgalo.",
+    "error": "No se pudo mostrar el archivo.",
+    "noPreview": "No hay vista previa para este tipo de archivo.",
+    "extracted": "Texto extraído",
+    "noExtracted": "Todavía no hay texto extraído para este archivo.",
+    "zoomIn": "Ampliar",
+    "zoomOut": "Reducir",
+    "zoomReset": "Ajustar"
+  },
+  "picker": {
+    "up": "Subir una carpeta",
+    "empty": "No hay nada aquí.",
+    "choose": "Elegir"
+  },
+  "attachment": {
+    "missing": "Falta el archivo",
+    "relink": "Elegir el archivo de nuevo",
+    "relinkTitle": "Elegir el archivo para {name}"
+  }
+}

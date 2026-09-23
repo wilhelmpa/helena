@@ -1,5 +1,6 @@
 {
   "inbox": "صندوق الوارد",
+  "files": "الملفات",
   "approvals": "الموافقات",
   "dashboards": "لوحات المعلومات",
   "workItems": "عناصر العمل (work items)",
@@ -31,6 +32,7 @@
   "newTeam": "فريق جديد",
   "manageTeams": "إدارة الفرق",
   "role": "الدور: {role}",
+  "basedOn": "مبني على It’s a Plan (AGPL-3.0)",
   "search": "ابحث أو نفّذ أمرًا…",
   "searchHint": "ابحث أو نفّذ أمرًا ({key})",
   "newIssueHint": "مهمة جديدة ({key})",
@@ -97,6 +99,7 @@
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
+  "devices": "الأجهزة وObsidian",
   "teamSettings": "إعدادات الفريق",
   "teamOrchestration": "الفريق والتنسيق",
   "overview": "نظرة عامة",

@@ -4,10 +4,12 @@ import {
   BookText,
   Building2,
   Clock3,
+  Folder,
   Inbox,
   KeyRound,
   LayoutGrid,
   ListTodo,
+  MonitorSmartphone,
   Plug,
   Radio,
   ShieldCheck,
@@ -32,6 +34,7 @@ const icons = {
   overview: LayoutGrid,
   allWorkItems: ListTodo,
   inbox: Inbox,
+  files: Folder,
   approvals: ShieldCheck,
   agentPool: Bot,
   organization: Building2,
@@ -42,6 +45,7 @@ const icons = {
   mcps: Radio,
   connections: Plug,
   vault: KeyRound,
+  devices: MonitorSmartphone,
   teamSettings: UsersRound,
 } as const;
 

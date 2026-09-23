@@ -1,8 +1,9 @@
 # Volition architecture
 
-Volition runs It's a Plan, Mastra and Hermes natively on Kingston (Debian, systemd, no
-Docker). Each component has one responsibility. This document is the reference for where a
-feature belongs; a change that gives a second component the same responsibility is wrong.
+Volition runs Plan (this repository, a fork of It's a Plan), Mastra and Hermes natively on
+Kingston (Debian, systemd, no Docker). Each component has one responsibility. This document is
+the reference for where a feature belongs; a change that gives a second component the same
+responsibility is wrong.
 
 ## Responsibilities
 
@@ -11,7 +12,7 @@ feature belongs; a change that gives a second component the same responsibility 
 | Role | Executes agent work | Decides what runs, when, by whom and in which order | Stores all configuration and results; the only user interface |
 | Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Workflows, event ingress, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, run history. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, secrets, connections, mail accounts, browser logins, approvals, activity. |
 | Does not | Schedule business work (Hermes cron is limited to Hermes maintenance). Delegate inside automated runs, apart from a coordinator's sub-agents (see Agent structure). Hold its own configuration: profiles are generated from Plan. | Call an LLM provider directly. Serve a user interface (Studio is a debugging tool). Store project or agent data of its own. | Run agents itself. Schedule work. Contain workflow logic beyond simple issue rules. |
-| Stores | Sessions, memory, learned skills | Run state: runs, checkpoints, schedules | Configuration and results |
+| Stores | Sessions, memory, learned skills | Run state: runs and checkpoints for 90 days, schedules | Configuration and results |
 
 The Kingston integration service (`deployment/volition-stack/integration/server.mjs`) is the
 only component that changes operating-system resources: project workspaces, browser units,
@@ -101,6 +102,20 @@ and makes no decisions.
   and in its vault folder. Plan stores the folder name; the integration service creates,
   moves and trashes the folders with the project's provisioning. A run for a task of an area
   starts in the area's workspace folder.
+- A local process is not trusted for being local. Mastra answers only its proxy, which
+  holds a token created on every start. The proxy accepts control requests with a token
+  only Plan's API and worker hold, and Studio requests only with a token Nginx adds after
+  Plan confirmed the instance owner. No process of the Unix user Hermes runs as can read
+  either token. The complete trust model is in
+  `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
+- Documents are files in the vault (`PROJECT_VAULT_ROOT`): `Home/`, `Templates/`,
+  `Private/` (the owner's; group `volition-private`, which the agents' user is not in),
+  and `Projects/<KEY>/`. Plan's Files page reads and writes them directly; a file deleted
+  there moves to `.trash/` at the same relative path (`Private/.trash/` for `Private/`).
+  A project's workspace is shown read-only next to its vault folder. Task and comment
+  attachments are stored once, in `Projects/<KEY>/Files/Tasks/<KEY>-<n>/`, and the
+  attachment row keeps the vault path and the sha256; a row can also link a file that
+  was in the vault before. Agents read the same files on disk.
 - Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
   for one run as environment variables, website logins as entries of the profile's Hermes
   vault, and SSH keys as files of the profile. The model sees secret names only.
