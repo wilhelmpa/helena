@@ -262,9 +262,9 @@ def unit_properties(path: str, section: str, replace: dict[str, str]) -> list[tu
                 continue
             if current != section:
                 continue
-            key, _, value = line.partition('=')
             for old, new in replace.items():
-                value = value.replace(old, new)
+                line = line.replace(old, new)
+            key, _, value = line.partition('=')
             properties.append((key, value))
     return properties
 
