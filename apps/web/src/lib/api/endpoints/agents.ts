@@ -40,6 +40,9 @@ export interface AgentRuntimePolicy {
   // seconds (60-7200). Chat answers are not limited.
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
+  // Unset, the agent learns and the curator stays off.
+  learning?: boolean;
+  curator?: boolean;
 }
 
 // A managed file the runtime found changed outside Plan. It wrote Plan's version and kept
@@ -58,12 +61,19 @@ export interface AgentInventorySkill {
   category: string | null;
   description: string;
   origin: AgentSkillOrigin;
+  // The skill's directory in the runtime, which an action names it by. Absent from an
+  // older runner.
+  path?: string;
+  pinned?: boolean;
 }
 
 export interface AgentInventoryMemory {
   file: 'MEMORY.md' | 'USER.md';
   content: string;
   truncated: boolean;
+  // Of the whole file, which an edit names as the version it was made on.
+  sha256?: string;
+  chars?: number;
 }
 
 // What the agent can do in Hermes, as its runner last reported it. Hermes owns all of it;
@@ -73,6 +83,8 @@ export interface AgentRuntimeInventory {
   mcpServers: string[];
   skills: AgentInventorySkill[];
   memory: AgentInventoryMemory[];
+  // Jobs in Hermes' own scheduler, which run outside Plan.
+  cronJobs?: number;
 }
 
 export interface AgentRuntimeState {
@@ -82,6 +94,8 @@ export interface AgentRuntimeState {
   capabilities: string[];
   detail: string | null;
   conflicts: AgentRuntimeConflict[];
+  // What the runner put back after it was changed or removed outside Plan.
+  restored: string[];
   // Null until a runner that reads it reports one.
   inventory: AgentRuntimeInventory | null;
   reportedAt: string | null;

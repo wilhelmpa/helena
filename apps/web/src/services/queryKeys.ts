@@ -203,6 +203,11 @@ export const qk = {
   mcpServers: (teamId: number) => ['mcpServers', teamId] as const,
   agentMcpServers: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'mcp-servers'] as const,
+  // What an agent learned: the actions waiting for its runner, and one learned skill.
+  agentRuntimeActions: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
+  learnedSkill: (teamId: number, agentId: number, path: string) =>
+    ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,
