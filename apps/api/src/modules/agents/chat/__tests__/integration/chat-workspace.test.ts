@@ -104,7 +104,7 @@ describe('chat list', () => {
     expect((await chat.get()).status).toBe(404);
     expect((await chat.patch({ title: 'Mine now' })).status).toBe(404);
     expect((await chat.pin.put()).status).toBe(404);
-    expect((await chat.delete({ query: {} })).status).toBe(404);
+    expect((await chat.delete()).status).toBe(404);
   });
 
   it('finds a chat by its title and by the text of its messages', async () => {
@@ -143,7 +143,7 @@ describe('chat list', () => {
     expect(archived.data!.items.map((c) => c.title)).toEqual(['Renamed']);
     expect(archived.data!.items[0].archivedAt).not.toBeNull();
 
-    expect((await chat.delete({ query: {} })).status).toBe(204);
+    expect((await chat.delete()).status).toBe(204);
     expect((await asOwner.chats.get({ query: { view: 'archived' } })).data!.total).toBe(0);
     const trash = await asOwner.chats.get({ query: { view: 'trash' } });
     expect(trash.data!.items.map((c) => c.title)).toEqual(['Renamed']);
@@ -154,9 +154,9 @@ describe('chat list', () => {
     expect((await asOwner.chats.get({ query: { view: 'archived' } })).data!.total).toBe(1);
 
     // Only a chat in the trash is deleted for good.
-    expect((await chat.delete({ query: { permanent: true } })).status).toBe(404);
-    await chat.delete({ query: {} });
-    expect((await chat.delete({ query: { permanent: true } })).status).toBe(204);
+    expect((await chat.delete(undefined, { query: { permanent: true } })).status).toBe(404);
+    await chat.delete();
+    expect((await chat.delete(undefined, { query: { permanent: true } })).status).toBe(204);
     expect((await chat.get()).status).toBe(404);
   });
 
@@ -182,7 +182,7 @@ describe('chat list', () => {
       (await home.chat.post({ prompt: 'From Home', threadId: sent.data!.threadId })).status,
     ).toBe(404);
 
-    await asOwner.chats({ threadId: sent.data!.threadId }).delete({ query: {} });
+    await asOwner.chats({ threadId: sent.data!.threadId }).delete();
     const again = await chatOf(asOwner, 'MKT', mia.id).chat.post({
       prompt: 'Still there?',
       threadId: sent.data!.threadId,
