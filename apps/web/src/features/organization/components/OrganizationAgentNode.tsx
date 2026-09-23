@@ -3,6 +3,7 @@
 import { Bot, Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
+import { AgentTemplateBadge } from '@/components/common/agent-chat/AgentTemplateBadge';
 import {
   organizationAgentRole,
   type OrganizationAgentNode as AgentNode,
@@ -38,10 +39,17 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
               </p>
             </div>
           </div>
-          <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-            <Circle className={`size-2.5 ${statusClass[agent.runtimeState.status]}`} />
-            {agent.runtimeState.adapter ?? agent.kind}
-          </span>
+          {agent.template ? (
+            // A pool template runs nowhere by design — its own runtimeState.status
+            // defaults to 'offline' the same as an agent whose runner actually dropped,
+            // which is exactly the mix-up this badge exists to avoid.
+            <AgentTemplateBadge />
+          ) : (
+            <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+              <Circle className={`size-2.5 ${statusClass[agent.runtimeState.status]}`} />
+              {agent.runtimeState.adapter ?? agent.kind}
+            </span>
+          )}
         </div>
         {agent.capabilities.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">

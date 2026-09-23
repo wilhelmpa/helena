@@ -387,6 +387,7 @@
     "usernamePlaceholder": "ex. bot-triagem",
     "usernameHint": "Letras, dígitos, pontos, hífens e sublinhados. Até 64 caracteres.",
     "template": "Modelo",
+    "templateCopyCount": "{count, plural, =0 {sem cópias} one {# cópia} other {# cópias}}",
     "templateHint": "Um modelo não é executado em lugar nenhum e não trabalha em nenhum projeto. Os projetos adicionam cópias dele como seus próprios especialistas. Ativá-lo remove o agente dos seus projetos.",
     "templates": "Modelos",
     "templatesHint": "Os projetos adicionam cópias destes modelos como seus próprios especialistas. O conhecimento compartilhado entre as cópias fica na biblioteca de habilidades; cada cópia mantém a própria memória.",

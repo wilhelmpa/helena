@@ -387,6 +387,7 @@
     "usernamePlaceholder": "e.g. triage-bot",
     "usernameHint": "Letters, digits, dots, dashes, and underscores. Up to 64 characters.",
     "template": "Template",
+    "templateCopyCount": "{count, plural, =0 {no copies} one {# copy} other {# copies}}",
     "templateHint": "A template runs nowhere and works in no project. Projects add copies of it as their own specialists. Turning it on takes the agent out of its projects.",
     "templates": "Templates",
     "templatesHint": "Projects add copies of these as their own specialists. Knowledge the copies share belongs in the skills library; each copy keeps its own memory.",

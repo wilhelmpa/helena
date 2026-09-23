@@ -387,6 +387,7 @@
     "usernamePlaceholder": "z. B. triage-bot",
     "usernameHint": "Buchstaben, Ziffern, Punkte, Bindestriche und Unterstriche. Bis zu 64 Zeichen.",
     "template": "Vorlage",
+    "templateCopyCount": "{count, plural, =0 {keine Kopien} one {# Kopie} other {# Kopien}}",
     "templateHint": "Eine Vorlage läuft nirgends und arbeitet in keinem Projekt. Projekte fügen Kopien davon als eigene Spezialisten hinzu. Wenn du sie einschaltest, verlässt der Agent seine Projekte.",
     "templates": "Vorlagen",
     "templatesHint": "Projekte fügen Kopien davon als eigene Spezialisten hinzu. Wissen, das die Kopien teilen, gehört in die Skill-Bibliothek; jede Kopie hat ihr eigenes Gedächtnis.",

@@ -28,6 +28,7 @@ import { useTranslations } from 'next-intl';
 export function TeamAiAgentRow({
   agent,
   providerLabel,
+  copyCount,
   onChat,
   onRuns,
   onEdit,
@@ -35,6 +36,9 @@ export function TeamAiAgentRow({
 }: {
   agent: AiAgent;
   providerLabel: (key: string) => string;
+  // Set only for a template row (how many project copies of it exist); forwarded to
+  // AgentRunnerStatus's template badge.
+  copyCount?: number;
   onChat: () => void;
   onRuns: () => void;
   onEdit: () => void;
@@ -93,7 +97,7 @@ export function TeamAiAgentRow({
           <AgentMetaRow agent={agent} providerLabel={providerLabel} />
         ) : (
           <div className="flex flex-col gap-1">
-            <AgentRunnerStatus agent={agent} />
+            <AgentRunnerStatus agent={agent} copyCount={copyCount} />
             <span className="text-xs text-muted-foreground">
               {agent.apiKeyStart ? t('apiKeyValue', { start: agent.apiKeyStart }) : t('apiKey')}
             </span>
