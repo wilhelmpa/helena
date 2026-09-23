@@ -6,8 +6,8 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { loadProjectContext, resolveRoles } from '#modules/pipelines/project-context';
 import { bootstrapHomeAgent } from '../../../../../scripts/bootstrap-home-agent';
-import { runtimePolicySnapshot } from '../../runtime-policy/service';
-import { getAgentById } from '../service';
+import { runtimePolicySnapshot } from '../../../runtime-policy/service';
+import { getAgentById } from '../../service';
 
 // End to end: Helena is the source of truth for a template and its copies (the owner's
 // requirement), so a change to a template must reach, in order: the copy's own row,
