@@ -121,6 +121,13 @@ class PlanApprovalGuardTest(unittest.TestCase):
         self.assertBlocked(self.check("terminal", command="git reset --hard"), "not a run id")
         self.assertEqual(FakePlan.requests, [])
 
+    def test_blocks_hermes_cron_jobs_in_runs_and_chats(self):
+        call = {"action": "create", "schedule": "every 1h", "prompt": "Check the inbox"}
+        self.assertBlocked(self.check("cronjob_manage", **call), "routine in Plan")
+        del os.environ["ITSAPLAN_RUN_ID"]
+        self.assertBlocked(self.check("cronjob_manage", **call), "routine in Plan")
+        self.assertEqual(FakePlan.requests, [])
+
     def test_leaves_chats_and_other_tools_to_hermes(self):
         self.assertIsNone(self.check("write_file", path="notes.md", content="rm -rf /"))
         del os.environ["ITSAPLAN_RUN_ID"]
@@ -141,13 +148,14 @@ for command in sys.argv[1:]:
     blocked, _ = _dispatch_pre_tool_call_hooks("terminal", {"command": command})
     guard = check_all_command_guards(command, "local")
     result[command] = {"plugin": blocked, "hermes": guard["approved"]}
+result["cronjob_manage"] = _dispatch_pre_tool_call_hooks("cronjob_manage", {"action": "list"})[0]
 print(json.dumps(result))
 """
 
 
 @unittest.skipUnless(HERMES_RUNTIME, "Hermes' dependencies are not installed")
 class HermesLoadsTheGuardTest(unittest.TestCase):
-    def test_single_query_runs_leave_the_decision_to_the_guard_and_keep_the_hard_block_list(self):
+    def test_single_query_runs_leave_the_decision_to_the_guard(self):
         server = serve_plan()
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
@@ -181,6 +189,7 @@ class HermesLoadsTheGuardTest(unittest.TestCase):
         self.assertTrue(result["git reset --hard"]["hermes"])
         self.assertIn("not even with an approval", result["rm -rf /"]["plugin"])
         self.assertFalse(result["rm -rf /"]["hermes"])
+        self.assertIn("routine in Plan", result["cronjob_manage"])
 
 
 if __name__ == "__main__":

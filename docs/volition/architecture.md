@@ -95,7 +95,8 @@ and makes no decisions.
   page of a project and the Home overview manage routines through the control API. Every
   fire of a schedule gets its own event id from its Mastra run id and is listed with the
   runs of its project. A fire that starts more than ten minutes late is skipped, and so is
-  one whose routine task is still open.
+  one whose routine task is still open. Agents get no Hermes cron: the runner never passes
+  the `cronjob` toolset, and the approval guard plugin blocks the tool.
 - Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
   for one run as environment variables, website logins as entries of the profile's Hermes
   vault, and SSH keys as files of the profile. The model sees secret names only.

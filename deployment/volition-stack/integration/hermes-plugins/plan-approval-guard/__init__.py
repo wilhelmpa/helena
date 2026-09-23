@@ -4,6 +4,9 @@ In a run of a Plan agent (``ITSAPLAN_RUN_ID`` is set), a terminal command that H
 as dangerous and every execute_code script run only when a person approved exactly that text in
 Plan, for this run. Hermes' hard block list is never approvable. Chats and Hermes sessions
 started outside the Plan runner are left to Hermes' own approval settings.
+
+Hermes' own scheduler is blocked everywhere: Plan schedules work through its routines, so a
+Hermes cron job would run the work a second time.
 """
 
 from __future__ import annotations
@@ -18,6 +21,11 @@ from tools.approval_detection import detect_dangerous_command, detect_hardline_c
 # Below Hermes' pre_tool_call timeout (plugins.hook_callback_timeout, 30 seconds by default),
 # which would block the call with a less helpful message.
 PLAN_TIMEOUT_SECONDS = 10
+
+CRON_MESSAGE = (
+    "BLOCKED: Hermes cron jobs are not used here. Recurring work is a routine in Plan, which "
+    "a person sets up on the project's Schedules page; a Hermes job would run the work twice."
+)
 
 
 def approved_commands(run_id: str) -> list[str]:
@@ -69,6 +77,8 @@ def block_message(tool_name: str, args: dict[str, Any]) -> str | None:
 
 
 def check_tool_call(tool_name: str = "", args: Any = None, **_: Any) -> dict[str, str] | None:
+    if tool_name == "cronjob_manage":
+        return {"action": "block", "message": CRON_MESSAGE}
     if not os.environ.get("ITSAPLAN_RUN_ID") or not isinstance(args, dict):
         return None
     try:

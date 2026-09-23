@@ -539,7 +539,6 @@
         "computer_use": "Controls the desktop with the mouse and keyboard.",
         "connections": "Uses connected accounts and remote connectors.",
         "context_engine": "Tools of the active context engine.",
-        "cronjob": "Creates and manages scheduled jobs.",
         "delegation": "Hands subtasks to subagents.",
         "file": "Reads, writes, edits and searches files.",
         "image_gen": "Generates images.",

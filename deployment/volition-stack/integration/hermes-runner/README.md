@@ -42,8 +42,9 @@ store; credentials are never embedded in the image or repository. Restarting
 
 The catalog script also writes the `hermes` field of the runner config: the toolsets and MCP
 servers `config.yaml` enables for the cli platform, names only. The runner reports them to Plan
-with each agent's skills and memory, and builds `--toolsets` from them when the owner turns a
-toolset off for an agent. A change to `config.yaml` reaches Plan with the next runner restart.
+with each agent's skills and memory, and passes them as `--toolsets` to every run and chat,
+without the toolsets the owner turned off for the agent and without `cronjob`. A change to
+`config.yaml` reaches Plan with the next runner restart.
 
 ## Run limits
 
@@ -74,6 +75,14 @@ lets a `hermes chat` query run a command that Hermes' pattern detection flags as
 The catalog script links the plugin from the live checkout into the `plugins` directory of every
 Hermes home, and it stops the runner start when `single_query_mode` is `approve` but the plugin is
 not in `plugins.enabled`.
+
+## Hermes cron
+
+Recurring work is a routine in Plan, run through Mastra; a Hermes cron job would run the same work
+a second time. The runner never passes the `cronjob` toolset to Hermes, Plan does not offer it as a
+toggle, and the plugin blocks the `cronjob_manage` tool in every session. The Hermes cron ticker
+has no switch in `config.yaml`: `hermes dashboard` starts it when `HERMES_DESKTOP=1` is set, which
+`volition-hermes-serve.service` does, and it ticks the store of every profile.
 
 ## Secret boundary
 

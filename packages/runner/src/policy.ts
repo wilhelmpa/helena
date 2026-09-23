@@ -354,17 +354,21 @@ export class HermesPolicyMaterializer {
   }
 }
 
-// The `--toolsets` list for Hermes: the profile's toolsets without the denied ones, plus
-// every MCP server, which an explicit list has to name to keep. Null while nothing the
-// profile enables is denied, which leaves Hermes on the profile's own selection. Without
+// Hermes' own scheduler. Plan schedules work through its routines, so a job Hermes ran
+// on its own would run the work a second time.
+const WITHHELD_TOOLSETS = ['cronjob'];
+
+// The `--toolsets` list for Hermes: the profile's toolsets without the withheld and the
+// denied ones, plus every MCP server, which an explicit list has to name to keep. Without
 // the profile the runner reports no toolsets, so Plan offers none to turn off.
 export function allowedToolsets(
   profile: HermesProfile | undefined,
   denied: string[],
 ): string[] | null {
   if (!profile) return null;
-  const kept = profile.toolsets.filter((name) => !denied.includes(name));
-  if (kept.length === profile.toolsets.length) return null;
+  const kept = profile.toolsets.filter(
+    (name) => !WITHHELD_TOOLSETS.includes(name) && !denied.includes(name),
+  );
   const toolsets = [...kept, ...profile.mcpServers];
   // Hermes reads an empty list as no selection and enables every toolset.
   if (toolsets.length === 0) {

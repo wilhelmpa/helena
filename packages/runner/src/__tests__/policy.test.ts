@@ -355,9 +355,9 @@ describe('Hermes runtime policy synchronizer', () => {
       { profile },
     );
 
-    expect(sync.toolsets()).toBeNull();
+    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
     await sync.ensure();
-    expect(sync.toolsets()).toBeNull();
+    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
     await sync.ensure();
     expect(sync.toolsets()).toEqual(['file', 'web', 'itsaplan']);
   });
@@ -366,15 +366,29 @@ describe('Hermes runtime policy synchronizer', () => {
 describe('Hermes toolset restriction', () => {
   const profile = { toolsets: ['browser', 'file', 'terminal'], mcpServers: ['itsaplan'] };
 
-  it('leaves Hermes on its own selection while nothing it enables is denied', () => {
-    expect(allowedToolsets(profile, [])).toBeNull();
-    expect(allowedToolsets(profile, ['message.send', 'itsaplan'])).toBeNull();
+  it('names the profile toolsets and every MCP server while nothing is denied', () => {
+    expect(allowedToolsets(profile, [])).toEqual(['browser', 'file', 'terminal', 'itsaplan']);
+    expect(allowedToolsets(profile, ['message.send', 'itsaplan'])).toEqual([
+      'browser',
+      'file',
+      'terminal',
+      'itsaplan',
+    ]);
+  });
+
+  it('leaves Hermes on its own selection without the profile', () => {
     expect(allowedToolsets(undefined, ['terminal'])).toBeNull();
   });
 
   it('names the remaining toolsets and every MCP server', () => {
     expect(allowedToolsets(profile, ['terminal'])).toEqual(['browser', 'file', 'itsaplan']);
     expect(allowedToolsets(profile, ['browser', 'file', 'terminal'])).toEqual(['itsaplan']);
+  });
+
+  it('never passes the Hermes scheduler on, whatever the policy allows', () => {
+    const withCron = { ...profile, toolsets: ['cronjob', ...profile.toolsets] };
+    expect(allowedToolsets(withCron, [])).toEqual(['browser', 'file', 'terminal', 'itsaplan']);
+    expect(allowedToolsets(withCron, ['terminal'])).toEqual(['browser', 'file', 'itsaplan']);
   });
 
   it('refuses a list Hermes would read as no selection', () => {

@@ -210,9 +210,11 @@ filled in from the profile by whatever sets the runner up:
 "hermes": { "toolsets": ["browser", "file", "terminal", "web"], "mcpServers": ["itsaplan"] }
 ```
 
-A toolset turned off for the agent in Plan is left out of `--toolsets`, which then names the
-remaining toolsets and every MCP server. While nothing is turned off, Hermes uses the profile's
-own selection. Without the `hermes` field no toolsets are reported and none can be turned off.
+Every run and chat answer gets `--toolsets` with these toolsets and every MCP server. A toolset
+turned off for the agent in Plan is left out, and so is `cronjob`, Hermes' own scheduler: Plan
+schedules work through its routines, and a Hermes job would run it a second time. Without the
+`hermes` field no toolsets are reported, none can be turned off, and Hermes uses the profile's
+own selection.
 
 ## What the coding agent receives
 

@@ -231,6 +231,13 @@ describe('agent runner queue', () => {
     }
     expect(await read()).toEqual(inventory);
 
+    // Hermes' scheduler is never offered.
+    await asRunner['agent-runtime'].status.post({
+      ...status,
+      inventory: { ...inventory, toolsets: ['cronjob', ...inventory.toolsets] },
+    });
+    expect(await read()).toEqual(inventory);
+
     // A runner that reads no inventory reports none, which clears the one stored.
     await asRunner['agent-runtime'].status.post(status);
     expect(await read()).toBeNull();

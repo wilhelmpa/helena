@@ -539,7 +539,6 @@
         "computer_use": "Contrôle le bureau avec la souris et le clavier.",
         "connections": "Utilise les comptes connectés et les connecteurs distants.",
         "context_engine": "Outils du moteur de contexte actif.",
-        "cronjob": "Crée et gère des tâches planifiées.",
         "delegation": "Confie des sous-tâches à des sous-agents.",
         "file": "Lit, écrit, modifie et recherche des fichiers.",
         "image_gen": "Génère des images.",

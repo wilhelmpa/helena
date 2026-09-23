@@ -539,7 +539,6 @@
         "computer_use": "Controla a área de trabalho com o mouse e o teclado.",
         "connections": "Usa contas conectadas e conectores remotos.",
         "context_engine": "Ferramentas do mecanismo de contexto ativo.",
-        "cronjob": "Cria e gerencia tarefas agendadas.",
         "delegation": "Passa subtarefas para subagentes.",
         "file": "Lê, grava, edita e pesquisa arquivos.",
         "image_gen": "Gera imagens.",
