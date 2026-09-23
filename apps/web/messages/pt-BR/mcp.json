@@ -24,18 +24,18 @@
     "methodTabsAria": "Método de conexão",
     "method": "OAuth",
     "personalKey": "Chave de API",
-    "description": "Use isto para qualquer cliente MCP que suporte OAuth, como ChatGPT ou Claude. Você entra com sua conta Volition One. O cliente nunca recebe uma chave de API.",
+    "description": "Use isto para qualquer cliente MCP que suporte OAuth, como ChatGPT ou Claude. Você entra com sua conta Volition. O cliente nunca recebe uma chave de API.",
     "discovery": "Descoberta OAuth",
     "steps": {
       "add": "Adicione um app MCP no seu cliente.",
       "paste": "Cole o endpoint MCP.",
       "choose": "Escolha OAuth quando o cliente perguntar como entrar.",
-      "signIn": "Entre no Volition One e aprove o acesso."
+      "signIn": "Entre no Volition e aprove o acesso."
     },
-    "security": "O OAuth usa PKCE (S256), registro dinâmico de cliente e tokens de acesso com escopo limitado à sua conta Volition One.",
+    "security": "O OAuth usa PKCE (S256), registro dinâmico de cliente e tokens de acesso com escopo limitado à sua conta Volition.",
     "consent": {
-      "title": "Autorizar Volition One",
-      "description": "Permitir que este cliente MCP aja com as permissões da sua conta Volition One.",
+      "title": "Autorizar Volition",
+      "description": "Permitir que este cliente MCP aja com as permissões da sua conta Volition.",
       "missingCode": "Esta requisição de autorização não tem seu código de consentimento.",
       "cancel": "Cancelar",
       "pending": "Autorizando…",

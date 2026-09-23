@@ -31,6 +31,7 @@
   "newTeam": "Tim baru",
   "manageTeams": "Kelola tim",
   "role": "Peran: {role}",
+  "basedOn": "Berbasis It’s a Plan (AGPL-3.0)",
   "search": "Cari atau jalankan perintah…",
   "searchHint": "Cari atau jalankan perintah ({key})",
   "newIssueHint": "Issue baru ({key})",

@@ -55,7 +55,7 @@ mcp_servers:
   IDs and token counts are streamed to the native chat.
 - `provider` is optional and is passed as `--provider`. Set it when the selected Hermes account
   needs an explicit provider instead of automatic provider selection.
-- A chat resumes with `--resume`. The model and reasoning level selected in It's a Plan are
+- A chat resumes with `--resume`. The model and reasoning level selected in Volition are
   passed as `--model` and `--reasoning` for that request.
 - `--profile` chooses the Hermes memory, skills, credentials and sessions. The profile must
   already exist. Omit the flag to use the default profile.

@@ -31,6 +31,7 @@
   "newTeam": "Nouvelle équipe",
   "manageTeams": "Gérer les équipes",
   "role": "Rôle : {role}",
+  "basedOn": "Basé sur It’s a Plan (AGPL-3.0)",
   "search": "Rechercher ou lancer une commande…",
   "searchHint": "Rechercher ou lancer une commande ({key})",
   "newIssueHint": "Nouveau ticket ({key})",
