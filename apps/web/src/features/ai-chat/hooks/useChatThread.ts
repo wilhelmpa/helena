@@ -68,7 +68,11 @@ export function useChatThread(scopeKey: string, agentId: number | null, threadId
     hasOlder: nextPage != null,
     loadingOlder,
     loadOlder,
-    isLoading: first.isLoading,
+    // Still loading until the newest page has been copied into `pages`: the query
+    // settles one render before the effect above stores its data, and a view that
+    // restores its transcript the moment loading ends would otherwise take the empty
+    // list of that in-between render and never look again.
+    isLoading: enabled && (first.isLoading || (first.isSuccess && pages[0] !== first.data)),
     refetch: first.refetch,
   };
 }
