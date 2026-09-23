@@ -226,7 +226,8 @@
     "edited": "bearbeitet",
     "deleteComment": "Kommentar löschen",
     "deleteCommentTitle": "Diesen Kommentar löschen?",
-    "deleteCommentConfirmation": "Der Kommentar und seine Antworten werden endgültig gelöscht."
+    "deleteCommentConfirmation": "Der Kommentar und seine Antworten werden endgültig gelöscht.",
+    "agentPaused": "Pausiert"
   },
   "stats": {
     "title": "Statistik",
@@ -428,7 +429,8 @@
     "noCandidates": "Niemand zur Auswahl.",
     "area": "Bereich",
     "noArea": "Kein Bereich",
-    "changeArea": "In Bereich verschieben…"
+    "changeArea": "In Bereich verschieben…",
+    "agentPaused": "Pausiert"
   },
   "watchers": {
     "watch": "Beobachten",

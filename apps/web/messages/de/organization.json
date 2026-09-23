@@ -56,6 +56,32 @@
     "capabilitiesHint": "Kleingeschriebene Wörter, durch Kommas getrennt. Eine Aufgabe, deren Labels zu den Fähigkeiten genau eines Specialists passen, geht ohne Plan des Coordinators direkt an diesen Specialist.",
     "saved": "{name} gespeichert"
   },
+  "governance": {
+    "title": "Arbeit und Token-Obergrenzen",
+    "active": "Nimmt neue Arbeit an.",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "paused": "{name} ist pausiert",
+    "resumed": "{name} nimmt wieder Arbeit an"
+  },
+  "tokens": {
+    "today": "Heute",
+    "thisMonth": "Diesen Monat",
+    "dailyCeiling": "Tagesobergrenze",
+    "monthlyCeiling": "Monatsobergrenze",
+    "noCeiling": "Keine Obergrenze",
+    "usedOfCeiling": "{used, number} von {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "Tokens der Läufe des Agenten in allen Projekten, gezählt pro Tag und Monat in UTC. Erreicht er eine Obergrenze, wird er pausiert und sein Besitzer benachrichtigt.",
+    "invalid": "Gib eine ganze Zahl ab 1 ein oder lass das Feld leer, wenn es keine Obergrenze geben soll.",
+    "save": "Obergrenzen speichern",
+    "saved": "Token-Obergrenzen von {name} gespeichert",
+    "projectTitle": "Token-Budget",
+    "projectDescription": "Tokens der Agentenläufe dieses Projekts in diesem Monat (UTC). Ist die Obergrenze erreicht, wird der Agent pausiert, dessen Lauf als Nächstes starten würde, und die Projektbesitzer werden benachrichtigt.",
+    "projectSaved": "Token-Obergrenze von {name} gespeichert",
+    "agentsTitle": "Agenten",
+    "agentsHint": "Gezählt über alle Projekte des Teams. Die Obergrenzen eines Agenten legst du im Tab Agenten fest."
+  },
   "projects": {
     "empty": "Dieses Team hat keine Projekte.",
     "instructionsPlaceholder": "Beschreibe den Auftrag des Projekts und die Arbeitsanweisungen."
