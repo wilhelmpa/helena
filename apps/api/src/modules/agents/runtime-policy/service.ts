@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import {
   getAgentById,
   type AgentRuntimeConflict,
+  type AgentRuntimeInventory,
   type AgentRuntimePolicy,
   type AgentRuntimeState,
 } from '../core/service';
@@ -102,13 +103,15 @@ function chatPreamble(): string {
 
 export async function reportRuntimeState(
   agentId: number,
-  state: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts'> & {
+  state: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts' | 'inventory'> & {
     conflicts?: AgentRuntimeConflict[];
+    inventory?: AgentRuntimeInventory;
   },
 ): Promise<AgentRuntimeState> {
   const value: AgentRuntimeState = {
     ...state,
     conflicts: state.conflicts ?? [],
+    inventory: state.inventory ?? null,
     reportedAt: new Date().toISOString(),
   };
   await db

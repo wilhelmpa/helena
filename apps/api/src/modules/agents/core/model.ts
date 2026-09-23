@@ -38,7 +38,12 @@ const username = t.String({
 export const runtimePolicy = t.Object({
   reasoningEffort: t.Nullable(t.String({ maxLength: 32 })),
   toolAllow: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
-  toolDeny: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
+  toolDeny: t.Array(t.String({ minLength: 1, maxLength: 160 }), {
+    maxItems: 256,
+    description:
+      "Hermes toolsets the agent may not use in chats and runs, from its runtime state's " +
+      'inventory. MCP servers stay available.',
+  }),
   mcpGrants: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
   files: t.Array(instructionsRuntimeFile, { maxItems: 32 }),
   // Defaults for every queued run of the agent; a chat answer is not limited.
@@ -53,6 +58,40 @@ export const runtimeConflict = t.Object({
   content: t.String({ maxLength: 65536 }),
 });
 
+const inventoryName = t.String({ minLength: 1, maxLength: 128 });
+
+// What the agent can do in its runtime, as the runner reads it: the Hermes toolsets and
+// MCP servers of its profile, its skills and its memory. Hermes owns all of it, so Plan
+// only shows it.
+export const runtimeInventory = t.Object({
+  toolsets: t.Array(inventoryName, { maxItems: 64 }),
+  mcpServers: t.Array(inventoryName, { maxItems: 64 }),
+  skills: t.Array(
+    t.Object({
+      name: inventoryName,
+      category: t.Nullable(inventoryName),
+      description: t.String({ maxLength: 300 }),
+      origin: t.Union(
+        [t.Literal('bundled'), t.Literal('hub'), t.Literal('plan'), t.Literal('agent')],
+        {
+          description:
+            "'bundled' ships with Hermes, 'hub' was installed from the Skills Hub, 'plan' is " +
+            "one of Plan's skills, 'agent' was created by the agent.",
+        },
+      ),
+    }),
+    { maxItems: 300 },
+  ),
+  memory: t.Array(
+    t.Object({
+      file: t.Union([t.Literal('MEMORY.md'), t.Literal('USER.md')]),
+      content: t.String({ maxLength: 16384 }),
+      truncated: t.Boolean(),
+    }),
+    { maxItems: 2 },
+  ),
+});
+
 export const runtimeState = t.Object({
   adapter: t.Nullable(t.String()),
   status: t.Union([t.Literal('offline'), t.Literal('online'), t.Literal('degraded')]),
@@ -60,6 +99,7 @@ export const runtimeState = t.Object({
   capabilities: t.Array(t.String()),
   detail: t.Nullable(t.String()),
   conflicts: t.Array(runtimeConflict),
+  inventory: t.Nullable(runtimeInventory),
   reportedAt: t.Nullable(t.String()),
 });
 

@@ -72,6 +72,18 @@ export interface AgentRuntimeConflict {
   content: string;
 }
 
+export interface AgentRuntimeInventory {
+  toolsets: string[];
+  mcpServers: string[];
+  skills: {
+    name: string;
+    category: string | null;
+    description: string;
+    origin: 'bundled' | 'hub' | 'plan' | 'agent';
+  }[];
+  memory: { file: 'MEMORY.md' | 'USER.md'; content: string; truncated: boolean }[];
+}
+
 export interface AgentRuntimeState {
   adapter: string | null;
   status: 'offline' | 'online' | 'degraded';
@@ -79,6 +91,8 @@ export interface AgentRuntimeState {
   capabilities: string[];
   detail: string | null;
   conflicts: AgentRuntimeConflict[];
+  // Null until a runner that reads it reports one.
+  inventory: AgentRuntimeInventory | null;
   reportedAt: string | null;
 }
 
@@ -110,6 +124,7 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   capabilities: [],
   detail: null,
   conflicts: [],
+  inventory: null,
   reportedAt: null,
 };
 
@@ -138,6 +153,8 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
             typeof conflict.content === 'string',
         )
       : [],
+    // Validated when the runner reported it, so only its presence is checked.
+    inventory: state.inventory && typeof state.inventory === 'object' ? state.inventory : null,
     reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
   };
 }

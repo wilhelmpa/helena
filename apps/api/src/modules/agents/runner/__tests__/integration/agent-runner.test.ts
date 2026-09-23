@@ -148,6 +148,91 @@ describe('agent runner queue', () => {
     });
   });
 
+  it('stores the inventory the runner reports, within its bounds', async () => {
+    const { asOwner, asRunner, agent, teamId } = await setup();
+    const status = {
+      adapter: 'hermes',
+      status: 'online' as const,
+      appliedRevision: null,
+      capabilities: [],
+      detail: null,
+    };
+    const skill = (index: number) => ({
+      name: `skill-${index}`,
+      category: 'research',
+      description: 'x'.repeat(300),
+      origin: 'bundled' as const,
+    });
+    const inventory = {
+      toolsets: ['browser', 'file', 'terminal'],
+      mcpServers: ['itsaplan'],
+      skills: [
+        ...Array.from({ length: 299 }, (_, index) => skill(index)),
+        { name: 'release-notes', category: null, description: '', origin: 'agent' as const },
+      ],
+      memory: [
+        { file: 'MEMORY.md' as const, content: 'y'.repeat(16384), truncated: true },
+        { file: 'USER.md' as const, content: '', truncated: false },
+      ],
+    };
+    const read = async () =>
+      (await asOwner.teams({ teamId })['ai-agents']({ agentId: agent.id }).get()).data!.runtimeState
+        .inventory;
+
+    expect(await read()).toBeNull();
+    const reported = await asRunner['agent-runtime'].status.post({ ...status, inventory });
+    expect(reported.status).toBe(200);
+    expect(await read()).toEqual(inventory);
+
+    const refused = [
+      { ...inventory, skills: [...inventory.skills, skill(300)] },
+      { ...inventory, skills: [{ ...skill(0), description: 'x'.repeat(301) }] },
+      { ...inventory, skills: [{ ...skill(0), origin: 'imported' }] },
+      {
+        ...inventory,
+        memory: [{ file: 'MEMORY.md', content: 'y'.repeat(16385), truncated: false }],
+      },
+      { ...inventory, memory: [{ file: 'SOUL.md', content: '', truncated: false }] },
+      { ...inventory, toolsets: [''] },
+      { ...inventory, mcpServers: Array.from({ length: 65 }, (_, index) => `mcp-${index}`) },
+    ];
+    for (const body of refused) {
+      const res = await asRunner['agent-runtime'].status.post({
+        ...status,
+        inventory: body as typeof inventory,
+      });
+      expect(res.status).toBe(400);
+    }
+    expect(await read()).toEqual(inventory);
+
+    // A runner that reads no inventory reports none, which clears the one stored.
+    await asRunner['agent-runtime'].status.post(status);
+    expect(await read()).toBeNull();
+  });
+
+  it('hands the denied toolsets to the runner with the policy', async () => {
+    const { asOwner, asRunner, agent, teamId } = await setup();
+    const before = await asRunner['agent-runtime'].policy.get();
+    expect(before.data!.runtimePolicy.toolDeny).toEqual([]);
+
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({
+        runtimePolicy: {
+          reasoningEffort: null,
+          toolAllow: [],
+          toolDeny: ['terminal', 'computer_use'],
+          mcpGrants: [],
+          files: [],
+        },
+      });
+
+    const after = await asRunner['agent-runtime'].policy.get();
+    expect(after.data!.runtimePolicy.toolDeny).toEqual(['terminal', 'computer_use']);
+    expect(after.data!.revision).not.toBe(before.data!.revision);
+  });
+
   it("builds the profile's SOUL.md from the agent, its projects and its own SOUL.md", async () => {
     const { asOwner, asRunner, agent, teamId } = await setup();
     await asOwner
