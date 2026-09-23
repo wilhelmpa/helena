@@ -38,14 +38,17 @@ function nal(type: number, refIdc = 3, extra: number[] = []): Uint8Array {
 }
 
 describe('avcDescription', () => {
-  it('returns an avcC box\'s payload, wherever it sits in the buffer', () => {
+  it("returns an avcC box's payload, wherever it sits in the buffer", () => {
     const avcC = box('avcC', new Uint8Array([0x01, 0x64, 0x00, 0x1f, 0xff, 0xe1]));
     const init = concat(box('ftyp', new Uint8Array([0x69, 0x73, 0x6f, 0x6d])), box('moov', avcC));
     assert.deepEqual([...avcDescription(init)], [0x01, 0x64, 0x00, 0x1f, 0xff, 0xe1]);
   });
 
   it('throws when the initialization segment has no avcC box', () => {
-    assert.throws(() => avcDescription(box('ftyp', new Uint8Array([1, 2, 3]))), /No H.264 configuration/);
+    assert.throws(
+      () => avcDescription(box('ftyp', new Uint8Array([1, 2, 3]))),
+      /No H.264 configuration/,
+    );
   });
 });
 

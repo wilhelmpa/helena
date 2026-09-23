@@ -186,7 +186,8 @@ export function useBrowserScreencast(
   const downlinkKbps = useCallback(() => {
     if (received.current.length < 2) return 0;
     const bytes = received.current.reduce((sum, sample) => sum + sample.bytes, 0);
-    const seconds = (received.current[received.current.length - 1].at - received.current[0].at) / 1000;
+    const seconds =
+      (received.current[received.current.length - 1].at - received.current[0].at) / 1000;
     return seconds > 0 ? Math.round((bytes * 8) / 1000 / seconds) : 0;
   }, []);
 
@@ -261,7 +262,8 @@ export function useBrowserScreencast(
           };
           if (video.current) frameSize.current = announced.current.size;
         } else if (message.type === 'pong') {
-          if (pingSentAt.current === message.t) rttMs.current = Math.round(performance.now() - message.t);
+          if (pingSentAt.current === message.t)
+            rttMs.current = Math.round(performance.now() - message.t);
         } else if (message.type === 'control') {
           setControlBy(message.by);
         } else void queryClient.invalidateQueries({ queryKey: browserTabsQueryKey(controlBase) });
@@ -291,7 +293,16 @@ export function useBrowserScreencast(
       socket.current?.close();
       socket.current = null;
     };
-  }, [controlBase, reloadToken, closeVideo, downlinkKbps, queryClient, receive, send, sendViewport]);
+  }, [
+    controlBase,
+    reloadToken,
+    closeVideo,
+    downlinkKbps,
+    queryClient,
+    receive,
+    send,
+    sendViewport,
+  ]);
 
   // Sent again after a reconnect while the view is shown.
   const setViewport = useCallback(
