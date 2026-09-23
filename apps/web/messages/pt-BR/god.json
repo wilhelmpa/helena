@@ -314,5 +314,33 @@
       "remove": "Remover projeto",
       "saved": "Acesso do grupo salvo"
     }
+  },
+  "systemHealth": {
+    "title": "Serviços",
+    "service": {
+      "runner": "Executor do Hermes",
+      "mastra": "Mastra",
+      "bridge": "Ponte da equipe Hermes",
+      "provisioning": "Provisionamento",
+      "worker": "Worker"
+    },
+    "seen": "visto há {time}",
+    "lastSeen": "visto pela última vez há {time}",
+    "neverSeen": "ainda não visto",
+    "waiting": "{count, plural, one {# execução aguarda} other {# execuções aguardam}} para ser assumida, a mais antiga há {time}",
+    "overdue": "{count, plural, one {# execução continua} other {# execuções continuam}} rodando além do limite de tempo",
+    "agentTeamStartsWaiting": "{count, plural, one {# início de agent-team aguarda} other {# inícios de agent-team aguardam}} o Mastra",
+    "stalledWorkflowRuns": "{count, plural, one {# execução de agent-team não avançou} other {# execuções de agent-team não avançaram}} em 15 minutos",
+    "failedLastDay": "{count, plural, one {# execução falhou} other {# execuções falharam}} nas últimas 24 horas",
+    "provisioningFailed": "{count, plural, one {# tarefa de provisionamento falhou} other {# tarefas de provisionamento falharam}}",
+    "janitorsTitle": "Tarefas de limpeza",
+    "janitor": {
+      "run-janitor": "Limpeza de execuções",
+      "stage-janitor": "Limpeza de estágios",
+      "workflow-schedules": "Sincronização de agendas"
+    },
+    "janitorRan": "executado há {time}",
+    "janitorCleaned": "{count, plural, one {limpou # item} other {limpou # itens}}",
+    "janitorNeverRan": "ainda não foi executado"
   }
 }

@@ -13,8 +13,18 @@ export interface Point {
 }
 
 export type LiveMessage =
-  | { type: 'viewport'; width: number; height: number }
+  | { type: 'viewport'; width: number; height: number; dpr: number; video: boolean }
+  | { type: 'follow'; agent: boolean }
   | { type: 'ack' }
+  | { type: 'dialog'; accept: boolean; text?: string }
+  // Sent when the view is covered (another panel or browser tab in front) or shown again, so
+  // the router stops sending it frames and its tier's encoder can stop once no one is left.
+  | { type: 'hidden'; hidden: boolean }
+  // The video connection's last measured round trip and downlink, so the router can put this
+  // view on the quality tier they afford.
+  | { type: 'stats'; rttMs: number; downlinkKbps: number }
+  // Answered with {"type":"pong","t":..} at once, to measure the round trip.
+  | { type: 'ping'; t: number }
   | {
       type: 'mouse';
       event: 'move' | 'down' | 'up' | 'click';
@@ -43,6 +53,13 @@ export interface KeyMessage {
 
 export type MouseButton = 'none' | 'left' | 'middle' | 'right' | 'back' | 'forward';
 
+// A JavaScript dialog the page shows, which the browser draws outside the streamed page.
+export interface LiveDialog {
+  kind: 'alert' | 'confirm' | 'prompt' | 'beforeunload';
+  message: string;
+  defaultPrompt: string;
+}
+
 // The DevTools modifier bits.
 const ALT = 1;
 const CONTROL = 2;
@@ -54,12 +71,17 @@ export function screencastUrl(controlBase: string): string {
   return `${controlBase.replace(/^http/, 'ws')}/screencast`;
 }
 
-// A frame message: the page's size in CSS pixels, then the JPEG.
+// The kinds of binary message, in their first byte.
+export const JPEG_FRAME = 0;
+export const VIDEO_INIT = 1;
+export const VIDEO_FRAGMENT = 2;
+
+// A JPEG frame message: the page's viewport in CSS pixels, then the JPEG.
 export function readFrame(data: ArrayBuffer): { size: Size; jpeg: Blob } {
-  const header = new DataView(data, 0, 4);
+  const header = new DataView(data, 1, 4);
   return {
     size: { width: header.getUint16(0), height: header.getUint16(2) },
-    jpeg: new Blob([new Uint8Array(data, 4)], { type: 'image/jpeg' }),
+    jpeg: new Blob([new Uint8Array(data, 5)], { type: 'image/jpeg' }),
   };
 }
 

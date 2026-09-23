@@ -116,7 +116,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
     inputSchema: agentTeamStateSchema,
     outputSchema: agentTeamStateSchema,
     retries: STAGE_RETRIES,
-    execute: async ({ inputData, abortSignal }) => {
+    execute: async ({ inputData, abortSignal, runId }) => {
       const { input } = inputData;
       const routed = routeTask(input);
       if (routed) {
@@ -162,6 +162,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
         {
           phase: 'coordinate',
           idempotencyKey: teamIdempotencyKey(inputData.envelope, 'coordinate', input.task.taskRef),
+          workflowRunId: runId,
           projectRef: projectRef(inputData),
           task: input.task,
           agent: input.coordinator,
@@ -194,7 +195,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
     inputSchema: agentTeamStateSchema,
     outputSchema: agentTeamStateSchema,
     retries: STAGE_RETRIES,
-    execute: async ({ inputData, abortSignal }) => {
+    execute: async ({ inputData, abortSignal, runId }) => {
       if (inputData.envelope.dryRun) return inputData;
       const { input } = inputData;
       const members = new Map(input.specialists.map((item) => [item.agentRef, item]));
@@ -217,6 +218,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
                   'specialize',
                   assignment.assignmentId,
                 ),
+                workflowRunId: runId,
                 projectRef: projectRef(inputData),
                 task: input.task,
                 agent,
@@ -247,7 +249,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
     inputSchema: agentTeamStateSchema,
     outputSchema: agentTeamStateSchema,
     retries: STAGE_RETRIES,
-    execute: async ({ inputData, abortSignal }) => {
+    execute: async ({ inputData, abortSignal, runId }) => {
       if (inputData.envelope.dryRun || !inputData.input.policy.reviewRequired) return inputData;
       const result = await adapter.executeStage(
         {
@@ -257,6 +259,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
             'review',
             inputData.input.task.taskRef,
           ),
+          workflowRunId: runId,
           projectRef: projectRef(inputData),
           task: inputData.input.task,
           agent: inputData.input.coordinator,

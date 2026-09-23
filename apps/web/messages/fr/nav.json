@@ -74,9 +74,15 @@
       "liveTitle": "Vue en direct de l’onglet au premier plan",
       "desktop": "Bureau",
       "desktopTitle": "Bureau (VNC)",
+      "followAgentOn": "Suit l’onglet de l’agent",
+      "followAgentOff": "Suivre l’onglet de l’agent",
       "liveKeyboard": "Navigateur en direct. Les touches vont à la page tant que la vue a le focus.",
+      "controlAgent": "L’agent agit actuellement",
       "connecting": "Connexion au navigateur…",
-      "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…"
+      "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…",
+      "dialogTitle": "La page demande",
+      "dialogOk": "OK",
+      "dialogCancel": "Annuler"
     }
   },
   "groups": {

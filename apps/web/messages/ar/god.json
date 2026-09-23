@@ -314,5 +314,33 @@
       "remove": "إزالة المشروع",
       "saved": "تم حفظ وصول المجموعة"
     }
+  },
+  "systemHealth": {
+    "title": "الخدمات",
+    "service": {
+      "runner": "مشغّل Hermes",
+      "mastra": "Mastra",
+      "bridge": "جسر فريق Hermes",
+      "provisioning": "التجهيز",
+      "worker": "العامل"
+    },
+    "seen": "شوهد قبل {time}",
+    "lastSeen": "آخر ظهور قبل {time}",
+    "neverSeen": "لم يُشاهد بعد",
+    "waiting": "{count, plural, zero {لا تشغيلات تنتظر} one {تشغيل واحد ينتظر} two {تشغيلان ينتظران} few {# تشغيلات تنتظر} many {# تشغيلًا ينتظر} other {# تشغيل ينتظر}} الاستلام، أقدمها منذ {time}",
+    "overdue": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد لا يزال يعمل} two {تشغيلان لا يزالان يعملان} few {# تشغيلات لا تزال تعمل} many {# تشغيلًا لا يزال يعمل} other {# تشغيل لا يزال يعمل}} بعد تجاوز الحد الزمني",
+    "agentTeamStartsWaiting": "{count, plural, zero {لا بدايات لـ agent-team} one {بداية واحدة لـ agent-team تنتظر} two {بدايتان لـ agent-team تنتظران} few {# بدايات لـ agent-team تنتظر} many {# بداية لـ agent-team تنتظر} other {# بداية لـ agent-team تنتظر}} Mastra",
+    "stalledWorkflowRuns": "{count, plural, zero {لا تشغيلات لـ agent-team} one {تشغيل واحد لـ agent-team لم يتقدم} two {تشغيلان لـ agent-team لم يتقدما} few {# تشغيلات لـ agent-team لم تتقدم} many {# تشغيلًا لـ agent-team لم يتقدم} other {# تشغيل لـ agent-team لم يتقدم}} منذ 15 دقيقة",
+    "failedLastDay": "{count, plural, zero {لم يفشل أي تشغيل} one {فشل تشغيل واحد} two {فشل تشغيلان} few {فشلت # تشغيلات} many {فشل # تشغيلًا} other {فشل # تشغيل}} خلال آخر 24 ساعة",
+    "provisioningFailed": "{count, plural, zero {لم تفشل أي مهمة تجهيز} one {فشلت مهمة تجهيز واحدة} two {فشلت مهمتا تجهيز} few {فشلت # مهام تجهيز} many {فشلت # مهمة تجهيز} other {فشلت # مهمة تجهيز}}",
+    "janitorsTitle": "عمليات التنظيف",
+    "janitor": {
+      "run-janitor": "منظف التشغيلات",
+      "stage-janitor": "منظف المراحل",
+      "workflow-schedules": "مزامنة الجداول الزمنية"
+    },
+    "janitorRan": "عمل قبل {time}",
+    "janitorCleaned": "{count, plural, zero {لم يتم تنظيف شيء} one {تم تنظيف عنصر واحد} two {تم تنظيف عنصرين} few {تم تنظيف # عناصر} many {تم تنظيف # عنصرًا} other {تم تنظيف # عنصر}}",
+    "janitorNeverRan": "لم يعمل بعد"
   }
 }

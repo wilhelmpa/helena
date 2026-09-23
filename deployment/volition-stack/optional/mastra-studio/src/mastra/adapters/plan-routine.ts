@@ -5,7 +5,7 @@ import {
   type AgentRoutinePayload,
   type RoutineAnswer,
 } from '../routine-contracts.ts';
-import { bridgeRequest } from './hermes-team.ts';
+import { BRIDGE_OUTAGE_MS, bridgeRequest, untilBridgeAnswers } from './hermes-team.ts';
 
 export interface RoutineRequest extends Omit<AgentRoutinePayload, 'taskRef'> {
   idempotencyKey: string;
@@ -26,10 +26,9 @@ export function routineIdempotencyKey(envelope: Pick<WorkEnvelope, 'eventId'>): 
 
 export const privatePlanRoutineAdapter: PlanRoutineAdapter = {
   async dispatch(input) {
-    const raw = await bridgeRequest(
-      '/internal/hermes/team/routine',
-      { schemaVersion: 1, ...input },
-      60_000,
+    const raw = await untilBridgeAnswers(
+      () => bridgeRequest('/internal/hermes/team/routine', { schemaVersion: 1, ...input }, 60_000),
+      Date.now() + BRIDGE_OUTAGE_MS,
     );
     const answer = routineAnswerSchema.parse(raw);
     if (answer.idempotencyKey !== input.idempotencyKey) {

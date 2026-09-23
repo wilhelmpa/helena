@@ -9,6 +9,7 @@ import {
   pruneFinishedDeprovisioningJobs,
 } from './project-provisioning';
 import { reconcileProjectProvisioning } from './project-reconciliation';
+import { HEARTBEAT_INTERVAL_MS, recordHeartbeats } from './heartbeat';
 import {
   type ClaimedDelivery,
   claimDueDeliveries,
@@ -23,6 +24,7 @@ let ticksSinceCleanup = 0;
 // Starts due, so an install is visible even if the instance is removed minutes later.
 let ticksSinceTelemetry = TELEMETRY_CHECK_EVERY_TICKS;
 let lastProjectReconcileAt = 0;
+let lastHeartbeatAt = 0;
 
 export function startWorker(): WorkerHandle {
   return startPollLoop('worker', tick, () => workerConfig().pollIntervalMs);
@@ -33,6 +35,14 @@ export function startWorker(): WorkerHandle {
 // on their own intervals.
 async function tick(): Promise<void> {
   const cfg = workerConfig();
+  if (Date.now() - lastHeartbeatAt >= HEARTBEAT_INTERVAL_MS) {
+    lastHeartbeatAt = Date.now();
+    try {
+      await recordHeartbeats();
+    } catch (error) {
+      console.error('[worker] heartbeat failed:', error);
+    }
+  }
   const claimed = await claimDueDeliveries();
   if (claimed.length > 0) {
     await Promise.all(claimed.map(processDelivery));

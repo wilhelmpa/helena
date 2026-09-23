@@ -7,8 +7,9 @@ import { hermesPolicySynchronizer, type HermesPolicySynchronizer } from './polic
 import { reflect } from './reflect';
 import { perform } from './run';
 
-// The runner holds no state — the queue is the server's — so stopping it mid-task only
-// means that task's lease expires and another runner picks it up.
+// The runner holds no state — the queue is the server's. A runner stopped by its service
+// manager (SIGTERM) kills the commands in flight and hands their runs back, so they are
+// claimed again at once; one that dies mid-task leaves its runs to their leases.
 //
 // Two feeds are drained side by side per agent: triggered runs, polled, and chat
 // messages, claimed by a call that waits on the server for one. A config that lists
@@ -20,6 +21,15 @@ const ERROR_BACKOFF_MS = 5_000;
 const CATALOG_RETRY_MS = 30_000;
 
 type Log = (message: string) => void;
+
+// Shared by every agent the runner serves. `stopping` ends the claiming; `releasing` says
+// the runs in flight are handed back instead of finished; `stops` holds the controllers
+// that kill the commands of those runs. Chat answers in flight are left to finish.
+interface State {
+  stopping: boolean;
+  releasing: boolean;
+  stops: Set<AbortController>;
+}
 
 function prefixOf(name: string): string {
   return name ? `[itsaplan-runner ${name}]` : '[itsaplan-runner]';
@@ -43,8 +53,11 @@ async function withHeartbeat<T>(log: Log, beat: () => Promise<void>, work: Promi
 }
 
 // A cancel reaches the runner on the heartbeat, which aborts `stop` and so kills the
-// command.
+// command. The heartbeat does the same for a run that is no longer this runner's, and
+// marks it `lost`, which also ends the reporting of a result. An answer to a heartbeat
+// sent before this runner claimed its run again names the old claim and is ignored.
 async function handle(
+  state: State,
   config: RunnerConfig,
   client: Client,
   log: Log,
@@ -52,37 +65,53 @@ async function handle(
   policy: HermesPolicySynchronizer | null,
 ): Promise<void> {
   const label = run.issueIdentifier ?? `run ${run.id}`;
-  log(`${label}: started (${run.trigger})`);
   const stop = new AbortController();
+  const lost = new AbortController();
+  if (state.releasing) stop.abort();
+  else log(`${label}: started (${run.trigger})`);
+  state.stops.add(stop);
   try {
-    const hermes = (await policy?.runSettings({ runId: run.id })) ?? null;
-    const performed = await withHeartbeat(
-      log,
-      async () => {
-        if (await client.heartbeat(run.id)) stop.abort();
-      },
-      perform(config, client, run, stop, hermes),
-    );
-    if (!performed) {
-      log(`${label}: canceled`);
-      return;
-    }
-    const { outcome, reflection } = performed;
-    log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
-    // The run is finished and reported, so a reflection has no lease to keep alive.
-    if (reflection && outcome.sessionId) {
-      await reflect(config, client, run, outcome.sessionId, reflection, hermes ?? noSettings)
-        .then((done) => log(`${label}: reflection ${done.status}, ${done.saved.length} saved`))
-        .catch((err) => log(`${label}: reflection not reported — ${String(err)}`));
-    }
+    const hermes = stop.signal.aborted
+      ? null
+      : ((await policy?.runSettings({ runId: run.id })) ?? null);
+    const performed = stop.signal.aborted
+      ? null
+      : await withHeartbeat(
+          log,
+          async () => {
+            const claim = run.claim;
+            if (!(await client.heartbeat(run.id, claim)) || claim !== run.claim) return;
+            lost.abort();
+            stop.abort();
+          },
+          perform(config, client, run, stop, hermes, { lost: lost.signal }),
+        );
+    if (performed) {
+      const { outcome, reflection } = performed;
+      log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
+      // The run is finished and reported, so a reflection has no lease to keep alive.
+      if (reflection && outcome.sessionId) {
+        await reflect(config, client, run, outcome.sessionId, reflection, hermes ?? noSettings)
+          .then((done) => log(`${label}: reflection ${done.status}, ${done.saved.length} saved`))
+          .catch((err) => log(`${label}: reflection not reported — ${String(err)}`));
+      }
+    } else if (state.releasing && run.claim !== undefined)
+      await client.release(run.id, run.claim).then(
+        () => log(`${label}: handed back to the queue`),
+        (err: unknown) => log(`${label}: could not be handed back — ${String(err)}`),
+      );
+    else log(`${label}: canceled`);
   } catch (err) {
     // The command itself never throws here; this is the runner failing to run or
     // report it. Reporting the failure keeps the run from being retried blindly. A
-    // canceled run is already closed, so nothing is reported for it.
+    // canceled run is already closed, and a run the server says is not this runner's
+    // (404) takes no result from it, so nothing is reported for either.
     const message = err instanceof Error ? err.message : String(err);
     log(`${label}: runner error — ${message}`);
-    if (!stop.signal.aborted)
-      await client.report(run.id, { status: 'failed', error: message }).catch(() => {});
+    if (!lost.signal.aborted && !(err instanceof RequestError && err.status === 404))
+      await client.report(run.id, run.claim, { status: 'failed', error: message }).catch(() => {});
+  } finally {
+    state.stops.delete(stop);
   }
 }
 
@@ -124,7 +153,7 @@ async function handleChat(
 // for runs, a waiting claim for chat. `onEmpty` waits before asking again, and returns
 // false to give the feed up entirely.
 async function drain<T>(
-  state: { stopping: boolean },
+  state: State,
   log: Log,
   concurrency: number,
   take: () => Promise<T | null>,
@@ -188,7 +217,7 @@ function parseArgv(argv: string[]): { configPath?: string; agent?: string; args:
 // The server can be unreachable while the runner starts, for instance when both start at
 // boot. The agent answers meanwhile; its model list follows once the server takes it.
 async function publishCatalog(
-  state: { stopping: boolean },
+  state: State,
   log: Log,
   client: Client,
   config: RunnerConfig,
@@ -207,7 +236,7 @@ async function publishCatalog(
 
 // Everything one agent needs: the two feeds, until the runner is stopped or the server
 // refuses its key.
-async function serve(state: { stopping: boolean }, config: RunnerConfig): Promise<void> {
+async function serve(state: State, config: RunnerConfig): Promise<void> {
   const client = new Client(config);
   const prefix = prefixOf(config.name);
   const log: Log = (message) => console.log(`${prefix} ${message}`);
@@ -219,6 +248,7 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
   await policy?.ensure();
   if (config.models.length > 0) void publishCatalog(state, log, client, config);
   let chatSupported = true;
+  const inFlight = new Map<number, Run>();
   await Promise.all([
     drain<Run>(
       state,
@@ -226,12 +256,25 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
       config.concurrency,
       async () => {
         await policy?.ensure();
-        return client.claim();
+        const run = await client.claim();
+        const held = run && inFlight.get(run.id);
+        if (!held) return run;
+        // The lease ran out while the server could not be reached, and the run came back
+        // to this runner: its command keeps running under the new claim.
+        held.attempts = run.attempts;
+        held.claim = run.claim;
+        log(`${held.issueIdentifier ?? `run ${held.id}`}: claimed again while it runs`);
+        return null;
       },
       async (run) => {
-        await policy?.ensure();
-        await handle(config, client, log, run, policy);
-        policy?.inventoryChanged();
+        inFlight.set(run.id, run);
+        try {
+          await policy?.ensure();
+          await handle(state, config, client, log, run, policy);
+          policy?.inventoryChanged();
+        } finally {
+          inFlight.delete(run.id);
+        }
       },
       async () => {
         await sleep(config.pollIntervalMs);
@@ -273,8 +316,11 @@ async function main(): Promise<void> {
   const configPath =
     cli.configPath ?? process.env.ITSAPLAN_RUNNER_CONFIG ?? './itsaplan-runner.json';
   const configs = await loadConfig(configPath, { agent: cli.agent, args: cli.args });
-  const state = { stopping: false };
+  const state: State = { stopping: false, releasing: false, stops: new Set() };
 
+  // Ctrl-C finishes what is in flight. SIGTERM, which a service manager sends, kills the
+  // commands and hands their runs back: a restart must not wait for a run of half an
+  // hour, nor leave it to a lease that counts it as a failed attempt.
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.on(signal, () => {
       // The commands run in their own process groups, so quitting now leaves them running
@@ -285,7 +331,13 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       state.stopping = true;
-      log('stopping — finishing the tasks in flight, press again to quit now');
+      if (signal === 'SIGINT') {
+        log('stopping — finishing the tasks in flight, press again to quit now');
+        return;
+      }
+      state.releasing = true;
+      log('stopping — handing the runs in flight back to the queue');
+      for (const stop of state.stops) stop.abort();
     });
   }
 
@@ -303,7 +355,7 @@ async function main(): Promise<void> {
       ),
     ),
   );
-  if (served.includes(false)) process.exit(1);
+  process.exit(served.includes(false) ? 1 : 0);
 }
 
 main().catch((err) => {

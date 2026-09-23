@@ -659,6 +659,12 @@ export const agentRun = pgTable(
     // also added to the run's own.
     reflection: jsonb('reflection'),
     startedAt: timestamp('started_at', { withTimezone: true }),
+    // Every claim by a runner counts one up, and nothing counts it down: the runner names
+    // it on its heartbeats and its result, so one whose run was claimed since is refused.
+    // `attempts` cannot do this, since a release and a replayed stage lower it.
+    claims: integer('claims').notNull().default(0),
+    // When the latest claim was made, which is when the run's current attempt started.
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -677,6 +683,27 @@ export const agentRun = pgTable(
     index('agent_run_agent_finished_idx').on(t.agentId, t.finishedAt),
   ],
 );
+
+// When a Volition service was last seen working, for the health overview. A service
+// that reports itself writes its row; one that is probed gets the result of the probe:
+// `error` is null when the last check succeeded, and `lastSeenAt` stays at the last
+// success.
+export const serviceHeartbeat = pgTable('service_heartbeat', {
+  service: text('service').primaryKey(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+  error: text('error'),
+});
+
+// The last run of one of the api's janitor loops, for the health overview: when it last
+// ran, how much it cleaned up (null while a run failed before it could count, which
+// keeps the count of the last run that did), and why it failed, if it did.
+export const janitorRun = pgTable('janitor_run', {
+  job: text('job').primaryKey(),
+  ranAt: timestamp('ran_at', { withTimezone: true }).notNull().defaultNow(),
+  cleaned: integer('cleaned'),
+  error: text('error'),
+});
 
 // An agent's request to take an action outside Plan (send, publish, pay, delete), which
 // a person with the ai_agents edit permission of the project approves or rejects. The

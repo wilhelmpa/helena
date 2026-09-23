@@ -18,6 +18,7 @@ const run: Run = {
   trigger: 'delegation',
   prompt: 'Scrape the price list.',
   systemPrompt: '',
+  attempts: 1,
   issueId: 3,
   issueIdentifier: 'MKT-3',
   model: 'anthropic/claude-opus-5.5',

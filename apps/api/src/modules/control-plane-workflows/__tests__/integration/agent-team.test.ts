@@ -4,7 +4,8 @@ import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { controlApi, controlPlane } from '#tests/helpers/control';
+import { controlApi, controlPlane, type ControlRequest } from '#tests/helpers/control';
+import { processAgentTeamStarts } from '../../agent-team-starts';
 
 // The agent team of a project, started from Plan: delegating an issue to a coordinator
 // of a project that runs agent-team, or starting it on the issue directly. The Mastra
@@ -225,7 +226,7 @@ describe('agent team', () => {
 
     controlPlane.answer = (request) =>
       request.operation === 'start'
-        ? Response.json({ message: 'Mastra is down' }, { status: 502 })
+        ? Response.json({ message: 'The run belongs to another project' }, { status: 409 })
         : {};
     const refused = await createIssue(asOwner, columnId);
     await asOwner.issues({ issueId: refused.id }).patch({ delegateUserId: coordinator.userId });
@@ -493,5 +494,121 @@ describe('agent team', () => {
     );
     expect((await asOwner.issues({ issueId: 999_999 })['agent-team'].post({})).status).toBe(404);
     expect(controlPlane.started()).toEqual([]);
+  });
+});
+
+// A delegation to a coordinator is recorded before Mastra is asked. A start Mastra does
+// not answer is asked for again with the same event id, and never falls back to a run of
+// the coordinator, which would do the work a second time if Mastra had started the team.
+describe('agent team start', () => {
+  beforeEach(async () => {
+    await resetDb();
+    controlPlane.reset();
+    process.env.AGENT_TEAM_START_RETRY_SECONDS = '1';
+  });
+
+  // Mastra down for starts only; everything else is answered as before.
+  function mastraDown() {
+    const answers = controlPlane.answer;
+    return (request: ControlRequest) =>
+      request.operation === 'start'
+        ? Response.json({ message: 'Workflow control plane is unavailable' }, { status: 502 })
+        : answers(request);
+  }
+  const retryIsDue = () => Bun.sleep(1_100);
+  const eventIds = () => controlPlane.started().map((request) => request.eventId);
+
+  async function delegated() {
+    const context = await setup();
+    await enableAgentTeam(context.asOwner);
+    const issue = await createIssue(context.asOwner, context.columnId);
+    const delegate = (userId: string | null) =>
+      context.asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: userId });
+    return { ...context, issue, delegate };
+  }
+
+  it('asks a Mastra that did not answer again with the same event id', async () => {
+    const { asOwner, teamId, coordinator, delegate } = await delegated();
+    controlPlane.answer = mastraDown();
+    await delegate(coordinator.userId);
+    expect(eventIds()).toHaveLength(1);
+    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
+
+    await processAgentTeamStarts();
+    expect(eventIds()).toHaveLength(1);
+
+    controlPlane.answer = (request) =>
+      request.operation === 'start'
+        ? { runId: request.eventId, resourceId: request.projectRef, status: 'running' }
+        : {};
+    await retryIsDue();
+    await processAgentTeamStarts();
+    const [first, second] = eventIds();
+    expect(second).toBe(first);
+    await retryIsDue();
+    await processAgentTeamStarts();
+    expect(eventIds()).toHaveLength(2);
+    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
+  });
+
+  it('queues the coordinator run when Mastra refuses a start it was asked for again', async () => {
+    const { asOwner, teamId, coordinator, delegate } = await delegated();
+    controlPlane.answer = mastraDown();
+    await delegate(coordinator.userId);
+
+    await asOwner
+      .projects({ projectKey: 'MKT' })
+      ['control-plane'].workflows({ workflowId: 'agent-team' })
+      .put({ enabled: false, capabilityRefs: CAPABILITIES });
+    await retryIsDue();
+    await processAgentTeamStarts();
+    expect(await runsOf(asOwner, teamId, coordinator.id)).toHaveLength(1);
+  });
+
+  it('keeps one start for an issue delegated again while it waits for Mastra', async () => {
+    const { coordinator, delegate } = await delegated();
+    controlPlane.answer = mastraDown();
+    await delegate(coordinator.userId);
+    await delegate(null);
+    await delegate(coordinator.userId);
+    expect(eventIds()).toHaveLength(1);
+  });
+
+  it('drops a waiting start when the issue is delegated to someone else', async () => {
+    const { asOwner, teamId, coordinator, delegate } = await delegated();
+    const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
+    controlPlane.answer = mastraDown();
+    await delegate(coordinator.userId);
+    await delegate(designer.userId);
+
+    controlPlane.reset();
+    await retryIsDue();
+    await processAgentTeamStarts();
+    expect(controlPlane.started()).toEqual([]);
+    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
+    expect(await runsOf(asOwner, teamId, designer.id)).toHaveLength(1);
+  });
+
+  it('starts no second team run while the first one works on the issue', async () => {
+    const { coordinator, delegate } = await delegated();
+    await delegate(coordinator.userId);
+    const [first] = eventIds();
+
+    let status = 'running';
+    controlPlane.answer = (request) =>
+      request.operation === 'run' && request.runId === first
+        ? { runId: first, status }
+        : request.operation === 'start'
+          ? { runId: request.eventId, status: 'running' }
+          : {};
+    await delegate(null);
+    await delegate(coordinator.userId);
+    expect(eventIds()).toEqual([first]);
+
+    status = 'success';
+    await delegate(null);
+    await delegate(coordinator.userId);
+    expect(eventIds()).toHaveLength(2);
+    expect(eventIds()[1]).not.toBe(first);
   });
 });

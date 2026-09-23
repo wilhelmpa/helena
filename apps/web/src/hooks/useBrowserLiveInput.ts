@@ -29,6 +29,11 @@ import {
 // A touch that moves less than this is a tap.
 const TAP_DISTANCE = 8;
 
+// Events on a page's dialog shown over the view are for the dialog, not for the page.
+function inDialog(target: EventTarget | null) {
+  return target instanceof Element && target.closest('[data-live-dialog]') !== null;
+}
+
 interface Touch {
   id: number;
   at: Point;
@@ -66,6 +71,7 @@ export function useBrowserLiveInput(
     if (!element) return;
     // React registers wheel listeners as passive, which cannot keep the panel from scrolling.
     const onWheel = (event: WheelEvent) => {
+      if (inDialog(event.target)) return;
       event.preventDefault();
       const at = pointAt(event);
       if (!at) return;
@@ -159,7 +165,7 @@ export function useBrowserLiveInput(
       touch.current = null;
     },
     onContextMenu(event: MouseEvent<HTMLDivElement>) {
-      event.preventDefault();
+      if (!inDialog(event.target)) event.preventDefault();
     },
   };
 

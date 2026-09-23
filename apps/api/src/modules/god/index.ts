@@ -26,6 +26,7 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { paginate } from '#shared/pagination';
 import { noContent } from '#shared/http';
 import { deleteProject } from '#modules/projects/service';
+import { systemHealth } from './system-health';
 import {
   deleteInstanceUser,
   getInstanceProject,
@@ -58,6 +59,7 @@ import {
   InstanceTeamResponse,
   InstanceUserDetailResponse,
   InstanceUserPageResponse,
+  SystemHealthResponse,
   OidcSettingsBody,
   OidcSettingsResponse,
   ScimGroupMappingsBody,
@@ -127,6 +129,17 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
   // once here instead of per route.
   .onBeforeHandle(({ user }) => {
     requireGod(user);
+  })
+
+  .get('/god/system-health', () => systemHealth(), {
+    response: { 200: SystemHealthResponse, ...errors(401, 403) },
+    detail: {
+      summary: 'Read the health of the services',
+      description:
+        'The last time the Hermes runner, Mastra, the Hermes team bridge, the provisioning ' +
+        'service and the worker were seen working, the agent runs that wait or overran, and ' +
+        'when the janitor loops last ran and what they cleaned up.',
+    },
   })
 
   .get(

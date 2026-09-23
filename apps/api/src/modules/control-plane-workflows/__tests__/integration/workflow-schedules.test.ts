@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { controlPlane } from '#tests/helpers/control';
+import { controlPlane, type ControlRequest } from '#tests/helpers/control';
+import { reconcileWorkflowSchedules } from '../../service';
 
 // Schedules of a project workflow are Mastra schedules. The control endpoint is a
 // stand-in that records the requests Plan sends it.
@@ -89,8 +90,8 @@ describe('workflow schedules', () => {
       request.operation === 'schedules'
         ? {
             schedules: [
-              { id: 'active_one', status: 'active' },
-              { id: 'paused_one', status: 'paused' },
+              { id: 'active_one', status: 'active', requestContext: { projectRef: 'project:MKT' } },
+              { id: 'paused_one', status: 'paused', requestContext: { projectRef: 'project:MKT' } },
             ],
           }
         : fallback(request);
@@ -107,6 +108,95 @@ describe('workflow schedules', () => {
     expect((await schedule.delete()).status).toBe(200);
     expect((await schedule({ action: 'run' }).post()).status).toBe(409);
     expect((await schedule({ action: 'resume' }).post()).status).toBe(409);
+  });
+
+  // A schedule of agent-team as Mastra stores it, saved under a maximum of 10 turns.
+  function storedSchedule(status = 'active') {
+    return {
+      id: 'weekly',
+      cron: '0 7 * * 1',
+      status,
+      requestContext: { projectRef: 'project:MKT' },
+      inputData: {
+        eventId: 'schedule-input',
+        payload: {
+          policy: { maxAttempts: 2, reviewRequired: true, autonomy: 'review', maxTurns: 10 },
+          configuration: { maxTurns: 10 },
+          projectKey: 'MKT',
+        },
+      },
+    };
+  }
+
+  function withSchedules(schedule: Record<string, unknown>) {
+    const fallback = controlPlane.answer;
+    controlPlane.answer = (request: ControlRequest) =>
+      request.operation === 'schedules' ? { schedules: [schedule] } : fallback(request);
+  }
+
+  const sent = (operation: string) =>
+    controlPlane.requests.filter((request) => request.operation === operation);
+
+  it('fires a schedule saved under earlier settings with the settings of the project', async () => {
+    const { workflows } = await setup();
+    withSchedules(storedSchedule());
+    await workflows({ workflowId: 'agent-team' }).put({
+      enabled: true,
+      capabilityRefs: ['hermes-team.v1', 'plan-task-sync.v1'],
+      configuration: { autonomy: 'done' },
+    });
+
+    const [update] = sent('update-schedule');
+    expect(update).toMatchObject({ scheduleId: 'weekly', cron: '0 7 * * 1' });
+    expect(update!.payload).toEqual({
+      eventId: 'schedule-input',
+      payload: {
+        policy: { maxAttempts: 2, reviewRequired: true, autonomy: 'done' },
+        configuration: { autonomy: 'done' },
+        projectKey: 'MKT',
+      },
+    });
+  });
+
+  it('pauses on its next pass a schedule the switch-off could not reach', async () => {
+    const { workflows } = await setup();
+    await workflows({ workflowId: 'support' }).put({ enabled: true, capabilityRefs: [] });
+    const schedule = { ...storedSchedule(), inputData: { payload: { configuration: {} } } };
+    withSchedules(schedule);
+    const answer = controlPlane.answer;
+    controlPlane.answer = (request) =>
+      request.operation === 'pause-schedule'
+        ? Response.json({ message: 'Mastra is down' }, { status: 502 })
+        : answer(request);
+    await workflows({ workflowId: 'support' }).put({ enabled: false, capabilityRefs: [] });
+
+    controlPlane.answer = answer;
+    expect(await reconcileWorkflowSchedules()).toBe(1);
+    expect(sent('pause-schedule').at(-1)).toMatchObject({
+      scheduleId: 'weekly',
+      projectRef: 'project:MKT',
+    });
+  });
+
+  it('leaves a schedule alone that fires under the current settings', async () => {
+    const { workflows } = await setup();
+    await workflows({ workflowId: 'agent-team' }).put({
+      enabled: true,
+      capabilityRefs: ['hermes-team.v1', 'plan-task-sync.v1'],
+      configuration: { maxTurns: 10 },
+    });
+    const current = storedSchedule();
+    current.inputData.payload.configuration = { maxTurns: 10 };
+    withSchedules(current);
+
+    expect(await reconcileWorkflowSchedules()).toBe(0);
+    expect(sent('update-schedule')).toEqual([]);
+    withSchedules(storedSchedule('paused'));
+    await workflows({ workflowId: 'agent-team' }).put({
+      enabled: false,
+      capabilityRefs: ['hermes-team.v1', 'plan-task-sync.v1'],
+    });
+    expect(sent('pause-schedule')).toEqual([]);
   });
 
   it('refuses a schedule of a workflow the project has not enabled', async () => {
