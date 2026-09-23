@@ -267,10 +267,16 @@ export function useBrowserScreencast(
         rttMs.current = 0;
         pingSentAt.current = null;
         received.current = [];
-        pingTimer = setInterval(() => {
+        // A fresh connection's first real round trip is measured right away rather than
+        // waiting out the first interval: until it arrives, rttMs stays 0, which chooseTier
+        // reads as an excellent connection, so a slow one would otherwise be let onto a tier
+        // it cannot afford for up to PING_INTERVAL_MS.
+        const ping = () => {
           pingSentAt.current = performance.now();
           send({ type: 'ping', t: pingSentAt.current });
-        }, PING_INTERVAL_MS);
+        };
+        ping();
+        pingTimer = setInterval(ping, PING_INTERVAL_MS);
         statsTimer = setInterval(() => {
           send({
             type: 'stats',
