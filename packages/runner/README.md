@@ -230,6 +230,23 @@ passes them to Hermes in those variables, so they are never written to disk. The
 the environment of the Hermes process for that run, which its tools inherit. A server named like
 a toolset or a server of the profile fails the sync.
 
+### Website logins
+
+Plan tells the runner in the policy whether website logins are granted to the agent. Before
+each run and chat answer the runner then reads them from `GET /agent-runs/:runId/web-logins` or
+`GET /agent-chats/:messageId/web-logins`, which answer only for the work the runner holds, and
+makes the vault of the agent's profile (`HERMES_HOME/vault`) hold exactly those logins: one item
+per origin a login may be filled on, with its authenticator key when it has one. It writes them
+with Hermes' own `agent.vault_store` in Hermes' Python (`python3`, or `HERMES_PYTHON`), which
+receives the values on stdin. `HERMES_HOME/run/itsaplan-vault-manifest.json` lists the items the
+runner wrote, without values; a login changed in Plan is replaced, a revoked one removed, and an
+item the runner did not write is left alone. A failed update fails the run, so a revoked login is
+never left in the vault for it. An agent with logins keeps the `browser` toolset, which carries
+Hermes' vault tools, even where the toolset is otherwise turned off for it.
+
+`browser_vault_fill` and `browser_vault_enter_code` calls on those items that succeed are read
+from Hermes' output and reported to `POST /agent-runtime/credential-uses` for the audit log.
+
 ## What the coding agent receives
 
 ### The task text

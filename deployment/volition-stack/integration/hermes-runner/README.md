@@ -52,6 +52,10 @@ to `run/itsaplan-managed/config.yaml` in the agent's home and starts Hermes with
 server of the library runs as the Hermes user with the Hermes `PATH`; an `npx` server downloads
 its package on first start.
 
+The website logins the owner grants an agent on Plan's Credentials page are written to the vault
+of the agent's home before each run and chat answer, with Hermes' own vault code run by the
+`python3` of the wrapper's `PATH` (the Hermes venv); `packages/runner/README.md` describes it.
+
 ## Run limits
 
 A queued run carries two limits that the runner passes to `hermes chat`: `--max-turns`
