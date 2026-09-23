@@ -9,7 +9,7 @@ import {
   projectMember,
   projectSetting,
 } from '@repo/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { authorizeControlRequest } from './home-agent-bootstrap';
 import { maxTurnsLimit, runBudgetSecondsLimit } from './modules/agents/model';
 import { agentRunConfig } from './modules/agents/core/run-queue';
@@ -156,10 +156,15 @@ export async function enqueueHermesStage(body: unknown) {
     if (value) {
       if (value.fingerprint !== requestFingerprint)
         return { conflict: true as const, runId: 0, replayed: false };
+      // A stage is asked for again after its run failed (a retry of the stage or of the
+      // workflow run) or was canceled when Mastra stopped waiting (Mastra restarted and
+      // continues the stage). The run is queued again with its claims counted anew;
+      // Mastra bounds how often it asks.
       await tx
         .update(agentRun)
         .set({
           status: 'pending',
+          attempts: 0,
           output: null,
           lastError: null,
           finishedAt: null,
@@ -168,8 +173,7 @@ export async function enqueueHermesStage(body: unknown) {
         .where(
           and(
             eq(agentRun.id, Number(value.runId)),
-            eq(agentRun.status, 'failed'),
-            sql`${agentRun.attempts} < ${Number(maxAttempts)}`,
+            inArray(agentRun.status, ['failed', 'canceled']),
           ),
         );
       return { conflict: false as const, runId: Number(value.runId), replayed: true };

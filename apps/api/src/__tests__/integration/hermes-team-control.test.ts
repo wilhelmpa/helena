@@ -5,9 +5,9 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { controlApi } from '#tests/helpers/control';
 
-// The Hermes team bridge queues each agent-team stage as a run of the stage's agent and
-// cancels it when the workflow run waiting on it was canceled. It calls these routes
-// with the control token.
+// The Hermes team bridge queues each agent-team stage as a run of the stage's agent,
+// asks for it again when Mastra retries or continues the stage, and cancels it when the
+// workflow run waiting on it was canceled. It calls these routes with the control token.
 
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -24,17 +24,24 @@ async function setup() {
       .projects({ projectKey: 'MKT' })
       .issues.post({ columnId: view.columns[0].id, title: 'Team task' })
   ).data!;
-  const queued = await controlApi().internal.orchestration['agent-run'].post({
-    projectRef: 'project:MKT',
-    task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
-    agent: { agentRef: `agent:${created.data!.agent.username}` },
-    idempotencyKey: 'a'.repeat(64),
-    prompt: 'Complete the assignment.',
-    policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
-  });
+  const queue = () =>
+    controlApi().internal.orchestration['agent-run'].post({
+      projectRef: 'project:MKT',
+      task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
+      agent: { agentRef: `agent:${created.data!.agent.username}` },
+      idempotencyKey: 'a'.repeat(64),
+      prompt: 'Complete the assignment.',
+      policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
+    });
   // The internal routes answer with a Response, which Treaty parses without a type.
-  const { runId } = queued.data as unknown as { runId: number };
-  return { asOwner, projectId: view.project.id, asRunner: apiKeyApi(created.data!.apiKey!), runId };
+  const { runId } = (await queue()).data as unknown as { runId: number };
+  return {
+    asOwner,
+    projectId: view.project.id,
+    asRunner: apiKeyApi(created.data!.apiKey!),
+    runId,
+    queue,
+  };
 }
 
 function cancel(body: Record<string, unknown>) {
@@ -101,5 +108,46 @@ describe('Hermes stage cancel', () => {
       projectRef: 'project:MKT',
     });
     expect(res.status).toBe(401);
+  });
+});
+
+describe('Hermes stage replay', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  it('queues a canceled or failed stage run again, with its claims counted anew', async () => {
+    const { asRunner, runId, queue } = await setup();
+    await cancel({ runId, projectRef: 'project:MKT' });
+
+    expect((await queue()).data).toMatchObject({ runId, replayed: true });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: runId,
+      attempts: 1,
+    });
+    await asRunner['agent-runs']({ runId }).result.post({
+      status: 'failed',
+      error: 'Hermes failed',
+    });
+
+    expect((await queue()).data).toMatchObject({ runId, replayed: true });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: runId,
+      attempts: 1,
+    });
+  });
+
+  it('answers a replay of a finished stage with its outcome', async () => {
+    const { asRunner, runId, queue } = await setup();
+    await asRunner['agent-runs'].claim.post();
+    await asRunner['agent-runs']({ runId }).result.post({ status: 'success', output: 'Done' });
+
+    expect((await queue()).data).toMatchObject({ runId, replayed: true });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+    const status = await controlApi().internal.orchestration['agent-run'].status.post({
+      runId,
+      projectRef: 'project:MKT',
+    });
+    expect(status.data).toMatchObject({ status: 'success', output: 'Done' });
   });
 });
