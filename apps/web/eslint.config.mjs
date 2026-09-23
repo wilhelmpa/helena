@@ -47,7 +47,19 @@ export default [
   // them — every feature and every route — uses only the tokens.
   {
     files: ['src/features/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}'],
-    ignores: ['src/**/*.test.{ts,tsx}'],
+    ignores: [
+      'src/**/*.test.{ts,tsx}',
+      // Content color, not chrome: these hexes are a palette the *user* picks from
+      // (a label/field color, a sticky note, an annotation stroke) or a fallback for
+      // one (a deleted column's color), not a developer's ad hoc UI choice. A sticky
+      // note also keeps fixed dark text on its own fixed pastel background by design
+      // ("Miro-style"), independent of the app's light/dark theme.
+      'src/features/settings/components/crud/SettingsColorField.tsx',
+      'src/features/notes/utils/stickerColors.ts',
+      'src/features/notes/components/StickerNode.tsx',
+      'src/features/issue/utils/annotations.ts',
+      'src/features/issue/utils/timeline.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -64,10 +76,14 @@ export default [
             'No raw Tailwind palette classes here (bg-blue-500, text-gray-400, …) — use a token instead. See docs/volition-design-helena-ui.md.',
         },
         {
+          // Scoped to the type scale and the row/control height it drives (the two
+          // cases the design doc gives, `text-[13px]` and `h-[37px]`) — not every
+          // arbitrary bracket value. A truncation width like `max-w-[220px]` is
+          // content-specific, not part of a scale, and is not what this rule is for.
           selector:
-            "Literal[value=/-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/], TemplateElement[value.raw=/-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/]",
+            "Literal[value=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/], TemplateElement[value.raw=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/]",
           message:
-            'No arbitrary Tailwind sizes here (text-[13px], h-[37px], …) — that scale lives in components/ui and components/common only. See docs/volition-design-helena-ui.md.',
+            'No arbitrary text size or row/control height here (text-[13px], h-[37px], …) — that scale lives in components/ui and components/common only. See docs/volition-design-helena-ui.md.',
         },
       ],
     },

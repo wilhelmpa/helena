@@ -7,7 +7,7 @@ export function TeamSettingState({ on }: { on: boolean }) {
   const t = useTranslations('teams.settingState');
   return (
     <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
-      {on ? <Check className="size-4 text-green-500" /> : <Minus className="size-4" />}
+      {on ? <Check className="size-4 text-status-success" /> : <Minus className="size-4" />}
       {t(on ? 'on' : 'off')}
     </span>
   );
