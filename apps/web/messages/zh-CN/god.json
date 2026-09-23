@@ -313,5 +313,24 @@
       "remove": "移除项目",
       "saved": "群组权限已保存"
     }
+  },
+  "systemHealth": {
+    "title": "服务",
+    "service": {
+      "runner": "Hermes 运行器",
+      "mastra": "Mastra",
+      "bridge": "Hermes 团队桥接",
+      "provisioning": "资源配置",
+      "worker": "Worker"
+    },
+    "seen": "{time}前在线",
+    "lastSeen": "最后一次在线于{time}前",
+    "neverSeen": "尚未见到",
+    "waiting": "{count, plural, other {# 个运行}}等待领取，最早的已等待 {time}",
+    "overdue": "{count, plural, other {# 个运行}}已超出时间限制仍在运行",
+    "agentTeamStartsWaiting": "{count, plural, other {# 个 agent-team 启动}}正在等待 Mastra",
+    "stalledWorkflowRuns": "{count, plural, other {# 个 agent-team 运行}}已 15 分钟没有进展",
+    "failedLastDay": "过去 24 小时内有{count, plural, other {# 个运行}}失败",
+    "provisioningFailed": "{count, plural, other {# 个资源配置任务}}失败"
   }
 }

@@ -313,5 +313,24 @@
       "remove": "Projekt entfernen",
       "saved": "Gruppenzugriff gespeichert"
     }
+  },
+  "systemHealth": {
+    "title": "Dienste",
+    "service": {
+      "runner": "Hermes-Runner",
+      "mastra": "Mastra",
+      "bridge": "Hermes-Team-Bridge",
+      "provisioning": "Provisionierung",
+      "worker": "Worker"
+    },
+    "seen": "vor {time} gesehen",
+    "lastSeen": "zuletzt vor {time} gesehen",
+    "neverSeen": "noch nicht gesehen",
+    "waiting": "{count, plural, one {# Lauf wartet} other {# Läufe warten}} auf Übernahme, der älteste seit {time}",
+    "overdue": "{count, plural, one {# Lauf läuft} other {# Läufe laufen}} noch über das Zeitlimit hinaus",
+    "agentTeamStartsWaiting": "{count, plural, one {# Agent-Team-Start wartet} other {# Agent-Team-Starts warten}} auf Mastra",
+    "stalledWorkflowRuns": "{count, plural, one {# Agent-Team-Lauf kommt} other {# Agent-Team-Läufe kommen}} seit 15 Minuten nicht voran",
+    "failedLastDay": "{count, plural, one {# Lauf} other {# Läufe}} in den letzten 24 Stunden fehlgeschlagen",
+    "provisioningFailed": "{count, plural, one {# Provisionierungsauftrag} other {# Provisionierungsaufträge}} fehlgeschlagen"
   }
 }

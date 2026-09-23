@@ -315,3 +315,37 @@ export const InstanceTeamMemberPageResponse = pageResponse(
     joinedAt: t.String(),
   }),
 );
+
+export const SystemHealthResponse = t.Object({
+  services: t.Array(
+    t.Object({
+      service: t.Union([
+        t.Literal('runner'),
+        t.Literal('mastra'),
+        t.Literal('bridge'),
+        t.Literal('provisioning'),
+        t.Literal('worker'),
+      ]),
+      state: t.Union([t.Literal('ok'), t.Literal('down'), t.Literal('unknown')], {
+        description: 'unknown: the service has never been seen.',
+      }),
+      lastSeenAt: t.Nullable(t.String({ description: 'When it was last seen working.' })),
+      error: t.Nullable(t.String({ description: 'Why the last check failed.' })),
+    }),
+  ),
+  runs: t.Object({
+    waiting: t.Number({ description: 'Agent runs due and not claimed.' }),
+    oldestWaitingSince: t.Nullable(t.String()),
+    overdue: t.Number({ description: 'Claimed runs still running past their time limit.' }),
+    failedLastDay: t.Number(),
+    agentTeamStartsWaiting: t.Number({ description: 'Agent-team starts waiting for Mastra.' }),
+    provisioningFailed: t.Number({ description: 'Provisioning jobs that gave up.' }),
+    stalledWorkflowRuns: t.Nullable(
+      t.Number({
+        description:
+          'Active agent-team runs Mastra has not moved on for 15 minutes that wait on no ' +
+          'stage run in Plan. Null while Mastra cannot be asked.',
+      }),
+    ),
+  }),
+});

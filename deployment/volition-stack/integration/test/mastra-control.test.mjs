@@ -547,3 +547,26 @@ test("deleting a project's schedules leaves other projects and agent schedules a
   assert.deepEqual(deleted, ['daily', 'gone']);
   await assert.rejects(control.execute({ ...request, projectRef: 'PRIV' }), MastraControlError);
 });
+
+test('active runs lists the running and waiting runs of every project', async () => {
+  const paths = [];
+  const control = service(async (url) => {
+    const parsed = new URL(url);
+    paths.push(`${parsed.pathname}${parsed.search}`);
+    const status = parsed.searchParams.get('status');
+    return json({
+      runs: status === 'running'
+        ? [{ runId: 'run-a', resourceId: 'project:A', updatedAt: '2026-09-23T10:00:00.000Z', snapshot: {} }]
+        : [{ runId: 'run-b', resourceId: 'project:B', updatedAt: '2026-09-23T11:00:00.000Z' }],
+    });
+  });
+  const result = await control.execute({ schemaVersion: 1, operation: 'active-runs', workflowId: 'agent-team' });
+  assert.deepEqual(paths, [
+    '/mastra/api/workflows/agent-team/runs?status=running&perPage=50',
+    '/mastra/api/workflows/agent-team/runs?status=waiting&perPage=50',
+  ]);
+  assert.deepEqual(result.runs, [
+    { runId: 'run-a', resourceId: 'project:A', status: 'running', updatedAt: '2026-09-23T10:00:00.000Z' },
+    { runId: 'run-b', resourceId: 'project:B', status: 'waiting', updatedAt: '2026-09-23T11:00:00.000Z' },
+  ]);
+});

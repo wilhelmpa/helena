@@ -175,3 +175,12 @@ on `:18800`, the Mastra proxy on `:4111` and Mastra on `:4112`, code-server on `
 
 After a change, verify the public route through Nginx, anonymous denial, HTTP assets, and
 the applicable WebSocket path. A running unit or open port alone is insufficient.
+
+Home shows the instance owner when the Hermes runner, Mastra, the Hermes team bridge, the
+provisioning service and the worker were last seen working (`GET /god/system-health`),
+and lists agent runs that wait for a runner, runs still leased past their time limit,
+agent-team starts waiting for Mastra, agent-team runs without progress for 15 minutes,
+runs failed in the last day and provisioning jobs that gave up. The worker and the bridge
+report every 30 seconds, the worker checks the provisioning service's `/healthz`, a runner
+counts as seen when it polls, and the API checks Mastra's `/healthz` when the overview is
+read.

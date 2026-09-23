@@ -110,6 +110,10 @@ export async function startHermesTeamBridge() {
     synchronize: body => planRequest('/internal/orchestration/task-sync', body, planToken),
     routine: body => planRequest('/internal/orchestration/routine', body, planToken),
   };
+  // Plan's health overview shows when the bridge was last seen.
+  const heartbeat = () => planRequest('/internal/orchestration/heartbeat', { service: 'bridge' }, planToken).catch(() => {});
+  void heartbeat();
+  setInterval(heartbeat, 30_000).unref();
   const service = createHermesTeamService(plan);
   const server = http.createServer(createHermesTeamHandler({ bridgeToken, planToken }, service));
   await lstat(socketPath).then(stat => {

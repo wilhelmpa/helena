@@ -221,8 +221,34 @@ export interface InstanceProjectOption {
   name: string;
 }
 
+export type SystemService = 'runner' | 'mastra' | 'bridge' | 'provisioning' | 'worker';
+
+export interface SystemServiceHealth {
+  service: SystemService;
+  // unknown: the service has never been seen.
+  state: 'ok' | 'down' | 'unknown';
+  lastSeenAt: string | null;
+  error: string | null;
+}
+
+export interface SystemHealth {
+  services: SystemServiceHealth[];
+  runs: {
+    waiting: number;
+    oldestWaitingSince: string | null;
+    overdue: number;
+    failedLastDay: number;
+    agentTeamStartsWaiting: number;
+    provisioningFailed: number;
+    // Null while Mastra cannot be asked.
+    stalledWorkflowRuns: number | null;
+  };
+}
+
 // Instance administration (god mode). Every route below is owner-only; a plain
 // user gets a 403, which is why the entries are hidden from the sidebar.
+export const getSystemHealth = () => request<SystemHealth>('/god/system-health');
+
 export const getInstanceAuthSettings = () => request<InstanceAuthSettings>('/god/auth-settings');
 
 export const updateInstanceAuthSettings = (patch: InstanceAuthSettingsPatch) =>

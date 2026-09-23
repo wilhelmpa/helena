@@ -56,6 +56,12 @@ function controlUrl(): URL {
   return url;
 }
 
+// The health endpoint of the control plane's proxy, which answers only while Mastra
+// behind it does.
+export function controlPlaneHealthUrl(): URL {
+  return new URL('/healthz', controlUrl());
+}
+
 async function controlToken(): Promise<string> {
   const tokenFile =
     process.env.MASTRA_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/mastra_control_token';

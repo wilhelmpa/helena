@@ -9,6 +9,7 @@ import {
   project,
   projectMember,
   projectSetting,
+  recordServiceCheck,
 } from '@repo/db';
 import { and, eq, inArray, like, lt, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
@@ -714,6 +715,12 @@ export async function dispatchRoutine(body: unknown) {
   return finish(reopened);
 }
 
+// The bridge reports itself every 30 seconds for the health overview.
+async function bridgeHeartbeat() {
+  await recordServiceCheck('bridge', null);
+  return { status: 200, body: { recorded: true } };
+}
+
 async function respond(
   request: Request,
   operation: (body: unknown) => Promise<{ status: number; body: unknown }>,
@@ -739,4 +746,5 @@ export const hermesTeamControlRoutes = new Elysia({ name: 'hermes-team-control' 
   .post('/internal/orchestration/task-sync', ({ request }) =>
     respond(request, synchronizeHermesStage),
   )
-  .post('/internal/orchestration/routine', ({ request }) => respond(request, dispatchRoutine));
+  .post('/internal/orchestration/routine', ({ request }) => respond(request, dispatchRoutine))
+  .post('/internal/orchestration/heartbeat', ({ request }) => respond(request, bridgeHeartbeat));

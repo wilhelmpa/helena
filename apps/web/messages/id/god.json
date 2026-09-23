@@ -313,5 +313,24 @@
       "remove": "Hapus proyek",
       "saved": "Akses grup disimpan"
     }
+  },
+  "systemHealth": {
+    "title": "Layanan",
+    "service": {
+      "runner": "Runner Hermes",
+      "mastra": "Mastra",
+      "bridge": "Jembatan tim Hermes",
+      "provisioning": "Penyediaan",
+      "worker": "Worker"
+    },
+    "seen": "terlihat {time} lalu",
+    "lastSeen": "terakhir terlihat {time} lalu",
+    "neverSeen": "belum terlihat",
+    "waiting": "{count, plural, other {# run menunggu}} untuk diambil, yang tertua sejak {time}",
+    "overdue": "{count, plural, other {# run}} masih berjalan melewati batas waktu",
+    "agentTeamStartsWaiting": "{count, plural, other {# start agent-team menunggu}} Mastra",
+    "stalledWorkflowRuns": "{count, plural, other {# run agent-team}} tidak maju selama 15 menit",
+    "failedLastDay": "{count, plural, other {# run}} gagal dalam 24 jam terakhir",
+    "provisioningFailed": "{count, plural, other {# tugas penyediaan}} gagal"
   }
 }

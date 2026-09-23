@@ -313,5 +313,24 @@
       "remove": "Прибрати проєкт",
       "saved": "Доступ групи збережено"
     }
+  },
+  "systemHealth": {
+    "title": "Сервіси",
+    "service": {
+      "runner": "Ранер Hermes",
+      "mastra": "Mastra",
+      "bridge": "Міст команди Hermes",
+      "provisioning": "Провіжинінг",
+      "worker": "Воркер"
+    },
+    "seen": "бачили {time} тому",
+    "lastSeen": "востаннє бачили {time} тому",
+    "neverSeen": "ще не бачили",
+    "waiting": "{count, plural, one {# запуск чекає} few {# запуски чекають} many {# запусків чекають} other {# запуску чекають}}, поки їх візьмуть, найстаріший — {time}",
+    "overdue": "{count, plural, one {# запуск досі триває} few {# запуски досі тривають} many {# запусків досі тривають} other {# запуску досі тривають}} понад ліміт часу",
+    "agentTeamStartsWaiting": "{count, plural, one {# старт agent-team чекає} few {# старти agent-team чекають} many {# стартів agent-team чекають} other {# старту agent-team чекають}} на Mastra",
+    "stalledWorkflowRuns": "{count, plural, one {# запуск agent-team не просувається} few {# запуски agent-team не просуваються} many {# запусків agent-team не просуваються} other {# запуску agent-team не просуваються}} вже 15 хвилин",
+    "failedLastDay": "{count, plural, one {# запуск завершився} few {# запуски завершилися} many {# запусків завершилися} other {# запуску завершилися}} помилкою за останні 24 години",
+    "provisioningFailed": "{count, plural, one {# завдання провіжинінгу завершилося} few {# завдання провіжинінгу завершилися} many {# завдань провіжинінгу завершилися} other {# завдання провіжинінгу завершилися}} помилкою"
   }
 }

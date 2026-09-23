@@ -208,6 +208,17 @@ export function createMastraControlService(config, options = {}) {
           : [];
         return { schedules: await Promise.all(owned.map((schedule) => withLastRun(workflowId, schedule))) };
       }
+      // The running and waiting runs of the workflow in every project, for Plan's health
+      // overview.
+      if (input.operation === 'active-runs') {
+        const runs = [];
+        for (const status of ['running', 'waiting']) {
+          const result = object(await call(`workflows/${workflowId}/runs?status=${status}&perPage=50`), 'Mastra runs');
+          for (const run of Array.isArray(result.runs) ? result.runs : [])
+            runs.push({ runId: run?.runId ?? null, resourceId: run?.resourceId ?? null, status, updatedAt: run?.updatedAt ?? null });
+        }
+        return { runs };
+      }
       const projectRef = string(input.projectRef, PROJECT_REF, 'projectRef');
 
       if (input.operation === 'runs') {
