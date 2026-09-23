@@ -189,13 +189,13 @@ describe('MCP structured results through the SDK client', () => {
       status: 201,
       data: { key: 'MCP', teamId: agent.teamId },
     });
+    // The owner owns it. The agent keeps to its own project: a new project takes in no
+    // external agent but its coordinator and the Home agent.
     const members = await ownerApi.projects({ projectKey: 'MCP' }).members.get();
     expect(members.data?.items).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ userId: owner.userId, role: 'owner' }),
-        expect.objectContaining({ userId: agent.userId, role: 'member', isAgent: true }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ userId: owner.userId, role: 'owner' })]),
     );
+    expect(members.data?.items.some((member) => member.userId === agent.userId)).toBe(false);
   });
 
   it('accepts the exact create_project grant and rejects an external agent with no grant', async () => {

@@ -33,6 +33,7 @@ import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { PROJECT_FEATURES, featureLabel, type ProjectFeature } from '#shared/features';
 import { getLimits } from '#shared/limits';
 import { deleteThreadsWhere } from '#modules/agents/core/runtime/memory';
+import { HOME_AGENT_USERNAME, isHomeAgent } from '#modules/agents/core/home-agent';
 import { getProjectDefaults } from '#modules/settings/service';
 import { dropUnusedTeamMembership } from '#modules/scim/reconcile';
 import { deleteObjects } from '#shared/s3';
@@ -336,8 +337,6 @@ export const DEFAULT_PROVISIONING_RESOURCES = [
   'browser',
 ] as const;
 
-const HERMES_PROJECT_COORDINATOR = /^hermes-[a-z0-9_-]+-coordinator$/;
-
 // A project coordinator is a real external agent, not a deployment-side record.
 // The deterministic, reserved handle makes it unique per project key (which is
 // instance-wide unique), while the normal agent rows remain the source of truth for
@@ -347,8 +346,30 @@ export function hermesProjectCoordinatorUsername(projectKey: string): string {
   return `hermes-${slug}-coordinator`;
 }
 
-export function isHermesProjectCoordinatorUsername(username: string): boolean {
-  return HERMES_PROJECT_COORDINATOR.test(username);
+// The bot users of the agents a new project of the team starts with, beside its own
+// coordinator: the Home agent always, and the internal agents of the team unless the
+// creator opts out. Every other external agent keeps to its one project, which is what
+// gives it a Hermes runtime of its own. A specialist belongs to the project it was made
+// for, and a template to none.
+export async function newProjectAgentUserIds(
+  teamId: number,
+  withTeamAgents: boolean,
+): Promise<string[]> {
+  const rows = await db
+    .select({ userId: aiAgent.userId, username: aiAgent.username, kind: aiAgent.kind })
+    .from(aiAgent)
+    .where(
+      and(
+        eq(aiAgent.teamId, teamId),
+        eq(aiAgent.template, false),
+        sql`not exists (select 1 from ${organizationAgentAssignment} a where a.agent_id = ${aiAgent.id} and a.role = 'specialist')`,
+      ),
+    );
+  return rows
+    .filter(
+      ({ username, kind }) => isHomeAgent(username) || (withTeamAgents && kind === 'internal'),
+    )
+    .map(({ userId }) => userId);
 }
 
 function hermesProjectCoordinatorInstructions(projectKey: string, projectName: string): string {
@@ -396,6 +417,15 @@ export async function createHermesProjectCoordinator(
     // agent row, team membership, credentials, schedules, and runtime state.
     await tx.delete(user).where(eq(user.id, existing.userId));
   }
+  const [home] = await tx
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(
+      and(
+        eq(aiAgent.teamId, input.teamId),
+        eq(sql`lower(${aiAgent.username})`, HOME_AGENT_USERNAME),
+      ),
+    );
   const userId = crypto.randomUUID();
   await tx.insert(user).values({
     id: userId,
@@ -427,10 +457,13 @@ export async function createHermesProjectCoordinator(
       runnerScope: 'owner',
     })
     .returning({ id: aiAgent.id });
-  // It leads the project's agent team.
-  await tx
-    .insert(organizationAgentAssignment)
-    .values({ teamId: input.teamId, agentId: agent.id, role: 'coordinator' });
+  // It leads the project's agent team and reports to the Home agent.
+  await tx.insert(organizationAgentAssignment).values({
+    teamId: input.teamId,
+    agentId: agent.id,
+    role: 'coordinator',
+    reportsToAgentId: home?.id ?? null,
+  });
   await tx.insert(teamMember).values({ teamId: input.teamId, userId, role: 'agent' });
   await tx.insert(projectMember).values({
     projectId: input.projectId,
@@ -610,14 +643,9 @@ export async function createProject(
   const ownerTeam = await targetTeam(ownerId, teamId);
   // What a new project starts with, set instance-wide in god mode. Read before the
   // transaction opens so the settings lookup is not part of it.
-  const [defaults, teamAgents, defaultRoleId] = await Promise.all([
+  const [defaults, agentUserIds, defaultRoleId] = await Promise.all([
     getProjectDefaults(),
-    input.autoAssignTeamAgents === false
-      ? Promise.resolve([])
-      : db
-          .select({ userId: aiAgent.userId, username: aiAgent.username })
-          .from(aiAgent)
-          .where(eq(aiAgent.teamId, ownerTeam.id)),
+    newProjectAgentUserIds(ownerTeam.id, input.autoAssignTeamAgents !== false),
     getDefaultRoleId(ownerTeam.id),
   ]);
   return db.transaction(async (tx) => {
@@ -632,12 +660,9 @@ export async function createProject(
       })
       .returning();
     await tx.insert(projectMember).values({ projectId: row.id, userId: ownerId, role: 'owner' });
-    const inheritedAgents = teamAgents.filter(
-      ({ username }) => !isHermesProjectCoordinatorUsername(username),
-    );
-    if (inheritedAgents.length > 0) {
+    if (agentUserIds.length > 0) {
       await tx.insert(projectMember).values(
-        inheritedAgents.map(({ userId }) => ({
+        agentUserIds.map((userId) => ({
           projectId: row.id,
           userId,
           role: 'member' as const,

@@ -11,6 +11,7 @@ import {
 } from '@repo/db';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
+import { notHomeAgent } from '#modules/agents/core/home-agent';
 import { isWorkflowEnabled, listTaskWorkflowRuns, startWorkflow } from './service';
 
 // The Mastra agent-team workflow started for one issue: the issue is the task, its
@@ -55,7 +56,8 @@ async function issueTask(issueId: number) {
 }
 
 // The external agents of the project that have an agent-team role in their team's
-// organization. Hermes runs only external agents.
+// organization. Hermes runs only external agents. The Home agent hands work to the
+// team and is not part of it.
 async function teamMembers(projectId: number) {
   return db
     .select({
@@ -77,7 +79,13 @@ async function teamMembers(projectId: number) {
       projectMember,
       and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, projectId)),
     )
-    .where(and(eq(aiAgent.kind, 'external'), isNotNull(organizationAgentAssignment.role)))
+    .where(
+      and(
+        eq(aiAgent.kind, 'external'),
+        isNotNull(organizationAgentAssignment.role),
+        notHomeAgent(),
+      ),
+    )
     .orderBy(asc(aiAgent.username));
 }
 

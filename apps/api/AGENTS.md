@@ -168,6 +168,11 @@ Two decisions a reader would otherwise propose again:
 - **An agent's role is its `project_member` row**, per project, set from the project's
   member list like a person's. Attaching an agent joins it on the team's default role;
   `members/` refuses to make it an owner, since an owner bypasses the matrix.
+- **The Home agent is left out of a project's lists, not out of the project.** It keeps
+  its `project_member` rows so it can work there, and every project-scoped list (agents,
+  assignees, members, candidates, the project's organization, the agent team) filters it
+  with `notHomeAgent()` from `modules/agents/core/home-agent.ts`. A component never
+  filters it itself.
 
 Over MCP the team is resolved from the API key rather than asked for (`mcp/server.ts`):
 an agent's key acts in its own team, a person with one team in theirs, and a person in

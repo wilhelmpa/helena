@@ -1,7 +1,16 @@
 import { auth } from '@repo/auth';
-import { aiAgent, db, project, projectMember, teamMember, user } from '@repo/db';
-import { and, asc, eq } from 'drizzle-orm';
+import {
+  aiAgent,
+  db,
+  organizationAgentAssignment,
+  project,
+  projectMember,
+  teamMember,
+  user,
+} from '@repo/db';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 
+import { HOME_AGENT_USERNAME } from '#modules/agents/core/home-agent';
 import { createAgent, regenerateKey } from '#modules/agents/core/service';
 import {
   createHermesProjectCoordinator,
@@ -24,9 +33,9 @@ export const HOME_AGENT_SOUL =
   'the stakes demand it, not by default.';
 
 const HOME_AGENT_INSTRUCTIONS = [
-  'Du bist der globale Home-Koordinator.',
-  'Du hilfst beim Einrichten und Steuern des gesamten Systems.',
-  'Arbeite projektuebergreifend, halte Aufgaben in Plan nachvollziehbar und fuehre keine externen Aktionen ohne ausdrueckliche Freigabe aus.',
+  'You are the Home agent, the master of all agents of this system.',
+  'You help set up and run the whole system.',
+  'Work across projects, keep tasks traceable in Plan, and take no external action without explicit approval.',
 ].join(' ');
 
 export interface ProjectCoordinatorBootstrapResult {
@@ -132,12 +141,14 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   const [existing] = await db
     .select({ id: aiAgent.id, kind: aiAgent.kind })
     .from(aiAgent)
-    .where(and(eq(aiAgent.teamId, owner.teamId), eq(aiAgent.username, 'master')))
+    .where(and(eq(aiAgent.teamId, owner.teamId), eq(aiAgent.username, HOME_AGENT_USERNAME)))
     .limit(1);
 
   if (existing) {
     if (existing.kind !== 'external') {
-      throw new Error('The reserved Home agent handle "master" belongs to a non-external agent');
+      throw new Error(
+        `The reserved Home agent handle "${HOME_AGENT_USERNAME}" belongs to a non-external agent`,
+      );
     }
     const apiKey = await regenerateKey(existing.id, owner.teamId);
     if (!apiKey) throw new Error('The existing Home agent could not be re-keyed');
@@ -146,7 +157,7 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
 
   const created = await createAgent(owner.teamId, {
     name: 'Home',
-    username: 'master',
+    username: HOME_AGENT_USERNAME,
     kind: 'external',
     projectIds: [],
     ownerUserId: owner.userId,
@@ -167,6 +178,17 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   });
 
   if (!created.apiKey) throw new Error('Home agent creation did not return an external key');
+  // Coordinators of projects created before the Home agent report to nobody yet.
+  await db
+    .update(organizationAgentAssignment)
+    .set({ reportsToAgentId: created.agent.id, updatedAt: new Date() })
+    .where(
+      and(
+        eq(organizationAgentAssignment.teamId, owner.teamId),
+        eq(organizationAgentAssignment.role, 'coordinator'),
+        isNull(organizationAgentAssignment.reportsToAgentId),
+      ),
+    );
   return { status: 'ready', agentId: created.agent.id, apiKey: created.apiKey };
 }
 

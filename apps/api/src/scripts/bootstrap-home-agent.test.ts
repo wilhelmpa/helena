@@ -67,6 +67,20 @@ describe('Home agent bootstrap', () => {
     expect(afterRetry!.runtimePolicy).toEqual(customizedPolicy);
   });
 
+  it('makes the coordinators of earlier projects report to the new Home agent', async () => {
+    const owner = await signUpTestUser({ name: 'Patrick' });
+    const api = authedApi(owner.cookie);
+    const teamId = (await api.projects.post({ key: 'MKT', name: 'Marketing' })).data!.teamId;
+
+    const result = await bootstrapHomeAgent();
+    if (result.status !== 'ready') throw new Error('Home agent was not provisioned');
+
+    const organization = await api.teams({ teamId }).organization.get();
+    expect(
+      organization.data!.agents.find((agent) => agent.username === 'hermes-mkt-coordinator'),
+    ).toMatchObject({ reportsToAgentId: result.agentId });
+  });
+
   it('serves the Home chat directly from the team without creating a project', async () => {
     const owner = await signUpTestUser({ name: 'Patrick' });
     const result = await bootstrapHomeAgent();

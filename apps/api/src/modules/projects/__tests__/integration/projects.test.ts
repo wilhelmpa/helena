@@ -121,12 +121,19 @@ describe('projects', () => {
       ]);
     });
 
-    it('adds existing agents from the owning team on the default member role only', async () => {
+    // An external agent keeps to its one project, which gives it a Hermes runtime of its
+    // own, so only the internal agents of the team join a new project.
+    it('adds the internal agents of the owning team on the default member role only', async () => {
       const owner = await signUpClient();
       await owner.api.projects.post({ key: 'SRC', name: 'Source' });
       const mine = await createAgent(owner.api, 'SRC', {
         name: 'Team tester',
         username: 'team-tester',
+        kind: 'internal',
+      });
+      const runner = await createAgent(owner.api, 'SRC', {
+        name: 'Team runner',
+        username: 'team-runner',
         kind: 'external',
       });
       const other = await signUpClient();
@@ -158,6 +165,9 @@ describe('projects', () => {
       expect(
         members.data?.items.some((member) => member.userId === theirs.data!.agent.userId),
       ).toBe(false);
+      expect(
+        members.data?.items.some((member) => member.userId === runner.data!.agent.userId),
+      ).toBe(false);
     });
 
     it('supports an explicit project-create opt out from team agent assignment', async () => {
@@ -166,7 +176,7 @@ describe('projects', () => {
       await createAgent(owner.api, 'SRC', {
         name: 'Team tester',
         username: 'team-tester',
-        kind: 'external',
+        kind: 'internal',
       });
 
       await owner.api.projects.post({
@@ -814,17 +824,18 @@ describe('projects', () => {
       expect(roles.data?.map((r) => r.name).sort()).toEqual(['Editor', 'Member']);
     });
 
-    // Shared agents follow a same-team copy, while each project keeps its own Hermes
-    // coordinator and never attaches the source coordinator to the destination.
-    it('keeps shared agents and creates a separate coordinator in a same-team copy', async () => {
+    // Internal agents follow a same-team copy, while each project keeps its own Hermes
+    // coordinator and external agents keep to their one project.
+    it('keeps internal agents and creates a separate coordinator in a same-team copy', async () => {
       const { api, user } = await signUpClient();
       await api.projects.post({ key: 'SRC', name: 'Source' });
       await createAgent(api, 'SRC', {
-        name: 'Ext',
-        username: 'ext',
-        kind: 'external',
+        name: 'Int',
+        username: 'int',
+        kind: 'internal',
         runnerScope: 'owner',
       });
+      await createAgent(api, 'SRC', { name: 'Ext', username: 'ext', kind: 'external' });
 
       await api.projects({ projectKey: 'SRC' }).copy.post({
         key: 'DST',
@@ -839,7 +850,7 @@ describe('projects', () => {
       expect(copied.data).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            username: 'ext',
+            username: 'int',
             runnerScope: 'owner',
             ownerUserId: user.userId,
           }),
@@ -850,17 +861,18 @@ describe('projects', () => {
         ]),
       );
       const all = await api.teams({ teamId })['ai-agents'].get();
-      expect(all.data).toHaveLength(3);
+      expect(all.data).toHaveLength(4);
       expect(copied.data?.some((agent) => agent.username === 'hermes-src-coordinator')).toBe(false);
+      expect(copied.data?.some((agent) => agent.username === 'ext')).toBe(false);
     });
 
-    it('assigns every target-team agent to a copy even without copying agent settings', async () => {
+    it('assigns the internal team agents to a copy even without copying agent settings', async () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'SRC', name: 'Source' });
       const agent = await createAgent(api, 'SRC', {
         name: 'Shared tester',
         username: 'shared-tester',
-        kind: 'external',
+        kind: 'internal',
       });
 
       await api.projects({ projectKey: 'SRC' }).copy.post({
@@ -872,9 +884,12 @@ describe('projects', () => {
       const assigned = await api.teams({ teamId })['ai-agents'].get({
         query: { projectId: await projectIdOf(api, 'DST') },
       });
-      expect(assigned.data).toHaveLength(1);
-      expect(assigned.data?.[0]).toMatchObject({ id: agent.data!.agent.id });
-      expect(assigned.data?.[0].projects.find((item) => item.key === 'DST')).toMatchObject({
+      expect(assigned.data?.map((a) => a.username).sort()).toEqual([
+        'hermes-dst-coordinator',
+        'shared-tester',
+      ]);
+      const shared = assigned.data!.find((a) => a.id === agent.data!.agent.id)!;
+      expect(shared.projects.find((item) => item.key === 'DST')).toMatchObject({
         roleName: 'Member',
       });
     });

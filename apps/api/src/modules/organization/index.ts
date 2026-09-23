@@ -15,6 +15,7 @@ import {
   organizationDepartmentParams,
   organizationGoalParams,
   organizationProjectParams,
+  organizationQuery,
   organizationTeamParams,
   setAgentAssignmentBody,
   setAgentProjectInstructionsBody,
@@ -43,16 +44,21 @@ export const organizationRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
-  .get('/teams/:teamId/organization', ({ membership }) => getOrganization(membership.teamId), {
-    params: organizationTeamParams,
-    teamManager: true,
-    response: { 200: OrganizationResponse, ...errors(401, 403, 404) },
-    detail: {
-      summary: 'Get the team organization',
-      description:
-        'Get departments, goals, agents, reporting lines, project ownership and project instructions. Only team owners and managers can read the full organization.',
+  .get(
+    '/teams/:teamId/organization',
+    ({ membership, query }) => getOrganization(membership.teamId, query.projectId),
+    {
+      params: organizationTeamParams,
+      query: organizationQuery,
+      teamManager: true,
+      response: { 200: OrganizationResponse, ...commonErrors },
+      detail: {
+        summary: 'Get the team organization',
+        description:
+          'Get departments, goals, agents, reporting lines, project ownership and project instructions. Only team owners and managers can read the full organization.',
+      },
     },
-  })
+  )
   .post(
     '/teams/:teamId/organization/departments',
     async ({ membership, body, set }) => {

@@ -12,6 +12,7 @@ import {
 import { and, desc, eq, ilike, isNotNull, isNull, notExists, or, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
 import { DEFAULT_TIMEZONE } from '#modules/user-preferences/service';
+import { notHomeAgent } from '#modules/agents/core/home-agent';
 import {
   defaultMemberPermissions,
   emptyPermissions,
@@ -233,7 +234,8 @@ export async function listAssigneeCandidates(projectId: number): Promise<Assigne
       .innerJoin(
         projectMember,
         and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, projectId)),
-      ),
+      )
+      .where(notHomeAgent()),
   ]);
   const members: AssigneeCandidate[] = memberRows.map((r) => {
     const context = toMemberContext(r.role as MemberRole, r.permissions);
@@ -296,6 +298,12 @@ export function matchesFilters({ search, kind }: MemberFilters) {
   );
 }
 
+// The members a project's list shows. The Home agent is a member of the projects so it
+// can work in them, and is listed in none.
+function listedMembers(projectId: number, filters: MemberFilters) {
+  return and(eq(projectMember.projectId, projectId), notHomeAgent(), matchesFilters(filters));
+}
+
 // How many members match, ignoring the page window, so the two agree.
 async function countMembers(projectId: number, filters: MemberFilters = {}): Promise<number> {
   const rows = await db
@@ -303,7 +311,7 @@ async function countMembers(projectId: number, filters: MemberFilters = {}): Pro
     .from(projectMember)
     .innerJoin(user, eq(user.id, projectMember.userId))
     .leftJoin(aiAgent, eq(aiAgent.userId, projectMember.userId))
-    .where(and(eq(projectMember.projectId, projectId), matchesFilters(filters)));
+    .where(listedMembers(projectId, filters));
   return rows[0]?.count ?? 0;
 }
 
@@ -341,7 +349,7 @@ function selectMembers(projectId: number, filters: MemberFilters, order: MemberO
     .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
     .leftJoin(aiAgent, eq(aiAgent.userId, projectMember.userId))
     .leftJoin(userPreference, eq(userPreference.userId, projectMember.userId))
-    .where(and(eq(projectMember.projectId, projectId), matchesFilters(filters)))
+    .where(listedMembers(projectId, filters))
     .orderBy(...memberOrderBy(order));
 }
 
@@ -441,6 +449,7 @@ export async function listMemberCandidates(
     .where(
       and(
         eq(teamMember.teamId, teamId),
+        notHomeAgent(),
         notExists(
           db
             .select({ one: sql`1` })

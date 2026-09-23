@@ -12,6 +12,7 @@ import {
 } from '@repo/db';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
+import { notHomeAgent } from '#modules/agents/core/home-agent';
 
 export type GoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
 export type AgentTeamRole = 'coordinator' | 'specialist' | 'reviewer';
@@ -189,7 +190,9 @@ function nonBlank(value: string, label: string): string {
   return result;
 }
 
-export async function getOrganization(teamId: number) {
+// The team's organization. With projectId, its agents are the ones working in that
+// project, the Home agent left out.
+export async function getOrganization(teamId: number, projectId?: number) {
   const [departments, goals, agents, agentProjects, projects] = await Promise.all([
     db
       .select({
@@ -244,7 +247,17 @@ export async function getOrganization(teamId: number) {
           eq(organizationAgentAssignment.teamId, teamId),
         ),
       )
-      .where(eq(aiAgent.teamId, teamId))
+      .where(
+        and(
+          eq(aiAgent.teamId, teamId),
+          projectId == null
+            ? undefined
+            : and(
+                notHomeAgent(),
+                sql`exists (select 1 from ${projectMember} pm where pm.user_id = ${aiAgent.userId} and pm.project_id = ${projectId})`,
+              ),
+        ),
+      )
       .orderBy(asc(user.name)),
     db
       .select({

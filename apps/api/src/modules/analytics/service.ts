@@ -14,6 +14,7 @@ import {
 } from '@repo/db';
 import { and, desc, eq, inArray, isNull, isNotNull, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
+import { notHomeAgent } from '#modules/agents/core/home-agent';
 
 // Read-only project metrics for the dashboards feature. Every figure is derived
 // from the existing issue / project_column / issue_activity / issue_status tables —
@@ -597,7 +598,8 @@ export async function getAgentWorkload(projectId: number): Promise<AgentWorkload
     .innerJoin(
       projectMember,
       and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, projectId)),
-    );
+    )
+    .where(notHomeAgent());
   if (agents.length === 0) return [];
 
   const delegatedRows = await db
