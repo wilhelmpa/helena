@@ -34,6 +34,8 @@ export interface ChatMessage {
   sessionId: string | null;
   model: string | null;
   thinkingLevel: string | null;
+  // Absolute paths of the images attached to the question. Older servers send none.
+  images?: string[];
 }
 
 // None of these calls does real work on the server, so a request that hangs is a dead
@@ -189,6 +191,7 @@ export class Client {
       error?: string;
       usage?: ContextUsage | null;
       sessionLost?: boolean;
+      model?: string;
     },
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);

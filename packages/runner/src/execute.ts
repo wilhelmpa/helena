@@ -24,6 +24,8 @@ export interface Task {
   runBudgetSeconds?: number | null;
   // The toolsets Hermes is limited to, or null for the profile's own selection.
   toolsets?: string[] | null;
+  // An image the model reads with the prompt.
+  image?: string | null;
 }
 
 export interface Outcome {
@@ -153,6 +155,7 @@ function spawnArgs(
       maxTurns: task.maxTurns,
       runBudgetSeconds: task.runBudgetSeconds,
       toolsets: task.toolsets,
+      image: task.image,
     }),
   ];
 }
