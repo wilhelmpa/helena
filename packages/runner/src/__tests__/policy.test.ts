@@ -510,6 +510,35 @@ describe('Hermes runtime policy synchronizer', () => {
     await sync.ensure();
     expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web', 'itsaplan'], env: {} });
   });
+
+  it('hands the vault paths of the latest policy to Hermes in the environment', async () => {
+    const { materializer } = await fixture();
+    const vaultAccess = {
+      root: '/srv/volition/vault',
+      read: ['/srv/volition/vault/Projects/VOL', '/srv/volition/vault/Templates'],
+      write: ['/srv/volition/vault/Projects/VOL'],
+      deny: ['/srv/volition/vault/Private'],
+    };
+    const sync = new HermesPolicySynchronizer(
+      client(
+        [
+          {
+            revision: 'sha256:one',
+            runtimePolicy: { files: [{ kind: 'instructions', path: 'SOUL.md', content: 'x' }] },
+            skills: [],
+            vaultAccess,
+          },
+        ],
+        [],
+      ),
+      materializer,
+    );
+
+    expect((await sync.runSettings()).env).toEqual({});
+    await sync.ensure();
+    const { env } = await sync.runSettings();
+    expect(JSON.parse(env.VOLITION_VAULT_ACCESS!)).toEqual(vaultAccess);
+  });
 });
 
 describe('Hermes toolset restriction', () => {

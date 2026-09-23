@@ -28,7 +28,14 @@ if changed bun.lock; then
   as_owner bash -c "cd '$live' && bun install --frozen-lockfile >/dev/null"
 fi
 
+# The vault's layout, groups, permissions and git history; idempotent.
+"$live/deployment/volition-stack/native/vault-setup.sh"
+
 if changed packages/db/drizzle; then
+  # The Docs pages still stored in the database become files in the vault before the
+  # migration drops their tables; the script does nothing once they are gone.
+  runuser -u volition-plan -- env PROJECT_VAULT_ROOT=/srv/volition/vault \
+    bash -c "cd '$live' && /usr/local/bin/bun --env-file=/etc/volition/plan.env apps/api/src/scripts/convert-documents-to-vault.ts"
   echo "migrating the database"
   systemctl start volition-plan-migrate.service
 fi

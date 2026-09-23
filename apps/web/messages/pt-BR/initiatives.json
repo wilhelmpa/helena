@@ -154,13 +154,5 @@
     "download": "Baixar",
     "downloadFile": "Baixar {name}",
     "deleteFile": "Excluir {name}"
-  },
-  "documents": {
-    "title": "Docs",
-    "add": "Vincular um Doc",
-    "empty": "Nenhum Doc vinculado ainda.",
-    "loadFailed": "Não foi possível carregar os Docs vinculados. Tente novamente.",
-    "untitled": "Sem título",
-    "remove": "Desvincular {title}"
   }
 }

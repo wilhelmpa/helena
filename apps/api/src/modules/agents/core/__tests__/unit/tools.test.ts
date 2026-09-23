@@ -77,14 +77,8 @@ describe('normalizeToolKeys', () => {
     for (const key of keys) expect(alwaysOn.has(key)).toBe(false);
   });
 
-  it('registers document actions as grantable, including the reads', () => {
-    const keys = [
-      'list_documents',
-      'get_document',
-      'create_document',
-      'update_document',
-      'delete_document',
-    ];
+  it('registers the knowledge actions as grantable, including the reads', () => {
+    const keys = ['search_knowledge', 'read_document', 'list_folder', 'backlinks', 'write_note'];
     expect(normalizeToolKeys(keys)).toEqual(keys);
   });
 

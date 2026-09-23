@@ -102,7 +102,7 @@ function beforeInventory() {
       ['ai_agent', 14],
       ['apikey', 15],
       ['issue', 78],
-      ['project_document', 34],
+      ['vault_entry', 34],
       ['cycle', 1],
     ]),
     facts: {
@@ -135,7 +135,7 @@ function targetInventory() {
       ['ai_agent', 1],
       ['apikey', 1],
       ['issue', 0],
-      ['project_document', 0],
+      ['vault_entry', 0],
       ['cycle', 0],
       ['agent_run', 0],
       ['agent_skill', 0],
@@ -232,7 +232,7 @@ test('Garage environment rotation replaces exactly the two required keys', () =>
 test('target state permits only the owner, HOME project and master agent rows', () => {
   assert.equal(isTargetState(targetInventory()), true);
   const residual = targetInventory();
-  residual.counts.set('project_document', 1);
+  residual.counts.set('issue', 1);
   assert.equal(isTargetState(residual), false);
   const secret = targetInventory();
   secret.counts.set('app_secret', 1);

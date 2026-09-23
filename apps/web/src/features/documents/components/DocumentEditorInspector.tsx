@@ -1,7 +1,5 @@
 'use client';
 
-import type { Editor } from '@tiptap/react';
-import type { ProjectDocument } from '@/lib/api/endpoints/documents';
 import {
   Sheet,
   SheetContent,
@@ -11,34 +9,26 @@ import {
 } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLocale, useTranslations } from 'next-intl';
-import DocumentSidePanel from './DocumentSidePanel';
+import type { Frontmatter } from '../utils/noteFrontmatter';
+import DocumentBacklinks from './DocumentBacklinks';
+import DocumentProperties from './DocumentProperties';
 
 export default function DocumentEditorInspector({
   open,
-  projectKey,
-  document,
-  editor,
-  authorNames,
-  canUpload,
-  canDeleteAssets,
-  canReadWorkItems,
-  canLinkWorkItems,
-  canRetryMarkdown,
+  revision,
+  path,
+  frontmatter,
+  editable,
+  onFrontmatterChange,
   onOpenChange,
-  onOpenHistory,
 }: {
   open: boolean;
-  projectKey: string;
-  document: ProjectDocument;
-  editor: Editor | null;
-  authorNames: Record<string, string>;
-  canUpload: boolean;
-  canDeleteAssets: boolean;
-  canReadWorkItems: boolean;
-  canLinkWorkItems: boolean;
-  canRetryMarkdown: boolean;
+  revision: number;
+  path: string;
+  frontmatter: Frontmatter;
+  editable: boolean;
+  onFrontmatterChange: (frontmatter: Frontmatter) => void;
   onOpenChange: (open: boolean) => void;
-  onOpenHistory: () => void;
 }) {
   const t = useTranslations('documents');
   const locale = useLocale();
@@ -47,18 +37,15 @@ export default function DocumentEditorInspector({
   if (!open) return null;
 
   const panel = (
-    <DocumentSidePanel
-      projectKey={projectKey}
-      document={document}
-      editor={editor}
-      authorNames={authorNames}
-      canUpload={canUpload}
-      canDeleteAssets={canDeleteAssets}
-      canReadWorkItems={canReadWorkItems}
-      canLinkWorkItems={canLinkWorkItems}
-      canRetryMarkdown={canRetryMarkdown}
-      onOpenHistory={onOpenHistory}
-    />
+    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4">
+      <DocumentProperties
+        key={revision}
+        frontmatter={frontmatter}
+        editable={editable}
+        onChange={onFrontmatterChange}
+      />
+      <DocumentBacklinks path={path} />
+    </div>
   );
 
   if (isMobile) {
@@ -80,7 +67,7 @@ export default function DocumentEditorInspector({
 
   return (
     <aside
-      className="flex w-[21rem] shrink-0 animate-in flex-col border-s bg-muted/10 duration-200 slide-in-from-right"
+      className="flex w-[19rem] shrink-0 animate-in flex-col border-s bg-muted/10 duration-200 slide-in-from-right"
       aria-label={t('details')}
     >
       {panel}

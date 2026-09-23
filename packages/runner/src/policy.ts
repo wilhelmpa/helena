@@ -25,6 +25,17 @@ export interface RuntimeSkill {
   files: RuntimeSkillFile[];
 }
 
+// The parts of the knowledge vault the agent's file tools may reach, as absolute paths:
+// a path is readable below an entry of `read`, writable below one of `write`, and
+// neither below one of `deny`. Hermes gets it as VOLITION_VAULT_ACCESS (JSON) for its
+// approval plugin to enforce.
+export interface VaultAccess {
+  root: string;
+  read: string[];
+  write: string[];
+  deny: string[];
+}
+
 // A literal, or the id of one of the team's secrets, whose value the runner reads from
 // Plan before each run and chat answer.
 export type RuntimeMcpValue = { name: string; value: string } | { name: string; secret: number };
@@ -51,6 +62,7 @@ export interface RuntimePolicySnapshot {
   mcpServers?: RuntimeMcpServer[];
   // Whether website logins are granted to the agent. An older server sends none.
   webLogins?: boolean;
+  vaultAccess?: VaultAccess;
 }
 
 // A managed file that was changed outside Plan. Plan's version replaced it; the changed
@@ -539,6 +551,7 @@ export class HermesPolicySynchronizer {
   // wrote them. mcpSecrets is null while there is no managed configuration.
   private mcpServerNames: string[] = [];
   private mcpSecrets: number[] | null = null;
+  private vaultAccess: VaultAccess | null = null;
   private inventory: HermesInventory | undefined;
   private inventoryDigest: string | null = null;
   private inventoryReadAt = -Infinity;
@@ -578,7 +591,10 @@ export class HermesPolicySynchronizer {
   // run or chat answer the vault is brought to the logins granted now; a login revoked in
   // Plan is removed from it before Hermes starts.
   async runSettings(work?: WorkRef): Promise<HermesRunSettings> {
-    const settings = { toolsets: this.toolsets(), env: await this.mcpEnv(work) };
+    const settings = {
+      toolsets: this.toolsets(),
+      env: { ...this.vaultAccessEnv(), ...(await this.mcpEnv(work)) },
+    };
     if (!work || !this.options.vault) return settings;
     const granted = this.webLogins ? await this.client.webLogins(work) : [];
     const logins = await this.options.vault.sync(granted);
@@ -589,6 +605,11 @@ export class HermesPolicySynchronizer {
       this.mcpServerNames,
     );
     return { ...settings, toolsets, logins };
+  }
+
+  // The knowledge vault paths the agent's file tools may reach, for the approval plugin.
+  private vaultAccessEnv(): Record<string, string> {
+    return this.vaultAccess ? { VOLITION_VAULT_ACCESS: JSON.stringify(this.vaultAccess) } : {};
   }
 
   private async mcpEnv(work?: WorkRef): Promise<Record<string, string>> {
@@ -611,9 +632,10 @@ export class HermesPolicySynchronizer {
       // The claim that follows reports a server that cannot be reached.
       return;
     }
-    // The restriction writes no file, so it holds even while a revision fails to apply.
+    // The restrictions write no file, so they hold even while a revision fails to apply.
     this.deniedToolsets = snapshot.runtimePolicy?.toolDeny ?? [];
     this.webLogins = snapshot.webLogins === true;
+    this.vaultAccess = snapshot.vaultAccess ?? null;
     const applied = await this.apply(snapshot);
     const inventoryChanged = await this.readInventory();
     if ((applied || inventoryChanged) && this.state) await this.report(this.state);

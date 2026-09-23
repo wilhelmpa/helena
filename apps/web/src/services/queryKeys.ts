@@ -100,21 +100,17 @@ export const qk = {
   // widgets. `kind` names the metric (stats/pulse/throughput/breakdown/...) and
   // `params` scopes it to the widget's query (window, filters).
   dashboards: (projectKey: string) => ['dashboards', projectKey] as const,
-  documents: (projectKey: string, q = '', archived = false) =>
-    ['documents', projectKey, 'list', archived ? 'archived' : 'active', q] as const,
-  documentListsForProject: (projectKey: string) => ['documents', projectKey, 'list'] as const,
-  document: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId] as const,
-  documentRevisions: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'revisions'] as const,
-  documentAssets: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'assets'] as const,
-  documentIssueLinks: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'issues'] as const,
-  issueDocumentLinks: (projectKey: string, issueId: number) =>
-    ['documents', projectKey, 'issue', issueId] as const,
-  initiativeDocumentLinks: (projectKey: string, initiativeId: number) =>
-    ['documents', projectKey, 'initiative', initiativeId] as const,
+  // The knowledge vault, addressed by vault-relative path. `knowledge` is the
+  // invalidation base for all of it: a write can move a note between lists.
+  knowledge: ['knowledge'] as const,
+  knowledgeTree: (root: string) => ['knowledge', 'tree', root] as const,
+  knowledgeDocument: (path: string) => ['knowledge', 'document', path] as const,
+  knowledgeBacklinks: (path: string) => ['knowledge', 'backlinks', path] as const,
+  knowledgeTaskNotes: (identifier: string) => ['knowledge', 'task', identifier] as const,
+  knowledgeTrash: (root: string) => ['knowledge', 'trash', root] as const,
+  knowledgeConflicts: (root: string) => ['knowledge', 'conflicts', root] as const,
+  knowledgeHistory: (path: string) => ['knowledge', 'history', path] as const,
+  knowledgeSearch: (q: string, folder = '') => ['knowledge', 'search', folder, q] as const,
   // Note boards (the notes canvases). `noteBoardsForProject` is the invalidation
   // base for every list/search variant; `noteBoardsSearch` is one paged switcher
   // query (scoped by search text); `noteBoard` is a single board with its canvas.

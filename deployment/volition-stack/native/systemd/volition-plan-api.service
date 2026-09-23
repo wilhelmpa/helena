@@ -8,6 +8,10 @@ Requires=postgresql.service volition-plan-migrate.service
 Type=simple
 User=volition-plan
 Group=volition
+# Private/ of the vault belongs to volition-private. The umask keeps what the API writes
+# into the vault readable and writable for its group.
+SupplementaryGroups=volition-private
+UMask=0007
 WorkingDirectory=/srv/volition/source/plan
 EnvironmentFile=/etc/volition/plan.env
 # In production the auth cookies are marked Secure, and a browser drops those over plain

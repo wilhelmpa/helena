@@ -154,13 +154,5 @@
     "download": "Herunterladen",
     "downloadFile": "{name} herunterladen",
     "deleteFile": "{name} löschen"
-  },
-  "documents": {
-    "title": "Dokumente",
-    "add": "Dokument verknüpfen",
-    "empty": "Noch keine verknüpften Dokumente.",
-    "loadFailed": "Die verknüpften Dokumente konnten nicht geladen werden. Versuch es noch einmal.",
-    "untitled": "Ohne Titel",
-    "remove": "Verknüpfung zu {title} entfernen"
   }
 }

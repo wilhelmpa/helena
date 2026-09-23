@@ -90,6 +90,38 @@ it. For an account with triage switched on, the worker hands new inbox mail to t
   are not Plan agents and Plan does not show them. Longer or specialist work goes to the
   project's specialists through the agent team.
 
+## Knowledge vault
+
+The knowledge is Markdown and other files in the vault (`/srv/volition/vault`); the files
+are the source of truth. Plan's Docs page is an editor and a view on them, Obsidian edits
+the same files through Syncthing, and agents read and write them through Plan's MCP tools.
+Plan keeps only an index of them in Postgres (`vault_entry`, `vault_link`, `vault_move`).
+
+- **Layout:** `Home/`, `Projects/<KEY>/` (Docs, Files, Assets, Inbox, the area folders),
+  `Templates/`, `Private/` (the owner's, group `volition-private`, never an agent's),
+  `.trash/` (a trashed path keeps its relative path below it), `.obsidian/`.
+- **One index, built by Plan.** The worker watches the whole vault, indexes every file
+  (notes with frontmatter and links, the extracted text of PDFs, scans, images and office
+  files) and repairs drift with a periodic rescan. The API indexes its own writes at once.
+  Nobody else builds an index; other writers just write files.
+- **History:** the vault is a git repository of its text files, `Private/` a second one. A
+  save in Plan commits at once as the person or agent who made it; changes made outside
+  Plan are committed by the watcher as `extern` once the vault is quiet.
+- **Links:** `[[Note]]` links a note, `[[VOL-12]]` a task (the task lists the notes that
+  link it under "Wissen"). A reference to a file stores its path and sha256 and finds the
+  file again after a move through `GET /knowledge/resolve`.
+- **Addresses:** the Docs page opens a note by vault-relative path,
+  `/project/<KEY>/docs?path=<path>` (Home: `/docs?path=<path>`); Obsidian opens it as
+  `obsidian://open?vault=Volition&file=<encoded path>`.
+- **Reach:** a person reaches `Projects/<KEY>/` by their Docs permission in the project;
+  `Home/`, `Templates/` and `Private/` are the owner's. A project agent reads and writes its
+  project and reads `Templates/`; the Home agent reads everything but `Private/` and writes
+  `Home/`. The knowledge MCP tools (`search_knowledge`, `read_document`, `write_note`,
+  `list_folder`, `backlinks`) enforce this. For Hermes' own file tools the runtime policy
+  carries the same reach as `vaultAccess` (`{ root, read, write, deny }`, absolute paths),
+  which the runner hands to Hermes as `VOLITION_VAULT_ACCESS` for the approval plugin to
+  enforce.
+
 ## Rules that keep the boundaries
 
 - Plan has one agent kind: an external agent driven by the Hermes runner.

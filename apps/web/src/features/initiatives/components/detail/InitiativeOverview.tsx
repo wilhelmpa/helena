@@ -4,18 +4,10 @@ import { useTranslations } from 'next-intl';
 import type { Initiative } from '@/lib/api/endpoints/initiatives';
 import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 import InitiativeAttachments from './InitiativeAttachments';
-import InitiativeDocuments from './InitiativeDocuments';
 
 // The initiative's own text: its title and its description as markdown, with its
-// linked Docs and its files beside them. The numbers and the activity feed are the
-// Progress tab.
-export default function InitiativeOverview({
-  initiative,
-  projectKey,
-}: {
-  initiative: Initiative;
-  projectKey: string;
-}) {
+// files beside them. The numbers and the activity feed are the Progress tab.
+export default function InitiativeOverview({ initiative }: { initiative: Initiative }) {
   const t = useTranslations('initiatives');
   const hasDescription = initiative.description.trim().length > 0;
 
@@ -39,7 +31,6 @@ export default function InitiativeOverview({
           )}
         </div>
         <aside className="flex flex-col gap-6 @4xl:ms-auto @4xl:w-88 @4xl:shrink-0">
-          <InitiativeDocuments projectKey={projectKey} initiativeId={initiative.id} />
           <InitiativeAttachments initiativeId={initiative.id} />
         </aside>
       </div>

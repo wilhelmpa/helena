@@ -22,6 +22,7 @@ COPY packages/mail/package.json ./packages/mail/
 COPY packages/mailer/package.json ./packages/mailer/
 COPY packages/net/package.json ./packages/net/
 COPY packages/storage/package.json ./packages/storage/
+COPY packages/vault/package.json ./packages/vault/
 COPY packages/runner/package.json ./packages/runner/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 # INSTALL_FILTER installs only the api workspace and its dependency closure, so the

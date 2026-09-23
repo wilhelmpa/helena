@@ -1,0 +1,27 @@
+{
+  "name": "@repo/vault",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test --env-file=../../.env.test"
+  },
+  "dependencies": {
+    "@repo/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "exceljs": "^4.4.0",
+    "jszip": "^3.10.1",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -67,8 +67,13 @@ describe('authorized internal link previews', () => {
   });
 
   it('reads document and bounded note board overviews', async () => {
-    responses.set('/projects/SYR/documents/9', {
-      body: { title: 'Plan', content: '# Outline\n\nNext step', updatedAt: '2026-09-09' },
+    responses.set('/knowledge/documents', {
+      body: {
+        title: 'Plan',
+        body: '# Outline\n\nNext step',
+        projectKey: 'SYR',
+        updatedAt: '2026-09-09',
+      },
     });
     responses.set('/projects/SYR/note-boards/18', {
       body: {
@@ -82,11 +87,19 @@ describe('authorized internal link previews', () => {
       },
     });
     const document = await resolveLinkPreview(
-      '/project/SYR/docs/9',
+      '/project/SYR/docs?path=Projects%2FSYR%2FDocs%2FPlan.md',
       origin,
       new AbortController().signal,
     );
+    assert.equal(document.title, 'Plan');
     assert.equal(document.description, 'Outline Next step');
+    assert.equal(document.siteName, 'Research');
+    assert.equal(
+      calls
+        .find((call) => call.url.pathname === '/knowledge/documents')
+        ?.url.searchParams.get('path'),
+      'Projects/SYR/Docs/Plan.md',
+    );
     const notes = await resolveLinkPreview(
       '/project/SYR/notes/18',
       origin,

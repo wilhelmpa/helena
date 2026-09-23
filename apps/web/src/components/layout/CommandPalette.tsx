@@ -1,10 +1,14 @@
 import { Fragment, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIssueSearchQuery } from '@/services/issues.service';
+import { useKnowledgeSearchQuery } from '@/services/knowledge.service';
 import type { Command, CommandPage, CommandSection } from '@/utils/commands';
 import { substringFilter } from '@/utils/commandFilter';
+import { knowledgeHref } from '@/utils/knowledgeHref';
 import CommandPaletteIssues from '@/components/layout/CommandPaletteIssues';
+import CommandPaletteKnowledge from '@/components/layout/CommandPaletteKnowledge';
 import CommandPaletteRow from '@/components/layout/CommandPaletteRow';
 import {
   CommandDialog,
@@ -19,9 +23,10 @@ import {
 // for the issue in front of the user, then the board, the general commands, the
 // project list and every section they may open. A command with a submenu opens a
 // second level (status, priority, assignee, labels); Backspace on an empty input
-// goes back. While the user is typing, a last "Issues" group lists issues the
-// server matches by identifier, title, description, number or custom fields
-// (archived issues included), so a search separates sections, commands and issues.
+// goes back. While the user is typing, an "Issues" group lists issues the server
+// matches by identifier, title, description, number or custom fields (archived
+// issues included), and a last "Knowledge" group the notes and files of the vault
+// whose text matches.
 export default function CommandPalette({
   open,
   onOpenChange,
@@ -38,6 +43,7 @@ export default function CommandPalette({
   onOpenIssue: (sequenceNumber: number) => void;
 }) {
   const t = useTranslations('palette');
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [page, setPage] = useState<CommandPage | null>(null);
 
@@ -65,6 +71,8 @@ export default function CommandPalette({
   const debounced = useDebouncedValue(query, 250);
   const search = useIssueSearchQuery(currentProjectKey, debounced, { enabled: open && !page });
   const hits = search.data ?? [];
+  const knowledge = useKnowledgeSearchQuery(debounced, { enabled: open && !page });
+  const knowledgeHits = knowledge.data?.items ?? [];
   const searching = query.trim().length > 0;
 
   function run(command: Command) {
@@ -121,6 +129,16 @@ export default function CommandPalette({
             onOpenIssue={(seq) => {
               onOpenChange(false);
               onOpenIssue(seq);
+            }}
+          />
+        )}
+        {!page && searching && (knowledgeHits.length > 0 || knowledge.isFetching) && (
+          <CommandPaletteKnowledge
+            hits={knowledgeHits}
+            fetching={knowledge.isFetching}
+            onOpen={(hit) => {
+              onOpenChange(false);
+              router.push(knowledgeHref(hit.path, hit.kind));
             }}
           />
         )}

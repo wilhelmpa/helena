@@ -38,7 +38,7 @@ import { webhookRoutes } from './modules/webhooks';
 import { gitSettingsRoutes } from './modules/git';
 import { dashboardRoutes } from './modules/dashboards';
 import { noteBoardRoutes } from './modules/note-boards';
-import { documentRoutes } from './modules/documents';
+import { knowledgeRoutes } from './modules/knowledge';
 import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
@@ -138,7 +138,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentRuntimeFileRoutes)
   .use(dashboardRoutes)
   .use(noteBoardRoutes)
-  .use(documentRoutes)
+  .use(knowledgeRoutes)
   .use(projectFileRoutes)
   .use(analyticsRoutes)
   .use(chartRoutes)

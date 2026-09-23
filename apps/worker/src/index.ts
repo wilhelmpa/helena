@@ -1,3 +1,4 @@
+import { startVaultWatcher } from '@repo/vault';
 import { startWorker } from './worker';
 import { startHubInboxWorker } from './hub-inbox-worker';
 import { startMailWorker } from './mail/worker';
@@ -7,12 +8,16 @@ console.log('[worker] worker starting');
 const worker = startWorker();
 const hubInboxWorker = startHubInboxWorker();
 const mailWorker = startMailWorker();
+// Only a worker pointed at a vault explicitly watches one: the watcher indexes it and
+// commits outside changes to its history.
+const vaultWatcher = process.env.PROJECT_VAULT_ROOT?.trim() ? startVaultWatcher() : null;
 
 function shutdown(signal: string): void {
   console.log(`[worker] ${signal} received, stopping`);
   worker.stop();
   hubInboxWorker.stop();
   mailWorker.stop();
+  vaultWatcher?.stop();
   process.exit(0);
 }
 

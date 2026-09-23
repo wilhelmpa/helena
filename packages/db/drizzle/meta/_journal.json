@@ -1093,6 +1093,13 @@
       "when": 1790187585414,
       "tag": "0155_mail_imap",
       "breakpoints": true
+    },
+    {
+      "idx": 156,
+      "version": "7",
+      "when": 1790188115076,
+      "tag": "0156_vault_knowledge",
+      "breakpoints": true
     }
   ]
 }
