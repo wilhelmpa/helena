@@ -1,15 +1,18 @@
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Activity, Bot, Clock3, Network, Workflow } from 'lucide-react';
+import { Activity, Bot, Clock3, Network, ShieldCheck, Workflow } from 'lucide-react';
 import {
   agentActivityPath,
   aiAgentsPath,
   aiTeamPath,
   organizationPath,
+  projectApprovalsPath,
   workflowsPath,
 } from '@/utils/paths';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
+import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
+import { usePipelineApprovals } from '@/services/pipelines.service';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -19,13 +22,21 @@ import {
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 
 // Who works in the project and what runs on its own: the agents, how they work as a
-// team, what they did, the Mastra workflows and the schedules.
+// team, what they did, the Mastra workflows, its approvals and the schedules.
 export default function SidebarAutomationNav({ projectKey }: { projectKey: string }) {
   const t = useTranslations('nav');
   const sectionText = useSettingsSectionText();
   const pathname = usePathname();
   const { can } = usePermissions();
   const schedulesHref = aiTeamPath(projectKey, 'schedules');
+  const mayDecide = can('ai_agents', 'edit');
+  const pendingCount = usePendingApprovalCount(projectKey, mayDecide);
+  const gates = useWorkflowGates(mayDecide);
+  const pipelineApprovals = usePipelineApprovals(mayDecide);
+  const pendingApprovals =
+    (pendingCount.data?.count ?? 0) +
+    (gates.data?.items.filter((gate) => gate.projectKey === projectKey).length ?? 0) +
+    (pipelineApprovals.data?.filter((approval) => approval.projectKey === projectKey).length ?? 0);
 
   return (
     <SidebarGroup>
@@ -57,6 +68,16 @@ export default function SidebarAutomationNav({ projectKey }: { projectKey: strin
               label={t('agentActivity')}
               active={pathname.startsWith(agentActivityPath(projectKey))}
               disabled={false}
+            />
+          )}
+          {mayDecide && (
+            <SidebarNavItem
+              href={projectApprovalsPath(projectKey)}
+              icon={ShieldCheck}
+              label={t('approvals')}
+              active={pathname.startsWith(projectApprovalsPath(projectKey))}
+              disabled={false}
+              badge={pendingApprovals}
             />
           )}
           {can('actions', 'read') && (

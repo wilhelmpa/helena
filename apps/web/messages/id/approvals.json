@@ -1,7 +1,10 @@
 {
   "hint": "Agen meminta persetujuan di sini sebelum mengirim, memublikasikan, membayar, atau menghapus sesuatu di luar Plan, dan alur kerja menunggu di sini pada gerbang persetujuannya. Keputusan dan catatan Anda memulai langkah berikutnya.",
+  "projectHint": "Agen meminta persetujuan di sini sebelum mengirim, memublikasikan, membayar, atau menghapus sesuatu di luar Plan untuk proyek ini, dan alur kerjanya menunggu di sini pada gerbang persetujuannya.",
   "pending": "Menunggu",
   "decided": "Diputuskan",
+  "filterProject": "Filter berdasarkan proyek",
+  "filterProjectAll": "Semua proyek",
   "empty": {
     "pending": "Tidak ada yang perlu diputuskan",
     "decided": "Belum ada keputusan"

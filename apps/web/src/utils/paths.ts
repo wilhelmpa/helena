@@ -20,6 +20,11 @@ export const workflowRunPath = (key: string, workflowId: string, runId: string) 
 
 export const agentActivityPath = (key: string) => `${projectPath(key)}/activity`;
 
+// The project's own approvals: the agent requests and workflow gates waiting for a
+// decision, narrowed to this one project (see the global approvalsPath for every
+// project the reader may decide in).
+export const projectApprovalsPath = (key: string) => `${projectPath(key)}/approvals`;
+
 export const connectionsPath = () => '/connections';
 
 export const mailAccountsPath = () => '/mail/accounts';

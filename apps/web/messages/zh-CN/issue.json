@@ -321,6 +321,7 @@
     "agentStarted": "接手了该工作项",
     "agentFinished": "完成了该工作项的处理",
     "agentFailed": "未能完成该工作项",
+    "workflowRunLimited": "已达到运行次数上限，跳过了 <v>{workflow}</v>",
     "pullRequestMerged": "合并了拉取请求 <v>{pr}</v>",
     "pullRequestOpened": "打开了拉取请求 <v>{pr}</v>",
     "worklogAdded": "记录了 <v>{date}</v> 的 <v>{time}</v>",

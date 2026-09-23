@@ -1,7 +1,10 @@
 {
   "hint": "Agenten fragen hier, bevor sie außerhalb von Plan etwas senden, veröffentlichen, bezahlen oder löschen, und Workflows warten hier an ihrem Freigabeschritt. Deine Entscheidung und deine Notiz starten den nächsten Schritt.",
+  "projectHint": "Agenten fragen hier, bevor sie für dieses Projekt außerhalb von Plan etwas senden, veröffentlichen, bezahlen oder löschen, und seine Workflows warten hier an ihrem Freigabeschritt.",
   "pending": "Offen",
   "decided": "Entschieden",
+  "filterProject": "Nach Projekt filtern",
+  "filterProjectAll": "Alle Projekte",
   "empty": {
     "pending": "Nichts zu entscheiden",
     "decided": "Noch keine Entscheidungen"

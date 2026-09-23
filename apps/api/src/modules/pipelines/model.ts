@@ -250,3 +250,15 @@ export const PipelineApprovalResponse = t.Object({
   issueTitle: t.Nullable(t.String()),
   waitingSince: t.String(),
 });
+
+// The project's guard against workflows re-triggering each other without end (see
+// modules/pipelines/rate-limit.ts): at most maxRuns runs of any workflow may start
+// on one task within windowMinutes, a fixed hour.
+export const PipelineRunLimitResponse = t.Object({
+  maxRuns: t.Number(),
+  windowMinutes: t.Number(),
+});
+
+export const updatePipelineRunLimitBody = t.Object({
+  maxRuns: t.Integer({ minimum: 1, maximum: 1000 }),
+});

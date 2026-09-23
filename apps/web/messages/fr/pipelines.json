@@ -431,7 +431,14 @@
     "nobody": "personne",
     "open": "Ouvrir",
     "runs": "Exécutions",
-    "problems": "Pourquoi il ne peut pas s’exécuter ici"
+    "problems": "Pourquoi il ne peut pas s’exécuter ici",
+    "runLimit": {
+      "title": "Limite d'exécutions du flux de travail",
+      "hint": "Empêche les flux de travail de se redéclencher indéfiniment entre eux : au plus ce nombre d'exécutions peut démarrer sur une tâche par heure.",
+      "perHour": "par heure",
+      "save": "Enregistrer",
+      "saved": "Enregistré."
+    }
   },
   "issuePanel": {
     "title": "Flux de travail",

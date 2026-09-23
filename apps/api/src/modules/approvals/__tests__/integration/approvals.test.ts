@@ -221,6 +221,79 @@ describe('approval requests', () => {
     expect((await asMember.approvals['pending-count'].get()).data).toEqual({ count: 0 });
   });
 
+  it('narrows the list and the pending count to one project', async () => {
+    const { asOwner, asAgent } = await setup();
+    const mkt = (await requestApproval(asAgent)).data!;
+
+    await asOwner.projects.post({ key: 'OPS', name: 'Ops' });
+    const opsAgent = (
+      await createAgent(asOwner, 'OPS', {
+        name: 'Ops Bot',
+        username: 'opsbot',
+        kind: 'external',
+        triggerOnMention: true,
+      })
+    ).data!;
+    const asOpsAgent = apiKeyApi(opsAgent.apiKey!);
+    const ops = (
+      await asOpsAgent
+        .projects({ projectKey: 'OPS' })
+        .approvals.post({ kind: 'send', action: 'Send the OPS update' } as never)
+    ).data!;
+
+    const mktOnly = await asOwner.approvals.get({ query: { projectKey: 'MKT' } });
+    expect(mktOnly.data!.total).toBe(1);
+    expect(mktOnly.data!.items.map((item) => item.id)).toEqual([mkt.id]);
+    expect(
+      (await asOwner.approvals['pending-count'].get({ query: { projectKey: 'MKT' } })).data,
+    ).toEqual({ count: 1 });
+
+    const opsOnly = await asOwner.approvals.get({ query: { projectKey: 'OPS' } });
+    expect(opsOnly.data!.total).toBe(1);
+    expect(opsOnly.data!.items.map((item) => item.id)).toEqual([ops.id]);
+
+    expect((await asOwner.approvals.get({ query: {} })).data!.total).toBe(2);
+  });
+
+  it('filters to nothing rather than error for a project the caller may not decide in', async () => {
+    const { asOwner, asAgent } = await setup();
+    await requestApproval(asAgent);
+    await asOwner.projects.post({ key: 'OPS', name: 'Ops' });
+    const asMember = await addProjectMember(asOwner, 'MKT');
+
+    // Not a member of OPS at all, and a project that does not exist: neither tells
+    // the caller anything beyond "no requests here".
+    for (const projectKey of ['OPS', 'NOPE']) {
+      const list = await asMember.approvals.get({ query: { projectKey } });
+      expect(list.status).toBe(200);
+      expect(list.data!.total).toBe(0);
+      expect(
+        (await asMember.approvals['pending-count'].get({ query: { projectKey } })).data,
+      ).toEqual({ count: 0 });
+    }
+  });
+
+  it('lists only the projects the caller may decide approvals in', async () => {
+    const { asOwner, asAgent } = await setup();
+    await requestApproval(asAgent);
+    await asOwner.projects.post({ key: 'OPS', name: 'Ops' });
+
+    const ownerProjects = await asOwner.approvals.projects.get();
+    expect(ownerProjects.data!.map((p) => p.key).sort()).toEqual(['MKT', 'OPS']);
+
+    // A member of MKT only, even with a role that may decide there, never sees OPS:
+    // the filter offers only what the caller could already see requests from.
+    const role = await createRole(asOwner, 'MKT', {
+      name: 'Decider',
+      permissions: { ai_agents: { create: false, read: true, edit: true, delete: false } },
+    });
+    const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
+    const memberProjects = await asMember.approvals.projects.get();
+    expect(memberProjects.data).toEqual([
+      { id: expect.any(Number), key: 'MKT', name: 'Marketing' },
+    ]);
+  });
+
   it('lets the agent that asked and the people who may decide read a request', async () => {
     const { asOwner, asAgent } = await setup();
     const asMember = await addProjectMember(asOwner, 'MKT');

@@ -328,6 +328,23 @@ export const setProjectPipeline = (
 export const getProjectPipelineContext = (projectKey: string) =>
   request<PipelineContext>(`/projects/${projectKey}/pipeline-context`);
 
+// The guard against workflows re-triggering each other without end (see
+// modules/pipelines/rate-limit.ts on the API): at most maxRuns runs of any workflow
+// may start on one task within windowMinutes, a fixed hour.
+export interface PipelineRunLimit {
+  maxRuns: number;
+  windowMinutes: number;
+}
+
+export const getPipelineRunLimit = (projectKey: string) =>
+  request<PipelineRunLimit>(`/projects/${projectKey}/pipeline-run-limit`);
+
+export const setPipelineRunLimit = (projectKey: string, maxRuns: number) =>
+  request<PipelineRunLimit>(`/projects/${projectKey}/pipeline-run-limit`, {
+    method: 'PATCH',
+    body: json({ maxRuns }),
+  });
+
 export const validateProjectPipeline = (
   projectKey: string,
   input: { definition: PipelineDefinition; template: boolean; roles?: Record<string, number> },

@@ -321,6 +321,7 @@
     "agentStarted": "pegou a issue",
     "agentFinished": "terminou o trabalho na issue",
     "agentFailed": "não conseguiu concluir a issue",
+    "workflowRunLimited": "atingiu o limite de execuções e pulou <v>{workflow}</v>",
     "pullRequestMerged": "mesclou o pull request <v>{pr}</v>",
     "pullRequestOpened": "abriu o pull request <v>{pr}</v>",
     "worklogAdded": "registrou <v>{time}</v> em <v>{date}</v>",
