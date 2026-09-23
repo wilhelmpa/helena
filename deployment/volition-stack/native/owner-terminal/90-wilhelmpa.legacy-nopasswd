@@ -1,0 +1,12 @@
+# The rule this instance ran under before Owner Terminals existed, kept here only
+# as an explicit, reviewed opt-out. setup.sh installs the narrowed 90-wilhelmpa
+# (in this same directory) by default; pass --sudo-policy=legacy-nopasswd to
+# install this file instead, e.g. while the orchestrator is still auditing what
+# to put in VOLITION_DEPLOY/VOLITION_STATUS and does not want the browser
+# terminal's "password required" setting enforced yet.
+#
+# Installing this file makes every `sudo` command passwordless everywhere
+# wilhelmpa runs one, including inside an owner-terminal browser session --
+# sudo cannot distinguish that from the SSH automation this rule exists for (see
+# 90-wilhelmpa's own comment). Switch back with --sudo-policy=narrow once ready.
+wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL

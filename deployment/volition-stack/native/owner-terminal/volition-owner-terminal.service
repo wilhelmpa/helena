@@ -1,0 +1,75 @@
+[Unit]
+Description=Volition owner terminal (Shell, Claude Code, Codex, Helena dev)
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=wilhelmpa
+# nginx's worker runs as www-data and has to reach the Unix socket this service
+# listens on; www-data is not wilhelmpa's own group, so it is added as a
+# supplementary one here. The router chown()s the socket file (and its runtime
+# directory) to that group right after it starts listening -- see
+# fixSocketOwnership() in owner-terminal-router.mjs and its long comment for why
+# a Unix socket, not a loopback TCP port, is what actually keeps every other
+# local user off it.
+SupplementaryGroups=www-data
+WorkingDirectory=/srv/volition/source/plan/deployment/volition-stack/native/owner-terminal
+RuntimeDirectory=volition-owner-terminal
+RuntimeDirectoryMode=0700
+Environment=HOME=/home/wilhelmpa
+Environment=OWNER_TERMINAL_SOCKET_PATH=/run/volition-owner-terminal/term.sock
+Environment=OWNER_TERMINAL_SOCKET_GROUP=www-data
+Environment=OWNER_TERMINAL_RUNTIME_ROOT=/run/volition-owner-terminal/sessions
+Environment=OWNER_TERMINAL_KEY_PATH=/etc/volition/owner-terminal.key
+Environment=OWNER_TERMINAL_RECORD_ROOT=/var/log/volition/owner-terminal
+Environment=OWNER_TERMINAL_ALLOWED_HOSTS=kingston-server.local,kingston-server
+Environment=OWNER_TERMINAL_SHELL=/srv/volition/source/plan/deployment/volition-stack/native/owner-terminal/owner-terminal-shell
+Environment=WETTY_ALLOW_LOCAL_COMMAND=true
+ExecStart=/usr/local/bin/node owner-terminal-router.mjs
+Restart=always
+RestartSec=2
+RestartSteps=5
+RestartMaxDelaySec=60
+TimeoutStopSec=20
+KillMode=control-group
+UMask=0077
+
+# This service exists to give the owner a real, root-capable shell (`sudo` has to
+# work in it), so it is deliberately NOT sandboxed the way
+# deployment/volition-stack/native/terminal/volition-terminal.service (the
+# project terminal, which never runs as a privileged user and never needs sudo)
+# is. In particular:
+#  - NoNewPrivileges is left at its default (no): setting it to yes would make
+#    the kernel ignore sudo's setuid bit for every process this service starts,
+#    breaking sudo entirely inside every session it opens.
+#  - CapabilityBoundingSet is left unset: an empty bounding set caps what a
+#    setuid-root exec (sudo) can gain even without NoNewPrivileges, which would
+#    have the same effect.
+#  - ProtectHome is left unset: this *is* wilhelmpa's home directory service --
+#    ~/.local/bin/claude, ~/.local/bin/codex, ~/volition/plan and the stored
+#    Claude/Codex login state all live under it, and ProtectHome=yes hides /home
+#    even from its own owner.
+# What is still worth restricting -- resource limits, the socket's own
+# permissions, a private /tmp so no other service's temp files are visible, and
+# not letting the process load kernel modules or touch kernel tunables directly
+# (unrelated to sudo, which talks to the kernel through its own setuid exec, not
+# through this process's namespace) -- stays on below.
+PrivateTmp=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+
+# A runaway or misused session (a build loop, a fork bomb typed by mistake) must
+# not be able to take the whole host down. TasksMax covers every tmux pane,
+# wetty and PTY this service ever spawns combined, not per session.
+MemoryMax=2G
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

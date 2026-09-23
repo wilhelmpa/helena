@@ -1,0 +1,36 @@
+# wilhelmpa's sudo policy. Installed by setup.sh at /etc/sudoers.d/90-wilhelmpa,
+# replacing the "wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL" rule that instance had
+# before Owner Terminals existed.
+#
+# Why it changed: sudo authorizes purely by (user, host, command) -- it has no
+# concept of which process asked, so it cannot tell an SSH session started by the
+# orchestrator apart from a browser terminal's shell opened through
+# volition-owner-terminal.service. Both run commands as the same Unix account,
+# wilhelmpa. A blanket NOPASSWD: ALL therefore did not just cover
+# `sudo -n <deploy script>` from SSH, the reason it was added -- it silently also
+# made every `sudo` typed inside an owner-terminal browser session passwordless,
+# defeating "sudo im Browser-Terminal verlangt Passwort" (Home -> Security,
+# default on) before that setting could mean anything: there is no runtime signal
+# sudo could check to tell the two apart, and NOPASSWD skips the PAM
+# authentication step entirely, so nothing downstream (PAM, the owner-terminal
+# service) can add the prompt back once sudoers has waived it.
+#
+# The clean fix is the one already used next to this file for the same reason
+# (/etc/sudoers.d/91-volition-gog): stop granting NOPASSWD for ALL, and name
+# exactly the automation this instance's SSH-driven workflow actually runs
+# unattended. Everything else -- including these same commands run by hand, and
+# any command a browser terminal session types -- falls through to the base
+# `%sudo ALL=(ALL:ALL) ALL` rule in /etc/sudoers (wilhelmpa is a member of the
+# `sudo` group), which asks for the Linux password every time. That password is
+# `passwd`-set by the owner once; see the branch report for where.
+#
+# VOLITION_DEPLOY is the one command CLAUDE.md documents as run non-interactively
+# over SSH today. VOLITION_STATUS is read-only (service status and logs), which
+# the same workflow's "check services" step after a deploy needs and which
+# carries no risk of change even without a password. Neither list is exhaustive
+# of everything the orchestrator might one day want to automate -- extend it
+# deliberately, one named command at a time, rather than widening back to ALL.
+Cmnd_Alias VOLITION_DEPLOY = /srv/volition/source/plan-dev/deployment/volition-stack/native/deploy.sh
+Cmnd_Alias VOLITION_STATUS = /usr/bin/systemctl status volition-*, /usr/bin/systemctl is-active volition-*, /usr/bin/journalctl --no-pager -u volition-*
+
+wilhelmpa ALL=(ALL:ALL) NOPASSWD: VOLITION_DEPLOY, VOLITION_STATUS
