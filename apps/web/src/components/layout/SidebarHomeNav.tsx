@@ -1,7 +1,8 @@
 import {
   Activity,
-  Bot,
+  AtSign,
   BookText,
+  Bot,
   Building2,
   Clock3,
   Inbox,
@@ -41,6 +42,7 @@ const icons = {
   tools: Wrench,
   mcps: Radio,
   connections: Plug,
+  mailAccounts: AtSign,
   vault: KeyRound,
   teamSettings: UsersRound,
 } as const;

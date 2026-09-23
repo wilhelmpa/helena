@@ -4,7 +4,6 @@ import { createProvisioningServer } from "../server.mjs";
 
 const TOKEN = "0123456789abcdef0123456789abcdef"; // gitleaks:allow -- inert test fixture
 const INBOX_TOKEN = "inbox-integration-token-0123456789abcdef";
-const PUSH_TOKEN = "inbox-push-token-0123456789abcdef00000";
 const MASTRA_TOKEN = "mastra-inbox-token-0123456789abcdef000";
 const EVENT_ID = "123e4567-e89b-42d3-a456-426614174000";
 let server;
@@ -20,7 +19,6 @@ beforeEach(async () => {
       token: TOKEN,
       inboxAccounts: ["owner@example.com"],
       inboxIntegrationToken: INBOX_TOKEN,
-      inboxPushToken: PUSH_TOKEN,
       mastraInboxToken: MASTRA_TOKEN,
       mastraInboxOrganizationRef: "organization:volition",
       mastraInboxProjectRef: "project:PRIV",
@@ -44,15 +42,6 @@ beforeEach(async () => {
         },
         async state() {
           return { projects: [{ project: { id: 7 }, requestedResources: [], boards: [], browserActive: null }] };
-        },
-      },
-      inbox: {
-        async recordPush(value) {
-          inboxCalls.push(["push", value]);
-        },
-        async sync(value) {
-          inboxCalls.push(["sync", value]);
-          return { sources: [] };
         },
       },
       triage: {
@@ -154,53 +143,19 @@ describe("provisioning server", () => {
     assert.equal(calls, 0);
   });
 
-  it("keeps push and worker sync behind separate bearer tokens", async () => {
-    const pushBody = {
-      emailAddress: "owner@example.com",
-      historyId: "101",
-      messageId: "push-1",
-      publishedAt: "2026-09-21T00:00:00.000Z",
-    };
-    const push = await fetch(`${origin}/inbox/gmail/push`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${PUSH_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(pushBody),
-    });
-    assert.equal(push.status, 204);
-
-    const syncBody = {
-      schemaVersion: 1,
-      accounts: ["owner@example.com"],
-      cursors: { "owner@example.com": null },
-      limitPerAccount: 50,
-    };
-    const sync = await fetch(`${origin}/api/inbox/sync`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${INBOX_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(syncBody),
-    });
-    assert.equal(sync.status, 200);
-    assert.deepEqual(await sync.json(), { sources: [] });
-    assert.deepEqual(inboxCalls, [
-      ["push", pushBody],
-      ["sync", syncBody],
-    ]);
-
-    const crossedTokens = await fetch(`${origin}/api/inbox/sync`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${PUSH_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(syncBody),
-    });
-    assert.equal(crossedTokens.status, 401);
+  it("refuses triage without the inbox integration bearer", async () => {
+    for (const authorization of [undefined, `Bearer ${MASTRA_TOKEN}`]) {
+      const response = await fetch(`${origin}/api/inbox/triage`, {
+        method: "POST",
+        headers: {
+          ...(authorization ? { Authorization: authorization } : {}),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ schemaVersion: 1 }),
+      });
+      assert.equal(response.status, 401);
+    }
+    assert.deepEqual(inboxCalls, []);
   });
 
   it("starts and polls authenticated asynchronous triage", async () => {

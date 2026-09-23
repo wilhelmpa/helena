@@ -168,22 +168,11 @@ function triageControlPlane(value) {
   return selected;
 }
 
-function jsonStringRecord(value, name) {
-  if (!value) return {};
-  let parsed;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    throw new Error(`${name} must be a JSON object`);
-  }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`${name} must be a JSON object`);
-  }
-  const entries = Object.entries(parsed);
-  if (entries.some(([key, item]) => !key || typeof item !== "string" || !item)) {
-    throw new Error(`${name} must contain non-empty string values`);
-  }
-  return Object.fromEntries(entries);
+function mailAddresses(value) {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 async function privateSecret(filePath, name) {
@@ -267,7 +256,6 @@ export function loadConfig(env = process.env) {
       path.join(integrationStateRoot, "connections-integration-token"),
     ),
     connectionsEnabled: env.CONNECTIONS_ENABLED === "true",
-    mailEnabled: env.MAIL_ENABLED === "true",
     artifactSyncEnabled: env.ARTIFACT_SYNC_ENABLED === "true",
     registryRoot: absolutePath(
       env.PROVISIONING_REGISTRY_ROOT,
@@ -346,27 +334,14 @@ export function loadConfig(env = process.env) {
       env.NEXTCLOUD_APP_PASSWORD_FILE,
       "/run/credentials/volition-provisioning.service/nextcloud_app_password",
     ),
-    inboxAccounts: Object.keys(jsonStringRecord(env.INBOX_BASELINES, "INBOX_BASELINES")),
-    inboxBaselines: jsonStringRecord(env.INBOX_BASELINES, "INBOX_BASELINES"),
-    inboxQueuePath: absolutePath(
-      env.INBOX_PUSH_QUEUE_PATH,
-      path.join(integrationStateRoot, "volition/inbox-push.json"),
-    ),
+    inboxAccounts: mailAddresses(env.INBOX_TRIAGE_ACCOUNTS),
     inboxTriagePath: absolutePath(
       env.INBOX_TRIAGE_PATH,
       path.join(integrationStateRoot, "volition/inbox-triage.json"),
     ),
-    inboxTriagePromptRoot: absolutePath(
-      env.INBOX_TRIAGE_PROMPT_ROOT,
-      path.join(integrationStateRoot, "volition/triage-prompts"),
-    ),
     inboxIntegrationTokenFile: absolutePath(
       env.INBOX_INTEGRATION_TOKEN_FILE,
       path.join(integrationStateRoot, "volition/inbox-integration-token"),
-    ),
-    inboxPushTokenFile: absolutePath(
-      env.INBOX_PUSH_TOKEN_FILE,
-      "/run/credentials/volition-provisioning.service/inbox_push_token",
     ),
     mastraInboxUrl: privateServiceUrl(
       env.MASTRA_INBOX_URL,
@@ -417,20 +392,6 @@ export function loadConfig(env = process.env) {
       "/run/credentials/volition-provisioning.service/plan_mastra_control_token",
     ),
     mastraControlOwnerEmail: env.MASTRA_CONTROL_OWNER_EMAIL?.trim() || "owner@example.com",
-    inboxWorkerWakeUrl: privateServiceUrl(
-      env.INBOX_WORKER_WAKE_URL,
-      "http://172.30.254.2:18801/internal/inbox/wake",
-      "/internal/inbox/wake",
-    ),
-    gogBin: absolutePath(env.GOG_BIN, path.join(home, ".local/bin/gog")),
-    gogHome: absolutePath(
-      env.GOG_HOME,
-      path.join(home, ".local/share/volition-gog"),
-    ),
-    gogKeyringPasswordFile: absolutePath(
-      env.GOG_KEYRING_PASSWORD_FILE,
-      path.join(home, ".local/share/volition-gog/keyring.pass"),
-    ),
   };
 }
 
@@ -457,18 +418,15 @@ export async function loadServerSecrets(config) {
   const mastraEventToken = config.mastraEventIngressEnabled
     ? await privateSecret(config.mastraEventTokenFile, "MASTRA_EVENT_TOKEN_FILE")
     : "";
-  const connectionsIntegrationToken = config.connectionsEnabled || config.mailEnabled
+  const connectionsIntegrationToken = config.connectionsEnabled
     ? await privateSecret(config.connectionsIntegrationTokenFile, "CONNECTIONS_INTEGRATION_TOKEN_FILE") : "";
   if (config.inboxAccounts.length === 0) {
     return { ...config, token, planApiKey, planControlToken, mastraControlToken, mastraEventToken, connectionsIntegrationToken, ...artifactSecrets };
   }
-  const [inboxIntegrationToken, inboxPushToken, gogKeyringPassword, mastraInboxToken] =
-    await Promise.all([
-      privateSecret(config.inboxIntegrationTokenFile, "INBOX_INTEGRATION_TOKEN_FILE"),
-      privateSecret(config.inboxPushTokenFile, "INBOX_PUSH_TOKEN_FILE"),
-      privateSecret(config.gogKeyringPasswordFile, "GOG_KEYRING_PASSWORD_FILE"),
-      privateSecret(config.mastraInboxTokenFile, "MASTRA_INBOX_TOKEN_FILE"),
-    ]);
+  const [inboxIntegrationToken, mastraInboxToken] = await Promise.all([
+    privateSecret(config.inboxIntegrationTokenFile, "INBOX_INTEGRATION_TOKEN_FILE"),
+    privateSecret(config.mastraInboxTokenFile, "MASTRA_INBOX_TOKEN_FILE"),
+  ]);
   return {
     ...config,
     ...artifactSecrets,
@@ -479,8 +437,6 @@ export async function loadServerSecrets(config) {
     mastraEventToken,
     inboxIntegrationToken,
     connectionsIntegrationToken,
-    inboxPushToken,
-    gogKeyringPassword,
     mastraInboxToken,
   };
 }
@@ -498,15 +454,14 @@ export function assertServerConfig(config) {
   if (Buffer.byteLength(config.token) < 32) {
     throw new Error("PROVISIONING_TOKEN must contain at least 32 bytes");
   }
-  if (config.connectionsEnabled || config.mailEnabled) {
+  if (config.connectionsEnabled) {
     if (Buffer.byteLength(config.connectionsIntegrationToken || "") < 32) {
       throw new Error("CONNECTIONS_INTEGRATION_TOKEN must contain at least 32 bytes");
     }
   }
   for (const [name, value] of [
     ["INBOX_INTEGRATION_TOKEN", config.inboxIntegrationToken],
-    ["INBOX_PUSH_TOKEN", config.inboxPushToken],
-    ...(config.connectionsEnabled || config.mailEnabled ? [["CONNECTIONS_INTEGRATION_TOKEN", config.connectionsIntegrationToken]] : []),
+    ...(config.connectionsEnabled ? [["CONNECTIONS_INTEGRATION_TOKEN", config.connectionsIntegrationToken]] : []),
     ["MASTRA_INBOX_TOKEN", config.mastraInboxToken],
     ...(config.mastraControlEnabled
       ? [["MASTRA_CONTROL_TOKEN", config.mastraControlToken]]

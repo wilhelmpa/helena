@@ -15,8 +15,13 @@ feature belongs; a change that gives a second component the same responsibility 
 
 The Kingston integration service (`deployment/volition-stack/integration/server.mjs`) is the
 only component that changes operating-system resources: project workspaces, browser units,
-terminal sessions, Hermes profiles, the Gmail API and inbound mail. It has no user interface
-and makes no decisions.
+terminal sessions and Hermes profiles. It has no user interface and makes no decisions.
+
+Plan imports mail over IMAP in its worker and sends mail over SMTP after the owner confirms
+it. For an account with triage switched on, the worker hands new inbox mail to the Mastra
+`inbox-triage` workflow through the integration service's triage route
+(`POST /api/inbox/triage`). Hermes reads and drafts mail through Plan's MCP tools
+`search_mail`, `read_mail`, `draft_reply` and `request_mail_send`.
 
 ## Two paths
 
@@ -44,9 +49,7 @@ and makes no decisions.
    (issues, mail drafts, secret names). Before an agent sends, publishes, pays or deletes
    anything outside Plan it calls `request_approval` and ends its run; the owner decides
    on the Approvals page, next to the Mastra runs held at an approval gate.
-4. **Plan and Mastra → integration service**: provisioning, sending mail after the owner
-   confirms it, browser control. The integration service reports inbound mail to Mastra as
-   an event.
+4. **Plan and Mastra → integration service**: provisioning, inbox triage, browser control.
 
 ```
           owner

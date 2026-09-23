@@ -59,9 +59,9 @@ export const mailDraftRoutes = new Elysia({
     params: teamParams,
     response: { 200: DraftListResponse, ...accessErrors },
     detail: {
-        summary: 'List the open mail drafts',
-        description: 'Drafts being written, waiting for approval, failed or in their undo time.',
-      },
+      summary: 'List the open mail drafts',
+      description: 'Drafts being written, waiting for approval, failed or in their undo time.',
+    },
   })
   .post(
     '/teams/:teamId/mail/drafts',
@@ -103,7 +103,8 @@ export const mailDraftRoutes = new Elysia({
       response: { 201: DraftResponse, ...commonErrors },
       detail: {
         summary: 'Start a mail, an answer or a forward',
-        description: 'An answer or a forward is prefilled with recipients, subject, quote and forwarded attachments.',
+        description:
+          'An answer or a forward is prefilled with recipients, subject, quote and forwarded attachments.',
       },
     },
   )
@@ -112,9 +113,9 @@ export const mailDraftRoutes = new Elysia({
     params: draftParams,
     response: { 200: DraftResponse, ...accessErrors },
     detail: {
-        summary: 'Get a mail draft',
-        description: 'One draft with its recipients, body and attachments.',
-      },
+      summary: 'Get a mail draft',
+      description: 'One draft with its recipients, body and attachments.',
+    },
   })
   .patch(
     '/mail/drafts/:draftId',
@@ -223,9 +224,9 @@ export const mailDraftRoutes = new Elysia({
     params: draftParams,
     response: { 200: DraftResponse, ...accessErrors, ...errors(409) },
     detail: {
-        summary: 'Take back a mail in its undo time',
-        description: 'Returns a queued draft to the drafts before the worker sends it.',
-      },
+      summary: 'Take back a mail in its undo time',
+      description: 'Returns a queued draft to the drafts before the worker sends it.',
+    },
   })
   .post(
     '/projects/:projectKey/mail/threads/:threadId/draft-reply',

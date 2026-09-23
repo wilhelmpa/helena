@@ -91,7 +91,8 @@ export const mailThreadRoutes = new Elysia({
       response: { 200: ThreadPageResponse, ...commonErrors },
       detail: {
         summary: 'List mail threads, newest first',
-        description: 'The threads the caller reaches, filtered by project, account, folder, unread state, attachments and search words; paged by cursor.',
+        description:
+          'The threads the caller reaches, filtered by project, account, folder, unread state, attachments and search words; paged by cursor.',
       },
     },
   )
@@ -121,18 +122,19 @@ export const mailThreadRoutes = new Elysia({
     query: contactQuery,
     response: { 200: ContactListResponse, ...commonErrors },
     detail: {
-        summary: 'Find past correspondents for a recipient field',
-        description: 'Addresses the team exchanged mail with, most frequent first.',
-      },
+      summary: 'Find past correspondents for a recipient field',
+      description: 'Addresses the team exchanged mail with, most frequent first.',
+    },
   })
   .get('/mail/threads/:threadId', ({ thread }) => getThread(thread.id), {
     mailThread: 'read',
     params: threadParams,
     response: { 200: ThreadResponse, ...accessErrors },
     detail: {
-        summary: 'Get a mail thread with its messages',
-        description: 'Every message with its sanitized HTML, text, recipients and vault attachments, plus linked tasks and open drafts.',
-      },
+      summary: 'Get a mail thread with its messages',
+      description:
+        'Every message with its sanitized HTML, text, recipients and vault attachments, plus linked tasks and open drafts.',
+    },
   })
   .patch(
     '/mail/threads/:threadId',
@@ -148,7 +150,8 @@ export const mailThreadRoutes = new Elysia({
       response: { 204: t.Void(), ...commonErrors },
       detail: {
         summary: 'Move a mail thread to another project or to Home',
-        description: 'Moves the attachment folders in the vault along and changes which agents reach the thread.',
+        description:
+          'Moves the attachment folders in the vault along and changes which agents reach the thread.',
       },
     },
   )
@@ -190,7 +193,8 @@ export const mailThreadRoutes = new Elysia({
       response: { 201: TaskResponse, ...commonErrors },
       detail: {
         summary: 'Create a task from a mail thread',
-        description: 'The task links back to the thread and lists the attachments by their vault path.',
+        description:
+          'The task links back to the thread and lists the attachments by their vault path.',
       },
     },
   )
@@ -206,7 +210,8 @@ export const mailThreadRoutes = new Elysia({
       response: { 201: NoteResponse, ...accessErrors },
       detail: {
         summary: 'Save a mail thread as a note in the vault',
-        description: 'Writes Docs/Mail/<date> <subject>.md of the thread\'s project (or Home) with links to its attachments.',
+        description:
+          "Writes Docs/Mail/<date> <subject>.md of the thread's project (or Home) with links to its attachments.",
       },
     },
   )

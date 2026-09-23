@@ -39,9 +39,10 @@ export const mailAccountRoutes = new Elysia({
     params: teamParams,
     response: { 200: MailAccountListResponse, ...accessErrors },
     detail: {
-        summary: 'List the mail accounts of a team',
-        description: 'Every IMAP/SMTP account of the team with its import state; passwords are never returned.',
-      },
+      summary: 'List the mail accounts of a team',
+      description:
+        'Every IMAP/SMTP account of the team with its import state; passwords are never returned.',
+    },
   })
   .get(
     '/projects/:projectKey/mail/accounts',
@@ -68,7 +69,8 @@ export const mailAccountRoutes = new Elysia({
       response: { 201: MailAccountResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Add a mail account',
-        description: 'Stores the servers and the encrypted password; the worker starts importing within seconds.',
+        description:
+          'Stores the servers and the encrypted password; the worker starts importing within seconds.',
       },
     },
   )
@@ -82,7 +84,8 @@ export const mailAccountRoutes = new Elysia({
       response: { 200: MailAccountResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Change a mail account',
-        description: 'A password left out keeps the stored one; a changed setting makes the worker connect again.',
+        description:
+          'A password left out keeps the stored one; a changed setting makes the worker connect again.',
       },
     },
   )
@@ -112,7 +115,8 @@ export const mailAccountRoutes = new Elysia({
       response: { 200: TestConnectionResponse, ...commonErrors },
       detail: {
         summary: 'Test the IMAP and SMTP login of a mail account',
-        description: 'Logs in to both servers and answers with null for each that accepted, else the reason.',
+        description:
+          'Logs in to both servers and answers with null for each that accepted, else the reason.',
       },
     },
   )
@@ -121,9 +125,9 @@ export const mailAccountRoutes = new Elysia({
     params: teamParams,
     response: { 200: MailRuleListResponse, ...accessErrors },
     detail: {
-        summary: 'List the rules that file new mail under a project',
-        description: 'Sender address and domain rules, for one account or all of the team.',
-      },
+      summary: 'List the rules that file new mail under a project',
+      description: 'Sender address and domain rules, for one account or all of the team.',
+    },
   })
   .post(
     '/teams/:teamId/mail/rules',
@@ -138,7 +142,8 @@ export const mailAccountRoutes = new Elysia({
       response: { 201: CreateRuleResponse, ...commonErrors },
       detail: {
         summary: 'Add a rule that files mail of a sender under a project',
-        description: 'With applyToExisting the threads that already match move to the project too, attachments included.',
+        description:
+          'With applyToExisting the threads that already match move to the project too, attachments included.',
       },
     },
   )

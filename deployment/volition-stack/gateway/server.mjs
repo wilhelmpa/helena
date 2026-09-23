@@ -2,16 +2,10 @@ import fs from 'node:fs';
 import http from 'node:http';
 import httpProxy from 'http-proxy';
 import { makeAuthenticator, trustedHeaders } from './auth.mjs';
-import { makePushAuthenticator, parsePushBody, readPushBody } from './push.mjs';
 import { resolveUpstream } from './routing.mjs';
 
 const config = JSON.parse(fs.readFileSync(process.env.GATEWAY_CONFIG ?? '/config/gateway.json', 'utf8'));
 const authenticate = makeAuthenticator(config);
-const pushRoutes = new Map(Object.entries(config.pushRoutes ?? {}).map(([host, route]) => {
-  const token = fs.readFileSync(route.tokenFile, 'utf8').trim();
-  if (token.length < 32) throw new Error('Push receiver credential is too short');
-  return [host, { route, token, authenticate: makePushAuthenticator(route) }];
-}));
 const proxy = httpProxy.createProxyServer({ xfwd: false, ws: true, proxyTimeout: 120000, timeout: 120000 });
 const identityByRequest = new WeakMap();
 
@@ -49,31 +43,6 @@ proxy.on('proxyRes', (response, request) => {
 });
 
 const server = http.createServer(async (request, response) => {
-  const push = pushRoutes.get(request.headers.host?.toLowerCase());
-  if (push) {
-    let pushStage = 'authenticate';
-    try {
-      await push.authenticate(request);
-      pushStage = 'metadata';
-      const event = parsePushBody(await readPushBody(request), push.route);
-      pushStage = 'receiver';
-      const delivered = await fetch(push.route.target, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${push.token}` },
-        body: JSON.stringify(event), signal: AbortSignal.timeout(15000), redirect: 'error',
-      });
-      if (!delivered.ok) {
-        console.warn(JSON.stringify({event:'gmail_push_rejected',stage:'receiver',status:delivered.status}));
-        response.writeHead(503, { 'Cache-Control': 'no-store' }); response.end('Delivery unavailable'); return;
-      }
-      await delivered.body?.cancel();
-      console.log(JSON.stringify({event:'gmail_push_accepted'}));
-      response.writeHead(204, { 'Cache-Control': 'no-store' }); response.end();
-    } catch (error) {
-      console.warn(JSON.stringify({event:'gmail_push_rejected',stage:pushStage,reason:pushStage==='metadata' && ['Unknown subscription','Invalid message id','Invalid data','Mailbox not allowed','Invalid mailbox history','Invalid timestamp','Push too large'].includes(error.message)?error.message:undefined,code:typeof error.code==='string' && /^ERR_[A-Z_]{1,64}$/.test(error.code)?error.code:'INVALID_REQUEST'}));
-      response.writeHead(403, { 'Cache-Control': 'no-store' }); response.end('Push denied');
-    }
-    return;
-  }
   const preflightRoute = config.routes[request.headers.host?.toLowerCase()];
   if (request.method === 'OPTIONS' && preflightRoute?.corsOrigin && request.headers.origin === preflightRoute.corsOrigin && request.headers['access-control-request-method']) {
     response.writeHead(204, {

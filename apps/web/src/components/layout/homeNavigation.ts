@@ -4,6 +4,7 @@ import {
   connectionsPath,
   globalAgentActivityPath,
   globalInboxPath,
+  mailAccountsPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
@@ -27,6 +28,7 @@ export type HomeNavigationId =
   | 'tools'
   | 'mcps'
   | 'connections'
+  | 'mailAccounts'
   | 'vault'
   | 'teamSettings';
 
@@ -61,6 +63,7 @@ export function homeNavigation(teamId: number | null, vaultEnabled = true): Home
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },
     ]),
     { id: 'connections', group: 'globalSettings', href: connectionsPath() },
+    { id: 'mailAccounts', group: 'globalSettings', href: mailAccountsPath() },
     ...(vaultEnabled
       ? [{ id: 'vault' as const, group: 'globalSettings' as const, href: vaultPath() }]
       : []),

@@ -55,7 +55,7 @@
     "openExternal": "在新标签页中打开{tool}",
     "unavailable": "尚未配置{tool}",
     "unavailableDescription": "管理员可以为此实例连接该工作区。",
-    "mail": "Mail",
+    "mail": "撰写",
     "openBeside": "在旁边打开",
     "closeSplit": "关闭分屏",
     "browserBar": {
@@ -81,6 +81,7 @@
   "organization": "Organization",
   "schedules": "定时任务",
   "connections": "Connections",
+  "mailAccounts": "邮箱账户",
   "agentPool": "智能体池",
   "mcps": "MCP",
   "tools": "工具",

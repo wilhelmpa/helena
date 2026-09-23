@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useProjectsQuery } from '@/services/projects.service';
 import type { WorkspaceContentProps } from '@/context/workspaceContents';
 import { useTeamsQuery } from '@/services/teams.service';
-import HubInboxView from './components/HubInboxView';
+import MailInbox from './components/MailInbox';
 import { resolveInboxTeamId } from './inboxTeamScope';
 
 export default function InboxWorkspace({ projectKey }: WorkspaceContentProps) {
@@ -52,10 +52,10 @@ export default function InboxWorkspace({ projectKey }: WorkspaceContentProps) {
       ) : teamId == null ? (
         <p className="p-4 text-sm text-muted-foreground">{teamCopy('manage.empty')}</p>
       ) : (
-        <HubInboxView
+        <MailInbox
           key={`${teamId}:${project?.id ?? 'all'}`}
           teamId={teamId}
-          initialProjectId={project?.id}
+          projectId={project?.id}
         />
       )}
     </div>

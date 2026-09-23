@@ -277,7 +277,10 @@ describe('mail import', () => {
     });
 
     // The triage keeps the thread where it is and offers its project as a suggestion.
-    await db.update(mailThread).set({ projectId: account.projectId }).where(eq(mailThread.id, thread!.id));
+    await db
+      .update(mailThread)
+      .set({ projectId: account.projectId })
+      .where(eq(mailThread.id, thread!.id));
     await materializeInboxEvents();
     const [claimed] = await claimInboxThreads();
     await completeTriage(claimed!, {
@@ -289,7 +292,10 @@ describe('mail import', () => {
       confidence: 0.9,
     });
     const [suggested] = await db.select().from(mailThread).where(eq(mailThread.id, thread!.id));
-    expect(suggested).toMatchObject({ projectId: account.projectId, suggestedProjectId: verve!.id });
+    expect(suggested).toMatchObject({
+      projectId: account.projectId,
+      suggestedProjectId: verve!.id,
+    });
   });
 
   it('imports mail that arrives while it waits on the inbox', async () => {

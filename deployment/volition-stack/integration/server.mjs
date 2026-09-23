@@ -17,13 +17,11 @@ import {
   RequestValidationError,
   validateEnvelope,
 } from "./validation.mjs";
-import { createInboxService, InboxValidationError } from "./inbox.mjs";
-import { createTriageService } from "./triage.mjs";
+import { createTriageService, InboxValidationError } from "./triage.mjs";
 import {
   createConnectionsService,
   ConnectionsValidationError,
 } from "./connections.mjs";
-import { createMailService, MailValidationError } from "./mail-service.mjs";
 import { createArtifactSyncService } from "./artifact-sync.mjs";
 import { createThemeService, ThemeValidationError } from "./theme.mjs";
 import {
@@ -56,11 +54,6 @@ function json(response, status, body) {
     "X-Content-Type-Options": "nosniff",
   });
   response.end(payload);
-}
-
-function noContent(response) {
-  response.writeHead(204, { "Cache-Control": "no-store" });
-  response.end();
 }
 
 function attachment(response, value) {
@@ -117,10 +110,8 @@ async function requestBody(request, maxBytes = MAX_BODY_BYTES) {
 export function createRequestHandler(
   config,
   provisioner,
-  inbox = null,
   triage = null,
   connections = null,
-  mail = null,
   theme = null,
   secrets = null,
   mastraControl = null,
@@ -299,13 +290,11 @@ export function createRequestHandler(
     const secretList = request.method === "GET" && pathname === "/api/secrets";
     const secretSet = request.method === "POST" && pathname === "/api/secrets";
     const secretRoute = secretList || secretSet;
-    const mailRoute = pathname.startsWith("/api/mail/");
     const themeRoute = request.method === "POST" && pathname === "/api/theme";
     const filesRoute = pathname.startsWith("/api/files/");
     if (
       connectionList ||
       connectionAction ||
-      mailRoute ||
       themeRoute ||
       secretRoute ||
       filesRoute
@@ -313,7 +302,6 @@ export function createRequestHandler(
       if (
         (!secrets && secretRoute) ||
         (!connections && (connectionList || connectionAction)) ||
-        (!mail && mailRoute) ||
         (!theme && themeRoute) ||
         (!files && filesRoute)
       ) {
@@ -366,19 +354,6 @@ export function createRequestHandler(
         }
         const body = request.method === "GET" ? {} : await requestBody(request);
         const routes = new Map([
-          ["POST /api/mail/accounts", () => mail.accountsStatus()],
-          ["POST /api/mail/search", () => mail.search(body)],
-          ["POST /api/mail/thread", () => mail.getThread(body)],
-          ["POST /api/mail/labels", () => mail.labels(body)],
-          ["POST /api/mail/labels/modify", () => mail.modifyLabels(body)],
-          ["POST /api/mail/drafts", () => mail.createDraft(body)],
-          ["POST /api/mail/drafts/list", () => mail.listDrafts(body)],
-          [
-            "POST /api/mail/drafts/authorize-send",
-            () => mail.authorizeSend(body),
-          ],
-          ["POST /api/mail/drafts/send", () => mail.sendDraft(body)],
-          ["POST /api/mail/attachment", () => mail.attachment(body)],
           ["POST /api/files/list", () => files.list(body)],
           ["POST /api/files/read-text", () => files.readText(body)],
           ["POST /api/files/create-text", () => files.createText(body)],
@@ -394,11 +369,7 @@ export function createRequestHandler(
           return;
         }
         const result = await operation();
-        if (
-          pathname === "/api/mail/attachment" ||
-          pathname === "/api/files/download"
-        )
-          attachment(response, result);
+        if (pathname === "/api/files/download") attachment(response, result);
         else
           json(
             response,
@@ -422,7 +393,6 @@ export function createRequestHandler(
         } else if (
           error instanceof SecretStoreValidationError ||
           error instanceof ConnectionsValidationError ||
-          error instanceof MailValidationError ||
           error instanceof ThemeValidationError
         ) {
           json(response, 400, {
@@ -441,27 +411,20 @@ export function createRequestHandler(
       }
       return;
     }
-    const inboxPush =
-      request.method === "POST" && request.url === "/inbox/gmail/push";
-    const inboxSync =
-      request.method === "POST" && request.url === "/api/inbox/sync";
     const inboxTriage =
       request.method === "POST" && request.url === "/api/inbox/triage";
     const inboxTriageStatus =
       request.method === "GET" && request.url?.startsWith("/api/inbox/triage/");
-    if (inboxPush || inboxSync || inboxTriage || inboxTriageStatus) {
-      if (
-        ((inboxPush || inboxSync) && !inbox) ||
-        ((inboxTriage || inboxTriageStatus) && !triage)
-      ) {
+    if (inboxTriage || inboxTriageStatus) {
+      if (!triage) {
         json(response, 404, { error: "not_found" });
         return;
       }
-      const expectedToken = inboxPush
-        ? config.inboxPushToken
-        : config.inboxIntegrationToken;
       if (
-        !authorized(firstHeader(request.headers.authorization), expectedToken)
+        !authorized(
+          firstHeader(request.headers.authorization),
+          config.inboxIntegrationToken,
+        )
       ) {
         response.setHeader("WWW-Authenticate", "Bearer");
         json(response, 401, { error: "unauthorized" });
@@ -491,15 +454,7 @@ export function createRequestHandler(
           else json(response, 200, status);
           return;
         }
-        const body = await requestBody(request);
-        if (inboxPush) {
-          await inbox.recordPush(body);
-          noContent(response);
-        } else if (inboxTriage) {
-          json(response, 202, await triage.start(body));
-        } else {
-          json(response, 200, await inbox.sync(body));
-        }
+        json(response, 202, await triage.start(await requestBody(request)));
       } catch (error) {
         if (
           error instanceof RequestValidationError ||
@@ -510,9 +465,7 @@ export function createRequestHandler(
             message: error.message,
           });
         } else {
-          json(response, inboxPush ? 503 : 500, {
-            error: inboxPush ? "push_not_persisted" : "inbox_sync_failed",
-          });
+          json(response, 500, { error: "inbox_triage_failed" });
         }
       }
       return;
@@ -598,9 +551,6 @@ export function createProvisioningServer(config, options = {}) {
       : null);
   const provisioner =
     options.provisioner ?? createProvisioner(config, { ...options, mastraControl });
-  const inbox =
-    options.inbox ??
-    (config.inboxAccounts?.length ? createInboxService(config, options) : null);
   const triage =
     options.triage ??
     (config.inboxAccounts?.length
@@ -615,11 +565,6 @@ export function createProvisioningServer(config, options = {}) {
     options.connections ??
     (config.connectionsEnabled
       ? createConnectionsService(config, { ...options, artifactSync })
-      : null);
-  const mail =
-    options.mail ??
-    (config.inboxAccounts?.length && config.mailEnabled
-      ? createMailService(config, options)
       : null);
   const theme =
     options.theme ??
@@ -642,10 +587,8 @@ export function createProvisioningServer(config, options = {}) {
   const handler = createRequestHandler(
     config,
     provisioner,
-    inbox,
     triage,
     connections,
-    mail,
     theme,
     secrets,
     mastraControl,

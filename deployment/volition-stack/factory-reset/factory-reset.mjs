@@ -85,8 +85,7 @@ export const APP_UNITS = Object.freeze([
   'volition-browser-ensure.timer', 'volition-browser-novnc.service',
   'volition-browser-vnc.service', 'volition-browser-xvfb.service',
   ...HERMES_BASELINE_UNITS,
-  'volition-hermes-runner.service', 'volition-inbox-watch-renew.service',
-  'volition-inbox-watch-renew.timer', 'volition-integration-audit.service',
+  'volition-hermes-runner.service', 'volition-integration-audit.service',
   'volition-offsite.service', 'volition-offsite.timer', 'volition-provisioning.service',
   'volition-standalone-browser.target',
 ]);
@@ -432,13 +431,14 @@ async function resetStackEnvironment() {
 async function resetGatewayConfig() {
   const path = `${STACK_ROOT}/config/gateway.json`;
   const current = JSON.parse(await readFile(path, 'utf8'));
-  assertExactSet(Object.keys(current).sort(), ['issuer', 'ownerEmail', 'port', 'pushRoutes', 'routes'], 'Gateway top-level keys');
+  delete current.pushRoutes;
+  assertExactSet(Object.keys(current).sort(), ['issuer', 'ownerEmail', 'port', 'routes'], 'Gateway top-level keys');
   const routes = {};
   for (const name of FACTORY_GATEWAY_ROUTES) {
     if (!current.routes?.[name]) throw new FactoryResetError(`Required gateway route is missing: ${name}`);
     routes[name] = current.routes[name];
   }
-  await atomicPrivateWrite(path, `${JSON.stringify({ ...current, routes, pushRoutes: {} }, null, 2)}\n`);
+  await atomicPrivateWrite(path, `${JSON.stringify({ ...current, routes }, null, 2)}\n`);
 }
 
 async function enableVaultFirstRunSignup() {
@@ -641,7 +641,6 @@ async function postconditions(repositoryBefore) {
   const parsedGateway = JSON.parse(gatewayConfig);
   if (parsedGateway.ownerEmail !== 'patrick.wilhelm@volition.one') throw new FactoryResetError('Gateway owner changed');
   assertExactSet(Object.keys(parsedGateway.routes ?? {}), FACTORY_GATEWAY_ROUTES, 'Factory gateway routes');
-  if (Object.keys(parsedGateway.pushRoutes ?? {}).length !== 0) throw new FactoryResetError('Gateway push routes remain');
   for (const unit of ['cloudflared.service', 'ssh.service']) {
     const state = await run('/usr/bin/systemctl', ['is-active', unit]);
     if (state.stdout.trim() !== 'active') throw new FactoryResetError(`Protected infrastructure is inactive: ${unit}`);

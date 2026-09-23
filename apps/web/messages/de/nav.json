@@ -56,7 +56,7 @@
     "openExternal": "{tool} in neuem Tab öffnen",
     "unavailable": "{tool} ist nicht konfiguriert",
     "unavailableDescription": "Ein Admin kann diesen Workspace für die Instanz verbinden.",
-    "mail": "E-Mail",
+    "mail": "Verfassen",
     "openBeside": "Daneben öffnen",
     "closeSplit": "Geteilte Ansicht schließen",
     "browserBar": {
@@ -82,6 +82,7 @@
   "organization": "Organisation",
   "schedules": "Zeitpläne",
   "connections": "Verbindungen",
+  "mailAccounts": "E-Mail-Konten",
   "agentPool": "Agentenpool",
   "mcps": "MCPs",
   "tools": "Tools",
