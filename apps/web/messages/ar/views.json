@@ -24,5 +24,8 @@
   "noFolder": "بلا مجال",
   "newBoard": "لوحة جديدة",
   "boardNamePrompt": "اسم اللوحة",
-  "areaOptions": "خيارات المجال"
+  "areaOptions": "خيارات المجال",
+  "newFolderDescription": "تجمع المنطقة المهام مع لوحات خاصة بها، ليمكن تخطيط جزء من المشروع على حدة.",
+  "newBoardDescription": "تعرض اللوحة مهام {name} فقط.",
+  "create": "إنشاء"
 }

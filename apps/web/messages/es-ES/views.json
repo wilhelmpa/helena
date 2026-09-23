@@ -24,5 +24,8 @@
   "noFolder": "Sin área",
   "newBoard": "Nuevo tablero",
   "boardNamePrompt": "Nombre del tablero",
-  "areaOptions": "Opciones del área"
+  "areaOptions": "Opciones del área",
+  "newFolderDescription": "Un área agrupa tareas con tableros propios, para planificar una parte del proyecto por separado.",
+  "newBoardDescription": "El tablero muestra solo las tareas de {name}.",
+  "create": "Crear"
 }

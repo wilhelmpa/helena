@@ -24,5 +24,8 @@
   "noFolder": "No area",
   "newBoard": "New board",
   "boardNamePrompt": "Board name",
-  "areaOptions": "Area options"
+  "areaOptions": "Area options",
+  "newFolderDescription": "An area bundles tasks with boards of their own, so a part of the project can be planned separately.",
+  "newBoardDescription": "The board shows only the tasks of {name}.",
+  "create": "Create"
 }

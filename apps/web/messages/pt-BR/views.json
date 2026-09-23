@@ -24,5 +24,8 @@
   "noFolder": "Sem área",
   "newBoard": "Novo quadro",
   "boardNamePrompt": "Nome do quadro",
-  "areaOptions": "Opções da área"
+  "areaOptions": "Opções da área",
+  "newFolderDescription": "Uma área agrupa tarefas com quadros próprios, para planejar uma parte do projeto separadamente.",
+  "newBoardDescription": "O quadro mostra apenas as tarefas de {name}.",
+  "create": "Criar"
 }

@@ -24,5 +24,8 @@
   "noFolder": "Tanpa area",
   "newBoard": "Papan baru",
   "boardNamePrompt": "Nama papan",
-  "areaOptions": "Opsi area"
+  "areaOptions": "Opsi area",
+  "newFolderDescription": "Area mengelompokkan tugas dengan papan sendiri, agar sebagian proyek dapat direncanakan terpisah.",
+  "newBoardDescription": "Papan hanya menampilkan tugas {name}.",
+  "create": "Buat"
 }

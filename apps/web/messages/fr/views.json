@@ -24,5 +24,8 @@
   "noFolder": "Aucun domaine",
   "newBoard": "Nouveau tableau",
   "boardNamePrompt": "Nom du tableau",
-  "areaOptions": "Options du domaine"
+  "areaOptions": "Options du domaine",
+  "newFolderDescription": "Une zone regroupe des tâches avec leurs propres tableaux, pour planifier une partie du projet séparément.",
+  "newBoardDescription": "Le tableau n’affiche que les tâches de {name}.",
+  "create": "Créer"
 }

@@ -24,5 +24,8 @@
   "noFolder": "无区域",
   "newBoard": "新建看板",
   "boardNamePrompt": "看板名称",
-  "areaOptions": "区域选项"
+  "areaOptions": "区域选项",
+  "newFolderDescription": "区域将任务与其专属看板归在一起，便于单独规划项目的一部分。",
+  "newBoardDescription": "此看板只显示 {name} 的任务。",
+  "create": "创建"
 }
