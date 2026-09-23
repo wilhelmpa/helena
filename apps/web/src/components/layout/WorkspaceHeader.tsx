@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { useShellHeaderSlot } from '@/context/shellHeaderSlot';
+import { Separator } from '@/components/ui/separator';
 
 export const WORKSPACE_HEADER_CLASS = 'flex h-12 shrink-0 items-center border-b';
 export const WORKSPACE_HEADER_DESCRIPTION_CLASS =
@@ -76,3 +77,27 @@ export function WorkspacePageHeader({
 
 // The one-line description a page opens with in the single-row layout: 13px, muted.
 export const PAGE_INTRO_CLASS = 'text-xs text-muted-foreground';
+
+// A page's own tab/switcher row (dashboard tabs, note boards). In the single-row header
+// it moves into the app header's page slot, after a hairline, instead of stacking a
+// second 48px row under it — a React portal, so its context (drag and drop, dialogs)
+// stays the page's own. In the 'classic' layout and outside the shell it is that row.
+export function ShellHeaderRow({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  const slot = useShellHeaderSlot();
+  if (slot) {
+    return createPortal(
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        <Separator orientation="vertical" className="me-1 h-4" />
+        {children}
+      </div>,
+      slot,
+    );
+  }
+  return <WorkspaceHeader className={className}>{children}</WorkspaceHeader>;
+}
