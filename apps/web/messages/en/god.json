@@ -331,6 +331,15 @@
     "agentTeamStartsWaiting": "{count, plural, one {# agent-team start waits} other {# agent-team starts wait}} for Mastra",
     "stalledWorkflowRuns": "{count, plural, one {# agent-team run has} other {# agent-team runs have}} made no progress for 15 minutes",
     "failedLastDay": "{count, plural, one {# run} other {# runs}} failed in the last 24 hours",
-    "provisioningFailed": "{count, plural, one {# provisioning job} other {# provisioning jobs}} failed"
+    "provisioningFailed": "{count, plural, one {# provisioning job} other {# provisioning jobs}} failed",
+    "janitorsTitle": "Janitors",
+    "janitor": {
+      "run-janitor": "Run janitor",
+      "stage-janitor": "Stage janitor",
+      "workflow-schedules": "Schedule sync"
+    },
+    "janitorRan": "ran {time} ago",
+    "janitorCleaned": "{count, plural, one {cleaned up # thing} other {cleaned up # things}}",
+    "janitorNeverRan": "has not run yet"
   }
 }

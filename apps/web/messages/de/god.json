@@ -331,6 +331,15 @@
     "agentTeamStartsWaiting": "{count, plural, one {# Agent-Team-Start wartet} other {# Agent-Team-Starts warten}} auf Mastra",
     "stalledWorkflowRuns": "{count, plural, one {# Agent-Team-Lauf kommt} other {# Agent-Team-Läufe kommen}} seit 15 Minuten nicht voran",
     "failedLastDay": "{count, plural, one {# Lauf} other {# Läufe}} in den letzten 24 Stunden fehlgeschlagen",
-    "provisioningFailed": "{count, plural, one {# Provisionierungsauftrag} other {# Provisionierungsaufträge}} fehlgeschlagen"
+    "provisioningFailed": "{count, plural, one {# Provisionierungsauftrag} other {# Provisionierungsaufträge}} fehlgeschlagen",
+    "janitorsTitle": "Aufräumdienste",
+    "janitor": {
+      "run-janitor": "Lauf-Aufräumdienst",
+      "stage-janitor": "Stufen-Aufräumdienst",
+      "workflow-schedules": "Zeitplan-Abgleich"
+    },
+    "janitorRan": "lief vor {time}",
+    "janitorCleaned": "{count, plural, one {# Eintrag aufgeräumt} other {# Einträge aufgeräumt}}",
+    "janitorNeverRan": "noch nicht gelaufen"
   }
 }

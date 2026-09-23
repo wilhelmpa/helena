@@ -701,6 +701,16 @@ export const serviceHeartbeat = pgTable('service_heartbeat', {
   error: text('error'),
 });
 
+// The last run of one of the api's janitor loops, for the health overview: when it last
+// ran, how much it cleaned up (null while a run failed before it could count, which
+// keeps the count of the last run that did), and why it failed, if it did.
+export const janitorRun = pgTable('janitor_run', {
+  job: text('job').primaryKey(),
+  ranAt: timestamp('ran_at', { withTimezone: true }).notNull().defaultNow(),
+  cleaned: integer('cleaned'),
+  error: text('error'),
+});
+
 // An agent's request to take an action outside Plan (send, publish, pay, delete), which
 // a person with the ai_agents edit permission of the project approves or rejects. The
 // decision queues a run of the agent with the decision in its prompt (followUpRunId).

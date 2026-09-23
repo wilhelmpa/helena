@@ -331,6 +331,15 @@
     "agentTeamStartsWaiting": "{count, plural, other {# start agent-team menunggu}} Mastra",
     "stalledWorkflowRuns": "{count, plural, other {# run agent-team}} tidak maju selama 15 menit",
     "failedLastDay": "{count, plural, other {# run}} gagal dalam 24 jam terakhir",
-    "provisioningFailed": "{count, plural, other {# tugas penyediaan}} gagal"
+    "provisioningFailed": "{count, plural, other {# tugas penyediaan}} gagal",
+    "janitorsTitle": "Tugas pembersihan",
+    "janitor": {
+      "run-janitor": "Pembersih proses",
+      "stage-janitor": "Pembersih tahap",
+      "workflow-schedules": "Sinkronisasi jadwal"
+    },
+    "janitorRan": "berjalan {time} lalu",
+    "janitorCleaned": "{count, plural, other {membersihkan # item}}",
+    "janitorNeverRan": "belum pernah berjalan"
   }
 }

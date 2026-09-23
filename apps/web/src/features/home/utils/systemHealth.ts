@@ -1,4 +1,4 @@
-import type { SystemHealth } from '@/lib/api/endpoints/god';
+import type { JanitorHealth, SystemHealth } from '@/lib/api/endpoints/god';
 
 export type HealthProblem =
   | { key: 'waiting'; count: number; since: string | null }
@@ -29,4 +29,22 @@ export function healthProblems(runs: SystemHealth['runs']): HealthProblem[] {
     if (count > 0) problems.push({ key, count });
   }
   return problems;
+}
+
+export interface JanitorSummary {
+  ranAt: string;
+  // What it cleaned up that run, when it found anything: a run that cleaned nothing
+  // is not worth a number next to the time.
+  cleaned: number | null;
+}
+
+// What a janitor card says under its name: null while it has never run yet.
+export function janitorSummary(
+  health: Pick<JanitorHealth, 'ranAt' | 'cleaned'>,
+): JanitorSummary | null {
+  if (!health.ranAt) return null;
+  return {
+    ranAt: health.ranAt,
+    cleaned: health.cleaned && health.cleaned > 0 ? health.cleaned : null,
+  };
 }

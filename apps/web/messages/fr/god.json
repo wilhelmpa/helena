@@ -331,6 +331,15 @@
     "agentTeamStartsWaiting": "{count, plural, one {# démarrage d’agent-team attend} other {# démarrages d’agent-team attendent}} Mastra",
     "stalledWorkflowRuns": "{count, plural, one {# exécution d’agent-team n’a pas avancé} other {# exécutions d’agent-team n’ont pas avancé}} depuis 15 minutes",
     "failedLastDay": "{count, plural, one {# exécution a échoué} other {# exécutions ont échoué}} au cours des dernières 24 heures",
-    "provisioningFailed": "{count, plural, one {# tâche de provisionnement a échoué} other {# tâches de provisionnement ont échoué}}"
+    "provisioningFailed": "{count, plural, one {# tâche de provisionnement a échoué} other {# tâches de provisionnement ont échoué}}",
+    "janitorsTitle": "Tâches de nettoyage",
+    "janitor": {
+      "run-janitor": "Nettoyage des exécutions",
+      "stage-janitor": "Nettoyage des étapes",
+      "workflow-schedules": "Synchronisation des plannings"
+    },
+    "janitorRan": "exécuté il y a {time}",
+    "janitorCleaned": "{count, plural, one {a nettoyé # élément} other {a nettoyé # éléments}}",
+    "janitorNeverRan": "n'a pas encore tourné"
   }
 }

@@ -331,6 +331,15 @@
     "agentTeamStartsWaiting": "{count, plural, other {# 个 agent-team 启动}}正在等待 Mastra",
     "stalledWorkflowRuns": "{count, plural, other {# 个 agent-team 运行}}已 15 分钟没有进展",
     "failedLastDay": "过去 24 小时内有{count, plural, other {# 个运行}}失败",
-    "provisioningFailed": "{count, plural, other {# 个资源配置任务}}失败"
+    "provisioningFailed": "{count, plural, other {# 个资源配置任务}}失败",
+    "janitorsTitle": "清理任务",
+    "janitor": {
+      "run-janitor": "运行清理器",
+      "stage-janitor": "阶段清理器",
+      "workflow-schedules": "日程同步"
+    },
+    "janitorRan": "{time}前运行过",
+    "janitorCleaned": "{count, plural, other {清理了 # 项}}",
+    "janitorNeverRan": "尚未运行"
   }
 }

@@ -3,6 +3,7 @@ import {
   agentTeamStart,
   aiAgent,
   db,
+  listJanitorRuns,
   projectDeprovisioningJob,
   projectProvisioningJob,
   projectSetting,
@@ -22,6 +23,10 @@ import {
 
 export const SERVICES = ['runner', 'mastra', 'bridge', 'provisioning', 'worker'] as const;
 type Service = (typeof SERVICES)[number];
+
+// The api's janitor loops, named the same way in background.ts, which starts them,
+// and in the janitor_run table, which this file reads their last run from.
+export const JANITOR_JOBS = ['run-janitor', 'stage-janitor', 'workflow-schedules'] as const;
 
 // How long a service may go unseen before it counts as down. The worker and the bridge
 // report every 30 seconds, the provisioning service is checked with the worker's report,
@@ -43,10 +48,28 @@ const RUNNER_STOP_SECONDS = 1_800;
 // waiting in Plan, makes no progress.
 const STALL_MS = 15 * 60_000;
 
+// How long a janitor may go without running before it counts as stopped, rather than
+// merely between runs: three times its own interval, so one slow tick is not a false
+// alarm. Kept in step with the intervals background.ts starts each loop with.
+const JANITOR_INTERVAL_MS: Record<(typeof JANITOR_JOBS)[number], number> = {
+  'run-janitor': 60_000,
+  'stage-janitor': 300_000,
+  'workflow-schedules': 600_000,
+};
+const JANITOR_STALE_FACTOR = 3;
+
 export interface ServiceHealth {
   service: Service;
   state: 'ok' | 'down' | 'unknown';
   lastSeenAt: string | null;
+  error: string | null;
+}
+
+export interface JanitorHealth {
+  job: (typeof JANITOR_JOBS)[number];
+  state: 'ok' | 'down' | 'unknown';
+  ranAt: string | null;
+  cleaned: number | null;
   error: string | null;
 }
 
@@ -62,6 +85,22 @@ function health(
     service,
     state: recent && !row.error ? 'ok' : 'down',
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
+    error: row.error,
+  };
+}
+
+function janitorHealth(
+  job: (typeof JANITOR_JOBS)[number],
+  row: { ranAt: Date; cleaned: number | null; error: string | null } | undefined,
+): JanitorHealth {
+  if (!row) return { job, state: 'unknown', ranAt: null, cleaned: null, error: null };
+  const recent =
+    Date.now() - row.ranAt.getTime() <= JANITOR_INTERVAL_MS[job] * JANITOR_STALE_FACTOR;
+  return {
+    job,
+    state: recent && !row.error ? 'ok' : 'down',
+    ranAt: iso(row.ranAt),
+    cleaned: row.cleaned,
     error: row.error,
   };
 }
@@ -145,7 +184,7 @@ async function stalledWorkflowRuns(): Promise<number | null> {
 
 export async function systemHealth() {
   await checkMastra();
-  const [reported, [runner], runs, stalled] = await Promise.all([
+  const [reported, [runner], runs, stalled, janitors] = await Promise.all([
     db.select().from(serviceHeartbeat),
     db
       .select({ lastSeenAt: sql`max(${aiAgent.lastSeenAt})`.mapWith(aiAgent.lastSeenAt) })
@@ -153,8 +192,10 @@ export async function systemHealth() {
       .where(eq(aiAgent.kind, 'external')),
     runCounts(),
     stalledWorkflowRuns(),
+    listJanitorRuns(),
   ]);
   const byService = new Map(reported.map((row) => [row.service, row]));
+  const byJanitor = new Map(janitors.map((row) => [row.job, row]));
   return {
     services: SERVICES.map((service) =>
       health(
@@ -165,5 +206,6 @@ export async function systemHealth() {
       ),
     ),
     runs: { ...runs, stalledWorkflowRuns: stalled },
+    janitors: JANITOR_JOBS.map((job) => janitorHealth(job, byJanitor.get(job))),
   };
 }

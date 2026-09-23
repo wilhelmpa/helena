@@ -749,6 +749,24 @@ describe('agent runner queue', () => {
       expect(await expireExhaustedRuns()).toBe(0);
     });
 
+    it('fences the run-janitor: two of it racing on the same exhausted run fails it once', async () => {
+      const { asOwner, asRunner, agent, columnId } = await setup();
+      const issue = await queueRun(asOwner, columnId, agent.username);
+      withShortLease('1');
+      await asRunner['agent-runs'].claim.post();
+      await leaseRunsOut();
+
+      // Both calls see the run as pending before either commits; Postgres serializes the
+      // two UPDATEs on the row, and the second re-checks status = 'pending' once it gets
+      // the lock, so only the first still matches it.
+      const failedCounts = await Promise.all([expireExhaustedRuns(), expireExhaustedRuns()]);
+      expect(failedCounts.reduce((sum, count) => sum + count, 0)).toBe(1);
+
+      const feed = await asOwner.issues({ issueId: issue.id }).feed.get({ query: {} });
+      const finishedEntries = feed.data!.items.filter((item) => item.action === 'agent_finished');
+      expect(finishedEntries).toHaveLength(1);
+    });
+
     it('lets one of two runners claiming at once take the run', async () => {
       const { asOwner, asRunner, agent, columnId } = await setup();
       await queueRun(asOwner, columnId, agent.username);

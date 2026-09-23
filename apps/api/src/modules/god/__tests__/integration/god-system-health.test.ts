@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { agentRun, db } from '@repo/db';
+import { agentRun, db, janitorRun, recordJanitorRun } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi } from '#tests/helpers/app';
 import { createAgent } from '#tests/helpers/agents';
@@ -103,6 +103,47 @@ describe('system health', () => {
 
     controlPlane.answer = () => new Response('{}', { status: 502 });
     expect((await god.api.god['system-health'].get()).data!.runs.stalledWorkflowRuns).toBeNull();
+  });
+
+  it("shows each janitor's last run, and stays down until one runs again", async () => {
+    const { god } = await setup();
+    const unknown = (await god.api.god['system-health'].get()).data!;
+    expect(unknown.janitors).toEqual([
+      { job: 'run-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
+      { job: 'stage-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
+      { job: 'workflow-schedules', state: 'unknown', ranAt: null, cleaned: null, error: null },
+    ]);
+
+    await recordJanitorRun('run-janitor', 3, null);
+    const ok = (await god.api.god['system-health'].get()).data!;
+    const runJanitor = ok.janitors.find((j) => j.job === 'run-janitor')!;
+    expect(runJanitor).toMatchObject({ state: 'ok', cleaned: 3, error: null });
+    expect(runJanitor.ranAt).not.toBeNull();
+
+    // A run that fails keeps the last count it found rather than resetting it, so the
+    // owner still sees what the janitor last actually cleaned up.
+    await recordJanitorRun('run-janitor', null, 'connection refused');
+    const failed = (await god.api.god['system-health'].get()).data!;
+    expect(failed.janitors.find((j) => j.job === 'run-janitor')).toMatchObject({
+      state: 'down',
+      cleaned: 3,
+      error: 'connection refused',
+    });
+
+    // Stale: it ran once, long enough ago that it counts as stopped even without an
+    // error of its own.
+    await db.insert(janitorRun).values({
+      job: 'stage-janitor',
+      ranAt: new Date(Date.now() - 86_400_000),
+      cleaned: 5,
+      error: null,
+    });
+    const stale = (await god.api.god['system-health'].get()).data!;
+    expect(stale.janitors.find((j) => j.job === 'stage-janitor')).toMatchObject({
+      state: 'down',
+      cleaned: 5,
+      error: null,
+    });
   });
 
   it('is for the instance owner only', async () => {

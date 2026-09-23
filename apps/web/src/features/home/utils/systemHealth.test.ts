@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { healthProblems } from './systemHealth';
+import { healthProblems, janitorSummary } from './systemHealth';
 
 const quiet = {
   waiting: 0,
@@ -33,5 +33,29 @@ describe('health problems', () => {
         { key: 'failedLastDay', count: 2 },
       ],
     );
+  });
+});
+
+describe('janitor summary', () => {
+  test('is null while the janitor has never run', () => {
+    assert.equal(janitorSummary({ ranAt: null, cleaned: null }), null);
+  });
+
+  test('leaves out the count for a run that cleaned nothing', () => {
+    assert.deepEqual(janitorSummary({ ranAt: '2026-09-23T10:00:00.000Z', cleaned: 0 }), {
+      ranAt: '2026-09-23T10:00:00.000Z',
+      cleaned: null,
+    });
+    assert.deepEqual(janitorSummary({ ranAt: '2026-09-23T10:00:00.000Z', cleaned: null }), {
+      ranAt: '2026-09-23T10:00:00.000Z',
+      cleaned: null,
+    });
+  });
+
+  test('carries the count for a run that cleaned something', () => {
+    assert.deepEqual(janitorSummary({ ranAt: '2026-09-23T10:00:00.000Z', cleaned: 4 }), {
+      ranAt: '2026-09-23T10:00:00.000Z',
+      cleaned: 4,
+    });
   });
 });

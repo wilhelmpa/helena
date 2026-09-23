@@ -348,4 +348,25 @@ export const SystemHealthResponse = t.Object({
       }),
     ),
   }),
+  janitors: t.Array(
+    t.Object({
+      job: t.Union([
+        t.Literal('run-janitor'),
+        t.Literal('stage-janitor'),
+        t.Literal('workflow-schedules'),
+      ]),
+      state: t.Union([t.Literal('ok'), t.Literal('down'), t.Literal('unknown')], {
+        description: 'unknown: the job has never run.',
+      }),
+      ranAt: t.Nullable(t.String({ description: 'When it last ran.' })),
+      cleaned: t.Nullable(
+        t.Number({
+          description:
+            'What it cleaned up that run. Stays at the last run that had a count while the ' +
+            'most recent run failed before counting anything.',
+        }),
+      ),
+      error: t.Nullable(t.String({ description: 'Why the last run failed.' })),
+    }),
+  ),
 });

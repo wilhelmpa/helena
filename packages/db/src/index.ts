@@ -4,6 +4,7 @@ export * from './permissions';
 export { getSetting, getOrCreateSetting, setSetting } from './settings';
 export { readSecret, writeSecret } from './secrets';
 export { recordServiceCheck } from './service-heartbeat';
+export { recordJanitorRun, listJanitorRuns, type JanitorRunRow } from './janitor-run';
 export {
   TELEGRAM_BOT_SECRET_KEY,
   getInstanceBotConfig,

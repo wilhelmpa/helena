@@ -331,6 +331,15 @@
     "agentTeamStartsWaiting": "{count, plural, one {# старт agent-team ждёт} few {# старта agent-team ждут} many {# стартов agent-team ждут} other {# старта agent-team ждут}} Mastra",
     "stalledWorkflowRuns": "{count, plural, one {# запуск agent-team не продвигается} few {# запуска agent-team не продвигаются} many {# запусков agent-team не продвигаются} other {# запуска agent-team не продвигаются}} уже 15 минут",
     "failedLastDay": "{count, plural, one {# запуск завершился} few {# запуска завершились} many {# запусков завершились} other {# запуска завершились}} ошибкой за последние 24 часа",
-    "provisioningFailed": "{count, plural, one {# задание провижининга завершилось} few {# задания провижининга завершились} many {# заданий провижининга завершились} other {# задания провижининга завершились}} ошибкой"
+    "provisioningFailed": "{count, plural, one {# задание провижининга завершилось} few {# задания провижининга завершились} many {# заданий провижининга завершились} other {# задания провижининга завершились}} ошибкой",
+    "janitorsTitle": "Уборщики",
+    "janitor": {
+      "run-janitor": "Уборщик запусков",
+      "stage-janitor": "Уборщик этапов",
+      "workflow-schedules": "Синхронизация расписаний"
+    },
+    "janitorRan": "выполнялся {time} назад",
+    "janitorCleaned": "{count, plural, one {очищен # элемент} few {очищено # элемента} many {очищено # элементов} other {очищено # элемента}}",
+    "janitorNeverRan": "ещё не запускался"
   }
 }
