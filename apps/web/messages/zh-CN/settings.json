@@ -86,6 +86,13 @@
       "loading": "正在加载设置状态…",
       "unavailable": "设置状态不可用。",
       "retry": "重试"
+    },
+    "dangerZone": {
+      "title": "危险区域",
+      "description": "对此项目执行不可逆的操作。",
+      "deleteTitle": "删除此项目",
+      "deleteDescription": "将永久删除该项目及其全部内容：任务、文档、文件、活动记录。此操作无法撤销。",
+      "deleteAction": "删除项目"
     }
   },
   "configuration": {

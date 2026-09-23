@@ -86,6 +86,13 @@
       "loading": "Cargando el estado de la configuración…",
       "unavailable": "El estado de la configuración no está disponible.",
       "retry": "Reintentar"
+    },
+    "dangerZone": {
+      "title": "Zona de peligro",
+      "description": "Acciones irreversibles en este proyecto.",
+      "deleteTitle": "Eliminar este proyecto",
+      "deleteDescription": "Elimina permanentemente el proyecto y todo su contenido: tickets, documentos, archivos, actividad. Esto no se puede deshacer.",
+      "deleteAction": "Eliminar proyecto"
     }
   },
   "configuration": {

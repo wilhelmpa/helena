@@ -86,6 +86,13 @@
       "loading": "Einrichtungsstatus wird geladen…",
       "unavailable": "Der Einrichtungsstatus ist nicht verfügbar.",
       "retry": "Erneut versuchen"
+    },
+    "dangerZone": {
+      "title": "Gefahrenzone",
+      "description": "Unumkehrbare Aktionen für dieses Projekt.",
+      "deleteTitle": "Projekt löschen",
+      "deleteDescription": "Löscht das Projekt und alles darin endgültig: Aufgaben, Docs, Dateien, Aktivität. Das kann nicht rückgängig gemacht werden.",
+      "deleteAction": "Projekt löschen"
     }
   },
   "configuration": {

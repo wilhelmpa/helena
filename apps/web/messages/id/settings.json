@@ -86,6 +86,13 @@
       "loading": "Memuat status penyiapan…",
       "unavailable": "Status penyiapan tidak tersedia.",
       "retry": "Coba lagi"
+    },
+    "dangerZone": {
+      "title": "Zona berbahaya",
+      "description": "Tindakan yang tidak dapat dibatalkan pada proyek ini.",
+      "deleteTitle": "Hapus proyek ini",
+      "deleteDescription": "Menghapus proyek dan semua isinya secara permanen: issue, dokumen, file, aktivitas. Tindakan ini tidak dapat dibatalkan.",
+      "deleteAction": "Hapus proyek"
     }
   },
   "configuration": {

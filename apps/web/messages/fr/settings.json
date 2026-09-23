@@ -86,6 +86,13 @@
       "loading": "Chargement de l’état de la mise en place…",
       "unavailable": "L’état de la mise en place n’est pas disponible.",
       "retry": "Relancer"
+    },
+    "dangerZone": {
+      "title": "Zone de danger",
+      "description": "Actions irréversibles sur ce projet.",
+      "deleteTitle": "Supprimer ce projet",
+      "deleteDescription": "Supprime définitivement le projet et tout son contenu : tickets, docs, fichiers, activité. Cette action est irréversible.",
+      "deleteAction": "Supprimer le projet"
     }
   },
   "configuration": {

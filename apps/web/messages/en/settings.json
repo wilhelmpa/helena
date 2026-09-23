@@ -86,6 +86,13 @@
       "loading": "Loading the setup state…",
       "unavailable": "The setup state is unavailable.",
       "retry": "Retry"
+    },
+    "dangerZone": {
+      "title": "Danger zone",
+      "description": "Irreversible actions on this project.",
+      "deleteTitle": "Delete this project",
+      "deleteDescription": "Permanently deletes the project and everything in it: issues, docs, files, activity. This cannot be undone.",
+      "deleteAction": "Delete project"
     }
   },
   "configuration": {
