@@ -58,7 +58,7 @@ async function handle(
       async () => {
         if (await client.heartbeat(run.id)) stop.abort();
       },
-      perform(config, client, run, stop, policy?.toolsets() ?? null),
+      perform(config, client, run, stop, policy?.toolsets() ?? null, policy?.env()),
     );
     log(
       outcome
@@ -94,7 +94,7 @@ async function handleChat(
       async () => {
         if (await client.chatHeartbeat(message.id)) stop.abort();
       },
-      answer(config, client, message, stop, policy?.toolsets() ?? null),
+      answer(config, client, message, stop, policy?.toolsets() ?? null, policy?.env()),
     );
   } catch (err) {
     // Without a reported failure the chat waits for an answer that is no longer coming.

@@ -26,6 +26,7 @@ export async function answer(
   message: ChatMessage,
   stop: AbortController,
   toolsets: string[] | null,
+  policyEnv: Record<string, string> = {},
 ): Promise<void> {
   // Reported once: repeating it on every batch is a field the server has to ignore.
   let reported = message.sessionId !== null;
@@ -53,6 +54,7 @@ export async function answer(
       thinkingLevel: message.thinkingLevel,
       toolsets,
       env: {
+        ...policyEnv,
         ITSAPLAN_TRIGGER: 'chat',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
         ITSAPLAN_THREAD_ID: message.threadId,

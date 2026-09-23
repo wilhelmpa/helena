@@ -25,6 +25,14 @@ export const RuntimePolicySnapshotResponse = t.Object({
   configuredTools: t.Array(
     t.Object({ id: t.Number(), toolKey: t.String(), integrationKey: t.String() }),
   ),
+  // The parts of the knowledge vault the agent's own file tools may reach, as absolute
+  // paths (see knowledge.ts). The runner hands it to Hermes as VOLITION_VAULT_ACCESS.
+  vaultAccess: t.Object({
+    root: t.String(),
+    read: t.Array(t.String()),
+    write: t.Array(t.String()),
+    deny: t.Array(t.String()),
+  }),
 });
 
 export const RuntimeStateBody = t.Object({

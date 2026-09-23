@@ -32,14 +32,16 @@ export async function perform(
   run: Run,
   stop: AbortController,
   toolsets: string[] | null = null,
+  policyEnv: Record<string, string> = {},
 ): Promise<Outcome | null> {
   // Read as the command writes, not off the outcome: only the tail of the output is
   // kept, and the line carrying the counts can fall outside it. A command that reports
   // the totals of the run has them on the outcome, and those are what the run cost.
   const usage = new UsageReader(config.outputFormat);
+  const task = taskOf(run);
   const outcome = await execute(
     { ...config, cwd: runCwd(config.cwd, run.workdir) },
-    { ...taskOf(run), toolsets },
+    { ...task, env: { ...policyEnv, ...task.env }, toolsets },
     {
       onData: (chunk) => usage.write(chunk),
       signal: stop.signal,

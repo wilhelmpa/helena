@@ -24,6 +24,17 @@ export interface RuntimeSkill {
   files: RuntimeSkillFile[];
 }
 
+// The parts of the knowledge vault the agent's file tools may reach, as absolute paths:
+// a path is readable below an entry of `read`, writable below one of `write`, and
+// neither below one of `deny`. Hermes gets it as VOLITION_VAULT_ACCESS (JSON) for its
+// approval plugin to enforce.
+export interface VaultAccess {
+  root: string;
+  read: string[];
+  write: string[];
+  deny: string[];
+}
+
 export interface RuntimePolicySnapshot {
   revision: string;
   runtimePolicy: {
@@ -32,6 +43,7 @@ export interface RuntimePolicySnapshot {
     toolDeny?: string[];
   };
   skills: RuntimeSkill[];
+  vaultAccess?: VaultAccess;
 }
 
 // A managed file that was changed outside Plan. Plan's version replaced it; the changed
@@ -389,6 +401,7 @@ export class HermesPolicySynchronizer {
   // with it again, since a report replaces the whole state Plan keeps.
   private state: ReportedState | null = null;
   private deniedToolsets: string[] = [];
+  private vaultAccess: VaultAccess | null = null;
   private inventory: HermesInventory | undefined;
   private inventoryDigest: string | null = null;
   private inventoryReadAt = -Infinity;
@@ -422,6 +435,11 @@ export class HermesPolicySynchronizer {
     return allowedToolsets(this.options.profile, this.deniedToolsets);
   }
 
+  // The environment the policy adds to a run or a chat answer.
+  env(): Record<string, string> {
+    return this.vaultAccess ? { VOLITION_VAULT_ACCESS: JSON.stringify(this.vaultAccess) } : {};
+  }
+
   private async sync(): Promise<void> {
     let snapshot: RuntimePolicySnapshot;
     try {
@@ -430,8 +448,9 @@ export class HermesPolicySynchronizer {
       // The claim that follows reports a server that cannot be reached.
       return;
     }
-    // The restriction writes no file, so it holds even while a revision fails to apply.
+    // The restrictions write no file, so they hold even while a revision fails to apply.
     this.deniedToolsets = snapshot.runtimePolicy?.toolDeny ?? [];
+    this.vaultAccess = snapshot.vaultAccess ?? null;
     const applied = await this.apply(snapshot);
     const inventoryChanged = await this.readInventory();
     if ((applied || inventoryChanged) && this.state) await this.report(this.state);

@@ -19,16 +19,18 @@ import type { RunnerAgent } from '../runner/service';
 import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
 import { areasSection } from './areas';
+import { agentVaultAccess, knowledgeSection } from './knowledge';
 import { structureSection } from './structure';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [skills, tools, structure, areas] = await Promise.all([
+  const [skills, tools, structure, areas, vaultAccess] = await Promise.all([
     listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
     structureSection(agent),
     areasSection(agent),
+    agentVaultAccess(agentRef.userId),
   ]);
   const snapshot = {
     agent: { id: agent.id, name: agent.name, username: agent.username },
@@ -41,7 +43,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
         {
           kind: 'instructions' as const,
           path: 'SOUL.md',
-          content: soul(agentRef, agent, structure, areas),
+          content: soul(agentRef, agent, structure, areas, knowledgeSection(vaultAccess)),
         },
       ],
     },
@@ -57,6 +59,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       toolKey,
       integrationKey,
     })),
+    vaultAccess,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.
   // Eden's response parser treats a bare 64-character digest as an encoded value.
@@ -78,6 +81,7 @@ function soul(
   config: { name: string; runtimePolicy: AgentRuntimePolicy },
   structure: string,
   areas: string,
+  knowledge: string,
 ): string {
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
@@ -95,6 +99,7 @@ function soul(
     projectsPreamble(agent.projects).trim(),
     ...agent.projects.map((project) => projectInstructionsPreamble(project).trim()),
     areas,
+    knowledge,
     structure,
     chatPreamble().trim(),
     blockedPreamble(),
