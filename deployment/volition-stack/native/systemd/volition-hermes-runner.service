@@ -1,8 +1,8 @@
 [Unit]
 Description=Volition Plan Hermes agent runner
-After=network-online.target volition-plan-api-dev.service volition-hermes-gateway.service
+After=network-online.target volition-plan-api.service volition-hermes-gateway.service
 Wants=network-online.target
-Requires=volition-plan-api-dev.service
+Requires=volition-plan-api.service
 ConditionPathExists=/srv/volition/source/plan/packages/runner/dist/cli.js
 ConditionPathExists=/etc/volition/hermes-plan-key
 

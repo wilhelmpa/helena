@@ -53,6 +53,21 @@ class HermesModelCatalogTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             CATALOG.catalog_models("openai-codex")
 
+    def test_names_read_as_versions_without_release_dates(self):
+        self.assertEqual(CATALOG.model_name("claude-opus-4-5-20251101"), "Claude Opus 4.5")
+        self.assertEqual(CATALOG.model_name("claude-opus-4-20250514"), "Claude Opus 4")
+        self.assertEqual(CATALOG.model_name("claude-fable-5.1"), "Claude Fable 5.1")
+        self.assertEqual(CATALOG.model_name("gpt-5.5"), "GPT 5.5")
+        self.assertEqual(CATALOG.model_name("gpt-5-codex"), "GPT 5 Codex")
+
+    def test_keeps_one_model_per_name_within_a_provider(self):
+        self.catalogs["anthropic"] = [
+            {**model("claude-fable-5-1"), "name": "Claude Fable 5.1"},
+            {**model("claude-fable-5.1"), "name": "Claude Fable 5.1"},
+        ]
+        ids = [entry["id"] for entry in CATALOG.catalog_models("openai-codex")]
+        self.assertEqual(ids, ["gpt-5.5", "shared", "claude-fable-5-1"])
+
 
 if __name__ == "__main__":
     unittest.main()

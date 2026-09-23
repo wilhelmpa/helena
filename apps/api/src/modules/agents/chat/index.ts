@@ -142,7 +142,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       body: sendChatBody,
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
-      response: { 200: SendChatResponse, ...commonErrors, ...errors(429) },
+      response: { 200: SendChatResponse, ...commonErrors, ...errors(409, 429) },
       detail: { summary: 'Send a global Home chat message' },
     },
   )
@@ -249,12 +249,13 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       body: sendChatBody,
       params: projectAgentParams,
       permission: ['ai_agents', 'read'],
-      response: { 200: SendChatResponse, ...commonErrors, ...errors(429) },
+      response: { 200: SendChatResponse, ...commonErrors, ...errors(409, 429) },
       detail: {
         summary: 'Send a chat message',
         description:
           "Queue a message for an external agent's runner and return the answer it will " +
-          'produce. Follow the answer with the stream endpoint.',
+          'produce. Follow the answer with the stream endpoint. A paused agent takes no ' +
+          'message (409).',
       },
     },
   )

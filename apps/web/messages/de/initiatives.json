@@ -1,0 +1,166 @@
+{
+  "title": "Initiativen",
+  "newInitiative": "Neue Initiative",
+  "notFound": "Initiative nicht gefunden.",
+  "options": "Optionen der Initiative",
+  "showDescription": "Beschreibung anzeigen",
+  "noDescription": "Keine Beschreibung.",
+  "noOwner": "Keine verantwortliche Person",
+  "startDate": "Startdatum",
+  "targetDate": "Zieldatum",
+  "progress": "Fortschritt",
+  "activity": "Aktivität",
+  "noActivity": "Noch keine Aktivität.",
+  "noIssuesLinked": "Noch keine Aufgaben verknüpft.",
+  "inProgress": "In Arbeit",
+  "emptyTitle": "Noch keine Initiativen",
+  "emptyDescription": "Eine Initiative bündelt zusammengehörige Aufgaben unter einem gemeinsamen Ziel.",
+  "emptyTabDescription": "Initiativen wechseln den Tab, sobald sich ihr Status ändert.",
+  "emptyTab": {
+    "active": "Keine aktiven Initiativen",
+    "planned": "Keine geplanten Initiativen",
+    "proposed": "Keine vorgeschlagenen Initiativen",
+    "completed": "Keine abgeschlossenen Initiativen"
+  },
+  "tabs": {
+    "active": "Aktiv",
+    "planned": "Geplant",
+    "proposed": "Vorgeschlagen",
+    "completed": "Abgeschlossen",
+    "all": "Alle Initiativen"
+  },
+  "detailTabs": {
+    "overview": "Übersicht",
+    "progress": "Fortschritt",
+    "issues": "Aufgaben"
+  },
+  "columns": {
+    "name": "Name",
+    "priority": "Priorität",
+    "owner": "Verantwortlich",
+    "target": "Zieldatum",
+    "progress": "Fortschritt",
+    "health": "Zustand"
+  },
+  "status": {
+    "proposed": "Vorgeschlagen",
+    "planned": "Geplant",
+    "active": "Aktiv",
+    "completed": "Abgeschlossen",
+    "canceled": "Abgebrochen"
+  },
+  "stateGroups": {
+    "backlog": "Backlog",
+    "unstarted": "Zu erledigen",
+    "started": "In Arbeit",
+    "completed": "Erledigt",
+    "canceled": "Abgebrochen"
+  },
+  "health": {
+    "on_track": "Im Plan",
+    "at_risk": "Gefährdet",
+    "off_track": "Im Verzug",
+    "unknown": "Keine Angabe"
+  },
+  "healthInfo": {
+    "trigger": "Wie wird der Zustand berechnet?",
+    "title": "Zustand",
+    "description": "Vergleicht die erledigte Arbeit mit der verstrichenen Zeit. Wird automatisch aktualisiert.",
+    "legend": {
+      "on_track": "Die Arbeit liegt im Zeitplan.",
+      "at_risk": "Die Arbeit fällt hinter den Zeitplan zurück.",
+      "off_track": "Die Arbeit liegt deutlich zurück oder das Zieldatum ist überschritten.",
+      "unknown": "Noch nicht genug Daten: keine Aufgaben oder kein Zieldatum."
+    },
+    "howCalculated": "So wird er berechnet",
+    "workDone": "Erledigte Arbeit",
+    "timeElapsed": "Verstrichene Zeit",
+    "trail": "Rückstand der Arbeit gegenüber der Zeit",
+    "trailOnTrack": "bis zu 10 % Rückstand",
+    "trailAtRisk": "10–25 % Rückstand",
+    "trailOffTrack": "über 25 % Rückstand"
+  },
+  "timeline": {
+    "title": "Zeitachse",
+    "started": "Beginn",
+    "target": "Ziel",
+    "remaining": "Verbleibend",
+    "overdue": "{days} Tg. überfällig",
+    "dueToday": "Heute fällig",
+    "left": "noch {days} Tg.",
+    "timeElapsed": "Verstrichene Zeit",
+    "workDone": "Erledigte Arbeit",
+    "noTargetDate": "Lege ein Zieldatum fest, um das Tempo zu verfolgen."
+  },
+  "form": {
+    "titlePlaceholder": "Q3-Launch",
+    "descriptionPlaceholder": "Worum geht es bei dieser Initiative?",
+    "create": "Initiative erstellen",
+    "creating": "Wird erstellt…",
+    "editTitle": "Initiative bearbeiten",
+    "save": "Änderungen speichern"
+  },
+  "pagination": {
+    "range": "{from}–{to} von {total}",
+    "previous": "Vorherige Seite",
+    "next": "Nächste Seite"
+  },
+  "select": {
+    "label": "Initiative",
+    "search": "Mit Initiative verknüpfen…",
+    "empty": "Keine Initiativen.",
+    "none": "Keine Initiative",
+    "create": "Initiative erstellen"
+  },
+  "feed": {
+    "system": "System",
+    "createdInitiative": "hat die Initiative erstellt",
+    "createdIssue": "hat die Aufgabe erstellt",
+    "renamed": "hat in „{title}“ umbenannt",
+    "descriptionUpdated": "hat die Beschreibung aktualisiert",
+    "descriptionCleared": "hat die Beschreibung geleert",
+    "statusSet": "hat den Status auf {status} gesetzt",
+    "statusMoved": "hat von {from} nach {to} verschoben",
+    "prioritySet": "hat die Priorität auf {priority} gesetzt",
+    "priorityRemoved": "hat die Priorität entfernt",
+    "ownerSet": "hat {name} als verantwortliche Person festgelegt",
+    "ownerRemoved": "hat {name} als verantwortliche Person entfernt",
+    "assigneeSet": "hat {name} zugewiesen",
+    "assigneeRemoved": "hat {name} als zuständige Person entfernt",
+    "delegateSet": "hat an {name} delegiert",
+    "delegateRemoved": "hat die Delegierung an {name} entfernt",
+    "targetDateSet": "hat das Zieldatum auf {date} gesetzt",
+    "targetDateRemoved": "hat das Zieldatum entfernt",
+    "startDateSet": "hat das Startdatum auf {date} gesetzt",
+    "startDateRemoved": "hat das Startdatum entfernt",
+    "dueDateSet": "hat das Fälligkeitsdatum auf {date} gesetzt",
+    "dueDateRemoved": "hat das Fälligkeitsdatum entfernt",
+    "labelAdded": "hat das Label {label} hinzugefügt",
+    "labelRemoved": "hat das Label {label} entfernt",
+    "typeSet": "hat den Typ auf {type} gesetzt",
+    "typeRemoved": "hat den Typ entfernt",
+    "linked": "hat mit {name} verknüpft",
+    "unlinked": "hat die Verknüpfung zur Initiative entfernt"
+  },
+  "attachments": {
+    "title": "Anhänge",
+    "add": "Hinzufügen",
+    "uploading": "Wird hochgeladen…",
+    "empty": "Noch keine Anhänge.",
+    "emptyHint": "Lege Dateien hier ab oder lade sie über „Hinzufügen“ hoch.",
+    "dropToUpload": "Dateien zum Hochladen ablegen",
+    "uploadFailed": "Hochladen fehlgeschlagen",
+    "open": "{name} öffnen",
+    "download": "Herunterladen",
+    "downloadFile": "{name} herunterladen",
+    "deleteFile": "{name} löschen"
+  },
+  "documents": {
+    "title": "Dokumente",
+    "add": "Dokument verknüpfen",
+    "empty": "Noch keine verknüpften Dokumente.",
+    "loadFailed": "Die verknüpften Dokumente konnten nicht geladen werden. Versuch es noch einmal.",
+    "untitled": "Ohne Titel",
+    "remove": "Verknüpfung zu {title} entfernen"
+  }
+}

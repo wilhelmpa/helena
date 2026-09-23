@@ -26,27 +26,25 @@ async function setup() {
   const agent = (
     await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot', kind: 'internal' })
   ).data!.agent;
-  const issue = (
-    await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Task' })
-  ).data!;
   const projectId = agent.projects[0].id;
-  const enqueue = (prompt: string) =>
-    enqueueAgentRun({
+  // Each run on an issue of its own: an agent has one pending run per issue at a time.
+  const enqueue = async (title: string) => {
+    const issue = (await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title }))
+      .data!;
+    await enqueueAgentRun({
       agentId: agent.id,
       projectId,
       issueId: issue.id,
       sourceActivityId: null,
-      prompt,
+      prompt: title,
     });
+    return issue;
+  };
 
   await enqueue('first');
   await claimDueRuns();
-  await enqueue('second');
-  const [, second] = await db
-    .select()
-    .from(agentRun)
-    .where(eq(agentRun.issueId, issue.id))
-    .orderBy(agentRun.id);
+  const issue = await enqueue('second');
+  const [second] = await db.select().from(agentRun).where(eq(agentRun.issueId, issue.id));
   return { second };
 }
 

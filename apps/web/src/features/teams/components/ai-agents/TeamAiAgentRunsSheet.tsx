@@ -112,6 +112,14 @@ function RunItem({ run: r }: { run: AgentRun }) {
           <ChevronRight className="size-3.5 shrink-0" />
         )}
         <StatusBadge status={r.status} />
+        {r.blockedQuestion && (
+          <Badge
+            variant="outline"
+            className="shrink-0 border-amber-500/50 text-amber-700 dark:text-amber-400"
+          >
+            {t('blocked')}
+          </Badge>
+        )}
         <span className="shrink-0 text-muted-foreground capitalize">{r.trigger}</span>
         <span className="truncate font-medium">{subject}</span>
         {r.attempts > 1 && (
@@ -132,6 +140,9 @@ function RunItem({ run: r }: { run: AgentRun }) {
       {open && (
         <div className="space-y-3 px-4 pb-3">
           <DetailBlock label={t('task')} value={r.prompt} />
+          {r.blockedQuestion && (
+            <DetailBlock label={t('blockedQuestion')} value={r.blockedQuestion} />
+          )}
           {r.status === 'failed' && r.lastError && (
             <DetailBlock label={t('error')} value={r.lastError} />
           )}

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import type {
   AgentTeamRole,
   OrganizationAgent,
@@ -12,6 +13,7 @@ import type {
 } from '@/lib/api/endpoints/organization';
 import { parseCapabilities } from '../capabilities';
 import { useClearAgentAssignment, useSetAgentAssignment } from '../services/organization.service';
+import OrganizationAgentGovernance from './OrganizationAgentGovernance';
 import OrganizationAgentProjectInstruction from './OrganizationAgentProjectInstruction';
 
 export default function OrganizationAgentCard({
@@ -40,9 +42,12 @@ export default function OrganizationAgentCard({
   return (
     <div className="space-y-4 rounded-lg border p-4">
       <div>
-        <h3 className="font-medium" dir="auto">
-          {agent.name}
-        </h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-medium" dir="auto">
+            {agent.name}
+          </h3>
+          <AgentPausedBadge agent={agent} />
+        </div>
         <p className="text-xs text-muted-foreground">
           @{agent.username} · {agent.kind}
         </p>
@@ -122,6 +127,7 @@ export default function OrganizationAgentCard({
           </select>
         </label>
       </div>
+      <OrganizationAgentGovernance teamId={teamId} agent={agent} />
       {agent.projects.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium">{t('agents.projectInstructions')}</h4>

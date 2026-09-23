@@ -1,0 +1,164 @@
+{
+  "title": "Organisation",
+  "description": "Verwalte Abteilungen, Ziele, Berichtslinien der Agenten und Projektverantwortlichkeiten.",
+  "loading": "Organisation wird geladen…",
+  "managerRequired": "Nur Inhaber und Manager des Teams können die Organisation ansehen und bearbeiten.",
+  "tabs": {
+    "map": "Organigramm",
+    "departments": "Abteilungen",
+    "goals": "Ziele",
+    "agents": "Agenten",
+    "projects": "Projekte",
+    "orchestration": "Orchestrierung"
+  },
+  "fields": {
+    "team": "Team",
+    "name": "Name",
+    "title": "Titel",
+    "description": "Beschreibung",
+    "parentDepartment": "Übergeordnete Abteilung",
+    "department": "Abteilung",
+    "project": "Projekt",
+    "status": "Status",
+    "targetDate": "Zieldatum",
+    "roleTitle": "Rolle in der Organisation",
+    "reportsTo": "Berichtet an",
+    "hermesAgentId": "Runtime-Agenten-ID",
+    "parentGoal": "Übergeordnetes Ziel",
+    "projectInstructions": "Projektanweisungen",
+    "teamRole": "Teamrolle",
+    "capabilities": "Fähigkeiten"
+  },
+  "values": {
+    "none": "Keine"
+  },
+  "actions": {
+    "add": "Hinzufügen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "clearAssignment": "Zuweisung entfernen",
+    "saveInstructions": "Anweisungen speichern"
+  },
+  "departments": {
+    "newPlaceholder": "Neue Abteilung",
+    "empty": "Noch keine Abteilungen erstellt."
+  },
+  "goals": {
+    "newPlaceholder": "Neues Ziel",
+    "empty": "Noch keine Organisationsziele erstellt."
+  },
+  "agents": {
+    "empty": "Dieses Team hat keine Agenten.",
+    "hermesPlaceholder": "coordinator-agent-id",
+    "projectInstructions": "Projektspezifische Anweisungen",
+    "projectInstructionsPlaceholder": "Beschreibe die Verantwortung dieses Agenten im Projekt.",
+    "capabilitiesPlaceholder": "recherche, texten, code",
+    "capabilitiesHint": "Kleingeschriebene Wörter, durch Kommas getrennt. Eine Aufgabe, deren Labels zu den Fähigkeiten genau eines Specialists passen, geht ohne Plan des Coordinators direkt an diesen Specialist.",
+    "saved": "{name} gespeichert"
+  },
+  "governance": {
+    "title": "Arbeit und Token-Obergrenzen",
+    "active": "Nimmt neue Arbeit an.",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "paused": "{name} ist pausiert",
+    "resumed": "{name} nimmt wieder Arbeit an"
+  },
+  "tokens": {
+    "today": "Heute",
+    "thisMonth": "Diesen Monat",
+    "dailyCeiling": "Tagesobergrenze",
+    "monthlyCeiling": "Monatsobergrenze",
+    "noCeiling": "Keine Obergrenze",
+    "usedOfCeiling": "{used, number} von {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "Tokens der Läufe des Agenten in allen Projekten, gezählt pro Tag und Monat in UTC. Erreicht er eine Obergrenze, wird er pausiert und sein Besitzer benachrichtigt.",
+    "invalid": "Gib eine ganze Zahl ab 1 ein oder lass das Feld leer, wenn es keine Obergrenze geben soll.",
+    "save": "Obergrenzen speichern",
+    "saved": "Token-Obergrenzen von {name} gespeichert",
+    "projectTitle": "Token-Budget",
+    "projectDescription": "Tokens der Agentenläufe dieses Projekts in diesem Monat (UTC). Ist die Obergrenze erreicht, wird der Agent pausiert, dessen Lauf als Nächstes starten würde, und die Projektbesitzer werden benachrichtigt.",
+    "projectSaved": "Token-Obergrenze von {name} gespeichert",
+    "agentsTitle": "Agenten",
+    "agentsHint": "Gezählt über alle Projekte des Teams. Die Obergrenzen eines Agenten legst du im Tab Agenten fest."
+  },
+  "projects": {
+    "empty": "Dieses Team hat keine Projekte.",
+    "instructionsPlaceholder": "Beschreibe den Auftrag des Projekts und die Arbeitsanweisungen."
+  },
+  "map": {
+    "empty": "Noch keine Organisationsstruktur.",
+    "unassigned": "Nicht zugewiesene Agenten"
+  },
+  "summary": {
+    "pool": "Agentenpool",
+    "coordinators": "Coordinators",
+    "specialists": "Specialists"
+  },
+  "roles": {
+    "pool": "Pool",
+    "coordinator": "Coordinator",
+    "specialist": "Specialist",
+    "reviewer": "Reviewer"
+  },
+  "resources": {
+    "title": "Projektressourcen",
+    "description": "Bereitgestellte Ressourcen für Code, Terminal, Browser, Dateien und Agenten in diesem Projekt.",
+    "loading": "Projektressourcen werden geladen…",
+    "unavailable": "Der Status der Projektressourcen ist nicht verfügbar.",
+    "status": {
+      "pending": "Wird bereitgestellt",
+      "succeeded": "Bereit",
+      "failed": "Fehlgeschlagen"
+    }
+  },
+  "statuses": {
+    "planned": "Geplant",
+    "active": "Aktiv",
+    "achieved": "Erreicht",
+    "paused": "Pausiert"
+  },
+  "orchestration": {
+    "teamTitle": "Agententeam",
+    "teamDescription": "Rollen und Fähigkeiten gelten für alle Projekte des Teams. Nur Agenten, die in Hermes laufen, nehmen an einem Teamlauf teil.",
+    "internal": "nicht in Hermes",
+    "editRoles": "Rollen und Fähigkeiten legst du im Tab „Agenten“ fest.",
+    "policyTitle": "Agententeam-Workflow",
+    "policyDescription": "Läuft in Mastra, wenn eine Aufgabe an einen Coordinator delegiert wird.",
+    "on": "An",
+    "off": "Aus",
+    "configure": "Konfigurieren",
+    "loading": "Workflow wird geladen…",
+    "unavailable": "Die Workflow-Liste ist nicht verfügbar. Prüfe, ob Mastra läuft.",
+    "offHint": "Für dieses Projekt aus: Eine an einen Coordinator delegierte Aufgabe wird nur für diesen Agenten in die Warteschlange gestellt.",
+    "result": "Ergebnis",
+    "autonomyReview": "Aufgabe geht in „Review“",
+    "autonomyDone": "Angenommene Arbeit geht in „Erledigt“",
+    "review": "Review durch Coordinator",
+    "reviewRequired": "Erforderlich",
+    "reviewSkipped": "Übersprungen",
+    "maxTurns": "Runden pro Phase",
+    "runBudget": "Zeit pro Phase",
+    "noLimit": "Kein Limit",
+    "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
+    "warnings": {
+      "noCoordinator": "Kein Hermes-Agent hat die Rolle Coordinator, daher startet eine delegierte Aufgabe keinen Teamlauf.",
+      "severalCoordinators": "Mehrere Coordinators: Der Coordinator, an den die Aufgabe delegiert wird, leitet den Lauf.",
+      "noSpecialists": "Keine Specialists: Der Coordinator erledigt die Arbeit selbst."
+    },
+    "flow": {
+      "title": "Wie eine Aufgabe zu den Agenten gelangt",
+      "directTitle": "Direkt",
+      "direct": "Ein Chat, eine @Erwähnung oder eine Aufgabe, die einem einzelnen Agenten zugewiesen ist, geht direkt an diesen Agenten in Hermes.",
+      "teamTitle": "Über das Agententeam",
+      "team": "Eine Aufgabe, die an einen Coordinator delegiert oder im Abschnitt „Agententeam“ der Aufgabe gestartet wird, läuft in Mastra:",
+      "stages": {
+        "coordinate": "Der Coordinator teilt die Aufgabe in Arbeitspakete auf.",
+        "specialize": "Specialists bearbeiten sie in Hermes, voneinander unabhängige parallel.",
+        "review": "Der Coordinator prüft die Ergebnisse.",
+        "synchronize": "Zusammenfassung und Nachweise werden in die Aufgabe geschrieben, die dann nach „Review“ oder „Erledigt“ wechselt."
+      },
+      "route": "Passen die Labels der Aufgabe zu den Fähigkeiten genau eines Specialists oder hat das Projekt nur einen, überspringt Mastra den Plan und weist die Aufgabe direkt zu."
+    }
+  }
+}

@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # Deploys a branch to the live Plan instance on Kingston: fast-forwards the live checkout,
-# migrates the database, rebuilds what runs from a build, restarts what does not reload
-# by itself, and checks that everything answers again.
+# installs changed dependencies, migrates the database, rebuilds what runs from a build,
+# restarts what changed, and checks that everything answers again.
 #
 #   sudo deployment/volition-stack/native/deploy.sh [branch]    (default: volition/hub)
-#
-# The API, web and worker services reload on their own when their files change.
 set -euo pipefail
 
 [[ $EUID -eq 0 ]] || { echo "deploy.sh: run with sudo" >&2; exit 1; }
@@ -25,9 +23,33 @@ fi
 changed() { ! as_owner git -C "$live" diff --quiet "$before" "$after" -- "$@"; }
 restart=()
 
+if changed bun.lock; then
+  echo "installing dependencies"
+  as_owner bash -c "cd '$live' && bun install --frozen-lockfile >/dev/null"
+fi
+
 if changed packages/db/drizzle; then
   echo "migrating the database"
   systemctl start volition-plan-migrate.service
+fi
+
+# The API and the worker run from the checkout's sources; the web app runs from a
+# production build, which web-release.sh installs as a release of its own.
+plan_units=(volition-plan-api.service volition-plan-worker.service volition-plan-web.service)
+if changed "${plan_units[@]/#/deployment/volition-stack/native/systemd/}"; then
+  for unit in "${plan_units[@]}"; do
+    install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+  done
+  systemctl daemon-reload
+  restart+=("${plan_units[@]}")
+fi
+if changed apps/api apps/worker packages bun.lock; then
+  restart+=(volition-plan-api.service volition-plan-worker.service)
+fi
+if changed apps/web bun.lock; then
+  echo "building the web app"
+  "$live/deployment/volition-stack/native/web-release.sh"
+  restart+=(volition-plan-web.service)
 fi
 
 # The runner executes a bundle owned by root, so the agent user it runs as cannot replace
@@ -83,7 +105,7 @@ fi
 # Every service the instance consists of has to be running again, and the API and web
 # entry have to answer.
 failed=0
-for unit in volition-plan-api-dev volition-plan-web-dev volition-plan-worker-dev \
+for unit in volition-plan-api volition-plan-web volition-plan-worker \
   volition-hermes-runner volition-mastra volition-provisioning volition-terminal \
   volition-project-browser-router; do
   if ! systemctl is-active --quiet "$unit.service"; then

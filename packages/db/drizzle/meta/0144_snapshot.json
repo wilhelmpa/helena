@@ -1,5 +1,5 @@
 {
-  "id": "6b8397da-a61c-48ab-823e-6d33054cc91e",
+  "id": "c83ee74c-cdab-4020-9b46-276c27bfa9dc",
   "prevId": "f10123e5-9328-4042-9f67-5870caed9a9c",
   "version": "7",
   "dialect": "postgresql",
@@ -1772,12 +1772,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "schedule_id": {
+          "name": "schedule_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "trigger": {
           "name": "trigger",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "default": "'delegation'"
+        },
+        "scheduled_for": {
+          "name": "scheduled_for",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "source_activity_id": {
           "name": "source_activity_id",
@@ -1848,6 +1860,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "blocked_question": {
+          "name": "blocked_question",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "started_at": {
           "name": "started_at",
           "type": "timestamp with time zone",
@@ -1869,6 +1887,27 @@
         }
       },
       "indexes": {
+        "agent_run_schedule_fire_uq": {
+          "name": "agent_run_schedule_fire_uq",
+          "columns": [
+            {
+              "expression": "schedule_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "scheduled_for",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "agent_run_due_idx": {
           "name": "agent_run_due_idx",
           "columns": [
@@ -1890,11 +1929,47 @@
           "method": "btree",
           "with": {}
         },
+        "agent_run_schedule_idx": {
+          "name": "agent_run_schedule_idx",
+          "columns": [
+            {
+              "expression": "schedule_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "agent_run_project_idx": {
           "name": "agent_run_project_idx",
           "columns": [
             {
               "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_run_agent_finished_idx": {
+          "name": "agent_run_agent_finished_idx",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "finished_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1946,6 +2021,19 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
+        "agent_run_schedule_id_agent_schedule_id_fk": {
+          "name": "agent_run_schedule_id_agent_schedule_id_fk",
+          "tableFrom": "agent_run",
+          "tableTo": "agent_schedule",
+          "columnsFrom": [
+            "schedule_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "agent_run_source_activity_id_issue_activity_id_fk": {
           "name": "agent_run_source_activity_id_issue_activity_id_fk",
           "tableFrom": "agent_run",
@@ -1971,6 +2059,188 @@
         "agent_run_trigger_check": {
           "name": "agent_run_trigger_check",
           "value": "\"agent_run\".\"trigger\" IN ('mention', 'delegation', 'field', 'schedule', 'manual')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.agent_schedule": {
+      "name": "agent_schedule",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prompt": {
+          "name": "prompt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cron": {
+          "name": "cron",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "next_run_at": {
+          "name": "next_run_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_run_at": {
+          "name": "last_run_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "agent_schedule_due_idx": {
+          "name": "agent_schedule_due_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "next_run_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_schedule_agent_idx": {
+          "name": "agent_schedule_agent_idx",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_schedule_project_idx": {
+          "name": "agent_schedule_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "agent_schedule_agent_id_ai_agent_id_fk": {
+          "name": "agent_schedule_agent_id_ai_agent_id_fk",
+          "tableFrom": "agent_schedule",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_schedule_project_id_project_id_fk": {
+          "name": "agent_schedule_project_id_project_id_fk",
+          "tableFrom": "agent_schedule",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agent_schedule_project_id_agent_id_name_unique": {
+          "name": "agent_schedule_project_id_agent_id_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_id",
+            "agent_id",
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "agent_schedule_status_check": {
+          "name": "agent_schedule_status_check",
+          "value": "\"agent_schedule\".\"status\" IN ('active', 'paused')"
         }
       },
       "isRLSEnabled": false
@@ -2506,6 +2776,30 @@
         "last_seen_at": {
           "name": "last_seen_at",
           "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paused_at": {
+          "name": "paused_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pause_reason": {
+          "name": "pause_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daily_token_ceiling": {
+          "name": "daily_token_ceiling",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monthly_token_ceiling": {
+          "name": "monthly_token_ceiling",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -7981,6 +8275,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "monthly_token_ceiling": {
+          "name": "monthly_token_ceiling",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

@@ -1,0 +1,50 @@
+{
+  "none": "Keine Berechtigungen erteilt",
+  "grantedCount": "{count, plural, one {# Berechtigung} other {# Berechtigungen}} erteilt",
+  "resources": {
+    "work_items": "Aufgaben",
+    "initiatives": "Initiativen",
+    "cycles": "Zyklen",
+    "dashboards": "Dashboards",
+    "documents": "Dokumente",
+    "views": "Aufgabenansichten",
+    "members_invite": "Einladungen",
+    "members_manage": "Mitglieder",
+    "states": "Status",
+    "issue_types": "Aufgabentypen",
+    "labels": "Labels",
+    "ai_agents": "KI-Agenten",
+    "integrations": "Integrationen",
+    "agent_skills": "Agenten-Skills",
+    "agent_tools": "Agenten-Tools",
+    "custom_fields": "Benutzerdefinierte Felder",
+    "issue_templates": "Aufgabenvorlagen",
+    "workflow_config": "Workflow-Konfiguration",
+    "actions": "Aktionen",
+    "webhooks": "Webhooks",
+    "note_boards": "Notiz-Boards",
+    "danger_zone": "Gefahrenzone"
+  },
+  "actions": {
+    "create": "Erstellen",
+    "edit": "Bearbeiten",
+    "read": "Lesen",
+    "delete": "Löschen"
+  },
+  "groups": {
+    "workItems": "Aufgaben",
+    "dashboards": "Dashboards",
+    "documents": "Dokumente",
+    "notes": "Notizen",
+    "ai": "KI",
+    "configuration": "Konfiguration",
+    "members": "Mitglieder",
+    "project": "Projekt",
+    "other": "Sonstiges"
+  },
+  "resourceColumn": "Ressource",
+  "allowed": "erlaubt",
+  "notAllowed": "nicht erlaubt",
+  "accessHeading": "Zugriff auf dieses Projekt",
+  "joined": "beigetreten am {date}"
+}

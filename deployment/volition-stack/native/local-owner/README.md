@@ -24,6 +24,6 @@ header to `kingston-server.local`, disable this mode or use a separate authentic
 virtual host. A trusted local proxy must never carry untrusted traffic to this host.
 
 To disable, remove both `50-local-owner.conf` systemd drop-ins, run `systemctl
-daemon-reload`, and restart `volition-plan-api-dev` and `volition-plan-web-dev`.
+daemon-reload`, and restart `volition-plan-api` and `volition-plan-web`.
 Remove the Nginx capability directives/map and root-only environment file afterward.
 Existing sessions remain ordinary valid sessions until signed out or revoked.

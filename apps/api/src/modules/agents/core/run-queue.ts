@@ -39,6 +39,9 @@ export async function countRunsAhead(teamId: number, runId: number): Promise<num
   return row?.count ?? 0;
 }
 
+// Queues a run of the agent on the issue, unless the agent already has one pending
+// there — queued or in flight. One automated run per agent and issue at a time: the
+// run that is there reads the issue as it is when it starts, later comments included.
 export async function enqueueAgentRun(input: {
   agentId: number;
   // The project the run works in, which is the issue's. An agent works in several
@@ -53,14 +56,31 @@ export async function enqueueAgentRun(input: {
   delaySeconds?: number;
 }): Promise<void> {
   const delay = Math.max(0, Math.trunc(input.delaySeconds ?? 0));
-  await db.insert(agentRun).values({
-    agentId: input.agentId,
-    projectId: input.projectId,
-    issueId: input.issueId,
-    sourceActivityId: input.sourceActivityId,
-    prompt: input.prompt,
-    trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
-    nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
+  await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`agent-run:${input.agentId}:${input.issueId}`}, 0))`,
+    );
+    const [pending] = await tx
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(
+        and(
+          eq(agentRun.agentId, input.agentId),
+          eq(agentRun.issueId, input.issueId),
+          eq(agentRun.status, 'pending'),
+        ),
+      )
+      .limit(1);
+    if (pending) return;
+    await tx.insert(agentRun).values({
+      agentId: input.agentId,
+      projectId: input.projectId,
+      issueId: input.issueId,
+      sourceActivityId: input.sourceActivityId,
+      prompt: input.prompt,
+      trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
+      nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
+    });
   });
 }
 
@@ -105,7 +125,8 @@ export interface ClaimedRun {
 // keeping status 'pending', so a run whose poller crashes mid-flight becomes
 // claimable again after the lease — no separate recovery pass. The run's project and
 // the agent's user_id are read inline. An external agent's runs are left alone:
-// they are claimed over HTTP by the operator's runner (modules/agents/runner).
+// they are claimed over HTTP by the operator's runner (modules/agents/runner). A
+// paused agent's runs wait in the queue.
 export async function claimDueRuns(): Promise<ClaimedRun[]> {
   const batchSize = agentRunConfig.batchSize();
   const leaseSeconds = agentRunConfig.leaseSeconds();
@@ -118,6 +139,7 @@ export async function claimDueRuns(): Promise<ClaimedRun[]> {
       SELECT id FROM agent_run q
       WHERE q.status = 'pending' AND q.next_attempt_at <= now()
         AND (SELECT kind FROM ai_agent a WHERE a.id = q.agent_id) = 'internal'
+        AND (SELECT paused_at FROM ai_agent a WHERE a.id = q.agent_id) IS NULL
       ORDER BY q.next_attempt_at, q.id
       FOR UPDATE SKIP LOCKED
       LIMIT ${batchSize}
@@ -259,6 +281,7 @@ export interface AgentRunRow {
   // printed. Null until the run finishes.
   output: string | null;
   contextTokens?: number;
+  blockedQuestion: string | null;
   nextAttemptAt: string;
   createdAt: string;
 }
@@ -304,6 +327,7 @@ export async function listAgentRuns(
       output: agentRun.output,
       inputTokens: agentRun.inputTokens,
       outputTokens: agentRun.outputTokens,
+      blockedQuestion: agentRun.blockedQuestion,
       nextAttemptAt: agentRun.nextAttemptAt,
       createdAt: agentRun.createdAt,
       issueSeq: issue.sequenceNumber,
@@ -337,6 +361,7 @@ export async function listAgentRuns(
       lastError: r.lastError,
       output: r.output,
       ...contextTokensOf(r),
+      blockedQuestion: r.blockedQuestion,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),
     })),

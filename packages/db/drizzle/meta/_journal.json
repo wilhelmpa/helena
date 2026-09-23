@@ -1013,8 +1013,15 @@
     {
       "idx": 144,
       "version": "7",
-      "when": 1790162888665,
-      "tag": "0144_drop_agent_schedule",
+      "when": 1790161703244,
+      "tag": "0144_agent_governance",
+      "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1790164624220,
+      "tag": "0145_drop_agent_schedule",
       "breakpoints": true
     }
   ]

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowDown, ArrowUp, FolderCog, FolderPlus, Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ViewFolder } from '@/lib/api/endpoints/views';
@@ -15,6 +16,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import NameDialog from '@/components/common/overlay/NameDialog';
+
+type FolderDialog =
+  | { kind: 'create' }
+  | { kind: 'rename'; folder: ViewFolder }
+  | { kind: 'delete'; folder: ViewFolder };
 
 export default function ViewFolderManager({
   projectKey,
@@ -24,15 +32,12 @@ export default function ViewFolderManager({
   folders: ViewFolder[];
 }) {
   const t = useTranslations('views');
+  const tCommon = useTranslations('common');
+  const [dialog, setDialog] = useState<FolderDialog | null>(null);
   const createFolder = useCreateViewFolder(projectKey);
   const updateFolder = useUpdateViewFolder(projectKey);
   const deleteFolder = useDeleteViewFolder(projectKey);
   const reorderFolders = useReorderViewFolders(projectKey);
-
-  function askName(current = ''): string | null {
-    const name = window.prompt(t('folderNamePrompt'), current)?.trim();
-    return name || null;
-  }
 
   function move(id: number, offset: number) {
     const ordered = [...folders].sort((a, b) => a.position - b.position || a.id - b.id);
@@ -44,60 +49,83 @@ export default function ViewFolderManager({
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          title={t('manageFolders')}
-          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <FolderCog className="size-4" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuItem
-          onSelect={() => {
-            const name = askName();
-            if (name) createFolder.mutate(name);
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            title={t('manageFolders')}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <FolderCog className="size-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-64">
+          <DropdownMenuItem onSelect={() => setDialog({ kind: 'create' })}>
+            <FolderPlus /> {t('newFolder')}
+          </DropdownMenuItem>
+          {folders.length > 0 && <DropdownMenuSeparator />}
+          {folders.map((folder, index) => (
+            <div key={folder.id}>
+              <DropdownMenuLabel className="truncate">{folder.name}</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => setDialog({ kind: 'rename', folder })}>
+                <Pencil /> {t('renameFolder')}
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={index === 0} onSelect={() => move(folder.id, -1)}>
+                <ArrowUp /> {t('moveFolderUp')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={index === folders.length - 1}
+                onSelect={() => move(folder.id, 1)}
+              >
+                <ArrowDown /> {t('moveFolderDown')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => setDialog({ kind: 'delete', folder })}
+              >
+                <Trash2 /> {t('deleteFolder')}
+              </DropdownMenuItem>
+              {index < folders.length - 1 && <DropdownMenuSeparator />}
+            </div>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {dialog?.kind === 'create' && (
+        <NameDialog
+          title={t('newFolder')}
+          description={t('newFolderDescription')}
+          label={t('folderNamePrompt')}
+          submitLabel={t('create')}
+          onSubmit={(name) => createFolder.mutateAsync(name)}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'rename' && (
+        <NameDialog
+          title={t('renameFolder')}
+          label={t('folderNamePrompt')}
+          initialName={dialog.folder.name}
+          submitLabel={tCommon('save')}
+          onSubmit={(name) => updateFolder.mutateAsync({ id: dialog.folder.id, name })}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'delete' && (
+        <ConfirmDialog
+          title={t('deleteFolder')}
+          confirmLabel={t('deleteFolder')}
+          onConfirm={async () => {
+            await deleteFolder.mutateAsync(dialog.folder.id);
+            setDialog(null);
           }}
+          onClose={() => setDialog(null)}
         >
-          <FolderPlus /> {t('newFolder')}
-        </DropdownMenuItem>
-        {folders.length > 0 && <DropdownMenuSeparator />}
-        {folders.map((folder, index) => (
-          <div key={folder.id}>
-            <DropdownMenuLabel className="truncate">{folder.name}</DropdownMenuLabel>
-            <DropdownMenuItem
-              onSelect={() => {
-                const name = askName(folder.name);
-                if (name) updateFolder.mutate({ id: folder.id, name });
-              }}
-            >
-              <Pencil /> {t('renameFolder')}
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={index === 0} onSelect={() => move(folder.id, -1)}>
-              <ArrowUp /> {t('moveFolderUp')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={index === folders.length - 1}
-              onSelect={() => move(folder.id, 1)}
-            >
-              <ArrowDown /> {t('moveFolderDown')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => {
-                if (window.confirm(t('deleteFolderConfirm', { name: folder.name }))) {
-                  deleteFolder.mutate(folder.id);
-                }
-              }}
-            >
-              <Trash2 /> {t('deleteFolder')}
-            </DropdownMenuItem>
-            {index < folders.length - 1 && <DropdownMenuSeparator />}
-          </div>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <p className="text-sm text-muted-foreground">
+            {t('deleteFolderConfirm', { name: dialog.folder.name })}
+          </p>
+        </ConfirmDialog>
+      )}
+    </>
   );
 }

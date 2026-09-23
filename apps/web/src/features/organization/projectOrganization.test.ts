@@ -13,6 +13,15 @@ const offlineRuntime = {
   conflicts: [],
   reportedAt: null,
 };
+const working = {
+  pausedAt: null,
+  pauseReason: null,
+  dailyTokenCeiling: null,
+  monthlyTokenCeiling: null,
+  tokensToday: 0,
+  tokensThisMonth: 0,
+};
+const noBudget = { monthlyTokenCeiling: null, tokensThisMonth: 0 };
 const organization: Organization = {
   teamId: 1,
   departments: [
@@ -45,8 +54,24 @@ const organization: Organization = {
     },
   ],
   projects: [
-    { id: 10, key: 'SEL', name: 'Selected', description: '', departmentId: 2, instructions: '' },
-    { id: 20, key: 'OTH', name: 'Other', description: '', departmentId: 3, instructions: '' },
+    {
+      id: 10,
+      key: 'SEL',
+      name: 'Selected',
+      description: '',
+      departmentId: 2,
+      instructions: '',
+      ...noBudget,
+    },
+    {
+      id: 20,
+      key: 'OTH',
+      name: 'Other',
+      description: '',
+      departmentId: 3,
+      instructions: '',
+      ...noBudget,
+    },
   ],
   goals: [
     {
@@ -100,6 +125,7 @@ const organization: Organization = {
       capabilities: [],
       runtimeAgentId: null,
       runtimeState: offlineRuntime,
+      ...working,
       projects: [
         { id: 10, key: 'SEL', name: 'Selected', instructions: '' },
         { id: 20, key: 'OTH', name: 'Other', instructions: '' },
@@ -118,6 +144,7 @@ const organization: Organization = {
       capabilities: [],
       runtimeAgentId: null,
       runtimeState: offlineRuntime,
+      ...working,
       projects: [{ id: 20, key: 'OTH', name: 'Other', instructions: '' }],
     },
   ],

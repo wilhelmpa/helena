@@ -1,0 +1,34 @@
+[Unit]
+Description=Volition Plan API
+After=network-online.target postgresql.service volition-plan-migrate.service
+Wants=network-online.target
+Requires=postgresql.service volition-plan-migrate.service
+
+[Service]
+Type=simple
+User=volition-plan
+Group=volition
+WorkingDirectory=/srv/volition/source/plan
+EnvironmentFile=/etc/volition/plan.env
+# In production the auth cookies are marked Secure, and a browser drops those over plain
+# HTTP. The LAN entry has no TLS yet, so the API keeps the development value until it has.
+Environment=NODE_ENV=development
+Environment=API_HOST=127.0.0.1
+Environment=API_PORT=3000
+Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
+Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
+LoadCredential=mastra_control_token:/etc/volition/plan-control.token
+Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
+ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/api/src/index.ts
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/volition/plan /srv/volition/vault
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+TasksMax=infinity
+
+[Install]
+WantedBy=multi-user.target

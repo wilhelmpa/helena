@@ -551,7 +551,11 @@
         "web": "Mencari di web dan membaca halaman.",
         "x_search": "Mencari postingan di X (Twitter)."
       }
-    }
+    },
+    "paused": "Dijeda",
+    "pausedNoReason": "Dijeda. Tidak ada alasan yang diberikan.",
+    "blocked": "Terhambat",
+    "blockedQuestion": "Pertanyaan"
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

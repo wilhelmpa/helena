@@ -1,8 +1,8 @@
 [Unit]
 Description=Volition Mastra to Hermes project-team bridge
-After=network-online.target volition-plan-api-dev.service volition-hermes-runner.service
+After=network-online.target volition-plan-api.service volition-hermes-runner.service
 Wants=network-online.target
-Requires=volition-plan-api-dev.service
+Requires=volition-plan-api.service
 
 [Service]
 Type=simple

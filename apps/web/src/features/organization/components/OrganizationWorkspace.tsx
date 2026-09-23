@@ -35,7 +35,12 @@ export default function OrganizationWorkspace({
       </TabsList>
       {projectKey && (
         <TabsContent value="orchestration" className="min-w-0 overflow-y-auto p-4">
-          <OrganizationOrchestration agents={organization.agents} projectKey={projectKey} />
+          <OrganizationOrchestration
+            teamId={organization.teamId}
+            project={organization.projects.find((project) => project.key === projectKey)}
+            agents={organization.agents}
+            projectKey={projectKey}
+          />
         </TabsContent>
       )}
       <TabsContent value="structure" className="min-w-0 overflow-auto p-4">

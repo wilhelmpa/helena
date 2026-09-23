@@ -21,9 +21,17 @@ MAX_MODELS = 200
 
 def model_name(model_id: str) -> str:
     leaf = model_id.rsplit('/', 1)[-1]
-    words = re.split(r'[-_]+', leaf)
-    rendered: list[str] = []
+    # A trailing release date (claude-opus-4-20250514) is left out, and adjacent version
+    # numbers are one version (claude-opus-4-5 is Opus 4.5).
+    words = [word for word in re.split(r'[-_]+', leaf) if not re.fullmatch(r'\d{8}', word)]
+    merged: list[str] = []
     for word in words:
+        if merged and word.isdigit() and re.fullmatch(r'\d+(\.\d+)*', merged[-1]):
+            merged[-1] = f'{merged[-1]}.{word}'
+        else:
+            merged.append(word)
+    rendered: list[str] = []
+    for word in merged:
         lower = word.lower()
         if lower == 'gpt':
             rendered.append('GPT')
@@ -187,10 +195,14 @@ def catalog_models(provider: str) -> list[dict[str, Any]]:
                 raise
             print(f'Hermes catalog: skipping {name}: {exc}', file=sys.stderr)
             continue
+        # A provider can list one model under two ids (claude-fable-5-1, claude-fable-5.1);
+        # the first keeps the name.
+        names: set[str] = set()
         for entry in entries:
-            if entry['id'] in seen or len(models) == MAX_MODELS:
+            if entry['id'] in seen or entry['name'] in names or len(models) == MAX_MODELS:
                 continue
             seen.add(entry['id'])
+            names.add(entry['name'])
             models.append({**entry, 'provider': name})
     return models
 

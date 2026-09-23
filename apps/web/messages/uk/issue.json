@@ -226,7 +226,8 @@
     "edited": "змінено",
     "deleteComment": "Видалити коментар",
     "deleteCommentTitle": "Видалити цей коментар?",
-    "deleteCommentConfirmation": "Коментар і відповіді на нього буде видалено безповоротно."
+    "deleteCommentConfirmation": "Коментар і відповіді на нього буде видалено безповоротно.",
+    "agentPaused": "Призупинено"
   },
   "stats": {
     "title": "Статистика",
@@ -428,7 +429,8 @@
     "noCandidates": "Нема кого вибрати.",
     "area": "Область",
     "noArea": "Без області",
-    "changeArea": "Перемістити до області…"
+    "changeArea": "Перемістити до області…",
+    "agentPaused": "Призупинено"
   },
   "watchers": {
     "watch": "Стежити",

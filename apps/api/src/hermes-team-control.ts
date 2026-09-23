@@ -15,6 +15,7 @@ import { authorizeControlRequest } from './home-agent-bootstrap';
 import { maxTurnsLimit, runBudgetSecondsLimit } from './modules/agents/model';
 import { agentRunConfig } from './modules/agents/core/run-queue';
 import { runLimit } from './modules/agents/core/service';
+import { enforceAgentLimits } from './modules/agents/governance';
 import { listColumns, type ColumnRow } from './modules/columns/service';
 import {
   createIssue,
@@ -144,6 +145,14 @@ export async function enqueueHermesStage(body: unknown) {
     (requestedReasoning && configuredReasoning !== requestedReasoning)
   )
     return { status: 409, body: { error: 'Hermes agent execution settings do not match Plan' } };
+  // Refused rather than queued, so the workflow run fails with the reason instead of
+  // waiting on a run no runner claims.
+  const refusal = await enforceAgentLimits(agent.id, resolved.project.id, resolved.task.id);
+  if (refusal)
+    return {
+      status: 409,
+      body: { error: `Hermes agent ${agentRef.slice('agent:'.length)} is paused: ${refusal}` },
+    };
 
   const key = settingKey('mastra-agent-run', idempotencyKey);
   const requestFingerprint = fingerprint({
@@ -243,6 +252,7 @@ export async function hermesStageStatus(body: unknown) {
       startedAt: agentRun.startedAt,
       finishedAt: agentRun.finishedAt,
       expiresAt: agentRun.nextAttemptAt,
+      blockedQuestion: agentRun.blockedQuestion,
       projectId: project.id,
       projectKey: project.key,
     })
@@ -269,6 +279,7 @@ export async function hermesStageStatus(body: unknown) {
       heartbeatAt: heartbeatAt?.toISOString() ?? null,
       expiresAt: row.attempts > 0 ? row.expiresAt.toISOString() : null,
       finishedAt: row.finishedAt?.toISOString() ?? null,
+      blockedQuestion: row.blockedQuestion,
     },
   };
 }

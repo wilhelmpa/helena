@@ -56,6 +56,32 @@
     "capabilitiesHint": "كلمات بأحرف صغيرة تفصل بينها فواصل. المهمة التي تطابق وسومها قدرات متخصص واحد فقط تذهب إليه مباشرة دون خطة المنسق.",
     "saved": "تم حفظ {name}"
   },
+  "governance": {
+    "title": "العمل وحدود الرموز",
+    "active": "يستقبل عملًا جديدًا.",
+    "pause": "إيقاف مؤقت",
+    "resume": "استئناف",
+    "paused": "تم إيقاف {name} مؤقتًا",
+    "resumed": "يستقبل {name} العمل مجددًا"
+  },
+  "tokens": {
+    "today": "اليوم",
+    "thisMonth": "هذا الشهر",
+    "dailyCeiling": "الحد اليومي",
+    "monthlyCeiling": "الحد الشهري",
+    "noCeiling": "بلا حد",
+    "usedOfCeiling": "{used, number} من {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "رموز تشغيلات الوكيل في جميع المشاريع، محسوبة لكل يوم وشهر بتوقيت UTC. بلوغ أحد الحدود يوقف الوكيل مؤقتًا ويُعلم مالكه.",
+    "invalid": "أدخل عددًا صحيحًا لا يقل عن 1، أو اترك الحقل فارغًا لعدم وضع حد.",
+    "save": "حفظ الحدود",
+    "saved": "تم حفظ حدود الرموز لـ {name}",
+    "projectTitle": "ميزانية الرموز",
+    "projectDescription": "رموز تشغيلات الوكلاء في هذا المشروع خلال هذا الشهر (UTC). بلوغ الحد يوقف مؤقتًا الوكيل الذي سيبدأ تشغيله التالي ويُعلم مالكي المشروع.",
+    "projectSaved": "تم حفظ حد الرموز لـ {name}",
+    "agentsTitle": "الوكلاء",
+    "agentsHint": "تُحسب عبر جميع مشاريع الفريق. عيّن حدود الوكيل في علامة تبويب الوكلاء."
+  },
   "projects": {
     "empty": "This team has no projects.",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions."

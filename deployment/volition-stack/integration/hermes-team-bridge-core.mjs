@@ -240,6 +240,9 @@ export function createHermesTeamService(plan, options = {}) {
           throw new HermesTeamError(499, 'stage_canceled', 'The execution stage was canceled');
         }
         const run = await plan.status({ runId: queued.runId, projectRef: stage.projectRef });
+        // The agent marked the task blocked and asked a person; its output is no stage result.
+        if (run.status === 'success' && run.blockedQuestion)
+          throw new HermesTeamError(409, 'hermes_run_blocked', `The agent is blocked and needs input: ${run.blockedQuestion}`);
         if (run.status === 'success') return stageResult(stage, run, run.output);
         if (run.status === 'failed' || run.status === 'canceled')
           throw new HermesTeamError(502, 'hermes_run_failed', 'Hermes could not complete the execution stage');

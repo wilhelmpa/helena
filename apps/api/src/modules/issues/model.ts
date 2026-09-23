@@ -632,6 +632,24 @@ export const createCommentBody = t.Object({
   replyToId: t.Optional(t.Number({ description: 'Reply to this comment of the same issue.' })),
 });
 
+export const markBlockedBody = t.Object({
+  question: t.String({
+    minLength: 1,
+    maxLength: 4000,
+    description: 'The one question a person has to answer before you can continue.',
+  }),
+});
+
+export const MarkBlockedResponse = t.Object({
+  comment: FeedItemResponse,
+  runId: t.Nullable(
+    t.Number({
+      description:
+        'Your run on the issue, which now ends as blocked. Null when you are not in a run on it.',
+    }),
+  ),
+});
+
 export const updateCommentBody = t.Object({
   body: t.String({ minLength: 1, description: 'Comment text.' }),
 });

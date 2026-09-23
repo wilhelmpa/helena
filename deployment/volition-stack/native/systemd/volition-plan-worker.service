@@ -1,0 +1,29 @@
+[Unit]
+Description=Volition Plan worker
+After=network-online.target postgresql.service volition-plan-migrate.service volition-plan-api.service
+Wants=network-online.target
+Requires=postgresql.service volition-plan-migrate.service
+
+[Service]
+Type=simple
+User=volition-plan
+Group=volition
+WorkingDirectory=/srv/volition/source/plan
+EnvironmentFile=/etc/volition/plan.env
+Environment=NODE_ENV=production
+LoadCredential=provisioning_token:/etc/volition/provisioning.token
+Environment=PROJECT_PROVISIONING_URL=http://127.0.0.1:18800/api/provision
+Environment=PROJECT_PROVISIONING_TOKEN_FILE=%d/provisioning_token
+ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/worker/src/index.ts
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/volition/plan
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+TasksMax=infinity
+
+[Install]
+WantedBy=multi-user.target

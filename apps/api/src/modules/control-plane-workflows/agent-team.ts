@@ -64,6 +64,7 @@ async function teamMembers(projectId: number) {
       username: aiAgent.username,
       role: organizationAgentAssignment.role,
       capabilities: organizationAgentAssignment.capabilities,
+      pausedAt: aiAgent.pausedAt,
     })
     .from(aiAgent)
     .innerJoin(
@@ -92,7 +93,8 @@ function member(agent: TeamMember) {
 }
 
 // Starts agent-team for the issue. With no specialist in the project the coordinator
-// also does the work.
+// also does the work. A paused agent takes no part: a paused coordinator refuses the
+// start, and a paused specialist is left out of the team.
 export async function startIssueAgentTeam(
   issueId: number,
   actorUserId: string,
@@ -111,8 +113,13 @@ export async function startIssueAgentTeam(
         ? 'The project has no coordinator agent'
         : 'Delegate the issue to the coordinator that leads the team',
     );
+  if (coordinator.pausedAt)
+    throw new HttpError(409, `The coordinator @${coordinator.username} is paused`);
   const specialists = members
-    .filter((agent) => agent.role === 'specialist' && agent.agentId !== coordinator.agentId)
+    .filter(
+      (agent) =>
+        agent.role === 'specialist' && agent.agentId !== coordinator.agentId && !agent.pausedAt,
+    )
     .slice(0, 12)
     .map(member);
   const labels = await db

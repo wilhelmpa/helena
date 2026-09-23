@@ -9,7 +9,7 @@ import type { ViewFolder } from '@/lib/api/endpoints/views';
 // The scaffold mirrors ProjectScaffold minus the caller's viewer/permissions and
 // member emails and handles (a public page shows names and avatars only).
 export type PublicScaffold = Omit<ProjectScaffold, 'viewer' | 'permissions' | 'assignees'> & {
-  assignees: Omit<Assignee, 'email' | 'username' | 'canReadWorkItems'>[];
+  assignees: Omit<Assignee, 'email' | 'username' | 'canReadWorkItems' | 'paused'>[];
   // The project's areas; empty on a link that is not extended.
   areas: ViewFolder[];
 };

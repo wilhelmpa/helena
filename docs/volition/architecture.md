@@ -79,3 +79,12 @@ and makes no decisions.
   into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are
   shown read-only in Plan.
 - Automated runs use the toolsets of the agent's role. In chat, Hermes may delegate freely.
+- Whether an agent takes work is stored and enforced in Plan, at its run queue: a paused
+  agent's runs and chat answers are not claimed, a mention or a delegation queues nothing,
+  and an agent-team stage for it is refused, which fails the Mastra run with the reason.
+  Token ceilings (per agent per UTC day and month, per project per month) count the tokens
+  the runs report; reaching one pauses the agent. Mastra's own budgets are the limits of
+  one workflow run.
+- An agent that needs a person's answer calls Plan's `mark_issue_blocked` tool: the issue
+  gets the Blocked label and the question as a comment to the person the agent reports to,
+  and the run ends as a success marked blocked.

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import NameDialog from '@/components/common/overlay/NameDialog';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCreateViewFolder, useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import {
@@ -19,13 +21,9 @@ export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
   const { data: views = [] } = useViewsQuery(projectKey);
   const createArea = useCreateViewFolder(projectKey);
   const canCreate = can('views', 'create');
+  const [creating, setCreating] = useState(false);
 
   if (areas.length === 0 && !canCreate) return null;
-
-  function addArea() {
-    const name = window.prompt(t('folderNamePrompt'))?.trim();
-    if (name) createArea.mutate(name);
-  }
 
   return (
     <SidebarMenuItem>
@@ -43,7 +41,7 @@ export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
         {canCreate && (
           <SidebarMenuSubItem>
             <SidebarMenuSubButton asChild size="sm" className="text-muted-foreground">
-              <button type="button" onClick={addArea}>
+              <button type="button" onClick={() => setCreating(true)}>
                 <Plus />
                 <span>{t('newFolder')}</span>
               </button>
@@ -51,6 +49,16 @@ export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
           </SidebarMenuSubItem>
         )}
       </SidebarMenuSub>
+      {creating && (
+        <NameDialog
+          title={t('newFolder')}
+          description={t('newFolderDescription')}
+          label={t('folderNamePrompt')}
+          submitLabel={t('create')}
+          onSubmit={(name) => createArea.mutateAsync(name)}
+          onClose={() => setCreating(false)}
+        />
+      )}
     </SidebarMenuItem>
   );
 }

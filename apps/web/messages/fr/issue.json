@@ -226,7 +226,8 @@
     "edited": "modifié",
     "deleteComment": "Supprimer le commentaire",
     "deleteCommentTitle": "Supprimer ce commentaire ?",
-    "deleteCommentConfirmation": "Le commentaire et ses réponses seront définitivement supprimés."
+    "deleteCommentConfirmation": "Le commentaire et ses réponses seront définitivement supprimés.",
+    "agentPaused": "En pause"
   },
   "stats": {
     "title": "Statistiques",
@@ -428,7 +429,8 @@
     "noCandidates": "Personne à choisir.",
     "area": "Domaine",
     "noArea": "Aucun domaine",
-    "changeArea": "Déplacer vers un domaine…"
+    "changeArea": "Déplacer vers un domaine…",
+    "agentPaused": "En pause"
   },
   "watchers": {
     "watch": "Suivre",

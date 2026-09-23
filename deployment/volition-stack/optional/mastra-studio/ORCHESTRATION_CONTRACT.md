@@ -87,6 +87,8 @@ Mastra connects only through `/run/volition-ipc/hermes-team.sock`. Authenticatio
 
 It returns the `stageResultSchema` from `src/mastra/team-contracts.ts`. A repeated idempotency key must return the same logical execution and must not create another Hermes session or Plan mutation. The bridge queues each stage as a Plan agent run through `/internal/orchestration/agent-run` with the stage `policy`; Plan stores `maxTurns` and `runBudgetSeconds` on the run and the Hermes runner passes them to `hermes chat`.
 
+Plan refuses a stage with HTTP 409 while the stage's agent is paused, and pauses it first when one of its token ceilings or the project's is reached; the error names the reason. The bridge answers the stage request with the same status and a `message` carrying that error, and the Mastra step fails with it. A run in which the agent marked its task blocked ends as `success` with `blockedQuestion` set in the status document; the bridge fails that stage with HTTP 409 `hermes_run_blocked` and the question, since the run's output is no stage result.
+
 ### Cancellation
 
 A canceled workflow run fires the abort signal of the running step. Mastra aborts the stage request and makes no further attempt, which closes the socket connection. The bridge then stops polling and cancels the stage's Plan run through `/internal/orchestration/agent-run/cancel`:

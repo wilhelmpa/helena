@@ -12,6 +12,14 @@ const offline = {
   conflicts: [],
   reportedAt: null,
 };
+const working = {
+  pausedAt: null,
+  pauseReason: null,
+  dailyTokenCeiling: null,
+  monthlyTokenCeiling: null,
+  tokensToday: 0,
+  tokensThisMonth: 0,
+};
 
 describe('buildOrganizationTree', () => {
   test('nests departments and reporting lines without duplicating agents', () => {
@@ -54,6 +62,7 @@ describe('buildOrganizationTree', () => {
           runtimeAgentId: 'lead',
           projects: [],
           runtimeState: { ...offline, adapter: 'agent_runtime', status: 'online' },
+          ...working,
         },
         {
           id: 11,
@@ -69,6 +78,7 @@ describe('buildOrganizationTree', () => {
           runtimeAgentId: 'researcher',
           projects: [],
           runtimeState: offline,
+          ...working,
         },
       ],
     } as Organization;
@@ -101,6 +111,7 @@ describe('buildOrganizationTree', () => {
           runtimeAgentId: null,
           projects: [],
           runtimeState: offline,
+          ...working,
         },
       ],
     } as Organization;

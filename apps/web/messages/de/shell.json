@@ -1,0 +1,8 @@
+{
+  "noProjectAccess": "Du hast keinen Zugriff auf dieses Projekt.",
+  "projectUnavailable": "Dieses Projekt ist nicht verfügbar.",
+  "noProjects": "Noch keine Projekte. Erstelle eins, um loszulegen.",
+  "noProjectsTitle": "Noch keine Projekte",
+  "noProjectsHint": "Erstelle dein erstes Projekt, um Aufgaben auf einem Board zu planen.",
+  "createProject": "Projekt erstellen"
+}

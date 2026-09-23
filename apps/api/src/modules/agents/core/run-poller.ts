@@ -16,13 +16,14 @@ import {
 } from './run-queue';
 import { runAgent } from './runtime';
 import { runThreadId } from './runtime/thread-ids';
+import { enforceAgentLimits } from '../governance';
 
 // Drains the agent_run queue. The runtime, the model credentials and the limits are
 // all here, so the run is claimed and executed in the same process — the queue row is
 // the only thing a run is built from, so nothing about which project or which bot user
 // it acts as can be handed in from outside.
 
-// How long a run waits when its team has no free slot.
+// How long a run waits when its team has no free slot or its agent may not start it.
 const DEFERRED_RETRY_SECONDS = 30;
 const RETRY_BASE_MS = 30_000;
 const RETRY_CAP_MS = 30 * 60_000;
@@ -35,7 +36,10 @@ export async function processAgentRuns(): Promise<void> {
 async function processRun(run: ClaimedRun): Promise<void> {
   const teamId = await getProjectTeamId(run.projectId);
   const { maxConcurrentRuns, maxRunSeconds } = await getLimits({ teamId });
-  if (maxConcurrentRuns > 0 && (await countRunsAhead(teamId, run.id)) >= maxConcurrentRuns) {
+  if (
+    (maxConcurrentRuns > 0 && (await countRunsAhead(teamId, run.id)) >= maxConcurrentRuns) ||
+    (await enforceAgentLimits(run.agentId, run.projectId, run.issueId))
+  ) {
     await deferRun(run.id, DEFERRED_RETRY_SECONDS);
     return;
   }

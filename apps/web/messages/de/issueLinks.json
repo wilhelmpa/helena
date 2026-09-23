@@ -1,0 +1,16 @@
+{
+  "relations": {
+    "blocked_by": "Blockiert durch",
+    "blocks": "Blockiert",
+    "duplicates": "Dupliziert",
+    "duplicated_by": "Dupliziert durch",
+    "relates": "Verwandt"
+  },
+  "phrases": {
+    "blocked_by": "blockiert durch",
+    "blocks": "Blocker für",
+    "duplicates": "Duplikat von",
+    "duplicated_by": "dupliziert durch",
+    "relates": "verwandt mit"
+  }
+}
