@@ -1,6 +1,6 @@
 {
-  "id": "b87be388-a5de-4873-96c9-76d2660fdc66",
-  "prevId": "ef2f12a1-5fd7-4f3f-8448-ef1bb20296f3",
+  "id": "d76942b0-2251-4ba0-86a8-bd901f93bc3c",
+  "prevId": "8afabb78-fee6-4d62-81c9-5c8991e8cd4b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -930,108 +930,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.two_factor": {
-      "name": "two_factor",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "secret": {
-          "name": "secret",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "backup_codes": {
-          "name": "backup_codes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "verified": {
-          "name": "verified",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": true
-        },
-        "failed_verification_count": {
-          "name": "failed_verification_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "locked_until": {
-          "name": "locked_until",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "twoFactor_secret_idx": {
-          "name": "twoFactor_secret_idx",
-          "columns": [
-            {
-              "expression": "secret",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "twoFactor_userId_idx": {
-          "name": "twoFactor_userId_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "two_factor_user_id_user_id_fk": {
-          "name": "two_factor_user_id_user_id_fk",
-          "tableFrom": "two_factor",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.user": {
       "name": "user",
       "schema": "",
@@ -1092,13 +990,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "two_factor_enabled": {
-          "name": "two_factor_enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
         },
         "role": {
           "name": "role",
@@ -1425,12 +1316,48 @@
           "primaryKey": false,
           "notNull": true
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "content": {
           "name": "content",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "default": "''"
+        },
+        "attachments": {
+          "name": "attachments",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "status": {
           "name": "status",
@@ -1501,6 +1428,21 @@
           "method": "btree",
           "with": {}
         },
+        "agent_chat_message_parent_idx": {
+          "name": "agent_chat_message_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "agent_chat_message_due_idx": {
           "name": "agent_chat_message_due_idx",
           "columns": [
@@ -1544,6 +1486,19 @@
           "tableTo": "ai_agent",
           "columnsFrom": [
             "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_chat_message_parent_id_agent_chat_message_id_fk": {
+          "name": "agent_chat_message_parent_id_agent_chat_message_id_fk",
+          "tableFrom": "agent_chat_message",
+          "tableTo": "agent_chat_message",
+          "columnsFrom": [
+            "parent_id"
           ],
           "columnsTo": [
             "id"
@@ -1613,6 +1568,36 @@
           "primaryKey": false,
           "notNull": false
         },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issue_id": {
+          "name": "issue_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active_message_id": {
+          "name": "active_message_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1655,6 +1640,42 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "agent_chat_thread_user_idx": {
+          "name": "agent_chat_thread_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_chat_thread_issue_idx": {
+          "name": "agent_chat_thread_issue_idx",
+          "columns": [
+            {
+              "expression": "issue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1682,6 +1703,32 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_chat_thread_project_id_project_id_fk": {
+          "name": "agent_chat_thread_project_id_project_id_fk",
+          "tableFrom": "agent_chat_thread",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_chat_thread_issue_id_issue_id_fk": {
+          "name": "agent_chat_thread_issue_id_issue_id_fk",
+          "tableFrom": "agent_chat_thread",
+          "tableTo": "issue",
+          "columnsFrom": [
+            "issue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -2197,6 +2244,19 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resumes": {
+          "name": "resumes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "finished_at": {
           "name": "finished_at",
@@ -2908,6 +2968,13 @@
           "notNull": true,
           "default": 120
         },
+        "max_concurrent_chats": {
+          "name": "max_concurrent_chats",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
         "api_key_ciphertext": {
           "name": "api_key_ciphertext",
           "type": "text",
@@ -3133,6 +3200,10 @@
         "ai_agent_delegation_delay_check": {
           "name": "ai_agent_delegation_delay_check",
           "value": "\"ai_agent\".\"delegation_delay_sec\" >= 0 AND \"ai_agent\".\"delegation_delay_sec\" <= 86400"
+        },
+        "ai_agent_max_concurrent_chats_check": {
+          "name": "ai_agent_max_concurrent_chats_check",
+          "value": "\"ai_agent\".\"max_concurrent_chats\" >= 1 AND \"ai_agent\".\"max_concurrent_chats\" <= 20"
         }
       },
       "isRLSEnabled": false
@@ -3606,6 +3677,124 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.chat_prompt": {
+      "name": "chat_prompt",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "command": {
+          "name": "command",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "chat_prompt_user_scope_command_uq": {
+          "name": "chat_prompt_user_scope_command_uq",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"project_id\", 0)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "command",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "chat_prompt_user_id_user_id_fk": {
+          "name": "chat_prompt_user_id_user_id_fk",
+          "tableFrom": "chat_prompt",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "chat_prompt_project_id_project_id_fk": {
+          "name": "chat_prompt_project_id_project_id_fk",
+          "tableFrom": "chat_prompt",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -8886,266 +9075,6 @@
         "notification_delivery_channel_check": {
           "name": "notification_delivery_channel_check",
           "value": "\"notification_delivery\".\"channel\" IN ('email', 'telegram')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.owner_terminal_audit": {
-      "name": "owner_terminal_audit",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "event": {
-          "name": "event",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "session_name": {
-          "name": "session_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "device": {
-          "name": "device",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ip_address": {
-          "name": "ip_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "detail": {
-          "name": "detail",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "owner_terminal_audit_user_idx": {
-          "name": "owner_terminal_audit_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "owner_terminal_audit_event_idx": {
-          "name": "owner_terminal_audit_event_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "event",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "owner_terminal_audit_user_id_user_id_fk": {
-          "name": "owner_terminal_audit_user_id_user_id_fk",
-          "tableFrom": "owner_terminal_audit",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "owner_terminal_audit_event_check": {
-          "name": "owner_terminal_audit_event_check",
-          "value": "\"owner_terminal_audit\".\"event\" IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.owner_terminal_grant": {
-      "name": "owner_terminal_grant",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "session_id": {
-          "name": "session_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "method": {
-          "name": "method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "device": {
-          "name": "device",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "ip_address": {
-          "name": "ip_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revoked_at": {
-          "name": "revoked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "owner_terminal_grant_session_uq": {
-          "name": "owner_terminal_grant_session_uq",
-          "columns": [
-            {
-              "expression": "session_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "owner_terminal_grant_user_idx": {
-          "name": "owner_terminal_grant_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "owner_terminal_grant_user_id_user_id_fk": {
-          "name": "owner_terminal_grant_user_id_user_id_fk",
-          "tableFrom": "owner_terminal_grant",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "owner_terminal_grant_method_check": {
-          "name": "owner_terminal_grant_method_check",
-          "value": "\"owner_terminal_grant\".\"method\" IN ('totp', 'passkey')"
         }
       },
       "isRLSEnabled": false

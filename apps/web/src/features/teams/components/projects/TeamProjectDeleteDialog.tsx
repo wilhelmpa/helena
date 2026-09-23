@@ -13,7 +13,10 @@ export default function TeamProjectDeleteDialog({
   onClose,
 }: {
   teamId: number;
-  project: TeamProject;
+  // Only the fields this dialog actually reads, so a caller that has a
+  // ProjectDetail (a project's own settings page) rather than a TeamProject
+  // (the team's project list) can pass it straight through.
+  project: Pick<TeamProject, 'id' | 'key' | 'name'>;
   onClose: () => void;
 }) {
   const t = useTranslations('projects.deleteDialog');

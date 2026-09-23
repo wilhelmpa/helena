@@ -118,6 +118,12 @@
     },
     "language": "Idioma",
     "languageDescription": "O idioma da interface, dos seus e-mails e do bot do Telegram.",
+    "headerLayout": "Layout do cabeçalho",
+    "headerLayoutDescription": "Uma linha combina o cabeçalho e as abas de visão, e move idioma, tema e conta para a barra lateral. Clássico mantém o cabeçalho e as abas de visão em duas linhas, com esses controles no cabeçalho.",
+    "headerLayoutOptions": {
+      "single": "Uma linha",
+      "classic": "Clássico (duas linhas)"
+    },
     "timezone": "Fuso horário",
     "timezoneDescription": "Escolha o fuso no qual você trabalha.",
     "timezonePlaceholder": "Selecione um fuso horário",

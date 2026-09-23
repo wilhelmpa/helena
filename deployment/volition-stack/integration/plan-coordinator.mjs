@@ -253,7 +253,7 @@ function findExactAgent(agents, username) {
 async function ensurePlanAgent(config, fetchImpl, project, username, expectedName = coordinatorName(project)) {
   const listPath = `/teams/${project.teamId}/ai-agents?projectId=${project.id}`;
   let projectAgents = await planGet(config, fetchImpl, listPath, "Listing project agents");
-  if (!Array.isArray(projectAgents)) throw new PlanCoordinatorError("It's a Plan returned an invalid agent list");
+  if (!Array.isArray(projectAgents)) throw new PlanCoordinatorError("Helena returned an invalid agent list");
   let agent = findExactAgent(projectAgents, username);
   let apiKey = null;
 
@@ -264,7 +264,7 @@ async function ensurePlanAgent(config, fetchImpl, project, username, expectedNam
       `/teams/${project.teamId}/ai-agents`,
       "Listing team agents",
     );
-    if (!Array.isArray(teamAgents)) throw new PlanCoordinatorError("It's a Plan returned an invalid team agent list");
+    if (!Array.isArray(teamAgents)) throw new PlanCoordinatorError("Helena returned an invalid team agent list");
     agent = findExactAgent(teamAgents, username);
     if (agent) {
       agent = await planWrite(
@@ -327,7 +327,7 @@ async function ensurePlanAgent(config, fetchImpl, project, username, expectedNam
     !Array.isArray(agent.projects) ||
     !agent.projects.some((item) => item?.id === project.id)
   ) {
-    throw new PlanCoordinatorError("It's a Plan did not confirm the project coordinator agent");
+    throw new PlanCoordinatorError("Helena did not confirm the project coordinator agent");
   }
   if (agent.name !== expectedName) {
     agent = await planWrite(
@@ -427,7 +427,7 @@ async function ensureOrganization(config, fetchImpl, project, agent, hermesIdent
     assignedProject?.instructions !== effectiveAgentInstructions ||
     responsible?.length !== 1
   ) {
-    throw new PlanCoordinatorError("It's a Plan did not confirm one responsible project coordinator");
+    throw new PlanCoordinatorError("Helena did not confirm one responsible project coordinator");
   }
   return {
     departmentId: assignment.departmentId,
@@ -476,7 +476,7 @@ async function ensureKeyedDescriptor(config, project, options, { name, route, bo
     !isAgent(agent.id, agent.username) ||
     !apiKeyValue(apiKey)
   ) {
-    throw new PlanCoordinatorError(`It's a Plan returned an invalid agent for ${name}`);
+    throw new PlanCoordinatorError(`Helena returned an invalid agent for ${name}`);
   }
   const descriptor = {
     ...descriptorValue(
@@ -575,7 +575,7 @@ export async function ensurePlanCoordinator(config, project, options = {}) {
     apiKey = rotated?.apiKey;
   }
   if (!apiKeyValue(apiKey)) {
-    throw new PlanCoordinatorError("It's a Plan did not issue a valid Hermes coordinator credential");
+    throw new PlanCoordinatorError("Helena did not issue a valid Hermes coordinator credential");
   }
   const descriptorChanged = Boolean(
     createdKey ||

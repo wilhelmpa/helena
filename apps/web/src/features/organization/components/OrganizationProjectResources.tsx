@@ -102,7 +102,7 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
         })}
       </div>
       {job.result?.warnings?.map((warning) => (
-        <p key={warning} className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+        <p key={warning} className="mt-2 text-xs text-status-waiting">
           {warning}
         </p>
       ))}

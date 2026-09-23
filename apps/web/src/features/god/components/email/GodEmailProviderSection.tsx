@@ -40,7 +40,7 @@ export default function GodEmailProviderSection({ form }: { form: GodEmailForm }
             id="email-from"
             value={form.from}
             onChange={(e) => form.setFrom(e.target.value)}
-            placeholder={'Volition <noreply@example.com>'}
+            placeholder={'Helena <noreply@example.com>'}
           />
           <p className="text-xs text-muted-foreground">{t('fromHint')}</p>
         </div>

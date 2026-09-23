@@ -20,6 +20,7 @@ export const PREFERENCE_DEFAULTS: AccountPreferences = {
   locale: 'en',
   theme: 'system',
   issueOpenMode: 'panel',
+  headerLayout: 'single',
   startPage: 'work-items',
   showChatByDefault: false,
   issueStatsOpen: true,

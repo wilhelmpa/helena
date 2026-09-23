@@ -249,6 +249,12 @@ export const userPreference = pgTable(
     locale: text('locale').notNull().default('en'),
     theme: text('theme').notNull().default('system'),
     issueOpenMode: text('issue_open_mode').notNull().default('panel'),
+    // 'single' merges the app header and the page's view tabs/filters into the one
+    // row docs/volition-design-helena-ui.md calls for, and moves the language/theme/
+    // account controls into the sidebar footer; 'classic' is today's two-row header
+    // with those controls in it, kept as a full fallback (an owner decision, not a
+    // deprecation: see CLAUDE.md).
+    headerLayout: text('header_layout').notNull().default('single'),
     startPage: text('start_page').notNull().default('work-items'),
     showChatByDefault: boolean('show_chat_by_default').notNull().default(false),
     issueStatsOpen: boolean('issue_stats_open').notNull().default(true),
@@ -271,6 +277,7 @@ export const userPreference = pgTable(
   (t) => [
     check('user_preference_theme_check', sql`${t.theme} IN ('light', 'dark', 'system')`),
     check('user_preference_issue_open_mode_check', sql`${t.issueOpenMode} IN ('panel', 'page')`),
+    check('user_preference_header_layout_check', sql`${t.headerLayout} IN ('single', 'classic')`),
     check(
       'user_preference_start_page_check',
       sql`${t.startPage} IN ('inbox', 'dashboard', 'work-items', 'initiatives')`,
@@ -544,6 +551,11 @@ export const aiAgent = pgTable(
     // to keep editing the issue after delegating it. Applies to delegation only: a
     // mention is a question already asked, and its author waits for the reply.
     delegationDelaySec: integer('delegation_delay_sec').notNull().default(120),
+    // How many of this agent's chats a member may leave answering at once. The
+    // composer checks it before sending, and sendMessage refuses (409) past it, so a
+    // runner already carrying its share of a member's turns is not asked to
+    // interleave more than the owner decided it should.
+    maxConcurrentChats: integer('max_concurrent_chats').notNull().default(3),
     // The agent's own API key, encrypted at rest (AES-256-GCM, see shared/crypto).
     // An internal agent replays it on every tool call, so unlike better-auth's
     // hashed apikey row it has to stay recoverable. Set for internal agents only:
@@ -597,6 +609,10 @@ export const aiAgent = pgTable(
     check(
       'ai_agent_delegation_delay_check',
       sql`${t.delegationDelaySec} >= 0 AND ${t.delegationDelaySec} <= 86400`,
+    ),
+    check(
+      'ai_agent_max_concurrent_chats_check',
+      sql`${t.maxConcurrentChats} >= 1 AND ${t.maxConcurrentChats} <= 20`,
     ),
     index('ai_agent_team_idx').on(t.teamId),
   ],
@@ -665,6 +681,15 @@ export const agentRun = pgTable(
     claims: integer('claims').notNull().default(0),
     // When the latest claim was made, which is when the run's current attempt started.
     claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    // The coding agent session of this run, saved as soon as the runner reads it off the
+    // command's own output rather than only at the end. A claim after a runner died mid
+    // run resumes this session instead of starting over, as long as `resumes` is under
+    // the instance's limit.
+    sessionId: text('session_id'),
+    // How many times this run has been resumed in the same session after an interruption.
+    // Distinct from `attempts`, which a release or a replayed stage lowers; this only
+    // grows, and is what the instance's resume limit checks.
+    resumes: integer('resumes').notNull().default(0),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -779,10 +804,27 @@ export const agentChatThread = pgTable(
     // default, so a later model-default change is inherited without rewriting chats.
     model: text('model'),
     thinkingLevel: text('thinking_level'),
+    // The project the chat was started in; null for a Home chat. Home lists every chat
+    // of the member, a project only its own.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    // The task the member linked the chat to, which lists it on its detail.
+    issueId: integer('issue_id').references(() => issue.id, { onDelete: 'set null' }),
+    // The message the chat shows last. The messages form a tree (see
+    // agent_chat_message.parent_id); the shown branch is this message and its
+    // ancestors. No foreign key: the message references the thread.
+    activeMessageId: integer('active_message_id'),
+    // Archived and deleted chats leave the list. A deleted one stays restorable until
+    // it is deleted for good.
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('agent_chat_thread_agent_user_idx').on(t.agentId, t.userId, t.updatedAt.desc())],
+  (t) => [
+    index('agent_chat_thread_agent_user_idx').on(t.agentId, t.userId, t.updatedAt.desc()),
+    index('agent_chat_thread_user_idx').on(t.userId, t.updatedAt.desc()),
+    index('agent_chat_thread_issue_idx').on(t.issueId),
+  ],
 );
 
 // The non-secret model catalog an external runner publishes for one agent. The
@@ -814,9 +856,26 @@ export const agentChatMessage = pgTable(
       .notNull()
       .references(() => aiAgent.id, { onDelete: 'cascade' }),
     role: text('role').notNull(),
+    // The message this one follows. An edited question or a regenerated answer is a
+    // second child of the same parent, so the thread is a tree of versions.
+    parentId: integer('parent_id').references((): AnyPgColumn => agentChatMessage.id, {
+      onDelete: 'cascade',
+    }),
     // The turn's text: what the member wrote, or what the agent has said so far. It is
     // appended to as text events arrive, so the transcript reads correctly mid-answer.
     content: text('content').notNull().default(''),
+    // Vault files and tasks the member attached to the question: `{ kind: 'file', path,
+    // name, contentType, sizeBytes }` with the vault path, or `{ kind: 'task', issueId,
+    // identifier, title }`.
+    attachments: jsonb('attachments'),
+    // The runner session that produced the answer. The next answer resumes it only
+    // while this answer is the last one produced in it.
+    sessionId: text('session_id'),
+    // The model the runner reported for the answer, and the tokens its last call read
+    // and wrote.
+    model: text('model'),
+    inputTokens: integer('input_tokens'),
+    outputTokens: integer('output_tokens'),
     status: text('status').notNull().default('pending'),
     attempts: integer('attempts').notNull().default(0),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
@@ -832,6 +891,7 @@ export const agentChatMessage = pgTable(
       sql`${t.status} IN ('pending', 'streaming', 'success', 'failed', 'canceled')`,
     ),
     index('agent_chat_message_thread_idx').on(t.threadId, t.id),
+    index('agent_chat_message_parent_idx').on(t.parentId),
     index('agent_chat_message_due_idx')
       .on(t.agentId, t.nextAttemptAt)
       .where(sql`${t.status} IN ('pending', 'streaming')`),
@@ -897,6 +957,32 @@ export const agentChatFavorite = pgTable(
     threadId: text('thread_id').notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.threadId] })],
+);
+
+// A member's saved chat prompt, inserted with `/<command>` in the composer. `{{name}}`
+// in the text is a variable the member fills in before it is inserted. A prompt with
+// no project is offered in every chat; one with a project only in that project's.
+export const chatPrompt = pgTable(
+  'chat_prompt',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    command: text('command').notNull(),
+    title: text('title').notNull(),
+    content: text('content').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('chat_prompt_user_scope_command_uq').on(
+      t.userId,
+      sql`coalesce(${t.projectId}, 0)`,
+      t.command,
+    ),
+  ],
 );
 
 // Stored credentials for a team's integrations, shared by every project it owns. One

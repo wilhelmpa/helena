@@ -305,11 +305,11 @@ export function SkillCreateDialog({
         </TabsContent>
 
         <TabsContent value="github" className="mt-2 space-y-4">
-          <div className="flex gap-2.5 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
+          <div className="flex gap-2.5 rounded-md border border-status-waiting/30 bg-status-waiting/10 p-3 text-status-waiting">
             <TriangleAlert className="mt-px size-4 shrink-0" />
             <div className="space-y-1.5 text-xs leading-relaxed">
               <p className="font-medium">{t('trustWarning')}</p>
-              <ul className="list-disc space-y-0.5 ps-4 text-amber-700/90 dark:text-amber-300/90">
+              <ul className="list-disc space-y-0.5 ps-4 text-status-waiting/90">
                 <li>{t('trustWarning1')}</li>
                 <li>{t('trustWarning2')}</li>
               </ul>

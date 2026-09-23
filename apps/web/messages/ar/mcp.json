@@ -24,18 +24,18 @@
     "methodTabsAria": "طريقة الاتصال",
     "method": "OAuth",
     "personalKey": "مفتاح API",
-    "description": "استخدم هذا مع أي عميل MCP يدعم OAuth، مثل ChatGPT أو Claude. تسجّل الدخول بحساب Volition. لا يستلم العميل أي مفتاح API.",
+    "description": "استخدم هذا مع أي عميل MCP يدعم OAuth، مثل ChatGPT أو Claude. تسجّل الدخول بحساب Helena. لا يستلم العميل أي مفتاح API.",
     "discovery": "اكتشاف OAuth",
     "steps": {
       "add": "أضف تطبيق MCP في عميلك.",
       "paste": "الصق نقطة نهاية MCP.",
       "choose": "اختر OAuth عندما يسأل العميل عن طريقة تسجيل الدخول.",
-      "signIn": "سجّل الدخول إلى Volition ووافق على الوصول."
+      "signIn": "سجّل الدخول إلى Helena ووافق على الوصول."
     },
-    "security": "يستخدم OAuth آلية PKCE (S256) وتسجيل العملاء الديناميكي ورموز وصول مقيّدة بحساب Volition.",
+    "security": "يستخدم OAuth آلية PKCE (S256) وتسجيل العملاء الديناميكي ورموز وصول مقيّدة بحساب Helena.",
     "consent": {
-      "title": "تفويض Volition",
-      "description": "اسمح لعميل MCP هذا بالعمل بصلاحيات حساب Volition الخاص بك.",
+      "title": "تفويض Helena",
+      "description": "اسمح لعميل MCP هذا بالعمل بصلاحيات حساب Helena الخاص بك.",
       "missingCode": "طلب التفويض هذا يفتقد رمز الموافقة.",
       "cancel": "إلغاء",
       "pending": "جارٍ التفويض…",

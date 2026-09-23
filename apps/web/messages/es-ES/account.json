@@ -118,6 +118,12 @@
     },
     "language": "Idioma",
     "languageDescription": "El idioma de la interfaz, tus correos y el bot de Telegram.",
+    "headerLayout": "Diseño de la cabecera",
+    "headerLayoutDescription": "Una fila combina la cabecera y las pestañas de vista, y traslada el idioma, el tema y la cuenta a la barra lateral. Clásico mantiene la cabecera y las pestañas de vista en dos filas, con esos controles en la cabecera.",
+    "headerLayoutOptions": {
+      "single": "Una fila",
+      "classic": "Clásico (dos filas)"
+    },
     "timezone": "Zona horaria",
     "timezoneDescription": "Elige la zona en la que trabajas.",
     "timezonePlaceholder": "Seleccionar una zona horaria",

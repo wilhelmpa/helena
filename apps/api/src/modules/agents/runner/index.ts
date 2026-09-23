@@ -12,8 +12,16 @@ import {
   RunAckResponse,
   runClaimQuery,
   runParams,
+  sessionBody,
 } from './model';
-import { claimRunnerRun, finishRun, heartbeatRun, recordReflection, releaseRun } from './service';
+import {
+  claimRunnerRun,
+  finishRun,
+  heartbeatRun,
+  recordReflection,
+  releaseRun,
+  reportRunSession,
+} from './service';
 
 // The queue an external agent's runner drains, authenticated with the agent's own
 // API key.
@@ -96,6 +104,29 @@ export const agentRunnerRoutes = new Elysia({
         description:
           'Report the reflection the run result asked for: how it went, what the agent saved ' +
           "and the tokens it used, which are added to the run's.",
+      },
+    },
+  )
+
+  .post(
+    '/agent-runs/:runId/session',
+    async ({ agent, params, query, body }) => {
+      if (!(await reportRunSession(agent.id, params.runId, query.claim, body.sessionId)))
+        throw new HttpError(404, 'Run not found');
+      return noContent();
+    },
+    {
+      runnerAgent: true,
+      params: runParams,
+      query: runClaimQuery,
+      body: sessionBody,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: {
+        summary: 'Report the session of a run',
+        description:
+          'Save the coding agent session of a claimed run as soon as the runner reads it, ' +
+          'so a claim after a crash resumes it instead of starting over. Best effort: the ' +
+          'runner ignores a refusal and keeps working.',
       },
     },
   )

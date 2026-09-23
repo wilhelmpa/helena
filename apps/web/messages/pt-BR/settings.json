@@ -86,6 +86,13 @@
       "loading": "Carregando o estado da configuração…",
       "unavailable": "O estado da configuração não está disponível.",
       "retry": "Tentar novamente"
+    },
+    "dangerZone": {
+      "title": "Zona de risco",
+      "description": "Ações irreversíveis neste projeto.",
+      "deleteTitle": "Excluir este projeto",
+      "deleteDescription": "Exclui permanentemente o projeto e tudo nele: tarefas, docs, arquivos, atividade. Isso não pode ser desfeito.",
+      "deleteAction": "Excluir projeto"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "Comando copiado. Substitua owner/repo, depois execute-o.",
     "nativeConnections": "Conexões de provedor",
     "nativeConnectionsRecommended": "Conexões de provedor · Recomendado",
-    "nativeConnectionsHint": "Autorize um provedor Git, escolha repositórios e deixe o Volition configurar seus webhooks.",
+    "nativeConnectionsHint": "Autorize um provedor Git, escolha repositórios e deixe o Helena configurar seus webhooks.",
     "nativeConnectProvider": "Conectar {provider}",
     "nativeNoConnections": "Nenhuma conta de provedor conectada ainda. A configuração manual de webhook permanece disponível abaixo.",
     "nativeConnectTitle": "Conectar {provider}",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "Precisa de atenção",
     "nativeDisconnectProvider": "Desconectar provedor",
     "nativeDisconnectRepository": "Desconectar repositório",
-    "nativeDisconnectConfirm": "Desconectar {provider} e remover todos os webhooks gerenciados pelo Volition?",
+    "nativeDisconnectConfirm": "Desconectar {provider} e remover todos os webhooks gerenciados pelo Helena?",
     "nativeDisconnected": "{provider} desconectado",
     "nativeRepositoryDisconnected": "Repositório desconectado",
     "nativeDisconnectFailed": "Não foi possível desconectar a integração.",

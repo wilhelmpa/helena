@@ -2,7 +2,7 @@
 
 This Compose project runs two loopback-only upstreams for the authenticated Volition gateway:
 
-- `http://127.0.0.1:8091` — code-server 4.138.0, Node.js 24.21.0, Bun 1.4.2, pnpm 12.5.1 and Git. The It's a Plan tree automatically selects its repository-pinned Bun 1.4.0; both binaries also remain directly available as `bun-1.4.0` and `bun-1.4.2`.
+- `http://127.0.0.1:8091` — code-server 4.138.0, Node.js 24.21.0, Bun 1.4.2, pnpm 12.5.1 and Git. The Helena tree automatically selects its repository-pinned Bun 1.4.0; both binaries also remain directly available as `bun-1.4.0` and `bun-1.4.2`.
 - `http://127.0.0.1:8100` — authenticated-header ttyd 1.7.7 listener for all project terminals. It runs as UID/GID 1000 inside the workspace container and accepts exactly one lowercase project slug through `?arg=<slug>`. A fixed wrapper resolves only an existing `/projects/<slug>` directory and attaches to a slug-specific tmux session. The stable URL survives service restarts and recreates its tmux session lazily.
 - `http://127.0.0.1:8092` — Nextcloud 34.0.4 with PostgreSQL 17.6, Redis 8.2.1 and `user_saml` 8.3.1.
 
@@ -57,7 +57,7 @@ The local recovery login is `https://cloud.volition.one/login?direct=1`. The adm
 
 ## Project provisioner
 
-`integration/server.mjs` is the private receiver for It's a Plan project provisioning events. The workspace-only unit binds it to the host side of the internal `volition_control` bridge on port `18800`. It accepts only `POST /api/provision` with the configured bearer token, a UUID `Idempotency-Key`, and `X-Itsaplan-Event: project.provision`. The event id in the body and headers must match. Project keys are restricted to uppercase letters and numbers before they are converted to a workspace path.
+`integration/server.mjs` is the private receiver for Helena project provisioning events. The workspace-only unit binds it to the host side of the internal `volition_control` bridge on port `18800`. It accepts only `POST /api/provision` with the configured bearer token, a UUID `Idempotency-Key`, and `X-Itsaplan-Event: project.provision`. The event id in the body and headers must match. Project keys are restricted to uppercase letters and numbers before they are converted to a workspace path.
 
 New projects request `workspace` and `terminal` by default. The provisioner creates the persistent host directory, returns a code-server deep link for `/projects/<slug>`, and returns a ttyd link whose fixed wrapper opens a slug-specific tmux session in exactly that directory. It does not create an agent, browser profile, cloud-file folder, repository credential or second workspace overlay. Verve keeps its explicit existing checkout mount and is not copied.
 
@@ -79,6 +79,6 @@ Set `PROJECT_PROVISIONING_URL=http://172.30.254.1:18800/api/provision`. The work
 
 `google-bridge/server.mjs` is a host-local stdio MCP server for the legacy private mail and career triage jobs. legacy runtime starts it directly; it has no listening socket. The bridge invokes the existing owner-managed gog wrappers with `execFile`, never a shell, and exposes only bounded read operations for three fixed Gmail accounts plus the owner's primary calendar. Credentials remain in the host gog profile.
 
-The live MCP surface is exactly `gmail_thread_get`, `gmail_search`, `gmail_attachment_metadata`, and `calendar_list`. It has no Gmail mutation, attachment download, calendar write, attendee, invitation, send, delete, or generic command tool. The unattended career job records a calendar proposal in It's a Plan for later owner review. Its model cannot create its own approval.
+The live MCP surface is exactly `gmail_thread_get`, `gmail_search`, `gmail_attachment_metadata`, and `calendar_list`. It has no Gmail mutation, attachment download, calendar write, attendee, invitation, send, delete, or generic command tool. The unattended career job records a calendar proposal in Helena for later owner review. Its model cannot create its own approval.
 
 Install dependencies with `npm ci --ignore-scripts`, run `npm test`, then register the server through `hermes mcp add` using absolute paths. Probe the saved server and verify an empty diagnostics list before granting exact tool IDs to an agent. The production IDs are prefixed `google-private__`; only the mail tools belong to `itsaplan-inbox`, and only `calendar_list` belongs to `karriere-triage`.

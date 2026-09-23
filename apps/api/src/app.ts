@@ -81,7 +81,7 @@ export const app = new Elysia()
       },
       documentation: {
         info: {
-          title: 'Volition API',
+          title: 'Helena API',
           version: pkg.version,
           description: apiDescription,
         },
@@ -108,6 +108,10 @@ export const app = new Elysia()
           {
             name: 'Agent Chat',
             description: "Chat with an external agent: the member's messages and its runner's feed",
+          },
+          {
+            name: 'Chat Prompts',
+            description: "The member's saved prompts for the chat composer",
           },
           {
             name: 'Agent Tools',
@@ -434,7 +438,7 @@ export const app = new Elysia()
     },
   )
   // Root doubles as the liveness/health endpoint.
-  .get('/', () => ({ name: 'Volition api', status: 'ok' }), {
+  .get('/', () => ({ name: 'Helena api', status: 'ok' }), {
     detail: {
       tags: ['System'],
       summary: 'Check that the api is up',

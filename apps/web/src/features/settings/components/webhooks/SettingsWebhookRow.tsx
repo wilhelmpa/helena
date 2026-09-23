@@ -51,7 +51,7 @@ export function SettingsWebhookRow({
           <span
             className={cn(
               'mt-1.5 size-2 shrink-0 rounded-full',
-              webhook.isActive ? 'bg-emerald-500' : 'bg-muted-foreground/40',
+              webhook.isActive ? 'bg-status-success' : 'bg-muted-foreground/40',
             )}
             title={t(webhook.isActive ? 'active' : 'disabled')}
           />

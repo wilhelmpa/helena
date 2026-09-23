@@ -118,6 +118,12 @@
     },
     "language": "Bahasa",
     "languageDescription": "Bahasa antarmuka, email Anda, dan bot Telegram.",
+    "headerLayout": "Tata letak header",
+    "headerLayoutDescription": "Satu baris menggabungkan header dan tab tampilan, serta memindahkan bahasa, tema, dan akun ke sidebar. Klasik mempertahankan header dan tab tampilan dalam dua baris, dengan kontrol tersebut di header.",
+    "headerLayoutOptions": {
+      "single": "Satu baris",
+      "classic": "Klasik (dua baris)"
+    },
     "timezone": "Zona waktu",
     "timezoneDescription": "Pilih zona waktu tempat Anda bekerja.",
     "timezonePlaceholder": "Pilih zona waktu",

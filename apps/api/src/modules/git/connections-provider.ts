@@ -795,7 +795,7 @@ export async function installProviderWebhook(
     const response = await providerRequest(input, path, {
       method: existing ? 'PUT' : 'POST',
       body: JSON.stringify({
-        description: 'Volition',
+        description: 'Helena',
         url: payloadUrl,
         active: true,
         secret,

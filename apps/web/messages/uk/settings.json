@@ -86,6 +86,13 @@
       "loading": "Завантаження стану налаштування…",
       "unavailable": "Стан налаштування недоступний.",
       "retry": "Повторити"
+    },
+    "dangerZone": {
+      "title": "Небезпечна зона",
+      "description": "Незворотні дії з цим проєктом.",
+      "deleteTitle": "Видалити цей проєкт",
+      "deleteDescription": "Остаточно видаляє проєкт і все в ньому: задачі, документи, файли, активність. Це неможливо скасувати.",
+      "deleteAction": "Видалити проєкт"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "Команду скопійовано. Замініть owner/repo і виконайте її.",
     "nativeConnections": "Підключення провайдерів",
     "nativeConnectionsRecommended": "Підключення провайдерів · Рекомендовано",
-    "nativeConnectionsHint": "Авторизуйте Git-провайдера, виберіть репозиторії, а Volition налаштує їхні webhooks.",
+    "nativeConnectionsHint": "Авторизуйте Git-провайдера, виберіть репозиторії, а Helena налаштує їхні webhooks.",
     "nativeConnectProvider": "Підключити {provider}",
     "nativeNoConnections": "Облікові записи провайдерів ще не підключено. Нижче залишається ручне налаштування webhook.",
     "nativeConnectTitle": "Підключити {provider}",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "Потребує уваги",
     "nativeDisconnectProvider": "Відключити провайдера",
     "nativeDisconnectRepository": "Відключити репозиторій",
-    "nativeDisconnectConfirm": "Відключити {provider} і видалити всі webhooks, якими керує Volition?",
+    "nativeDisconnectConfirm": "Відключити {provider} і видалити всі webhooks, якими керує Helena?",
     "nativeDisconnected": "{provider} відключено",
     "nativeRepositoryDisconnected": "Репозиторій відключено",
     "nativeDisconnectFailed": "Не вдалося відключити інтеграцію.",

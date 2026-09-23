@@ -86,6 +86,13 @@
       "loading": "Memuat status penyiapan…",
       "unavailable": "Status penyiapan tidak tersedia.",
       "retry": "Coba lagi"
+    },
+    "dangerZone": {
+      "title": "Zona berbahaya",
+      "description": "Tindakan yang tidak dapat dibatalkan pada proyek ini.",
+      "deleteTitle": "Hapus proyek ini",
+      "deleteDescription": "Menghapus proyek dan semua isinya secara permanen: issue, dokumen, file, aktivitas. Tindakan ini tidak dapat dibatalkan.",
+      "deleteAction": "Hapus proyek"
     }
   },
   "configuration": {
@@ -488,7 +495,7 @@
     "commandCopied": "Perintah disalin. Ganti owner/repo, lalu jalankan.",
     "nativeConnections": "Koneksi penyedia",
     "nativeConnectionsRecommended": "Koneksi penyedia · Disarankan",
-    "nativeConnectionsHint": "Otorisasi penyedia Git, pilih repositori, dan biarkan Volition mengonfigurasi webhook-nya.",
+    "nativeConnectionsHint": "Otorisasi penyedia Git, pilih repositori, dan biarkan Helena mengonfigurasi webhook-nya.",
     "nativeConnectProvider": "Hubungkan {provider}",
     "nativeNoConnections": "Belum ada akun penyedia yang terhubung. Pengaturan webhook manual tetap tersedia di bawah.",
     "nativeConnectTitle": "Hubungkan {provider}",
@@ -526,7 +533,7 @@
     "nativeWebhookError": "Perlu perhatian",
     "nativeDisconnectProvider": "Putuskan sambungan penyedia",
     "nativeDisconnectRepository": "Putuskan sambungan repositori",
-    "nativeDisconnectConfirm": "Putuskan sambungan {provider} dan hapus setiap webhook yang dikelola oleh Volition?",
+    "nativeDisconnectConfirm": "Putuskan sambungan {provider} dan hapus setiap webhook yang dikelola oleh Helena?",
     "nativeDisconnected": "{provider} terputus",
     "nativeRepositoryDisconnected": "Repositori terputus",
     "nativeDisconnectFailed": "Gagal memutuskan integrasi.",

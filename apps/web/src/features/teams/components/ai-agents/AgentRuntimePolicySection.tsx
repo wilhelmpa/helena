@@ -1,6 +1,7 @@
 'use client';
 
 import { Cpu, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ export default function AgentRuntimePolicySection({
   modelsError: boolean;
   conflicts: AgentRuntimeConflict[];
 }) {
+  const t = useTranslations('teams.agents.runtimePolicy');
   const policy = value.runtimePolicy;
   const selectedModel = models.find((entry) => entry.id === value.model);
   const unavailableModel = value.model.length > 0 && !selectedModel;
@@ -77,13 +79,13 @@ export default function AgentRuntimePolicySection({
       open={open}
       onOpenChange={onOpenChange}
       icon={Cpu}
-      title="Runtime policy"
-      hint="Runtime-neutral policy applied by the connected adapter"
+      title={t('title')}
+      hint={t('hint')}
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label htmlFor="agent-runtime-model" className="text-sm font-medium">
-            Model
+            {t('model')}
           </label>
           <Select
             value={value.model || AGENT_DEFAULT}
@@ -94,10 +96,10 @@ export default function AgentRuntimePolicySection({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={AGENT_DEFAULT}>Agent default</SelectItem>
+              <SelectItem value={AGENT_DEFAULT}>{t('agentDefault')}</SelectItem>
               {unavailableModel && (
                 <SelectItem value={value.model} disabled>
-                  {value.model} (unavailable)
+                  {t('unavailable', { value: value.model })}
                 </SelectItem>
               )}
               {models.map((model) => (
@@ -109,17 +111,17 @@ export default function AgentRuntimePolicySection({
           </Select>
           <p className="text-xs text-muted-foreground">
             {modelsLoading
-              ? 'Loading the connected runner catalog…'
+              ? t('modelsLoading')
               : modelsError
-                ? 'The runner catalog is temporarily unavailable.'
+                ? t('modelsError')
                 : models.length === 0
-                  ? 'The connected runner has not published any models yet.'
-                  : 'Models published by the connected runner provider.'}
+                  ? t('modelsEmpty')
+                  : t('modelsHint')}
           </p>
         </div>
         <div className="space-y-1.5">
           <label htmlFor="agent-runtime-reasoning" className="text-sm font-medium">
-            Reasoning
+            {t('reasoning')}
           </label>
           <Select
             value={policy.reasoningEffort ?? AGENT_DEFAULT}
@@ -133,12 +135,12 @@ export default function AgentRuntimePolicySection({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={AGENT_DEFAULT}>
-                Agent default
+                {t('agentDefault')}
                 {selectedModel?.thinkingDefault ? ` · ${selectedModel.thinkingDefault}` : ''}
               </SelectItem>
               {unavailableReasoning && policy.reasoningEffort && (
                 <SelectItem value={policy.reasoningEffort} disabled>
-                  {policy.reasoningEffort} (unavailable)
+                  {t('unavailable', { value: policy.reasoningEffort })}
                 </SelectItem>
               )}
               {selectedModel?.thinkingLevels.map((effort) => (
@@ -157,23 +159,42 @@ export default function AgentRuntimePolicySection({
           checked={value.memoryEnabled}
           onCheckedChange={(checked) => onChange({ memoryEnabled: checked === true })}
         />
-        <span className="text-sm font-medium">Conversation memory</span>
+        <span className="text-sm font-medium">{t('memory')}</span>
       </label>
       {value.memoryEnabled && (
         <Input
           type="number"
           min="1"
-          aria-label="Memory message window"
-          placeholder="Recent message window"
+          aria-label={t('memoryWindowLabel')}
+          placeholder={t('memoryWindowPlaceholder')}
           value={value.memoryLastMessages}
           onChange={(event) => onChange({ memoryLastMessages: event.target.value })}
         />
       )}
 
+      <div className="space-y-1.5">
+        <label htmlFor="agent-max-concurrent-chats" className="text-sm font-medium">
+          Parallel chats
+        </label>
+        <Input
+          id="agent-max-concurrent-chats"
+          type="number"
+          min="1"
+          max="20"
+          step="1"
+          value={value.maxConcurrentChats}
+          onChange={(event) => onChange({ maxConcurrentChats: event.target.value })}
+        />
+        <p className="text-xs text-muted-foreground">
+          How many of the agent&apos;s chats a member may leave answering at once. A send past the
+          limit is refused until one finishes.
+        </p>
+      </div>
+
       {(
         [
-          ['toolAllow', 'Allowed tools'],
-          ['mcpGrants', 'MCP grants'],
+          ['toolAllow', t('toolAllow')],
+          ['mcpGrants', t('mcpGrants')],
         ] as const
       ).map(([key, label]) => (
         <div key={key} className="space-y-1.5">
@@ -183,7 +204,7 @@ export default function AgentRuntimePolicySection({
           <Textarea
             id={`runtime-${key}`}
             rows={2}
-            placeholder="One key per line"
+            placeholder={t('keysPlaceholder')}
             value={policy[key].join('\n')}
             onChange={(event) => patchPolicy({ [key]: lines(event.target.value) })}
           />
@@ -193,11 +214,8 @@ export default function AgentRuntimePolicySection({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Managed Markdown files</p>
-            <p className="text-xs text-muted-foreground">
-              SOUL.md and files below instructions/, combined into the SOUL.md of the agent&apos;s
-              Hermes profile. Hermes keeps its memory itself.
-            </p>
+            <p className="text-sm font-medium">{t('managedFiles')}</p>
+            <p className="text-xs text-muted-foreground">{t('managedFilesHint')}</p>
           </div>
           <Button
             type="button"
@@ -209,7 +227,7 @@ export default function AgentRuntimePolicySection({
               })
             }
           >
-            <Plus className="me-1 size-3.5" /> Add file
+            <Plus className="me-1 size-3.5" /> {t('addFile')}
           </Button>
         </div>
         <AgentRuntimeConflicts conflicts={conflicts} onTakeOver={takeOverSoul} />
@@ -217,8 +235,8 @@ export default function AgentRuntimePolicySection({
           <div key={`${index}-${file.path}`} className="space-y-2 rounded-md border p-3">
             <div className="flex gap-2">
               <Input
-                aria-label={`Managed file ${index + 1} path`}
-                placeholder="SOUL.md or instructions/topic.md"
+                aria-label={t('filePathLabel', { index: index + 1 })}
+                placeholder={t('filePathPlaceholder')}
                 value={file.path}
                 onChange={(event) => {
                   const files = [...policy.files];
@@ -230,7 +248,7 @@ export default function AgentRuntimePolicySection({
                 type="button"
                 size="icon"
                 variant="ghost"
-                aria-label={`Remove managed file ${index + 1}`}
+                aria-label={t('removeFile', { index: index + 1 })}
                 onClick={() => patchPolicy({ files: policy.files.filter((_, i) => i !== index) })}
               >
                 <Trash2 className="size-4" />
@@ -238,7 +256,7 @@ export default function AgentRuntimePolicySection({
             </div>
             <Textarea
               rows={6}
-              aria-label={`Managed file ${index + 1} content`}
+              aria-label={t('fileContentLabel', { index: index + 1 })}
               value={file.content}
               onChange={(event) => {
                 const files = [...policy.files];

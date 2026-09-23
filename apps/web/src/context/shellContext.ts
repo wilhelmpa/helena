@@ -1,5 +1,5 @@
-import { createContext, useContext } from 'react';
-import type { IssueOpenMode } from '@/lib/api/endpoints/userPreferences';
+import { createContext, useContext, type ReactNode } from 'react';
+import type { HeaderLayout, IssueOpenMode } from '@/lib/api/endpoints/userPreferences';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
@@ -30,6 +30,11 @@ export type ShellContext = {
   onOpenChatThread: (agentId: number, threadId: string) => void;
   chatThreadRequest: ChatThreadRequest | null;
   onChatThreadHandled: () => void;
+  // The account's header layout preference, and the child page's way of putting
+  // content into the Shell's single-row header (its view tabs/filter bar, for the
+  // one it renders itself when the layout is 'classic'). See useShellHeaderExtra.
+  headerLayout: HeaderLayout;
+  setHeaderExtra: (node: ReactNode) => void;
 };
 
 export type ChatThreadRequest = { agentId: number; threadId: string };

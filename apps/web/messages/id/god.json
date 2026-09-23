@@ -156,10 +156,15 @@
     "joined": "bergabung {date}"
   },
   "general": {
+    "about": "Tentang",
     "saved": "Pengaturan bawaan proyek disimpan",
     "projectDefaults": "Pengaturan bawaan proyek",
     "mcpEnabled": "Aktifkan MCP pada proyek baru",
-    "mcpEnabledHint": "Proyek baru berada dalam jangkauan MCP timnya sejak saat dibuat."
+    "mcpEnabledHint": "Proyek baru berada dalam jangkauan MCP timnya sejak saat dibuat.",
+    "runResume": "Pelanjutan run",
+    "maxResumes": "Batas pelanjutan",
+    "maxResumesHint": "Berapa kali sebuah run boleh melanjutkan sesi agen coding-nya setelah runner yang memegangnya mati di tengah jalan, sebelum berhenti sendiri dan meminta Anda memeriksanya. 0 mematikan pelanjutan: run yang terputus dicoba ulang dari awal.",
+    "savedRunResume": "Batas pelanjutan disimpan"
   },
   "authentication": {
     "saved": "Pengaturan autentikasi disimpan",
@@ -361,10 +366,13 @@
     "janitor": {
       "run-janitor": "Pembersih proses",
       "stage-janitor": "Pembersih tahap",
-      "workflow-schedules": "Sinkronisasi jadwal"
+      "workflow-schedules": "Sinkronisasi jadwal",
+      "resume-janitor": "Pembersih pelanjutan"
     },
     "janitorRan": "berjalan {time} lalu",
     "janitorCleaned": "{count, plural, other {membersihkan # item}}",
-    "janitorNeverRan": "belum pernah berjalan"
+    "janitorNeverRan": "belum pernah berjalan",
+    "resuming": "{count, plural, other {# run sedang dilanjutkan}} setelah crash",
+    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa"
   }
 }

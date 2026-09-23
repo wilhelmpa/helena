@@ -68,7 +68,7 @@ async function handle(
   const stop = new AbortController();
   const lost = new AbortController();
   if (state.releasing) stop.abort();
-  else log(`${label}: started (${run.trigger})`);
+  else log(run.sessionId ? `${label}: resuming its session` : `${label}: started (${run.trigger})`);
   state.stops.add(stop);
   try {
     const hermes = stop.signal.aborted

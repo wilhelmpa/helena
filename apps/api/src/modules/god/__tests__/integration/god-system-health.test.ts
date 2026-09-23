@@ -6,6 +6,7 @@ import { createAgent } from '#tests/helpers/agents';
 import { controlApi, controlPlane } from '#tests/helpers/control';
 import { resetDb } from '#tests/helpers/db';
 import { addUser, setup } from '../helpers';
+import { RESUME_LIMIT_ERROR } from '#modules/agents/runner/service';
 
 // The owner's overview of the services around Plan: when each was last seen working,
 // and the agent runs that wait, overran or belong to a stalled workflow run.
@@ -112,6 +113,7 @@ describe('system health', () => {
       { job: 'run-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
       { job: 'stage-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
       { job: 'workflow-schedules', state: 'unknown', ranAt: null, cleaned: null, error: null },
+      { job: 'resume-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
     ]);
 
     await recordJanitorRun('run-janitor', 3, null);
@@ -144,6 +146,27 @@ describe('system health', () => {
       cleaned: 5,
       error: null,
     });
+  });
+
+  it('counts runs resuming a session and ones that reached the resume limit', async () => {
+    const { god } = await setup();
+    const { asRunner, queueStage } = await project(god);
+    await queueStage('c', 'resume-check');
+    const claimed = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await db
+      .update(agentRun)
+      .set({ sessionId: 'sess-health-1' })
+      .where(eq(agentRun.id, claimed.id));
+
+    const resuming = (await god.api.god['system-health'].get()).data!;
+    expect(resuming.runs).toMatchObject({ resuming: 1, needsResumeReview: 0 });
+
+    await db
+      .update(agentRun)
+      .set({ status: 'failed', lastError: RESUME_LIMIT_ERROR })
+      .where(eq(agentRun.id, claimed.id));
+    const needsReview = (await god.api.god['system-health'].get()).data!;
+    expect(needsReview.runs).toMatchObject({ resuming: 0, needsResumeReview: 1 });
   });
 
   it('is for the instance owner only', async () => {

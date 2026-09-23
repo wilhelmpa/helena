@@ -7,6 +7,7 @@ import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
 import approvals from '../../messages/en/approvals.json';
 import auth from '../../messages/en/auth.json';
+import chatWorkspace from '../../messages/en/chatWorkspace.json';
 import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
@@ -68,6 +69,7 @@ const defaultMessages = {
   mail,
   projects,
   aiChat,
+  chatWorkspace,
   inbox,
   approvals,
   permissions,

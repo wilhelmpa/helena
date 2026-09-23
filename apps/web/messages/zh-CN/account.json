@@ -118,6 +118,12 @@
     },
     "language": "语言",
     "languageDescription": "应用界面、邮件和 Telegram 机器人的语言。",
+    "headerLayout": "标题栏布局",
+    "headerLayoutDescription": "单行会合并标题栏和视图标签，并将语言、主题和账户移到侧边栏。经典模式保持标题栏和视图标签为两行，这些控件留在标题栏中。",
+    "headerLayoutOptions": {
+      "single": "单行",
+      "classic": "经典（两行）"
+    },
     "timezone": "时区",
     "timezoneDescription": "选择你所在的时区。",
     "timezonePlaceholder": "选择时区",

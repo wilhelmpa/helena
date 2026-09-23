@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useHotkeyLabel } from '@/context/useHotkeys';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
+import type { HeaderLayout } from '@/lib/api/endpoints/userPreferences';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -21,6 +23,8 @@ export default function AppHeader({
   workspaceOpen,
   activeWorkspaceTool,
   onSelectWorkspaceTool,
+  headerLayout,
+  headerExtra,
 }: {
   title: ReactNode;
   hasProject: boolean;
@@ -29,18 +33,40 @@ export default function AppHeader({
   workspaceOpen: boolean;
   activeWorkspaceTool: WorkspaceToolId;
   onSelectWorkspaceTool: (tool: WorkspaceToolId) => void;
+  // 'single' (the default, docs/volition-design-helena-ui.md) merges the page's own
+  // view tabs/filters into this one row (`headerExtra`) and leaves language, theme
+  // and the account menu to the sidebar footer. 'classic' is today's header exactly
+  // as it was: those three controls here, and the page renders its own second row.
+  headerLayout: HeaderLayout;
+  headerExtra?: ReactNode;
 }) {
   const t = useTranslations('nav');
   const { can } = usePermissions();
   const paletteKey = useHotkeyLabel('palette.toggle');
   const newIssueKey = useHotkeyLabel('issue.new');
   const canCreateIssue = hasProject && can('work_items', 'create');
+  const single = headerLayout === 'single';
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b px-2 sm:px-4">
       <SidebarTrigger />
       <Separator orientation="vertical" className="me-1 h-4" />
-      <div className="hidden max-w-40 shrink-0 truncate text-sm font-medium 2xl:block">{title}</div>
+      <div
+        className={cn(
+          'shrink-0 truncate text-sm font-medium',
+          single ? 'max-w-48' : 'hidden max-w-40 2xl:block',
+        )}
+      >
+        {title}
+      </div>
+
+      {single && headerExtra && (
+        <>
+          <Separator orientation="vertical" className="mx-1 h-4" />
+          <div className="min-w-0 flex-1 overflow-x-auto">{headerExtra}</div>
+        </>
+      )}
+      {single && !headerExtra && <div className="min-w-0 flex-1" />}
 
       <Tooltip>
         <TooltipTrigger asChild>
@@ -85,9 +111,13 @@ export default function AppHeader({
         activeTool={activeWorkspaceTool}
         onSelectTool={onSelectWorkspaceTool}
       />
-      <LocaleToggle />
-      <ThemeToggle />
-      <UserMenu />
+      {!single && (
+        <>
+          <LocaleToggle />
+          <ThemeToggle />
+          <UserMenu />
+        </>
+      )}
     </header>
   );
 }
