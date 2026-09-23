@@ -37,7 +37,7 @@ export const PLAN_PUBLIC_TABLES = Object.freeze([
   'agent_chat_message', 'agent_chat_thread', 'agent_chat_usage', 'agent_field_trigger',
   'agent_run', 'agent_skill', 'agent_skill_link', 'agent_tool',
   'agent_tool_link', 'ai_agent', 'apikey', 'app_secret', 'app_setting',
-  'chat_attachment', 'custom_field', 'custom_field_option', 'cycle', 'document_asset',
+  'chat_attachment', 'custom_field', 'custom_field_option', 'cycle',
   'git_managed_repository', 'git_provider_connection', 'hub_inbox_event',
   'hub_inbox_source', 'hub_inbox_thread', 'initiative', 'initiative_attachment',
   'initiative_label', 'integration_credential', 'issue', 'issue_activity',
@@ -62,15 +62,14 @@ export const PLAN_PUBLIC_TABLES = Object.freeze([
   'organization_agent_assignment', 'organization_department', 'organization_goal',
   'organization_project_assignment', 'passkey', 'project', 'project_action',
   'project_action_run', 'project_action_run_step', 'project_column', 'project_dashboard',
-  'project_document', 'project_document_initiative', 'project_document_issue',
-  'project_document_preference', 'project_document_revision', 'project_member',
+  'project_member',
   'project_notification_setting', 'project_provisioning_job', 'project_setting',
   'project_template', 'project_view', 'project_view_favorite', 'project_view_folder',
   'project_workflow_assignment', 'revision', 'scim_group', 'scim_group_mapping',
   'scim_group_member', 'session', 'team', 'team_invite', 'team_member',
   'team_notification_setting', 'team_role', 'user', 'user_notification_preference',
-  'user_preference', 'user_telegram_account', 'verification', 'webhook',
-  'webhook_delivery',
+  'user_preference', 'user_telegram_account', 'vault_entry', 'vault_link', 'vault_move',
+  'verification', 'webhook', 'webhook_delivery',
 ].sort());
 
 export const HERMES_BASELINE_UNITS = Object.freeze([

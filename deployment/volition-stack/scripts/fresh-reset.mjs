@@ -62,13 +62,16 @@ const TARGET_ROWS = new Map([
   ['team_member', 2],
   ['team_role', 1],
 ]);
-const REQUIRED_TABLES = [...TARGET_ROWS.keys(), 'issue', 'project_document', 'cycle'];
+const REQUIRED_TABLES = [...TARGET_ROWS.keys(), 'issue', 'vault_entry', 'cycle'];
 const REATTEST_OPERATIONAL_TABLES = new Set([
   'hub_inbox_event',
   'hub_inbox_source',
   'hub_inbox_thread',
   'revision',
   'user_preference',
+  'vault_entry',
+  'vault_link',
+  'vault_move',
 ]);
 const PERMISSION_RESOURCES = [
   'work_items',
@@ -833,12 +836,8 @@ export function summarizeInventory(inventory) {
       teams: count('team'),
       projects: count('project'),
       tasks: count('issue'),
-      documents: count('project_document'),
-      files:
-        count('issue_attachment') +
-        count('initiative_attachment') +
-        count('chat_attachment') +
-        count('document_asset'),
+      documents: count('vault_entry'),
+      files: count('issue_attachment') + count('initiative_attachment') + count('chat_attachment'),
       workflows: count('project_workflow_assignment') + count('project_action'),
       cycles: count('cycle'),
       schedules: count('mastra_schedules'),
