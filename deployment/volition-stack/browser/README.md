@@ -14,10 +14,15 @@ This directory holds the router and the display wait helper:
 | --- | --- |
 | `project-router.mjs` | the loopback router on `127.0.0.1:6082`, run by `volition-project-browser-router.service` from the checkout with the modules next to it |
 | `project-browser-control.mjs` | DevTools connection, window keeper, tab list and toolbar actions |
-| `project-browser-screencast.mjs` | the live view: screencast frames out, page size, agent activity, dialogs |
+| `project-browser-screencast.mjs` | the live view: video and screencast frames out, page size, quality tiers, agent activity, dialogs |
+| `project-browser-video.mjs` | the H.264 encoder (ffmpeg) and its quality tiers, and the MP4 box reading the fragments need |
 | `project-browser-input.mjs` | the viewers' messages and the order their input reaches the page in |
 | `websocket.mjs` | the server side of WebSocket for the live view |
 | `bin/wait-for-x` | `/usr/local/libexec/volition-wait-for-x`, the `ExecStartPre` of the Chromium unit |
+
+The video path needs `ffmpeg` on the host, built with `libx264` (`ffmpeg -encoders | grep libx264`);
+Debian's own package has it. Without it — or if the encoder ever fails — the live view falls back
+to the JPEG screencast below, for as long as the page's size stays the same.
 
 The KasmVNC and Chromium units and the polkit rule that lets `volition-hermes` start, stop and
 restart them are in `../native/systemd/`; `../native/install-browser.sh` installs KasmVNC and
@@ -46,6 +51,36 @@ mouse, wheel, key, paste and dialog messages as JSON (the format is at `viewerMe
 `project-browser-input.mjs`) and the CSS size and pixel ratio of their view. Pointer moves and
 wheel turns that arrive while the page is busy are merged. A viewer that stops answering pings
 for 30 seconds is dropped. The router refuses a WebSocket whose `Origin` is another host.
+
+When every viewer's browser can play it, the router streams H.264 video instead: ffmpeg grabs
+the page's area of the display and encodes it as fragmented MP4, one fragment per frame, which
+a viewer plays with Media Source Extensions (plain HTTP, the LAN today) or decodes itself with
+WebCodecs (a secure context — HTTPS, or Chromium's `--unsafely-treat-insecure-origin-as-secure`
+for a test origin — which the Cloudflare tunnel will make of the live one later); the client
+picks whichever the page has (`videoPlayback` in `apps/web/src/utils/liveVideo.ts`). A viewer
+that cannot play video, or an encoder that fails, falls back to the JPEG screencast above for as
+long as the page's size stays the same.
+
+Video is adaptive: three quality tiers (`TIERS` in `project-browser-video.mjs`) trade resolution,
+frame rate, encoder quality and thread count for how little bandwidth and CPU they need, from
+"high" (the capture's own size, 60 fps) down to "low" (854 px long edge, 18 fps). A viewer
+reports its round trip and the bytes it is receiving every few seconds; the router puts it on the
+best tier its numbers afford (`chooseTier`), dropping at once but rising only one step at a time.
+Viewers on the same tier of the same stream share its encoder — at most one ffmpeg per tier, per
+project browser, never one per viewer — and a tier with no viewer left on it stops its encoder,
+so nothing encodes while nobody is watching. A covered view (another panel, or the browser tab
+itself backgrounded) tells the router it is hidden and gets no frames until it is shown again, at
+which point it gets a fresh keyframe burst at once rather than waiting out the tier's keyframe
+interval; the same burst is how a fresh viewer, or a viewer whose tier just changed, starts
+without a wait either.
+
+The live view can follow the tab the agent is working in instead of the tab in front (a toggle in
+the browser bar, on by default, sent as `{"type":"follow","agent":true|false}`); a small,
+read-only "agent is acting" indicator reuses the same activity signal the stream's own size and
+rate already track. Neither is a lock: the live view has no notion yet of who is allowed to act,
+only of who last did: the actual control lock, its "Übernehmen" banner and its "Steuert: …" label
+arrive with the browser gateway (see `docs/volition-design-browser-gateway.md` §5), which this is
+built not to conflict with.
 
 While someone watches, the window keeper sizes the browser window to the most recent viewer's
 view, and the tab in front is drawn at pixel ratio 2 for a high-density screen (JPEG quality
