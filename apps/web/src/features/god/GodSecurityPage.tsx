@@ -62,7 +62,7 @@ export default function GodSecurityPage() {
         description={t('sudoDescription')}
         action={
           <EnabledSwitch
-            checked={settings.data?.sudoPasswordRequired ?? true}
+            checked={settings.data?.sudoPasswordRequired ?? false}
             onChange={(checked) => updateSettings.mutate({ sudoPasswordRequired: checked })}
             disabled={!settings.data || updateSettings.isPending}
           />

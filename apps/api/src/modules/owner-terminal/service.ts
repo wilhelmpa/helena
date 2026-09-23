@@ -22,17 +22,22 @@ export interface OwnerTerminalSettings {
   // not a schema change.
   stepUpMethods: ('totp' | 'passkey')[];
   // Whether the sudoers policy the browser terminal runs under asks for the Linux
-  // password. This is read by deployment/volition-stack/native/owner-terminal/setup.sh
-  // at install time, not by the running service -- sudo authorizes purely by Unix
-  // user, so nothing at runtime can make sudo itself treat a browser-terminal shell
-  // differently from an SSH one for the same account. See the setup script and the
-  // handoff report for why that makes the *next deploy* the place this takes effect.
+  // password. Read by deployment/volition-stack/native/owner-terminal/setup.sh,
+  // and only when the orchestrator passes --install-sudo-policy explicitly --
+  // sudo authorizes purely by Unix user, so nothing at runtime can make sudo
+  // itself treat a browser-terminal shell differently from an SSH one for the
+  // same account, and turning this on is only safe once the orchestrator's
+  // `sudo -n` automation has been fully audited against the sudoers Cmnd_Aliases
+  // (see 90-wilhelmpa's own comment). Defaults to false -- the existing blanket
+  // NOPASSWD stays in effect, and the UI says why turning this on needs that
+  // audit first, rather than presenting a security setting that quietly does
+  // less than it says until someone performs a separate, undocumented step.
   sudoPasswordRequired: boolean;
   recordOutput: Partial<Record<OwnerTerminalKind, boolean>>;
 }
 
 function defaultSettings(): OwnerTerminalSettings {
-  return { stepUpMethods: ['totp'], sudoPasswordRequired: true, recordOutput: {} };
+  return { stepUpMethods: ['totp'], sudoPasswordRequired: false, recordOutput: {} };
 }
 
 export async function getOwnerTerminalSettings(): Promise<OwnerTerminalSettings> {

@@ -178,15 +178,18 @@ describe('owner terminal', () => {
     const api = authedApi(user.cookie, ORIGIN);
 
     const initial = await api['owner-terminal'].settings.get();
-    expect(initial.data).toMatchObject({ sudoPasswordRequired: true, stepUpMethods: ['totp'] });
+    // Off by default: the existing blanket sudoers NOPASSWD stays in effect
+    // until the orchestrator audits the automation and turns this on
+    // deliberately (see service.ts's defaultSettings comment).
+    expect(initial.data).toMatchObject({ sudoPasswordRequired: false, stepUpMethods: ['totp'] });
 
     const updated = await api['owner-terminal'].settings.patch({
-      sudoPasswordRequired: false,
+      sudoPasswordRequired: true,
       recordOutput: { shell: true },
     });
     expect(updated.status).toBe(200);
     expect(updated.data).toMatchObject({
-      sudoPasswordRequired: false,
+      sudoPasswordRequired: true,
       recordOutput: { shell: true },
     });
   });
