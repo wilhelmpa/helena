@@ -51,7 +51,9 @@ async function withHeartbeat<T>(log: Log, beat: () => Promise<void>, work: Promi
 }
 
 // A cancel reaches the runner on the heartbeat, which aborts `stop` and so kills the
-// command. The heartbeat does the same for a run that is no longer this runner's.
+// command. The heartbeat does the same for a run that is no longer this runner's, and
+// marks it `lost`, which also ends the reporting of a result. An answer to a heartbeat
+// sent before this runner claimed its run again names the old claim and is ignored.
 async function handle(
   state: State,
   config: RunnerConfig,
@@ -62,6 +64,7 @@ async function handle(
 ): Promise<void> {
   const label = run.issueIdentifier ?? `run ${run.id}`;
   const stop = new AbortController();
+  const lost = new AbortController();
   if (state.releasing) stop.abort();
   else log(`${label}: started (${run.trigger})`);
   state.stops.add(stop);
@@ -72,9 +75,12 @@ async function handle(
       : await withHeartbeat(
           log,
           async () => {
-            if (await client.heartbeat(run.id, run.attempts)) stop.abort();
+            const attempt = run.attempts;
+            if (!(await client.heartbeat(run.id, attempt)) || attempt !== run.attempts) return;
+            lost.abort();
+            stop.abort();
           },
-          perform(config, client, run, stop, hermes),
+          perform(config, client, run, stop, hermes, { lost: lost.signal }),
         );
     if (outcome) log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
     else if (state.releasing)
@@ -90,7 +96,7 @@ async function handle(
     // (404) takes no result from it, so nothing is reported for either.
     const message = err instanceof Error ? err.message : String(err);
     log(`${label}: runner error — ${message}`);
-    if (!stop.signal.aborted && !(err instanceof RequestError && err.status === 404))
+    if (!lost.signal.aborted && !(err instanceof RequestError && err.status === 404))
       await client
         .report(run.id, run.attempts, { status: 'failed', error: message })
         .catch(() => {});

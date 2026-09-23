@@ -247,13 +247,21 @@ export async function setProjectWorkflowAssignment(input: {
       },
     })
     .returning();
+  await bumpControlPlaneRevision(input.projectId);
+  // The settings are saved whether Mastra answers or not; the periodic pass brings the
+  // schedules in line when this one could not.
   const [project] = await db
     .select({ key: projectTable.key })
     .from(projectTable)
     .where(eq(projectTable.id, input.projectId));
   if (project)
-    await syncWorkflowSchedules(input.workflowId, [{ ...row!, projectKey: project.key }]);
-  await bumpControlPlaneRevision(input.projectId);
+    await syncWorkflowSchedules(input.workflowId, [{ ...row!, projectKey: project.key }]).catch(
+      (error: unknown) =>
+        console.error(
+          '[planner] workflow schedules not brought in line:',
+          error instanceof Error ? error.message : error,
+        ),
+    );
   return row;
 }
 
@@ -305,6 +313,7 @@ async function syncWorkflowSchedules(
     operation: 'schedules',
     workflowId,
     projectRefs: [...byProject.keys()],
+    lastRun: false,
   });
   let changed = 0;
   for (const schedule of result.schedules ?? []) {

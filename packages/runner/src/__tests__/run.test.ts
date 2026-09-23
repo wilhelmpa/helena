@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -117,7 +117,9 @@ describe('result report', () => {
       { ...run, attempts: 2 },
       new AbortController(),
       null,
-      noWait,
+      {
+        wait: noWait,
+      },
     );
     expect(outcome).toMatchObject({ status: 'success' });
     expect(sent).toEqual([{ attempt: 2, result: expect.objectContaining({ output: 'done' }) }]);
@@ -146,5 +148,44 @@ describe('result report', () => {
       noWait,
     );
     await expect(stopped).rejects.toMatchObject({ status: 502 });
+  });
+
+  it('takes a server error that repeats as the answer, and waits for a server that is down', async () => {
+    let errors = 0;
+    const failing = reportUntilTaken(
+      async () => {
+        errors++;
+        throw new RequestError(500, 'POST /agent-runs/7/result failed with 500');
+      },
+      new AbortController().signal,
+      noWait,
+    );
+    await expect(failing).rejects.toMatchObject({ status: 500 });
+    expect(errors).toBe(6);
+
+    let refused = 0;
+    await reportUntilTaken(
+      async () => {
+        if (refused++ < 20) throw new TypeError('fetch failed');
+      },
+      new AbortController().signal,
+      noWait,
+    );
+    expect(refused).toBe(21);
+  });
+
+  it('kills a command whose stop came before it started', async () => {
+    const { config, client, reports, pidFile } = await setup(
+      'echo $$ > "$PID_FILE"; exec sleep 30',
+    );
+    const stop = new AbortController();
+    stop.abort();
+    expect(await perform(config, client, run, stop)).toBeNull();
+    expect(reports).toEqual([]);
+    if (existsSync(pidFile)) {
+      const pid = Number(readFileSync(pidFile, 'utf8'));
+      await sleep(200);
+      expect(() => process.kill(pid, 0)).toThrow();
+    }
   });
 });

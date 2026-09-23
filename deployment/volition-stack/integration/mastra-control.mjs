@@ -206,6 +206,9 @@ export function createMastraControlService(config, options = {}) {
         const owned = Array.isArray(result.schedules)
           ? result.schedules.filter((item) => projects.has(item?.requestContext?.projectRef))
           : [];
+        // `lastRun: false` leaves out the newest fire of each schedule, which costs two
+        // more Mastra calls per schedule.
+        if (input.lastRun === false) return { schedules: owned };
         return { schedules: await Promise.all(owned.map((schedule) => withLastRun(workflowId, schedule))) };
       }
       // The running and waiting runs of the workflow in every project, for Plan's health

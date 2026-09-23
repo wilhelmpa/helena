@@ -702,7 +702,7 @@ describe('agent runner queue', () => {
       expect(beat.data).toEqual({ canceled: true });
     });
 
-    it('hands a released run back at once without counting the attempt', async () => {
+    it('hands a released run back at once without counting the attempt, as interrupted', async () => {
       const { asOwner, asRunner, agent, columnId } = await setup();
       await queueRun(asOwner, columnId, agent.username);
       const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
@@ -712,7 +712,8 @@ describe('agent runner queue', () => {
       expect((await runs.release.post({}, { query: { attempt: 1 } })).status).toBe(204);
       const again = (await asRunner['agent-runs'].claim.post()).data!.run!;
       expect(again).toMatchObject({ id: run.id, attempts: 1 });
-      expect(again.systemPrompt).not.toContain('Interrupted run');
+      expect(run.systemPrompt).not.toContain('Interrupted run');
+      expect(again.systemPrompt).toContain('Interrupted run');
     });
 
     it('tells the agent that an earlier attempt was interrupted', async () => {

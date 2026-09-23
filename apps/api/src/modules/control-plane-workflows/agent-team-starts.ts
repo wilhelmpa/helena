@@ -54,8 +54,8 @@ export async function startDelegatedAgentTeam(
   return (await requestAgentTeamStart({ issueId, projectId, agentId, actorUserId })) !== 'refused';
 }
 
-// Records the start and asks Mastra for it at once. An issue with a start still waiting
-// for Mastra gets no second one.
+// Records the start and asks Mastra for it at once. An issue with a start for the same
+// coordinator still waiting for Mastra gets no second one.
 export async function requestAgentTeamStart(input: {
   issueId: number;
   projectId: number;
@@ -69,7 +69,13 @@ export async function requestAgentTeamStart(input: {
     const [waiting] = await tx
       .select({ id: agentTeamStart.id })
       .from(agentTeamStart)
-      .where(and(eq(agentTeamStart.issueId, input.issueId), eq(agentTeamStart.status, 'pending')))
+      .where(
+        and(
+          eq(agentTeamStart.issueId, input.issueId),
+          eq(agentTeamStart.agentId, input.agentId),
+          eq(agentTeamStart.status, 'pending'),
+        ),
+      )
       .limit(1);
     if (waiting) return null;
     const [created] = await tx
@@ -138,8 +144,9 @@ async function attemptStart(row: StartRow): Promise<StartOutcome> {
 }
 
 // A start is dropped when the issue is no longer delegated to its coordinator, or while
-// the agent-team run of an earlier start is still working on it: one agent-team run per
-// issue at a time, the way a delegation queues one run per agent and issue.
+// the agent-team run of an earlier start for the same coordinator is still working on
+// it: one run per coordinator and issue at a time, the way a delegation queues one run
+// per agent and issue.
 async function start(row: StartRow): Promise<StartOutcome> {
   const [current] = await db
     .select({ delegateUserId: issue.delegateUserId, agentUserId: aiAgent.userId })
@@ -160,6 +167,7 @@ async function earlierRunActive(row: StartRow): Promise<boolean> {
     .where(
       and(
         eq(agentTeamStart.issueId, row.issueId),
+        eq(agentTeamStart.agentId, row.agentId),
         eq(agentTeamStart.status, 'started'),
         ne(agentTeamStart.id, row.id),
       ),
@@ -206,13 +214,4 @@ async function queueCoordinatorRun(row: StartRow): Promise<void> {
     prompt: delegationPrompt(`${target.key}-${target.sequenceNumber}`, target.title),
     delaySeconds: agent.delegationDelaySec,
   });
-}
-
-// Starts that wait for Mastra, for the health overview.
-export async function countWaitingAgentTeamStarts(): Promise<number> {
-  const [row] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(agentTeamStart)
-    .where(eq(agentTeamStart.status, 'pending'));
-  return row?.count ?? 0;
 }

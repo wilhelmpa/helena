@@ -142,6 +142,9 @@ export interface RunnerRun {
 // The claim's raw row, before framing. The extra people columns exist only to build
 // the prompts and are not handed to the runner.
 type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
+  // Claimed before, by a claim that ended without a result: the runner stopped, handed
+  // the run back, or lost its lease.
+  interrupted: boolean;
   // The project the run works in, which is what its system prompt names.
   projectKey: string;
   projectName: string;
@@ -228,6 +231,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.prompt,
       r.attempts,
       r.issue_id AS "issueId",
+      r.started_at < now() AS "interrupted",
       r.max_turns AS "maxTurns",
       r.run_budget_seconds AS "runBudgetSeconds",
       (SELECT p.key FROM project p WHERE p.id = r.project_id) AS "projectKey",
@@ -277,7 +281,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         agent,
         { key: row.projectKey, name: row.projectName, description: row.projectDescription },
         forPrompt,
-      ) + (row.attempts > 1 ? INTERRUPTED_RUN : ''),
+      ) + (row.interrupted ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
@@ -290,8 +294,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   };
 }
 
-// A run claimed again was handed out before and ended without a result: its runner
-// stopped or lost the lease. Whatever that attempt did outside the run has happened.
+// Whatever an interrupted attempt did outside the run has happened.
 const INTERRUPTED_RUN =
   '## Interrupted run\nAn earlier attempt at this run was interrupted before it reported a ' +
   'result. Check the work item, its comments and your workspace for what that attempt ' +

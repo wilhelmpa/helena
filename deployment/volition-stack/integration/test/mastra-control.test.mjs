@@ -570,3 +570,20 @@ test('active runs lists the running and waiting runs of every project', async ()
     { runId: 'run-b', resourceId: 'project:B', status: 'waiting', updatedAt: '2026-09-23T11:00:00.000Z' },
   ]);
 });
+
+test('schedules without their last runs cost one Mastra call', async () => {
+  const paths = [];
+  const control = service(async (url) => {
+    paths.push(new URL(url).pathname);
+    return json({ schedules: [{ id: 'weekly', requestContext: { projectRef: 'project:PRIV' } }] });
+  });
+  const result = await control.execute({
+    schemaVersion: 1,
+    operation: 'schedules',
+    workflowId: 'agent-team',
+    projectRefs: ['project:PRIV'],
+    lastRun: false,
+  });
+  assert.deepEqual(result.schedules, [{ id: 'weekly', requestContext: { projectRef: 'project:PRIV' } }]);
+  assert.equal(paths.length, 1);
+});
