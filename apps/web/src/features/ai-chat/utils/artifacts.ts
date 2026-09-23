@@ -29,6 +29,30 @@ export function artifactDocument({ language, code }: Artifact): string {
   return `<!doctype html><html><head>${head}</head><body>${code}</body></html>`;
 }
 
+// The fenced code blocks of an answer that are shown as artifacts: ```html or ```svg,
+// tagged or not — an agent writing a full page fences it as html without necessarily
+// naming it "artifact". Only complete fences count, so a block still streaming in does
+// not flash open before the model has finished it.
+const FENCE = /```(html|svg)\r?\n([\s\S]*?)```/gi;
+
+export function extractArtifacts(text: string): Artifact[] {
+  const found: Artifact[] = [];
+  for (const match of text.matchAll(FENCE)) {
+    const language = match[1].toLowerCase() as ArtifactLanguage;
+    const code = match[2].trim();
+    if (code) found.push({ language, code });
+  }
+  return found;
+}
+
+// The answer's prose with its artifact fences taken out, and the artifacts themselves —
+// the bubble shows the artifact as a card in the fence's place, not the raw code, the
+// way an image markdown shows a picture instead of its own syntax.
+export function splitArtifacts(text: string): { text: string; artifacts: Artifact[] } {
+  const artifacts = extractArtifacts(text);
+  return { text: text.replace(FENCE, '').trim(), artifacts };
+}
+
 // The name an artifact is saved under in the vault.
 export function artifactFileName(language: ArtifactLanguage, title: string | null, now: Date) {
   const base = (title ?? 'artifact')

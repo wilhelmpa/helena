@@ -20,6 +20,26 @@ export const workflowRunPath = (key: string, workflowId: string, runId: string) 
 
 export const agentActivityPath = (key: string) => `${projectPath(key)}/activity`;
 
+// The chat workspace: a project's own, and Home's across every agent and project. The
+// open agent and chat stay in the address so a reload or a shared link reopens them.
+export interface ChatLocation {
+  agent?: number | null;
+  thread?: string | null;
+}
+
+function chatQuery(location: ChatLocation): string {
+  const query = new URLSearchParams();
+  if (location.agent != null) query.set('agent', String(location.agent));
+  if (location.thread) query.set('thread', location.thread);
+  const search = query.toString();
+  return search ? `?${search}` : '';
+}
+
+export const chatPath = (key: string, location: ChatLocation = {}) =>
+  `${projectPath(key)}/chat${chatQuery(location)}`;
+
+export const homeChatPath = (location: ChatLocation = {}) => `/chat${chatQuery(location)}`;
+
 export const connectionsPath = () => '/connections';
 
 export const agentsPath = () => '/agents';

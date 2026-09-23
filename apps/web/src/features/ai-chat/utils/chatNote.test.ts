@@ -12,7 +12,13 @@ describe('chat as a note', () => {
         role: 'assistant',
         parts: [
           { type: 'reasoning', text: 'Look it up.' },
-          { type: 'dynamic-tool', toolName: 'x', toolCallId: 't', state: 'input-available', input: {} },
+          {
+            type: 'dynamic-tool',
+            toolName: 'x',
+            toolCallId: 't',
+            state: 'input-available',
+            input: {},
+          },
           { type: 'text', text: 'Maria does.' },
         ],
       },

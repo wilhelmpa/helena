@@ -15,7 +15,9 @@ export function chatNoteMarkdown(input: {
   date: string;
   labels: ChatNoteLabels;
 }): string {
-  const agent = input.agentName(input.messages.find((m) => m.role === 'assistant') ?? input.messages[0]);
+  const agent = input.agentName(
+    input.messages.find((m) => m.role === 'assistant') ?? input.messages[0],
+  );
   const lines = [`# ${input.title}`, '', `> ${input.labels.source(agent, input.date)}`, ''];
   for (const message of input.messages) {
     const text = messageText(message);

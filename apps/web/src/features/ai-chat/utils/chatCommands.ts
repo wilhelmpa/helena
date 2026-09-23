@@ -31,10 +31,11 @@ export interface ChatCommand {
   refusal?: ChatCommandRefusal;
 }
 
-const command = (
-  name: string,
-  rest: Partial<Omit<ChatCommand, 'name'>> = {},
-): ChatCommand => ({ name, aliases: [], ...rest });
+const command = (name: string, rest: Partial<Omit<ChatCommand, 'name'>> = {}): ChatCommand => ({
+  name,
+  aliases: [],
+  ...rest,
+});
 
 export const CHAT_COMMANDS: ChatCommand[] = [
   command('new', { aliases: ['reset', 'clear'], action: 'new' }),
@@ -116,7 +117,9 @@ export function slashItems(query: string, prompts: ChatPrompt[]): SlashItem[] {
     if (score >= 0) items.push({ kind: 'prompt', prompt, score: score + 0.5 });
   }
   for (const entry of CHAT_COMMANDS) {
-    const score = Math.max(...[entry.name, ...entry.aliases].map((name) => fuzzyScore(query, name)));
+    const score = Math.max(
+      ...[entry.name, ...entry.aliases].map((name) => fuzzyScore(query, name)),
+    );
     if (score < 0) continue;
     if (entry.refusal && !(query.length >= 2 && score >= 3)) continue;
     items.push({ kind: 'command', command: entry, score });

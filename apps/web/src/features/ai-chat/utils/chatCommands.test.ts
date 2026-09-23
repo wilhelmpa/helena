@@ -1,14 +1,23 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
-import { CHAT_COMMANDS, findCommand, fuzzyScore, parseSlashCommand, slashItems } from './chatCommands';
+import {
+  CHAT_COMMANDS,
+  findCommand,
+  fuzzyScore,
+  parseSlashCommand,
+  slashItems,
+} from './chatCommands';
 
 const prompt = (command: string, title: string) =>
   ({ id: 1, command, title, content: '', project: null }) as ChatPrompt;
 
 describe('chat slash commands', () => {
   it('reads a command and its arguments, and leaves a path alone', () => {
-    assert.deepEqual(parseSlashCommand('/model gpt-5.5 fast'), { name: 'model', args: 'gpt-5.5 fast' });
+    assert.deepEqual(parseSlashCommand('/model gpt-5.5 fast'), {
+      name: 'model',
+      args: 'gpt-5.5 fast',
+    });
     assert.deepEqual(parseSlashCommand('/New'), { name: 'new', args: '' });
     assert.equal(parseSlashCommand('/Users/me/plan.md read this'), null);
     assert.equal(parseSlashCommand('model'), null);
@@ -49,7 +58,9 @@ describe('chat slash commands', () => {
     assert.ok(forRe.includes('command:retry'));
     assert.ok(forRe.includes('command:reasoning'));
     assert.ok(!forRe.includes('command:restart'));
-    assert.ok(slashItems('', prompts).every((item) => item.kind === 'prompt' || !item.command.refusal));
+    assert.ok(
+      slashItems('', prompts).every((item) => item.kind === 'prompt' || !item.command.refusal),
+    );
     assert.ok(
       slashItems('cron', prompts).some(
         (item) => item.kind === 'command' && item.command.name === 'cron',

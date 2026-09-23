@@ -1,6 +1,11 @@
 import type { DynamicToolUIPart, UIMessage } from 'ai';
 import type { AiChatAttachment, AiChatMessage } from '@/lib/api/endpoints/agentChat';
 
+// Mirrors the API's CHAT_PROMPT_LIMIT (apps/api/.../chat/model.ts): the composer caps
+// input at the same length the server accepts, so a member hits a visible limit on the
+// textarea rather than a rejected send.
+export const CHAT_PROMPT_LIMIT = 32_000;
+
 // What the chat keeps about a message beside its parts. The server fills it in for a
 // stored message; while an answer streams, the transport sets what it knows.
 export interface PlanChatMetadata {
@@ -92,4 +97,31 @@ export function mergeNewestPage(current: PlanUIMessage[], page: PlanUIMessage[])
   const earlier = index >= 0 ? current.slice(0, index) : [];
   const ids = new Set(page.map((message) => message.id));
   return [...earlier.filter((message) => !ids.has(message.id)), ...page];
+}
+
+// A message read as the stretches the bubble draws in order: text, the model's
+// reasoning, and the tool calls made between one stretch of text and the next — calls
+// that follow one another become one block, shown together (see ChatToolCallDisclosure).
+export type MessageBlock =
+  | { kind: 'text'; text: string }
+  | { kind: 'reasoning'; text: string }
+  | { kind: 'tools'; tools: DynamicToolUIPart[] };
+
+export function messageBlocks(message: Pick<PlanUIMessage, 'parts'>): MessageBlock[] {
+  const blocks: MessageBlock[] = [];
+  for (const part of message.parts) {
+    if (part.type === 'text') {
+      blocks.push({ kind: 'text', text: part.text });
+      continue;
+    }
+    if (part.type === 'reasoning') {
+      blocks.push({ kind: 'reasoning', text: part.text });
+      continue;
+    }
+    if (part.type !== 'dynamic-tool') continue;
+    const last = blocks.at(-1);
+    if (last?.kind === 'tools') last.tools.push(part);
+    else blocks.push({ kind: 'tools', tools: [part] });
+  }
+  return blocks;
 }

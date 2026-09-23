@@ -23,14 +23,23 @@ describe('artifacts', () => {
   });
 
   it('keeps a preview off the network with a policy of its own', () => {
-    const page = artifactDocument({ language: 'html', code: '<h1>Hi</h1><script>fetch("/x")</script>' });
-    assert.match(page, /http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'/);
+    const page = artifactDocument({
+      language: 'html',
+      code: '<h1>Hi</h1><script>fetch("/x")</script>',
+    });
+    assert.match(
+      page,
+      /http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'/,
+    );
     assert.ok(!/connect-src/.test(page));
     const withHead = artifactDocument({
       language: 'html',
       code: '<html><head><title>T</title></head><body>x</body></html>',
     });
-    assert.match(withHead, /<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy"/);
+    assert.match(
+      withHead,
+      /<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy"/,
+    );
     const svg = artifactDocument({ language: 'svg', code: '<svg viewBox="0 0 1 1"></svg>' });
     assert.match(svg, /<body><svg viewBox="0 0 1 1"><\/svg><\/body>/);
   });

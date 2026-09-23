@@ -62,6 +62,10 @@ export const listApprovals = (params: PageParams, status: ApprovalListStatus) =>
 
 export const getPendingApprovalCount = () => request<{ count: number }>('/approvals/pending-count');
 
+// One approval request by id — what the chat's approval card reads to show its
+// current status and, once it is decided, who decided it.
+export const getApproval = (id: number) => request<ApprovalRequest>(`/approvals/${id}`);
+
 export const listWorkflowGates = () => request<WorkflowGateList>('/approvals/workflow-gates');
 
 export const decideApproval = (id: number, decision: ApprovalDecision) =>
