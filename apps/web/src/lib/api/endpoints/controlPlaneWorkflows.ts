@@ -19,7 +19,15 @@ export interface ProjectWorkflow {
   assignment: {
     enabled: boolean;
     capabilityRefs: string[];
-    configuration: { instructions?: string; retryLimit?: number };
+    configuration: {
+      instructions?: string;
+      retryLimit?: number;
+      // agent-team only; the API returns them with their defaults filled in.
+      autonomy?: 'review' | 'done';
+      reviewRequired?: boolean;
+      maxTurns?: number | null;
+      runBudgetSeconds?: number | null;
+    };
     createdAt?: string;
     updatedAt?: string;
   };
