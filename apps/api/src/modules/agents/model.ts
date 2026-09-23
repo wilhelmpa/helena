@@ -133,6 +133,8 @@ export type ChatMessagePage = {
   // sending the member's prompt a second time.
   activeAnswer?: {
     messageId: number;
+    // The agent producing it, which is the one its stream is read from.
+    agentId?: number;
     status: 'pending' | 'streaming';
     createdAt: string;
   };

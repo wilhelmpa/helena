@@ -384,6 +384,7 @@ export const ChatMessagesResponse = t.Object({
   activeAnswer: t.Optional(
     t.Object({
       messageId: t.Number(),
+      agentId: t.Optional(t.Number()),
       status: t.Union([t.Literal('pending'), t.Literal('streaming')]),
       createdAt: t.String(),
     }),

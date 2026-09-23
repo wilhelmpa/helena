@@ -284,6 +284,7 @@ export async function getThreadMessages(
     newest?.role === 'assistant' && isLive(newest.status)
       ? {
           messageId: newest.id,
+          agentId: newest.agentId,
           status: newest.status as 'pending' | 'streaming',
           createdAt: iso(newest.createdAt),
         }
