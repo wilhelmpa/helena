@@ -105,6 +105,9 @@ function keyMessage(message, modifiers) {
 //   {"type":"ack"}                                        a JPEG frame was drawn
 //   {"type":"dialog","accept":true,"text":"answer"}       closes a JavaScript dialog
 //   {"type":"follow","agent":true}                        shows the agent's tab
+//   {"type":"hidden","hidden":true}                       the view is covered, or shown again
+//   {"type":"stats","rttMs":40,"downlinkKbps":3200}       the video connection just measured
+//   {"type":"ping","t":123.4}                              answered with {"type":"pong","t":..}
 //   {"type":"mouse","event":"move|down|up|click","x":..,"y":..,"button":"left",
 //    "buttons":1,"clickCount":1,"modifiers":0}            x and y in page CSS pixels
 //   {"type":"wheel","x":..,"y":..,"deltaX":0,"deltaY":120,"modifiers":0}
@@ -137,6 +140,18 @@ export function viewerMessage(data) {
     case "follow":
       if (typeof message.agent !== "boolean") throw invalid();
       return { followAgent: message.agent };
+    case "hidden":
+      if (typeof message.hidden !== "boolean") throw invalid();
+      return { hidden: message.hidden };
+    case "stats":
+      return {
+        stats: {
+          rttMs: number(message.rttMs ?? 0, 0, 60_000),
+          downlinkKbps: number(message.downlinkKbps ?? 0, 0, 10_000_000),
+        },
+      };
+    case "ping":
+      return { ping: number(message.t, -1e15, 1e15) };
     case "dialog":
       if (typeof message.accept !== "boolean") throw invalid();
       return {

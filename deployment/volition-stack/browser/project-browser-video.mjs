@@ -5,15 +5,74 @@
 import { execFile, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
 
-const FRAME_RATE = 60;
-// A keyframe every two seconds: a viewer that joins or falls behind waits at most that long.
-const KEYFRAME_INTERVAL = FRAME_RATE * 2;
-const QUALITY_CRF = 18;
 const XRANDR_TIMEOUT_MS = 5_000;
 
-// The ffmpeg arguments for grabbing an area of a display at 60 frames a second and encoding
-// it with the least delay: no B-frames and no lookahead, and a fragment written per frame.
-export function encoderArguments({ display, x, y, width, height }) {
+// Quality tiers, from the one a wired LAN affords down to the one a slow, lossy connection
+// still plays smoothly. A viewer is put on the best tier its measured connection (chooseTier)
+// affords, and viewers on the same tier of the same stream share one encoder: at most one
+// ffmpeg per tier, never one per viewer. `scaleMax` bounds the encoded frame's long edge, so a
+// low tier also costs less to encode and to decode; `threads` bounds a tier's own CPU use.
+// Every tier keeps a keyframe close enough that a viewer who joins mid-stream, or one recovering
+// from a stall, is never far from one: the encoder cannot be told to force one out of turn, so
+// a short, fixed interval stands in for that (see AreaEncoder and the README).
+export const TIERS = [
+  { name: "high", scaleMax: null, frameRate: 60, crf: 18, keyframeSeconds: 2, threads: 4 },
+  { name: "medium", scaleMax: 1280, frameRate: 30, crf: 24, keyframeSeconds: 1.5, threads: 2 },
+  { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 1, threads: 1 },
+];
+
+// The downlink and round trip a tier needs, and the socket backlog that always counts as
+// congested no matter what a viewer last reported: bufferedBytes grows only when the socket
+// cannot drain as fast as frames arrive, so it outranks a stale measurement.
+const DOWNLINK_KBPS = { high: 4000, medium: 1200, low: 0 };
+const RTT_MS = { high: 60, medium: 250, low: Infinity };
+const CONGESTED_BYTES = 2 * 1024 * 1024;
+
+// The tier a viewer's connection affords, given its last measurement and the tier index it is
+// on now (null for a viewer joining fresh). A tier drops as far as the numbers call for right
+// away, so a stall recovers quickly, but rises only one step at a time, so a connection that
+// looks better for one sample does not swing the picture straight to the heaviest tier; a
+// fresh viewer instead starts directly on the best tier it affords.
+export function chooseTier(measurement, currentIndex = null) {
+  const { downlinkKbps = 0, rttMs = 0, bufferedBytes = 0 } = measurement;
+  let affordable = TIERS.length - 1;
+  for (let index = 0; index < TIERS.length; index++) {
+    const tier = TIERS[index];
+    if (downlinkKbps >= DOWNLINK_KBPS[tier.name] && rttMs <= RTT_MS[tier.name]) {
+      affordable = index;
+      break;
+    }
+  }
+  if (bufferedBytes > CONGESTED_BYTES) affordable = TIERS.length - 1;
+  // A lower index is a better tier. Dropping to a worse or equal one (a higher or same index)
+  // applies at once; rising to a better one (a lower index) moves at most one step closer.
+  if (currentIndex === null || currentIndex === undefined || affordable >= currentIndex) {
+    return affordable;
+  }
+  return Math.max(affordable, currentIndex - 1);
+}
+
+// A size scaled down to at most maxEdge on its long side, kept even for yuv420p, or the size
+// itself when it already fits or the tier keeps the capture size (maxEdge is null).
+export function scaledSize(width, height, maxEdge) {
+  if (!maxEdge || Math.max(width, height) <= maxEdge) return { width, height };
+  const factor = maxEdge / Math.max(width, height);
+  const even = (value) => Math.max(2, Math.round((value * factor) / 2) * 2);
+  return { width: even(width), height: even(height) };
+}
+
+// Whether two capture areas are the same, so an encoder already running for them is reused.
+export function sameArea(a, b) {
+  return Boolean(a && b && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height);
+}
+
+// The ffmpeg arguments for grabbing an area of a display and encoding it at a tier's frame
+// rate, quality and thread limit, with the least delay: no B-frames and no lookahead, and a
+// fragment written per frame. The tier's keyframe interval bounds how long a viewer who joins
+// mid-stream, or misses frames to a stall, waits for the next one.
+export function encoderArguments({ x, y, width, height, display }, tier) {
+  const size = scaledSize(width, height, tier.scaleMax);
+  const scale = size.width === width && size.height === height ? [] : ["-vf", `scale=${size.width}:${size.height}`];
   return [
     "-hide_banner",
     "-loglevel",
@@ -24,23 +83,26 @@ export function encoderArguments({ display, x, y, width, height }) {
     "-draw_mouse",
     "0",
     "-framerate",
-    String(FRAME_RATE),
+    String(tier.frameRate),
     "-video_size",
     `${width}x${height}`,
     "-i",
     `:${display}+${x},${y}`,
+    ...scale,
     "-c:v",
     "libx264",
+    "-threads",
+    String(tier.threads),
     "-preset",
     "ultrafast",
     "-tune",
     "zerolatency",
     "-crf",
-    String(QUALITY_CRF),
+    String(tier.crf),
     "-pix_fmt",
     "yuv420p",
     "-g",
-    String(KEYFRAME_INTERVAL),
+    String(Math.max(1, Math.round(tier.frameRate * tier.keyframeSeconds))),
     "-f",
     "mp4",
     "-movflags",
@@ -116,10 +178,11 @@ export async function fitScreen(environment, width, height) {
 // and its codec string, "fragment" with each frame's fragment and whether it is a keyframe,
 // and "exit" when ffmpeg ends.
 export class AreaEncoder extends EventEmitter {
-  constructor({ display, xauthority, x, y, width, height }) {
+  constructor({ display, xauthority, x, y, width, height, tier = TIERS[0] }) {
     super();
     this.environment = { PATH: process.env.PATH, DISPLAY: `:${display}`, XAUTHORITY: xauthority };
     this.area = { display, x, y, width, height };
+    this.tier = tier;
     this.process = null;
     this.buffer = Buffer.alloc(0);
     this.init = [];
@@ -131,7 +194,7 @@ export class AreaEncoder extends EventEmitter {
     const onScreen = await fitScreen(this.environment, this.area.x + this.area.width, this.area.y + this.area.height);
     if (!onScreen) throw new Error("The display cannot hold the page");
     if (this.stopped) return;
-    this.process = spawn("ffmpeg", encoderArguments(this.area), {
+    this.process = spawn("ffmpeg", encoderArguments(this.area, this.tier), {
       env: this.environment,
       stdio: ["ignore", "pipe", "pipe"],
     });

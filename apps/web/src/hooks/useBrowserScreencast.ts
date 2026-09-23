@@ -25,11 +25,23 @@ export type ScreencastMode = 'jpeg' | 'video';
 
 const RETRY_FIRST_MS = 500;
 const RETRY_MAX_MS = 10_000;
+// How often the round trip is measured and the connection's stats are reported to the router,
+// which puts this view on the quality tier they afford.
+const PING_INTERVAL_MS = 4_000;
+const STATS_INTERVAL_MS = 3_000;
+// The downlink is the bytes received over this trailing window, so a burst of a few frames
+// does not read as a much faster connection than it is.
+const THROUGHPUT_WINDOW_MS = 4_000;
 
 type ServerText =
   | ({ type: 'dialog'; open: boolean } & LiveDialog)
   | { type: 'video'; codec: string; width: number; height: number }
-  | { type: 'tab' };
+  | { type: 'tab' }
+  | { type: 'pong'; t: number }
+  | { type: 'control'; by: 'agent' | 'owner' };
+
+// Who last acted on the page, purely informational (see the router's ScreencastStream).
+export type LiveControl = 'agent' | 'owner';
 
 // The live view's connection to the browser router. Video is played as it arrives: on the
 // canvas with WebCodecs, or in the video element with Media Source Extensions where WebCodecs
@@ -45,12 +57,14 @@ export function useBrowserScreencast(
   reloadToken: number,
   canvas: RefObject<HTMLCanvasElement | null>,
   videoElement: RefObject<HTMLVideoElement | null>,
+  followAgent: boolean,
 ) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<ScreencastStatus>('connecting');
   const [mode, setMode] = useState<ScreencastMode>('jpeg');
   const [hasFrame, setHasFrame] = useState(false);
   const [dialog, setDialog] = useState<LiveDialog | null>(null);
+  const [controlBy, setControlBy] = useState<LiveControl>('owner');
   const socket = useRef<WebSocket | null>(null);
   // The page size of the frame shown, which pointer positions are mapped to.
   const frameSize = useRef<Size | null>(null);
@@ -63,6 +77,13 @@ export function useBrowserScreencast(
   const announced = useRef<{ codec: string; size: Size } | null>(null);
   const waitingForKeyframe = useRef(true);
   const playback = useRef(videoPlayback());
+  // The connection's last measured round trip and the bytes received in the trailing window,
+  // which the router is periodically told so it can put this view on the tier they afford.
+  const rttMs = useRef(0);
+  const pingSentAt = useRef<number | null>(null);
+  const received = useRef<{ at: number; bytes: number }[]>([]);
+  const reportedHidden = useRef<boolean | null>(null);
+  const followAgentRef = useRef(followAgent);
 
   const send = useCallback((message: LiveMessage) => {
     const current = socket.current;
@@ -135,6 +156,12 @@ export function useBrowserScreencast(
   const receive = useCallback(
     (data: ArrayBuffer) => {
       const bytes = new Uint8Array(data);
+      if (bytes[0] === VIDEO_INIT || bytes[0] === VIDEO_FRAGMENT) {
+        const now = performance.now();
+        received.current.push({ at: now, bytes: data.byteLength });
+        const cutoff = now - THROUGHPUT_WINDOW_MS;
+        while (received.current.length && received.current[0].at < cutoff) received.current.shift();
+      }
       if (bytes[0] === JPEG_FRAME) {
         closeVideo();
         setMode('jpeg');
@@ -154,21 +181,71 @@ export function useBrowserScreencast(
     [closeVideo, draw, startVideo],
   );
 
+  // The bytes received for video over the trailing window, as a bitrate: what the router is
+  // told the connection currently affords.
+  const downlinkKbps = useCallback(() => {
+    if (received.current.length < 2) return 0;
+    const bytes = received.current.reduce((sum, sample) => sum + sample.bytes, 0);
+    const seconds = (received.current[received.current.length - 1].at - received.current[0].at) / 1000;
+    return seconds > 0 ? Math.round((bytes * 8) / 1000 / seconds) : 0;
+  }, []);
+
   useEffect(() => {
     shown.current = active;
     if (active) void draw();
   }, [active, draw]);
 
+  // A covered view (another panel, or the browser tab itself put in the background) is told
+  // to the router, which stops sending it frames; document.hidden is read again on each check
+  // since visibilitychange fires no React update on its own.
+  useEffect(() => {
+    const reportHidden = () => {
+      const hidden = !active || document.hidden;
+      if (reportedHidden.current === hidden) return;
+      reportedHidden.current = hidden;
+      send({ type: 'hidden', hidden });
+    };
+    reportHidden();
+    document.addEventListener('visibilitychange', reportHidden);
+    return () => document.removeEventListener('visibilitychange', reportHidden);
+  }, [active, send]);
+
+  // Tells the router the streamed tab to follow, again whenever the choice changes.
+  useEffect(() => {
+    followAgentRef.current = followAgent;
+    send({ type: 'follow', agent: followAgent });
+  }, [followAgent, send]);
+
   useEffect(() => {
     let stopped = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
     let attempt = 0;
+    let pingTimer: ReturnType<typeof setInterval> | undefined;
+    let statsTimer: ReturnType<typeof setInterval> | undefined;
     const connect = () => {
       const current = new WebSocket(screencastUrl(controlBase));
       current.binaryType = 'arraybuffer';
       socket.current = current;
-      // A hidden view leaves the page size to the views that are shown.
-      current.onopen = sendViewport;
+      current.onopen = () => {
+        // A hidden view leaves the page size to the views that are shown; a fresh connection
+        // (the first one, or a reconnect) tells its hidden state again, since the router's
+        // side of a new one starts out shown.
+        sendViewport();
+        const hidden = !shown.current || document.hidden;
+        reportedHidden.current = hidden;
+        send({ type: 'hidden', hidden });
+        send({ type: 'follow', agent: followAgentRef.current });
+        rttMs.current = 0;
+        pingSentAt.current = null;
+        received.current = [];
+        pingTimer = setInterval(() => {
+          pingSentAt.current = performance.now();
+          send({ type: 'ping', t: pingSentAt.current });
+        }, PING_INTERVAL_MS);
+        statsTimer = setInterval(() => {
+          send({ type: 'stats', rttMs: rttMs.current, downlinkKbps: downlinkKbps() });
+        }, STATS_INTERVAL_MS);
+      };
       current.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
         if (typeof event.data !== 'string') {
           attempt = 0;
@@ -183,11 +260,18 @@ export function useBrowserScreencast(
             size: { width: message.width, height: message.height },
           };
           if (video.current) frameSize.current = announced.current.size;
+        } else if (message.type === 'pong') {
+          if (pingSentAt.current === message.t) rttMs.current = Math.round(performance.now() - message.t);
+        } else if (message.type === 'control') {
+          setControlBy(message.by);
         } else void queryClient.invalidateQueries({ queryKey: browserTabsQueryKey(controlBase) });
       };
       current.onclose = () => {
+        clearInterval(pingTimer);
+        clearInterval(statsTimer);
         if (stopped) return;
         setDialog(null);
+        setControlBy('owner');
         closeVideo();
         socket.current = null;
         pending.current = null;
@@ -201,11 +285,13 @@ export function useBrowserScreencast(
     return () => {
       stopped = true;
       clearTimeout(retry);
+      clearInterval(pingTimer);
+      clearInterval(statsTimer);
       closeVideo();
       socket.current?.close();
       socket.current = null;
     };
-  }, [controlBase, reloadToken, closeVideo, queryClient, receive, sendViewport]);
+  }, [controlBase, reloadToken, closeVideo, downlinkKbps, queryClient, receive, send, sendViewport]);
 
   // Sent again after a reconnect while the view is shown.
   const setViewport = useCallback(
@@ -223,6 +309,7 @@ export function useBrowserScreencast(
     hasFrame,
     frameSize,
     dialog,
+    controlBy,
     send,
     setViewport,
   };

@@ -248,8 +248,8 @@ describe("project browser router", () => {
     const tabs = await (await fetch(`${base}/tabs`)).json();
     assert.deepEqual(tabs, {
       tabs: [
-        { id: "A".repeat(32), title: "Front", url: "https://a.test/", active: true },
-        { id: "C".repeat(32), title: "https://c.test/", url: "https://c.test/", active: false },
+        { id: "A".repeat(32), title: "Front", url: "https://a.test/", active: true, agent: false },
+        { id: "C".repeat(32), title: "https://c.test/", url: "https://c.test/", active: false, agent: false },
       ],
     });
 
@@ -286,11 +286,16 @@ describe("project browser router", () => {
     viewer.binaryType = "arraybuffer";
     const received = [];
     viewer.addEventListener("message", (event) => received.push(event.data));
+    // A real client sends its view's size once it opens; the stream starts once it has one.
+    viewer.addEventListener("open", () => {
+      viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 600, dpr: 1 }));
+    });
 
     await until(() => received.some((message) => message instanceof ArrayBuffer));
     const frame = Buffer.from(received.find((message) => message instanceof ArrayBuffer));
-    assert.deepEqual([frame.readUInt16BE(0), frame.readUInt16BE(2)], [800, 513]);
-    assert.equal(frame.subarray(4).toString(), "jpeg");
+    assert.equal(frame[0], 0); // JPEG_FRAME
+    assert.deepEqual([frame.readUInt16BE(1), frame.readUInt16BE(3)], [800, 513]);
+    assert.equal(frame.subarray(5).toString(), "jpeg");
     assert.ok(received.includes(JSON.stringify({ type: "tab" })));
     const [screencast] = browser.sent("Page.startScreencast");
     assert.equal(screencast.sessionId, `S-${PAGE}`);
@@ -313,14 +318,18 @@ describe("project browser router", () => {
     // A retina view: the window takes the view's size in window pixels plus the browser's
     // own toolbar, and the tab is drawn at pixel ratio 2. The page's CSS size is pinned while
     // the window changes.
+    // The view already sent its initial size when it connected, which sized the window once;
+    // this resize is counted from there on, not from zero.
+    const priorBounds = browser.sent("Browser.setWindowBounds").length;
+    const priorMetrics = browser.sent("Emulation.setDeviceMetricsOverride").length;
     viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 900, dpr: 2 }));
-    await until(() => browser.sent("Emulation.setDeviceMetricsOverride").length === 2);
-    assert.deepEqual(browser.sent("Browser.setWindowBounds")[0].params, {
+    await until(() => browser.sent("Emulation.setDeviceMetricsOverride").length === priorMetrics + 2);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds")[priorBounds].params, {
       windowId: 1,
       bounds: { left: 0, top: 0, width: 1600, height: 1887 },
     });
     assert.deepEqual(
-      browser.sent("Emulation.setDeviceMetricsOverride").map((command) => command.params),
+      browser.sent("Emulation.setDeviceMetricsOverride").slice(priorMetrics).map((command) => command.params),
       [
         { width: 800, height: 900, deviceScaleFactor: 2, mobile: false },
         { width: 0, height: 0, deviceScaleFactor: 2, scale: 2, mobile: false },
@@ -335,7 +344,7 @@ describe("project browser router", () => {
     });
     await until(() => frames().length === 2);
     const sharp = Buffer.from(frames()[1]);
-    assert.deepEqual([sharp.readUInt16BE(0), sharp.readUInt16BE(2)], [800, 900]);
+    assert.deepEqual([sharp.readUInt16BE(1), sharp.readUInt16BE(3)], [800, 900]);
 
     // A dialog is shown to the viewer, who can answer it.
     browser.emit("Page.javascriptDialogOpening", { type: "confirm", message: "Sure?", url: "https://a.test/" });
@@ -352,8 +361,8 @@ describe("project browser router", () => {
     await new Promise((resolve) => setTimeout(resolve, 1_100));
     const clears = browser.sent("Emulation.clearDeviceMetricsOverride").length;
     browser.lastInput = Date.now();
-    await until(() => browser.sent("Browser.setWindowBounds").length === 2);
-    assert.deepEqual(browser.sent("Browser.setWindowBounds")[1].params.bounds, {
+    await until(() => browser.sent("Browser.setWindowBounds").length === priorBounds + 2);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds")[priorBounds + 1].params.bounds, {
       left: 0,
       top: 0,
       width: 800,
@@ -366,7 +375,7 @@ describe("project browser router", () => {
     );
     viewer.send(JSON.stringify({ type: "viewport", width: 900, height: 900, dpr: 2 }));
     await new Promise((resolve) => setTimeout(resolve, 200));
-    assert.equal(browser.sent("Browser.setWindowBounds").length, 2);
+    assert.equal(browser.sent("Browser.setWindowBounds").length, priorBounds + 2);
 
     // Once nobody watches, the page keeps its CSS size at the display's pixel ratio; a desktop
     // (VNC) viewer then has the window fill the screen again.
@@ -374,8 +383,8 @@ describe("project browser router", () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     const routerPort = router.address().port;
     await upgradeStatus(routerPort, "/projects/demo/websockify", {});
-    await until(() => browser.sent("Browser.setWindowBounds").length === 3);
-    assert.deepEqual(browser.sent("Browser.setWindowBounds")[2].params.bounds, {
+    await until(() => browser.sent("Browser.setWindowBounds").length === priorBounds + 3);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds")[priorBounds + 2].params.bounds, {
       left: 0,
       top: 0,
       width: 1920,

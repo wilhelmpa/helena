@@ -4,7 +4,7 @@
 //
 // The stream is H.264 video grabbed from the project's X display (project-browser-video.mjs)
 // when every viewer can play it, and the DevTools screencast as JPEG frames otherwise or when
-// the encoder fails. The page is shown at the CSS size of the most recent viewer's view, and
+// every encoder fails. The page is shown at the CSS size of the most recent viewer's view, and
 // on a high-density screen at pixel ratio 2: the window keeper sizes the real window to the
 // view in window pixels and draws its tabs at that ratio. The agent works on that same page.
 // While the agent acts, the page keeps its CSS size, so the layout does not move between the
@@ -12,17 +12,26 @@
 // 20 frames a second, because a sharp JPEG stream at full rate fills the browser's DevTools
 // connection, which the agent's commands then wait for.
 //
+// Video is adaptive: each viewer is put on the quality tier (project-browser-video.mjs) its
+// last reported round trip and downlink, and its socket's backlog, afford, and viewers on the
+// same tier share its encoder — at most one running encoder per tier, never one per viewer. A
+// covered view (the browser tab behind another, a minimised window) reports itself hidden and
+// gets no frames until shown again, at which point it gets a fresh one at once; a tier with no
+// shown viewer left stops its encoder.
+//
 // Server to viewer, binary: a kind byte, then for kind 0 a JPEG frame after the page's
 // viewport in CSS pixels as two big-endian 16-bit integers; for kind 1 the video's MP4
 // initialization segment; for kind 2 a keyframe flag byte and one frame's MP4 fragment. Text:
 // {"type":"video","codec":..,"width":..,"height":..} before an initialization segment, with
 // the viewport in CSS pixels; {"type":"tab"} when the streamed tab, its address or its title
-// changes; {"type":"dialog", ...} while a JavaScript dialog is open and
-// {"type":"dialog","open":false} when it closes. Viewer to server: JSON text, see
-// viewerMessage.
+// changes; {"type":"dialog", ...} while a JavaScript dialog is open;
+// {"type":"dialog","open":false} when it closes; {"type":"pong","t":..} answering a viewer's
+// {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"} when who last acted on the
+// page changes (informational only, see ScreencastStream's controlBy). Viewer to server: JSON
+// text, see viewerMessage.
 import { activateTab, listTabs, openBrowser, setLiveViewport, windowChrome } from "./project-browser-control.mjs";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
-import { AreaEncoder } from "./project-browser-video.mjs";
+import { AreaEncoder, chooseTier, sameArea, TIERS } from "./project-browser-video.mjs";
 
 const JPEG_FRAME = 0;
 const VIDEO_INIT = 1;
@@ -39,6 +48,11 @@ const FRAMES_IN_FLIGHT = 2;
 const MAX_BUFFERED = 16 * 1024 * 1024;
 const MAX_VIDEO_BUFFERED = 4 * 1024 * 1024;
 const FOLLOW_INTERVAL_MS = 1_000;
+// How often a connected viewer's tier is reassessed from its last reported RTT and downlink
+// and the socket's backlog, besides whenever a fresh measurement or a shown/hidden change
+// arrives. A viewer without one yet (a fresh join, or one waiting out an area change) picks a
+// tier the moment an encoder becomes possible, not on this schedule.
+const TIER_INTERVAL_MS = 2_000;
 // Chromium keeps a window at least 500 pixels wide.
 const MIN_WINDOW_WIDTH = 500;
 // The agent halves a screenshot until its long edge is at most 1568 pixels and clicks at CSS
@@ -111,6 +125,14 @@ class Viewer {
     this.missed = false;
     this.viewport = null;
     this.waitingForKeyframe = true;
+    // Whether the view is covered (another browser tab, a minimised window): set by the
+    // viewer, which then gets no frames until it is shown again, at which point it gets a
+    // fresh one right away rather than the tier's usual keyframe interval.
+    this.hidden = false;
+    // The index into TIERS this viewer's video is encoded at, or null before one is chosen.
+    this.tierIndex = null;
+    this.rttMs = 0;
+    this.downlinkKbps = 0;
   }
 
   ready() {
@@ -167,8 +189,10 @@ class ScreencastStream {
     this.screencasting = false;
     this.pendingAck = null;
     this.nextAck = 0;
-    this.encoder = null;
-    this.video = null;
+    // One AreaEncoder per quality tier in use, keyed by tier name, shared by every viewer on
+    // that tier: never one per viewer. { encoder, video: { announcement, init, sinceKeyframe } }
+    this.tiers = new Map();
+    this.videoArea = null;
     this.videoFailed = false;
     this.zoom = 1;
     // The page size in effect.
@@ -183,8 +207,13 @@ class ScreencastStream {
     this.viewerActionAt = 0;
     this.pageNavigationAt = 0;
     this.agentActiveAt = 0;
+    // Purely informational, from the same activity signal the stream's own size and rate
+    // already use: no lock. The real control lock and its "Übernehmen" arrive with the
+    // browser gateway (see docs/volition-design-browser-gateway.md).
+    this.controlBy = "owner";
     this.resizeTimer = null;
     this.timer = null;
+    this.tierTimer = null;
     this.following = false;
     this.ended = false;
   }
@@ -200,6 +229,7 @@ class ScreencastStream {
     this.connection.onClose = () => this.end();
     this.connection.send("Target.setDiscoverTargets", { discover: true }).catch(() => {});
     this.timer = setInterval(() => this.follow(), FOLLOW_INTERVAL_MS);
+    this.tierTimer = setInterval(() => this.reassignTiers(), TIER_INTERVAL_MS);
     await this.follow();
   }
 
@@ -207,6 +237,7 @@ class ScreencastStream {
     const viewer = new Viewer(socket, (method, params) => this.sendInput(method, params));
     this.viewers.add(viewer);
     if (this.dialog) socket.send(JSON.stringify(this.dialog));
+    socket.send(JSON.stringify({ type: "control", by: this.controlBy }));
     socket.on("message", (data, binary) => {
       if (!binary) this.receive(viewer, data.toString("utf8"));
     });
@@ -250,16 +281,57 @@ class ScreencastStream {
       }
       return;
     }
+    if (message.hidden !== undefined) return this.setViewerHidden(viewer, message.hidden);
+    if (message.stats) {
+      viewer.rttMs = message.stats.rttMs;
+      viewer.downlinkKbps = message.stats.downlinkKbps;
+      return this.reassignTiers();
+    }
+    if (message.ping !== undefined) {
+      viewer.socket.send(JSON.stringify({ type: "pong", t: message.ping }));
+      return;
+    }
     for (const command of message.commands) viewer.input.dispatch(command);
+  }
+
+  // A covered view gets no frames; a view shown again gets a fresh one right away, whether or
+  // not its tier's encoder kept running for another viewer meanwhile.
+  setViewerHidden(viewer, hidden) {
+    const was = viewer.hidden;
+    viewer.hidden = hidden;
+    if (was === hidden) return;
+    if (hidden) return void this.syncTierEncoders();
+    viewer.waitingForKeyframe = true;
+    this.reassignTiers();
+    this.resumeVideo(viewer);
   }
 
   // A viewer's first view: it gets what the stream shows now.
   welcome(viewer) {
-    if (this.video && viewer.viewport.video) viewer.startVideo(this.video);
-    else {
+    if (this.videoArea && viewer.viewport.video) {
+      viewer.tierIndex = chooseTier(this.connectionOf(viewer), null);
+      this.syncTierEncoders();
+      this.resumeVideo(viewer);
+    } else {
       viewer.offer(this.frame);
       this.acknowledgeWhenWanted();
     }
+  }
+
+  // A viewer's last reported round trip and downlink, and its socket's current backlog, which
+  // outranks a stale measurement because it can only grow when the viewer cannot keep up.
+  connectionOf(viewer) {
+    return { downlinkKbps: viewer.downlinkKbps, rttMs: viewer.rttMs, bufferedBytes: viewer.socket.bufferedAmount };
+  }
+
+  // Sends a viewer already on a running tier's encoder the burst since its last keyframe, so a
+  // view that just connected or was just shown again starts at once instead of waiting out the
+  // tier's keyframe interval. Does nothing when the tier's encoder has not produced one yet:
+  // its "init" handler sends every viewer waiting on it their first burst once it has.
+  resumeVideo(viewer) {
+    if (!viewer.viewport?.video || viewer.hidden || viewer.tierIndex === null) return;
+    const entry = this.tiers.get(TIERS[viewer.tierIndex].name);
+    if (entry?.video) viewer.startVideo(entry.video);
   }
 
   sendInput(method, params) {
@@ -277,6 +349,15 @@ class ScreencastStream {
     const wasQuiet = Date.now() - this.agentActiveAt >= AGENT_QUIET_MS;
     this.agentActiveAt = Date.now();
     if (wasQuiet) this.resize();
+  }
+
+  // Tells a fresh or changed control state to every viewer; a viewer that joins gets it in
+  // add(). Informational only, see the field's own comment.
+  broadcastControl() {
+    const by = Date.now() - this.agentActiveAt < AGENT_QUIET_MS ? "agent" : "owner";
+    if (by === this.controlBy) return;
+    this.controlBy = by;
+    this.broadcast({ type: "control", by });
   }
 
   // The activity is read once a second; a view that changes size right after the agent's
@@ -297,6 +378,7 @@ class ScreencastStream {
     clearTimeout(this.resizeTimer);
     const quietIn = this.agentActiveAt + AGENT_QUIET_MS - Date.now();
     if (quietIn > 0) this.resizeTimer = setTimeout(() => this.resize(), quietIn);
+    this.broadcastControl();
     const stream = quietIn > 0 ? AGENT_STREAM : VIEWER_STREAM;
     if (stream !== this.stream) {
       this.stream = stream;
@@ -315,70 +397,122 @@ class ScreencastStream {
     void this.updateMode();
   }
 
-  // Runs the encoder for the page area when every viewer plays video, and the JPEG screencast
-  // otherwise.
+  // Runs one encoder per quality tier a viewer is on when every viewer plays video, and the
+  // JPEG screencast otherwise.
   async updateMode() {
     if (this.ended || !this.session || !this.size) return;
     const chrome = windowChrome(this.port);
     const area = this.wantsVideo() && chrome && captureArea(this.size, chrome);
     if (!area) {
-      this.stopVideo();
+      this.stopAllTiers();
       if (!this.screencasting) await this.startScreencast(this.session).catch(() => {});
       return;
     }
-    const current = this.encoder?.area;
-    if (current && current.x === area.x && current.y === area.y && current.width === area.width && current.height === area.height) {
+    if (sameArea(this.videoArea, area)) {
+      this.assignMissingTiers();
+      this.syncTierEncoders();
       return;
     }
-    this.stopVideo();
+    this.stopAllTiers();
     if (this.screencasting) {
       this.screencasting = false;
       this.pendingAck = null;
       await this.connection.send("Page.stopScreencast", {}, this.session).catch(() => {});
     }
-    this.startVideo(area);
+    this.videoArea = area;
+    this.assignMissingTiers();
+    this.syncTierEncoders();
   }
 
-  startVideo(area) {
-    const encoder = new AreaEncoder({ ...this.display, ...area });
-    this.encoder = encoder;
+  // Gives a video viewer without a tier yet — a fresh join, or one that was waiting out an
+  // area change — the best one its last measurement affords.
+  assignMissingTiers() {
+    for (const viewer of this.viewers) {
+      if (viewer.viewport?.video && !viewer.hidden && viewer.tierIndex === null) {
+        viewer.tierIndex = chooseTier(this.connectionOf(viewer), null);
+      }
+    }
+  }
+
+  // Reassesses every shown video viewer's tier from its last measurement, on the fixed
+  // schedule and whenever a fresh one arrives, and starts or stops encoders to match.
+  reassignTiers() {
+    if (!this.videoArea) return;
+    for (const viewer of this.viewers) {
+      if (!viewer.viewport?.video || viewer.hidden) continue;
+      viewer.tierIndex = chooseTier(this.connectionOf(viewer), viewer.tierIndex);
+    }
+    this.syncTierEncoders();
+  }
+
+  // Starts the encoder of every tier a shown video viewer is now on, and stops one that has
+  // none left: at most one running encoder per tier, shared by every viewer on it.
+  syncTierEncoders() {
+    if (!this.videoArea) return;
+    const wanted = new Set();
+    for (const viewer of this.viewers) {
+      if (viewer.viewport?.video && !viewer.hidden && viewer.tierIndex !== null) {
+        wanted.add(TIERS[viewer.tierIndex].name);
+      }
+    }
+    for (const [name, entry] of this.tiers) {
+      if (!wanted.has(name)) {
+        entry.encoder.stop();
+        this.tiers.delete(name);
+      }
+    }
+    for (const name of wanted) {
+      if (!this.tiers.has(name)) {
+        this.startTierEncoder(TIERS.find((tier) => tier.name === name));
+      }
+    }
+  }
+
+  startTierEncoder(tier) {
+    const encoder = new AreaEncoder({ ...this.display, ...this.videoArea, tier });
+    const entry = { encoder, video: null };
+    this.tiers.set(tier.name, entry);
     const size = this.size;
+    const onTier = (viewer) => viewer.viewport?.video && !viewer.hidden && TIERS[viewer.tierIndex ?? -1]?.name === tier.name;
     encoder.on("init", (init, codec) => {
-      const announcement = {
-        type: "video",
-        codec,
-        width: Math.round(size.width / this.zoom),
-        height: Math.round(size.height / this.zoom),
+      entry.video = {
+        announcement: {
+          type: "video",
+          codec,
+          width: Math.round(size.width / this.zoom),
+          height: Math.round(size.height / this.zoom),
+        },
+        init: Buffer.concat([Buffer.from([VIDEO_INIT]), init]),
+        sinceKeyframe: [],
       };
-      this.video = { announcement, init: Buffer.concat([Buffer.from([VIDEO_INIT]), init]), sinceKeyframe: [] };
-      for (const viewer of this.viewers) if (viewer.viewport?.video) viewer.startVideo(this.video);
+      for (const viewer of this.viewers) if (onTier(viewer)) viewer.startVideo(entry.video);
     });
     encoder.on("fragment", (fragment, keyframe) => {
-      if (!this.video) return;
+      if (!entry.video) return;
       const message = Buffer.concat([Buffer.from([VIDEO_FRAGMENT, keyframe ? 1 : 0]), fragment]);
-      if (keyframe) this.video.sinceKeyframe = [];
-      this.video.sinceKeyframe.push({ message, keyframe });
-      for (const viewer of this.viewers) if (viewer.viewport?.video) viewer.offerVideo(message, keyframe);
+      if (keyframe) entry.video.sinceKeyframe = [];
+      entry.video.sinceKeyframe.push({ message, keyframe });
+      for (const viewer of this.viewers) if (onTier(viewer)) viewer.offerVideo(message, keyframe);
     });
     encoder.on("exit", (code) => {
-      if (code === null || this.encoder !== encoder) return;
+      if (code === null || this.tiers.get(tier.name)?.encoder !== encoder) return;
       // The JPEG screencast shows the page until the page size changes again.
       this.videoFailed = true;
-      this.stopVideo();
+      this.stopAllTiers();
       void this.updateMode();
     });
     encoder.start().catch(() => {
-      if (this.encoder !== encoder) return;
+      if (this.tiers.get(tier.name)?.encoder !== encoder) return;
       this.videoFailed = true;
-      this.stopVideo();
+      this.stopAllTiers();
       void this.updateMode();
     });
   }
 
-  stopVideo() {
-    this.encoder?.stop();
-    this.encoder = null;
-    this.video = null;
+  stopAllTiers() {
+    for (const entry of this.tiers.values()) entry.encoder.stop();
+    this.tiers.clear();
+    this.videoArea = null;
   }
 
   startScreencast(session) {
@@ -444,21 +578,28 @@ class ScreencastStream {
   }
 
   // A zoom change repaints the page before it is read here, so the newest frame is sent
-  // again with the new size, and the video is announced again with it.
+  // again with the new size, and every tier's video is announced again with it. Each viewer
+  // gets its own tier's announcement directly, since tiers can differ in codec.
   async readZoom(session) {
     const metrics = await this.connection.send("Page.getLayoutMetrics", {}, session);
     const zoom = metrics.cssVisualViewport?.zoom || 1;
     if (zoom === this.zoom) return;
     this.zoom = zoom;
     if (this.screencastFrame && session === this.session) this.showFrame(this.screencastFrame);
-    if (this.video) {
-      const size = this.size;
-      this.video.announcement = {
-        ...this.video.announcement,
+    if (this.tiers.size === 0) return;
+    const size = this.size;
+    for (const entry of this.tiers.values()) {
+      if (!entry.video) continue;
+      entry.video.announcement = {
+        ...entry.video.announcement,
         width: Math.round(size.width / zoom),
         height: Math.round(size.height / zoom),
       };
-      this.broadcast(this.video.announcement);
+    }
+    for (const viewer of this.viewers) {
+      if (!viewer.viewport?.video || viewer.hidden || viewer.tierIndex === null) continue;
+      const entry = this.tiers.get(TIERS[viewer.tierIndex].name);
+      if (entry?.video) viewer.socket.send(JSON.stringify(entry.video.announcement));
     }
   }
 
@@ -605,8 +746,9 @@ class ScreencastStream {
     if (this.ended) return;
     this.ended = true;
     clearInterval(this.timer);
+    clearInterval(this.tierTimer);
     clearTimeout(this.resizeTimer);
-    this.stopVideo();
+    this.stopAllTiers();
     this.onEnd();
     for (const viewer of this.viewers) viewer.socket.close(1011, "Browser unavailable");
     this.connection?.close();

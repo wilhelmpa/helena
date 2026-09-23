@@ -17,6 +17,14 @@ export type LiveMessage =
   | { type: 'follow'; agent: boolean }
   | { type: 'ack' }
   | { type: 'dialog'; accept: boolean; text?: string }
+  // Sent when the view is covered (another panel or browser tab in front) or shown again, so
+  // the router stops sending it frames and its tier's encoder can stop once no one is left.
+  | { type: 'hidden'; hidden: boolean }
+  // The video connection's last measured round trip and downlink, so the router can put this
+  // view on the quality tier they afford.
+  | { type: 'stats'; rttMs: number; downlinkKbps: number }
+  // Answered with {"type":"pong","t":..} at once, to measure the round trip.
+  | { type: 'ping'; t: number }
   | {
       type: 'mouse';
       event: 'move' | 'down' | 'up' | 'click';

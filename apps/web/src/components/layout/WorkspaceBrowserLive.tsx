@@ -20,11 +20,13 @@ export default function WorkspaceBrowserLive({
   base,
   active,
   reloadToken,
+  followAgent,
   className,
 }: {
   base: string;
   active: boolean;
   reloadToken: number;
+  followAgent: boolean;
   className?: string;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
@@ -32,8 +34,8 @@ export default function WorkspaceBrowserLive({
   const canvas = useRef<HTMLCanvasElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const keyboard = useRef<HTMLTextAreaElement>(null);
-  const { status, mode, playback, hasFrame, frameSize, dialog, send, setViewport } =
-    useBrowserScreencast(base, active, reloadToken, canvas, video);
+  const { status, mode, playback, hasFrame, frameSize, dialog, controlBy, send, setViewport } =
+    useBrowserScreencast(base, active, reloadToken, canvas, video, followAgent);
   const inVideoElement = mode === 'video' && playback === 'mse';
   const { pointer, keys } = useBrowserLiveInput(view, keyboard, frameSize, send);
   const dpr = useDevicePixelRatio();
@@ -94,6 +96,13 @@ export default function WorkspaceBrowserLive({
           dialog={dialog}
           onAnswer={(accept, text) => send({ type: 'dialog', accept, text })}
         />
+      )}
+      {/* Informational only: who last acted on the page. The lock this hands off to later is
+          the browser gateway's, not this view's. */}
+      {controlBy === 'agent' && (
+        <div className="pointer-events-none absolute start-2 top-2 rounded-full bg-background/80 px-2 py-0.5 text-xs text-muted-foreground shadow-sm">
+          {t('controlAgent')}
+        </div>
       )}
       {notice && (
         <div

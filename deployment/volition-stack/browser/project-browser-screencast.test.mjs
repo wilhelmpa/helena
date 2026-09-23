@@ -11,19 +11,25 @@ const input = (message) => viewerMessage(JSON.stringify(message));
 describe("live view messages", () => {
   it("reads the view's CSS size and pixel ratio", () => {
     assert.deepEqual(input({ type: "viewport", width: 812.4, height: 600.6, dpr: 2 }), {
-      viewport: { width: 812, height: 601, dpr: 2 },
+      viewport: { width: 812, height: 601, dpr: 2, video: false },
     });
-    assert.deepEqual(input({ type: "viewport", width: 1280, height: 700, dpr: 1.3333333 }), {
-      viewport: { width: 1280, height: 700, dpr: 1.333 },
+    assert.deepEqual(input({ type: "viewport", width: 1280, height: 700, dpr: 1.3333333, video: true }), {
+      viewport: { width: 1280, height: 700, dpr: 1.333, video: true },
     });
     assert.deepEqual(input({ type: "viewport", width: 50, height: 9000 }), {
-      viewport: { width: 100, height: 8192, dpr: 1 },
+      viewport: { width: 100, height: 8192, dpr: 1, video: false },
     });
     assert.deepEqual(input({ type: "ack" }), { ack: true });
     assert.deepEqual(input({ type: "dialog", accept: false }), { dialog: { accept: false } });
     assert.deepEqual(input({ type: "dialog", accept: true, text: "answer" }), {
       dialog: { accept: true, promptText: "answer" },
     });
+    assert.deepEqual(input({ type: "hidden", hidden: true }), { hidden: true });
+    assert.deepEqual(input({ type: "stats", rttMs: 42, downlinkKbps: 3500 }), {
+      stats: { rttMs: 42, downlinkKbps: 3500 },
+    });
+    assert.deepEqual(input({ type: "stats" }), { stats: { rttMs: 0, downlinkKbps: 0 } });
+    assert.deepEqual(input({ type: "ping", t: 123.5 }), { ping: 123.5 });
   });
 
   it("draws a page at pixel ratio 2 on a high-density screen when the agent's screenshots allow it", () => {
@@ -173,14 +179,15 @@ describe("live view messages", () => {
     assert.equal(sent.length, 5);
   });
 
-  it("puts the viewport size in CSS pixels in front of each frame", () => {
+  it("puts a kind byte and the viewport size in CSS pixels in front of each frame", () => {
     const frame = frameMessage(Buffer.from("jpeg"), { deviceWidth: 812.4, deviceHeight: 70000 }, 1);
-    assert.equal(frame.readUInt16BE(0), 812);
-    assert.equal(frame.readUInt16BE(2), 0xffff);
-    assert.equal(frame.subarray(4).toString(), "jpeg");
+    assert.equal(frame[0], 0); // JPEG_FRAME, so a viewer tells it apart from video messages
+    assert.equal(frame.readUInt16BE(1), 812);
+    assert.equal(frame.readUInt16BE(3), 0xffff);
+    assert.equal(frame.subarray(5).toString(), "jpeg");
     // A window 2560 pixels wide at pixel ratio 2 and 125 % page zoom shows 1024 CSS pixels.
     const scaled = frameMessage(Buffer.from("jpeg"), { deviceWidth: 2560, deviceHeight: 1600 }, 2 * 1.25);
-    assert.deepEqual([scaled.readUInt16BE(0), scaled.readUInt16BE(2)], [1024, 640]);
+    assert.deepEqual([scaled.readUInt16BE(1), scaled.readUInt16BE(3)], [1024, 640]);
   });
 });
 

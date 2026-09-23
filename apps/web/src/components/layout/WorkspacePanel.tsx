@@ -195,6 +195,8 @@ export default function WorkspacePanel({
       base={browserBase}
       view={browserPreferences.view}
       onViewChange={browserPreferences.setView}
+      followAgent={browserPreferences.followAgent}
+      onToggleFollowAgent={browserPreferences.toggleFollowAgent}
     />
   ) : undefined;
   const overlay = isMobile || mode === 'overlay';
@@ -290,7 +292,12 @@ export default function WorkspacePanel({
             reloadToken: frameReloads[frame.key] ?? 0,
           };
           return liveBase ? (
-            <WorkspaceBrowserLive key={frame.key} base={liveBase} {...props} />
+            <WorkspaceBrowserLive
+              key={frame.key}
+              base={liveBase}
+              followAgent={browserPreferences.followAgent}
+              {...props}
+            />
           ) : (
             <WorkspaceFrame key={frame.key} url={frame.url} title={frame.title} {...props} />
           );
