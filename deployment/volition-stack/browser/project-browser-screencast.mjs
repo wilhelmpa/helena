@@ -130,6 +130,7 @@ class ScreencastStream {
     this.stream = VIEWER_STREAM;
     this.dialog = null;
     this.activityContext = null;
+    this.activityRead = null;
     this.lastInput = 0;
     this.ownInputAt = 0;
     this.viewerActionAt = 0;
@@ -190,7 +191,7 @@ class ScreencastStream {
       // The set keeps insertion order, so its last viewer with a view is the most recent.
       this.viewers.delete(viewer);
       this.viewers.add(viewer);
-      return this.resize();
+      return void this.resizeAfterReadingActivity();
     }
     if (message.dialog) {
       if (this.session) {
@@ -216,6 +217,13 @@ class ScreencastStream {
     const wasQuiet = Date.now() - this.agentActiveAt >= AGENT_QUIET_MS;
     this.agentActiveAt = Date.now();
     if (wasQuiet) this.resize();
+  }
+
+  // The activity is read once a second; a view that changes size right after the agent's
+  // input has to see that input first.
+  async resizeAfterReadingActivity() {
+    if (this.session) await this.readActivity(this.session).catch(() => {});
+    this.resize();
   }
 
   // Applies the page size and stream settings for the most recent view and the agent's
@@ -345,7 +353,14 @@ class ScreencastStream {
   }
 
   // Trusted input that no viewer sent is the agent's.
-  async readActivity(session) {
+  readActivity(session) {
+    this.activityRead ??= this.readActivityOnce(session).finally(() => {
+      this.activityRead = null;
+    });
+    return this.activityRead;
+  }
+
+  async readActivityOnce(session) {
     const send = (method, params) => this.connection.send(method, params, session);
     if (!this.activityContext) {
       const { frameTree } = await send("Page.getFrameTree");
