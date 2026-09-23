@@ -636,7 +636,7 @@
         "promote": "نقل إلى المكتبة",
         "promoted": "أصبحت {name} في مكتبة المهارات ومفعّلة للوكيل.",
         "tooLarge": "هذه المهارة أكبر من أن تُعرض أو تُنقل إلى المكتبة.",
-        "otherFiles": "{count, plural, zero {لا ملفات} one {ملف واحد} two {ملفان} few {# ملفات} many {# ملفًا} other {# ملف}} بغير Markdown تبقى في ملف تعريف الوكيل؛ المكتبة تحفظ Markdown فقط.",
+        "otherFiles": "{count, plural, zero {لا ملفات} one {ملف واحد ليس} two {ملفان ليسا} few {# ملفات ليست} many {# ملفًا ليست} other {# ملف ليست}} بصيغة Markdown، مثل برنامج نصي. مكتبة المهارات تحفظ Markdown فقط، لذا تبقى هذه المهارة لدى الوكيل.",
         "memorySize": "{chars, plural, zero {لا أحرف} one {حرف واحد} two {حرفان} few {# أحرف} many {# حرفًا} other {# حرف}}",
         "memoryEdit": "تعديل",
         "memoryClear": "مسح",

@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { guards } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
-import type { TeamMembership } from '#shared/access';
+import { requireTeamPermission, type TeamMembership } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { agentInTeam, agentScopeOf } from '../core/service';
@@ -61,8 +61,11 @@ export const agentLearningRoutes = new Elysia({
 
   .post(
     '/teams/:teamId/ai-agents/:agentId/learned-skills/promote',
-    async ({ params, membership, body, set }) => {
+    async ({ params, membership, body, set, user }) => {
       await requireAgent(params.agentId, membership);
+      // Taking a skill over also enables it on the agent and discards the agent's copy.
+      await requireTeamPermission(membership.teamId, user, 'agent_skills', 'edit');
+      await requireTeamPermission(membership.teamId, user, 'ai_agents', 'edit');
       set.status = 201;
       return promoteLearnedSkill(membership.teamId, params.agentId, body.path);
     },
@@ -76,7 +79,8 @@ export const agentLearningRoutes = new Elysia({
         description:
           "Copies a skill the agent created into the team's skill library and enables it on " +
           "the agent. The runner then writes it as one of Plan's skills and discards the " +
-          "agent's own copy.",
+          "agent's own copy. Needs the rights to create and edit skills and to edit agents. " +
+          'A skill with files other than Markdown stays with the agent.',
       },
     },
   )

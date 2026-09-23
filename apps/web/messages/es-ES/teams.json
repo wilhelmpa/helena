@@ -636,7 +636,7 @@
         "promote": "Pasar a la biblioteca",
         "promoted": "{name} ya está en la biblioteca de habilidades y activada para el agente.",
         "tooLarge": "Esta habilidad es demasiado grande para mostrarla o pasarla a la biblioteca.",
-        "otherFiles": "{count, plural, one {# archivo que no es Markdown se queda} other {# archivos que no son Markdown se quedan}} en el perfil del agente; la biblioteca solo guarda Markdown.",
+        "otherFiles": "{count, plural, one {# archivo no es Markdown} other {# archivos no son Markdown}}, por ejemplo un script. La biblioteca de habilidades solo guarda Markdown, así que esta habilidad se queda con el agente.",
         "memorySize": "{chars, plural, one {# carácter} other {# caracteres}}",
         "memoryEdit": "Editar",
         "memoryClear": "Vaciar",

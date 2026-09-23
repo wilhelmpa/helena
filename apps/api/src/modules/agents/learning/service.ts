@@ -89,45 +89,62 @@ export async function pendingRuntimeActions(agentId: number): Promise<RuntimeAct
   return rows.map(toSnapshot);
 }
 
-// Skill actions only name a skill the runner reported as created by the agent. The
-// newest decision on a target replaces an older one, carried out or failed, so a
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// A skill action only names a skill the runner reported as created by the agent.
+function assertActionable(inventory: AgentRuntimeInventory | null, skillPath: string | null) {
+  if (!inventory) {
+    throw new HttpError(409, "The agent's runtime has not reported what it learned yet");
+  }
+  if (
+    skillPath !== null &&
+    !inventory.skills.some((skill) => skill.origin === 'agent' && skill.path === skillPath)
+  ) {
+    throw new HttpError(404, 'Learned skill not found');
+  }
+}
+
+// The newest decision on a target replaces an older one, carried out or failed, so a
 // discard also drops a pin still waiting.
+async function insertAction(
+  tx: Transaction,
+  agentId: number,
+  kind: ActionKind,
+  target: string,
+  payload: Record<string, unknown>,
+): Promise<RuntimeActionRow> {
+  const kinds: ActionKind[] =
+    kind === 'write-memory' ? ['write-memory'] : ['discard-skill', 'pin-skill'];
+  await tx
+    .delete(agentRuntimeAction)
+    .where(
+      and(
+        eq(agentRuntimeAction.agentId, agentId),
+        eq(agentRuntimeAction.target, target),
+        inArray(agentRuntimeAction.kind, kinds),
+      ),
+    );
+  const [row] = await tx
+    .insert(agentRuntimeAction)
+    .values({ agentId, kind, target, payload })
+    .returning();
+  return toRow(row);
+}
+
 export async function queueRuntimeAction(
   agentId: number,
   input: RuntimeActionInput,
 ): Promise<RuntimeActionRow> {
   const { inventory } = await runtimeOf(agentId);
-  if (!inventory) {
-    throw new HttpError(409, "The agent's runtime has not reported what it learned yet");
-  }
-  const skill = input.kind !== 'write-memory';
-  const target = skill ? input.path : input.file;
-  if (skill && !inventory.skills.some((s) => s.origin === 'agent' && s.path === target)) {
-    throw new HttpError(404, 'Learned skill not found');
-  }
+  const target = input.kind === 'write-memory' ? input.file : input.path;
+  assertActionable(inventory, input.kind === 'write-memory' ? null : target);
   const payload =
     input.kind === 'pin-skill'
       ? { pinned: input.pinned }
       : input.kind === 'write-memory'
         ? { content: input.content, baseSha256: input.baseSha256 }
         : {};
-  const kinds: ActionKind[] = skill ? ['discard-skill', 'pin-skill'] : ['write-memory'];
-  return db.transaction(async (tx) => {
-    await tx
-      .delete(agentRuntimeAction)
-      .where(
-        and(
-          eq(agentRuntimeAction.agentId, agentId),
-          eq(agentRuntimeAction.target, target),
-          inArray(agentRuntimeAction.kind, kinds),
-        ),
-      );
-    const [row] = await tx
-      .insert(agentRuntimeAction)
-      .values({ agentId, kind: input.kind, target, payload })
-      .returning();
-    return toRow(row);
-  });
+  return db.transaction((tx) => insertAction(tx, agentId, input.kind, target, payload));
 }
 
 // A done action is deleted; a failed one keeps its error, which the owner sees.
@@ -150,24 +167,34 @@ export async function completeRuntimeActions(
   }
 }
 
-export async function getLearnedSkill(agentId: number, path: string): Promise<LearnedSkill> {
-  const { learned } = await runtimeOf(agentId);
+function learnedSkillAt(learned: LearnedSkill[], path: string): LearnedSkill {
   const skill = learned.find((entry) => entry.path === path);
   if (!skill) throw new HttpError(404, 'Learned skill not found');
   return skill;
 }
 
+export async function getLearnedSkill(agentId: number, path: string): Promise<LearnedSkill> {
+  return learnedSkillAt((await runtimeOf(agentId)).learned, path);
+}
+
 // Copies a skill the agent created into the team's library and enables it on the agent,
 // where the runner then writes it as one of Plan's skills. The agent's own copy is
-// discarded with the same sync, so the agent does not load the skill twice.
+// discarded with the same sync, so the agent does not load the skill twice. A skill with
+// files the library cannot hold, such as scripts, stays with the agent: discarding its
+// copy would take those files from it.
 export async function promoteLearnedSkill(
   teamId: number,
   agentId: number,
   path: string,
 ): Promise<SkillRow> {
-  const skill = await getLearnedSkill(agentId, path);
+  const { inventory, learned } = await runtimeOf(agentId);
+  assertActionable(inventory, path);
+  const skill = learnedSkillAt(learned, path);
   if (skill.truncated || !skill.markdown.trim()) {
     throw new HttpError(409, 'The skill is too large to take over');
+  }
+  if (skill.otherFiles > 0) {
+    throw new HttpError(409, 'The skill has files the skill library cannot hold, such as scripts');
   }
   const created = await createSkillFromFiles(teamId, {
     name: skill.name,
@@ -179,7 +206,9 @@ export async function promoteLearnedSkill(
       contentType: 'text/markdown',
     })),
   });
-  await db.insert(agentSkillLink).values({ agentId, skillId: created.id }).onConflictDoNothing();
-  await queueRuntimeAction(agentId, { kind: 'discard-skill', path });
+  await db.transaction(async (tx) => {
+    await tx.insert(agentSkillLink).values({ agentId, skillId: created.id }).onConflictDoNothing();
+    await insertAction(tx, agentId, 'discard-skill', path, {});
+  });
   return created;
 }

@@ -3,7 +3,7 @@ import Markdown from '@/components/common/Markdown';
 import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
 import { useTeamQuery } from '@/services/teams.service';
-import { useAgentSection } from '../../context/agentSection';
+import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { useLearnedSkillQuery, usePromoteLearnedSkill } from '../../services/agentLearning.service';
 
 // The content of a skill the agent created, as its runner last reported it, and the way
@@ -24,7 +24,10 @@ export default function AgentLearnedSkillDialog({
   const t = useTranslations('teams.agents.abilities.learning');
   const tCommon = useTranslations('common');
   const { teamId } = useAgentSection();
-  const canPromote = useTeamQuery(teamId).data?.permissions.agent_skills.create ?? false;
+  // Taking a skill over also enables it on the agent and discards the agent's copy.
+  const skillRights = useTeamQuery(teamId).data?.permissions.agent_skills;
+  const canPromote =
+    useAgentCan()('edit') && (skillRights?.create ?? false) && (skillRights?.edit ?? false);
   const query = useLearnedSkillQuery(teamId, agentId, path);
   const promote = usePromoteLearnedSkill(teamId, agentId);
   const skill = query.data;
@@ -63,7 +66,7 @@ export default function AgentLearnedSkillDialog({
         <Button type="button" variant="outline" onClick={onClose}>
           {tCommon('close')}
         </Button>
-        {canPromote && skill && !skill.truncated && (
+        {canPromote && skill && !skill.truncated && skill.otherFiles === 0 && (
           <Button
             type="button"
             disabled={promote.isPending}

@@ -636,7 +636,7 @@
         "promote": "纳入技能库",
         "promoted": "{name} 已加入技能库并为该代理启用。",
         "tooLarge": "该技能过大，无法显示或纳入技能库。",
-        "otherFiles": "有 {count, plural, other {# 个非 Markdown 文件}}会留在代理的配置文件中；技能库只保存 Markdown。",
+        "otherFiles": "有 {count, plural, other {# 个文件}}不是 Markdown（例如脚本）。技能库只保存 Markdown，因此该技能保留在代理处。",
         "memorySize": "{chars, plural, other {# 个字符}}",
         "memoryEdit": "编辑",
         "memoryClear": "清空",

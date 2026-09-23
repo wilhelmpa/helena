@@ -636,7 +636,7 @@
         "promote": "Взять в библиотеку",
         "promoted": "{name} теперь в библиотеке навыков и включён для агента.",
         "tooLarge": "Этот навык слишком большой, чтобы показать его или взять в библиотеку.",
-        "otherFiles": "{count, plural, one {# файл не в Markdown остаётся} few {# файла не в Markdown остаются} many {# файлов не в Markdown остаются} other {# файла не в Markdown остаются}} в профиле агента; библиотека хранит только Markdown.",
+        "otherFiles": "{count, plural, one {# файл не в Markdown} few {# файла не в Markdown} many {# файлов не в Markdown} other {# файла не в Markdown}}, например скрипт. Библиотека навыков хранит только Markdown, поэтому этот навык остаётся у агента.",
         "memorySize": "{chars, plural, one {# символ} few {# символа} many {# символов} other {# символа}}",
         "memoryEdit": "Изменить",
         "memoryClear": "Очистить",

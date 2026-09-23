@@ -636,7 +636,7 @@
         "promote": "Take into library",
         "promoted": "{name} is in the skill library now and enabled on the agent.",
         "tooLarge": "This skill is too large to show or take over.",
-        "otherFiles": "{count, plural, one {# file that is not Markdown stays} other {# files that are not Markdown stay}} in the agent's profile; the library holds Markdown only.",
+        "otherFiles": "{count, plural, one {# file is not Markdown} other {# files are not Markdown}}, such as a script. The skill library holds Markdown only, so this skill stays with the agent.",
         "memorySize": "{chars, plural, one {# character} other {# characters}}",
         "memoryEdit": "Edit",
         "memoryClear": "Clear",

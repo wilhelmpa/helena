@@ -635,7 +635,7 @@
         "promote": "In Bibliothek übernehmen",
         "promoted": "{name} ist jetzt in der Skill-Bibliothek und für den Agenten aktiviert.",
         "tooLarge": "Dieser Skill ist zu groß, um ihn anzuzeigen oder zu übernehmen.",
-        "otherFiles": "{count, plural, one {# Datei, die kein Markdown ist, bleibt} other {# Dateien, die kein Markdown sind, bleiben}} im Profil des Agenten; die Bibliothek enthält nur Markdown.",
+        "otherFiles": "{count, plural, one {# Datei ist kein Markdown} other {# Dateien sind kein Markdown}}, etwa ein Skript. Die Skill-Bibliothek enthält nur Markdown, daher bleibt dieser Skill beim Agenten.",
         "memorySize": "{chars, plural, one {# Zeichen} other {# Zeichen}}",
         "memoryEdit": "Bearbeiten",
         "memoryClear": "Leeren",

@@ -636,7 +636,7 @@
         "promote": "Ambil ke pustaka",
         "promoted": "{name} kini ada di pustaka skill dan diaktifkan untuk agen.",
         "tooLarge": "Skill ini terlalu besar untuk ditampilkan atau diambil.",
-        "otherFiles": "{count, plural, other {# file yang bukan Markdown tetap}} ada di profil agen; pustaka hanya menyimpan Markdown.",
+        "otherFiles": "{count, plural, other {# file bukan Markdown}}, misalnya skrip. Pustaka skill hanya menyimpan Markdown, jadi skill ini tetap pada agen.",
         "memorySize": "{chars, plural, other {# karakter}}",
         "memoryEdit": "Edit",
         "memoryClear": "Kosongkan",

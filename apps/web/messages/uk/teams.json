@@ -636,7 +636,7 @@
         "promote": "Узяти до бібліотеки",
         "promoted": "{name} тепер у бібліотеці навичок і ввімкнено для агента.",
         "tooLarge": "Ця навичка завелика, щоб показати її або взяти до бібліотеки.",
-        "otherFiles": "{count, plural, one {# файл не в Markdown залишається} few {# файли не в Markdown залишаються} many {# файлів не в Markdown залишаються} other {# файлу не в Markdown залишаються}} у профілі агента; бібліотека зберігає лише Markdown.",
+        "otherFiles": "{count, plural, one {# файл не в Markdown} few {# файли не в Markdown} many {# файлів не в Markdown} other {# файлу не в Markdown}}, наприклад скрипт. Бібліотека навичок зберігає лише Markdown, тому ця навичка залишається в агента.",
         "memorySize": "{chars, plural, one {# символ} few {# символи} many {# символів} other {# символу}}",
         "memoryEdit": "Змінити",
         "memoryClear": "Очистити",

@@ -636,7 +636,7 @@
         "promote": "Levar para a biblioteca",
         "promoted": "{name} agora está na biblioteca de skills e ativada para o agente.",
         "tooLarge": "Esta skill é grande demais para ser mostrada ou levada para a biblioteca.",
-        "otherFiles": "{count, plural, one {# arquivo que não é Markdown fica} other {# arquivos que não são Markdown ficam}} no perfil do agente; a biblioteca guarda só Markdown.",
+        "otherFiles": "{count, plural, one {# arquivo não é Markdown} other {# arquivos não são Markdown}}, como um script. A biblioteca de skills guarda só Markdown, então esta skill fica com o agente.",
         "memorySize": "{chars, plural, one {# caractere} other {# caracteres}}",
         "memoryEdit": "Editar",
         "memoryClear": "Limpar",

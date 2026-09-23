@@ -19,7 +19,7 @@ const webScrape = {
   name: 'web-scrape',
   markdown: '---\nname: web-scrape\ndescription: Scrape a site politely\n---\n\n# Web scrape\n',
   files: [{ path: 'references/sites.md', content: '# Sites' }],
-  otherFiles: 1,
+  otherFiles: 0,
   truncated: false,
 };
 
@@ -335,17 +335,23 @@ describe('agent learning', () => {
     expect(again.status).toBe(409);
   });
 
-  it('refuses to take over a skill whose content the runner left out', async () => {
+  it('leaves a skill with the agent when the library cannot hold all of it', async () => {
     const { asOwner, asRunner, teamId, agentId } = await setup();
+    const promote = () =>
+      agentRoute(asOwner, teamId, agentId)['learned-skills'].promote.post({
+        path: 'research/web-scrape',
+      });
+
     await report(asRunner, {
       learnedSkills: [{ ...webScrape, markdown: '', files: [], truncated: true }],
     });
+    expect((await promote()).status).toBe(409);
+    // A script would be archived with the agent's copy.
+    await report(asRunner, { learnedSkills: [{ ...webScrape, otherFiles: 1 }] });
+    expect((await promote()).status).toBe(409);
 
-    const res = await agentRoute(asOwner, teamId, agentId)['learned-skills'].promote.post({
-      path: 'research/web-scrape',
-    });
-    expect(res.status).toBe(409);
     expect((await asOwner.teams({ teamId })['agent-skills'].get()).data!.items).toEqual([]);
+    expect((await agentRoute(asOwner, teamId, agentId)['runtime-actions'].get()).data).toEqual([]);
   });
 
   it('lets a member act only with the rights to it', async () => {
@@ -378,6 +384,24 @@ describe('agent learning', () => {
     ).toBe(403);
 
     // Someone outside the team does not see the agent at all.
+    // Taking a skill over also enables it on the agent and discards the agent's copy.
+    const skillManager = await createRole(asOwner, 'MKT', {
+      name: 'Skill manager',
+      permissions: {
+        ai_agents: { read: true },
+        agent_skills: { read: true, create: true, edit: true },
+      },
+    });
+    const asSkillManager = await addProjectMember(asOwner, 'MKT', skillManager.data!.id);
+    expect(
+      (
+        await agentRoute(asSkillManager, teamId, agentId)['learned-skills'].promote.post({
+          path: 'research/web-scrape',
+        })
+      ).status,
+    ).toBe(403);
+    expect((await asOwner.teams({ teamId })['agent-skills'].get()).data!.items).toEqual([]);
+
     const outsider = authedApi((await signUpTestUser()).cookie);
     expect((await agentRoute(outsider, teamId, agentId)['runtime-actions'].get()).status).toBe(404);
   });

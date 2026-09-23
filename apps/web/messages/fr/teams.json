@@ -636,7 +636,7 @@
         "promote": "Reprendre dans la bibliothèque",
         "promoted": "{name} est maintenant dans la bibliothèque de compétences et activée pour l'agent.",
         "tooLarge": "Cette compétence est trop grande pour être affichée ou reprise.",
-        "otherFiles": "{count, plural, one {# fichier qui n'est pas en Markdown reste} other {# fichiers qui ne sont pas en Markdown restent}} dans le profil de l'agent ; la bibliothèque ne contient que du Markdown.",
+        "otherFiles": "{count, plural, one {# fichier n'est pas en Markdown} other {# fichiers ne sont pas en Markdown}}, par exemple un script. La bibliothèque de compétences ne contient que du Markdown, cette compétence reste donc chez l'agent.",
         "memorySize": "{chars, plural, one {# caractère} other {# caractères}}",
         "memoryEdit": "Modifier",
         "memoryClear": "Vider",
