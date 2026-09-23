@@ -94,9 +94,16 @@ async function verifyToken(token, expectedKind) {
   return payload;
 }
 
+// `id -g <name>` resolves a *user*'s primary group, which is the wrong answer for
+// a group that has no same-named user (e.g. a pure group like volition-private) --
+// it happens to work for www-data only because that distribution also ships a
+// www-data user with a matching primary group. getent's group database is the
+// one that actually maps an arbitrary group name to a gid.
 async function resolveGid(groupName) {
-  const { stdout } = await run('id', ['-g', groupName]);
-  return Number(stdout.trim());
+  const { stdout } = await run('getent', ['group', groupName]);
+  const gid = stdout.split(':')[2];
+  if (!gid) throw new Error(`Unknown group: ${groupName}`);
+  return Number(gid);
 }
 
 // A Unix socket Node creates is owned by this process (wilhelmpa) with a mode
@@ -215,6 +222,14 @@ function safeOrigin(request) {
 // trusts the token's own `kind` claim over the URL -- verifyToken checks both
 // agree. A malformed path or an unknown kind/name is rejected before the token is
 // even looked at.
+//
+// wetty is started with --base /focus/owner-terminal/<kind>/<name> (see session()
+// below) and does its own routing against that base, the same way the project
+// terminal's wetty instances do (project-terminal-router.mjs) -- so the *full*
+// incoming path is what has to reach it. Stripping the prefix here, instead of
+// forwarding request.url unchanged, makes wetty see an unrecognised path and
+// 301 to what it thinks is the un-prefixed one, which is not reachable through
+// this router at all.
 function requestTarget(request) {
   if (!safeHost(request.headers.host) || !safeOrigin(request)) return { status: 403 };
   const url = new URL(request.url, 'http://owner-terminal.invalid');
@@ -228,7 +243,7 @@ function requestTarget(request) {
   const [, kind, name] = match;
   if (!KINDS.has(kind) || !slugFrom(name)) return { status: 400 };
   const token = request.headers['x-owner-terminal-token'];
-  return { kind, name, upstreamPath: url.pathname.slice(`/focus/owner-terminal/${kind}`.length) || '/', token };
+  return { kind, name, upstreamPath: request.url, token };
 }
 
 function upstreamHeaders(headers) {

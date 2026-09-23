@@ -128,14 +128,17 @@ test('rejects untrusted hosts, origins and ambiguous or unknown-kind paths', () 
   }
 });
 
-test('a valid path carries the kind, name and upstream path through', () => {
+test('a valid path carries the kind, name and full upstream path through', () => {
+  // wetty is started with --base /focus/owner-terminal/<kind>/<name> and routes
+  // against that itself, so the full path (unstripped) is what has to reach it.
+  const url = '/focus/owner-terminal/helena-dev-claude/main/socket.io/';
   const target = requestTarget({
-    url: '/focus/owner-terminal/helena-dev-claude/main/socket.io/',
+    url,
     headers: { host: 'kingston-server.local', 'x-owner-terminal-token': 'abc.def' },
   });
   assert.deepEqual(
     { kind: target.kind, name: target.name, upstreamPath: target.upstreamPath, token: target.token },
-    { kind: 'helena-dev-claude', name: 'main', upstreamPath: '/main/socket.io/', token: 'abc.def' },
+    { kind: 'helena-dev-claude', name: 'main', upstreamPath: url, token: 'abc.def' },
   );
 });
 
