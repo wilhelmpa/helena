@@ -15,7 +15,8 @@
     "assigned": "Asignación",
     "mentioned": "Mención",
     "commented": "Comentario",
-    "state_changed": "Estado cambiado"
+    "state_changed": "Estado cambiado",
+    "approval_requested": "Aprobación solicitada"
   },
   "actions": {
     "markRead": "Marcar como leída",
@@ -32,7 +33,8 @@
     "mentioned": "{who} te ha mencionado",
     "commented": "{who} ha comentado",
     "stateChanged": "{who} ha cambiado el estado de {from} a {to}",
-    "stateChangedPlain": "{who} ha cambiado el estado"
+    "stateChangedPlain": "{who} ha cambiado el estado",
+    "approval_requested": "{who} solicita tu aprobación"
   },
   "hub": {
     "messages": "Messages",

@@ -167,7 +167,8 @@
       "delegation": "berjalan saat pendelegasian",
       "field": "berjalan pada bidang",
       "manual": "dijalankan secara manual",
-      "schedule": "berjalan sesuai jadwal"
+      "schedule": "berjalan sesuai jadwal",
+      "approval": "dijalankan setelah keputusan persetujuan"
     }
   },
   "agentHealth": {

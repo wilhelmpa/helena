@@ -148,7 +148,7 @@ export type AgentRunStatus = 'pending' | 'success' | 'failed' | 'canceled';
 export interface AgentRun {
   id: number;
   status: AgentRunStatus;
-  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual';
+  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
   issueId: number | null;
   issueIdentifier: string | null;
   issueTitle: string | null;

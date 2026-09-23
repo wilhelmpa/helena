@@ -15,7 +15,8 @@
     "assigned": "Ditetapkan",
     "mentioned": "Disebutkan",
     "commented": "Diberi komentar",
-    "state_changed": "Status diubah"
+    "state_changed": "Status diubah",
+    "approval_requested": "Persetujuan diminta"
   },
   "actions": {
     "markRead": "Tandai sudah dibaca",
@@ -32,7 +33,8 @@
     "mentioned": "{who} menyebut Anda",
     "commented": "{who} berkomentar",
     "stateChanged": "{who} mengubah status dari {from} ke {to}",
-    "stateChangedPlain": "{who} mengubah status"
+    "stateChangedPlain": "{who} mengubah status",
+    "approval_requested": "{who} meminta persetujuan Anda"
   },
   "hub": {
     "messages": "Messages",

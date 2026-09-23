@@ -459,6 +459,7 @@
     "endOfHistory": "Akhir riwayat",
     "manualTask": "Tugas manual",
     "scheduledTask": "Tugas terjadwal",
+    "approvalTask": "Keputusan persetujuan",
     "failed": "Gagal",
     "task": "Tugas",
     "error": "Kesalahan",

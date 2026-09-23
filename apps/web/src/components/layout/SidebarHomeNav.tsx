@@ -8,6 +8,7 @@ import {
   ListTodo,
   Plug,
   Radio,
+  ShieldCheck,
   UsersRound,
   Wrench,
 } from 'lucide-react';
@@ -20,13 +21,16 @@ import {
   SidebarMenu,
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
+import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
+import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 
 const icons = {
   overview: LayoutGrid,
   allWorkItems: ListTodo,
   inbox: Inbox,
+  approvals: ShieldCheck,
   agentPool: Bot,
   organization: Building2,
   skills: BookText,
@@ -41,14 +45,23 @@ const GROUPS: HomeNavigationGroup[] = ['work', 'agents', 'globalSettings'];
 
 // The sidebar while no project is selected: the work across every project, the
 // team's agents, and the settings every project shares. A selected project shows its
-// own navigation instead.
-export default function SidebarHomeNav({ teamId }: { teamId: number | null }) {
+// own navigation instead. `teamIds` are the teams of the reader's projects, whose
+// approval requests move the approvals badge.
+export default function SidebarHomeNav({
+  teamId,
+  teamIds,
+}: {
+  teamId: number | null;
+  teamIds: number[];
+}) {
   const pathname = usePathname();
   const t = useTranslations('nav');
   const { vaultEnabled } = runtimeEnv().workspace;
   const items = homeNavigation(teamId, vaultEnabled);
+  const pendingApprovals =
+    (usePendingApprovalCount().data?.count ?? 0) + (useWorkflowGates().data?.items.length ?? 0);
 
-  return GROUPS.map((group) => {
+  const groups = GROUPS.map((group) => {
     const groupItems = items.filter((item) => item.group === group);
     if (groupItems.length === 0) return null;
     return (
@@ -64,6 +77,7 @@ export default function SidebarHomeNav({ teamId }: { teamId: number | null }) {
                 label={t(item.id)}
                 active={pathname === item.href || pathname.startsWith(item.href + '/')}
                 disabled={false}
+                badge={item.id === 'approvals' ? pendingApprovals : undefined}
               />
             ))}
           </SidebarMenu>
@@ -71,4 +85,12 @@ export default function SidebarHomeNav({ teamId }: { teamId: number | null }) {
       </SidebarGroup>
     );
   });
+  return (
+    <>
+      {teamIds.map((id) => (
+        <SidebarApprovalsRefresh key={id} teamId={id} />
+      ))}
+      {groups}
+    </>
+  );
 }

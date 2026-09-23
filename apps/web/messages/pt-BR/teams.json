@@ -459,6 +459,7 @@
     "endOfHistory": "Fim do histórico",
     "manualTask": "Tarefa manual",
     "scheduledTask": "Tarefa agendada",
+    "approvalTask": "Decisão de aprovação",
     "failed": "Com falha",
     "task": "Tarefa",
     "error": "Erro",

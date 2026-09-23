@@ -1,0 +1,35 @@
+{
+  "hint": "Agen meminta persetujuan di sini sebelum mengirim, memublikasikan, membayar, atau menghapus sesuatu di luar Plan, dan alur kerja menunggu di sini pada gerbang persetujuannya. Keputusan dan catatan Anda memulai langkah berikutnya.",
+  "pending": "Menunggu",
+  "decided": "Diputuskan",
+  "empty": {
+    "pending": "Tidak ada yang perlu diputuskan",
+    "decided": "Belum ada keputusan"
+  },
+  "emptyHint": {
+    "pending": "Saat agen meminta persetujuan sebelum bertindak di luar Plan, permintaannya muncul di sini.",
+    "decided": "Permintaan yang disetujui dan ditolak muncul di sini."
+  },
+  "kind": {
+    "send": "Kirim",
+    "publish": "Publikasikan",
+    "pay": "Bayar",
+    "delete": "Hapus",
+    "other": "Lainnya"
+  },
+  "requestedBy": "{agent} (@{username}) di {project}",
+  "notePlaceholder": "Catatan untuk keputusan Anda (opsional)",
+  "approve": "Setujui",
+  "reject": "Tolak",
+  "approvedToast": "Disetujui. Agen mendapat eksekusi baru dengan keputusan Anda.",
+  "rejectedToast": "Ditolak. Agen mendapat eksekusi baru dengan keputusan Anda.",
+  "approvedBy": "Disetujui oleh {name}",
+  "rejectedBy": "Ditolak oleh {name}",
+  "someone": "seseorang",
+  "workflows": "Persetujuan alur kerja",
+  "workflowsIncomplete": "Alur kerja beberapa proyek tidak dapat dibaca, jadi persetujuannya mungkin tidak tampil di sini.",
+  "gateOf": "{workflow} di {project}",
+  "effects": "Dijalankan setelah disetujui:",
+  "gateApprovedToast": "Disetujui. Alur kerja berlanjut.",
+  "gateRejectedToast": "Ditolak. Alur kerja berakhir tanpa efek ini."
+}

@@ -89,7 +89,8 @@
       "assigned": "الإسناد إلى مهمة",
       "mentioned": "الإشارة في مهمة",
       "commented": "تعليق جديد على مهمة تتابعها",
-      "state_changed": "تغيّر الحالة في مهمة تتابعها"
+      "state_changed": "تغيّر الحالة في مهمة تتابعها",
+      "approval_requested": "يطلب وكيل موافقتك"
     },
     "eventsTitle": "الأحداث",
     "telegramAccount": "حساب Telegram",

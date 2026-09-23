@@ -30,6 +30,7 @@ export const vaultPath = () => '/vault';
 // The Home pages that read across every project: the task list and the inbox.
 export const tasksPath = () => '/tasks';
 export const globalInboxPath = () => '/inbox';
+export const approvalsPath = () => '/approvals';
 
 // Public read-only share pages (no auth). The token is the unguessable share key.
 export const shareIssuePath = (token: string) => `/share/issue/${token}`;

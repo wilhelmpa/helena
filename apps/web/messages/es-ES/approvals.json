@@ -1,0 +1,35 @@
+{
+  "hint": "Los agentes piden aprobación aquí antes de enviar, publicar, pagar o eliminar algo fuera de Plan, y los flujos de trabajo esperan aquí en su punto de aprobación. Tu decisión y tu nota inician el siguiente paso.",
+  "pending": "Pendientes",
+  "decided": "Decididas",
+  "empty": {
+    "pending": "Nada que decidir",
+    "decided": "Aún no hay decisiones"
+  },
+  "emptyHint": {
+    "pending": "Cuando un agente pida aprobación antes de actuar fuera de Plan, la solicitud aparecerá aquí.",
+    "decided": "Aquí aparecen las solicitudes aprobadas y rechazadas."
+  },
+  "kind": {
+    "send": "Enviar",
+    "publish": "Publicar",
+    "pay": "Pagar",
+    "delete": "Eliminar",
+    "other": "Otro"
+  },
+  "requestedBy": "{agent} (@{username}) en {project}",
+  "notePlaceholder": "Nota con tu decisión (opcional)",
+  "approve": "Aprobar",
+  "reject": "Rechazar",
+  "approvedToast": "Aprobada. El agente recibe una nueva ejecución con tu decisión.",
+  "rejectedToast": "Rechazada. El agente recibe una nueva ejecución con tu decisión.",
+  "approvedBy": "Aprobada por {name}",
+  "rejectedBy": "Rechazada por {name}",
+  "someone": "alguien",
+  "workflows": "Aprobaciones de flujos de trabajo",
+  "workflowsIncomplete": "No se han podido leer los flujos de trabajo de algunos proyectos, así que aquí pueden faltar sus aprobaciones.",
+  "gateOf": "{workflow} en {project}",
+  "effects": "Se ejecuta al aprobar:",
+  "gateApprovedToast": "Aprobada. El flujo de trabajo continúa.",
+  "gateRejectedToast": "Rechazada. El flujo de trabajo termina sin estos efectos."
+}

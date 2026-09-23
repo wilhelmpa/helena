@@ -89,7 +89,8 @@
       "assigned": "Assigned to an issue",
       "mentioned": "Mentioned on an issue",
       "commented": "New comment on an issue you watch",
-      "state_changed": "State changed on an issue you watch"
+      "state_changed": "State changed on an issue you watch",
+      "approval_requested": "An agent asks for your approval"
     },
     "eventsTitle": "Events",
     "telegramAccount": "Telegram account",

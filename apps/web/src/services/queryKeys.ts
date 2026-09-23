@@ -252,6 +252,13 @@ export const qk = {
   notifications: (projectKey: string, filters?: unknown) =>
     ['notifications', projectKey, filters ?? {}] as const,
   notificationsUnread: (projectKey: string) => ['notificationsUnread', projectKey] as const,
+  // The approvals inbox: agents' requests, the pending count of the sidebar badge, and
+  // the workflow runs waiting at an approval gate. `anyApprovals` covers all three.
+  anyApprovals: ['approvals'] as const,
+  approvalLists: ['approvals', 'list'] as const,
+  approvals: (status: string, params: unknown) => ['approvals', 'list', status, params] as const,
+  approvalsPendingCount: ['approvals', 'pendingCount'] as const,
+  workflowGates: ['approvals', 'workflowGates'] as const,
   hubInboxSources: (teamId: number) => ['hubInbox', teamId, 'sources'] as const,
   hubInboxThreads: (teamId: number, filters: unknown) =>
     ['hubInbox', teamId, 'threads', filters] as const,
