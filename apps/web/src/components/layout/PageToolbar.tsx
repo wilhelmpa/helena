@@ -92,12 +92,14 @@ export function PageToolbar({ children }: { children: ReactNode }) {
     if (width > lastWidth.current) setLevel(0);
     lastWidth.current = width;
   }, [width]);
-  // After every render: still overflowing, fold one more piece.
+  // After a render that may have changed the width of what is in the row: still
+  // overflowing, fold one more piece. Bounded by LEVELS, so it settles after at most
+  // four steps.
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element || level >= LEVELS) return;
     if (element.scrollWidth > element.clientWidth + 1) setLevel(level + 1);
-  });
+  }, [level, width, children]);
   return (
     <ShellHeaderRow className="gap-1 bg-background px-3">
       <div ref={ref} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
