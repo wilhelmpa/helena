@@ -8,14 +8,12 @@ import { Button } from '@/components/ui/button';
 // and the secrets its values come from.
 export function McpServerRow({
   server,
-  canEdit,
-  canDelete,
+  canManage,
   onEdit,
   onDelete,
 }: {
   server: McpServer;
-  canEdit: boolean;
-  canDelete: boolean;
+  canManage: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -59,8 +57,8 @@ export function McpServerRow({
           </div>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {canEdit && (
+      {canManage && (
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
@@ -70,8 +68,6 @@ export function McpServerRow({
           >
             <Pencil className="size-4" />
           </Button>
-        )}
-        {canDelete && (
           <Button
             variant="ghost"
             size="icon"
@@ -81,8 +77,8 @@ export function McpServerRow({
           >
             <Trash2 className="size-4" />
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </li>
   );
 }

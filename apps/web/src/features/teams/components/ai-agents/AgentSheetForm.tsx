@@ -288,8 +288,9 @@ export function AgentSheetForm({
     )
   ) : null;
 
+  // Shown once the agent's own servers are known, so a toggle never starts from none.
   const mcpServersContent =
-    canReadTools && mcpLibraryQuery.data ? (
+    canReadTools && mcpLibraryQuery.data && (isCreate || mcpServerIds !== null) ? (
       <AgentLibraryMcpServers
         teamId={teamId}
         servers={mcpLibraryQuery.data}

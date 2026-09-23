@@ -329,6 +329,7 @@
   "mcpServers": {
     "title": "Server MCP",
     "hint": "Server yang dijalankan agen Hermes tim. Aktifkan server di halaman agen.",
+    "managerOnly": "Hanya pemilik dan manajer tim yang dapat menambah atau mengubah server.",
     "add": "Tambah server MCP",
     "edit": "Edit server MCP",
     "delete": "Hapus server MCP",

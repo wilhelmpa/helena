@@ -338,20 +338,22 @@ function hermesValues(values: RuntimeMcpValue[]): Record<string, string> {
 }
 
 // The mcp_servers Hermes layers over its config.yaml for this agent: the agent's own
-// servers, and the servers of the Hermes configuration the policy turns off. Null when
-// there is neither.
+// servers, and the servers of config.yaml the policy turns off. Null when there is neither.
+// An own server may not take the name of a toolset or a server of the profile: Hermes names
+// a server's toolset after it.
 export function hermesMcpServers(
   servers: RuntimeMcpServer[],
-  globalServers: string[],
+  profile: HermesProfile | undefined,
   denied: string[],
 ): Record<string, unknown> | null {
   const config: Record<string, unknown> = {};
+  const taken = [...(profile?.toolsets ?? []), ...(profile?.mcpServers ?? [])];
   for (const server of servers) {
     if (!MCP_SERVER_NAME.test(server.name) || server.name in config) {
       throw new Error('runtime policy contains an invalid MCP server name');
     }
-    if (globalServers.includes(server.name)) {
-      throw new Error(`MCP server ${server.name} is also configured in Hermes`);
+    if (taken.includes(server.name)) {
+      throw new Error(`MCP server ${server.name} has the name of a Hermes toolset or server`);
     }
     config[server.name] =
       server.transport === 'stdio'
@@ -362,7 +364,7 @@ export function hermesMcpServers(
             headers: hermesValues(server.headers),
           };
   }
-  for (const name of globalServers) {
+  for (const name of profile?.mcpServers ?? []) {
     if (denied.includes(name)) config[name] = { enabled: false };
   }
   return Object.keys(config).length > 0 ? config : null;
@@ -389,13 +391,13 @@ export class HermesPolicyMaterializer {
   // The directory Hermes reads as HERMES_MANAGED_DIR: its config.yaml is merged over the
   // profile's own, which the agents share, and cannot be changed from inside Hermes.
   readonly managedDir: string;
-  private readonly globalMcpServers: string[];
+  private readonly profile: HermesProfile | undefined;
 
-  constructor(options: { hermesHome: string; globalMcpServers?: string[] }) {
+  constructor(options: { hermesHome: string; profile?: HermesProfile }) {
     this.hermesHome = assertRoot(options.hermesHome, 'HERMES_HOME');
     this.manifestPath = join(this.hermesHome, 'run', 'itsaplan-policy-manifest.json');
     this.managedDir = join(this.hermesHome, 'run', 'itsaplan-managed');
-    this.globalMcpServers = options.globalMcpServers ?? [];
+    this.profile = options.profile;
   }
 
   // Plan's version always wins. A file found changed outside Plan (an existing SOUL.md on
@@ -414,7 +416,7 @@ export class HermesPolicyMaterializer {
     const servers = snapshot.mcpServers ?? [];
     const mcpServers = hermesMcpServers(
       servers,
-      this.globalMcpServers,
+      this.profile,
       snapshot.runtimePolicy.toolDeny ?? [],
     );
     const oldByKey = new Map((previous?.entries ?? []).map((entry) => [entryKey(entry), entry]));
@@ -468,28 +470,25 @@ export class HermesPolicyMaterializer {
   }
 }
 
-// The `--toolsets` list for Hermes: the profile's toolsets without the denied ones, plus
-// the MCP servers that stay on and the agent's own, which an explicit list has to name to
-// keep. Null while no toolset the profile enables is denied, which leaves Hermes on the
-// profile's own selection; the managed configuration adds the agent's servers to it and
-// turns the denied ones off. Without the profile the runner reports no toolsets, so Plan
-// offers none to turn off.
+// The `--toolsets` list for Hermes: the profile's toolsets and MCP servers without the
+// denied ones, plus the agent's own servers, which an explicit list has to name to keep.
+// Null while nothing the profile enables is denied, which leaves Hermes on the profile's
+// own selection, which the managed configuration adds the agent's servers to. The list
+// holds a denial even while the managed configuration that turns a server off failed to
+// apply. Without the profile the runner reports no toolsets, so Plan offers none to turn
+// off.
 export function allowedToolsets(
   profile: HermesProfile | undefined,
   denied: string[],
   ownMcpServers: string[] = [],
 ): string[] | null {
   if (!profile) return null;
-  const kept = profile.toolsets.filter((name) => !denied.includes(name));
-  if (kept.length === profile.toolsets.length) return null;
-  const toolsets = [
-    ...kept,
-    ...profile.mcpServers.filter((name) => !denied.includes(name)),
-    ...ownMcpServers,
-  ];
+  const enabled = [...profile.toolsets, ...profile.mcpServers];
+  if (!enabled.some((name) => denied.includes(name))) return null;
+  const toolsets = [...enabled, ...ownMcpServers].filter((name) => !denied.includes(name));
   // Hermes reads an empty list as no selection and enables every toolset.
   if (toolsets.length === 0) {
-    throw new Error('Every Hermes toolset is turned off and the profile has no MCP server');
+    throw new Error('Every Hermes toolset and MCP server of the agent is turned off');
   }
   return toolsets;
 }
@@ -548,15 +547,18 @@ export class HermesPolicySynchronizer {
   }
 
   // Read before each run and chat answer, so a secret changed in Plan applies at once.
+  // Plan answers with the secrets of the agent's current servers, which also covers a
+  // revision the other feed applies before Hermes reads the managed configuration.
   async runSettings(): Promise<HermesRunSettings> {
     const toolsets = this.toolsets();
     if (this.mcpSecrets === null) return { toolsets, env: {} };
     const env: Record<string, string> = { HERMES_MANAGED_DIR: this.materializer.managedDir };
-    if (this.mcpSecrets.length > 0) {
-      const values = await this.client.mcpSecrets();
-      // A secret deleted in Plan reaches its server empty.
-      for (const id of this.mcpSecrets) env[mcpSecretVariable(id)] = values[String(id)] ?? '';
+    const values = await this.client.mcpSecrets();
+    for (const [id, value] of Object.entries(values)) {
+      if (/^\d+$/.test(id)) env[mcpSecretVariable(Number(id))] = value;
     }
+    // A secret deleted in Plan reaches its server empty.
+    for (const id of this.mcpSecrets) env[mcpSecretVariable(id)] ??= '';
     return { toolsets, env };
   }
 
@@ -647,10 +649,7 @@ export function hermesPolicySynchronizer(
   if (config.agent !== 'hermes') return null;
   const hermesHome = config.env.HERMES_HOME ?? process.env.HERMES_HOME;
   if (!hermesHome) throw new Error('Hermes policy sync requires HERMES_HOME');
-  const materializer = new HermesPolicyMaterializer({
-    hermesHome,
-    globalMcpServers: config.hermes?.mcpServers,
-  });
+  const materializer = new HermesPolicyMaterializer({ hermesHome, profile: config.hermes });
   return new HermesPolicySynchronizer(client, materializer, {
     inventory: () => readHermesInventory(materializer.hermesHome, config.hermes),
     profile: config.hermes,

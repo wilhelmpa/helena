@@ -25,8 +25,9 @@ import {
 } from './service';
 
 // The team's MCP server library, and the servers enabled on each of its agents. A server
-// starts a command on the machine the agents run on, so none of these routes is an MCP
-// tool: the owner configures them in the UI. The library is small, so its list is whole.
+// starts a command on the machine the agents run on and reads any secret of the team, so
+// only the team's owners and managers, who hold its credentials anyway, add or change one,
+// and none of these routes is an MCP tool. The library is small, so its list is whole.
 export const agentMcpServerRoutes = new Elysia({
   name: 'agent-mcp-servers',
   detail: { tags: ['Agent MCP Servers'] },
@@ -53,7 +54,7 @@ export const agentMcpServerRoutes = new Elysia({
     {
       params: teamParams,
       body: createMcpServerBody,
-      teamPermission: ['agent_tools', 'create'],
+      teamManager: true,
       response: { 201: McpServerResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Add an MCP server',
@@ -74,7 +75,7 @@ export const agentMcpServerRoutes = new Elysia({
     {
       params: mcpServerParams,
       body: updateMcpServerBody,
-      teamPermission: ['agent_tools', 'edit'],
+      teamManager: true,
       response: { 200: McpServerResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Update an MCP server',
@@ -94,7 +95,7 @@ export const agentMcpServerRoutes = new Elysia({
     },
     {
       params: mcpServerParams,
-      teamPermission: ['agent_tools', 'delete'],
+      teamManager: true,
       response: { 204: t.Void(), ...accessErrors },
       detail: {
         summary: 'Delete an MCP server',

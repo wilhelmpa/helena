@@ -1,7 +1,7 @@
 import { db, agentMcpServer, agentMcpServerLink, integrationCredential } from '@repo/db';
 import { and, eq, inArray } from 'drizzle-orm';
 import { decryptSecret } from '@repo/crypto';
-import { iso, HttpError, pgErrorCode } from '#shared/lib';
+import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { SECRET_INTEGRATION_KEY } from '../integrations/catalog';
 
 // The team's library of MCP servers and the servers enabled on each agent. An env or
@@ -154,8 +154,9 @@ function transportFields(input: McpServerInput): {
   return { command: null, args: [], url, env: [], headers };
 }
 
-// The stored columns of a server. The fields its transport does not use are cleared, so a
-// change of transport needs no second request to empty them.
+// The stored columns of a server, and the labels of the team's secrets. The fields its
+// transport does not use are cleared, so a change of transport needs no second request to
+// empty them.
 async function columns(teamId: number, input: McpServerInput) {
   const fields = transportFields(input);
   const labels = await secretLabels(teamId);
@@ -164,19 +165,13 @@ async function columns(teamId: number, input: McpServerInput) {
       throw new HttpError(400, `The secret of ${entry.name} is not a secret of this team.`);
     }
   }
-  return {
+  const values = {
     name: input.name,
     description: (input.description ?? '').trim(),
     transport: input.transport,
     ...fields,
   };
-}
-
-function rethrowDuplicateName(err: unknown): never {
-  if (pgErrorCode(err) === '23505') {
-    throw new HttpError(409, 'An MCP server with this name already exists.');
-  }
-  throw err;
+  return { values, labels };
 }
 
 export async function listMcpServers(teamId: number): Promise<McpServerRow[]> {
@@ -200,15 +195,15 @@ async function getRecord(id: number, teamId: number): Promise<ServerRecord | nul
 }
 
 export async function createMcpServer(teamId: number, input: McpServerInput) {
-  const values = await columns(teamId, input);
+  const { values, labels } = await columns(teamId, input);
   try {
     const [row] = await db
       .insert(agentMcpServer)
       .values({ teamId, ...values })
       .returning();
-    return mapRow(row, await secretLabels(teamId));
+    return mapRow(row, labels);
   } catch (err) {
-    rethrowDuplicateName(err);
+    rethrowDuplicate(err, 'server');
   }
 }
 
@@ -219,7 +214,7 @@ export async function updateMcpServer(
 ): Promise<McpServerRow | null> {
   const existing = await getRecord(id, teamId);
   if (!existing) return null;
-  const values = await columns(teamId, {
+  const { values, labels } = await columns(teamId, {
     name: existing.name,
     description: existing.description,
     transport: existing.transport as McpTransport,
@@ -236,9 +231,9 @@ export async function updateMcpServer(
       .set(values)
       .where(and(eq(agentMcpServer.id, id), eq(agentMcpServer.teamId, teamId)))
       .returning();
-    return mapRow(row, await secretLabels(teamId));
+    return mapRow(row, labels);
   } catch (err) {
-    rethrowDuplicateName(err);
+    rethrowDuplicate(err, 'server');
   }
 }
 

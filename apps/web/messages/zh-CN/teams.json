@@ -329,6 +329,7 @@
   "mcpServers": {
     "title": "MCP 服务器",
     "hint": "团队的 Hermes 代理启动的服务器。在代理页面上启用服务器。",
+    "managerOnly": "只有团队的所有者和管理员可以添加或更改服务器。",
     "add": "添加 MCP 服务器",
     "edit": "编辑 MCP 服务器",
     "delete": "删除 MCP 服务器",

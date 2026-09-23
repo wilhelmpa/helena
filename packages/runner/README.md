@@ -210,10 +210,10 @@ filled in from the profile by whatever sets the runner up:
 "hermes": { "toolsets": ["browser", "file", "terminal", "web"], "mcpServers": ["itsaplan"] }
 ```
 
-A toolset turned off for the agent in Plan is left out of `--toolsets`, which then names the
-remaining toolsets and the MCP servers that stay on. While no toolset is turned off, Hermes uses
-the profile's own selection. Without the `hermes` field no toolsets are reported and none can be
-turned off.
+A toolset or an MCP server of the profile turned off for the agent in Plan is left out of
+`--toolsets`, which then names everything else the profile enables and the agent's own MCP
+servers. While nothing is turned off, Hermes uses the profile's own selection. Without the
+`hermes` field no toolsets are reported and none can be turned off.
 
 ### MCP servers
 
@@ -226,8 +226,9 @@ from the managed directory cannot be changed from inside Hermes.
 
 A value that names one of the team's secrets is written as `${ITSAPLAN_MCP_SECRET_<id>}`. Before
 each run and chat answer the runner reads the values from `GET /agent-runtime/mcp-secrets` and
-passes them to Hermes in those variables, so they are never written to disk. A server named like
-one of `config.yaml` fails the sync.
+passes them to Hermes in those variables, so they are never written to disk. They are part of
+the environment of the Hermes process for that run, which its tools inherit. A server named like
+a toolset or a server of the profile fails the sync.
 
 ## What the coding agent receives
 

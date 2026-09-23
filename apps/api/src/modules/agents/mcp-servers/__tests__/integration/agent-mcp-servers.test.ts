@@ -362,12 +362,20 @@ describe('agent MCP servers', () => {
     expect(team.toolCount).toBe(1);
   });
 
-  it('lets a member read the library when their role grants it, and nothing more', async () => {
+  // A server runs a command with any secret of the team, so the tools permission lets a
+  // member read the library and enable its servers on agents, never change it.
+  it('leaves changing the library to the owners and managers of the team', async () => {
     const { asOwner, teamId } = await setup();
-    await servers(asOwner, teamId).post({ name: 'shopify-dev', transport: 'stdio', command: 'x' });
+    const server = await servers(asOwner, teamId).post({
+      name: 'shopify-dev',
+      transport: 'stdio',
+      command: 'x',
+    });
+    const id = server.data!.id;
+    const agent = await externalAgent(asOwner, 'shopper');
     const role = await createRole(asOwner, 'MKT', {
-      name: 'Tool reader',
-      permissions: { agent_tools: { read: true } },
+      name: 'Tool admin',
+      permissions: { agent_tools: { read: true, create: true, edit: true, delete: true } },
     });
     const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
 
@@ -378,6 +386,12 @@ describe('agent MCP servers', () => {
       command: 'x',
     });
     expect(post.status).toBe(403);
+    expect(
+      (await servers(asMember, teamId)({ mcpServerId: id }).patch({ command: 'y' })).status,
+    ).toBe(403);
+    expect((await servers(asMember, teamId)({ mcpServerId: id }).delete()).status).toBe(403);
+    const enabled = await agentServers(asMember, teamId, agent.id).put({ mcpServerIds: [id] });
+    expect(enabled.status).toBe(200);
 
     const plain = await addProjectMember(asOwner, 'MKT');
     expect((await servers(plain, teamId).get()).status).toBe(403);

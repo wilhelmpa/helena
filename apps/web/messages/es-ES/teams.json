@@ -329,6 +329,7 @@
   "mcpServers": {
     "title": "Servidores MCP",
     "hint": "Los servidores que inician los agentes Hermes del equipo. Activa un servidor en la página de un agente.",
+    "managerOnly": "Solo los propietarios y los responsables del equipo pueden añadir o cambiar un servidor.",
     "add": "Añadir servidor MCP",
     "edit": "Editar servidor MCP",
     "delete": "Eliminar servidor MCP",

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { McpServer } from '@/lib/api/endpoints/agentMcpServers';
-import type { ResourcePermissions } from '@/lib/api/endpoints/roles';
 import { useDeleteMcpServer, useMcpServersQuery } from '@/services/agentMcpServers.service';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/page/EmptyState';
@@ -13,13 +12,14 @@ import { McpServerRow } from './McpServerRow';
 import { ToolSectionHeader } from './ToolSectionHeader';
 
 // The team's MCP server library. A Hermes agent starts the servers enabled on it, which
-// is done on the agent's page.
+// is done on the agent's page. A server runs a command with the team's secrets, so only the
+// team's owners and managers change the library.
 export default function TeamMcpServers({
   teamId,
-  permissions,
+  canManage,
 }: {
   teamId: number;
-  permissions: ResourcePermissions;
+  canManage: boolean;
 }) {
   const t = useTranslations('teams.mcpServers');
   const servers = useMcpServersQuery(teamId).data;
@@ -31,9 +31,9 @@ export default function TeamMcpServers({
     <section className="space-y-3">
       <ToolSectionHeader
         title={t('title')}
-        hint={t('hint')}
+        hint={canManage ? t('hint') : `${t('hint')} ${t('managerOnly')}`}
         action={
-          permissions.create ? (
+          canManage ? (
             <Button size="sm" className="h-8 gap-1.5" onClick={() => setEditing('new')}>
               <Plus className="size-3.5" />
               {t('add')}
@@ -51,8 +51,7 @@ export default function TeamMcpServers({
             <McpServerRow
               key={server.id}
               server={server}
-              canEdit={permissions.edit}
-              canDelete={permissions.delete}
+              canManage={canManage}
               onEdit={() => setEditing(server)}
               onDelete={() => setDeleting(server)}
             />

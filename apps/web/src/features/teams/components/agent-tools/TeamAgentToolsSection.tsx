@@ -38,7 +38,10 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
         <p className="text-sm text-muted-foreground">{t('tools.noAccess')}</p>
       ) : (
         <div className="space-y-10">
-          <TeamMcpServers teamId={teamId} permissions={permissions} />
+          <TeamMcpServers
+            teamId={teamId}
+            canManage={team?.role === 'owner' || team?.role === 'manager'}
+          />
           <section className="space-y-3">
             <ToolSectionHeader
               title={t('tools.title')}
