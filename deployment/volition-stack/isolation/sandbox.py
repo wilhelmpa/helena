@@ -89,9 +89,13 @@ def ensure_links(home: str, links: list[tuple[str, str]]) -> None:
                     continue
                 os.unlink(path)
             elif os.path.lexists(path):
-                print(f'volition-agent-sandbox: {name} in the profile is not a link, left as it is',
+                # Whatever took the link's place (an agent's own "approval guard") is kept
+                # aside, as the runner does, and the link put back.
+                aside = os.path.join(home, 'run', f'{name.replace("/", "-")}.outside-{int(time.time())}')
+                os.makedirs(os.path.dirname(aside), mode=0o700, exist_ok=True)
+                os.rename(path, aside)
+                print(f'volition-agent-sandbox: {name} in the profile was not the link; moved to {aside}',
                       file=sys.stderr, flush=True)
-                continue
             os.symlink(target, path)
         except OSError as error:
             print(f'volition-agent-sandbox: cannot link {name}: {error.strerror}', file=sys.stderr, flush=True)

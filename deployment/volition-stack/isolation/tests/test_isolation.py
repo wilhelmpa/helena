@@ -230,6 +230,23 @@ class SandboxTest(unittest.TestCase):
         self.assertIn('127.0.0.1', env['NO_PROXY'])
         self.assertNotIn('HTTPS_PROXY', sandbox.proxy_environment({3000: '/p'}))
 
+    def test_puts_the_links_back_and_keeps_what_replaced_them(self):
+        home = Path(tempfile.mkdtemp())
+        try:
+            (home / 'plugins' / 'plan-approval-guard').mkdir(parents=True)
+            (home / 'plugins' / 'plan-approval-guard' / '__init__.py').write_text('# not the guard')
+            (home / 'config.yaml').symlink_to('/elsewhere')
+            sandbox.ensure_links(str(home), [('plugins/plan-approval-guard', '/opt/guard'), ('config.yaml', '/etc/c.yaml'),
+                                             ('.env', '/etc/e')])
+            self.assertEqual(os.readlink(home / 'plugins' / 'plan-approval-guard'), '/opt/guard')
+            self.assertEqual(os.readlink(home / 'config.yaml'), '/etc/c.yaml')
+            self.assertEqual(os.readlink(home / '.env'), '/etc/e')
+            aside = list((home / 'run').iterdir())
+            self.assertEqual(len(aside), 1)
+            self.assertTrue((aside[0] / '__init__.py').is_file())
+        finally:
+            shutil.rmtree(home)
+
     def test_reads_the_variable_header_to_the_byte(self):
         read_end, write_end = os.pipe()
         header = json.dumps({'ITSAPLAN_API_KEY': 'k'}).encode()
