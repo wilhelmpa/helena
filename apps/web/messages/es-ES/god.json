@@ -22,7 +22,7 @@
       "email": "Correo"
     },
     "registered": "se unió el {date}",
-    "roleGod": "Dios",
+    "roleGod": "Administrador",
     "roleUser": "Usuario",
     "agent": "Agente",
     "noProviders": "ninguno",

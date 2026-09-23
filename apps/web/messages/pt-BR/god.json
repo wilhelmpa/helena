@@ -22,7 +22,7 @@
       "email": "E-mail"
     },
     "registered": "entrou em {date}",
-    "roleGod": "God",
+    "roleGod": "Administrador",
     "roleUser": "Usuário",
     "agent": "Agente",
     "noProviders": "nenhum",

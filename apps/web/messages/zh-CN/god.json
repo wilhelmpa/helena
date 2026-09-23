@@ -22,7 +22,7 @@
       "email": "邮箱"
     },
     "registered": "注册于 {date}",
-    "roleGod": "实例管理员",
+    "roleGod": "管理员",
     "roleUser": "用户",
     "agent": "代理",
     "noProviders": "无",
