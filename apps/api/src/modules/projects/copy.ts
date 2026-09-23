@@ -33,8 +33,6 @@ import {
 import { GIT_SETTING_KEY } from '#modules/git/service';
 import { getProjectDefaults } from '#modules/settings/service';
 import { listAgents, updateAgent } from '#modules/agents/core/service';
-import { listAllAgentSchedules, createAgentSchedule } from '#modules/agents/schedules/service';
-import { nextCronRun } from '#modules/agents/schedules/cron';
 import { generateSecret } from '#modules/webhooks/service';
 import {
   assertAttachmentStorageCapacity,
@@ -66,7 +64,6 @@ export interface CopyProjectInclude {
   configuration: boolean;
   webhooks: boolean;
   agents: boolean;
-  schedules: boolean;
 }
 
 export const COPY_INCLUDE_KEYS: (keyof CopyProjectInclude)[] = [
@@ -81,7 +78,6 @@ export const COPY_INCLUDE_KEYS: (keyof CopyProjectInclude)[] = [
   'configuration',
   'webhooks',
   'agents',
-  'schedules',
 ];
 
 const ALL_FALSE = Object.fromEntries(
@@ -104,7 +100,7 @@ const DEFAULT_INCLUDE: CopyProjectInclude = {
 
 // Resolves the selection and force-enables the dependencies each entity needs to be
 // copied correctly. Views/actions remap the ids of states, types, labels and fields,
-// so those must be copied too; a schedule cannot exist without its agent.
+// so those must be copied too.
 function normalizeInclude(raw?: Partial<CopyProjectInclude>): CopyProjectInclude {
   const inc: CopyProjectInclude = raw ? { ...ALL_FALSE, ...raw } : { ...DEFAULT_INCLUDE };
   if (inc.customFields) inc.issueTypes = true;
@@ -119,7 +115,6 @@ function normalizeInclude(raw?: Partial<CopyProjectInclude>): CopyProjectInclude
     inc.issueTypes = true;
     inc.labels = true;
   }
-  if (inc.schedules) inc.agents = true;
   return inc;
 }
 
@@ -709,24 +704,6 @@ export async function copyProject(
         },
         ownerId,
       );
-    }
-  }
-
-  // Schedules: re-created against the same agents, which only work in the copy when it
-  // stayed in the team. next_run_at is recomputed from the cron so the copy starts on
-  // its own cadence rather than inheriting a past due time.
-  if (inc.schedules && sameTeam) {
-    for (const s of await listAllAgentSchedules(sourceProjectId, ownerId)) {
-      await createAgentSchedule({
-        projectId: newProject.id,
-        agentId: s.agentId,
-        actorUserId: ownerId,
-        name: s.name,
-        prompt: s.prompt,
-        cron: s.cron,
-        status: s.status,
-        nextRunAt: nextCronRun(s.cron),
-      });
     }
   }
 

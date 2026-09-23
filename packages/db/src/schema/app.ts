@@ -600,45 +600,9 @@ export const aiAgent = pgTable(
   ],
 );
 
-// Recurring autonomous tasks for internal agents. The worker claims rows whose
-// next_run_at is due, advances the cadence, and inserts an agent_run snapshot.
-export const agentSchedule = pgTable(
-  'agent_schedule',
-  {
-    id: serial('id').primaryKey(),
-    agentId: integer('agent_id')
-      .notNull()
-      .references(() => aiAgent.id, { onDelete: 'cascade' }),
-    // The project the schedule's runs work in. An agent belongs to a team and works
-    // in several of its projects, so the schedule names which one; the operator picks
-    // it when they create the schedule.
-    projectId: integer('project_id')
-      .notNull()
-      .references(() => project.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    prompt: text('prompt').notNull(),
-    cron: text('cron').notNull(),
-    timezone: text('timezone').notNull(),
-    status: text('status').notNull().default('active'),
-    nextRunAt: timestamp('next_run_at', { withTimezone: true }).notNull(),
-    lastRunAt: timestamp('last_run_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    check('agent_schedule_status_check', sql`${t.status} IN ('active', 'paused')`),
-    // A schedule works in one project, and one agent works in several projects of
-    // its team, so the same name is free again in each of them.
-    unique().on(t.projectId, t.agentId, t.name),
-    index('agent_schedule_due_idx').on(t.status, t.nextRunAt),
-    index('agent_schedule_agent_idx').on(t.agentId),
-    index('agent_schedule_project_idx').on(t.projectId),
-  ],
-);
-
 // Queued autonomous runs of an internal agent. Mentions and delegations carry an
-// issue; scheduled and manual runs do not. The worker claims due rows with a lease,
-// runs the agent, and records the result for history and retries.
+// issue; manual runs do not. The worker claims due rows with a lease, runs the agent,
+// and records the result for history and retries.
 export const agentRun = pgTable(
   'agent_run',
   {
@@ -647,16 +611,15 @@ export const agentRun = pgTable(
       .notNull()
       .references(() => aiAgent.id, { onDelete: 'cascade' }),
     // The project the run works in, taken from what triggered it: the issue for a
-    // mention or a delegation, the schedule for a scheduled run, the call for a manual
-    // one. Stored on the row so the run keeps its project after the agent leaves that
-    // project, and so the worker hands one to the runtime without reading the agent.
+    // mention or a delegation, the call for a manual one. Stored on the row so the run
+    // keeps its project after the agent leaves that project, and so the worker hands
+    // one to the runtime without reading the agent.
     projectId: integer('project_id')
       .notNull()
       .references(() => project.id, { onDelete: 'cascade' }),
     issueId: integer('issue_id').references(() => issue.id, { onDelete: 'cascade' }),
-    scheduleId: integer('schedule_id').references(() => agentSchedule.id, { onDelete: 'cascade' }),
+    // 'schedule' only marks older runs; nothing queues one any more.
     trigger: text('trigger').notNull().default('delegation'),
-    scheduledFor: timestamp('scheduled_for', { withTimezone: true }),
     // The comment that mentioned the agent, kept for traceability. The prompt is
     // snapshotted into `prompt` so a run still works if the comment is later deleted.
     sourceActivityId: integer('source_activity_id').references(() => issueActivity.id, {
@@ -695,9 +658,7 @@ export const agentRun = pgTable(
       'agent_run_trigger_check',
       sql`${t.trigger} IN ('mention', 'delegation', 'field', 'schedule', 'manual')`,
     ),
-    uniqueIndex('agent_run_schedule_fire_uq').on(t.scheduleId, t.scheduledFor),
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
-    index('agent_run_schedule_idx').on(t.scheduleId),
     index('agent_run_project_idx').on(t.projectId),
   ],
 );

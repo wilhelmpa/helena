@@ -9,8 +9,7 @@ import { createAgent } from '#tests/helpers/agents';
 
 // Agent conversation threads live in Mastra's tables, which carry no foreign key of
 // ours, so they are deleted explicitly when what they are bound to goes away: the
-// agent, its project, or the schedule. Archiving an issue is reversible and drops
-// none of them.
+// agent or its project. Archiving an issue is reversible and drops none of them.
 //
 // The runtime is not exercised — a live model call would be needed to produce a thread
 // — so threads are seeded through the memory module the same way a run creates them.
@@ -55,20 +54,6 @@ async function seedIssueThread(agent: { id: number; projects: { id: number }[] }
     threadId,
     'agent-bot',
     { agentId: agent.id, projectId: agent.projects[0].id, kind: 'run', issueId },
-    'run',
-  );
-  return threadId;
-}
-
-async function seedScheduleThread(
-  agent: { id: number; projects: { id: number }[] },
-  scheduleId: number,
-) {
-  const threadId = `schedule:${scheduleId}`;
-  await ensureThread(
-    threadId,
-    'agent-bot',
-    { agentId: agent.id, projectId: agent.projects[0].id, kind: 'run', scheduleId },
     'run',
   );
   return threadId;
@@ -144,27 +129,6 @@ describe('agent thread cleanup', () => {
 
     expect(await threadExists(`chat:${agent.id}:${owner.userId}:t1`)).toBe(false);
     expect(await threadExists(runThread)).toBe(false);
-  });
-
-  it("deletes a schedule's run thread when the schedule is deleted", async () => {
-    const { asOwner } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
-    const schedules = asOwner.projects({ projectKey: 'MKT' })['agent-schedules'];
-    const created = await schedules.post({
-      agentId: agent.id,
-      name: 'Daily digest',
-      prompt: 'Summarise the board',
-      cron: '0 9 * * *',
-    });
-    const scheduleId = created.data!.id;
-    const thread = await seedScheduleThread(agent, scheduleId);
-    await seedMessage(thread, 'agent-bot');
-
-    const res = await schedules({ scheduleId }).delete();
-    expect(res.status).toBe(204);
-
-    expect(await threadExists(thread)).toBe(false);
-    expect(await messageCount(thread)).toBe(0);
   });
 
   it("keeps an issue's run threads when it is archived", async () => {

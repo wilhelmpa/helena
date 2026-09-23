@@ -138,7 +138,6 @@ function targetInventory() {
       ['project_document', 0],
       ['cycle', 0],
       ['agent_run', 0],
-      ['agent_schedule', 0],
       ['agent_skill', 0],
       ['integration_credential', 0],
       ['mastra_agents', 0],

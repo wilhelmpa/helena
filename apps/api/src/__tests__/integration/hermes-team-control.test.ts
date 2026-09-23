@@ -151,3 +151,169 @@ describe('Hermes stage replay', () => {
     expect(status.data).toMatchObject({ status: 'success', output: 'Done' });
   });
 });
+
+// Each fire of a routine asks Plan, through the bridge, to create a task for the
+// routine's agent or to reopen the routine's task. The routine's task blocks both while
+// it is open.
+describe('routine dispatch', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  async function routineSetup() {
+    const owner = await signUpTestUser({ name: 'Owner' });
+    const asOwner = authedApi(owner.cookie);
+    await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+    const view = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!;
+    const created = await createAgent(asOwner, 'MKT', {
+      name: 'Writer',
+      username: 'writer',
+      kind: 'external',
+      triggerOnAssign: true,
+      delegationDelaySec: 0,
+    });
+    const column = (stateType: string) =>
+      view.columns.find((item) => item.stateType === stateType)!.id;
+    return {
+      owner,
+      asOwner,
+      agent: created.data!.agent,
+      asRunner: apiKeyApi(created.data!.apiKey!),
+      todo: column('unstarted'),
+      done: column('completed'),
+    };
+  }
+
+  const KEY = 'b'.repeat(64);
+  const request = (body: Record<string, unknown> = {}) =>
+    controlApi().internal.orchestration.routine.post({
+      idempotencyKey: KEY,
+      projectRef: 'project:MKT',
+      agentRef: 'agent:writer',
+      title: 'Weekly report',
+      instructions: 'Summarize the week.',
+      mode: 'new',
+      ...body,
+    });
+  const answer = async (body: Record<string, unknown> = {}) => {
+    const res = await request(body);
+    return { status: res.status, data: res.data as unknown as Record<string, unknown> };
+  };
+  const issuesOf = async (asOwner: Api) =>
+    (await asOwner.projects({ projectKey: 'MKT' }).issues.get({ query: {} })).data!;
+
+  it('creates a task in the first unstarted state and delegates it to the agent', async () => {
+    const { owner, asOwner, agent, asRunner, todo } = await routineSetup();
+    const res = await answer({ actorId: owner.userId });
+    expect(res).toEqual({
+      status: 200,
+      data: { idempotencyKey: KEY, outcome: 'created', taskRef: 'task:MKT-1' },
+    });
+    const [task] = await issuesOf(asOwner);
+    expect(task).toMatchObject({
+      sequenceNumber: 1,
+      title: 'Weekly report',
+      description: 'Summarize the week.',
+      columnId: todo,
+      delegateUserId: agent.userId,
+    });
+    const feed = (await asOwner.issues({ issueId: task.id }).feed.get({ query: {} })).data!;
+    expect(feed.items.find((item) => item.action === 'created')?.actorUserId).toBe(owner.userId);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(run).toMatchObject({ trigger: 'delegation', issueIdentifier: 'MKT-1' });
+  });
+
+  it('answers a repeated key with what the first request did and refuses another request', async () => {
+    const { asOwner } = await routineSetup();
+    const first = await answer();
+    expect(await answer()).toEqual(first);
+    expect(await issuesOf(asOwner)).toHaveLength(1);
+    expect((await answer({ title: 'Monthly report' })).status).toBe(409);
+  });
+
+  it('creates two tasks at once for one key only once', async () => {
+    const { asOwner } = await routineSetup();
+    const [first, second] = await Promise.all([answer(), answer()]);
+    expect(second).toEqual(first);
+    expect(await issuesOf(asOwner)).toHaveLength(1);
+  });
+
+  it('skips while the task the routine created last is open and creates the next once it is done', async () => {
+    const { asOwner, done } = await routineSetup();
+    await answer();
+    const [task] = await issuesOf(asOwner);
+
+    const skipped = await answer({ idempotencyKey: 'c'.repeat(64), taskRef: 'task:MKT-1' });
+    expect(skipped.data).toMatchObject({ outcome: 'skipped', taskRef: 'task:MKT-1' });
+    expect(await issuesOf(asOwner)).toHaveLength(1);
+
+    await asOwner.issues({ issueId: task.id }).patch({ columnId: done });
+    const next = await answer({ idempotencyKey: 'd'.repeat(64), taskRef: 'task:MKT-1' });
+    expect(next.data).toMatchObject({ outcome: 'created', taskRef: 'task:MKT-2' });
+  });
+
+  it('reopens a finished task: back to unstarted, a comment and a new run of the agent', async () => {
+    const { asOwner, agent, asRunner, todo, done } = await routineSetup();
+    const task = (
+      await asOwner
+        .projects({ projectKey: 'MKT' })
+        .issues.post({ columnId: done, title: 'Check the backups' })
+    ).data!;
+    await asOwner.issues({ issueId: task.id }).archive.post({});
+
+    const reopen = { mode: 'reopen', taskRef: 'task:MKT-1', instructions: 'Check them again.' };
+    const res = await answer(reopen);
+    expect(res.data).toEqual({ idempotencyKey: KEY, outcome: 'reopened', taskRef: 'task:MKT-1' });
+    const [reopened] = await issuesOf(asOwner);
+    expect(reopened).toMatchObject({
+      id: task.id,
+      columnId: todo,
+      delegateUserId: agent.userId,
+      archivedAt: null,
+    });
+    const feed = (await asOwner.issues({ issueId: task.id }).feed.get({ query: {} })).data!;
+    expect(feed.items.filter((item) => item.kind === 'comment').map((item) => item.body)).toEqual([
+      'Reopened by the schedule "Weekly report".\n\nCheck them again.',
+    ]);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      issueIdentifier: 'MKT-1',
+    });
+
+    expect(await answer(reopen)).toEqual(res);
+    expect(
+      (await asOwner.issues({ issueId: task.id }).feed.get({ query: {} })).data!.items.filter(
+        (item) => item.kind === 'comment',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('leaves an open task to reopen alone', async () => {
+    const { asOwner, todo } = await routineSetup();
+    await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId: todo, title: 'Open' });
+    const res = await answer({ mode: 'reopen', taskRef: 'task:MKT-1' });
+    expect(res.data).toMatchObject({ outcome: 'skipped', taskRef: 'task:MKT-1' });
+  });
+
+  it('rejects an invalid request, a foreign project or agent and a missing task', async () => {
+    const { asOwner } = await routineSetup();
+    for (const body of [
+      { idempotencyKey: 'short' },
+      { projectRef: 'MKT' },
+      { mode: 'later' },
+      { mode: 'reopen' },
+      { title: '' },
+      { instructions: 'x'.repeat(20_001) },
+    ])
+      expect((await request(body)).status).toBe(400);
+    expect((await request({ projectRef: 'project:NOPE' })).status).toBe(404);
+    expect((await request({ agentRef: 'agent:nobody' })).status).toBe(409);
+    expect((await request({ mode: 'reopen', taskRef: 'task:MKT-9' })).status).toBe(404);
+    expect(await issuesOf(asOwner)).toHaveLength(0);
+  });
+
+  it('refuses a caller without the control token', async () => {
+    await routineSetup();
+    const res = await api.internal.orchestration.routine.post({ idempotencyKey: KEY });
+    expect(res.status).toBe(401);
+  });
+});

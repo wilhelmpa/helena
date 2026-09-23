@@ -896,7 +896,7 @@ describe('projects', () => {
         .copy.post({
           key: 'DST',
           name: 'Destination',
-          include: { agents: true, schedules: true },
+          include: { agents: true },
         });
 
       expect((await api.teams({ teamId: target.id })['ai-agents'].get()).data).toEqual([]);

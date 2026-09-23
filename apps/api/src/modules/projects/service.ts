@@ -393,7 +393,7 @@ export async function createHermesProjectCoordinator(
       );
     }
     // The agent owns a dedicated bot user. Deleting that user cascades to its
-    // agent row, team membership, credentials, schedules, and runtime state.
+    // agent row, team membership, credentials, and runtime state.
     await tx.delete(user).where(eq(user.id, existing.userId));
   }
   const userId = crypto.randomUUID();

@@ -67,9 +67,8 @@ export async function enqueueAgentRun(input: {
 export interface ClaimedRun {
   id: number;
   agentId: number;
-  // Null for a scheduled or manual run, which works on no single issue.
+  // Null for a manual run, which works on no single issue.
   issueId: number | null;
-  scheduleId: number | null;
   trigger: AgentRunTrigger;
   prompt: string;
   attempts: number;
@@ -127,7 +126,6 @@ export async function claimDueRuns(): Promise<ClaimedRun[]> {
       r.id,
       r.agent_id AS "agentId",
       r.issue_id AS "issueId",
-      r.schedule_id AS "scheduleId",
       r.trigger,
       r.prompt,
       r.attempts,

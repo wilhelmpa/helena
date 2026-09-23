@@ -136,7 +136,10 @@ export const app = new Elysia()
             description:
               'Repository integration: the inbound pull request webhook and its per-project settings',
           },
-          { name: 'Agent Schedules', description: 'Recurring tasks for internal agents' },
+          {
+            name: 'Routines',
+            description: 'Tasks created or reopened for an agent on a schedule, run by Mastra',
+          },
           { name: 'Dashboards', description: 'Saved analytics dashboards' },
           { name: 'Documents', description: 'Shared project Docs pages' },
           {

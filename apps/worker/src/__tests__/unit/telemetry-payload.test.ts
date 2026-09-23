@@ -63,7 +63,6 @@ const counts: InstanceCounts = {
   agentChats30d: 8,
   webhookDeliveries30d: 0,
   webhookDeliveriesFailed30d: 0,
-  hasAgentSchedules: false,
   hasActiveRunners: false,
   runByMention30d: true,
   runByDelegation30d: false,

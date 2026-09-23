@@ -841,7 +841,7 @@ export function summarizeInventory(inventory) {
         count('document_asset'),
       workflows: count('project_workflow_assignment') + count('project_action'),
       cycles: count('cycle'),
-      schedules: count('agent_schedule') + count('mastra_schedules'),
+      schedules: count('mastra_schedules'),
       runs: count('agent_run') + count('project_action_run') + count('mastra_workflow_snapshot'),
       agents: count('ai_agent') + count('mastra_agents'),
       skills: count('agent_skill') + count('mastra_skills'),
