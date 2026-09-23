@@ -39,6 +39,8 @@ function slugFrom(value) {
 }
 
 async function projectDirectory(slug) {
+  // Home is no project of its own: its terminal opens where the Home agent works.
+  if (slug === 'home') return realpath(path.dirname(projectsRoot));
   const root = await realpath(projectsRoot);
   const candidate = path.join(root, slug);
   const stat = await lstat(candidate);

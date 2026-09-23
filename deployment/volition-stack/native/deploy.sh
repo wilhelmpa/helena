@@ -51,7 +51,9 @@ if changed deployment/volition-stack/optional/mastra-studio; then
   restart+=(volition-mastra.service)
 fi
 
-if changed deployment/volition-stack/native/terminal; then
+if changed deployment/volition-stack/native/terminal deployment/volition-stack/native/systemd/volition-terminal.service; then
+  install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-terminal.service" /etc/systemd/system/
+  systemctl daemon-reload
   restart+=(volition-terminal.service)
 fi
 

@@ -17,6 +17,7 @@ Environment=TERMINAL_PORT=8444
 Environment=PROJECTS_ROOT=/srv/volition/workspaces/projects
 Environment=TERMINAL_RUNTIME_ROOT=/run/volition-terminal
 Environment=TERMINAL_ALLOWED_HOSTS=kingston-server.local,kingston-server
+Environment=TERMINAL_SHELL=/srv/volition/source/plan/deployment/volition-stack/native/terminal/terminal-shell
 ExecStart=/usr/local/bin/node project-terminal-router.mjs
 Restart=on-failure
 RestartSec=2
