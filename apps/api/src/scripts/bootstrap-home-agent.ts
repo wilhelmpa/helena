@@ -1,3 +1,4 @@
+import { auth } from '@repo/auth';
 import { aiAgent, db, project, projectMember, teamMember, user } from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
 
@@ -31,13 +32,22 @@ const HOME_AGENT_INSTRUCTIONS = [
 export interface ProjectCoordinatorBootstrapResult {
   project: { id: number; teamId: number; key: string; name: string; description: string };
   agent: { id: number; userId: string; username: string };
-  apiKey: string;
+  // Null when the caller's current key is still valid for the coordinator.
+  apiKey: string | null;
   projectInstructions: string;
   agentInstructions: string;
 }
 
+async function isCoordinatorKey(userId: string, apiKey: string): Promise<boolean> {
+  const verified = await auth.api.verifyApiKey({ body: { key: apiKey } });
+  return verified.valid && verified.key?.referenceId === userId;
+}
+
+// A key is issued only when the caller holds none that still works, because issuing
+// one revokes the key the Hermes runner is using.
 export async function bootstrapProjectCoordinator(
   projectId: number,
+  currentApiKey?: string,
 ): Promise<ProjectCoordinatorBootstrapResult | null> {
   const [target] = await db
     .select({
@@ -83,8 +93,11 @@ export async function bootstrapProjectCoordinator(
       .limit(1);
   }
   if (!agent) throw new Error('The project coordinator could not be created');
-  const apiKey = await regenerateKey(agent.id, target.teamId);
-  if (!apiKey) throw new Error('The project coordinator could not be keyed');
+  let apiKey: string | null = null;
+  if (!currentApiKey || !(await isCoordinatorKey(agent.userId, currentApiKey))) {
+    apiKey = await regenerateKey(agent.id, target.teamId);
+    if (!apiKey) throw new Error('The project coordinator could not be keyed');
+  }
   const [full] = await db
     .select({ instructions: aiAgent.instructions })
     .from(aiAgent)

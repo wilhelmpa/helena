@@ -105,6 +105,15 @@ export function createProvisioner(config, options = {}) {
     options.ensureBoardFiles ?? ensureLocalBoardFiles;
   let queue = Promise.resolve();
 
+  // The runner reads the descriptors only when it starts.
+  async function restartHermesRunner() {
+    await execute(
+      config.systemctlBin,
+      [...(config.systemctlUser !== false ? ["--user"] : []), "restart", config.hermesRunnerService],
+      { timeout: 60_000, maxBuffer: 64 * 1024, encoding: "utf8" },
+    );
+  }
+
   async function ensureProjectVault(_slug, project) {
     const vaultRoot = await ensureSharedVaultDirectory(config.vaultRoot);
     await Promise.all([
@@ -262,17 +271,7 @@ export function createProvisioner(config, options = {}) {
           terminalUrl(config, workspace.slug),
         )
       : null;
-    if (coordinator || browser) {
-      await execute(config.systemctlBin, [
-        ...(config.systemctlUser !== false ? ["--user"] : []),
-        "restart",
-        config.hermesRunnerService,
-      ], {
-        timeout: 60_000,
-        maxBuffer: 64 * 1024,
-        encoding: "utf8",
-      });
-    }
+    if (planCoordinator?.descriptorChanged) await restartHermesRunner();
     const boardResources = await provisionBoards(config, envelope, workspace, ensureBoardFiles);
     const registryPath = await writeRegistry(envelope, workspace, coordinator, planCoordinator, files, terminal, browser);
     const resources = [resource("registry", `project:${workspace.slug}`), ...boardResources];
@@ -382,17 +381,7 @@ export function createProvisioner(config, options = {}) {
       label: "hermes-profile",
     });
     if (hermesProfile) quarantined.push(hermesProfile);
-    if (descriptor || hermesAgent || hermesProfile) {
-      await execute(
-        config.systemctlBin,
-        [
-          ...(config.systemctlUser !== false ? ["--user"] : []),
-          "restart",
-          config.hermesRunnerService,
-        ],
-        { timeout: 60_000, maxBuffer: 64 * 1024, encoding: "utf8" },
-      );
-    }
+    if (descriptor || hermesAgent || hermesProfile) await restartHermesRunner();
 
     const workspaceManaged =
       registry?.resources?.workspace?.managed === true || envelope.project.key !== "VERV";

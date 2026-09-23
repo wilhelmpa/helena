@@ -186,6 +186,21 @@ async function readDescriptor(filePath, expected) {
   return descriptor;
 }
 
+async function readStoredDescriptor(filePath) {
+  try {
+    await privateDescriptor(filePath);
+    const descriptor = JSON.parse(await fs.readFile(filePath, "utf8"));
+    return descriptor && typeof descriptor === "object" ? descriptor : null;
+  } catch {
+    return null;
+  }
+}
+
+function sameDescriptor(left, right) {
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...keys].every((key) => left[key] === right[key]);
+}
+
 async function writeDescriptor(filePath, descriptor) {
   const directory = path.dirname(filePath);
   await fs.mkdir(directory, { recursive: true, mode: 0o700 });
@@ -414,8 +429,21 @@ async function ensureOrganization(config, fetchImpl, project, agent, hermesIdent
   };
 }
 
+// Plan issues a new key only when the stored one no longer works, so a repeated
+// provisioning run leaves the descriptor and the running Hermes runner untouched.
 async function ensureControlledCoordinator(config, project, options) {
   const fetchImpl = options.fetchImpl ?? fetch;
+  const username = `hermes-${coordinatorSlug(project)}-coordinator`;
+  const filePath = descriptorPath(config, coordinatorSlug(project));
+  const descriptorStore = options.descriptorStore ?? { read: readStoredDescriptor, write: writeDescriptor };
+  if (typeof descriptorStore.read !== 'function' || typeof descriptorStore.write !== 'function') {
+    throw new PlanCoordinatorError('The Hermes runner descriptor store is invalid');
+  }
+  const stored = await descriptorStore.read(filePath);
+  const storedKey =
+    stored?.projectId === project.id && stored.username === username && apiKeyValue(stored.apiKey)
+      ? stored.apiKey
+      : null;
   const result = await responseJson(
     await fetchImpl(apiUrl(config, '/internal/bootstrap/project-coordinator'), {
       method: 'POST',
@@ -424,39 +452,34 @@ async function ensureControlledCoordinator(config, project, options) {
         Authorization: `Bearer ${config.planControlToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ projectId: project.id }),
+      body: JSON.stringify({ projectId: project.id, ...(storedKey ? { apiKey: storedKey } : {}) }),
       signal: AbortSignal.timeout(15_000),
     }),
     'Bootstrapping the project coordinator',
   );
   const agent = result?.agent;
+  const apiKey = result?.apiKey ?? storedKey;
   if (
     !agent ||
     !Number.isSafeInteger(agent.id) ||
     typeof agent.userId !== 'string' ||
-    agent.username !== `hermes-${coordinatorSlug(project)}-coordinator` ||
-    !apiKeyValue(result.apiKey)
+    agent.username !== username ||
+    !apiKeyValue(apiKey)
   ) {
     throw new PlanCoordinatorError("It's a Plan returned an invalid project coordinator");
   }
-  const expectedDescriptor = descriptorValue(
-    config,
-    project,
-    agent,
-    options.workspace,
-    options.browser,
-  );
-  const filePath = descriptorPath(config, coordinatorSlug(project));
-  const descriptorStore = options.descriptorStore ?? { read: readDescriptor, write: writeDescriptor };
-  if (typeof descriptorStore.write !== 'function') {
-    throw new PlanCoordinatorError('The Hermes runner descriptor store is invalid');
-  }
-  await descriptorStore.write(filePath, { ...expectedDescriptor, apiKey: result.apiKey });
+  const descriptor = {
+    ...descriptorValue(config, project, agent, options.workspace, options.browser),
+    apiKey,
+  };
+  const descriptorChanged = !stored || !sameDescriptor(stored, descriptor);
+  if (descriptorChanged) await descriptorStore.write(filePath, descriptor);
   return {
     planAgentId: agent.id,
     planAgentUserId: agent.userId,
     username: agent.username,
     hermesIdentity: agent.username,
+    descriptorChanged,
     organization: {
       projectInstructions: result.projectInstructions ?? '',
       agentInstructions: result.agentInstructions ?? '',
@@ -504,11 +527,12 @@ export async function ensurePlanCoordinator(config, project, options = {}) {
   if (!apiKeyValue(apiKey)) {
     throw new PlanCoordinatorError("It's a Plan did not issue a valid Hermes coordinator credential");
   }
-  if (
+  const descriptorChanged = Boolean(
     createdKey ||
     !existing ||
     (existing.browserCdpUrl ?? null) !== expectedDescriptor.browserCdpUrl
-  ) {
+  );
+  if (descriptorChanged) {
     await descriptorStore.write(filePath, { ...expectedDescriptor, apiKey });
   }
 
@@ -519,6 +543,7 @@ export async function ensurePlanCoordinator(config, project, options = {}) {
     planAgentUserId: agent.userId,
     username,
     hermesIdentity,
+    descriptorChanged,
     organization,
   };
 }

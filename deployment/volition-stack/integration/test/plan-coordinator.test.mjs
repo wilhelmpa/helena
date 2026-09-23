@@ -125,3 +125,91 @@ describe("ensurePlanCoordinator", () => {
     );
   });
 });
+
+describe("ensurePlanCoordinator with the Plan control token", () => {
+  const controlConfig = {
+    planInternalUrl: "http://127.0.0.1:3000",
+    planControlToken: "control-token-value-with-at-least-32-bytes",
+    hermesHome: "/data/hermes",
+    hermesAgentsRoot: "/data/hermes/agents",
+    hermesRunnerDescriptorRoot: "/data/hermes/run/agents",
+  };
+
+  function controlled() {
+    const state = { validKey: null, issued: 0, offered: [], writes: 0, descriptor: null };
+    const fetchImpl = async (url, init) => {
+      assert.equal(new URL(url).pathname, "/internal/bootstrap/project-coordinator");
+      assert.equal(init.headers.Authorization, `Bearer ${controlConfig.planControlToken}`);
+      const body = JSON.parse(init.body);
+      assert.equal(body.projectId, project.id);
+      state.offered.push(body.apiKey ?? null);
+      let apiKey = null;
+      if (!body.apiKey || body.apiKey !== state.validKey) {
+        state.issued += 1;
+        apiKey = `issued-key-value-${state.issued}-1234567890`;
+        state.validKey = apiKey;
+      }
+      return json(200, {
+        agent: { id: 21, userId: "agent-user", username: "hermes-sysqa-coordinator" },
+        apiKey,
+        projectInstructions: "",
+        agentInstructions: "",
+      });
+    };
+    const descriptorStore = {
+      read: async () => structuredClone(state.descriptor),
+      write: async (_path, value) => { state.writes += 1; state.descriptor = structuredClone(value); },
+    };
+    return { state, options: { fetchImpl, descriptorStore, workspace } };
+  }
+
+  it("issues a key and writes the descriptor when none exists", async () => {
+    const { state, options } = controlled();
+    const result = await ensurePlanCoordinator(controlConfig, project, options);
+    assert.equal(result.descriptorChanged, true);
+    assert.deepEqual(state.offered, [null]);
+    assert.equal(state.descriptor.apiKey, state.validKey);
+    assert.equal(state.descriptor.hermesHome, "/data/hermes/profiles/sysqa");
+  });
+
+  it("keeps a valid key and leaves an unchanged descriptor alone", async () => {
+    const { state, options } = controlled();
+    await ensurePlanCoordinator(controlConfig, project, options);
+    const key = state.validKey;
+
+    const result = await ensurePlanCoordinator(controlConfig, project, options);
+    assert.equal(result.descriptorChanged, false);
+    assert.deepEqual(state.offered, [null, key]);
+    assert.equal(state.issued, 1);
+    assert.equal(state.writes, 1);
+  });
+
+  it("rewrites the descriptor with the same key when only the browser changed", async () => {
+    const { state, options } = controlled();
+    await ensurePlanCoordinator(controlConfig, project, options);
+    const result = await ensurePlanCoordinator(controlConfig, project, {
+      ...options,
+      browser: { cdpUrl: "http://127.0.0.1:19202" },
+    });
+    assert.equal(result.descriptorChanged, true);
+    assert.equal(state.issued, 1);
+    assert.equal(state.descriptor.browserCdpUrl, "http://127.0.0.1:19202");
+  });
+
+  it("replaces a rejected key", async () => {
+    const { state, options } = controlled();
+    await ensurePlanCoordinator(controlConfig, project, options);
+    state.validKey = "revoked-elsewhere";
+    const result = await ensurePlanCoordinator(controlConfig, project, options);
+    assert.equal(result.descriptorChanged, true);
+    assert.equal(state.issued, 2);
+    assert.equal(state.descriptor.apiKey, state.validKey);
+  });
+
+  it("never offers the key of a descriptor that belongs to another project", async () => {
+    const { state, options } = controlled();
+    state.descriptor = { projectId: 99, username: "hermes-sysqa-coordinator", apiKey: "other-project-key-1234567890" };
+    await ensurePlanCoordinator(controlConfig, project, options);
+    assert.deepEqual(state.offered, [null]);
+  });
+});

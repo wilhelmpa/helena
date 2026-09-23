@@ -50,6 +50,7 @@ function fakeCoordinator(calls) {
       planAgentUserId: "agent-user",
       username: id,
       hermesIdentity: id,
+      descriptorChanged: calls.length === 1,
       organization: { departmentId: 4, reportsToAgentId: null, projectInstructions: "Project scope" },
     };
   };
@@ -85,6 +86,24 @@ describe("createProvisioner", () => {
     assert.equal("apiKey" in registry.resources.coordinator, false);
     const context = JSON.parse(await fs.readFile(path.join(root, "projects/demo/PROJECT.json"), "utf8"));
     assert.equal(context.coordinatorId, "hermes-demo-coordinator");
+  });
+
+  it("restarts the runner only when a provisioning run changed the runner descriptor", async () => {
+    const coordinatorCalls = [];
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator(coordinatorCalls),
+      ensureFiles: async (slug) => ({ kind: "files", id: "/Projects/" + slug }),
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+    await provisioner.provision(envelope());
+    await provisioner.provision({ ...envelope(), eventId: "323e4567-e89b-42d3-a456-426614174002" });
+
+    assert.equal(coordinatorCalls.length, 2);
+    assert.equal(restarts.length, 1);
   });
 
   it("provisions the browser before reloading Hermes and exposes no CDP details", async () => {
