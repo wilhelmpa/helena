@@ -78,20 +78,20 @@ export class PlanClient {
     return text ? (JSON.parse(text) as T) : (undefined as T);
   }
 
-  resolve(agentKey: string, projectKey: string): Promise<ResolveResult> {
-    return this.#post('/internal/browser-gateway/resolve', { agentKey, projectKey });
+  resolve(agentKey: string, projectSlug: string): Promise<ResolveResult> {
+    return this.#post('/internal/browser-gateway/resolve', { agentKey, projectSlug });
   }
 
   login(
     agentKey: string,
-    projectKey: string,
+    projectSlug: string,
     frameOrigin: string,
     credentialId?: number,
     work?: { runId?: number; messageId?: number },
   ): Promise<LoginResult> {
     return this.#post('/internal/browser-gateway/login', {
       agentKey,
-      projectKey,
+      projectSlug,
       frameOrigin,
       credentialId,
       ...work,
@@ -108,7 +108,7 @@ export class PlanClient {
 
   audit(input: {
     agentKey: string;
-    projectKey: string;
+    projectSlug: string;
     actor: 'agent' | 'owner';
     tool: string;
     target?: string;

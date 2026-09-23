@@ -1,8 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile } from 'node:fs/promises';
 import { Elysia } from 'elysia';
-import { db, project } from '@repo/db';
-import { eq } from 'drizzle-orm';
 import { getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from '#shared/lib';
 import { getRunnerAgent, type RunnerAgent } from '../agents/runner/service';
@@ -11,6 +9,7 @@ import {
   browserGatewayEnabledForAgent,
   browserGatewayPolicies,
   getBrowserGatewaySettings,
+  projectBySlug,
 } from './service';
 import { recordBrowserGatewayEvent } from './events';
 
@@ -22,6 +21,12 @@ import { recordBrowserGatewayEvent } from './events';
 // agentKey it forwards proves which agent it is acting for — the same key that agent
 // presents everywhere else (x-api-key), resolved through the normal session/agent lookup so
 // there is exactly one place that decides whether a key is valid.
+//
+// The gateway itself only ever knows a project by its SLUG (deployment/volition-stack/
+// browser/README.md: one project-browser directory per slug, never a key) — every route
+// below takes `projectSlug`, resolved to a project via projectBySlug (service.ts), which
+// also hands back the project's key so agent membership (RunnerAgent.projects[].key) can
+// still be checked the way every other internal caller checks it.
 
 let tokenPromise: Promise<string> | null = null;
 
@@ -77,13 +82,8 @@ async function agentByKey(agentKey: string): Promise<RunnerAgent | null> {
   return agent;
 }
 
-async function projectByKey(key: string): Promise<{ id: number } | null> {
-  const [row] = await db.select({ id: project.id }).from(project).where(eq(project.key, key));
-  return row ?? null;
-}
-
-function agentProject(agent: RunnerAgent, projectKey: string) {
-  return agent.projects.find((row) => row.key === projectKey);
+function agentHasProject(agent: RunnerAgent, projectKey: string): boolean {
+  return agent.projects.some((row) => row.key === projectKey);
 }
 
 async function readJson(request: Request): Promise<Record<string, unknown> | null> {
@@ -113,15 +113,16 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       const refused = await denied(request);
       if (refused) return refused;
       const body = await readJson(request);
-      if (!body || typeof body.agentKey !== 'string' || typeof body.projectKey !== 'string') {
+      if (!body || typeof body.agentKey !== 'string' || typeof body.projectSlug !== 'string') {
         return privateJson({ error: 'Invalid request' }, 400);
       }
       const agent = await agentByKey(body.agentKey);
       if (!agent) return privateJson({ error: 'Unknown agent key' }, 403);
-      const membership = agentProject(agent, body.projectKey);
-      if (!membership) return privateJson({ error: 'Agent does not work in this project' }, 403);
-      const proj = await projectByKey(body.projectKey);
+      const proj = await projectBySlug(body.projectSlug);
       if (!proj) return privateJson({ error: 'Project not found' }, 404);
+      if (!agentHasProject(agent, proj.key)) {
+        return privateJson({ error: 'Agent does not work in this project' }, 403);
+      }
       const [enabled, settings] = await Promise.all([
         browserGatewayEnabledForAgent(agent.id, agent.teamId),
         getBrowserGatewaySettings(proj.id),
@@ -146,15 +147,15 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       if (
         !body ||
         typeof body.agentKey !== 'string' ||
-        typeof body.projectKey !== 'string' ||
+        typeof body.projectSlug !== 'string' ||
         typeof body.frameOrigin !== 'string'
       ) {
         return privateJson({ error: 'Invalid request' }, 400);
       }
       const agent = await agentByKey(body.agentKey);
       if (!agent) return privateJson({ error: 'Unknown agent key' }, 403);
-      const proj = await projectByKey(body.projectKey);
-      if (!proj || !agentProject(agent, body.projectKey)) {
+      const proj = await projectBySlug(body.projectSlug);
+      if (!proj || !agentHasProject(agent, proj.key)) {
         return privateJson({ error: 'Agent does not work in this project' }, 403);
       }
       try {
@@ -213,7 +214,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       if (
         !body ||
         typeof body.agentKey !== 'string' ||
-        typeof body.projectKey !== 'string' ||
+        typeof body.projectSlug !== 'string' ||
         typeof body.tool !== 'string' ||
         (body.actor !== 'agent' && body.actor !== 'owner')
       ) {
@@ -221,8 +222,8 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       }
       const agent = await agentByKey(body.agentKey);
       if (!agent) return privateJson({ error: 'Unknown agent key' }, 403);
-      const proj = await projectByKey(body.projectKey);
-      if (!proj || !agentProject(agent, body.projectKey)) {
+      const proj = await projectBySlug(body.projectSlug);
+      if (!proj || !agentHasProject(agent, proj.key)) {
         return privateJson({ error: 'Agent does not work in this project' }, 403);
       }
       await recordBrowserGatewayEvent({

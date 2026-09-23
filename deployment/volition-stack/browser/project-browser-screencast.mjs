@@ -183,7 +183,10 @@ class Viewer {
   }
 }
 
-class ScreencastStream {
+// Exported for tests only (controlMessage()/setControlHolder() need no live CDP
+// connection — everything else about this class does, so a test constructs one and calls
+// only those two, never start()). Not used as a public constructor anywhere else.
+export class ScreencastStream {
   constructor(port, display, onEnd) {
     this.port = port;
     this.display = display;
@@ -215,10 +218,14 @@ class ScreencastStream {
     this.viewerActionAt = 0;
     this.pageNavigationAt = 0;
     this.agentActiveAt = 0;
-    // Purely informational, from the same activity signal the stream's own size and rate
-    // already use: no lock. The real control lock and its "Übernehmen" arrive with the
-    // browser gateway (see docs/volition-design-browser-gateway.md).
+    // Who the "Steuert: …" banner names. Until the browser gateway calls
+    // setControlHolder() at least once for this project browser (only once something with
+    // an actual lock — an agent's MCP session or the live view's Übernehmen — has acted),
+    // this stays the old activity-based guess (see broadcastControl()); once it has, that
+    // guess is retired and this field alone decides it, including whose name a viewer sees.
     this.controlBy = "owner";
+    this.controlHolder = null;
+    this.controlHolderSet = false;
     this.resizeTimer = null;
     this.timer = null;
     this.tierTimer = null;
@@ -245,7 +252,7 @@ class ScreencastStream {
     const viewer = new Viewer(socket, (method, params) => this.sendInput(method, params));
     this.viewers.add(viewer);
     if (this.dialog) socket.send(JSON.stringify(this.dialog));
-    socket.send(JSON.stringify({ type: "control", by: this.controlBy }));
+    socket.send(JSON.stringify(this.controlMessage()));
     socket.on("message", (data, binary) => {
       if (!binary) this.receive(viewer, data.toString("utf8"));
     });
@@ -367,13 +374,45 @@ class ScreencastStream {
     if (wasQuiet) this.resize();
   }
 
+  // The current "{type:'control', by, agentName?}" message: the real lock's holder once
+  // the gateway has ever reported one for this project browser, the old activity guess
+  // until then (a project whose gateway was never used, or whose router just restarted
+  // and has not heard from it yet, still shows something reasonable rather than nothing).
+  controlMessage() {
+    if (this.controlHolderSet) {
+      const holder = this.controlHolder;
+      return holder
+        ? { type: "control", by: holder.kind, agentName: holder.agentName ?? null }
+        : { type: "control", by: "owner", agentName: null };
+    }
+    return { type: "control", by: this.controlBy, agentName: null };
+  }
+
+  // Called by the browser gateway (same process, see
+  // deployment/volition-stack/browser/browser-gateway-server.mjs) whenever the real
+  // control lock of this project browser changes: acquired, released, expired, or taken
+  // over. From here on this stream stops guessing from activity timing and reports
+  // exactly what the lock says, including the agent's name.
+  setControlHolder(holder) {
+    this.controlHolderSet = true;
+    const changed =
+      !this.controlHolder ||
+      !holder ||
+      this.controlHolder.kind !== holder.kind ||
+      this.controlHolder.agentName !== holder.agentName;
+    this.controlHolder = holder;
+    if (changed) this.broadcast(this.controlMessage());
+  }
+
   // Tells a fresh or changed control state to every viewer; a viewer that joins gets it in
-  // add(). Informational only, see the field's own comment.
+  // add(). Retired once setControlHolder() has ever been called for this stream — see
+  // controlMessage().
   broadcastControl() {
+    if (this.controlHolderSet) return;
     const by = Date.now() - this.agentActiveAt < AGENT_QUIET_MS ? "agent" : "owner";
     if (by === this.controlBy) return;
     this.controlBy = by;
-    this.broadcast({ type: "control", by });
+    this.broadcast({ type: "control", by, agentName: null });
   }
 
   // The activity is read once a second; a view that changes size right after the agent's
@@ -802,6 +841,15 @@ export function joinScreencast(port, display, socket) {
     void stream.start();
   }
   stream.add(socket);
+}
+
+// The browser gateway's own hook (browser-gateway-server.mjs): tells the live view of one
+// project browser who its control lock's holder is now, `null` for free. A silent no-op
+// when nobody is watching that project browser's live view yet — there is no stream to
+// tell, and the next viewer who joins gets the gateway's answer to browser_status instead
+// (the gateway, not this file, is the lock's source of truth either way).
+export function notifyControlHolder(port, holder) {
+  streams.get(port)?.setControlHolder(holder);
 }
 
 // A desktop (VNC) viewer sizes the display to its panel, so the windows fill the display

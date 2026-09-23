@@ -4,6 +4,7 @@ import { db, project, projectSetting } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
+import { HOME_SLUG, projectSlug } from '#shared/agent-socket';
 import {
   BROWSER_GATEWAY_MCP_SERVER_NAME,
   agentMcpServerIds,
@@ -113,8 +114,12 @@ export interface BrowserGatewayPolicyEntry extends BrowserGatewaySettings {
   projectId: number;
 }
 
-// Every project's settings, by key, for the gateway's own policy fetch
-// (/internal/browser-gateway/policy) — mirrors agent-egress's egressPolicies().
+// Every project's settings, by SLUG (the browser gateway process knows only slugs — see
+// deployment/volition-stack/browser/README.md, one project-browser directory per slug —
+// never a project's key), for the gateway's own policy fetch
+// (/internal/browser-gateway/policy). Mirrors agent-egress's egressPolicies(), same
+// projectSlug() mapping as the agent socket (shared/agent-socket.ts) uses everywhere else
+// an isolated agent's project identity crosses this boundary.
 export async function browserGatewayPolicies(): Promise<Record<string, BrowserGatewayPolicyEntry>> {
   const rows = await db
     .select({ key: project.key, id: project.id, value: projectSetting.value })
@@ -123,9 +128,25 @@ export async function browserGatewayPolicies(): Promise<Record<string, BrowserGa
       projectSetting,
       and(eq(projectSetting.projectId, project.id), eq(projectSetting.key, SETTING_KEY)),
     );
-  return Object.fromEntries(
-    rows.map((row) => [row.key, { projectId: row.id, ...sanitize(row.value) }]),
-  );
+  const policies: Record<string, BrowserGatewayPolicyEntry> = {};
+  for (const row of rows) {
+    const slug = projectSlug(row.key);
+    if (slug === HOME_SLUG) continue; // Home has no project row; the gateway defaults it itself
+    policies[slug] = { projectId: row.id, ...sanitize(row.value) };
+  }
+  return policies;
+}
+
+// A project by its browser-gateway slug (the inverse of projectSlug(), computed the same
+// way egressPolicies() above does: no slug column exists, so this is a small scan — the
+// gateway calls it once per resolve/login/audit, and the project count this system runs at
+// makes that entirely fine). Returns the project's key too, since callers than need to
+// check the calling agent's own project membership, which is stored by key
+// (RunnerAgent.projects[].key), not by slug.
+export async function projectBySlug(slug: string): Promise<{ id: number; key: string } | null> {
+  const rows = await db.select({ id: project.id, key: project.key }).from(project);
+  const row = rows.find((candidate) => projectSlug(candidate.key) === slug);
+  return row ?? null;
 }
 
 // Whether the agent has "Projekt-Browser" turned on (Agent → Tools). Reuses the same

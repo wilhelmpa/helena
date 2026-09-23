@@ -3,7 +3,7 @@ import http from "node:http";
 import net from "node:net";
 import { afterEach, describe, it } from "node:test";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
-import { frameMessage, pageSize, targetSize } from "./project-browser-screencast.mjs";
+import { frameMessage, pageSize, targetSize, ScreencastStream, notifyControlHolder } from "./project-browser-screencast.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
 const input = (message) => viewerMessage(JSON.stringify(message));
@@ -313,5 +313,49 @@ describe("WebSocket server", () => {
       request.end();
     });
     assert.equal(response.statusCode, 400);
+  });
+});
+
+describe("control lock state (browser gateway)", () => {
+  it("starts out as the old activity-based guess, unset", () => {
+    const stream = new ScreencastStream(1, null, () => {});
+    assert.deepEqual(stream.controlMessage(), { type: "control", by: "owner", agentName: null });
+  });
+
+  it("setControlHolder(agent) reports the agent by name and stops the activity guess", () => {
+    const stream = new ScreencastStream(1, null, () => {});
+    let broadcasts = [];
+    stream.broadcast = (message) => broadcasts.push(message);
+    stream.setControlHolder({ kind: "agent", agentName: "Writer" });
+    assert.deepEqual(stream.controlMessage(), { type: "control", by: "agent", agentName: "Writer" });
+    assert.deepEqual(broadcasts, [{ type: "control", by: "agent", agentName: "Writer" }]);
+
+    // The old heuristic must never override it again once a real holder has been reported.
+    stream.agentActiveAt = Date.now();
+    stream.broadcastControl();
+    assert.deepEqual(stream.controlMessage(), { type: "control", by: "agent", agentName: "Writer" });
+  });
+
+  it("setControlHolder(null) reports the owner, free", () => {
+    const stream = new ScreencastStream(1, null, () => {});
+    stream.broadcast = () => {};
+    stream.setControlHolder({ kind: "agent", agentName: "Writer" });
+    stream.setControlHolder(null);
+    assert.deepEqual(stream.controlMessage(), { type: "control", by: "owner", agentName: null });
+  });
+
+  it("does not broadcast again for a holder that did not actually change", () => {
+    const stream = new ScreencastStream(1, null, () => {});
+    let broadcasts = [];
+    stream.broadcast = (message) => broadcasts.push(message);
+    stream.setControlHolder({ kind: "agent", agentName: "Writer" });
+    stream.setControlHolder({ kind: "agent", agentName: "Writer" });
+    assert.equal(broadcasts.length, 1);
+  });
+
+  it("notifyControlHolder is a silent no-op when nobody is watching that project browser", () => {
+    // No stream was ever created for this port (joinScreencast was never called) — must not
+    // throw.
+    notifyControlHolder(999999, { kind: "owner" });
   });
 });

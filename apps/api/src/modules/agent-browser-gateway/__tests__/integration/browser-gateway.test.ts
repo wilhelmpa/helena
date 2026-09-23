@@ -80,7 +80,7 @@ describe('browser gateway', () => {
     // token: an empty/absent Authorization header is what "no token" means here.
     const res = await internal(
       '/internal/browser-gateway/resolve',
-      { agentKey: 'x', projectKey: 'MKT' },
+      { agentKey: 'x', projectSlug: 'mkt' },
       '',
     );
     expect(res.status).toBe(401);
@@ -89,7 +89,7 @@ describe('browser gateway', () => {
   it('refuses a request with the wrong service token', async () => {
     const res = await internal(
       '/internal/browser-gateway/resolve',
-      { agentKey: 'x', projectKey: 'MKT' },
+      { agentKey: 'x', projectSlug: 'mkt' },
       'wrong-token-0123456789abcdef0123456789',
     );
     expect(res.status).toBe(401);
@@ -100,7 +100,7 @@ describe('browser gateway', () => {
     const { agent, apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
     const res = await internal('/internal/browser-gateway/resolve', {
       agentKey: apiKey,
-      projectKey: 'MKT',
+      projectSlug: 'mkt',
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
@@ -122,7 +122,7 @@ describe('browser gateway', () => {
     });
     const res = await internal('/internal/browser-gateway/resolve', {
       agentKey: created.data!.apiKey!,
-      projectKey: 'MKT',
+      projectSlug: 'mkt',
     });
     const body = (await res.json()) as { browserGatewayEnabled: boolean };
     expect(body.browserGatewayEnabled).toBe(false);
@@ -134,7 +134,7 @@ describe('browser gateway', () => {
     const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
     const res = await internal('/internal/browser-gateway/resolve', {
       agentKey: apiKey,
-      projectKey: 'OPS',
+      projectSlug: 'ops',
     });
     expect(res.status).toBe(403);
   });
@@ -157,7 +157,7 @@ describe('browser gateway', () => {
 
     const res = await internal('/internal/browser-gateway/login', {
       agentKey: apiKey,
-      projectKey: 'MKT',
+      projectSlug: 'mkt',
       frameOrigin: 'https://github.com',
     });
     expect(res.status).toBe(200);
@@ -192,7 +192,7 @@ describe('browser gateway', () => {
     }
     const res = await internal('/internal/browser-gateway/login', {
       agentKey: apiKey,
-      projectKey: 'MKT',
+      projectSlug: 'mkt',
       frameOrigin: 'https://example.com',
     });
     const body = (await res.json()) as { status: string; candidates: { label: string }[] };
@@ -217,7 +217,7 @@ describe('browser gateway', () => {
     await credential(asOwner, mkt.teamId, cred.id).grants.put({ agentIds: [agent.id] });
     const res = await internal('/internal/browser-gateway/login', {
       agentKey: apiKey,
-      projectKey: 'MKT',
+      projectSlug: 'mkt',
       frameOrigin: 'https://not-github.example',
     });
     const body = (await res.json()) as { status: string };
@@ -278,7 +278,7 @@ describe('browser gateway', () => {
     const { agent, apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
     const audit = await internal('/internal/browser-gateway/audit', {
       agentKey: apiKey,
-      projectKey: 'MKT',
+      projectSlug: 'mkt',
       actor: 'agent',
       tool: 'browser_navigate',
       target: 'https://example.com/secret-path?token=abc',
@@ -327,7 +327,7 @@ describe('browser gateway', () => {
       }),
     );
     const body = (await res.json()) as { projects: Record<string, { domainBlocklist: string[] }> };
-    expect(body.projects.MKT.domainBlocklist).toEqual(['bank.example']);
+    expect(body.projects.mkt.domainBlocklist).toEqual(['bank.example']);
   });
 
   it('seeds the builtin servers as builtin, and a team cannot edit or delete them', async () => {
