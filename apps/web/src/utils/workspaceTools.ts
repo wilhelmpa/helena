@@ -111,9 +111,14 @@ function terminalUrl(
   const resourceSlug = terminal?.id.match(/^terminal-project:([a-z0-9][a-z0-9-]{0,31})$/)?.[1];
   const projectSlug =
     projectKey?.trim().toUpperCase() === 'VERV' ? 'verve' : projectKey?.trim().toLowerCase();
+  // Without a project the terminal opens Home's, where the Home agent works.
   const slug =
     resourceSlug ??
-    (projectSlug && /^[a-z0-9][a-z0-9-]{0,31}$/.test(projectSlug) ? projectSlug : '');
+    (!projectKey
+      ? 'home'
+      : projectSlug && /^[a-z0-9][a-z0-9-]{0,31}$/.test(projectSlug)
+        ? projectSlug
+        : '');
   if (base && slug) {
     const url = new URL(base);
     if (['/terminal', '/focus/terminal-project'].includes(url.pathname.replace(/\/+$/, ''))) {

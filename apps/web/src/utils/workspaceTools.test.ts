@@ -33,6 +33,18 @@ describe('workspaceTools', () => {
     assert.equal(preferredAgentUsername('VERV'), 'hermes-verve-coordinator');
   });
 
+  it("opens Home's terminal outside a project", () => {
+    assert.equal(
+      workspaceTools(config, null).terminal.url,
+      'https://plan.example.com/focus/terminal-project/home',
+    );
+    assert.equal(
+      workspaceTools({ ...config, terminalUrl: 'https://plan.example.com/terminal' }, null).terminal
+        .url,
+      'https://plan.example.com/focus/terminal-project/home',
+    );
+  });
+
   it('uses configured project agents and workspace paths', () => {
     const tools = workspaceTools(config, 'verv');
     assert.equal(tools.chat.url, '');
