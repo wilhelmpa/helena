@@ -32,10 +32,17 @@ case "$kind" in
     workdir=$HOME
     ;;
   helena-dev-claude)
-    command=("$HOME/.local/bin/claude")
+    # --add-dir also makes Claude Code read that directory's CLAUDE.md as extra
+    # project context, which is the handoff (~/volition/CLAUDE.md) the design
+    # asks for: the dev clone (~/volition/plan) is its own git repository, and
+    # Claude Code does not read a CLAUDE.md above a repository boundary on its own.
+    command=("$HOME/.local/bin/claude" --add-dir "$HOME/volition")
     workdir=$dev_clone
     ;;
   helena-dev-codex)
+    # Codex's own AGENTS.md discovery walks up from the working directory; no
+    # flag equivalent to Claude Code's --add-dir was found for also handing it
+    # ~/volition/CLAUDE.md specifically (see the branch report's open items).
     command=("$HOME/.local/bin/codex")
     workdir=$dev_clone
     ;;

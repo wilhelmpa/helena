@@ -363,6 +363,15 @@ export const app = new Elysia()
   .get(
     '/auth/verify/owner-terminal/:kind',
     async ({ request, params, set, status }) => {
+      // An x-api-key resolves to its owner's session like any other (see
+      // apps/api AGENTS.md), which would otherwise let a leaked personal API key
+      // open a root shell. The owner terminal is reached only by the owner's own
+      // signed-in browser, never by a key -- the same rule
+      // modules/connections/interactive.ts's requireInteractiveOwner enforces for
+      // the rest of this feature's routes.
+      if (request.headers.has('x-api-key') || request.headers.has('authorization')) {
+        return status(403);
+      }
       const session = await getSessionFromHeaders(request.headers);
       if (!session || session.user.active === false) return status(401);
       if (session.user.role !== 'god') return status(403);

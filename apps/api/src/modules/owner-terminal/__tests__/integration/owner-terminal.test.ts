@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { auth } from '@repo/auth';
 import { db, ownerTerminalAudit } from '@repo/db';
-import { authedApi } from '#tests/helpers/app';
+import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 
@@ -146,6 +146,31 @@ describe('owner terminal', () => {
     expect(events).toContain('step_up_ok');
     expect(events).toContain('session_start');
     expect(events).toContain('grant_revoked');
+  });
+
+  it('mints the proxy token only for an interactive owner session with a live grant', async () => {
+    const { user, secret } = await ownerWithTotp();
+    const api = authedApi(user.cookie, ORIGIN);
+
+    // No step-up yet in this sub-test's fresh grant lifecycle: revoke first so the
+    // route is exercised without one.
+    await api['owner-terminal'].grant.revoke.post();
+    const noGrant = await api.auth.verify['owner-terminal']({ kind: 'shell' }).get();
+    expect(noGrant.status).toBe(403);
+
+    await api['owner-terminal']['step-up']['totp'].post({ code: totpCode(secret, 1) });
+    const ok = await api.auth.verify['owner-terminal']({ kind: 'shell' }).get();
+    expect(ok.status).toBe(204);
+    expect(ok.response.headers.get('x-owner-terminal-token')).toBeTruthy();
+
+    // A wrong kind still 204s (the route itself does not validate kind against a
+    // session's history), but a personal API key must never reach it, even with a
+    // live grant -- see app.ts's comment on this route.
+    const key = await auth.api.createApiKey({ body: { userId: user.userId, name: 'agent' } });
+    const keyResult = await apiKeyApi(key.key)
+      .auth.verify['owner-terminal']({ kind: 'shell' })
+      .get();
+    expect(keyResult.status).toBe(403);
   });
 
   it('reads and updates the instance policy', async () => {
