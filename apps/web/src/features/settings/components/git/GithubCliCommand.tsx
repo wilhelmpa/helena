@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { githubWebhookCommand } from './githubCommand';
+import { copyText } from '@/utils/clipboard';
 
 // A copyable `gh` command that registers the repository webhook in one step. The
 // payload URL and secret are already inlined; only <owner>/<repo> is left to
@@ -20,7 +21,7 @@ export default function GithubCliCommand({
   const preview = githubWebhookCommand(payloadUrl, '•'.repeat(24) + secret.slice(-4));
 
   async function copy() {
-    await navigator.clipboard.writeText(command);
+    await copyText(command);
     toast.success(t('commandCopied'));
   }
 

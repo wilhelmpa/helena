@@ -9,6 +9,7 @@ import { formatShortDate } from '@/utils/dates';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Item, ItemActions, ItemContent, ItemTitle } from '@/components/ui/item';
+import { copyText } from '@/utils/clipboard';
 
 const STATUS_VARIANT = { pending: 'secondary', accepted: 'default', rejected: 'outline' } as const;
 
@@ -42,7 +43,7 @@ export default function InviteRow({
   async function copy() {
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
     try {
-      await navigator.clipboard.writeText(inviteLink(origin, invite.token));
+      await copyText(inviteLink(origin, invite.token));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

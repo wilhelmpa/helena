@@ -9,8 +9,10 @@ import auth from '../../messages/en/auth.json';
 import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
+import devices from '../../messages/en/devices.json';
 import display from '../../messages/en/display.json';
 import documents from '../../messages/en/documents.json';
+import files from '../../messages/en/files.json';
 import filters from '../../messages/en/filters.json';
 import god from '../../messages/en/god.json';
 import inbox from '../../messages/en/inbox.json';
@@ -53,6 +55,7 @@ const defaultMessages = {
   issue,
   display,
   documents,
+  files,
   filters,
   workItems,
   apiKeys,
@@ -79,6 +82,7 @@ const defaultMessages = {
   connections,
   agentActivity,
   routines,
+  devices,
 };
 
 export type Messages = typeof defaultMessages;

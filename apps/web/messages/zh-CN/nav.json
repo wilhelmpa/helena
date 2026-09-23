@@ -1,5 +1,6 @@
 {
   "inbox": "收件箱",
+  "files": "文件",
   "approvals": "审批",
   "dashboards": "仪表盘",
   "workItems": "工作项",
@@ -32,6 +33,7 @@
   "newTeam": "新建团队",
   "manageTeams": "管理团队",
   "role": "角色：{role}",
+  "basedOn": "基于 It’s a Plan（AGPL-3.0）",
   "search": "搜索或运行命令…",
   "searchHint": "搜索或运行命令（{key}）",
   "newIssueHint": "新建工作项（{key}）",
@@ -66,7 +68,15 @@
       "reload": "重新加载",
       "tabs": "标签页",
       "newTab": "新标签页",
-      "closeTab": "关闭标签页"
+      "closeTab": "关闭标签页",
+      "view": "浏览器视图",
+      "live": "实时",
+      "liveTitle": "前台标签页的实时画面",
+      "desktop": "桌面",
+      "desktopTitle": "桌面（VNC）",
+      "liveKeyboard": "实时浏览器。视图获得焦点时，按键会发送到页面。",
+      "connecting": "正在连接浏览器…",
+      "reconnecting": "与浏览器的连接已断开，正在重新连接…"
     }
   },
   "groups": {
@@ -90,6 +100,7 @@
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
+  "devices": "设备与 Obsidian",
   "teamSettings": "团队设置",
   "teamOrchestration": "团队与编排",
   "overview": "概览",

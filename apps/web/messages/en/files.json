@@ -1,0 +1,111 @@
+{
+  "title": "Files",
+  "projectDescription": "Documents, attachments and code of this project",
+  "roots": {
+    "label": "Folders",
+    "vault": "Knowledge",
+    "code": "Code",
+    "home": "Home",
+    "private": "Private",
+    "templates": "Templates",
+    "projects": "Projects"
+  },
+  "toolbar": {
+    "filter": "Filter by name",
+    "sort": "Sort",
+    "sortName": "Name",
+    "sortModified": "Modified",
+    "sortSize": "Size",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "list": "List",
+    "grid": "Grid",
+    "upload": "Upload",
+    "newFolder": "New folder",
+    "newFile": "New note",
+    "openInCode": "Open in VS Code"
+  },
+  "breadcrumb": "Folder path",
+  "modified": "{date, date, medium}",
+  "empty": {
+    "folder": "This folder is empty.",
+    "folderHint": "Drop files here or use Upload.",
+    "filter": "No entry matches “{filter}”.",
+    "readOnly": "Plan shows this folder read-only."
+  },
+  "unreadable": {
+    "title": "Plan cannot read this folder",
+    "body": "The workspace belongs to the agents' user on the server. Open it in VS Code instead.",
+    "missing": "This folder does not exist on the server."
+  },
+  "loadError": "The folder could not be loaded.",
+  "retry": "Try again",
+  "truncated": "Only the first {count} entries are shown.",
+  "dropToUpload": "Drop to upload into {folder}",
+  "uploaded": "{count, plural, one {# file uploaded} other {# files uploaded}}",
+  "moved": "Moved to {folder}",
+  "trashed": "{name} moved to the trash",
+  "pathCopied": "Path copied",
+  "copyFailed": "The path could not be copied",
+  "actions": {
+    "more": "Actions for {name}",
+    "download": "Download",
+    "rename": "Rename",
+    "move": "Move",
+    "copyPath": "Copy path",
+    "openInObsidian": "Open in Obsidian",
+    "openInCode": "Open in VS Code",
+    "openInDocs": "Open in Docs",
+    "linkToTask": "Link to task",
+    "trash": "Move to trash",
+    "showInFolder": "Show in folder"
+  },
+  "dialog": {
+    "newFolder": "New folder",
+    "newFile": "New note",
+    "rename": "Rename",
+    "name": "Name",
+    "folderName": "New folder",
+    "fileName": "Note.md",
+    "fileHint": "A .md or .txt file. A Markdown note opens in Docs.",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "moveDialog": {
+    "title": "Move {name}",
+    "description": "Open the folder to move it to.",
+    "here": "Move here"
+  },
+  "trashDialog": {
+    "title": "Move {name} to the trash?",
+    "description": "It moves to the trash folder of the vault and can be restored from there.",
+    "confirm": "Move to trash"
+  },
+  "linkDialog": {
+    "title": "Link to task",
+    "prompt": "Search tasks",
+    "linked": "Linked to {identifier}"
+  },
+  "viewer": {
+    "loading": "Loading…",
+    "tooLarge": "The file is too large to show here. Download it instead.",
+    "error": "The file could not be shown.",
+    "noPreview": "There is no preview for this kind of file.",
+    "extracted": "Extracted text",
+    "noExtracted": "No extracted text is available for this file yet.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomReset": "Fit"
+  },
+  "picker": {
+    "up": "Up one folder",
+    "empty": "Nothing here.",
+    "choose": "Choose"
+  },
+  "attachment": {
+    "missing": "File missing",
+    "relink": "Choose the file again",
+    "relinkTitle": "Choose the file for {name}"
+  }
+}

@@ -1,5 +1,6 @@
 {
   "inbox": "Inbox",
+  "files": "Files",
   "approvals": "Approvals",
   "dashboards": "Dashboard",
   "workItems": "Tasks",
@@ -35,6 +36,7 @@
   "newTeam": "New team",
   "manageTeams": "Manage teams",
   "role": "Role: {role}",
+  "basedOn": "Based on It’s a Plan (AGPL-3.0)",
   "search": "Search or run a command…",
   "searchHint": "Search or run a command ({key})",
   "newIssueHint": "New issue ({key})",
@@ -69,7 +71,15 @@
       "reload": "Reload",
       "tabs": "Tabs",
       "newTab": "New tab",
-      "closeTab": "Close tab"
+      "closeTab": "Close tab",
+      "view": "Browser view",
+      "live": "Live",
+      "liveTitle": "Live view of the tab in front",
+      "desktop": "Desktop",
+      "desktopTitle": "Desktop (VNC)",
+      "liveKeyboard": "Live browser. Keys go to the page while the view has the focus.",
+      "connecting": "Connecting to the browser…",
+      "reconnecting": "The connection to the browser was lost. Reconnecting…"
     }
   },
   "groups": {
@@ -90,6 +100,7 @@
   "tools": "Tools",
   "skills": "Skills",
   "vault": "Vault",
+  "devices": "Devices & Obsidian",
   "teamSettings": "Team settings",
   "teamOrchestration": "Team & orchestration",
   "overview": "Overview",

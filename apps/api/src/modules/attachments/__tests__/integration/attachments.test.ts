@@ -3,6 +3,7 @@ import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
+import { freshVault } from '#tests/helpers/vault';
 
 // Attachments feature: metadata in Postgres, bytes in the file storage (shared/s3.ts,
 // below the temporary STORAGE_ROOT the test preload sets). It also covers the one
@@ -38,6 +39,7 @@ function uploadFile(
 describe('attachments', () => {
   beforeEach(async () => {
     await resetDb();
+    freshVault();
   });
   afterEach(clearLimits);
 

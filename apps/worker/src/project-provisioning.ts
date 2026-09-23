@@ -223,11 +223,46 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
   }
 }
 
+// The schedules of a deleted project would keep firing in Mastra. They are deleted before
+// the job reaches provisioning, and a retry deletes the ones that are left.
+function deleteMastraSchedules(job: ClaimedDeprovisioningJob, signal: AbortSignal) {
+  const config = workerConfig();
+  return fetch(config.mastraControlUrl!, {
+    method: 'POST',
+    signal,
+    redirect: 'error',
+    headers: {
+      Authorization: `Bearer ${config.mastraControlToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      schemaVersion: 1,
+      operation: 'delete-project-schedules',
+      projectRef: `project:${job.project.key}`,
+    }),
+  });
+}
+
 async function deliverDeprovisioningJob(job: ClaimedDeprovisioningJob): Promise<void> {
   const config = workerConfig();
+  if (config.mastraControlUrl && !config.mastraControlToken) {
+    await recordDeprovisioningFailure(job, 'MASTRA_CONTROL_TOKEN_FILE is not set', false);
+    return;
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.projectProvisioningTimeoutMs);
   try {
+    if (config.mastraControlUrl) {
+      const deleted = await deleteMastraSchedules(job, controller.signal);
+      if (!deleted.ok) {
+        await recordDeprovisioningFailure(
+          job,
+          `Mastra control HTTP ${deleted.status}`,
+          isRetryableStatus(deleted.status),
+        );
+        return;
+      }
+    }
     const response = await fetch(config.projectProvisioningUrl!, {
       method: 'POST',
       signal: controller.signal,
@@ -312,7 +347,7 @@ export async function projectAgentIds(projectIds?: number[]): Promise<Map<number
 // Every area of the project with its folder. The integration service creates the
 // folders of new areas, moves those whose folder changed and moves the folders of an
 // area missing from the list to the trash.
-export async function projectAreas(projectId: number) {
+async function projectAreas(projectId: number) {
   return db
     .select({
       id: projectViewFolder.id,

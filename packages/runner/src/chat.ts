@@ -2,6 +2,7 @@ import { AnswerStream } from './agui';
 import type { ChatMessage, Client } from './client';
 import { presetOf, type RunnerConfig } from './config';
 import { execute } from './execute';
+import type { HermesRunSettings } from './policy';
 
 // The command is the same one that handles a queued run; what differs is that its output
 // is reported while it is still being written, so the person waiting in the chat reads the
@@ -25,8 +26,7 @@ export async function answer(
   client: Client,
   message: ChatMessage,
   stop: AbortController,
-  toolsets: string[] | null,
-  policyEnv: Record<string, string> = {},
+  hermes: HermesRunSettings | null,
 ): Promise<void> {
   // Reported once: repeating it on every batch is a field the server has to ignore.
   let reported = message.sessionId !== null;
@@ -52,14 +52,14 @@ export async function answer(
       sessionId: message.sessionId,
       model: message.model,
       thinkingLevel: message.thinkingLevel,
-      toolsets,
+      toolsets: hermes?.toolsets ?? null,
       env: {
-        ...policyEnv,
         ITSAPLAN_TRIGGER: 'chat',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
         ITSAPLAN_THREAD_ID: message.threadId,
         ITSAPLAN_MESSAGE_ID: String(message.id),
         ITSAPLAN_SESSION_ID: message.sessionId ?? '',
+        ...hermes?.env,
       },
     },
     { onData: (chunk) => stream.write(chunk), signal: stop.signal },

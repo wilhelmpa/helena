@@ -34,3 +34,21 @@ depends on the m5 LAN address and the nspawn address remaining unchanged. Existi
 connections have a 15-minute idle timeout and an eight-hour lifetime; at most 32 are
 accepted concurrently. The relay provides no SSH authentication itself and must not be
 used as a public-interface listener.
+
+## Syncthing relay
+
+`volition-lan-syncthing-relay.service` runs the same relay for Syncthing: it forwards
+`192.168.2.220:22000` to `192.168.122.58:22000`, so devices on the home network sync
+with Kingston directly instead of through the public Syncthing relays. Syncthing's local
+discovery does not cross the private virtual network, so each device lists Kingston with
+the addresses `tcp://192.168.2.220:22000, dynamic`. Plan shows this address in its
+device guide once `SYNCTHING_LAN_ADDRESS=tcp://192.168.2.220:22000` is in
+`/etc/volition/plan.env`.
+
+```sh
+install -Dm0644 volition-lan-syncthing-relay.service ~/.config/systemd/user/volition-lan-syncthing-relay.service
+systemctl --user daemon-reload
+systemctl --user enable --now volition-lan-syncthing-relay.service
+```
+
+A connection lasts at most seven days; Syncthing then connects again.

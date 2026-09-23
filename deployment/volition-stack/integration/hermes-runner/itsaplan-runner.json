@@ -3,8 +3,7 @@
   "agent": "hermes",
   "cwd": "/srv/volition/workspaces",
   "args": [
-    "--checkpoints",
-    "--yolo"
+    "--checkpoints"
   ],
   "concurrency": 3,
   "pollIntervalMs": 3000,

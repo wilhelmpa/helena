@@ -1016,7 +1016,8 @@ describe('ai agents', () => {
 
   // An agent is set up and talked to entirely over MCP. What stays out serves the chat
   // UI: the streamed run and the caller's own thread history, plus this agent's run
-  // history — the analytics routes carry the project-wide run feed MCP reads instead.
+  // history — the analytics routes carry the project-wide run feed MCP reads instead —
+  // and its MCP servers, which start commands on the agents' machine.
   it('exposes agent management and the run to MCP', () => {
     const untagged = untaggedRoutes((route) => route.includes('/ai-agents'));
     expect(untagged).toEqual([
@@ -1028,6 +1029,8 @@ describe('ai agents', () => {
       'GET /projects/:projectKey/ai-agents/:agentId/threads/:threadId/messages',
       'PATCH /projects/:projectKey/ai-agents/:agentId/threads/:threadId',
       'DELETE /projects/:projectKey/ai-agents/:agentId/threads/:threadId',
+      'GET /teams/:teamId/ai-agents/:agentId/mcp-servers',
+      'PUT /teams/:teamId/ai-agents/:agentId/mcp-servers',
       'POST /projects/:projectKey/ai-agents/:agentId/chat',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/catalog',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/events',

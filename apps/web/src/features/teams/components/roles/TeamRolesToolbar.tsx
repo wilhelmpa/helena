@@ -16,6 +16,7 @@ import {
   serializeRoles,
   type PlannedRole,
 } from '../../utils/rolesTransfer';
+import { copyText, readClipboardText } from '@/utils/clipboard';
 
 // The header actions of the team panel's roles section: create a role, and copy or
 // paste the team's roles through the clipboard (with Cmd/Ctrl+C/V shortcuts). Only
@@ -45,7 +46,7 @@ export default function TeamRolesToolbar({
       return;
     }
     try {
-      await navigator.clipboard.writeText(serializeRoles(roles));
+      await copyText(serializeRoles(roles));
       toast.success(t('copiedRoles', { count: customRoleCount }));
       recheck();
     } catch {
@@ -58,7 +59,7 @@ export default function TeamRolesToolbar({
     if (!catalog) return;
     let text: string;
     try {
-      text = await navigator.clipboard.readText();
+      text = await readClipboardText();
     } catch {
       toast.error(t('readFailed'));
       return;

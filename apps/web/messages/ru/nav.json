@@ -1,5 +1,6 @@
 {
   "inbox": "Входящие",
+  "files": "Файлы",
   "approvals": "Согласования",
   "dashboards": "Дашборды",
   "workItems": "Задачи",
@@ -32,6 +33,7 @@
   "newTeam": "Новая команда",
   "manageTeams": "Управление командами",
   "role": "Роль: {role}",
+  "basedOn": "Основано на It’s a Plan (AGPL-3.0)",
   "search": "Поиск или команда…",
   "searchHint": "Поиск или команда ({key})",
   "newIssueHint": "Новая задача ({key})",
@@ -66,7 +68,15 @@
       "reload": "Обновить",
       "tabs": "Вкладки",
       "newTab": "Новая вкладка",
-      "closeTab": "Закрыть вкладку"
+      "closeTab": "Закрыть вкладку",
+      "view": "Вид браузера",
+      "live": "Вживую",
+      "liveTitle": "Прямой показ активной вкладки",
+      "desktop": "Рабочий стол",
+      "desktopTitle": "Рабочий стол (VNC)",
+      "liveKeyboard": "Браузер в прямом показе. Нажатия клавиш передаются странице, пока вид в фокусе.",
+      "connecting": "Подключение к браузеру…",
+      "reconnecting": "Соединение с браузером потеряно. Повторное подключение…"
     }
   },
   "groups": {
@@ -90,6 +100,7 @@
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
+  "devices": "Устройства и Obsidian",
   "teamSettings": "Настройки команды",
   "teamOrchestration": "Команда и оркестрация",
   "overview": "Обзор",

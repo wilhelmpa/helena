@@ -19,6 +19,8 @@ Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
 LoadCredential=provisioning_token:/etc/volition/provisioning.token
 Environment=PROJECT_PROVISIONING_URL=http://127.0.0.1:18800/api/provision
 Environment=PROJECT_PROVISIONING_TOKEN_FILE=%d/provisioning_token
+LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
+Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/worker/src/index.ts
 Restart=on-failure
 RestartSec=2

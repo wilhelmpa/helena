@@ -2,6 +2,12 @@ import { t } from 'elysia';
 
 import { runtimeConflict, runtimeInventory, runtimePolicy, runtimeState } from '../core/model';
 
+// A literal, or the id of a secret whose value GET /agent-runtime/mcp-secrets returns.
+const runtimeMcpValue = t.Union([
+  t.Object({ name: t.String(), value: t.String() }),
+  t.Object({ name: t.String(), secret: t.Number() }),
+]);
+
 export const RuntimePolicySnapshotResponse = t.Object({
   revision: t.String(),
   agent: t.Object({ id: t.Number(), name: t.String(), username: t.String() }),
@@ -32,6 +38,24 @@ export const RuntimePolicySnapshotResponse = t.Object({
     read: t.Array(t.String()),
     write: t.Array(t.String()),
     deny: t.Array(t.String()),
+  }),
+  mcpServers: t.Array(
+    t.Object({
+      name: t.String(),
+      transport: t.Union([t.Literal('stdio'), t.Literal('http'), t.Literal('sse')]),
+      command: t.Nullable(t.String()),
+      args: t.Array(t.String()),
+      url: t.Nullable(t.String()),
+      env: t.Array(runtimeMcpValue),
+      headers: t.Array(runtimeMcpValue),
+    }),
+    { description: 'The MCP servers of the team library enabled on the agent.' },
+  ),
+});
+
+export const McpSecretsResponse = t.Object({
+  secrets: t.Record(t.String(), t.String(), {
+    description: "The values of the secrets the agent's MCP servers reference, by secret id.",
   }),
 });
 

@@ -3,12 +3,14 @@ import test from 'node:test';
 import { Mastra } from '@mastra/core/mastra';
 import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { LibSQLStore } from '@mastra/libsql';
+import { createHonoServer } from '@mastra/deployer/server';
 import { z } from 'zod';
 import { workflowIds, type WorkEnvelope } from '../src/mastra/contracts.ts';
 import { idempotencyKey, planEffects } from '../src/mastra/effects.ts';
-import { workflowDefinitions, workflowRegistry } from '../src/mastra/registry.ts';
+import { workflowRegistry } from '../src/mastra/registry.ts';
 import { eventTriggerRegistry, workflowForEvent } from '../src/mastra/triggers.ts';
-import { mastra, restartActiveRuns } from '../src/mastra/index.ts';
+import { createClient } from '@libsql/client';
+import { mastra, pruneStorage, restartActiveRuns } from '../src/mastra/index.ts';
 import { privateClassifierAdapter } from '../src/mastra/adapters/classifier.ts';
 import { withBackoff } from '../src/mastra/adapters/hermes-team.ts';
 
@@ -24,10 +26,6 @@ const envelope = (dryRun: boolean): WorkEnvelope => ({
 
 test('registry contains the required workflows and every trigger resolves', () => {
   assert.deepEqual(Object.keys(workflowRegistry).sort(), [...workflowIds].sort());
-  assert.deepEqual(
-    [...workflowDefinitions.map((item) => item.id), 'agent-team', 'agent-routine'].sort(),
-    [...workflowIds].sort(),
-  );
   for (const [event, workflowId] of Object.entries(eventTriggerRegistry)) {
     assert.equal(workflowForEvent(event), workflowId);
   }
@@ -38,25 +36,23 @@ test('effect ids and idempotency keys are stable and gated effects are marked', 
   const specs = [
     { kind: 'external-send' as const, target: 'mail:reply', description: 'Send reply' },
   ];
-  const first = planEffects(envelope(false), 'support', specs);
-  const second = planEffects(envelope(false), 'support', specs);
+  const first = planEffects(envelope(false), 'inbox-triage', specs);
+  const second = planEffects(envelope(false), 'inbox-triage', specs);
   assert.deepEqual(first, second);
   assert.equal(first[0].requiresApproval, true);
   assert.equal(first[0].status, 'blocked');
-  assert.equal(first[0].idempotencyKey, idempotencyKey(envelope(false), 'support', 'mail:reply'));
+  assert.equal(first[0].idempotencyKey, idempotencyKey(envelope(false), 'inbox-triage', 'mail:reply'));
 });
 
-test('all workflows execute a safe dry-run', async () => {
-  for (const workflowId of workflowIds.filter((item) => !['agent-team', 'agent-routine'].includes(item))) {
-    const run = await mastra.getWorkflow(workflowId).createRun();
-    const result = await run.start({ inputData: envelope(true) });
-    assert.equal(result.status, 'success', workflowId);
-    if (result.status !== 'success') continue;
-    assert.equal(result.result.status, 'dry-run-complete');
-    assert.equal(result.result.workflowId, workflowId);
-    assert.ok(result.result.effects.length > 0);
-    assert.ok(result.result.effects.every((effect) => effect.status === 'simulated'));
-  }
+test('an inbox triage dry-run simulates its effects without the classifier', async () => {
+  const run = await mastra.getWorkflow('inbox-triage').createRun();
+  const result = await run.start({ inputData: envelope(true) });
+  assert.equal(result.status, 'success');
+  if (result.status !== 'success') return;
+  assert.equal(result.result.status, 'dry-run-complete');
+  assert.equal(result.result.workflowId, 'inbox-triage');
+  assert.ok(result.result.effects.length > 0);
+  assert.ok(result.result.effects.every((effect) => effect.status === 'simulated'));
 });
 
 test('bounded exponential backoff preserves attempts for an idempotent operation', async () => {
@@ -95,22 +91,6 @@ test('an aborted signal ends the backoff wait and stops further attempts', async
     { name: 'AbortError' },
   );
   assert.deepEqual(attempts, [1]);
-});
-
-test('external effects suspend, then resume without executing them', async () => {
-  const run = await mastra.getWorkflow('application').createRun();
-  const suspended = await run.start({ inputData: envelope(false) });
-  assert.equal(suspended.status, 'suspended');
-  if (suspended.status !== 'suspended') return;
-  assert.deepEqual(suspended.suspended[0], ['approval-gate']);
-  const resumed = await run.resume({
-    step: 'approval-gate',
-    resumeData: { approved: true, decidedBy: 'test-operator' },
-  });
-  assert.equal(resumed.status, 'success');
-  if (resumed.status !== 'success') return;
-  assert.equal(resumed.result.status, 'needs-attention');
-  assert.match(resumed.result.summary, /No external effect was executed/);
 });
 
 test('production inbox triage uses the provider-neutral classifier adapter', async () => {
@@ -221,4 +201,39 @@ test('runs that were active when Mastra stopped continue from the step they were
   assert.equal(stored?.status, 'success');
   assert.deepEqual(stored?.result, { value: 20 });
   assert.deepEqual(executed, ['first', 'second']);
+});
+
+test('the Mastra API answers only requests that carry the token of the proxy', async () => {
+  const app = await createHonoServer(mastra, { tools: {} });
+  const token = process.env.MASTRA_UPSTREAM_TOKEN;
+  for (const headers of [{}, { authorization: `Bearer ${'x'.repeat(48)}` }]) {
+    assert.equal((await app.request('/mastra/api/workflows', { headers })).status, 401);
+    const start = await app.request('/mastra/api/workflows/agent-team/create-run', {
+      method: 'POST',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: '{}',
+    });
+    assert.equal(start.status, 401);
+  }
+  const listed = await app.request('/mastra/api/workflows', { headers: { authorization: `Bearer ${token}` } });
+  assert.equal(listed.status, 200);
+});
+
+test('pruning deletes runs unchanged for 90 days and keeps newer ones', async () => {
+  for (const runId of ['prune-old', 'prune-new']) {
+    const run = await mastra.getWorkflow('inbox-triage').createRun({ runId });
+    await run.start({ inputData: { ...envelope(true), eventId: runId } });
+  }
+  const database = createClient({ url: process.env.STUDIO_DATABASE_URL! });
+  await database.execute({
+    sql: 'UPDATE mastra_workflow_snapshot SET updatedAt = ? WHERE run_id = ?',
+    args: [new Date(Date.now() - 91 * 24 * 60 * 60_000).toISOString(), 'prune-old'],
+  });
+  database.close();
+
+  await pruneStorage();
+
+  const workflows = await mastra.getStorage()!.getStore('workflows');
+  assert.equal(await workflows!.getWorkflowRunById({ runId: 'prune-old', workflowName: 'inbox-triage' }), null);
+  assert.ok(await workflows!.getWorkflowRunById({ runId: 'prune-new', workflowName: 'inbox-triage' }));
 });

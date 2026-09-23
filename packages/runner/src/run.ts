@@ -2,6 +2,7 @@ import { UsageReader } from './agui';
 import type { Client, Run } from './client';
 import type { RunnerConfig } from './config';
 import { execute, type Outcome } from './execute';
+import type { HermesRunSettings } from './policy';
 import { runCwd } from './workdir';
 
 // `stop` is aborted when the heartbeat says the run was canceled. The server has already
@@ -31,8 +32,7 @@ export async function perform(
   client: Client,
   run: Run,
   stop: AbortController,
-  toolsets: string[] | null = null,
-  policyEnv: Record<string, string> = {},
+  hermes: HermesRunSettings | null = null,
 ): Promise<Outcome | null> {
   // Read as the command writes, not off the outcome: only the tail of the output is
   // kept, and the line carrying the counts can fall outside it. A command that reports
@@ -41,7 +41,7 @@ export async function perform(
   const task = taskOf(run);
   const outcome = await execute(
     { ...config, cwd: runCwd(config.cwd, run.workdir) },
-    { ...task, env: { ...policyEnv, ...task.env }, toolsets },
+    { ...task, toolsets: hermes?.toolsets ?? null, env: { ...task.env, ...hermes?.env } },
     {
       onData: (chunk) => usage.write(chunk),
       signal: stop.signal,

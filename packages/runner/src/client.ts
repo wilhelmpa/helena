@@ -98,6 +98,14 @@ export class Client {
     return (await (await this.get('/agent-runtime/policy')).json()) as RuntimePolicySnapshot;
   }
 
+  // The values of the secrets the agent's MCP servers name, by secret id.
+  async mcpSecrets(): Promise<Record<string, string>> {
+    const body = (await (await this.get('/agent-runtime/mcp-secrets')).json()) as {
+      secrets?: Record<string, string>;
+    };
+    return body.secrets ?? {};
+  }
+
   async reportRuntimeStatus(status: RuntimeStatus): Promise<void> {
     await this.post('/agent-runtime/status', status);
   }

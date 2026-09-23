@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { gitlabWebhookCommand } from './gitlabCommand';
+import { copyText } from '@/utils/clipboard';
 
 export default function GitlabCliCommand({
   payloadUrl,
@@ -16,7 +17,7 @@ export default function GitlabCliCommand({
   const preview = gitlabWebhookCommand(payloadUrl, '•'.repeat(24) + secret.slice(-4));
 
   async function copy() {
-    await navigator.clipboard.writeText(command);
+    await copyText(command);
     toast.success(t('gitlabCommandCopied'));
   }
 

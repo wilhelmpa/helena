@@ -1,5 +1,6 @@
 {
   "inbox": "Bandeja de entrada",
+  "files": "Archivos",
   "approvals": "Aprobaciones",
   "dashboards": "Paneles",
   "workItems": "Elementos de trabajo",
@@ -32,6 +33,7 @@
   "newTeam": "Nuevo equipo",
   "manageTeams": "Gestionar equipos",
   "role": "Rol: {role}",
+  "basedOn": "Basado en It’s a Plan (AGPL-3.0)",
   "search": "Buscar o ejecutar un comando…",
   "searchHint": "Buscar o ejecutar un comando ({key})",
   "newIssueHint": "Nuevo ticket ({key})",
@@ -66,7 +68,15 @@
       "reload": "Recargar",
       "tabs": "Pestañas",
       "newTab": "Nueva pestaña",
-      "closeTab": "Cerrar pestaña"
+      "closeTab": "Cerrar pestaña",
+      "view": "Vista del navegador",
+      "live": "En directo",
+      "liveTitle": "Vista en directo de la pestaña en primer plano",
+      "desktop": "Escritorio",
+      "desktopTitle": "Escritorio (VNC)",
+      "liveKeyboard": "Navegador en directo. Las teclas van a la página mientras la vista tiene el foco.",
+      "connecting": "Conectando con el navegador…",
+      "reconnecting": "Se perdió la conexión con el navegador. Reconectando…"
     }
   },
   "groups": {
@@ -90,6 +100,7 @@
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
+  "devices": "Dispositivos y Obsidian",
   "teamSettings": "Ajustes del equipo",
   "teamOrchestration": "Equipo y orquestación",
   "overview": "Resumen",

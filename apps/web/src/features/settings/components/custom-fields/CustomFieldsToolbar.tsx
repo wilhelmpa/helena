@@ -26,6 +26,7 @@ import {
   serializeCustomFields,
   type CustomFieldsImportPlan,
 } from '../../utils/customFieldsTransfer';
+import { copyText, readClipboardText } from '@/utils/clipboard';
 
 // The Custom fields page header actions: copy the project's fields (asking whether to
 // include the type-scoped ones) and paste them (creating any missing issue types).
@@ -55,9 +56,7 @@ export default function CustomFieldsToolbar({
   const doCopy = useCallback(
     async (includeTypeScoped: boolean) => {
       try {
-        await navigator.clipboard.writeText(
-          serializeCustomFields(fields, typeNameById, includeTypeScoped),
-        );
+        await copyText(serializeCustomFields(fields, typeNameById, includeTypeScoped));
         toast.success(t('copied', { count: includeTypeScoped ? fields.length : globalCount }));
       } catch {
         toast.error(tTransfer('copyFailed'));
@@ -83,7 +82,7 @@ export default function CustomFieldsToolbar({
   const pasteFields = useCallback(async () => {
     let text: string;
     try {
-      text = await navigator.clipboard.readText();
+      text = await readClipboardText();
     } catch {
       toast.error(tTransfer('readFailed'));
       return;

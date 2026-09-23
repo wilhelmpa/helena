@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import SettingsIconButton from '../SettingsIconButton';
 import { useSettingsCan } from '../../context/settingsPermission';
+import { copyText } from '@/utils/clipboard';
 
 export function SettingsWebhookRow({
   webhook,
@@ -35,7 +36,7 @@ export function SettingsWebhookRow({
 
   async function copySecret() {
     try {
-      await navigator.clipboard.writeText(webhook.secret);
+      await copyText(webhook.secret);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

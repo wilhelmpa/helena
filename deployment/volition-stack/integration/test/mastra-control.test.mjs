@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createMastraControlService, MastraControlError } from '../mastra-control.mjs';
 
+const catalog = { flows: [{ id: 'inbox-triage' }, { id: 'agent-team' }, { id: 'agent-routine' }] };
+
 function service(handler) {
   return createMastraControlService(
-    { mastraControlUrl: 'http://172.30.95.2:4111/mastra/api/', mastraControlOwnerEmail: 'owner@example.test' },
+    { mastraApiUrl: 'http://127.0.0.1:4112/mastra/api/', mastraApiToken: 'upstream-token', catalog },
     { fetch: handler },
   );
 }
@@ -12,6 +14,29 @@ function service(handler) {
 function json(value, status = 200) {
   return new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 }
+
+test('every Mastra request carries the upstream token and no identity headers', async () => {
+  const calls = [];
+  const control = service(async (url, init) => {
+    calls.push(init.headers);
+    return json({ runs: [] });
+  });
+  await control.execute({ schemaVersion: 1, operation: 'runs', workflowId: 'agent-team', projectRef: 'project:PRIV' });
+  assert.deepEqual(calls, [{ accept: 'application/json', authorization: 'Bearer upstream-token' }]);
+});
+
+test('the catalog is answered without a Mastra request', async () => {
+  const control = service(async () => assert.fail('Mastra was called'));
+  assert.deepEqual(await control.execute({ schemaVersion: 1, operation: 'catalog' }), { catalog });
+});
+
+test('a workflow outside the catalog has no runs and Mastra is not asked', async () => {
+  const control = service(async () => assert.fail('Mastra was called'));
+  assert.deepEqual(
+    await control.execute({ schemaVersion: 1, operation: 'runs', workflowId: 'support', projectRef: 'project:PRIV' }),
+    { runs: [], total: 0 },
+  );
+});
 
 test('start creates the run in the project and starts it without waiting for it', async () => {
   const calls = [];
@@ -55,7 +80,7 @@ test('an existing idempotency key cannot cross projects', async () => {
       control.execute({
         schemaVersion: 1,
         operation: 'start',
-        workflowId: 'support',
+        workflowId: 'inbox-triage',
         projectRef: 'project:PRIV',
         eventId: 'same',
       }),
@@ -70,7 +95,7 @@ test('run controls reject a run from another project', async () => {
       control.execute({
         schemaVersion: 1,
         operation: 'retry',
-        workflowId: 'support',
+        workflowId: 'inbox-triage',
         projectRef: 'project:PRIV',
         runId: 'run-1',
       }),
@@ -133,7 +158,7 @@ test('retry refuses a run that did not fail or has no failed step', async () => 
 test('schedule listing filters by the stored project context', async () => {
   const control = service(async (url) => {
     if (String(url).endsWith('/triggers?limit=1')) return json({ triggers: [] });
-    assert.match(String(url), /schedules\?workflowId=support$/);
+    assert.match(String(url), /schedules\?workflowId=inbox-triage$/);
     return json({
       schedules: [
         { id: 'one', requestContext: { projectRef: 'project:PRIV' } },
@@ -144,7 +169,7 @@ test('schedule listing filters by the stored project context', async () => {
   const result = await control.execute({
     schemaVersion: 1,
     operation: 'schedules',
-    workflowId: 'support',
+    workflowId: 'inbox-triage',
     projectRef: 'project:PRIV',
   });
   assert.deepEqual(result.schedules.map((item) => item.id), ['one']);
@@ -331,7 +356,7 @@ test('schedule creation is idempotent within one project and schedule key', asyn
 test('concurrent schedule creation shares one Mastra mutation', async () => {
   let mutations = 0;
   const control = service(async (url, init = {}) => {
-    if (String(url).endsWith('schedules?workflowId=system-audit')) {
+    if (String(url).endsWith('schedules?workflowId=inbox-triage')) {
       await new Promise(resolve => setTimeout(resolve, 5));
       return json({ schedules: [] });
     }
@@ -344,7 +369,7 @@ test('concurrent schedule creation shares one Mastra mutation', async () => {
   const request = {
     schemaVersion: 1,
     operation: 'create-schedule',
-    workflowId: 'system-audit',
+    workflowId: 'inbox-triage',
     projectRef: 'project:PRIV',
     organizationRef: 'organization:1',
     capabilityRefs: [],
@@ -365,7 +390,7 @@ test('run listing exposes the status stored in Mastra snapshots', async () => {
   const result = await control.execute({
     schemaVersion: 1,
     operation: 'runs',
-    workflowId: 'system-audit',
+    workflowId: 'inbox-triage',
     projectRef: 'project:PRIV',
   });
   assert.equal(result.runs[0].status, 'success');
@@ -429,7 +454,7 @@ test('resume requires an explicit approval for a suspended owned run', async () 
       control.execute({
         schemaVersion: 1,
         operation: 'resume',
-        workflowId: 'application',
+        workflowId: 'inbox-triage',
         projectRef: 'project:PRIV',
         runId: 'run-1',
       }),
@@ -456,7 +481,8 @@ test("deleting a project's schedules leaves other projects and agent schedules a
       ],
     });
   });
-  assert.equal(await control.deleteProjectSchedules('project:PRIV'), 2);
+  const request = { schemaVersion: 1, operation: 'delete-project-schedules' };
+  assert.deepEqual(await control.execute({ ...request, projectRef: 'project:PRIV' }), { deleted: 2 });
   assert.deepEqual(deleted, ['daily', 'gone']);
-  await assert.rejects(control.deleteProjectSchedules('PRIV'), MastraControlError);
+  await assert.rejects(control.execute({ ...request, projectRef: 'PRIV' }), MastraControlError);
 });

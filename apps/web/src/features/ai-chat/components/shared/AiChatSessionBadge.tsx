@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { InputGroupButton } from '@/components/ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { copyText } from '@/utils/clipboard';
 
 // The coding agent session the agent's runner keeps for this conversation on its own
 // machine. It is what the operator resumes to read the full transcript — `claude
@@ -15,7 +16,7 @@ export function AiChatSessionBadge({ sessionId }: { sessionId: string }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
-    await navigator.clipboard.writeText(sessionId);
+    await copyText(sessionId);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };

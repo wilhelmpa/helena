@@ -135,6 +135,18 @@ describe('area folders', () => {
       });
 
       expect(renamed.data).toMatchObject({ name: 'Product design', folder: 'ux' });
+      const job = await provisioning(asOwner);
+      expect(job.status).toBe('pending');
+      expect(job.id).not.toBe(delivered);
+    });
+
+    it('queues nothing for a patch that changes nothing', async () => {
+      const { asOwner, projectId, areas } = await setup();
+      const area = (await areas.post({ name: 'Design', folder: 'ux' })).data!;
+      const delivered = await deliver(asOwner, projectId);
+
+      await asOwner['view-folders']({ folderId: area.id }).patch({ name: 'Design' });
+
       expect(await provisioning(asOwner)).toMatchObject({ id: delivered, status: 'succeeded' });
     });
 

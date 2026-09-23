@@ -22,6 +22,23 @@ const jsonProcessor = { meta: { name: '.json' }, ...i18nJson.processors['.json']
 /** @type {import("eslint").Linter.Config[]} */
 export default [
   ...nextJsConfig,
+  // The app is also used over plain http on the LAN, where both APIs are undefined and
+  // a direct call throws. The helpers fall back to what every context provides.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/utils/uuid.ts', 'src/utils/clipboard.ts', 'src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        { object: 'crypto', property: 'randomUUID', message: 'Use uuid() from @/utils/uuid.' },
+        {
+          object: 'navigator',
+          property: 'clipboard',
+          message: 'Use copyText/readClipboardText from @/utils/clipboard.',
+        },
+      ],
+    },
+  },
   ...namespaces.map((namespace) => ({
     files: [`messages/*/${namespace}`],
     plugins: { 'i18n-json': i18nJson },

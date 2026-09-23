@@ -10,9 +10,12 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
 import { ToolConfigDialog } from './ToolConfigDialog';
 import TeamAgentTools from './TeamAgentTools';
+import TeamMcpServers from './TeamMcpServers';
+import { ToolSectionHeader } from './ToolSectionHeader';
 
-// The configured tools of a team: external integrations the internal agents of its
-// projects can call, each bound to one of the team's credentials.
+// The tools of a team: the MCP servers its Hermes agents start, and the external
+// integrations the internal agents of its projects call, each bound to one of the team's
+// credentials.
 export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
   const t = useTranslations('teams');
   const { data: team } = useTeamQuery(teamId);
@@ -28,21 +31,33 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
       title={t('sections.agentTools.title')}
       description={t('sections.agentTools.description')}
       wide
-      actions={
-        permissions?.create ? (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('tools.add')}
-          </Button>
-        ) : undefined
-      }
     >
       {!permissions ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : !permissions.read ? (
         <p className="text-sm text-muted-foreground">{t('tools.noAccess')}</p>
       ) : (
-        <TeamAgentTools teamId={teamId} catalog={catalog} permissions={permissions} />
+        <div className="space-y-10">
+          <TeamMcpServers
+            teamId={teamId}
+            canManage={team?.role === 'owner' || team?.role === 'manager'}
+          />
+          <section className="space-y-3">
+            <ToolSectionHeader
+              title={t('tools.title')}
+              hint={t('tools.hint')}
+              action={
+                permissions.create ? (
+                  <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
+                    <Plus className="size-3.5" />
+                    {t('tools.add')}
+                  </Button>
+                ) : undefined
+              }
+            />
+            <TeamAgentTools teamId={teamId} catalog={catalog} permissions={permissions} />
+          </section>
+        </div>
       )}
 
       {creating && team && (

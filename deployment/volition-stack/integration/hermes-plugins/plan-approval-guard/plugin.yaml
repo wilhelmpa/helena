@@ -1,0 +1,6 @@
+name: plan-approval-guard
+version: "1.0.0"
+description: "Blocks a dangerous terminal command or an execute_code call in a Plan agent run until a person approved exactly that command in Plan, and blocks Hermes cron jobs."
+author: "Volition"
+provides_hooks:
+  - pre_tool_call

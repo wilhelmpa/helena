@@ -2,9 +2,11 @@ import {
   agentsPath,
   approvalsPath,
   connectionsPath,
+  devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
   homeDocsPath,
+  homeFilesPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
@@ -19,6 +21,7 @@ export type HomeNavigationId =
   | 'overview'
   | 'allWorkItems'
   | 'inbox'
+  | 'files'
   | 'approvals'
   | 'docs'
   | 'agentPool'
@@ -30,6 +33,7 @@ export type HomeNavigationId =
   | 'mcps'
   | 'connections'
   | 'vault'
+  | 'devices'
   | 'teamSettings';
 
 // The sidebar group an entry is listed under while no project is selected: the work
@@ -55,6 +59,7 @@ export function homeNavigation(
     { id: 'overview', group: 'work', href: '/' },
     { id: 'allWorkItems', group: 'work', href: tasksPath() },
     { id: 'inbox', group: 'work', href: globalInboxPath() },
+    { id: 'files', group: 'work', href: homeFilesPath() },
     { id: 'approvals', group: 'work', href: approvalsPath() },
     ...(isOwner ? [{ id: 'docs' as const, group: 'work' as const, href: homeDocsPath() }] : []),
     ...teamOnly([
@@ -72,6 +77,7 @@ export function homeNavigation(
     ...(vaultEnabled
       ? [{ id: 'vault' as const, group: 'globalSettings' as const, href: vaultPath() }]
       : []),
+    { id: 'devices', group: 'globalSettings', href: devicesPath() },
     { id: 'teamSettings', group: 'globalSettings', href: manageTeamsPath() },
   ];
 }

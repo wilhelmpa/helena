@@ -18,7 +18,8 @@ function apiOrigin(): string {
 // after this one. Inline styles are what tiptap, Radix, recharts and Scalar emit.
 // Images and media come from anywhere: markdown embeds by URL, OAuth profile
 // pictures, and the /media proxy on this origin. React evals in development only,
-// to rebuild server error stacks in the browser.
+// to rebuild server error stacks in the browser. Frames come from this origin, where
+// the file viewer opens a PDF, and from the configured workspace tools.
 export function contentSecurityPolicy(): string {
   const frameOrigins = workspaceFrameOrigins(serverRuntimeEnv().workspace);
   const scriptSources =
@@ -33,7 +34,7 @@ export function contentSecurityPolicy(): string {
     "media-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
     `connect-src 'self' ${apiOrigin()}`.trimEnd(),
-    `frame-src ${frameOrigins.length > 0 ? frameOrigins.join(' ') : "'none'"}`,
+    ["frame-src 'self'", ...frameOrigins].join(' '),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

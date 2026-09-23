@@ -190,7 +190,7 @@
     "openPreviewLink": "{name} in neuem Tab öffnen",
     "loadingPreview": "Vorschau wird geladen…",
     "previewUnavailable": "Keine Vorschau verfügbar. Öffne den Link, um diese Seite anzusehen.",
-    "internalPage": "ItsAPlan-Seite",
+    "internalPage": "Volition-Seite",
     "internalPreviewUnavailable": "Diese Seite ist nicht verfügbar oder du hast keinen Zugriff.",
     "previewNoteCount": "{count, plural, one {# Notiz} other {# Notizen}}",
     "previewCustomField": "Benutzerdefiniertes Feld",
@@ -209,6 +209,5 @@
     "page": "Seite {number}",
     "perPage": "pro Seite",
     "range": "{first}-{last} von {total}"
-  },
-  "themeSyncPartial": "Design in Plan aktualisiert, aber {count, plural, one {ein verbundener Dienst konnte nicht aktualisiert werden} other {# verbundene Dienste konnten nicht aktualisiert werden}}."
+  }
 }

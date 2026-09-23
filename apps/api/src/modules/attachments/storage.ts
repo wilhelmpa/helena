@@ -8,7 +8,7 @@ import {
   issueAttachment,
   project,
 } from '@repo/db';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { putObject, getObject, deleteObject } from '#shared/s3';
 import { HttpError, num } from '#shared/lib';
 import { getStorageSettings, mimeAllowed, MB } from '#modules/settings/service';
@@ -29,7 +29,7 @@ async function projectStoredBytes(
     .select({ total: sql<string>`coalesce(sum(${issueAttachment.sizeBytes}), 0)` })
     .from(issueAttachment)
     .innerJoin(issue, eq(issue.id, issueAttachment.issueId))
-    .where(eq(issue.projectId, projectId));
+    .where(and(eq(issue.projectId, projectId), eq(issueAttachment.linked, false)));
   const chats = await executor
     .select({ total: sql<string>`coalesce(sum(${chatAttachment.sizeBytes}), 0)` })
     .from(chatAttachment)
@@ -51,7 +51,7 @@ async function teamStoredBytes(
     .from(issueAttachment)
     .innerJoin(issue, eq(issue.id, issueAttachment.issueId))
     .innerJoin(project, eq(project.id, issue.projectId))
-    .where(eq(project.teamId, teamId));
+    .where(and(eq(project.teamId, teamId), eq(issueAttachment.linked, false)));
   const chats = await executor
     .select({ total: sql<string>`coalesce(sum(${chatAttachment.sizeBytes}), 0)` })
     .from(chatAttachment)

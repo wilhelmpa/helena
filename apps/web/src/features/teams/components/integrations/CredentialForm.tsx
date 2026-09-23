@@ -84,7 +84,10 @@ export function CredentialForm({
     return false;
   }
 
-  const canSubmit = !busy && meta.credentialSchema.every(fieldSatisfied);
+  // A secret is picked by its name, so it needs one.
+  const isSecret = meta.kind === 'secret';
+  const canSubmit =
+    !busy && meta.credentialSchema.every(fieldSatisfied) && (!isSecret || label.trim() !== '');
 
   function buildCredential(): Record<string, unknown> {
     const out: Record<string, unknown> = {};
@@ -170,13 +173,15 @@ export function CredentialForm({
       ))}
 
       <div className="space-y-1.5">
-        <Label>{t('label')}</Label>
+        <Label>{isSecret ? t('secretName') : t('label')}</Label>
         <Input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder={t('labelPlaceholder')}
+          placeholder={isSecret ? 'TYPESAFE_API_KEY' : t('labelPlaceholder')}
         />
-        <p className="text-xs text-muted-foreground">{t('labelHint')}</p>
+        <p className="text-xs text-muted-foreground">
+          {isSecret ? t('secretNameHint') : t('labelHint')}
+        </p>
       </div>
 
       <div className="flex justify-end gap-2">

@@ -703,6 +703,9 @@ export const approvalRequest = pgTable(
     kind: text('kind').notNull(),
     action: text('action').notNull(),
     details: text('details').notNull().default(''),
+    // The exact command a blocked tool call asked to run. Hermes' approval guard lets the
+    // follow-up run execute exactly this command once the request is approved.
+    command: text('command'),
     status: text('status').notNull().default('pending'),
     decidedByUserId: text('decided_by_user_id').references(() => user.id, {
       onDelete: 'set null',
@@ -722,10 +725,11 @@ export const approvalRequest = pgTable(
     check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
     index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),
     index('approval_request_agent_idx').on(t.agentId),
-    // One pending request per action of a run, so a repeated tool call cannot queue the
-    // same outward action twice.
+    // One pending request per action and command of a run, so a repeated tool call cannot
+    // queue the same outward action twice. The command is indexed by its hash: a long one
+    // exceeds the size of a b-tree index entry.
     uniqueIndex('approval_request_pending_run_uq')
-      .on(t.runId, t.kind, t.action)
+      .on(t.runId, t.kind, t.action, sql`md5(coalesce(${t.command}, ''))`)
       .where(sql`${t.status} = 'pending' AND ${t.runId} IS NOT NULL`),
   ],
 );
@@ -1175,6 +1179,53 @@ export const agentToolLink = pgTable(
   (t) => [
     primaryKey({ columns: [t.agentId, t.agentToolId] }),
     index('agent_tool_link_tool_idx').on(t.agentToolId),
+  ],
+);
+
+// An MCP server of the team's library, which an external agent's Hermes profile starts
+// once the server is enabled on the agent (agent_mcp_server_link). `name` is the key of
+// the server in Hermes' mcp_servers and the name of its toolset. A stdio server has
+// `command` and `args`, an http or sse server `url`. `env` (stdio) and `headers`
+// (http, sse) hold [{ name, value }] for a literal, or [{ name, credentialId }] for the
+// value of a team secret (an integration_credential of the 'secret' integration),
+// which only the agent's runner receives.
+export const agentMcpServer = pgTable(
+  'agent_mcp_server',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    transport: text('transport').notNull(),
+    command: text('command'),
+    args: jsonb('args').notNull().default([]),
+    url: text('url'),
+    env: jsonb('env').notNull().default([]),
+    headers: jsonb('headers').notNull().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.teamId, t.name),
+    check('agent_mcp_server_transport_check', sql`${t.transport} IN ('stdio', 'http', 'sse')`),
+    index('agent_mcp_server_team_idx').on(t.teamId),
+  ],
+);
+
+export const agentMcpServerLink = pgTable(
+  'agent_mcp_server_link',
+  {
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    mcpServerId: integer('mcp_server_id')
+      .notNull()
+      .references(() => agentMcpServer.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.agentId, t.mcpServerId] }),
+    index('agent_mcp_server_link_server_idx').on(t.mcpServerId),
   ],
 );
 
@@ -1668,9 +1719,11 @@ export const issueFieldOption = pgTable(
   (t) => [primaryKey({ columns: [t.issueId, t.fieldId, t.optionId] })],
 );
 
-// File attachments on issues. Bytes live in the S3-compatible object store;
-// this table holds metadata and the object key. public_id is the unguessable id
-// used in the public download URL.
+// File attachments on issues. The file is in the vault (vault_path, relative to
+// PROJECT_VAULT_ROOT), or, for a row not yet moved there, in the object store
+// (s3_key). sha256 finds the file again after it was moved outside Plan. A linked
+// row points at a vault file that existed before it and is never deleted with it.
+// public_id is the unguessable id used in the public download URL.
 export const issueAttachment = pgTable(
   'issue_attachment',
   {
@@ -1679,13 +1732,20 @@ export const issueAttachment = pgTable(
     issueId: integer('issue_id')
       .notNull()
       .references(() => issue.id, { onDelete: 'cascade' }),
-    s3Key: text('s3_key').notNull(),
+    s3Key: text('s3_key'),
+    vaultPath: text('vault_path'),
+    sha256: text('sha256'),
+    linked: boolean('linked').notNull().default(false),
     filename: text('filename').notNull(),
     contentType: text('content_type').notNull(),
     sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('issue_attachment_issue_idx').on(t.issueId)],
+  (t) => [
+    index('issue_attachment_issue_idx').on(t.issueId),
+    index('issue_attachment_vault_path_idx').on(t.vaultPath),
+    check('issue_attachment_storage_check', sql`(${t.s3Key} IS NULL) <> (${t.vaultPath} IS NULL)`),
+  ],
 );
 
 export const issueDevelopmentLink = pgTable(

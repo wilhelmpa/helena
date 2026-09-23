@@ -115,7 +115,6 @@ export function createProvisioner(config, options = {}) {
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
   const ensureBoardFiles =
     options.ensureBoardFiles ?? ensureLocalBoardFiles;
-  const mastraControl = options.mastraControl ?? null;
   let queue = Promise.resolve();
 
   // The runner reads the descriptors only when it starts.
@@ -234,7 +233,7 @@ export function createProvisioner(config, options = {}) {
     return registryPath;
   }
 
-  async function writeTrashReceipt(quarantineRoot, envelope, quarantined, details = {}) {
+  async function writeTrashReceipt(quarantineRoot, envelope, quarantined) {
     const receiptPath = path.join(quarantineRoot, "receipt.json");
     await writeJsonAtomic(receiptPath, {
       schemaVersion: 1,
@@ -245,7 +244,6 @@ export function createProvisioner(config, options = {}) {
         Date.now() + config.projectTrashRetentionDays * 24 * 60 * 60 * 1000,
       ).toISOString(),
       quarantined,
-      ...details,
       completedAt: new Date().toISOString(),
     });
     return receiptPath;
@@ -279,11 +277,13 @@ export function createProvisioner(config, options = {}) {
     return quarantined;
   }
 
-  // The registry names the areas of the last successful run, which is how a changed
-  // folder is moved and the folders of a deleted area are found.
+  // The registry names the areas whose folders the last runs created, moved or found,
+  // which is how a changed folder is moved and the folders of a deleted area are found.
   async function provisionProjectAreas(envelope, workspace, quarantineRoot) {
-    const registry = await readJson(path.join(config.registryRoot, `${workspace.slug}.json`), null);
-    const previous = registry?.project?.id === envelope.project.id ? validAreas(registry.areas) : [];
+    const registryPath = path.join(config.registryRoot, `${workspace.slug}.json`);
+    const registry = await readJson(registryPath, null);
+    const registered = registry?.project?.id === envelope.project.id;
+    const previous = registered ? validAreas(registry.areas) : [];
     const areas = envelope.areas ?? [];
     if (!areas.length && !previous.length) return { areas: [], quarantined: [], warnings: [] };
     const vault = await ensureProjectVault(workspace.slug, envelope.project);
@@ -299,6 +299,10 @@ export function createProvisioner(config, options = {}) {
       ],
       quarantine: (source, allowedRoot, label) =>
         quarantinePath({ source, allowedRoot, quarantineRoot, label }),
+      // A project's first run has no registry yet; writeRegistry creates it at the end.
+      record: async (recorded) => {
+        if (registered) await writeJsonAtomic(registryPath, { ...registry, areas: recorded });
+      },
     });
   }
 
@@ -526,9 +530,6 @@ export function createProvisioner(config, options = {}) {
       throw new ProvisioningConflictError("The project registry belongs to another project id");
     }
     const quarantined = [];
-    const mastraSchedulesDeleted = mastraControl
-      ? await mastraControl.deleteProjectSchedules(`project:${envelope.project.key}`)
-      : 0;
 
     if (envelope.requestedResources.includes("browser") || registry?.resources?.browser) {
       const browserDestination = await deprovisionProjectBrowser(
@@ -599,9 +600,7 @@ export function createProvisioner(config, options = {}) {
     });
     if (registryEntry) quarantined.push(registryEntry);
 
-    const receiptPath = await writeTrashReceipt(quarantineRoot, envelope, quarantined, {
-      mastraSchedulesDeleted,
-    });
+    const receiptPath = await writeTrashReceipt(quarantineRoot, envelope, quarantined);
     const resources = quarantined.flatMap((item) => {
       const kind =
         item.label === "workspace"

@@ -22,7 +22,7 @@ export default function HomePage() {
             </div>
           </div>
           <HomeOpenTasks />
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-3">
             {projects.data?.map((project) => (
               <HomeProjectCard key={project.id} project={project} />
             ))}
