@@ -577,7 +577,13 @@ export function createRequestHandler(
 
 export function createProvisioningServer(config, options = {}) {
   assertServerConfig(config);
-  const provisioner = options.provisioner ?? createProvisioner(config, options);
+  const mastraControl =
+    options.mastraControl ??
+    (config.mastraControlEnabled
+      ? createMastraControlService(config, options)
+      : null);
+  const provisioner =
+    options.provisioner ?? createProvisioner(config, { ...options, mastraControl });
   const inbox =
     options.inbox ??
     (config.inboxAccounts?.length ? createInboxService(config, options) : null);
@@ -609,11 +615,6 @@ export function createProvisioningServer(config, options = {}) {
   const secrets =
     options.secrets ??
     (config.connectionsEnabled ? createSecretStore(config, options) : null);
-  const mastraControl =
-    options.mastraControl ??
-    (config.mastraControlEnabled
-      ? createMastraControlService(config, options)
-      : null);
   const files =
     options.files ??
     (config.connectionsEnabled

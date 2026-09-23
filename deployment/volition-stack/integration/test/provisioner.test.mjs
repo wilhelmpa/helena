@@ -217,6 +217,44 @@ describe("createProvisioner", () => {
     assert.ok(commandCalls.some(({ args }) => args.includes("restart")));
   });
 
+  it("deletes the runner descriptor and the project's Mastra schedules on deprovision", async () => {
+    const scheduleRefs = [];
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      mastraControl: {
+        deleteProjectSchedules: async (projectRef) => {
+          scheduleRefs.push(projectRef);
+          return 2;
+        },
+      },
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+    const request = envelope();
+    request.requestedResources = ["workspace"];
+    await provisioner.provision(request);
+    const descriptor = path.join(root, "hermes/run/agents/demo.json");
+    await fs.mkdir(path.dirname(descriptor), { recursive: true });
+    await fs.writeFile(descriptor, "{}", { mode: 0o600 });
+
+    const deletion = {
+      ...request,
+      eventId: "423e4567-e89b-42d3-a456-426614174003",
+      eventType: "project.deprovision",
+    };
+    await provisioner.deprovision(deletion);
+
+    await assert.rejects(fs.lstat(descriptor), { code: "ENOENT" });
+    const quarantine = path.join(root, "trash/projects", deletion.eventId);
+    assert.deepEqual((await fs.readdir(quarantine)).sort(), ["receipt.json", "registry.json", "workspace"]);
+    const receipt = JSON.parse(await fs.readFile(path.join(quarantine, "receipt.json"), "utf8"));
+    assert.equal(receipt.mastraSchedulesDeleted, 2);
+    assert.deepEqual(scheduleRefs, ["project:DEMO"]);
+    assert.equal(restarts.length, 1);
+  });
+
   it("rejects reuse of an event id with another request", async () => {
     const provisioner = createProvisioner(config(), {
       ensurePlanCoordinator: fakeCoordinator([]),

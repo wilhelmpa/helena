@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { requestTarget, slugFrom, upstreamHeaders, downstreamHeaders } from './project-terminal-router.mjs';
+import {
+  requestTarget,
+  slugFrom,
+  upstreamHeaders,
+  downstreamHeaders,
+  tmuxSessionSlugs,
+  removedProjects,
+} from './project-terminal-router.mjs';
 
 test('accepts bounded project slugs', () => {
   assert.equal(slugFrom('vol'), 'vol');
@@ -55,4 +62,16 @@ test('local HTTP terminal does not upgrade its own assets to unavailable HTTPS',
     'content-type': 'text/html; charset=utf-8',
     'cache-control': 'no-store',
   });
+});
+
+test('finds the project tmux sessions and ignores every other session', () => {
+  assert.deepEqual(tmuxSessionSlugs('volition-vol\nvolition-fam\nscratch\nvolition-../x\n'), ['vol', 'fam']);
+});
+
+test('selects the projects whose workspace no longer exists', async () => {
+  const workspaces = new Set(['vol']);
+  assert.deepEqual(
+    await removedProjects(['vol', 'gone', 'gone'], async slug => workspaces.has(slug)),
+    ['gone'],
+  );
 });

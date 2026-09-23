@@ -180,3 +180,27 @@ test('resume requires an explicit approval for a suspended owned run', async () 
     (error) => error instanceof MastraControlError && error.status === 400,
   );
 });
+
+test("deleting a project's schedules leaves other projects and agent schedules alone", async () => {
+  const deleted = [];
+  const control = service(async (url, init = {}) => {
+    const target = new URL(String(url));
+    if (init.method === 'DELETE') {
+      deleted.push(target.pathname.split('/').at(-1));
+      return target.pathname.endsWith('/gone') ? json({ error: 'not found' }, 404) : json({});
+    }
+    assert.equal(target.pathname, '/mastra/api/schedules');
+    assert.equal(target.search, '');
+    return json({
+      schedules: [
+        { id: 'daily', workflowId: 'report', requestContext: { projectRef: 'project:PRIV' } },
+        { id: 'gone', workflowId: 'report', requestContext: { projectRef: 'project:PRIV' } },
+        { id: 'other', workflowId: 'report', requestContext: { projectRef: 'project:VOL' } },
+        { id: 'agent_1', agentId: 'home', requestContext: { projectRef: 'project:PRIV' } },
+      ],
+    });
+  });
+  assert.equal(await control.deleteProjectSchedules('project:PRIV'), 2);
+  assert.deepEqual(deleted, ['daily', 'gone']);
+  await assert.rejects(control.deleteProjectSchedules('PRIV'), MastraControlError);
+});

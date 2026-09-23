@@ -1,8 +1,9 @@
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { lstat, mkdir, realpath, rm } from 'node:fs/promises';
 import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
+import { promisify } from 'node:util';
 
 const host = process.env.TERMINAL_HOST ?? '127.0.0.1';
 const port = Number(process.env.TERMINAL_PORT ?? 8444);
@@ -10,6 +11,9 @@ const projectsRoot = process.env.PROJECTS_ROOT ?? '/srv/volition/workspaces/proj
 const runtimeRoot = process.env.TERMINAL_RUNTIME_ROOT ?? '/run/volition-terminal';
 const wetty = process.env.WETTY_BIN ?? '/usr/local/bin/wetty';
 const shell = process.env.TERMINAL_SHELL ?? '/usr/local/libexec/volition-terminal-shell';
+const tmux = process.env.TMUX_BIN ?? '/usr/bin/tmux';
+const sweepIntervalMs = Number(process.env.TERMINAL_SWEEP_INTERVAL_MS ?? 60_000);
+const run = promisify(execFile);
 const publicPrefix = '/focus/terminal-project';
 const allowedHosts = new Set((process.env.TERMINAL_ALLOWED_HOSTS ?? 'kingston-server.local,kingston-server')
   .split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
@@ -44,6 +48,47 @@ async function projectDirectory(slug) {
   return resolved;
 }
 
+async function projectExists(slug) {
+  try {
+    await projectDirectory(slug);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// terminal-shell names each project's tmux session volition-<slug>.
+function tmuxSessionSlugs(output) {
+  return output.split('\n').flatMap(name => {
+    const slug = name.startsWith('volition-') ? slugFrom(name.slice('volition-'.length)) : null;
+    return slug ? [slug] : [];
+  });
+}
+
+async function removedProjects(candidates, exists = projectExists) {
+  const removed = [];
+  for (const slug of new Set(candidates)) {
+    if (!(await exists(slug))) removed.push(slug);
+  }
+  return removed;
+}
+
+async function stopProject(slug) {
+  const current = sessions.get(slug);
+  sessions.delete(slug);
+  if (current) Promise.resolve(current).then(item => item.child.kill('SIGTERM')).catch(() => {});
+  await run(tmux, ['kill-session', '-t', `=volition-${slug}`]).catch(() => {});
+}
+
+// Deleting a project moves its workspace to the trash. Its Wetty and tmux session
+// run inside this service's private /tmp, so only this router can stop them.
+async function stopRemovedProjects() {
+  const { stdout } = await run(tmux, ['list-sessions', '-F', '#{session_name}']).catch(() => ({ stdout: '' }));
+  for (const slug of await removedProjects([...sessions.keys(), ...tmuxSessionSlugs(stdout)])) {
+    await stopProject(slug);
+  }
+}
+
 async function waitForSocket(socketPath, child) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (child.exitCode !== null) throw new Error('Wetty exited before opening its socket');
@@ -59,10 +104,13 @@ async function waitForSocket(socketPath, child) {
 }
 
 async function session(slug) {
+  if (!(await projectExists(slug))) {
+    await stopProject(slug);
+    throw new Error('project directory unavailable');
+  }
   const current = sessions.get(slug);
   if (current) return current;
   const pending = (async () => {
-    await projectDirectory(slug);
     await mkdir(runtimeRoot, { recursive: true, mode: 0o700 });
     const socketPath = path.join(runtimeRoot, `${slug}.sock`);
     await rm(socketPath, { force: true });
@@ -187,7 +235,10 @@ server.on('upgrade', async (request, client, head) => {
   }
 });
 
+let sweep;
+
 function stop() {
+  clearInterval(sweep);
   server.close();
   for (const value of sessions.values()) {
     Promise.resolve(value).then(item => item.child.kill('SIGTERM')).catch(() => {});
@@ -196,8 +247,9 @@ function stop() {
 
 if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
   server.listen(port, host);
+  sweep = setInterval(() => stopRemovedProjects().catch(() => {}), sweepIntervalMs);
   process.once('SIGTERM', stop);
   process.once('SIGINT', stop);
 }
 
-export { requestTarget, slugFrom, upstreamHeaders, downstreamHeaders };
+export { requestTarget, slugFrom, upstreamHeaders, downstreamHeaders, tmuxSessionSlugs, removedProjects };

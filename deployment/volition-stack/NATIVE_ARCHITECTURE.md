@@ -61,7 +61,16 @@ copy.
 
 Project creation writes one idempotent provisioning job. Provisioning creates the
 workspace, vault folders, Hermes profile, terminal resource, code link, browser state,
-coordinator assignment, and registry entry. A retry reuses those resources.
+coordinator assignment, and registry entry. A retry reuses those resources. Plan issues a
+new coordinator API key only when the runner descriptor holds none that still works, and
+the Hermes runner is restarted only when a descriptor was created or changed.
+
+Project deletion writes one deprovisioning job. Deprovisioning deletes the project's Mastra
+workflow schedules and its runner descriptor, stops the browser units, and moves the
+workspace, vault folder, Hermes profile, browser state, and registry entry to
+`/srv/volition/trash/projects/<event-id>/` with a `receipt.json`. The terminal router stops
+the project's Wetty process and tmux session once its workspace directory is gone. A
+failed job is retried with `POST /teams/:teamId/project-deprovisioning/:jobId/retry`.
 
 Mastra coordinates `agent-team` through `/run/volition-ipc/hermes-team.sock`. The bridge
 submits project-bound work to Plan's external-agent queue. The Hermes runner claims that
@@ -90,7 +99,9 @@ All routes use the Plan origin and require a valid Plan session.
 The terminal compatibility URL redirects to the project path and then Wetty's slashless
 canonical path. The verified chain terminates after two redirects with HTTP 200. The
 router validates host, same-origin WebSocket, slug, and resolved workspace. It starts one
-Wetty child per requested project on a private Unix socket. Nginx and the router remove
+Wetty child per requested project on a private Unix socket. On every request and every
+minute it stops the Wetty child and the `volition-<slug>` tmux session of a project whose
+workspace directory no longer exists. Nginx and the router remove
 Cookie and Authorization headers before Wetty. New projects become available after their
 workspace directory is created.
 

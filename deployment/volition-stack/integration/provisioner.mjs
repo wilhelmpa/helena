@@ -103,6 +103,7 @@ export function createProvisioner(config, options = {}) {
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
   const ensureBoardFiles =
     options.ensureBoardFiles ?? ensureLocalBoardFiles;
+  const mastraControl = options.mastraControl ?? null;
   let queue = Promise.resolve();
 
   // The runner reads the descriptors only when it starts.
@@ -344,6 +345,9 @@ export function createProvisioner(config, options = {}) {
       throw new ProvisioningConflictError("The project registry belongs to another project id");
     }
     const quarantined = [];
+    const mastraSchedulesDeleted = mastraControl
+      ? await mastraControl.deleteProjectSchedules(`project:${envelope.project.key}`)
+      : 0;
 
     if (envelope.requestedResources.includes("browser") || registry?.resources?.browser) {
       const browserDestination = await deprovisionProjectBrowser(
@@ -360,13 +364,16 @@ export function createProvisioner(config, options = {}) {
       }
     }
 
-    const descriptor = await quarantinePath({
-      source: path.join(config.hermesRunnerDescriptorRoot, `${slug}.json`),
-      allowedRoot: config.hermesRunnerDescriptorRoot,
-      quarantineRoot,
-      label: "hermes-runner.json",
-    });
-    if (descriptor) quarantined.push(descriptor);
+    // The descriptor holds the coordinator's API key, so it is deleted rather than kept in the trash.
+    const descriptorRemoved = await fs
+      .unlink(path.join(config.hermesRunnerDescriptorRoot, `${slug}.json`))
+      .then(
+        () => true,
+        (error) => {
+          if (error?.code === "ENOENT") return false;
+          throw error;
+        },
+      );
     const hermesAgent = await quarantinePath({
       source: path.join(config.hermesAgentsRoot, slug),
       allowedRoot: config.hermesAgentsRoot,
@@ -381,7 +388,7 @@ export function createProvisioner(config, options = {}) {
       label: "hermes-profile",
     });
     if (hermesProfile) quarantined.push(hermesProfile);
-    if (descriptor || hermesAgent || hermesProfile) await restartHermesRunner();
+    if (descriptorRemoved || hermesAgent || hermesProfile) await restartHermesRunner();
 
     const workspaceManaged =
       registry?.resources?.workspace?.managed === true || envelope.project.key !== "VERV";
@@ -418,6 +425,7 @@ export function createProvisioner(config, options = {}) {
         Date.now() + config.projectTrashRetentionDays * 24 * 60 * 60 * 1000,
       ).toISOString(),
       quarantined,
+      mastraSchedulesDeleted,
       completedAt: new Date().toISOString(),
     };
     const receiptPath = path.join(quarantineRoot, "receipt.json");
