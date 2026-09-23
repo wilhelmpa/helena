@@ -218,22 +218,6 @@ export const projectSetting = pgTable(
   (t) => [primaryKey({ columns: [t.projectId, t.key] })],
 );
 
-// The mail identity assigned to a project. This stores only provider metadata;
-// authentication remains in the external connections runtime.
-export const projectMailAccount = pgTable(
-  'project_mail_account',
-  {
-    projectId: integer('project_id')
-      .primaryKey()
-      .references(() => project.id, { onDelete: 'cascade' }),
-    provider: text('provider').notNull().default('gmail'),
-    account: text('account').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [check('project_mail_account_provider_check', sql`${t.provider} IN ('gmail')`)],
-);
-
 // A user's own interface preferences, held per account rather than per project so
 // the same choices apply on every device. timezone is an IANA zone name used by the
 // web app to render stored UTC timestamps; the API keeps storing and returning UTC.

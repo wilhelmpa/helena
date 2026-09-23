@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { mkdtemp, mkdir, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { deleteObject, getObject, putObject } from '../../storage-local';
+import { deleteObject, getObject, putObject } from '../index';
 
 const originalRoot = process.env.STORAGE_ROOT;
 let root: string;

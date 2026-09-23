@@ -18,6 +18,7 @@ export const PERMISSION_RESOURCES = [
   'labels',
   'ai_agents',
   'integrations',
+  'mail',
   'agent_skills',
   'agent_tools',
   'custom_fields',
@@ -91,6 +92,8 @@ export function defaultMemberPermissions(): Permissions {
   p.issue_templates.read = true;
   p.members_manage.read = true;
   p.members_invite.read = true;
+  p.mail.read = true;
+  p.mail.create = true;
   return p;
 }
 
