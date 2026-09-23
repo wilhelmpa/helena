@@ -87,6 +87,16 @@ Mastra connects only through `/run/volition-ipc/hermes-team.sock`. Authenticatio
 
 It returns the `stageResultSchema` from `src/mastra/team-contracts.ts`. A repeated idempotency key must return the same logical execution and must not create another Hermes session or Plan mutation. The bridge queues each stage as a Plan agent run through `/internal/orchestration/agent-run` with the stage `policy`; Plan stores `maxTurns` and `runBudgetSeconds` on the run and the Hermes runner passes them to `hermes chat`.
 
+### Cancellation
+
+A canceled workflow run fires the abort signal of the running step. Mastra aborts the stage request and makes no further attempt, which closes the socket connection. The bridge then stops polling and cancels the stage's Plan run through `/internal/orchestration/agent-run/cancel`:
+
+```json
+{ "runId": 7, "projectRef": "project:KEY" }
+```
+
+It requires the same bearer as the other internal orchestration routes. Plan sets a `pending` run to `canceled` with `finishedAt` and moves the project's control-plane revision; a finished run keeps its outcome. The answer is the same status document `/internal/orchestration/agent-run/status` returns, so a repeated cancel gets the same answer. A runner executing the run learns of the cancel from its next heartbeat, which answers `{ "canceled": true }`: it interrupts the Hermes process group, kills it after five seconds, and reports nothing for the run.
+
 `POST /internal/hermes/team/synchronize` accepts the exact project and task references, target state, summary, evidence and idempotency key. It returns the same idempotency key and `synchronizedAt`. The bridge must reject cross-project task references.
 
 ## Plan control
@@ -97,7 +107,7 @@ Plan controls the workflow through the Mastra control API:
 - `start` creates a project-scoped run with the event ID as run ID and starts it without waiting for it to finish.
 - `runs` and `run` expose stored status, checkpoints and history for one project. `runs` with a `taskRef` returns the runs whose payload names that task, searched among the project's 200 newest runs of the workflow.
 - `retry` restarts only failed runs with the same run ID.
-- `cancel` stops a non-terminal run.
+- `cancel` stops a non-terminal run and cancels the Plan run of the stage it waits for (see Cancellation).
 - schedule operations create, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key.
 
 Business schedules exist only in Mastra. Hermes cron is limited to Hermes-internal maintenance and must not start Plan workflows.
