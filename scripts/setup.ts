@@ -390,8 +390,6 @@ if (mode === 'dev') {
   test.set('DATABASE_URL', `postgres://${user}:${password}@localhost:${dbPort}/${testDatabase}`);
   test.set('API_URL', `http://localhost:${apiPort}`);
   test.set('APP_URL', env.get('APP_URL'));
-  for (const key of ['S3_ENDPOINT', 'S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'])
-    test.set(key, env.get(key));
   test.save();
 
   const migrations = p.spinner();

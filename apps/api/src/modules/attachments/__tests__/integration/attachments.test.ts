@@ -4,9 +4,8 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
 
-// Attachments feature: metadata in Postgres, bytes in the object store (shared/
-// s3.ts against a real MinIO — see the Tests setup for S3_* env). This is the
-// only test that exercises s3.ts (putObject/getObject/deleteObject) and the one
+// Attachments feature: metadata in Postgres, bytes in the file storage (shared/s3.ts,
+// below the temporary STORAGE_ROOT the test preload sets). It also covers the one
 // public, unauthenticated route (GET /attachments/:publicId/raw), which is the
 // auth-context session-gate exception.
 

@@ -193,10 +193,7 @@ export async function storeAttachmentObject(
     await putObject(key, bytes, contentType);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(
-      `[planner] object store PUT failed (bucket=${process.env.S3_BUCKET}, key=${key}, size=${bytes.length}):`,
-      error,
-    );
+    console.error(`[planner] object store PUT failed (key=${key}, size=${bytes.length}):`, error);
     throw new HttpError(502, `Object store error: ${message}`);
   }
 }

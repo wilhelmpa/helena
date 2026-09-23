@@ -16,6 +16,7 @@ Environment=NODE_ENV=development
 Environment=API_HOST=127.0.0.1
 Environment=API_PORT=3000
 Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
+Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
 LoadCredential=mastra_control_token:/etc/volition/plan-control.token
 Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/api/src/index.ts
