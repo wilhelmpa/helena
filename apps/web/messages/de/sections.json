@@ -101,6 +101,10 @@
       "label": "Repositorys",
       "description": "Aufgaben schließen, wenn ihre Pull Requests auf GitHub, GitLab, Gitea, Forgejo oder Bitbucket gemergt werden."
     },
+    "network": {
+      "label": "Agenten-Netzwerk",
+      "description": "Welche Ziele die isolierten Agenten dieses Projekts im Internet erreichen dürfen. Agenten können das nicht selbst ändern."
+    },
     "ai-agents": {
       "label": "KI-Agenten",
       "description": "KI-Agenten, die in diesem Projekt arbeiten."

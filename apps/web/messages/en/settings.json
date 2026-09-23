@@ -549,6 +549,68 @@
     "changeState": "Change state…",
     "noState": "No state."
   },
+  "network": {
+    "isolationNote": "These settings take effect once agent isolation is active on the server.",
+    "accessTitle": "Access",
+    "accessHint": "Egress leaves through ports 80 and 443 only. Local addresses and the home network are always blocked, in every mode. A domain also covers its subdomains.",
+    "mode": {
+      "open": {
+        "label": "Internet",
+        "description": "Every public destination except the ones on the deny list."
+      },
+      "allowlist": {
+        "label": "Allow list only",
+        "description": "Only the destinations on the allow list. The deny list still applies."
+      },
+      "blocked": {
+        "label": "Blocked",
+        "description": "No internet access. The Helena API and browser gateway stay reachable."
+      }
+    },
+    "allowLabel": "Allow list",
+    "allowOnlyHint": "Only used in \"Allow list only\" mode.",
+    "denyLabel": "Deny list",
+    "domainsPerLine": "One domain per line",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "Mail",
+    "mailPortsLabel": "Allow mail ports",
+    "mailPortsHint": "Also opens 465, 587 and 993 for the mail role.",
+    "perAgentTitle": "Per agent",
+    "perAgentHint": "Overrides the project mode for one agent. The project's allow and deny lists still apply — an agent in \"Allow list only\" mode uses the project's allow list.",
+    "followProject": "Follow project ({mode})",
+    "noAgents": "This project has no agents yet.",
+    "saved": "Saved",
+    "logTitle": "Log",
+    "logHint": "The destination, decision and data volume of recent connections — never their content.",
+    "filterAll": "All",
+    "filterBlocked": "Blocked only",
+    "columns": {
+      "time": "Time",
+      "agent": "Agent",
+      "target": "Destination",
+      "decision": "Decision",
+      "connections": "Connections",
+      "data": "Data"
+    },
+    "decisions": {
+      "allowed": "Allowed",
+      "blocked": "Blocked"
+    },
+    "reasons": {
+      "private-address": "Private address",
+      "port": "Port not allowed",
+      "denylisted": "On the deny list",
+      "not-allowlisted": "Not on the allow list",
+      "dns": "DNS failure",
+      "connect-failed": "Connection failed",
+      "bad-request": "Invalid request"
+    },
+    "loadMore": "Load more",
+    "endOfLog": "End of log",
+    "empty": "No connections yet",
+    "emptyHint": "Once this project's agents make connections, they show up here.",
+    "loadError": "The log could not be loaded."
+  },
   "issueTemplates": {
     "addTemplate": "New template",
     "editTemplate": "Edit template",

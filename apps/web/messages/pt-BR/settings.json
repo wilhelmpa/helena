@@ -549,6 +549,68 @@
     "changeState": "Alterar estado…",
     "noState": "Sem estado."
   },
+  "network": {
+    "isolationNote": "Essas configurações passam a valer assim que o isolamento de agentes estiver ativo no servidor.",
+    "accessTitle": "Acesso",
+    "accessHint": "O tráfego de saída usa apenas as portas 80 e 443. Endereços locais e a rede doméstica ficam sempre bloqueados, em qualquer modo. Um domínio também cobre seus subdomínios.",
+    "mode": {
+      "open": {
+        "label": "Internet",
+        "description": "Qualquer destino público, exceto os da lista de bloqueio."
+      },
+      "allowlist": {
+        "label": "Somente lista de permissões",
+        "description": "Somente os destinos da lista de permissões. A lista de bloqueio continua valendo."
+      },
+      "blocked": {
+        "label": "Bloqueado",
+        "description": "Sem acesso à internet. A API da Helena e o gateway do navegador continuam acessíveis."
+      }
+    },
+    "allowLabel": "Lista de permissões",
+    "allowOnlyHint": "Usada apenas no modo \"Somente lista de permissões\".",
+    "denyLabel": "Lista de bloqueio",
+    "domainsPerLine": "Um domínio por linha",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "E-mail",
+    "mailPortsLabel": "Permitir portas de e-mail",
+    "mailPortsHint": "Também abre as portas 465, 587 e 993 para a função de e-mail.",
+    "perAgentTitle": "Por agente",
+    "perAgentHint": "Substitui o modo do projeto para um agente específico. As listas de permissões e de bloqueio do projeto continuam valendo — um agente no modo \"Somente lista de permissões\" usa a lista de permissões do projeto.",
+    "followProject": "Como o projeto ({mode})",
+    "noAgents": "Este projeto ainda não tem agentes.",
+    "saved": "Salvo",
+    "logTitle": "Registro",
+    "logHint": "O destino, a decisão e o volume de dados das conexões recentes — nunca o conteúdo.",
+    "filterAll": "Todas",
+    "filterBlocked": "Somente bloqueadas",
+    "columns": {
+      "time": "Hora",
+      "agent": "Agente",
+      "target": "Destino",
+      "decision": "Decisão",
+      "connections": "Conexões",
+      "data": "Dados"
+    },
+    "decisions": {
+      "allowed": "Permitida",
+      "blocked": "Bloqueada"
+    },
+    "reasons": {
+      "private-address": "Endereço privado",
+      "port": "Porta não permitida",
+      "denylisted": "Está na lista de bloqueio",
+      "not-allowlisted": "Não está na lista de permissões",
+      "dns": "Falha de DNS",
+      "connect-failed": "Falha na conexão",
+      "bad-request": "Solicitação inválida"
+    },
+    "loadMore": "Carregar mais",
+    "endOfLog": "Fim do registro",
+    "empty": "Ainda não há conexões",
+    "emptyHint": "Assim que os agentes deste projeto fizerem conexões, elas aparecerão aqui.",
+    "loadError": "Não foi possível carregar o registro."
+  },
   "issueTemplates": {
     "addTemplate": "Novo modelo",
     "editTemplate": "Editar modelo",

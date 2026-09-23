@@ -101,6 +101,10 @@
       "label": "Repositorios",
       "description": "Cerrar tickets cuando sus pull requests se integran en GitHub, GitLab, Gitea, Forgejo o Bitbucket."
     },
+    "network": {
+      "label": "Red de agentes",
+      "description": "Los destinos a los que los agentes aislados de este proyecto pueden acceder en internet. Los agentes nunca pueden cambiar esto por sí mismos."
+    },
     "ai-agents": {
       "label": "Agentes de IA",
       "description": "Agentes de IA que trabajan en este proyecto."

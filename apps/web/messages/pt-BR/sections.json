@@ -101,6 +101,10 @@
       "label": "Repositórios",
       "description": "Feche issues quando seus pull requests mesclam no GitHub, GitLab, Gitea, Forgejo ou Bitbucket."
     },
+    "network": {
+      "label": "Rede dos agentes",
+      "description": "Quais destinos os agentes isolados deste projeto podem acessar na internet. Os agentes nunca podem alterar isso por conta própria."
+    },
     "ai-agents": {
       "label": "Agentes de IA",
       "description": "Agentes de IA trabalhando neste projeto."
