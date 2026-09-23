@@ -357,6 +357,10 @@ describe('mail tools of an agent', () => {
       .mail.search.get({ query: { q: 'kickoff' } });
     expect(found.status).toBe(200);
     expect(found.data!.map((row) => row.threadId)).toEqual([own.threadId]);
+    const unread = await asAgent
+      .projects({ projectKey: 'VOL' })
+      .mail.search.get({ query: { unread: true } });
+    expect(unread.data!.map((row) => row.threadId)).toEqual([own.threadId]);
 
     const read = await asAgent
       .projects({ projectKey: 'VOL' })

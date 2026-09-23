@@ -38,7 +38,10 @@ export const mailAccountRoutes = new Elysia({
     teamPermission: ['integrations', 'read'],
     params: teamParams,
     response: { 200: MailAccountListResponse, ...accessErrors },
-    detail: { summary: 'List the mail accounts of a team' },
+    detail: {
+        summary: 'List the mail accounts of a team',
+        description: 'Every IMAP/SMTP account of the team with its import state; passwords are never returned.',
+      },
   })
   .get(
     '/projects/:projectKey/mail/accounts',
@@ -46,7 +49,10 @@ export const mailAccountRoutes = new Elysia({
     {
       permission: ['integrations', 'read'],
       response: { 200: MailAccountListResponse, ...accessErrors },
-      detail: { summary: 'List the mail accounts of a project' },
+      detail: {
+        summary: 'List the mail accounts of a project',
+        description: 'The accounts whose new mail is filed under this project.',
+      },
     },
   )
   .post(
@@ -60,7 +66,10 @@ export const mailAccountRoutes = new Elysia({
       params: teamParams,
       body: createAccountBody,
       response: { 201: MailAccountResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Add a mail account' },
+      detail: {
+        summary: 'Add a mail account',
+        description: 'Stores the servers and the encrypted password; the worker starts importing within seconds.',
+      },
     },
   )
   .patch(
@@ -71,7 +80,10 @@ export const mailAccountRoutes = new Elysia({
       params: accountParams,
       body: updateAccountBody,
       response: { 200: MailAccountResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Change a mail account' },
+      detail: {
+        summary: 'Change a mail account',
+        description: 'A password left out keeps the stored one; a changed setting makes the worker connect again.',
+      },
     },
   )
   .delete(
@@ -98,14 +110,20 @@ export const mailAccountRoutes = new Elysia({
       params: teamParams,
       body: testConnectionBody,
       response: { 200: TestConnectionResponse, ...commonErrors },
-      detail: { summary: 'Test the IMAP and SMTP login of a mail account' },
+      detail: {
+        summary: 'Test the IMAP and SMTP login of a mail account',
+        description: 'Logs in to both servers and answers with null for each that accepted, else the reason.',
+      },
     },
   )
   .get('/teams/:teamId/mail/rules', ({ params }) => listRules(params.teamId), {
     teamPermission: ['integrations', 'read'],
     params: teamParams,
     response: { 200: MailRuleListResponse, ...accessErrors },
-    detail: { summary: 'List the rules that file new mail under a project' },
+    detail: {
+        summary: 'List the rules that file new mail under a project',
+        description: 'Sender address and domain rules, for one account or all of the team.',
+      },
   })
   .post(
     '/teams/:teamId/mail/rules',
@@ -118,7 +136,10 @@ export const mailAccountRoutes = new Elysia({
       params: teamParams,
       body: createRuleBody,
       response: { 201: CreateRuleResponse, ...commonErrors },
-      detail: { summary: 'Add a rule that files mail of a sender under a project' },
+      detail: {
+        summary: 'Add a rule that files mail of a sender under a project',
+        description: 'With applyToExisting the threads that already match move to the project too, attachments included.',
+      },
     },
   )
   .delete(
@@ -131,6 +152,9 @@ export const mailAccountRoutes = new Elysia({
       teamPermission: ['integrations', 'edit'],
       params: ruleParams,
       response: { 204: t.Void(), ...accessErrors },
-      detail: { summary: 'Remove a mail rule' },
+      detail: {
+        summary: 'Remove a mail rule',
+        description: 'Threads already filed by the rule stay where they are.',
+      },
     },
   );

@@ -186,6 +186,20 @@ carries `teamMcpEnabled` from the join it already makes. The team guards check t
 switch through `assertTeamMcpAllowed`, which is what covers the resources no project
 flag reaches: the agents, the skills, the tools, the roles and the credentials.
 
+## Mail
+
+`modules/mail/{accounts,threads,drafts}` read and write what the worker imports. Two
+rules a reader would otherwise redraw:
+
+- **A thread's project decides who reaches it**, not its account. `mail_thread.project_id`
+  starts as the account's project (or a routing rule's) and changes with "Move to project";
+  NULL is Home, which only the team's owners and managers reach. Project mail needs the
+  `mail` permission there (`modules/mail/access.ts`). An agent's MCP tools are the
+  `:projectKey` routes, so an agent reaches only the threads filed under its project.
+- **An agent never sends.** The send route refuses an agent; `request_mail_send` files an
+  approval request and parks the draft in `pending_approval`, and the worker queues it once
+  the request is approved.
+
 ## SCIM
 
 `modules/scim/` serves SCIM 2.0 (RFC 7643 / 7644) at `/scim/v2` for an identity provider

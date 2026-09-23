@@ -114,8 +114,24 @@ export async function listThreads(filters: ThreadFilters) {
   if (filters.unread) messageWhere.push(eq(mailMessage.seen, false));
   if (filters.attachments) messageWhere.push(eq(mailMessage.hasAttachments, true));
   if (filters.flagged) messageWhere.push(eq(mailMessage.flagged, true));
+  // The words are looked up in the search index once, not thread by thread.
   const query = filters.q ? searchQuery(filters.q) : null;
-  if (query) messageWhere.push(sql`${mailMessage.search} @@ to_tsquery('simple', ${query})`);
+  if (query) {
+    where.push(
+      inArray(
+        mailThread.id,
+        db
+          .select({ id: mailMessage.threadId })
+          .from(mailMessage)
+          .where(
+            and(
+              sql`${mailMessage.search} @@ to_tsquery('simple', ${query})`,
+              isNull(mailMessage.deletedAt),
+            ),
+          ),
+      ),
+    );
+  }
   if (filters.folderId !== undefined || (filters.role && filters.role !== 'all')) {
     messageWhere.push(
       exists(
@@ -507,6 +523,7 @@ export async function issueThreads(issueId: number, scope: MailScope) {
       fromAddress: mailThread.lastFromAddress,
       snippet: mailThread.snippet,
       accountAddress: mailAccount.address,
+      latestMessageId: sql<number>`(SELECT m.id FROM mail_message m WHERE m.thread_id = ${mailThread.id} AND m.deleted_at IS NULL ORDER BY m.sent_at DESC, m.id DESC LIMIT 1)`,
     })
     .from(mailThreadIssue)
     .innerJoin(mailThread, eq(mailThread.id, mailThreadIssue.threadId))

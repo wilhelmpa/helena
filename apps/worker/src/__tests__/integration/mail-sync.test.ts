@@ -20,6 +20,7 @@ import {
   team,
 } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
+import { claimInboxThreads, completeTriage, materializeInboxEvents } from '../../hub-inbox-store';
 import { pushActions } from '../../mail/actions';
 import { AccountSync } from '../../mail/account-sync';
 import { applyApprovalDecisions, sendDueDrafts } from '../../mail/send';
@@ -274,6 +275,21 @@ describe('mail import', () => {
       externalMessageId: '<new@verve.example>',
       subject: 'Offer',
     });
+
+    // The triage keeps the thread where it is and offers its project as a suggestion.
+    await db.update(mailThread).set({ projectId: account.projectId }).where(eq(mailThread.id, thread!.id));
+    await materializeInboxEvents();
+    const [claimed] = await claimInboxThreads();
+    await completeTriage(claimed!, {
+      summary: 'An offer for Verve',
+      priority: null,
+      requiresAction: false,
+      projectKey: 'VERV',
+      issueIdentifier: null,
+      confidence: 0.9,
+    });
+    const [suggested] = await db.select().from(mailThread).where(eq(mailThread.id, thread!.id));
+    expect(suggested).toMatchObject({ projectId: account.projectId, suggestedProjectId: verve!.id });
   });
 
   it('imports mail that arrives while it waits on the inbox', async () => {

@@ -58,7 +58,10 @@ export const mailDraftRoutes = new Elysia({
     mailTeam: 'create',
     params: teamParams,
     response: { 200: DraftListResponse, ...accessErrors },
-    detail: { summary: 'List the open mail drafts' },
+    detail: {
+        summary: 'List the open mail drafts',
+        description: 'Drafts being written, waiting for approval, failed or in their undo time.',
+      },
   })
   .post(
     '/teams/:teamId/mail/drafts',
@@ -98,14 +101,20 @@ export const mailDraftRoutes = new Elysia({
       params: teamParams,
       body: createDraftBody,
       response: { 201: DraftResponse, ...commonErrors },
-      detail: { summary: 'Start a mail, an answer or a forward' },
+      detail: {
+        summary: 'Start a mail, an answer or a forward',
+        description: 'An answer or a forward is prefilled with recipients, subject, quote and forwarded attachments.',
+      },
     },
   )
   .get('/mail/drafts/:draftId', ({ draft }) => getDraft(draft.id), {
     mailDraft: 'create',
     params: draftParams,
     response: { 200: DraftResponse, ...accessErrors },
-    detail: { summary: 'Get a mail draft' },
+    detail: {
+        summary: 'Get a mail draft',
+        description: 'One draft with its recipients, body and attachments.',
+      },
   })
   .patch(
     '/mail/drafts/:draftId',
@@ -123,7 +132,10 @@ export const mailDraftRoutes = new Elysia({
       params: draftParams,
       body: updateDraftBody,
       response: { 200: DraftResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Save a mail draft' },
+      detail: {
+        summary: 'Save a mail draft',
+        description: 'Autosave of the compose panel. Attachments can only be kept or dropped here.',
+      },
     },
   )
   .delete(
@@ -136,7 +148,10 @@ export const mailDraftRoutes = new Elysia({
       mailDraft: 'create',
       params: draftParams,
       response: { 204: t.Void(), ...accessErrors, ...errors(409) },
-      detail: { summary: 'Discard a mail draft' },
+      detail: {
+        summary: 'Discard a mail draft',
+        description: 'Removes the draft and its uploaded files.',
+      },
     },
   )
   .post(
@@ -152,7 +167,10 @@ export const mailDraftRoutes = new Elysia({
       params: draftParams,
       body: uploadDraftAttachmentBody,
       response: { 201: DraftResponse, ...commonErrors, ...errors(409, 413) },
-      detail: { summary: 'Attach an uploaded file to a draft' },
+      detail: {
+        summary: 'Attach an uploaded file to a draft',
+        description: 'Stores the file until the mail is sent.',
+      },
     },
   )
   .post(
@@ -177,7 +195,10 @@ export const mailDraftRoutes = new Elysia({
       params: draftParams,
       body: vaultAttachmentBody,
       response: { 201: DraftResponse, ...commonErrors, ...errors(409, 413) },
-      detail: { summary: 'Attach a file of the vault to a draft' },
+      detail: {
+        summary: 'Attach a file of the vault to a draft',
+        description: 'A file of a project the caller may read, or of Home.',
+      },
     },
   )
   .post(
@@ -201,7 +222,10 @@ export const mailDraftRoutes = new Elysia({
     mailDraft: 'create',
     params: draftParams,
     response: { 200: DraftResponse, ...accessErrors, ...errors(409) },
-    detail: { summary: 'Take back a mail in its undo time' },
+    detail: {
+        summary: 'Take back a mail in its undo time',
+        description: 'Returns a queued draft to the drafts before the worker sends it.',
+      },
   })
   .post(
     '/projects/:projectKey/mail/threads/:threadId/draft-reply',

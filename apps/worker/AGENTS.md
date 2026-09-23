@@ -26,6 +26,17 @@ own service (own Dockerfile), separate from `apps/api`. See root `AGENTS.md`.
   `@repo/mailer`, Telegram through the Bot API. The provider credentials are read
   from the database and decrypted here (`notification-send.ts`), so the process
   needs `APP_ENCRYPTION_KEY`.
+- Imports mail (`src/mail/`): one IMAP connection per enabled account with a password
+  imports every folder newest first, then waits on the inbox with IDLE and compares the
+  other folders every `MAIL_POLL_INTERVAL_MS`. A message is stored once per account (by
+  Message-ID) with one `mail_message_folder` row per folder holding it; the stored UIDs
+  are the checkpoint an interrupted import resumes from, and `mail_folder.uid_next` is
+  written only when a folder pass is complete. The raw `.eml` goes to `STORAGE_ROOT`,
+  attachments to the vault (`PROJECT_VAULT_ROOT`, paths from `@repo/mail`). Changes made
+  in Plan (`mail_action`) are pushed before the server's flags are read back. Queued drafts
+  are sent over SMTP once their `send_at` passed, at most once: a send interrupted midway
+  is marked failed, never repeated. New inbox mail of an account with triage on becomes a
+  `hub_inbox_event` for the inbox triage.
 
 ## Invariants
 
@@ -52,9 +63,11 @@ own service (own Dockerfile), separate from `apps/api`. See root `AGENTS.md`.
 All via env with defaults (see `src/config.ts`): `WEBHOOK_POLL_INTERVAL_MS`,
 `WEBHOOK_BATCH_SIZE`, `WEBHOOK_TIMEOUT_MS`, `WEBHOOK_MAX_ATTEMPTS`,
 `WEBHOOK_DISABLE_THRESHOLD`, `WEBHOOK_LEASE_SECONDS`, `WEBHOOK_CLEANUP_DAYS`,
-`WEBHOOK_CLEANUP_EVERY_TICKS`. Only `DATABASE_URL` is required for webhook
-delivery. Notification delivery also needs `APP_ENCRYPTION_KEY` (the same value the
-api uses) to read the stored provider credentials.
+`WEBHOOK_CLEANUP_EVERY_TICKS`, and `MAIL_*` for the mail import (`src/mail/transport.ts`).
+Only `DATABASE_URL` is required for webhook delivery. Notification delivery also needs
+`APP_ENCRYPTION_KEY` (the same value the api uses) to read the stored provider
+credentials; the mail import needs it for the account passwords, plus `STORAGE_ROOT` and
+`PROJECT_VAULT_ROOT`.
 
 ## Tests
 

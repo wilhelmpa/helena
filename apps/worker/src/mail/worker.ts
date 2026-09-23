@@ -8,6 +8,10 @@ import { mailSyncConfig } from './transport';
 // owner edits the account. Every tick it also sends the drafts that are due and wakes
 // the accounts with changes to push.
 export function startMailWorker(): WorkerHandle {
+  if (!process.env.STORAGE_ROOT?.trim()) {
+    console.log('[mail] STORAGE_ROOT is not set; mail is not imported or sent');
+    return { stop() {} };
+  }
   const syncs = new Map<number, AccountSync>();
   const config = mailSyncConfig();
 

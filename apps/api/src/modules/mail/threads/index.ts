@@ -89,7 +89,10 @@ export const mailThreadRoutes = new Elysia({
       params: teamParams,
       query: threadListQuery,
       response: { 200: ThreadPageResponse, ...commonErrors },
-      detail: { summary: 'List mail threads, newest first' },
+      detail: {
+        summary: 'List mail threads, newest first',
+        description: 'The threads the caller reaches, filtered by project, account, folder, unread state, attachments and search words; paged by cursor.',
+      },
     },
   )
   .get(
@@ -106,7 +109,10 @@ export const mailThreadRoutes = new Elysia({
       params: teamParams,
       query: folderListQuery,
       response: { 200: FolderListResponse, ...accessErrors },
-      detail: { summary: 'List the imported folders of the mail accounts' },
+      detail: {
+        summary: 'List the imported folders of the mail accounts',
+        description: 'The folders the worker imports, for the folder filter of the inbox.',
+      },
     },
   )
   .get('/teams/:teamId/mail/contacts', ({ teamId, query }) => searchContacts(teamId, query.q), {
@@ -114,13 +120,19 @@ export const mailThreadRoutes = new Elysia({
     params: teamParams,
     query: contactQuery,
     response: { 200: ContactListResponse, ...commonErrors },
-    detail: { summary: 'Find past correspondents for a recipient field' },
+    detail: {
+        summary: 'Find past correspondents for a recipient field',
+        description: 'Addresses the team exchanged mail with, most frequent first.',
+      },
   })
   .get('/mail/threads/:threadId', ({ thread }) => getThread(thread.id), {
     mailThread: 'read',
     params: threadParams,
     response: { 200: ThreadResponse, ...accessErrors },
-    detail: { summary: 'Get a mail thread with its messages' },
+    detail: {
+        summary: 'Get a mail thread with its messages',
+        description: 'Every message with its sanitized HTML, text, recipients and vault attachments, plus linked tasks and open drafts.',
+      },
   })
   .patch(
     '/mail/threads/:threadId',
@@ -134,7 +146,10 @@ export const mailThreadRoutes = new Elysia({
       params: threadParams,
       body: moveThreadBody,
       response: { 204: t.Void(), ...commonErrors },
-      detail: { summary: 'Move a mail thread to another project or to Home' },
+      detail: {
+        summary: 'Move a mail thread to another project or to Home',
+        description: 'Moves the attachment folders in the vault along and changes which agents reach the thread.',
+      },
     },
   )
   .post(
@@ -151,7 +166,10 @@ export const mailThreadRoutes = new Elysia({
       params: threadParams,
       body: threadActionBody,
       response: { 204: t.Void(), ...commonErrors },
-      detail: { summary: 'Mark, flag, archive or delete a mail thread' },
+      detail: {
+        summary: 'Mark, flag, archive or delete a mail thread',
+        description: 'The change shows in Plan at once; the worker makes it on the mail server.',
+      },
     },
   )
   .post(
@@ -170,7 +188,10 @@ export const mailThreadRoutes = new Elysia({
       params: threadParams,
       body: createTaskBody,
       response: { 201: TaskResponse, ...commonErrors },
-      detail: { summary: 'Create a task from a mail thread' },
+      detail: {
+        summary: 'Create a task from a mail thread',
+        description: 'The task links back to the thread and lists the attachments by their vault path.',
+      },
     },
   )
   .post(
@@ -183,7 +204,10 @@ export const mailThreadRoutes = new Elysia({
       mailThread: 'read',
       params: threadParams,
       response: { 201: NoteResponse, ...accessErrors },
-      detail: { summary: 'Save a mail thread as a note in the vault' },
+      detail: {
+        summary: 'Save a mail thread as a note in the vault',
+        description: 'Writes Docs/Mail/<date> <subject>.md of the thread\'s project (or Home) with links to its attachments.',
+      },
     },
   )
   .post(
@@ -197,7 +221,10 @@ export const mailThreadRoutes = new Elysia({
       params: messageParams,
       body: remoteImagesBody,
       response: { 204: t.Void(), ...commonErrors },
-      detail: { summary: 'Allow or block the remote images of a message' },
+      detail: {
+        summary: 'Allow or block the remote images of a message',
+        description: 'Remote images are blocked until allowed for the message.',
+      },
     },
   )
   .get(
@@ -221,7 +248,10 @@ export const mailThreadRoutes = new Elysia({
       mailMessage: 'read',
       params: partParams,
       response: accessErrors,
-      detail: { summary: 'Get an inline image of a message' },
+      detail: {
+        summary: 'Get an inline image of a message',
+        description: 'A part the message HTML shows by Content-ID, read from the stored .eml.',
+      },
     },
   )
   .get(
@@ -242,7 +272,10 @@ export const mailThreadRoutes = new Elysia({
       mailAttachment: 'read',
       params: attachmentParams,
       response: accessErrors,
-      detail: { summary: 'Download a mail attachment from the vault' },
+      detail: {
+        summary: 'Download a mail attachment from the vault',
+        description: 'Streams the file the importer saved in the vault.',
+      },
     },
   )
   .get(
@@ -252,7 +285,10 @@ export const mailThreadRoutes = new Elysia({
       issueMail: true,
       params: issueParams,
       response: { 200: IssueThreadListResponse, ...accessErrors },
-      detail: { summary: 'List the mail threads linked to a task' },
+      detail: {
+        summary: 'List the mail threads linked to a task',
+        description: 'The threads a task was created from, for the Mails section of the task.',
+      },
     },
   )
   .get(

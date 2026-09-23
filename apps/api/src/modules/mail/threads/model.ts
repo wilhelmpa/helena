@@ -180,6 +180,8 @@ export const IssueThreadListResponse = t.Array(
     fromAddress: t.String(),
     snippet: t.String(),
     accountAddress: t.String(),
+    // The message an answer from the task replies to.
+    latestMessageId: t.Nullable(t.Number()),
   }),
 );
 
