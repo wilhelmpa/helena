@@ -26,7 +26,7 @@ import { iso } from '#shared/lib';
 // is not a second closing, and an issue that was reopened counts once, at the last
 // entry — the one it never left. An issue that is not in a completed state now has
 // no row here.
-function closings(projectId: number) {
+export function closings(projectId: number) {
   return sql`
     SELECT s.issue_id, min(s.entered_at) AS closed_at
       FROM issue_status s

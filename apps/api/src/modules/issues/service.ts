@@ -14,9 +14,7 @@ import {
   customFieldOption,
   initiative,
   cycle,
-  projectMember,
   projectViewFolder,
-  teamRole,
   user,
 } from '@repo/db';
 import { alias } from 'drizzle-orm/pg-core';
@@ -73,9 +71,8 @@ import {
 } from '#modules/agents/core/service';
 import { getInitiativeProjectId } from '#modules/initiatives/service';
 import { cycleStatus, getCycleRef, type CycleStatus } from '#modules/cycles/service';
-import { getMembership, toMemberContext, type MemberRole } from '#modules/members/service';
+import { getMembership, projectIdsWithPermission } from '#modules/members/service';
 import { getViewFolder } from '#modules/views/service';
-import { hasPermission } from '#shared/permissions';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
 import { startDelegatedAgentTeam } from '#modules/control-plane-workflows/agent-team';
 import { applySubtaskAutomation } from './automation';
@@ -492,29 +489,6 @@ export interface CrossProjectIssueFilters {
   q?: string;
 }
 
-// The projects whose issues the user may read: every membership whose role grants
-// work_items read (an owner holds every permission).
-async function readableProjectIds(userId: string): Promise<number[]> {
-  const rows = await db
-    .select({
-      projectId: projectMember.projectId,
-      role: projectMember.role,
-      permissions: teamRole.permissions,
-    })
-    .from(projectMember)
-    .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
-    .where(eq(projectMember.userId, userId));
-  return rows
-    .filter((r) =>
-      hasPermission(
-        toMemberContext(r.role as MemberRole, r.permissions).permissions,
-        'work_items',
-        'read',
-      ),
-    )
-    .map((r) => r.projectId);
-}
-
 const assigneeUser = alias(user, 'assignee_user');
 const delegateUser = alias(user, 'delegate_user');
 
@@ -525,7 +499,7 @@ export async function listIssuesAcrossProjects(
   filters: CrossProjectIssueFilters,
   window: { limit: number; offset: number },
 ): Promise<{ items: CrossProjectIssue[]; total: number }> {
-  const projectIds = await readableProjectIds(userId);
+  const projectIds = await projectIdsWithPermission(userId, 'work_items', 'read');
   if (projectIds.length === 0) return { items: [], total: 0 };
 
   const conds: SQL[] = [inArray(issue.projectId, projectIds), isNull(issue.archivedAt)];
