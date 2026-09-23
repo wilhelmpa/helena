@@ -1,5 +1,8 @@
+import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { describe, expect, test } from 'bun:test';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, it } from 'node:test';
 
 // The color/size rules in eslint.config.mjs (docs/volition-design-helena-ui.md) run
 // as 'warn', not 'error': `bun run lint` is a hard gate other branches merge behind,
@@ -16,6 +19,8 @@ import { describe, expect, test } from 'bun:test';
 // colors, 20 raw hex/rgb()).
 const BASELINE = 203;
 
+const WEB_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
 interface EslintMessage {
   ruleId: string | null;
 }
@@ -24,16 +29,7 @@ interface EslintResult {
   messages: EslintMessage[];
 }
 
-function countDesignRuleWarnings(): { total: number; byFile: Map<string, number> } {
-  const raw = execFileSync('bunx', ['eslint', '.', '--format', 'json'], {
-    cwd: `${import.meta.dir}/../../..`,
-    encoding: 'utf-8',
-    // eslint exits 1 when it reports anything at all (even warn-only); that is
-    // not a failure for this check, which reads the report rather than the
-    // exit code, so a non-zero exit must not throw here.
-    maxBuffer: 1024 * 1024 * 64,
-  });
-  const results = JSON.parse(raw) as EslintResult[];
+function tally(results: EslintResult[]): { total: number; byFile: Map<string, number> } {
   const byFile = new Map<string, number>();
   let total = 0;
   for (const result of results) {
@@ -45,45 +41,44 @@ function countDesignRuleWarnings(): { total: number; byFile: Map<string, number>
   return { total, byFile };
 }
 
-describe('design token migration (ratchet)', () => {
-  test(
-    'raw color/size lint warnings never increase past the recorded baseline',
-    () => {
-      let outcome: ReturnType<typeof countDesignRuleWarnings>;
-      try {
-        outcome = countDesignRuleWarnings();
-      } catch (error) {
-        const e = error as { status?: number; stdout?: string };
-        // eslint's own exit code is 1 whenever it reports anything, warnings
-        // included; execFileSync only throws for that, and stdout still holds
-        // the JSON report to parse.
-        if (typeof e.stdout !== 'string') throw error;
-        const results = JSON.parse(e.stdout) as EslintResult[];
-        const byFile = new Map<string, number>();
-        let total = 0;
-        for (const result of results) {
-          const count = result.messages.filter((m) => m.ruleId === 'no-restricted-syntax').length;
-          if (count === 0) continue;
-          total += count;
-          byFile.set(result.filePath, count);
-        }
-        outcome = { total, byFile };
-      }
+function countDesignRuleWarnings(): { total: number; byFile: Map<string, number> } {
+  try {
+    const raw = execFileSync('bunx', ['eslint', '.', '--format', 'json'], {
+      cwd: WEB_ROOT,
+      encoding: 'utf-8',
+      maxBuffer: 1024 * 1024 * 64,
+    });
+    return tally(JSON.parse(raw) as EslintResult[]);
+  } catch (error) {
+    // eslint's own exit code is 1 whenever it reports anything, warnings
+    // included; execFileSync throws for that even though this is not a
+    // failure for this check, which reads the report rather than the exit
+    // code — stdout still holds the JSON report to parse.
+    const e = error as { stdout?: string };
+    if (typeof e.stdout !== 'string') throw error;
+    return tally(JSON.parse(e.stdout) as EslintResult[]);
+  }
+}
 
+describe('design token migration (ratchet)', () => {
+  it(
+    'raw color/size lint warnings never increase past the recorded baseline',
+    { timeout: 60_000 },
+    () => {
+      const outcome = countDesignRuleWarnings();
       if (outcome.total > BASELINE) {
         const worst = [...outcome.byFile.entries()]
           .sort((a, b) => b[1] - a[1])
           .slice(0, 10)
           .map(([file, count]) => `  ${count}  ${file}`)
           .join('\n');
-        throw new Error(
+        assert.fail(
           `Raw color/size lint warnings went from ${BASELINE} to ${outcome.total} — a new ` +
             `raw color or arbitrary size was introduced (or the baseline needs lowering ` +
             `after a real cleanup, in src/design/lintRatchet.test.ts). Worst offenders:\n${worst}`,
         );
       }
-      expect(outcome.total).toBeLessThanOrEqual(BASELINE);
+      assert.ok(outcome.total <= BASELINE);
     },
-    60_000,
   );
 });
