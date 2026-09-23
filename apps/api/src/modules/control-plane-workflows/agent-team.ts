@@ -15,7 +15,7 @@ import {
 import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { notHomeAgent } from '#modules/agents/core/home-agent';
-import { isWorkflowEnabled, listTaskWorkflowRuns, startWorkflow } from './service';
+import { listTaskWorkflowRuns, startWorkflow } from './service';
 
 // The Mastra agent-team workflow started for one issue: the issue is the task, its
 // delegate (or the project's only coordinator) leads, and the project's specialists
@@ -163,37 +163,6 @@ export async function startIssueAgentTeam(
     status: String(started.status ?? 'running'),
     taskRef: task.taskRef,
   };
-}
-
-// Starts agent-team for an issue delegated to a coordinator, when the project runs the
-// workflow. False when it does not apply or the control plane refused the start: the
-// caller then queues a run for the agent itself, so the delegation is never lost.
-export async function startDelegatedAgentTeam(
-  issueId: number,
-  projectId: number,
-  agentId: number,
-  actorUserId: string | null,
-): Promise<boolean> {
-  const [coordinator] = await db
-    .select({ agentId: organizationAgentAssignment.agentId })
-    .from(organizationAgentAssignment)
-    .where(
-      and(
-        eq(organizationAgentAssignment.agentId, agentId),
-        eq(organizationAgentAssignment.role, 'coordinator'),
-      ),
-    );
-  if (!coordinator || !(await isWorkflowEnabled(projectId, 'agent-team'))) return false;
-  try {
-    await startIssueAgentTeam(issueId, actorUserId ?? 'itsaplan');
-    return true;
-  } catch (error) {
-    console.error(
-      '[planner] agent-team did not start, queueing a run for the coordinator:',
-      error instanceof Error ? error.message : error,
-    );
-    return false;
-  }
 }
 
 export function record(value: unknown): Record<string, unknown> {

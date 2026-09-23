@@ -73,6 +73,67 @@ test('start creates the run in the project and starts it without waiting for it'
   });
 });
 
+function startRequest(eventId) {
+  return {
+    schemaVersion: 1,
+    operation: 'start',
+    workflowId: 'agent-team',
+    projectRef: 'project:PRIV',
+    organizationRef: 'organization:1',
+    eventId,
+    occurredAt: '2026-09-22T00:00:00Z',
+    actorId: 'user-1',
+    payload: {},
+    capabilityRefs: [],
+    connectionRefs: [],
+  };
+}
+
+test('a start asked for again answers the run it started', async () => {
+  const calls = [];
+  const control = service(async (url, init) => {
+    calls.push(`${init?.method ?? 'GET'} ${new URL(url).pathname}`);
+    return json({ runId: 'event-1', resourceId: 'project:PRIV', status: 'running' });
+  });
+  const result = await control.execute(startRequest('event-1'));
+  assert.equal(result.status, 'running');
+  assert.deepEqual(calls, ['GET /mastra/api/workflows/agent-team/runs/event-1']);
+});
+
+test('a run created by a start that failed before starting it is started by the next start', async () => {
+  const calls = [];
+  const control = service(async (url, init) => {
+    calls.push(`${init?.method ?? 'GET'} ${new URL(url).pathname}`);
+    return json({ runId: 'event-2', resourceId: 'project:PRIV', status: 'pending' });
+  });
+  const result = await control.execute(startRequest('event-2'));
+  assert.equal(result.status, 'running');
+  assert.deepEqual(calls, [
+    'GET /mastra/api/workflows/agent-team/runs/event-2',
+    'POST /mastra/api/workflows/agent-team/start',
+  ]);
+});
+
+test('concurrent starts of one event share one pair of Mastra calls', async () => {
+  const calls = [];
+  const control = service(async (url, init) => {
+    calls.push(`${init?.method ?? 'GET'} ${new URL(url).pathname}`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    if (!init?.method) return json({}, 404);
+    return json({ runId: 'event-3', status: 'pending' });
+  });
+  const [first, second] = await Promise.all([
+    control.execute(startRequest('event-3')),
+    control.execute(startRequest('event-3')),
+  ]);
+  assert.deepEqual(first, second);
+  assert.deepEqual(calls, [
+    'GET /mastra/api/workflows/agent-team/runs/event-3',
+    'POST /mastra/api/workflows/agent-team/create-run',
+    'POST /mastra/api/workflows/agent-team/start',
+  ]);
+});
+
 test('an existing idempotency key cannot cross projects', async () => {
   const control = service(async () => json({ runId: 'same', resourceId: 'project:OTHER' }));
   await assert.rejects(

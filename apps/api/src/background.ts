@@ -1,6 +1,7 @@
 import { intEnv } from '#shared/lib';
 import { agentRunConfig } from '#modules/agents/core/run-queue';
 import { expireExhaustedRuns } from '#modules/agents/runner/service';
+import { processAgentTeamStarts } from '#modules/control-plane-workflows/agent-team-starts';
 import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { processAgentRuns } from '#modules/agents/core/run-poller';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
@@ -22,6 +23,9 @@ export function startBackgroundJobs(): void {
   // Archiving is not time-sensitive, so the sweep runs far less often than the queue
   // is drained.
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));
+  startLoop('agent-team-starts', processAgentTeamStarts, () =>
+    intEnv('AGENT_TEAM_START_POLL_INTERVAL_MS', 5_000),
+  );
   startLoop('run-janitor', runJanitor, () => intEnv('RUN_JANITOR_INTERVAL_MS', 60_000));
   startLoop('stage-janitor', stageJanitor, () => intEnv('STAGE_JANITOR_INTERVAL_MS', 300_000));
 }
