@@ -293,6 +293,22 @@ describe('browser gateway', () => {
     });
   });
 
+  it('lists the projects a user works in for the Home "Browser" overview', async () => {
+    const { asOwner, mkt } = await setup();
+    const overview = await asOwner['browser-gateway'].overview.get();
+    expect(overview.status).toBe(200);
+    expect(overview.data!.projects).toContainEqual({
+      projectId: mkt.id,
+      projectKey: 'MKT',
+      projectName: 'Marketing',
+    });
+  });
+
+  it('refuses the "Browser" overview to a request with no session', async () => {
+    const res = await app.handle(new Request('http://localhost/browser-gateway/overview'));
+    expect(res.status).toBe(401);
+  });
+
   it("lets the project owner read and change the project's browser gateway settings", async () => {
     const { asOwner } = await setup();
     const before = await asOwner.projects({ projectKey: 'MKT' }).settings['browser-gateway'].get();
