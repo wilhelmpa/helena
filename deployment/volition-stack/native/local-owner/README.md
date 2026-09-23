@@ -12,7 +12,7 @@ sudo python3 deployment/volition-stack/native/local-owner/configure.py owner@exa
 
 The desktop Caddy route must continue limiting this hostname to the home LAN.
 Debian Nginx injects a random capability only for the exact hostname and the trusted
-desktop gateway or loopback source. Incoming capability headers are overwritten;
+desktop gateway (192.168.122.1) or the home LAN; never from loopback, where the Cloudflare tunnel arrives. Incoming capability headers are overwritten;
 external backend requests have the header stripped. The Next server and auth API
 both verify it. Neither the capability nor a password is sent to the browser.
 The API still validates normal sessions, including account deactivation.

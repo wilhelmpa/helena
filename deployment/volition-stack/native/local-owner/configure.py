@@ -24,9 +24,12 @@ config.write_text(
 )
 config.chmod(0o600)
 nginx_map = pathlib.Path('/etc/nginx/conf.d/volition-local-owner.conf')
+# The home network signs in without a password: the relay on the nspawn host
+# (192.168.122.1) and, when Kingston boots natively, the LAN itself. Loopback is left out
+# on purpose, because the Cloudflare tunnel reaches nginx from there.
 nginx_map.write_text(
     'geo $volition_local_owner_source {\n    default 0;\n'
-    '    127.0.0.1/32 1;\n    ::1/128 1;\n    192.168.122.1/32 1;\n}\n'
+    '    192.168.122.1/32 1;\n    192.168.2.0/24 1;\n    fe80::/10 1;\n}\n'
     'map "$host:$volition_local_owner_source" $volition_local_owner_token {\n'
     f'    default "";\n    "kingston-server.local:1" "{token}";\n}}\n'
 )
