@@ -14,11 +14,7 @@ import { decideWorkflow } from '@/lib/api/endpoints/controlPlaneWorkflows';
 import { qk } from '@/services/queryKeys';
 import { withoutGate } from '../utils/workflowGates';
 
-export const useApprovals = (
-  status: ApprovalListStatus,
-  params: PageParams,
-  projectKey?: string,
-) =>
+export const useApprovals = (status: ApprovalListStatus, params: PageParams, projectKey?: string) =>
   useQuery({
     queryKey: qk.approvals(status, params, projectKey),
     queryFn: () => listApprovals(params, status, projectKey),

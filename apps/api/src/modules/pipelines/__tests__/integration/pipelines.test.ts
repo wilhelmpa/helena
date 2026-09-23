@@ -1012,9 +1012,9 @@ describe('workflow run limit', () => {
     ).toHaveLength(3);
     const feedAfter = (await ctx.asOwner.issues({ issueId: task.id }).feed.get({ query: {} }))
       .data!;
-    expect(
-      feedAfter.items.filter((entry) => entry.action === 'workflow_run_limited'),
-    ).toHaveLength(1);
+    expect(feedAfter.items.filter((entry) => entry.action === 'workflow_run_limited')).toHaveLength(
+      1,
+    );
   });
 
   it('counts every workflow of the task toward the one limit, not each apart', async () => {

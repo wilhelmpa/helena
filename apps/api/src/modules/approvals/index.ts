@@ -195,18 +195,14 @@ export const approvalRoutes = new Elysia({
       },
     },
   )
-  .get(
-    '/approvals/projects',
-    ({ user }) => listApprovalProjects(requireUser(user).id),
-    {
-      response: { 200: ApprovalProjectResponse, ...errors(401) },
-      detail: {
-        summary: 'List the projects the caller may decide approvals in',
-        description:
-          'The projects behind the approvals list and pending count, for its project filter.',
-      },
+  .get('/approvals/projects', ({ user }) => listApprovalProjects(requireUser(user).id), {
+    response: { 200: ApprovalProjectResponse, ...errors(401) },
+    detail: {
+      summary: 'List the projects the caller may decide approvals in',
+      description:
+        'The projects behind the approvals list and pending count, for its project filter.',
     },
-  )
+  })
   .get('/approvals/workflow-gates', ({ user }) => listWorkflowGates(requireUser(user).id), {
     response: { 200: WorkflowGateListResponse, ...errors(401) },
     detail: {

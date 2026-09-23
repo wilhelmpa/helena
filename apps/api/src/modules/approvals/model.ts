@@ -126,9 +126,7 @@ export const listApprovalsQuery = t.Object({
 });
 
 export const pendingCountQuery = t.Object({
-  projectKey: t.Optional(
-    t.String({ description: 'Count only the requests of this project.' }),
-  ),
+  projectKey: t.Optional(t.String({ description: 'Count only the requests of this project.' })),
 });
 
 export const ApprovalProjectResponse = t.Array(

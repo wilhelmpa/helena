@@ -41,9 +41,7 @@ export default function ApprovalsPage() {
             {projects.length > 1 && (
               <Select
                 value={projectKey ?? ALL_PROJECTS}
-                onValueChange={(value) =>
-                  setProjectKey(value === ALL_PROJECTS ? undefined : value)
-                }
+                onValueChange={(value) => setProjectKey(value === ALL_PROJECTS ? undefined : value)}
               >
                 <SelectTrigger className="w-[220px]" aria-label={t('filterProject')}>
                   <SelectValue />
