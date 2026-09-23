@@ -81,7 +81,10 @@ lets a `hermes chat` query run a command that Hermes' pattern detection flags as
 
 The catalog script links the plugin from the live checkout into the `plugins` directory of every
 Hermes home, and it stops the runner start when `single_query_mode` is `approve` but the plugin is
-not in `plugins.enabled`.
+not in `plugins.enabled`. It also names the link in the `hermes.plugins` field of the runner
+config. The runner checks the link before every run and chat answer and every minute, puts back a
+link the agent removed or replaced, fails a run whose link it cannot put back, and reports what it
+restored on the agent in Plan.
 
 ## Hermes cron
 
@@ -89,7 +92,17 @@ Recurring work is a routine in Plan, run through Mastra; a Hermes cron job would
 a second time. The runner never passes the `cronjob` toolset to Hermes, Plan does not offer it as a
 toggle, and the plugin blocks the `cronjob_manage` tool in every session. The Hermes cron ticker
 has no switch in `config.yaml`: `hermes dashboard` starts it when `HERMES_DESKTOP=1` is set, which
-`volition-hermes-serve.service` does, and it ticks the store of every profile.
+`volition-hermes-serve.service` does, and it ticks the store of every profile. The runner reports
+the jobs in each home's `cron/jobs.json` to Plan, which shows them as a warning on the agent.
+
+## Learning
+
+Whether an agent learns and whether Hermes' curator runs are set per agent in Plan; the runner
+applies both through the managed configuration and `skills/.curator_state` (see the runner's
+README). The managed configuration also turns off Hermes' post-turn review and model-written
+session titles for every run and chat answer. `hermes dashboard` reads `config.yaml` without the
+managed directory, so in a chat started in the Hermes dashboard the review, memory and titles
+follow `config.yaml`; the curator's pause is a file of the home and holds there too.
 
 ## Secret boundary
 

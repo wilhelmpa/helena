@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -22,6 +23,8 @@ async function home(files: Record<string, string>): Promise<string> {
 
 const skill = (name: string, description: string) =>
   `---\nname: ${name}\ndescription: ${description}\n---\n\n# ${name}\n`;
+
+const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
 
 describe('Hermes inventory', () => {
   it("lists the profile's skills by category, with where each came from", async () => {
@@ -50,22 +53,72 @@ describe('Hermes inventory', () => {
         category: null,
         description: 'Writes release notes.',
         origin: 'agent',
+        path: 'release-notes',
+        pinned: false,
       },
-      { name: 'Triage', category: 'plan-managed', description: 'Triage work', origin: 'plan' },
+      {
+        name: 'Triage',
+        category: 'plan-managed',
+        description: 'Triage work',
+        origin: 'plan',
+        path: 'plan-managed/plan-7',
+        pinned: false,
+      },
       {
         name: 'airtable',
         category: 'productivity',
         description: 'Airtable REST API via curl.',
         origin: 'bundled',
+        path: 'productivity/airtable',
+        pinned: false,
       },
       {
         name: 'arxiv',
         category: 'research',
         description: 'Search arXiv: papers, authors.',
         origin: 'bundled',
+        path: 'research/arxiv',
+        pinned: false,
       },
-      { name: 'pdf-tools', category: 'research', description: 'Read PDFs.', origin: 'hub' },
+      {
+        name: 'pdf-tools',
+        category: 'research',
+        description: 'Read PDFs.',
+        origin: 'hub',
+        path: 'research/pdf-tools',
+        pinned: false,
+      },
     ]);
+    expect(inventory.cronJobs).toBe(0);
+  });
+
+  it("counts a skill below plan-managed that Plan did not write as the agent's", async () => {
+    const hermesHome = await home({
+      'skills/plan-managed/plan-7/SKILL.md': skill('Triage', 'Triage work'),
+      'skills/plan-managed/notes/SKILL.md': skill('notes', 'The agent put it here'),
+    });
+
+    const { skills } = await readHermesInventory(hermesHome, undefined, new Set(['plan-7']));
+
+    expect(skills.map(({ path, origin }) => ({ path, origin }))).toEqual([
+      { path: 'plan-managed/notes', origin: 'agent' },
+      { path: 'plan-managed/plan-7', origin: 'plan' },
+    ]);
+  });
+
+  it("marks the skills Hermes keeps pinned and counts Hermes' own cron jobs", async () => {
+    const hermesHome = await home({
+      'skills/release-notes/SKILL.md': skill('release-notes', 'Writes release notes.'),
+      'skills/.usage.json': JSON.stringify({ 'release-notes': { pinned: true, use_count: 3 } }),
+      'cron/jobs.json': JSON.stringify({
+        jobs: [{ id: 'a' }, { id: 'b', enabled: false }, { id: 'c', enabled: true }],
+      }),
+    });
+
+    const inventory = await readHermesInventory(hermesHome, undefined);
+
+    expect(inventory.skills[0]).toMatchObject({ name: 'release-notes', pinned: true });
+    expect(inventory.cronJobs).toBe(2);
   });
 
   it('bounds the skill list and each description', async () => {
@@ -90,9 +143,16 @@ describe('Hermes inventory', () => {
 
     const { memory } = await readHermesInventory(hermesHome, undefined);
 
+    const user = `${'a'.repeat(16 * 1024)}b`;
     expect(memory).toEqual([
-      { file: 'MEMORY.md', content: '', truncated: false },
-      { file: 'USER.md', content: 'a'.repeat(16 * 1024), truncated: true },
+      { file: 'MEMORY.md', content: '', truncated: false, sha256: sha256(''), chars: 0 },
+      {
+        file: 'USER.md',
+        content: 'a'.repeat(16 * 1024),
+        truncated: true,
+        sha256: sha256(user),
+        chars: user.length,
+      },
     ]);
   });
 
@@ -105,7 +165,7 @@ describe('Hermes inventory', () => {
     const { skills, memory } = await readHermesInventory(hermesHome, undefined);
 
     expect(skills[0].description).toBe('x'.repeat(299));
-    expect(memory[0]).toEqual({
+    expect(memory[0]).toMatchObject({
       file: 'MEMORY.md',
       content: 'm'.repeat(16 * 1024 - 1),
       truncated: true,
