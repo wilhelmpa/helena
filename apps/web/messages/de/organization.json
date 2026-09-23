@@ -107,6 +107,7 @@
     "description": "Bereitgestellte Ressourcen für Code, Terminal, Browser, Dateien und Agenten in diesem Projekt.",
     "loading": "Projektressourcen werden geladen…",
     "unavailable": "Der Status der Projektressourcen ist nicht verfügbar.",
+    "boardDeleted": "Board Nr. {id} (gelöscht)",
     "status": {
       "pending": "Wird bereitgestellt",
       "succeeded": "Bereit",

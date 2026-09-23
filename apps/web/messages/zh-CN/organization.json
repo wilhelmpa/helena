@@ -107,6 +107,7 @@
     "description": "Provisioned code, terminal, browser, files, and agent resources for this project.",
     "loading": "Loading project resources…",
     "unavailable": "Project resource status is unavailable.",
+    "boardDeleted": "看板 #{id}(已删除)",
     "status": {
       "pending": "Provisioning",
       "succeeded": "Ready",
