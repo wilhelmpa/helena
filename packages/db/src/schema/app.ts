@@ -580,6 +580,9 @@ export const aiAgent = pgTable(
     // Latest non-secret adapter report. This is operational state, not a second
     // configuration store: external runners such as Hermes use the same shape.
     runtimeState: jsonb('runtime_state').notNull().default({}),
+    // The content of the skills the agent created in its runtime, from the same report.
+    // Kept apart from runtime_state, which every read of the agent returns.
+    runtimeLearnedSkills: jsonb('runtime_learned_skills').notNull().default([]),
     // The member who created the agent. An external agent's runner authenticates
     // with the agent's key, so `owner` scope means the runner only receives runs
     // this member triggered; `team` scope, the default, means any member's.
@@ -1117,6 +1120,33 @@ export const agentSkill = pgTable(
     unique().on(t.teamId, t.name),
     check('agent_skill_source_check', sql`${t.source} IN ('upload', 'inline', 'github')`),
     index('agent_skill_team_idx').on(t.teamId),
+  ],
+);
+
+// An owner's decision on what an external agent learned in its runtime: discard or pin a
+// skill it created, or write one of its memory files. The agent's runner receives the
+// pending ones with its runtime policy and reports each result. A done action is deleted;
+// a failed one keeps its error until a newer action on the same target replaces it.
+export const agentRuntimeAction = pgTable(
+  'agent_runtime_action',
+  {
+    id: serial('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    // The skill's directory in the runtime, or the memory file.
+    target: text('target').notNull(),
+    payload: jsonb('payload').notNull().default({}),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'agent_runtime_action_kind_check',
+      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory')`,
+    ),
+    index('agent_runtime_action_agent_idx').on(t.agentId, t.id),
   ],
 );
 

@@ -66,9 +66,12 @@ export interface AgentRuntimePolicy {
   mcpGrants: string[];
   files: { kind: 'instructions'; path: string; content: string }[];
   // Null clears a limit. A normalized policy carries a limit only when it is set, so
-  // the policy of an agent without limits keeps its shape and its revision.
+  // the policy of an agent without limits keeps its shape and its revision. The same
+  // holds for the two learning switches.
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
+  learning?: boolean;
+  curator?: boolean;
 }
 
 export interface AgentRuntimeConflict {
@@ -84,8 +87,17 @@ export interface AgentRuntimeInventory {
     category: string | null;
     description: string;
     origin: 'bundled' | 'hub' | 'plan' | 'agent';
+    path?: string;
+    pinned?: boolean;
   }[];
-  memory: { file: 'MEMORY.md' | 'USER.md'; content: string; truncated: boolean }[];
+  memory: {
+    file: 'MEMORY.md' | 'USER.md';
+    content: string;
+    truncated: boolean;
+    sha256?: string;
+    chars?: number;
+  }[];
+  cronJobs?: number;
 }
 
 export interface AgentRuntimeState {
@@ -95,6 +107,7 @@ export interface AgentRuntimeState {
   capabilities: string[];
   detail: string | null;
   conflicts: AgentRuntimeConflict[];
+  restored: string[];
   // Null until a runner that reads it reports one.
   inventory: AgentRuntimeInventory | null;
   reportedAt: string | null;
@@ -128,6 +141,7 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   capabilities: [],
   detail: null,
   conflicts: [],
+  restored: [],
   inventory: null,
   reportedAt: null,
 };
@@ -156,6 +170,9 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
             typeof conflict.path === 'string' &&
             typeof conflict.content === 'string',
         )
+      : [],
+    restored: Array.isArray(state.restored)
+      ? state.restored.filter((path): path is string => typeof path === 'string')
       : [],
     // Validated when the runner reported it, so only its presence is checked.
     inventory: state.inventory && typeof state.inventory === 'object' ? state.inventory : null,
@@ -201,6 +218,8 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     files,
     ...(maxTurns === null ? {} : { maxTurns }),
     ...(runBudgetSeconds === null ? {} : { runBudgetSeconds }),
+    ...(typeof policy.learning === 'boolean' && { learning: policy.learning }),
+    ...(typeof policy.curator === 'boolean' && { curator: policy.curator }),
   };
 }
 

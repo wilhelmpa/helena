@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { db, aiAgent } from '@repo/db';
 import { eq } from 'drizzle-orm';
+import { HttpError } from '#shared/lib';
 
 import {
   getAgentById,
@@ -19,18 +20,25 @@ import type { RunnerAgent } from '../runner/service';
 import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
 import { agentRuntimeMcpServers } from '../mcp-servers/service';
+import {
+  completeRuntimeActions,
+  pendingRuntimeActions,
+  type LearnedSkill,
+  type RuntimeActionResult,
+} from '../learning/service';
 import { areasSection } from './areas';
 import { structureSection } from './structure';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [skills, tools, structure, areas, mcpServers] = await Promise.all([
+  const [skills, tools, structure, areas, mcpServers, actions] = await Promise.all([
     listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
     structureSection(agent),
     areasSection(agent),
     agentRuntimeMcpServers(agent.id),
+    pendingRuntimeActions(agent.id),
   ]);
   const snapshot = {
     agent: { id: agent.id, name: agent.name, username: agent.username },
@@ -60,6 +68,11 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       integrationKey,
     })),
     mcpServers,
+    learning: {
+      enabled: agent.runtimePolicy.learning ?? true,
+      curator: agent.runtimePolicy.curator ?? false,
+    },
+    actions,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.
   // Eden's response parser treats a bare 64-character digest as an encoded value.
@@ -146,17 +159,31 @@ function approvalPreamble(): string {
 // routines, so the toggle for it is not offered.
 const WITHHELD_TOOLSETS = ['cronjob'];
 
+// What the learned skills of one report may hold together, beyond the bounds of each.
+const MAX_LEARNED_CHARS = 2 * 1024 * 1024;
+
 export async function reportRuntimeState(
   agentId: number,
-  state: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts' | 'inventory'> & {
+  report: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts' | 'restored' | 'inventory'> & {
     conflicts?: AgentRuntimeConflict[];
+    restored?: string[];
     inventory?: AgentRuntimeInventory;
+    learnedSkills?: LearnedSkill[];
+    actions?: RuntimeActionResult[];
   },
 ): Promise<AgentRuntimeState> {
+  const { learnedSkills = [], actions = [], ...state } = report;
+  const learnedChars = learnedSkills.reduce(
+    (sum, skill) =>
+      sum + skill.markdown.length + skill.files.reduce((n, file) => n + file.content.length, 0),
+    0,
+  );
+  if (learnedChars > MAX_LEARNED_CHARS) throw new HttpError(413, 'Learned skills are too large');
   const inventory = state.inventory;
   const value: AgentRuntimeState = {
     ...state,
     conflicts: state.conflicts ?? [],
+    restored: state.restored ?? [],
     inventory: inventory
       ? {
           ...inventory,
@@ -167,7 +194,8 @@ export async function reportRuntimeState(
   };
   await db
     .update(aiAgent)
-    .set({ runtimeState: value, lastSeenAt: new Date() })
+    .set({ runtimeState: value, runtimeLearnedSkills: learnedSkills, lastSeenAt: new Date() })
     .where(eq(aiAgent.id, agentId));
+  await completeRuntimeActions(agentId, actions);
   return value;
 }

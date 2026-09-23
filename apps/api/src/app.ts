@@ -115,6 +115,12 @@ export const app = new Elysia()
             name: 'Agent MCP Servers',
             description: "The team's MCP server library and the servers enabled on each agent",
           },
+          {
+            name: 'Agent Learning',
+            description:
+              'What an external agent learned in its runtime, and the actions its runner ' +
+              'carries out on it',
+          },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
           { name: 'Issues', description: 'Issues, their fields, feed, and comments' },
