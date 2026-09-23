@@ -943,7 +943,7 @@ describe('ai agents', () => {
       return ids;
     }
 
-    it('queues the projects an external agent joins, leaves and is deleted from', async () => {
+    it('queues the projects of an external agent that is created, moved, rekeyed or deleted', async () => {
       const { asOwner, teamId } = await setup();
       const ops = await asOwner
         .teams({ teamId })
@@ -969,10 +969,16 @@ describe('ai agents', () => {
       await agent.patch({ name: 'Coder 2', projectIds: [ops.data!.id] });
       expect(await jobIds(asOwner, ['MKT', 'OPS'])).toEqual(afterMove);
 
+      // The runtime's key stops working, so the runtime is keyed again.
+      await agent['regenerate-key'].post();
+      const afterRotate = await jobIds(asOwner, ['MKT', 'OPS']);
+      expect(afterRotate.MKT).toBe(afterMove.MKT);
+      expect(afterRotate.OPS).not.toBe(afterMove.OPS);
+
       await agent.delete();
       const afterDelete = await jobIds(asOwner, ['MKT', 'OPS']);
       expect(afterDelete.MKT).toBe(afterMove.MKT);
-      expect(afterDelete.OPS).not.toBe(afterMove.OPS);
+      expect(afterDelete.OPS).not.toBe(afterRotate.OPS);
     });
 
     it('queues the projects of an agent added or removed through the member list', async () => {
