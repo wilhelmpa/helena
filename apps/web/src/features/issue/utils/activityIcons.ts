@@ -15,6 +15,7 @@ import {
   Pencil,
   RefreshCw,
   Shapes,
+  ShieldAlert,
   SignalHigh,
   Bot,
   Tag,
@@ -63,4 +64,5 @@ export const ACTION_ICON: Record<ActivityAction, LucideIcon> = {
   agent_finished: Bot,
   comment_edited: MessageSquare,
   comment_deleted: MessageSquare,
+  workflow_run_limited: ShieldAlert,
 };

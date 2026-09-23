@@ -431,7 +431,14 @@
     "nobody": "tidak ada",
     "open": "Buka",
     "runs": "Eksekusi",
-    "problems": "Mengapa tidak dapat berjalan di sini"
+    "problems": "Mengapa tidak dapat berjalan di sini",
+    "runLimit": {
+      "title": "Batas jalannya alur kerja",
+      "hint": "Mencegah alur kerja memicu satu sama lain tanpa henti: paling banyak sejumlah ini jalannya alur kerja dapat dimulai pada satu tugas per jam.",
+      "perHour": "per jam",
+      "save": "Simpan",
+      "saved": "Tersimpan."
+    }
   },
   "issuePanel": {
     "title": "Alur kerja",

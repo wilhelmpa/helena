@@ -3,6 +3,7 @@ import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { addProjectMember } from '#tests/helpers/members';
 import { controlApi, controlPlane } from '#tests/helpers/control';
 import { drainPendingStarts } from '../../runs';
 
@@ -917,5 +918,135 @@ describe('workflow runs', () => {
     const outsider = authedApi((await signUpTestUser({ name: 'Outsider' })).cookie);
     expect((await outsider['pipeline-runs']({ runId: run.id }).get()).status).toBe(403);
     expect((await outsider['pipeline-runs']({ runId: run.id }).cancel.post()).status).toBe(403);
+  });
+});
+
+describe('workflow run limit', () => {
+  beforeEach(async () => {
+    await resetDb();
+    controlPlane.reset();
+  });
+
+  // Starts the newest run Mastra was just asked to start, then reports it finished —
+  // the run this task event just created, freed up so the next task event can start
+  // its own (the partial unique index only blocks a second *active* run of the same
+  // workflow on the same task).
+  async function finishNewestRun(ctx: Setup, issueId: number) {
+    await drainPendingStarts();
+    const runs = (await ctx.asOwner.issues({ issueId })['pipeline-runs'].get()).data!;
+    const newest = runs[0]!;
+    await control({
+      operation: 'finish',
+      runId: newest.id,
+      projectRef: 'project:MKT',
+      status: 'succeeded',
+    });
+  }
+
+  it('reads the default and lets an editor change it, within bounds', async () => {
+    const ctx = await setup();
+    const limitApi = () => ctx.asOwner.projects({ projectKey: 'MKT' })['pipeline-run-limit'];
+
+    expect((await limitApi().get()).data).toEqual({ maxRuns: 10, windowMinutes: 60 });
+
+    expect((await limitApi().patch({ maxRuns: 3 })).data).toEqual({
+      maxRuns: 3,
+      windowMinutes: 60,
+    });
+    expect((await limitApi().get()).data).toEqual({ maxRuns: 3, windowMinutes: 60 });
+
+    // Clamped to the allowed range rather than refused outright.
+    await limitApi().patch({ maxRuns: 5000 });
+    expect((await limitApi().get()).data!.maxRuns).toBe(1000);
+
+    expect((await limitApi().patch({ maxRuns: 0 })).status).toBe(422);
+
+    const asMember = await addProjectMember(ctx.asOwner, 'MKT');
+    expect(
+      (await asMember.projects({ projectKey: 'MKT' })['pipeline-run-limit'].patch({ maxRuns: 5 }))
+        .status,
+    ).toBe(403);
+  });
+
+  it('stops starting runs once the limit is reached and leaves one trace of it', async () => {
+    const ctx = await setup();
+    await ctx.asOwner.projects({ projectKey: 'MKT' })['pipeline-run-limit'].patch({ maxRuns: 2 });
+    const created = await template(ctx, {
+      definition: { ...simple(), trigger: { type: 'status_changed' } },
+    });
+    expect((await enable(ctx, created.id, { coder: ctx.coder.id })).status).toBe(200);
+    const task = await issue(ctx);
+
+    // Two runs, each a real status change finished before the next is asked for.
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('In Progress') });
+    await finishNewestRun(ctx, task.id);
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('Todo') });
+    await finishNewestRun(ctx, task.id);
+
+    // A third is the limit's business: nothing is asked of Mastra for it.
+    const beforeThird = controlPlane.started().length;
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('In Progress') });
+    await drainPendingStarts();
+    expect(controlPlane.started().length).toBe(beforeThird);
+
+    const runs = (await ctx.asOwner.issues({ issueId: task.id })['pipeline-runs'].get()).data!;
+    expect(runs).toHaveLength(3);
+    const rejected = runs.filter((run) => run.status === 'rejected');
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0]!.trigger).toBe('status_changed');
+    expect(rejected[0]!.error).toContain('2 runs per 60 min reached');
+
+    const feed = (await ctx.asOwner.issues({ issueId: task.id }).feed.get({ query: {} })).data!;
+    const notice = feed.items.find((entry) => entry.action === 'workflow_run_limited');
+    expect(notice).toBeDefined();
+    expect(notice!.actorName).toBe('Workflow');
+    expect(notice!.payload.subject?.value).toBe('Release');
+
+    // A second blocked attempt in the same window leaves the trace alone — one
+    // notice per workflow per window, not one per retry of the loop this guards
+    // against.
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('Todo') });
+    await drainPendingStarts();
+    expect(controlPlane.started().length).toBe(beforeThird);
+    expect(
+      (await ctx.asOwner.issues({ issueId: task.id })['pipeline-runs'].get()).data,
+    ).toHaveLength(4);
+    const feedAfter = (await ctx.asOwner.issues({ issueId: task.id }).feed.get({ query: {} }))
+      .data!;
+    expect(
+      feedAfter.items.filter((entry) => entry.action === 'workflow_run_limited'),
+    ).toHaveLength(1);
+  });
+
+  it('counts every workflow of the task toward the one limit, not each apart', async () => {
+    const ctx = await setup();
+    await ctx.asOwner.projects({ projectKey: 'MKT' })['pipeline-run-limit'].patch({ maxRuns: 1 });
+    const first = await template(ctx, {
+      name: 'First',
+      definition: { ...simple(), trigger: { type: 'status_changed' } },
+    });
+    const second = await template(ctx, {
+      name: 'Second',
+      definition: { ...simple(), trigger: { type: 'label_added' } },
+    });
+    expect((await enable(ctx, first.id, { coder: ctx.coder.id })).status).toBe(200);
+    expect((await enable(ctx, second.id, { coder: ctx.coder.id })).status).toBe(200);
+    const urgent = (
+      await ctx.asOwner.projects({ projectKey: 'MKT' }).labels.post({ name: 'urgent' })
+    ).data!;
+    const task = await issue(ctx);
+
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('In Progress') });
+    await drainPendingStarts();
+    expect(controlPlane.started()).toHaveLength(1);
+
+    // The task used up its one slot for the hour on the first workflow: the
+    // second workflow's own, distinct trigger is refused too.
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ labelIds: [urgent.id] });
+    await drainPendingStarts();
+    expect(controlPlane.started()).toHaveLength(1);
+    const runs = (await ctx.asOwner.issues({ issueId: task.id })['pipeline-runs'].get()).data!;
+    expect(runs.map((run) => run.trigger).sort()).toEqual(['label_added', 'status_changed']);
+    expect(runs.find((run) => run.trigger === 'label_added')!.status).toBe('rejected');
   });
 });

@@ -82,6 +82,7 @@ export const qk = {
   pipelineVersion: (pipelineId: number, version: number) =>
     ['pipeline', pipelineId, 'versions', version] as const,
   pipelineContext: (scope: string) => ['pipelineContext', scope] as const,
+  pipelineRunLimit: (projectKey: string) => ['pipelines', 'project', projectKey, 'runLimit'] as const,
   pipelineValidation: (scope: string, draft: string) =>
     ['pipelineValidation', scope, draft] as const,
   anyPipelineRuns: ['pipelineRuns'] as const,

@@ -18,6 +18,7 @@ import { qk } from '@/services/queryKeys';
 import { projectPipelinePath } from '@/utils/paths';
 import { revScope } from '@/utils/revScopes';
 import PipelineProjectRow from './components/project/PipelineProjectRow';
+import WorkflowRunLimitSettings from './components/project/WorkflowRunLimitSettings';
 import { useNewPipeline } from './hooks/useNewPipeline';
 
 // The workflow builder on a project's Workflows page: the templates of the team's
@@ -55,6 +56,7 @@ export default function ProjectPipelinesPanel() {
           </Button>
         )}
       </div>
+      <WorkflowRunLimitSettings projectKey={projectKey} editable={editable} />
       {pipelines.isPending ? null : pipelines.isError ? (
         <p className="rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
           {t('loadFailed')}

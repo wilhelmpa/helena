@@ -321,6 +321,7 @@
     "agentStarted": "hat die Aufgabe übernommen",
     "agentFinished": "hat die Arbeit an der Aufgabe abgeschlossen",
     "agentFailed": "konnte die Aufgabe nicht abschließen",
+    "workflowRunLimited": "hat sein Lauflimit erreicht und <v>{workflow}</v> übersprungen",
     "pullRequestMerged": "hat den Pull Request <v>{pr}</v> gemergt",
     "pullRequestOpened": "hat den Pull Request <v>{pr}</v> geöffnet",
     "worklogAdded": "hat <v>{time}</v> am <v>{date}</v> erfasst",

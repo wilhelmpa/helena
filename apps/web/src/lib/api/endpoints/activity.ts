@@ -66,7 +66,10 @@ export type ActivityAction =
   | 'agent_started'
   | 'agent_finished'
   | 'comment_edited'
-  | 'comment_deleted';
+  | 'comment_deleted'
+  // A workflow held back on this task by the project's workflow run limit (see
+  // modules/pipelines/rate-limit.ts): subject names the workflow that was skipped.
+  | 'workflow_run_limited';
 
 // One side of a change: the display-ready text snapshot (column/label/type/assignee
 // name, raw priority, ISO date, or the new text of a long field) and the id of the
