@@ -80,13 +80,15 @@ describe('agent network settings', () => {
   it('starts open, with nothing listed and every agent following the project', async () => {
     const { asOwner, agent } = await setup();
     const res = await asOwner.projects({ projectKey: 'MKT' }).settings['agent-network'].get();
-    expect(res.data).toEqual({
-      mode: 'open',
-      allow: [],
-      deny: [],
-      mailPorts: false,
-      agents: [{ id: agent.id, username: 'writer', name: 'Writer', mode: null }],
+    expect(res.data).toMatchObject({ mode: 'open', allow: [], deny: [], mailPorts: false });
+    // The project's own coordinator and the agent made for it, never the Home agent.
+    expect(res.data!.agents).toContainEqual({
+      id: agent.id,
+      username: 'writer',
+      name: 'Writer',
+      mode: null,
     });
+    expect(res.data!.agents.every((entry) => entry.mode === null)).toBe(true);
   });
 
   it('keeps each of the three modes, for the project and for one agent', async () => {
@@ -96,10 +98,10 @@ describe('agent network settings', () => {
       const res = await settings().put({ mode, agents: { [String(agent.id)]: mode } });
       expect(res.status).toBe(200);
       expect(res.data!.mode).toBe(mode);
-      expect(res.data!.agents[0].mode).toBe(mode);
+      expect(res.data!.agents.find((entry) => entry.id === agent.id)!.mode).toBe(mode);
     }
     const cleared = await settings().put({ agents: { [String(agent.id)]: null } });
-    expect(cleared.data!.agents[0].mode).toBeNull();
+    expect(cleared.data!.agents.find((entry) => entry.id === agent.id)!.mode).toBeNull();
     expect(cleared.data!.mode).toBe('blocked');
   });
 
