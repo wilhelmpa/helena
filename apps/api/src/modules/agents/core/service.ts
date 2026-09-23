@@ -61,6 +61,8 @@ export interface AgentRuntimePolicy {
   toolDeny: string[];
   mcpGrants: string[];
   files: { kind: 'instructions'; path: string; content: string }[];
+  // Null clears a limit. A normalized policy carries a limit only when it is set, so
+  // the policy of an agent without limits keeps its shape and its revision.
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
 }
@@ -86,8 +88,6 @@ const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
   toolDeny: [],
   mcpGrants: [],
   files: [],
-  maxTurns: null,
-  runBudgetSeconds: null,
 };
 
 // The value when it is a whole number inside the limit, otherwise null.
@@ -167,6 +167,8 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
           typeof file.content === 'string',
       )
     : [];
+  const maxTurns = runLimit(policy.maxTurns, maxTurnsLimit);
+  const runBudgetSeconds = runLimit(policy.runBudgetSeconds, runBudgetSecondsLimit);
   return {
     reasoningEffort:
       typeof policy.reasoningEffort === 'string' && policy.reasoningEffort.trim()
@@ -176,8 +178,8 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     toolDeny: strings(policy.toolDeny),
     mcpGrants: strings(policy.mcpGrants),
     files,
-    maxTurns: runLimit(policy.maxTurns, maxTurnsLimit),
-    runBudgetSeconds: runLimit(policy.runBudgetSeconds, runBudgetSecondsLimit),
+    ...(maxTurns === null ? {} : { maxTurns }),
+    ...(runBudgetSeconds === null ? {} : { runBudgetSeconds }),
   };
 }
 
