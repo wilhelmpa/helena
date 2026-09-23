@@ -9,9 +9,11 @@ from urllib.parse import urlsplit, urlunsplit
 
 DEV_ORIGIN = 'http://localhost:8090'
 DEV_DATABASE = 'itsaplan_dev'
+DEV_STORAGE = '/var/lib/volition/plan-dev/storage'
 OVERRIDES = {
     'APP_URL': DEV_ORIGIN,
     'API_URL': f'{DEV_ORIGIN}/backend',
+    'STORAGE_ROOT': DEV_STORAGE,
     'SERVICE_URL_API': 'http://127.0.0.1:3100',
     'API_HOST': '127.0.0.1',
     'API_PORT': '3100',

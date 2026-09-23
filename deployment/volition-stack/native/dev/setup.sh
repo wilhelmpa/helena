@@ -15,6 +15,8 @@ site=/etc/nginx/sites-enabled/volition-dev.conf
 
 # Only root and the developer's group may traverse the socket directory.
 install -d -m 0750 -o root -g "$dev_user" "$run_dir"
+# Uploads of the dev instance, apart from the live files.
+install -d -m 0700 -o "$dev_user" -g "$dev_user" /var/lib/volition/plan-dev /var/lib/volition/plan-dev/storage
 
 token=$(openssl rand -hex 32)
 tmp=$(mktemp)
