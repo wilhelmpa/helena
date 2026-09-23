@@ -10,6 +10,12 @@ import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerSta
 // Starting a new chat means picking who it is with, once. There is no agent switcher
 // inside a conversation afterwards and no way to add a second agent to it — one agent
 // per chat is the whole point of Helena's chat, not a limitation to work around.
+//
+// A pool template is filtered out regardless of what the caller passes in: it runs
+// nowhere, so it can never actually answer — only a project's copy of it can. A
+// project-scoped agent list already leaves templates out (they join no project), and
+// the backend rejects a chat run against one outright, but this stays correct for any
+// caller that has not filtered by project (e.g. a Home-wide picker).
 export default function NewChatAgentPicker({
   open,
   onOpenChange,
@@ -22,6 +28,7 @@ export default function NewChatAgentPicker({
   onPick: (agentId: number) => void;
 }) {
   const t = useTranslations('chatWorkspace');
+  const selectable = agents.filter((agent) => !agent.template);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,7 +37,7 @@ export default function NewChatAgentPicker({
           <DialogTitle>{t('list.newChat')}</DialogTitle>
         </DialogHeader>
         <ul className="-mx-1 max-h-80 space-y-0.5 overflow-y-auto">
-          {agents.map((agent) => (
+          {selectable.map((agent) => (
             <li key={agent.id}>
               <button
                 type="button"
@@ -48,7 +55,7 @@ export default function NewChatAgentPicker({
               </button>
             </li>
           ))}
-          {agents.length === 0 && (
+          {selectable.length === 0 && (
             <p className="px-2 py-4 text-sm text-muted-foreground">{t('empty.description')}</p>
           )}
         </ul>

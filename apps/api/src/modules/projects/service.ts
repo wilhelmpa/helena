@@ -41,6 +41,10 @@ import { lockAttachmentStorage } from '#modules/attachments/storage';
 import { applyProjectTemplateInTransaction } from '#modules/project-templates/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { ensureDefaultProjectViews } from '#modules/views/service';
+import {
+  hermesProjectCoordinatorUsername,
+  isHermesProjectCoordinatorUsername,
+} from '@repo/agent-naming';
 
 // Data access for projects: the top-level container that groups its own columns,
 // issue types, labels, assignees, custom fields, issues, saved views, and
@@ -366,20 +370,17 @@ export const DEFAULT_PROVISIONING_RESOURCES = [
   'browser',
 ] as const;
 
-const HERMES_PROJECT_COORDINATOR = /^hermes-[a-z0-9_-]+-coordinator$/;
+// hermesProjectCoordinatorUsername/isHermesProjectCoordinatorUsername now live in
+// @repo/agent-naming (imported above), the single source of truth apps/web's
+// preferredAgentUsername (utils/workspaceTools.ts) also depends on — they used to be
+// two independent implementations of the same convention. Re-exported here so every
+// existing `from '#modules/projects/service'` import in this app keeps working.
+export { hermesProjectCoordinatorUsername, isHermesProjectCoordinatorUsername };
 
-// A project coordinator is a real external agent, not a deployment-side record.
-// The deterministic, reserved handle makes it unique per project key (which is
+// A project coordinator is a real external agent, not a deployment-side record. The
+// deterministic, reserved handle makes it unique per project key (which is
 // instance-wide unique), while the normal agent rows remain the source of truth for
 // editable instructions, model, runtime policy/files, skills, and runner state.
-export function hermesProjectCoordinatorUsername(projectKey: string): string {
-  const slug = projectKey === 'VERV' ? 'verve' : projectKey.toLowerCase();
-  return `hermes-${slug}-coordinator`;
-}
-
-export function isHermesProjectCoordinatorUsername(username: string): boolean {
-  return HERMES_PROJECT_COORDINATOR.test(username);
-}
 
 // The bot users of the agents a new project of the team starts with, beside its own
 // coordinator: the Home agent always, and the internal agents of the team unless the

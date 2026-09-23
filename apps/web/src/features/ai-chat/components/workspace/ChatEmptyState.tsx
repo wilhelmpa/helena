@@ -16,6 +16,9 @@ import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadg
 // Shown before an agent is picked: Home or a project with no open chat yet. One agent
 // per chat, so starting one is choosing who it is with — no blank thread with an
 // agent switcher, which would read as a group chat waiting to happen.
+//
+// A pool template is filtered out here for the same reason as in NewChatAgentPicker:
+// it runs nowhere and can never actually answer.
 export default function ChatEmptyState({
   agents,
   onPick,
@@ -26,6 +29,7 @@ export default function ChatEmptyState({
   onOpenList: () => void;
 }) {
   const t = useTranslations('chatWorkspace');
+  const selectable = agents.filter((agent) => !agent.template);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto p-6">
@@ -45,9 +49,9 @@ export default function ChatEmptyState({
           <EmptyTitle>{t('empty.title')}</EmptyTitle>
           <EmptyDescription>{t('empty.description')}</EmptyDescription>
         </EmptyHeader>
-        {agents.length > 0 && (
+        {selectable.length > 0 && (
           <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
-            {agents.map((agent) => (
+            {selectable.map((agent) => (
               <button
                 key={agent.id}
                 type="button"

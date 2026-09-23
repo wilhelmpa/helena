@@ -2,6 +2,7 @@ import { db, agentMcpServer, agentMcpServerLink, integrationCredential } from '@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { decryptSecret } from '@repo/crypto';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
+import { onTemplateRelevantChange } from '../core/template-sync';
 
 // The team's library of MCP servers and the servers enabled on each agent. An env or
 // header value is a literal or the id of one of the team's secrets: a secret or an API
@@ -287,6 +288,7 @@ export async function setAgentMcpServers(
         .values(valid.map((mcpServerId) => ({ agentId, mcpServerId })));
     }
   });
+  await onTemplateRelevantChange(agentId, ['mcpServers']);
 }
 
 export async function agentMcpServerIds(agentId: number): Promise<number[]> {

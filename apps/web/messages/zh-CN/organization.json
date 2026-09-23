@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "没有模板，也不向任何人汇报。请指定部门或上级。",
+    "noDepartment": "无部门",
+    "templates": "代理池模板"
   },
   "summary": {
     "pool": "Agent pool",

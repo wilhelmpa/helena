@@ -587,6 +587,21 @@ export const aiAgent = pgTable(
     // A template runs nowhere and joins no project. A project adds a copy of it as a
     // specialist of its own.
     template: boolean('template').notNull().default(false),
+    // The template this row was copied from (copyTemplateIntoProject), kept so a later
+    // edit to the template can be synced into this copy. NULL for a template itself and
+    // for an agent nobody copied. set null on the template's deletion: the copy keeps
+    // working, it just stops following a (now gone) template.
+    sourceTemplateId: integer('source_template_id').references((): AnyPgColumn => aiAgent.id, {
+      onDelete: 'set null',
+    }),
+    // Field groups (see agents/core/template-sync.ts TEMPLATE_FIELD_GROUPS) this copy's
+    // owner changed by hand after the copy was made. A synced field is skipped for this
+    // copy the next time its template changes, until "reset to template" clears it.
+    // Meaningless (stays []) for a template itself.
+    templateOverrides: jsonb('template_overrides').notNull().default([]).$type<string[]>(),
+    // Last time this copy was synced from its template (creation counts as the first
+    // sync). NULL for a template itself and for an agent nobody copied.
+    templateSyncedAt: timestamp('template_synced_at', { withTimezone: true }),
     // Last time a runner claimed work or sent a heartbeat for this agent, which is
     // what the UI shows as its presence. NULL for an agent no runner ever polled.
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
@@ -615,6 +630,11 @@ export const aiAgent = pgTable(
       sql`${t.maxConcurrentChats} >= 1 AND ${t.maxConcurrentChats} <= 20`,
     ),
     index('ai_agent_team_idx').on(t.teamId),
+    index('ai_agent_source_template_idx').on(t.sourceTemplateId),
+    check(
+      'ai_agent_template_no_source_check',
+      sql`NOT (${t.template} AND ${t.sourceTemplateId} IS NOT NULL)`,
+    ),
   ],
 );
 
@@ -1424,6 +1444,34 @@ export const agentMcpServerLink = pgTable(
   (t) => [
     primaryKey({ columns: [t.agentId, t.mcpServerId] }),
     index('agent_mcp_server_link_server_idx').on(t.mcpServerId),
+  ],
+);
+
+// One row per field-group actually propagated from a template into one of its copies
+// (see agents/core/template-sync.ts), so a copy's page can show "picked up <groups>
+// from the template <when>" and a template's page can show its last fan-out. A group a
+// copy has overridden is skipped and logs nothing. This is a narrow, template-specific
+// trail, not the team's general activity feed.
+export const agentTemplateSyncLog = pgTable(
+  'agent_template_sync_log',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    templateId: integer('template_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    copyId: integer('copy_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    groups: jsonb('groups').notNull().$type<string[]>(),
+    syncedAt: timestamp('synced_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('agent_template_sync_log_team_idx').on(t.teamId),
+    index('agent_template_sync_log_template_idx').on(t.templateId, t.syncedAt),
+    index('agent_template_sync_log_copy_idx').on(t.copyId, t.syncedAt),
   ],
 );
 

@@ -35,6 +35,18 @@ const username = t.String({
   description: 'Mention handle (letters, digits, . _ -).',
 });
 
+// The field groups a template copy follows (template-sync.ts): Skills, Tools, MCP
+// servers, approval rules, instructions, model + reasoning, and budgets.
+export const templateFieldGroup = t.Union([
+  t.Literal('skills'),
+  t.Literal('tools'),
+  t.Literal('mcpServers'),
+  t.Literal('approvals'),
+  t.Literal('instructions'),
+  t.Literal('model'),
+  t.Literal('budgets'),
+]);
+
 export const runtimePolicy = t.Object({
   reasoningEffort: t.Nullable(t.String({ maxLength: 32 })),
   toolAllow: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
@@ -282,6 +294,15 @@ export const AiAgentResponse = t.Object({
   ownerUserId: t.Nullable(t.String()),
   runnerScope: t.Union([t.Literal('owner'), t.Literal('team')]),
   template: t.Boolean(),
+  sourceTemplateId: t.Nullable(
+    t.Number({ description: 'The template this agent was copied from.' }),
+  ),
+  templateOverrides: t.Array(templateFieldGroup, {
+    description: "Field groups this copy's owner changed by hand; a template sync skips them.",
+  }),
+  templateSyncedAt: t.Nullable(t.String()),
+  dailyTokenCeiling: t.Nullable(t.Number()),
+  monthlyTokenCeiling: t.Nullable(t.Number()),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({
@@ -500,6 +521,10 @@ export const createAgentBody = t.Object({
 
 export const copyTemplateBody = t.Object({
   projectId: t.Integer({ description: 'The project of the team the copy works in.' }),
+});
+
+export const resetToTemplateBody = t.Object({
+  group: templateFieldGroup,
 });
 
 export const updateAgentBody = t.Object({

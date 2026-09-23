@@ -23,6 +23,13 @@ export default function TeamAiAgentTable({
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
   const paging = usePaging();
+  // How many copies each template has, from the same list — cheap, and the whole
+  // reason "0 copies" is worth showing right on the template's own row.
+  const copyCounts = new Map<number, number>();
+  for (const agent of agents) {
+    if (agent.sourceTemplateId == null) continue;
+    copyCounts.set(agent.sourceTemplateId, (copyCounts.get(agent.sourceTemplateId) ?? 0) + 1);
+  }
 
   return (
     <div className="space-y-4">
@@ -55,6 +62,7 @@ export default function TeamAiAgentTable({
               key={agent.id}
               agent={agent}
               providerLabel={providerLabel}
+              copyCount={agent.template ? (copyCounts.get(agent.id) ?? 0) : undefined}
               onChat={() => onEdit(agent)}
               onRuns={() => onRuns(agent)}
               onEdit={() => onEdit(agent)}

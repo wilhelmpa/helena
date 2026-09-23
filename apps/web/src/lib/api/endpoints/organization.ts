@@ -40,6 +40,12 @@ export interface OrganizationAgent {
   name: string;
   username: string;
   kind: 'external' | 'internal';
+  // Root of the reporting chain (Home master). Always counted as assigned, never shown
+  // as a pool template or as an unassigned agent.
+  isHome: boolean;
+  // A pool template: runs nowhere, joins no project. Shown as "Vorlage", never as
+  // unassigned, even though it carries no reportsToAgentId.
+  template: boolean;
   departmentId: number | null;
   reportsToAgentId: number | null;
   roleTitle: string;

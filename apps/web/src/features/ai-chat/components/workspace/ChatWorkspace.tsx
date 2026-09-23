@@ -43,7 +43,13 @@ export default function ChatWorkspace({
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [artifactOpen, setArtifactOpen] = useState(false);
 
-  const agentId = location.agentId ?? agents[0]?.id ?? null;
+  // A pool template runs nowhere, so it can never hold a real conversation — filtered
+  // out here, once, so the default-agent pick below can never land on one (it would
+  // open a chat with an agent that rejects every run) and every child that lists
+  // "agents to chat with" (the list pane's new-chat entry point, the empty state)
+  // inherits the same guarantee.
+  const chatAgents = agents.filter((agent) => !agent.template);
+  const agentId = location.agentId ?? chatAgents[0]?.id ?? null;
   const threadId = location.threadId;
 
   // The thread view is remounted for every other chat, but not when a new chat is given
@@ -105,14 +111,14 @@ export default function ChatWorkspace({
   }, []);
 
   const mode = chatLayoutMode(width || 1024);
-  const selectedAgent = agents.find((agent) => agent.id === agentId) ?? null;
+  const selectedAgent = chatAgents.find((agent) => agent.id === agentId) ?? null;
 
   return (
     <div ref={rootRef} className="@container/chat flex h-full min-h-0 flex-1 overflow-hidden">
       <ChatListPane
         scopeKey={scopeKey}
         projectKey={projectKey}
-        agents={agents}
+        agents={chatAgents}
         mode={mode}
         open={listOpen}
         onOpenChange={setListOpen}
@@ -139,7 +145,7 @@ export default function ChatWorkspace({
           />
         ) : (
           <ChatEmptyState
-            agents={agents}
+            agents={chatAgents}
             onPick={startNewChat}
             onOpenList={() => setListOpen(true)}
           />
