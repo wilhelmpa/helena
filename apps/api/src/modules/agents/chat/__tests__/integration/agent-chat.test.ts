@@ -600,6 +600,31 @@ describe('external agent chat', () => {
     ]);
   });
 
+  it('keeps the reasoning the runner reported as parts of their own', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    const sent = await send(asOwner, agent.id, 'Where is the file?');
+    const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    await asRunner['agent-chats']({ messageId: answer.id }).events.post({
+      events: [
+        { type: 'THINKING_TEXT_MESSAGE_CONTENT', delta: 'The user wants ' },
+        { type: 'THINKING_TEXT_MESSAGE_CONTENT', delta: 'the path.' },
+        { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'It is /work.' },
+      ],
+    });
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+
+    const transcript = await chatOf(asOwner, agent.id)
+      .threads({ threadId: sent.data!.threadId })
+      .messages.get();
+    expect(transcript.data!.items[1]).toMatchObject({
+      role: 'assistant',
+      parts: [
+        { type: 'reasoning', text: 'The user wants the path.' },
+        { type: 'text', text: 'It is /work.' },
+      ],
+    });
+  });
+
   it('streams the answer and always ends on a terminal event', async () => {
     const { owner, asOwner, asRunner, agent } = await setup();
     await send(asOwner, agent.id, 'Ping');

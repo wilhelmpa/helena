@@ -11,6 +11,7 @@ export type AgUiEvent =
   | { type: 'TEXT_MESSAGE_START'; messageId: string; role: 'assistant' }
   | { type: 'TEXT_MESSAGE_CONTENT'; messageId: string; delta: string }
   | { type: 'TEXT_MESSAGE_END'; messageId: string }
+  | { type: 'THINKING_TEXT_MESSAGE_CONTENT'; delta: string }
   | { type: 'TOOL_CALL_START'; toolCallId: string; toolCallName: string; parentMessageId: string }
   | { type: 'TOOL_CALL_ARGS'; toolCallId: string; delta: string }
   | { type: 'TOOL_CALL_END'; toolCallId: string }
@@ -42,6 +43,8 @@ export class AnswerStream {
   private readonly messageId: string;
   private queued: AgUiEvent[] = [];
   private text = '';
+  // The model's reasoning, reported apart from the answer where the command streams it.
+  private thinking = '';
   private started = false;
   private line = '';
   // Most formats name their session on the line that opens the stream; Copilot names it
@@ -146,12 +149,35 @@ export class AnswerStream {
 
   private appendText(text: string): void {
     if (!text) return;
+    this.drainThinking();
     this.sawAnyText = true;
     this.text += text;
     if (this.text.length >= FLUSH_CHARS) this.drainText();
   }
 
+  private appendThinking(text: string): void {
+    if (!text) return;
+    this.drainAnswerText();
+    this.thinking += text;
+    if (this.thinking.length >= FLUSH_CHARS) this.drainThinking();
+  }
+
+  private drainThinking(): void {
+    while (this.thinking.length > 0) {
+      const delta = this.thinking.slice(0, DELTA_LIMIT);
+      this.thinking = this.thinking.slice(DELTA_LIMIT);
+      this.queued.push({ type: 'THINKING_TEXT_MESSAGE_CONTENT', delta });
+    }
+  }
+
+  // Reasoning and answer text alternate, and each drains the other's buffer before it
+  // grows its own, so at most one of them holds anything and the order is kept.
   private drainText(): void {
+    this.drainThinking();
+    this.drainAnswerText();
+  }
+
+  private drainAnswerText(): void {
     if (this.text.length === 0) return;
     if (!this.started) {
       this.started = true;
@@ -213,6 +239,10 @@ export class AnswerStream {
     if (message.type === 'text' && typeof message.text === 'string') {
       this.sawPartialText = true;
       this.appendText(message.text);
+      return;
+    }
+    if (message.type === 'reasoning' && typeof message.text === 'string') {
+      this.appendThinking(message.text);
       return;
     }
     if (message.type === 'result') {

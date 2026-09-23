@@ -19,7 +19,7 @@ import {
   type ThreadListOpts,
   type ThreadRow,
 } from '../chat-history';
-import { appendTextPart } from '../chat-parts';
+import { appendReasoningPart, appendTextPart } from '../chat-parts';
 import type { ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { newChatThreadId } from '../core/runtime/thread-ids';
 import { touchRunner, type RunnerAgent } from '../runner/service';
@@ -274,10 +274,12 @@ export async function getThreadMessages(
   };
 }
 
-// The event types a transcript is made of: the answer's text, and the tool calls with
-// what each was given and answered. The lifecycle events say nothing the reader sees.
+// The event types a transcript is made of: the answer's text, the model's reasoning, and
+// the tool calls with what each was given and answered. The lifecycle events say nothing
+// the reader sees.
 const TRANSCRIPT_EVENTS = [
   'TEXT_MESSAGE_CONTENT',
+  'THINKING_TEXT_MESSAGE_CONTENT',
   'TOOL_CALL_START',
   'TOOL_CALL_ARGS',
   'TOOL_CALL_RESULT',
@@ -315,6 +317,9 @@ async function readAnswerParts(messageIds: number[]): Promise<Map<number, ChatPa
     switch (row.type) {
       case 'TEXT_MESSAGE_CONTENT':
         appendTextPart(message, row.delta ?? '');
+        break;
+      case 'THINKING_TEXT_MESSAGE_CONTENT':
+        appendReasoningPart(message, row.delta ?? '');
         break;
       case 'TOOL_CALL_START': {
         const started = {

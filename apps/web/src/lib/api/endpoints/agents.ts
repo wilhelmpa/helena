@@ -196,6 +196,7 @@ export interface AiAgentPatch {
 // conversation thread id; `error` reports a failure that happened mid-run.
 export type AgentRunEvent =
   | { type: 'text'; value: string }
+  | { type: 'reasoning'; value: string }
   | { type: 'tool-start'; toolCallId: string; toolName: string; args?: string }
   // An external agent's runner sends a call's arguments after the call itself, in
   // pieces; an internal agent has them all at its start.

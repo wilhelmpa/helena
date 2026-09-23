@@ -17,11 +17,12 @@ import { useTranslations } from 'next-intl';
 // broke.
 export type ChatMessage = AiChatMessage & { error?: string };
 
-// Only a tool call between two chunks of the answer starts a new text part.
-function appendText(parts: AiChatPart[], chunk: string): AiChatPart[] {
+// A chunk extends the last part when that part is of the same kind: text, or the model's
+// reasoning. Anything in between, a tool call or the other kind, starts a new part.
+function appendChunk(parts: AiChatPart[], type: 'text' | 'reasoning', chunk: string): AiChatPart[] {
   const last = parts[parts.length - 1];
-  if (last?.type !== 'text') return [...parts, { type: 'text', text: chunk }];
-  return [...parts.slice(0, -1), { type: 'text', text: last.text + chunk }];
+  if (last?.type !== type) return [...parts, { type, text: chunk }];
+  return [...parts.slice(0, -1), { type, text: last.text + chunk }];
 }
 
 // What a call was given or answered arrives after the call itself.
@@ -114,7 +115,11 @@ export function useAgentChat(
             case 'text':
               setStatus('streaming');
               setActiveTool(null);
-              growAssistant((parts) => appendText(parts, event.value));
+              growAssistant((parts) => appendChunk(parts, 'text', event.value));
+              break;
+            case 'reasoning':
+              setStatus('streaming');
+              growAssistant((parts) => appendChunk(parts, 'reasoning', event.value));
               break;
             case 'tool-start':
               setStatus('streaming');

@@ -262,11 +262,12 @@ export const ChatThreadResponse = t.Object({
   updatedAt: t.String(),
 });
 
-// One piece of a message (ChatPart): a stretch of text, or a tool the agent called
-// between two of them, with what it was given and what it answered where the agent
-// reported them.
+// One piece of a message (ChatPart): a stretch of text, the model's reasoning, or a tool
+// the agent called between two of them, with what it was given and what it answered where
+// the agent reported them.
 const ChatPartResponse = t.Union([
   t.Object({ type: t.Literal('text'), text: t.String() }),
+  t.Object({ type: t.Literal('reasoning'), text: t.String() }),
   t.Object({
     type: t.Literal('tool'),
     toolCallId: t.String(),

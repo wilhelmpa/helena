@@ -81,6 +81,7 @@ export type ChatThreadSummary = {
 // leaves both unset.
 export type ChatPart =
   | { type: 'text'; text: string }
+  | { type: 'reasoning'; text: string }
   | {
       type: 'tool';
       toolCallId: string;

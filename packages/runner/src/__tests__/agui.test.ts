@@ -214,6 +214,37 @@ describe('answer stream', () => {
     ]);
   });
 
+  it("keeps Hermes' reasoning apart from the answer and in the order it came", async () => {
+    const sink = collect();
+    const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);
+
+    stream.write(
+      [
+        JSON.stringify({ type: 'reasoning', text: 'The user wants ' }),
+        JSON.stringify({ type: 'reasoning', text: 'the path.' }),
+        JSON.stringify({ type: 'text', text: 'It is /work. ' }),
+        JSON.stringify({ type: 'reasoning', text: 'Mention the owner.' }),
+        JSON.stringify({ type: 'text', text: 'Maria owns it.' }),
+        '',
+      ].join('\n'),
+    );
+    await stream.finish('');
+
+    expect(text(sink.events)).toBe('It is /work. Maria owns it.');
+    expect(
+      sink.events.flatMap((event) =>
+        event.type === 'THINKING_TEXT_MESSAGE_CONTENT' || event.type === 'TEXT_MESSAGE_CONTENT'
+          ? [`${event.type === 'TEXT_MESSAGE_CONTENT' ? 'text' : 'thinking'}: ${event.delta}`]
+          : [],
+      ),
+    ).toEqual([
+      'thinking: The user wants the path.',
+      'text: It is /work. ',
+      'thinking: Mention the owner.',
+      'text: Maria owns it.',
+    ]);
+  });
+
   it("reads opencode's json, adding only what a re-sent part grew by", async () => {
     const sink = collect();
     const stream = new AnswerStream('opencode-json', 'chat:1:u:x', '7', sink.send);

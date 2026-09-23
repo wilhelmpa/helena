@@ -126,7 +126,8 @@
     "importConfirmed": "Se {count, plural, one {ha creado # ticket} other {han creado # tickets}}",
     "importSkippedRow": "Fila saltada {row}: {reason}",
     "contextSize": "Contexto de la conversación: {count, plural, one {# token} other {# tokens}}",
-    "contextUnavailable": "El tamaño del contexto no está disponible para este agente"
+    "contextUnavailable": "El tamaño del contexto no está disponible para este agente",
+    "reasoning": "Razonamiento"
   },
   "share": {
     "createFailed": "No se ha podido crear el enlace. Inténtalo otra vez.",

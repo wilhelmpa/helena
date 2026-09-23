@@ -35,3 +35,11 @@ export function appendTextPart(parts: ChatPart[], text: string): void {
   if (last?.type === 'text') last.text += text;
   else parts.push({ type: 'text', text });
 }
+
+// The same for the model's reasoning, which a stretch of answer text or a tool call ends.
+export function appendReasoningPart(parts: ChatPart[], text: string): void {
+  if (!text) return;
+  const last = parts[parts.length - 1];
+  if (last?.type === 'reasoning') last.text += text;
+  else parts.push({ type: 'reasoning', text });
+}

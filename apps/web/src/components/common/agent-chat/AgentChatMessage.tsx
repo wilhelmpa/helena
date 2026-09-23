@@ -9,12 +9,13 @@ import { Bubble, BubbleContent } from '@/components/ui/bubble';
 import { Marker, MarkerContent } from '@/components/ui/marker';
 import { Message, MessageContent, MessageFooter } from '@/components/ui/message';
 import { MessageScrollerItem } from '@/components/ui/message-scroller';
+import AgentChatReasoning from './AgentChatReasoning';
 import AgentChatToolCalls from './AgentChatToolCalls';
 import AgentChatUserText from './AgentChatUserText';
 import AgentChatSpeakButton from './AgentChatSpeakButton';
 import { useTranslations } from 'next-intl';
 
-type Block = { text: string } | { tools: AiChatToolPart[] };
+type Block = { text: string } | { reasoning: string } | { tools: AiChatToolPart[] };
 
 // Tool calls that follow one another are shown as one block, in the place between the
 // two stretches of text where they were made.
@@ -23,6 +24,10 @@ function blocksOf(parts: AiChatPart[]): Block[] {
   for (const part of parts) {
     if (part.type === 'text') {
       blocks.push({ text: part.text });
+      continue;
+    }
+    if (part.type === 'reasoning') {
+      blocks.push({ reasoning: part.text });
       continue;
     }
     const last = blocks[blocks.length - 1];
@@ -63,6 +68,8 @@ export default function AgentChatMessage({
             {blocksOf(message.parts).map((block, index) =>
               'tools' in block ? (
                 <AgentChatToolCalls key={index} tools={block.tools} />
+              ) : 'reasoning' in block ? (
+                <AgentChatReasoning key={index} text={block.reasoning} />
               ) : (
                 <BubbleContent key={index} className={cn(!isUser && 'w-full')}>
                   {isUser ? (

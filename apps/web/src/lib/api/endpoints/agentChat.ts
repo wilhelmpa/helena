@@ -54,6 +54,8 @@ function toRunEvent(event: AgUiEvent): AgentRunEvent | null {
   switch (event.type) {
     case 'TEXT_MESSAGE_CONTENT':
       return { type: 'text', value: event.delta ?? '' };
+    case 'THINKING_TEXT_MESSAGE_CONTENT':
+      return { type: 'reasoning', value: event.delta ?? '' };
     case 'TOOL_CALL_START':
       return {
         type: 'tool-start',
@@ -236,9 +238,9 @@ export interface AiChatThread {
   updatedAt: string;
 }
 
-// One piece of a message, in the order the agent produced it: what it wrote, and the
-// tools it called between one stretch of text and the next. A call carries what it was
-// given and what it answered where the agent reported them.
+// One piece of a message, in the order the agent produced it: what it wrote, what it
+// reasoned, and the tools it called between one stretch of text and the next. A call
+// carries what it was given and what it answered where the agent reported them.
 export interface AiChatToolPart {
   type: 'tool';
   toolCallId: string;
@@ -247,7 +249,8 @@ export interface AiChatToolPart {
   result?: string;
 }
 
-export type AiChatPart = { type: 'text'; text: string } | AiChatToolPart;
+export type AiChatPart =
+  { type: 'text'; text: string } | { type: 'reasoning'; text: string } | AiChatToolPart;
 
 // One restored message of a chat thread's transcript. `stopped` marks an answer the
 // member ended part-way: what the agent had written by then is all there is.

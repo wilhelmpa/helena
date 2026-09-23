@@ -126,7 +126,8 @@
     "importConfirmed": "{count, plural, one {Membuat # issue} other {Membuat # issue}}",
     "importSkippedRow": "Baris dilewati {row}: {reason}",
     "contextSize": "Konteks percakapan: {count, plural, one {# token} other {# token}}",
-    "contextUnavailable": "Ukuran konteks tidak tersedia untuk agen ini"
+    "contextUnavailable": "Ukuran konteks tidak tersedia untuk agen ini",
+    "reasoning": "Pemikiran"
   },
   "share": {
     "createFailed": "Gagal membuat tautan. Coba lagi.",

@@ -126,7 +126,8 @@
     "importConfirmed": "{count, plural, one {# ticket créé} other {# tickets créés}}",
     "importSkippedRow": "Ligne {row} ignorée : {reason}",
     "contextSize": "Contexte de la conversation : {count, plural, one {# token} other {# tokens}}",
-    "contextUnavailable": "La taille du contexte n'est pas disponible pour cet agent"
+    "contextUnavailable": "La taille du contexte n'est pas disponible pour cet agent",
+    "reasoning": "Réflexion"
   },
   "share": {
     "createFailed": "Impossible de créer le lien. Réessayez.",

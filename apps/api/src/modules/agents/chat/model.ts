@@ -59,6 +59,12 @@ const TextMessageEndEvent = t.Object({
   messageId: t.String({ maxLength: 200 }),
 });
 
+// The model's reasoning while it answers, kept apart from the answer text.
+const ThinkingTextMessageContentEvent = t.Object({
+  type: t.Literal('THINKING_TEXT_MESSAGE_CONTENT'),
+  delta: t.String({ maxLength: DELTA_LIMIT }),
+});
+
 const ToolCallStartEvent = t.Object({
   type: t.Literal('TOOL_CALL_START'),
   toolCallId: t.String({ maxLength: 200 }),
@@ -92,6 +98,7 @@ export const AgUiEvent = t.Union([
   TextMessageStartEvent,
   TextMessageContentEvent,
   TextMessageEndEvent,
+  ThinkingTextMessageContentEvent,
   ToolCallStartEvent,
   ToolCallArgsEvent,
   ToolCallEndEvent,
