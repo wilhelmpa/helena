@@ -11,6 +11,7 @@ import { PlanChatTransport } from '../../services/planChatTransport';
 import { useChatThread } from '../../hooks/useChatThread';
 import type { Artifact } from '../../utils/artifacts';
 import { toUIMessage, type PlanUIMessage } from '../../utils/chatMessages';
+import { uuid } from '@/utils/uuid';
 import ChatHeader from './ChatHeader';
 import ChatMessageList from './ChatMessageList';
 import ChatComposer from './ChatComposer';
@@ -53,8 +54,11 @@ export default function ChatThreadView({
   const transport = useMemo(() => new PlanChatTransport(scopeKey, agent.id), [scopeKey, agent.id]);
   const resumedRef = useRef(false);
 
+  // Fixed for the life of this view: a new chat keeps its id when its thread id arrives,
+  // so the AI SDK keeps the same chat, with the answer still streaming into it.
+  const [chatId] = useState(() => threadId ?? `new-${agent.id}-${uuid()}`);
   const chat = useChat<PlanUIMessage>({
-    id: threadId ?? `new-${agent.id}`,
+    id: chatId,
     transport,
     messages: [],
     onData: (part) => {
