@@ -28,6 +28,7 @@ function config() {
     codeUrl: "https://plan.example.com/workspace/code/",
     terminalUrl: "https://plan.example.com/focus/terminal-project/",
     planUrl: "https://plan.example.com/",
+    planControlToken: "control-token-value-with-at-least-32-bytes",
   };
 }
 
@@ -481,6 +482,20 @@ describe("createProvisioner", () => {
     assert.equal(restarts.length, restartsBefore + 1);
     const [state] = (await provisioner.state()).projects;
     assert.deepEqual(state.agents, [31]);
+  });
+
+  it("reports rather than fails the agents it cannot key without the control token", async () => {
+    const agentCalls = [];
+    const provisioner = createProvisioner({ ...config(), planControlToken: "" }, {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensurePlanProjectAgent: fakeProjectAgent(agentCalls),
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+
+    const result = await provisioner.provision({ ...envelope(), agents: [31] });
+
+    assert.deepEqual(agentCalls, []);
+    assert.deepEqual(result.warnings, ["Project agents get no Hermes runtime without the Plan control token."]);
   });
 
   it("reloads the runner for the descriptors a failed run already wrote", async () => {

@@ -325,7 +325,10 @@ export function createProvisioner(config, options = {}) {
   }
 
   // Each agent in the request gets a Hermes profile and a runner descriptor of its own.
+  // Plan issues their keys only against the control token; without it the runtimes are
+  // left as they are.
   async function provisionAgentRuntimes(envelope, workspace, browser, quarantineRoot, runner) {
+    if (!config.planControlToken) return { agents: [], quarantined: [] };
     const agents = [];
     for (const agentId of envelope.agents ?? []) {
       const runtime = await ensurePlanProjectAgentImpl(config, envelope.project, agentId, {
@@ -437,6 +440,9 @@ export function createProvisioner(config, options = {}) {
     if (browser) resources.push(resource("browser", browser.id, browser.url));
 
     const warnings = [];
+    if (!config.planControlToken && envelope.agents?.length) {
+      warnings.push("Project agents get no Hermes runtime without the Plan control token.");
+    }
     for (const kind of ["boards", "workflows"]) {
       if (requested.has(kind)) {
         warnings.push(

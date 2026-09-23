@@ -66,8 +66,9 @@ coordinator assignment, and registry entry. Each other external agent that works
 project only gets a Hermes profile and a runner descriptor of its own. A retry reuses
 those resources. Plan issues a new API key only when the runner descriptor holds none that
 still works, and the Hermes runner is restarted only when a descriptor was created,
-changed or deleted. Creating, attaching, detaching or deleting an external agent queues the
-provisioning of its projects again; the runtime of an agent that left is removed.
+changed or deleted. Creating, attaching, detaching, rekeying or deleting an external agent
+queues the provisioning of its projects again; the runtime of an agent that left is
+removed.
 
 Project deletion writes one deprovisioning job. Deprovisioning deletes the project's Mastra
 workflow schedules and its runner descriptors, stops the browser units, and moves the
