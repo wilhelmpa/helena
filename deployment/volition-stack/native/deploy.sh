@@ -143,6 +143,17 @@ if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs
   restart+=(volition-terminal.service)
 fi
 
+# The owner terminal: its own setup.sh installs the unit, the nginx snippet, the sudoers
+# policy and the signing key, and restarts volition-owner-terminal.service itself (same
+# shape as the Syncthing setup above) -- see that script and its own comments for what
+# each part does and why sudo's policy narrows instead of staying NOPASSWD: ALL. A restart
+# here ends every open owner-terminal session the same way the project terminal's does; the
+# tmux sessions behind them are unaffected and a reconnect finds them again after a fresh
+# step-up.
+if changed deployment/volition-stack/native/owner-terminal; then
+  "$live/deployment/volition-stack/native/owner-terminal/setup.sh"
+fi
+
 # Chromium reads its managed policies from this directory; a running project browser applies
 # a change when it reloads its policies, at the latest when it restarts. The project browsers
 # keep no passwords: logins come from Plan through Hermes' vault.
