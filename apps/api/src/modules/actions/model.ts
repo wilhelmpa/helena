@@ -26,7 +26,7 @@ export const ActionConditionSchema = t.Object(
           field: t.String({
             maxLength: 64,
             pattern:
-              '^(status|statusType|assignee|delegate|priority|type|initiative|cycle|labels|dueDate|startDate|created|updated|cf:[0-9]+)$',
+              '^(status|statusType|assignee|delegate|priority|type|initiative|cycle|area|labels|dueDate|startDate|created|updated|cf:[0-9]+)$',
           }),
           op: FilterOperatorSchema,
           values: t.Array(FilterValueSchema, { maxItems: 50 }),

@@ -487,6 +487,8 @@ export interface CrossProjectIssueFilters {
   // 'me', 'agents', 'unassigned', or a user id held as assignee or delegate.
   assignee?: string;
   due?: 'overdue' | 'week';
+  // The reader's calendar day, so 'overdue' and 'week' match the day they see.
+  today?: string;
   q?: string;
 }
 
@@ -539,9 +541,9 @@ export async function listIssuesAcrossProjects(
     conds.push(
       or(eq(issue.assigneeUserId, filters.assignee), eq(issue.delegateUserId, filters.assignee))!,
     );
-  if (filters.due === 'overdue') conds.push(sql`${issue.dueDate} < CURRENT_DATE`);
-  if (filters.due === 'week')
-    conds.push(sql`${issue.dueDate} BETWEEN CURRENT_DATE AND CURRENT_DATE + 7`);
+  const today = filters.today ? sql`${filters.today}::date` : sql`CURRENT_DATE`;
+  if (filters.due === 'overdue') conds.push(sql`${issue.dueDate} < ${today}`);
+  if (filters.due === 'week') conds.push(sql`${issue.dueDate} BETWEEN ${today} AND ${today} + 7`);
   const text = filters.q?.trim();
   if (text) {
     const pattern = `%${escapeLike(text)}%`;

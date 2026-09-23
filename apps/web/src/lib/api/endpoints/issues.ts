@@ -6,6 +6,7 @@ import type { CustomFieldType } from '@/lib/api/endpoints/customFields';
 import type { DevelopmentLink } from '@/lib/api/endpoints/git';
 import type { StateType } from '@/lib/api/endpoints/columns';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
+import { dayKey } from '@/utils/dates';
 
 // The subtask disposition as the delete route takes it: a query string, since a
 // DELETE carries no body.
@@ -480,8 +481,16 @@ export interface CrossProjectIssueFilters {
   q?: string;
 }
 
+// The due filters count from the reader's own day, the one the rows are dated by.
 export const listIssuesAcrossProjects = (
   params: PageParams,
   filters: CrossProjectIssueFilters,
   signal?: AbortSignal,
-) => request<Page<CrossProjectIssue>>(`/issues${pageQuery(params, { ...filters })}`, { signal });
+) =>
+  request<Page<CrossProjectIssue>>(
+    `/issues${pageQuery(params, {
+      ...filters,
+      today: filters.due && dayKey(new Date().toISOString()),
+    })}`,
+    { signal },
+  );

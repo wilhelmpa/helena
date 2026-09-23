@@ -194,6 +194,23 @@ describe('GET /issues', () => {
     expect((await list(asOwner, { due: 'week' })).data!.items.map((i) => i.id)).toEqual([soon]);
   });
 
+  it("counts the due filters from the reader's day when it is given", async () => {
+    const { asOwner, mkt } = await setup();
+    const due = (await createIssue(asOwner, 'MKT', mkt[0].id, { dueDate: '2030-01-10' })).data!.id;
+
+    const late = await list(asOwner, { due: 'overdue', today: '2030-01-11' });
+    expect(late.data!.items.map((i) => i.id)).toEqual([due]);
+    const onTheDay = await list(asOwner, { due: 'overdue', today: '2030-01-10' });
+    expect(onTheDay.data!.total).toBe(0);
+    const soon = await list(asOwner, { due: 'week', today: '2030-01-03' });
+    expect(soon.data!.items.map((i) => i.id)).toEqual([due]);
+    const tooEarly = await list(asOwner, { due: 'week', today: '2030-01-02' });
+    expect(tooEarly.data!.total).toBe(0);
+
+    const invalid = await list(asOwner, { due: 'overdue', today: 'tomorrow' });
+    expect(invalid.status).toBe(400);
+  });
+
   it('searches the title and the identifier', async () => {
     const { asOwner, mkt, ops } = await setup();
     const docs = (await createIssue(asOwner, 'MKT', mkt[0].id, { title: 'Write the docs' })).data!;

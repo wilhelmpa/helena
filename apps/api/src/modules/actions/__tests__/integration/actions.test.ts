@@ -215,6 +215,71 @@ describe('actions', () => {
       );
     });
 
+    it('branches on the area of the issue', async () => {
+      const { asOwner } = await setupOwnerProject();
+      const [source] = await projectColumns(asOwner);
+      const areaId = (
+        await asOwner.projects({ projectKey: 'MKT' })['view-folders'].post({ name: 'Backend' })
+      ).data!.id;
+      const inArea = (
+        await asOwner
+          .projects({ projectKey: 'MKT' })
+          .issues.post({ title: 'In the area', columnId: source.id, folderId: areaId })
+      ).data!;
+      const outside = await createIssue(asOwner, source.id);
+      const workflow = {
+        version: 1 as const,
+        nodes: [
+          {
+            id: 'trigger',
+            type: 'trigger' as const,
+            config: { trigger: 'manual' as const },
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'condition',
+            type: 'condition' as const,
+            config: {
+              conditions: [{ id: 'area', field: 'area', op: 'is' as const, values: [areaId] }],
+            },
+            position: { x: 0, y: 100 },
+          },
+          {
+            id: 'matched',
+            type: 'action' as const,
+            config: { priority: 'urgent' as const },
+            position: { x: 0, y: 200 },
+          },
+        ],
+        edges: [
+          { id: 'start', source: 'trigger', target: 'condition', branch: 'always' as const },
+          { id: 'yes', source: 'condition', target: 'matched', branch: 'true' as const },
+        ],
+      };
+      const created = await asOwner
+        .projects({ projectKey: 'MKT' })
+        .actions.post({ name: 'Area branch', workflow });
+      expect(created.status).toBe(201);
+      const actionId = created.data!.id;
+
+      const matched = await asOwner
+        .actions({ actionId })
+        .preview.post({ issueId: inArea.id, workflow });
+      expect(matched.data?.path).toContainEqual({
+        type: 'condition',
+        nodeId: 'condition',
+        outcome: 'true',
+      });
+      const missed = await asOwner
+        .actions({ actionId })
+        .preview.post({ issueId: outside.id, workflow });
+      expect(missed.data?.path).toContainEqual({
+        type: 'condition',
+        nodeId: 'condition',
+        outcome: 'false',
+      });
+    });
+
     it('runs a manual action through the API and records the result', async () => {
       const { asOwner, ownerUserId } = await setupOwnerProject();
       const [source] = await projectColumns(asOwner);

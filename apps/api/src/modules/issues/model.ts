@@ -684,6 +684,11 @@ export const crossProjectIssuesQuery = t.Object({
       description: "'overdue' (due before today) or 'week' (due from today through 7 days).",
     }),
   ),
+  today: t.Optional(
+    isoDate(
+      "The reader's calendar day 'YYYY-MM-DD' the due filters count from. Defaults to the server's date.",
+    ),
+  ),
   q: t.Optional(
     t.String({ description: 'Case-insensitive substring of the title or the identifier.' }),
   ),

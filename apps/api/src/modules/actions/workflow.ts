@@ -59,7 +59,7 @@ export class WorkflowValidationError extends Error {}
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 const CONDITION_FIELDS =
-  /^(status|statusType|assignee|delegate|priority|type|initiative|cycle|labels|dueDate|startDate|created|updated|cf:[0-9]+)$/;
+  /^(status|statusType|assignee|delegate|priority|type|initiative|cycle|area|labels|dueDate|startDate|created|updated|cf:[0-9]+)$/;
 const CONDITION_OPS = new Set([
   'is',
   'is_not',
