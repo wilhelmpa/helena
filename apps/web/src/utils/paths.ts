@@ -33,6 +33,8 @@ export const skillsPath = () => '/skills';
 
 export const vaultPath = () => '/vault';
 
+export const devicesPath = () => '/devices';
+
 // The Home pages that read across every project: the task list, the inbox and the
 // agent activity, the approvals and the schedules.
 export const tasksPath = () => '/tasks';

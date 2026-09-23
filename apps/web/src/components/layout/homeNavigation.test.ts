@@ -13,6 +13,7 @@ describe('home sidebar navigation', () => {
       { id: 'schedules', group: 'agents', href: '/schedules' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
       { id: 'vault', group: 'globalSettings', href: '/vault' },
+      { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
   });
@@ -32,6 +33,7 @@ describe('home sidebar navigation', () => {
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
       { id: 'vault', group: 'globalSettings', href: '/vault' },
+      { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
     const ids = homeNavigation(42).map((item) => item.id) as string[];
