@@ -370,10 +370,8 @@ class Launcher:
 
     def sandbox_args(self, mode: str, runtime, home: str | None, extra: list[str]) -> list[str]:
         args = [self.config.python, '-I', self.config.sandbox, mode]
-        forwards = self.config.extra.get('forwards') or {'egress': 3128, 'plan': 3000}
-        for name, port in forwards.items():
-            if name in self.config.sockets:
-                args += ['--forward', f'{int(port)}={self.config.sockets[name]}']
+        for name, port in self.config.forwards.items():
+            args += ['--forward', f'{int(port)}={self.config.sockets[name]}']
         if home and runtime is not None:
             for link, target in runtime.profile_links.items():
                 if os.path.lexists(target):

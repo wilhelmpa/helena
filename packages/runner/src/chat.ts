@@ -70,6 +70,7 @@ export async function answer(
         logins.write(chunk);
       },
       signal: stop.signal,
+      work: { kind: 'chat', id: message.id },
     },
   ).finally(() => clearInterval(flushing));
   if (stop.signal.aborted) return;

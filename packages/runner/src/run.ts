@@ -50,6 +50,7 @@ export async function perform(
         logins.write(chunk);
       },
       signal: stop.signal,
+      work: { kind: 'run', id: run.id },
     },
   );
   if (stop.signal.aborted) return null;

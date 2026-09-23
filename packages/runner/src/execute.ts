@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
+import { StringDecoder } from 'node:string_decoder';
 import type { ContextUsage } from './agui';
 import { presetOf, type RunnerConfig } from './config';
+import { isolatedEnv, isolationEnabled, launch, LaunchError, type WorkKind } from './isolation';
 import { presetArgv, presetPrompt, type Preset } from './presets';
 
 // Runs one task: the command the preset builds, or the operator's own in a shell, with the
@@ -164,16 +166,27 @@ function stdinText(preset: Preset | undefined, task: Task): string {
   return presetPrompt(preset, task.systemPrompt, task.prompt);
 }
 
+export interface ExecuteOptions {
+  onData?: (chunk: string) => void;
+  signal?: AbortSignal;
+  // What the command works on, which the unit of an isolated agent is named after.
+  work?: { kind: WorkKind; id: number | null };
+}
+
+// The runtimes the launcher knows as presets of its own (launcher.json).
+const ISOLATED_RUNTIMES = new Set(['hermes', 'claude', 'codex']);
+
 // `onData` sees stdout as it arrives, for a caller that reports the output while the
 // command is still running. `signal` ends the command the way the timeout does, for a
 // chat answer the member stopped.
 export async function execute(
   config: RunnerConfig,
   task: Task,
-  opts: { onData?: (chunk: string) => void; signal?: AbortSignal } = {},
+  opts: ExecuteOptions = {},
 ): Promise<Outcome> {
   const preset = presetOf(config);
   const [bin, args] = spawnArgs(config, preset, task);
+  if (isolationEnabled()) return executeIsolated(config, task, preset, args, opts);
   const child = spawn(bin, args, {
     cwd: config.cwd,
     env: childEnv(config, task),
@@ -223,6 +236,89 @@ export async function execute(
     opts.signal?.removeEventListener('abort', kill);
   }
 
+  hermesResult?.end();
+  const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
+  return hermesResult?.usage ? { ...outcome, usage: hermesResult.usage } : outcome;
+}
+
+// The same command, started by the launcher as the project's user in its sandbox. The
+// output is read the same way; stopping it closes the connection, and the launcher stops
+// the unit (SIGINT, SIGKILL after a grace period).
+async function executeIsolated(
+  config: RunnerConfig,
+  task: Task,
+  preset: Preset | undefined,
+  args: string[],
+  opts: ExecuteOptions,
+): Promise<Outcome> {
+  const isolation = config.isolation;
+  if (!isolation) {
+    throw new Error(
+      'Agent isolation is on and this agent has no isolated project, so it is not started',
+    );
+  }
+  if (!preset || !config.agent || !ISOLATED_RUNTIMES.has(config.agent)) {
+    throw new Error(`${config.agent ?? 'A custom command'} cannot run isolated`);
+  }
+  if (!config.cwd) throw new Error('An isolated agent needs its working directory');
+  const stop = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    stop.abort();
+  }, config.timeoutMs);
+  const onAbort = () => stop.abort();
+  opts.signal?.addEventListener('abort', onAbort, { once: true });
+
+  let stdout = '';
+  let stderr = '';
+  const hermesResult =
+    config.outputFormat === 'hermes-stream-json' ? new HermesResultReader() : null;
+  const out = new StringDecoder('utf8');
+  const err = new StringDecoder('utf8');
+  const onStdout = (text: string) => {
+    if (!text) return;
+    stdout = tail(stdout + text, OUTPUT_LIMIT);
+    hermesResult?.write(text);
+    opts.onData?.(text);
+  };
+  let code: number | null = null;
+  let signal: string | null = null;
+  try {
+    const result = await launch(
+      {
+        slug: isolation.slug,
+        profile: isolation.profile,
+        runtime: config.agent,
+        args,
+        env: isolatedEnv(
+          config.env,
+          { ITSAPLAN_URL: config.url, ITSAPLAN_API_KEY: config.apiKey },
+          task.env,
+        ),
+        cwd: config.cwd,
+        agentId: isolation.agentId,
+        work: opts.work ?? { kind: 'run', id: null },
+        limits: { runtimeMaxSec: Math.ceil(config.timeoutMs / 1000) + 60 },
+      },
+      {
+        stdin: stdinText(preset, task),
+        onStdout: (chunk) => onStdout(out.write(chunk)),
+        onStderr: (chunk) => {
+          stderr = tail(stderr + err.write(chunk), ERROR_LIMIT);
+        },
+        signal: stop.signal,
+      },
+    );
+    code = result.code;
+  } catch (error) {
+    if (!(error instanceof LaunchError && error.code === 'aborted')) throw error;
+    signal = 'SIGINT';
+  } finally {
+    clearTimeout(timer);
+    opts.signal?.removeEventListener('abort', onAbort);
+  }
+  onStdout(out.end());
   hermesResult?.end();
   const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
   return hermesResult?.usage ? { ...outcome, usage: hermesResult.usage } : outcome;

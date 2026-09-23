@@ -3,6 +3,7 @@ import { chmod, lstat, mkdir, open, readFile, rename, rm, unlink } from 'node:fs
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { RunnerConfig } from './config';
 import { readHermesInventory, type HermesInventory, type HermesProfile } from './inventory';
+import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 
 export interface RuntimePolicyFile {
@@ -391,7 +392,7 @@ function describeFailure(error: unknown): string {
   return error instanceof Error ? error.message.slice(0, 200) : 'unknown error';
 }
 
-export class HermesPolicyMaterializer {
+export class HermesPolicyMaterializer implements PolicyMaterializer {
   readonly hermesHome: string;
   readonly manifestPath: string;
   // The directory Hermes reads as HERMES_MANAGED_DIR: its config.yaml is merged over the
@@ -518,12 +519,75 @@ export function toolsetsWithBrowser(
 
 type ReportedState = Pick<RuntimeStatus, 'status' | 'detail' | 'conflicts'>;
 
+export interface MaterializeResult {
+  revision: string;
+  conflicts: RuntimeConflict[];
+  mcpSecrets: number[] | null;
+}
+
+// What writes the policy into the agent's profile: the runner itself, or, for an isolated
+// agent, the runner's profile helper run as the project's user (see IsolatedMaterializer).
+export interface PolicyMaterializer {
+  readonly managedDir: string;
+  apply(snapshot: RuntimePolicySnapshot): Promise<MaterializeResult>;
+}
+
+export interface LoginVault {
+  sync(logins: WebLogin[]): Promise<Map<string, number>>;
+}
+
 export interface SynchronizerOptions {
   inventory?: () => Promise<HermesInventory>;
   profile?: HermesProfile;
   now?: () => number;
   // The agent's Hermes vault, which receives its website logins.
-  vault?: WebLoginVault;
+  vault?: LoginVault;
+}
+
+// An isolated agent's profile belongs to the project's user, and the runner never opens a
+// file in it: a folder the agent replaced with a link would otherwise lead the runner's
+// writes and reads into another project. The same code runs instead in a helper unit as the
+// project's user (cli.ts `profile-helper`), where such a link leads nowhere it may go.
+export class IsolatedMaterializer implements PolicyMaterializer {
+  readonly managedDir: string;
+
+  constructor(
+    private readonly isolation: AgentIsolation,
+    private readonly cwd: string,
+    hermesHome: string,
+    private readonly profile: HermesProfile | undefined,
+  ) {
+    this.managedDir = join(assertRoot(hermesHome, 'HERMES_HOME'), 'run', 'itsaplan-managed');
+  }
+
+  apply(snapshot: RuntimePolicySnapshot): Promise<MaterializeResult> {
+    return profileHelper<MaterializeResult>(this.isolation, this.cwd, {
+      op: 'materialize',
+      snapshot,
+      profile: this.profile ?? null,
+    });
+  }
+}
+
+export function isolatedInventory(
+  isolation: AgentIsolation,
+  cwd: string,
+  profile: HermesProfile | undefined,
+): () => Promise<HermesInventory> {
+  return () =>
+    profileHelper<HermesInventory>(isolation, cwd, { op: 'inventory', profile: profile ?? null });
+}
+
+export function isolatedVault(isolation: AgentIsolation, cwd: string): LoginVault {
+  return {
+    async sync(logins) {
+      const entries = await profileHelper<[string, number][]>(isolation, cwd, {
+        op: 'vault-sync',
+        logins,
+      });
+      return new Map(entries);
+    },
+  };
 }
 
 export class HermesPolicySynchronizer {
@@ -546,7 +610,7 @@ export class HermesPolicySynchronizer {
 
   constructor(
     private readonly client: RuntimePolicyClient,
-    private readonly materializer: HermesPolicyMaterializer,
+    private readonly materializer: PolicyMaterializer,
     private readonly options: SynchronizerOptions = {},
   ) {
     this.now = options.now ?? Date.now;
@@ -691,6 +755,21 @@ export function hermesPolicySynchronizer(
   if (config.agent !== 'hermes') return null;
   const hermesHome = config.env.HERMES_HOME ?? process.env.HERMES_HOME;
   if (!hermesHome) throw new Error('Hermes policy sync requires HERMES_HOME');
+  if (isolationEnabled()) {
+    if (!config.isolation || !config.cwd) {
+      throw new Error('Agent isolation is on and this agent has no isolated project');
+    }
+    const { isolation, cwd } = config;
+    return new HermesPolicySynchronizer(
+      client,
+      new IsolatedMaterializer(isolation, cwd, hermesHome, config.hermes),
+      {
+        inventory: isolatedInventory(isolation, cwd, config.hermes),
+        profile: config.hermes,
+        vault: isolatedVault(isolation, cwd),
+      },
+    );
+  }
   const materializer = new HermesPolicyMaterializer({ hermesHome, profile: config.hermes });
   const python = config.env.HERMES_PYTHON ?? process.env.HERMES_PYTHON ?? 'python3';
   return new HermesPolicySynchronizer(client, materializer, {

@@ -22,6 +22,7 @@
     "egress": "/run/volition-agents/egress.sock",
     "plan": "/run/volition-agents/plan.sock"
   },
+  "forwards": { "egress": 3128, "plan": 3000 },
   "hide": ["/var/lib/volition", "/srv/volition", "/var/lib/volition-agent-launcher", "/var/lib/volition-egress"],
   "inaccessible": ["/etc/volition", "/var/lib/postgresql", "/var/lib/redis", "/var/backups", "/var/log"],
   "path": "/usr/local/bin:/usr/bin:/bin",

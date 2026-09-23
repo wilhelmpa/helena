@@ -79,6 +79,8 @@ class Config:
     python: str
     sandbox: str
     sockets: dict[str, str]
+    # Which socket each loopback port of a unit leads to, e.g. 3128 → egress, 3000 → plan.
+    forwards: dict[str, int]
     hide: tuple[str, ...]
     inaccessible: tuple[str, ...]
     path: str
@@ -175,8 +177,16 @@ def load_config(path: str, *, require_root: bool = True) -> Config:
         if not isinstance(value, str) or not re.fullmatch(r'[a-z][a-z0-9-]{1,40}-', value):
             raise IsolationError('config', f'{name} is invalid')
     sockets = raw.get('sockets') or {}
-    if not isinstance(sockets, dict) or not all(isinstance(k, str) and k in {'egress', 'plan', 'browser'} for k in sockets):
+    if not isinstance(sockets, dict) or not all(isinstance(k, str) and re.fullmatch(r'[a-z]{1,16}', k) for k in sockets):
         raise IsolationError('config', 'sockets is invalid')
+    forwards = raw.get('forwards', {'egress': 3128, 'plan': 3000})
+    if (
+        not isinstance(forwards, dict)
+        or not all(k in sockets for k in forwards)
+        or not all(isinstance(v, int) and not isinstance(v, bool) and 1024 <= v <= 65535 for v in forwards.values())
+        or len(set(forwards.values())) != len(forwards)
+    ):
+        raise IsolationError('config', 'forwards is invalid')
     runtimes = raw.get('runtimes') or {}
     if not isinstance(runtimes, dict) or not runtimes:
         raise IsolationError('config', 'runtimes is missing')
@@ -208,6 +218,7 @@ def load_config(path: str, *, require_root: bool = True) -> Config:
         python=_absolute(raw.get('python', '/usr/bin/python3'), 'python'),
         sandbox=_absolute(raw.get('sandbox'), 'sandbox'),
         sockets={k: _absolute(v, f'socket {k}') for k, v in sockets.items()},
+        forwards=dict(forwards),
         hide=tuple(_absolute(p, 'hide') for p in _strings(raw.get('hide'), 'hide')),
         inaccessible=tuple(_absolute(p, 'inaccessible') for p in _strings(raw.get('inaccessible'), 'inaccessible')),
         path=str(raw.get('path', '/usr/local/bin:/usr/bin:/bin')),

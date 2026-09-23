@@ -168,8 +168,183 @@ def run_mode_proofs(report, probe, keys, state) -> None:
 # ── Function (design §6.5) ───────────────────────────────────────────────────────────────
 
 
+ROOT = '/srv/vpt-test'
+ISO = f'{ROOT}/isolation'
+
+
+def owner_of(path: str) -> str:
+    import pwd  # noqa: PLC0415
+
+    try:
+        return pwd.getpwuid(os.stat(path).st_uid).pw_name
+    except (OSError, KeyError):
+        return 'missing'
+
+
+def read(path: str) -> str:
+    try:
+        with open(path, encoding='utf-8', errors='replace') as handle:
+            return handle.read().strip()
+    except OSError as error:
+        return f'<{error.strerror}>'
+
+
+def run_hermes_end_to_end(report, keys, state) -> None:
+    """The real runner, as the runner user with AGENT_ISOLATION=on, claims the seeded run and
+    has the launcher start the real Hermes as the project user; Hermes asks the scripted
+    model, which has it write a workspace file and a vault file and call the Plan API and the
+    internet from inside the sandbox."""
+    import subprocess  # noqa: PLC0415
+
+    k = keys()
+    agent = k['alphaAgentId']
+    profile = f'alpha_{agent}'
+    workspace = f'{ROOT}/workspaces/projects/alpha'
+    if not os.path.isfile(f'{ISO}/runner/cli.js'):
+        report.add('5', 'hermes: runner bundle', False, 'packages/runner/dist/cli.js was not built')
+        return
+    subprocess.run(['/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I', f'{ISO}/launch_client.py',
+                    'ensure-project-user', 'alpha', '--profile', profile],
+                   env={'VOLITION_LAUNCHER_SOCKET': '/run/vpt-launcher/launch.sock', 'PATH': '/usr/bin:/bin'},
+                   check=True, capture_output=True)
+    config = {
+        'url': f'http://127.0.0.1:{state["planPort"]}',
+        'agent': 'hermes',
+        'cwd': workspace,
+        'concurrency': 1,
+        'pollIntervalMs': 1000,
+        'timeoutMs': 300000,
+        'hermes': {'toolsets': ['terminal', 'file'], 'mcpServers': []},
+        'agents': [{
+            'name': 'alphabot',
+            'apiKey': k['alphaKey'],
+            'env': {'HERMES_HOME': f'{ROOT}/hermes/profiles/{profile}'},
+            'isolation': {'slug': 'alpha', 'profile': profile, 'agentId': agent},
+        }],
+    }
+    path = f'{ROOT}/proof/runner.json'
+    with open(path, 'w', encoding='utf-8') as handle:
+        json.dump(config, handle)
+    import pwd  # noqa: PLC0415
+
+    hermes = pwd.getpwnam('vpt-hermes')
+    os.chown(path, hermes.pw_uid, hermes.pw_gid)
+    os.chmod(path, 0o600)
+    os.chmod(f'{ROOT}/proof', 0o711)
+    log = open(f'{ROOT}/proof/runner.log', 'wb')
+    runner = subprocess.Popen(
+        ['/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/local/bin/node', f'{ISO}/runner/cli.js', path],
+        env={'PATH': '/usr/local/bin:/usr/bin:/bin', 'AGENT_ISOLATION': 'on',
+             'VOLITION_LAUNCHER_SOCKET': '/run/vpt-launcher/launch.sock', 'HOME': '/nonexistent'},
+        stdout=log, stderr=subprocess.STDOUT)
+    status = None
+    try:
+        deadline = time.time() + 240
+        while time.time() < deadline:
+            time.sleep(3)
+            code, page = api(state, 'GET', '/projects/ALPHA/agent-activity?kind=agent-run', k['ownerKey'])
+            runs = page.get('items', []) if isinstance(page, dict) else []
+            done = [run for run in runs if run.get('status') in ('success', 'failed')]
+            if done:
+                status = done[0]['status']
+                break
+    finally:
+        runner.terminate()
+        try:
+            runner.wait(20)
+        except subprocess.TimeoutExpired:
+            runner.kill()
+        log.close()
+        os.chmod(f'{ROOT}/proof', 0o700)
+    runner_log = read(f'{ROOT}/proof/runner.log')
+    report.add('5', 'hermes: the run ends as success in Plan', status == 'success',
+               f'status={status}; runner: {runner_log[-300:]}')
+    hermes_file = f'{workspace}/proof-hermes.txt'
+    report.add('5', 'hermes: workspace file written as the project user',
+               read(hermes_file) == 'written by hermes as vpt-alpha' and owner_of(hermes_file) == 'vpt-alpha',
+               f'{read(hermes_file)!r} owner={owner_of(hermes_file)}')
+    vault_file = f'{ROOT}/vault/Projects/ALPHA/proof-hermes.md'
+    report.add('5', 'hermes: vault file written', read(vault_file) == 'vault note by hermes',
+               f'{read(vault_file)!r} owner={owner_of(vault_file)}')
+    report.add('5', 'hermes: Plan API with its own key from inside', read(f'{workspace}/proof-plan.txt') == '200',
+               read(f'{workspace}/proof-plan.txt'))
+    report.add('5', 'hermes: internet through the egress proxy', read(f'{workspace}/proof-egress.txt') == '200',
+               read(f'{workspace}/proof-egress.txt'))
+    soul = f'{ROOT}/hermes/profiles/{profile}/SOUL.md'
+    report.add('5', 'hermes: policy written by the helper as the project user',
+               owner_of(soul) == 'vpt-alpha', f'SOUL.md owner={owner_of(soul)}')
+    journal = subprocess.run(['journalctl', '-u', 'vpt-model', '--no-pager', '-o', 'cat', '--since', '-10min'],
+                             capture_output=True, text=True).stdout
+    report.add('5', 'hermes: the model was asked through the unit', 'answer=tool:terminal' in journal,
+               ' | '.join(line for line in journal.splitlines() if 'mock-model' in line)[-300:])
+    code, page = api(state, 'GET', '/projects/ALPHA/agent-network/events?limit=200', k['ownerKey'])
+    items = page.get('items', []) if isinstance(page, dict) else []
+    tagged = [item for item in items if item['host'] == 'example.com' and item.get('runId')]
+    report.add('5', 'hermes: the egress log names the run', bool(tagged), json.dumps(tagged[:1])[:200])
+
+
+def run_other_runtimes(report, client) -> None:
+    """Claude Code and Codex start as the project user and reach their API only through the
+    egress proxy; without a login they are refused there, which is the end of what a test
+    without the owner's credentials can show."""
+    workspace = f'{ROOT}/workspaces/projects/alpha'
+    runs = {
+        'claude': (['-p', '--output-format', 'stream-json', '--verbose', '--max-turns', '1'],
+                   {'ANTHROPIC_API_KEY': 'sk-ant-api03-proof-invalid-key-0000000000'},
+                   ('authentication', 'invalid', '401')),
+        'codex': (['exec', '--json', '--skip-git-repo-check', '-c', 'sandbox_mode="workspace-write"', '-'],
+                  {'OPENAI_API_KEY': 'sk-proof-invalid-key-000000000000000000'},
+                  ('401', 'unauthorized', 'invalid', 'incorrect api key')),
+    }
+    for runtime, (args, env, needles) in runs.items():
+        argv = ['run', '--slug', 'alpha', '--profile', 'alpha', '--runtime', runtime, '--cwd', workspace]
+        for key, value in env.items():
+            argv += ['--env', f'{key}={value}']
+        done = client(argv + ['--', *args], check=False, stdin=b'Say hi.', timeout=180)
+        output = (done.stdout + done.stderr).decode(errors='replace')
+        lowered = output.lower()
+        report.add('5', f'{runtime}: starts in the sandbox and reaches its API via the proxy',
+                   any(needle in lowered for needle in needles) and 'not reachable' not in lowered,
+                   f'rc={done.returncode} {output.strip()[-240:]}')
+
+
+def run_stop(report, client) -> None:
+    """Stopping a run ends its unit: SIGINT first, so the runtime can end its turn."""
+    import subprocess  # noqa: PLC0415
+
+    workspace = f'{ROOT}/workspaces/projects/alpha'
+    marker = f'{workspace}/stopped.txt'
+    if os.path.exists(marker):
+        os.unlink(marker)
+    script = f"trap 'echo interrupted > {marker}; exit 130' INT; sleep 300 & wait"
+    env = {'VOLITION_LAUNCHER_SOCKET': '/run/vpt-launcher/launch.sock', 'PATH': '/usr/bin:/bin'}
+    process = subprocess.Popen(
+        ['/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I', f'{ISO}/launch_client.py', 'run',
+         '--slug', 'alpha', '--profile', 'alpha', '--runtime', 'probe', '--cwd', workspace, '--kind', 'run',
+         '--work-id', '99', '--', f'exec:sh,-c,{script}'],
+        env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    time.sleep(4)
+    units = subprocess.run(['systemctl', 'list-units', '--plain', '--no-legend', 'vpt-agent-alpha--a0-r99-*'],
+                           capture_output=True, text=True).stdout.strip()
+    process.kill()  # the runner's connection goes away
+    process.wait()
+    deadline = time.time() + 30
+    left = units
+    while time.time() < deadline:
+        left = subprocess.run(['systemctl', 'list-units', '--plain', '--no-legend', 'vpt-agent-alpha--a0-r99-*'],
+                              capture_output=True, text=True).stdout.strip()
+        if not left:
+            break
+        time.sleep(0.5)
+    report.add('5', 'stop: the unit was running', bool(units), units[:160])
+    report.add('5', 'stop: the unit is gone after the connection closed', not left, left[:160] or 'none left')
+    report.add('5', 'stop: the runtime got SIGINT first', read(marker) == 'interrupted', read(marker))
+
+
 def run_function_proofs(report, probe, client, keys, state) -> None:
-    report.add('5', 'pending', False, 'not written yet')
+    run_hermes_end_to_end(report, keys, state)
+    run_other_runtimes(report, client)
+    run_stop(report, client)
 
 
 # ── Terminal ─────────────────────────────────────────────────────────────────────────────

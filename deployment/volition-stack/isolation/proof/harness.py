@@ -98,7 +98,10 @@ def test_config(source: str) -> dict:
         'stateRoot': f'{ROOT}/launcher-state',
         'sandbox': f'{ISO}/sandbox.py',
         'tmuxConf': f'{ISO}/tmux.conf',
-        'sockets': {'egress': f'{RUN_AGENTS}/egress.sock', 'plan': f'{RUN_AGENTS}/plan.sock'},
+        # A third way out for the test alone: the scripted model of the Hermes proof.
+        'sockets': {'egress': f'{RUN_AGENTS}/egress.sock', 'plan': f'{RUN_AGENTS}/plan.sock',
+                    'model': f'{RUN_AGENTS}/model.sock'},
+        'forwards': {'egress': 3128, 'plan': 3000, 'model': 8765},
         # The production list, and the test data besides.
         'hide': config['hide'] + [f'{ROOT}/{name}' for name in (
             'hermes', 'workspaces', 'vault', 'provisioning', 'secrets', 'project-browser',
@@ -126,7 +129,7 @@ def test_config(source: str) -> dict:
             },
         },
         'claude': {'exec': f'{ROOT}/bin/claude', 'env': config['runtimes']['claude'].get('env', {})},
-        'codex': {'exec': f'{ROOT}/bin/codex'},
+        'codex': {'exec': '/usr/local/bin/node', 'fixedArgs': [f'{ROOT}/codex/bin/codex.js']},
         'profile-helper': {
             **config['runtimes']['profile-helper'],
             'fixedArgs': [f'{ISO}/runner/cli.js', 'profile-helper'],
@@ -144,6 +147,7 @@ def install_tree(source: str) -> None:
         if name.endswith('.py') and os.path.isfile(path):
             shutil.copyfile(path, os.path.join(ISO, name))
     shutil.copyfile(os.path.join(source, 'proof', 'probe.py'), os.path.join(ISO, 'probe.py'))
+    shutil.copyfile(os.path.join(source, 'proof', 'mock_model.py'), os.path.join(ISO, 'mock_model.py'))
     shutil.copyfile(os.path.join(source, '..', 'native', 'terminal', 'tmux.conf'), os.path.join(ISO, 'tmux.conf'))
     plugins = os.path.join(source, '..', 'integration', 'hermes-plugins')
     if os.path.isdir(plugins):
@@ -190,6 +194,23 @@ def setup(args: argparse.Namespace) -> None:
     mkdir(f'{ROOT}/launcher-state', 'root', 'root', 0o700)
     mkdir(f'{ROOT}/egress-state', 'vpt-egress', 'vpt-egress', 0o700)
     mkdir(f'{ROOT}/bin', 'root', 'root', 0o755)
+    # Claude Code and Codex as the developer installed them, copied where the test units see
+    # them (the live units would find them in /usr/local/bin).
+    home = os.path.expanduser('~wilhelmpa')
+    claude = os.path.realpath(f'{home}/.local/bin/claude')
+    if os.path.isfile(claude):
+        shutil.copyfile(claude, f'{ROOT}/bin/claude')
+        os.chmod(f'{ROOT}/bin/claude', 0o755)
+    codex = f'{home}/.local/lib/node_modules/@openai/codex'
+    if os.path.isdir(codex) and not os.path.isdir(f'{ROOT}/codex'):
+        shutil.copytree(codex, f'{ROOT}/codex', symlinks=True)
+        for directory, _dirs, files in os.walk(f'{ROOT}/codex'):
+            os.chown(directory, 0, 0)
+            for name in files:
+                path = os.path.join(directory, name)
+                if not os.path.islink(path):
+                    os.chown(path, 0, 0)
+                    os.chmod(path, 0o755 if os.stat(path).st_mode & 0o100 else 0o644)
     # Registry, as provisioning writes it.
     mkdir(f'{ROOT}/provisioning', 'vpt-hermes', 'vpt-hermes', 0o755)
     mkdir(f'{ROOT}/provisioning/projects', 'vpt-hermes', 'vpt-hermes', 0o700)
@@ -227,10 +248,9 @@ def setup(args: argparse.Namespace) -> None:
         connection.execute('create table sessions (id text)')
         connection.execute("insert into sessions values ('home-session-1')")
     os.chown(database, uid('vpt-hermes'), gid('vpt-hermes'))
-    port = args.model_port
     write(f'{ROOT}/hermes/config.yaml',
           'model:\n  provider: custom\n'
-          f'  base_url: http://model.vpt.invalid:{port}/v1\n'
+          '  base_url: http://127.0.0.1:8765/v1\n'
           '  default: vpt-mock\n  api_key: vpt-mock-key\n'
           'agent:\n  max_turns: 8\n'
           'approvals:\n  single_query_mode: approve\n'
@@ -370,6 +390,17 @@ def start(args: argparse.Namespace) -> None:
         'StateDirectory=volition-agent-launcher': 'UMask=0022',
         'StateDirectoryMode=0700': 'UMask=0022',
     })
+    command = ('echo "written by hermes as $(id -un)" > proof-hermes.txt && '
+               f'echo "vault note by hermes" > {ROOT}/vault/Projects/ALPHA/proof-hermes.md && '
+               'curl -s -o /dev/null -w "%{http_code}" -H "x-api-key: $ITSAPLAN_API_KEY" '
+               'http://127.0.0.1:3000/me > proof-plan.txt; '
+               'curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://example.com > proof-egress.txt; '
+               'cat proof-plan.txt proof-egress.txt')
+    sh('systemd-run', '--unit=vpt-model', '--quiet', '--collect',
+       f'--socket-property=ListenStream={RUN_AGENTS}/model.sock', '--socket-property=SocketMode=0660',
+       '--socket-property=SocketGroup=vpt-agents', '--property=DynamicUser=yes',
+       '--property=ProtectSystem=strict', '--property=PrivateNetwork=yes', '--property=NoNewPrivileges=yes',
+       f'--setenv=MOCK_COMMAND={command}', '--', '/usr/bin/python3', '-I', f'{ISO}/mock_model.py')
     time.sleep(0.5)
     # The agents' profiles as they are before the migration: the runner's.
     for profile in ('alpha', 'alpha_7', 'beta'):
