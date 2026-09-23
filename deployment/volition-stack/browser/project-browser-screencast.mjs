@@ -50,6 +50,14 @@ const MAX_BUFFERED = 16 * 1024 * 1024;
 // healthy stream can briefly hold: a viewer this far behind is asked to wait for the next
 // keyframe rather than pile on frames it cannot show in time anyway.
 const MAX_VIDEO_BUFFERED = 512 * 1024;
+// A viewer's own acknowledged receipt (see Viewer.unackedBytes) is the true measure of how
+// far behind it is; this is sized the same as MAX_VIDEO_BUFFERED, the same fraction of a
+// second of the busiest tier's own output.
+const MAX_VIDEO_UNACKED = 512 * 1024;
+// How long a fresh video's own catch-up burst is given before its viewer's acknowledged
+// receipt is trusted: long enough for one real stats report (sent every 200ms on the client,
+// see useBrowserScreencast.ts) to have had time to arrive even over a slow connection.
+const ACK_GRACE_MS = 1_000;
 const FOLLOW_INTERVAL_MS = 1_000;
 // How often a connected viewer's tier is reassessed from its last reported RTT and downlink
 // and the socket's backlog, besides whenever a fresh measurement or a shown/hidden change
@@ -58,6 +66,18 @@ const FOLLOW_INTERVAL_MS = 1_000;
 const TIER_INTERVAL_MS = 2_000;
 // The window a tier's own recent encoder output is measured over, for chooseTier.
 const ENCODE_WINDOW_MS = 3_000;
+// The minimum span a tier's own kbps measurement must cover before it is trusted. Right after
+// an encoder (re)starts, the window can hold just its opening keyframe plus the next frame a
+// few milliseconds later: dividing that keyframe's size by a near-zero elapsed time produces an
+// absurd kbps spike, which chooseTier's "strained" check then misreads as a real connection
+// shortfall — dropping the tier, restarting its encoder, and reproducing the same spike again.
+// Below this span, kbps() reports 0 (no meaningful data yet) rather than a number.
+const MIN_KBPS_WINDOW_MS = 500;
+// How long a restart forced by one viewer's requestKeyframe protects a tier's encoder from
+// another: restarting it is disruptive to every viewer on the tier, so a request is answered
+// with the fresh keyframe the tier's encoder already just started with when one is recent
+// enough, rather than restarting again.
+const KEYFRAME_REQUEST_MIN_MS = 2_000;
 // Chromium keeps a window at least 500 pixels wide.
 const MIN_WINDOW_WIDTH = 500;
 // The agent halves a screenshot until its long edge is at most 1568 pixels and clicks at CSS
@@ -141,6 +161,22 @@ class Viewer {
     // When its last stats report arrived; stays fresh for a while after joining, so it is not
     // read as stale before the first one has had a chance to.
     this.lastStatsAt = Date.now();
+    // Video bytes sent to this viewer, and the most recent count it has itself reported
+    // receiving (a videoAck, see receive()): both running totals since its video last
+    // (re)started, so what it is sent but has not answered for is exact, not a rate estimate,
+    // and not thrown off by Node's own write buffer, which the kernel and the network both
+    // hide far more from than it. Reset whenever a fresh video starts for it, so a slow
+    // catch-up right after a tier or area change is not read as an already-stale answer.
+    this.sentBytes = 0;
+    this.receivedBytes = 0;
+    // When this reset last happened: a burst as large as the tier's own keyframe interval can
+    // be sent in the same tick a fresh video starts (the catch-up burst since the last
+    // keyframe, in startVideo below), before its viewer has had any chance to acknowledge
+    // even the first byte of it. Read as unacked that soon, it looks exactly like the stall it
+    // is meant to detect; chooseTier ignores the acknowledgement past this until one real
+    // report has had time to arrive.
+    this.videoStartedAt = 0;
+    this.lastKeyframeRequestAt = 0;
   }
 
   ready() {
@@ -165,18 +201,36 @@ class Viewer {
     if (this.missed) this.offer(latest);
   }
 
+  // How much this viewer has been sent but has not yet answered for (see receive()'s
+  // "stats" handling): the true measure of how far behind it is, immune to Node's own write
+  // buffer, which the kernel and the network both hide far more behind than it ever shows.
+  unackedBytes() {
+    return Math.max(0, this.sentBytes - this.receivedBytes);
+  }
+
   // Frames depend on the ones before them back to a keyframe, so a viewer that cannot keep
   // up misses frames up to the next keyframe.
   offerVideo(message, keyframe) {
-    if (this.socket.bufferedAmount > MAX_VIDEO_BUFFERED) this.waitingForKeyframe = true;
+    // The catch-up burst a fresh video starts with (see startVideo) can itself be as large as
+    // the tier's own keyframe interval, sent before this viewer has had any chance to
+    // acknowledge even its first byte; read that soon, it looks exactly like the stall this
+    // is meant to catch, and would cut its own burst short.
+    const ackGraceElapsed = Date.now() - this.videoStartedAt > ACK_GRACE_MS;
+    if (this.socket.bufferedAmount > MAX_VIDEO_BUFFERED || (ackGraceElapsed && this.unackedBytes() > MAX_VIDEO_UNACKED)) {
+      this.waitingForKeyframe = true;
+    }
     if (this.waitingForKeyframe && !keyframe) return;
     this.waitingForKeyframe = false;
+    this.sentBytes += message.length;
     this.socket.send(message);
   }
 
   // The video from its initialization segment and the frames since the last keyframe.
   startVideo(video) {
     this.waitingForKeyframe = true;
+    this.sentBytes = 0;
+    this.receivedBytes = 0;
+    this.videoStartedAt = Date.now();
     this.socket.send(JSON.stringify(video.announcement));
     this.socket.send(video.init);
     for (const { message, keyframe } of video.sinceKeyframe) this.offerVideo(message, keyframe);
@@ -293,14 +347,36 @@ class ScreencastStream {
     if (message.stats) {
       viewer.rttMs = message.stats.rttMs;
       viewer.downlinkKbps = message.stats.downlinkKbps;
+      viewer.receivedBytes = Math.max(viewer.receivedBytes, message.stats.receivedBytes);
       viewer.lastStatsAt = Date.now();
       return this.reassignTiers();
     }
+    if (message.requestKeyframe) return this.requestKeyframe(viewer);
     if (message.ping !== undefined) {
       viewer.socket.send(JSON.stringify({ type: "pong", t: message.ping }));
       return;
     }
     for (const command of message.commands) viewer.input.dispatch(command);
+  }
+
+  // A viewer whose own decoder fell far enough behind to give up on what it has queued asks
+  // for a fresh keyframe rather than wait out its tier's keyframe interval. ffmpeg cannot be
+  // told to produce one out of turn (see AreaEncoder), so its tier's encoder is restarted,
+  // which starts with one as its very first frame — at the cost of every other viewer on that
+  // tier getting a fresh keyframe too, which is why this is rate-limited per tier rather than
+  // run for every request.
+  requestKeyframe(viewer) {
+    if (viewer.tierIndex === null) return;
+    const tier = TIERS[viewer.tierIndex];
+    const entry = this.tiers.get(tier.name);
+    if (!entry) return;
+    const now = Date.now();
+    if (now - viewer.lastKeyframeRequestAt < KEYFRAME_REQUEST_MIN_MS) return;
+    viewer.lastKeyframeRequestAt = now;
+    if (now - (entry.startedAt ?? 0) < KEYFRAME_REQUEST_MIN_MS) return;
+    entry.encoder.stop();
+    this.tiers.delete(tier.name);
+    this.startTierEncoder(tier);
   }
 
   // A covered view gets no frames; a view shown again gets a fresh one right away, whether or
@@ -327,14 +403,18 @@ class ScreencastStream {
     }
   }
 
-  // A viewer's last reported round trip and downlink, its socket's current backlog, how long
-  // since its last stats report, and its tier's own recent encoder output — the last two give
-  // chooseTier a read on the connection even when Node's own backlog figure cannot.
+  // A viewer's last reported round trip and downlink, how far behind its own acknowledged
+  // receipt says it is (or, failing that, Node's own backlog figure), how long since its last
+  // stats report, and its tier's own recent encoder output — the last two give chooseTier a
+  // read on the connection even when a backlog figure cannot.
   connectionOf(viewer) {
+    const ackGraceElapsed = Date.now() - viewer.videoStartedAt > ACK_GRACE_MS;
     return {
       downlinkKbps: viewer.downlinkKbps,
       rttMs: viewer.rttMs,
-      bufferedBytes: viewer.socket.bufferedAmount,
+      bufferedBytes: ackGraceElapsed
+        ? Math.max(viewer.socket.bufferedAmount, viewer.unackedBytes())
+        : viewer.socket.bufferedAmount,
       feedbackAgeMs: Date.now() - viewer.lastStatsAt,
       encodedKbps: viewer.tierIndex === null ? 0 : (this.tiers.get(TIERS[viewer.tierIndex].name)?.kbps() ?? 0),
     };
@@ -489,14 +569,15 @@ class ScreencastStream {
     // bytesWindow tracks what this tier's own encoder has produced over the last
     // ENCODE_WINDOW_MS, so chooseTier can tell a slow connection from a quiet page: the
     // former's viewers report a downlink well under what the encoder is actually producing.
-    const entry = { encoder, video: null, bytesWindow: [] };
+    const entry = { encoder, video: null, bytesWindow: [], startedAt: Date.now() };
     entry.kbps = () => {
       const cutoff = Date.now() - ENCODE_WINDOW_MS;
       while (entry.bytesWindow.length && entry.bytesWindow[0].at < cutoff) entry.bytesWindow.shift();
       if (entry.bytesWindow.length < 2) return 0;
+      const spanMs = Date.now() - entry.bytesWindow[0].at;
+      if (spanMs < MIN_KBPS_WINDOW_MS) return 0;
       const bytes = entry.bytesWindow.reduce((sum, sample) => sum + sample.bytes, 0);
-      const seconds = (Date.now() - entry.bytesWindow[0].at) / 1000;
-      return seconds > 0 ? Math.round((bytes * 8) / 1000 / seconds) : 0;
+      return Math.round((bytes * 8) / 1000 / (spanMs / 1000));
     };
     this.tiers.set(tier.name, entry);
     const size = this.size;

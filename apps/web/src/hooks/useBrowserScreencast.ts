@@ -25,13 +25,19 @@ export type ScreencastMode = 'jpeg' | 'video';
 
 const RETRY_FIRST_MS = 500;
 const RETRY_MAX_MS = 10_000;
-// How often the round trip is measured and the connection's stats are reported to the router,
-// which puts this view on the quality tier they afford.
+// How often the round trip is measured, and the connection's stats — including the running
+// count of video bytes received, this view's side of the ack the router uses as its main
+// backlog signal — are reported to the router, which puts this view on the quality tier they
+// afford. Frequent enough that bytes sent but not yet acknowledged stay a small, informative
+// number instead of however much a tier sends between reports.
 const PING_INTERVAL_MS = 4_000;
-const STATS_INTERVAL_MS = 3_000;
+const STATS_INTERVAL_MS = 200;
 // The downlink is the bytes received over this trailing window, so a burst of a few frames
 // does not read as a much faster connection than it is.
 const THROUGHPUT_WINDOW_MS = 4_000;
+// A decoder this far behind what has arrived gives up on the gap and asks the router for a
+// fresh keyframe rather than wait out its tier's own keyframe interval.
+const REQUEST_KEYFRAME_LAG_MS = 800;
 
 type ServerText =
   | ({ type: 'dialog'; open: boolean } & LiveDialog)
@@ -82,6 +88,14 @@ export function useBrowserScreencast(
   const rttMs = useRef(0);
   const pingSentAt = useRef<number | null>(null);
   const received = useRef<{ at: number; bytes: number }[]>([]);
+  // The running total of video bytes received since the current video (re)started: this
+  // view's side of the ack the router uses as its main backlog signal, reported with every
+  // stats message. Reset together with the router's own count, in startVideo below.
+  const receivedBytesTotal = useRef(0);
+  // When the view first started waiting for a keyframe this time, so a wait long enough asks
+  // the router for a fresh one instead of waiting out the tier's own keyframe interval; null
+  // once asked, so one stall asks once, not on every frame it is still missing one.
+  const waitingSinceMs = useRef<number | null>(null);
   const reportedHidden = useRef<boolean | null>(null);
   const followAgentRef = useRef(followAgent);
 
@@ -148,6 +162,12 @@ export function useBrowserScreencast(
         // The router keeps sending JPEG frames to a view that shows no video.
       }
       waitingForKeyframe.current = true;
+      waitingSinceMs.current = null;
+      // The router's own count for this viewer starts over with every fresh video too (see
+      // Viewer.startVideo, which does not count the init segment either), so the ack stays
+      // meaningful across a tier or area change instead of comparing against bytes sent under
+      // a stream this one replaced.
+      receivedBytesTotal.current = 0;
       setMode('video');
     },
     [canvas, closeVideo, videoElement],
@@ -171,10 +191,18 @@ export function useBrowserScreencast(
       } else if (bytes[0] === VIDEO_INIT) {
         startVideo(bytes.subarray(1));
       } else if (bytes[0] === VIDEO_FRAGMENT) {
+        // Counted as soon as it arrives, matching Viewer.offerVideo on the router's side,
+        // which counts a fragment as sent whether or not this view ends up using it: the ack
+        // this feeds is about what the connection has carried, not what got drawn.
+        receivedBytesTotal.current += data.byteLength;
         const keyframe = bytes[1] === 1;
         if (!shown.current) waitingForKeyframe.current = true;
+        if (waitingForKeyframe.current && waitingSinceMs.current === null) {
+          waitingSinceMs.current = performance.now();
+        }
         if (!shown.current || (waitingForKeyframe.current && !keyframe)) return;
         waitingForKeyframe.current = false;
+        waitingSinceMs.current = null;
         video.current?.push(bytes.subarray(2), keyframe);
       }
     },
@@ -244,7 +272,21 @@ export function useBrowserScreencast(
           send({ type: 'ping', t: pingSentAt.current });
         }, PING_INTERVAL_MS);
         statsTimer = setInterval(() => {
-          send({ type: 'stats', rttMs: rttMs.current, downlinkKbps: downlinkKbps() });
+          send({
+            type: 'stats',
+            rttMs: rttMs.current,
+            downlinkKbps: downlinkKbps(),
+            receivedBytes: receivedBytesTotal.current,
+          });
+          const since = waitingSinceMs.current;
+          if (since !== null && since > 0 && performance.now() - since > REQUEST_KEYFRAME_LAG_MS) {
+            // One request per stall: set to a non-null, non-positive value that fails this
+            // check without looking like "no stall", so it does not repeat every report
+            // until the keyframe it asked for arrives (or a new stall starts one afresh,
+            // since receive() only sets waitingSinceMs when it is exactly null).
+            waitingSinceMs.current = 0;
+            send({ type: 'requestKeyframe' });
+          }
         }, STATS_INTERVAL_MS);
       };
       current.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {

@@ -25,10 +25,11 @@ describe("live view messages", () => {
       dialog: { accept: true, promptText: "answer" },
     });
     assert.deepEqual(input({ type: "hidden", hidden: true }), { hidden: true });
-    assert.deepEqual(input({ type: "stats", rttMs: 42, downlinkKbps: 3500 }), {
-      stats: { rttMs: 42, downlinkKbps: 3500 },
+    assert.deepEqual(input({ type: "stats", rttMs: 42, downlinkKbps: 3500, receivedBytes: 4_000_000 }), {
+      stats: { rttMs: 42, downlinkKbps: 3500, receivedBytes: 4_000_000 },
     });
-    assert.deepEqual(input({ type: "stats" }), { stats: { rttMs: 0, downlinkKbps: 0 } });
+    assert.deepEqual(input({ type: "stats" }), { stats: { rttMs: 0, downlinkKbps: 0, receivedBytes: 0 } });
+    assert.deepEqual(input({ type: "requestKeyframe" }), { requestKeyframe: true });
     assert.deepEqual(input({ type: "ping", t: 123.5 }), { ping: 123.5 });
   });
 

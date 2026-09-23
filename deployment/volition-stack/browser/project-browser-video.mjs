@@ -15,10 +15,15 @@ const XRANDR_TIMEOUT_MS = 5_000;
 // Every tier keeps a keyframe close enough that a viewer who joins mid-stream, or one recovering
 // from a stall, is never far from one: the encoder cannot be told to force one out of turn, so
 // a short, fixed interval stands in for that (see AreaEncoder and the README).
+// medium and low keep a shorter keyframe interval than high: they are the tiers a
+// constrained connection is actually on, so how long a viewer waits for the encoder's own
+// next keyframe — after a stall, after a keyframe request's minimum interval, after joining
+// — matters more for them than the modest extra bytes a keyframe costs over a delta frame at
+// their own already-reduced resolution.
 export const TIERS = [
   { name: "high", scaleMax: null, frameRate: 60, crf: 18, keyframeSeconds: 2, threads: 4 },
-  { name: "medium", scaleMax: 1280, frameRate: 30, crf: 24, keyframeSeconds: 1.5, threads: 2 },
-  { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 1, threads: 1 },
+  { name: "medium", scaleMax: 1280, frameRate: 30, crf: 24, keyframeSeconds: 1, threads: 2 },
+  { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 0.5, threads: 1 },
 ];
 
 // The round trip a tier needs to be worth trying (see chooseTier). Node's own bufferedAmount

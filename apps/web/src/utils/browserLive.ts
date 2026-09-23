@@ -20,9 +20,13 @@ export type LiveMessage =
   // Sent when the view is covered (another panel or browser tab in front) or shown again, so
   // the router stops sending it frames and its tier's encoder can stop once no one is left.
   | { type: 'hidden'; hidden: boolean }
-  // The video connection's last measured round trip and downlink, so the router can put this
-  // view on the quality tier they afford.
-  | { type: 'stats'; rttMs: number; downlinkKbps: number }
+  // The video connection's last measured round trip and downlink, and the running total of
+  // video bytes this view has received, so the router can put it on the quality tier they
+  // afford and knows how much of what it has sent is still unacknowledged.
+  | { type: 'stats'; rttMs: number; downlinkKbps: number; receivedBytes: number }
+  // This view's decoder fell far enough behind to give up on the gap; answered with a fresh
+  // keyframe once the router's rate limit on restarting the tier's encoder allows one.
+  | { type: 'requestKeyframe' }
   // Answered with {"type":"pong","t":..} at once, to measure the round trip.
   | { type: 'ping'; t: number }
   | {
