@@ -192,12 +192,12 @@ describe('runner gateway client', () => {
       apiKey: 'runner-secret',
     } as RunnerConfig);
 
-    expect(await client.report(9, { status: 'success' })).toEqual({
+    expect(await client.report(9, undefined, { status: 'success' })).toEqual({
       prompt: 'Look back.',
       maxTurns: 8,
       runBudgetSeconds: 120,
     });
-    expect(await client.report(9, { status: 'success' })).toBeNull();
+    expect(await client.report(9, undefined, { status: 'success' })).toBeNull();
 
     await client.reportReflection(9, {
       status: 'success',
