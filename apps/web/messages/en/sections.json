@@ -35,6 +35,10 @@
       "label": "Keyboard shortcuts",
       "description": "The key each command is bound to for everyone on this instance. Each person can rebind a shortcut for their own account in their preferences."
     },
+    "security": {
+      "label": "Security",
+      "description": "The owner terminal's step-up policy, its current grant and its audit trail."
+    },
     "storage": {
       "label": "Storage",
       "description": "How much people may upload: the size of a single file, the attachment types accepted, and the storage each project gets."

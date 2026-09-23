@@ -2764,3 +2764,60 @@ export const revision = pgTable(
   // Backs both the project cleanup and the membership join the read does.
   (t) => [index('revision_project_idx').on(t.projectId)],
 );
+
+// A step-up terminal grant: the owner re-authenticated (TOTP or passkey) and may open
+// Claude Code, Codex and Shell sessions on the host as `wilhelmpa` for 12 hours. Only
+// the instance owner ever holds one — enforced in the service, not by a column here.
+// One active row per owner: a new step-up replaces it (`ownerTerminalGrant` in the
+// service revokes the previous row rather than stacking). `sessionId` binds the grant
+// to the better-auth session it was issued for, so signing out or a session revoke
+// invalidates it without a separate check.
+export const ownerTerminalGrant = pgTable(
+  'owner_terminal_grant',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    sessionId: text('session_id').notNull(),
+    method: text('method').notNull(),
+    device: text('device').notNull(),
+    ipAddress: text('ip_address').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('owner_terminal_grant_method_check', sql`${t.method} IN ('totp', 'passkey')`),
+    uniqueIndex('owner_terminal_grant_session_uq').on(t.sessionId),
+    // Backs "the owner's current grant": newest first, filtered to unrevoked in the query.
+    index('owner_terminal_grant_user_idx').on(t.userId, t.createdAt.desc()),
+  ],
+);
+
+// Audit trail for the owner terminal: every step-up attempt, rate-limit lockout, grant
+// revocation, session start/end and rejected token. Shown at Home -> Security. `kind` and
+// `sessionName` are set for a session event, null for a step-up/grant event.
+export const ownerTerminalAudit = pgTable(
+  'owner_terminal_audit',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    event: text('event').notNull(),
+    kind: text('kind'),
+    sessionName: text('session_name'),
+    device: text('device'),
+    ipAddress: text('ip_address'),
+    detail: text('detail'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'owner_terminal_audit_event_check',
+      sql`${t.event} IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected')`,
+    ),
+    index('owner_terminal_audit_user_idx').on(t.userId, t.createdAt.desc()),
+    // Backs the rate-limit window query: failures of one user in the last 15 minutes.
+    index('owner_terminal_audit_event_idx').on(t.userId, t.event, t.createdAt),
+  ],
+);

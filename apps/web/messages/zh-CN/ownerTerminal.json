@@ -1,0 +1,31 @@
+{
+  "stepUp": {
+    "title": "确认是你本人",
+    "description": "输入身份验证器应用中的验证码,以打开终端 12 小时。",
+    "codeLabel": "验证码",
+    "confirm": "确认",
+    "verifying": "正在检查…",
+    "wrongCode": "验证码未被接受。",
+    "rateLimited": "尝试次数过多,请等待 15 分钟后再试。"
+  },
+  "grant": {
+    "active": "终端已授权至 {time}",
+    "expired": "终端授权已过期。",
+    "end": "结束"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "开发 Helena(Claude Code)",
+    "helena-dev-codex": "开发 Helena(Codex)",
+    "close": "关闭标签页"
+  },
+  "keys": {
+    "esc": "Esc",
+    "tab": "Tab",
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "paste": "粘贴"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "stepUp": {
+    "title": "Bestätige, dass du es bist",
+    "description": "Gib den Code aus deiner Authenticator-App ein, um das Terminal für 12 Stunden zu öffnen.",
+    "codeLabel": "Code",
+    "confirm": "Bestätigen",
+    "verifying": "Wird geprüft…",
+    "wrongCode": "Der Code wurde nicht akzeptiert.",
+    "rateLimited": "Zu viele Versuche. Warte 15 Minuten und versuche es erneut."
+  },
+  "grant": {
+    "active": "Terminal freigegeben bis {time}",
+    "expired": "Die Terminal-Freigabe ist abgelaufen.",
+    "end": "Beenden"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "Helena weiterentwickeln (Claude Code)",
+    "helena-dev-codex": "Helena weiterentwickeln (Codex)",
+    "close": "Tab schließen"
+  },
+  "keys": {
+    "esc": "Esc",
+    "tab": "Tab",
+    "ctrl": "Strg",
+    "alt": "Alt",
+    "paste": "Einfügen"
+  }
+}

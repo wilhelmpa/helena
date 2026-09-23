@@ -1,0 +1,31 @@
+{
+  "stepUp": {
+    "title": "Подтвердите, что это вы",
+    "description": "Введите код из приложения-аутентификатора, чтобы открыть терминал на 12 часов.",
+    "codeLabel": "Код",
+    "confirm": "Подтвердить",
+    "verifying": "Проверка…",
+    "wrongCode": "Код не принят.",
+    "rateLimited": "Слишком много попыток. Подождите 15 минут и попробуйте снова."
+  },
+  "grant": {
+    "active": "Терминал разрешён до {time}",
+    "expired": "Разрешение терминала истекло.",
+    "end": "Завершить"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "Развивать Helena (Claude Code)",
+    "helena-dev-codex": "Развивать Helena (Codex)",
+    "close": "Закрыть вкладку"
+  },
+  "keys": {
+    "esc": "Esc",
+    "tab": "Tab",
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "paste": "Вставить"
+  }
+}

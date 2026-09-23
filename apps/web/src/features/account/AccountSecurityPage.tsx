@@ -12,6 +12,7 @@ import AccountSecurityPasswordForm from './components/security/AccountSecurityPa
 import AccountSecurityAddPasskey from './components/security/AccountSecurityAddPasskey';
 import AccountSecurityPasskeyList from './components/security/AccountSecurityPasskeyList';
 import AccountSecurityDeletePasskeyDialog from './components/security/AccountSecurityDeletePasskeyDialog';
+import AccountSecurityTotpSection from './components/security/AccountSecurityTotpSection';
 
 // How the account is signed in to: the password and the passkeys registered for it.
 // Owns the passkey list query and the delete target; the child components refresh
@@ -45,6 +46,10 @@ export default function AccountSecurityPage() {
           isPending={isPending}
           onDelete={setDeleting}
         />
+      </AccountSection>
+
+      <AccountSection title={t('totpTitle')} description={t('totpDescription')}>
+        <AccountSecurityTotpSection />
       </AccountSection>
 
       {deleting && (

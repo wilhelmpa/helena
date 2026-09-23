@@ -1,0 +1,15 @@
+# The rule this instance ran under before Owner Terminals existed. This is what
+# stays in effect by default -- setup.sh does not touch
+# /etc/sudoers.d/90-wilhelmpa at all unless the orchestrator explicitly passes
+# --install-sudo-policy, so installing this file is only ever a no-op reinstall
+# of what is already there. It exists as a named, reviewed option (rather than
+# "just don't pass --install-sudo-policy") for the day the narrowed
+# 90-wilhelmpa in this directory has been reviewed and installed, and needs to
+# be rolled back.
+#
+# This rule makes every `sudo` command passwordless everywhere wilhelmpa runs
+# one, including inside an owner-terminal browser session -- sudo cannot
+# distinguish that from SSH automation for the same Unix account (see
+# 90-wilhelmpa's own comment for why). Home -> Security's "sudo in the browser
+# terminal asks for a password" defaults to off and says so.
+wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL
