@@ -42,8 +42,9 @@ store; credentials are never embedded in the image or repository. Restarting
 
 The catalog script also writes the `hermes` field of the runner config: the toolsets and MCP
 servers `config.yaml` enables for the cli platform, names only. The runner reports them to Plan
-with each agent's skills and memory, and builds `--toolsets` from them when the owner turns a
-toolset off for an agent. A change to `config.yaml` reaches Plan with the next runner restart.
+with each agent's skills and memory, and passes them as `--toolsets` to every run and chat,
+without the toolsets the owner turned off for the agent and without `cronjob`. A change to
+`config.yaml` reaches Plan with the next runner restart.
 
 The MCP servers `config.yaml` names are available to every agent. The owner turns one off for an
 agent, and adds servers of the team's library, on the agent's page in Plan. The runner writes both
@@ -61,6 +62,34 @@ takes them from the agent's runtime policy (`maxTurns`, `runBudgetSeconds`). A l
 is not set is not passed, so Hermes applies its own default. Chat answers have no limits.
 `timeoutMs` in `itsaplan-runner.json` is still the hard stop of the runner, so it has to be
 larger than the largest run budget.
+
+## Dangerous commands
+
+The runner starts Hermes without `--yolo`. `approvals.single_query_mode: approve` in `config.yaml`
+lets a `hermes chat` query run a command that Hermes' pattern detection flags as dangerous, and the
+`plan-approval-guard` plugin (`../hermes-plugins/plan-approval-guard`) decides instead:
+
+- In a run (`ITSAPLAN_RUN_ID` is set), a terminal command that Hermes flags as dangerous and every
+  execute_code script are blocked until a person approved exactly that text in Plan. The plugin reads
+  `GET /agent-runs/:runId/approved-commands` with the agent's key. The block message tells the agent
+  to call `request_approval` with the text in `command` and to end its run; the decision queues a new
+  run, and in that run the approved text runs.
+- A command on Hermes' hard block list is always blocked, and so is every flagged call while Plan
+  cannot be reached.
+- A chat has no run id. Its commands run without an approval, because Plan has no way to ask the
+  person in the chat.
+
+The catalog script links the plugin from the live checkout into the `plugins` directory of every
+Hermes home, and it stops the runner start when `single_query_mode` is `approve` but the plugin is
+not in `plugins.enabled`.
+
+## Hermes cron
+
+Recurring work is a routine in Plan, run through Mastra; a Hermes cron job would run the same work
+a second time. The runner never passes the `cronjob` toolset to Hermes, Plan does not offer it as a
+toggle, and the plugin blocks the `cronjob_manage` tool in every session. The Hermes cron ticker
+has no switch in `config.yaml`: `hermes dashboard` starts it when `HERMES_DESKTOP=1` is set, which
+`volition-hermes-serve.service` does, and it ticks the store of every profile.
 
 ## Secret boundary
 

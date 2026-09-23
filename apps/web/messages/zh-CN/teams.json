@@ -596,7 +596,6 @@
         "computer_use": "用鼠标和键盘控制桌面。",
         "connections": "使用已连接的账号和远程连接器。",
         "context_engine": "当前上下文引擎提供的工具。",
-        "cronjob": "创建和管理定时任务。",
         "delegation": "把子任务交给子代理。",
         "file": "读取、写入、编辑和搜索文件。",
         "image_gen": "生成图片。",

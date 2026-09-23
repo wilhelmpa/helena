@@ -142,6 +142,10 @@ function approvalPreamble(): string {
   ].join('\n');
 }
 
+// Hermes' own scheduler, which the runner never passes on: Plan schedules work through its
+// routines, so the toggle for it is not offered.
+const WITHHELD_TOOLSETS = ['cronjob'];
+
 export async function reportRuntimeState(
   agentId: number,
   state: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts' | 'inventory'> & {
@@ -149,10 +153,16 @@ export async function reportRuntimeState(
     inventory?: AgentRuntimeInventory;
   },
 ): Promise<AgentRuntimeState> {
+  const inventory = state.inventory;
   const value: AgentRuntimeState = {
     ...state,
     conflicts: state.conflicts ?? [],
-    inventory: state.inventory ?? null,
+    inventory: inventory
+      ? {
+          ...inventory,
+          toolsets: inventory.toolsets.filter((name) => !WITHHELD_TOOLSETS.includes(name)),
+        }
+      : null,
     reportedAt: new Date().toISOString(),
   };
   await db

@@ -43,7 +43,9 @@ and makes no decisions.
    runner then stops Hermes. Hermes reads and writes Plan data through Plan's MCP server
    (issues, mail drafts, secret names). Before an agent sends, publishes, pays or deletes
    anything outside Plan it calls `request_approval` and ends its run; the owner decides
-   on the Approvals page, next to the Mastra runs held at an approval gate.
+   on the Approvals page, next to the Mastra runs held at an approval gate. A command
+   Hermes flags as dangerous goes the same way in a run: Hermes' `plan-approval-guard`
+   plugin blocks it until Plan lists it as approved for that run.
 4. **Plan and Mastra → integration service**: provisioning, sending mail after the owner
    confirms it, browser control. The integration service reports inbound mail to Mastra as
    an event.
@@ -93,7 +95,8 @@ and makes no decisions.
   page of a project and the Home overview manage routines through the control API. Every
   fire of a schedule gets its own event id from its Mastra run id and is listed with the
   runs of its project. A fire that starts more than ten minutes late is skipped, and so is
-  one whose routine task is still open.
+  one whose routine task is still open. Agents get no Hermes cron: the runner never passes
+  the `cronjob` toolset, and the approval guard plugin blocks the tool.
 - Each area of a project has a folder at the same relative path in the project's workspace
   and in its vault folder. Plan stores the folder name; the integration service creates,
   moves and trashes the folders with the project's provisioning. A run for a task of an area

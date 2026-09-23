@@ -234,6 +234,11 @@ each run and chat answer the runner reads the values from `GET /agent-runtime/mc
 passes them to Hermes in those variables, so they are never written to disk. They are part of
 the environment of the Hermes process for that run, which its tools inherit. A server named like
 a toolset or a server of the profile fails the sync.
+Every run and chat answer gets `--toolsets` with these toolsets and every MCP server. A toolset
+turned off for the agent in Plan is left out, and so is `cronjob`, Hermes' own scheduler: Plan
+schedules work through its routines, and a Hermes job would run it a second time. Without the
+`hermes` field no toolsets are reported, none can be turned off, and Hermes uses the profile's
+own selection.
 
 ## What the coding agent receives
 

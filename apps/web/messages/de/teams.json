@@ -595,7 +595,6 @@
         "computer_use": "Steuert den Desktop mit Maus und Tastatur.",
         "connections": "Nutzt verbundene Konten und Remote-Connectors.",
         "context_engine": "Tools der aktiven Context Engine.",
-        "cronjob": "Erstellt und verwaltet geplante Jobs.",
         "delegation": "Gibt Unteraufgaben an Subagenten ab.",
         "file": "Liest, schreibt, bearbeitet und durchsucht Dateien.",
         "image_gen": "Erzeugt Bilder.",
