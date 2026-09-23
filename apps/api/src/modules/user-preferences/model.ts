@@ -15,6 +15,7 @@ const Locale = t.Union([
 ]);
 const Theme = t.Union([t.Literal('light'), t.Literal('dark'), t.Literal('system')]);
 const IssueOpenMode = t.Union([t.Literal('panel'), t.Literal('page')]);
+const HeaderLayout = t.Union([t.Literal('single'), t.Literal('classic')]);
 const StartPage = t.Union([
   t.Literal('inbox'),
   t.Literal('dashboard'),
@@ -29,6 +30,7 @@ export const PreferenceResponse = t.Object({
   locale: Locale,
   theme: Theme,
   issueOpenMode: IssueOpenMode,
+  headerLayout: HeaderLayout,
   startPage: StartPage,
   showChatByDefault: t.Boolean(),
   issueStatsOpen: t.Boolean(),
@@ -44,6 +46,7 @@ export const PreferencePatch = t.Object({
   locale: t.Optional(Locale),
   theme: t.Optional(Theme),
   issueOpenMode: t.Optional(IssueOpenMode),
+  headerLayout: t.Optional(HeaderLayout),
   startPage: t.Optional(StartPage),
   showChatByDefault: t.Optional(t.Boolean()),
   issueStatsOpen: t.Optional(t.Boolean()),

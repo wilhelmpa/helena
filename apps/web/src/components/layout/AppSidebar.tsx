@@ -9,6 +9,7 @@ import { APP_NAME } from '@/utils/app';
 import { godPath } from '@/utils/paths';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
+import { useAccountPreferences } from '@/services/preferences.service';
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +17,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarRail,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import ProjectList from '@/components/layout/ProjectList';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
@@ -23,6 +25,8 @@ import SidebarProjectNav from '@/components/layout/SidebarProjectNav';
 import SidebarHomeNav from '@/components/layout/SidebarHomeNav';
 import HelenaMark from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
+import SidebarBrandFooter from '@/components/brand/SidebarBrandFooter';
+import SidebarUtilityRow from '@/components/brand/SidebarUtilityRow';
 
 // The app sidebar: the projects, then either the navigation of the selected project
 // (its work, its agents and automation, its settings folded under one entry) or, with
@@ -54,8 +58,10 @@ export default function AppSidebar({
   const isGod = mounted && session?.user.role === 'god';
 
   const side = useSidebarSide();
-
-  return (
+  // 'single' (the default) is the only reason this row exists: it carries the
+  // language/theme/account controls the single-row header no longer has room for.
+  // 'classic' keeps them in AppHeader instead, exactly where they are today.
+  const { headerLayout } = useAccountPreferences();
     <Sidebar collapsible="icon" side={side}>
       <SidebarHeader className="h-12 shrink-0 justify-center px-4 py-0 group-data-[collapsible=icon]:px-2">
         <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
@@ -104,6 +110,13 @@ export default function AppSidebar({
             />
           )}
         </SidebarMenu>
+        {headerLayout === 'single' && (
+          <>
+            <SidebarSeparator />
+            <SidebarUtilityRow />
+          </>
+        )}
+        <SidebarBrandFooter />
       </SidebarFooter>
 
       <SidebarRail />

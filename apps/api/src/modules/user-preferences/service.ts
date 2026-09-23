@@ -12,12 +12,14 @@ export const DEFAULT_TIMEZONE = 'UTC';
 
 export const THEMES = ['light', 'dark', 'system'] as const;
 export const ISSUE_OPEN_MODES = ['panel', 'page'] as const;
+export const HEADER_LAYOUTS = ['single', 'classic'] as const;
 export const START_PAGES = ['inbox', 'dashboard', 'work-items', 'initiatives'] as const;
 export const ISSUE_STATS_VIEWS = ['compact', 'timeline'] as const;
 export const ISSUE_ACTIVITY_VIEWS = ['flat', 'grouped'] as const;
 
 export type Theme = (typeof THEMES)[number];
 export type IssueOpenMode = (typeof ISSUE_OPEN_MODES)[number];
+export type HeaderLayout = (typeof HEADER_LAYOUTS)[number];
 export type StartPage = (typeof START_PAGES)[number];
 export type IssueStatsView = (typeof ISSUE_STATS_VIEWS)[number];
 export type IssueActivityView = (typeof ISSUE_ACTIVITY_VIEWS)[number];
@@ -28,6 +30,10 @@ export interface UserPreferenceDto {
   locale: Locale;
   theme: Theme;
   issueOpenMode: IssueOpenMode;
+  // 'single' merges the header and the page's view tabs into one row and moves the
+  // language/theme/account controls into the sidebar footer; 'classic' keeps
+  // today's two-row header with those controls in it.
+  headerLayout: HeaderLayout;
   startPage: StartPage;
   // Keeps the floating AI chat button on screen from the start, with the chat
   // window collapsed.
@@ -57,6 +63,7 @@ export function defaults(locale: Locale = DEFAULT_LOCALE): UserPreferenceDto {
     locale,
     theme: 'system',
     issueOpenMode: 'panel',
+    headerLayout: 'single',
     startPage: 'work-items',
     showChatByDefault: false,
     issueStatsOpen: true,
@@ -84,6 +91,7 @@ function toDto(row: {
   locale: string;
   theme: string;
   issueOpenMode: string;
+  headerLayout: string;
   startPage: string;
   showChatByDefault: boolean;
   issueStatsOpen: boolean;
@@ -98,6 +106,7 @@ function toDto(row: {
     locale: row.locale as Locale,
     theme: row.theme as Theme,
     issueOpenMode: row.issueOpenMode as IssueOpenMode,
+    headerLayout: row.headerLayout as HeaderLayout,
     startPage: row.startPage as StartPage,
     showChatByDefault: row.showChatByDefault,
     issueStatsOpen: row.issueStatsOpen,
@@ -120,6 +129,7 @@ export async function getPreferences(
       locale: userPreference.locale,
       theme: userPreference.theme,
       issueOpenMode: userPreference.issueOpenMode,
+      headerLayout: userPreference.headerLayout,
       startPage: userPreference.startPage,
       showChatByDefault: userPreference.showChatByDefault,
       issueStatsOpen: userPreference.issueStatsOpen,

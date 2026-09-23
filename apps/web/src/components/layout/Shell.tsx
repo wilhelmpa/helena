@@ -65,7 +65,11 @@ export default function Shell({
   } = useShellProject(projectKey, route.activeViewId);
 
   const initiativeOptions = useInitiativeOptionsQuery(projectKey).data ?? [];
-  const { issueOpenMode } = useAccountPreferences();
+  const { issueOpenMode, headerLayout } = useAccountPreferences();
+  // What the active page put into the single-row header's middle slot (its view
+  // tabs/filter bar); see useShellHeaderExtra. Unused, and always empty, in
+  // 'classic' layout, where the page renders that row itself instead.
+  const [headerExtra, setHeaderExtra] = useState<ReactNode>(null);
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kioskDual = useKioskDisplay() === 'dual';
@@ -177,6 +181,8 @@ export default function Shell({
     },
     chatThreadRequest,
     onChatThreadHandled: () => setChatThreadRequest(null),
+    headerLayout,
+    setHeaderExtra,
   };
 
   return (
@@ -212,6 +218,8 @@ export default function Shell({
             workspaceOpen={workspacePanel.open}
             activeWorkspaceTool={workspacePanel.activeTool}
             onSelectWorkspaceTool={selectWorkspaceTool}
+            headerLayout={headerLayout}
+            headerExtra={headerExtra}
           />
 
           {errorMsg && !forbidden && (

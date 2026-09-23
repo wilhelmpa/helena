@@ -100,6 +100,12 @@
     },
     "language": "Language",
     "languageDescription": "The language of the interface, your emails, and the Telegram bot.",
+    "headerLayout": "Header layout",
+    "headerLayoutDescription": "Single row merges the header and the view tabs, and moves language, theme and account into the sidebar. Classic keeps the header and the view tabs in two rows, with those controls in the header.",
+    "headerLayoutOptions": {
+      "single": "Single row",
+      "classic": "Classic (two rows)"
+    },
     "timezone": "Timezone",
     "timezoneDescription": "Pick the zone you work in.",
     "timezonePlaceholder": "Select a timezone",
