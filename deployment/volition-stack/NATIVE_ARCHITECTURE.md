@@ -42,7 +42,8 @@ project runner would let a second Hermes scheduler traverse all project profiles
 /srv/volition/trash/projects/                      deletion quarantine
 /var/lib/volition/provisioning/                    provisioning state and registry
 /var/lib/volition/hermes/                          shared Hermes runtime and auth
-/var/lib/volition/hermes/profiles/<slug>/          project Hermes home
+/var/lib/volition/hermes/profiles/<slug>/          coordinator Hermes home
+/var/lib/volition/hermes/profiles/<slug>_<id>/     Hermes home of another project agent
 /var/lib/volition/mastra/                          Mastra state
 /var/lib/volition/project-browser/projects/<slug>/ browser profile and runtime state
 ```
@@ -61,13 +62,16 @@ copy.
 
 Project creation writes one idempotent provisioning job. Provisioning creates the
 workspace, vault folders, Hermes profile, terminal resource, code link, browser state,
-coordinator assignment, and registry entry. A retry reuses those resources. Plan issues a
-new coordinator API key only when the runner descriptor holds none that still works, and
-the Hermes runner is restarted only when a descriptor was created or changed.
+coordinator assignment, and registry entry. Each other external agent that works in the
+project only gets a Hermes profile and a runner descriptor of its own. A retry reuses
+those resources. Plan issues a new API key only when the runner descriptor holds none that
+still works, and the Hermes runner is restarted only when a descriptor was created,
+changed or deleted. Creating, attaching, detaching or deleting an external agent queues the
+provisioning of its projects again; the runtime of an agent that left is removed.
 
 Project deletion writes one deprovisioning job. Deprovisioning deletes the project's Mastra
-workflow schedules and its runner descriptor, stops the browser units, and moves the
-workspace, vault folder, Hermes profile, browser state, and registry entry to
+workflow schedules and its runner descriptors, stops the browser units, and moves the
+workspace, vault folder, Hermes profiles, browser state, and registry entry to
 `/srv/volition/trash/projects/<event-id>/` with a `receipt.json`. The terminal router stops
 the project's Wetty process and tmux session once its workspace directory is gone. A
 failed job is retried with `POST /teams/:teamId/project-deprovisioning/:jobId/retry`.
@@ -81,8 +85,8 @@ deprovisioning jobs after 30 days.
 
 Every ten minutes the worker reads `GET /api/provision/state` and compares it with the
 database. A provisioned project whose registry entry is missing, whose browser units are
-not active, or whose boards differ is provisioned again; a registry entry without a
-project is deprovisioned.
+not active, or whose boards or agent runtimes differ is provisioned again; a registry entry
+without a project is deprovisioned.
 
 Mastra coordinates `agent-team` through `/run/volition-ipc/hermes-team.sock`. The bridge
 submits project-bound work to Plan's external-agent queue. The Hermes runner claims that
@@ -94,7 +98,7 @@ executing it stops Hermes on its next heartbeat.
 ```text
 Plan API -> provisioning control :18800 -> Mastra proxy :4111
 Mastra -> Hermes team Unix socket -> Plan internal orchestration API :3000
-Plan agent queue -> Hermes runner -> /var/lib/volition/hermes/profiles/<slug>
+Plan agent queue -> Hermes runner -> /var/lib/volition/hermes/profiles/<slug>[_<id>]
 ```
 
 ## Public project URLs

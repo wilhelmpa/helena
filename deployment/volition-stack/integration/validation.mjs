@@ -113,6 +113,13 @@ export function validateEnvelope(value, headers) {
     if (value.eventType === "project.deprovision") break;
     if (resource.startsWith("board:") && !ids.has(Number(resource.slice(6)))) throw new RequestValidationError("Requested board metadata is missing");
   }
+  const agents = value.agents ?? [];
+  if (!Array.isArray(agents) || agents.length > 200) throw new RequestValidationError("agents is invalid");
+  if (value.eventType === "project.deprovision" && agents.length > 0) {
+    throw new RequestValidationError("agents are not accepted for deprovisioning");
+  }
+  for (const agent of agents) positiveInteger(agent, "agent id");
+  if (new Set(agents).size !== agents.length) throw new RequestValidationError("agents contains a duplicate");
   const createdAt = requiredString(value.createdAt, "createdAt", 40);
   const created = new Date(createdAt);
   if (
@@ -134,6 +141,7 @@ export function validateEnvelope(value, headers) {
     },
     requestedResources,
     ...(cleanBoards.length ? { boards: cleanBoards } : {}),
+    ...(agents.length ? { agents } : {}),
     createdAt,
   };
 }

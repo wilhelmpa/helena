@@ -82,6 +82,50 @@ class HermesProjectBrowserCatalogTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "endpoint conflicts"):
             CATALOG.descriptor_entries(self.descriptors, self.home, self.browsers)
 
+    def write_agent(self, name, **fields):
+        descriptor = {
+            "schemaVersion": 1,
+            "projectId": 7,
+            "teamId": 3,
+            "planAgentId": 42,
+            "username": "Coder.Bot",
+            "cwd": str(Path(self.temp.name) / "workspace"),
+            "hermesHome": str(self.home / "profiles" / name),
+            "globalHermesHome": str(self.home),
+            "browserCdpUrl": "http://127.0.0.1:19201",
+            "apiKey": "private-agent-key-0000000000",
+            **fields,
+        }
+        path = self.descriptors / f"{name}.json"
+        path.write_text(json.dumps(descriptor), encoding="utf-8")
+        os.chmod(path, 0o600)
+
+    def test_runs_a_project_agent_in_its_own_profile_with_the_project_browser(self):
+        self.write_agent("demo_42")
+        coordinator, agent = CATALOG.descriptor_entries(self.descriptors, self.home, self.browsers)
+        self.assertEqual(coordinator["name"], "hermes-demo-coordinator")
+        self.assertEqual(agent["name"], "Coder.Bot")
+        self.assertEqual(agent["env"]["HERMES_HOME"], str(self.home / "profiles" / "demo_42"))
+        self.assertEqual(agent["env"]["BROWSER_CDP_URL"], "http://127.0.0.1:19201")
+        self.assertEqual(agent["env"]["DISPLAY"], ":201")
+        self.assertTrue((self.home / "profiles" / "demo_42" / "config.yaml").is_symlink())
+
+    def test_rejects_a_project_agent_descriptor_that_does_not_match_its_name(self):
+        for name, fields in (
+            ("demo_42", {"planAgentId": 43}),
+            ("demo_42", {"username": "../escape"}),
+            ("demo_42", {"hermesHome": str(self.home / "profiles" / "demo")}),
+            ("demo_42", {"username": "hermes-demo-coordinator", "hermesHome": str(self.home / "profiles" / "demo")}),
+            ("demo_x42", {}),
+            ("Demo_42", {"hermesHome": str(self.home / "profiles" / "Demo_42")}),
+        ):
+            with self.subTest(name=name, fields=fields):
+                for stale in self.descriptors.glob("*_*.json"):
+                    stale.unlink()
+                self.write_agent(name, **fields)
+                with self.assertRaisesRegex(RuntimeError, "conflicts"):
+                    CATALOG.descriptor_entries(self.descriptors, self.home, self.browsers)
+
     def test_rejects_symlinked_browser_state(self):
         state = self.project / "runtime.json"
         state.unlink()

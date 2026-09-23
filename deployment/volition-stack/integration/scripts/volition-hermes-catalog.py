@@ -17,6 +17,9 @@ from pathlib import Path
 from typing import Any
 
 MAX_MODELS = 200
+COORDINATOR_DESCRIPTOR = re.compile(r'[a-z0-9][a-z0-9-]{0,63}')
+PROJECT_AGENT_DESCRIPTOR = re.compile(r'([a-z0-9][a-z0-9-]{0,31})_([1-9][0-9]{0,9})')
+PLAN_USERNAME = re.compile(r'[A-Za-z0-9._-]{1,64}')
 
 
 def model_name(model_id: str) -> str:
@@ -274,6 +277,23 @@ def project_browser_env(
     }
 
 
+def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | None:
+    """The project slug and Plan username a descriptor must carry, from its file name:
+    `<slug>` is the project's coordinator, `<slug>_<agentId>` another agent of the project."""
+    if COORDINATOR_DESCRIPTOR.fullmatch(name):
+        return name, f'hermes-{name}-coordinator'
+    match = PROJECT_AGENT_DESCRIPTOR.fullmatch(name)
+    username = item.get('username')
+    if (
+        match
+        and item.get('planAgentId') == int(match.group(2))
+        and isinstance(username, str)
+        and PLAN_USERNAME.fullmatch(username)
+    ):
+        return match.group(1), username
+    return None
+
+
 def descriptor_entries(root: Path, global_home: Path, browser_root: Path | None = None) -> list[dict[str, Any]]:
     private_directory(root)
     entries: list[dict[str, Any]] = []
@@ -287,9 +307,11 @@ def descriptor_entries(root: Path, global_home: Path, browser_root: Path | None 
             raise RuntimeError('Hermes runner descriptor is invalid') from exc
         if not isinstance(item, dict):
             raise RuntimeError('Hermes runner descriptor is invalid')
-        slug = descriptor_path.stem
-        username = f'hermes-{slug}-coordinator'
-        home = profiles_root / slug
+        identity = descriptor_identity(descriptor_path.stem, item)
+        if identity is None:
+            raise RuntimeError('Hermes runner descriptor conflicts with its project')
+        slug, username = identity
+        home = profiles_root / descriptor_path.stem
         expected = {
             'schemaVersion': 1,
             'username': username,

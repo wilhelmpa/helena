@@ -56,6 +56,25 @@ function fakeCoordinator(calls) {
   };
 }
 
+// Writes the descriptor file the way the real bootstrap does, so the provisioner finds
+// it again when the agent leaves the project.
+function fakeProjectAgent(calls, { changed = () => true, fail = () => false } = {}) {
+  return async (config, project, agentId, options) => {
+    calls.push({ project, agentId, options });
+    if (fail(agentId)) throw new Error("Bootstrapping failed with HTTP 404");
+    const name = `${project.key.toLowerCase()}_${agentId}`;
+    await fs.mkdir(config.hermesRunnerDescriptorRoot, { recursive: true });
+    await fs.writeFile(path.join(config.hermesRunnerDescriptorRoot, `${name}.json`), "{}", { mode: 0o600 });
+    return {
+      planAgentId: agentId,
+      username: `agent-${agentId}`,
+      name,
+      hermesHome: path.join(config.hermesHome, "profiles", name),
+      descriptorChanged: changed(agentId),
+    };
+  };
+}
+
 describe("createProvisioner", () => {
   it("provisions a Hermes coordinator and reloads the common runner exactly once", async () => {
     const coordinatorCalls = [];
@@ -391,5 +410,117 @@ describe("createProvisioner", () => {
     });
     await provisioner.provision(envelope());
     await assert.rejects(provisioner.provision(envelope({ name: "Other" })), ProvisioningConflictError);
+  });
+
+  it("gives each agent of the project a profile and a runner descriptor of its own", async () => {
+    const agentCalls = [];
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensurePlanProjectAgent: fakeProjectAgent(agentCalls),
+      ensureProjectBrowser: async (_project, slug) => ({
+        id: `project-browser:${slug}`,
+        name: "project-browser",
+        profile: `project:7:${slug}`,
+        cdpUrl: "http://127.0.0.1:19201",
+      }),
+      projectBrowserActive: async () => true,
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+    const request = { ...envelope(), requestedResources: ["workspace", "coordinator", "browser"], agents: [31, 32] };
+
+    await provisioner.provision(request);
+
+    assert.deepEqual(agentCalls.map(({ agentId }) => agentId), [31, 32]);
+    assert.equal(agentCalls[0].options.workspace.hostPath, path.join(root, "projects/demo"));
+    assert.equal(agentCalls[0].options.browser.cdpUrl, "http://127.0.0.1:19201");
+    for (const name of ["demo_31", "demo_32"]) {
+      const stat = await fs.stat(path.join(root, "hermes/profiles", name));
+      assert.equal(stat.mode & 0o777, 0o700);
+    }
+    assert.equal(restarts.length, 1);
+    const registry = JSON.parse(await fs.readFile(path.join(root, "state/projects/demo.json"), "utf8"));
+    assert.deepEqual(registry.agents, [
+      { id: 31, username: "agent-31", profile: "demo_31" },
+      { id: 32, username: "agent-32", profile: "demo_32" },
+    ]);
+    const [state] = (await provisioner.state()).projects;
+    assert.deepEqual(state.agents, [31, 32]);
+  });
+
+  it("removes the runtime of an agent that left the project", async () => {
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensurePlanProjectAgent: fakeProjectAgent([], { changed: () => false }),
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+    const request = { ...envelope(), agents: [31, 32] };
+    await provisioner.provision(request);
+    await fs.writeFile(path.join(root, "hermes/profiles/demo_32/MEMORY.md"), "kept in the trash");
+    // Another project's agent with a similar name stays.
+    await fs.mkdir(path.join(root, "hermes/profiles/demox_32"), { recursive: true });
+
+    const restartsBefore = restarts.length;
+    const later = { ...request, eventId: "b23e4567-e89b-42d3-a456-42661417400a", agents: [31] };
+    await provisioner.provision(later);
+
+    await assert.rejects(fs.lstat(path.join(root, "hermes/run/agents/demo_32.json")), { code: "ENOENT" });
+    await assert.rejects(fs.lstat(path.join(root, "hermes/profiles/demo_32")), { code: "ENOENT" });
+    const trash = path.join(root, "trash/projects", later.eventId);
+    assert.deepEqual((await fs.readdir(trash)).sort(), ["hermes-profile-demo_32", "receipt.json"]);
+    assert.equal(await fs.readFile(path.join(trash, "hermes-profile-demo_32/MEMORY.md"), "utf8"), "kept in the trash");
+    assert.equal(await fs.stat(path.join(root, "hermes/profiles/demo_31")).then((stat) => stat.isDirectory()), true);
+    assert.equal(await fs.stat(path.join(root, "hermes/profiles/demox_32")).then((stat) => stat.isDirectory()), true);
+    assert.equal(restarts.length, restartsBefore + 1);
+    const [state] = (await provisioner.state()).projects;
+    assert.deepEqual(state.agents, [31]);
+  });
+
+  it("reloads the runner for the descriptors a failed run already wrote", async () => {
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensurePlanProjectAgent: fakeProjectAgent([], { fail: (agentId) => agentId === 32 }),
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+
+    await assert.rejects(provisioner.provision({ ...envelope(), agents: [31, 32] }), /HTTP 404/);
+    assert.equal(restarts.length, 1);
+  });
+
+  it("removes every agent runtime of a deleted project", async () => {
+    const restarts = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensurePlanProjectAgent: fakeProjectAgent([]),
+      execute: async (_bin, args) => {
+        if (args.includes("restart")) restarts.push(args);
+        return { stdout: "", stderr: "" };
+      },
+    });
+    const request = { ...envelope(), agents: [31] };
+    await provisioner.provision(request);
+
+    const deletion = {
+      ...envelope(),
+      eventId: "c23e4567-e89b-42d3-a456-42661417400b",
+      eventType: "project.deprovision",
+    };
+    await provisioner.deprovision(deletion);
+
+    assert.deepEqual(await fs.readdir(path.join(root, "hermes/run/agents")), []);
+    const quarantine = path.join(root, "trash/projects", deletion.eventId);
+    assert.ok((await fs.readdir(quarantine)).includes("hermes-profile-demo_31"));
+    assert.equal(restarts.length, 2);
   });
 });
