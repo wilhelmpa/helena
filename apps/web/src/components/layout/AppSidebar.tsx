@@ -62,6 +62,8 @@ export default function AppSidebar({
   // language/theme/account controls the single-row header no longer has room for.
   // 'classic' keeps them in AppHeader instead, exactly where they are today.
   const { headerLayout } = useAccountPreferences();
+
+  return (
     <Sidebar collapsible="icon" side={side}>
       <SidebarHeader className="h-12 shrink-0 justify-center px-4 py-0 group-data-[collapsible=icon]:px-2">
         <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
