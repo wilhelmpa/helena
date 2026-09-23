@@ -335,14 +335,14 @@ def start(args: argparse.Namespace) -> None:
         print(f'ensure-project-user {slug}: {answer.stdout.decode().strip()}')
     for slug, profile in (('alpha', 'alpha'), ('alpha', 'alpha_7'), ('beta', 'beta'), ('home', 'home')):
         memory = f'{ROOT}/hermes/profiles/{profile}/MEMORY.md'
-        sh('runuser', '-u', f'vpt-{slug}', '--', 'sh', '-c', f'echo "memory of {profile}" > {memory}')
+        sh('/usr/sbin/runuser', '-u', f'vpt-{slug}', '--', 'sh', '-c', f'echo "memory of {profile}" > {memory}')
     print('started')
 
 
 def client(argv: list[str], *, user: str = 'vpt-hermes', socket_path: str = LAUNCH_SOCKET,
            stdin: bytes | None = None, check: bool = True, timeout: float = 300) -> subprocess.CompletedProcess:
     env = {'PATH': '/usr/bin:/bin', 'VOLITION_LAUNCHER_SOCKET': socket_path}
-    return sh('runuser', '-u', user, '--', '/usr/bin/python3', '-I', f'{ISO}/launch_client.py', *argv,
+    return sh('/usr/sbin/runuser', '-u', user, '--', '/usr/bin/python3', '-I', f'{ISO}/launch_client.py', *argv,
               check=check, input=stdin or b'', env=env, timeout=timeout)
 
 
@@ -365,11 +365,11 @@ def teardown(args: argparse.Namespace) -> None:
     if args.users:
         for entry in pwd.getpwall():
             if entry.pw_name.startswith('vpt-'):
-                sh('userdel', entry.pw_name, check=False)
+                sh('/usr/sbin/userdel', entry.pw_name, check=False)
                 removed.append(entry.pw_name)
         for entry in grp.getgrall():
             if entry.gr_name.startswith('vpt-'):
-                sh('groupdel', entry.gr_name, check=False)
+                sh('/usr/sbin/groupdel', entry.gr_name, check=False)
                 removed.append(f'group {entry.gr_name}')
     print(json.dumps({'removed': removed}))
 
@@ -529,10 +529,10 @@ def prove_4_no_foreign_files(report: Report) -> None:
     expect(report, '4', results, f'read:{ROOT}/vault/Private', False)
     expect(report, '4', results, f'read:{ROOT}/workspaces/projects/alpha', False)
     # Outside any unit, on the host, the project users cannot read each other's files either.
-    done = sh('runuser', '-u', 'vpt-alpha', '--', 'cat', f'{ROOT}/workspaces/projects/beta/secret-beta.txt', check=False)
+    done = sh('/usr/sbin/runuser', '-u', 'vpt-alpha', '--', 'cat', f'{ROOT}/workspaces/projects/beta/secret-beta.txt', check=False)
     report.add('4', 'host: vpt-alpha reads beta workspace', done.returncode != 0,
                (done.stderr or b'').decode().strip()[:120])
-    done = sh('runuser', '-u', 'vpt-alpha', '--', 'cat', f'{ROOT}/hermes/profiles/beta/MEMORY.md', check=False)
+    done = sh('/usr/sbin/runuser', '-u', 'vpt-alpha', '--', 'cat', f'{ROOT}/hermes/profiles/beta/MEMORY.md', check=False)
     report.add('4', 'host: vpt-alpha reads beta profile', done.returncode != 0,
                (done.stderr or b'').decode().strip()[:120])
 
@@ -559,7 +559,7 @@ def prove_6_launcher_refuses(report: Report) -> None:
                   'd=b""\n'
                   'while len(d)<n:\n  c=s.recv(n-len(d))\n  if not c: break\n  d+=c\n'
                   'print(hex(k), d.decode())\n')
-        done = sh('runuser', '-u', user, '--', '/usr/bin/python3', '-I', '-c', script, check=False, input=line)
+        done = sh('/usr/sbin/runuser', '-u', user, '--', '/usr/bin/python3', '-I', '-c', script, check=False, input=line)
         out = done.stdout.decode().strip()
         if out:
             return out
