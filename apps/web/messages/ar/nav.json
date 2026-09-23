@@ -9,12 +9,10 @@
   "documents": "Docs",
   "aiTeam": "فريق الذكاء الاصطناعي",
   "aiAgents": "وكلاء الذكاء الاصطناعي",
-  "configuration": "التهيئة",
   "members": "الأعضاء",
   "notifications": "الإشعارات",
   "notificationPreferences": "تفضيلات الإشعارات",
   "projectSettings": "إعدادات المشروع",
-  "backToProject": "العودة إلى المشروع",
   "apiDocs": "توثيق واجهة البرمجة (API)",
   "api": "واجهة البرمجة (API)",
   "mcpServer": "خادم MCP",
@@ -60,7 +58,10 @@
   "groups": {
     "project": "المشروع",
     "workflow": "سير العمل",
-    "automation": "الأتمتة"
+    "automation": "الأتمتة",
+    "work": "العمل",
+    "agents": "الوكلاء والأتمتة",
+    "team": "الفريق"
   },
   "godModeOwnerOnly": "وضع المشرف متاح لمالك النسخة بس.",
   "project": "المشروع",
@@ -73,5 +74,6 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault"
+  "vault": "Vault",
+  "teamSettings": "إعدادات الفريق"
 }

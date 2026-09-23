@@ -17,6 +17,7 @@ export const workflowsPath = (key: string) => `${projectPath(key)}/workflows`;
 export const connectionsPath = () => '/connections';
 
 export const agentsPath = () => '/agents';
+export const teamOrganizationPath = () => '/organization';
 
 export const mcpsPath = () => '/mcps';
 

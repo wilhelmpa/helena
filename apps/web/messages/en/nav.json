@@ -9,12 +9,10 @@
   "documents": "Docs",
   "aiTeam": "AI Team",
   "aiAgents": "AI Agents",
-  "configuration": "Configuration",
   "members": "Members",
   "notifications": "Notifications",
   "notificationPreferences": "Notification preferences",
   "projectSettings": "Project settings",
-  "backToProject": "Back to project",
   "apiDocs": "API docs",
   "api": "API",
   "mcpServer": "MCP Server",
@@ -63,7 +61,10 @@
   "groups": {
     "project": "Project",
     "workflow": "Workflow",
-    "automation": "Automation"
+    "automation": "Automation",
+    "work": "Work",
+    "agents": "Agents & automation",
+    "team": "Team"
   },
   "godModeOwnerOnly": "God mode is open to the instance owner only.",
   "project": "Project",
@@ -73,5 +74,6 @@
   "mcps": "MCPs",
   "tools": "Tools",
   "skills": "Skills",
-  "vault": "Vault"
+  "vault": "Vault",
+  "teamSettings": "Team settings"
 }

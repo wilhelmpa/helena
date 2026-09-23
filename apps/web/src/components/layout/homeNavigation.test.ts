@@ -7,19 +7,20 @@ describe('home sidebar navigation', () => {
     assert.deepEqual(homeNavigation(null), [
       { id: 'connections', href: '/connections' },
       { id: 'vault', href: '/vault' },
-      { id: 'projectSettings', href: '/account/teams' },
+      { id: 'teamSettings', href: '/account/teams' },
     ]);
   });
 
   test('links a single team through persistent global shell routes', () => {
     assert.deepEqual(homeNavigation(42), [
       { id: 'agentPool', href: '/agents' },
+      { id: 'organization', href: '/organization' },
       { id: 'connections', href: '/connections' },
       { id: 'vault', href: '/vault' },
       { id: 'mcps', href: '/mcps' },
       { id: 'tools', href: '/tools' },
       { id: 'skills', href: '/skills' },
-      { id: 'projectSettings', href: '/account/teams' },
+      { id: 'teamSettings', href: '/account/teams' },
     ]);
     const ids = homeNavigation(42).map((item) => item.id) as string[];
     assert.ok(!ids.includes('notifications'));

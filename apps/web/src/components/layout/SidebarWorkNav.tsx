@@ -1,17 +1,17 @@
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
-  Code2,
   FileText,
   Folder,
   Inbox,
   LayoutDashboard,
+  RefreshCw,
   SquareKanban,
   StickyNote,
   Target,
 } from 'lucide-react';
 import {
-  codePath,
+  cyclesPath,
   dashboardsPath,
   documentsPath,
   filesPath,
@@ -22,7 +22,12 @@ import {
 } from '@/utils/paths';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
-import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/components/ui/sidebar';
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+} from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 
 export default function SidebarWorkNav({ projectKey }: { projectKey: string | null }) {
@@ -39,6 +44,7 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
 
   return (
     <SidebarGroup>
+      <SidebarGroupLabel>{t('groups.work')}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {features.dashboards && can('dashboards', 'read') && (
@@ -82,19 +88,21 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
               disabled={disabled}
             />
           )}
-          <SidebarNavItem
-            href={projectKey ? codePath(projectKey) : '#'}
-            icon={Code2}
-            label={t('workspace.code')}
-            active={!!projectKey && pathname === codePath(projectKey)}
-            disabled={disabled}
-          />
           {features.initiatives && can('initiatives', 'read') && (
             <SidebarNavItem
               href={projectKey ? initiativesPath(projectKey) : '#'}
               icon={Target}
               label={t('initiatives')}
               active={pathname.includes('/initiatives')}
+              disabled={disabled}
+            />
+          )}
+          {features.cycles && can('cycles', 'read') && (
+            <SidebarNavItem
+              href={projectKey ? cyclesPath(projectKey) : '#'}
+              icon={RefreshCw}
+              label={t('cycles')}
+              active={pathname.includes('/cycles')}
               disabled={disabled}
             />
           )}

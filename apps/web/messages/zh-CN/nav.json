@@ -9,12 +9,10 @@
   "documents": "Docs",
   "aiTeam": "AI 团队",
   "aiAgents": "AI 代理",
-  "configuration": "配置",
   "members": "成员",
   "notifications": "通知",
   "notificationPreferences": "通知偏好",
   "projectSettings": "项目设置",
-  "backToProject": "返回项目",
   "apiDocs": "API 文档",
   "api": "API",
   "mcpServer": "MCP 服务器",
@@ -60,7 +58,10 @@
   "groups": {
     "project": "项目",
     "workflow": "工作流",
-    "automation": "自动化"
+    "automation": "自动化",
+    "work": "工作",
+    "agents": "智能体与自动化",
+    "team": "团队"
   },
   "godModeOwnerOnly": "管理模式仅对实例管理员开放。",
   "project": "项目",
@@ -73,5 +74,6 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault"
+  "vault": "Vault",
+  "teamSettings": "团队设置"
 }

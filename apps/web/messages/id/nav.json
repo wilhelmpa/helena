@@ -9,12 +9,10 @@
   "documents": "Dokumen",
   "aiTeam": "Tim AI",
   "aiAgents": "Agen AI",
-  "configuration": "Konfigurasi",
   "members": "Anggota",
   "notifications": "Notifikasi",
   "notificationPreferences": "Preferensi notifikasi",
   "projectSettings": "Pengaturan proyek",
-  "backToProject": "Kembali ke proyek",
   "apiDocs": "Dokumentasi API",
   "api": "API",
   "mcpServer": "Server MCP",
@@ -60,7 +58,10 @@
   "groups": {
     "project": "Proyek",
     "workflow": "Alur kerja",
-    "automation": "Otomatisasi"
+    "automation": "Otomatisasi",
+    "work": "Pekerjaan",
+    "agents": "Agen & otomatisasi",
+    "team": "Tim"
   },
   "godModeOwnerOnly": "Mode God hanya terbuka untuk pemilik instance.",
   "project": "Proyek",
@@ -73,5 +74,6 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault"
+  "vault": "Vault",
+  "teamSettings": "Pengaturan tim"
 }

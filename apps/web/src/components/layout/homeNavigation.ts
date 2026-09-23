@@ -2,6 +2,7 @@ import {
   agentsPath,
   connectionsPath,
   manageTeamsPath,
+  teamOrganizationPath,
   mcpsPath,
   skillsPath,
   toolsPath,
@@ -9,7 +10,14 @@ import {
 } from '@/utils/paths';
 
 export type HomeNavigationId =
-  'agentPool' | 'connections' | 'vault' | 'mcps' | 'tools' | 'skills' | 'projectSettings';
+  | 'agentPool'
+  | 'organization'
+  | 'connections'
+  | 'vault'
+  | 'mcps'
+  | 'tools'
+  | 'skills'
+  | 'teamSettings';
 
 export function homeNavigation(
   teamId: number | null,
@@ -19,7 +27,12 @@ export function homeNavigation(
   href: string;
 }> {
   return [
-    ...(teamId == null ? [] : [{ id: 'agentPool' as const, href: agentsPath() }]),
+    ...(teamId == null
+      ? []
+      : [
+          { id: 'agentPool' as const, href: agentsPath() },
+          { id: 'organization' as const, href: teamOrganizationPath() },
+        ]),
     { id: 'connections', href: connectionsPath() },
     ...(vaultEnabled ? [{ id: 'vault' as const, href: vaultPath() }] : []),
     ...(teamId == null
@@ -29,6 +42,6 @@ export function homeNavigation(
           { id: 'tools' as const, href: toolsPath() },
           { id: 'skills' as const, href: skillsPath() },
         ]),
-    { id: 'projectSettings', href: manageTeamsPath() },
+    { id: 'teamSettings', href: manageTeamsPath() },
   ];
 }

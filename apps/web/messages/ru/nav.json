@@ -9,12 +9,10 @@
   "documents": "Docs",
   "aiTeam": "AI-команда",
   "aiAgents": "ИИ-агенты",
-  "configuration": "Конфигурация",
   "members": "Участники",
   "notifications": "Уведомления",
   "notificationPreferences": "Настройки уведомлений",
   "projectSettings": "Настройки проекта",
-  "backToProject": "Назад к проекту",
   "apiDocs": "Документация API",
   "api": "API",
   "mcpServer": "MCP-сервер",
@@ -60,7 +58,10 @@
   "groups": {
     "project": "Проект",
     "workflow": "Рабочий процесс",
-    "automation": "Автоматизация"
+    "automation": "Автоматизация",
+    "work": "Работа",
+    "agents": "Агенты и автоматизация",
+    "team": "Команда"
   },
   "godModeOwnerOnly": "Режим администратора доступен только владельцу инстанса.",
   "project": "Проект",
@@ -73,5 +74,6 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault"
+  "vault": "Vault",
+  "teamSettings": "Настройки команды"
 }

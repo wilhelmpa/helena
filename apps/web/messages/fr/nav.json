@@ -9,12 +9,10 @@
   "notes": "Notes",
   "aiTeam": "Équipe IA",
   "aiAgents": "Agents IA",
-  "configuration": "Configuration",
   "members": "Membres",
   "notifications": "Notifications",
   "notificationPreferences": "Préférences de notification",
   "projectSettings": "Paramètres du projet",
-  "backToProject": "Retour au projet",
   "apiDocs": "Documentation de l'API",
   "api": "API",
   "mcpServer": "Serveur MCP",
@@ -60,7 +58,10 @@
   "groups": {
     "project": "Projet",
     "workflow": "Flux de travail",
-    "automation": "Automatisation"
+    "automation": "Automatisation",
+    "work": "Travail",
+    "agents": "Agents et automatisation",
+    "team": "Équipe"
   },
   "godModeOwnerOnly": "Le God mode est réservé au propriétaire de l'instance.",
   "project": "Projet",
@@ -73,5 +74,6 @@
   "loading": "Loading…",
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
-  "vault": "Vault"
+  "vault": "Vault",
+  "teamSettings": "Paramètres de l'équipe"
 }

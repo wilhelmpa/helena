@@ -48,9 +48,9 @@ import {
 import type { Command, CommandSection } from '@/utils/commands';
 
 // Every place the palette can navigate to, filtered by what the viewer may read.
-// The destinations mirror the sidebars one-to-one: the main nav (SidebarMainNav),
-// the project settings nav (useSettingsNavGroups, which already applies the
-// permission gate), the sidebar footer, the account pages and god mode. Grouped
+// The destinations mirror the sidebar: the project nav (SidebarProjectNav), the
+// project settings (useSettingsNavGroups, which already applies the permission gate),
+// the team nav, the account pages and god mode. Grouped
 // under one "Sections" heading so a search separates them from commands and
 // issues.
 export function useNavigationCommands(projectKey: string | null): CommandSection | null {
