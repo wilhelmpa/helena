@@ -144,17 +144,76 @@ async function devtoolsJson(port, path, method = "GET") {
   }
 }
 
-// The browser's tabs, most recently used first, as DevTools lists them.
+// One DevTools connection per project browser, kept open and shared by the window keeper
+// and the tab list, with a session attached to each page it has asked something.
+class BrowserLink {
+  constructor(port) {
+    this.port = port;
+    this.connection = null;
+    this.sessions = new Map();
+  }
+
+  async open() {
+    if (this.connection && !this.connection.closed) return this.connection;
+    const version = await devtoolsJson(this.port, "/json/version");
+    this.connection = await CdpConnection.open(version.webSocketDebuggerUrl);
+    this.sessions.clear();
+    return this.connection;
+  }
+
+  async evaluate(targetId, expression) {
+    const connection = await this.open();
+    let sessionId = this.sessions.get(targetId);
+    if (!sessionId) {
+      ({ sessionId } = await connection.send("Target.attachToTarget", { targetId, flatten: true }));
+      this.sessions.set(targetId, sessionId);
+    }
+    const { result } = await connection.send(
+      "Runtime.evaluate",
+      { expression, returnByValue: true },
+      sessionId,
+    );
+    return result?.value;
+  }
+
+  // Forgets the sessions of pages that are gone.
+  keep(targetIds) {
+    for (const id of this.sessions.keys()) if (!targetIds.has(id)) this.sessions.delete(id);
+  }
+
+  close() {
+    this.connection?.close();
+    this.connection = null;
+  }
+}
+
+const links = new Map();
+
+function linkFor(port) {
+  let link = links.get(port);
+  if (!link) {
+    link = new BrowserLink(port);
+    links.set(port, link);
+  }
+  return link;
+}
+
+// The browser's tabs. The one in front is the one whose page is visible: DevTools lists
+// the tabs in no order that says which one the person is looking at.
 export async function listTabs(port) {
   const targets = await devtoolsJson(port, "/json/list");
-  return (Array.isArray(targets) ? targets : [])
-    .filter((target) => target.type === "page")
-    .map((target, index) => ({
-      id: target.id,
-      title: target.title || target.url,
-      url: target.url,
-      active: index === 0,
-    }));
+  const pages = (Array.isArray(targets) ? targets : []).filter((target) => target.type === "page");
+  const link = linkFor(port);
+  const visibility = await Promise.all(
+    pages.map((page) => link.evaluate(page.id, "document.visibilityState").catch(() => null)),
+  );
+  const front = Math.max(0, visibility.indexOf("visible"));
+  return pages.map((page, index) => ({
+    id: page.id,
+    title: page.title || page.url,
+    url: page.url,
+    active: index === front,
+  }));
 }
 
 async function onPage(port, id, work) {
@@ -231,11 +290,11 @@ export async function readJsonBody(request) {
 // Fits every window of one browser to its screen. The page is asked for the screen size
 // because the display is not reachable from here; a tab that shows nothing yet reports
 // it all the same.
-export async function fitWindows(connection, sessions) {
+export async function fitWindows(link) {
+  const connection = await link.open();
   const { targetInfos = [] } = await connection.send("Target.getTargets");
   const pages = targetInfos.filter((target) => target.type === "page");
-  const live = new Set(pages.map((target) => target.targetId));
-  for (const id of sessions.keys()) if (!live.has(id)) sessions.delete(id);
+  link.keep(new Set(pages.map((target) => target.targetId)));
   const fittedWindows = new Set();
   for (const target of pages) {
     const { windowId, bounds } = await connection.send("Browser.getWindowForTarget", {
@@ -243,20 +302,8 @@ export async function fitWindows(connection, sessions) {
     });
     if (fittedWindows.has(windowId)) continue;
     fittedWindows.add(windowId);
-    let sessionId = sessions.get(target.targetId);
-    if (!sessionId) {
-      ({ sessionId } = await connection.send("Target.attachToTarget", {
-        targetId: target.targetId,
-        flatten: true,
-      }));
-      sessions.set(target.targetId, sessionId);
-    }
-    const { result } = await connection.send(
-      "Runtime.evaluate",
-      { expression: "[screen.width, screen.height]", returnByValue: true },
-      sessionId,
-    );
-    const [width, height] = Array.isArray(result?.value) ? result.value : [];
+    const value = await link.evaluate(target.targetId, "[screen.width, screen.height]");
+    const [width, height] = Array.isArray(value) ? value : [];
     const fitted = fittedBounds(bounds, { width, height });
     if (!fitted) continue;
     if (bounds.windowState !== "normal") {
@@ -272,7 +319,7 @@ export async function fitWindows(connection, sessions) {
 // Runs fitWindows for every project browser once per interval. A browser that cannot be
 // reached is tried again on the next pass with a new connection.
 export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () => {} }) {
-  const browsers = new Map();
+  const lastErrors = new Map();
   let stopped = false;
   let running = false;
 
@@ -282,33 +329,24 @@ export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () =
     try {
       const current = await listBrowsers();
       const ports = new Set(current.map((browser) => browser.cdpPort));
-      for (const [port, state] of browsers) {
+      for (const [port, link] of links) {
         if (!ports.has(port)) {
-          state.connection?.close();
-          browsers.delete(port);
+          link.close();
+          links.delete(port);
         }
       }
       for (const { cdpPort } of current) {
-        const state = browsers.get(cdpPort) ?? {
-          connection: null,
-          sessions: new Map(),
-          lastError: null,
-        };
-        browsers.set(cdpPort, state);
+        const link = linkFor(cdpPort);
         try {
-          if (!state.connection || state.connection.closed) {
-            const version = await devtoolsJson(cdpPort, "/json/version");
-            state.connection = await CdpConnection.open(version.webSocketDebuggerUrl);
-            state.sessions.clear();
-          }
-          await fitWindows(state.connection, state.sessions);
-          state.lastError = null;
+          await fitWindows(link);
+          lastErrors.delete(cdpPort);
         } catch (error) {
           // A browser that stays down is reported once, not on every pass.
-          if (error.message !== state.lastError) log(`browser on port ${cdpPort}: ${error.message}`);
-          state.lastError = error.message;
-          state.connection?.close();
-          state.connection = null;
+          if (error.message !== lastErrors.get(cdpPort)) {
+            log(`browser on port ${cdpPort}: ${error.message}`);
+          }
+          lastErrors.set(cdpPort, error.message);
+          link.close();
         }
       }
     } catch (error) {
@@ -323,6 +361,6 @@ export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () =
   return () => {
     stopped = true;
     clearInterval(timer);
-    for (const state of browsers.values()) state.connection?.close();
+    for (const link of links.values()) link.close();
   };
 }
