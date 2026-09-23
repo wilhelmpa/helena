@@ -56,6 +56,10 @@ class HermesResultReader {
   sessionId: string | undefined;
   toolCalls = 0;
 
+  // Told as soon as a session id is read, and again if a compression moves it to a new
+  // one, so the caller can save it well before the run itself is done.
+  constructor(private onSessionId?: (sessionId: string) => void) {}
+
   write(chunk: string): void {
     const lines = chunk.split('\n');
     for (let index = 0; index < lines.length; index++) {
@@ -75,6 +79,7 @@ class HermesResultReader {
       const value = this.oversized ? null : JSON.parse(this.line);
       if (value?.type === 'tool_use') this.toolCalls++;
       if (typeof value?.session_id === 'string' && value.session_id) {
+        if (value.session_id !== this.sessionId) this.onSessionId?.(value.session_id);
         this.sessionId = value.session_id;
       }
       if (value?.type === 'result' && typeof value.text === 'string') {
@@ -181,7 +186,13 @@ function stdinText(preset: Preset | undefined, task: Task): string {
 export async function execute(
   config: RunnerConfig,
   task: Task,
-  opts: { onData?: (chunk: string) => void; signal?: AbortSignal } = {},
+  opts: {
+    onData?: (chunk: string) => void;
+    // Fired as soon as the command names its session, and again if it moves to a new
+    // one. Only hermes-stream-json commands report one.
+    onSessionId?: (sessionId: string) => void;
+    signal?: AbortSignal;
+  } = {},
 ): Promise<Outcome> {
   const preset = presetOf(config);
   const [bin, args] = spawnArgs(config, preset, task);
@@ -206,7 +217,7 @@ export async function execute(
   let stdout = '';
   let stderr = '';
   const hermesResult =
-    config.outputFormat === 'hermes-stream-json' ? new HermesResultReader() : null;
+    config.outputFormat === 'hermes-stream-json' ? new HermesResultReader(opts.onSessionId) : null;
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
   child.stdout.on('data', (chunk: string) => {

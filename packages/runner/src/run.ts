@@ -31,6 +31,10 @@ function taskOf(run: Run) {
   return {
     prompt: run.prompt,
     systemPrompt: run.systemPrompt,
+    // Set only when the server sent one: the run is being resumed after the runner
+    // that held it before died mid run, and the command picks the session back up
+    // instead of starting a new one.
+    sessionId: run.sessionId ?? null,
     model: run.model,
     thinkingLevel: run.thinkingLevel,
     maxTurns: run.maxTurns,
@@ -63,6 +67,9 @@ export async function perform(
   const usage = new UsageReader(config.outputFormat);
   const logins = new LoginUseReader(hermes?.logins ?? new Map());
   const task = taskOf(run);
+  // Reported as soon as it is known, not only with the result: a crash before the run
+  // reports keeps this session for the next claim to resume. Best effort -- a stale
+  // claim or a server that predates this route is not fatal to the run itself.
   const outcome = await execute(
     { ...config, cwd: runCwd(config.cwd, run.workdir) },
     { ...task, toolsets: hermes?.toolsets ?? null, env: { ...task.env, ...hermes?.env } },
@@ -70,6 +77,9 @@ export async function perform(
       onData: (chunk) => {
         usage.write(chunk);
         logins.write(chunk);
+      },
+      onSessionId: (sessionId) => {
+        void client.reportSession(run.id, run.claim, sessionId).catch(() => {});
       },
       signal: stop.signal,
     },

@@ -16,6 +16,7 @@ import {
   controlPlaneHealthUrl,
   controlPlaneRequest,
 } from '#modules/control-plane-workflows/service';
+import { RESUME_LIMIT_ERROR } from '#modules/agents/runner/service';
 
 // The state of the services Plan works with, for the owner's overview on Home. The
 // worker and the bridge report themselves, the worker checks the provisioning service,
@@ -26,7 +27,12 @@ type Service = (typeof SERVICES)[number];
 
 // The api's janitor loops, named the same way in background.ts, which starts them,
 // and in the janitor_run table, which this file reads their last run from.
-export const JANITOR_JOBS = ['run-janitor', 'stage-janitor', 'workflow-schedules'] as const;
+export const JANITOR_JOBS = [
+  'run-janitor',
+  'stage-janitor',
+  'workflow-schedules',
+  'resume-janitor',
+] as const;
 
 // How long a service may go unseen before it counts as down. The worker and the bridge
 // report every 30 seconds, the provisioning service is checked with the worker's report,
@@ -55,6 +61,7 @@ const JANITOR_INTERVAL_MS: Record<(typeof JANITOR_JOBS)[number], number> = {
   'run-janitor': 60_000,
   'stage-janitor': 300_000,
   'workflow-schedules': 600_000,
+  'resume-janitor': 60_000,
 };
 const JANITOR_STALE_FACTOR = 3;
 
@@ -128,6 +135,10 @@ async function runCounts() {
         and ${agentRun.nextAttemptAt} > now()
         and ${agentRun.claimedAt} < now() - make_interval(secs =>
           greatest(coalesce(${agentRun.runBudgetSeconds}, 0), ${RUNNER_STOP_SECONDS}) + ${OVERDUE_GRACE_SECONDS}))::int`,
+      // Waiting on the runner that held it to resume its session, or already resumed
+      // once and running again: either way, this run survived a crash instead of
+      // silently failing.
+      resuming: sql<number>`count(*) filter (where ${agentRun.sessionId} is not null)::int`,
     })
     .from(agentRun)
     .where(eq(agentRun.status, 'pending'));
@@ -137,6 +148,10 @@ async function runCounts() {
     .where(
       and(eq(agentRun.status, 'failed'), gt(agentRun.finishedAt, sql`now() - interval '1 day'`)),
     );
+  const [needsReview] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(agentRun)
+    .where(and(eq(agentRun.status, 'failed'), eq(agentRun.lastError, RESUME_LIMIT_ERROR)));
   const [starts] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(agentTeamStart)
@@ -153,7 +168,9 @@ async function runCounts() {
     waiting: runs?.waiting ?? 0,
     oldestWaitingSince: runs?.oldestWaitingSince ? iso(runs.oldestWaitingSince) : null,
     overdue: runs?.overdue ?? 0,
+    resuming: runs?.resuming ?? 0,
     failedLastDay: failed?.count ?? 0,
+    needsResumeReview: needsReview?.count ?? 0,
     agentTeamStartsWaiting: starts?.count ?? 0,
     provisioningFailed: (provisioning?.count ?? 0) + (deprovisioning?.count ?? 0),
   };

@@ -5,6 +5,8 @@ export type HealthProblem =
   | {
       key:
         | 'overdue'
+        | 'resuming'
+        | 'needsResumeReview'
         | 'agentTeamStartsWaiting'
         | 'stalledWorkflowRuns'
         | 'failedLastDay'
@@ -13,13 +15,18 @@ export type HealthProblem =
     };
 
 // What of the agent runs needs the owner's attention, most urgent first. A count of
-// zero, and one Mastra could not be asked for, is left out.
+// zero, and one Mastra could not be asked for, is left out. `resuming` is not itself a
+// problem -- a run picking its session back up is the point of resuming -- but it is
+// worth naming so the owner sees resilience working rather than wondering why a run
+// they know crashed is still going.
 export function healthProblems(runs: SystemHealth['runs']): HealthProblem[] {
   const problems: HealthProblem[] = [];
   if (runs.waiting > 0)
     problems.push({ key: 'waiting', count: runs.waiting, since: runs.oldestWaitingSince });
   for (const key of [
     'overdue',
+    'resuming',
+    'needsResumeReview',
     'agentTeamStartsWaiting',
     'stalledWorkflowRuns',
     'failedLastDay',

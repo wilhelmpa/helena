@@ -231,7 +231,7 @@ export interface SystemServiceHealth {
   error: string | null;
 }
 
-export type JanitorJob = 'run-janitor' | 'stage-janitor' | 'workflow-schedules';
+export type JanitorJob = 'run-janitor' | 'stage-janitor' | 'workflow-schedules' | 'resume-janitor';
 
 export interface JanitorHealth {
   job: JanitorJob;
@@ -250,7 +250,12 @@ export interface SystemHealth {
     waiting: number;
     oldestWaitingSince: string | null;
     overdue: number;
+    // Waiting to resume, or already resumed, the coding agent session of a runner
+    // that died mid run.
+    resuming: number;
     failedLastDay: number;
+    // Reached the resume limit and need the owner to look at them.
+    needsResumeReview: number;
     agentTeamStartsWaiting: number;
     provisioningFailed: number;
     // Null while Mastra cannot be asked.
@@ -306,6 +311,22 @@ export const getInstanceProjectDefaults = () => request<ProjectDefaults>('/god/p
 
 export const updateInstanceProjectDefaults = (body: ProjectDefaults) =>
   request<ProjectDefaults>('/god/project-defaults', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+
+export interface RunResumeSettings {
+  // How many times a run may resume its coding agent session after the runner
+  // holding it died mid run, before it stops on its own and asks the owner to look
+  // at it. 0 turns resuming off.
+  maxResumes: number;
+}
+
+export const getInstanceRunResumeSettings = () =>
+  request<RunResumeSettings>('/god/run-resume-settings');
+
+export const updateInstanceRunResumeSettings = (body: RunResumeSettings) =>
+  request<RunResumeSettings>('/god/run-resume-settings', {
     method: 'PUT',
     body: JSON.stringify(body),
   });

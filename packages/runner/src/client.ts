@@ -26,6 +26,9 @@ export interface Run {
   // The folder of the issue's area below `cwd`, where the run starts. Absent on a server
   // that predates area folders.
   workdir?: string | null;
+  // The coding agent session to resume, when the runner that held this run before died
+  // mid run and reported one. Absent on a server that predates run resume.
+  sessionId?: string | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -170,6 +173,14 @@ export class Client {
   // Hands a run back to the queue without spending its attempt, for a runner that stops.
   async release(runId: number, claim: number): Promise<void> {
     await this.post(`/agent-runs/${runId}/release${claimQuery(claim)}`);
+  }
+
+  // Saves this run's coding agent session as soon as it is known, not only with the
+  // final result: a crash before the result still leaves a session the next claim can
+  // resume. Best effort -- a stale claim (the run was claimed again) is not fatal, so
+  // the runner keeps working and swallows the refusal itself.
+  async reportSession(runId: number, claim: number | undefined, sessionId: string): Promise<void> {
+    await this.post(`/agent-runs/${runId}/session${claimQuery(claim)}`, { sessionId });
   }
 
   // `usage` is what the run read and wrote: its totals where the command reports them

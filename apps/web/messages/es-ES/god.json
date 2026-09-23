@@ -159,7 +159,11 @@
     "saved": "Los valores por defecto del proyecto se han guardado",
     "projectDefaults": "Valores por defecto del proyecto",
     "mcpEnabled": "Activar MCP en los proyectos nuevos",
-    "mcpEnabledHint": "Un proyecto nuevo está en el alcance de MCP de su equipo desde el momento en que se crea."
+    "mcpEnabledHint": "Un proyecto nuevo está en el alcance de MCP de su equipo desde el momento en que se crea.",
+    "runResume": "Reanudación de ejecuciones",
+    "maxResumes": "Límite de reanudaciones",
+    "maxResumesHint": "Cuántas veces puede una ejecución reanudar su sesión del agente de código después de que el runner que la sostenía muriera a mitad de camino, antes de detenerse por sí sola y pedirte que la revises. 0 desactiva la reanudación: una ejecución interrumpida se reintenta desde cero en su lugar.",
+    "savedRunResume": "Límite de reanudaciones guardado"
   },
   "authentication": {
     "saved": "Los ajustes de autenticación se han guardado",
@@ -336,10 +340,13 @@
     "janitor": {
       "run-janitor": "Limpieza de ejecuciones",
       "stage-janitor": "Limpieza de etapas",
-      "workflow-schedules": "Sincronización de horarios"
+      "workflow-schedules": "Sincronización de horarios",
+      "resume-janitor": "Limpieza de reanudaciones"
     },
     "janitorRan": "se ejecutó hace {time}",
     "janitorCleaned": "{count, plural, one {limpió # elemento} other {limpió # elementos}}",
-    "janitorNeverRan": "aún no se ha ejecutado"
+    "janitorNeverRan": "aún no se ha ejecutado",
+    "resuming": "{count, plural, one {# ejecución se está reanudando} other {# ejecuciones se están reanudando}} tras una caída",
+    "needsResumeReview": "{count, plural, one {# ejecución alcanzó} other {# ejecuciones alcanzaron}} el límite de reanudaciones y necesitan revisión"
   }
 }

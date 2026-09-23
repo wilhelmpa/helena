@@ -665,6 +665,15 @@ export const agentRun = pgTable(
     claims: integer('claims').notNull().default(0),
     // When the latest claim was made, which is when the run's current attempt started.
     claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    // The coding agent session of this run, saved as soon as the runner reads it off the
+    // command's own output rather than only at the end. A claim after a runner died mid
+    // run resumes this session instead of starting over, as long as `resumes` is under
+    // the instance's limit.
+    sessionId: text('session_id'),
+    // How many times this run has been resumed in the same session after an interruption.
+    // Distinct from `attempts`, which a release or a replayed stage lowers; this only
+    // grows, and is what the instance's resume limit checks.
+    resumes: integer('resumes').notNull().default(0),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
