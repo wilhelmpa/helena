@@ -114,7 +114,7 @@ def run_mode_proofs(report, probe, keys, state) -> None:
     try:
         configure({'mode': 'blocked', 'allow': [], 'deny': [], 'mailPorts': False, 'agents': {str(alpha): None}})
         results = probe('alpha', 'alpha', ['curl:https://example.com', 'curl:http://example.com/'])
-        expect(report, 'M', results, 'curl:https://example.com', False, 'http=403', 'blocked: https refused')
+        expect(report, 'M', results, 'curl:https://example.com', False, '403', 'blocked: https refused')
         expect(report, 'M', results, 'curl:http://example.com/', False, 'http=403', 'blocked: http refused')
 
         configure({'mode': 'allowlist', 'allow': ['example.com'], 'deny': []})
@@ -122,13 +122,13 @@ def run_mode_proofs(report, probe, keys, state) -> None:
                                            'curl:https://example.org'])
         expect(report, 'M', results, 'curl:https://example.com', True, 'http=200', 'allowlist: listed domain')
         expect(report, 'M', results, 'curl:https://www.example.com', True, 'http=', 'allowlist: its subdomain')
-        expect(report, 'M', results, 'curl:https://example.org', False, 'http=403', 'allowlist: other domain')
+        expect(report, 'M', results, 'curl:https://example.org', False, '403', 'allowlist: other domain')
 
         configure({'mode': 'open', 'allow': [], 'deny': ['example.org']})
         results = probe('alpha', 'alpha', ['curl:https://example.com', 'curl:https://example.org',
                                            connect('smtp.gmail.com', 587)])
         expect(report, 'M', results, 'curl:https://example.com', True, 'http=200', 'open: public host')
-        expect(report, 'M', results, 'curl:https://example.org', False, 'http=403', 'open: denied domain')
+        expect(report, 'M', results, 'curl:https://example.org', False, '403', 'open: denied domain')
         expect(report, 'M', results, connect('smtp.gmail.com', 587), True, ' 403 ', 'open: mail port closed')
 
         configure({'mailPorts': True})
@@ -139,13 +139,13 @@ def run_mode_proofs(report, probe, keys, state) -> None:
         # a unit of the same project without it is not.
         configure({'mailPorts': False, 'agents': {str(alpha): 'blocked'}})
         results = probe('alpha', 'alpha', ['curl:https://example.com'], agent_id=alpha, work=('run', 1))
-        expect(report, 'M', results, 'curl:https://example.com', False, 'http=403', 'per agent: blocked agent')
+        expect(report, 'M', results, 'curl:https://example.com', False, '403', 'per agent: blocked agent')
         results = probe('alpha', 'alpha', ['curl:https://example.com'])
         expect(report, 'M', results, 'curl:https://example.com', True, 'http=200', 'per agent: rest of the project')
         configure({'agents': {str(alpha): 'allowlist'}, 'allow': ['example.net']})
         results = probe('alpha', 'alpha', ['curl:https://example.net', 'curl:https://example.com'], agent_id=alpha)
         expect(report, 'M', results, 'curl:https://example.net', True, 'http=', 'per agent: allowlist agent, listed')
-        expect(report, 'M', results, 'curl:https://example.com', False, 'http=403', 'per agent: allowlist agent, other')
+        expect(report, 'M', results, 'curl:https://example.com', False, '403', 'per agent: allowlist agent, other')
 
         time.sleep(5)  # the proxy reports every 2 seconds in the test
         status, page = api(state, 'GET', '/projects/ALPHA/agent-network/events?limit=200', owner)

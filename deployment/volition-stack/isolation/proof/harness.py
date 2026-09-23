@@ -188,6 +188,7 @@ def setup(args: argparse.Namespace) -> None:
 
     mkdir(PROOF, 'root', 'root', 0o700)
     mkdir(f'{ROOT}/launcher-state', 'root', 'root', 0o700)
+    mkdir(f'{ROOT}/egress-state', 'vpt-egress', 'vpt-egress', 0o700)
     mkdir(f'{ROOT}/bin', 'root', 'root', 0o755)
     # Registry, as provisioning writes it.
     mkdir(f'{ROOT}/provisioning', 'vpt-hermes', 'vpt-hermes', 0o755)
@@ -342,7 +343,8 @@ def start(args: argparse.Namespace) -> None:
         **common,
         'User=volition-egress': 'User=vpt-egress', 'Group=volition-egress': 'Group=vpt-egress',
         '/etc/volition/agent-egress.token': f'{PROOF}/egress.token',
-        'StateDirectory=volition-egress': 'StateDirectory=vpt-egress',
+        'StateDirectory=volition-egress': f'Environment=STATE_DIRECTORY={ROOT}/egress-state',
+        'StateDirectoryMode=0700': 'UMask=0077',
         'http://127.0.0.1:3000': f'http://127.0.0.1:{state["planPort"]}',
         f'-/srv/volition': f'-/srv/volition -{ROOT}/secrets -{ROOT}/hermes -{PROOF}',
     }, ['--socket-property=SocketUser=root', '--setenv=VOLITION_EGRESS_REFRESH_SEC=2',
@@ -355,7 +357,8 @@ def start(args: argparse.Namespace) -> None:
         **common,
         '/run/volition-agent-launcher': RUN_LAUNCHER,
         'SocketGroup=volition-launcher': 'SocketGroup=vpt-hermes',
-        'StateDirectory=volition-agent-launcher': 'StateDirectory=vpt-launcher',
+        'StateDirectory=volition-agent-launcher': 'UMask=0022',
+        'StateDirectoryMode=0700': 'UMask=0022',
     })
     # A second socket for the same launcher code, open to everyone: it proves the launcher
     # itself refuses a caller that is not the runner, not only the socket's permissions.
@@ -364,7 +367,8 @@ def start(args: argparse.Namespace) -> None:
         '/run/volition-agent-launcher/launch.sock': OPEN_SOCKET,
         'SocketGroup=volition-launcher': 'SocketGroup=vpt-hermes',
         'SocketMode=0660': 'SocketMode=0666',
-        'StateDirectory=volition-agent-launcher': 'StateDirectory=vpt-launcher-open',
+        'StateDirectory=volition-agent-launcher': 'UMask=0022',
+        'StateDirectoryMode=0700': 'UMask=0022',
     })
     time.sleep(0.5)
     # The agents' profiles as they are before the migration: the runner's.
@@ -417,6 +421,9 @@ def teardown(args: argparse.Namespace) -> None:
     stop(args)
     shutil.rmtree(ROOT, ignore_errors=True)
     shutil.rmtree(RUN_AGENTS, ignore_errors=True)
+    for leftover in ('/var/lib/vpt-egress', '/var/lib/vpt-launcher', '/var/lib/vpt-launcher-open',
+                     '/var/lib/private/vpt-egress'):
+        shutil.rmtree(leftover, ignore_errors=True)
     shutil.rmtree(RUN_LAUNCHER, ignore_errors=True)
     removed = []
     if args.users:

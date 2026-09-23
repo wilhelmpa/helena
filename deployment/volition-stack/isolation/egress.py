@@ -470,6 +470,12 @@ async def serve() -> None:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.bind(path)
         sock.listen(256)
+    # The first connection is decided by current settings: a start by socket activation
+    # happens exactly when an agent connects. Without Plan the cached ones apply.
+    try:
+        await asyncio.wait_for(plan.refresh(), 8)
+    except asyncio.TimeoutError:
+        log('Plan did not answer at start; using the cached project settings')
     server = await asyncio.start_unix_server(egress.handle, sock=sock, limit=64 * 1024)
     background = asyncio.ensure_future(plan.loop(
         float(os.environ.get('VOLITION_EGRESS_REFRESH_SEC', '30')),
