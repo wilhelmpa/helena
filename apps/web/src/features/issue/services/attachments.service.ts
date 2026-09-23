@@ -7,6 +7,7 @@ import {
   uploadAttachment,
   replaceAttachment,
   deleteAttachment,
+  relinkAttachment,
 } from '@/lib/api/endpoints/attachments';
 import { qk } from '@/services/queryKeys';
 
@@ -43,5 +44,15 @@ export function useDeleteAttachment(issueId: number) {
       void qc.invalidateQueries({ queryKey: qk.attachments(issueId) });
       void qc.invalidateQueries({ queryKey: qk.issue(issueId) });
     },
+  });
+}
+
+// Points an attachment whose file is missing at another file of the project folder.
+export function useRelinkAttachment(issueId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ publicId, path }: { publicId: string; path: string }) =>
+      relinkAttachment(publicId, path),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.attachments(issueId) }),
   });
 }

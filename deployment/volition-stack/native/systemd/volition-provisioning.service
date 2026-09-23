@@ -41,7 +41,6 @@ Environment=TERMINAL_PUBLIC_URL=http://kingston-server.local/focus/terminal-proj
 Environment=INBOX_BASELINES={}
 Environment=CONNECTIONS_ENABLED=false
 Environment=MAIL_ENABLED=false
-Environment=ARTIFACT_SYNC_ENABLED=false
 Environment=MASTRA_EVENT_INGRESS_ENABLED=false
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/server.mjs
 Restart=on-failure

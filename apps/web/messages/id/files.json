@@ -1,0 +1,111 @@
+{
+  "title": "Berkas",
+  "projectDescription": "Dokumen, lampiran, dan kode proyek ini",
+  "roots": {
+    "label": "Folder",
+    "vault": "Pengetahuan",
+    "code": "Kode",
+    "home": "Beranda",
+    "private": "Pribadi",
+    "templates": "Templat",
+    "projects": "Proyek"
+  },
+  "toolbar": {
+    "filter": "Saring menurut nama",
+    "sort": "Urutkan",
+    "sortName": "Nama",
+    "sortModified": "Diubah",
+    "sortSize": "Ukuran",
+    "ascending": "Naik",
+    "descending": "Turun",
+    "list": "Daftar",
+    "grid": "Kisi",
+    "upload": "Unggah",
+    "newFolder": "Folder baru",
+    "newFile": "Catatan baru",
+    "openInCode": "Buka di VS Code"
+  },
+  "breadcrumb": "Jalur folder",
+  "modified": "{date, date, medium}",
+  "empty": {
+    "folder": "Folder ini kosong.",
+    "folderHint": "Letakkan berkas di sini atau gunakan Unggah.",
+    "filter": "Tidak ada entri yang cocok dengan “{filter}”.",
+    "readOnly": "Plan menampilkan folder ini hanya-baca."
+  },
+  "unreadable": {
+    "title": "Plan tidak dapat membaca folder ini",
+    "body": "Ruang kerja ini milik pengguna agen di server. Buka di VS Code sebagai gantinya.",
+    "missing": "Folder ini tidak ada di server."
+  },
+  "loadError": "Folder tidak dapat dimuat.",
+  "retry": "Coba lagi",
+  "truncated": "Hanya {count} entri pertama yang ditampilkan.",
+  "dropToUpload": "Lepaskan untuk mengunggah ke {folder}",
+  "uploaded": "{count, plural, other {# berkas diunggah}}",
+  "moved": "Dipindahkan ke {folder}",
+  "trashed": "{name} dipindahkan ke tempat sampah",
+  "pathCopied": "Jalur disalin",
+  "copyFailed": "Jalur tidak dapat disalin",
+  "actions": {
+    "more": "Tindakan untuk {name}",
+    "download": "Unduh",
+    "rename": "Ganti nama",
+    "move": "Pindahkan",
+    "copyPath": "Salin jalur",
+    "openInObsidian": "Buka di Obsidian",
+    "openInCode": "Buka di VS Code",
+    "openInDocs": "Buka di Docs",
+    "linkToTask": "Tautkan ke tugas",
+    "trash": "Pindahkan ke tempat sampah",
+    "showInFolder": "Tampilkan di folder"
+  },
+  "dialog": {
+    "newFolder": "Folder baru",
+    "newFile": "Catatan baru",
+    "rename": "Ganti nama",
+    "name": "Nama",
+    "folderName": "Folder baru",
+    "fileName": "Catatan.md",
+    "fileHint": "Berkas .md atau .txt. Catatan Markdown terbuka di Docs.",
+    "create": "Buat",
+    "save": "Simpan",
+    "cancel": "Batal"
+  },
+  "moveDialog": {
+    "title": "Pindahkan {name}",
+    "description": "Buka folder tujuan.",
+    "here": "Pindahkan ke sini"
+  },
+  "trashDialog": {
+    "title": "Pindahkan {name} ke tempat sampah?",
+    "description": "Entri dipindahkan ke folder tempat sampah vault dan dapat dipulihkan dari sana.",
+    "confirm": "Pindahkan ke tempat sampah"
+  },
+  "linkDialog": {
+    "title": "Tautkan ke tugas",
+    "prompt": "Cari tugas",
+    "linked": "Ditautkan ke {identifier}"
+  },
+  "viewer": {
+    "loading": "Memuat…",
+    "tooLarge": "Berkas terlalu besar untuk ditampilkan. Unduh saja.",
+    "error": "Berkas tidak dapat ditampilkan.",
+    "noPreview": "Tidak ada pratinjau untuk jenis berkas ini.",
+    "extracted": "Teks yang diekstrak",
+    "noExtracted": "Belum ada teks yang diekstrak untuk berkas ini.",
+    "zoomIn": "Perbesar",
+    "zoomOut": "Perkecil",
+    "zoomReset": "Paskan"
+  },
+  "picker": {
+    "up": "Naik satu folder",
+    "empty": "Tidak ada apa pun di sini.",
+    "choose": "Pilih"
+  },
+  "attachment": {
+    "missing": "Berkas hilang",
+    "relink": "Pilih berkas lagi",
+    "relinkTitle": "Pilih berkas untuk {name}"
+  }
+}

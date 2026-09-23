@@ -24,16 +24,10 @@ import {
   ConnectionsValidationError,
 } from "./connections.mjs";
 import { createMailService, MailValidationError } from "./mail-service.mjs";
-import { createArtifactSyncService } from "./artifact-sync.mjs";
-import { createThemeService, ThemeValidationError } from "./theme.mjs";
 import {
   createMastraEventService,
   MastraEventError,
 } from "./mastra-events.mjs";
-import {
-  createProjectFilesService,
-  ProjectFilesValidationError,
-} from "./project-files.mjs";
 
 import {
   createSecretStore,
@@ -117,9 +111,7 @@ export function createRequestHandler(
   triage = null,
   connections = null,
   mail = null,
-  theme = null,
   secrets = null,
-  files = null,
   mastraEvents = null,
 ) {
   return async function handle(request, response) {
@@ -249,22 +241,11 @@ export function createRequestHandler(
     const secretSet = request.method === "POST" && pathname === "/api/secrets";
     const secretRoute = secretList || secretSet;
     const mailRoute = pathname.startsWith("/api/mail/");
-    const themeRoute = request.method === "POST" && pathname === "/api/theme";
-    const filesRoute = pathname.startsWith("/api/files/");
-    if (
-      connectionList ||
-      connectionAction ||
-      mailRoute ||
-      themeRoute ||
-      secretRoute ||
-      filesRoute
-    ) {
+    if (connectionList || connectionAction || mailRoute || secretRoute) {
       if (
         (!secrets && secretRoute) ||
         (!connections && (connectionList || connectionAction)) ||
-        (!mail && mailRoute) ||
-        (!theme && themeRoute) ||
-        (!files && filesRoute)
+        (!mail && mailRoute)
       ) {
         json(response, 404, { error: "not_found" });
         return;
@@ -309,10 +290,6 @@ export function createRequestHandler(
           );
           return;
         }
-        if (themeRoute) {
-          json(response, 200, await theme.apply(await requestBody(request)));
-          return;
-        }
         const body = request.method === "GET" ? {} : await requestBody(request);
         const routes = new Map([
           ["POST /api/mail/accounts", () => mail.accountsStatus()],
@@ -328,14 +305,6 @@ export function createRequestHandler(
           ],
           ["POST /api/mail/drafts/send", () => mail.sendDraft(body)],
           ["POST /api/mail/attachment", () => mail.attachment(body)],
-          ["POST /api/files/list", () => files.list(body)],
-          ["POST /api/files/read-text", () => files.readText(body)],
-          ["POST /api/files/create-text", () => files.createText(body)],
-          ["POST /api/files/ensure-folder", () => files.ensureFolder(body)],
-          ["POST /api/files/upsert-text", () => files.upsertText(body)],
-          ["POST /api/files/delete", () => files.deleteText(body)],
-          ["POST /api/files/move", () => files.moveText(body)],
-          ["POST /api/files/download", () => files.download(body)],
         ]);
         const operation = routes.get(`${request.method} ${pathname}`);
         if (!operation) {
@@ -343,36 +312,18 @@ export function createRequestHandler(
           return;
         }
         const result = await operation();
-        if (
-          pathname === "/api/mail/attachment" ||
-          pathname === "/api/files/download"
-        )
-          attachment(response, result);
-        else
-          json(
-            response,
-            pathname === "/api/files/create-text" ||
-              (pathname === "/api/files/upsert-text" && result.created)
-              ? 201
-              : 200,
-            result,
-          );
+        if (pathname === "/api/mail/attachment") attachment(response, result);
+        else json(response, 200, result);
       } catch (error) {
         if (secretRoute && !(error instanceof SecretStoreValidationError)) {
           json(response, 502, {
             error: "secret_store_failed",
             message: "Native secret store operation failed",
           });
-        } else if (error instanceof ProjectFilesValidationError) {
-          json(response, error.status, {
-            error: error.code,
-            message: error.message,
-          });
         } else if (
           error instanceof SecretStoreValidationError ||
           error instanceof ConnectionsValidationError ||
-          error instanceof MailValidationError ||
-          error instanceof ThemeValidationError
+          error instanceof MailValidationError
         ) {
           json(response, 400, {
             error: "invalid_request",
@@ -549,34 +500,19 @@ export function createProvisioningServer(config, options = {}) {
     (config.inboxAccounts?.length
       ? createTriageService(config, options)
       : null);
-  const artifactSync =
-    options.artifactSync ??
-    (config.artifactSyncEnabled
-      ? createArtifactSyncService(config, options)
-      : null);
   const connections =
     options.connections ??
     (config.connectionsEnabled
-      ? createConnectionsService(config, { ...options, artifactSync })
+      ? createConnectionsService(config, options)
       : null);
   const mail =
     options.mail ??
     (config.inboxAccounts?.length && config.mailEnabled
       ? createMailService(config, options)
       : null);
-  const theme =
-    options.theme ??
-    (connections && config.connectionsEnabled
-      ? createThemeService(config, options)
-      : null);
   const secrets =
     options.secrets ??
     (config.connectionsEnabled ? createSecretStore(config, options) : null);
-  const files =
-    options.files ??
-    (config.connectionsEnabled
-      ? createProjectFilesService(config, options)
-      : null);
   const mastraEvents =
     options.mastraEvents ??
     (config.mastraEventIngressEnabled && config.mastraEventToken
@@ -589,9 +525,7 @@ export function createProvisioningServer(config, options = {}) {
     triage,
     connections,
     mail,
-    theme,
     secrets,
-    files,
     mastraEvents,
   );
   const server = http.createServer(handler);

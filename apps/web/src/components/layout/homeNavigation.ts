@@ -5,6 +5,7 @@ import {
   devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
+  homeFilesPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
@@ -19,6 +20,7 @@ export type HomeNavigationId =
   | 'overview'
   | 'allWorkItems'
   | 'inbox'
+  | 'files'
   | 'approvals'
   | 'agentPool'
   | 'organization'
@@ -50,6 +52,7 @@ export function homeNavigation(teamId: number | null, vaultEnabled = true): Home
     { id: 'overview', group: 'work', href: '/' },
     { id: 'allWorkItems', group: 'work', href: tasksPath() },
     { id: 'inbox', group: 'work', href: globalInboxPath() },
+    { id: 'files', group: 'work', href: homeFilesPath() },
     { id: 'approvals', group: 'work', href: approvalsPath() },
     ...teamOnly([
       { id: 'agentPool', group: 'agents', href: agentsPath() },

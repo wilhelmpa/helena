@@ -8,11 +8,14 @@ import { mcpTool } from '#mcp/generate';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { getIssueProjectId } from '#modules/issues/service';
 import { getStorageSettings, MB } from '#modules/settings/service';
+import { ATTACHMENT_INLINE, VIEWER_INLINE } from '#modules/project-files/serve';
+import { serveVaultFile } from '#modules/project-files/service';
 import {
-  AttachmentResponse,
-  AttachmentListResponse,
+  IssueAttachmentResponse,
+  IssueAttachmentListResponse,
   importAttachmentBody,
   issueParams,
+  linkAttachmentBody,
   publicIdParams,
   rawAttachmentQuery,
   uploadAttachmentBody,
@@ -21,24 +24,32 @@ import {
   createAttachment,
   listAttachments,
   getAttachmentByPublicId,
-  replaceAttachmentContent,
+  replaceAttachmentFile,
   deleteAttachmentByPublicId,
   removeAttachmentEmbeds,
+  type AttachmentFile,
   type AttachmentRow,
 } from './service';
 import {
   assertAttachmentUploadAllowed,
-  attachmentObjectKey,
   attachmentObjectResponse,
-  deleteAttachmentObject,
   safeAttachmentFilename,
-  storeAttachmentObject,
 } from './storage';
+import {
+  currentAttachmentPath,
+  discardAttachmentFile,
+  linkedAttachmentFile,
+  purgeAttachmentFiles,
+  storeAttachmentFile,
+  storeReplacement,
+  withFileState,
+} from './vault';
 
 // Public shape returned to the UI: never exposes the internal serial id or the
 // object key. `url` is the public, no-auth download route — it can be embedded in
-// an issue description and fetched by external services.
-function attachmentDto(a: AttachmentRow) {
+// an issue description and fetched by external services. `vaultPath` is where the
+// file is in the vault; `missing` says it is no longer found there.
+function attachmentDto(a: AttachmentRow & { missing?: boolean }) {
   return {
     id: a.publicId,
     filename: a.filename,
@@ -46,7 +57,77 @@ function attachmentDto(a: AttachmentRow) {
     sizeBytes: a.sizeBytes,
     createdAt: a.createdAt,
     url: `/attachments/${a.publicId}/raw`,
+    vaultPath: a.vaultPath,
+    linked: a.linked,
+    missing: a.missing ?? false,
   };
+}
+
+async function projectOfAttachment(publicId: string) {
+  const existing = await getAttachmentByPublicId(publicId);
+  return existing ? getIssueProjectId(existing.issueId) : null;
+}
+
+// Stores the file, then writes the row; a file whose row could not be written is
+// removed again.
+async function attach(projectId: number, issueId: number, file: AttachmentFile) {
+  try {
+    return await createAttachment({ projectId, issueId, ...file });
+  } catch (error) {
+    if (!file.linked) await discardAttachmentFile(file);
+    throw error;
+  }
+}
+
+// Points the row at `file`. The previous file is removed unless `file` is the same
+// file written in place; a new file whose row could not be written is removed again.
+async function replaceWith(
+  publicId: string,
+  projectId: number,
+  previous: AttachmentRow,
+  file: AttachmentFile,
+) {
+  const inPlace = file.vaultPath === previous.vaultPath;
+  let replacement;
+  try {
+    replacement = await replaceAttachmentFile(publicId, projectId, file);
+    if (!replacement) throw new HttpError(404, 'Attachment not found');
+  } catch (error) {
+    if (!file.linked && !inPlace) await discardAttachmentFile(file);
+    throw error;
+  }
+  if (!inPlace) await purgeAttachmentFiles([replacement.replaced]);
+  return replacement.attachment;
+}
+
+// The file of an attachment, served inline for the kinds `inline` allows.
+async function attachmentFile(
+  publicId: string,
+  request: Request,
+  download: boolean,
+  inline: (contentType: string) => boolean,
+) {
+  const row = await getAttachmentByPublicId(publicId);
+  if (!row) throw new HttpError(404, 'Attachment not found');
+  if (row.s3Key) {
+    return attachmentObjectResponse({
+      s3Key: row.s3Key,
+      contentType: row.contentType,
+      filename: row.filename,
+      request,
+      download,
+    });
+  }
+  const vaultPath = await currentAttachmentPath(row);
+  if (!vaultPath) throw new HttpError(404, 'The file of this attachment is missing');
+  return serveVaultFile({
+    vaultPath,
+    filename: row.filename,
+    contentType: row.contentType,
+    request,
+    download,
+    inline,
+  });
 }
 
 export const attachmentRoutes = new Elysia({
@@ -57,73 +138,66 @@ export const attachmentRoutes = new Elysia({
   // Guards for the attachment routes, keyed by how they address the work item:
   // `issueAttachment` for /issues/:issueId/attachments, `attachment` for
   // /attachments/:publicId. Both assert a work_items action on the owning project.
+  // Linking a vault file also needs the documents read permission the Files page
+  // asks for, since the attachment makes the file readable through the issue.
   .macro({
     issueAttachment: entityGuard('work_items', 'Issue not found', (p) =>
       getIssueProjectId(Number(p.issueId)),
     ),
-    attachment: entityGuard('work_items', 'Attachment not found', async (p) => {
-      const existing = await getAttachmentByPublicId(p.publicId);
-      if (!existing) return null;
-      return getIssueProjectId(existing.issueId);
-    }),
+    issueDocuments: entityGuard('documents', 'Issue not found', (p) =>
+      getIssueProjectId(Number(p.issueId)),
+    ),
+    attachment: entityGuard('work_items', 'Attachment not found', (p) =>
+      projectOfAttachment(p.publicId),
+    ),
+    attachmentDocuments: entityGuard('documents', 'Attachment not found', (p) =>
+      projectOfAttachment(p.publicId),
+    ),
   })
   .get(
     '/issues/:issueId/attachments',
     async ({ params }) => {
       const rows = await listAttachments(params.issueId);
-      return rows.map(attachmentDto);
+      return Promise.all(rows.map(async (row) => attachmentDto(await withFileState(row))));
     },
     {
       params: issueParams,
       issueAttachment: 'read',
-      response: { 200: AttachmentListResponse, ...commonErrors },
+      response: { 200: IssueAttachmentListResponse, ...commonErrors },
       detail: {
         summary: 'List attachments',
-        description: "List an issue's attachments by its numeric id.",
+        description:
+          "List an issue's attachments by its numeric id. vaultPath is the file's path in the vault; missing is true when the file is no longer found.",
         ...mcpTool('list_attachments'),
       },
     },
   )
 
-  // Accepts a multipart form with a single "file" field, stores the bytes in the
-  // object store, and records the metadata. Returns the attachment DTO.
+  // Accepts a multipart form with a single "file" field, stores the file in the
+  // issue's folder of the vault, and records the metadata. Returns the attachment DTO.
   .post(
     '/issues/:issueId/attachments',
     async ({ params, body, set, projectId }) => {
-      const issueId = params.issueId;
       const file = body.file;
       if (!(file instanceof File)) throw new HttpError(400, 'No file uploaded (form field "file")');
       if (file.size === 0) throw new HttpError(400, 'Uploaded file is empty');
 
-      const filename = safeAttachmentFilename(file.name);
       const contentType = file.type || 'application/octet-stream';
       await assertAttachmentUploadAllowed(projectId, file.size, contentType);
-
-      const key = attachmentObjectKey(projectId, 'attachments', issueId, filename);
-      await storeAttachmentObject(key, Buffer.from(await file.arrayBuffer()), contentType);
-
-      let row;
-      try {
-        row = await createAttachment({
-          projectId,
-          issueId,
-          s3Key: key,
-          filename,
-          contentType,
-          sizeBytes: file.size,
-        });
-      } catch (error) {
-        await deleteAttachmentObject(key);
-        throw error;
-      }
+      const stored = await storeAttachmentFile(
+        params.issueId,
+        safeAttachmentFilename(file.name),
+        contentType,
+        new Uint8Array(await file.arrayBuffer()),
+      );
       set.status = 201;
-      return attachmentDto(row);
+      return attachmentDto(await attach(projectId, params.issueId, stored));
     },
     {
       body: uploadAttachmentBody,
       params: issueParams,
       issueAttachment: 'edit',
-      response: { 201: AttachmentResponse, ...commonErrors, ...errors(413, 502) },
+      response: { 201: IssueAttachmentResponse, ...commonErrors, ...errors(413, 502) },
       detail: { summary: 'Upload an attachment' },
     },
   )
@@ -135,8 +209,6 @@ export const attachmentRoutes = new Elysia({
   .post(
     '/issues/:issueId/attachments/import',
     async ({ params, body, set, projectId }) => {
-      const issueId = params.issueId;
-      const filename = safeAttachmentFilename(body.filename);
       const { url, contentBase64 } = body;
       if ((url == null) === (contentBase64 == null)) {
         throw new HttpError(400, 'Provide exactly one of url or contentBase64');
@@ -175,32 +247,20 @@ export const attachmentRoutes = new Elysia({
 
       if (bytes.length === 0) throw new HttpError(400, 'The file is empty');
       await assertAttachmentUploadAllowed(projectId, bytes.length, contentType);
-
-      const key = attachmentObjectKey(projectId, 'attachments', issueId, filename);
-      await storeAttachmentObject(key, bytes, contentType);
-
-      let row;
-      try {
-        row = await createAttachment({
-          projectId,
-          issueId,
-          s3Key: key,
-          filename,
-          contentType,
-          sizeBytes: bytes.length,
-        });
-      } catch (error) {
-        await deleteAttachmentObject(key);
-        throw error;
-      }
+      const stored = await storeAttachmentFile(
+        params.issueId,
+        safeAttachmentFilename(body.filename),
+        contentType,
+        bytes,
+      );
       set.status = 201;
-      return attachmentDto(row);
+      return attachmentDto(await attach(projectId, params.issueId, stored));
     },
     {
       params: issueParams,
       body: importAttachmentBody,
       issueAttachment: 'edit',
-      response: { 201: AttachmentResponse, ...commonErrors, ...errors(413, 502) },
+      response: { 201: IssueAttachmentResponse, ...commonErrors, ...errors(413, 502) },
       detail: {
         summary: 'Add an attachment from a URL or base64',
         description: 'Attach a file to an issue without a multipart upload.',
@@ -209,10 +269,33 @@ export const attachmentRoutes = new Elysia({
     },
   )
 
-  // Swaps the bytes behind an attachment, keeping its publicId and so its URL:
+  // Attaches a file that is in the project's vault folder already, without copying
+  // it. Deleting the attachment later leaves the file where it is.
+  .post(
+    '/issues/:issueId/attachments/link',
+    async ({ params, body, set, projectId }) => {
+      const linked = await linkedAttachmentFile(params.issueId, body.path);
+      set.status = 201;
+      return attachmentDto(await attach(projectId, params.issueId, linked));
+    },
+    {
+      params: issueParams,
+      body: linkAttachmentBody,
+      issueAttachment: 'edit',
+      issueDocuments: 'read',
+      response: { 201: IssueAttachmentResponse, ...commonErrors },
+      detail: {
+        summary: 'Link a project file to an issue',
+        description:
+          "Attach a file of the project's vault folder by its path relative to that folder. The file is not copied.",
+      },
+    },
+  )
+
+  // Swaps the file behind an attachment, keeping its publicId and so its URL:
   // an edited image (annotated, cropped) stays the same attachment and every
-  // embed of it in a description shows the new version. The old object is
-  // dropped, and the raw route serves the new bytes because it revalidates.
+  // embed of it in a description shows the new version. The old file moves to the
+  // trash, and the raw route serves the new bytes because it revalidates.
   .put(
     '/attachments/:publicId',
     async ({ params, body, projectId }) => {
@@ -223,37 +306,42 @@ export const attachmentRoutes = new Elysia({
       if (!(file instanceof File)) throw new HttpError(400, 'No file uploaded (form field "file")');
       if (file.size === 0) throw new HttpError(400, 'Uploaded file is empty');
 
-      const filename = safeAttachmentFilename(file.name, existing.filename);
       const contentType = file.type || 'application/octet-stream';
-      await assertAttachmentUploadAllowed(projectId, file.size, contentType, existing.sizeBytes);
-
-      const key = attachmentObjectKey(projectId, 'attachments', existing.issueId, filename);
-      await storeAttachmentObject(key, Buffer.from(await file.arrayBuffer()), contentType);
-
-      let replacement;
-      try {
-        replacement = await replaceAttachmentContent(params.publicId, projectId, {
-          s3Key: key,
-          filename,
-          contentType,
-          sizeBytes: file.size,
-        });
-        if (!replacement) throw new HttpError(404, 'Attachment not found');
-      } catch (error) {
-        await deleteAttachmentObject(key);
-        throw error;
-      }
-
-      // The row already points at the new object, so a failed delete only
-      // orphans the old bytes.
-      await deleteAttachmentObject(replacement.replacedS3Key);
-      return attachmentDto(replacement.attachment);
+      const replacedBytes = existing.linked ? 0 : existing.sizeBytes;
+      await assertAttachmentUploadAllowed(projectId, file.size, contentType, replacedBytes);
+      const stored = await storeReplacement(
+        existing,
+        safeAttachmentFilename(file.name, existing.filename),
+        contentType,
+        new Uint8Array(await file.arrayBuffer()),
+      );
+      return attachmentDto(await replaceWith(params.publicId, projectId, existing, stored));
     },
     {
       body: uploadAttachmentBody,
       attachment: 'edit',
-      response: { 200: AttachmentResponse, ...commonErrors, ...errors(413, 502) },
+      response: { 200: IssueAttachmentResponse, ...commonErrors, ...errors(413, 502) },
       detail: { summary: "Replace an attachment's file" },
+    },
+  )
+
+  // Points an attachment whose file went missing at a file of the project's vault
+  // folder. The chosen file is linked: it stays when the attachment is deleted.
+  .put(
+    '/attachments/:publicId/link',
+    async ({ params, body, projectId }) => {
+      const existing = await getAttachmentByPublicId(params.publicId);
+      if (!existing) throw new HttpError(404, 'Attachment not found');
+      const linked = await linkedAttachmentFile(existing.issueId, body.path);
+      return attachmentDto(await replaceWith(params.publicId, projectId, existing, linked));
+    },
+    {
+      params: publicIdParams,
+      body: linkAttachmentBody,
+      attachment: 'edit',
+      attachmentDocuments: 'read',
+      response: { 200: IssueAttachmentResponse, ...commonErrors },
+      detail: { summary: 'Point an attachment at another project file' },
     },
   )
 
@@ -265,9 +353,9 @@ export const attachmentRoutes = new Elysia({
       // Strip any embed of this attachment from the issue description and its
       // markdown field values, so no broken image is left behind.
       await removeAttachmentEmbeds(row.issueId, row.publicId);
-      // Row is already gone; a failed object delete only orphans bytes, so don't
+      // Row is already gone; a failed file removal only leaves the bytes, so don't
       // fail the request over it.
-      await deleteAttachmentObject(row.s3Key);
+      await purgeAttachmentFiles([row]);
       return noContent();
     },
     {
@@ -275,9 +363,25 @@ export const attachmentRoutes = new Elysia({
       response: { 204: t.Void(), ...accessErrors },
       detail: {
         summary: 'Delete an attachment',
-        description: 'Delete an attachment. Irreversible.',
+        description:
+          'Delete an attachment. Its file moves to the trash of the vault; a linked file stays where it is.',
         ...mcpTool('delete_attachment'),
       },
+    },
+  )
+
+  // The file for the viewer in Plan: PDF, images, audio, video and text open inline,
+  // everything else is a download.
+  .get(
+    '/attachments/:publicId/view',
+    ({ params, query, request }) =>
+      attachmentFile(params.publicId, request, query.download != null, VIEWER_INLINE),
+    {
+      params: publicIdParams,
+      query: rawAttachmentQuery,
+      attachment: 'read',
+      response: { ...commonErrors },
+      detail: { summary: 'Open an attachment in the viewer' },
     },
   )
 
@@ -286,17 +390,8 @@ export const attachmentRoutes = new Elysia({
   // uuid. `?download=1` forces a download instead of inline rendering.
   .get(
     '/attachments/:publicId/raw',
-    async ({ params, query, request }) => {
-      const row = await getAttachmentByPublicId(params.publicId);
-      if (!row) throw new HttpError(404, 'Attachment not found');
-      return attachmentObjectResponse({
-        s3Key: row.s3Key,
-        contentType: row.contentType,
-        filename: row.filename,
-        request,
-        download: query.download != null,
-      });
-    },
+    ({ params, query, request }) =>
+      attachmentFile(params.publicId, request, query.download != null, ATTACHMENT_INLINE),
     {
       params: publicIdParams,
       query: rawAttachmentQuery,

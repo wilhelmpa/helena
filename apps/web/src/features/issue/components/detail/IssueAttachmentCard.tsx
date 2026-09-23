@@ -1,7 +1,7 @@
 import { type DragEvent } from 'react';
-import { Download, PenLine, Plus, Trash2 } from 'lucide-react';
+import { Download, FileWarning, Link2, PenLine, Plus, Trash2 } from 'lucide-react';
 import type { Attachment } from '@/lib/api/endpoints/attachments';
-import { attachmentHtml, isImage, isVideo } from '@/components/common/editor/attachmentEmbed';
+import { attachmentHtml, isImage } from '@/components/common/editor/attachmentEmbed';
 import { formatSize } from '@/utils/fileSize';
 import AttachmentThumb from '@/components/common/attachments/AttachmentThumb';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ export default function IssueAttachmentCard({
   onInsert,
   onAnnotate,
   onDelete,
+  onRelink,
   readOnly,
 }: {
   attachment: Attachment;
@@ -32,11 +33,14 @@ export default function IssueAttachmentCard({
   onInsert: () => void;
   onAnnotate: () => void;
   onDelete: () => void;
+  // Points a missing attachment at another file of the project folder.
+  onRelink: () => void;
   readOnly?: boolean;
 }) {
   const t = useTranslations('issue.attachments');
+  const tFiles = useTranslations('files');
   const tCommon = useTranslations('common');
-  const viewable = isImage(attachment) || isVideo(attachment);
+  const missing = attachment.missing === true;
   const dragProps = readOnly
     ? {}
     : {
@@ -53,12 +57,19 @@ export default function IssueAttachmentCard({
       }`}
     >
       <div className="relative flex aspect-video items-center justify-center bg-muted [&_svg]:size-7">
-        <AttachmentThumb
-          attachment={{ ...attachment, url: thumbnailUrl }}
-          sizes="(min-width: 640px) 12rem, 50vw"
-        />
+        {missing ? (
+          <span className="flex flex-col items-center gap-1 text-xs text-destructive">
+            <FileWarning />
+            {tFiles('attachment.missing')}
+          </span>
+        ) : (
+          <AttachmentThumb
+            attachment={{ ...attachment, url: thumbnailUrl }}
+            sizes="(min-width: 640px) 12rem, 50vw"
+          />
+        )}
 
-        {viewable && (
+        {!missing && (
           <button
             type="button"
             onClick={onOpen}
@@ -73,7 +84,19 @@ export default function IssueAttachmentCard({
             screenshot as often as not, and icons alone drown in it. */}
         <div className="pointer-events-none absolute inset-0 bg-black/30 p-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 max-sm:opacity-100">
           <div className="pointer-events-auto mx-auto flex w-fit items-center gap-0.5 rounded-md border bg-popover p-0.5 shadow-lg shadow-black/30">
-            {!readOnly && (
+            {!readOnly && missing && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                title={tFiles('attachment.relink')}
+                aria-label={tFiles('attachment.relink')}
+                onClick={onRelink}
+              >
+                <Link2 />
+              </Button>
+            )}
+            {!readOnly && !missing && (
               <>
                 <Button
                   variant="ghost"
@@ -99,16 +122,18 @@ export default function IssueAttachmentCard({
                 )}
               </>
             )}
-            <Button variant="ghost" size="icon" className="size-7" asChild title={t('download')}>
-              <a
-                href={`${attachment.url}?download=1`}
-                download={attachment.filename}
-                aria-label={t('downloadFile', { name: attachment.filename })}
-                draggable={false}
-              >
-                <Download />
-              </a>
-            </Button>
+            {!missing && (
+              <Button variant="ghost" size="icon" className="size-7" asChild title={t('download')}>
+                <a
+                  href={`${attachment.url}?download=1`}
+                  download={attachment.filename}
+                  aria-label={t('downloadFile', { name: attachment.filename })}
+                  draggable={false}
+                >
+                  <Download />
+                </a>
+              </Button>
+            )}
             {!readOnly && (
               <Button
                 variant="ghost"

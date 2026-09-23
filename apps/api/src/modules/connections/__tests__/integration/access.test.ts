@@ -21,13 +21,6 @@ describe('interactive communications boundary', () => {
         })
       ).status,
     ).toBe(403);
-    expect(
-      (
-        await apiKeyApi(key.key).theme.sync.post({
-          theme: 'dark',
-        })
-      ).status,
-    ).toBe(403);
     const connections = await authedApi(owner.cookie).connections.get();
     expect(connections.status).toBe(200);
     expect(connections.data?.items).toEqual([]);
@@ -48,13 +41,6 @@ describe('interactive communications boundary', () => {
         await authedApi(owner.cookie, { origin: 'http://localhost:3001' }).connections.secrets.post(
           { name: 'TEST_SECRET', value: 'test', allowedHosts: [] },
         )
-      ).status,
-    ).toBe(503);
-    expect(
-      (
-        await authedApi(owner.cookie, { origin: 'http://localhost:3001' }).theme.sync.post({
-          theme: 'dark',
-        })
       ).status,
     ).toBe(503);
   });

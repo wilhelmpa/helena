@@ -60,9 +60,30 @@ export const notePath = (key: string, boardId: number) => `${notesPath(key)}/${b
 
 export const documentsPath = (key: string) => `${projectPath(key)}/docs`;
 
-// `folder` opens the Files page in that folder of the project.
-export const filesPath = (key: string, folder?: string) =>
-  `${projectPath(key)}/files${folder ? `?path=${encodeURIComponent(folder)}` : ''}`;
+// The Files page and what it opens, all in the address so a link can reopen it: root
+// "code" (the workspace instead of the vault folder), a folder, a file in its viewer.
+export interface FilesLocation {
+  root?: string;
+  project?: string;
+  file?: string | null;
+}
+
+function filesQuery(folder: string | undefined, location: FilesLocation): string {
+  const query = new URLSearchParams();
+  if (location.root) query.set('root', location.root);
+  if (location.project) query.set('project', location.project);
+  if (folder) query.set('path', folder);
+  if (location.file) query.set('file', location.file);
+  const search = query.toString();
+  return search ? `?${search}` : '';
+}
+
+export const filesPath = (key: string, folder?: string, location: FilesLocation = {}) =>
+  `${projectPath(key)}/files${filesQuery(folder, location)}`;
+
+// The Home Files page: Home, Private, Templates and the folder of every project.
+export const homeFilesPath = (folder?: string, location: FilesLocation = {}) =>
+  `/files${filesQuery(folder, location)}`;
 
 export const codePath = (key: string) => `${projectPath(key)}/code`;
 

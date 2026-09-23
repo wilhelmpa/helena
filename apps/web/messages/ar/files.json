@@ -1,0 +1,111 @@
+{
+  "title": "الملفات",
+  "projectDescription": "مستندات هذا المشروع ومرفقاته وشيفرته",
+  "roots": {
+    "label": "المجلدات",
+    "vault": "المعرفة",
+    "code": "الشيفرة",
+    "home": "الرئيسية",
+    "private": "خاص",
+    "templates": "القوالب",
+    "projects": "المشاريع"
+  },
+  "toolbar": {
+    "filter": "تصفية حسب الاسم",
+    "sort": "الترتيب",
+    "sortName": "الاسم",
+    "sortModified": "تاريخ التعديل",
+    "sortSize": "الحجم",
+    "ascending": "تصاعدي",
+    "descending": "تنازلي",
+    "list": "قائمة",
+    "grid": "شبكة",
+    "upload": "رفع",
+    "newFolder": "مجلد جديد",
+    "newFile": "ملاحظة جديدة",
+    "openInCode": "فتح في VS Code"
+  },
+  "breadcrumb": "مسار المجلد",
+  "modified": "{date, date, medium}",
+  "empty": {
+    "folder": "هذا المجلد فارغ.",
+    "folderHint": "أفلت الملفات هنا أو استخدم «رفع».",
+    "filter": "لا يوجد إدخال يطابق «{filter}».",
+    "readOnly": "يعرض Plan هذا المجلد للقراءة فقط."
+  },
+  "unreadable": {
+    "title": "لا يستطيع Plan قراءة هذا المجلد",
+    "body": "مساحة العمل مملوكة لمستخدم الوكلاء على الخادم. افتحها في VS Code بدلاً من ذلك.",
+    "missing": "هذا المجلد غير موجود على الخادم."
+  },
+  "loadError": "تعذر تحميل المجلد.",
+  "retry": "إعادة المحاولة",
+  "truncated": "تُعرض أول {count} إدخالات فقط.",
+  "dropToUpload": "أفلت للرفع إلى {folder}",
+  "uploaded": "{count, plural, zero {لم يُرفع أي ملف} one {تم رفع ملف واحد} two {تم رفع ملفين} few {تم رفع # ملفات} many {تم رفع # ملفًا} other {تم رفع # ملف}}",
+  "moved": "نُقل إلى {folder}",
+  "trashed": "نُقل {name} إلى سلة المهملات",
+  "pathCopied": "تم نسخ المسار",
+  "copyFailed": "تعذر نسخ المسار",
+  "actions": {
+    "more": "إجراءات {name}",
+    "download": "تنزيل",
+    "rename": "إعادة التسمية",
+    "move": "نقل",
+    "copyPath": "نسخ المسار",
+    "openInObsidian": "فتح في Obsidian",
+    "openInCode": "فتح في VS Code",
+    "openInDocs": "فتح في المستندات",
+    "linkToTask": "ربط بمهمة",
+    "trash": "نقل إلى سلة المهملات",
+    "showInFolder": "إظهار في المجلد"
+  },
+  "dialog": {
+    "newFolder": "مجلد جديد",
+    "newFile": "ملاحظة جديدة",
+    "rename": "إعادة التسمية",
+    "name": "الاسم",
+    "folderName": "مجلد جديد",
+    "fileName": "ملاحظة.md",
+    "fileHint": "ملف ‎.md أو ‎.txt. تُفتح ملاحظة Markdown في المستندات.",
+    "create": "إنشاء",
+    "save": "حفظ",
+    "cancel": "إلغاء"
+  },
+  "moveDialog": {
+    "title": "نقل {name}",
+    "description": "افتح المجلد الذي تريد النقل إليه.",
+    "here": "نقل إلى هنا"
+  },
+  "trashDialog": {
+    "title": "نقل {name} إلى سلة المهملات؟",
+    "description": "يُنقل إلى مجلد سلة المهملات في الخزنة ويمكن استعادته من هناك.",
+    "confirm": "نقل إلى سلة المهملات"
+  },
+  "linkDialog": {
+    "title": "ربط بمهمة",
+    "prompt": "البحث في المهام",
+    "linked": "تم الربط بـ {identifier}"
+  },
+  "viewer": {
+    "loading": "جارٍ التحميل…",
+    "tooLarge": "الملف كبير جدًا لعرضه هنا. نزّله بدلاً من ذلك.",
+    "error": "تعذر عرض الملف.",
+    "noPreview": "لا تتوفر معاينة لهذا النوع من الملفات.",
+    "extracted": "النص المستخرج",
+    "noExtracted": "لا يتوفر نص مستخرج لهذا الملف بعد.",
+    "zoomIn": "تكبير",
+    "zoomOut": "تصغير",
+    "zoomReset": "ملاءمة"
+  },
+  "picker": {
+    "up": "مجلد واحد لأعلى",
+    "empty": "لا يوجد شيء هنا.",
+    "choose": "اختيار"
+  },
+  "attachment": {
+    "missing": "الملف مفقود",
+    "relink": "اختيار الملف من جديد",
+    "relinkTitle": "اختر الملف لـ {name}"
+  }
+}

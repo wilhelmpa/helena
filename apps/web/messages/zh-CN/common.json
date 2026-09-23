@@ -209,6 +209,5 @@
     "page": "第 {number} 页",
     "perPage": "每页",
     "range": "第 {first}-{last} 项，共 {total} 项"
-  },
-  "themeSyncPartial": "Theme updated in Volition, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
+  }
 }
