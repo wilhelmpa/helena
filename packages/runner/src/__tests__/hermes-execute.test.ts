@@ -76,6 +76,31 @@ describe('Hermes subprocess adapter', () => {
     });
   });
 
+  it("reports the run's token totals from the Hermes result, cache included", async () => {
+    const outcome = await streamOutcome(
+      [
+        JSON.stringify({ type: 'text', text: 'Done.' }),
+        JSON.stringify({
+          type: 'result',
+          text: 'Done.',
+          exit_code: 0,
+          tokens: { input: 1_200, output: 340, total: 9_540, cache_read: 8_000, cache_write: 0 },
+        }),
+      ].join('\n'),
+    );
+    expect(outcome).toEqual({
+      status: 'success',
+      output: 'Done.',
+      usage: { inputTokens: 9_200, outputTokens: 340 },
+    });
+
+    const failed = await streamOutcome(
+      JSON.stringify({ type: 'result', text: 'Stopped', exit_code: 1, tokens: { input: 50 } }),
+    );
+    expect(failed).toMatchObject({ status: 'failed', usage: { inputTokens: 50, outputTokens: 0 } });
+    expect(await streamOutcome('{"type":"result","text":"No counts"}')).not.toHaveProperty('usage');
+  });
+
   it('honors failure reported by the Hermes result', async () => {
     const outcome = await streamOutcome('{"type":"result","text":"Cannot finish","exit_code":2}\n');
     expect(outcome).toEqual({

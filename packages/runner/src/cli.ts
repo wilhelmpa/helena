@@ -64,7 +64,8 @@ async function handle(config: RunnerConfig, client: Client, log: Log, run: Run):
   log(`${label}: started (${run.trigger})`);
   try {
     // Read as the command writes, not off the outcome: only the tail of the output is
-    // kept, and the line carrying the counts can fall outside it.
+    // kept, and the line carrying the counts can fall outside it. A command that reports
+    // the totals of the run has them on the outcome, and those are what the run cost.
     const usage = new UsageReader(config.outputFormat);
     const outcome = await withHeartbeat(
       log,
@@ -72,7 +73,7 @@ async function handle(config: RunnerConfig, client: Client, log: Log, run: Run):
       execute(config, taskOf(run), { onData: (chunk) => usage.write(chunk) }),
     );
     usage.end();
-    await client.report(run.id, { ...outcome, usage: usage.value() });
+    await client.report(run.id, { ...outcome, usage: outcome.usage ?? usage.value() });
     log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
   } catch (err) {
     // The command itself never throws here; this is the runner failing to run or

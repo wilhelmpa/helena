@@ -109,8 +109,9 @@ export class Client {
     await this.post(`/agent-runs/${runId}/heartbeat`);
   }
 
-  // `usage` is what the last model call of the run read and wrote. Left out where the
-  // command reported nothing about it, which stores the run without counts.
+  // `usage` is what the run read and wrote: its totals where the command reports them
+  // (Hermes), otherwise its last model call. Left out where the command reported
+  // nothing about it, which stores the run without counts.
   async report(
     runId: number,
     result: {

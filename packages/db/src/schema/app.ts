@@ -672,9 +672,10 @@ export const agentRun = pgTable(
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
     lastError: text('last_error'),
     output: text('output'),
-    // What the last model call of the run read and wrote, cache included. Null for a run
-    // that finished before this was recorded, and for one whose agent reports no counts;
-    // the run history shows nothing for either.
+    // What the run read, cache included, and wrote: the totals of every model call of the
+    // run where the agent reports them (the Hermes runner does), otherwise the last model
+    // call. Null for a run that finished before this was recorded, and for one whose agent
+    // reports no counts; the run history shows nothing for either.
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
     // The limits the runner hands to the agent's command for this run: tool-calling

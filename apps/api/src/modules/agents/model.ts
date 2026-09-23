@@ -37,15 +37,17 @@ export const runBudgetSecondsLimit = { minimum: 60, maximum: 7_200 };
 export const runContextTokens = t.Optional(
   t.Number({
     description:
-      'The tokens the last model call of this run read and wrote. Absent for a run that ' +
-      'finished before this was recorded and for one whose agent reports no counts.',
+      'The tokens this run read and wrote: the totals of the run where its agent reports ' +
+      'them (Hermes), otherwise its last model call. Absent for a run that finished before ' +
+      'this was recorded and for one whose agent reports no counts.',
   }),
 );
 
-// What the last model call of an answer read, cache included, and what it wrote, as a
-// runner reports it. Left out by a command that reported nothing about it, which leaves
-// the counts already stored; null where the command reports none a context size can be
-// read from. Shared by the chat result and the run result, which report the same thing.
+// What an answer or a run read, cache included, and what it wrote, as a runner reports
+// it: for a chat answer its last model call, for a run the totals of the run where the
+// command reports them (Hermes), otherwise its last model call. Left out by a command
+// that reported nothing about it, which leaves the counts already stored; null where the
+// command reports none. Shared by the chat result and the run result.
 export const contextUsageBody = t.Optional(
   t.Nullable(
     t.Object({
