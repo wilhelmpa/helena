@@ -1,9 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import { chatPath, homeChatPath, type ChatLocation } from '@/utils/paths';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import { artifactPlacement, chatLayoutMode } from '../../utils/chatLayout';
 import type { Artifact } from '../../utils/artifacts';
@@ -12,10 +10,20 @@ import ChatThreadView from './ChatThreadView';
 import ChatEmptyState from './ChatEmptyState';
 import ArtifactPanel from './ArtifactPanel';
 
+export interface ChatLocation {
+  agentId: number | null;
+  threadId: string | null;
+}
+
 export interface ChatWorkspaceProps {
   scopeKey: string;
   projectKey: string | null;
   agents: AiAgent[];
+  // Controlled: the caller owns where "here" is — the URL for the full page
+  // (ChatWorkspaceRoot), local state for the tool panel (panel/NativeChatWorkspace) —
+  // so the same component works whether or not it owns the address bar.
+  location: ChatLocation;
+  onNavigate: (next: ChatLocation) => void;
 }
 
 // The claude.ai-style chat: a chat list, the open conversation with its composer, and
@@ -23,27 +31,29 @@ export interface ChatWorkspaceProps {
 // layout instead of three columns, so the same component reads correctly full page, in
 // a split view, or in the tool panel. One agent per chat; picking an agent starts a new
 // one (see NewChatAgentPicker), it never becomes a group chat.
-export default function ChatWorkspace({ scopeKey, projectKey, agents }: ChatWorkspaceProps) {
-  const router = useRouter();
-  const params = useSearchParams();
+export default function ChatWorkspace({
+  scopeKey,
+  projectKey,
+  agents,
+  location,
+  onNavigate,
+}: ChatWorkspaceProps) {
   const [rootRef, width] = useContainerWidth<HTMLDivElement>();
   const [listOpen, setListOpen] = useState(false);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [artifactOpen, setArtifactOpen] = useState(false);
 
-  const agentParam = params.get('agent');
-  const agentId = agentParam ? Number(agentParam) : (agents[0]?.id ?? null);
-  const threadId = params.get('thread');
+  const agentId = location.agentId ?? agents[0]?.id ?? null;
+  const threadId = location.threadId;
 
   const go = useCallback(
-    (next: ChatLocation) => {
-      const location: ChatLocation = {
-        agent: next.agent !== undefined ? next.agent : agentId,
-        thread: next.thread !== undefined ? next.thread : threadId,
-      };
-      router.push(projectKey ? chatPath(projectKey, location) : homeChatPath(location));
+    (next: Partial<ChatLocation>) => {
+      onNavigate({
+        agentId: next.agentId !== undefined ? next.agentId : agentId,
+        threadId: next.threadId !== undefined ? next.threadId : threadId,
+      });
     },
-    [router, projectKey, agentId, threadId],
+    [onNavigate, agentId, threadId],
   );
 
   const selectThread = useCallback(
@@ -51,7 +61,7 @@ export default function ChatWorkspace({ scopeKey, projectKey, agents }: ChatWork
       setArtifact(null);
       setArtifactOpen(false);
       setListOpen(false);
-      go({ agent: thread.agentId, thread: thread.id });
+      go({ agentId: thread.agentId, threadId: thread.id });
     },
     [go],
   );
@@ -61,14 +71,14 @@ export default function ChatWorkspace({ scopeKey, projectKey, agents }: ChatWork
       setArtifact(null);
       setArtifactOpen(false);
       setListOpen(false);
-      go({ agent: newAgentId, thread: null });
+      go({ agentId: newAgentId, threadId: null });
     },
     [go],
   );
 
   const onThreadCreated = useCallback(
     (newThreadId: string) => {
-      if (newThreadId !== threadId) go({ thread: newThreadId });
+      if (newThreadId !== threadId) go({ threadId: newThreadId });
     },
     [go, threadId],
   );
