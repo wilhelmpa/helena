@@ -24,7 +24,6 @@ describe('home sidebar navigation', () => {
       { id: 'overview', group: 'work', href: '/' },
       { id: 'allWorkItems', group: 'work', href: '/tasks' },
       { id: 'inbox', group: 'work', href: '/inbox' },
-      { id: 'chat', group: 'work', href: '/chat' },
       { id: 'files', group: 'work', href: '/files' },
       { id: 'approvals', group: 'work', href: '/approvals' },
       { id: 'agentPool', group: 'agents', href: '/agents' },
@@ -45,6 +44,8 @@ describe('home sidebar navigation', () => {
     assert.ok(!ids.includes('notifications'));
     assert.ok(!ids.includes('workItems'));
     assert.ok(!ids.includes('apiDocs'));
+    // The chat lives in the tool panel, not in the navigation.
+    assert.ok(!ids.includes('chat'));
   });
 
   test('lists Home Docs for the instance owner only', () => {
@@ -54,11 +55,10 @@ describe('home sidebar navigation', () => {
       homeNavigation(42, true).find((item) => item.id === 'docs'),
       { id: 'docs', group: 'work', href: '/docs' },
     );
-    assert.deepEqual(ids(true).slice(0, 7), [
+    assert.deepEqual(ids(true).slice(0, 6), [
       'overview',
       'allWorkItems',
       'inbox',
-      'chat',
       'files',
       'approvals',
       'docs',

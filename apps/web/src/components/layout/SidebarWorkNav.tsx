@@ -5,14 +5,12 @@ import {
   Folder,
   Inbox,
   LayoutDashboard,
-  MessageCircle,
   RefreshCw,
   SquareKanban,
   StickyNote,
   Target,
 } from 'lucide-react';
 import {
-  chatPath,
   cyclesPath,
   dashboardsPath,
   documentsPath,
@@ -74,15 +72,6 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
             active={!!projectKey && pathname === inboxPath(projectKey)}
             disabled={disabled}
           />
-          {can('ai_agents', 'read') && (
-            <SidebarNavItem
-              href={projectKey ? chatPath(projectKey) : '#'}
-              icon={MessageCircle}
-              label={t('chat')}
-              active={pathname.includes('/chat')}
-              disabled={disabled}
-            />
-          )}
           {features.documents && can('documents', 'read') && (
             <SidebarNavItem
               href={projectKey ? documentsPath(projectKey) : '#'}
