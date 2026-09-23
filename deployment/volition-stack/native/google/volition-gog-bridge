@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+# Runs gog as volition-google with its own home and keyring. The owner reaches it through
+# sudo (see sudoers-gog); no agent user can read the home, the keyring or its password.
+import os
+import sys
+from pathlib import Path
+
+home = '/var/lib/volition-google/gog'
+binary = '/usr/local/libexec/volition-gog'
+os.umask(0o077)
+environment = os.environ.copy()
+environment['HOME'] = '/var/lib/volition-google'
+environment['GOG_KEYRING_PASSWORD'] = Path(home, 'keyring.pass').read_text(encoding='utf-8').rstrip('\r\n')
+os.execve(binary, [binary, '--home', home, *sys.argv[1:]], environment)
