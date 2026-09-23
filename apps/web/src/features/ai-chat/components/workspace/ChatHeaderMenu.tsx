@@ -2,23 +2,24 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import {
   Archive,
   ArchiveRestore,
-  MoreVertical,
+  ListPlus,
+  MoreHorizontal,
   NotebookPen,
+  Pencil,
   Pin,
   PinOff,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
-import { chatPath, homeChatPath } from '@/utils/paths';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -27,21 +28,30 @@ import { useChatListMutations } from '../../hooks/useChatList';
 import { useSaveChatNote } from '../../hooks/useSaveChatNote';
 import type { PlanUIMessage } from '../../utils/chatMessages';
 
+// The open chat's own actions: rename, pin, turn it into a task, keep it as a note,
+// archive, delete. Deleting hands the view back to the workspace (`onDeleted`) instead
+// of navigating, so it works the same in the tool panel, which owns no address.
 export default function ChatHeaderMenu({
   scopeKey,
   threadId,
   chat,
   messages,
   agentName,
+  onRename,
+  onToIssue,
+  onDeleted,
 }: {
   scopeKey: string;
   threadId: string;
   chat: ChatSummary | undefined;
   messages: PlanUIMessage[];
   agentName: string;
+  onRename: () => void;
+  // Absent outside a project, where there is no backlog to add a task to.
+  onToIssue?: () => void;
+  onDeleted: () => void;
 }) {
   const t = useTranslations('chatWorkspace');
-  const router = useRouter();
   const { pin, archive, trash } = useChatListMutations();
   const saveNote = useSaveChatNote();
   const [deleting, setDeleting] = useState(false);
@@ -52,11 +62,14 @@ export default function ChatHeaderMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={t('list.moreActions')}>
-            <MoreVertical className="size-4" />
+          <Button variant="ghost" size="icon" className="size-8" aria-label={t('list.moreActions')}>
+            <MoreHorizontal className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={onRename}>
+            <Pencil className="size-4" /> {t('list.rename')}
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => pin.mutate({ threadId, pinned: !chat.pinned })}>
             {chat.pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
             {t(chat.pinned ? 'list.unpin' : 'list.pin')}
@@ -74,6 +87,11 @@ export default function ChatHeaderMenu({
           >
             <NotebookPen className="size-4" /> {t('messages.saveAsNote')}
           </DropdownMenuItem>
+          {onToIssue && (
+            <DropdownMenuItem onSelect={onToIssue}>
+              <ListPlus className="size-4" /> {t('issue.fromChat')}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onSelect={() => archive.mutate({ threadId, archived: chat.archivedAt == null })}
           >
@@ -84,6 +102,7 @@ export default function ChatHeaderMenu({
             )}
             {t(chat.archivedAt != null ? 'list.unarchive' : 'list.archive')}
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
             <Trash2 className="size-4" /> {t('list.delete')}
           </DropdownMenuItem>
@@ -97,7 +116,7 @@ export default function ChatHeaderMenu({
           onConfirm={async () => {
             await trash.mutateAsync(threadId);
             setDeleting(false);
-            router.push(chat.project ? chatPath(chat.project.key) : homeChatPath());
+            onDeleted();
           }}
         >
           <p className="text-sm text-muted-foreground">

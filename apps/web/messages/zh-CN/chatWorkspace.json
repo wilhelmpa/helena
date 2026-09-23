@@ -44,8 +44,9 @@
     "purged": "聊天已永久删除。"
   },
   "empty": {
-    "title": "没有打开的聊天",
-    "description": "选择一个代理来开始新的聊天。每个聊天只与一个代理进行——要与另一个代理交谈，请新建一个聊天。"
+    "noAgentsTitle": "没有可以对话的智能体",
+    "noAgentsDescription": "这里还没有可以开始对话的智能体。添加一个，或者给现有智能体开通此项目的访问权限。",
+    "manageAgents": "管理智能体"
   },
   "messages": {
     "transcript": "消息",
@@ -72,7 +73,11 @@
     "noteSaveFailed": "无法将聊天保存为笔记。",
     "noteQuestion": "问题",
     "noteAnswer": "{agent} 的回答",
-    "noteSource": "与 {agent} 的聊天，保存于 {date}"
+    "noteSource": "与 {agent} 的聊天，保存于 {date}",
+    "waitingForRunner": "正在等待 {agent}——它的运行器离线。运行器恢复后开始回答。",
+    "restoreFailedTitle": "无法加载此对话",
+    "restoreFailed": "无法读取其消息。请检查连接后重试。",
+    "retry": "重试"
   },
   "composer": {
     "placeholder": "给 {agent} 发消息…",
@@ -146,5 +151,35 @@
     "approvedBy": "由 {name} 批准",
     "rejectedBy": "由 {name} 拒绝",
     "loading": "正在加载请求…"
+  },
+  "newChat": {
+    "title": "与 {agent} 的新对话",
+    "offlineHint": "它的运行器目前未连接。消息会在队列中等待，运行器恢复后即会回复。",
+    "pickAgent": "选择此对话的智能体"
+  },
+  "agents": {
+    "status": {
+      "running": "工作中",
+      "waiting": "等待你处理",
+      "ready": "就绪",
+      "offline": "离线",
+      "never": "从未连接",
+      "paused": "已暂停",
+      "template": "模板——添加到项目后才能与其对话"
+    },
+    "runtimeExternal": "外部",
+    "switch": "正在与 {agent} 对话——与其他智能体开始新对话",
+    "newChatWith": "新对话，对象…",
+    "templates": "模板"
+  },
+  "interrupted": {
+    "lost": "与回答的连接已断开。{agent} 可能仍在处理。",
+    "stopped": "回答已停止。",
+    "failed": "回答在完成前中断了。",
+    "sendFailed": "消息未能发送。",
+    "reconnect": "重新连接",
+    "continue": "继续",
+    "continuePrompt": "请从被打断的地方继续。",
+    "resend": "重新发送"
   }
 }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 import { Chat } from '@ai-sdk/react';
+import { chatStreamConfig } from '@/lib/api/endpoints/agentChat';
 import { PlanChatTransport } from './planChatTransport';
 import type { PlanUIMessage } from '../utils/chatMessages';
 
@@ -199,7 +200,7 @@ describe('PlanChatTransport', () => {
     assert.equal(transport.resume, null);
   });
 
-  it('asks the API to stop the answer when the chat is stopped', async () => {
+  it('only closes the stream when the chat is left, and stops the answer on cancel', async () => {
     const calls: Call[] = [];
     globalThis.fetch = (async (input, init) => {
       const url = new URL(String(input));
@@ -215,13 +216,96 @@ describe('PlanChatTransport', () => {
         ),
       );
     }) as typeof fetch;
-    const { chat } = chatWith(new PlanChatTransport('WEB', 4));
+    const transport = new PlanChatTransport('WEB', 4);
+    const { chat } = chatWith(transport);
 
     const sending = chat.sendMessage({ text: 'Long job' });
     await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.deepEqual(transport.active, { agentId: 4, messageId: 12 });
+    // Leaving the conversation (the view unmounts) only stops following the answer —
+    // the agent keeps working, the chat list shows it running.
     await chat.stop();
     await sending;
     assert.equal(chat.status, 'ready');
+    assert.ok(!calls.some((call) => call.path.endsWith('/cancel')));
+
+    // Pressing stop is its own request.
+    transport.active = { agentId: 4, messageId: 12 };
+    await transport.cancel();
     assert.ok(calls.some((call) => call.path === '/projects/WEB/ai-agents/4/chat/12/cancel'));
+  });
+
+  it('keeps reading through events that map to nothing (the answer used to hang)', async () => {
+    // What a real runner sends: lifecycle events without anything to show, one after
+    // another, each arriving on its own. A stream that handed over nothing on a pull was
+    // never pulled again and stayed at "Thinking …" with the whole answer already sent.
+    const events = [
+      { type: 'RUN_STARTED' },
+      { role: 'assistant', type: 'TEXT_MESSAGE_START', messageId: 'msg-12' },
+      { type: 'TEXT_MESSAGE_CONTENT', delta: 'OK', messageId: 'msg-12' },
+      { type: 'TEXT_MESSAGE_END', messageId: 'msg-12' },
+      { type: 'RUN_FINISHED' },
+    ];
+    globalThis.fetch = (async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/chat')) {
+        return Response.json({ threadId: 't', messageId: 12, userMessageId: 11 });
+      }
+      const encoder = new TextEncoder();
+      const body = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          for (const [i, event] of events.entries()) {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+            controller.enqueue(encoder.encode(`id: ${i + 1}\ndata: ${JSON.stringify(event)}\n\n`));
+          }
+          controller.close();
+        },
+      });
+      return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
+    }) as typeof fetch;
+    const { chat } = chatWith(new PlanChatTransport('WEB', 4));
+
+    await Promise.race([
+      chat.sendMessage({ text: 'Test: answer only with OK.' }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('The answer hung')), 2000)),
+    ]);
+    assert.equal(chat.status, 'ready');
+    assert.deepEqual(chat.messages[1].parts.map(plain), [
+      { type: 'text', text: 'OK', state: 'done' },
+    ]);
+  });
+
+  it('picks a dropped stream up after the last event, and marks an answer it lost', async () => {
+    const saved = { ...chatStreamConfig };
+    chatStreamConfig.backoffMs = 1;
+    chatStreamConfig.retries = 2;
+    try {
+      const streams: string[] = [];
+      globalThis.fetch = (async (input) => {
+        const url = new URL(String(input));
+        if (url.pathname.endsWith('/chat')) {
+          return Response.json({ threadId: 't', messageId: 12, userMessageId: 11 });
+        }
+        streams.push(url.search);
+        // The first connection delivers half the answer and drops; every later one
+        // fails outright.
+        if (streams.length > 1) throw new TypeError('network error');
+        return new Response(
+          `id: 7\ndata: ${JSON.stringify({ type: 'TEXT_MESSAGE_CONTENT', delta: 'Half' })}\n\n`,
+          { headers: { 'content-type': 'text/event-stream' } },
+        );
+      }) as typeof fetch;
+      const { chat } = chatWith(new PlanChatTransport('WEB', 4));
+
+      await chat.sendMessage({ text: 'Q' });
+      assert.deepEqual(streams, ['?after=0', '?after=7', '?after=7', '?after=7']);
+      assert.equal(chat.status, 'ready');
+      assert.equal(chat.messages[1].metadata?.interrupted, true);
+      assert.deepEqual(chat.messages[1].parts.map(plain), [
+        { type: 'text', text: 'Half', state: 'done' },
+      ]);
+    } finally {
+      Object.assign(chatStreamConfig, saved);
+    }
   });
 });

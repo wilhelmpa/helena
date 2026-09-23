@@ -44,8 +44,9 @@
     "purged": "Obrolan dihapus selamanya."
   },
   "empty": {
-    "title": "Tidak ada obrolan yang terbuka",
-    "description": "Pilih agen untuk memulai obrolan baru. Setiap obrolan hanya dengan satu agen — untuk bicara dengan agen lain, mulai obrolan baru."
+    "noAgentsTitle": "Tidak ada agen untuk diajak chat",
+    "noAgentsDescription": "Belum ada agen di sini yang bisa diajak memulai chat. Tambahkan satu, atau beri agen yang ada akses ke proyek ini.",
+    "manageAgents": "Kelola agen"
   },
   "messages": {
     "transcript": "Pesan",
@@ -72,7 +73,11 @@
     "noteSaveFailed": "Obrolan tidak bisa disimpan sebagai catatan.",
     "noteQuestion": "Pertanyaan",
     "noteAnswer": "Jawaban {agent}",
-    "noteSource": "Obrolan dengan {agent}, disimpan {date}"
+    "noteSource": "Obrolan dengan {agent}, disimpan {date}",
+    "waitingForRunner": "Menunggu {agent} — runner-nya offline. Jawaban dimulai begitu runner kembali.",
+    "restoreFailedTitle": "Chat ini tidak dapat dimuat",
+    "restoreFailed": "Pesannya tidak dapat dibaca. Periksa koneksi lalu coba lagi.",
+    "retry": "Coba lagi"
   },
   "composer": {
     "placeholder": "Pesan untuk {agent}…",
@@ -146,5 +151,35 @@
     "approvedBy": "Disetujui oleh {name}",
     "rejectedBy": "Ditolak oleh {name}",
     "loading": "Memuat permintaan…"
+  },
+  "newChat": {
+    "title": "Chat baru dengan {agent}",
+    "offlineHint": "Runner-nya sedang tidak terhubung. Pesan menunggu di antrean dan dijawab begitu runner kembali.",
+    "pickAgent": "Pilih agen untuk chat ini"
+  },
+  "agents": {
+    "status": {
+      "running": "Sedang bekerja",
+      "waiting": "Menunggu Anda",
+      "ready": "Siap",
+      "offline": "Offline",
+      "never": "Belum pernah terhubung",
+      "paused": "Dijeda",
+      "template": "Templat — tambahkan ke proyek untuk chat dengannya"
+    },
+    "runtimeExternal": "Eksternal",
+    "switch": "Chat dengan {agent} — mulai chat baru dengan agen lain",
+    "newChatWith": "Chat baru dengan …",
+    "templates": "Templat"
+  },
+  "interrupted": {
+    "lost": "Koneksi ke jawaban terputus. {agent} mungkin masih mengerjakannya.",
+    "stopped": "Jawaban dihentikan.",
+    "failed": "Jawaban terputus sebelum selesai.",
+    "sendFailed": "Pesan tidak dapat dikirim.",
+    "reconnect": "Sambungkan lagi",
+    "continue": "Lanjutkan",
+    "continuePrompt": "Silakan lanjutkan dari bagian saat kamu terputus.",
+    "resend": "Kirim lagi"
   }
 }

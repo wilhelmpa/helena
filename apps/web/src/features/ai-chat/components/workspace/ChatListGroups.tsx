@@ -72,9 +72,9 @@ export default function ChatListGroups({
 
   if (query.isLoading) {
     return (
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} className="h-12 w-full rounded-md" />
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <Skeleton key={index} className="h-8 w-full rounded-md" />
         ))}
       </div>
     );
@@ -82,17 +82,22 @@ export default function ChatListGroups({
 
   if (chats.length === 0) {
     return (
-      <p className="flex-1 px-4 py-8 text-center text-sm text-muted-foreground">
+      <p className="min-h-0 flex-1 px-4 py-6 text-center text-sm text-muted-foreground">
         {q ? t('list.noMatches') : t(`list.empty.${view}`)}
       </p>
     );
   }
 
+  // Styled after the sidebar's groups: a 32px label in 12px medium at 70%, rows packed
+  // 2px apart.
   return (
-    <nav aria-label={t('list.title')} className="flex-1 space-y-4 overflow-y-auto p-2 pb-4">
+    <nav
+      aria-label={t('list.title')}
+      className="min-h-0 flex-1 scrollbar-thin space-y-2 overflow-y-auto px-2 pb-2"
+    >
       {groups.map((group) => (
         <div key={group.key}>
-          <h3 className="px-2 pb-1 text-xs font-medium text-muted-foreground">
+          <h3 className="flex h-8 items-center px-2 text-xs font-medium text-sidebar-foreground/70">
             {q ? t('list.searchResults') : groupLabel(t, group.key)}
           </h3>
           <ul className="space-y-0.5">
@@ -111,7 +116,7 @@ export default function ChatListGroups({
         </div>
       ))}
       <div ref={sentinelRef} />
-      {query.isFetchingNextPage && <Skeleton className="mx-2 h-12 rounded-md" />}
+      {query.isFetchingNextPage && <Skeleton className="h-8 rounded-md" />}
     </nav>
   );
 }

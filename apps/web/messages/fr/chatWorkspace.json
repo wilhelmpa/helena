@@ -44,8 +44,9 @@
     "purged": "Chat supprimé définitivement."
   },
   "empty": {
-    "title": "Aucun chat ouvert",
-    "description": "Choisissez un agent pour démarrer un nouveau chat. Chaque chat se fait avec un seul agent — pour en parler à un autre, démarrez-en un nouveau."
+    "noAgentsTitle": "Aucun agent pour discuter",
+    "noAgentsDescription": "Il n’y a encore aucun agent avec lequel démarrer une discussion ici. Ajoutez-en un, ou donnez à un agent existant l’accès à ce projet.",
+    "manageAgents": "Gérer les agents"
   },
   "messages": {
     "transcript": "Messages",
@@ -72,7 +73,11 @@
     "noteSaveFailed": "Impossible d’enregistrer le chat comme note.",
     "noteQuestion": "Question",
     "noteAnswer": "Réponse de {agent}",
-    "noteSource": "Chat avec {agent}, enregistré le {date}"
+    "noteSource": "Chat avec {agent}, enregistré le {date}",
+    "waitingForRunner": "En attente de {agent} — son runner est hors ligne. La réponse commence dès son retour.",
+    "restoreFailedTitle": "Impossible de charger cette discussion",
+    "restoreFailed": "Ses messages n’ont pas pu être lus. Vérifiez la connexion et réessayez.",
+    "retry": "Réessayer"
   },
   "composer": {
     "placeholder": "Message à {agent}…",
@@ -146,5 +151,35 @@
     "approvedBy": "Approuvée par {name}",
     "rejectedBy": "Refusée par {name}",
     "loading": "Chargement de la demande…"
+  },
+  "newChat": {
+    "title": "Nouvelle discussion avec {agent}",
+    "offlineHint": "Son runner n’est pas connecté pour le moment. Un message attend dans sa file et reçoit une réponse dès son retour.",
+    "pickAgent": "Choisir l’agent de cette discussion"
+  },
+  "agents": {
+    "status": {
+      "running": "Au travail",
+      "waiting": "Vous attend",
+      "ready": "Prêt",
+      "offline": "Hors ligne",
+      "never": "Jamais connecté",
+      "paused": "En pause",
+      "template": "Modèle — ajoutez-le à un projet pour discuter avec lui"
+    },
+    "runtimeExternal": "Externe",
+    "switch": "Discussion avec {agent} — démarrer une nouvelle discussion avec un autre agent",
+    "newChatWith": "Nouvelle discussion avec …",
+    "templates": "Modèles"
+  },
+  "interrupted": {
+    "lost": "La connexion à la réponse a été perdue. {agent} y travaille peut-être encore.",
+    "stopped": "La réponse a été arrêtée.",
+    "failed": "La réponse s’est interrompue avant d’être terminée.",
+    "sendFailed": "Le message n’a pas pu être envoyé.",
+    "reconnect": "Se reconnecter",
+    "continue": "Continuer",
+    "continuePrompt": "Merci de reprendre là où tu as été interrompu.",
+    "resend": "Renvoyer"
   }
 }

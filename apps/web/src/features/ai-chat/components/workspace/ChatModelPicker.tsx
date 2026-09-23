@@ -46,18 +46,24 @@ export default function ChatModelPicker({
   const catalog = useChatCatalog(scopeKey, agentId);
   const models = catalog.data?.models ?? [];
   const selected = models.find((entry) => entry.id === model);
-  const label = model == null ? t('composer.modelDefault') : (selected?.name ?? model);
+  const name = model == null ? t('composer.modelDefault') : (selected?.name ?? model);
+  const label = thinkingLevel ? `${name} · ${thinkingLevel}` : name;
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <Sparkles className="size-3.5" />
-          <span className="max-w-32 truncate">{label}</span>
-          <ChevronDown className="size-3.5 text-muted-foreground" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 min-w-0 gap-1 px-2 text-xs font-normal text-muted-foreground hover:text-foreground data-[state=open]:bg-accent"
+          title={t('composer.model')}
+        >
+          <Sparkles className="size-3.5 shrink-0" />
+          <span className="max-w-40 truncate">{label}</span>
+          <ChevronDown className="size-3.5 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start" className="max-h-96 w-64 overflow-y-auto">
         <DropdownMenuLabel>{t('composer.model')}</DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => onChange(null, null)}>
           {model == null && <Check className="size-4" />}

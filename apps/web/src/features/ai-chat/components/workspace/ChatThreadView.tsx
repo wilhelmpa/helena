@@ -1,28 +1,30 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useChat } from '@ai-sdk/react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import { showChatVersion } from '@/lib/api/endpoints/agentChat';
 import { ApiError } from '@/lib/api/core/client';
-import { PlanChatTransport } from '../../services/planChatTransport';
-import { useChatThread } from '../../hooks/useChatThread';
+import { usePlanChat } from '../../hooks/usePlanChat';
+import type { ChatAgentState } from '../../utils/agentPresence';
 import type { Artifact } from '../../utils/artifacts';
-import { toUIMessage, type PlanUIMessage } from '../../utils/chatMessages';
-import { uuid } from '@/utils/uuid';
 import ChatHeader from './ChatHeader';
 import ChatMessageList from './ChatMessageList';
 import ChatComposer from './ChatComposer';
+import ChatNewChatIntro from './ChatNewChatIntro';
+import ChatRestoreError from './ChatRestoreError';
 
 export interface ChatThreadViewProps {
   scopeKey: string;
   projectKey: string | null;
   agent: AiAgent;
+  agents: AiAgent[];
+  states: Map<number, ChatAgentState>;
   threadId: string | null;
+  // The text typed into a new chat so far, kept by the workspace across agent picks.
+  newChatDraft: { current: string };
   onThreadCreated: (threadId: string) => void;
-  onNewChat: () => void;
+  onNewChat: (agentId: number) => void;
   onOpenList: () => void;
   compact: boolean;
   onArtifact: (artifact: Artifact) => void;
@@ -31,15 +33,20 @@ export interface ChatThreadViewProps {
   hasArtifact: boolean;
 }
 
-// One open conversation: its transcript restored from the API, the live AI SDK chat
-// state layered on top of it, the header, the message list and the composer. Remounted
-// (see the `key` ChatWorkspace gives it) whenever the agent or the thread changes, so
-// none of this has to reset its own state by hand.
+// One open conversation: the header, the transcript (or, before the first message, who
+// the new chat is with) and the composer. Remounted (see the `key` ChatWorkspace gives
+// it) whenever the agent or the thread changes, so none of this has to reset its own
+// state by hand. The composer keeps its place in the tree between the new-chat layout
+// (centered, claude.ai-style) and the conversation (docked at the bottom), so what was
+// typed and the model picked survive the first send.
 export default function ChatThreadView({
   scopeKey,
   projectKey,
   agent,
+  agents,
+  states,
   threadId,
+  newChatDraft,
   onThreadCreated,
   onNewChat,
   onOpenList,
@@ -50,27 +57,13 @@ export default function ChatThreadView({
   hasArtifact,
 }: ChatThreadViewProps) {
   const t = useTranslations('chatWorkspace');
-  const thread = useChatThread(scopeKey, agent.id, threadId);
-  const transport = useMemo(() => new PlanChatTransport(scopeKey, agent.id), [scopeKey, agent.id]);
-  const resumedRef = useRef(false);
-
-  // Fixed for the life of this view: a new chat keeps its id when its thread id arrives,
-  // so the AI SDK keeps the same chat, with the answer still streaming into it.
-  const [chatId] = useState(() => threadId ?? `new-${agent.id}-${uuid()}`);
-  const chat = useChat<PlanUIMessage>({
-    id: chatId,
-    transport,
-    messages: [],
-    onData: (part) => {
-      if (part.type === 'data-turn') {
-        const data = part.data as { threadId: string };
-        onThreadCreated(data.threadId);
-      }
-    },
-    // The composer already checks the agent's chat concurrency limit before sending;
-    // this only catches the rare race where two sends (e.g. two tabs) both pass that
-    // check before either reaches the server, so the send that actually loses is still
-    // explained rather than failing silently.
+  const plan = usePlanChat({
+    scopeKey,
+    agent,
+    threadId,
+    onThreadCreated,
+    // The composer checks the agent's chat limit before sending; this catches the race
+    // where two sends (two tabs) both passed it, so the one that lost is explained.
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
         toast.error(
@@ -79,25 +72,12 @@ export default function ChatThreadView({
       }
     },
   });
-
-  const [restored, setRestored] = useState(threadId == null);
-
-  useEffect(() => {
-    if (restored || thread.isLoading) return;
-    transport.threadId = threadId;
-    chat.setMessages(thread.messages);
-    if (thread.activeAnswer && !resumedRef.current) {
-      resumedRef.current = true;
-      transport.resume = {
-        messageId: thread.activeAnswer.messageId,
-        agentId: thread.activeAnswer.agentId ?? agent.id,
-      };
-      void chat.resumeStream();
-    }
-    setRestored(true);
-    // Runs once the transcript arrives; chat/transport are stable for this mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [thread.isLoading, thread.messages, thread.activeAnswer, restored]);
+  const [model, setModel] = useState<{ model: string | null; thinkingLevel: string | null }>({
+    model: null,
+    thinkingLevel: null,
+  });
+  const state = states.get(agent.id);
+  const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -105,55 +85,49 @@ export default function ChatThreadView({
         scopeKey={scopeKey}
         projectKey={projectKey}
         agent={agent}
+        agents={agents}
+        states={states}
         threadId={threadId}
-        messages={chat.messages}
+        messages={plan.messages}
         onOpenList={onOpenList}
+        onNewChat={onNewChat}
         compact={compact}
         artifactOpen={artifactOpen}
         onToggleArtifact={onToggleArtifact}
         hasArtifact={hasArtifact}
       />
-      <ChatMessageList
-        messages={chat.messages}
-        status={chat.status}
-        agent={agent}
-        loading={!restored}
-        hasOlder={thread.hasOlder}
-        loadingOlder={thread.loadingOlder}
-        onLoadOlder={thread.loadOlder}
-        onRegenerate={(messageId) => chat.regenerate({ messageId })}
-        onEdit={(index, text) => {
-          chat.setMessages((messages) => messages.slice(0, index));
-          void chat.sendMessage({ text });
-        }}
-        onReply={(text) => void chat.sendMessage({ text })}
-        onShowArtifact={onArtifact}
-        onSwitchVersion={async (messageId) => {
-          if (!threadId) return;
-          await showChatVersion(threadId, Number(messageId));
-          const page = await thread.refetch();
-          if (page.data) chat.setMessages(page.data.items.map(toUIMessage));
-        }}
-        projectKey={projectKey}
-        threadId={threadId}
-      />
+      {plan.restoreFailed ? (
+        <ChatRestoreError onRetry={() => void plan.retryRestore()} />
+      ) : empty ? (
+        <ChatNewChatIntro agent={agent} agents={agents} states={states} onPick={onNewChat} />
+      ) : (
+        <ChatMessageList
+          plan={plan}
+          agent={agent}
+          agentOnline={state?.online ?? true}
+          projectKey={projectKey}
+          threadId={threadId}
+          onShowArtifact={onArtifact}
+        />
+      )}
       <ChatComposer
         scopeKey={scopeKey}
         agent={agent}
         threadId={threadId}
         projectKey={projectKey}
-        status={chat.status}
-        onSend={(text, options) => void chat.sendMessage({ text }, { body: options })}
-        onStop={() => void chat.stop()}
-        onNewChat={onNewChat}
-        onRetryLast={() => chat.regenerate()}
-        onUndo={() => {
-          const index = chat.messages.findLastIndex((message) => message.role === 'user');
-          if (index === -1) return false;
-          chat.setMessages((messages) => messages.slice(0, index));
-          return true;
-        }}
+        docked={!empty}
+        draft={threadId == null ? newChatDraft : undefined}
+        busy={plan.busy}
+        model={model.model}
+        thinkingLevel={model.thinkingLevel}
+        onModelChange={(next, thinkingLevel) => setModel({ model: next, thinkingLevel })}
+        onSend={(text, options, metadata) => void plan.send(text, options, metadata)}
+        onStop={() => void plan.stop()}
+        onNewChat={() => onNewChat(agent.id)}
+        onRetryLast={() => void plan.regenerate()}
+        onUndo={plan.undo}
       />
+      {empty && <div aria-hidden className="flex-1" />}
     </div>
   );
 }

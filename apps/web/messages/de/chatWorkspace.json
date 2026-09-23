@@ -44,8 +44,9 @@
     "purged": "Chat endgültig gelöscht."
   },
   "empty": {
-    "title": "Kein Chat geöffnet",
-    "description": "Wähle einen Agenten, um einen neuen Chat zu starten. Jeder Chat läuft mit einem Agenten — für einen anderen beginnst du einen neuen."
+    "noAgentsTitle": "Kein Agent für einen Chat",
+    "noAgentsDescription": "Hier gibt es noch keinen Agenten, mit dem ein Chat beginnen kann. Lege einen an oder gib einem vorhandenen Zugriff auf dieses Projekt.",
+    "manageAgents": "Agenten verwalten"
   },
   "messages": {
     "transcript": "Nachrichten",
@@ -72,7 +73,11 @@
     "noteSaveFailed": "Der Chat konnte nicht als Notiz gespeichert werden.",
     "noteQuestion": "Frage",
     "noteAnswer": "Antwort von {agent}",
-    "noteSource": "Chat mit {agent}, gespeichert am {date}"
+    "noteSource": "Chat mit {agent}, gespeichert am {date}",
+    "waitingForRunner": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist.",
+    "restoreFailedTitle": "Dieser Chat konnte nicht geladen werden",
+    "restoreFailed": "Seine Nachrichten konnten nicht gelesen werden. Prüfe die Verbindung und versuche es erneut.",
+    "retry": "Erneut versuchen"
   },
   "composer": {
     "placeholder": "Nachricht an {agent} …",
@@ -146,5 +151,35 @@
     "approvedBy": "Freigegeben von {name}",
     "rejectedBy": "Abgelehnt von {name}",
     "loading": "Anfrage wird geladen …"
+  },
+  "newChat": {
+    "title": "Neuer Chat mit {agent}",
+    "offlineHint": "Sein Runner ist gerade nicht verbunden. Eine Nachricht wartet in der Warteschlange und wird beantwortet, sobald er wieder da ist.",
+    "pickAgent": "Agent für diesen Chat wählen"
+  },
+  "agents": {
+    "status": {
+      "running": "Arbeitet",
+      "waiting": "Wartet auf dich",
+      "ready": "Bereit",
+      "offline": "Offline",
+      "never": "Nie verbunden",
+      "paused": "Pausiert",
+      "template": "Vorlage – füge sie einem Projekt hinzu, um mit ihr zu chatten"
+    },
+    "runtimeExternal": "Extern",
+    "switch": "Chat mit {agent} – neuen Chat mit einem anderen Agenten beginnen",
+    "newChatWith": "Neuer Chat mit …",
+    "templates": "Vorlagen"
+  },
+  "interrupted": {
+    "lost": "Die Verbindung zur Antwort ist abgerissen. {agent} arbeitet vielleicht noch daran.",
+    "stopped": "Die Antwort wurde gestoppt.",
+    "failed": "Die Antwort ist abgebrochen, bevor sie fertig war.",
+    "sendFailed": "Die Nachricht konnte nicht gesendet werden.",
+    "reconnect": "Neu verbinden",
+    "continue": "Fortsetzen",
+    "continuePrompt": "Bitte mach dort weiter, wo du unterbrochen wurdest.",
+    "resend": "Erneut senden"
   }
 }

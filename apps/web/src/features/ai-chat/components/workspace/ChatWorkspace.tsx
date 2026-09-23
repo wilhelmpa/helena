@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useAiAgentQuery } from '@/services/aiAgents.service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
+import { useChatAgentStates } from '../../hooks/useChatAgentStates';
 import { artifactPlacement, chatLayoutMode } from '../../utils/chatLayout';
 import type { Artifact } from '../../utils/artifacts';
 import ChatListPane from './ChatListPane';
@@ -26,16 +27,18 @@ export interface ChatWorkspaceProps {
   agents: AiAgent[];
   // Controlled: the caller owns where "here" is — the URL for the full page
   // (ChatWorkspaceRoot), local state for the tool panel (panel/NativeChatWorkspace) —
-  // so the same component works whether or not it owns the address bar.
+  // so the same component works whether or not it owns the address bar. `replace` asks
+  // for no new history entry: a new chat getting its thread id is the same place.
   location: ChatLocation;
-  onNavigate: (next: ChatLocation) => void;
+  onNavigate: (next: ChatLocation, options?: { replace?: boolean }) => void;
 }
 
 // The claude.ai-style chat: a chat list, the open conversation with its composer, and
 // an artifact panel — a container query away from becoming a narrow drawer-and-overlay
 // layout instead of three columns, so the same component reads correctly full page, in
-// a split view, or in the tool panel. One agent per chat; picking an agent starts a new
-// one (see NewChatAgentPicker), it never becomes a group chat.
+// a split view, in the tool panel and on a phone. One agent per chat: a new chat starts
+// by choosing who it is with (ChatNewChatIntro), and choosing another agent later starts
+// another chat (ChatAgentMenu) — it never becomes a group chat.
 export default function ChatWorkspace({
   scopeKey,
   teamId,
@@ -48,13 +51,18 @@ export default function ChatWorkspace({
   const [listOpen, setListOpen] = useState(false);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [artifactOpen, setArtifactOpen] = useState(false);
+  const states = useChatAgentStates(agents);
+  // What was typed into a new chat before its agent was picked: picking remounts the
+  // view (another agent, another chat), and the text should come along.
+  const newChatDraft = useRef('');
 
-  const agentId = location.agentId ?? agents[0]?.id ?? null;
+  const defaultAgentId = agents.find((agent) => !agent.template)?.id ?? null;
+  const agentId = location.agentId ?? defaultAgentId;
   const threadId = location.threadId;
 
   // The thread view is remounted for every other chat, but not when a new chat is given
   // its thread id by its own first answer: remounting then would drop the answer that is
-  // streaming in, and closing its stream tells the API to stop it.
+  // streaming in.
   const [adoptedThreadId, setAdoptedThreadId] = useState<string | null>(null);
   const [view, setView] = useState({ agentId, threadId, session: 0 });
   if (view.agentId !== agentId || view.threadId !== threadId) {
@@ -66,43 +74,35 @@ export default function ChatWorkspace({
     setView({ agentId, threadId, session: adopted ? view.session : view.session + 1 });
   }
 
-  const go = useCallback(
-    (next: Partial<ChatLocation>) => {
-      onNavigate({
-        agentId: next.agentId !== undefined ? next.agentId : agentId,
-        threadId: next.threadId !== undefined ? next.threadId : threadId,
-      });
-    },
-    [onNavigate, agentId, threadId],
-  );
+  const closePanels = useCallback(() => {
+    setArtifact(null);
+    setArtifactOpen(false);
+    setListOpen(false);
+  }, []);
 
   const selectThread = useCallback(
     (thread: { id: string; agentId: number }) => {
-      setArtifact(null);
-      setArtifactOpen(false);
-      setListOpen(false);
-      go({ agentId: thread.agentId, threadId: thread.id });
+      closePanels();
+      onNavigate({ agentId: thread.agentId, threadId: thread.id });
     },
-    [go],
+    [closePanels, onNavigate],
   );
 
   const startNewChat = useCallback(
-    (newAgentId: number) => {
-      setArtifact(null);
-      setArtifactOpen(false);
-      setListOpen(false);
-      go({ agentId: newAgentId, threadId: null });
+    (newAgentId: number | null) => {
+      closePanels();
+      onNavigate({ agentId: newAgentId ?? agentId, threadId: null });
     },
-    [go],
+    [closePanels, onNavigate, agentId],
   );
 
   const onThreadCreated = useCallback(
     (newThreadId: string) => {
       if (newThreadId === threadId) return;
       setAdoptedThreadId(newThreadId);
-      go({ threadId: newThreadId });
+      onNavigate({ agentId, threadId: newThreadId }, { replace: true });
     },
-    [go, threadId],
+    [onNavigate, agentId, threadId],
   );
 
   const showArtifact = useCallback((next: Artifact) => {
@@ -110,29 +110,24 @@ export default function ChatWorkspace({
     setArtifactOpen(true);
   }, []);
 
-  // Before the first real measurement (width 0 — see useContainerWidth), assume
-  // compact rather than split. Split hides the list pane behind a CSS container query
-  // of its own (@3xl/chat) instead of the mode this hook computes, so guessing split
-  // while narrow is not just a wrong guess: nothing in the DOM answers to listOpen
-  // until the state updates it, and "Open chat list" stops doing anything until it
-  // does. Guessing compact while actually wide costs one open-close flicker of a
-  // Sheet at most, self-corrected the moment the real width arrives.
+  // Before the first measurement (width 0) the layout is compact: the split layout
+  // hides the list behind its own container query, so guessing "wide" while narrow would
+  // leave the list button with nothing to open until the width arrives.
   const mode = chatLayoutMode(width);
   const agentInScope = agents.find((agent) => agent.id === agentId) ?? null;
-  // The agent a thread belongs to is not always one this workspace's own picker
-  // offers (a template, one filtered out for some other reason, or simply one the
-  // picker has not loaded yet): fetched directly rather than silently falling back
-  // to "no chat open" and never even asking for the thread's messages. Only tried
-  // once a specific agent is actually wanted and the picker's own list did not carry
-  // it — never while nothing is selected at all.
+  // The agent a thread belongs to is not always one this workspace's picker offers
+  // (one working in another project, or one the list has not loaded yet): it is read
+  // directly rather than silently showing no chat and never loading the thread.
   const fallbackAgent = useAiAgentQuery(teamId, agentInScope || agentId == null ? null : agentId);
   const selectedAgent = agentInScope ?? fallbackAgent.data ?? null;
   const resolvingAgent = agentId != null && !agentInScope && fallbackAgent.isLoading;
 
   return (
-    <div ref={rootRef} className="@container/chat flex h-full min-h-0 flex-1 overflow-hidden">
+    <div
+      ref={rootRef}
+      className="@container/chat relative flex h-full min-h-0 flex-1 overflow-hidden"
+    >
       <ChatListPane
-        scopeKey={scopeKey}
         projectKey={projectKey}
         agents={agents}
         mode={mode}
@@ -140,7 +135,7 @@ export default function ChatWorkspace({
         onOpenChange={setListOpen}
         selectedThreadId={threadId}
         onSelectThread={selectThread}
-        onNewChat={startNewChat}
+        onNewChat={() => startNewChat(null)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         {selectedAgent ? (
@@ -149,9 +144,12 @@ export default function ChatWorkspace({
             scopeKey={scopeKey}
             projectKey={projectKey}
             agent={selectedAgent}
+            agents={agents}
+            states={states}
             threadId={threadId}
+            newChatDraft={newChatDraft}
             onThreadCreated={onThreadCreated}
-            onNewChat={() => startNewChat(selectedAgent.id)}
+            onNewChat={startNewChat}
             onOpenList={() => setListOpen(true)}
             compact={mode === 'compact'}
             onArtifact={showArtifact}
@@ -166,8 +164,8 @@ export default function ChatWorkspace({
           </div>
         ) : (
           <ChatEmptyState
-            agents={agents}
-            onPick={startNewChat}
+            teamId={teamId}
+            compact={mode === 'compact'}
             onOpenList={() => setListOpen(true)}
           />
         )}

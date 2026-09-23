@@ -1,8 +1,10 @@
 import type { ChatRequestOptions, ChatTransport } from 'ai';
 import {
+  cancelAiAgentChatAnswer,
   retryAiAgentChat,
   sendAiAgentChat,
   streamAnswerEvents,
+  type AgUiEvent,
 } from '@/lib/api/endpoints/agentChat';
 import { AgUiChunkMapper, type PlanChunk } from '../utils/agUiChunks';
 import { messageText, type PlanUIMessage } from '../utils/chatMessages';
@@ -20,6 +22,14 @@ export interface PlanSendOptions {
   thinkingLevel?: string | null;
 }
 
+// The answer a stream follows: which agent produces it, and the message it is stored as.
+export interface PlanAnswerRef {
+  agentId: number;
+  messageId: number;
+  // When the answer was queued, for the message's timestamp; now when unknown.
+  createdAt?: string;
+}
+
 const serverId = (id: string | undefined) =>
   id != null && /^\d+$/.test(id) ? Number(id) : undefined;
 
@@ -28,10 +38,17 @@ const serverId = (id: string | undefined) =>
 // read back as the AG-UI events the runner reported, mapped to UI message chunks.
 //
 // A chat's thread is known after its first answer is queued; `threadId` holds it. An
-// answer that was running before the page loaded is resumed from `resume`.
+// answer that was running before the page loaded, or whose stream was lost, is picked up
+// again from `resume` (see reconnectToStream).
+//
+// Closing a stream only stops following the answer — it keeps being produced, and the
+// chat list shows it running — so leaving a conversation never stops its agent. Stopping
+// is its own request (`cancel`), sent only when the member presses stop.
 export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
   threadId: string | null = null;
-  resume: { messageId: number; agentId: number } | null = null;
+  resume: PlanAnswerRef | null = null;
+  // The answer the current stream follows, for `cancel`. Null between answers.
+  active: PlanAnswerRef | null = null;
 
   constructor(
     readonly scopeKey: string,
@@ -57,7 +74,7 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
         threadId: this.threadId,
         questionId,
       });
-      return this.answer(agentId, retried.messageId, [], options.abortSignal);
+      return this.answer({ agentId, messageId: retried.messageId }, [], options.abortSignal);
     }
     const previous = options.messages.at(-2);
     const sent = await sendAiAgentChat(this.scopeKey, agentId, {
@@ -80,7 +97,7 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
         clientId: question?.id ?? '',
       },
     };
-    return this.answer(agentId, sent.messageId, [turn], options.abortSignal);
+    return this.answer({ agentId, messageId: sent.messageId }, [turn], options.abortSignal);
   }
 
   async reconnectToStream(
@@ -89,34 +106,69 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
     const resume = this.resume;
     this.resume = null;
     if (!resume) return null;
-    return this.answer(resume.agentId, resume.messageId, [], options.abortSignal);
+    return this.answer(resume, [], options.abortSignal);
+  }
+
+  // Stops the answer being followed. Resolves once the API took the stop; the stream
+  // then ends on its own with what the agent wrote so far.
+  async cancel(): Promise<void> {
+    const active = this.active;
+    if (!active) return;
+    await cancelAiAgentChatAnswer(this.scopeKey, active.agentId, active.messageId);
   }
 
   private answer(
-    agentId: number,
-    messageId: number,
+    ref: PlanAnswerRef,
     head: PlanChunk[],
     signal: AbortSignal | undefined,
   ): ReadableStream<PlanChunk> {
-    const mapper = new AgUiChunkMapper(String(messageId), {
-      createdAt: new Date().toISOString(),
-      agentId,
+    this.active = ref;
+    const mapper = new AgUiChunkMapper(String(ref.messageId), {
+      createdAt: ref.createdAt ?? new Date().toISOString(),
+      agentId: ref.agentId,
     });
-    const events = streamAnswerEvents(this.scopeKey, agentId, messageId, signal);
+    const events = streamAnswerEvents(this.scopeKey, ref.agentId, ref.messageId, signal, {
+      cancelOnAbort: false,
+    });
+    const done = () => {
+      if (this.active === ref) this.active = null;
+    };
     return new ReadableStream<PlanChunk>({
       start(controller) {
         for (const chunk of [...head, ...mapper.start()]) controller.enqueue(chunk);
       },
+      // Most AG-UI events (RUN_STARTED, TEXT_MESSAGE_START, TOOL_CALL_END, …) map to no
+      // chunk at all. A pull that enqueues nothing is never called again — the stream
+      // only pulls once more when something was read or asked for while it pulled — so
+      // this keeps reading until it has a chunk to hand over or the answer is over.
+      // Returning empty-handed is what left answers hanging at "Thinking …".
       async pull(controller) {
-        const next = await events.next();
-        if (next.done) {
-          for (const chunk of mapper.end()) controller.enqueue(chunk);
-          controller.close();
-          return;
+        for (;;) {
+          let next: IteratorResult<AgUiEvent, void>;
+          try {
+            next = await events.next();
+          } catch (err) {
+            done();
+            if (signal?.aborted) throw err;
+            // Lost, not failed: the answer may still be running. The message says so,
+            // and the chat offers to follow it again.
+            for (const chunk of mapper.end()) controller.enqueue(chunk);
+            controller.close();
+            return;
+          }
+          if (next.done) {
+            done();
+            for (const chunk of mapper.end()) controller.enqueue(chunk);
+            controller.close();
+            return;
+          }
+          const chunks = mapper.map(next.value);
+          for (const chunk of chunks) controller.enqueue(chunk);
+          if (chunks.length > 0) return;
         }
-        for (const chunk of mapper.map(next.value)) controller.enqueue(chunk);
       },
       async cancel() {
+        done();
         await events.return(undefined);
       },
     });

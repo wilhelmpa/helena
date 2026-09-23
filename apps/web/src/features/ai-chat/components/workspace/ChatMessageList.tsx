@@ -1,11 +1,9 @@
 'use client';
 
-import type { ChatStatus } from 'ai';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Marker, MarkerContent } from '@/components/ui/marker';
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -15,118 +13,88 @@ import {
   MessageScrollerViewport,
 } from '@/components/ui/message-scroller';
 import InitialScrollToEnd from '@/components/common/agent-chat/InitialScrollToEnd';
-import { formatLongDate } from '@/utils/dates';
+import type { PlanChat } from '../../hooks/usePlanChat';
 import type { Artifact } from '../../utils/artifacts';
-import type { PlanUIMessage } from '../../utils/chatMessages';
 import ChatMessageItem from './ChatMessageItem';
-import ChatEmptyState from './ChatEmptyState';
+import ChatInterruptedBar from './ChatInterruptedBar';
 
 export interface ChatMessageListProps {
-  messages: PlanUIMessage[];
-  status: ChatStatus;
+  plan: PlanChat;
   agent: AiAgent;
-  loading: boolean;
-  hasOlder: boolean;
-  loadingOlder: boolean;
-  onLoadOlder: () => void;
-  onRegenerate: (messageId: string) => void;
-  onEdit: (index: number, text: string) => void;
-  onReply: (text: string) => void;
-  onShowArtifact: (artifact: Artifact) => void;
-  onSwitchVersion: (messageId: string) => void;
+  agentOnline: boolean;
   projectKey: string | null;
   threadId: string | null;
+  onShowArtifact: (artifact: Artifact) => void;
 }
 
 // The transcript, in the shared MessageScroller: it keeps the view pinned to the
 // newest message while the reader stays at the bottom, and stops the moment they
-// scroll up to read back, with a button to jump back down (see message-scroller.tsx,
-// already used by the tool panel's chat). Centered at a comfortable reading width
-// rather than filling the pane edge to edge.
+// scroll up to read back, with a button to jump back down. Centered at a comfortable
+// reading width rather than filling the pane edge to edge, the way claude.ai reads.
+// Under the last turn, when an answer did not end the normal way, the bar that offers
+// to pick it up again (ChatInterruptedBar).
 export default function ChatMessageList({
-  messages,
-  status,
+  plan,
   agent,
-  loading,
-  hasOlder,
-  loadingOlder,
-  onLoadOlder,
-  onRegenerate,
-  onEdit,
-  onReply,
-  onShowArtifact,
-  onSwitchVersion,
+  agentOnline,
   projectKey,
   threadId,
+  onShowArtifact,
 }: ChatMessageListProps) {
   const t = useTranslations('chatWorkspace');
+  const { messages, status } = plan;
 
-  if (loading) {
+  if (plan.restoring) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 overflow-hidden p-4">
-        <Skeleton className="h-16 w-2/3" />
-        <Skeleton className="ms-auto h-10 w-1/2" />
-        <Skeleton className="h-24 w-3/4" />
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-hidden px-4 py-6">
+        <Skeleton className="ms-auto h-9 w-1/2 rounded-2xl" />
+        <Skeleton className="h-20 w-3/4" />
+        <Skeleton className="ms-auto h-9 w-2/5 rounded-2xl" />
       </div>
     );
   }
 
-  if (messages.length === 0) {
-    return (
-      <ChatEmptyState agents={[agent]} onPick={() => undefined} onOpenList={() => undefined} />
-    );
-  }
-
-  let lastDate = '';
-
-  // The scroller's hooks (InitialScrollToEnd) read the provider's context, not the root's;
-  // without it the first rendered message throws and takes the page down.
   return (
     <MessageScrollerProvider>
-      <MessageScroller>
+      <MessageScroller className="flex-1">
         <InitialScrollToEnd hasMessages={messages.length > 0} />
         <MessageScrollerViewport aria-label={t('messages.transcript')}>
-          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-6 p-4 pb-8">
-            {hasOlder && (
-              <div className="flex justify-center pb-2">
-                <Button variant="outline" size="sm" disabled={loadingOlder} onClick={onLoadOlder}>
-                  {loadingOlder ? t('messages.loading') : t('messages.loadOlder')}
+          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-6 px-4 pt-6 pb-10">
+            {plan.hasOlder && (
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={plan.loadingOlder}
+                  onClick={() => void plan.loadOlder()}
+                >
+                  {plan.loadingOlder ? t('messages.loading') : t('messages.loadOlder')}
                 </Button>
               </div>
             )}
-            {messages.map((message, index) => {
-              const createdAt = message.metadata?.createdAt;
-              const day = createdAt ? formatLongDate(createdAt) : '';
-              const showDate = day !== '' && day !== lastDate;
-              if (showDate) lastDate = day;
-              return (
-                <MessageScrollerItem
-                  key={message.id}
-                  messageId={message.id}
-                  scrollAnchor={message.role === 'user'}
-                  className="flex flex-col gap-6"
-                >
-                  {showDate && (
-                    <Marker variant="separator">
-                      <MarkerContent>{day}</MarkerContent>
-                    </Marker>
-                  )}
-                  <ChatMessageItem
-                    message={message}
-                    isLast={index === messages.length - 1}
-                    status={status}
-                    projectKey={projectKey}
-                    threadId={threadId}
-                    agentId={agent.id}
-                    onRegenerate={() => onRegenerate(message.id)}
-                    onEdit={(text) => onEdit(index, text)}
-                    onReply={onReply}
-                    onShowArtifact={onShowArtifact}
-                    onSwitchVersion={onSwitchVersion}
-                  />
-                </MessageScrollerItem>
-              );
-            })}
+            {messages.map((message, index) => (
+              <MessageScrollerItem
+                key={message.id}
+                messageId={message.id}
+                scrollAnchor={message.role === 'user'}
+              >
+                <ChatMessageItem
+                  message={message}
+                  isLast={index === messages.length - 1}
+                  status={status}
+                  agent={agent}
+                  agentOnline={agentOnline}
+                  projectKey={projectKey}
+                  threadId={threadId}
+                  onRegenerate={() => void plan.regenerate(message.id)}
+                  onEdit={(text) => void plan.edit(index, text)}
+                  onReply={(text) => void plan.send(text, { agentId: agent.id })}
+                  onShowArtifact={onShowArtifact}
+                  onSwitchVersion={(messageId) => void plan.switchVersion(messageId)}
+                />
+              </MessageScrollerItem>
+            ))}
+            <ChatInterruptedBar plan={plan} agent={agent} />
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />
