@@ -99,9 +99,12 @@ function keyMessage(message, modifiers) {
 // in, its acknowledgement of a frame, or its answer to a dialog. A message that is none of
 // these throws.
 //
-//   {"type":"viewport","width":800,"height":600,"dpr":2}  CSS pixels and pixel ratio of the view
-//   {"type":"ack"}                                        a frame was drawn
+//   {"type":"viewport","width":800,"height":600,"dpr":2,"video":true}
+//                                                         CSS pixels and pixel ratio of the view,
+//                                                         and whether it plays H.264 video
+//   {"type":"ack"}                                        a JPEG frame was drawn
 //   {"type":"dialog","accept":true,"text":"answer"}       closes a JavaScript dialog
+//   {"type":"follow","agent":true}                        shows the agent's tab
 //   {"type":"mouse","event":"move|down|up|click","x":..,"y":..,"button":"left",
 //    "buttons":1,"clickCount":1,"modifiers":0}            x and y in page CSS pixels
 //   {"type":"wheel","x":..,"y":..,"deltaX":0,"deltaY":120,"modifiers":0}
@@ -128,8 +131,12 @@ export function viewerMessage(data) {
           width: Math.round(number(message.width, MIN_VIEWPORT, MAX_VIEWPORT)),
           height: Math.round(number(message.height, MIN_VIEWPORT, MAX_VIEWPORT)),
           dpr: Math.round(number(message.dpr ?? 1, MIN_RATIO, MAX_RATIO) * 1000) / 1000,
+          video: message.video === true,
         },
       };
+    case "follow":
+      if (typeof message.agent !== "boolean") throw invalid();
+      return { followAgent: message.agent };
     case "dialog":
       if (typeof message.accept !== "boolean") throw invalid();
       return {

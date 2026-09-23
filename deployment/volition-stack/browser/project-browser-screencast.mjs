@@ -1,33 +1,43 @@
-// The live view of a project browser. The tab in front is streamed with the DevTools
-// screencast to every viewer on the browser's WebSocket, and each viewer's mouse, wheel and
-// keyboard input is sent to that tab.
+// The live view of a project browser: the tab the agent works in, or else the tab in front,
+// streamed to every viewer on the browser's WebSocket, with each viewer's mouse, wheel and
+// keyboard input sent to that tab.
 //
-// The page is shown at the CSS size of the most recent viewer's view, and on a high-density
-// screen at pixel ratio 2, so frames are about as sharp as a tab in the viewer's own browser:
-// the window keeper sizes the real window to the view in window pixels, and the streamed tab
-// emulates the pixel ratio. The agent works on that same page. While the agent acts, the
-// page keeps its CSS size, so the layout does not move between the agent's look at the page
-// and its next action, and it is streamed at ratio 1 and at most 20 frames a second: sharp
-// frames at full rate fill the browser's DevTools connection, which the agent's commands then
-// wait for.
+// The stream is H.264 video grabbed from the project's X display (project-browser-video.mjs)
+// when every viewer can play it, and the DevTools screencast as JPEG frames otherwise or when
+// the encoder fails. The page is shown at the CSS size of the most recent viewer's view, and
+// on a high-density screen at pixel ratio 2: the window keeper sizes the real window to the
+// view in window pixels and draws its tabs at that ratio. The agent works on that same page.
+// While the agent acts, the page keeps its CSS size, so the layout does not move between the
+// agent's look at the page and its next action; a JPEG stream then also drops to ratio 1 and
+// 20 frames a second, because a sharp JPEG stream at full rate fills the browser's DevTools
+// connection, which the agent's commands then wait for.
 //
-// Server to viewer: a binary message per frame, the page's viewport in CSS pixels (which
-// mouse input is given in) as two big-endian 16-bit integers followed by the JPEG;
-// {"type":"tab"} when the tab in front, its address or its title changes; {"type":"dialog",
-// ...} while a JavaScript dialog is open and {"type":"dialog","open":false} when it closes.
-// Viewer to server: JSON text, see viewerMessage.
-import { listTabs, openBrowser, setLiveViewport } from "./project-browser-control.mjs";
+// Server to viewer, binary: a kind byte, then for kind 0 a JPEG frame after the page's
+// viewport in CSS pixels as two big-endian 16-bit integers; for kind 1 the video's MP4
+// initialization segment; for kind 2 a keyframe flag byte and one frame's MP4 fragment. Text:
+// {"type":"video","codec":..,"width":..,"height":..} before an initialization segment, with
+// the viewport in CSS pixels; {"type":"tab"} when the streamed tab, its address or its title
+// changes; {"type":"dialog", ...} while a JavaScript dialog is open and
+// {"type":"dialog","open":false} when it closes. Viewer to server: JSON text, see
+// viewerMessage.
+import { activateTab, listTabs, openBrowser, setLiveViewport, windowChrome } from "./project-browser-control.mjs";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
+import { AreaEncoder } from "./project-browser-video.mjs";
 
-// Stream settings while only viewers act, and while the agent acts. Chromium sends the next
-// frame once the last one is acknowledged, so a delayed acknowledgement limits the rate.
+const JPEG_FRAME = 0;
+const VIDEO_INIT = 1;
+const VIDEO_FRAGMENT = 2;
+
+// JPEG stream settings while only viewers act, and while the agent acts. Chromium sends the
+// next frame once the last one is acknowledged, so a delayed acknowledgement limits the rate.
 const VIEWER_STREAM = { quality: 90, frameIntervalMs: 0 };
 const AGENT_STREAM = { quality: 75, frameIntervalMs: 50 };
 const MAX_FRAME_SIDE = 4096;
-// Frames a viewer may have unacknowledged, and bytes the router may hold for it, before it
-// misses the frames after them.
+// JPEG frames a viewer may have unacknowledged, and bytes the router may hold for it, before
+// it misses the frames after them. A video viewer with more waiting skips to the next keyframe.
 const FRAMES_IN_FLIGHT = 2;
 const MAX_BUFFERED = 16 * 1024 * 1024;
+const MAX_VIDEO_BUFFERED = 4 * 1024 * 1024;
 const FOLLOW_INTERVAL_MS = 1_000;
 // Chromium keeps a window at least 500 pixels wide.
 const MIN_WINDOW_WIDTH = 500;
@@ -61,21 +71,35 @@ export function pageSize({ width, height, dpr }) {
   return { width: Math.max(width, Math.ceil(MIN_WINDOW_WIDTH / ratio)), height, ratio };
 }
 
-// The page size for the most recent view: while the agent acts, the current CSS size at ratio
-// 1, or nothing to change before one was set; otherwise the view's pageSize. Ratio 1 and 2
-// give the agent screenshots of the same size, so switching between them is safe.
-export function targetSize(viewport, current, agentActive) {
+// The page size for the most recent view: while the agent acts, the current CSS size, at
+// ratio 1 for a JPEG stream, or nothing to change before one was set; otherwise the view's
+// pageSize. Ratio 1 and 2 give the agent screenshots of the same size.
+export function targetSize(viewport, current, agentActive, video) {
   if (!agentActive) return pageSize(viewport);
-  return current ? { ...current, ratio: 1 } : null;
+  if (!current) return null;
+  return video ? current : { ...current, ratio: 1 };
 }
 
-// The binary message of one screencast frame. The frame's metadata gives the viewport in
-// window pixels, which the emulated pixel ratio and the page zoom make larger than CSS pixels.
+// The area of the display the video grabs: the page below the window's tab strip and toolbar,
+// in window pixels, with an even width and height as the encoder needs.
+export function captureArea(size, chrome) {
+  const even = (value) => Math.max(2, Math.floor(value / 2) * 2);
+  return {
+    x: 0,
+    y: chrome.height,
+    width: even(size.width * size.ratio),
+    height: even(size.height * size.ratio),
+  };
+}
+
+// The binary message of one JPEG frame. The frame's metadata gives the viewport in window
+// pixels, which the pixel ratio and the page zoom make larger than CSS pixels.
 export function frameMessage(jpeg, metadata, scale) {
   const cssPixels = (value) => Math.min(0xffff, Math.max(0, Math.round((value || 0) / scale)));
-  const header = Buffer.alloc(4);
-  header.writeUInt16BE(cssPixels(metadata.deviceWidth), 0);
-  header.writeUInt16BE(cssPixels(metadata.deviceHeight), 2);
+  const header = Buffer.alloc(5);
+  header[0] = JPEG_FRAME;
+  header.writeUInt16BE(cssPixels(metadata.deviceWidth), 1);
+  header.writeUInt16BE(cssPixels(metadata.deviceHeight), 3);
   return Buffer.concat([header, jpeg]);
 }
 
@@ -86,13 +110,14 @@ class Viewer {
     this.inFlight = 0;
     this.missed = false;
     this.viewport = null;
+    this.waitingForKeyframe = true;
   }
 
   ready() {
     return this.inFlight < FRAMES_IN_FLIGHT && this.socket.bufferedAmount <= MAX_BUFFERED;
   }
 
-  // Sends a frame unless the viewer has not drawn the earlier ones yet; it then gets the
+  // Sends a JPEG frame unless the viewer has not drawn the earlier ones yet; it then gets the
   // newest frame once it catches up.
   offer(frame) {
     if (!frame) return;
@@ -109,11 +134,29 @@ class Viewer {
     this.inFlight = Math.max(0, this.inFlight - 1);
     if (this.missed) this.offer(latest);
   }
+
+  // Frames depend on the ones before them back to a keyframe, so a viewer that cannot keep
+  // up misses frames up to the next keyframe.
+  offerVideo(message, keyframe) {
+    if (this.socket.bufferedAmount > MAX_VIDEO_BUFFERED) this.waitingForKeyframe = true;
+    if (this.waitingForKeyframe && !keyframe) return;
+    this.waitingForKeyframe = false;
+    this.socket.send(message);
+  }
+
+  // The video from its initialization segment and the frames since the last keyframe.
+  startVideo(video) {
+    this.waitingForKeyframe = true;
+    this.socket.send(JSON.stringify(video.announcement));
+    this.socket.send(video.init);
+    for (const { message, keyframe } of video.sinceKeyframe) this.offerVideo(message, keyframe);
+  }
 }
 
 class ScreencastStream {
-  constructor(port, onEnd) {
+  constructor(port, display, onEnd) {
     this.port = port;
+    this.display = display;
     this.onEnd = onEnd;
     this.viewers = new Set();
     this.connection = null;
@@ -121,13 +164,17 @@ class ScreencastStream {
     this.targetId = null;
     this.frame = null;
     this.screencastFrame = null;
+    this.screencasting = false;
     this.pendingAck = null;
     this.nextAck = 0;
+    this.encoder = null;
+    this.video = null;
+    this.videoFailed = false;
     this.zoom = 1;
-    // The page size in effect, and the pixel ratio the streamed tab emulates.
+    // The page size in effect.
     this.size = null;
-    this.ratio = 1;
     this.stream = VIEWER_STREAM;
+    this.followAgent = true;
     this.dialog = null;
     this.activityContext = null;
     this.activityRead = null;
@@ -159,8 +206,6 @@ class ScreencastStream {
   add(socket) {
     const viewer = new Viewer(socket, (method, params) => this.sendInput(method, params));
     this.viewers.add(viewer);
-    viewer.offer(this.frame);
-    this.acknowledgeWhenWanted();
     if (this.dialog) socket.send(JSON.stringify(this.dialog));
     socket.on("message", (data, binary) => {
       if (!binary) this.receive(viewer, data.toString("utf8"));
@@ -187,11 +232,17 @@ class ScreencastStream {
       return this.acknowledgeWhenWanted();
     }
     if (message.viewport) {
+      const first = !viewer.viewport;
       viewer.viewport = message.viewport;
       // The set keeps insertion order, so its last viewer with a view is the most recent.
       this.viewers.delete(viewer);
       this.viewers.add(viewer);
+      if (first) this.welcome(viewer);
       return void this.resizeAfterReadingActivity();
+    }
+    if (message.followAgent !== undefined) {
+      this.followAgent = message.followAgent;
+      return void this.follow();
     }
     if (message.dialog) {
       if (this.session) {
@@ -200,6 +251,15 @@ class ScreencastStream {
       return;
     }
     for (const command of message.commands) viewer.input.dispatch(command);
+  }
+
+  // A viewer's first view: it gets what the stream shows now.
+  welcome(viewer) {
+    if (this.video && viewer.viewport.video) viewer.startVideo(this.video);
+    else {
+      viewer.offer(this.frame);
+      this.acknowledgeWhenWanted();
+    }
   }
 
   sendInput(method, params) {
@@ -226,6 +286,11 @@ class ScreencastStream {
     this.resize();
   }
 
+  wantsVideo() {
+    const viewports = [...this.viewers].map((viewer) => viewer.viewport).filter(Boolean);
+    return Boolean(this.display) && !this.videoFailed && viewports.length > 0 && viewports.every((view) => view.video);
+  }
+
   // Applies the page size and stream settings for the most recent view and the agent's
   // activity, and does so again once the agent has been quiet long enough.
   resize() {
@@ -235,51 +300,89 @@ class ScreencastStream {
     const stream = quietIn > 0 ? AGENT_STREAM : VIEWER_STREAM;
     if (stream !== this.stream) {
       this.stream = stream;
-      if (this.session) this.startScreencast(this.session).catch(() => {});
+      if (this.screencasting) this.startScreencast(this.session).catch(() => {});
     }
     const viewport = [...this.viewers].reverse().find((viewer) => viewer.viewport)?.viewport;
-    const size = viewport && targetSize(viewport, this.size, quietIn > 0);
+    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.wantsVideo());
     const current = this.size;
-    if (!size || (current?.width === size.width && current.height === size.height && current.ratio === size.ratio)) return;
-    void this.applySize(size);
+    if (size && !(current?.width === size.width && current.height === size.height && current.ratio === size.ratio)) {
+      this.size = size;
+      this.videoFailed = false;
+      return void setLiveViewport(this.port, size)
+        .catch(() => {})
+        .then(() => this.updateMode());
+    }
+    void this.updateMode();
   }
 
-  // Pins the page's CSS size while the window changes, so its layout changes at most once and
-  // not at all when only the pixel ratio changes.
-  async applySize(size) {
-    this.size = size;
-    const session = this.session;
-    if (session) {
-      await this.connection
-        .send(
-          "Emulation.setDeviceMetricsOverride",
-          { width: size.width, height: size.height, deviceScaleFactor: size.ratio, mobile: false },
-          session,
-        )
-        .catch(() => {});
+  // Runs the encoder for the page area when every viewer plays video, and the JPEG screencast
+  // otherwise.
+  async updateMode() {
+    if (this.ended || !this.session || !this.size) return;
+    const chrome = windowChrome(this.port);
+    const area = this.wantsVideo() && chrome && captureArea(this.size, chrome);
+    if (!area) {
+      this.stopVideo();
+      if (!this.screencasting) await this.startScreencast(this.session).catch(() => {});
+      return;
     }
-    // The window keeper fits the window on its next pass when this fails.
-    await setLiveViewport(this.port, size).catch(() => {});
-    await this.emulate(session).catch(() => {});
+    const current = this.encoder?.area;
+    if (current && current.x === area.x && current.y === area.y && current.width === area.width && current.height === area.height) {
+      return;
+    }
+    this.stopVideo();
+    if (this.screencasting) {
+      this.screencasting = false;
+      this.pendingAck = null;
+      await this.connection.send("Page.stopScreencast", {}, this.session).catch(() => {});
+    }
+    this.startVideo(area);
   }
 
-  // Draws the streamed tab at the page size's pixel ratio, with the CSS size of the window
-  // divided by that ratio.
-  async emulate(session) {
-    if (!session || this.ended || session !== this.session) return;
-    const ratio = this.size?.ratio ?? 1;
-    if (ratio === 1) await this.connection.send("Emulation.clearDeviceMetricsOverride", {}, session);
-    else {
-      await this.connection.send(
-        "Emulation.setDeviceMetricsOverride",
-        { width: 0, height: 0, deviceScaleFactor: ratio, scale: ratio, mobile: false },
-        session,
-      );
-    }
-    this.ratio = ratio;
+  startVideo(area) {
+    const encoder = new AreaEncoder({ ...this.display, ...area });
+    this.encoder = encoder;
+    const size = this.size;
+    encoder.on("init", (init, codec) => {
+      const announcement = {
+        type: "video",
+        codec,
+        width: Math.round(size.width / this.zoom),
+        height: Math.round(size.height / this.zoom),
+      };
+      this.video = { announcement, init: Buffer.concat([Buffer.from([VIDEO_INIT]), init]), sinceKeyframe: [] };
+      for (const viewer of this.viewers) if (viewer.viewport?.video) viewer.startVideo(this.video);
+    });
+    encoder.on("fragment", (fragment, keyframe) => {
+      if (!this.video) return;
+      const message = Buffer.concat([Buffer.from([VIDEO_FRAGMENT, keyframe ? 1 : 0]), fragment]);
+      if (keyframe) this.video.sinceKeyframe = [];
+      this.video.sinceKeyframe.push({ message, keyframe });
+      for (const viewer of this.viewers) if (viewer.viewport?.video) viewer.offerVideo(message, keyframe);
+    });
+    encoder.on("exit", (code) => {
+      if (code === null || this.encoder !== encoder) return;
+      // The JPEG screencast shows the page until the page size changes again.
+      this.videoFailed = true;
+      this.stopVideo();
+      void this.updateMode();
+    });
+    encoder.start().catch(() => {
+      if (this.encoder !== encoder) return;
+      this.videoFailed = true;
+      this.stopVideo();
+      void this.updateMode();
+    });
+  }
+
+  stopVideo() {
+    this.encoder?.stop();
+    this.encoder = null;
+    this.video = null;
   }
 
   startScreencast(session) {
+    this.screencasting = true;
     return this.connection.send(
       "Page.startScreencast",
       { format: "jpeg", quality: this.stream.quality, maxWidth: MAX_FRAME_SIDE, maxHeight: MAX_FRAME_SIDE },
@@ -292,14 +395,18 @@ class ScreencastStream {
     for (const viewer of this.viewers) viewer.socket.send(data);
   }
 
-  // Streams the tab in front, which the person or the agent may have switched, and reads its
-  // page zoom and the agent's input on it.
+  // Streams the tab the agent works in when the viewers follow the agent, and the tab in front
+  // otherwise, and reads its page zoom and the agent's input on it. The agent's tab is brought
+  // to the front first: a tab behind another is not drawn.
   async follow() {
     if (this.following || this.ended) return;
     this.following = true;
     try {
-      const front = (await listTabs(this.port)).find((tab) => tab.active);
-      if (front && front.id !== this.targetId) await this.attach(front.id);
+      const tabs = await listTabs(this.port);
+      const agentTab = this.followAgent ? tabs.find((tab) => tab.agent) : null;
+      const shown = agentTab ?? tabs.find((tab) => tab.active);
+      if (agentTab && !agentTab.active) await activateTab(this.port, agentTab.id);
+      if (shown && shown.id !== this.targetId) await this.attach(shown.id);
       else if (this.session) {
         await this.readZoom(this.session);
         await this.readActivity(this.session);
@@ -311,45 +418,48 @@ class ScreencastStream {
     }
   }
 
-  // Page and Emulation calls are answered by the browser, so a tab whose page waits on a
-  // dialog is attached all the same; the calls its page answers come on the next passes.
+  // Page calls are answered by the browser, so a tab whose page waits on a dialog is attached
+  // all the same; the calls its page answers come on the next passes.
   async attach(targetId) {
     const previous = this.session;
     this.session = null;
     this.targetId = targetId;
-    this.ratio = 1;
+    this.screencasting = false;
     this.pendingAck = null;
     this.activityContext = null;
     this.setDialog(null);
-    if (previous) {
-      // A tab behind the one in front goes back to the pixel ratio of the display.
-      this.connection.send("Emulation.clearDeviceMetricsOverride", {}, previous).catch(() => {});
-      this.connection.send("Target.detachFromTarget", { sessionId: previous }).catch(() => {});
-    }
+    if (previous) this.connection.send("Target.detachFromTarget", { sessionId: previous }).catch(() => {});
     let sessionId;
     try {
       ({ sessionId } = await this.connection.send("Target.attachToTarget", { targetId, flatten: true }));
       await this.connection.send("Page.enable", {}, sessionId);
       this.session = sessionId;
-      await this.emulate(sessionId);
-      await this.startScreencast(sessionId);
     } catch (error) {
       if (sessionId) this.connection.send("Target.detachFromTarget", { sessionId }).catch(() => {});
-      this.session = null;
       this.targetId = null;
       throw error;
     }
     this.broadcast({ type: "tab" });
+    await this.updateMode();
   }
 
   // A zoom change repaints the page before it is read here, so the newest frame is sent
-  // again with the new size.
+  // again with the new size, and the video is announced again with it.
   async readZoom(session) {
     const metrics = await this.connection.send("Page.getLayoutMetrics", {}, session);
     const zoom = metrics.cssVisualViewport?.zoom || 1;
     if (zoom === this.zoom) return;
     this.zoom = zoom;
     if (this.screencastFrame && session === this.session) this.showFrame(this.screencastFrame);
+    if (this.video) {
+      const size = this.size;
+      this.video.announcement = {
+        ...this.video.announcement,
+        width: Math.round(size.width / zoom),
+        height: Math.round(size.height / zoom),
+      };
+      this.broadcast(this.video.announcement);
+    }
   }
 
   // Trusted input that no viewer sent is the agent's.
@@ -459,11 +569,12 @@ class ScreencastStream {
 
   showFrame(screencastFrame) {
     this.screencastFrame = screencastFrame;
-    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, this.ratio * this.zoom);
+    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, (this.size?.ratio ?? 1) * this.zoom);
     for (const viewer of this.viewers) viewer.offer(this.frame);
   }
 
   receiveFrame({ data, metadata, sessionId: frameId }, session) {
+    if (!this.screencasting) return;
     this.showFrame({ jpeg: Buffer.from(data, "base64"), metadata });
     this.pendingAck = { frameId, session };
     this.acknowledgeWhenWanted();
@@ -489,12 +600,13 @@ class ScreencastStream {
 
   // The page keeps its CSS size at the display's pixel ratio, so the layout the agent works on
   // does not change when the last viewer leaves; with a desktop viewer watching, the window
-  // fills the screen again. The emulation ends with the connection.
+  // fills the screen again.
   end() {
     if (this.ended) return;
     this.ended = true;
     clearInterval(this.timer);
     clearTimeout(this.resizeTimer);
+    this.stopVideo();
     this.onEnd();
     for (const viewer of this.viewers) viewer.socket.close(1011, "Browser unavailable");
     this.connection?.close();
@@ -508,12 +620,12 @@ const streams = new Map();
 // Open desktop (VNC) connections, by DevTools port.
 const desktopViewers = new Map();
 
-// Adds a WebSocket as a viewer of the browser on the given DevTools port. The first
-// viewer starts the stream and the last one to leave ends it.
-export function joinScreencast(port, socket) {
+// Adds a WebSocket as a viewer of the browser on the given DevTools port, whose display the
+// video grabs. The first viewer starts the stream and the last one to leave ends it.
+export function joinScreencast(port, display, socket) {
   let stream = streams.get(port);
   if (!stream) {
-    stream = new ScreencastStream(port, () => {
+    stream = new ScreencastStream(port, display, () => {
       if (streams.get(port) === stream) streams.delete(port);
     });
     streams.set(port, stream);

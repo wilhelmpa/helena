@@ -13,7 +13,8 @@ export interface Point {
 }
 
 export type LiveMessage =
-  | { type: 'viewport'; width: number; height: number; dpr: number }
+  | { type: 'viewport'; width: number; height: number; dpr: number; video: boolean }
+  | { type: 'follow'; agent: boolean }
   | { type: 'ack' }
   | { type: 'dialog'; accept: boolean; text?: string }
   | {
@@ -62,12 +63,17 @@ export function screencastUrl(controlBase: string): string {
   return `${controlBase.replace(/^http/, 'ws')}/screencast`;
 }
 
-// A frame message: the page's viewport in CSS pixels, then the JPEG.
+// The kinds of binary message, in their first byte.
+export const JPEG_FRAME = 0;
+export const VIDEO_INIT = 1;
+export const VIDEO_FRAGMENT = 2;
+
+// A JPEG frame message: the page's viewport in CSS pixels, then the JPEG.
 export function readFrame(data: ArrayBuffer): { size: Size; jpeg: Blob } {
-  const header = new DataView(data, 0, 4);
+  const header = new DataView(data, 1, 4);
   return {
     size: { width: header.getUint16(0), height: header.getUint16(2) },
-    jpeg: new Blob([new Uint8Array(data, 4)], { type: 'image/jpeg' }),
+    jpeg: new Blob([new Uint8Array(data, 5)], { type: 'image/jpeg' }),
   };
 }
 

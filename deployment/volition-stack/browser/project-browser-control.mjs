@@ -1,8 +1,9 @@
 // Controls the project browsers over the Chrome DevTools Protocol. The project display
 // has no window manager, so nothing sizes Chromium's windows: the window keeper fits them
 // to the page size the live view asks for, and to the screen otherwise, which changes size
-// with the desktop view's panel. The control routes serve the tab list and the navigation
-// the Plan toolbar uses.
+// with the desktop view's panel. It also draws every tab of a live view's window at the
+// view's pixel ratio. The control routes serve the tab list and the navigation the Plan
+// toolbar uses.
 
 const TARGET_ID = /^[A-Fa-f0-9]{16,64}$/;
 const MAX_BODY = 8 * 1024;
@@ -169,12 +170,20 @@ export async function openBrowser(port) {
 
 // One DevTools connection per project browser, kept open and shared by the window keeper
 // and the tab list, with a session attached to each page it has asked something.
+//
+// A pixel ratio emulation belongs to the session that set it: a clear from any session ends
+// it, and so does the setting session's end. So only this connection emulates, and it is the
+// last one to close.
 class BrowserLink {
   constructor(port) {
     this.port = port;
     this.connection = null;
     this.opening = null;
     this.sessions = new Map();
+    // The pixel ratio each page is drawn at where it is not 1, and 0 while it is pinned.
+    this.ratios = new Map();
+    // The tab strip and toolbar of the window last fitted, in window pixels.
+    this.chrome = null;
   }
 
   // Callers that arrive while the connection is being opened share that one.
@@ -184,6 +193,7 @@ class BrowserLink {
       .then((connection) => {
         this.connection = connection;
         this.sessions.clear();
+        this.ratios.clear();
         return connection;
       })
       .finally(() => {
@@ -192,24 +202,53 @@ class BrowserLink {
     return this.opening;
   }
 
-  async evaluate(targetId, expression) {
+  async send(targetId, method, params) {
     const connection = await this.open();
     let sessionId = this.sessions.get(targetId);
     if (!sessionId) {
       ({ sessionId } = await connection.send("Target.attachToTarget", { targetId, flatten: true }));
       this.sessions.set(targetId, sessionId);
     }
-    const { result } = await connection.send(
-      "Runtime.evaluate",
-      { expression, returnByValue: true },
-      sessionId,
-    );
+    return connection.send(method, params, sessionId);
+  }
+
+  async evaluate(targetId, expression) {
+    const { result } = await this.send(targetId, "Runtime.evaluate", { expression, returnByValue: true });
     return result?.value;
+  }
+
+  // Draws a page at a pixel ratio, with the CSS size of its window divided by the ratio.
+  async emulate(targetId, ratio) {
+    if ((this.ratios.has(targetId) ? this.ratios.get(targetId) : 1) === ratio) return;
+    if (ratio === 1) await this.send(targetId, "Emulation.clearDeviceMetricsOverride", {});
+    else {
+      await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
+        width: 0,
+        height: 0,
+        deviceScaleFactor: ratio,
+        scale: ratio,
+        mobile: false,
+      });
+    }
+    if (ratio === 1) this.ratios.delete(targetId);
+    else this.ratios.set(targetId, ratio);
+  }
+
+  // Holds a page at a CSS size while its window changes, so its layout changes once.
+  async pin(targetId, { width, height, ratio }) {
+    await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
+      width,
+      height,
+      deviceScaleFactor: ratio,
+      mobile: false,
+    });
+    this.ratios.set(targetId, 0);
   }
 
   // Forgets the sessions of pages that are gone.
   keep(targetIds) {
     for (const id of this.sessions.keys()) if (!targetIds.has(id)) this.sessions.delete(id);
+    for (const id of this.ratios.keys()) if (!targetIds.has(id)) this.ratios.delete(id);
   }
 
   close() {
@@ -232,6 +271,9 @@ function linkFor(port) {
   return link;
 }
 
+// The title browser-harness puts in front of the tab the agent works in.
+const AGENT_TAB_MARKER = "\u{1F434}";
+
 // The browser's tabs. The one in front is the one whose page is visible: DevTools lists
 // the tabs in no order that says which one the person is looking at.
 export async function listTabs(port) {
@@ -247,7 +289,13 @@ export async function listTabs(port) {
     title: page.title || page.url,
     url: page.url,
     active: index === front,
+    agent: page.title.startsWith(AGENT_TAB_MARKER),
   }));
+}
+
+// Brings a tab to the front of its window.
+export async function activateTab(port, id) {
+  await devtoolsJson(port, `/json/activate/${targetId(id)}`);
 }
 
 async function onPage(port, id, work) {
@@ -286,7 +334,7 @@ export async function controlBrowser(port, action, body) {
       await onPage(port, targetId(body.id), (page) => page.send("Page.reload"));
       return { ok: true };
     case "activate":
-      await devtoolsJson(port, `/json/activate/${targetId(body.id)}`);
+      await activateTab(port, body.id);
       return { ok: true };
     case "close":
       await devtoolsJson(port, `/json/close/${targetId(body.id)}`);
@@ -329,8 +377,17 @@ export async function setLiveViewport(port, viewport) {
   await fitWindows(linkFor(port));
 }
 
+// The tab strip and toolbar above the page, in window pixels, as the window keeper last
+// measured them: the page starts this far below the window's top left corner.
+export function windowChrome(port) {
+  return links.get(port)?.chrome ?? null;
+}
+
 // The sizes a visible tab reports: its screen, and its window's tab strip and toolbar. The
-// page is measured in CSS pixels, which page zoom makes larger than the window's.
+// page is measured in CSS pixels, which page zoom and the pixel ratio make larger than the
+// window's; a page pinned to a CSS size says nothing about its window, so its measure of the
+// tab strip and toolbar is not used.
+const MAX_CHROME = 400;
 const WINDOW_SIZES = `[document.visibilityState, screen.width, screen.height,
   Math.round(outerWidth - innerWidth * devicePixelRatio),
   Math.round(outerHeight - innerHeight * devicePixelRatio)]`;
@@ -344,18 +401,22 @@ export async function fitWindows(link) {
   const { targetInfos = [] } = await connection.send("Target.getTargets");
   const pages = targetInfos.filter((target) => target.type === "page");
   link.keep(new Set(pages.map((target) => target.targetId)));
+  const live = liveViewports.get(link.port);
   const windows = new Map();
   for (const target of pages) {
     const { windowId, bounds } = await connection.send("Browser.getWindowForTarget", {
       targetId: target.targetId,
     });
-    const window = windows.get(windowId) ?? { bounds, sizes: null };
+    const window = windows.get(windowId) ?? { bounds, sizes: null, tabs: [] };
     windows.set(windowId, window);
+    window.tabs.push(target.targetId);
     if (window.sizes) continue;
     const value = await link.evaluate(target.targetId, WINDOW_SIZES);
-    if (Array.isArray(value) && value[0] === "visible") window.sizes = value;
+    if (Array.isArray(value) && value[0] === "visible") {
+      window.sizes = { value, pinned: link.ratios.get(target.targetId) === 0 };
+    }
   }
-  for (const [windowId, { bounds, sizes }] of windows) {
+  for (const [windowId, { bounds, sizes, tabs }] of windows) {
     if (bounds.windowState !== "normal") {
       await connection.send("Browser.setWindowBounds", {
         windowId,
@@ -363,14 +424,18 @@ export async function fitWindows(link) {
       });
     }
     if (!sizes) continue;
-    const [, width, height, chromeWidth, chromeHeight] = sizes;
-    const size = windowSize(
-      { width, height },
-      { width: chromeWidth, height: chromeHeight },
-      liveViewports.get(link.port),
-    );
-    const fitted = fittedBounds(bounds, size);
-    if (fitted) await connection.send("Browser.setWindowBounds", { windowId, bounds: fitted });
+    const [, width, height, chromeWidth, chromeHeight] = sizes.value;
+    if (!sizes.pinned && chromeWidth >= 0 && chromeHeight >= 0 && chromeHeight < MAX_CHROME) {
+      link.chrome = { width: chromeWidth, height: chromeHeight };
+    }
+    const chrome = link.chrome;
+    if (!chrome) continue;
+    const fitted = fittedBounds(bounds, windowSize({ width, height }, chrome, live));
+    if (fitted) {
+      if (live) for (const tab of tabs) await link.pin(tab, live);
+      await connection.send("Browser.setWindowBounds", { windowId, bounds: fitted });
+    }
+    for (const tab of tabs) await link.emulate(tab, live?.ratio ?? 1);
   }
 }
 

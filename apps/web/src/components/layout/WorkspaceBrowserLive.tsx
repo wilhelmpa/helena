@@ -30,13 +30,11 @@ export default function WorkspaceBrowserLive({
   const t = useTranslations('nav.workspace.browserBar');
   const view = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
   const keyboard = useRef<HTMLTextAreaElement>(null);
-  const { status, hasFrame, frameSize, dialog, send, setViewport } = useBrowserScreencast(
-    base,
-    active,
-    reloadToken,
-    canvas,
-  );
+  const { status, mode, playback, hasFrame, frameSize, dialog, send, setViewport } =
+    useBrowserScreencast(base, active, reloadToken, canvas, video);
+  const inVideoElement = mode === 'video' && playback === 'mse';
   const { pointer, keys } = useBrowserLiveInput(view, keyboard, frameSize, send);
   const dpr = useDevicePixelRatio();
 
@@ -73,7 +71,13 @@ export default function WorkspaceBrowserLive({
       )}
       {...pointer}
     >
-      <canvas ref={canvas} className="size-full object-contain" />
+      <canvas ref={canvas} className={cn('size-full object-contain', inVideoElement && 'hidden')} />
+      <video
+        ref={video}
+        muted
+        playsInline
+        className={cn('size-full object-contain', !inVideoElement && 'hidden')}
+      />
       <textarea
         ref={keyboard}
         aria-label={t('liveKeyboard')}

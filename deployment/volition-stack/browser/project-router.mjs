@@ -41,7 +41,21 @@ async function privateState(root, slug) {
   ) {
     throw new Error("Invalid browser route");
   }
-  return state;
+  return { ...state, projectRoot };
+}
+
+// The X display a browser draws on and the cookie to reach it, for the live view's video, or
+// null when the state does not name a display.
+async function displayOf(state) {
+  if (!Number.isInteger(state.display) || state.display < 0 || state.display > 65535) return null;
+  const xauthority = path.join(state.projectRoot, "run", "Xauthority");
+  try {
+    const stat = await fs.lstat(xauthority);
+    if (!stat.isFile() || stat.isSymbolicLink()) return null;
+  } catch {
+    return null;
+  }
+  return { display: state.display, xauthority };
 }
 
 export async function resolveProjectBrowser(root, requestUrl) {
@@ -55,6 +69,7 @@ export async function resolveProjectBrowser(root, requestUrl) {
     slug,
     port: state.noVncPort,
     cdpPort: state.cdpPort,
+    display: await displayOf(state),
     url: `${pathname}${parsed.search}`,
     api: pathname.startsWith("/api/") ? pathname.slice("/api/".length) : null,
   };
@@ -153,7 +168,7 @@ async function handleUpgrade(root, request, socket, head) {
     if (target.api !== "screencast") return refuse(socket, "404 Not Found");
     if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
     const connection = acceptWebSocket(request, socket, head);
-    if (connection) joinScreencast(target.cdpPort, connection);
+    if (connection) joinScreencast(target.cdpPort, target.display, connection);
     return;
   }
   watchDesktop(target.cdpPort, socket);
