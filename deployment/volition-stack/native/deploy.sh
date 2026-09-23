@@ -33,6 +33,14 @@ if changed packages/db/drizzle; then
   systemctl start volition-plan-migrate.service
 fi
 
+# Syncthing syncs the vault with the owner's devices. Its setup writes the API key the
+# API unit loads, so it runs before the Plan units are installed.
+if changed deployment/volition-stack/native/syncthing \
+  deployment/volition-stack/native/systemd/volition-syncthing.service; then
+  echo "setting up Syncthing"
+  "$live/deployment/volition-stack/native/syncthing/setup.sh"
+fi
+
 # The API and the worker run from the checkout's sources; the web app runs from a
 # production build, which web-release.sh installs as a release of its own.
 plan_units=(volition-plan-api.service volition-plan-worker.service volition-plan-web.service)
@@ -107,7 +115,7 @@ fi
 failed=0
 for unit in volition-plan-api volition-plan-web volition-plan-worker \
   volition-hermes-runner volition-mastra volition-provisioning volition-terminal \
-  volition-project-browser-router; do
+  volition-project-browser-router volition-syncthing; do
   if ! systemctl is-active --quiet "$unit.service"; then
     echo "deploy.sh: $unit is not running" >&2
     failed=1
