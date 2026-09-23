@@ -23,6 +23,7 @@ import { AgentInstructionsField } from './AgentInstructionsField';
 import AgentRunnerSection from './AgentRunnerSection';
 import AgentRuntimePolicySection from './AgentRuntimePolicySection';
 import AgentAbilitiesSection from './AgentAbilitiesSection';
+import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
 
 // Which sections open when an existing agent is opened for editing, so the form reads
@@ -171,6 +172,13 @@ export default function TeamAiAgentFields({
         value={value.instructions}
         onChange={(instructions) => onChange({ instructions })}
       />
+
+      {value.projectId == null && (
+        <AgentTemplateField
+          checked={value.template}
+          onChange={(template) => onChange({ template })}
+        />
+      )}
     </div>
   );
 
@@ -183,15 +191,17 @@ export default function TeamAiAgentFields({
     />
   );
 
-  const projectsSection = (
-    <AgentProjectsSection
-      key="projects"
-      {...sectionProps('projects')}
-      value={value}
-      onChange={onChange}
-      projects={projects}
-    />
-  );
+  // A template works in no project, and an agent created in a project works in that one.
+  const projectsSection =
+    value.template || value.projectId != null ? null : (
+      <AgentProjectsSection
+        key="projects"
+        {...sectionProps('projects')}
+        value={value}
+        onChange={onChange}
+        projects={projects}
+      />
+    );
 
   const tokenSection = (
     <AgentTokenSection

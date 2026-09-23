@@ -66,7 +66,7 @@
   },
   "agents": {
     "empty": "还没有代理",
-    "emptyHint": "团队在其设置中把代理接入项目。",
+    "emptyHint": "在此创建代理，或从模板添加一个。",
     "editAssignment": "Edit project assignment",
     "assignmentDescription": "Set the role and project-specific instructions for {name}.",
     "projectRole": "Role in this project",
@@ -75,10 +75,12 @@
     "assignment": "Project assignment",
     "defaultRole": "Default project role",
     "noProjectInstructions": "No project-specific instructions",
-    "available": "Available to this project",
-    "availableHint": "Add the shared agent to grant project access.",
-    "addToProject": "Add to project",
-    "removeFromProject": "Remove from project"
+    "removeFromProject": "Remove from project",
+    "newFromTemplate": "从模板添加专家",
+    "templateDialogDescription": "该副本仅在此项目中工作，作为向项目协调者汇报的专家。",
+    "template": "模板",
+    "chooseTemplate": "选择模板",
+    "addSpecialist": "添加专家"
   },
   "notifications": {
     "title": "通知",

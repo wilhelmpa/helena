@@ -66,7 +66,7 @@
   },
   "agents": {
     "empty": "Belum ada agen",
-    "emptyHint": "Tim mengaitkan agen dengan proyek melalui pengaturan tim.",
+    "emptyHint": "Buat agen di sini atau tambahkan dari templat.",
     "editAssignment": "Edit project assignment",
     "assignmentDescription": "Set the role and project-specific instructions for {name}.",
     "projectRole": "Role in this project",
@@ -75,10 +75,12 @@
     "assignment": "Project assignment",
     "defaultRole": "Default project role",
     "noProjectInstructions": "No project-specific instructions",
-    "available": "Available to this project",
-    "availableHint": "Add the shared agent to grant project access.",
-    "addToProject": "Add to project",
-    "removeFromProject": "Remove from project"
+    "removeFromProject": "Remove from project",
+    "newFromTemplate": "Tambah spesialis dari templat",
+    "templateDialogDescription": "Salinan hanya bekerja di proyek ini, sebagai spesialis yang melapor kepada koordinator proyek.",
+    "template": "Templat",
+    "chooseTemplate": "Pilih templat",
+    "addSpecialist": "Tambah spesialis"
   },
   "notifications": {
     "title": "Notifikasi",

@@ -29,6 +29,7 @@ import {
   listAgentRuns,
   listAgentTools,
   createAiAgent,
+  copyAiAgentTemplate,
   updateAiAgent,
   regenerateAiAgentKey,
   deleteAiAgent,
@@ -250,7 +251,10 @@ export function useAgentToolsQuery(teamId: number | null) {
 function useAgentInvalidator(teamId: number | null) {
   const qc = useQueryClient();
   return () => {
-    if (teamId != null) void qc.invalidateQueries({ queryKey: qk.teamAiAgents(teamId) });
+    if (teamId != null) {
+      void qc.invalidateQueries({ queryKey: qk.teamAiAgents(teamId) });
+      void qc.invalidateQueries({ queryKey: qk.organization(teamId) });
+    }
     void qc.invalidateQueries({ queryKey: ['workItems'] });
   };
 }
@@ -277,6 +281,16 @@ export function useUpdateAiAgent(teamId: number | null) {
       toast.success(t('saved', { username: agent.username }));
       invalidate();
     },
+  });
+}
+
+// The copy appears in the project's agent list, so a success needs no toast.
+export function useCopyAiAgentTemplate(teamId: number | null) {
+  const invalidate = useAgentInvalidator(teamId);
+  return useMutation({
+    mutationFn: ({ templateId, projectId }: { templateId: number; projectId: number }) =>
+      copyAiAgentTemplate(teamId!, templateId, projectId),
+    onSuccess: invalidate,
   });
 }
 

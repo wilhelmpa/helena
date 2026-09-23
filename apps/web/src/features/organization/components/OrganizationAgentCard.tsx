@@ -112,6 +112,11 @@ export default function OrganizationAgentCard({
             onChange={(event) => setReportsToAgentId(event.target.value)}
           >
             <option value="">{t('values.none')}</option>
+            {/* A project's organization leaves out the Home agent its coordinator reports to. */}
+            {agent.reportsToAgentId != null &&
+              !agents.some((candidate) => candidate.id === agent.reportsToAgentId) && (
+                <option value={agent.reportsToAgentId}>{t('values.outsideProject')}</option>
+              )}
             {agents
               .filter((candidate) => candidate.id !== agent.id)
               .map((candidate) => (

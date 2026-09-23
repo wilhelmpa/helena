@@ -48,19 +48,21 @@ import { useTranslations } from 'next-intl';
 // the agent exists (they are linked through a separate endpoint).
 export function AgentSheetForm({
   agent,
+  projectId,
   expanded = false,
   onCreated,
 }: {
   agent: AiAgent | null;
-  // The project a new agent starts attached to, set when the sheet is opened from
-  // inside one. An agent reaches nothing until it works in a project, so creating it
-  // there means creating it for that project.
+  // The project a new agent is created in, set when the sheet is opened from inside one.
+  projectId?: number;
   expanded?: boolean;
   onCreated: (agent: AiAgent) => void;
 }) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
-  const [value, setValue] = useState<AgentFormValue>(() => initialAgentValue(agent ?? undefined));
+  const [value, setValue] = useState<AgentFormValue>(() =>
+    initialAgentValue(agent ?? undefined, projectId),
+  );
   const isCreate = agent == null;
   // The plaintext key issued in this sheet, by the create or by a regenerate. It is
   // shown once in the API key section and cannot be read back from the server.

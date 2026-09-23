@@ -30,7 +30,8 @@
     "capabilities": "Навички"
   },
   "values": {
-    "none": "None"
+    "none": "None",
+    "outsideProject": "Поза цим проєктом"
   },
   "actions": {
     "add": "Add",

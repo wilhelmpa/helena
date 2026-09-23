@@ -125,6 +125,8 @@ export interface AiAgent {
   // limited to; 'team' scope serves any member's runs.
   ownerUserId: string | null;
   runnerScope: 'owner' | 'team';
+  // A template runs nowhere and works in no project; a project adds a copy of it.
+  template: boolean;
   // When the agent's runner last polled, or null while none ever has.
   lastSeenAt: string | null;
   createdAt: string;
@@ -201,7 +203,11 @@ export interface NewAiAgentInput {
   fieldTriggers?: AgentFieldTrigger[];
   delegationDelaySec?: number;
   projectIds?: number[];
+  // The project the agent is created in, in place of projectIds: it works there only,
+  // as a specialist reporting to the project's coordinator.
+  projectId?: number;
   runnerScope?: 'owner' | 'team';
+  template?: boolean;
 }
 
 export interface AiAgentPatch {
@@ -222,6 +228,7 @@ export interface AiAgentPatch {
   delegationDelaySec?: number;
   projectIds?: number[];
   runnerScope?: 'owner' | 'team';
+  template?: boolean;
 }
 
 // One event of a streamed agent run (mirrors the API's AgentRunEvent). `text` is a
@@ -255,6 +262,14 @@ export const createAiAgent = (teamId: number, input: NewAiAgentInput) =>
   request<{ agent: AiAgent; apiKey: string | null }>(`/teams/${teamId}/ai-agents`, {
     method: 'POST',
     body: JSON.stringify(input),
+  });
+
+// Adds a copy of a template to a project as a specialist of its own. An external
+// copy's key is returned once, like on create.
+export const copyAiAgentTemplate = (teamId: number, agentId: number, projectId: number) =>
+  request<{ agent: AiAgent; apiKey: string | null }>(`/teams/${teamId}/ai-agents/${agentId}/copy`, {
+    method: 'POST',
+    body: JSON.stringify({ projectId }),
   });
 
 export const updateAiAgent = (teamId: number, agentId: number, patch: AiAgentPatch) =>

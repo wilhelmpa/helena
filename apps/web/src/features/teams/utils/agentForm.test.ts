@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { initialAgentValue, toUpdatePatch } from './agentForm';
+import { initialAgentValue, toCreateInput, toUpdatePatch } from './agentForm';
 
 describe('external agent runtime policy form', () => {
   it('keeps runtime policy when an external agent is opened', () => {
@@ -62,5 +62,37 @@ describe('external agent runtime policy form', () => {
       mcpGrants: ['plan__get_issue'],
       files: [{ kind: 'instructions', path: 'SOUL.md', content: '# Agent' }],
     });
+  });
+});
+
+describe('agent projects and templates', () => {
+  function named(projectId?: number) {
+    const value = initialAgentValue(undefined, projectId);
+    value.name = 'Writer';
+    value.username = 'writer';
+    return value;
+  }
+
+  it('creates an agent in the project it was started from', () => {
+    const input = toCreateInput(named(7));
+    assert.equal(input.projectId, 7);
+    assert.equal('projectIds' in input, false);
+  });
+
+  it('creates an agent elsewhere with the projects picked in the form', () => {
+    const value = named();
+    value.projectIds = [3, 4];
+    const input = toCreateInput(value);
+    assert.deepEqual(input.projectIds, [3, 4]);
+    assert.equal('projectId' in input, false);
+  });
+
+  it('saves a template without projects', () => {
+    const value = named();
+    value.projectIds = [3];
+    value.template = true;
+    const patch = toUpdatePatch(value);
+    assert.equal(patch.template, true);
+    assert.deepEqual(patch.projectIds, []);
   });
 });

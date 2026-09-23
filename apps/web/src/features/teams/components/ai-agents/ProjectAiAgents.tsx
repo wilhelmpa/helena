@@ -1,4 +1,4 @@
-import { MessageSquarePlus, Shield, UserMinus, UserPlus } from 'lucide-react';
+import { MessageSquarePlus, Shield, UserMinus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useShell } from '@/context/shellContext';
@@ -27,10 +27,8 @@ import { AgentMetaRow } from './AgentMetaRow';
 import { AgentTriggers } from './AgentTriggers';
 import ProjectAgentAssignmentDialog from './ProjectAgentAssignmentDialog';
 
-// The team's real agents, split by whether they work in this project. This keeps the
-// shared roster visible from every project without copying agent configuration into
-// the project. Attaching creates only the project membership; role and instructions
-// remain project-specific fields on that membership.
+// The agents working in this project. The server leaves the Home agent out. Their role
+// and instructions here are project-specific fields of the membership.
 export default function ProjectAiAgents() {
   const t = useTranslations('settings.agents');
   const tTeam = useTranslations('teams.agents');
@@ -40,20 +38,13 @@ export default function ProjectAiAgents() {
   const { can, isAdmin } = usePermissions();
   const { teamId } = useAgentSection();
   const canManageAgents = useAgentCan()('edit');
-  const query = useAiAgentsQuery(teamId);
+  const query = useAiAgentsQuery(teamId, project?.project.id);
   const updateAgent = useUpdateAiAgent(teamId);
   const paging = usePaging();
   const agents = query.data ?? [];
-  const orderedAgents = project
-    ? [...agents].sort((left, right) => {
-        const leftAttached = left.projects.some((entry) => entry.id === project.project.id);
-        const rightAttached = right.projects.some((entry) => entry.id === project.project.id);
-        return Number(rightAttached) - Number(leftAttached) || left.name.localeCompare(right.name);
-      })
-    : agents;
-  // The team's agents come in one list — it is read whole by the chat panel and the
+  // The project's agents come in one list — it is read whole by the chat panel and the
   // schedule editor too — so the page is cut here rather than asked for.
-  const shown = paging.slice(orderedAgents);
+  const shown = paging.slice(agents);
   // The integration catalog maps a provider key to a readable label for the meta row.
   const catalog = useIntegrationCatalogQuery(teamId).data ?? [];
 
@@ -111,7 +102,7 @@ export default function ProjectAiAgents() {
                   </div>
                 </TableCell>
                 <TableCell className="px-3 py-3 align-middle whitespace-normal">
-                  {assignment ? (
+                  {assignment && (
                     <div className="flex min-w-0 flex-col gap-1">
                       <span className="text-sm font-medium">
                         {assignment.roleName ?? t('defaultRole')}
@@ -119,11 +110,6 @@ export default function ProjectAiAgents() {
                       <span className="line-clamp-2 text-xs text-muted-foreground">
                         {assignment.instructions || t('noProjectInstructions')}
                       </span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm text-muted-foreground">{t('available')}</span>
-                      <span className="text-xs text-muted-foreground">{t('availableHint')}</span>
                     </div>
                   )}
                 </TableCell>
@@ -165,33 +151,22 @@ export default function ProjectAiAgents() {
                             size="icon"
                             className="size-8 text-muted-foreground hover:text-foreground"
                             disabled={updateAgent.isPending}
-                            aria-label={assignment ? t('removeFromProject') : t('addToProject')}
+                            aria-label={t('removeFromProject')}
                             onClick={() =>
                               updateAgent.mutate({
                                 id: agent.id,
                                 patch: {
-                                  projectIds: assignment
-                                    ? agent.projects
-                                        .filter((entry) => entry.id !== project.project.id)
-                                        .map((entry) => entry.id)
-                                    : [
-                                        ...agent.projects.map((entry) => entry.id),
-                                        project.project.id,
-                                      ],
+                                  projectIds: agent.projects
+                                    .filter((entry) => entry.id !== project.project.id)
+                                    .map((entry) => entry.id),
                                 },
                               })
                             }
                           >
-                            {assignment ? (
-                              <UserMinus className="size-4" />
-                            ) : (
-                              <UserPlus className="size-4" />
-                            )}
+                            <UserMinus className="size-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          {assignment ? t('removeFromProject') : t('addToProject')}
-                        </TooltipContent>
+                        <TooltipContent>{t('removeFromProject')}</TooltipContent>
                       </Tooltip>
                     )}
                     {assignment && (
@@ -216,7 +191,7 @@ export default function ProjectAiAgents() {
           })}
         </TableBody>
       </Table>
-      <ListPager paging={paging} total={orderedAgents.length} />
+      <ListPager paging={paging} total={agents.length} />
     </div>
   );
 }
