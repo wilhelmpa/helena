@@ -202,7 +202,9 @@ function ReflectionBlock({ reflection }: { reflection: ReflectionView }) {
           </ul>
         ) : (
           <p className="text-muted-foreground">
-            {reflection.status === 'failed' && reflection.error ? reflection.error : t('nothingSaved')}
+            {reflection.status === 'failed' && reflection.error
+              ? reflection.error
+              : t('nothingSaved')}
           </p>
         )}
         {reflection.summary && <p className="mt-1 text-muted-foreground">{reflection.summary}</p>}

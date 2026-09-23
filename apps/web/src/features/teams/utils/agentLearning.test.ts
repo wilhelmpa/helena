@@ -33,10 +33,11 @@ const action = (patch: Partial<RuntimeAction>): RuntimeAction => ({
 describe('agent learning', () => {
   it('lets an agent learn, keeps the curator off and reflects on complex runs unless the policy says otherwise', () => {
     assert.deepEqual(learningOf(policy), { learning: true, curator: false, reflection: 'complex' });
-    assert.deepEqual(
-      learningOf({ ...policy, learning: false, curator: true, reflection: 'off' }),
-      { learning: false, curator: true, reflection: 'off' },
-    );
+    assert.deepEqual(learningOf({ ...policy, learning: false, curator: true, reflection: 'off' }), {
+      learning: false,
+      curator: true,
+      reflection: 'off',
+    });
   });
 
   it('offers actions only to a runner that carries them out', () => {

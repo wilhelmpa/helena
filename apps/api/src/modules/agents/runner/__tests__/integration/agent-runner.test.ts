@@ -687,7 +687,11 @@ describe('run reflection', () => {
       sessionId: 'sess-1',
       toolCalls: 10,
     });
-    expect(res.data!.reflection).toEqual({ prompt: expect.any(String), maxTurns: 8, runBudgetSeconds: 120 });
+    expect(res.data!.reflection).toEqual({
+      prompt: expect.any(String),
+      maxTurns: 8,
+      runBudgetSeconds: 120,
+    });
 
     const history = await asOwner
       .teams({ teamId: await teamOf(asOwner, 'MKT') })
