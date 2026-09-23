@@ -16,7 +16,9 @@ describe("Hermes runner deployment", () => {
 
     assert.equal(config.agent, "hermes");
     assert.equal(config.apiKey, undefined);
-    assert.deepEqual(config.models, []);
+    assert.equal(config.cwd, "/srv/volition/workspaces");
+    assert.deepEqual(config.args, ["--checkpoints", "--yolo"]);
+    assert.equal(config.concurrency, 3);
     assert.ok(catalog.includes("descriptor_entries"));
     assert.ok(catalog.includes("private_file(descriptor_path"));
     assert.ok(catalog.includes("materialize_agent_home"));
