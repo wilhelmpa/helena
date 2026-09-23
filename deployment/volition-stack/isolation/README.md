@@ -10,6 +10,7 @@ transient systemd unit that can reach only what its project gives it:
 | the Plan API with its own key | `127.0.0.1:3000` in the unit → `plan.sock` → Plan, which accepts only a key of an agent of that project |
 | the internet | `127.0.0.1:3128` in the unit → `egress.sock` → public addresses only, per the project's network mode |
 | its model | the model endpoints in `egress.json`, in every mode |
+| the browser gateway | `/run/volition-agents/browser.sock` in the unit → that project's own socket, `/run/volition-browser/gateway-<slug>.sock` (Home: `gateway-home.sock`; 0660, group `volition-agents`). One socket per provisioned project browser, bound in read-only like `egress.sock`/`plan.sock`, but — unlike those two — per project, not shared: the router (a Node process, one `net.Server` per project) knows the caller's project from which socket accepted the connection, so no peer-cred lookup is needed on that side (see `volition-design-browser-gateway.md` §3) |
 
 Not reachable, whatever the agent runs: other projects' files and profiles, `/etc/volition`, the
 runner's descriptors and keys, browser profiles, CDP and noVNC ports, code-server, the Hermes
