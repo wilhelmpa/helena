@@ -140,7 +140,7 @@ async function readChats(
     SELECT t.id,
            t.title,
            t.agent_id AS "agentId",
-           a.name AS "agentName",
+           u.name AS "agentName",
            a.username AS "agentUsername",
            a.team_id AS "teamId",
            p.id AS "projectId",
@@ -162,6 +162,7 @@ async function readChats(
            t.updated_at AS "updatedAt"
     FROM agent_chat_thread t
     JOIN ai_agent a ON a.id = t.agent_id
+    JOIN "user" u ON u.id = a.user_id
     LEFT JOIN project p ON p.id = t.project_id
     LEFT JOIN issue i ON i.id = t.issue_id
     LEFT JOIN project ip ON ip.id = i.project_id
