@@ -1,13 +1,13 @@
 import { intEnv } from '#shared/lib';
 import { agentRunConfig } from '#modules/agents/core/run-queue';
-import { expireExhaustedRuns } from '#modules/agents/runner/service';
-import { processAgentTeamStarts } from '#modules/control-plane-workflows/agent-team-starts';
-import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/service';
-import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { processAgentRuns } from '#modules/agents/core/run-poller';
+import { expireExhaustedRuns } from '#modules/agents/runner/service';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
 import { processActionRuns } from '#modules/actions/runner';
 import { processInboxTasks } from '#modules/hub-inbox/tasks';
+import { processAgentTeamStarts } from '#modules/control-plane-workflows/agent-team-starts';
+import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/service';
+import { cancelOrphanedStageRuns } from './hermes-team-control';
 
 // The api's background jobs, started by index.ts rather than assembled into the app,
 // so importing the app in a test starts nothing. Several api replicas run them without
@@ -47,6 +47,12 @@ async function stageJanitor(): Promise<void> {
     console.log(`[background] canceled ${canceled} stage runs Mastra no longer waits for`);
 }
 
+async function syncSchedules(): Promise<void> {
+  const changed = await reconcileWorkflowSchedules();
+  if (changed > 0)
+    console.log(`[background] brought ${changed} workflow schedules in line with Plan`);
+}
+
 async function autoArchive(): Promise<void> {
   const archived = await sweepStaleIssues();
   if (archived > 0) console.log(`[background] auto-archived ${archived} stale issues`);
@@ -62,10 +68,4 @@ function startLoop(name: string, job: () => Promise<void>, intervalMs: () => num
     setTimeout(tick, intervalMs()).unref();
   };
   void tick();
-}
-
-async function syncSchedules(): Promise<void> {
-  const changed = await reconcileWorkflowSchedules();
-  if (changed > 0)
-    console.log(`[background] brought ${changed} workflow schedules in line with Plan`);
 }
