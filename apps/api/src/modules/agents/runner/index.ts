@@ -3,7 +3,7 @@ import { noContent } from '#shared/http';
 import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
 import { runnerAuth } from '../runner-auth';
-import { ClaimResponse, resultBody, runParams } from './model';
+import { ClaimResponse, resultBody, RunAckResponse, runParams } from './model';
 import { claimRunnerRun, finishRun, heartbeatRun } from './service';
 
 // The queue an external agent's runner drains, authenticated with the agent's own
@@ -28,17 +28,19 @@ export const agentRunnerRoutes = new Elysia({
   .post(
     '/agent-runs/:runId/heartbeat',
     async ({ agent, params }) => {
-      const ok = await heartbeatRun(agent.id, params.runId);
-      if (!ok) throw new HttpError(404, 'Run not found');
-      return noContent();
+      const ack = await heartbeatRun(agent.id, params.runId);
+      if (!ack) throw new HttpError(404, 'Run not found');
+      return ack;
     },
     {
       runnerAgent: true,
       params: runParams,
-      response: { 204: t.Void(), ...commonErrors },
+      response: { 200: RunAckResponse, ...commonErrors },
       detail: {
         summary: 'Extend a run lease',
-        description: 'Keep a claimed run leased while the runner is still working on it.',
+        description:
+          'Keep a claimed run leased while the runner is still working on it. Answers ' +
+          '`canceled` when the run was canceled: kill the command and report nothing for it.',
       },
     },
   )

@@ -258,6 +258,22 @@ export async function hermesStageStatus(body: unknown) {
   };
 }
 
+// Called by the bridge when the workflow run that waits on a stage was canceled. A run
+// that already finished keeps its outcome; a runner executing the run learns of the
+// cancel from its next heartbeat. Answers the status document, so a repeat gets the
+// same answer.
+export async function cancelHermesStage(body: unknown) {
+  const found = await hermesStageStatus(body);
+  if (found.status !== 200) return found;
+  const [canceled] = await db
+    .update(agentRun)
+    .set({ status: 'canceled', finishedAt: new Date() })
+    .where(and(eq(agentRun.id, Number(object(body)?.runId)), eq(agentRun.status, 'pending')))
+    .returning({ projectId: agentRun.projectId });
+  if (canceled) await bumpControlPlaneRevision(canceled.projectId);
+  return hermesStageStatus(body);
+}
+
 function syncComment(summary: string, evidence: unknown): string {
   const entries = Array.isArray(evidence)
     ? evidence
@@ -381,6 +397,9 @@ export const hermesTeamControlRoutes = new Elysia({ name: 'hermes-team-control' 
   .post('/internal/orchestration/agent-run', ({ request }) => respond(request, enqueueHermesStage))
   .post('/internal/orchestration/agent-run/status', ({ request }) =>
     respond(request, hermesStageStatus),
+  )
+  .post('/internal/orchestration/agent-run/cancel', ({ request }) =>
+    respond(request, cancelHermesStage),
   )
   .post('/internal/orchestration/task-sync', ({ request }) =>
     respond(request, synchronizeHermesStage),
