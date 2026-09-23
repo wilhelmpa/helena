@@ -91,7 +91,8 @@
       "assigned": "Einer Aufgabe zugewiesen",
       "mentioned": "In einer Aufgabe erwähnt",
       "commented": "Neuer Kommentar in einer Aufgabe, die du beobachtest",
-      "state_changed": "Statusänderung in einer Aufgabe, die du beobachtest"
+      "state_changed": "Statusänderung in einer Aufgabe, die du beobachtest",
+      "approval_requested": "Ein Agent bittet um deine Freigabe"
     },
     "eventsTitle": "Ereignisse",
     "telegramAccount": "Telegram-Konto",

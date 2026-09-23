@@ -463,6 +463,7 @@
     "endOfHistory": "نهاية السجل",
     "manualTask": "مهمة يدوية",
     "scheduledTask": "مهمة مجدولة",
+    "approvalTask": "قرار موافقة",
     "failed": "فشل",
     "task": "المهمة",
     "error": "خطأ",

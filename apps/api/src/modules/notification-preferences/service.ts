@@ -6,7 +6,8 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 // absent means the member has not opted in and receives nothing (opt-in default).
 
 // The issue events a member can subscribe to, matching the inbox notification types.
-export type EventKey = 'assigned' | 'mentioned' | 'commented' | 'state_changed';
+export type EventKey =
+  'assigned' | 'mentioned' | 'commented' | 'state_changed' | 'approval_requested';
 export type EventToggles = Record<EventKey, boolean>;
 
 export interface NotificationPreferenceDto {
@@ -15,7 +16,13 @@ export interface NotificationPreferenceDto {
 }
 
 function emptyEvents(): EventToggles {
-  return { assigned: false, mentioned: false, commented: false, state_changed: false };
+  return {
+    assigned: false,
+    mentioned: false,
+    commented: false,
+    state_changed: false,
+    approval_requested: false,
+  };
 }
 
 function defaults(): NotificationPreferenceDto {
@@ -30,6 +37,7 @@ function toToggles(value: unknown): EventToggles {
     mentioned: Boolean(o.mentioned),
     commented: Boolean(o.commented),
     state_changed: Boolean(o.state_changed),
+    approval_requested: Boolean(o.approval_requested),
   };
 }
 
@@ -61,13 +69,19 @@ export async function getPreferences(
   return rows[0] ? toDto(rows[0]) : defaults();
 }
 
-// Upserts a member's preferences for a project and returns the normalized result.
+// Upserts a member's preferences for a project and returns the normalized result. An
+// event the input leaves out keeps its stored value, so a client that predates an event
+// does not turn it off by saving.
 export async function setPreferences(
   userId: string,
   projectId: number,
-  input: NotificationPreferenceDto,
+  input: { emailEvents: Partial<EventToggles>; telegramEvents: Partial<EventToggles> },
 ): Promise<NotificationPreferenceDto> {
-  const values = { emailEvents: input.emailEvents, telegramEvents: input.telegramEvents };
+  const current = await getPreferences(userId, projectId);
+  const values = {
+    emailEvents: toToggles({ ...current.emailEvents, ...input.emailEvents }),
+    telegramEvents: toToggles({ ...current.telegramEvents, ...input.telegramEvents }),
+  };
   await db
     .insert(userNotificationPreference)
     .values({ userId, projectId, ...values })

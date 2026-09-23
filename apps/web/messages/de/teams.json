@@ -559,7 +559,8 @@
     "paused": "Pausiert",
     "pausedNoReason": "Pausiert. Es wurde kein Grund angegeben.",
     "blocked": "Blockiert",
-    "blockedQuestion": "Frage"
+    "blockedQuestion": "Frage",
+    "approvalTask": "Freigabe-Entscheidung"
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

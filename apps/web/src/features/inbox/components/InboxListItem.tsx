@@ -7,6 +7,7 @@ import {
   Clock,
   MessageSquare,
   MoreHorizontal,
+  ShieldCheck,
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   mentioned: AtSign,
   commented: MessageSquare,
   state_changed: CircleDot,
+  approval_requested: ShieldCheck,
 };
 
 const dropdownMenu = {

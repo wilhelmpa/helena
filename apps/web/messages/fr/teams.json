@@ -463,6 +463,7 @@
     "endOfHistory": "Fin de l'historique",
     "manualTask": "Tâche manuelle",
     "scheduledTask": "Tâche planifiée",
+    "approvalTask": "Décision d'approbation",
     "failed": "En échec",
     "task": "Tâche",
     "error": "Erreur",

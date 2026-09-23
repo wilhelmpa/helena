@@ -39,55 +39,72 @@ export async function countRunsAhead(teamId: number, runId: number): Promise<num
   return row?.count ?? 0;
 }
 
-// Queues a run of the agent on the issue, unless the agent already has one pending
-// there — queued or in flight. One automated run per agent and issue at a time: the
-// run that is there reads the issue as it is when it starts, later comments included.
-export async function enqueueAgentRun(input: {
-  agentId: number;
-  // The project the run works in, which is the issue's. An agent works in several
-  // projects, so the run carries its own rather than reading the agent's.
-  projectId: number;
-  issueId: number;
-  sourceActivityId: number | null;
-  prompt: string;
-  trigger?: 'mention' | 'delegation' | 'field';
-  // Seconds the run stays unclaimable after it is queued, so the issue can still be
-  // edited before the agent reads it.
-  delaySeconds?: number;
-}): Promise<void> {
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Queues a run of the agent and returns its id. On an issue, a mention, delegation or
+// field trigger queues nothing while the agent already has a run pending there — queued
+// or in flight — and returns that run: one automated run per agent and issue at a time,
+// and the run that is there reads the issue as it is when it starts. An approval
+// decision is always queued, so it reaches the agent. `executor` is the transaction the
+// queueing belongs to, when it has one.
+export async function enqueueAgentRun(
+  input: {
+    agentId: number;
+    // The project the run works in, which is the issue's. An agent works in several
+    // projects, so the run carries its own rather than reading the agent's.
+    projectId: number;
+    // Null only for an approval decision on a request made outside an issue.
+    issueId: number | null;
+    sourceActivityId: number | null;
+    prompt: string;
+    trigger?: 'mention' | 'delegation' | 'field' | 'approval';
+    // Seconds the run stays unclaimable after it is queued, so the issue can still be
+    // edited before the agent reads it.
+    delaySeconds?: number;
+  },
+  executor: typeof db | Transaction = db,
+): Promise<number> {
   const delay = Math.max(0, Math.trunc(input.delaySeconds ?? 0));
-  await db.transaction(async (tx) => {
-    await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${`agent-run:${input.agentId}:${input.issueId}`}, 0))`,
-    );
-    const [pending] = await tx
-      .select({ id: agentRun.id })
-      .from(agentRun)
-      .where(
-        and(
-          eq(agentRun.agentId, input.agentId),
-          eq(agentRun.issueId, input.issueId),
-          eq(agentRun.status, 'pending'),
-        ),
-      )
-      .limit(1);
-    if (pending) return;
-    await tx.insert(agentRun).values({
-      agentId: input.agentId,
-      projectId: input.projectId,
-      issueId: input.issueId,
-      sourceActivityId: input.sourceActivityId,
-      prompt: input.prompt,
-      trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
-      nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
-    });
-  });
+  const queue = async (tx: typeof db | Transaction): Promise<number> => {
+    if (input.issueId != null && input.trigger !== 'approval') {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${`agent-run:${input.agentId}:${input.issueId}`}, 0))`,
+      );
+      const [pending] = await tx
+        .select({ id: agentRun.id })
+        .from(agentRun)
+        .where(
+          and(
+            eq(agentRun.agentId, input.agentId),
+            eq(agentRun.issueId, input.issueId),
+            eq(agentRun.status, 'pending'),
+          ),
+        )
+        .limit(1);
+      if (pending) return pending.id;
+    }
+    const [row] = await tx
+      .insert(agentRun)
+      .values({
+        agentId: input.agentId,
+        projectId: input.projectId,
+        issueId: input.issueId,
+        sourceActivityId: input.sourceActivityId,
+        prompt: input.prompt,
+        trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
+        nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
+      })
+      .returning({ id: agentRun.id });
+    return row!.id;
+  };
+  return executor === db ? db.transaction(queue) : queue(executor);
 }
 
 export interface ClaimedRun {
   id: number;
   agentId: number;
-  // Null for a scheduled or manual run, which works on no single issue.
+  // Null for a scheduled or manual run, which works on no single issue, and for the
+  // decision on an approval request made outside an issue.
   issueId: number | null;
   scheduleId: number | null;
   trigger: AgentRunTrigger;

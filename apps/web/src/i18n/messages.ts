@@ -4,6 +4,7 @@ import account from '../../messages/en/account.json';
 import agentActivity from '../../messages/en/agentActivity.json';
 import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
+import approvals from '../../messages/en/approvals.json';
 import auth from '../../messages/en/auth.json';
 import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
@@ -59,6 +60,7 @@ const defaultMessages = {
   projects,
   aiChat,
   inbox,
+  approvals,
   permissions,
   members,
   cycles,

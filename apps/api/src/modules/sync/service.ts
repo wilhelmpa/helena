@@ -30,6 +30,7 @@ export const scopeKind: Record<string, ScopeKind> = {
   },
   inbox: { key: (projectId, userId) => `inbox:${projectId}:${userId}`, resource: null },
   hubInbox: { key: (teamId) => `hub-inbox:${teamId}`, resource: null, teamScoped: true },
+  approvals: { key: (teamId) => `approvals:${teamId}`, resource: null, teamScoped: true },
 };
 
 export async function bumpControlPlaneRevision(projectId: number): Promise<void> {

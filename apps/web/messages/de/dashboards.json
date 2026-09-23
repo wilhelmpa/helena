@@ -167,7 +167,8 @@
       "delegation": "lief nach Delegierung von",
       "field": "lief nach Feldänderung in",
       "manual": "lief manuell",
-      "schedule": "lief nach Zeitplan"
+      "schedule": "lief nach Zeitplan",
+      "approval": "lief nach einer Freigabe-Entscheidung"
     }
   },
   "agentHealth": {

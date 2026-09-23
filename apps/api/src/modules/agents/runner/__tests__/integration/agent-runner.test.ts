@@ -281,6 +281,8 @@ describe('agent runner queue', () => {
     expect(soul).toContain('## Instructions\n\nAlways answer in German.');
     expect(soul).toContain('(key MKT)');
     expect(soul).toContain('## Chat');
+    expect(soul).toContain('## Approvals');
+    expect(soul).toContain('call request_approval');
 
     await asOwner
       .teams({ teamId })

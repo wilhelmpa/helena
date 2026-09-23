@@ -47,6 +47,12 @@ export function runModePreamble(trigger: RunForPrompt['trigger']): string {
       'watching it and no one will answer questions. Complete the task with your tools,',
       'making reasonable assumptions; never ask for clarification or wait for input.',
     );
+  } else if (trigger === 'approval') {
+    lines.push(
+      'This run continues your work after a person decided on your approval request. No',
+      'human is watching it and no one will answer questions. Act on the decision with your',
+      'tools; never ask for clarification or wait for input.',
+    );
   } else {
     lines.push(
       'You are running autonomously in response to activity on an issue. No human is',
@@ -63,6 +69,7 @@ export function framePrompt(run: RunForPrompt): string {
   }
   const ref = run.issueIdentifier ?? `#${run.issueId}`;
   const titled = run.issueTitle ? `${ref} "${run.issueTitle}"` : ref;
+  if (run.trigger === 'approval') return frameApproval(run, titled);
   return run.trigger === 'delegation' ? frameDelegation(run, titled) : frameMention(run, titled);
 }
 
@@ -97,6 +104,29 @@ function frameDelegation(run: RunForPrompt, titled: string): string {
     `(issueId ${run.issueId}) describing what you did, and set the issue's status with`,
     'the update_issue tool. Do not mention yourself.',
   );
+  return lines.join('\n');
+}
+
+// The stored prompt holds the request and the decision; see approvals/service.
+function frameApproval(run: RunForPrompt, titled: string): string {
+  const lines = ['A person decided on an approval request you made earlier.'];
+  if (run.issueId != null) lines.push(`It belongs to issue ${titled} of your project.`);
+  lines.push(
+    ...areaLine(run),
+    '',
+    run.prompt,
+    '',
+    'If it was approved, carry out exactly the approved action, following the note when',
+    'there is one, and nothing beyond it. If it was rejected, do not carry the action out:',
+    'finish the rest of the work without it, or stop.',
+  );
+  if (run.issueId != null) {
+    lines.push(
+      '',
+      'Then report what you did in one comment on the issue with the add_comment tool',
+      `(issueId ${run.issueId}). Do not mention yourself.`,
+    );
+  }
   return lines.join('\n');
 }
 

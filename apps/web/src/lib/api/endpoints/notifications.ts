@@ -3,7 +3,8 @@ import type { StateType } from '@/lib/api/endpoints/columns';
 
 // Inbox notifications. Each row is enriched with the issue and project it points at
 // so the list renders without extra calls.
-export type NotificationType = 'assigned' | 'mentioned' | 'commented' | 'state_changed';
+export type NotificationType =
+  'assigned' | 'mentioned' | 'commented' | 'state_changed' | 'approval_requested';
 
 export interface Notification {
   id: number;

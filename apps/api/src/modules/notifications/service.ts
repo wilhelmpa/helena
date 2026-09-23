@@ -23,7 +23,13 @@ import { enqueueOutbound } from './outbound';
 // notified about their own action, and only project members receive notifications,
 // so agent bot users (assigned via delegate, not members) are excluded.
 
-export const NOTIFICATION_TYPES = ['assigned', 'mentioned', 'commented', 'state_changed'] as const;
+export const NOTIFICATION_TYPES = [
+  'assigned',
+  'mentioned',
+  'commented',
+  'state_changed',
+  'approval_requested',
+] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export interface NewNotificationRow {
@@ -53,14 +59,14 @@ async function actorName(id: string | null): Promise<string | null> {
   return rows[0]?.name ?? null;
 }
 
-async function insertNotifications(rows: NewNotificationRow[]): Promise<void> {
+async function insertNotifications(rows: NewNotificationRow[], detail?: string): Promise<void> {
   if (rows.length === 0) return;
   const name = await actorName(rows[0].actorUserId);
   await db.insert(notification).values(rows.map((r) => ({ ...r, actorName: name })));
   // Fan out to the project's enabled delivery channels (email, Telegram). Best-effort:
   // a delivery failure must not break the inbox insert or the domain mutation.
   try {
-    await enqueueOutbound(rows, name);
+    await enqueueOutbound(rows, name, detail);
   } catch (err) {
     console.error('[notifications] outbound enqueue failed:', err);
   }
@@ -218,6 +224,30 @@ export async function notifyIssueChange(input: {
   }
 
   await insertNotifications(rows);
+}
+
+// Tells the people who may decide an agent's approval request that it arrived. The
+// inbox row points at the request's issue, so a request made outside an issue is only
+// shown on the approvals page. `action` is what the agent asks to do, carried into the
+// email and Telegram text.
+export async function notifyApprovalRequested(input: {
+  projectId: number;
+  issueId: number;
+  agentUserId: string;
+  recipientUserIds: string[];
+  action: string;
+}): Promise<void> {
+  await insertNotifications(
+    input.recipientUserIds.map((userId) => ({
+      userId,
+      projectId: input.projectId,
+      issueId: input.issueId,
+      sourceActivityId: null,
+      type: 'approval_requested' as const,
+      actorUserId: input.agentUserId,
+    })),
+    input.action,
+  );
 }
 
 // --- Inbox read + mutations ------------------------------------------------------

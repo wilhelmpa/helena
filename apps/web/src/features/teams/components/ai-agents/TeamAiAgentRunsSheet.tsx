@@ -88,7 +88,10 @@ function RunsList({ agentId }: { agentId: number }) {
 // What the run was about: the issue it targeted, or how it was started when it
 // targeted none.
 function runSubject(r: AgentRun, t: ReturnType<typeof useTranslations<'teams.agents'>>): string {
-  if (r.issueId == null) return r.trigger === 'manual' ? t('manualTask') : t('scheduledTask');
+  if (r.issueId == null) {
+    if (r.trigger === 'manual') return t('manualTask');
+    return r.trigger === 'approval' ? t('approvalTask') : t('scheduledTask');
+  }
   if (!r.issueIdentifier) return `issue #${r.issueId}`;
   return `${r.issueIdentifier}${r.issueTitle ? ` · ${r.issueTitle}` : ''}`;
 }

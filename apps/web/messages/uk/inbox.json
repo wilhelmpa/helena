@@ -15,7 +15,8 @@
     "assigned": "Призначено",
     "mentioned": "Згадано",
     "commented": "Прокоментовано",
-    "state_changed": "Статус змінено"
+    "state_changed": "Статус змінено",
+    "approval_requested": "Запит на погодження"
   },
   "actions": {
     "markRead": "Позначити прочитаним",
@@ -32,7 +33,8 @@
     "mentioned": "{who} згадав(ла) вас",
     "commented": "{who} залишив(ла) коментар",
     "stateChanged": "{who} змінив(ла) статус з {from} на {to}",
-    "stateChangedPlain": "{who} змінив(ла) статус"
+    "stateChangedPlain": "{who} змінив(ла) статус",
+    "approval_requested": "{who} просить вашого погодження"
   },
   "hub": {
     "messages": "Messages",

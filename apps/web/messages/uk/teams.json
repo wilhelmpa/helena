@@ -463,6 +463,7 @@
     "endOfHistory": "Кінець історії",
     "manualTask": "Ручна задача",
     "scheduledTask": "Задача за розкладом",
+    "approvalTask": "Рішення щодо погодження",
     "failed": "Збій",
     "task": "Задача",
     "error": "Помилка",

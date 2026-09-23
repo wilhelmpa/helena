@@ -1,0 +1,35 @@
+{
+  "hint": "Agents ask here before they send, publish, pay or delete something outside Plan, and workflows wait here at their approval gate. Your decision and your note start the next step.",
+  "pending": "Pending",
+  "decided": "Decided",
+  "empty": {
+    "pending": "Nothing to decide",
+    "decided": "No decisions yet"
+  },
+  "emptyHint": {
+    "pending": "When an agent asks before acting outside Plan, the request appears here.",
+    "decided": "Approved and rejected requests appear here."
+  },
+  "kind": {
+    "send": "Send",
+    "publish": "Publish",
+    "pay": "Pay",
+    "delete": "Delete",
+    "other": "Other"
+  },
+  "requestedBy": "{agent} (@{username}) in {project}",
+  "notePlaceholder": "Note with your decision (optional)",
+  "approve": "Approve",
+  "reject": "Reject",
+  "approvedToast": "Approved. The agent gets a new run with your decision.",
+  "rejectedToast": "Rejected. The agent gets a new run with your decision.",
+  "approvedBy": "Approved by {name}",
+  "rejectedBy": "Rejected by {name}",
+  "someone": "someone",
+  "workflows": "Workflow approvals",
+  "workflowsIncomplete": "The workflows of some projects could not be read, so their approvals may be missing here.",
+  "gateOf": "{workflow} in {project}",
+  "effects": "Runs once approved:",
+  "gateApprovedToast": "Approved. The workflow continues.",
+  "gateRejectedToast": "Rejected. The workflow ends without these effects."
+}

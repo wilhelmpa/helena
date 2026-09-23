@@ -1,0 +1,35 @@
+{
+  "hint": "Agenten fragen hier, bevor sie außerhalb von Plan etwas senden, veröffentlichen, bezahlen oder löschen, und Workflows warten hier an ihrem Freigabeschritt. Deine Entscheidung und deine Notiz starten den nächsten Schritt.",
+  "pending": "Offen",
+  "decided": "Entschieden",
+  "empty": {
+    "pending": "Nichts zu entscheiden",
+    "decided": "Noch keine Entscheidungen"
+  },
+  "emptyHint": {
+    "pending": "Wenn ein Agent fragt, bevor er außerhalb von Plan handelt, erscheint die Anfrage hier.",
+    "decided": "Freigegebene und abgelehnte Anfragen erscheinen hier."
+  },
+  "kind": {
+    "send": "Senden",
+    "publish": "Veröffentlichen",
+    "pay": "Bezahlen",
+    "delete": "Löschen",
+    "other": "Sonstiges"
+  },
+  "requestedBy": "{agent} (@{username}) in {project}",
+  "notePlaceholder": "Notiz zu deiner Entscheidung (optional)",
+  "approve": "Freigeben",
+  "reject": "Ablehnen",
+  "approvedToast": "Freigegeben. Der Agent bekommt einen neuen Lauf mit deiner Entscheidung.",
+  "rejectedToast": "Abgelehnt. Der Agent bekommt einen neuen Lauf mit deiner Entscheidung.",
+  "approvedBy": "Freigegeben von {name}",
+  "rejectedBy": "Abgelehnt von {name}",
+  "someone": "jemandem",
+  "workflows": "Workflow-Freigaben",
+  "workflowsIncomplete": "Die Workflows einiger Projekte konnten nicht gelesen werden, deshalb fehlen hier eventuell deren Freigaben.",
+  "gateOf": "{workflow} in {project}",
+  "effects": "Wird nach der Freigabe ausgeführt:",
+  "gateApprovedToast": "Freigegeben. Der Workflow läuft weiter.",
+  "gateRejectedToast": "Abgelehnt. Der Workflow endet ohne diese Wirkungen."
+}

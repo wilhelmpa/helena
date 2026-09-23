@@ -93,10 +93,11 @@ export const decideWorkflow = (
   workflowId: string,
   runId: string,
   approved: boolean,
+  note?: string,
 ) =>
   request<WorkflowRun>(
     `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs/${runId}/approval`,
-    { method: 'POST', body: JSON.stringify({ approved }) },
+    { method: 'POST', body: JSON.stringify({ approved, note }) },
   );
 
 export const cancelWorkflow = (projectKey: string, workflowId: string, runId: string) =>

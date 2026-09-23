@@ -652,7 +652,8 @@ export const agentSchedule = pgTable(
 );
 
 // Queued autonomous runs of an internal agent. Mentions and delegations carry an
-// issue; scheduled and manual runs do not. The worker claims due rows with a lease,
+// issue; scheduled and manual runs do not, and an approval decision carries the issue
+// of its request when it has one. The worker claims due rows with a lease,
 // runs the agent, and records the result for history and retries.
 export const agentRun = pgTable(
   'agent_run',
@@ -711,7 +712,7 @@ export const agentRun = pgTable(
     ),
     check(
       'agent_run_trigger_check',
-      sql`${t.trigger} IN ('mention', 'delegation', 'field', 'schedule', 'manual')`,
+      sql`${t.trigger} IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval')`,
     ),
     uniqueIndex('agent_run_schedule_fire_uq').on(t.scheduleId, t.scheduledFor),
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
@@ -719,6 +720,52 @@ export const agentRun = pgTable(
     index('agent_run_project_idx').on(t.projectId),
     // The token ceilings sum an agent's runs of the current day and month.
     index('agent_run_agent_finished_idx').on(t.agentId, t.finishedAt),
+  ],
+);
+
+// An agent's request to take an action outside Plan (send, publish, pay, delete), which
+// a person with the ai_agents edit permission of the project approves or rejects. The
+// decision queues a run of the agent with the decision in its prompt (followUpRunId).
+export const approvalRequest = pgTable(
+  'approval_request',
+  {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    // The run that asked, when the request came from one.
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    issueId: integer('issue_id').references(() => issue.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    action: text('action').notNull(),
+    details: text('details').notNull().default(''),
+    status: text('status').notNull().default('pending'),
+    decidedByUserId: text('decided_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    decisionNote: text('decision_note'),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    followUpRunId: integer('follow_up_run_id').references(() => agentRun.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'approval_request_kind_check',
+      sql`${t.kind} IN ('send', 'publish', 'pay', 'delete', 'other')`,
+    ),
+    check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
+    index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),
+    index('approval_request_agent_idx').on(t.agentId),
+    // One pending request per action of a run, so a repeated tool call cannot queue the
+    // same outward action twice.
+    uniqueIndex('approval_request_pending_run_uq')
+      .on(t.runId, t.kind, t.action)
+      .where(sql`${t.status} = 'pending' AND ${t.runId} IS NOT NULL`),
   ],
 );
 
@@ -2551,7 +2598,7 @@ export const notification = pgTable(
   (t) => [
     check(
       'notification_type_check',
-      sql`${t.type} IN ('assigned', 'mentioned', 'commented', 'state_changed')`,
+      sql`${t.type} IN ('assigned', 'mentioned', 'commented', 'state_changed', 'approval_requested')`,
     ),
     // Backs the inbox list: a user's notifications newest first.
     index('notification_user_idx').on(t.userId, t.createdAt.desc(), t.id.desc()),

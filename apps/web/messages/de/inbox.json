@@ -15,7 +15,8 @@
     "assigned": "Zugewiesen",
     "mentioned": "Erwähnt",
     "commented": "Kommentiert",
-    "state_changed": "Status geändert"
+    "state_changed": "Status geändert",
+    "approval_requested": "Freigabe angefragt"
   },
   "actions": {
     "markRead": "Als gelesen markieren",
@@ -32,7 +33,8 @@
     "mentioned": "{who} hat dich erwähnt",
     "commented": "{who} hat kommentiert",
     "stateChanged": "{who} hat den Status von {from} auf {to} geändert",
-    "stateChangedPlain": "{who} hat den Status geändert"
+    "stateChangedPlain": "{who} hat den Status geändert",
+    "approval_requested": "{who} bittet um deine Freigabe"
   },
   "hub": {
     "messages": "Nachrichten",

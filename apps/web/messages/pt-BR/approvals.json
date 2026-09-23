@@ -1,0 +1,35 @@
+{
+  "hint": "Os agentes pedem aprovação aqui antes de enviar, publicar, pagar ou excluir algo fora do Plan, e os fluxos de trabalho aguardam aqui na etapa de aprovação. Sua decisão e sua nota iniciam a próxima etapa.",
+  "pending": "Pendentes",
+  "decided": "Decididas",
+  "empty": {
+    "pending": "Nada para decidir",
+    "decided": "Nenhuma decisão ainda"
+  },
+  "emptyHint": {
+    "pending": "Quando um agente pedir aprovação antes de agir fora do Plan, a solicitação aparecerá aqui.",
+    "decided": "Solicitações aprovadas e rejeitadas aparecem aqui."
+  },
+  "kind": {
+    "send": "Enviar",
+    "publish": "Publicar",
+    "pay": "Pagar",
+    "delete": "Excluir",
+    "other": "Outro"
+  },
+  "requestedBy": "{agent} (@{username}) em {project}",
+  "notePlaceholder": "Nota com sua decisão (opcional)",
+  "approve": "Aprovar",
+  "reject": "Rejeitar",
+  "approvedToast": "Aprovada. O agente recebe uma nova execução com sua decisão.",
+  "rejectedToast": "Rejeitada. O agente recebe uma nova execução com sua decisão.",
+  "approvedBy": "Aprovada por {name}",
+  "rejectedBy": "Rejeitada por {name}",
+  "someone": "alguém",
+  "workflows": "Aprovações de fluxos de trabalho",
+  "workflowsIncomplete": "Não foi possível ler os fluxos de trabalho de alguns projetos, então as aprovações deles podem estar faltando aqui.",
+  "gateOf": "{workflow} em {project}",
+  "effects": "Executado após a aprovação:",
+  "gateApprovedToast": "Aprovada. O fluxo de trabalho continua.",
+  "gateRejectedToast": "Rejeitada. O fluxo de trabalho termina sem esses efeitos."
+}

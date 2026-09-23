@@ -1,0 +1,35 @@
+{
+  "hint": "代理在 Plan 之外发送、发布、付款或删除内容之前，会在这里请求审批；工作流也会在审批关口于此等待。你的决定和备注会启动下一步。",
+  "pending": "待处理",
+  "decided": "已处理",
+  "empty": {
+    "pending": "没有需要决定的事项",
+    "decided": "暂无决定"
+  },
+  "emptyHint": {
+    "pending": "代理在 Plan 之外行动前请求审批时，请求会显示在这里。",
+    "decided": "已批准和已拒绝的请求会显示在这里。"
+  },
+  "kind": {
+    "send": "发送",
+    "publish": "发布",
+    "pay": "付款",
+    "delete": "删除",
+    "other": "其他"
+  },
+  "requestedBy": "{agent}（@{username}）· {project}",
+  "notePlaceholder": "随决定附上的备注（可选）",
+  "approve": "批准",
+  "reject": "拒绝",
+  "approvedToast": "已批准。代理将带着你的决定开始新的运行。",
+  "rejectedToast": "已拒绝。代理将带着你的决定开始新的运行。",
+  "approvedBy": "由 {name} 批准",
+  "rejectedBy": "由 {name} 拒绝",
+  "someone": "某人",
+  "workflows": "工作流审批",
+  "workflowsIncomplete": "部分项目的工作流无法读取，因此其审批可能未在此显示。",
+  "gateOf": "{project} 中的 {workflow}",
+  "effects": "批准后执行：",
+  "gateApprovedToast": "已批准。工作流继续执行。",
+  "gateRejectedToast": "已拒绝。工作流结束，不执行这些操作。"
+}

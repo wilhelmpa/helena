@@ -167,7 +167,8 @@
       "delegation": "se ha ejecutado por una delegación de",
       "field": "se ha ejecutado por un campo de",
       "manual": "se ha ejecutado manualmente",
-      "schedule": "se ha ejecutado por programado"
+      "schedule": "se ha ejecutado por programado",
+      "approval": "se ha ejecutado tras una decisión de aprobación"
     }
   },
   "agentHealth": {

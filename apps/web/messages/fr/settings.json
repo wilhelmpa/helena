@@ -91,7 +91,8 @@
       "assigned": "Assigné à un ticket",
       "mentioned": "Mentionné sur un ticket",
       "commented": "Nouveau commentaire sur un ticket que vous suivez",
-      "state_changed": "Changement d'état sur un ticket que vous suivez"
+      "state_changed": "Changement d'état sur un ticket que vous suivez",
+      "approval_requested": "Un agent demande votre approbation"
     },
     "eventsTitle": "Événements",
     "telegramAccount": "Compte Telegram",

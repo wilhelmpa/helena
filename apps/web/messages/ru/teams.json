@@ -463,6 +463,7 @@
     "endOfHistory": "Конец истории",
     "manualTask": "Ручная задача",
     "scheduledTask": "Задача по расписанию",
+    "approvalTask": "Решение по согласованию",
     "failed": "Сбой",
     "task": "Задача",
     "error": "Ошибка",

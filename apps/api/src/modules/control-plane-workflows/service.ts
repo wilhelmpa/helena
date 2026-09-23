@@ -106,10 +106,11 @@ function refs(value: unknown): string[] {
     : [];
 }
 
-async function catalogFlows(): Promise<CatalogFlow[]> {
-  const result = await controlPlaneRequest<{ catalog?: { flows?: CatalogFlow[] } }>({
-    operation: 'catalog',
-  });
+export async function catalogFlows(timeoutMs?: number): Promise<CatalogFlow[]> {
+  const result = await controlPlaneRequest<{ catalog?: { flows?: CatalogFlow[] } }>(
+    { operation: 'catalog' },
+    timeoutMs,
+  );
   return Array.isArray(result?.catalog?.flows) ? result.catalog.flows : [];
 }
 

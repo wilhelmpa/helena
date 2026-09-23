@@ -38,6 +38,7 @@ export const vaultPath = () => '/vault';
 export const tasksPath = () => '/tasks';
 export const globalInboxPath = () => '/inbox';
 export const globalAgentActivityPath = () => '/activity';
+export const approvalsPath = () => '/approvals';
 
 // Public read-only share pages (no auth). The token is the unguessable share key.
 export const shareIssuePath = (token: string) => `/share/issue/${token}`;

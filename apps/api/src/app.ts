@@ -160,6 +160,10 @@ export const app = new Elysia()
             name: 'Agent Activity',
             description: 'The timeline of agent chats, agent runs and workflow runs',
           },
+          {
+            name: 'Approvals',
+            description: 'Agent requests to act outside Plan and the decisions on them',
+          },
           { name: 'Sync', description: 'Change markers a client polls for live refresh' },
           {
             name: 'Telegram',

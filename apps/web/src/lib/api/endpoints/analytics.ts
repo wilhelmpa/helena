@@ -38,7 +38,7 @@ export interface ThroughputWeek {
 export interface AgentRunFeedItem {
   id: number;
   status: AgentRunStatus;
-  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual';
+  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
   agentId: number;
   agentName: string;
   issueId: number | null;

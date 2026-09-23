@@ -94,6 +94,7 @@ function soul(
     structure,
     chatPreamble().trim(),
     blockedPreamble(),
+    approvalPreamble(),
     chartPreamble().trim(),
     attachmentPreamble().trim(),
   ]
@@ -121,6 +122,16 @@ function blockedPreamble(): string {
     'Blocked label, posts the question and notifies the person you report to, and your run ends',
     'as blocked. Then stop and end your turn. A reply to that comment starts you again; remove',
     'the Blocked label when you continue. Do not use it for a problem you can solve yourself.',
+  ].join('\n');
+}
+
+function approvalPreamble(): string {
+  return [
+    '## Approvals',
+    'Before you send, publish, pay or delete anything outside Plan, call request_approval',
+    'with the action, its kind and every detail the owner needs to decide, then end the run',
+    'without taking the action. Plan starts a new run of yours with the decision: act only',
+    'on an approved request, exactly as approved. get_approval reads a request.',
   ].join('\n');
 }
 

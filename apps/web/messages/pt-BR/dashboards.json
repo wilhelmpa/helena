@@ -167,7 +167,8 @@
       "delegation": "executou por delegação de",
       "field": "executou por um campo de",
       "manual": "executou manualmente",
-      "schedule": "executou por agendamento"
+      "schedule": "executou por agendamento",
+      "approval": "executou após uma decisão de aprovação"
     }
   },
   "agentHealth": {

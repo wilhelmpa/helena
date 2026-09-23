@@ -82,7 +82,7 @@ export default function AppSidebar({
           {currentProjectKey ? (
             <SidebarProjectNav projectKey={currentProjectKey} />
           ) : (
-            <SidebarHomeNav teamId={homeTeamId} />
+            <SidebarHomeNav teamId={homeTeamId} teamIds={[...teamIds]} />
           )}
         </div>
       </SidebarContent>
