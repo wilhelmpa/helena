@@ -242,14 +242,14 @@ class Plan:
             for key, _ in batch:
                 self.pending.pop(key, None)
 
-    async def loop(self) -> None:
+    async def loop(self, refresh_sec: float = 30, flush_sec: float = 10) -> None:
         last_refresh = 0.0
         while True:
-            if time.monotonic() - last_refresh > 30:
+            if time.monotonic() - last_refresh > refresh_sec:
                 await self.refresh()
                 last_refresh = time.monotonic()
             await self.flush()
-            await asyncio.sleep(10)
+            await asyncio.sleep(flush_sec)
 
 
 # ── Connections ──────────────────────────────────────────────────────────────────────────
@@ -471,7 +471,10 @@ async def serve() -> None:
         sock.bind(path)
         sock.listen(256)
     server = await asyncio.start_unix_server(egress.handle, sock=sock, limit=64 * 1024)
-    background = asyncio.ensure_future(plan.loop())
+    background = asyncio.ensure_future(plan.loop(
+        float(os.environ.get('VOLITION_EGRESS_REFRESH_SEC', '30')),
+        float(os.environ.get('VOLITION_EGRESS_FLUSH_SEC', '10')),
+    ))
     async with server:
         try:
             await server.serve_forever()

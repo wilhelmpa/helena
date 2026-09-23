@@ -264,11 +264,18 @@ def setup(args: argparse.Namespace) -> None:
         os.unlink(link)
     os.symlink(f'{ROOT}/secrets/token', link)
     # The egress proxy's token, and the copy the test Plan API reads.
-    token = os.urandom(24).hex()
-    write(f'{PROOF}/egress.token', token, 'root', 'root', 0o600)
     api_copy = os.path.expanduser('~wilhelmpa/agent-work/plan-isolation-proof/egress.token')
     mkdir(os.path.dirname(api_copy), 'wilhelmpa', 'wilhelmpa', 0o700)
-    write(api_copy, token, 'wilhelmpa', 'wilhelmpa', 0o600)
+    # Kept across runs: the test Plan API reads its copy once, when it starts.
+    try:
+        with open(api_copy, encoding='utf-8') as handle:
+            token = handle.read().strip()
+    except FileNotFoundError:
+        token = ''
+    if len(token) < 32:
+        token = os.urandom(24).hex()
+        write(api_copy, token, 'wilhelmpa', 'wilhelmpa', 0o600)
+    write(f'{PROOF}/egress.token', token, 'root', 'root', 0o600)
     save_state({'planPort': args.plan_port, 'modelPort': args.model_port, 'source': source})
     print('setup done')
 
@@ -338,7 +345,8 @@ def start(args: argparse.Namespace) -> None:
         'StateDirectory=volition-egress': 'StateDirectory=vpt-egress',
         'http://127.0.0.1:3000': f'http://127.0.0.1:{state["planPort"]}',
         f'-/srv/volition': f'-/srv/volition -{ROOT}/secrets -{ROOT}/hermes -{PROOF}',
-    }, ['--socket-property=SocketUser=root'])
+    }, ['--socket-property=SocketUser=root', '--setenv=VOLITION_EGRESS_REFRESH_SEC=2',
+        '--setenv=VOLITION_EGRESS_FLUSH_SEC=2'])
     start_unit('vpt-plan', 'volition-agent-plan.service', 'volition-agent-plan.socket', {
         **common,
         '127.0.0.1:3000': f'127.0.0.1:{state["planPort"]}',
