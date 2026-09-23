@@ -61,6 +61,7 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
       agents={scope.agents}
       location={location}
       onNavigate={onNavigate}
+      inPage
     />
   );
 }

@@ -80,7 +80,7 @@ export default function ChatModelPicker({
           title={t('composer.model')}
         >
           <Sparkles className="size-3.5 shrink-0" />
-          <span className="max-w-40 truncate">{label}</span>
+          <span className="hidden max-w-40 truncate @md/chat:inline">{label}</span>
           <ChevronDown className="size-3.5 shrink-0" />
         </Button>
       </DropdownMenuTrigger>

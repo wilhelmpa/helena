@@ -29,6 +29,8 @@ export interface ChatWorkspaceProps {
   // for no new history entry: a new chat getting its thread id is the same place.
   location: ChatLocation;
   onNavigate: (next: ChatLocation, options?: { replace?: boolean }) => void;
+  // The chat page, not the tool panel: the conversation's bar joins the app header.
+  inPage?: boolean;
 }
 
 // The claude.ai-style chat: a chat list, the open conversation with its composer, and
@@ -44,6 +46,7 @@ export default function ChatWorkspace({
   agents,
   location,
   onNavigate,
+  inPage = false,
 }: ChatWorkspaceProps) {
   const [rootRef, width] = useContainerWidth<HTMLDivElement>();
   const [listOpen, setListOpen] = useState(false);
@@ -180,6 +183,7 @@ export default function ChatWorkspace({
             artifactOpen={artifactOpen}
             onToggleArtifact={() => setArtifactOpen((open) => !open)}
             hasArtifact={artifact != null}
+            inPage={inPage}
           />
         ) : resolvingAgent ? (
           <div className="flex h-full min-h-0 flex-col gap-3 p-4">

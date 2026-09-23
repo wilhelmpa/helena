@@ -40,6 +40,8 @@ export interface ChatThreadViewProps {
   artifactOpen: boolean;
   onToggleArtifact: () => void;
   hasArtifact: boolean;
+  // Mounted as the chat page (its bar goes into the app header), not in the tool panel.
+  inPage?: boolean;
 }
 
 // One open conversation: the header, the transcript (or, before the first message, a
@@ -64,6 +66,7 @@ export default function ChatThreadView({
   artifactOpen,
   onToggleArtifact,
   hasArtifact,
+  inPage = false,
 }: ChatThreadViewProps) {
   const t = useTranslations('chatWorkspace');
   const plan = usePlanChat({
@@ -139,6 +142,7 @@ export default function ChatThreadView({
         artifactOpen={artifactOpen}
         onToggleArtifact={onToggleArtifact}
         hasArtifact={hasArtifact}
+        inPage={inPage}
       />
       {plan.restoreFailed ? (
         <ChatRestoreError onRetry={() => void plan.retryRestore()} />
