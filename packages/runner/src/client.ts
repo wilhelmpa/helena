@@ -105,8 +105,9 @@ export class Client {
     return body.run;
   }
 
-  async heartbeat(runId: number): Promise<void> {
-    await this.post(`/agent-runs/${runId}/heartbeat`);
+  // True when the run was canceled, for instance with the workflow run of its stage.
+  async heartbeat(runId: number): Promise<boolean> {
+    return canceled(await this.post(`/agent-runs/${runId}/heartbeat`));
   }
 
   // `usage` is what the run read and wrote: its totals where the command reports them
@@ -167,7 +168,7 @@ export class Client {
 }
 
 // An instance too old to know about stopping answers this with 204 and no body, which
-// reads the same way as an answer nobody stopped.
+// reads the same way as work nobody stopped.
 async function canceled(res: Response): Promise<boolean> {
   const body = (await res.json().catch(() => ({}))) as { canceled?: boolean };
   return body.canceled === true;
