@@ -39,6 +39,10 @@ export const qk = {
   // Split from the scaffold so issue writes and live-refresh touch only the
   // issues, not the scaffold.
   boardIssues: (projectKey: string) => ['boardIssues', projectKey] as const,
+  // The Home task list: the issues of every project the caller may read, scoped by
+  // its filters and the window it was read with.
+  crossProjectIssues: (params: unknown, filters: unknown) =>
+    ['crossProjectIssues', params, filters] as const,
   // A project's archived issues.
   archivedIssues: (projectKey: string) => ['archivedIssues', projectKey] as const,
   // Command-palette issue search, scoped to a project and the search term.

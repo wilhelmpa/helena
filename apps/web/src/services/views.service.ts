@@ -129,10 +129,12 @@ export function useDeleteViewFolder(projectKey: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteViewFolder(id),
+    // The area's issues lose it in the database, so the board reloads them too.
     onSuccess: () => {
       if (!projectKey) return;
       void qc.invalidateQueries({ queryKey: qk.viewFolders(projectKey) });
       void qc.invalidateQueries({ queryKey: qk.views(projectKey) });
+      void qc.invalidateQueries({ queryKey: qk.boardIssues(projectKey) });
     },
   });
 }

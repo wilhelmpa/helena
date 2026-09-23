@@ -27,7 +27,8 @@
     "priority": "Prioritas",
     "type": "Tipe",
     "initiative": "Inisiatif",
-    "cycle": "Cycle"
+    "cycle": "Cycle",
+    "area": "Area"
   },
   "properties": {
     "id": "ID",

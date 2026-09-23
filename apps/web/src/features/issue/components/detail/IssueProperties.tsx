@@ -19,6 +19,7 @@ import StatusSelect from '@/components/common/fields/StatusSelect';
 import TypeSelect from '@/components/common/fields/TypeSelect';
 import InitiativeSelect from '../fields/InitiativeSelect';
 import CycleSelect from '../fields/CycleSelect';
+import AreaSelect from '../fields/AreaSelect';
 import CycleHistoryBadge from '../fields/CycleHistoryBadge';
 import EstimatePill from '../fields/EstimatePill';
 import IssueTimeTracking from '../fields/IssueTimeTracking';
@@ -164,6 +165,17 @@ export default function IssueProperties({
     {
       key: 'groupPlanning',
       rows: [
+        (project.areas.length > 0 || issue.folderId != null) && (
+          <IssuePropertyRow key="area" label={t('area')}>
+            <AreaSelect
+              areas={project.areas}
+              value={issue.folderId}
+              onChange={(id) => onPatch({ folderId: id })}
+              readOnly={readOnly}
+            />
+          </IssuePropertyRow>
+        ),
+
         project.project.initiativesEnabled && (!readOnly || issue.initiative) && (
           <IssuePropertyRow key="initiative" label={t('initiative')}>
             {readOnly ? (

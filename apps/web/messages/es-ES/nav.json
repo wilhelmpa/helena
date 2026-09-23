@@ -72,7 +72,7 @@
     "automation": "Automatización",
     "work": "Trabajo",
     "agents": "Agentes y automatización",
-    "team": "Equipo"
+    "globalSettings": "Ajustes globales"
   },
   "godModeOwnerOnly": "El modo dios está abierto solo al propietario de la instancia.",
   "project": "Proyecto",
@@ -87,5 +87,6 @@
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
   "teamSettings": "Ajustes del equipo",
-  "teamOrchestration": "Equipo y orquestación"
+  "teamOrchestration": "Equipo y orquestación",
+  "overview": "Resumen"
 }

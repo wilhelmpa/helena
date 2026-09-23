@@ -159,6 +159,7 @@ export default function IssueSubtasksPanel({
             parentId: issue.id,
             typeId: issue.typeId,
             initiativeId: issue.initiative?.id ?? null,
+            folderId: issue.folderId,
             assigneeUserId: issue.assigneeUserId,
             delegateUserId: null,
             priority: issue.priority,

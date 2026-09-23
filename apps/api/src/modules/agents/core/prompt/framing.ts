@@ -17,6 +17,8 @@ export interface RunForPrompt {
   issueId: number | null;
   issueIdentifier: string | null;
   issueTitle: string | null;
+  // The name of the area the issue belongs to, null outside any area.
+  issueArea: string | null;
   // The issue's assignee and, on a mention run, the author of the comment behind it:
   // the name they are called by and the handle they are tagged by.
   assigneeName: string | null;
@@ -64,9 +66,14 @@ export function framePrompt(run: RunForPrompt): string {
   return run.trigger === 'delegation' ? frameDelegation(run, titled) : frameMention(run, titled);
 }
 
+function areaLine(run: RunForPrompt): string[] {
+  return run.issueArea ? [`Area: ${run.issueArea}`] : [];
+}
+
 function frameDelegation(run: RunForPrompt, titled: string): string {
   const lines = [
     `Issue ${titled} of your project has been delegated to you. Carry it out.`,
+    ...areaLine(run),
     'Read the issue for context, then do the work it needs with your tools. Add a',
     'question comment only when you genuinely cannot proceed without a human answer.',
   ];
@@ -109,6 +116,7 @@ function frameMention(run: RunForPrompt, titled: string): string {
     : `Someone answered your comment on issue ${titled} of your project.`;
   const lines = [
     lead,
+    ...areaLine(run),
     'Work out what the comment is asking for and do it with your tools, then reply by',
     `adding one comment to the issue with the add_comment tool (${args}) with the`,
     'result or answer. Keep it short.',

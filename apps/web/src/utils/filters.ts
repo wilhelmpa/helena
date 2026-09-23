@@ -19,6 +19,7 @@ export type BuiltinFilterField =
   | 'type' // issue type id, or null for "no type"
   | 'initiative' // initiative id or `status:<status>`, or null for "no initiative"
   | 'cycle' // cycle id or `status:<status>`, or null for "no cycle"
+  | 'area' // area (view folder) id, or null for "no area"
   | 'labels' // label ids (a issue has any/none of the chosen ones)
   | 'dueDate'
   | 'startDate'
@@ -120,6 +121,8 @@ function builtinSetValues(
         : [null];
     case 'cycle':
       return issue.cycle ? [issue.cycle.id, statusValue(issue.cycle.status)] : [null];
+    case 'area':
+      return [issue.folderId];
     case 'labels':
       return issue.labelIds.length ? issue.labelIds : [null];
     default:

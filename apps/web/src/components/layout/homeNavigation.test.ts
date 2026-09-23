@@ -3,24 +3,30 @@ import { describe, test } from 'node:test';
 import { homeNavigation } from './homeNavigation';
 
 describe('home sidebar navigation', () => {
-  test('shows central services and team management without project-only sections', () => {
+  test('without a single team shows the work across projects and the shared services', () => {
     assert.deepEqual(homeNavigation(null), [
-      { id: 'connections', href: '/connections' },
-      { id: 'vault', href: '/vault' },
-      { id: 'teamSettings', href: '/account/teams' },
+      { id: 'overview', group: 'work', href: '/' },
+      { id: 'allWorkItems', group: 'work', href: '/tasks' },
+      { id: 'inbox', group: 'work', href: '/inbox' },
+      { id: 'connections', group: 'globalSettings', href: '/connections' },
+      { id: 'vault', group: 'globalSettings', href: '/vault' },
+      { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
   });
 
-  test('links a single team through persistent global shell routes', () => {
+  test('groups a single team into work, agents and global settings', () => {
     assert.deepEqual(homeNavigation(42), [
-      { id: 'agentPool', href: '/agents' },
-      { id: 'organization', href: '/organization' },
-      { id: 'connections', href: '/connections' },
-      { id: 'vault', href: '/vault' },
-      { id: 'mcps', href: '/mcps' },
-      { id: 'tools', href: '/tools' },
-      { id: 'skills', href: '/skills' },
-      { id: 'teamSettings', href: '/account/teams' },
+      { id: 'overview', group: 'work', href: '/' },
+      { id: 'allWorkItems', group: 'work', href: '/tasks' },
+      { id: 'inbox', group: 'work', href: '/inbox' },
+      { id: 'agentPool', group: 'agents', href: '/agents' },
+      { id: 'organization', group: 'agents', href: '/organization' },
+      { id: 'skills', group: 'globalSettings', href: '/skills' },
+      { id: 'tools', group: 'globalSettings', href: '/tools' },
+      { id: 'mcps', group: 'globalSettings', href: '/mcps' },
+      { id: 'connections', group: 'globalSettings', href: '/connections' },
+      { id: 'vault', group: 'globalSettings', href: '/vault' },
+      { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
     const ids = homeNavigation(42).map((item) => item.id) as string[];
     assert.ok(!ids.includes('notifications'));

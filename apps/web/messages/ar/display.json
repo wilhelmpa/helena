@@ -27,7 +27,8 @@
     "priority": "الأولوية",
     "type": "النوع",
     "initiative": "المبادرة",
-    "cycle": "الدورة"
+    "cycle": "الدورة",
+    "area": "المجال"
   },
   "properties": {
     "id": "المعرّف",

@@ -144,6 +144,7 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
   projectInstructions: string;
   agentProjectInstructions: string;
   issueTitle: string | null;
+  issueArea: string | null;
   assigneeName: string | null;
   assigneeUsername: string | null;
   requesterName: string | null;
@@ -215,6 +216,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
          FROM issue i JOIN project p ON p.id = i.project_id
          WHERE i.id = r.issue_id) AS "issueIdentifier",
       (SELECT title FROM issue i WHERE i.id = r.issue_id) AS "issueTitle",
+      (SELECT f.name FROM issue i JOIN project_view_folder f ON f.id = i.folder_id
+         WHERE i.id = r.issue_id) AS "issueArea",
       (SELECT u.name FROM issue i JOIN "user" u ON u.id = i.assignee_user_id
          WHERE i.id = r.issue_id) AS "assigneeName",
       (SELECT COALESCE(u.username, ag.username)

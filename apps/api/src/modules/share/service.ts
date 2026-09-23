@@ -16,7 +16,8 @@ import {
   type IssueLinkRow,
 } from '#modules/issues/links';
 import { getParentRef, listSubtasks, type IssueRef } from '#modules/issues/subtasks';
-import { applyFilters } from '#modules/views/filters';
+import { applyViewFilters } from '#modules/views/filters';
+import { listViewFolders } from '#modules/views/service';
 
 // Public read-only sharing: an issue or a saved view carries an unguessable
 // share_token that, when set, makes it readable without a session through the
@@ -42,6 +43,7 @@ export interface ShareScaffold {
     agentKind: 'external' | 'internal' | null;
   }>;
   customFields: Awaited<ReturnType<typeof listCustomFields>>;
+  areas: Awaited<ReturnType<typeof listViewFolders>>;
 }
 
 export interface SharedIssueBundle {
@@ -72,14 +74,16 @@ export interface SharedViewBundle {
 // issue payload can reference — the columns and issue types — so a link that hides
 // the people, labels and custom fields does not name them in the scaffold either.
 async function buildScaffold(project: ProjectRow, extended: boolean): Promise<ShareScaffold> {
-  const [columns, issueTypes, labels, labelGroups, assignees, customFields] = await Promise.all([
-    listColumns(project.id),
-    listIssueTypes(project.id),
-    extended ? listLabels(project.id) : [],
-    extended ? listLabelGroups(project.id) : [],
-    extended ? listAssigneeCandidates(project.id) : [],
-    extended ? listCustomFields(project.id, { allTypes: true }) : [],
-  ]);
+  const [columns, issueTypes, labels, labelGroups, assignees, customFields, areas] =
+    await Promise.all([
+      listColumns(project.id),
+      listIssueTypes(project.id),
+      extended ? listLabels(project.id) : [],
+      extended ? listLabelGroups(project.id) : [],
+      extended ? listAssigneeCandidates(project.id) : [],
+      extended ? listCustomFields(project.id, { allTypes: true }) : [],
+      extended ? listViewFolders(project.id) : [],
+    ]);
   const { teamId: _teamId, teamName: _teamName, ...publicProject } = project;
   return {
     project: publicProject,
@@ -96,18 +100,20 @@ async function buildScaffold(project: ProjectRow, extended: boolean): Promise<Sh
       agentKind: a.agentKind,
     })),
     customFields,
+    areas,
   };
 }
 
 // Cuts an issue down to what a non-extended share exposes: its title, description,
 // state, type, priority, dates, and its place among the other issues. The people on
-// it, its planning (initiative, cycle), its labels and its custom field values stay
-// private.
+// it, its planning (initiative, cycle, area), its labels and its custom field values
+// stay private.
 function redactIssue<T extends IssueRow>(row: T): T {
   return {
     ...row,
     initiative: null,
     cycle: null,
+    folderId: null,
     assigneeUserId: null,
     delegateUserId: null,
     labelIds: [],
@@ -247,7 +253,7 @@ export async function getSharedView(token: string): Promise<SharedViewBundle | n
   // Apply the view's own filters here so the bundle carries only the issues the
   // view shows, not the whole project. A public link must not expose issues the
   // filter excludes.
-  const visible = applyFilters(issues, view.filters, scaffold.columns);
+  const visible = applyViewFilters(issues, view, scaffold.columns);
   // The board renders relations and subtask counts on its cards, the same way the
   // authenticated board does. Both are counted over the issues the view shows, so a
   // card cannot name or count one its filter excludes.
@@ -290,6 +296,7 @@ export async function getSharedViewIssue(
   const rows = await db
     .select({
       projectId: projectView.projectId,
+      folderId: projectView.folderId,
       filters: projectView.filters,
       extended: projectView.shareExtended,
     })
@@ -299,7 +306,7 @@ export async function getSharedViewIssue(
   const project = await getProjectById(rows[0].projectId);
   if (!project) return null;
   const [columns, issues] = await Promise.all([listColumns(project.id), listIssues(project)]);
-  const shown = applyFilters(issues, rows[0].filters, columns);
+  const shown = applyViewFilters(issues, rows[0], columns);
   const issueRow = shown.find((i) => i.id === issueId);
   if (!issueRow) return null;
   return issueBundle(issueRow, {

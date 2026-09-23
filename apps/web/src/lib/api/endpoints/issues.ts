@@ -4,6 +4,9 @@ import { request } from '@/lib/api/core/client';
 import type { Checklist } from '@/lib/api/endpoints/checklists';
 import type { CustomFieldType } from '@/lib/api/endpoints/customFields';
 import type { DevelopmentLink } from '@/lib/api/endpoints/git';
+import type { StateType } from '@/lib/api/endpoints/columns';
+import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
+import { dayKey } from '@/utils/dates';
 
 // The subtask disposition as the delete route takes it: a query string, since a
 // DELETE carries no body.
@@ -39,6 +42,9 @@ export interface Issue {
   // The cycle this issue is planned into, expanded to id + name for rendering, or
   // null. Set through updateIssue by cycleId.
   cycle: CycleRef | null;
+  // The area (view folder) the issue belongs to, or null. Its name comes from the
+  // project's areas.
+  folderId: number | null;
   assigneeUserId: string | null;
   delegateUserId: string | null;
   columnId: number;
@@ -87,6 +93,7 @@ export interface IssueSearchHit {
   typeId: number | null;
   initiativeId: number | null;
   cycleId: number | null;
+  folderId: number | null;
   parentId: number | null;
   assigneeUserId: string | null;
   delegateUserId: string | null;
@@ -241,6 +248,7 @@ export interface NewIssueInput {
   typeId?: number | null;
   initiativeId?: number | null;
   cycleId?: number | null;
+  folderId?: number | null;
   assigneeUserId?: string | null;
   delegateUserId?: string | null;
   columnId: number;
@@ -262,6 +270,7 @@ export interface BulkIssuePatch {
   typeId?: number | null;
   initiativeId?: number | null;
   cycleId?: number | null;
+  folderId?: number | null;
   assigneeUserId?: string | null;
   delegateUserId?: string | null;
   priority?: string | null;
@@ -278,6 +287,7 @@ export interface IssuePatch {
   parentId?: number | null;
   initiativeId?: number | null;
   cycleId?: number | null;
+  folderId?: number | null;
   assigneeUserId?: string | null;
   delegateUserId?: string | null;
   title?: string;
@@ -440,3 +450,47 @@ export const setFieldValue = (issueId: number, fieldId: number, input: IssueFiel
     method: 'PUT',
     body: JSON.stringify(input),
   });
+
+// One row of the Home task list (GET /issues): an active issue of any project the
+// reader may read, with the names it is shown by.
+export interface CrossProjectIssue {
+  id: number;
+  sequenceNumber: number;
+  identifier: string;
+  title: string;
+  projectKey: string;
+  projectName: string;
+  areaName: string | null;
+  stateName: string;
+  stateType: StateType;
+  stateColor: string;
+  assignee: { userId: string; name: string; image: string | null } | null;
+  delegate: { userId: string; name: string; image: string | null } | null;
+  priority: string | null;
+  dueDate: string | null;
+  updatedAt: string;
+}
+
+// The filters of the Home task list. `stateType` 'open' is every state but completed
+// and canceled; `assignee` is 'me', 'agents', 'unassigned' or a user id.
+export interface CrossProjectIssueFilters {
+  projectKey?: string;
+  stateType?: 'open' | StateType;
+  assignee?: string;
+  due?: 'overdue' | 'week';
+  q?: string;
+}
+
+// The due filters count from the reader's own day, the one the rows are dated by.
+export const listIssuesAcrossProjects = (
+  params: PageParams,
+  filters: CrossProjectIssueFilters,
+  signal?: AbortSignal,
+) =>
+  request<Page<CrossProjectIssue>>(
+    `/issues${pageQuery(params, {
+      ...filters,
+      today: filters.due && dayKey(new Date().toISOString()),
+    })}`,
+    { signal },
+  );

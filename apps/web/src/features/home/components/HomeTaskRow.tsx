@@ -1,0 +1,56 @@
+import Link from 'next/link';
+import { FolderKanban } from 'lucide-react';
+import type { CrossProjectIssue } from '@/lib/api/endpoints/issues';
+import { usePriorityLabel } from '@/hooks/usePriorityLabel';
+import { dayKey, formatDate } from '@/utils/dates';
+import { issuePath } from '@/utils/paths';
+import { cn } from '@/lib/utils';
+import Avatar from '@/components/common/Avatar';
+import { colorDot } from '@/components/common/fields/colorDot';
+
+// One task of the Home lists. It opens the task in its project, where it is edited.
+export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
+  const priorityLabel = usePriorityLabel();
+  const holder = issue.assignee ?? issue.delegate;
+  const overdue = issue.dueDate != null && issue.dueDate < dayKey(new Date().toISOString());
+
+  return (
+    <Link
+      href={issuePath(issue.projectKey, issue.sequenceNumber)}
+      className="flex min-w-0 items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-accent/50"
+    >
+      <span className="w-20 shrink-0 font-mono text-xs text-muted-foreground" dir="ltr">
+        {issue.identifier}
+      </span>
+      <span className="min-w-0 flex-1 truncate" dir="auto">
+        {issue.title}
+      </span>
+      {issue.areaName && (
+        <span className="hidden max-w-40 shrink-0 items-center gap-1 truncate text-xs text-muted-foreground md:flex">
+          <FolderKanban className="size-3.5 shrink-0" />
+          <span className="truncate">{issue.areaName}</span>
+        </span>
+      )}
+      <span className="hidden w-32 shrink-0 items-center gap-1.5 truncate text-xs text-muted-foreground sm:flex">
+        {colorDot(issue.stateColor)}
+        <span className="truncate">{issue.stateName}</span>
+      </span>
+      {issue.priority && (
+        <span className="hidden w-16 shrink-0 truncate text-xs text-muted-foreground lg:block">
+          {priorityLabel(issue.priority)}
+        </span>
+      )}
+      <span
+        className={cn(
+          'w-24 shrink-0 text-end text-xs text-muted-foreground',
+          overdue && 'text-destructive',
+        )}
+      >
+        {issue.dueDate ? formatDate(issue.dueDate) : ''}
+      </span>
+      <span className="flex w-5 shrink-0 justify-end">
+        {holder && <Avatar name={holder.name} image={holder.image} title={holder.name} />}
+      </span>
+    </Link>
+  );
+}

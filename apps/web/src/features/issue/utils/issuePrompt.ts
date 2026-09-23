@@ -50,6 +50,7 @@ export function buildIssuePrompt(
   const delegate = issue.delegateUserId
     ? project.assignees.find((a) => a.userId === issue.delegateUserId)?.name
     : undefined;
+  const area = project.areas.find((a) => a.id === issue.folderId)?.name;
   const labels = issue.labelIds
     .map((id) => project.labels.find((l) => l.id === id)?.name)
     .filter((name): name is string => Boolean(name));
@@ -65,6 +66,7 @@ export function buildIssuePrompt(
   if (status) tags.push(`<status>${status}</status>`);
   if (issue.priority) tags.push(`<priority>${issue.priority}</priority>`);
   if (type) tags.push(`<type>${type}</type>`);
+  if (area) tags.push(`<area>${area}</area>`);
   if (assignee) tags.push(`<assignee>${assignee}</assignee>`);
   if (delegate) tags.push(`<delegate>${delegate}</delegate>`);
   if (issue.startDate) tags.push(`<startDate>${issue.startDate}</startDate>`);

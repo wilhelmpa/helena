@@ -33,7 +33,8 @@
     "groupLabels": "标签",
     "groupCustom": "自定义字段",
     "empty": "空",
-    "openInNewTab": "在新标签页中打开"
+    "openInNewTab": "在新标签页中打开",
+    "area": "区域"
   },
   "menu": {
     "preview": "预览",
@@ -325,7 +326,10 @@
     "worklogChanged": "将 <v>{fromDate}</v> 的 <v>{from}</v> 改为 <v>{date}</v> 的 <v>{to}</v>",
     "worklogRemoved": "删除了 <v>{date}</v> 的 <v>{time}</v>",
     "commentEdited": "编辑了一条评论",
-    "commentDeleted": "删除了一条评论"
+    "commentDeleted": "删除了一条评论",
+    "areaSet": "移至区域 <v>{area}</v>",
+    "areaMoved": "从区域 <v>{from}</v> 移至 <v>{to}</v>",
+    "areaRemoved": "从区域 <v>{area}</v> 中移除"
   },
   "development": {
     "title": "开发",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, other {# 个标签}}",
     "noMember": "未设置",
     "pickMember": "选择…",
-    "noCandidates": "没有可选对象。"
+    "noCandidates": "没有可选对象。",
+    "area": "区域",
+    "noArea": "无区域",
+    "changeArea": "移动到区域…"
   },
   "watchers": {
     "watch": "关注",

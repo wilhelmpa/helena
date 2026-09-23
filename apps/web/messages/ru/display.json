@@ -27,7 +27,8 @@
     "priority": "Приоритет",
     "type": "Тип",
     "initiative": "Инициатива",
-    "cycle": "Цикл"
+    "cycle": "Цикл",
+    "area": "Область"
   },
   "properties": {
     "id": "ID",

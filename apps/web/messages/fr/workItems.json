@@ -88,7 +88,9 @@
     "noInitiative": "Aucune initiative",
     "noCycle": "Aucun cycle",
     "archive": "Archiver",
-    "clearSelection": "Annuler la sélection"
+    "clearSelection": "Annuler la sélection",
+    "area": "Domaine",
+    "noArea": "Aucun domaine"
   },
   "removal": {
     "archive": {
@@ -114,6 +116,36 @@
     "noType": "Aucun type",
     "noInitiative": "Aucune initiative",
     "noCycle": "Aucun cycle",
-    "noMember": "Aucune valeur"
+    "noMember": "Aucune valeur",
+    "noArea": "Aucun domaine"
+  },
+  "allTasks": {
+    "hint": "Les tickets de tous vos projets. Ouvrez-en un pour le modifier dans son projet.",
+    "searchPlaceholder": "Rechercher des tickets…",
+    "allProjects": "Tous les projets",
+    "state": {
+      "open": "Ouverts",
+      "any": "Tous les états"
+    },
+    "assignee": {
+      "any": "Tout le monde",
+      "me": "Assignés à moi",
+      "agents": "Délégués à des agents",
+      "unassigned": "Non assignés"
+    },
+    "due": {
+      "any": "Toutes les échéances",
+      "overdue": "En retard",
+      "week": "Échéance sous une semaine"
+    },
+    "groupBy": {
+      "project": "Par projet",
+      "state": "Par état"
+    },
+    "empty": "Aucun ticket",
+    "emptyHint": "Aucun ticket ne correspond à ces filtres.",
+    "myOpenTasks": "Mes tickets ouverts",
+    "viewAll": "Tous les tickets",
+    "noOpenTasks": "Aucun ticket ouvert ne vous est assigné."
   }
 }

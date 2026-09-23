@@ -16,6 +16,7 @@ type FilterField =
   | 'type'
   | 'initiative'
   | 'cycle'
+  | 'area'
   | 'labels'
   | 'dueDate'
   | 'startDate'
@@ -96,6 +97,8 @@ function builtinSetValues(
         : [null];
     case 'cycle':
       return issue.cycle ? [issue.cycle.id, statusValue(issue.cycle.status)] : [null];
+    case 'area':
+      return [issue.folderId];
     case 'labels':
       return issue.labelIds.length ? issue.labelIds : [null];
     default:
@@ -177,15 +180,23 @@ function matchCondition(
   return cond.op === 'is' ? overlaps : !overlaps;
 }
 
-export function applyFilters(
-  issues: IssueRow[],
-  rawFilters: unknown,
-  columns: ColumnRow[],
-): IssueRow[] {
+function applyFilters(issues: IssueRow[], rawFilters: unknown, columns: ColumnRow[]): IssueRow[] {
   const active = toFilterSet(rawFilters).conditions.filter(isEffectiveCondition);
   if (active.length === 0) return issues;
   const columnStateType = new Map(columns.map((c) => [c.id, c.stateType]));
   return issues.filter((issue) =>
     active.every((cond) => matchCondition(issue, cond, columnStateType)),
   );
+}
+
+// The issues a saved view shows: a view inside an area holds only that area's issues,
+// and its own filters narrow them further.
+export function applyViewFilters(
+  issues: IssueRow[],
+  view: { folderId: number | null; filters: unknown },
+  columns: ColumnRow[],
+): IssueRow[] {
+  const inArea =
+    view.folderId == null ? issues : issues.filter((i) => i.folderId === view.folderId);
+  return applyFilters(inArea, view.filters, columns);
 }

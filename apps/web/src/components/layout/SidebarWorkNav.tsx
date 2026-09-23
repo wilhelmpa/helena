@@ -29,6 +29,7 @@ import {
   SidebarMenu,
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
+import SidebarAreaNav from '@/components/layout/SidebarAreaNav';
 
 export default function SidebarWorkNav({ projectKey }: { projectKey: string | null }) {
   const t = useTranslations('nav');
@@ -63,6 +64,7 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
             active={onWorkItems}
             disabled={disabled}
           />
+          {projectKey && can('views', 'read') && <SidebarAreaNav projectKey={projectKey} />}
           <SidebarNavItem
             href={projectKey ? inboxPath(projectKey) : '#'}
             icon={Inbox}

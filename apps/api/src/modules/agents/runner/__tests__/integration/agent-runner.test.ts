@@ -67,6 +67,32 @@ describe('agent runner queue', () => {
     expect(res.data!.run!.systemPrompt).toContain('Run mode');
   });
 
+  it("names the issue's area in the prompt", async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    const areaId = (
+      await asOwner.projects({ projectKey: 'MKT' })['view-folders'].post({ name: 'Backend' })
+    ).data!.id;
+    const issue = (
+      await asOwner
+        .projects({ projectKey: 'MKT' })
+        .issues.post({ columnId, title: 'Landing page', folderId: areaId })
+    ).data!;
+    await asOwner
+      .issues({ issueId: issue.id })
+      .comments.post({ body: `please review @${agent.username}` });
+
+    const res = await asRunner['agent-runs'].claim.post();
+    expect(res.data!.run!.prompt).toContain('Area: Backend');
+  });
+
+  it('leaves the area out of the prompt of an issue outside any area', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+
+    const res = await asRunner['agent-runs'].claim.post();
+    expect(res.data!.run!.prompt).not.toContain('Area:');
+  });
+
   it('serves a secret-free runtime policy and records generic adapter status', async () => {
     const { asOwner, asRunner, agent, teamId } = await setup();
     await asOwner

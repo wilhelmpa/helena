@@ -1,7 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Archive, Bot, CircleDashed, RefreshCw, Tag, Target, Trash2, User, X } from 'lucide-react';
+import {
+  Archive,
+  Bot,
+  CircleDashed,
+  FolderKanban,
+  RefreshCw,
+  Tag,
+  Target,
+  Trash2,
+  User,
+  X,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -180,6 +191,28 @@ export function BulkActionBar({ project }: { project: ProjectDetail }) {
                     >
                       {colorDot(CYCLE_STATUS_META[cycle.status].color)}
                       <span className="flex-1 truncate">{cycle.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </BarMenu>
+              )}
+
+              {project.areas.length > 0 && (
+                <BarMenu
+                  icon={<FolderKanban className="size-4" />}
+                  label={t('area')}
+                  disabled={disabled}
+                >
+                  <DropdownMenuItem onSelect={() => void bulk.patch(ids, { folderId: null })}>
+                    <CircleDashed />
+                    <span className="flex-1">{t('noArea')}</span>
+                  </DropdownMenuItem>
+                  {project.areas.map((area) => (
+                    <DropdownMenuItem
+                      key={area.id}
+                      onSelect={() => void bulk.patch(ids, { folderId: area.id })}
+                    >
+                      <FolderKanban />
+                      <span className="flex-1 truncate">{area.name}</span>
                     </DropdownMenuItem>
                   ))}
                 </BarMenu>

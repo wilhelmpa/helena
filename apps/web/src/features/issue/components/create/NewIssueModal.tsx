@@ -50,6 +50,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Pill } from '@/components/common/fields/Pill';
 import InitiativeSelect from '../fields/InitiativeSelect';
 import CycleSelect from '../fields/CycleSelect';
+import AreaSelect from '../fields/AreaSelect';
 import { useTranslations } from 'next-intl';
 
 export default function NewIssueModal({
@@ -83,6 +84,7 @@ export default function NewIssueModal({
   const [cycle, setCycle] = useState<CycleRef | null>(
     () => project.plannedCycles.find((c) => c.id === defaults.cycleId) ?? null,
   );
+  const [folderId, setFolderId] = useState<number | null>(defaults.folderId ?? null);
   const { data: session } = useSession();
   // Assignee defaults to the creating user unless the caller set one explicitly
   // (defaults.assigneeUserId is null for the "No assignee" board group).
@@ -251,6 +253,7 @@ export default function NewIssueModal({
           typeId,
           initiativeId,
           cycleId: cycle?.id ?? null,
+          folderId,
           assigneeUserId,
           delegateUserId,
           priority: priority || null,
@@ -423,6 +426,10 @@ export default function NewIssueModal({
 
           {project.project.cyclesEnabled && (
             <CycleSelect projectKey={project.project.key} value={cycle} onChange={setCycle} />
+          )}
+
+          {project.areas.length > 0 && (
+            <AreaSelect areas={project.areas} value={folderId} onChange={setFolderId} />
           )}
 
           {project.labels.length > 0 && (

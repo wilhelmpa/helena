@@ -1386,6 +1386,11 @@ export const issue = pgTable(
     cycleId: integer('cycle_id').references(() => cycle.id, {
       onDelete: 'set null',
     }),
+    // The area (project_view_folder) this issue belongs to, at most one. Deleting an
+    // area keeps its issues in the project.
+    folderId: integer('folder_id').references(() => projectViewFolder.id, {
+      onDelete: 'set null',
+    }),
     columnId: integer('column_id')
       .notNull()
       .references(() => projectColumn.id),
@@ -1451,6 +1456,9 @@ export const issue = pgTable(
     index('issue_cycle_idx')
       .on(t.cycleId)
       .where(sql`${t.cycleId} IS NOT NULL`),
+    index('issue_folder_idx')
+      .on(t.folderId)
+      .where(sql`${t.folderId} IS NOT NULL`),
   ],
 );
 
@@ -1892,8 +1900,9 @@ export const issueActivity = pgTable(
   ],
 );
 
-// One-level folders for saved work-item views. They organize views only: issues
-// and project workflow columns remain shared by every view in the project.
+// The areas of a project (one level): each holds saved views and the issues planned
+// in it, and a view inside an area shows only that area's issues. The columns, types,
+// labels and fields stay the project's, shared by every area.
 export const projectViewFolder = pgTable(
   'project_view_folder',
   {

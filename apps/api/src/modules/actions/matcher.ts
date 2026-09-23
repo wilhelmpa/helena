@@ -131,6 +131,8 @@ function valuesFor(
       return issue.initiative ? [issue.initiative.id, `status:${issue.initiative.status}`] : [null];
     case 'cycle':
       return issue.cycle ? [issue.cycle.id, `status:${issue.cycle.status}`] : [null];
+    case 'area':
+      return [issue.folderId];
     case 'labels':
       return issue.labelIds.length > 0 ? issue.labelIds : [null];
     case 'dueDate':

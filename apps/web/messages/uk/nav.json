@@ -72,7 +72,7 @@
     "automation": "Автоматизація",
     "work": "Робота",
     "agents": "Агенти й автоматизація",
-    "team": "Команда"
+    "globalSettings": "Глобальні налаштування"
   },
   "godModeOwnerOnly": "Режим адміністратора доступний лише власнику інстансу.",
   "project": "Проєкт",
@@ -87,5 +87,6 @@
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "vault": "Vault",
   "teamSettings": "Налаштування команди",
-  "teamOrchestration": "Команда й оркестрація"
+  "teamOrchestration": "Команда й оркестрація",
+  "overview": "Огляд"
 }

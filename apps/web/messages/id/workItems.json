@@ -88,7 +88,9 @@
     "noInitiative": "Tanpa inisiatif",
     "noCycle": "Tanpa cycle",
     "archive": "Arsipkan",
-    "clearSelection": "Hapus pilihan"
+    "clearSelection": "Hapus pilihan",
+    "area": "Area",
+    "noArea": "Tanpa area"
   },
   "removal": {
     "archive": {
@@ -114,6 +116,36 @@
     "noType": "Tanpa tipe",
     "noInitiative": "Tanpa inisiatif",
     "noCycle": "Tanpa cycle",
-    "noMember": "Tanpa nilai"
+    "noMember": "Tanpa nilai",
+    "noArea": "Tanpa area"
+  },
+  "allTasks": {
+    "hint": "Item pekerjaan dari setiap proyek tempat Anda bekerja. Buka salah satu untuk mengeditnya di proyeknya.",
+    "searchPlaceholder": "Cari item pekerjaan…",
+    "allProjects": "Semua proyek",
+    "state": {
+      "open": "Terbuka",
+      "any": "Status apa pun"
+    },
+    "assignee": {
+      "any": "Siapa saja",
+      "me": "Ditugaskan kepada saya",
+      "agents": "Didelegasikan ke agen",
+      "unassigned": "Belum ditugaskan"
+    },
+    "due": {
+      "any": "Tenggat apa pun",
+      "overdue": "Terlambat",
+      "week": "Jatuh tempo dalam seminggu"
+    },
+    "groupBy": {
+      "project": "Per proyek",
+      "state": "Per status"
+    },
+    "empty": "Tidak ada item pekerjaan",
+    "emptyHint": "Tidak ada item pekerjaan yang cocok dengan filter ini.",
+    "myOpenTasks": "Item pekerjaan terbuka saya",
+    "viewAll": "Semua item pekerjaan",
+    "noOpenTasks": "Tidak ada item pekerjaan terbuka yang ditugaskan kepada Anda."
   }
 }
