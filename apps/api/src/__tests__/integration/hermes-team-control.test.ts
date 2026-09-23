@@ -209,7 +209,8 @@ describe('routine dispatch', () => {
       status: 200,
       data: { idempotencyKey: KEY, outcome: 'created', taskRef: 'task:MKT-1' },
     });
-    const [task] = await issuesOf(asOwner);
+    const [listed] = await issuesOf(asOwner);
+    const task = (await asOwner.issues({ issueId: listed.id }).get()).data!;
     expect(task).toMatchObject({
       sequenceNumber: 1,
       title: 'Weekly report',
@@ -269,7 +270,7 @@ describe('routine dispatch', () => {
       id: task.id,
       columnId: todo,
       delegateUserId: agent.userId,
-      archivedAt: null,
+      archived: false,
     });
     const feed = (await asOwner.issues({ issueId: task.id }).feed.get({ query: {} })).data!;
     expect(feed.items.filter((item) => item.kind === 'comment').map((item) => item.body)).toEqual([

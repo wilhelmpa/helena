@@ -9,7 +9,9 @@ export const routineParams = t.Object({
   }),
 });
 
-export const routineMode = t.UnionEnum(['new', 'reopen'], {
+// A union of literals: t.UnionEnum defaults to its first value, which would fill in a
+// mode an update leaves out.
+export const routineMode = t.Union([t.Literal('new'), t.Literal('reopen')], {
   description: "'new' creates a task on every run; 'reopen' reopens the task named by taskId.",
 });
 
