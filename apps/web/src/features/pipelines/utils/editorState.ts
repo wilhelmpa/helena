@@ -3,7 +3,9 @@ import type {
   PipelineDefinition,
   PipelineRole,
   PipelineStep,
+  PipelineTrigger,
   StepKind,
+  TriggerType,
 } from '@/lib/api/endpoints/pipelines';
 
 // The editor changes a draft definition through these functions. A lane is the root
@@ -178,13 +180,27 @@ export function newStep(
   }
 }
 
+// The trigger of the type with the fields it needs, empty or at a common default.
+export function triggerOf(type: TriggerType): PipelineTrigger {
+  switch (type) {
+    case 'status_changed':
+      return { type, to: null };
+    case 'label_added':
+      return { type, label: '' };
+    case 'schedule':
+      return { type, cron: '0 9 * * 1-5', timezone: 'Europe/Berlin', title: '' };
+    default:
+      return { type };
+  }
+}
+
 const ROLE_KEY = /^[a-z][a-z0-9-]{0,31}$/;
 
 // A role key from the role's name, unique among the roles: 'Content agent' → 'content-agent'.
 export function roleKeyFor(name: string, roles: PipelineRole[]): string {
   const slug = name
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^[^a-z]+/, '')

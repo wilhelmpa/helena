@@ -52,8 +52,12 @@ export function useTeam(teamId: number): Team | null {
 
 // What the caller may do with the resources the team holds. Read on its own because
 // resolving it for a plain member costs a query per team, which the list avoids.
-export function useTeamQuery(teamId: number) {
-  return useQuery({ queryKey: qk.team(teamId), queryFn: () => getTeam(teamId) });
+export function useTeamQuery(teamId: number | null) {
+  return useQuery({
+    queryKey: qk.team(teamId ?? 0),
+    queryFn: () => getTeam(teamId!),
+    enabled: teamId !== null,
+  });
 }
 
 // One page of a team's members. The search and the window run on the server, so the

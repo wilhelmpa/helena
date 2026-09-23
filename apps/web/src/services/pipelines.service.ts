@@ -64,10 +64,11 @@ export function useCreatePipelineTemplate(teamId: number) {
   });
 }
 
-export const useProjectPipelines = (projectKey: string) =>
+export const useProjectPipelines = (projectKey: string | null) =>
   useQuery({
-    queryKey: qk.projectPipelines(projectKey),
-    queryFn: () => listProjectPipelines(projectKey),
+    queryKey: qk.projectPipelines(projectKey ?? ''),
+    queryFn: () => listProjectPipelines(projectKey!),
+    enabled: projectKey !== null,
   });
 
 export function useCreateProjectPipeline(projectKey: string) {

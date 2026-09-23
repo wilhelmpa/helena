@@ -16,6 +16,7 @@ import {
   ROOT_LANE,
   starterDefinition,
   stepCount,
+  triggerOf,
   uniqueStepId,
 } from './editorState';
 
@@ -118,5 +119,12 @@ describe('workflow editor state', () => {
     assert.equal(findStep(localized.steps, 'agent')?.name, 'Planen');
     assert.equal(findStep(localized.steps, 'inner')?.name, 'Innen');
     assert.equal(findStep(localized.steps, 'if')?.name, 'if');
+  });
+
+  test('gives a trigger the fields its type needs', () => {
+    assert.deepEqual(triggerOf('status_changed'), { type: 'status_changed', to: null });
+    assert.deepEqual(triggerOf('manual'), { type: 'manual' });
+    const schedule = triggerOf('schedule');
+    assert.ok(schedule.type === 'schedule' && schedule.cron && schedule.timezone);
   });
 });
