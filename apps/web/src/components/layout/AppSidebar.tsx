@@ -20,11 +20,12 @@ import {
 import ProjectList from '@/components/layout/ProjectList';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarProjectNav from '@/components/layout/SidebarProjectNav';
-import SidebarTeamNav from '@/components/layout/SidebarTeamNav';
+import SidebarHomeNav from '@/components/layout/SidebarHomeNav';
 
-// The app sidebar: the projects, the navigation of the selected project (its work, its
-// agents and automation, its settings folded under one entry), and what belongs to the
-// team. It keeps this one layout on every page, settings included.
+// The app sidebar: the projects, then either the navigation of the selected project
+// (its work, its agents and automation, its settings folded under one entry) or, with
+// no project selected, the Home navigation (the work across every project, the team's
+// agents and the settings every project shares).
 export default function AppSidebar({
   projects,
   currentProjectKey,
@@ -78,8 +79,11 @@ export default function AppSidebar({
           onSelectProject={onSelectProject}
         />
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain group-data-[collapsible=icon]:overflow-hidden">
-          {currentProjectKey && <SidebarProjectNav projectKey={currentProjectKey} />}
-          <SidebarTeamNav teamId={homeTeamId} />
+          {currentProjectKey ? (
+            <SidebarProjectNav projectKey={currentProjectKey} />
+          ) : (
+            <SidebarHomeNav teamId={homeTeamId} />
+          )}
         </div>
       </SidebarContent>
 

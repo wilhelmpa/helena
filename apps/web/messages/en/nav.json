@@ -75,7 +75,7 @@
     "automation": "Automation",
     "work": "Work",
     "agents": "Agents & automation",
-    "team": "Team"
+    "globalSettings": "Global settings"
   },
   "godModeOwnerOnly": "God mode is open to the instance owner only.",
   "project": "Project",
@@ -87,5 +87,6 @@
   "skills": "Skills",
   "vault": "Vault",
   "teamSettings": "Team settings",
-  "teamOrchestration": "Team & orchestration"
+  "teamOrchestration": "Team & orchestration",
+  "overview": "Overview"
 }
