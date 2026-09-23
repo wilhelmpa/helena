@@ -2,6 +2,7 @@ import { intEnv } from '#shared/lib';
 import { agentRunConfig } from '#modules/agents/core/run-queue';
 import { expireExhaustedRuns } from '#modules/agents/runner/service';
 import { processAgentTeamStarts } from '#modules/control-plane-workflows/agent-team-starts';
+import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/service';
 import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { processAgentRuns } from '#modules/agents/core/run-poller';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
@@ -28,6 +29,9 @@ export function startBackgroundJobs(): void {
   );
   startLoop('run-janitor', runJanitor, () => intEnv('RUN_JANITOR_INTERVAL_MS', 60_000));
   startLoop('stage-janitor', stageJanitor, () => intEnv('STAGE_JANITOR_INTERVAL_MS', 300_000));
+  startLoop('workflow-schedules', syncSchedules, () =>
+    intEnv('WORKFLOW_SCHEDULE_SYNC_INTERVAL_MS', 600_000),
+  );
 }
 
 // Ends what nobody else ends: a run of an external agent whose runner stopped reporting
@@ -58,4 +62,10 @@ function startLoop(name: string, job: () => Promise<void>, intervalMs: () => num
     setTimeout(tick, intervalMs()).unref();
   };
   void tick();
+}
+
+async function syncSchedules(): Promise<void> {
+  const changed = await reconcileWorkflowSchedules();
+  if (changed > 0)
+    console.log(`[background] brought ${changed} workflow schedules in line with Plan`);
 }

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { and, asc, eq } from 'drizzle-orm';
 import {
   db,
@@ -246,34 +247,116 @@ export async function setProjectWorkflowAssignment(input: {
       },
     })
     .returning();
-  if (!input.enabled) await pauseWorkflowSchedules(input.projectId, input.workflowId);
+  const [project] = await db
+    .select({ key: projectTable.key })
+    .from(projectTable)
+    .where(eq(projectTable.id, input.projectId));
+  if (project)
+    await syncWorkflowSchedules(input.workflowId, [{ ...row!, projectKey: project.key }]);
   await bumpControlPlaneRevision(input.projectId);
   return row;
 }
 
-// A workflow switched off in a project stops firing there: its active schedules are
-// paused, and stay paused when it is switched on again.
-async function pauseWorkflowSchedules(projectId: number, workflowId: string) {
-  const [row] = await db
-    .select({ key: projectTable.key })
-    .from(projectTable)
-    .where(eq(projectTable.id, projectId));
-  if (!row) return;
-  const projectRef = `project:${row.key}`;
-  const result = await controlPlaneRequest<{ schedules?: { id: string; status?: string }[] }>({
+interface StoredSchedule {
+  id: string;
+  cron: string;
+  status?: string;
+  requestContext?: { projectRef?: unknown };
+  inputData?: Record<string, unknown> & { payload?: Record<string, unknown> };
+}
+
+function objectOf(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+// The payload a fire carries under the project's settings. For agent-team, a run limit
+// the stored settings had put into the policy goes when the settings no longer set it.
+function payloadUnder(
+  workflowId: string,
+  configuration: ProjectWorkflowConfiguration,
+  payload: Record<string, unknown>,
+) {
+  if (workflowId !== 'agent-team') return { ...payload, configuration };
+  const stored = objectOf(payload.configuration);
+  const policy = { ...objectOf(payload.policy) };
+  for (const limit of ['maxTurns', 'runBudgetSeconds'])
+    if (stored[limit] != null && policy[limit] === stored[limit]) delete policy[limit];
+  return { ...payload, policy: agentTeamPolicy(configuration, policy), configuration };
+}
+
+// Mastra keeps the input a schedule was saved with. Brings the schedules of a workflow
+// in line with the projects' settings in Plan: a workflow switched off in a project stops
+// firing there, and its active schedules are paused, staying paused when it is switched
+// on again; the fires of an enabled one carry the project's current configuration. Run
+// when the settings change and periodically, which repairs a change Mastra missed while
+// it was down.
+async function syncWorkflowSchedules(
+  workflowId: string,
+  assignments: {
+    projectKey: string;
+    enabled: boolean;
+    configuration: ProjectWorkflowConfiguration;
+  }[],
+): Promise<number> {
+  const byProject = new Map(assignments.map((item) => [`project:${item.projectKey}`, item]));
+  const result = await controlPlaneRequest<{ schedules?: StoredSchedule[] }>({
     operation: 'schedules',
     workflowId,
-    projectRef,
+    projectRefs: [...byProject.keys()],
   });
+  let changed = 0;
   for (const schedule of result.schedules ?? []) {
-    if (schedule.status !== 'active') continue;
+    const projectRef = String(schedule.requestContext?.projectRef);
+    const assignment = byProject.get(projectRef);
+    if (!assignment) continue;
+    if (!assignment.enabled) {
+      if (schedule.status !== 'active') continue;
+      await controlPlaneRequest({
+        operation: 'pause-schedule',
+        workflowId,
+        scheduleId: schedule.id,
+        projectRef,
+      });
+      changed += 1;
+      continue;
+    }
+    const payload = objectOf(schedule.inputData?.payload);
+    const current = payloadUnder(workflowId, assignment.configuration, payload);
+    if (!schedule.inputData || isDeepStrictEqual(current, payload)) continue;
     await controlPlaneRequest({
-      operation: 'pause-schedule',
+      operation: 'update-schedule',
       workflowId,
       scheduleId: schedule.id,
       projectRef,
+      cron: schedule.cron,
+      payload: { ...schedule.inputData, payload: current },
     });
+    changed += 1;
   }
+  return changed;
+}
+
+// The periodic pass of syncWorkflowSchedules over every workflow a project has settings
+// for. Returns how many schedules it paused or updated.
+export async function reconcileWorkflowSchedules(): Promise<number> {
+  const rows = await db
+    .select({
+      workflowId: projectWorkflowAssignment.workflowId,
+      enabled: projectWorkflowAssignment.enabled,
+      configuration: projectWorkflowAssignment.configuration,
+      projectKey: projectTable.key,
+    })
+    .from(projectWorkflowAssignment)
+    .innerJoin(projectTable, eq(projectTable.id, projectWorkflowAssignment.projectId));
+  let changed = 0;
+  for (const workflowId of new Set(rows.map((row) => row.workflowId)))
+    changed += await syncWorkflowSchedules(
+      workflowId,
+      rows.filter((row) => row.workflowId === workflowId),
+    );
+  return changed;
 }
 
 export function projectWorkflowScope(project: ProjectContext) {
@@ -495,11 +578,7 @@ export async function createWorkflowSchedule(
     timezone: input.timezone ?? DEFAULT_TIMEZONE,
     capabilityRefs: row.capabilityRefs,
     payload: {
-      ...input.payload,
-      ...(workflowId === 'agent-team'
-        ? { policy: agentTeamPolicy(row.configuration, input.payload.policy) }
-        : {}),
-      configuration: row.configuration,
+      ...payloadUnder(workflowId, row.configuration, input.payload),
       projectKey: project.key,
       workflowRef: `workflow:${workflowId}:v1`,
     },
