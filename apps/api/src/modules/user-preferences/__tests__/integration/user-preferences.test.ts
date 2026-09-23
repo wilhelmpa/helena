@@ -124,7 +124,7 @@ describe('user preferences', () => {
     const u = await signUpTestUser();
 
     const res = await authedApi(u.cookie).account.preferences.patch({
-      locale: 'de' as 'uk',
+      locale: 'ja' as 'uk',
     });
 
     expect(res.status).toBe(400);
