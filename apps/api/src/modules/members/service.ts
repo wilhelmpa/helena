@@ -192,6 +192,8 @@ export interface AssigneeCandidate {
   // runner, so delegating it to anyone else does nothing. Null for everyone else.
   restrictedToUserId: string | null;
   canReadWorkItems: boolean;
+  // An agent that takes no new work. False for a member.
+  paused: boolean;
 }
 
 export async function listAssigneeCandidates(projectId: number): Promise<AssigneeCandidate[]> {
@@ -225,6 +227,7 @@ export async function listAssigneeCandidates(projectId: number): Promise<Assigne
         agentKind: aiAgent.kind,
         ownerUserId: aiAgent.ownerUserId,
         runnerScope: aiAgent.runnerScope,
+        pausedAt: aiAgent.pausedAt,
       })
       .from(aiAgent)
       .innerJoin(user, eq(user.id, aiAgent.userId))
@@ -250,6 +253,7 @@ export async function listAssigneeCandidates(projectId: number): Promise<Assigne
       restrictedToUserId: null,
       canReadWorkItems:
         context.role === 'owner' || hasPermission(context.permissions, 'work_items', 'read'),
+      paused: false,
     };
   });
   const agents: AssigneeCandidate[] = agentRows.map((r) => ({
@@ -264,6 +268,7 @@ export async function listAssigneeCandidates(projectId: number): Promise<Assigne
     description: null,
     restrictedToUserId: r.runnerScope === 'owner' ? r.ownerUserId : null,
     canReadWorkItems: false,
+    paused: r.pausedAt != null,
   }));
   return [...members, ...agents].sort((a, b) => a.name.localeCompare(b.name));
 }

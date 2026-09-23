@@ -15,7 +15,7 @@ import {
   customField,
   integrationCredential,
 } from '@repo/db';
-import { and, eq, inArray, ne, notInArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, notInArray, sql } from 'drizzle-orm';
 import { auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { getCredentialById } from '../integrations/service';
@@ -261,6 +261,9 @@ export interface AiAgentRow {
   // When a runner last polled for this agent, which is what presence is derived
   // from. Null until a runner connects.
   lastSeenAt: string | null;
+  // Set while the agent takes no new work, with why.
+  pausedAt: string | null;
+  pauseReason: string | null;
   createdAt: string;
   // The agent's current API key, for display only — the secret is never returned
   // after creation. start is the key's leading characters kept for identification.
@@ -301,6 +304,8 @@ function mapAgent(row: {
   ownerUserId: string | null;
   runnerScope: string;
   lastSeenAt: Date | null;
+  pausedAt: Date | null;
+  pauseReason: string | null;
   createdAt: Date;
   apiKeyStart: string | null;
   modelProvider: string | null;
@@ -333,6 +338,8 @@ function mapAgent(row: {
     ownerUserId: row.ownerUserId,
     runnerScope: row.runnerScope as RunnerScope,
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
+    pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
+    pauseReason: row.pauseReason,
     createdAt: iso(row.createdAt),
     apiKeyStart: row.apiKeyStart,
     modelProvider: row.modelProvider,
@@ -373,6 +380,8 @@ const agentColumns = {
   ownerUserId: aiAgent.ownerUserId,
   runnerScope: aiAgent.runnerScope,
   lastSeenAt: aiAgent.lastSeenAt,
+  pausedAt: aiAgent.pausedAt,
+  pauseReason: aiAgent.pauseReason,
   createdAt: aiAgent.createdAt,
   apiKeyStart: apikey.start,
   modelProvider: integrationCredential.integrationKey,
@@ -531,7 +540,7 @@ export async function canTriggerAgent(agentId: number, actorUserId: string): Pro
 // to mentions. Turns the user ids parsed from a comment's mentions into the agents that
 // should run for the comment's author. An agent of the team that is not a member of
 // this project is left out: a mention must not pull a key into a project the team
-// never opened it to.
+// never opened it to. A paused agent is left out too: it takes no new work.
 export async function listMentionTriggerAgents(
   projectId: number,
   userIds: string[],
@@ -545,6 +554,7 @@ export async function listMentionTriggerAgents(
       and(
         inProject(projectId),
         eq(aiAgent.triggerOnMention, true),
+        isNull(aiAgent.pausedAt),
         inArray(aiAgent.userId, userIds),
       ),
     );
@@ -555,7 +565,7 @@ export async function listMentionTriggerAgents(
 
 // The agent working in the project whose bot user is userId and that reacts to being
 // delegated to, or null. Turns a new delegate into the agent that should run on
-// delegation.
+// delegation. Null for a paused agent.
 export async function getAssignTriggerAgent(
   projectId: number,
   userId: string,
@@ -568,7 +578,14 @@ export async function getAssignTriggerAgent(
       ...triggerScopeColumns,
     })
     .from(aiAgent)
-    .where(and(eq(aiAgent.userId, userId), eq(aiAgent.triggerOnAssign, true), inProject(projectId)))
+    .where(
+      and(
+        eq(aiAgent.userId, userId),
+        eq(aiAgent.triggerOnAssign, true),
+        isNull(aiAgent.pausedAt),
+        inProject(projectId),
+      ),
+    )
     .limit(1);
   const row = rows[0];
   if (!row || !isTriggerableBy(row, actorUserId)) return null;
@@ -577,7 +594,7 @@ export async function getAssignTriggerAgent(
 
 // The agent working in the project whose bot user is userId and that reacts to being
 // set into that member field, or null. The counterpart of getAssignTriggerAgent for a
-// custom field.
+// custom field, and null for a paused agent the same way.
 export async function getFieldTriggerAgent(
   projectId: number,
   userId: string,
@@ -593,7 +610,12 @@ export async function getFieldTriggerAgent(
     .from(aiAgent)
     .innerJoin(agentFieldTrigger, eq(agentFieldTrigger.agentId, aiAgent.id))
     .where(
-      and(eq(aiAgent.userId, userId), eq(agentFieldTrigger.fieldId, fieldId), inProject(projectId)),
+      and(
+        eq(aiAgent.userId, userId),
+        eq(agentFieldTrigger.fieldId, fieldId),
+        isNull(aiAgent.pausedAt),
+        inProject(projectId),
+      ),
     )
     .limit(1);
   const row = rows[0];
