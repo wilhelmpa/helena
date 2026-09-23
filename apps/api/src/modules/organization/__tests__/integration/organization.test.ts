@@ -3,6 +3,7 @@ import { authedApi } from '#tests/helpers/app';
 import { createAgent } from '#tests/helpers/agents';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
+import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -138,7 +139,20 @@ describe('organization', () => {
   });
 
   it('marks the Home master and pool templates so neither counts as unassigned', async () => {
-    const { api, teamId, agent } = await setup();
+    // Home is provisioned separately from a plain signup (bootstrap-home-agent), not by
+    // creating a project — unlike the rest of this file's tests, this one needs it.
+    const owner = await signUpTestUser({ name: 'Owner' });
+    const api = authedApi(owner.cookie);
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
+    const project = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+    const teamId = project.data!.teamId;
+    const agentResponse = await createAgent(api, 'MKT', {
+      name: 'Researcher',
+      username: 'researcher',
+      kind: 'external',
+    });
+    const agent = agentResponse.data!.agent;
     const template = await api.teams({ teamId })['ai-agents'].post({
       name: 'Coder',
       username: 'coder',
