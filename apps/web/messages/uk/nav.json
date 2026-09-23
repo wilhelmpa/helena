@@ -77,6 +77,7 @@
   "godModeOwnerOnly": "Режим адміністратора доступний лише власнику інстансу.",
   "project": "Проєкт",
   "organization": "Organization",
+  "schedules": "Розклади",
   "connections": "Connections",
   "agentPool": "Пул агентів",
   "mcps": "MCP",

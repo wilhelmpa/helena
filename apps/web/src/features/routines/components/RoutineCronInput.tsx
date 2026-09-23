@@ -1,6 +1,6 @@
 import { useId } from 'react';
-import { SettingsSuggestionsInput, type InputSuggestion } from './SettingsSuggestionsInput';
-import { parseScheduleInput } from '../../utils/cronSchedule';
+import { RoutineSuggestionsInput, type InputSuggestion } from './RoutineSuggestionsInput';
+import { parseScheduleInput } from '../utils/cronSchedule';
 import { useTranslations } from 'next-intl';
 
 // `value` is what the preset writes into the input, and `parseScheduleInput` reads
@@ -16,7 +16,7 @@ const SCHEDULE_PRESETS = [
   { value: 'Every day at 9:00 AM', labelKey: 'presetEveryDayAt9', description: '0 9 * * *' },
 ] as const;
 
-export function SettingsScheduleInput({
+export function RoutineCronInput({
   id,
   value,
   onChange,
@@ -25,7 +25,7 @@ export function SettingsScheduleInput({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const t = useTranslations('settings.schedules');
+  const t = useTranslations('routines');
   const result = parseScheduleInput(value);
   const messageId = useId();
   const scheduleSuggestions: InputSuggestion[] = SCHEDULE_PRESETS.map((preset) => ({
@@ -36,7 +36,7 @@ export function SettingsScheduleInput({
 
   return (
     <>
-      <SettingsSuggestionsInput
+      <RoutineSuggestionsInput
         id={id}
         required
         maxLength={120}
@@ -63,7 +63,7 @@ export function SettingsScheduleInput({
 
 function successMessage(
   result: Extract<ReturnType<typeof parseScheduleInput>, { ok: true }>,
-  t: ReturnType<typeof useTranslations<'settings.schedules'>>,
+  t: ReturnType<typeof useTranslations<'routines'>>,
 ): React.ReactNode {
   if (result.source === 'cron') return t('runs', { description: result.description });
   return (

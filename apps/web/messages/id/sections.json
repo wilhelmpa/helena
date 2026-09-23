@@ -91,7 +91,7 @@
     },
     "schedules": {
       "label": "Jadwal",
-      "description": "Jalankan tugas agen dengan jadwal berulang."
+      "description": "Buat atau buka kembali tugas untuk agen dengan jadwal berulang."
     },
     "webhooks": {
       "label": "Webhook",

@@ -141,12 +141,13 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'skills'] as const,
   // An agent's triggered run history (the runs sidebar).
   agentRuns: (teamId: number, agentId: number) => ['aiAgents', teamId, agentId, 'runs'] as const,
-  agentSchedules: (projectKey: string) => ['agentSchedules', projectKey] as const,
+  // Every list of routines, the project ones and Home's, which a change to one refreshes.
+  anyRoutines: ['routines'] as const,
+  routines: (projectKey: string) => ['routines', 'project', projectKey] as const,
   // One page of them: the window scopes the entry.
-  agentSchedulePage: (projectKey: string, params: unknown) =>
-    ['agentSchedules', projectKey, 'page', params] as const,
-  agentScheduleRuns: (projectKey: string, scheduleId: number) =>
-    ['agentSchedules', projectKey, scheduleId, 'runs'] as const,
+  routinePage: (projectKey: string, params: unknown) =>
+    ['routines', 'project', projectKey, params] as const,
+  memberRoutinePage: (params: unknown) => ['routines', 'member', params] as const,
   // The caller's chat threads with one agent (the AI Chat history rail) and the
   // transcript of one thread (restored when a thread is opened). A search is a list of
   // its own, so the unsearched list stays cached while one is typed.

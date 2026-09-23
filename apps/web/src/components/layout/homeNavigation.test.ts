@@ -3,11 +3,12 @@ import { describe, test } from 'node:test';
 import { homeNavigation } from './homeNavigation';
 
 describe('home sidebar navigation', () => {
-  test('without a single team shows the work across projects and the shared services', () => {
+  test('without a single team shows the work and the schedules across projects and the shared services', () => {
     assert.deepEqual(homeNavigation(null), [
       { id: 'overview', group: 'work', href: '/' },
       { id: 'allWorkItems', group: 'work', href: '/tasks' },
       { id: 'inbox', group: 'work', href: '/inbox' },
+      { id: 'schedules', group: 'agents', href: '/schedules' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
       { id: 'vault', group: 'globalSettings', href: '/vault' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
@@ -21,6 +22,7 @@ describe('home sidebar navigation', () => {
       { id: 'inbox', group: 'work', href: '/inbox' },
       { id: 'agentPool', group: 'agents', href: '/agents' },
       { id: 'organization', group: 'agents', href: '/organization' },
+      { id: 'schedules', group: 'agents', href: '/schedules' },
       { id: 'skills', group: 'globalSettings', href: '/skills' },
       { id: 'tools', group: 'globalSettings', href: '/tools' },
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },

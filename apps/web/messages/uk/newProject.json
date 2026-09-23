@@ -39,8 +39,7 @@
     "actions": "Дії",
     "configuration": "Конфігурація",
     "webhooks": "Вебхуки",
-    "agents": "Агенти",
-    "schedules": "Розклади"
+    "agents": "Агенти"
   },
   "title": "Новий проєкт",
   "copyTitle": "Копіювати проєкт «{name}»",

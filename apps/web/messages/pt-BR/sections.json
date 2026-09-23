@@ -91,7 +91,7 @@
     },
     "schedules": {
       "label": "Agendamentos",
-      "description": "Execute tarefas de agente em um horário recorrente."
+      "description": "Crie ou reabra tarefas para um agente em um horário recorrente."
     },
     "webhooks": {
       "label": "Webhooks",

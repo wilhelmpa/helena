@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 export type CopyInclude = Record<CopyProjectIncludeKey, boolean>;
 
 // What each entity needs copied alongside it. Mirrors the API's normalizeInclude: a
-// view/action remaps state/type/label/field ids, and a schedule belongs to an agent.
+// view/action remaps state/type/label/field ids.
 // Checking a child enables its requirements; unchecking a requirement disables the
 // children that need it.
 const REQUIRES: Record<CopyProjectIncludeKey, CopyProjectIncludeKey[]> = {
@@ -20,7 +20,6 @@ const REQUIRES: Record<CopyProjectIncludeKey, CopyProjectIncludeKey[]> = {
   configuration: [],
   webhooks: [],
   agents: [],
-  schedules: ['agents'],
 };
 
 // The name of a group, and of each entity, are messages under `newProject`.
@@ -38,7 +37,7 @@ const COLUMNS: Group[][] = [
       keys: ['states', 'issueTypes', 'labels', 'customFields', 'configuration'],
     },
   ],
-  [{ title: 'automation', keys: ['actions', 'schedules', 'webhooks'] }],
+  [{ title: 'automation', keys: ['actions', 'webhooks'] }],
   [{ title: 'aiTeam', keys: ['agents'] }],
   [
     { title: 'views', keys: ['views', 'dashboards'] },

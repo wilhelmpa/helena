@@ -25,7 +25,7 @@ interface SuggestionsInputProps extends Omit<
   triggerLabel?: string;
 }
 
-export function SettingsSuggestionsInput({
+export function RoutineSuggestionsInput({
   value,
   suggestions,
   onValueChange,
@@ -133,7 +133,7 @@ export function SettingsSuggestionsInput({
         id={listId}
         role="listbox"
         align="start"
-        className="w-(--radix-popover-trigger-width) p-1"
+        className="max-h-72 w-(--radix-popover-trigger-width) overflow-y-auto p-1"
         onOpenAutoFocus={(event) => event.preventDefault()}
         onInteractOutside={(event) => {
           // The input and its trigger live in the anchor, outside the popup. Keep the

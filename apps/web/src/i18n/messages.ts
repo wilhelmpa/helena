@@ -25,6 +25,7 @@ import notes from '../../messages/en/notes.json';
 import palette from '../../messages/en/palette.json';
 import permissions from '../../messages/en/permissions.json';
 import projects from '../../messages/en/projects.json';
+import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
 import settings from '../../messages/en/settings.json';
 import shell from '../../messages/en/shell.json';
@@ -73,6 +74,7 @@ const defaultMessages = {
   whatsNew,
   organization,
   connections,
+  routines,
 };
 
 export type Messages = typeof defaultMessages;

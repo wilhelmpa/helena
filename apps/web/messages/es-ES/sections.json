@@ -91,7 +91,7 @@
     },
     "schedules": {
       "label": "Tareas programadas",
-      "description": "Ejecutar tareas programadas con agentes"
+      "description": "Crea o reabre tareas para un agente según una programación recurrente."
     },
     "webhooks": {
       "label": "Webhooks",

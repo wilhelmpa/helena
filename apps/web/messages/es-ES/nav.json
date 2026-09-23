@@ -77,6 +77,7 @@
   "godModeOwnerOnly": "El modo dios está abierto solo al propietario de la instancia.",
   "project": "Proyecto",
   "organization": "Organization",
+  "schedules": "Tareas programadas",
   "connections": "Connections",
   "agentPool": "Pool de agentes",
   "mcps": "MCP",

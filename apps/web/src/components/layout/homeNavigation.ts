@@ -5,6 +5,7 @@ import {
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
+  schedulesPath,
   skillsPath,
   tasksPath,
   toolsPath,
@@ -17,6 +18,7 @@ export type HomeNavigationId =
   | 'inbox'
   | 'agentPool'
   | 'organization'
+  | 'schedules'
   | 'skills'
   | 'tools'
   | 'mcps'
@@ -34,7 +36,8 @@ export interface HomeNavigationItem {
   href: string;
 }
 
-// The entries that need a single team to point at are left out without one.
+// The entries that need a single team to point at are left out without one. The
+// schedules read across every project, like the tasks, and need none.
 export function homeNavigation(teamId: number | null, vaultEnabled = true): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
@@ -44,6 +47,9 @@ export function homeNavigation(teamId: number | null, vaultEnabled = true): Home
     ...teamOnly([
       { id: 'agentPool', group: 'agents', href: agentsPath() },
       { id: 'organization', group: 'agents', href: teamOrganizationPath() },
+    ]),
+    { id: 'schedules', group: 'agents', href: schedulesPath() },
+    ...teamOnly([
       { id: 'skills', group: 'globalSettings', href: skillsPath() },
       { id: 'tools', group: 'globalSettings', href: toolsPath() },
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },
