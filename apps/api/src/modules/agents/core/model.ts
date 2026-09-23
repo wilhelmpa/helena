@@ -62,6 +62,14 @@ export const runtimePolicy = t.Object({
         'uses. Unset, it may not.',
     }),
   ),
+  reflection: t.Optional(
+    t.Union([t.Literal('off'), t.Literal('failure'), t.Literal('complex')], {
+      description:
+        'When a learning agent reflects on a run in a short follow-up turn of the same ' +
+        "session: 'failure' after a failed run and after rework on an issue, 'complex' also " +
+        "after a run of many tool calls. Unset, 'complex'.",
+    }),
+  ),
 });
 
 // A managed file the runtime found changed outside Plan. The runtime kept a copy and
@@ -316,6 +324,35 @@ export const AgentRunResponse = t.Object({
         'The question the agent asked when it reported itself blocked during the run, which ' +
         'then ended as a success. Null for a run that was not blocked.',
     }),
+  ),
+  reflection: t.Nullable(
+    t.Object(
+      {
+        status: t.Union([
+          t.Literal('pending'),
+          t.Literal('success'),
+          t.Literal('failed'),
+          t.Literal('lost'),
+        ]),
+        reason: t.Union([t.Literal('failure'), t.Literal('rework'), t.Literal('complex')]),
+        saved: t.Array(
+          t.Object({
+            tool: t.Union([t.Literal('memory'), t.Literal('skill')]),
+            action: t.String(),
+            target: t.String(),
+          }),
+        ),
+        summary: t.Nullable(t.String()),
+        error: t.Nullable(t.String()),
+        tokens: t.Optional(t.Number()),
+      },
+      {
+        description:
+          "The follow-up turn in which the agent kept what the run taught it: 'lost' when " +
+          "its runner never reported it. Its tokens are part of the run's. Null for a run " +
+          'without one.',
+      },
+    ),
   ),
   nextAttemptAt: t.String(),
   createdAt: t.String(),

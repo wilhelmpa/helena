@@ -33,6 +33,9 @@ export interface Outcome {
   // What the whole run read, cache included, and wrote, for a command that reports
   // its totals (Hermes).
   usage?: ContextUsage;
+  // The Hermes session the command ran in, and the tool calls it made there.
+  sessionId?: string;
+  toolCalls?: number;
 }
 
 // Only the tail of each stream is reported, so a long transcript still shows its ending —
@@ -48,6 +51,10 @@ class HermesResultReader {
   private oversized = false;
   result: { text: string; exitCode: number } | undefined;
   usage: ContextUsage | undefined;
+  // Named on the first line and again on the result, after a compression that moved the
+  // session to a new id.
+  sessionId: string | undefined;
+  toolCalls = 0;
 
   write(chunk: string): void {
     const lines = chunk.split('\n');
@@ -66,6 +73,10 @@ class HermesResultReader {
   end(): void {
     try {
       const value = this.oversized ? null : JSON.parse(this.line);
+      if (value?.type === 'tool_use') this.toolCalls++;
+      if (typeof value?.session_id === 'string' && value.session_id) {
+        this.sessionId = value.session_id;
+      }
       if (value?.type === 'result' && typeof value.text === 'string') {
         this.result = {
           text: value.text,
@@ -225,7 +236,13 @@ export async function execute(
 
   hermesResult?.end();
   const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
-  return hermesResult?.usage ? { ...outcome, usage: hermesResult.usage } : outcome;
+  if (!hermesResult) return outcome;
+  return {
+    ...outcome,
+    ...(hermesResult.usage && { usage: hermesResult.usage }),
+    ...(hermesResult.sessionId && { sessionId: hermesResult.sessionId }),
+    ...(hermesResult.toolCalls > 0 && { toolCalls: hermesResult.toolCalls }),
+  };
 }
 
 function settle(

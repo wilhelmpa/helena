@@ -36,6 +36,29 @@ export interface ChatMessage {
   thinkingLevel: string | null;
 }
 
+// A follow-up turn in the session of a finished run, in which the agent keeps what the run
+// taught it. Plan writes the prompt and sets the limits.
+export interface ReflectionRequest {
+  prompt: string;
+  maxTurns: number;
+  runBudgetSeconds: number;
+}
+
+// What the agent saved in a reflection: one entry per memory or skill write that succeeded.
+export interface ReflectionSaved {
+  tool: 'memory' | 'skill';
+  action: string;
+  target: string;
+}
+
+export interface ReflectionReport {
+  status: 'success' | 'failed';
+  usage?: ContextUsage | null;
+  saved: ReflectionSaved[];
+  summary?: string | null;
+  error?: string | null;
+}
+
 // None of these calls does real work on the server, so a request that hangs is a dead
 // connection. Without a deadline it would never settle and the runner would stop polling.
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -141,6 +164,7 @@ export class Client {
   // `usage` is what the run read and wrote: its totals where the command reports them
   // (Hermes), otherwise its last model call. Left out where the command reported
   // nothing about it, which stores the run without counts.
+  // The answer names the reflection Plan asks for, if any. An older server answers 204.
   async report(
     runId: number,
     result: {
@@ -148,9 +172,17 @@ export class Client {
       output?: string;
       error?: string;
       usage?: ContextUsage | null;
+      sessionId?: string;
+      toolCalls?: number;
     },
-  ): Promise<void> {
-    await this.post(`/agent-runs/${runId}/result`, result);
+  ): Promise<ReflectionRequest | null> {
+    const res = await this.post(`/agent-runs/${runId}/result`, result);
+    const body = (await res.json().catch(() => ({}))) as { reflection?: ReflectionRequest | null };
+    return body.reflection ?? null;
+  }
+
+  async reportReflection(runId: number, reflection: ReflectionReport): Promise<void> {
+    await this.post(`/agent-runs/${runId}/reflection`, reflection);
   }
 
   async claimChat(): Promise<ChatMessage | null> {

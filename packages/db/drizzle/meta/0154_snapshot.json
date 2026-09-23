@@ -1,5 +1,5 @@
 {
-  "id": "b33dfd66-068c-48d4-a62c-9843030301ec",
+  "id": "967af7c1-4344-4f74-a198-c766e2d741f9",
   "prevId": "ed404c4b-37b4-4505-ad09-f25a4e9fa1a2",
   "version": "7",
   "dialect": "postgresql",
@@ -2055,6 +2055,12 @@
         "blocked_question": {
           "name": "blocked_question",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reflection": {
+          "name": "reflection",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },

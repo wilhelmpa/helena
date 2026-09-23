@@ -72,7 +72,11 @@ export interface AgentRuntimePolicy {
   runBudgetSeconds?: number | null;
   learning?: boolean;
   curator?: boolean;
+  reflection?: ReflectionMode;
 }
+
+export type ReflectionMode = 'off' | 'failure' | 'complex';
+const REFLECTION_MODES: ReflectionMode[] = ['off', 'failure', 'complex'];
 
 export interface AgentRuntimeConflict {
   path: string;
@@ -220,6 +224,9 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     ...(runBudgetSeconds === null ? {} : { runBudgetSeconds }),
     ...(typeof policy.learning === 'boolean' && { learning: policy.learning }),
     ...(typeof policy.curator === 'boolean' && { curator: policy.curator }),
+    ...(REFLECTION_MODES.includes(policy.reflection as ReflectionMode) && {
+      reflection: policy.reflection,
+    }),
   };
 }
 

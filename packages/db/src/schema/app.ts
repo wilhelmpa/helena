@@ -667,6 +667,10 @@ export const agentRun = pgTable(
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
+    // The follow-up turn in which the agent kept what the run taught it, when Plan asked
+    // its runner for one: why, how it went, what it saved and what it cost. Its tokens are
+    // also added to the run's own.
+    reflection: jsonb('reflection'),
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
