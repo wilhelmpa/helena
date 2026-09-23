@@ -441,6 +441,8 @@ def client(argv: list[str], *, user: str = 'vpt-hermes', socket_path: str = LAUN
 def stop(args: argparse.Namespace) -> None:
     listing = sh('systemctl', 'list-units', '--plain', '--no-legend', '--all', 'vpt-*', check=False)
     units = [line.split()[0] for line in listing.stdout.decode().splitlines() if line.split()]
+    # The test Plan API is started and stopped by plan-api.sh.
+    units = [unit for unit in units if not unit.startswith('vpt-plan-api') or getattr(args, 'all', False)]
     for unit in units:
         sh('systemctl', 'stop', unit, check=False)
     for unit in units:
@@ -811,6 +813,7 @@ def main() -> None:
     commands.add_parser('stop')
     t = commands.add_parser('teardown')
     t.add_argument('--users', action='store_true')
+    t.add_argument('--all', action='store_true', help='the test Plan API too')
     args = parser.parse_args()
     {'setup': setup, 'start': start, 'prove': prove, 'stop': stop, 'teardown': teardown}[args.command](args)
 

@@ -16,10 +16,13 @@ case "${1:-}" in
   start)
     /usr/lib/postgresql/17/bin/createdb -h 127.0.0.1 -p 55481 -U wilhelmpa itsaplan_isolation_test 2>/dev/null || true
     BACKUP_DIR=$HOME/agent-work/tmp bun --env-file="$env_file" packages/db/src/migrate.ts 2>&1 | tail -1
-    if [[ -f $proof/api.pid ]] && kill -0 "$(cat "$proof/api.pid")" 2>/dev/null; then kill "$(cat "$proof/api.pid")"; sleep 1; fi
-    AGENT_EGRESS_TOKEN_FILE=$proof/egress.token API_HOST=127.0.0.1 API_PORT=$port \
-      nohup bun --env-file="$env_file" apps/api/src/index.ts > "$proof/api.log" 2>&1 &
-    echo $! > "$proof/api.pid"
+    # A transient unit of its own, so it outlives the shell that started it.
+    sudo -n systemctl stop vpt-plan-api.service 2>/dev/null || true
+    sudo -n systemd-run --unit=vpt-plan-api --quiet --collect --uid="$(id -u)" --gid="$(id -g)" \
+      --working-directory="$repo" -p ProtectSystem=full \
+      --setenv=AGENT_EGRESS_TOKEN_FILE="$proof/egress.token" --setenv=API_HOST=127.0.0.1 \
+      --setenv=API_PORT="$port" --setenv=TMPDIR="$HOME/agent-work/tmp" \
+      /usr/local/bin/bun --env-file="$env_file" apps/api/src/index.ts
     for _ in $(seq 60); do curl -sf -o /dev/null "http://127.0.0.1:$port/" && break; sleep 0.5; done
     curl -sf "http://127.0.0.1:$port/" && echo
     ;;
@@ -27,7 +30,7 @@ case "${1:-}" in
     (cd apps/api && NODE_ENV=test bun --env-file="$env_file" src/__tests__/isolation-proof/seed.ts "$proof/keys.json")
     ;;
   stop)
-    if [[ -f $proof/api.pid ]]; then kill "$(cat "$proof/api.pid")" 2>/dev/null || true; rm -f "$proof/api.pid"; fi
+    sudo -n systemctl stop vpt-plan-api.service 2>/dev/null || true
     ;;
   *) echo "usage: plan-api.sh start|stop|seed" >&2; exit 64 ;;
 esac
