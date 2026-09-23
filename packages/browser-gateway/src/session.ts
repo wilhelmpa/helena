@@ -7,7 +7,7 @@
 // caller-supplied script.
 import type { Browser, BrowserContext, Page, Download } from 'patchright-core';
 import { chromium } from 'patchright-core';
-import { SecretGuard, isCredentialField } from './redact';
+import { SecretGuard, isCredentialField } from './redact.ts';
 import {
   REF_ATTR,
   TAG_SCRIPT,
@@ -15,9 +15,9 @@ import {
   refSelector,
   renderSnapshot,
   type RawSnapshotNode,
-} from './snapshot';
-import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human';
-import type { GatewaySession } from './session-types';
+} from './snapshot.ts';
+import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts';
+import type { GatewaySession } from './session-types.ts';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -81,6 +81,13 @@ export class PatchrightGatewaySession implements GatewaySession {
 
   async close(): Promise<void> {
     await this.#browser.close();
+  }
+
+  // The project's "menschliche Eingabe" setting (design §8) can change between calls; the
+  // deployment glue re-applies it from the latest resolved settings each time it hands out
+  // a cached session rather than reconnecting.
+  setHumanInput(value: boolean): void {
+    this.#humanInput = value;
   }
 
   #wireCapture(page: Page): void {

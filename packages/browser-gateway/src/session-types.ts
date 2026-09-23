@@ -1,4 +1,4 @@
-import type { SecretGuard } from './redact';
+import type { SecretGuard } from './redact.ts';
 
 // What server.ts needs from a browser session, independent of patchright — session.ts is
 // the real, patchright-backed implementation; server.ts's own tests use a small fake

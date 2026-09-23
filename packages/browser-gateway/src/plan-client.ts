@@ -34,11 +34,15 @@ export interface LoginCodeResult {
 }
 
 export class PlanApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  // Not a TypeScript parameter property (public status: number in the constructor
+  // signature): the deployment glue that uses this package runs under plain Node's
+  // TypeScript type-stripping (erasable syntax only — no parameter properties, which need
+  // real code generation, not just erasure), so every field here is declared and assigned
+  // the ordinary way.
+  status: number;
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
   }
 }
 

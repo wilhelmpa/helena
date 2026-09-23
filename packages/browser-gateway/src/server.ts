@@ -1,10 +1,10 @@
-import type { Holder } from './lock';
-import { ProjectBrowserLocks } from './lock';
-import { CREDENTIAL_TOOLS, requiresLock, toolByName } from './tools';
-import { HOME_SLUG, projectSlug } from './project-slug';
-import type { PlanClient } from './plan-client';
-import { PlanApiError } from './plan-client';
-import type { SessionProvider } from './session-types';
+import type { Holder } from './lock.ts';
+import { ProjectBrowserLocks } from './lock.ts';
+import { CREDENTIAL_TOOLS, requiresLock, toolByName } from './tools.ts';
+import { HOME_SLUG, projectSlug } from './project-slug.ts';
+import type { PlanClient } from './plan-client.ts';
+import { PlanApiError } from './plan-client.ts';
+import type { SessionProvider } from './session-types.ts';
 
 // The gateway's tool dispatcher (design §3/§4): one instance per project-browser socket
 // (see browser-gateway-server.mjs), wired to that socket's own slug. Everything here is
