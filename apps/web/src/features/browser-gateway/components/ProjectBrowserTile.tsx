@@ -37,7 +37,7 @@ export default function ProjectBrowserTile({
     >
       <div className="flex aspect-video items-center justify-center overflow-hidden bg-muted text-muted-foreground">
         {thumbnailUrl ? (
-          // browser router, not a Next-optimizable static asset.
+          // eslint-disable-next-line @next/next/no-img-element -- a live thumbnail from the browser router, not a file Next could optimize.
           <img src={thumbnailUrl} alt="" className="size-full object-cover" />
         ) : (
           <div className="flex flex-col items-center gap-1.5 p-4 text-center">
