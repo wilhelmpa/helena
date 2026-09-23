@@ -16,7 +16,9 @@ import AccountSecurityTotpEnrollDialog from './AccountSecurityTotpEnrollDialog';
 export default function AccountSecurityTotpSection() {
   const t = useTranslations('account.security');
   const { data: session, refetch } = useSession();
-  const enabled = Boolean((session?.user as { twoFactorEnabled?: boolean } | undefined)?.twoFactorEnabled);
+  const enabled = Boolean(
+    (session?.user as { twoFactorEnabled?: boolean } | undefined)?.twoFactorEnabled,
+  );
   const [password, setPassword] = useState('');
   const [enrolling, setEnrolling] = useState(false);
 

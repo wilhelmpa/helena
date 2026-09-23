@@ -30,9 +30,7 @@ export default function GrantBanner({ expiresAt }: { expiresAt: string }) {
 
   return (
     <div className="flex h-8 shrink-0 items-center justify-between border-b bg-warning/10 px-3 text-xs">
-      <span>
-        {expired ? t('expired') : t('active', { time: formatTime(expiresAt) })}
-      </span>
+      <span>{expired ? t('expired') : t('active', { time: formatTime(expiresAt) })}</span>
       <Button
         variant="ghost"
         size="sm"

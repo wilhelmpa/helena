@@ -33,9 +33,7 @@ export default function GodSecurityPage() {
             <div className="flex items-center justify-between">
               <span>
                 {t('grantActive', {
-                  time: grant.data.expiresAt
-                    ? new Date(grant.data.expiresAt).toLocaleString()
-                    : '',
+                  time: grant.data.expiresAt ? new Date(grant.data.expiresAt).toLocaleString() : '',
                 })}
               </span>
               <Button
@@ -54,7 +52,9 @@ export default function GodSecurityPage() {
       </SettingsSection>
 
       <SettingsSection title={t('stepUpTitle')} description={t('stepUpDescription')}>
-        <SettingsCard className="p-4 text-sm text-muted-foreground">{t('stepUpMethod')}</SettingsCard>
+        <SettingsCard className="p-4 text-sm text-muted-foreground">
+          {t('stepUpMethod')}
+        </SettingsCard>
       </SettingsSection>
 
       <SettingsSection

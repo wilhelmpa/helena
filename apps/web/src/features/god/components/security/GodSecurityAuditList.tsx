@@ -39,7 +39,9 @@ export default function GodSecurityAuditList({
 
   if (isPending) return <ListSkeleton rows={5} rowClassName="h-8" />;
   if (entries.length === 0) {
-    return <SettingsCard className="p-4 text-sm text-muted-foreground">{t('auditEmpty')}</SettingsCard>;
+    return (
+      <SettingsCard className="p-4 text-sm text-muted-foreground">{t('auditEmpty')}</SettingsCard>
+    );
   }
 
   return (

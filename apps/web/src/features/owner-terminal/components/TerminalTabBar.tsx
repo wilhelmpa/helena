@@ -44,12 +44,16 @@ export default function TerminalTabBar({
             key={key}
             className={cn(
               'group flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-xs',
-              active ? 'bg-sidebar-accent font-medium' : 'text-muted-foreground hover:bg-sidebar-accent',
+              active
+                ? 'bg-sidebar-accent font-medium'
+                : 'text-muted-foreground hover:bg-sidebar-accent',
             )}
           >
             <button type="button" className="max-w-32 truncate" onClick={() => onSelect(key)}>
               {t(tab.kind)}
-              {tab.name !== 'main' && <span className="ms-1 font-mono text-xs opacity-70">{tab.name}</span>}
+              {tab.name !== 'main' && (
+                <span className="ms-1 font-mono text-xs opacity-70">{tab.name}</span>
+              )}
             </button>
             <button
               type="button"

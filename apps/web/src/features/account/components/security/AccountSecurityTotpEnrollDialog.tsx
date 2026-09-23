@@ -33,14 +33,16 @@ export default function AccountSecurityTotpEnrollDialog({
 
   useEffect(() => {
     let cancelled = false;
-    void twoFactor.enable({ password: password || undefined }).then(({ data, error: enableError }) => {
-      if (cancelled) return;
-      if (enableError || !data) {
-        setError(t('totpEnrollFailed'));
-        return;
-      }
-      setSecret(secretFromUri(data.totpURI));
-    });
+    void twoFactor
+      .enable({ password: password || undefined })
+      .then(({ data, error: enableError }) => {
+        if (cancelled) return;
+        if (enableError || !data) {
+          setError(t('totpEnrollFailed'));
+          return;
+        }
+        setSecret(secretFromUri(data.totpURI));
+      });
     return () => {
       cancelled = true;
     };
