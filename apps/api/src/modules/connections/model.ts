@@ -88,18 +88,3 @@ export const MailAttachmentBody = t.Object({
 });
 
 export const MailPayload = t.Any();
-
-export const ThemeSyncBody = t.Object({
-  theme: t.Union([t.Literal('light'), t.Literal('dark')]),
-});
-export const ThemeSyncResponse = t.Object({
-  theme: t.Union([t.Literal('light'), t.Literal('dark')]),
-  results: t.Array(
-    t.Object({
-      service: t.Union([t.Literal('agent_runtime'), t.Literal('code'), t.Literal('nextcloud')]),
-      status: t.Union([t.Literal('updated'), t.Literal('failed')]),
-      attempts: t.Integer({ minimum: 1, maximum: 2 }),
-      error: t.Optional(t.String({ maxLength: 200 })),
-    }),
-  ),
-});

@@ -1,5 +1,5 @@
 {
-  "id": "2e08cd0b-6a76-4096-97aa-a7f3728e6992",
+  "id": "1cd5909c-c9ad-43a3-bc3f-2465f139d0ea",
   "prevId": "85594fee-9984-4cd1-8324-1a9667a3e999",
   "version": "7",
   "dialect": "postgresql",
@@ -5161,12 +5161,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "ciphertext": {
           "name": "ciphertext",
           "type": "text",
@@ -5198,13 +5192,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
@@ -5213,21 +5200,6 @@
           "columns": [
             {
               "expression": "team_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "integration_credential_project_idx": {
-          "name": "integration_credential_project_idx",
-          "columns": [
-            {
-              "expression": "project_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -5252,295 +5224,12 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
-        },
-        "integration_credential_project_id_project_id_fk": {
-          "name": "integration_credential_project_id_project_id_fk",
-          "tableFrom": "integration_credential",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.integration_credential_grant": {
-      "name": "integration_credential_grant",
-      "schema": "",
-      "columns": {
-        "credential_id": {
-          "name": "credential_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "integration_credential_grant_agent_idx": {
-          "name": "integration_credential_grant_agent_idx",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "integration_credential_grant_credential_id_integration_credential_id_fk": {
-          "name": "integration_credential_grant_credential_id_integration_credential_id_fk",
-          "tableFrom": "integration_credential_grant",
-          "tableTo": "integration_credential",
-          "columnsFrom": [
-            "credential_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "integration_credential_grant_agent_id_ai_agent_id_fk": {
-          "name": "integration_credential_grant_agent_id_ai_agent_id_fk",
-          "tableFrom": "integration_credential_grant",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "integration_credential_grant_credential_id_agent_id_pk": {
-          "name": "integration_credential_grant_credential_id_agent_id_pk",
-          "columns": [
-            "credential_id",
-            "agent_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.integration_credential_use": {
-      "name": "integration_credential_use",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "team_id": {
-          "name": "team_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "credential_id": {
-          "name": "credential_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "credential_label": {
-          "name": "credential_label",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "agent_name": {
-          "name": "agent_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "chat_message_id": {
-          "name": "chat_message_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "action": {
-          "name": "action",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "purpose": {
-          "name": "purpose",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "integration_credential_use_credential_idx": {
-          "name": "integration_credential_use_credential_idx",
-          "columns": [
-            {
-              "expression": "credential_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "integration_credential_use_team_idx": {
-          "name": "integration_credential_use_team_idx",
-          "columns": [
-            {
-              "expression": "team_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "integration_credential_use_team_id_team_id_fk": {
-          "name": "integration_credential_use_team_id_team_id_fk",
-          "tableFrom": "integration_credential_use",
-          "tableTo": "team",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "integration_credential_use_credential_id_integration_credential_id_fk": {
-          "name": "integration_credential_use_credential_id_integration_credential_id_fk",
-          "tableFrom": "integration_credential_use",
-          "tableTo": "integration_credential",
-          "columnsFrom": [
-            "credential_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "integration_credential_use_agent_id_ai_agent_id_fk": {
-          "name": "integration_credential_use_agent_id_ai_agent_id_fk",
-          "tableFrom": "integration_credential_use",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "integration_credential_use_run_id_agent_run_id_fk": {
-          "name": "integration_credential_use_run_id_agent_run_id_fk",
-          "tableFrom": "integration_credential_use",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "integration_credential_use_chat_message_id_agent_chat_message_id_fk": {
-          "name": "integration_credential_use_chat_message_id_agent_chat_message_id_fk",
-          "tableFrom": "integration_credential_use",
-          "tableTo": "agent_chat_message",
-          "columnsFrom": [
-            "chat_message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "integration_credential_use_action_check": {
-          "name": "integration_credential_use_action_check",
-          "value": "\"integration_credential_use\".\"action\" IN ('delivered', 'used')"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.issue": {
@@ -6186,7 +5875,26 @@
           "name": "s3_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "vault_path": {
+          "name": "vault_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linked": {
+          "name": "linked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "filename": {
           "name": "filename",
@@ -6229,6 +5937,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "issue_attachment_vault_path_idx": {
+          "name": "issue_attachment_vault_path_idx",
+          "columns": [
+            {
+              "expression": "vault_path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -6257,7 +5980,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "issue_attachment_storage_check": {
+          "name": "issue_attachment_storage_check",
+          "value": "(\"issue_attachment\".\"s3_key\" IS NULL) <> (\"issue_attachment\".\"vault_path\" IS NULL)"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.issue_checklist": {

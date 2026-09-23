@@ -108,6 +108,14 @@ and makes no decisions.
   Plan confirmed the instance owner. No process of the Unix user Hermes runs as can read
   either token. The complete trust model is in
   `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
+- Documents are files in the vault (`PROJECT_VAULT_ROOT`): `Home/`, `Templates/`,
+  `Private/` (the owner's; group `volition-private`, which the agents' user is not in),
+  and `Projects/<KEY>/`. Plan's Files page reads and writes them directly; a file deleted
+  there moves to `.trash/` at the same relative path (`Private/.trash/` for `Private/`).
+  A project's workspace is shown read-only next to its vault folder. Task and comment
+  attachments are stored once, in `Projects/<KEY>/Files/Tasks/<KEY>-<n>/`, and the
+  attachment row keeps the vault path and the sha256; a row can also link a file that
+  was in the vault before. Agents read the same files on disk.
 - Credentials are stored in Plan, encrypted, on its Credentials page: website logins, API keys,
   SSH keys and secrets, each for the team or one project and granted to agents. Before each
   run and chat answer the runner makes the agent's Hermes vault hold exactly the website

@@ -17,8 +17,6 @@ import {
   MailSearchBody,
   MailSendBody,
   MailThreadBody,
-  ThemeSyncBody,
-  ThemeSyncResponse,
 } from './model';
 import {
   connectionsAction,
@@ -33,7 +31,6 @@ import {
   mailSearch,
   mailSendDraft,
   mailThread,
-  syncWorkspaceTheme,
 } from './service';
 
 export const connectionsRoutes = new Elysia({
@@ -130,9 +127,4 @@ export const connectionsRoutes = new Elysia({
       summary: 'Download a mail attachment',
       description: 'Download one attachment from a message in a connected mail account.',
     },
-  })
-  .post('/theme/sync', ({ body }) => syncWorkspaceTheme(body), {
-    body: ThemeSyncBody,
-    response: { 200: ThemeSyncResponse, ...commonErrors, ...errors(502, 503) },
-    detail: { summary: 'Persist the owner theme across connected workspaces' },
   });

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { WorkspaceRuntimeEnv } from './runtimeEnv';
 import {
+  codeFolderUrl,
   nativeChatProjectKey,
   preferredAgentUsername,
   workspaceFrameOrigins,
@@ -14,9 +15,9 @@ const config: WorkspaceRuntimeEnv = {
   codeUrl: 'https://plan.example.com/workspace/code/',
   projectWorkspacePaths: { VERV: '/workspace/verve' },
   browserUrl: 'https://browser.example.com/',
-  filesUrl: 'https://files.example.com/',
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
+  obsidianVault: 'Volition',
 };
 
 describe('workspaceTools', () => {
@@ -72,11 +73,6 @@ describe('workspaceTools', () => {
         url: 'https://plan.example.com/focus/terminal-project/?arg=demo',
       },
       {
-        kind: 'files',
-        id: '/Projects/demo',
-        url: 'https://files.example.com/apps/files/files?dir=%2FProjects%2Fdemo',
-      },
-      {
         kind: 'browser',
         id: 'demo-coordinator:volition-browser',
         url: 'https://browser.example.com/focus/dashboard/demo-coordinator',
@@ -90,10 +86,6 @@ describe('workspaceTools', () => {
       'https://plan.example.com/workspace/code/?folder=%2Fprojects%2Fdemo',
     );
     assert.equal(tools.terminal.url, 'https://plan.example.com/focus/terminal-project/demo');
-    assert.equal(
-      tools.files.url,
-      'https://files.example.com/apps/files/files?dir=%2FProjects%2Fdemo',
-    );
     assert.equal(tools.browser.url, 'https://browser.example.com/focus/dashboard/demo-coordinator');
   });
 
@@ -128,14 +120,12 @@ describe('workspaceTools', () => {
 
   it('rejects a provisioned resource outside its configured service origin', () => {
     const tools = workspaceTools(config, 'DEMO', [
-      { kind: 'files', id: '/Projects/demo', url: 'https://attacker.example/demo' },
       {
         kind: 'browser',
         id: 'demo-coordinator:volition-browser',
         url: 'https://attacker.example/focus/dashboard/demo-coordinator',
       },
     ]);
-    assert.equal(tools.files.url, 'https://files.example.com/');
     assert.equal(tools.browser.url, 'https://browser.example.com/');
   });
 
@@ -143,7 +133,6 @@ describe('workspaceTools', () => {
     assert.deepEqual(workspaceFrameOrigins(config), [
       'https://plan.example.com',
       'https://browser.example.com',
-      'https://files.example.com',
       'https://inbox.example.com',
     ]);
   });
@@ -152,5 +141,19 @@ describe('workspaceTools', () => {
     const unsafe = { ...config, browserUrl: 'javascript:alert(1)' };
     assert.equal(workspaceTools(unsafe, null).browser.url, '');
     assert.ok(!workspaceFrameOrigins(unsafe).includes('null'));
+  });
+});
+
+describe('codeFolderUrl', () => {
+  it('opens code-server on an absolute folder of the server', () => {
+    assert.equal(
+      codeFolderUrl(config, '/srv/volition/vault/Projects/VOL'),
+      'https://plan.example.com/workspace/code/?folder=%2Fsrv%2Fvolition%2Fvault%2FProjects%2FVOL',
+    );
+  });
+
+  it('offers nothing without a code-server or for a relative folder', () => {
+    assert.equal(codeFolderUrl({ ...config, codeUrl: '' }, '/srv/volition/vault'), '');
+    assert.equal(codeFolderUrl(config, 'Projects/VOL'), '');
   });
 });

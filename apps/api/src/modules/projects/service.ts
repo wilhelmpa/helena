@@ -1099,8 +1099,10 @@ export async function deleteProject(projectId: number): Promise<void> {
       }
     }
     await tx.delete(project).where(eq(project.id, projectId));
-    return [...issueAssets, ...chatAssets, ...documentAssets, ...initiativeAssets].map(
-      (asset) => asset.s3Key,
+    // An attachment in the vault has no object; its file goes with the project's vault
+    // folder, which the deprovisioning moves to the project trash.
+    return [...issueAssets, ...chatAssets, ...documentAssets, ...initiativeAssets].flatMap(
+      (asset) => (asset.s3Key ? [asset.s3Key] : []),
     );
   });
   await deleteObjects(assetKeys);

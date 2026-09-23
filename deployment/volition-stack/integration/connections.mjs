@@ -65,35 +65,10 @@ export function createConnectionsService(config, options = {}) {
   }
 
   async function snapshot() {
-    const [hermesItem, nextcloud, artifactStatus] = await Promise.all([
+    const items = await Promise.all([
       hermes(),
       probeHttp("nextcloud", "Nextcloud", config.nextcloudInternalUrl, "/status.php", [200]),
-      options.artifactSync?.status().catch(() => ({ running: false, projects: {}, statusError: "Archive status could not be read" })) ?? null,
     ]);
-    const items = [hermesItem, nextcloud];
-    if (artifactStatus) {
-      const projects = Object.values(artifactStatus.projects ?? {});
-      const lastError = artifactStatus.statusError ?? projects.find((project) => project.lastError)?.lastError ?? null;
-      const lastSuccessAt = projects.map((project) => project.lastSuccessAt).filter(Boolean).sort().at(-1) ?? null;
-      const lastCheckedAt = projects.flatMap((project) => [project.lastSuccessAt, project.lastDryRunAt]).filter(Boolean).sort().at(-1) ?? null;
-      items.push({
-        id: "service:artifact-sync",
-        kind: "service",
-        provider: "artifact-sync",
-        label: "Document archive",
-        configured: true,
-        connected: !lastError && Boolean(lastSuccessAt),
-        running: artifactStatus.running === true,
-        status: lastError ? "error" : lastSuccessAt ? "connected" : "configured",
-        lastCheckedAt,
-        lastSuccessAt,
-        lastError,
-        canProbe: false,
-        canReconnect: false,
-        canPair: false,
-        manageUrl: null,
-      });
-    }
     return { checkedAt: new Date().toISOString(), items };
   }
 
@@ -101,7 +76,7 @@ export function createConnectionsService(config, options = {}) {
     if (!input || typeof input !== "object" || Array.isArray(input) || typeof input.id !== "string" || typeof input.action !== "string") {
       throw new ConnectionsValidationError("Action input is invalid");
     }
-    if (input.action !== "probe" || (input.id !== "all" && !/^service:(hermes|nextcloud|artifact-sync)$/.test(input.id))) {
+    if (input.action !== "probe" || (input.id !== "all" && !/^service:(hermes|nextcloud)$/.test(input.id))) {
       throw new ConnectionsValidationError("This connection action is not allowed");
     }
     return snapshot();

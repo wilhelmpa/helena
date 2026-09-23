@@ -1783,9 +1783,11 @@ export const issueFieldOption = pgTable(
   (t) => [primaryKey({ columns: [t.issueId, t.fieldId, t.optionId] })],
 );
 
-// File attachments on issues. Bytes live in the S3-compatible object store;
-// this table holds metadata and the object key. public_id is the unguessable id
-// used in the public download URL.
+// File attachments on issues. The file is in the vault (vault_path, relative to
+// PROJECT_VAULT_ROOT), or, for a row not yet moved there, in the object store
+// (s3_key). sha256 finds the file again after it was moved outside Plan. A linked
+// row points at a vault file that existed before it and is never deleted with it.
+// public_id is the unguessable id used in the public download URL.
 export const issueAttachment = pgTable(
   'issue_attachment',
   {
@@ -1794,13 +1796,20 @@ export const issueAttachment = pgTable(
     issueId: integer('issue_id')
       .notNull()
       .references(() => issue.id, { onDelete: 'cascade' }),
-    s3Key: text('s3_key').notNull(),
+    s3Key: text('s3_key'),
+    vaultPath: text('vault_path'),
+    sha256: text('sha256'),
+    linked: boolean('linked').notNull().default(false),
     filename: text('filename').notNull(),
     contentType: text('content_type').notNull(),
     sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('issue_attachment_issue_idx').on(t.issueId)],
+  (t) => [
+    index('issue_attachment_issue_idx').on(t.issueId),
+    index('issue_attachment_vault_path_idx').on(t.vaultPath),
+    check('issue_attachment_storage_check', sql`(${t.s3Key} IS NULL) <> (${t.vaultPath} IS NULL)`),
+  ],
 );
 
 export const issueDevelopmentLink = pgTable(

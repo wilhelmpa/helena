@@ -113,9 +113,9 @@ beforeEach(async () => {
       codeUrl: '',
       projectWorkspacePaths: {},
       browserUrl: '',
-      filesUrl: '',
       inboxUrl: '',
       connectionsUrl: '',
+      obsidianVault: 'Volition',
     },
   };
   Object.defineProperties(globalThis, {

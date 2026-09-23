@@ -93,7 +93,7 @@ test('a project-scoped tool never survives a project change or a return Home', (
     assert.equal(panel.open, true);
     assert.equal(panel.activeTool, 'chat');
 
-    act(() => panel.openTool('files'));
+    act(() => panel.openTool('terminal'));
     test.unmount();
     test.remount();
     act(() => test.root().render(<Probe projectKey="SYSQA" />));

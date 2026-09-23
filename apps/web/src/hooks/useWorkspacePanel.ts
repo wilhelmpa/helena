@@ -13,7 +13,7 @@ const FULLSCREEN_KEY = 'workspace:panel:fullscreen';
 const PROJECT_KEY = 'workspace:panel:project';
 const SPLIT_KEY = 'workspace:panel:split';
 
-const PROJECT_SCOPED_TOOLS = new Set<WorkspaceToolId>(['terminal', 'code', 'files']);
+const PROJECT_SCOPED_TOOLS = new Set<WorkspaceToolId>(['terminal', 'code']);
 
 function write(key: string, value: string) {
   try {

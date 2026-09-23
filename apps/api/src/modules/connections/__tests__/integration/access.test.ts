@@ -12,27 +12,20 @@ describe('interactive communications boundary', () => {
     const key = await auth.api.createApiKey({ body: { userId: owner.userId, name: 'agent' } });
     expect((await apiKeyApi(key.key).connections.get()).status).toBe(403);
     expect(
-      (
-        await apiKeyApi(key.key).theme.sync.post({
-          theme: 'dark',
-        })
-      ).status,
+      (await apiKeyApi(key.key).connections.actions.post({ id: 'hermes', action: 'probe' })).status,
     ).toBe(403);
     const connections = await authedApi(owner.cookie).connections.get();
     expect(connections.status).toBe(200);
     expect(connections.data?.items).toEqual([]);
     expect(
-      (
-        await authedApi(owner.cookie).theme.sync.post({
-          theme: 'dark',
-        })
-      ).status,
+      (await authedApi(owner.cookie).connections.actions.post({ id: 'hermes', action: 'probe' }))
+        .status,
     ).toBe(403);
     expect(
       (
-        await authedApi(owner.cookie, { origin: 'http://localhost:3001' }).theme.sync.post({
-          theme: 'dark',
-        })
+        await authedApi(owner.cookie, {
+          origin: 'http://localhost:3001',
+        }).connections.actions.post({ id: 'hermes', action: 'probe' })
       ).status,
     ).toBe(503);
   });

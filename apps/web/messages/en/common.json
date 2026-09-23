@@ -209,6 +209,5 @@
     "page": "Page {number}",
     "perPage": "per page",
     "range": "{first}-{last} of {total}"
-  },
-  "themeSyncPartial": "Theme updated in Volition, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
+  }
 }
