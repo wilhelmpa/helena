@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
+import { setTimeout as sleep } from 'node:timers/promises';
 import {
   stageResultSchema,
   type AgentTeamPayload,
@@ -38,7 +39,9 @@ export interface PlanSyncRequest {
 }
 
 export interface HermesTeamAdapter {
-  executeStage(request: StageRequest): Promise<StageResult>;
+  // `signal` is the abort signal of the workflow step, which fires when the run is
+  // canceled.
+  executeStage(request: StageRequest, signal?: AbortSignal): Promise<StageResult>;
   synchronizePlan(request: PlanSyncRequest): Promise<{ synchronizedAt: string }>;
 }
 
@@ -55,18 +58,20 @@ export function teamIdempotencyKey(
 export async function withBackoff<T>(
   policy: Pick<TeamPolicy, 'maxAttempts' | 'initialBackoffMs' | 'maxBackoffMs' | 'backoffMultiplier'>,
   operation: (attempt: number) => Promise<T>,
-  wait: (milliseconds: number) => Promise<void> = milliseconds =>
-    new Promise(resolve => setTimeout(resolve, milliseconds)),
+  signal?: AbortSignal,
+  wait: (milliseconds: number, signal?: AbortSignal) => Promise<void> = (milliseconds, signal) =>
+    sleep(milliseconds, undefined, { signal }).catch(() => {}),
 ): Promise<T> {
   let delay = policy.initialBackoffMs;
   let lastError: unknown;
   for (let attempt = 1; attempt <= policy.maxAttempts; attempt += 1) {
+    signal?.throwIfAborted();
     try {
       return await operation(attempt);
     } catch (error) {
       lastError = error;
       if (attempt === policy.maxAttempts) break;
-      await wait(delay);
+      await wait(delay, signal);
       delay = Math.min(policy.maxBackoffMs, Math.ceil(delay * policy.backoffMultiplier));
     }
   }
@@ -113,8 +118,14 @@ function socketPath(): string {
 }
 
 // The bridge answers a stage only once its Hermes run has finished, so a stage
-// request waits as long as the stage timeout allows.
-async function request(path: string, body: unknown, timeoutMs = 330_000): Promise<unknown> {
+// request waits as long as the stage timeout allows. Aborting it closes the
+// connection, which makes the bridge cancel the stage's Plan run.
+async function request(
+  path: string,
+  body: unknown,
+  timeoutMs = 330_000,
+  signal?: AbortSignal,
+): Promise<unknown> {
   const auth = await token();
   const encoded = JSON.stringify(body);
   return await new Promise((resolve, reject) => {
@@ -122,6 +133,7 @@ async function request(path: string, body: unknown, timeoutMs = 330_000): Promis
       socketPath: socketPath(),
       path,
       method: 'POST',
+      signal,
       headers: {
         authorization: `Bearer ${auth}`,
         'content-type': 'application/json',
@@ -153,20 +165,25 @@ async function request(path: string, body: unknown, timeoutMs = 330_000): Promis
 }
 
 export const privateHermesTeamAdapter: HermesTeamAdapter = {
-  async executeStage(input) {
-    return withBackoff(input.policy, async attempt => {
-      const raw = await request(
-        '/internal/hermes/team/stages',
-        { schemaVersion: 1, ...input, attempt },
-        (input.policy.timeoutSeconds + 30) * 1_000,
-      );
-      const result = validateLease(stageResultSchema.parse(raw), input.policy);
-      if (result.idempotencyKey !== input.idempotencyKey || result.phase !== input.phase) {
-        throw new Error('Hermes returned a result for another execution stage');
-      }
-      if (result.status === 'failed') throw new Error('Hermes execution stage failed');
-      return result;
-    });
+  async executeStage(input, signal) {
+    return withBackoff(
+      input.policy,
+      async attempt => {
+        const raw = await request(
+          '/internal/hermes/team/stages',
+          { schemaVersion: 1, ...input, attempt },
+          (input.policy.timeoutSeconds + 30) * 1_000,
+          signal,
+        );
+        const result = validateLease(stageResultSchema.parse(raw), input.policy);
+        if (result.idempotencyKey !== input.idempotencyKey || result.phase !== input.phase) {
+          throw new Error('Hermes returned a result for another execution stage');
+        }
+        if (result.status === 'failed') throw new Error('Hermes execution stage failed');
+        return result;
+      },
+      signal,
+    );
   },
   async synchronizePlan(input) {
     const raw = await request('/internal/hermes/team/synchronize', { schemaVersion: 1, ...input });

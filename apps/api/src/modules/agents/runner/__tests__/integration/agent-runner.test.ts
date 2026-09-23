@@ -497,8 +497,50 @@ describe('agent runner queue', () => {
     await queueRun(asOwner, columnId, agent.username);
     const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
 
-    expect((await asRunner['agent-runs']({ runId: run.id }).heartbeat.post()).status).toBe(204);
-    expect((await asRunner['agent-runs']({ runId: run.id }).heartbeat.post()).status).toBe(204);
+    for (let beat = 0; beat < 2; beat++) {
+      const res = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post();
+      expect(res.status).toBe(200);
+      expect(res.data).toEqual({ canceled: false });
+    }
+  });
+
+  it('answers canceled on the heartbeat of a run canceled while it executes', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    const issue = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Team task' })
+    ).data!;
+    await controlApi().internal.orchestration['agent-run'].post({
+      projectRef: 'project:MKT',
+      task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
+      agent: { agentRef: `agent:${agent.username}` },
+      idempotencyKey: 'a'.repeat(64),
+      prompt: 'Complete the assignment.',
+      policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
+    });
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+
+    await controlApi().internal.orchestration['agent-run'].cancel.post({
+      runId: run.id,
+      projectRef: 'project:MKT',
+    });
+
+    const beat = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post();
+    expect(beat.status).toBe(200);
+    expect(beat.data).toEqual({ canceled: true });
+    const result = await asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      output: 'Too late',
+    });
+    expect(result.status).toBe(404);
+  });
+
+  it('refuses the heartbeat of a run that finished', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await asRunner['agent-runs']({ runId: run.id }).result.post({ status: 'success' });
+
+    expect((await asRunner['agent-runs']({ runId: run.id }).heartbeat.post()).status).toBe(404);
   });
 
   it('records presence on the agent when its runner polls', async () => {

@@ -78,6 +78,58 @@ test('run controls reject a run from another project', async () => {
   );
 });
 
+test('retry runs a failed run again from its failed step without waiting for it', async () => {
+  const calls = [];
+  const control = service(async (url, init = {}) => {
+    calls.push({ url: String(url), init });
+    if (init.method === 'POST') return json({ message: 'Workflow run time travel started' });
+    return json({
+      runId: 'run-1',
+      resourceId: 'project:PRIV',
+      status: 'failed',
+      steps: {
+        'prepare-team': { status: 'success' },
+        coordinate: { status: 'success' },
+        specialize: { status: 'failed' },
+      },
+    });
+  });
+  const result = await control.execute({
+    schemaVersion: 1,
+    operation: 'retry',
+    workflowId: 'agent-team',
+    projectRef: 'project:PRIV',
+    runId: 'run-1',
+  });
+  const traveled = calls.at(-1);
+  assert.match(traveled.url, /\/workflows\/agent-team\/time-travel\?runId=run-1$/);
+  assert.deepEqual(JSON.parse(traveled.init.body), {
+    step: 'specialize',
+    requestContext: { projectRef: 'project:PRIV' },
+  });
+  assert.deepEqual(result, { runId: 'run-1', resourceId: 'project:PRIV', status: 'running' });
+});
+
+test('retry refuses a run that did not fail or has no failed step', async () => {
+  for (const run of [
+    { status: 'success', steps: {} },
+    { status: 'failed', steps: { 'prepare-team': { status: 'success' } } },
+  ]) {
+    const control = service(async () => json({ runId: 'run-1', resourceId: 'project:PRIV', ...run }));
+    await assert.rejects(
+      () =>
+        control.execute({
+          schemaVersion: 1,
+          operation: 'retry',
+          workflowId: 'agent-team',
+          projectRef: 'project:PRIV',
+          runId: 'run-1',
+        }),
+      (error) => error instanceof MastraControlError && error.status === 409,
+    );
+  }
+});
+
 test('schedule listing filters by the stored project context', async () => {
   const control = service(async (url) => {
     assert.match(String(url), /schedules\?workflowId=support$/);

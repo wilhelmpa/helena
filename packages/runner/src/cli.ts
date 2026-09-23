@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import { setTimeout as sleep } from 'node:timers/promises';
-import { UsageReader } from './agui';
 import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
-import { execute } from './execute';
 import { hermesPolicySynchronizer, type HermesPolicySynchronizer } from './policy';
+import { perform } from './run';
 
 // The runner holds no state — the queue is the server's — so stopping it mid-task only
 // means that task's lease expires and another runner picks it up.
@@ -41,24 +40,8 @@ async function withHeartbeat<T>(log: Log, beat: () => Promise<void>, work: Promi
   }
 }
 
-function taskOf(run: Run) {
-  return {
-    prompt: run.prompt,
-    systemPrompt: run.systemPrompt,
-    model: run.model,
-    thinkingLevel: run.thinkingLevel,
-    maxTurns: run.maxTurns,
-    runBudgetSeconds: run.runBudgetSeconds,
-    env: {
-      ITSAPLAN_RUN_ID: String(run.id),
-      ITSAPLAN_TRIGGER: run.trigger,
-      ITSAPLAN_SYSTEM_PROMPT: run.systemPrompt,
-      ITSAPLAN_ISSUE: run.issueIdentifier ?? '',
-      ITSAPLAN_ISSUE_ID: run.issueId == null ? '' : String(run.issueId),
-    },
-  };
-}
-
+// A cancel reaches the runner on the heartbeat, which aborts `stop` and so kills the
+// command.
 async function handle(
   config: RunnerConfig,
   client: Client,
@@ -68,29 +51,28 @@ async function handle(
 ): Promise<void> {
   const label = run.issueIdentifier ?? `run ${run.id}`;
   log(`${label}: started (${run.trigger})`);
+  const stop = new AbortController();
   try {
-    // Read as the command writes, not off the outcome: only the tail of the output is
-    // kept, and the line carrying the counts can fall outside it. A command that reports
-    // the totals of the run has them on the outcome, and those are what the run cost.
-    const usage = new UsageReader(config.outputFormat);
     const outcome = await withHeartbeat(
       log,
-      () => client.heartbeat(run.id),
-      execute(
-        config,
-        { ...taskOf(run), toolsets: policy?.toolsets() ?? null },
-        { onData: (chunk) => usage.write(chunk) },
-      ),
+      async () => {
+        if (await client.heartbeat(run.id)) stop.abort();
+      },
+      perform(config, client, run, stop, policy?.toolsets() ?? null),
     );
-    usage.end();
-    await client.report(run.id, { ...outcome, usage: outcome.usage ?? usage.value() });
-    log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
+    log(
+      outcome
+        ? `${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`
+        : `${label}: canceled`,
+    );
   } catch (err) {
     // The command itself never throws here; this is the runner failing to run or
-    // report it. Reporting the failure keeps the run from being retried blindly.
+    // report it. Reporting the failure keeps the run from being retried blindly. A
+    // canceled run is already closed, so nothing is reported for it.
     const message = err instanceof Error ? err.message : String(err);
     log(`${label}: runner error — ${message}`);
-    await client.report(run.id, { status: 'failed', error: message }).catch(() => {});
+    if (!stop.signal.aborted)
+      await client.report(run.id, { status: 'failed', error: message }).catch(() => {});
   }
 }
 

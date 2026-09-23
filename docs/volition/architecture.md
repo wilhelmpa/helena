@@ -31,10 +31,12 @@ and makes no decisions.
 1. **Plan → Mastra**: events (`event-ingress`) and the control API (start, cancel, retry,
    schedules, runs).
 2. **Mastra → Plan**: Mastra queues Hermes stages in Plan's run queue and synchronizes results
-   to the issue. Mastra never calls Hermes directly, so every run is visible in Plan.
+   to the issue. Mastra never calls Hermes directly, so every run is visible in Plan. A
+   canceled workflow run cancels the queued run of the stage it waits for.
 3. **Plan ↔ Hermes**: the runner claims queued work and chat messages, sends heartbeats and
-   AG-UI events. Hermes reads and writes Plan data through Plan's MCP server (issues, mail
-   drafts, secret names).
+   AG-UI events. A heartbeat answers `canceled` for a canceled run or chat answer, and the
+   runner then stops Hermes. Hermes reads and writes Plan data through Plan's MCP server
+   (issues, mail drafts, secret names).
 4. **Plan and Mastra → integration service**: provisioning, sending mail after the owner
    confirms it, browser control. The integration service reports inbound mail to Mastra as
    an event.

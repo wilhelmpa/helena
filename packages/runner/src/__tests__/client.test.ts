@@ -90,4 +90,26 @@ describe('runner gateway client', () => {
     expect(requests.every((entry) => entry.apiKey === 'runner-secret')).toBe(true);
     expect(JSON.stringify(requests[0]?.body)).not.toContain('runner-secret');
   });
+
+  it('reads a canceled run off its heartbeat, and no body as not canceled', async () => {
+    server = createServer((request, response) => {
+      if (request.url === '/agent-runs/1/heartbeat') {
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ canceled: true }));
+        return;
+      }
+      response.statusCode = 204;
+      response.end();
+    });
+    await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+    const client = new Client({
+      url: `http://127.0.0.1:${address.port}`,
+      apiKey: 'runner-secret',
+    } as RunnerConfig);
+
+    expect(await client.heartbeat(1)).toBe(true);
+    expect(await client.heartbeat(2)).toBe(false);
+  });
 });

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { Mastra } from '@mastra/core/mastra';
+import { LibSQLStore } from '@mastra/libsql';
 import type { WorkEnvelope } from '../src/mastra/contracts.ts';
 import type { HermesTeamAdapter, StageRequest } from '../src/mastra/adapters/hermes-team.ts';
 import {
@@ -298,6 +300,33 @@ test('dependent assignments run after their dependencies and receive their resul
   assert.equal(independent?.dependencyResults, undefined);
 });
 
+test('canceling the run aborts the Hermes stage it waits for', { timeout: 10_000 }, async () => {
+  let started: () => void = () => {};
+  const waiting = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const signals: (AbortSignal | undefined)[] = [];
+  const adapter: HermesTeamAdapter = {
+    executeStage: (_request, signal) =>
+      new Promise((_resolve, reject) => {
+        signals.push(signal);
+        started();
+        if (signal?.aborted) reject(signal.reason);
+        signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+      }),
+    synchronizePlan: async () => {
+      throw new Error('unexpected Plan call');
+    },
+  };
+  const workflowRun = await buildAgentTeamWorkflow(adapter).createRun();
+  const result = workflowRun.start({ inputData: envelope(false, payload()) });
+  await waiting;
+  await workflowRun.cancel();
+  assert.equal((await result).status, 'canceled');
+  assert.equal(signals.length, 1);
+  assert.equal(signals[0]?.aborted, true);
+});
+
 test('a dependency cycle from the coordinator stops the run before specialist work', async () => {
   const recorder = recordingAdapter({
     delegations: [
@@ -307,7 +336,49 @@ test('a dependency cycle from the coordinator stops the run before specialist wo
   });
   const result = await run(recorder.adapter, false, payload({ specialists: [tester, designer] }));
   assert.equal(result.status, 'failed');
-  assert.deepEqual(recorder.calls, ['coordinate', 'coordinate', 'coordinate']);
+  assert.deepEqual(recorder.calls, ['coordinate']);
+});
+
+test('a failed stage is not retried by Mastra on top of the adapter', async () => {
+  let calls = 0;
+  const adapter: HermesTeamAdapter = {
+    executeStage: async () => {
+      calls += 1;
+      throw new Error('Hermes execution stage failed');
+    },
+    synchronizePlan: async () => {
+      throw new Error('unexpected Plan call');
+    },
+  };
+  const result = await run(adapter, false, payload());
+  assert.equal(result.status, 'failed');
+  assert.equal(calls, 1);
+});
+
+test('a retry runs the failed stage again and keeps the stages before it', async () => {
+  let failing = true;
+  const recorder = recordingAdapter({
+    delegations: [delegation('a', tester.agentRef), delegation('b', designer.agentRef)],
+    async specialize() {
+      if (failing) throw new Error('Hermes execution stage failed');
+    },
+  });
+  const mastra = new Mastra({
+    workflows: { agentTeam: buildAgentTeamWorkflow(recorder.adapter) },
+    storage: new LibSQLStore({ id: 'agent-team-retry', url: process.env.STUDIO_DATABASE_URL! }),
+  });
+  const workflowRun = await mastra.getWorkflow('agentTeam').createRun();
+  const failed = await workflowRun.start({
+    inputData: envelope(false, payload({ specialists: [tester, designer] })),
+  });
+  assert.equal(failed.status, 'failed');
+
+  failing = false;
+  const retried = await workflowRun.timeTravel({ step: 'specialize' });
+  assert.equal(retried.status, 'success');
+  assert.equal(recorder.calls.filter((call) => call === 'coordinate').length, 1);
+  assert.equal(recorder.calls.filter((call) => call.startsWith('specialize:')).length, 4);
+  assert.deepEqual(recorder.calls.slice(-2), ['review', 'sync:review']);
 });
 
 test('run limits travel with every Hermes stage and the stage timeout covers the budget', async () => {

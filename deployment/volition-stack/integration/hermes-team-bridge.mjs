@@ -72,8 +72,13 @@ export function createHermesTeamHandler({ bridgeToken }, service) {
       if (!String(request.headers['content-type'] ?? '').toLowerCase().startsWith('application/json'))
         throw new HermesTeamError(415, 'unsupported_media_type', 'JSON is required');
       const body = await readBody(request);
+      // Mastra closes the connection when it stops waiting for the stage.
+      const abandoned = new AbortController();
+      response.once('close', () => {
+        if (!response.writableFinished) abandoned.abort();
+      });
       const result = request.url === '/internal/hermes/team/stages'
-        ? await service.executeStage(body)
+        ? await service.executeStage(body, abandoned.signal)
         : request.url === '/internal/hermes/team/synchronize'
           ? await service.synchronize(body)
           : null;
@@ -96,6 +101,7 @@ export async function startHermesTeamBridge() {
   const plan = {
     enqueue: body => planRequest('/internal/orchestration/agent-run', body, planToken),
     status: body => planRequest('/internal/orchestration/agent-run/status', body, planToken),
+    cancel: body => planRequest('/internal/orchestration/agent-run/cancel', body, planToken),
     synchronize: body => planRequest('/internal/orchestration/task-sync', body, planToken),
   };
   const service = createHermesTeamService(plan);

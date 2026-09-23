@@ -9,7 +9,7 @@ import {
   projectMember,
   projectSetting,
 } from '@repo/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { authorizeControlRequest } from './home-agent-bootstrap';
 import { maxTurnsLimit, runBudgetSecondsLimit } from './modules/agents/model';
 import { agentRunConfig } from './modules/agents/core/run-queue';
@@ -156,10 +156,15 @@ export async function enqueueHermesStage(body: unknown) {
     if (value) {
       if (value.fingerprint !== requestFingerprint)
         return { conflict: true as const, runId: 0, replayed: false };
+      // A stage is asked for again after its run failed (a retry of the stage or of the
+      // workflow run) or was canceled when Mastra stopped waiting (Mastra restarted and
+      // continues the stage). The run is queued again with its claims counted anew;
+      // Mastra bounds how often it asks.
       await tx
         .update(agentRun)
         .set({
           status: 'pending',
+          attempts: 0,
           output: null,
           lastError: null,
           finishedAt: null,
@@ -168,8 +173,7 @@ export async function enqueueHermesStage(body: unknown) {
         .where(
           and(
             eq(agentRun.id, Number(value.runId)),
-            eq(agentRun.status, 'failed'),
-            sql`${agentRun.attempts} < ${Number(maxAttempts)}`,
+            inArray(agentRun.status, ['failed', 'canceled']),
           ),
         );
       return { conflict: false as const, runId: Number(value.runId), replayed: true };
@@ -256,6 +260,22 @@ export async function hermesStageStatus(body: unknown) {
       finishedAt: row.finishedAt?.toISOString() ?? null,
     },
   };
+}
+
+// Called by the bridge when the workflow run that waits on a stage was canceled. A run
+// that already finished keeps its outcome; a runner executing the run learns of the
+// cancel from its next heartbeat. Answers the status document, so a repeat gets the
+// same answer.
+export async function cancelHermesStage(body: unknown) {
+  const found = await hermesStageStatus(body);
+  if (found.status !== 200) return found;
+  const [canceled] = await db
+    .update(agentRun)
+    .set({ status: 'canceled', finishedAt: new Date() })
+    .where(and(eq(agentRun.id, Number(object(body)?.runId)), eq(agentRun.status, 'pending')))
+    .returning({ projectId: agentRun.projectId });
+  if (canceled) await bumpControlPlaneRevision(canceled.projectId);
+  return hermesStageStatus(body);
 }
 
 function syncComment(summary: string, evidence: unknown): string {
@@ -381,6 +401,9 @@ export const hermesTeamControlRoutes = new Elysia({ name: 'hermes-team-control' 
   .post('/internal/orchestration/agent-run', ({ request }) => respond(request, enqueueHermesStage))
   .post('/internal/orchestration/agent-run/status', ({ request }) =>
     respond(request, hermesStageStatus),
+  )
+  .post('/internal/orchestration/agent-run/cancel', ({ request }) =>
+    respond(request, cancelHermesStage),
   )
   .post('/internal/orchestration/task-sync', ({ request }) =>
     respond(request, synchronizeHermesStage),

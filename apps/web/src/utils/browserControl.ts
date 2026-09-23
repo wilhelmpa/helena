@@ -9,7 +9,8 @@ export interface BrowserTab {
   active: boolean;
 }
 
-export type BrowserAction = 'navigate' | 'back' | 'forward' | 'reload' | 'activate' | 'close' | 'new';
+export type BrowserAction =
+  'navigate' | 'back' | 'forward' | 'reload' | 'activate' | 'close' | 'new';
 
 // The control routes of the browser a stream URL shows, or null for a URL that is not a
 // project browser stream.

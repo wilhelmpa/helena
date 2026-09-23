@@ -74,6 +74,8 @@ The runner JSON and Hermes YAML contain no key.
 - A second message resumes the same Hermes session.
 - Model and reasoning selections change the Hermes invocation independently.
 - A delegated task is claimed once, heartbeated and completed or failed explicitly.
+- A run canceled while Hermes executes it is stopped on the next heartbeat (at most 60
+  seconds later), and the runner reports nothing for it.
 - Stopping the unit terminates the active process group; an expired lease can be claimed again.
 - The API key does not appear in JSON, YAML, argv, journal output or AG-UI events.
 

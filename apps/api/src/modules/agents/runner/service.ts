@@ -281,11 +281,16 @@ function buildSystemPrompt(
   );
 }
 
+export interface RunAck {
+  canceled: boolean;
+}
+
 // Extends a claimed run's lease while the runner is still working on it. A command
 // can outlive the lease by far, so the runner sends this periodically; without it the
-// run would be handed to another runner mid-flight. False when the run is not this
-// agent's, or is already finished.
-export async function heartbeatRun(agentId: number, runId: number): Promise<boolean> {
+// run would be handed to another runner mid-flight. `canceled` is how the runner
+// learns that the run was canceled while it executes it. Null when the run is not
+// this agent's, or finished otherwise.
+export async function heartbeatRun(agentId: number, runId: number): Promise<RunAck | null> {
   await touchRunner(agentId);
   const rows = await db
     .update(agentRun)
@@ -294,7 +299,13 @@ export async function heartbeatRun(agentId: number, runId: number): Promise<bool
       and(eq(agentRun.id, runId), eq(agentRun.agentId, agentId), eq(agentRun.status, 'pending')),
     )
     .returning({ id: agentRun.id });
-  return rows.length > 0;
+  if (rows.length > 0) return { canceled: false };
+  const [row] = await db
+    .select({ status: agentRun.status })
+    .from(agentRun)
+    .where(and(eq(agentRun.id, runId), eq(agentRun.agentId, agentId)))
+    .limit(1);
+  return row?.status === 'canceled' ? { canceled: true } : null;
 }
 
 // Records the outcome the runner reports. A failure is terminal: the runner ran the

@@ -311,10 +311,16 @@ export function createMastraControlService(config, options = {}) {
       }
       if (input.operation === 'retry') {
         if (run.status !== 'failed') throw new MastraControlError(409, 'Only failed workflow runs can be retried');
-        return call(`workflows/${workflowId}/restart-async?runId=${encodeURIComponent(runId)}`, {
+        // Mastra's restart answers a failed run with its stored failure. Time travel runs
+        // the failed step again with the stored results of the steps before it. Like a
+        // start, it is not waited for.
+        const step = Object.entries(run.steps ?? {}).find(([, result]) => result?.status === 'failed')?.[0];
+        if (!step) throw new MastraControlError(409, 'Workflow run has no failed step');
+        await call(`workflows/${workflowId}/time-travel?runId=${encodeURIComponent(runId)}`, {
           method: 'POST',
-          body: JSON.stringify({ requestContext: { projectRef } }),
+          body: JSON.stringify({ step, requestContext: { projectRef } }),
         });
+        return { runId, resourceId: projectRef, status: 'running' };
       }
       throw new MastraControlError(400, 'Control operation is invalid');
     },

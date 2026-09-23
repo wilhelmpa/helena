@@ -87,7 +87,9 @@ project is deprovisioned.
 Mastra coordinates `agent-team` through `/run/volition-ipc/hermes-team.sock`. The bridge
 submits project-bound work to Plan's external-agent queue. The Hermes runner claims that
 queue using the selected project profile. Stable idempotency keys, leases, heartbeats, and
-stored checkpoints cover retries and recovery.
+stored checkpoints cover retries and recovery. Canceling the workflow run closes the socket
+request of the stage it waits for; the bridge then cancels that Plan run, and a runner
+executing it stops Hermes on its next heartbeat.
 
 ```text
 Plan API -> provisioning control :18800 -> Mastra proxy :4111

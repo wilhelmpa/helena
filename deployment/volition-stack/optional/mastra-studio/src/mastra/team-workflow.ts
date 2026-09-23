@@ -81,6 +81,10 @@ export function dependencyWaves(delegations: Delegation[]): Delegation[][] {
   return waves;
 }
 
+// The adapter retries a stage request with the backoff of the team policy. The steps that
+// run stages have no Mastra retries on top, which would multiply the attempts.
+const STAGE_RETRIES = 0;
+
 export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHermesTeamAdapter) {
   const prepare = createStep({
     id: 'prepare-team',
@@ -109,8 +113,8 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
       'Route the task to one specialist when the team or the task labels decide it, otherwise ask the coordinator for assignments.',
     inputSchema: agentTeamStateSchema,
     outputSchema: agentTeamStateSchema,
-    retries: 2,
-    execute: async ({ inputData }) => {
+    retries: STAGE_RETRIES,
+    execute: async ({ inputData, abortSignal }) => {
       const { input } = inputData;
       const routed = routeTask(input);
       if (routed) {
@@ -152,16 +156,19 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
           })),
         };
       }
-      const result = await adapter.executeStage({
-        phase: 'coordinate',
-        idempotencyKey: teamIdempotencyKey(inputData.envelope, 'coordinate', input.task.taskRef),
-        projectRef: projectRef(inputData),
-        task: input.task,
-        agent: input.coordinator,
-        allowedSpecialists: input.specialists,
-        policy: input.policy,
-        execution: input.execution,
-      });
+      const result = await adapter.executeStage(
+        {
+          phase: 'coordinate',
+          idempotencyKey: teamIdempotencyKey(inputData.envelope, 'coordinate', input.task.taskRef),
+          projectRef: projectRef(inputData),
+          task: input.task,
+          agent: input.coordinator,
+          allowedSpecialists: input.specialists,
+          policy: input.policy,
+          execution: input.execution,
+        },
+        abortSignal,
+      );
       const allowed = new Set(input.specialists.map((item) => item.agentRef));
       if (
         result.delegations.length === 0 ||
@@ -184,8 +191,8 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
       'Execute specialist assignments in dependency order, independent ones in parallel, with idempotent Hermes leases.',
     inputSchema: agentTeamStateSchema,
     outputSchema: agentTeamStateSchema,
-    retries: 2,
-    execute: async ({ inputData }) => {
+    retries: STAGE_RETRIES,
+    execute: async ({ inputData, abortSignal }) => {
       if (inputData.envelope.dryRun) return inputData;
       const { input } = inputData;
       const members = new Map(input.specialists.map((item) => [item.agentRef, item]));
@@ -200,21 +207,24 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
               const { summary, evidence } = finished.get(assignmentId)!;
               return { assignmentId, summary, evidence };
             });
-            const result = await adapter.executeStage({
-              phase: 'specialize',
-              idempotencyKey: teamIdempotencyKey(
-                inputData.envelope,
-                'specialize',
-                assignment.assignmentId,
-              ),
-              projectRef: projectRef(inputData),
-              task: input.task,
-              agent,
-              assignment,
-              ...(dependencyResults.length > 0 ? { dependencyResults } : {}),
-              policy: input.policy,
-              execution: input.execution,
-            });
+            const result = await adapter.executeStage(
+              {
+                phase: 'specialize',
+                idempotencyKey: teamIdempotencyKey(
+                  inputData.envelope,
+                  'specialize',
+                  assignment.assignmentId,
+                ),
+                projectRef: projectRef(inputData),
+                task: input.task,
+                agent,
+                assignment,
+                ...(dependencyResults.length > 0 ? { dependencyResults } : {}),
+                policy: input.policy,
+                execution: input.execution,
+              },
+              abortSignal,
+            );
             return { ...result, assignmentId: assignment.assignmentId };
           }),
         );
@@ -234,23 +244,26 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
       'Have the coordinator review specialist evidence against the acceptance criteria when the policy requires a review.',
     inputSchema: agentTeamStateSchema,
     outputSchema: agentTeamStateSchema,
-    retries: 2,
-    execute: async ({ inputData }) => {
+    retries: STAGE_RETRIES,
+    execute: async ({ inputData, abortSignal }) => {
       if (inputData.envelope.dryRun || !inputData.input.policy.reviewRequired) return inputData;
-      const result = await adapter.executeStage({
-        phase: 'review',
-        idempotencyKey: teamIdempotencyKey(
-          inputData.envelope,
-          'review',
-          inputData.input.task.taskRef,
-        ),
-        projectRef: projectRef(inputData),
-        task: inputData.input.task,
-        agent: inputData.input.coordinator,
-        specialistResults: inputData.specialistResults,
-        policy: inputData.input.policy,
-        execution: inputData.input.execution,
-      });
+      const result = await adapter.executeStage(
+        {
+          phase: 'review',
+          idempotencyKey: teamIdempotencyKey(
+            inputData.envelope,
+            'review',
+            inputData.input.task.taskRef,
+          ),
+          projectRef: projectRef(inputData),
+          task: inputData.input.task,
+          agent: inputData.input.coordinator,
+          specialistResults: inputData.specialistResults,
+          policy: inputData.input.policy,
+          execution: inputData.input.execution,
+        },
+        abortSignal,
+      );
       if (!result.review) throw new Error('Coordinator review result is missing');
       return { ...inputData, review: result, history: [...inputData.history, history(result)] };
     },

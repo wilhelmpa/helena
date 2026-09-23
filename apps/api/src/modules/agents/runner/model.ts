@@ -27,6 +27,14 @@ export const ClaimResponse = t.Object({ run: t.Nullable(RunnerRunResponse) });
 
 export const runParams = t.Object({ runId: t.Numeric() });
 
+// The heartbeat's answer. The server has no connection to the runner, so the cancel
+// is returned on the call the runner already makes.
+export const RunAckResponse = t.Object({
+  canceled: t.Boolean({
+    description: 'The run was canceled: kill the command and report nothing for it.',
+  }),
+});
+
 export const resultBody = t.Object({
   status: t.Union([t.Literal('success'), t.Literal('failed')], {
     description: 'Whether the run completed or failed.',
