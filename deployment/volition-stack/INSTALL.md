@@ -57,6 +57,13 @@ sudo find /srv/volition/vault -type f -exec chmod 0660 {} +
 Apply those commands only to the dedicated Vault root. Do not broaden permissions on
 `/srv/volition`, project source, runtime profiles, or credentials.
 
+Plan stores uploaded files (attachments, document assets, skill files, avatars) on the
+local disk below `/var/lib/volition/plan/storage`. `volition-plan-api.service` sets
+`STORAGE_ROOT` to that directory, so `plan.env` needs no `S3_*` variables and no object
+store runs. The API creates the directory on the first upload, owned by `volition-plan`
+with mode `0700`. Only the API reads and writes it; the worker does not. Back it up
+together with the Plan database.
+
 ## Build and install
 
 From the repository root:
