@@ -21,15 +21,23 @@ export const TIERS = [
   { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 1, threads: 1 },
 ];
 
-// The round trip a tier needs, and the downlink it needs once throughput is informative at
-// all (see chooseTier). A socket backlog past CONGESTED_BYTES always means the worst tier, no
-// matter what a viewer last reported: it grows only when the socket cannot drain as fast as
-// frames arrive, so it outranks a stale measurement; past the smaller BACKLOG_BYTES, a little
-// is building up, which is when a low measured downlink is taken at face value.
+// The round trip and the downlink a tier needs, once throughput is informative at all (see
+// chooseTier). Node's own bufferedAmount is bytes not yet handed to the kernel; on a real
+// network, or one shaped for a bench, a socket can be badly backed up well before that number
+// moves, because the kernel and the network path both buffer far more than Node ever sees. A
+// backlog past CONGESTED_BYTES still means the worst tier at once when it does show — sized to
+// a fraction of a second of the busiest tier, not the many megabytes a perfectly healthy
+// stream can briefly hold — but it is a safety net, not the primary signal.
 const DOWNLINK_KBPS = { high: 4000, medium: 1200, low: 0 };
 const RTT_MS = { high: 60, medium: 250, low: Infinity };
-const CONGESTED_BYTES = 2 * 1024 * 1024;
-const BACKLOG_BYTES = 256 * 1024;
+const CONGESTED_BYTES = 384 * 1024;
+// Below this, the tier's own encoder is producing too little — a quiet page — for a low
+// measured downlink to say anything about the connection.
+const MEANINGFUL_ENCODE_KBPS = 150;
+// A viewer whose last stats report is older than this, despite being on a video tier, is
+// assumed congested: the report that would say so travels the same connection as the video
+// and can itself be stuck behind the backlog it would describe.
+const FEEDBACK_TIMEOUT_MS = 8_000;
 
 // The tier a viewer's connection affords, given its last measurement and the tier index it is
 // on now (null for a viewer joining fresh, which starts on a safe middle tier before its
@@ -42,15 +50,16 @@ const BACKLOG_BYTES = 256 * 1024;
 // hugely with how much the page is changing, so a quiet page legitimately sends little without
 // that meaning the connection is slow, and holding a low measured downlink against it would
 // leave a fast connection stuck on a low tier it long since outgrew. Downlink only lowers that
-// ceiling once the socket has a little backlog: that is the point a low number stops being
-// "nothing to send" and starts being "cannot send it fast enough".
+// ceiling once the tier's own encoder is actually producing a meaningful amount to send: that
+// is the point a low number stops being "nothing to send" and starts being "cannot send it
+// fast enough".
 export function chooseTier(measurement, currentIndex = null) {
   if (currentIndex === null || currentIndex === undefined) {
     return TIERS.findIndex((tier) => tier.name === "medium");
   }
-  const { downlinkKbps = 0, rttMs = 0, bufferedBytes = 0 } = measurement;
-  if (bufferedBytes > CONGESTED_BYTES) return TIERS.length - 1;
-  const throughputMatters = bufferedBytes > BACKLOG_BYTES;
+  const { downlinkKbps = 0, rttMs = 0, bufferedBytes = 0, encodedKbps = 0, feedbackAgeMs = 0 } = measurement;
+  if (bufferedBytes > CONGESTED_BYTES || feedbackAgeMs > FEEDBACK_TIMEOUT_MS) return TIERS.length - 1;
+  const throughputMatters = encodedKbps > MEANINGFUL_ENCODE_KBPS;
   let affordable = TIERS.length - 1;
   for (let index = 0; index < TIERS.length; index++) {
     const tier = TIERS[index];

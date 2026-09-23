@@ -38,25 +38,40 @@ describe("quality tiers", () => {
     assert.equal(TIERS[chooseTier({ downlinkKbps: 0, rttMs: 0, bufferedBytes: 0 })].name, "medium");
   });
 
-  it("sets the ceiling from the round trip alone while the socket has no backlog", () => {
+  it("sets the ceiling from the round trip alone while its tier's encoder sends little", () => {
     const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
-    // A quiet page sends little regardless of tier; a low downlink reading alone must not
-    // hold a fast, idle connection back from rising.
+    // A quiet page's tier produces little regardless of the connection; a low downlink
+    // reading alone must not hold a fast, idle connection back from rising.
     assert.equal(
-      TIERS[chooseTier({ downlinkKbps: 5, rttMs: 20, bufferedBytes: 0 }, mediumIndex)].name,
+      TIERS[chooseTier({ downlinkKbps: 5, rttMs: 20, encodedKbps: 10 }, mediumIndex)].name,
       "high",
     );
     // A genuinely slow round trip still rules a tier out on its own.
     assert.equal(
-      TIERS[chooseTier({ downlinkKbps: 5, rttMs: 400, bufferedBytes: 0 }, mediumIndex)].name,
+      TIERS[chooseTier({ downlinkKbps: 5, rttMs: 400, encodedKbps: 10 }, mediumIndex)].name,
       "low",
     );
   });
 
-  it("holds a low downlink against a tier once the socket has some backlog", () => {
+  it("holds a low downlink against a tier once its own encoder is sending enough to judge by", () => {
     const highIndex = TIERS.findIndex((tier) => tier.name === "high");
     assert.equal(
-      TIERS[chooseTier({ downlinkKbps: 100, rttMs: 20, bufferedBytes: 300_000 }, highIndex)].name,
+      TIERS[chooseTier({ downlinkKbps: 100, rttMs: 20, encodedKbps: 3000 }, highIndex)].name,
+      "low",
+    );
+  });
+
+  it("drops to the worst tier when the socket has a real backlog, or its stats have gone stale", () => {
+    const highIndex = TIERS.findIndex((tier) => tier.name === "high");
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 500_000 }, highIndex)].name,
+      "low",
+    );
+    // A viewer still on a video tier whose last report is old enough is assumed congested:
+    // the report that would say otherwise travels the same connection as the video, and can
+    // be stuck behind the very backlog it would describe.
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 6000, rttMs: 20, feedbackAgeMs: 9_000 }, highIndex)].name,
       "low",
     );
   });

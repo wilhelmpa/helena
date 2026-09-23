@@ -46,13 +46,18 @@ const MAX_FRAME_SIDE = 4096;
 // it misses the frames after them. A video viewer with more waiting skips to the next keyframe.
 const FRAMES_IN_FLIGHT = 2;
 const MAX_BUFFERED = 16 * 1024 * 1024;
-const MAX_VIDEO_BUFFERED = 4 * 1024 * 1024;
+// A fraction of a second of the busiest tier's own output, not the many megabytes a perfectly
+// healthy stream can briefly hold: a viewer this far behind is asked to wait for the next
+// keyframe rather than pile on frames it cannot show in time anyway.
+const MAX_VIDEO_BUFFERED = 512 * 1024;
 const FOLLOW_INTERVAL_MS = 1_000;
 // How often a connected viewer's tier is reassessed from its last reported RTT and downlink
 // and the socket's backlog, besides whenever a fresh measurement or a shown/hidden change
 // arrives. A viewer without one yet (a fresh join, or one waiting out an area change) picks a
 // tier the moment an encoder becomes possible, not on this schedule.
 const TIER_INTERVAL_MS = 2_000;
+// The window a tier's own recent encoder output is measured over, for chooseTier.
+const ENCODE_WINDOW_MS = 3_000;
 // Chromium keeps a window at least 500 pixels wide.
 const MIN_WINDOW_WIDTH = 500;
 // The agent halves a screenshot until its long edge is at most 1568 pixels and clicks at CSS
@@ -133,6 +138,9 @@ class Viewer {
     this.tierIndex = null;
     this.rttMs = 0;
     this.downlinkKbps = 0;
+    // When its last stats report arrived; stays fresh for a while after joining, so it is not
+    // read as stale before the first one has had a chance to.
+    this.lastStatsAt = Date.now();
   }
 
   ready() {
@@ -285,6 +293,7 @@ class ScreencastStream {
     if (message.stats) {
       viewer.rttMs = message.stats.rttMs;
       viewer.downlinkKbps = message.stats.downlinkKbps;
+      viewer.lastStatsAt = Date.now();
       return this.reassignTiers();
     }
     if (message.ping !== undefined) {
@@ -318,10 +327,17 @@ class ScreencastStream {
     }
   }
 
-  // A viewer's last reported round trip and downlink, and its socket's current backlog, which
-  // outranks a stale measurement because it can only grow when the viewer cannot keep up.
+  // A viewer's last reported round trip and downlink, its socket's current backlog, how long
+  // since its last stats report, and its tier's own recent encoder output — the last two give
+  // chooseTier a read on the connection even when Node's own backlog figure cannot.
   connectionOf(viewer) {
-    return { downlinkKbps: viewer.downlinkKbps, rttMs: viewer.rttMs, bufferedBytes: viewer.socket.bufferedAmount };
+    return {
+      downlinkKbps: viewer.downlinkKbps,
+      rttMs: viewer.rttMs,
+      bufferedBytes: viewer.socket.bufferedAmount,
+      feedbackAgeMs: Date.now() - viewer.lastStatsAt,
+      encodedKbps: viewer.tierIndex === null ? 0 : (this.tiers.get(TIERS[viewer.tierIndex].name)?.kbps() ?? 0),
+    };
   }
 
   // Sends a viewer already on a running tier's encoder the burst since its last keyframe, so a
@@ -470,7 +486,18 @@ class ScreencastStream {
 
   startTierEncoder(tier) {
     const encoder = new AreaEncoder({ ...this.display, ...this.videoArea, tier });
-    const entry = { encoder, video: null };
+    // bytesWindow tracks what this tier's own encoder has produced over the last
+    // ENCODE_WINDOW_MS, so chooseTier can tell a slow connection from a quiet page: the
+    // former's viewers report a downlink well under what the encoder is actually producing.
+    const entry = { encoder, video: null, bytesWindow: [] };
+    entry.kbps = () => {
+      const cutoff = Date.now() - ENCODE_WINDOW_MS;
+      while (entry.bytesWindow.length && entry.bytesWindow[0].at < cutoff) entry.bytesWindow.shift();
+      if (entry.bytesWindow.length < 2) return 0;
+      const bytes = entry.bytesWindow.reduce((sum, sample) => sum + sample.bytes, 0);
+      const seconds = (Date.now() - entry.bytesWindow[0].at) / 1000;
+      return seconds > 0 ? Math.round((bytes * 8) / 1000 / seconds) : 0;
+    };
     this.tiers.set(tier.name, entry);
     const size = this.size;
     const onTier = (viewer) => viewer.viewport?.video && !viewer.hidden && TIERS[viewer.tierIndex ?? -1]?.name === tier.name;
@@ -490,6 +517,7 @@ class ScreencastStream {
     encoder.on("fragment", (fragment, keyframe) => {
       if (!entry.video) return;
       const message = Buffer.concat([Buffer.from([VIDEO_FRAGMENT, keyframe ? 1 : 0]), fragment]);
+      entry.bytesWindow.push({ at: Date.now(), bytes: message.length });
       if (keyframe) entry.video.sinceKeyframe = [];
       entry.video.sinceKeyframe.push({ message, keyframe });
       for (const viewer of this.viewers) if (onTier(viewer)) viewer.offerVideo(message, keyframe);
