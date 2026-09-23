@@ -53,6 +53,10 @@ const nextConfig: NextConfig = {
   // next dev otherwise appends a block of its own to apps/web/AGENTS.md on every
   // start, which leaves the working tree dirty for anyone running the dev server.
   agentRules: false,
+  // The live instance runs `next dev` (dev mode, see CLAUDE.md), and the owner uses it
+  // as the real app: the floating "N" / "Issues" badge sat over the sidebar's account
+  // row. Errors still reach the browser console and the terminal.
+  devIndicators: false,
   ...(cloudUiEntry ? { turbopack: { resolveAlias: { '@/cloud': cloudUiEntry } } } : {}),
 };
 

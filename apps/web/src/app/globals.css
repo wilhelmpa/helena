@@ -149,7 +149,10 @@
 :root {
   --background: oklch(0.985 0.004 85);
   --foreground: oklch(0.23 0.008 65);
-  --card: oklch(0.995 0.002 85);
+  /* Boxes carry the sidebar's own surface, and everything that hovers or is selected
+     the sidebar's accent (owner, 2026-09-24: "die Farben von Boxen überall wie in der
+     Sidebar"): a card, a list group, a board column and the sidebar are one material. */
+  --card: oklch(0.967 0.006 80);
   --card-foreground: oklch(0.23 0.008 65);
   --popover: oklch(0.995 0.002 85);
   --popover-foreground: oklch(0.23 0.008 65);
@@ -159,8 +162,8 @@
   --secondary-foreground: oklch(0.26 0.01 65);
   --muted: oklch(0.96 0.006 80);
   --muted-foreground: oklch(0.5 0.012 70);
-  --accent: oklch(0.95 0.006 80);
-  --accent-foreground: oklch(0.26 0.01 65);
+  --accent: oklch(0.925 0.009 78);
+  --accent-foreground: oklch(0.2 0.008 65);
   --brand: oklch(0.5 0.085 215);
   --brand-foreground: oklch(0.985 0.004 85);
   /* A quiet tint of --brand for a resting state that still reads as "selected" or
@@ -206,8 +209,8 @@
   --priority-medium: oklch(0.79 0.14 85);
   --priority-high: oklch(0.71 0.15 55);
   --priority-urgent: oklch(0.65 0.16 38);
-  --kanban-column: oklch(0.955 0.006 80);
-  --kanban-column-raised: oklch(0.965 0.005 80);
+  --kanban-column: oklch(0.967 0.006 80);
+  --kanban-column-raised: oklch(0.975 0.005 80);
   --kanban-column-wip-destructive: oklch(0.93 0.014 27);
   --kanban-column-wip-warning: oklch(0.935 0.014 75);
   --kanban-card: oklch(0.99 0.003 85);
@@ -231,7 +234,7 @@
 .dark {
   --background: oklch(0.245 0.006 60);
   --foreground: oklch(0.935 0.007 80);
-  --card: oklch(0.27 0.006 60);
+  --card: oklch(0.22 0.006 60);
   --card-foreground: oklch(0.935 0.007 80);
   --popover: oklch(0.285 0.007 60);
   --popover-foreground: oklch(0.935 0.007 80);
@@ -241,8 +244,8 @@
   --secondary-foreground: oklch(0.935 0.007 80);
   --muted: oklch(0.305 0.007 60);
   --muted-foreground: oklch(0.75 0.01 75);
-  --accent: oklch(0.315 0.007 60);
-  --accent-foreground: oklch(0.935 0.007 80);
+  --accent: oklch(0.305 0.008 60);
+  --accent-foreground: oklch(0.96 0.006 80);
   --brand: oklch(0.75 0.09 210);
   --brand-foreground: oklch(0.2 0.02 215);
   --brand-subtle: oklch(0.32 0.045 215);
@@ -280,7 +283,7 @@
   --priority-medium: oklch(0.8 0.13 85);
   --priority-high: oklch(0.74 0.14 55);
   --priority-urgent: oklch(0.7 0.15 38);
-  --kanban-column: oklch(0.225 0.006 60);
+  --kanban-column: oklch(0.22 0.006 60);
   --kanban-column-raised: oklch(0.255 0.006 60);
   --kanban-column-wip-destructive: oklch(0.235 0.014 25);
   --kanban-column-wip-warning: oklch(0.238 0.012 75);

@@ -1,0 +1,472 @@
+'use client';
+
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from 'react';
+import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
+import { Check, ChevronDown, MoreHorizontal, Search, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
+import { ShellHeaderRow } from '@/components/layout/WorkspaceHeader';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+// The one pattern for everything a page offers (owner, 2026-09-24: "alles in eine
+// Reihe, ohne Funktionen zu verlieren, für alle Bereiche homogen"). A page puts its
+// view tabs, search, filters and actions into ONE <PageToolbar>, which renders inside
+// the app header's single row, after the breadcrumb:
+//
+//   [☰ | Projekt › Seite] | [Tabs …]            [Suche] [Filter] [◻ ◻ ◻] [+ Neu] | [Tools]
+//
+// Every control is a 32px sidebar-style control (13px text, 16px icon, the sidebar's
+// hover and selected fill). The toolbar measures the room it actually has (the tool
+// panel or a long breadcrumb takes some) and gives way step by step, so the row never
+// wraps or runs under the tools: the search becomes an icon that lays its field over
+// the row, the secondary actions move into a "…" menu, the primary action keeps only
+// its icon, and the tabs become one dropdown. On a phone the toolbar gets its own row
+// under the header (see Shell). Outside the shell (and in the 'classic' header layout)
+// it is its own 48px row, same content.
+
+// The shared look of a 32px header control; exported for the few page-specific
+// controls (a select, a sort menu) that are not one of the pieces below.
+export const PAGE_CONTROL_CLASS =
+  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0';
+export const PAGE_CONTROL_ACTIVE_CLASS =
+  'bg-sidebar-accent font-medium text-foreground hover:bg-sidebar-accent';
+
+// How far the toolbar has given way to fit its room: 0 shows everything in full, then
+// one piece at a time folds — the search into an icon, the secondary actions into the
+// "…" menu, the primary action to its icon, the tabs into a dropdown.
+const LEVELS = 4;
+type Room = {
+  tabs: boolean;
+  primaryLabel: boolean;
+  actions: boolean;
+  search: boolean;
+  wideSearch: boolean;
+};
+const roomFor = (level: number, width: number): Room => ({
+  search: level < 1,
+  wideSearch: level < 1 && width >= 940,
+  actions: level < 2,
+  primaryLabel: level < 3,
+  tabs: level < 4,
+});
+const RoomCtx = createContext<Room>(roomFor(0, 0));
+
+// For a page's own control in the toolbar (a sort menu, a select): whether it still has
+// room for its label (`actions`) or should show its icon alone.
+export function usePageToolbarRoom(): Room {
+  return useContext(RoomCtx);
+}
+
+export function PageToolbar({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const [level, setLevel] = useState(0);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    setWidth(element.getBoundingClientRect().width);
+    const observer = new ResizeObserver(([entry]) => setWidth(entry!.contentRect.width));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  // More room: start over from the full toolbar (the step below folds it again as far
+  // as it has to). Layout effects run before paint, so no step is ever seen.
+  const lastWidth = useRef(0);
+  useLayoutEffect(() => {
+    if (width > lastWidth.current) setLevel(0);
+    lastWidth.current = width;
+  }, [width]);
+  // After every render: still overflowing, fold one more piece.
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element || level >= LEVELS) return;
+    if (element.scrollWidth > element.clientWidth + 1) setLevel(level + 1);
+  });
+  return (
+    <ShellHeaderRow className="gap-1 bg-background px-3">
+      <div ref={ref} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+        <RoomCtx.Provider value={roomFor(level, width)}>{children}</RoomCtx.Provider>
+      </div>
+    </ShellHeaderRow>
+  );
+}
+
+// Pushes what follows to the end of the row.
+export function PageToolbarSpacer() {
+  return <div className="min-w-0 flex-1" />;
+}
+
+export type PageTab<T extends string> = {
+  value: T;
+  label: string;
+  icon?: LucideIcon;
+  count?: number;
+  href?: string;
+};
+
+// A page's views (Wissen/Code, Aktiv/Geplant/…, Tabelle/Zeitachse): sidebar rows laid
+// side by side. Below md they collapse into one dropdown showing the current view.
+export function PageTabs<T extends string>({
+  items,
+  value,
+  onChange,
+  label,
+}: {
+  items: PageTab<T>[];
+  value: T;
+  onChange?: (value: T) => void;
+  // Accessible name of the tab group.
+  label?: string;
+}) {
+  const room = useContext(RoomCtx);
+  const current = items.find((item) => item.value === value) ?? items[0];
+  if (room.tabs) {
+    return (
+      <nav aria-label={label} className="flex shrink-0 items-center gap-0.5">
+        {items.map((item) => (
+          <PageTabButton
+            key={item.value}
+            item={item}
+            active={item.value === value}
+            onSelect={() => onChange?.(item.value)}
+          />
+        ))}
+      </nav>
+    );
+  }
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={label}
+            className={cn(PAGE_CONTROL_CLASS, 'min-w-0 text-foreground')}
+          >
+            {current?.icon ? <current.icon aria-hidden="true" /> : null}
+            <span className="truncate">{current?.label}</span>
+            <ChevronDown className="!size-3.5 text-muted-foreground" aria-hidden="true" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-44">
+          {items.map((item) => {
+            const inner = (
+              <>
+                {item.icon ? <item.icon /> : null}
+                <span className="flex-1">{item.label}</span>
+                {item.count != null ? (
+                  <span className="text-xs text-muted-foreground tabular-nums">{item.count}</span>
+                ) : null}
+                {item.value === value ? <Check className="text-muted-foreground" /> : null}
+              </>
+            );
+            return item.href ? (
+              <DropdownMenuItem key={item.value} asChild>
+                <Link href={item.href}>{inner}</Link>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem key={item.value} onSelect={() => onChange?.(item.value)}>
+                {inner}
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+}
+
+function PageTabButton<T extends string>({
+  item,
+  active,
+  onSelect,
+}: {
+  item: PageTab<T>;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const className = cn(PAGE_CONTROL_CLASS, 'h-7', active && PAGE_CONTROL_ACTIVE_CLASS);
+  const inner = (
+    <>
+      {item.icon ? <item.icon aria-hidden="true" /> : null}
+      <span>{item.label}</span>
+      {item.count != null ? (
+        <span className="text-xs font-normal text-muted-foreground tabular-nums">{item.count}</span>
+      ) : null}
+    </>
+  );
+  return item.href ? (
+    <Link href={item.href} aria-current={active ? 'page' : undefined} className={className}>
+      {inner}
+    </Link>
+  ) : (
+    <button type="button" aria-pressed={active} onClick={onSelect} className={className}>
+      {inner}
+    </button>
+  );
+}
+
+// The page's filter field. From md a 13px field in the row; below it a search icon
+// that lays the field over the whole header row until it is closed or emptied.
+export function PageSearch({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  className?: string;
+}) {
+  const t = useTranslations('common');
+  const room = useContext(RoomCtx);
+  const [open, setOpen] = useState(false);
+  const field = (autoFocus: boolean) => (
+    <div className="relative flex min-w-0 items-center">
+      <Search
+        className="pointer-events-none absolute start-2 size-3.5 text-muted-foreground"
+        aria-hidden="true"
+      />
+      <input
+        type="search"
+        value={value}
+        autoFocus={autoFocus}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            onChange('');
+            setOpen(false);
+          }
+        }}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="h-7 w-full min-w-0 rounded-md border border-sidebar-border bg-background ps-7 pe-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-sidebar-ring focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 [&::-webkit-search-cancel-button]:hidden"
+      />
+    </div>
+  );
+  if (room.search) {
+    return (
+      <div className={cn('shrink-0', room.wideSearch ? 'w-56' : 'w-40', className)}>
+        {field(false)}
+      </div>
+    );
+  }
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={placeholder}
+        onClick={() => setOpen(true)}
+        className={cn(
+          PAGE_CONTROL_CLASS,
+          'w-8 justify-center px-0',
+          value && PAGE_CONTROL_ACTIVE_CLASS,
+        )}
+      >
+        <Search aria-hidden="true" />
+      </button>
+      {open ? (
+        <div className="absolute inset-0 z-20 flex items-center gap-1 bg-background px-2">
+          <div className="min-w-0 flex-1">{field(true)}</div>
+          <button
+            type="button"
+            aria-label={t('close')}
+            onClick={() => setOpen(false)}
+            className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
+          >
+            <X aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+export type PageAction = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  onClick?: () => void;
+  href?: string;
+  // `href` leaves the app (a code-server folder, a download): a plain link in a new tab.
+  external?: boolean;
+  disabled?: boolean;
+  // Shown after a separator in the "…" menu, and never as a row icon (rare, e.g. a
+  // destructive or seldom-used action).
+  menuOnly?: boolean;
+};
+
+// The page's actions. `primary` is the one filled button a page may have (its "New …"),
+// the others are 32px icon buttons with a tooltip. Below md the primary shrinks to its
+// icon and every other action moves into a "…" menu.
+export function PageActions({
+  actions = [],
+  primary,
+}: {
+  actions?: PageAction[];
+  primary?: Omit<PageAction, 'menuOnly'>;
+}) {
+  const t = useTranslations('common');
+  const room = useContext(RoomCtx);
+  const inRow = room.actions ? actions.filter((action) => !action.menuOnly) : [];
+  const inMenu = room.actions ? actions.filter((action) => action.menuOnly) : actions;
+  return (
+    <div className="flex shrink-0 items-center gap-0.5">
+      {inRow.map((action) => (
+        <Tooltip key={action.id}>
+          <TooltipTrigger asChild>
+            <ActionControl action={action} className="w-8 justify-center px-0">
+              <action.icon aria-hidden="true" />
+            </ActionControl>
+          </TooltipTrigger>
+          <TooltipContent>{action.label}</TooltipContent>
+        </Tooltip>
+      ))}
+      {inMenu.length > 0 ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={t('more')}
+              className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
+            >
+              <MoreHorizontal aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-48">
+            {inMenu.map((action, index) => (
+              <MenuEntry
+                key={action.id}
+                action={action}
+                separated={index > 0 && !!action.menuOnly && !inMenu[index - 1]!.menuOnly}
+              />
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+      {primary ? (
+        <ActionControl
+          action={primary}
+          className={cn(
+            'ms-1 bg-primary font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
+            room.primaryLabel ? 'px-2.5' : 'w-8 justify-center px-0',
+          )}
+        >
+          <primary.icon aria-hidden="true" />
+          <span className={room.primaryLabel ? undefined : 'sr-only'}>{primary.label}</span>
+        </ActionControl>
+      ) : null}
+    </div>
+  );
+}
+
+// Also a TooltipTrigger's child: Radix passes its ref and handlers through `rest`.
+function ActionControl({
+  action,
+  className,
+  children,
+  ...rest
+}: {
+  action: Omit<PageAction, 'menuOnly'>;
+  className?: string;
+  children: ReactNode;
+} & Omit<ComponentProps<'button'>, 'className' | 'children'>) {
+  const classes = cn(PAGE_CONTROL_CLASS, className);
+  if (action.href && action.external && !action.disabled) {
+    return (
+      <a
+        href={action.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={action.label}
+        className={classes}
+        {...(rest as ComponentProps<'a'>)}
+      >
+        {children}
+      </a>
+    );
+  }
+  if (action.href && !action.disabled) {
+    return (
+      <Link
+        href={action.href}
+        aria-label={action.label}
+        className={classes}
+        {...(rest as Omit<ComponentProps<typeof Link>, 'href'>)}
+      >
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <button
+      type="button"
+      aria-label={action.label}
+      disabled={action.disabled}
+      onClick={action.onClick}
+      className={classes}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MenuEntry({ action, separated }: { action: PageAction; separated: boolean }) {
+  return (
+    <>
+      {separated ? <DropdownMenuSeparator /> : null}
+      <ActionMenuItem action={action} />
+    </>
+  );
+}
+
+function ActionMenuItem({ action, className }: { action: PageAction; className?: string }) {
+  if (action.href && action.external) {
+    return (
+      <DropdownMenuItem asChild disabled={action.disabled} className={className}>
+        <a href={action.href} target="_blank" rel="noopener noreferrer">
+          <action.icon />
+          {action.label}
+        </a>
+      </DropdownMenuItem>
+    );
+  }
+  if (action.href) {
+    return (
+      <DropdownMenuItem asChild disabled={action.disabled} className={className}>
+        <Link href={action.href}>
+          <action.icon />
+          {action.label}
+        </Link>
+      </DropdownMenuItem>
+    );
+  }
+  return (
+    <DropdownMenuItem
+      disabled={action.disabled}
+      onSelect={() => action.onClick?.()}
+      className={className}
+    >
+      <action.icon />
+      {action.label}
+    </DropdownMenuItem>
+  );
+}

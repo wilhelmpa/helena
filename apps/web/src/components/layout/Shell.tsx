@@ -21,6 +21,8 @@ import { createHeaderExtraStore } from '@/utils/headerExtraStore';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
 import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/shellContext';
 import { ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/AppSidebar';
 import AppHeader from '@/components/layout/AppHeader';
@@ -78,6 +80,13 @@ export default function Shell({
   // WorkspacePageHeader). A DOM element, set once by AppHeader's ref callback — not a
   // React element, so it never re-renders the page in a loop.
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  // Below 1024px (a phone, a tablet, a narrow window) the header row has room only for
+  // where you are and the app's tools, so a page's toolbar goes into its own 44px row
+  // right under it instead — the same row on every page (owner, 2026-09-24: "mobile
+  // muss alles richtig gut aussehen").
+  const [pageBarSlot, setPageBarSlot] = useState<HTMLElement | null>(null);
+  const narrow = useMediaQuery('(max-width: 1023px)');
+  const pageSlot = headerLayout === 'single' ? (narrow ? pageBarSlot : headerSlot) : null;
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kioskDual = useKioskDisplay() === 'dual';
@@ -195,7 +204,7 @@ export default function Shell({
 
   return (
     <ShellCtx.Provider value={context}>
-      <ShellHeaderSlotCtx.Provider value={headerLayout === 'single' ? headerSlot : null}>
+      <ShellHeaderSlotCtx.Provider value={pageSlot}>
         <SidebarProvider
           open={navigation.sidebarOpen}
           onOpenChange={navigation.setSidebarOpen}
@@ -234,9 +243,18 @@ export default function Shell({
               activeWorkspaceTool={workspacePanel.activeTool}
               onSelectWorkspaceTool={selectWorkspaceTool}
               headerLayout={headerLayout}
-              headerExtra={headerExtra}
+              headerExtra={narrow ? null : headerExtra}
               pageSlotRef={setHeaderSlot}
             />
+            {headerLayout === 'single' && narrow && (
+              <div
+                ref={setPageBarSlot}
+                data-slot="app-page-bar"
+                className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden"
+              >
+                <ShellHeaderExtra store={headerExtra} bare />
+              </div>
+            )}
 
             {errorMsg && !forbidden && (
               <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">

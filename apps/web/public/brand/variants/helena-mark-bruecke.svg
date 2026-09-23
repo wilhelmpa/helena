@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-label="Helena"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#15808f"/><stop offset="1" stop-color="#0e6f81"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#g)"/>
-    <path d="M10.25 8.75v14.5M21.75 8.75v14.5" stroke="#fbfaf7" stroke-width="3.1" stroke-linecap="round"/>
-    <path d="M10.25 18.4C11.9 14.2 20.1 14.2 21.75 18.4" stroke="#fbfaf7" stroke-width="3.1" stroke-linecap="round" fill="none"/>
-</svg>

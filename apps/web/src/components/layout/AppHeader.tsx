@@ -41,7 +41,8 @@ export default function AppHeader({
   // and the account menu to the sidebar footer. 'classic' is today's header exactly
   // as it was: those three controls here, and the page renders its own second row.
   headerLayout: HeaderLayout;
-  headerExtra: HeaderExtraStore;
+  // Null on a phone, where the page's row sits under the header instead (see Shell).
+  headerExtra: HeaderExtraStore | null;
   // Receives the page slot's element (see ShellHeaderSlotCtx): a section page renders
   // its actions there instead of in a second row.
   pageSlotRef?: (element: HTMLElement | null) => void;
@@ -59,7 +60,7 @@ export default function AppHeader({
     // filters, or its actions through the page slot), and the app's own tools on the
     // right (search, new task, the tool panels) — every control a 32px button with the
     // sidebar's hover fill and a 16px icon, a hairline between the groups.
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3">
+    <header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3">
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-4" />
       <div
@@ -71,7 +72,7 @@ export default function AppHeader({
         {title}
       </div>
 
-      {single && <ShellHeaderExtra store={headerExtra} />}
+      {single && headerExtra ? <ShellHeaderExtra store={headerExtra} /> : null}
       {single && (
         <div
           ref={pageSlotRef}

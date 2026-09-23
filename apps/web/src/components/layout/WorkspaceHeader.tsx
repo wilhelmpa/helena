@@ -23,12 +23,12 @@ export function WorkspaceHeader({ className, ...props }: ComponentProps<'div'>) 
 }
 
 // A page's own heading inside the shell. In the single-row header layout (the default)
-// the page has no second header row: the app header already names it (its breadcrumb),
-// the page's actions go into the header's page slot, and the one-line description is
-// the first line of the page body — the owner's "eine Kopfzeile, einreihig". The title
-// stays in the document as a screen-reader heading. In the 'classic' layout, and
-// outside the shell, the page keeps its own 48px title bar: title (16, semibold), the
-// description beside it, the actions on the right.
+// the page has no second header row: the app header already names it (its breadcrumb)
+// and the page's actions go into the header's page slot — the owner's "eine Kopfzeile,
+// einreihig". The description is not shown there at all (owner, 2026-09-24: the intro
+// lines under the header were noise); it stays the page's accessible description. In
+// the 'classic' layout, and outside the shell, the page keeps its own 48px title bar:
+// title (16, semibold), the description beside it, the actions on the right.
 export function WorkspacePageHeader({
   title,
   description,
@@ -47,14 +47,10 @@ export function WorkspacePageHeader({
     return (
       <>
         <h1 className="sr-only">{title}</h1>
+        {description ? <p className="sr-only">{description}</p> : null}
         {actions
           ? createPortal(<div className="flex shrink-0 items-center gap-2">{actions}</div>, slot)
           : null}
-        {description ? (
-          <p className={cn(PAGE_INTRO_CLASS, 'shrink-0 truncate px-4 pt-3 pb-1', className)}>
-            {description}
-          </p>
-        ) : null}
       </>
     );
   }
@@ -89,9 +85,11 @@ export function ShellHeaderRow({
 }) {
   const slot = useShellHeaderSlot();
   if (slot) {
+    // The phone's page bar (see Shell) starts the row itself: no hairline before it.
+    const inHeader = slot.dataset.slot !== 'app-page-bar';
     return createPortal(
       <div className="flex min-w-0 flex-1 items-center gap-1">
-        <Separator orientation="vertical" className="me-1 h-4" />
+        {inHeader ? <Separator orientation="vertical" className="me-1 h-4" /> : null}
         {children}
       </div>,
       slot,

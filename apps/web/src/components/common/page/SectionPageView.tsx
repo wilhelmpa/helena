@@ -2,8 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { PAGE_INTRO_CLASS, WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
-import { useShellHeaderSlot } from '@/context/shellHeaderSlot';
+import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 
 // The content column a section page occupies: the full width up to the default content
 // measure (PageBody's 1080px), never a fixed minimum — a phone gets the whole screen,
@@ -37,21 +36,12 @@ export default function SectionPageView({
   children: ReactNode;
 }) {
   const width = widthClassName ?? (wide ? 'mx-auto w-full max-w-[1600px]' : SECTION_COLUMN_CLASS);
-  // In the single-row header the description opens the page column instead of sitting
-  // in a title bar (see WorkspacePageHeader), aligned with the content under it.
-  const intro = useShellHeaderSlot() != null;
+  // In the single-row header the description is not shown (see WorkspacePageHeader).
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <WorkspacePageHeader
-        title={title}
-        description={intro ? undefined : description}
-        actions={actions}
-      />
+      <WorkspacePageHeader title={title} description={description} actions={actions} />
       <div className="@container/page min-h-0 flex-1 overflow-y-auto">
         <div className={cn('flex min-h-full w-full flex-col', PAGE_GUTTER_CLASS, width)}>
-          {intro && description ? (
-            <p className={cn(PAGE_INTRO_CLASS, 'mb-4')}>{description}</p>
-          ) : null}
           {children}
         </div>
       </div>
