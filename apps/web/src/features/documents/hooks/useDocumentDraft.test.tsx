@@ -116,7 +116,6 @@ beforeEach(async () => {
       filesUrl: '',
       inboxUrl: '',
       connectionsUrl: '',
-      vaultEnabled: true,
     },
   };
   Object.defineProperties(globalThis, {

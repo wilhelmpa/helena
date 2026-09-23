@@ -39,11 +39,6 @@ import {
   ProjectFilesValidationError,
 } from "./project-files.mjs";
 
-import {
-  createSecretStore,
-  SecretStoreValidationError,
-} from "./secret-store.mjs";
-
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_EVENT_BODY_BYTES = 64 * 1024;
 
@@ -122,7 +117,6 @@ export function createRequestHandler(
   connections = null,
   mail = null,
   theme = null,
-  secrets = null,
   mastraControl = null,
   files = null,
   mastraEvents = null,
@@ -296,9 +290,6 @@ export function createRequestHandler(
       request.method === "GET" && pathname === "/api/connections";
     const connectionAction =
       request.method === "POST" && pathname === "/api/connections/actions";
-    const secretList = request.method === "GET" && pathname === "/api/secrets";
-    const secretSet = request.method === "POST" && pathname === "/api/secrets";
-    const secretRoute = secretList || secretSet;
     const mailRoute = pathname.startsWith("/api/mail/");
     const themeRoute = request.method === "POST" && pathname === "/api/theme";
     const filesRoute = pathname.startsWith("/api/files/");
@@ -307,11 +298,9 @@ export function createRequestHandler(
       connectionAction ||
       mailRoute ||
       themeRoute ||
-      secretRoute ||
       filesRoute
     ) {
       if (
-        (!secrets && secretRoute) ||
         (!connections && (connectionList || connectionAction)) ||
         (!mail && mailRoute) ||
         (!theme && themeRoute) ||
@@ -340,14 +329,6 @@ export function createRequestHandler(
         return;
       }
       try {
-        if (secretList) {
-          json(response, 200, await secrets.list());
-          return;
-        }
-        if (secretSet) {
-          json(response, 200, await secrets.set(await requestBody(request)));
-          return;
-        }
         if (connectionList) {
           json(response, 200, await connections.snapshot());
           return;
@@ -409,18 +390,12 @@ export function createRequestHandler(
             result,
           );
       } catch (error) {
-        if (secretRoute && !(error instanceof SecretStoreValidationError)) {
-          json(response, 502, {
-            error: "secret_store_failed",
-            message: "Native secret store operation failed",
-          });
-        } else if (error instanceof ProjectFilesValidationError) {
+        if (error instanceof ProjectFilesValidationError) {
           json(response, error.status, {
             error: error.code,
             message: error.message,
           });
         } else if (
-          error instanceof SecretStoreValidationError ||
           error instanceof ConnectionsValidationError ||
           error instanceof MailValidationError ||
           error instanceof ThemeValidationError
@@ -626,9 +601,6 @@ export function createProvisioningServer(config, options = {}) {
     (connections && config.connectionsEnabled
       ? createThemeService(config, options)
       : null);
-  const secrets =
-    options.secrets ??
-    (config.connectionsEnabled ? createSecretStore(config, options) : null);
   const files =
     options.files ??
     (config.connectionsEnabled
@@ -647,7 +619,6 @@ export function createProvisioningServer(config, options = {}) {
     connections,
     mail,
     theme,
-    secrets,
     mastraControl,
     files,
     mastraEvents,

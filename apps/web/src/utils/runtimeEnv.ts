@@ -20,7 +20,6 @@ export interface WorkspaceRuntimeEnv {
   filesUrl: string;
   inboxUrl: string;
   connectionsUrl: string;
-  vaultEnabled: boolean;
 }
 
 declare global {
@@ -54,12 +53,6 @@ function readJsonRecord(name: string): Record<string, string> {
   }
 }
 
-function readBoolean(name: string, fallback: boolean): boolean {
-  const value = readOrigin(name).trim().toLowerCase();
-  if (!value) return fallback;
-  return value === 'true' || value === '1' || value === 'yes';
-}
-
 const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   homeChatProjectKey: '',
   terminalUrl: '',
@@ -69,7 +62,6 @@ const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   filesUrl: '',
   inboxUrl: '',
   connectionsUrl: '',
-  vaultEnabled: true,
 });
 
 export function serverRuntimeEnv(): RuntimeEnv {
@@ -87,7 +79,6 @@ export function serverRuntimeEnv(): RuntimeEnv {
       filesUrl: readOrigin('FILES_URL'),
       inboxUrl: readOrigin('INBOX_URL'),
       connectionsUrl: readOrigin('CONNECTIONS_URL'),
-      vaultEnabled: readBoolean('VAULT_UI_ENABLED', true),
     },
   };
 }

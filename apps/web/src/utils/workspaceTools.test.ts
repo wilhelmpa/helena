@@ -17,7 +17,6 @@ const config: WorkspaceRuntimeEnv = {
   filesUrl: 'https://files.example.com/',
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
-  vaultEnabled: true,
 };
 
 describe('workspaceTools', () => {
