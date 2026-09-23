@@ -16,6 +16,7 @@ import { paginate } from '#shared/pagination';
 import { commonErrors, errors } from '#shared/responses';
 import {
   ApprovalPageResponse,
+  ApprovalProjectResponse,
   ApprovalResponse,
   ApprovedCommandsResponse,
   PendingCountResponse,
@@ -25,6 +26,7 @@ import {
   createApprovalBody,
   decisionBody,
   listApprovalsQuery,
+  pendingCountQuery,
 } from './model';
 import {
   DECIDE_PERMISSION,
@@ -34,6 +36,7 @@ import {
   getApproval,
   getApprovalAccess,
   getCallingAgent,
+  listApprovalProjects,
   listApprovals,
   listApprovedCommands,
 } from './service';
@@ -163,7 +166,7 @@ export const approvalRoutes = new Elysia({
     '/approvals',
     ({ query, user }) =>
       paginate(query, (window) =>
-        listApprovals(requireUser(user).id, query.status ?? 'pending', window),
+        listApprovals(requireUser(user).id, query.status ?? 'pending', window, query.projectKey),
       ),
     {
       query: listApprovalsQuery,
@@ -171,19 +174,36 @@ export const approvalRoutes = new Elysia({
       detail: {
         summary: 'List approval requests',
         description:
-          'The approval requests of every project in which the caller may decide them, newest first.',
+          'The approval requests of every project in which the caller may decide them, newest ' +
+          'first, or of one of them with projectKey.',
       },
     },
   )
   .get(
     '/approvals/pending-count',
-    async ({ user }) => ({ count: await countPendingApprovals(requireUser(user).id) }),
+    async ({ query, user }) => ({
+      count: await countPendingApprovals(requireUser(user).id, query.projectKey),
+    }),
     {
+      query: pendingCountQuery,
       response: { 200: PendingCountResponse, ...errors(401) },
       detail: {
         summary: 'Count pending approval requests',
         description:
-          'How many requests wait for a decision in the projects in which the caller may decide them.',
+          'How many requests wait for a decision in the projects in which the caller may decide ' +
+          'them, or in one of them with projectKey.',
+      },
+    },
+  )
+  .get(
+    '/approvals/projects',
+    ({ user }) => listApprovalProjects(requireUser(user).id),
+    {
+      response: { 200: ApprovalProjectResponse, ...errors(401) },
+      detail: {
+        summary: 'List the projects the caller may decide approvals in',
+        description:
+          'The projects behind the approvals list and pending count, for its project filter.',
       },
     },
   )
