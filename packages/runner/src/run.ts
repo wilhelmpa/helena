@@ -2,6 +2,7 @@ import { UsageReader } from './agui';
 import type { Client, Run } from './client';
 import type { RunnerConfig } from './config';
 import { execute, type Outcome } from './execute';
+import { runCwd } from './workdir';
 
 // `stop` is aborted when the heartbeat says the run was canceled. The server has already
 // closed the run by then, so the command is killed and nothing is reported for it.
@@ -37,7 +38,7 @@ export async function perform(
   // the totals of the run has them on the outcome, and those are what the run cost.
   const usage = new UsageReader(config.outputFormat);
   const outcome = await execute(
-    config,
+    { ...config, cwd: runCwd(config.cwd, run.workdir) },
     { ...taskOf(run), toolsets },
     {
       onData: (chunk) => usage.write(chunk),

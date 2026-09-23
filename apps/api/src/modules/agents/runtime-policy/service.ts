@@ -18,15 +18,17 @@ import {
 import type { RunnerAgent } from '../runner/service';
 import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
+import { areasSection } from './areas';
 import { structureSection } from './structure';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [skills, tools, structure] = await Promise.all([
+  const [skills, tools, structure, areas] = await Promise.all([
     listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
     structureSection(agent),
+    areasSection(agent),
   ]);
   const snapshot = {
     agent: { id: agent.id, name: agent.name, username: agent.username },
@@ -39,7 +41,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
         {
           kind: 'instructions' as const,
           path: 'SOUL.md',
-          content: soul(agentRef, agent, structure),
+          content: soul(agentRef, agent, structure, areas),
         },
       ],
     },
@@ -75,6 +77,7 @@ function soul(
   agent: RunnerAgent,
   config: { name: string; runtimePolicy: AgentRuntimePolicy },
   structure: string,
+  areas: string,
 ): string {
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
@@ -91,6 +94,7 @@ function soul(
     ...(instructions ? [`## Instructions\n\n${instructions}`] : []),
     projectsPreamble(agent.projects).trim(),
     ...agent.projects.map((project) => projectInstructionsPreamble(project).trim()),
+    areas,
     structure,
     chatPreamble().trim(),
     blockedPreamble(),

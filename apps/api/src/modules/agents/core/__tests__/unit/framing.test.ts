@@ -35,6 +35,7 @@ describe('an approval run', () => {
     issueIdentifier: 'MKT-4',
     issueTitle: 'Offer',
     issueArea: null,
+    issueAreaFolder: null,
     assigneeName: null,
     assigneeUsername: null,
     requesterName: null,
@@ -51,6 +52,11 @@ describe('an approval run', () => {
     expect(text).toContain('Decision: rejected by Pat\nNote: Not yet');
     expect(text).toContain('If it was rejected, do not carry the action out');
     expect(text).toContain('add_comment tool\n(issueId 12)');
+  });
+
+  it('names the area and its folder', () => {
+    const text = framePrompt({ ...run, issueArea: 'Backend', issueAreaFolder: 'backend' });
+    expect(text).toContain('Area: Backend (folder backend)');
   });
 
   it('names no issue and asks for no comment when the request had none', () => {

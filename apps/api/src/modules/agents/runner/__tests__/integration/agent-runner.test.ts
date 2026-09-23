@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'bun:test';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { createAgent, teamOf } from '#tests/helpers/agents';
+import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
 import { controlApi } from '#tests/helpers/control';
 import { db, organizationProjectAssignment } from '@repo/db';
 
@@ -82,7 +82,36 @@ describe('agent runner queue', () => {
       .comments.post({ body: `please review @${agent.username}` });
 
     const res = await asRunner['agent-runs'].claim.post();
-    expect(res.data!.run!.prompt).toContain('Area: Backend');
+    expect(res.data!.run!.prompt).toContain('Area: Backend (folder backend)');
+    expect(res.data!.run!.workdir).toBe('backend');
+  });
+
+  it('starts an agent of several projects in its own working directory', async () => {
+    const { asOwner, columnId } = await setup();
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    const projectIds = [await projectIdOf(asOwner, 'MKT'), await projectIdOf(asOwner, 'OPS')];
+    const shared = (
+      await createAgent(asOwner, 'MKT', {
+        name: 'Shared Bot',
+        username: 'shared',
+        kind: 'external',
+        triggerOnMention: true,
+        projectIds,
+      })
+    ).data!;
+    const areaId = (
+      await asOwner.projects({ projectKey: 'MKT' })['view-folders'].post({ name: 'Backend' })
+    ).data!.id;
+    const issue = (
+      await asOwner
+        .projects({ projectKey: 'MKT' })
+        .issues.post({ columnId, title: 'Landing page', folderId: areaId })
+    ).data!;
+    await asOwner.issues({ issueId: issue.id }).comments.post({ body: 'please review @shared' });
+
+    const res = await apiKeyApi(shared.apiKey!)['agent-runs'].claim.post();
+    expect(res.data!.run!.prompt).toContain('Area: Backend (folder backend)');
+    expect(res.data!.run!.workdir).toBeNull();
   });
 
   it('leaves the area out of the prompt of an issue outside any area', async () => {
@@ -91,6 +120,7 @@ describe('agent runner queue', () => {
 
     const res = await asRunner['agent-runs'].claim.post();
     expect(res.data!.run!.prompt).not.toContain('Area:');
+    expect(res.data!.run!.workdir).toBeNull();
   });
 
   it('serves a secret-free runtime policy and records generic adapter status', async () => {
@@ -291,6 +321,18 @@ describe('agent runner queue', () => {
     const second = await asRunner['agent-runtime'].policy.get();
     expect(second.data!.revision).not.toBe(first.data!.revision);
     expect(second.data!.runtimePolicy.files[0].content).toContain('Always answer in English.');
+  });
+
+  it("lists the project's areas with their folders in the SOUL.md", async () => {
+    const { asOwner, asRunner } = await setup();
+    const before = await asRunner['agent-runtime'].policy.get();
+    expect(before.data!.runtimePolicy.files[0].content).not.toContain('## Areas');
+
+    await asOwner.projects({ projectKey: 'MKT' })['view-folders'].post({ name: 'Backend' });
+
+    const after = await asRunner['agent-runtime'].policy.get();
+    expect(after.data!.runtimePolicy.files[0].content).toContain('- MKT: Backend (folder backend)');
+    expect(after.data!.revision).not.toBe(before.data!.revision);
   });
 
   it('hands the configured external model and reasoning to each queued run', async () => {
