@@ -21,6 +21,7 @@ export const user = pgTable("user", {
     .notNull(),
   username: text("username").unique(),
   displayUsername: text("display_username"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
   role: text("role").default("user"),
   active: boolean("active").default(true),
   scimExternalId: text("scim_external_id"),
@@ -201,6 +202,25 @@ export const oauthConsent = pgTable(
   ],
 );
 
+export const twoFactor = pgTable(
+  "two_factor",
+  {
+    id: text("id").primaryKey(),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    verified: boolean("verified").default(true),
+    failedVerificationCount: integer("failed_verification_count").default(0),
+    lockedUntil: timestamp("locked_until"),
+  },
+  (table) => [
+    index("twoFactor_secret_idx").on(table.secret),
+    index("twoFactor_userId_idx").on(table.userId),
+  ],
+);
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
@@ -208,6 +228,7 @@ export const userRelations = relations(user, ({ many }) => ({
   oauthApplications: many(oauthApplication),
   oauthAccessTokens: many(oauthAccessToken),
   oauthConsents: many(oauthConsent),
+  twoFactors: many(twoFactor),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -264,6 +285,13 @@ export const oauthConsentRelations = relations(oauthConsent, ({ one }) => ({
   }),
   user: one(user, {
     fields: [oauthConsent.userId],
+    references: [user.id],
+  }),
+}));
+
+export const twoFactorRelations = relations(twoFactor, ({ one }) => ({
+  user: one(user, {
+    fields: [twoFactor.userId],
     references: [user.id],
   }),
 }));

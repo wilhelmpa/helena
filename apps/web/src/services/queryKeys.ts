@@ -364,6 +364,11 @@ export const qk = {
   instanceScimSettings: ['instanceScimSettings'] as const,
   instanceScimGroups: ['instanceScimGroups'] as const,
   instanceTelegramSettings: ['instanceTelegramSettings'] as const,
+  // The owner terminal: its 12h grant (session-scoped, so no invalidation reaches
+  // another tab's session), its instance policy and its audit trail.
+  ownerTerminalGrant: ['ownerTerminalGrant'] as const,
+  ownerTerminalSettings: ['ownerTerminalSettings'] as const,
+  ownerTerminalAudit: ['ownerTerminalAudit'] as const,
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
   instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,

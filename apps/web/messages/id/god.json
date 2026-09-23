@@ -22,7 +22,7 @@
       "email": "Email"
     },
     "registered": "bergabung {date}",
-    "roleGod": "God",
+    "roleGod": "Administrator",
     "roleUser": "Pengguna",
     "agent": "Agen",
     "noProviders": "tidak ada",
@@ -199,6 +199,31 @@
   },
   "hotkeys": {
     "saved": "Pintasan keyboard disimpan"
+  },
+  "security": {
+    "grantTitle": "Izin terminal",
+    "grantDescription": "Jendela 12 jam yang dibuka oleh verifikasi tambahan untuk sesi Shell, Claude Code, dan Codex.",
+    "grantActive": "Diizinkan hingga {time}",
+    "grantInactive": "Tidak ada izin aktif.",
+    "grantRevoke": "Cabut",
+    "stepUpTitle": "Metode verifikasi tambahan",
+    "stepUpDescription": "Yang membuktikan bahwa pemiliklah yang membuka terminal, setiap kali, bahkan di jaringan lokal.",
+    "stepUpMethod": "TOTP (aplikasi autentikator), disiapkan di Akun → Keamanan. Passkey akan mengambil alih begitu instans ini berjalan lewat HTTPS.",
+    "sudoTitle": "sudo di terminal browser meminta kata sandi",
+    "sudoDescription": "Nonaktif (bawaan) membiarkan setiap perintah sudo tanpa kata sandi di mana pun, di terminal pemilik sama seperti di otomasi SSH -- sudo mengotorisasi berdasarkan akun Unix dan tidak bisa membedakan keduanya. Aktif mempersempit sudo di terminal browser menjadi daftar perintah otomasi yang sudah ditinjau dan meminta kata sandi Linux untuk selain itu.",
+    "sudoHint": "Mengaktifkannya di sini saja tidak cukup: sudo tidak bisa dialihkan per sesi saat dijalankan, jadi operator tetap harus meninjau setiap perintah `sudo -n` yang benar-benar dijalankan otomasi SSH instans ini, mencocokkannya dengan kebijakan sudo, lalu memasang kebijakan itu secara manual. Koordinasikan dengan operator sebelum mengaktifkan ini -- sampai saat itu, pengaturan ini tidak berefek.",
+    "auditTitle": "Log audit",
+    "auditDescription": "Setiap percobaan verifikasi tambahan, setiap perubahan izin, dan setiap sesi terminal, terbaru lebih dulu. Tidak ada penekanan tombol yang tersimpan.",
+    "auditEmpty": "Belum ada kejadian.",
+    "event": {
+      "step_up_ok": "Verifikasi tambahan berhasil",
+      "step_up_fail": "Verifikasi tambahan gagal",
+      "rate_limited": "Batas percobaan tercapai",
+      "grant_revoked": "Izin dicabut",
+      "session_start": "Sesi dimulai",
+      "session_end": "Sesi berakhir",
+      "token_rejected": "Token ditolak"
+    }
   },
   "storage": {
     "saved": "Pengaturan penyimpanan disimpan",

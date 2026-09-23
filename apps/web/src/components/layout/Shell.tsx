@@ -17,6 +17,7 @@ import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
 import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
 import { projectPath, issuePath } from '@/utils/paths';
 import { useKioskDisplay } from '@/utils/kioskDisplay';
+import { createHeaderExtraStore } from '@/utils/headerExtraStore';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
 import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/shellContext';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -69,7 +70,7 @@ export default function Shell({
   // What the active page put into the single-row header's middle slot (its view
   // tabs/filter bar); see useShellHeaderExtra. Unused, and always empty, in
   // 'classic' layout, where the page renders that row itself instead.
-  const [headerExtra, setHeaderExtra] = useState<ReactNode>(null);
+  const [headerExtra] = useState(createHeaderExtraStore);
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kioskDual = useKioskDisplay() === 'dual';
@@ -182,7 +183,7 @@ export default function Shell({
     chatThreadRequest,
     onChatThreadHandled: () => setChatThreadRequest(null),
     headerLayout,
-    setHeaderExtra,
+    headerExtra,
   };
 
   return (

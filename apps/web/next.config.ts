@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
   // standalone build for a lean docker image.
   output: 'standalone',
   poweredByHeader: false,
+  // Set by web-release.sh to the commit being built: Next then notices when an open page
+  // belongs to an older release and loads the new one in full on its next navigation.
+  ...(process.env.NEXT_DEPLOYMENT_ID ? { deploymentId: process.env.NEXT_DEPLOYMENT_ID } : {}),
   headers: async () => [{ source: '/(.*)', headers: SECURITY_HEADERS }],
   // Monorepo: include the repo root in file tracing for standalone.
   outputFileTracingRoot: tracingRoot,

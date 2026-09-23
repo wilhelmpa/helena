@@ -1,7 +1,12 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { createAuthClient } from 'better-auth/react';
 import { inferAdditionalFields } from 'better-auth/client/plugins';
-import { genericOAuthClient, magicLinkClient, usernameClient } from 'better-auth/client/plugins';
+import {
+  genericOAuthClient,
+  magicLinkClient,
+  twoFactorClient,
+  usernameClient,
+} from 'better-auth/client/plugins';
 import { passkeyClient } from '@better-auth/passkey/client';
 import { apiKeyClient } from '@better-auth/api-key/client';
 import { API_URL, markSigningOut } from '@/lib/api/core/client';
@@ -33,6 +38,12 @@ export const authClient = createAuthClient({
     // what was typed is not an address, and the plugin types `username` on the
     // session user so the profile page can show it.
     usernameClient(),
+    // TOTP enrollment for the owner terminal's step-up (Account -> Security):
+    // twoFactor.enable()/getTotpUri()/verifyTotp()/disable(). Sign-in itself never
+    // asks for a second factor -- LAN auto-login / password stays as it is; only
+    // apps/api's owner-terminal step-up calls verifyTOTP, server-side, against an
+    // already open session.
+    twoFactorClient(),
   ],
 });
 
@@ -45,6 +56,7 @@ export const {
   getSession,
   passkey,
   apiKey,
+  twoFactor,
   updateUser,
   changePassword,
   // Password reset by email: request sends the link, reset consumes its token.
