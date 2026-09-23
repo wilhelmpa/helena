@@ -2,6 +2,7 @@ import type { Holder } from './lock.ts';
 import { ProjectBrowserLocks } from './lock.ts';
 import { CREDENTIAL_TOOLS, requiresLock, toolByName } from './tools.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
+import { hostAllowed } from './domain.ts';
 import type { PlanClient } from './plan-client.ts';
 import { PlanApiError } from './plan-client.ts';
 import type { SessionProvider } from './session-types.ts';
@@ -158,6 +159,22 @@ export class GatewayDispatcher {
       return { ok: false, error: 'The project browser is not reachable.' };
     }
 
+    // Design §8: keeps the network guard in sync with the project's current settings
+    // before anything else runs — applyDomainPolicy is a no-op when nothing changed, so
+    // this costs nothing on the common path.
+    await session.applyDomainPolicy(resolved.settings).catch(() => {});
+
+    if (request.tool === 'browser_navigate') {
+      const url = str(request.args, 'url');
+      const host = url ? this.#hostOf(url) : null;
+      if (!host || !hostAllowed(resolved.settings, host)) {
+        return {
+          ok: false,
+          error: `Navigation to ${url ?? '(no url)'} is blocked by this project's browser settings.`,
+        };
+      }
+    }
+
     try {
       const content = await this.#runTool(request, session, slug);
       const redacted = session.guard.redact(content);
@@ -176,6 +193,14 @@ export class GatewayDispatcher {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return { ok: false, error: session.guard.redact(message) };
+    }
+  }
+
+  #hostOf(url: string): string | null {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return null;
     }
   }
 

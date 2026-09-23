@@ -17,6 +17,7 @@ import {
   type RawSnapshotNode,
 } from './snapshot.ts';
 import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts';
+import { hostAllowed, type DomainPolicy } from './domain.ts';
 import type { GatewaySession } from './session-types.ts';
 
 function sleep(ms: number): Promise<void> {
@@ -51,6 +52,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   #vaultInbox: string;
   #humanInput: boolean;
   #random: () => number;
+  #domainPolicyJson: string | null = null;
 
   private constructor(
     browser: Browser,
@@ -131,10 +133,36 @@ export class PatchrightGatewaySession implements GatewaySession {
     };
   }
 
+  // Design §8: the project's domain block/allowlist. Applied two ways — this explicit,
+  // up-front check on browser_navigate's own target (a clear, immediate error rather than a
+  // navigation that just hangs), and a page.route() network guard (applyDomainPolicy,
+  // called before every page-touching tool by the dispatcher) that also catches a click on
+  // a link, a redirect, or a sub-resource/iframe load the agent never explicitly navigated
+  // to — "Banking gesperrt" has to mean the page can never load it, not only that
+  // browser_navigate refuses the top address.
   async navigate(url: string): Promise<string> {
     await this.#page.goto(url, { waitUntil: 'load', timeout: 30_000 });
     await this.#page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => {});
     return `Navigated to ${this.#page.url()}`;
+  }
+
+  // Idempotent: re-applying the same policy is a no-op, so the dispatcher can call this
+  // before every tool without piling up duplicate route handlers.
+  async applyDomainPolicy(policy: DomainPolicy): Promise<void> {
+    const json = JSON.stringify(policy);
+    if (json === this.#domainPolicyJson) return;
+    this.#domainPolicyJson = json;
+    await this.#page.unroute('**/*').catch(() => {});
+    await this.#page.route('**/*', async (route) => {
+      let host: string;
+      try {
+        host = new URL(route.request().url()).hostname;
+      } catch {
+        return route.continue();
+      }
+      if (hostAllowed(policy, host)) return route.continue();
+      return route.abort('blockedbyclient');
+    });
   }
 
   async back(): Promise<string> {

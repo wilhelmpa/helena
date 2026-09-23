@@ -1,4 +1,5 @@
 import type { SecretGuard } from './redact.ts';
+import type { DomainPolicy } from './domain.ts';
 
 // What server.ts needs from a browser session, independent of patchright — session.ts is
 // the real, patchright-backed implementation; server.ts's own tests use a small fake
@@ -17,6 +18,11 @@ export interface GatewaySession {
   // every text response (design §6) — shared across every tool call against this session,
   // for as long as the underlying page/profile lives.
   guard: SecretGuard;
+
+  // Design §8: blocks any request (navigation, click, redirect, sub-resource) whose host
+  // the project's settings disallow. Called by the dispatcher before every page-touching
+  // tool; a real implementation makes this a no-op when the policy has not changed.
+  applyDomainPolicy(policy: DomainPolicy): Promise<void>;
 
   status(): Promise<{ url: string; tabCount: number; dialogOpen: boolean }>;
   navigate(url: string): Promise<string>;

@@ -34,6 +34,7 @@ function fakePlanClient(overrides: Partial<PlanClient> = {}): PlanClient {
 function fakeSession(overrides: Partial<GatewaySession> = {}): GatewaySession {
   return {
     guard: new SecretGuard(),
+    applyDomainPolicy: mock(async () => {}),
     status: mock(async () => ({ url: 'https://example.com/', tabCount: 1, dialogOpen: false })),
     navigate: mock(async (url: string) => `Navigated to ${url}`),
     back: mock(async () => 'Back'),
@@ -377,5 +378,61 @@ describe('GatewayDispatcher: audit for non-credential tools', () => {
       tool: 'browser_navigate',
       target: 'https://example.com/page',
     });
+  });
+});
+
+describe('GatewayDispatcher: domain policy (design §8)', () => {
+  it('refuses browser_navigate to a blocked domain before it ever reaches the session', async () => {
+    const session = fakeSession();
+    const planClient = fakePlanClient({
+      resolve: mock(async () => ({
+        agentId: 1,
+        agentName: 'Writer',
+        teamId: 1,
+        projectId: 1,
+        browserGatewayEnabled: true,
+        settings: { ...DEFAULT_SETTINGS, domainBlocklist: ['bank.example'] },
+      })),
+    });
+    const gateway = dispatcher({ planClient, sessions: fakeSessions(session) });
+    await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
+    const result = await gateway.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: 'https://bank.example/login' },
+    });
+    expect(result.ok).toBe(false);
+    expect(session.navigate).not.toHaveBeenCalled();
+  });
+
+  it('allows browser_navigate to a domain the blocklist does not name', async () => {
+    const session = fakeSession();
+    const planClient = fakePlanClient({
+      resolve: mock(async () => ({
+        agentId: 1,
+        agentName: 'Writer',
+        teamId: 1,
+        projectId: 1,
+        browserGatewayEnabled: true,
+        settings: { ...DEFAULT_SETTINGS, domainBlocklist: ['bank.example'] },
+      })),
+    });
+    const gateway = dispatcher({ planClient, sessions: fakeSessions(session) });
+    await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
+    const result = await gateway.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: 'https://example.com/' },
+    });
+    expect(result.ok).toBe(true);
+    expect(session.navigate).toHaveBeenCalledWith('https://example.com/');
+  });
+
+  it('applies the current domain policy to the session before every page-touching tool, not only navigate', async () => {
+    const session = fakeSession();
+    const gateway = dispatcher({ sessions: fakeSessions(session) });
+    await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
+    await gateway.handle({ tool: 'browser_click', agentKey: 'k', args: { ref: 'e1' } });
+    expect(session.applyDomainPolicy).toHaveBeenCalledWith(DEFAULT_SETTINGS);
   });
 });
