@@ -160,6 +160,10 @@ export const app = new Elysia()
           },
           { name: 'Hub Inbox', description: 'External message triage and task routing' },
           {
+            name: 'Mail',
+            description: 'IMAP/SMTP mail accounts, threads, drafts and the mail tools of agents',
+          },
+          {
             name: 'Agent Activity',
             description: 'The timeline of agent chats, agent runs and workflow runs',
           },

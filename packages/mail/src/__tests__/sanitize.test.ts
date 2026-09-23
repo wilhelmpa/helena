@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { allowRemoteImages, resolveCidImages, sanitizeMailHtml } from '../sanitize';
+import { allowRemoteImages, plainTextHtml, resolveCidImages, sanitizeMailHtml } from '../sanitize';
 
 describe('sanitizeMailHtml', () => {
   it('keeps formatting and tables', () => {
@@ -50,5 +50,16 @@ describe('resolveCidImages', () => {
     const resolved = resolveCidImages(html, (cid) => `/parts/${encodeURIComponent(cid)}`);
     expect(resolved).toContain('src="/parts/a%26b%40x"');
     expect(resolved).toContain('data-remote-src="https://x/y.png"');
+  });
+});
+
+describe('plainTextHtml', () => {
+  it('escapes text and turns quote lines into a blockquote', () => {
+    expect(plainTextHtml('Hi <b>\nthere\n\n> a\n> b')).toBe(
+      '<p>Hi &lt;b&gt;<br>there</p><blockquote><p>a<br>b</p></blockquote>',
+    );
+    expect(plainTextHtml('Anna wrote:\n> a\n>\n> > b\nok')).toBe(
+      '<p>Anna wrote:</p><blockquote><p>a</p><blockquote><p>b</p></blockquote></blockquote><p>ok</p>',
+    );
   });
 });

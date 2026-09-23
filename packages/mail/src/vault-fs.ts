@@ -36,7 +36,7 @@ async function exists(target: string): Promise<boolean> {
   );
 }
 
-async function assertNoSymlinks(relative: string): Promise<void> {
+export async function assertNoSymlinks(relative: string): Promise<void> {
   let current = vaultRoot();
   for (const segment of relative.split('/')) {
     current = path.join(current, segment);

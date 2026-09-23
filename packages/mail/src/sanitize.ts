@@ -96,3 +96,42 @@ function decodeEntities(value: string): string {
     .replace(/&#x27;|&#39;/g, "'")
     .replace(/&amp;/g, '&');
 }
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// The HTML part of a mail whose body is plain text: paragraphs, line breaks, and
+// runs of "> " lines as a quote.
+export function plainTextHtml(text: string): string {
+  const out: string[] = [];
+  let lines: string[] = [];
+  let quoted: string[] = [];
+  const flushLines = () => {
+    if (lines.some((line) => line.trim())) out.push(`<p>${lines.map(escapeHtml).join('<br>')}</p>`);
+    lines = [];
+  };
+  const flushQuote = () => {
+    if (quoted.length > 0) out.push(`<blockquote>${plainTextHtml(quoted.join('\n'))}</blockquote>`);
+    quoted = [];
+  };
+  for (const line of text.replace(/\r\n/g, '\n').split('\n')) {
+    if (line.startsWith('>')) {
+      flushLines();
+      quoted.push(line.replace(/^> ?/, ''));
+    } else if (!line.trim()) {
+      flushLines();
+      flushQuote();
+    } else {
+      flushQuote();
+      lines.push(line);
+    }
+  }
+  flushLines();
+  flushQuote();
+  return out.join('');
+}

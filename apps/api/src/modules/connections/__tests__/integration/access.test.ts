@@ -59,31 +59,22 @@ describe('interactive communications boundary', () => {
     ).toBe(503);
   });
 
-  it('requires an owner session and an allowed browser origin before mail operations', async () => {
+  it('requires an owner session and an allowed browser origin before workspace operations', async () => {
     const owner = await signUpTestUser();
     const member = await signUpTestUser();
     expect((await authedApi(member.cookie).connections.get()).status).toBe(403);
+    expect((await authedApi(owner.cookie).theme.sync.post({ theme: 'dark' })).status).toBe(403);
     expect(
       (
-        await authedApi(owner.cookie).mail.search.post({
-          account: 'owner@example.com',
-          query: 'in:inbox',
+        await authedApi(owner.cookie, { origin: 'https://evil.test' }).theme.sync.post({
+          theme: 'dark',
         })
       ).status,
     ).toBe(403);
     expect(
       (
-        await authedApi(owner.cookie, { origin: 'https://evil.test' }).mail.search.post({
-          account: 'owner@example.com',
-          query: 'in:inbox',
-        })
-      ).status,
-    ).toBe(403);
-    expect(
-      (
-        await authedApi(owner.cookie, { origin: 'http://localhost:3001' }).mail.search.post({
-          account: 'owner@example.com',
-          query: 'in:inbox',
+        await authedApi(owner.cookie, { origin: 'http://localhost:3001' }).theme.sync.post({
+          theme: 'dark',
         })
       ).status,
     ).toBe(503);

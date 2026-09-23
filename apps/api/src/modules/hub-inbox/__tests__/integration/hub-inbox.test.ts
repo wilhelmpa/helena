@@ -31,7 +31,7 @@ describe('hub inbox', () => {
       .values({
         teamId: project.teamId,
         sourceId: source.id,
-        externalThreadId: 'thread-1',
+        externalThreadId: 'mail-thread:41',
         latestExternalMessageId: 'message-1',
         sender: 'customer@example.com',
         subject: 'Please investigate',
@@ -48,7 +48,7 @@ describe('hub inbox', () => {
       sourceId: source.id,
       teamId: project.teamId,
       externalEventId: 'event-1',
-      externalThreadId: 'thread-1',
+      externalThreadId: 'mail-thread:41',
       externalMessageId: 'message-1',
       sender: 'customer@example.com',
       subject: 'Please investigate',
@@ -85,7 +85,7 @@ describe('hub inbox', () => {
     const rows = await db.select().from(issue).where(eq(issue.projectId, project.id));
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ title: 'Please investigate' });
-    expect(rows[0]?.description).toContain('mail.google.com');
+    expect(rows[0]?.description).toContain('(/inbox?thread=41)');
     expect(rows[0]?.description).not.toContain('javascript:');
     await processActionRuns();
     const [updatedIssue] = await db.select().from(issue).where(eq(issue.id, firstBody.issueId));
@@ -96,7 +96,7 @@ describe('hub inbox', () => {
     expect(await list.json()).toMatchObject({
       items: [
         {
-          externalUrl: 'https://mail.google.com/mail/u/team%40example.com/#all/thread-1',
+          externalUrl: '/inbox?thread=41',
           issueIdentifier: 'HELP-1',
           ticketStatus: 'created',
         },
