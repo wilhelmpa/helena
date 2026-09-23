@@ -19,6 +19,7 @@ import {
 } from './instance';
 import { sendAuthEmail } from './mail';
 import { oidcProfileLabel } from './oidc-profile';
+import { localOwner } from './local-owner';
 
 // Frontend origins allowed to call the auth handler. Mandatory config: cookies, the
 // WebAuthn relying party and the cookie domain are all derived from it, so a deploy
@@ -564,6 +565,7 @@ export const auth = betterAuth({
   },
 
   plugins: [
+    localOwner(),
     // WebAuthn passkeys, a second sign-in method alongside email + password. A
     // passkey is added to an already signed-in account (passkey.addPasskey) and
     // then used to sign in (signIn.passkey). Adds the `passkey` table.

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionCookie } from 'better-auth/cookies';
 import { contentSecurityPolicy } from '@/utils/contentSecurityPolicy';
+import { localOwnerSession } from '@/lib/local-owner-session';
 
 // Routes reachable without a session, and that bounce a signed-in user back to
 // the app. Everything else requires one.
@@ -61,6 +62,11 @@ async function gate(request: NextRequest): Promise<NextResponse> {
   if (OPEN_PATHS.some(matches)) return NextResponse.next();
 
   const isPublic = PUBLIC_PATHS.some(matches);
+  const expired = isPublic && request.nextUrl.searchParams.get('expired') === '1';
+  if (!hasSession || expired) {
+    const localSession = await localOwnerSession(request);
+    if (localSession) return localSession;
+  }
 
   if (isPublic) {
     // The client lands here after the API refused the session. Its sign-out misses a
