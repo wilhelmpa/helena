@@ -1,5 +1,6 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
+  agentRun,
   aiAgent,
   db,
   issue,
@@ -8,9 +9,11 @@ import {
   organizationAgentAssignment,
   project,
   projectMember,
+  projectSetting,
+  user,
 } from '@repo/db';
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
-import { HttpError } from '#shared/lib';
+import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { HttpError, iso } from '#shared/lib';
 import { notHomeAgent } from '#modules/agents/core/home-agent';
 import { isWorkflowEnabled, listTaskWorkflowRuns, startWorkflow } from './service';
 
@@ -193,20 +196,177 @@ export async function startDelegatedAgentTeam(
   }
 }
 
-function record(value: unknown): Record<string, unknown> {
+export function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
 }
 
-function text(value: unknown): string | null {
+export function text(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
+}
+
+export type AgentTeamPhase = 'coordinate' | 'specialize' | 'review';
+
+// The idempotency key the agent-team workflow sends with the Hermes stage of one phase
+// (teamIdempotencyKey in the Mastra workflow). Plan stores the run it queued for the
+// stage under this key, which is what leads from a stage to its agent_run.
+export function stageIdempotencyKey(
+  envelope: { eventId: string; correlationId: string },
+  phase: AgentTeamPhase,
+  subject: string,
+): string {
+  return createHash('sha256')
+    .update(`agent-team\0${envelope.eventId}\0${envelope.correlationId}\0${phase}\0${subject}`)
+    .digest('hex');
+}
+
+interface StageRef {
+  phase: AgentTeamPhase;
+  assignmentId: string | null;
+  key: string;
+}
+
+// The Hermes stages a run can have asked for so far: the coordinator's plan, one stage
+// per assignment of that plan, and the coordinator's review. A stage Mastra did not
+// run (a task routed without a coordinator, a policy without review) has no stored run
+// under its key and is dropped when the runs are read.
+function stageRefs(run: Record<string, unknown>): StageRef[] {
+  const context = record(record(run.snapshot).context);
+  const envelope = record(context.input);
+  const eventId = text(envelope.eventId);
+  const correlationId = text(envelope.correlationId);
+  const taskRef = text(record(record(envelope.payload).task).taskRef);
+  if (!eventId || !correlationId || !taskRef) return [];
+  const key = (phase: AgentTeamPhase, subject: string) =>
+    stageIdempotencyKey({ eventId, correlationId }, phase, subject);
+  const delegations = record(record(context.coordinate).output).delegations;
+  const assignmentIds = (Array.isArray(delegations) ? delegations : [])
+    .map((item) => text(record(item).assignmentId))
+    .filter((id): id is string => id !== null);
+  return [
+    { phase: 'coordinate', assignmentId: null, key: key('coordinate', taskRef) },
+    ...assignmentIds.map((id) => ({
+      phase: 'specialize' as const,
+      assignmentId: id,
+      key: key('specialize', id),
+    })),
+    { phase: 'review', assignmentId: null, key: key('review', taskRef) },
+  ];
+}
+
+// A run a runner holds stays 'pending' in the queue until the runner reports it. It is
+// running while the lease of a claim is open; a run waiting for a retry carries the
+// error of the attempt before, and a queued stage asked for again starts at 0 claims.
+export function runStatus(run: {
+  status: string;
+  attempts: number;
+  nextAttemptAt: Date;
+  lastError: string | null;
+}): string {
+  return run.status === 'pending' &&
+    run.attempts > 0 &&
+    !run.lastError &&
+    run.nextAttemptAt.getTime() > Date.now()
+    ? 'running'
+    : run.status;
+}
+
+export interface AgentTeamStage {
+  phase: AgentTeamPhase;
+  assignmentId: string | null;
+  agentRunId: number;
+  agent: { id: number; username: string; name: string };
+  status: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  durationMs: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}
+
+// The Hermes run behind each stage of the given agent-team runs of one project, by
+// Mastra run id, in the order the stages ran.
+export async function agentTeamStages(
+  projectId: number,
+  runs: unknown[],
+): Promise<Map<string, AgentTeamStage[]>> {
+  const refs = runs.map((value) => {
+    const run = record(value);
+    return { runId: String(run.runId), stages: stageRefs(run) };
+  });
+  const keys = refs.flatMap((item) => item.stages.map((stage) => `mastra-agent-run:${stage.key}`));
+  const stored =
+    keys.length === 0
+      ? []
+      : await db
+          .select({ key: projectSetting.key, value: projectSetting.value })
+          .from(projectSetting)
+          .where(and(eq(projectSetting.projectId, projectId), inArray(projectSetting.key, keys)));
+  const runIdByKey = new Map(
+    stored.map((row) => [
+      row.key.slice('mastra-agent-run:'.length),
+      Number(record(row.value).runId),
+    ]),
+  );
+  const ids = [...runIdByKey.values()].filter((id) => Number.isSafeInteger(id));
+  const rows =
+    ids.length === 0
+      ? []
+      : await db
+          .select({
+            id: agentRun.id,
+            status: agentRun.status,
+            attempts: agentRun.attempts,
+            nextAttemptAt: agentRun.nextAttemptAt,
+            lastError: agentRun.lastError,
+            startedAt: agentRun.startedAt,
+            finishedAt: agentRun.finishedAt,
+            inputTokens: agentRun.inputTokens,
+            outputTokens: agentRun.outputTokens,
+            agentId: aiAgent.id,
+            username: aiAgent.username,
+            name: user.name,
+          })
+          .from(agentRun)
+          .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
+          .innerJoin(user, eq(user.id, aiAgent.userId))
+          .where(and(eq(agentRun.projectId, projectId), inArray(agentRun.id, ids)));
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return new Map(
+    refs.map(({ runId, stages }) => [
+      runId,
+      stages.flatMap((stage) => {
+        const row = byId.get(runIdByKey.get(stage.key) ?? 0);
+        if (!row) return [];
+        return [
+          {
+            phase: stage.phase,
+            assignmentId: stage.assignmentId,
+            agentRunId: row.id,
+            agent: { id: row.agentId, username: row.username, name: row.name },
+            status: runStatus(row),
+            startedAt: row.startedAt ? iso(row.startedAt) : null,
+            finishedAt: row.finishedAt ? iso(row.finishedAt) : null,
+            durationMs:
+              row.startedAt && row.finishedAt
+                ? row.finishedAt.getTime() - row.startedAt.getTime()
+                : null,
+            inputTokens: row.inputTokens,
+            outputTokens: row.outputTokens,
+          },
+        ];
+      }),
+    ]),
+  );
 }
 
 export async function listIssueAgentTeamRuns(issueId: number) {
   const task = await issueTask(issueId);
   const result = await listTaskWorkflowRuns(task.project, 'agent-team', task.taskRef);
-  return (result.runs ?? []).map((value) => {
+  const runs = result.runs ?? [];
+  const stages = await agentTeamStages(task.projectId, runs);
+  return runs.map((value) => {
     const run = record(value);
     const snapshot = record(run.snapshot);
     const error = snapshot.error;
@@ -218,6 +378,7 @@ export async function listIssueAgentTeamRuns(issueId: number) {
       steps: Object.entries(record(snapshot.context))
         .filter(([id]) => id !== 'input')
         .map(([id, step]) => ({ id, status: String(record(step).status ?? 'unknown') })),
+      stages: stages.get(String(run.runId)) ?? [],
       result: snapshot.result ?? null,
       error: error == null ? null : (text(record(error).message) ?? text(error) ?? 'Run failed'),
     };

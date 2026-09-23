@@ -1,0 +1,44 @@
+{
+  "title": "Activity",
+  "projectDescription": "What the agents of this project did, newest first: your chat answers, their runs, and the agent-team and workflow runs in Mastra.",
+  "homeDescription": "What the agents of your projects did, newest first: your chat answers, their runs, and the agent-team and workflow runs in Mastra.",
+  "allKinds": "All kinds",
+  "allAgents": "All agents",
+  "kinds": {
+    "chat": "Chat answer",
+    "agent-run": "Agent run",
+    "agent-team-run": "Agent-team run",
+    "workflow-run": "Workflow run"
+  },
+  "status": {
+    "pending": "Queued",
+    "running": "Running",
+    "streaming": "Answering",
+    "waiting": "Waiting",
+    "suspended": "Waiting for approval",
+    "success": "Done",
+    "failed": "Failed",
+    "canceled": "Canceled",
+    "bailed": "Stopped",
+    "skipped": "Skipped"
+  },
+  "triggers": {
+    "mention": "Mention",
+    "delegation": "Delegation",
+    "field": "Field trigger",
+    "schedule": "Schedule",
+    "manual": "Manual"
+  },
+  "maxTurns": "{count, plural, one {At most # turn} other {At most # turns}}",
+  "runBudget": "{minutes, plural, one {Budget # minute} other {Budget # minutes}}",
+  "openChat": "Open chat",
+  "openRun": "Open run",
+  "showMore": "Show more",
+  "empty": "No activity yet",
+  "emptyHint": "Chat answers, agent runs and workflow runs show up here once the agents work.",
+  "unavailable": "The activity could not be loaded.",
+  "notice": {
+    "workflow-runs-unavailable": "Mastra did not answer, so workflow runs are left out.",
+    "workflow-runs-limited": "Not every workflow run is shown: the timeline reads a limited number of workflows and runs from Mastra."
+  }
+}

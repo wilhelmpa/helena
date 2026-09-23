@@ -160,6 +160,16 @@
         "synchronize": "El resumen y las evidencias se escriben en la tarea, que pasa a Revisión o Hecho."
       },
       "route": "Cuando las etiquetas de la tarea coinciden con las capacidades de un solo especialista, o el proyecto solo tiene uno, Mastra omite el plan y asigna la tarea directamente."
+    },
+    "usage": {
+      "title": "Consumo de tokens",
+      "description": "Ejecuciones de agentes de este proyecto desde el {since}. Las respuestas del chat no cuentan.",
+      "loading": "Cargando el consumo…",
+      "unavailable": "No se pudo cargar el consumo de tokens.",
+      "month": "Este mes",
+      "split": "{input} leídos, {output} escritos",
+      "perClosedTask": "Por tarea cerrada",
+      "closedTasks": "{count, plural, =0 {Ninguna tarea cerrada con agentes este mes} one {# tarea cerrada con agentes este mes} other {# tareas cerradas con agentes este mes}}"
     }
   }
 }

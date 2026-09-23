@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { api, authedApi, type Api } from '#tests/helpers/app';
+import { api, apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
+import { createAgent } from '#tests/helpers/agents';
 import { createRole } from '#tests/helpers/roles';
 
 // GET /sync/rev is the one poll behind live refresh: it answers with the change
@@ -329,6 +330,43 @@ describe('sync', () => {
     });
   });
 
+  describe('agent runs scope', () => {
+    it('moves when a run is queued, claimed and finished, not on a heartbeat', async () => {
+      const { asOwner, projectId, columnId } = await setup();
+      const created = await createAgent(asOwner, 'MKT', {
+        name: 'Ext Bot',
+        username: 'ext',
+        kind: 'external',
+        triggerOnMention: true,
+      });
+      const asRunner = apiKeyApi(created.data!.apiKey!);
+      const scope = `agentRuns:${projectId}`;
+      const issue = (await createIssue(asOwner, columnId)).data!;
+      expect(await rev(asOwner, scope)).toBe('0');
+
+      await asOwner.issues({ issueId: issue.id }).comments.post({ body: 'please review @ext' });
+      const queued = await rev(asOwner, scope);
+      expect(queued).not.toBe('0');
+      const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      const claimed = await rev(asOwner, scope);
+      expect(claimed).not.toBe(queued);
+      await asRunner['agent-runs']({ runId: run.id }).heartbeat.post();
+      expect(await rev(asOwner, scope)).toBe(claimed);
+      await asRunner['agent-runs']({ runId: run.id }).result.post({ status: 'success' });
+      expect(await rev(asOwner, scope)).not.toBe(claimed);
+    });
+
+    it('reads the workflow scopes together with it', async () => {
+      const { asOwner, projectId } = await setup();
+      const scopes = [
+        `agentRuns:${projectId}`,
+        `controlPlane:${projectId}`,
+        `actionRuns:${projectId}`,
+      ];
+      expect(Object.keys(await revs(asOwner, scopes.join(',')))).toEqual(scopes);
+    });
+  });
+
   describe('access', () => {
     it('reads a non-member\'s project as "0"', async () => {
       const { asOwner, projectId, columnId } = await setup();
@@ -361,6 +399,34 @@ describe('sync', () => {
       await asOwner.projects({ projectKey: 'MKT' }).documents.post({ title: 'Handbook' });
       const { userId, api: asMember } = await addMember(asOwner);
       const scope = `documents:${projectId}`;
+      expect(await rev(asMember, scope)).not.toBe('0');
+
+      const role = (
+        await createRole(asOwner, 'MKT', {
+          name: 'Work items only',
+          permissions: { work_items: { read: true } },
+        })
+      ).data!;
+      await asOwner
+        .projects({ projectKey: 'MKT' })
+        .members({ userId })
+        .patch({ role: 'member', roleId: role.id });
+
+      expect(await rev(asMember, scope)).toBe('0');
+    });
+
+    it('hides the agent runs scope from a member without agents read access', async () => {
+      const { asOwner, projectId, columnId } = await setup();
+      await createAgent(asOwner, 'MKT', {
+        name: 'Ext Bot',
+        username: 'ext',
+        kind: 'external',
+        triggerOnMention: true,
+      });
+      const issue = (await createIssue(asOwner, columnId)).data!;
+      await asOwner.issues({ issueId: issue.id }).comments.post({ body: 'please review @ext' });
+      const { userId, api: asMember } = await addMember(asOwner);
+      const scope = `agentRuns:${projectId}`;
       expect(await rev(asMember, scope)).not.toBe('0');
 
       const role = (

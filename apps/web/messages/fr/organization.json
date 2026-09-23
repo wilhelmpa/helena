@@ -160,6 +160,16 @@
         "synchronize": "Le résumé et les preuves sont écrits dans la tâche, qui passe en Revue ou Terminé."
       },
       "route": "Quand les étiquettes de la tâche correspondent aux compétences d’un seul spécialiste, ou que le projet n’en a qu’un, Mastra saute le plan et assigne la tâche directement."
+    },
+    "usage": {
+      "title": "Consommation de jetons",
+      "description": "Exécutions d’agents de ce projet depuis le {since}. Les réponses du chat ne sont pas comptées.",
+      "loading": "Chargement de la consommation…",
+      "unavailable": "La consommation de jetons n’a pas pu être chargée.",
+      "month": "Ce mois-ci",
+      "split": "{input} lus, {output} écrits",
+      "perClosedTask": "Par tâche fermée",
+      "closedTasks": "{count, plural, =0 {Aucune tâche fermée avec des agents ce mois-ci} one {# tâche fermée avec des agents ce mois-ci} other {# tâches fermées avec des agents ce mois-ci}}"
     }
   }
 }

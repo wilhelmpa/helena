@@ -1,7 +1,13 @@
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Bot, Clock3, Network, Workflow } from 'lucide-react';
-import { aiAgentsPath, aiTeamPath, organizationPath, workflowsPath } from '@/utils/paths';
+import { Activity, Bot, Clock3, Network, Workflow } from 'lucide-react';
+import {
+  agentActivityPath,
+  aiAgentsPath,
+  aiTeamPath,
+  organizationPath,
+  workflowsPath,
+} from '@/utils/paths';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import {
@@ -13,7 +19,7 @@ import {
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 
 // Who works in the project and what runs on its own: the agents, how they work as a
-// team, the Mastra workflows and the schedules.
+// team, what they did, the Mastra workflows and the schedules.
 export default function SidebarAutomationNav({ projectKey }: { projectKey: string }) {
   const t = useTranslations('nav');
   const sectionText = useSettingsSectionText();
@@ -41,6 +47,15 @@ export default function SidebarAutomationNav({ projectKey }: { projectKey: strin
               icon={Network}
               label={t('teamOrchestration')}
               active={pathname.startsWith(organizationPath(projectKey))}
+              disabled={false}
+            />
+          )}
+          {can('ai_agents', 'read') && (
+            <SidebarNavItem
+              href={agentActivityPath(projectKey)}
+              icon={Activity}
+              label={t('agentActivity')}
+              active={pathname.startsWith(agentActivityPath(projectKey))}
               disabled={false}
             />
           )}

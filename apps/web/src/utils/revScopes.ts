@@ -7,7 +7,8 @@ export const revScope = {
   initiative: (initiativeId: number) => `initiative:${initiativeId}`,
   inbox: (projectId: number) => `inbox:${projectId}`,
   documents: (projectId: number) => `documents:${projectId}`,
-  actionRuns: (projectId: number) => `action-runs:${projectId}`,
-  controlPlane: (projectId: number) => `control-plane:${projectId}`,
+  actionRuns: (projectId: number) => `actionRuns:${projectId}`,
+  controlPlane: (projectId: number) => `controlPlane:${projectId}`,
+  agentRuns: (projectId: number) => `agentRuns:${projectId}`,
   hubInbox: (teamId: number) => `hubInbox:${teamId}`,
 };

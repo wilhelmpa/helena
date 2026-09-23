@@ -25,7 +25,14 @@ export type ShellContext = {
   onOpenWorkspaceTool?: (tool: WorkspaceToolId) => void;
   // Opens the chat panel on a new conversation with the agent.
   onChatWithAgent: (agentId: number) => void;
+  // Opens the chat panel on one of the reader's conversations. The request is held
+  // until the panel has opened it.
+  onOpenChatThread: (agentId: number, threadId: string) => void;
+  chatThreadRequest: ChatThreadRequest | null;
+  onChatThreadHandled: () => void;
 };
+
+export type ChatThreadRequest = { agentId: number; threadId: string };
 
 export const ShellCtx = createContext<ShellContext | null>(null);
 

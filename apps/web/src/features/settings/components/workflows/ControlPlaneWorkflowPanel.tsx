@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -27,7 +28,10 @@ export function ControlPlaneWorkflowPanel({
   const { can } = usePermissions();
   const workflows = useProjectWorkflows(projectKey);
   const update = useUpdateProjectWorkflow(projectKey);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  // A link to one run (workflowRunPath) opens its workflow and marks the run.
+  const searchParams = useSearchParams();
+  const linkedWorkflow = searchParams.get('workflow');
+  const [expanded, setExpanded] = useState<string | null>(linkedWorkflow);
   const editable = can('actions', 'edit');
   useLiveRefresh({
     scope: revScope.controlPlane(projectId),
@@ -119,6 +123,7 @@ export function ControlPlaneWorkflowPanel({
                     projectKey={projectKey}
                     workflow={workflow}
                     editable={editable}
+                    markedRunId={linkedWorkflow === workflow.id ? searchParams.get('run') : null}
                   />
                 </div>
               )}

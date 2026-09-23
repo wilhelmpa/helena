@@ -1,4 +1,5 @@
 import {
+  Activity,
   Bot,
   BookText,
   Building2,
@@ -29,6 +30,7 @@ const icons = {
   inbox: Inbox,
   agentPool: Bot,
   organization: Building2,
+  agentActivity: Activity,
   skills: BookText,
   tools: Wrench,
   mcps: Radio,

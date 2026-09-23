@@ -103,5 +103,6 @@
     "projectOptions": "Projektoptionen",
     "groupOptions": "Gruppenoptionen",
     "dropUngrouped": "Hier ablegen, um das Projekt aus der Gruppe zu nehmen"
-  }
+  },
+  "agentActivity": "Aktivität"
 }

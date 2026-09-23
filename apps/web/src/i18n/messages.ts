@@ -1,6 +1,7 @@
 import connections from '../../messages/en/connections.json';
 import organization from '../../messages/en/organization.json';
 import account from '../../messages/en/account.json';
+import agentActivity from '../../messages/en/agentActivity.json';
 import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
 import auth from '../../messages/en/auth.json';
@@ -73,6 +74,7 @@ const defaultMessages = {
   whatsNew,
   organization,
   connections,
+  agentActivity,
 };
 
 export type Messages = typeof defaultMessages;

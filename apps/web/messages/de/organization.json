@@ -160,6 +160,16 @@
         "synchronize": "Zusammenfassung und Nachweise werden in die Aufgabe geschrieben, die dann nach „Review“ oder „Erledigt“ wechselt."
       },
       "route": "Passen die Labels der Aufgabe zu den Fähigkeiten genau eines Specialists oder hat das Projekt nur einen, überspringt Mastra den Plan und weist die Aufgabe direkt zu."
+    },
+    "usage": {
+      "title": "Token-Verbrauch",
+      "description": "Agentenläufe dieses Projekts seit {since}. Chat-Antworten werden nicht gezählt.",
+      "loading": "Verbrauch wird geladen…",
+      "unavailable": "Der Token-Verbrauch konnte nicht geladen werden.",
+      "month": "Dieser Monat",
+      "split": "{input} gelesen, {output} geschrieben",
+      "perClosedTask": "Pro abgeschlossener Aufgabe",
+      "closedTasks": "{count, plural, =0 {Diesen Monat keine Aufgabe mit Agenten abgeschlossen} one {# Aufgabe diesen Monat mit Agenten abgeschlossen} other {# Aufgaben diesen Monat mit Agenten abgeschlossen}}"
     }
   }
 }

@@ -25,6 +25,7 @@
   "home": "主页",
   "globalHomeHint": "在此使用全局协调器，或选择项目以使用该项目的上下文。",
   "workflows": "工作流",
+  "agentActivity": "动态",
   "noProjects": "暂无项目",
   "newTeam": "新建团队",
   "manageTeams": "管理团队",

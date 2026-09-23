@@ -247,14 +247,18 @@ export function listWorkflowRuns(
   workflowId: string,
   page = 0,
   pageSize = 20,
+  timeoutMs?: number,
 ) {
-  return controlPlaneRequest({
-    operation: 'runs',
-    workflowId,
-    projectRef: projectWorkflowScope(project).projectRef,
-    page,
-    pageSize,
-  });
+  return controlPlaneRequest<{ runs?: unknown[] }>(
+    {
+      operation: 'runs',
+      workflowId,
+      projectRef: projectWorkflowScope(project).projectRef,
+      page,
+      pageSize,
+    },
+    timeoutMs,
+  );
 }
 
 // Every run of the workflow whose payload names the task, newest first.

@@ -160,6 +160,16 @@
         "synchronize": "The summary and evidence are written to the task, which moves to Review or Done."
       },
       "route": "When the task's labels match the capabilities of exactly one specialist, or the project has only one, Mastra skips the plan and assigns the task directly."
+    },
+    "usage": {
+      "title": "Token usage",
+      "description": "Agent runs of this project since {since}. Chat answers are not counted.",
+      "loading": "Loading usage…",
+      "unavailable": "The token usage could not be loaded.",
+      "month": "This month",
+      "split": "{input} read, {output} written",
+      "perClosedTask": "Per closed task",
+      "closedTasks": "{count, plural, =0 {No task closed with agents this month} one {# task closed with agents this month} other {# tasks closed with agents this month}}"
     }
   }
 }

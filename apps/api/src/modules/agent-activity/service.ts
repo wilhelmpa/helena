@@ -1,0 +1,337 @@
+import {
+  agentChatMessage,
+  agentChatThread,
+  agentRun,
+  aiAgent,
+  db,
+  issue,
+  project,
+  projectMember,
+  projectWorkflowAssignment,
+  teamMember,
+  user,
+} from '@repo/db';
+import { and, desc, eq, exists, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm';
+import { num } from '#shared/lib';
+import { closings } from '#modules/analytics/service';
+import { runStatus } from '#modules/control-plane-workflows/agent-team';
+import { projectIdsWithPermission } from '#modules/members/service';
+import {
+  compareEntries,
+  emptyEntry,
+  type ActivityCursor,
+  type ActivityEntry,
+  type ActivityFilters,
+  type ActivityPage,
+} from './entry';
+import type { ActivityKind } from './model';
+import { workflowRunEntries, type WorkflowSource } from './workflow-runs';
+
+// One timeline of what the agents did: their chat answers, their runs, and the Mastra
+// workflow runs. The first two are read from Plan's tables, the workflow runs from
+// Mastra, and the three are merged newest first.
+
+// Every workflow of the reader is one or more Mastra requests, so Home reads the ones
+// whose assignment changed last and says so when there are more.
+const HOME_WORKFLOW_SOURCES = 6;
+
+function sortKey(createdAt: AnyColumn, id: SQL) {
+  const at = sql`date_trunc('milliseconds', ${createdAt})`;
+  return {
+    at,
+    id: sql`(${id}) COLLATE "C"`,
+    iso: sql<string>`to_char(${at} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
+  };
+}
+
+function olderThan(key: ReturnType<typeof sortKey>, cursor: ActivityCursor | null) {
+  if (!cursor) return undefined;
+  return sql`(${key.at} < ${cursor.at}::timestamptz OR (${key.at} = ${cursor.at}::timestamptz AND ${key.id} < ${cursor.id} COLLATE "C"))`;
+}
+
+function elapsed(startedAt: Date | null, finishedAt: Date | null): number | null {
+  return startedAt && finishedAt ? finishedAt.getTime() - startedAt.getTime() : null;
+}
+
+async function agentRunEntries(
+  projectIds: number[],
+  filters: ActivityFilters,
+  limit: number,
+): Promise<ActivityEntry[]> {
+  if (projectIds.length === 0) return [];
+  const key = sortKey(agentRun.createdAt, sql`'run:' || ${agentRun.id}`);
+  const rows = await db
+    .select({
+      id: agentRun.id,
+      at: key.iso,
+      status: agentRun.status,
+      attempts: agentRun.attempts,
+      nextAttemptAt: agentRun.nextAttemptAt,
+      lastError: agentRun.lastError,
+      trigger: agentRun.trigger,
+      maxTurns: agentRun.maxTurns,
+      runBudgetSeconds: agentRun.runBudgetSeconds,
+      startedAt: agentRun.startedAt,
+      finishedAt: agentRun.finishedAt,
+      inputTokens: agentRun.inputTokens,
+      outputTokens: agentRun.outputTokens,
+      projectId: project.id,
+      projectKey: project.key,
+      projectName: project.name,
+      agentId: aiAgent.id,
+      agentUsername: aiAgent.username,
+      agentName: user.name,
+      issueId: issue.id,
+      issueSequence: issue.sequenceNumber,
+      issueTitle: issue.title,
+    })
+    .from(agentRun)
+    .innerJoin(project, eq(project.id, agentRun.projectId))
+    .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
+    .innerJoin(user, eq(user.id, aiAgent.userId))
+    .leftJoin(issue, eq(issue.id, agentRun.issueId))
+    .where(
+      and(
+        inArray(agentRun.projectId, projectIds),
+        filters.agentId ? eq(agentRun.agentId, filters.agentId) : undefined,
+        olderThan(key, filters.cursor),
+      ),
+    )
+    .orderBy(desc(key.at), desc(key.id))
+    .limit(limit + 1);
+  return rows.map((row) => ({
+    ...emptyEntry,
+    id: `run:${row.id}`,
+    kind: 'agent-run' as const,
+    at: row.at,
+    status: runStatus(row),
+    project: { id: row.projectId, key: row.projectKey, name: row.projectName },
+    agent: { id: row.agentId, username: row.agentUsername, name: row.agentName },
+    issue:
+      row.issueId != null && row.issueSequence != null && row.issueTitle != null
+        ? {
+            id: row.issueId,
+            identifier: `${row.projectKey}-${row.issueSequence}`,
+            sequenceNumber: row.issueSequence,
+            title: row.issueTitle,
+          }
+        : null,
+    trigger: row.trigger,
+    maxTurns: row.maxTurns,
+    runBudgetSeconds: row.runBudgetSeconds,
+    durationMs: elapsed(row.startedAt, row.finishedAt),
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
+  }));
+}
+
+// The reader's own chat answers: a chat belongs to one member and one agent, not to a
+// project. A project shows the chats with the agents working in it, Home the chats
+// with the agents of the reader's teams.
+async function chatEntries(
+  userId: string,
+  within: { id: number; key: string; name: string } | null,
+  filters: ActivityFilters,
+  limit: number,
+): Promise<ActivityEntry[]> {
+  const key = sortKey(agentChatMessage.createdAt, sql`'chat:' || ${agentChatMessage.id}`);
+  const reachable = within
+    ? exists(
+        db
+          .select({ one: sql`1` })
+          .from(projectMember)
+          .where(
+            and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, within.id)),
+          ),
+      )
+    : exists(
+        db
+          .select({ one: sql`1` })
+          .from(teamMember)
+          .where(and(eq(teamMember.teamId, aiAgent.teamId), eq(teamMember.userId, userId))),
+      );
+  const rows = await db
+    .select({
+      id: agentChatMessage.id,
+      at: key.iso,
+      status: agentChatMessage.status,
+      threadId: agentChatMessage.threadId,
+      startedAt: agentChatMessage.startedAt,
+      finishedAt: agentChatMessage.finishedAt,
+      agentId: aiAgent.id,
+      agentUsername: aiAgent.username,
+      agentName: user.name,
+    })
+    .from(agentChatMessage)
+    .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
+    .innerJoin(aiAgent, eq(aiAgent.id, agentChatMessage.agentId))
+    .innerJoin(user, eq(user.id, aiAgent.userId))
+    .where(
+      and(
+        eq(agentChatMessage.role, 'assistant'),
+        eq(agentChatThread.userId, userId),
+        filters.agentId ? eq(agentChatMessage.agentId, filters.agentId) : undefined,
+        reachable,
+        olderThan(key, filters.cursor),
+      ),
+    )
+    .orderBy(desc(key.at), desc(key.id))
+    .limit(limit + 1);
+  return rows.map((row) => ({
+    ...emptyEntry,
+    id: `chat:${row.id}`,
+    kind: 'chat' as const,
+    at: row.at,
+    status: row.status,
+    project: within,
+    agent: { id: row.agentId, username: row.agentUsername, name: row.agentName },
+    threadId: row.threadId,
+    durationMs: elapsed(row.startedAt, row.finishedAt),
+  }));
+}
+
+// The enabled workflows a timeline reads from Mastra, narrowed to the kind asked for.
+// A workflow run names no agent, so an agent filter keeps only agent-team.
+async function workflowSources(projectIds: number[], filters: ActivityFilters) {
+  if (
+    projectIds.length === 0 ||
+    filters.kind === 'chat' ||
+    filters.kind === 'agent-run' ||
+    (filters.kind === 'workflow-run' && filters.agentId != null)
+  )
+    return [];
+  const rows = await db
+    .select({
+      workflowId: projectWorkflowAssignment.workflowId,
+      id: project.id,
+      key: project.key,
+      name: project.name,
+      teamId: project.teamId,
+    })
+    .from(projectWorkflowAssignment)
+    .innerJoin(project, eq(project.id, projectWorkflowAssignment.projectId))
+    .where(
+      and(
+        inArray(projectWorkflowAssignment.projectId, projectIds),
+        eq(projectWorkflowAssignment.enabled, true),
+      ),
+    )
+    .orderBy(desc(projectWorkflowAssignment.updatedAt), project.id);
+  const agentTeamOnly = filters.kind === 'agent-team-run' || filters.agentId != null;
+  return rows
+    .filter((row) =>
+      agentTeamOnly
+        ? row.workflowId === 'agent-team'
+        : filters.kind !== 'workflow-run' || row.workflowId !== 'agent-team',
+    )
+    .map(({ workflowId, ...row }): WorkflowSource => ({
+      workflowId,
+      project: row,
+    }));
+}
+
+async function readTimeline(input: {
+  userId: string;
+  runProjectIds: number[];
+  chatProject: { id: number; key: string; name: string } | null;
+  workflows: WorkflowSource[];
+  limited: boolean;
+  filters: ActivityFilters;
+}): Promise<ActivityPage> {
+  const { filters } = input;
+  const limit = Math.min(Math.max(filters.limit ?? 25, 1), 100);
+  const wants = (kind: ActivityKind) => !filters.kind || filters.kind === kind;
+  const [runs, chats, workflows] = await Promise.all([
+    wants('agent-run') ? agentRunEntries(input.runProjectIds, filters, limit) : [],
+    wants('chat') ? chatEntries(input.userId, input.chatProject, filters, limit) : [],
+    workflowRunEntries(input.workflows, filters, limit),
+  ]);
+  const merged = [...runs, ...chats, ...workflows.entries].sort(compareEntries);
+  const items = merged.slice(0, limit);
+  const last = items.at(-1);
+  return {
+    items,
+    nextCursor: merged.length > limit && last ? { at: last.at, id: last.id } : null,
+    notice: workflows.failed
+      ? 'workflow-runs-unavailable'
+      : input.limited || workflows.limited
+        ? 'workflow-runs-limited'
+        : null,
+  };
+}
+
+export async function listProjectActivity(
+  current: { id: number; key: string; name: string },
+  userId: string,
+  includeWorkflows: boolean,
+  filters: ActivityFilters,
+): Promise<ActivityPage> {
+  return readTimeline({
+    userId,
+    runProjectIds: [current.id],
+    chatProject: { id: current.id, key: current.key, name: current.name },
+    workflows: includeWorkflows ? await workflowSources([current.id], filters) : [],
+    limited: false,
+    filters,
+  });
+}
+
+// Across every project in which the reader's role grants reading agents; the workflow
+// runs of those that also grant reading workflows.
+export async function listActivity(userId: string, filters: ActivityFilters) {
+  const [agentProjects, workflowProjects] = await Promise.all([
+    projectIdsWithPermission(userId, 'ai_agents', 'read'),
+    projectIdsWithPermission(userId, 'actions', 'read'),
+  ]);
+  const sources = await workflowSources(
+    workflowProjects.filter((id) => agentProjects.includes(id)),
+    filters,
+  );
+  return readTimeline({
+    userId,
+    runProjectIds: agentProjects,
+    chatProject: null,
+    workflows: sources.slice(0, HOME_WORKFLOW_SOURCES),
+    limited: sources.length > HOME_WORKFLOW_SOURCES,
+    filters,
+  });
+}
+
+// The tokens the project's agent runs used this month, and per task closed this month
+// that agents worked on: every run of such a task counts, whenever it ran.
+export async function getAgentUsage(projectId: number) {
+  const [row] = (await db.execute(sql`
+    WITH month AS (SELECT date_trunc('month', now(), 'UTC') AS since),
+    closed AS (
+      SELECT c.issue_id FROM (${closings(projectId)}) c, month WHERE c.closed_at >= month.since
+    ),
+    closed_runs AS (
+      SELECT r.issue_id, coalesce(r.input_tokens, 0) + coalesce(r.output_tokens, 0) AS tokens
+        FROM agent_run r JOIN closed ON closed.issue_id = r.issue_id
+       WHERE r.input_tokens IS NOT NULL OR r.output_tokens IS NOT NULL
+    )
+    SELECT
+      to_char((SELECT since FROM month) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS since,
+      (SELECT coalesce(sum(r.input_tokens), 0)::float8 FROM agent_run r, month
+        WHERE r.project_id = ${projectId} AND r.finished_at >= month.since) AS input_tokens,
+      (SELECT coalesce(sum(r.output_tokens), 0)::float8 FROM agent_run r, month
+        WHERE r.project_id = ${projectId} AND r.finished_at >= month.since) AS output_tokens,
+      (SELECT count(DISTINCT issue_id)::int FROM closed_runs) AS closed_tasks,
+      (SELECT coalesce(sum(tokens), 0)::float8 FROM closed_runs) AS closed_task_tokens
+  `)) as unknown as {
+    since: string;
+    input_tokens: number;
+    output_tokens: number;
+    closed_tasks: number;
+    closed_task_tokens: number;
+  }[];
+  const closedTasks = num(row!.closed_tasks);
+  return {
+    since: row!.since,
+    inputTokens: num(row!.input_tokens),
+    outputTokens: num(row!.output_tokens),
+    closedTasks,
+    tokensPerClosedTask:
+      closedTasks > 0 ? Math.round(num(row!.closed_task_tokens) / closedTasks) : null,
+  };
+}

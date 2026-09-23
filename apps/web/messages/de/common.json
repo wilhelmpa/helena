@@ -127,7 +127,8 @@
     "importSkippedRow": "Zeile {row} übersprungen: {reason}",
     "contextSize": "Kontext der Unterhaltung: {count, plural, one {# Token} other {# Tokens}}",
     "contextUnavailable": "Die Kontextgröße ist für diesen Agenten nicht verfügbar",
-    "reasoning": "Denkprozess"
+    "reasoning": "Denkprozess",
+    "tokenCounts": "{input, number} Tokens gelesen, {output, number} geschrieben"
   },
   "share": {
     "createFailed": "Der Link konnte nicht erstellt werden. Versuch es noch einmal.",

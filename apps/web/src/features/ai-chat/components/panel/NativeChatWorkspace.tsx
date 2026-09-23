@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
+import { ShellCtx } from '@/context/shellContext';
 import type { WorkspaceContentProps } from '@/context/workspaceContents';
 import { soleTeamId } from '@/features/home/homeTeamScope';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
@@ -15,6 +16,7 @@ import { ChatPanelBody } from './ChatPanelBody';
 // first project exists.
 export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProps) {
   const config = runtimeEnv().workspace;
+  const shell = useContext(ShellCtx);
   const teams = useTeamsQuery();
   const homeTeamId = projectKey ? null : soleTeamId(teams.data);
   const chatProjectKey = projectKey ? nativeChatProjectKey(config, projectKey) : null;
@@ -43,6 +45,8 @@ export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProp
         projectKey={scopeKey}
         newChatAgentId={null}
         onNewChatHandled={() => undefined}
+        openThreadRequest={shell?.chatThreadRequest ?? null}
+        onOpenThreadHandled={shell?.onChatThreadHandled}
         agents={agents}
         agentsLoading={teams.isLoading || project.isLoading || agentsQuery.isLoading}
       />

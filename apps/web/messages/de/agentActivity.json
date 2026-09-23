@@ -1,0 +1,44 @@
+{
+  "title": "Aktivität",
+  "projectDescription": "Was die Agenten dieses Projekts getan haben, neueste zuerst: deine Chat-Antworten, ihre Läufe und die Agententeam- und Workflow-Läufe in Mastra.",
+  "homeDescription": "Was die Agenten deiner Projekte getan haben, neueste zuerst: deine Chat-Antworten, ihre Läufe und die Agententeam- und Workflow-Läufe in Mastra.",
+  "allKinds": "Alle Arten",
+  "allAgents": "Alle Agenten",
+  "kinds": {
+    "chat": "Chat-Antwort",
+    "agent-run": "Agentenlauf",
+    "agent-team-run": "Agententeam-Lauf",
+    "workflow-run": "Workflow-Lauf"
+  },
+  "status": {
+    "pending": "In der Warteschlange",
+    "running": "Läuft",
+    "streaming": "Antwortet",
+    "waiting": "Wartet",
+    "suspended": "Wartet auf Freigabe",
+    "success": "Erledigt",
+    "failed": "Fehlgeschlagen",
+    "canceled": "Abgebrochen",
+    "bailed": "Gestoppt",
+    "skipped": "Übersprungen"
+  },
+  "triggers": {
+    "mention": "Erwähnung",
+    "delegation": "Delegierung",
+    "field": "Feld-Auslöser",
+    "schedule": "Zeitplan",
+    "manual": "Manuell"
+  },
+  "maxTurns": "{count, plural, one {Höchstens # Runde} other {Höchstens # Runden}}",
+  "runBudget": "{minutes, plural, one {Budget # Minute} other {Budget # Minuten}}",
+  "openChat": "Chat öffnen",
+  "openRun": "Lauf öffnen",
+  "showMore": "Mehr anzeigen",
+  "empty": "Noch keine Aktivität",
+  "emptyHint": "Chat-Antworten, Agentenläufe und Workflow-Läufe erscheinen hier, sobald die Agenten arbeiten.",
+  "unavailable": "Die Aktivität konnte nicht geladen werden.",
+  "notice": {
+    "workflow-runs-unavailable": "Mastra hat nicht geantwortet, deshalb fehlen die Workflow-Läufe.",
+    "workflow-runs-limited": "Nicht alle Workflow-Läufe sind zu sehen: Die Zeitleiste liest nur eine begrenzte Zahl von Workflows und Läufen aus Mastra."
+  }
+}

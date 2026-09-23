@@ -22,6 +22,7 @@ import {
   updateDepartment,
   updateGoal,
 } from '@/lib/api/endpoints/organization';
+import { getAgentUsage } from '@/lib/api/endpoints/agentActivity';
 import { qk } from '@/services/queryKeys';
 
 export function useOrganizationQuery(teamId: number | null, projectId?: number) {
@@ -30,6 +31,13 @@ export function useOrganizationQuery(teamId: number | null, projectId?: number) 
       teamId == null ? ['organization', 'none'] : [...qk.organization(teamId), projectId ?? 'all'],
     queryFn: () => getOrganization(teamId!, projectId),
     enabled: teamId != null,
+  });
+}
+
+export function useAgentUsageQuery(projectKey: string) {
+  return useQuery({
+    queryKey: qk.agentUsage(projectKey),
+    queryFn: () => getAgentUsage(projectKey),
   });
 }
 

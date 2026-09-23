@@ -101,15 +101,31 @@ export const AgentTeamStartResponse = t.Object({
   taskRef: t.String(),
 });
 
+// The Hermes run Plan queued for one stage of an agent-team run (AgentTeamStage).
+export const AgentTeamStageResponse = t.Object({
+  phase: t.Union([t.Literal('coordinate'), t.Literal('specialize'), t.Literal('review')]),
+  assignmentId: t.Nullable(t.String()),
+  agentRunId: t.Number(),
+  agent: t.Object({ id: t.Number(), username: t.String(), name: t.String() }),
+  status: t.String(),
+  startedAt: t.Nullable(t.String()),
+  finishedAt: t.Nullable(t.String()),
+  durationMs: t.Nullable(t.Number()),
+  inputTokens: t.Nullable(t.Number()),
+  outputTokens: t.Nullable(t.Number()),
+});
+
 // One agent-team run of an issue as Mastra stores it: the status of each step in
-// execution order, and once it finished the workflow output (summary, evidence, stage
-// history, the Plan state it set) or the error it failed with.
+// execution order, the Hermes run of each stage, and once it finished the workflow
+// output (summary, evidence, stage history, the Plan state it set) or the error it
+// failed with.
 export const AgentTeamRunResponse = t.Object({
   runId: t.String(),
   status: t.String(),
   createdAt: t.Nullable(t.String()),
   updatedAt: t.Nullable(t.String()),
   steps: t.Array(t.Object({ id: t.String(), status: t.String() })),
+  stages: t.Array(AgentTeamStageResponse),
   result: t.Any(),
   error: t.Nullable(t.String()),
 });

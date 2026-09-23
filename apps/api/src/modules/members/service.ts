@@ -21,6 +21,8 @@ import {
   normalizePermissions,
   PERMISSION_ACTIONS,
   PERMISSION_RESOURCES,
+  type PermissionAction,
+  type PermissionResource,
   type Permissions,
 } from '#shared/permissions';
 
@@ -130,6 +132,33 @@ export async function getMemberContext(
     .where(and(eq(projectMember.projectId, projectId), eq(projectMember.userId, userId)));
   const r = rows[0];
   return r ? toMemberContext(r.role as MemberRole, r.permissions) : null;
+}
+
+// The projects in which the user's role grants the action on the resource (an owner
+// holds every permission).
+export async function projectIdsWithPermission(
+  userId: string,
+  resource: PermissionResource,
+  action: PermissionAction,
+): Promise<number[]> {
+  const rows = await db
+    .select({
+      projectId: projectMember.projectId,
+      role: projectMember.role,
+      permissions: teamRole.permissions,
+    })
+    .from(projectMember)
+    .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
+    .where(eq(projectMember.userId, userId));
+  return rows
+    .filter((r) =>
+      hasPermission(
+        toMemberContext(r.role as MemberRole, r.permissions).permissions,
+        resource,
+        action,
+      ),
+    )
+    .map((r) => r.projectId);
 }
 
 // The access a user has across a team: the permissions of their project memberships
