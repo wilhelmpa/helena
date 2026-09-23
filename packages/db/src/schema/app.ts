@@ -1939,11 +1939,15 @@ export const projectViewFolder = pgTable(
       .notNull()
       .references(() => project.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    // The area's directory, relative to the project workspace and to the project's
+    // vault folder. The integration service creates, moves and trashes both.
+    folder: text('folder').notNull(),
     position: doublePrecision('position').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     unique('project_view_folder_project_name_unique').on(t.projectId, t.name),
+    unique('project_view_folder_project_folder_unique').on(t.projectId, t.folder),
     index('project_view_folder_project_idx').on(t.projectId, t.position),
   ],
 );

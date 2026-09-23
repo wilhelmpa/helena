@@ -2,6 +2,10 @@ const EVENT_TYPES = new Set(["project.provision", "project.deprovision"]);
 const PROJECT_KEY = /^[A-Z][A-Z0-9]{0,31}$/;
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// One path segment below the workspace and the vault project folder, never one of the
+// folders the provisioner manages there itself. Plan applies the same rule.
+export const AREA_FOLDER = /^[a-z0-9][a-z0-9-]{0,63}$/;
+export const RESERVED_AREA_FOLDERS = new Set(["assets", "boards", "docs", "files", "inbox"]);
 const RESOURCE_KINDS = new Set([
   "coordinator",
   "workspace",
@@ -120,6 +124,29 @@ export function validateEnvelope(value, headers) {
   }
   for (const agent of agents) positiveInteger(agent, "agent id");
   if (new Set(agents).size !== agents.length) throw new RequestValidationError("agents contains a duplicate");
+  const areas = value.areas ?? [];
+  if (!Array.isArray(areas) || areas.length > 1000) throw new RequestValidationError("areas is invalid");
+  if (value.eventType === "project.deprovision" && areas.length > 0) {
+    throw new RequestValidationError("areas are not accepted for deprovisioning");
+  }
+  const cleanAreas = areas.map((area) => {
+    if (!area || typeof area !== "object") throw new RequestValidationError("area is invalid");
+    const folder = requiredString(area.folder, "area.folder", 64);
+    if (!AREA_FOLDER.test(folder) || RESERVED_AREA_FOLDERS.has(folder)) {
+      throw new RequestValidationError("area.folder is invalid");
+    }
+    return {
+      id: positiveInteger(area.id, "area.id"),
+      name: requiredString(area.name, "area.name", 100),
+      folder,
+    };
+  });
+  if (
+    new Set(cleanAreas.map((area) => area.id)).size !== cleanAreas.length ||
+    new Set(cleanAreas.map((area) => area.folder)).size !== cleanAreas.length
+  ) {
+    throw new RequestValidationError("areas contains a duplicate");
+  }
   const createdAt = requiredString(value.createdAt, "createdAt", 40);
   const created = new Date(createdAt);
   if (
@@ -142,6 +169,7 @@ export function validateEnvelope(value, headers) {
     requestedResources,
     ...(cleanBoards.length ? { boards: cleanBoards } : {}),
     ...(agents.length ? { agents } : {}),
+    ...(cleanAreas.length ? { areas: cleanAreas } : {}),
     createdAt,
   };
 }

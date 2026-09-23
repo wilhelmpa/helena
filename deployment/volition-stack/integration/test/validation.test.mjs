@@ -35,3 +35,39 @@ test("agent ids must be distinct positive integers and are refused for a deletio
     /deprovisioning/,
   );
 });
+
+test("areas are passed on with their folders and left out when there are none", () => {
+  const areas = [
+    { id: 4, name: "Backend", folder: "backend" },
+    { id: 5, name: "Design & UX", folder: "design-ux" },
+  ];
+  assert.deepEqual(validateEnvelope(envelope({ areas }), headers).areas, areas);
+  assert.equal("areas" in validateEnvelope(envelope({ areas: [] }), headers), false);
+});
+
+test("an area folder is one lowercase path segment that the provisioner does not manage", () => {
+  const area = (fields) => ({ id: 4, name: "Backend", folder: "backend", ...fields });
+  for (const areas of [
+    [area({ folder: "Backend" })],
+    [area({ folder: "../backend" })],
+    [area({ folder: "back/end" })],
+    [area({ folder: "-backend" })],
+    [area({ folder: "docs" })],
+    [area({ folder: "a".repeat(65) })],
+    [area({ id: 0 })],
+    [area({ name: "" })],
+    [area(), area({ id: 5 })],
+    [area(), area({ folder: "other" })],
+    {},
+  ]) {
+    assert.throws(() => validateEnvelope(envelope({ areas }), headers), /area/);
+  }
+  assert.throws(
+    () =>
+      validateEnvelope(envelope({ eventType: "project.deprovision", areas: [area()] }), {
+        ...headers,
+        eventType: "project.deprovision",
+      }),
+    /deprovisioning/,
+  );
+});

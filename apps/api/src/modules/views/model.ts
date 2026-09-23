@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { AREA_FOLDER_MAX_LENGTH, AREA_FOLDER_PATTERN } from './area-folder';
 
 export const viewParams = t.Object({ viewId: t.Numeric() });
 export const viewFolderParams = t.Object({ folderId: t.Numeric() });
@@ -22,7 +23,13 @@ export const reorderViewsBody = t.Object({
 
 export const viewFolderBody = t.Object({
   name: t.String({ minLength: 1, maxLength: 100 }),
+  // Derived from the name when left out.
+  folder: t.Optional(
+    t.String({ minLength: 1, maxLength: AREA_FOLDER_MAX_LENGTH, pattern: AREA_FOLDER_PATTERN }),
+  ),
 });
+
+export const updateViewFolderBody = t.Partial(viewFolderBody);
 
 export const reorderViewFoldersBody = t.Object({
   orderedIds: t.Array(t.Integer({ minimum: 1 })),
@@ -32,6 +39,7 @@ export const ViewFolderResponse = t.Object({
   id: t.Number(),
   projectId: t.Number(),
   name: t.String(),
+  folder: t.String(),
   position: t.Number(),
   createdAt: t.String(),
 });

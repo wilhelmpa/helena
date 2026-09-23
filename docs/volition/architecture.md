@@ -94,6 +94,10 @@ and makes no decisions.
   fire of a schedule gets its own event id from its Mastra run id and is listed with the
   runs of its project. A fire that starts more than ten minutes late is skipped, and so is
   one whose routine task is still open.
+- Each area of a project has a folder at the same relative path in the project's workspace
+  and in its vault folder. Plan stores the folder name; the integration service creates,
+  moves and trashes the folders with the project's provisioning. A run for a task of an area
+  starts in the area's workspace folder.
 - Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
   for one run as environment variables, website logins as entries of the profile's Hermes
   vault, and SSH keys as files of the profile. The model sees secret names only.

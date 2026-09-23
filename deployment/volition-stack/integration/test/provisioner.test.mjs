@@ -303,6 +303,167 @@ describe("createProvisioner", () => {
     await assert.rejects(fs.lstat(path.join(root, "trash/projects/623e4567-e89b-42d3-a456-426614174005")));
   });
 
+  it("keeps a folder per area in the workspace and the vault and moves it with the area", async () => {
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    const request = {
+      ...envelope(),
+      areas: [
+        { id: 4, name: "Backend", folder: "backend" },
+        { id: 5, name: "Design", folder: "design" },
+      ],
+    };
+    await provisioner.provision(request);
+
+    for (const base of ["projects/demo", "vault/Projects/DEMO"]) {
+      for (const folder of ["backend", "design"]) {
+        const stat = await fs.stat(path.join(root, base, folder));
+        assert.equal(stat.isDirectory(), true, `${base}/${folder}`);
+      }
+    }
+    assert.equal((await fs.stat(path.join(root, "vault/Projects/DEMO/backend"))).mode & 0o7777, 0o2770);
+    const instructions = await fs.readFile(path.join(root, "projects/demo/backend/AGENTS.md"), "utf8");
+    assert.match(instructions, /^# Area: Backend\n/);
+    assert.match(instructions, /project "Demo" \(DEMO\)/);
+    await assert.rejects(fs.lstat(path.join(root, "vault/Projects/DEMO/backend/AGENTS.md")), { code: "ENOENT" });
+    await fs.writeFile(path.join(root, "projects/demo/backend/AGENTS.md"), "# Edited");
+    await fs.writeFile(path.join(root, "vault/Projects/DEMO/backend/notes.md"), "kept");
+
+    const renamed = {
+      ...request,
+      eventId: "d23e4567-e89b-42d3-a456-42661417400c",
+      areas: [
+        { id: 4, name: "Server", folder: "server" },
+        { id: 5, name: "Design", folder: "design" },
+      ],
+    };
+    await provisioner.provision(renamed);
+
+    assert.deepEqual((await fs.readdir(path.join(root, "projects/demo"))).filter((name) => ["backend", "design", "server"].includes(name)).sort(), ["design", "server"]);
+    assert.equal(await fs.readFile(path.join(root, "projects/demo/server/AGENTS.md"), "utf8"), "# Edited");
+    assert.equal(await fs.readFile(path.join(root, "vault/Projects/DEMO/server/notes.md"), "utf8"), "kept");
+    await assert.rejects(fs.lstat(path.join(root, "vault/Projects/DEMO/backend")), { code: "ENOENT" });
+    const registry = JSON.parse(await fs.readFile(path.join(root, "state/projects/demo.json"), "utf8"));
+    assert.deepEqual(registry.areas, renamed.areas);
+  });
+
+  it("keeps an area folder in place when its new folder exists already", async () => {
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    const request = { ...envelope(), areas: [{ id: 4, name: "Backend", folder: "backend" }] };
+    await provisioner.provision(request);
+    await fs.mkdir(path.join(root, "projects/demo/server"));
+    await fs.writeFile(path.join(root, "projects/demo/server/own.txt"), "someone else's");
+
+    const result = await provisioner.provision({
+      ...request,
+      eventId: "e23e4567-e89b-42d3-a456-42661417400d",
+      areas: [{ id: 4, name: "Server", folder: "server" }],
+    });
+
+    assert.deepEqual(result.warnings, [
+      "The workspace folder backend of the area Server was not moved: server exists already.",
+    ]);
+    assert.equal(await fs.readFile(path.join(root, "projects/demo/server/own.txt"), "utf8"), "someone else's");
+    assert.equal(await fs.stat(path.join(root, "projects/demo/backend")).then((stat) => stat.isDirectory()), true);
+    assert.equal(await fs.stat(path.join(root, "vault/Projects/DEMO/server")).then((stat) => stat.isDirectory()), true);
+    await assert.rejects(fs.lstat(path.join(root, "vault/Projects/DEMO/backend")), { code: "ENOENT" });
+  });
+
+  it("moves an area folder whose new name was the old folder of another area", async () => {
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    const request = {
+      ...envelope(),
+      areas: [
+        { id: 4, name: "A", folder: "a" },
+        { id: 5, name: "B", folder: "b" },
+      ],
+    };
+    await provisioner.provision(request);
+    await fs.writeFile(path.join(root, "projects/demo/a/from-a.txt"), "a");
+    await fs.writeFile(path.join(root, "projects/demo/b/from-b.txt"), "b");
+
+    const result = await provisioner.provision({
+      ...request,
+      eventId: "f23e4567-e89b-42d3-a456-42661417400e",
+      areas: [
+        { id: 4, name: "A", folder: "b" },
+        { id: 5, name: "B", folder: "c" },
+      ],
+    });
+
+    assert.equal(result.warnings, undefined);
+    assert.equal(await fs.readFile(path.join(root, "projects/demo/b/from-a.txt"), "utf8"), "a");
+    assert.equal(await fs.readFile(path.join(root, "projects/demo/c/from-b.txt"), "utf8"), "b");
+    await assert.rejects(fs.lstat(path.join(root, "projects/demo/a")), { code: "ENOENT" });
+  });
+
+  it("moves the folders of a deleted area to the trash and leaves unknown folders alone", async () => {
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    const request = {
+      ...envelope(),
+      areas: [
+        { id: 4, name: "Backend", folder: "backend" },
+        { id: 5, name: "Design", folder: "design" },
+      ],
+    };
+    await provisioner.provision(request);
+    await fs.writeFile(path.join(root, "vault/Projects/DEMO/design/brief.md"), "kept in the trash");
+    await fs.mkdir(path.join(root, "projects/demo/scratch"));
+
+    const later = {
+      ...request,
+      eventId: "a33e4567-e89b-42d3-a456-42661417400f",
+      areas: [{ id: 4, name: "Backend", folder: "backend" }],
+    };
+    await provisioner.provision(later);
+    await provisioner.provision({ ...later, eventId: "b33e4567-e89b-42d3-a456-426614174010" });
+
+    const trash = path.join(root, "trash/projects", later.eventId);
+    assert.deepEqual((await fs.readdir(trash)).sort(), ["area-5-files", "area-5-workspace", "receipt.json"]);
+    assert.equal(await fs.readFile(path.join(trash, "area-5-files/brief.md"), "utf8"), "kept in the trash");
+    const receipt = JSON.parse(await fs.readFile(path.join(trash, "receipt.json"), "utf8"));
+    assert.deepEqual(receipt.quarantined.map((item) => item.label).sort(), ["area-5-files", "area-5-workspace"]);
+    await assert.rejects(fs.lstat(path.join(root, "projects/demo/design")), { code: "ENOENT" });
+    assert.equal(await fs.stat(path.join(root, "projects/demo/scratch")).then((stat) => stat.isDirectory()), true);
+    await assert.rejects(fs.lstat(path.join(root, "trash/projects/b33e4567-e89b-42d3-a456-426614174010")));
+  });
+
+  it("reports only the areas whose folders exist, so the worker recreates a missing one", async () => {
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    const request = {
+      ...envelope(),
+      areas: [
+        { id: 4, name: "Backend", folder: "backend" },
+        { id: 5, name: "Design", folder: "design" },
+      ],
+    };
+    await provisioner.provision(request);
+    await fs.rm(path.join(root, "vault/Projects/DEMO/design"), { recursive: true });
+
+    assert.deepEqual((await provisioner.state()).projects[0].areas, [{ id: 4, folder: "backend" }]);
+
+    await provisioner.provision({ ...request, eventId: "c33e4567-e89b-42d3-a456-426614174011" });
+
+    assert.deepEqual((await provisioner.state()).projects[0].areas, [
+      { id: 4, folder: "backend" },
+      { id: 5, folder: "design" },
+    ]);
+  });
+
   it("reports each registered project with its boards and browser state", async () => {
     const checked = [];
     const provisioner = createProvisioner(config(), {
