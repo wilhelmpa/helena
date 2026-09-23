@@ -17,7 +17,13 @@ export const teamPolicySchema = z.object({
   leaseSeconds: z.number().int().min(30).max(900).default(300),
   heartbeatSeconds: z.number().int().min(5).max(120).default(60),
   timeoutSeconds: z.number().int().min(30).max(7_200).default(900),
-  reviewRequired: z.literal(true).default(true),
+  reviewRequired: z.boolean().default(true),
+  // Handed to every Hermes stage as --max-turns and --run-budget.
+  maxTurns: z.number().int().min(1).max(200).optional(),
+  runBudgetSeconds: z.number().int().min(60).max(7_200).optional(),
+  // 'done' moves the task to Done when the coordinator review accepted the work;
+  // 'review' always leaves it in Review for a person.
+  autonomy: z.enum(['review', 'done']).default('review'),
 });
 
 export const agentTeamPayloadSchema = z.object({
@@ -27,10 +33,11 @@ export const agentTeamPayloadSchema = z.object({
     title: z.string().min(1).max(300),
     objective: z.string().min(1).max(12_000),
     acceptanceCriteria: z.array(z.string().min(1).max(1_000)).min(1).max(30),
+    labels: z.array(z.string().min(1).max(100)).max(50).default([]),
   }),
   coordinator: agentMemberSchema,
   specialists: z.array(agentMemberSchema).min(1).max(12),
-  policy: teamPolicySchema.default({}),
+  policy: teamPolicySchema.prefault({}),
   execution: z
     .object({
       model: z.string().min(1).max(200).optional(),
@@ -43,7 +50,7 @@ export const delegationSchema = z.object({
   assignmentId: z.string().min(1).max(120),
   agentRef: z.string().regex(reference),
   objective: z.string().min(1).max(4_000),
-  acceptanceCriteria: z.array(z.string().min(1).max(1_000)).min(1).max(20),
+  acceptanceCriteria: z.array(z.string().min(1).max(1_000)).min(1).max(30),
   dependsOn: z.array(z.string().min(1).max(120)).max(20).default([]),
 });
 
@@ -77,15 +84,21 @@ export const stageResultSchema = z.object({
   }),
 });
 
-export const teamHistoryEntrySchema = stageResultSchema.pick({
-  executionId: true,
-  phase: true,
-  status: true,
-  attempt: true,
-  startedAt: true,
-  completedAt: true,
-  summary: true,
+export const specialistResultSchema = stageResultSchema.extend({
+  assignmentId: z.string().min(1).max(120),
 });
+
+// 'route' records a delegation Mastra built without asking the coordinator.
+export const teamHistoryEntrySchema = stageResultSchema
+  .pick({
+    executionId: true,
+    status: true,
+    attempt: true,
+    startedAt: true,
+    completedAt: true,
+    summary: true,
+  })
+  .extend({ phase: z.enum(['route', 'coordinate', 'specialize', 'review', 'synchronize']) });
 
 export const agentTeamStateSchema = z.object({
   workflowId: z.literal('agent-team'),
@@ -101,7 +114,7 @@ export const agentTeamStateSchema = z.object({
   }),
   input: agentTeamPayloadSchema,
   delegations: z.array(delegationSchema).max(12),
-  specialistResults: z.array(stageResultSchema).max(12),
+  specialistResults: z.array(specialistResultSchema).max(12),
   history: z.array(teamHistoryEntrySchema).max(100),
   review: stageResultSchema.nullable(),
 });
@@ -125,5 +138,6 @@ export type AgentTeamPayload = z.infer<typeof agentTeamPayloadSchema>;
 export type TeamPolicy = z.infer<typeof teamPolicySchema>;
 export type Delegation = z.infer<typeof delegationSchema>;
 export type StageResult = z.infer<typeof stageResultSchema>;
+export type SpecialistResult = z.infer<typeof specialistResultSchema>;
 export type AgentTeamState = z.infer<typeof agentTeamStateSchema>;
 export type AgentTeamOutput = z.infer<typeof agentTeamOutputSchema>;

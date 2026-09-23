@@ -5,6 +5,7 @@ import {
   stageResultSchema,
   type AgentTeamPayload,
   type Delegation,
+  type SpecialistResult,
   type StageResult,
   type TeamPolicy,
 } from '../team-contracts.ts';
@@ -20,7 +21,9 @@ export interface StageRequest {
   agent: AgentTeamPayload['coordinator'];
   allowedSpecialists?: AgentTeamPayload['specialists'];
   assignment?: Delegation;
-  specialistResults?: StageResult[];
+  // The results of the assignments this one depends on.
+  dependencyResults?: Pick<SpecialistResult, 'assignmentId' | 'summary' | 'evidence'>[];
+  specialistResults?: SpecialistResult[];
   policy: TeamPolicy;
   execution: AgentTeamPayload['execution'];
 }
@@ -109,7 +112,9 @@ function socketPath(): string {
   return value;
 }
 
-async function request(path: string, body: unknown): Promise<unknown> {
+// The bridge answers a stage only once its Hermes run has finished, so a stage
+// request waits as long as the stage timeout allows.
+async function request(path: string, body: unknown, timeoutMs = 330_000): Promise<unknown> {
   const auth = await token();
   const encoded = JSON.stringify(body);
   return await new Promise((resolve, reject) => {
@@ -141,7 +146,7 @@ async function request(path: string, body: unknown): Promise<unknown> {
         }
       });
     });
-    call.setTimeout(330_000, () => call.destroy(new Error('Hermes team bridge timed out')));
+    call.setTimeout(timeoutMs, () => call.destroy(new Error('Hermes team bridge timed out')));
     call.on('error', reject);
     call.end(encoded);
   });
@@ -150,7 +155,11 @@ async function request(path: string, body: unknown): Promise<unknown> {
 export const privateHermesTeamAdapter: HermesTeamAdapter = {
   async executeStage(input) {
     return withBackoff(input.policy, async attempt => {
-      const raw = await request('/internal/hermes/team/stages', { schemaVersion: 1, ...input, attempt });
+      const raw = await request(
+        '/internal/hermes/team/stages',
+        { schemaVersion: 1, ...input, attempt },
+        (input.policy.timeoutSeconds + 30) * 1_000,
+      );
       const result = validateLease(stageResultSchema.parse(raw), input.policy);
       if (result.idempotencyKey !== input.idempotencyKey || result.phase !== input.phase) {
         throw new Error('Hermes returned a result for another execution stage');

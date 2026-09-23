@@ -110,10 +110,10 @@
       },
       "steps": [
         { "id": "prepare-team", "title": "Validate team", "description": "Validate project scope, task identity, team membership and execution policy.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
-        { "id": "coordinate", "title": "Create delegations", "description": "Ask the Hermes coordinator for bounded assignments to registered project specialists.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
-        { "id": "specialize", "title": "Execute specialist work", "description": "Run independent specialist assignments through the private Hermes bridge with leases, heartbeats and stable idempotency keys.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
-        { "id": "review", "title": "Review evidence", "description": "Require the coordinator to evaluate evidence against the task acceptance criteria.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
-        { "id": "synchronize-plan", "title": "Synchronize Plan", "description": "Write the reviewed summary and evidence to the exact project task and set Review or Done exactly once.", "sourceRefs": ["src/mastra/team-workflow.ts"] }
+        { "id": "coordinate", "title": "Create delegations", "description": "Route the task to one specialist when the team has one or the task labels match the capabilities of exactly one; otherwise ask the Hermes coordinator for bounded assignments with dependencies.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
+        { "id": "specialize", "title": "Execute specialist work", "description": "Run specialist assignments in dependency order, independent ones in parallel, through the private Hermes bridge with leases, run limits and stable idempotency keys.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
+        { "id": "review", "title": "Review evidence", "description": "Have the coordinator evaluate evidence against the task acceptance criteria when the project requires a review.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
+        { "id": "synchronize-plan", "title": "Synchronize Plan", "description": "Write the summary and evidence to the exact project task exactly once and set Review, or Done when the project autonomy is done and the review accepted the work.", "sourceRefs": ["src/mastra/team-workflow.ts"] }
       ],
       "currentLimits": ["The private Hermes team bridge must implement the documented Unix-socket contract before production runs are enabled. Dry-runs make no Hermes or Plan call."]
     }

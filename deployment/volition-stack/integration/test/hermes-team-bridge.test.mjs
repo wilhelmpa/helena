@@ -72,6 +72,40 @@ test('coordinator stage is project-bound and returns a validated lease', async (
   assert.equal(result.delegations[0].agentRef, 'agent:tester');
 });
 
+test('a dependent specialist stage carries the results of its dependencies and the run limits', async () => {
+  let queued;
+  const service = createHermesTeamService({
+    enqueue: async input => {
+      queued = input;
+      return { runId: 42, replayed: false };
+    },
+    status: async () => completedRun({ summary: 'Built on the contract run.', evidence: [] }, 42),
+  });
+  const dependencyResults = [{
+    assignmentId: 'test-contract',
+    summary: 'Contract tests pass.',
+    evidence: [{ kind: 'test', ref: 'test:contract', label: 'Contract passed' }],
+  }];
+  await service.executeStage({
+    ...baseStage,
+    phase: 'specialize',
+    allowedSpecialists: undefined,
+    agent: { agentRef: 'agent:tester', role: 'specialist', capabilities: ['test'] },
+    assignment: {
+      assignmentId: 'release-notes',
+      agentRef: 'agent:tester',
+      objective: 'Write the release notes.',
+      acceptanceCriteria: ['Notes cite the contract run'],
+      dependsOn: ['test-contract'],
+    },
+    dependencyResults,
+    policy: { timeoutSeconds: 30, maxTurns: 12, runBudgetSeconds: 600 },
+  });
+  assert.match(queued.prompt, /Results of the assignments this assignment depends on/);
+  assert.ok(queued.prompt.includes(JSON.stringify(dependencyResults)));
+  assert.deepEqual(queued.policy, { timeoutSeconds: 30, maxTurns: 12, runBudgetSeconds: 600 });
+});
+
 test('rejects coordinator delegation outside the supplied project team', async () => {
   const service = createHermesTeamService({
     enqueue: async () => ({ runId: 41, replayed: false }),
