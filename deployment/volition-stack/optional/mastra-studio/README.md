@@ -4,31 +4,23 @@
 
 `MASTRA_FRESH_MODE=true` starts Studio with no registered workflows. It is an explicit reset mode. The deployment default registers the control-plane workflows. Stored runs are cleared separately during a fresh reset.
 
-This project exposes eight typed Mastra 1.67 workflows in Studio:
+This project exposes three typed Mastra 1.67 workflows in Studio:
 
 - `inbox-triage`
-- `career-research`
-- `application`
-- `support`
-- `system-audit`
-- `document-filing`
 - `agent-team`
 - `agent-routine`
 
-Each workflow accepts the shared envelope in `src/mastra/contracts.ts`, builds a
-deterministic effect plan, and passes it through an approval gate. With
-`dryRun: true`, every effect is simulated. With `dryRun: false`, an external
-write or send suspends the run. Approval resumes the run as `needs-attention`;
-it still does not execute that gated effect.
+Each workflow accepts the shared envelope in `src/mastra/contracts.ts`. With
+`dryRun: true`, a run validates its input and calls neither Hermes nor Plan.
+Recurring work is a routine (`agent-routine`) with an agent and instructions that
+a member creates in Plan.
 
 `inbox-triage` uses the provider-neutral `ClassifierAdapter` and capability
 reference `inbox-triage.v1`. The adapter knows no provider, model, agent ID or
 mail credential. It calls one authenticated private endpoint; the host-side
 integration owns the current runtime implementation and validates the result.
-The existing Plan worker remains the sole inbox and ticket writer. All other
-flows, including provider-neutral `document-store.v1`, still use local planning
-previews only. `src/mastra/triggers.ts` maps
-supported event names to workflow IDs.
+The existing Plan worker remains the sole inbox and ticket writer.
+`src/mastra/triggers.ts` maps supported event names to workflow IDs.
 
 `agent-team` is the project-scoped agent orchestration workflow. Mastra owns its
 trigger, retries, checkpoints, schedule and run history. Hermes executes the
@@ -50,11 +42,11 @@ registered event names in `src/mastra/triggers.ts`. It accepts exactly:
 ```json
 {
   "eventId": "stable-id",
-  "eventType": "system.audit.requested",
+  "eventType": "agent.team.requested",
   "organizationRef": "organization:volition",
   "projectRef": "project:PRIV",
   "actorRef": "service:plan-shadow",
-  "capabilityRefs": [],
+  "capabilityRefs": ["hermes-team.v1", "plan-task-sync.v1"],
   "connectionRefs": [],
   "payload": { "projectKey": "PRIV" },
   "dryRun": true

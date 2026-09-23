@@ -16,9 +16,8 @@ const apiReads = new Set([
   '/control-plane-catalog',
 ]);
 const banner = '<aside id="volition-studio-notice" role="note">'
-  + '<strong>Control Plane</strong> — Inbox-Triage ist produktiv über die projektgebundene Capability; weitere Abläufe bleiben im sicheren Dry-Run. '
-  + 'Externe Sends pausieren weiterhin zur Freigabe. '
-  + '<a href="/mastra/catalog">Verträge &amp; Grenzen</a> · <a href="/">Zurück zu It’s a Plan</a></aside>';
+  + '<strong>Control Plane</strong> — Studio is for diagnosis; workflows are configured and started in Plan. '
+  + '<a href="/mastra/catalog">Contracts &amp; limits</a> · <a href="/">Back to It’s a Plan</a></aside>';
 const style = '<style>#volition-studio-notice{height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:6px 14px;background:#172b41;color:#e3efff;font:12px/1.35 system-ui;border-bottom:1px solid #356081;overflow:auto}#volition-studio-notice a{color:#a8d7ff;text-decoration:underline}body{overflow:hidden!important}#root{height:calc(100dvh - 44px)!important;min-height:0!important}#root>div{max-height:calc(100dvh - 44px)}</style>';
 const headers = {
   'cache-control': 'no-store',
@@ -67,7 +66,7 @@ function bearer(header) {
 }
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function catalogHtml() {
-  return '<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Control Plane – Verträge und Grenzen</title><style>body{max-width:960px;margin:40px auto;padding:0 24px;font:16px/1.6 system-ui;background:#111923;color:#e8edf5}a{color:#9bd0ff}section{margin:36px 0;padding-top:10px;border-top:1px solid #445}code{overflow-wrap:anywhere;font-size:13px}.warning{color:#ffda95}</style><h1>Sichere Control Plane</h1><p>Die sechs Abläufe sind echte typisierte Mastra-Workflows. Inbox-Triage nutzt produktiv die projektgebundene, providerneutrale Capability inbox-triage.v1. Gmail-Zugangsdaten, Agent-ID, Provider und Modell bleiben im Host-Adapter. Die übrigen Workflows erzeugen im Dry-Run deterministische Pläne. Externe Sends und Writes pausieren zur Freigabe.</p><p>Der bestehende Plan-Worker bleibt alleiniger Inbox- und Ticket-Writer.</p><p><a href="/mastra/workflows">Zu den Workflows</a> · <a href="/">It’s a Plan</a></p>'
+  return '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Control Plane – contracts and limits</title><style>body{max-width:960px;margin:40px auto;padding:0 24px;font:16px/1.6 system-ui;background:#111923;color:#e8edf5}a{color:#9bd0ff}section{margin:36px 0;padding-top:10px;border-top:1px solid #445}code{overflow-wrap:anywhere;font-size:13px}.warning{color:#ffda95}</style><h1>Control Plane</h1><p>These are the typed Mastra workflows of the control plane. Inbox triage calls the project-scoped, provider-neutral capability inbox-triage.v1; Gmail credentials, agent ID, provider and model stay in the host adapter. The agent team and routines queue Hermes stages and tasks in Plan through the private bridge.</p><p>The Plan worker remains the only inbox and ticket writer.</p><p><a href="/mastra/workflows">Workflows</a> · <a href="/">It’s a Plan</a></p>'
     + catalog.flows.map(flow => `<section><h2><a href="/mastra/workflows/${encodeURIComponent(flow.id)}/graph">${escape(flow.name)}</a></h2><p>${escape(flow.description)}</p><ol>${flow.steps.map(step => `<li><strong>${escape(step.title)}</strong><p>${escape(step.description)}</p><small>${step.sourceRefs.map(ref => `<code>${escape(ref)}</code>`).join('<br>')}</small></li>`).join('')}</ol><ul class="warning">${flow.currentLimits.map(warning => `<li>${escape(warning)}</li>`).join('')}</ul></section>`).join('') + '</html>';
 }
 

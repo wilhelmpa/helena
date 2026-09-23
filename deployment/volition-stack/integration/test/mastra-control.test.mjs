@@ -72,7 +72,7 @@ test('an existing idempotency key cannot cross projects', async () => {
       control.execute({
         schemaVersion: 1,
         operation: 'start',
-        workflowId: 'support',
+        workflowId: 'inbox-triage',
         projectRef: 'project:PRIV',
         eventId: 'same',
       }),
@@ -87,7 +87,7 @@ test('run controls reject a run from another project', async () => {
       control.execute({
         schemaVersion: 1,
         operation: 'retry',
-        workflowId: 'support',
+        workflowId: 'inbox-triage',
         projectRef: 'project:PRIV',
         runId: 'run-1',
       }),
@@ -150,7 +150,7 @@ test('retry refuses a run that did not fail or has no failed step', async () => 
 test('schedule listing filters by the stored project context', async () => {
   const control = service(async (url) => {
     if (String(url).endsWith('/triggers?limit=1')) return json({ triggers: [] });
-    assert.match(String(url), /schedules\?workflowId=support$/);
+    assert.match(String(url), /schedules\?workflowId=inbox-triage$/);
     return json({
       schedules: [
         { id: 'one', requestContext: { projectRef: 'project:PRIV' } },
@@ -161,7 +161,7 @@ test('schedule listing filters by the stored project context', async () => {
   const result = await control.execute({
     schemaVersion: 1,
     operation: 'schedules',
-    workflowId: 'support',
+    workflowId: 'inbox-triage',
     projectRef: 'project:PRIV',
   });
   assert.deepEqual(result.schedules.map((item) => item.id), ['one']);
@@ -348,7 +348,7 @@ test('schedule creation is idempotent within one project and schedule key', asyn
 test('concurrent schedule creation shares one Mastra mutation', async () => {
   let mutations = 0;
   const control = service(async (url, init = {}) => {
-    if (String(url).endsWith('schedules?workflowId=system-audit')) {
+    if (String(url).endsWith('schedules?workflowId=inbox-triage')) {
       await new Promise(resolve => setTimeout(resolve, 5));
       return json({ schedules: [] });
     }
@@ -361,7 +361,7 @@ test('concurrent schedule creation shares one Mastra mutation', async () => {
   const request = {
     schemaVersion: 1,
     operation: 'create-schedule',
-    workflowId: 'system-audit',
+    workflowId: 'inbox-triage',
     projectRef: 'project:PRIV',
     organizationRef: 'organization:1',
     capabilityRefs: [],
@@ -382,7 +382,7 @@ test('run listing exposes the status stored in Mastra snapshots', async () => {
   const result = await control.execute({
     schemaVersion: 1,
     operation: 'runs',
-    workflowId: 'system-audit',
+    workflowId: 'inbox-triage',
     projectRef: 'project:PRIV',
   });
   assert.equal(result.runs[0].status, 'success');
@@ -446,7 +446,7 @@ test('resume requires an explicit approval for a suspended owned run', async () 
       control.execute({
         schemaVersion: 1,
         operation: 'resume',
-        workflowId: 'application',
+        workflowId: 'inbox-triage',
         projectRef: 'project:PRIV',
         runId: 'run-1',
       }),
