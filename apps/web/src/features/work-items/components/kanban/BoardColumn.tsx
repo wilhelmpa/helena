@@ -116,17 +116,23 @@ export function BoardColumn({
   return (
     <div
       className={cn(
-        'group/column flex h-full shrink-0 flex-col rounded-md bg-kanban-column px-3 py-2',
+        // The status color as a 3px top edge (docs/volition-design-helena-ui.md
+        // "Spaltenköpfe mit Statusfarbe als 3px-Oberkante"), the same color GroupDot
+        // already draws for this column — border-t-color is set inline below since
+        // it is the state's own configured color, content data, not a token.
+        'group/column flex h-full shrink-0 flex-col rounded-md border-t-[3px] bg-kanban-column px-3 py-2',
         pinned && PINNED_COLUMN,
         wip?.full && WIP_FULL_TINT[wipFullColor(wip)],
       )}
-      style={{ width: COLUMN_WIDTH }}
+      style={{ width: COLUMN_WIDTH, borderTopColor: group.color ?? 'var(--muted-foreground)' }}
     >
       <div className="mb-2 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
           <GroupDot group={group} />
           {group.name}
-          <WipCount filteredCount={issues.length} wip={wip} filtered={filtered} />
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs">
+            <WipCount filteredCount={issues.length} wip={wip} filtered={filtered} />
+          </span>
         </div>
         <div className="flex items-center gap-1">
           {!readOnly && (
