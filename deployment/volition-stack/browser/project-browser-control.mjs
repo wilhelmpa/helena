@@ -1,7 +1,8 @@
 // Controls the project browsers over the Chrome DevTools Protocol. The project display
-// has no window manager, so nothing sizes Chromium's windows to the screen: the window
-// keeper does, whenever the screen changes size with the panel it is shown in. The
-// control routes serve the tab list and the navigation the Plan toolbar uses.
+// has no window manager, so nothing sizes Chromium's windows: the window keeper fits them
+// to the page size of the live view while someone watches it, and to the screen
+// otherwise, which changes size with the desktop view's panel. The control routes serve
+// the tab list and the navigation the Plan toolbar uses.
 
 const TARGET_ID = /^[A-Fa-f0-9]{16,64}$/;
 const MAX_BODY = 8 * 1024;
@@ -45,10 +46,10 @@ export function targetId(value) {
 // window manager Chromium sets a window one pixel smaller than it was asked to.
 const FIT_TOLERANCE = 2;
 
-// The bounds a window needs to fill its screen, or null when it already does.
-export function fittedBounds(bounds, screen) {
-  if (!screen.width || !screen.height) return null;
-  const fitted = { left: 0, top: 0, width: screen.width, height: screen.height };
+// The bounds a window needs to have the given size, or null when it already has it.
+export function fittedBounds(bounds, size) {
+  if (!size.width || !size.height) return null;
+  const fitted = { left: 0, top: 0, width: size.width, height: size.height };
   const fits =
     bounds.windowState === "normal" &&
     bounds.left === fitted.left &&
@@ -58,7 +59,16 @@ export function fittedBounds(bounds, screen) {
   return fits ? null : fitted;
 }
 
-// One DevTools websocket, with the commands in flight matched to their answers.
+// The window size that shows a live view's page size: the page plus the browser's own
+// tab strip and toolbar. Without a live view a window fills the screen.
+export function windowSize(screen, chrome, live) {
+  return live
+    ? { width: live.width + chrome.width, height: live.height + chrome.height }
+    : screen;
+}
+
+// One DevTools websocket, with the commands in flight matched to their answers and the
+// events passed to onEvent.
 export class CdpConnection {
   static open(url) {
     return new Promise((resolve, reject) => {
@@ -83,6 +93,8 @@ export class CdpConnection {
     this.nextId = 1;
     this.pending = new Map();
     this.closed = false;
+    this.onEvent = null;
+    this.onClose = null;
     socket.addEventListener("message", (event) => {
       let message;
       try {
@@ -90,6 +102,7 @@ export class CdpConnection {
       } catch {
         return;
       }
+      if (message.method) return this.onEvent?.(message);
       const waiting = this.pending.get(message.id);
       if (!waiting) return;
       this.pending.delete(message.id);
@@ -100,6 +113,7 @@ export class CdpConnection {
       this.closed = true;
       for (const waiting of this.pending.values()) waiting.reject(new Error("DevTools closed"));
       this.pending.clear();
+      this.onClose?.();
     });
   }
 
@@ -144,21 +158,35 @@ async function devtoolsJson(port, path, method = "GET") {
   }
 }
 
+// A new DevTools connection to the whole browser, not to one page.
+export async function openBrowser(port) {
+  const version = await devtoolsJson(port, "/json/version");
+  return CdpConnection.open(version.webSocketDebuggerUrl);
+}
+
 // One DevTools connection per project browser, kept open and shared by the window keeper
 // and the tab list, with a session attached to each page it has asked something.
 class BrowserLink {
   constructor(port) {
     this.port = port;
     this.connection = null;
+    this.opening = null;
     this.sessions = new Map();
   }
 
+  // Callers that arrive while the connection is being opened share that one.
   async open() {
     if (this.connection && !this.connection.closed) return this.connection;
-    const version = await devtoolsJson(this.port, "/json/version");
-    this.connection = await CdpConnection.open(version.webSocketDebuggerUrl);
-    this.sessions.clear();
-    return this.connection;
+    this.opening ??= openBrowser(this.port)
+      .then((connection) => {
+        this.connection = connection;
+        this.sessions.clear();
+        return connection;
+      })
+      .finally(() => {
+        this.opening = null;
+      });
+    return this.opening;
   }
 
   async evaluate(targetId, expression) {
@@ -188,6 +216,8 @@ class BrowserLink {
 }
 
 const links = new Map();
+// The page size of each browser's live view, by DevTools port, while one is watched.
+const liveViewports = new Map();
 
 function linkFor(port) {
   let link = links.get(port);
@@ -287,32 +317,56 @@ export async function readJsonBody(request) {
   }
 }
 
-// Fits every window of one browser to its screen. The page is asked for the screen size
-// because the display is not reachable from here; a tab that shows nothing yet reports
-// it all the same.
+// Sets the page size of a browser's live view, or clears it with null, and fits the
+// windows to it at once.
+export async function setLiveViewport(port, viewport) {
+  if (viewport) liveViewports.set(port, viewport);
+  else liveViewports.delete(port);
+  await fitWindows(linkFor(port));
+}
+
+// The sizes a visible tab reports: its screen, and its window's tab strip and toolbar. The
+// page is measured in CSS pixels, which page zoom makes larger than the window's.
+const WINDOW_SIZES = `[document.visibilityState, screen.width, screen.height,
+  Math.round(outerWidth - innerWidth * devicePixelRatio),
+  Math.round(outerHeight - innerHeight * devicePixelRatio)]`;
+
+// Fits every window of one browser to its live view or its screen. The visible tab of a
+// window is asked for the sizes, because the display is not reachable from here and a tab
+// behind another one keeps the sizes it had when it was last shown. A window without a
+// visible tab, such as a minimized one, is restored and fitted on the next pass.
 export async function fitWindows(link) {
   const connection = await link.open();
   const { targetInfos = [] } = await connection.send("Target.getTargets");
   const pages = targetInfos.filter((target) => target.type === "page");
   link.keep(new Set(pages.map((target) => target.targetId)));
-  const fittedWindows = new Set();
+  const windows = new Map();
   for (const target of pages) {
     const { windowId, bounds } = await connection.send("Browser.getWindowForTarget", {
       targetId: target.targetId,
     });
-    if (fittedWindows.has(windowId)) continue;
-    fittedWindows.add(windowId);
-    const value = await link.evaluate(target.targetId, "[screen.width, screen.height]");
-    const [width, height] = Array.isArray(value) ? value : [];
-    const fitted = fittedBounds(bounds, { width, height });
-    if (!fitted) continue;
+    const window = windows.get(windowId) ?? { bounds, sizes: null };
+    windows.set(windowId, window);
+    if (window.sizes) continue;
+    const value = await link.evaluate(target.targetId, WINDOW_SIZES);
+    if (Array.isArray(value) && value[0] === "visible") window.sizes = value;
+  }
+  for (const [windowId, { bounds, sizes }] of windows) {
     if (bounds.windowState !== "normal") {
       await connection.send("Browser.setWindowBounds", {
         windowId,
         bounds: { windowState: "normal" },
       });
     }
-    await connection.send("Browser.setWindowBounds", { windowId, bounds: fitted });
+    if (!sizes) continue;
+    const [, width, height, chromeWidth, chromeHeight] = sizes;
+    const size = windowSize(
+      { width, height },
+      { width: chromeWidth, height: chromeHeight },
+      liveViewports.get(link.port),
+    );
+    const fitted = fittedBounds(bounds, size);
+    if (fitted) await connection.send("Browser.setWindowBounds", { windowId, bounds: fitted });
   }
 }
 

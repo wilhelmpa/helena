@@ -113,6 +113,7 @@ All routes use the Plan origin and require a valid Plan session.
 | Terminal, stored compatibility form | `http://kingston-server.local/focus/terminal-project/?arg=<slug>` |
 | Terminal, canonical form | `http://kingston-server.local/focus/terminal-project/<slug>` |
 | Browser | `http://kingston-server.local/browser/projects/<slug>/vnc.html?autoconnect=1&resize=scale&path=browser%2Fprojects%2F<slug>%2Fwebsockify` |
+| Browser live view (WebSocket) | `ws://kingston-server.local/browser/projects/<slug>/api/screencast` |
 | Mastra diagnostics | `http://kingston-server.local/mastra/workflows` |
 
 The terminal compatibility URL redirects to the project path and then Wetty's slashless
@@ -131,9 +132,11 @@ instance preserves its profile directory.
 The project coordinator receives the matching `BROWSER_CDP_URL`. In Browser Use mode,
 `browser_exec` should use `session="project"` to keep its tab visible in Plan's Browser panel
 between calls. The generated project instructions specify this session.
-`deployment/volition-stack/browser/` holds the loopback router
-(`/usr/local/libexec/volition-project-browser-router.mjs`) and the display wait helper
-(`/usr/local/libexec/volition-wait-for-x`). The KasmVNC and Chromium units are in
+`deployment/volition-stack/browser/` holds the loopback router, which
+`volition-project-browser-router.service` runs from the checkout, and the display wait helper
+(`/usr/local/libexec/volition-wait-for-x`). The router also serves the live view, a DevTools
+screencast of the tab in front with mouse and keyboard input, which the browser tool shows by
+default; the VNC display stays available in the tool. The KasmVNC and Chromium units are in
 `deployment/volition-stack/native/systemd/`, and the state is in
 `/var/lib/volition/project-browser/projects/<slug>`.
 
