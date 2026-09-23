@@ -135,9 +135,14 @@ export async function readDocument(relative: string, maxChars = DEFAULT_MAX_CHAR
 // The note after the write, and the commit that records it. The index is updated
 // right away, so the Docs tree, search and backlinks show the change before the
 // watcher sees it.
-async function recordWrite(paths: string[], message: string, scope: VaultScope): Promise<void> {
+async function recordWrite(
+  paths: string[],
+  message: string,
+  scope: VaultScope,
+  options: { continueSession?: boolean } = {},
+): Promise<void> {
   await indexVaultPaths(paths);
-  await commitVaultPaths(paths, message, scope.author);
+  await commitVaultPaths(paths, message, scope.author, options);
 }
 
 export async function writeNote(
@@ -173,7 +178,9 @@ export async function writeNote(
   const bytes = Buffer.from(content);
   if (bytes.length > MAX_NOTE_BYTES) throw new HttpError(413, 'The note is too large');
   const result = await writeVaultFile(input.path, bytes, expectedSha);
-  await recordWrite([input.path], `${result.created ? 'Create' : 'Update'} ${input.path}`, scope);
+  await recordWrite([input.path], `${result.created ? 'Create' : 'Update'} ${input.path}`, scope, {
+    continueSession: true,
+  });
   return {
     path: input.path,
     sha256: result.sha256,
@@ -241,10 +248,12 @@ export async function listFolder(scope: VaultScope, folder: string) {
       ? await db.select().from(vaultEntry).where(inArray(vaultEntry.path, paths))
       : [];
   const byPath = new Map(rows.map((row) => [row.path, row]));
-  const items = await Promise.all(
+  const listed = await Promise.all(
     visible.map(async (entry) => {
       const relative = joinVaultPath(folder, entry.name);
-      const info = await stat(absoluteVaultPath(relative));
+      // Gone since the folder was read.
+      const info = await stat(absoluteVaultPath(relative)).catch(() => null);
+      if (!info) return null;
       const row = byPath.get(relative);
       const kind = info.isDirectory()
         ? ('folder' as const)
@@ -263,6 +272,7 @@ export async function listFolder(scope: VaultScope, folder: string) {
       };
     }),
   );
+  const items = listed.filter((item) => item !== null);
   items.sort((a, b) =>
     a.kind === 'folder' && b.kind !== 'folder'
       ? -1

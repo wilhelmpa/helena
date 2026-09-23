@@ -121,10 +121,30 @@ async function committable(repository: Repository): Promise<string[]> {
   ];
 }
 
+// How long the saves one author makes to the same files go into one commit. The editor
+// saves while the owner types; without this every pause would be a version.
+const SAVE_SESSION_MS = 10 * 60_000;
+
+// Whether the last commit is one this save continues: the same author, the same files,
+// recent enough.
+async function continuesHead(dir: string, paths: string[], author: GitAuthor): Promise<boolean> {
+  const head = await git(dir, ['log', '-1', '--format=%an%x1f%ae%x1f%ct', '--name-only']);
+  if (head.code !== 0) return false;
+  const [meta = '', ...files] = head.stdout.split('\n').filter(Boolean);
+  const [name, email, seconds] = meta.split('\x1f');
+  return (
+    name === author.name &&
+    email === author.email &&
+    Date.now() - Number(seconds) * 1000 < SAVE_SESSION_MS &&
+    [...files].sort().join('\n') === [...paths].sort().join('\n')
+  );
+}
+
 async function commitRepository(
   repository: Repository,
   message: string,
   author: GitAuthor,
+  continueSession = false,
 ): Promise<void> {
   if (!isRepository(repository.dir)) return;
   const paths = await committable(repository);
@@ -132,12 +152,12 @@ async function commitRepository(
   await gitOrThrow(repository.dir, ['add', '-A', '--', ...paths]);
   const staged = await git(repository.dir, ['diff', '--cached', '--quiet', '--', ...paths]);
   if (staged.code === 0) return;
+  const amend = continueSession && (await continuesHead(repository.dir, paths, author));
   await gitOrThrow(repository.dir, [
     'commit',
     '--quiet',
     '--no-verify',
-    '-m',
-    message,
+    ...(amend ? ['--amend', '--no-edit'] : ['-m', message]),
     `--author=${author.name} <${author.email}>`,
     '--',
     ...paths,
@@ -145,16 +165,19 @@ async function commitRepository(
 }
 
 // Commits the current state of the given vault paths (files or folders, present or
-// removed) as one commit per repository. A failure is logged: the files are already
-// written, and the watcher's next commit of outside changes picks the paths up.
+// removed) as one commit per repository. With `continueSession`, a save that follows the
+// same author's save of the same files within ten minutes amends that commit. A failure
+// is logged: the files are already written, and the watcher's next commit of outside
+// changes picks the paths up.
 export async function commitVaultPaths(
   relativePaths: string[],
   message: string,
   author: GitAuthor,
+  options: { continueSession?: boolean } = {},
 ): Promise<void> {
   for (const repository of repositories(relativePaths)) {
     try {
-      await commitRepository(repository, message, author);
+      await commitRepository(repository, message, author, options.continueSession);
     } catch (error) {
       console.error('[vault] git commit failed:', error);
     }

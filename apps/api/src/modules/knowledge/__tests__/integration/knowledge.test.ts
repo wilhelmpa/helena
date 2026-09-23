@@ -388,21 +388,30 @@ describe('knowledge', () => {
   describe('history', () => {
     it.skipIf(!hasGit)('commits each save as its author and returns old versions', async () => {
       const { asOwner } = await setup();
+      const member = await addProjectMember(asOwner, 'MKT');
       await git('init', '--quiet');
       const notePath = 'Projects/MKT/Docs/History.md';
       const first = await write(asOwner, notePath, 'One');
-      await write(asOwner, notePath, 'Two', first.data!.sha256);
+      const second = await write(member, notePath, 'Two', first.data!.sha256);
+      // The same author saving again soon continues the version they started.
+      const third = await write(member, notePath, 'Three', second.data!.sha256);
+      await write(member, notePath, 'Four', third.data!.sha256);
       await writeFile(path.join(root(), 'Projects/MKT/Docs/picture.png'), 'binary');
 
       const history = await asOwner.knowledge.history.get({ query: { path: notePath } });
-      expect(history.data?.map((entry) => [entry.authorName, entry.message])).toEqual([
-        ['Owner', `Update ${notePath}`],
-        ['Owner', `Create ${notePath}`],
+      expect(history.data?.map((entry) => entry.message)).toEqual([
+        `Update ${notePath}`,
+        `Create ${notePath}`,
       ]);
-      const version = await asOwner.knowledge.history.version.get({
-        query: { path: notePath, commit: history.data![1].commit },
-      });
-      expect(version.data?.content).toBe('One');
+      expect(history.data?.[1].authorName).toBe('Owner');
+      const versions = await Promise.all(
+        history.data!.map((entry) =>
+          asOwner.knowledge.history.version.get({
+            query: { path: notePath, commit: entry.commit },
+          }),
+        ),
+      );
+      expect(versions.map((version) => version.data?.content)).toEqual(['Four', 'One']);
       expect(await git('ls-files')).not.toContain('picture.png');
     });
   });
