@@ -65,7 +65,7 @@ export default [
         'error',
         {
           selector:
-            "Literal[value=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/], TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/]",
+            'Literal[value=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/], TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/]',
           message:
             'No raw hex/rgb() colors here — use a token (bg-accent, text-muted-foreground, --status-*, --brand, …). See docs/volition-design-helena-ui.md.',
         },
@@ -81,7 +81,7 @@ export default [
           // arbitrary bracket value. A truncation width like `max-w-[220px]` is
           // content-specific, not part of a scale, and is not what this rule is for.
           selector:
-            "Literal[value=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/], TemplateElement[value.raw=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/]",
+            'Literal[value=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/], TemplateElement[value.raw=/\\b(?:text|leading|h|size)-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/]',
           message:
             'No arbitrary text size or row/control height here (text-[13px], h-[37px], …) — that scale lives in components/ui and components/common only. See docs/volition-design-helena-ui.md.',
         },

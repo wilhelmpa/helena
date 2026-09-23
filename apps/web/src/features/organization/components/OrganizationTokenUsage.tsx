@@ -32,7 +32,11 @@ export default function OrganizationTokenUsage({
           <div
             className={cn(
               'h-full rounded-full',
-              percent >= 100 ? 'bg-status-danger' : percent >= 80 ? 'bg-status-waiting' : 'bg-primary',
+              percent >= 100
+                ? 'bg-status-danger'
+                : percent >= 80
+                  ? 'bg-status-waiting'
+                  : 'bg-primary',
             )}
             style={{ width: `${percent}%` }}
           />

@@ -38,9 +38,7 @@ export default function EntityCard({
         {icon && <div className="shrink-0">{icon}</div>}
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{title}</div>
-          {code && (
-            <div className="mt-0.5 font-mono text-xs text-muted-foreground">{code}</div>
-          )}
+          {code && <div className="mt-0.5 font-mono text-xs text-muted-foreground">{code}</div>}
         </div>
         {status && <div className="shrink-0">{status}</div>}
       </div>

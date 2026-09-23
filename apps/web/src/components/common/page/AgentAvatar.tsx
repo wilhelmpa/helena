@@ -61,7 +61,7 @@ export default function AgentAvatar({
       <Avatar name={name} image={image} className="size-full text-[0.4em]" />
       {presence && (
         <span
-          className="absolute -top-0.5 -end-0.5 flex size-2 items-center justify-center rounded-full bg-background ring-2 ring-background"
+          className="absolute -end-0.5 -top-0.5 flex size-2 items-center justify-center rounded-full bg-background ring-2 ring-background"
           title={presence}
         >
           <span
@@ -75,7 +75,7 @@ export default function AgentAvatar({
       )}
       {runtime && (
         <span
-          className="absolute -bottom-1 -end-1 rounded-sm border border-border bg-background px-0.5 font-mono text-[8px] leading-tight font-semibold text-muted-foreground"
+          className="absolute -end-1 -bottom-1 rounded-sm border border-border bg-background px-0.5 font-mono text-[8px] leading-tight font-semibold text-muted-foreground"
           title={RUNTIME_LABEL[runtime]}
         >
           {RUNTIME_CODE[runtime]}
