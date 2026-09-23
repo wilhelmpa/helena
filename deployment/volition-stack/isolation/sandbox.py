@@ -178,6 +178,8 @@ def start_forwards(forwards: dict[int, str]) -> None:
 
 
 def parse(argv: list[str]) -> argparse.Namespace:
+    """Options up to `--`, the runtime's command line after it, taken as it is."""
+    split = argv.index('--') if '--' in argv else len(argv)
     parser = argparse.ArgumentParser(prog='volition-agent-sandbox')
     parser.add_argument('mode', choices=['run', 'terminal-server', 'terminal-attach'])
     parser.add_argument('--forward', action='append', default=[])
@@ -187,8 +189,9 @@ def parse(argv: list[str]) -> argparse.Namespace:
     parser.add_argument('--conf')
     parser.add_argument('--session')
     parser.add_argument('--cwd')
-    parser.add_argument('command', nargs=argparse.REMAINDER)
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv[:split])
+    args.command = argv[split + 1:]
+    return args
 
 
 def main(argv: list[str]) -> None:
@@ -209,7 +212,7 @@ def main(argv: list[str]) -> None:
     env = dict(os.environ)
     env.pop('VOLITION_AGENT_SANDBOX_ARGS', None)
     if args.mode == 'run':
-        command = args.command[1:] if args.command[:1] == ['--'] else args.command
+        command = args.command
         if not command:
             fail('no runtime to start')
         if args.env_header:
