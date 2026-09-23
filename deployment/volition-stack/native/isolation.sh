@@ -32,7 +32,8 @@ hermes_home=${ISOLATION_HERMES_HOME:-/var/lib/volition/hermes}
 browser_state=${ISOLATION_BROWSER_STATE:-/var/lib/volition/project-browser}
 python=${ISOLATION_PYTHON:-/usr/bin/python3}
 switch_units=(volition-hermes-runner volition-provisioning volition-terminal)
-browser_units=(volition-project-browser-chromium@.service volition-project-browser-kasm@.service volition-project-browser-router.service)
+browser_units=(volition-project-browser-chromium@.service volition-project-browser-kasm@.service volition-project-browser-router.service
+  volition-trash-purge.service)
 isolation_units=(volition-agent-launcher.socket volition-agent-launcher.service volition-egress.socket
   volition-egress.service volition-agent-plan.socket volition-agent-plan.service)
 sockets=(volition-agent-launcher.socket volition-egress.socket volition-agent-plan.socket)

@@ -407,6 +407,17 @@ export async function moveProjectBrowserState(config, project, slug, trashRoot, 
   checkedState(sourceState, slug, project.id);
   await privateDirectory(quarantineRoot);
   await movePath(projectRoot, destination, { rename: options.rename });
+  // The trash purge (purge-trash.mjs) deletes it once its time is up, like the project's own.
+  const retentionDays = options.retentionDays ?? 30;
+  await writeJsonAtomic(path.join(quarantineRoot, "receipt.json"), {
+    schemaVersion: 1,
+    eventId,
+    project: { id: project.id, slug },
+    retentionDays,
+    purgeAfter: new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000).toISOString(),
+    quarantined: [{ label: "browser", destination, state: "quarantined" }],
+    completedAt: new Date().toISOString(),
+  });
   return destination;
 }
 

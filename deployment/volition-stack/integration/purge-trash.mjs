@@ -36,7 +36,15 @@ export async function purgeTrash(root, now = Date.now()) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || "").href) {
-  const { purged, failed } = await purgeTrash(loadConfig().projectTrashRoot);
-  console.log(`Purged ${purged.length} project trash entries, ${failed.length} failed`);
-  if (failed.length) process.exitCode = 1;
+  // The browser user keeps a trash of its own (agent isolation), purged the same way.
+  const roots = [loadConfig().projectTrashRoot, process.env.PROJECT_BROWSER_TRASH_ROOT].filter(Boolean);
+  let purgedCount = 0;
+  let failedCount = 0;
+  for (const root of roots) {
+    const { purged, failed } = await purgeTrash(root);
+    purgedCount += purged.length;
+    failedCount += failed.length;
+  }
+  console.log(`Purged ${purgedCount} project trash entries, ${failedCount} failed`);
+  if (failedCount) process.exitCode = 1;
 }

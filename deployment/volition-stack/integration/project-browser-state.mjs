@@ -50,6 +50,7 @@ async function main(argv) {
       slug,
       config.projectBrowserTrashRoot,
       eventId,
+      { retentionDays: base("PROJECT_TRASH_RETENTION_DAYS", 30) },
     );
     return { destination };
   }
