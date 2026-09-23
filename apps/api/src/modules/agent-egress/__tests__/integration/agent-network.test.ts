@@ -77,10 +77,38 @@ const event = (overrides: Record<string, unknown> = {}) => ({
 describe('agent network settings', () => {
   beforeEach(resetDb);
 
-  it('starts open, with nothing listed', async () => {
-    const { asOwner } = await setup();
+  it('starts open, with nothing listed and every agent following the project', async () => {
+    const { asOwner, agent } = await setup();
     const res = await asOwner.projects({ projectKey: 'MKT' }).settings['agent-network'].get();
-    expect(res.data).toEqual({ mode: 'open', allow: [], deny: [], mailPorts: false });
+    expect(res.data).toEqual({
+      mode: 'open',
+      allow: [],
+      deny: [],
+      mailPorts: false,
+      agents: [{ id: agent.id, username: 'writer', name: 'Writer', mode: null }],
+    });
+  });
+
+  it('keeps each of the three modes, for the project and for one agent', async () => {
+    const { asOwner, agent } = await setup();
+    const settings = () => asOwner.projects({ projectKey: 'MKT' }).settings['agent-network'];
+    for (const mode of ['open', 'allowlist', 'blocked'] as const) {
+      const res = await settings().put({ mode, agents: { [String(agent.id)]: mode } });
+      expect(res.status).toBe(200);
+      expect(res.data!.mode).toBe(mode);
+      expect(res.data!.agents[0].mode).toBe(mode);
+    }
+    const cleared = await settings().put({ agents: { [String(agent.id)]: null } });
+    expect(cleared.data!.agents[0].mode).toBeNull();
+    expect(cleared.data!.mode).toBe('blocked');
+  });
+
+  it("refuses a mode for an agent that is not the project's", async () => {
+    const { asOwner, other } = await setup();
+    const res = await asOwner
+      .projects({ projectKey: 'MKT' })
+      .settings['agent-network'].put({ agents: { [String(other.id)]: 'blocked' } });
+    expect(res.status).toBe(400);
   });
 
   it('stores the lists normalized', async () => {
@@ -92,7 +120,7 @@ describe('agent network settings', () => {
       mailPorts: true,
     });
     expect(res.status).toBe(200);
-    expect(res.data).toEqual({
+    expect(res.data).toMatchObject({
       mode: 'allowlist',
       allow: ['api.github.com', 'github.com', 'npmjs.org', 'xn--bcher-kva.de'],
       deny: ['bank.example'],
@@ -129,10 +157,12 @@ describe('egress proxy routes', () => {
   });
 
   it('reads the settings of every project by slug', async () => {
-    const { asOwner, mkt, ops } = await setup();
-    await asOwner
-      .projects({ projectKey: 'OPS' })
-      .settings['agent-network'].put({ mode: 'allowlist', allow: ['github.com'] });
+    const { asOwner, mkt, ops, other } = await setup();
+    await asOwner.projects({ projectKey: 'OPS' }).settings['agent-network'].put({
+      mode: 'allowlist',
+      allow: ['github.com'],
+      agents: { [String(other.id)]: 'blocked' },
+    });
     const res = await internal('/internal/agent-egress/policy');
     expect(res.status).toBe(200);
     const body = (await res.json()) as { projects: Record<string, unknown> };
@@ -142,11 +172,13 @@ describe('egress proxy routes', () => {
       allow: [],
       deny: [],
       mailPorts: false,
+      agents: {},
     });
     expect(body.projects.ops).toMatchObject({
       projectId: ops.id,
       mode: 'allowlist',
       allow: ['github.com'],
+      agents: { [String(other.id)]: 'blocked' },
     });
     expect(body.projects.home).toMatchObject({ projectId: null, mode: 'open' });
   });

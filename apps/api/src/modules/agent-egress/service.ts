@@ -10,7 +10,7 @@ import {
   projectSetting,
   user as users,
 } from '@repo/db';
-import { and, desc, eq, inArray, lt, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, type SQL } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { HOME_SLUG, projectSlug } from '#shared/agent-socket';
@@ -62,28 +62,68 @@ function normalizeList(values: string[], field: string): string[] {
   return hosts.sort();
 }
 
+function isMode(value: unknown): value is AgentNetworkMode {
+  return AGENT_NETWORK_MODES.includes(value as AgentNetworkMode);
+}
+
 // A stored value that no longer validates (edited by hand, or from an older version) is
 // read as far as it still makes sense, never thrown at the reader.
 function sanitize(value: unknown): AgentNetworkSettings {
-  if (!value || typeof value !== 'object') return { ...DEFAULT_AGENT_NETWORK };
+  if (!value || typeof value !== 'object') return { ...DEFAULT_AGENT_NETWORK, agents: {} };
   const stored = value as Partial<Record<keyof AgentNetworkSettings, unknown>>;
   const list = (items: unknown) =>
     (Array.isArray(items) ? items : [])
       .flatMap((item) => (typeof item === 'string' ? [normalizeHost(item)] : []))
       .filter((item): item is string => item !== null)
       .slice(0, MAX_DOMAINS);
+  const agents: Record<string, AgentNetworkMode> = {};
+  if (stored.agents && typeof stored.agents === 'object' && !Array.isArray(stored.agents)) {
+    for (const [id, mode] of Object.entries(stored.agents)) {
+      if (/^[1-9][0-9]{0,9}$/.test(id) && isMode(mode)) agents[id] = mode;
+    }
+  }
   return {
-    mode: AGENT_NETWORK_MODES.includes(stored.mode as AgentNetworkMode)
-      ? (stored.mode as AgentNetworkMode)
-      : DEFAULT_AGENT_NETWORK.mode,
+    mode: isMode(stored.mode) ? stored.mode : DEFAULT_AGENT_NETWORK.mode,
     allow: list(stored.allow),
     deny: list(stored.deny),
     mailPorts: stored.mailPorts === true,
+    agents,
   };
+}
+
+// The agents of a project, the Home agent left out: it runs as Home, never in a project.
+async function projectAgents(projectId: number) {
+  const rows = await db
+    .select({ id: aiAgent.id, username: aiAgent.username, name: users.name })
+    .from(projectMember)
+    .innerJoin(aiAgent, eq(aiAgent.userId, projectMember.userId))
+    .innerJoin(users, eq(users.id, aiAgent.userId))
+    .where(eq(projectMember.projectId, projectId))
+    .orderBy(asc(users.name));
+  return rows.filter((row) => !isHomeAgent(row.username));
 }
 
 export async function getAgentNetwork(projectId: number): Promise<AgentNetworkSettings> {
   return sanitize(await getProjectSetting(projectId, SETTING_KEY));
+}
+
+// The settings with every agent of the project and the mode of its own, for the settings
+// page. An override of an agent that left the project is not shown and no longer applies.
+export async function getAgentNetworkView(projectId: number) {
+  const settings = await getAgentNetwork(projectId);
+  const agents = await projectAgents(projectId);
+  return {
+    ...settings,
+    agents: agents.map((agent) => ({ ...agent, mode: settings.agents[String(agent.id)] ?? null })),
+  };
+}
+
+export interface AgentNetworkPatch {
+  mode?: AgentNetworkMode;
+  allow?: string[];
+  deny?: string[];
+  mailPorts?: boolean;
+  agents?: Record<string, AgentNetworkMode | null>;
 }
 
 // The egress proxy reads these settings, so an agent may never change them for itself:
@@ -91,22 +131,32 @@ export async function getAgentNetwork(projectId: number): Promise<AgentNetworkSe
 export async function setAgentNetwork(
   projectId: number,
   callerId: string,
-  patch: Partial<AgentNetworkSettings>,
-): Promise<AgentNetworkSettings> {
+  patch: AgentNetworkPatch,
+) {
   const [agent] = await db
     .select({ id: aiAgent.id })
     .from(aiAgent)
     .where(eq(aiAgent.userId, callerId));
   if (agent) throw new HttpError(403, "An agent cannot change the agents' network access");
   const current = await getAgentNetwork(projectId);
+  const members = new Set((await projectAgents(projectId)).map((row) => String(row.id)));
+  const agents = Object.fromEntries(
+    Object.entries(current.agents).filter(([id]) => members.has(id)),
+  ) as Record<string, AgentNetworkMode>;
+  for (const [id, mode] of Object.entries(patch.agents ?? {})) {
+    if (!members.has(id)) throw new HttpError(400, `Agent ${id} is not an agent of this project`);
+    if (mode === null) delete agents[id];
+    else agents[id] = mode;
+  }
   const next: AgentNetworkSettings = {
     mode: patch.mode ?? current.mode,
     allow: patch.allow ? normalizeList(patch.allow, 'allow') : current.allow,
     deny: patch.deny ? normalizeList(patch.deny, 'deny') : current.deny,
     mailPorts: patch.mailPorts ?? current.mailPorts,
+    agents,
   };
   await setProjectSetting(projectId, SETTING_KEY, next);
-  return next;
+  return getAgentNetworkView(projectId);
 }
 
 export async function listAgentNetworkEvents(
@@ -179,7 +229,7 @@ export async function egressPolicies(): Promise<Record<string, EgressPolicy>> {
       and(eq(projectSetting.projectId, project.id), eq(projectSetting.key, SETTING_KEY)),
     );
   const policies: Record<string, EgressPolicy> = {
-    [HOME_SLUG]: { projectId: null, ...DEFAULT_AGENT_NETWORK },
+    [HOME_SLUG]: { projectId: null, ...DEFAULT_AGENT_NETWORK, agents: {} },
   };
   for (const row of rows) {
     const slug = projectSlug(row.key);

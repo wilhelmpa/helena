@@ -9,7 +9,7 @@ import {
   agentNetworkEventsQuery,
   updateAgentNetworkBody,
 } from './model';
-import { getAgentNetwork, listAgentNetworkEvents, setAgentNetwork } from './service';
+import { getAgentNetworkView, listAgentNetworkEvents, setAgentNetwork } from './service';
 
 // The network access of a project's isolated agents: which hosts the egress proxy lets
 // them reach, and what it let through or refused.
@@ -21,7 +21,7 @@ export const agentNetworkRoutes = new Elysia({
   .use(guards)
   .get(
     '/projects/:projectKey/settings/agent-network',
-    ({ project }) => getAgentNetwork(project.id),
+    ({ project }) => getAgentNetworkView(project.id),
     {
       permission: ['ai_agents', 'read'],
       response: { 200: AgentNetworkSettingsResponse, ...accessErrors },
@@ -29,8 +29,9 @@ export const agentNetworkRoutes = new Elysia({
         summary: "Get the network access of a project's agents",
         description:
           'The hosts the egress proxy lets the isolated agents of the project reach: every public ' +
-          'host but the denied ones (`open`), or only the allowed ones (`allowlist`). Private and ' +
-          'local addresses are never reachable, whatever this says.',
+          'host but the denied ones (`open`), only the allowed ones (`allowlist`), or none ' +
+          '(`blocked`), and the agents with a mode of their own. Private and local addresses ' +
+          'are never reachable, whatever this says.',
       },
     },
   )
@@ -44,8 +45,9 @@ export const agentNetworkRoutes = new Elysia({
       detail: {
         summary: "Update the network access of a project's agents",
         description:
-          'Change the mode, the allowed and the denied domains (a domain covers its subdomains) ' +
-          'and whether the mail ports are open. Agent keys are refused.',
+          'Change the mode, the allowed and the denied domains (a domain covers its subdomains), ' +
+          'whether the mail ports are open, and the modes of single agents (null follows the ' +
+          'project). Agent keys are refused.',
       },
     },
   )
