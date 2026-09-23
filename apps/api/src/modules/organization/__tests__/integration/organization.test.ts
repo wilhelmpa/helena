@@ -137,6 +137,15 @@ describe('organization', () => {
     expect(await read()).toMatchObject({ role: 'reviewer', capabilities: sixteen });
   });
 
+  it("makes a new project's Hermes coordinator the coordinator of its agent team", async () => {
+    const { api, teamId } = await setup();
+    const coordinator = (await api.teams({ teamId }).organization.get()).data!.agents.find(
+      (entry) => entry.username === 'hermes-mkt-coordinator',
+    );
+
+    expect(coordinator).toMatchObject({ role: 'coordinator', capabilities: [], roleTitle: '' });
+  });
+
   it('rejects an unknown team role and invalid capabilities', async () => {
     const { api, teamId, agent } = await setup();
     const assignment = api.teams({ teamId }).organization.agents({ agentId: agent.id });

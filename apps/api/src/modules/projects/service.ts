@@ -8,6 +8,7 @@ import {
   issueAttachment,
   issueType,
   aiAgent,
+  organizationAgentAssignment,
   project,
   projectColumn,
   projectDeprovisioningJob,
@@ -403,26 +404,33 @@ export async function createHermesProjectCoordinator(
     emailVerified: false,
     role: 'user',
   });
-  await tx.insert(aiAgent).values({
-    teamId: input.teamId,
-    userId,
-    username,
-    kind: 'external',
-    instructions: hermesProjectCoordinatorInstructions(input.projectKey, input.projectName),
-    tools: [],
-    triggerOnMention: true,
-    triggerOnAssign: true,
-    delegationDelaySec: 0,
-    runtimePolicy: {
-      reasoningEffort: null,
-      toolAllow: [],
-      toolDeny: [],
-      mcpGrants: ['itsaplan'],
-      files: [],
-    },
-    ownerUserId: input.ownerUserId,
-    runnerScope: 'owner',
-  });
+  const [agent] = await tx
+    .insert(aiAgent)
+    .values({
+      teamId: input.teamId,
+      userId,
+      username,
+      kind: 'external',
+      instructions: hermesProjectCoordinatorInstructions(input.projectKey, input.projectName),
+      tools: [],
+      triggerOnMention: true,
+      triggerOnAssign: true,
+      delegationDelaySec: 0,
+      runtimePolicy: {
+        reasoningEffort: null,
+        toolAllow: [],
+        toolDeny: [],
+        mcpGrants: ['itsaplan'],
+        files: [],
+      },
+      ownerUserId: input.ownerUserId,
+      runnerScope: 'owner',
+    })
+    .returning({ id: aiAgent.id });
+  // It leads the project's agent team.
+  await tx
+    .insert(organizationAgentAssignment)
+    .values({ teamId: input.teamId, agentId: agent.id, role: 'coordinator' });
   await tx.insert(teamMember).values({ teamId: input.teamId, userId, role: 'agent' });
   await tx.insert(projectMember).values({
     projectId: input.projectId,
