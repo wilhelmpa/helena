@@ -31,6 +31,7 @@
   "newTeam": "Novo time",
   "manageTeams": "Gerenciar times",
   "role": "Função: {role}",
+  "basedOn": "Baseado no It’s a Plan (AGPL-3.0)",
   "search": "Buscar ou executar um comando…",
   "searchHint": "Buscar ou executar um comando ({key})",
   "newIssueHint": "Nova issue ({key})",

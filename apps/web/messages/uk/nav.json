@@ -31,6 +31,7 @@
   "newTeam": "Нова команда",
   "manageTeams": "Керування командами",
   "role": "Роль: {role}",
+  "basedOn": "Базується на It’s a Plan (AGPL-3.0)",
   "search": "Пошук або команда…",
   "searchHint": "Пошук або команда ({key})",
   "newIssueHint": "Нова задача ({key})",

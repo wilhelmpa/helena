@@ -190,7 +190,7 @@
     "openPreviewLink": "Open {name} in a new tab",
     "loadingPreview": "Loading preview…",
     "previewUnavailable": "A preview is not available. Open the link to view this page.",
-    "internalPage": "ItsAPlan page",
+    "internalPage": "صفحة Volition",
     "internalPreviewUnavailable": "This page is unavailable or you do not have access.",
     "previewNoteCount": "{count, plural, one {# note} other {# notes}}",
     "previewCustomField": "Custom field",
@@ -210,5 +210,5 @@
     "perPage": "لكل صفحة",
     "range": "{first}-{last} من {total}"
   },
-  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
+  "themeSyncPartial": "Theme updated in Volition, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
 }

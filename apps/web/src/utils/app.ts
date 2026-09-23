@@ -2,10 +2,10 @@ import { runtimeEnv } from './runtimeEnv';
 
 // The product name shown to users: the login panel, the passkey label in the OS
 // picker, and the account page. It is defined once, so a rebrand is one edit.
-export const APP_NAME = 'Volition One';
+export const APP_NAME = 'Volition';
 
-// The product site. The product mark on the public share pages links to it.
-export const APP_SITE_URL = 'https://itsaplan.dev/';
+// The project this product is a fork of, named with its licence in the user menu.
+export const UPSTREAM_URL = 'https://github.com/croffasia/itsaplan';
 
 // The legal document URLs, linked from the logged-out screens: Google requires the
 // privacy policy and terms registered for the OAuth client to be reachable before

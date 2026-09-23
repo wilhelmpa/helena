@@ -77,7 +77,7 @@ export function buildIssuePrompt(
   tags.push('</issue>');
 
   return [
-    `Work on Itsaplan issue ${issue.identifier}:`,
+    `Work on Volition issue ${issue.identifier}:`,
     '',
     `Suggested branch name: ${branch}`,
     '',
