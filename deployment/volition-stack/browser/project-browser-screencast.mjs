@@ -416,9 +416,15 @@ class ScreencastStream {
     return {
       downlinkKbps: viewer.downlinkKbps,
       rttMs: viewer.rttMs,
-      bufferedBytes: ackGraceElapsed
-        ? Math.max(viewer.socket.bufferedAmount, viewer.unackedBytes())
-        : viewer.socket.bufferedAmount,
+      // Node's own bufferedAmount, not just the ack-based unackedBytes() figure, is also
+      // given the grace period: startVideo can itself send a burst as large as the tier's own
+      // keyframe interval in one tick (the catch-up since the last keyframe), on a perfectly
+      // healthy connection, before the OS has even had a chance to drain it — measured with
+      // two viewers on the same tier, a fast one's own burst briefly read as its own
+      // congestion this way and, now that a real drop's tier stays off the table for a few
+      // seconds (see chooseTier's RETRY_COOLDOWN_MS), took far longer than it should have to
+      // recover from a spike it only ever caused itself.
+      bufferedBytes: ackGraceElapsed ? Math.max(viewer.socket.bufferedAmount, viewer.unackedBytes()) : 0,
       feedbackAgeMs: Date.now() - viewer.lastStatsAt,
       encodedKbps: viewer.tierIndex === null ? 0 : (this.tiers.get(TIERS[viewer.tierIndex].name)?.kbps() ?? 0),
       droppedAgoMs: Date.now() - viewer.lastDroppedAt,

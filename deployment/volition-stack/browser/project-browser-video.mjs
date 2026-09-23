@@ -64,8 +64,12 @@ const FEEDBACK_TIMEOUT_MS = 8_000;
 // it affordable again on the very next reassessment — chooseTier runs on every stats report,
 // far more often than a connection's own throughput actually changes — and immediately trying
 // it again would either repeat the same shortfall it was just dropped for, or, on a connection
-// sitting right at a tier's cap, thrash between the two every couple of reports.
-const RETRY_COOLDOWN_MS = 5_000;
+// sitting right at a tier's cap, thrash between the two every couple of reports. Kept short: a
+// single noisy reading (measured with two simultaneous viewers, one of them CPU-starved for a
+// moment by the other's own encoder work, misjudged its own perfectly good downlink as a
+// shortfall) still recovers in about a second rather than being held to the worse tier for
+// several, which a genuinely struggling connection's own repeated drops make up for.
+const RETRY_COOLDOWN_MS = 1_500;
 
 // The tier a viewer's connection affords, given its last measurement and the tier index it is
 // on now (null for a viewer joining fresh, which starts on a safe middle tier before its
