@@ -31,7 +31,7 @@ export const toolsPath = () => '/tools';
 
 export const skillsPath = () => '/skills';
 
-export const vaultPath = () => '/vault';
+export const credentialsPath = () => '/credentials';
 
 export const devicesPath = () => '/devices';
 
