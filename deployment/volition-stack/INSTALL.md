@@ -93,6 +93,16 @@ dependency order:
 5. code-server, project terminal, and project browser router.
 6. Nginx.
 
+The live instance runs no development servers:
+- `volition-plan-api` and `volition-plan-worker` run the checkout's sources without a file
+  watcher.
+- `volition-plan-web` runs a production build from `/srv/volition/releases/web/current`,
+  which `native/web-release.sh` builds and installs, keeping the three newest releases.
+- Development happens in a separate worktree (`native/dev/README.md`).
+- `sudo native/deploy.sh` fast-forwards the live checkout and then does the rest: installs
+  changed dependencies, migrates, builds the web release, restarts what changed, and checks
+  that everything answers.
+
 The standalone `volition-hermes-gateway.service` is intentionally disabled. Plan uses the
 project-scoped Hermes runner. Enabling the gateway would create a second scheduler across
 all project profiles and is an architecture change.
@@ -101,9 +111,9 @@ all project profiles and is an architecture change.
 
 ```sh
 systemctl is-active \
-  volition-plan-api-dev.service \
-  volition-plan-web-dev.service \
-  volition-plan-worker-dev.service \
+  volition-plan-api.service \
+  volition-plan-web.service \
+  volition-plan-worker.service \
   volition-provisioning.service \
   volition-hermes-runner.service \
   volition-hermes-team-bridge.service \

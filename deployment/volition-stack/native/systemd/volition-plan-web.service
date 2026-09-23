@@ -1,0 +1,28 @@
+[Unit]
+Description=Volition Plan web
+After=network-online.target volition-plan-api.service
+Wants=network-online.target
+ConditionPathExists=/srv/volition/releases/web/current/apps/web/server.js
+
+[Service]
+Type=simple
+User=volition-plan
+Group=volition
+# web-release.sh builds the app and points `current` at the new release.
+WorkingDirectory=/srv/volition/releases/web/current/apps/web
+EnvironmentFile=/etc/volition/plan.env
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=HOSTNAME=127.0.0.1
+ExecStart=/usr/local/bin/node server.js
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/volition/releases/web
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

@@ -42,12 +42,12 @@ for location, value in [('location /backend/ {', '""'), ('location / {', '$volit
             raise SystemExit(f'Expected one {location}')
         text = text.replace(location, location + '\n' + marker)
 site.write_text(text)
-for service in ['volition-plan-api-dev', 'volition-plan-web-dev']:
+for service in ['volition-plan-api', 'volition-plan-web']:
     dropin = pathlib.Path(f'/etc/systemd/system/{service}.service.d/50-local-owner.conf')
     dropin.parent.mkdir(parents=True, exist_ok=True)
     dropin.write_text('[Service]\nEnvironmentFile=/etc/volition/local-owner.env\n')
 subprocess.run(['nginx', '-t'], check=True)
 subprocess.run(['systemctl', 'daemon-reload'], check=True)
-subprocess.run(['systemctl', 'restart', 'volition-plan-api-dev', 'volition-plan-web-dev'], check=True)
+subprocess.run(['systemctl', 'restart', 'volition-plan-api', 'volition-plan-web'], check=True)
 subprocess.run(['systemctl', 'reload', 'nginx'], check=True)
 print('Local single-user mode enabled for the existing owner; capability not printed.')
