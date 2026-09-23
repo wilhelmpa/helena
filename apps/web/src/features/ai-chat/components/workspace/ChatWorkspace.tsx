@@ -2,10 +2,12 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import { chatScopeKey } from '@/lib/api/endpoints/agentChat';
 import { useAiAgentQuery } from '@/services/aiAgents.service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import { useChatAgentStates } from '../../hooks/useChatAgentStates';
+import { useChatSummary } from '../../hooks/useChatSummary';
 import { artifactPlacement, chatLayoutMode } from '../../utils/chatLayout';
 import type { Artifact } from '../../utils/artifacts';
 import ChatListPane from './ChatListPane';
@@ -120,7 +122,19 @@ export default function ChatWorkspace({
   // directly rather than silently showing no chat and never loading the thread.
   const fallbackAgent = useAiAgentQuery(teamId, agentInScope || agentId == null ? null : agentId);
   const selectedAgent = agentInScope ?? fallbackAgent.data ?? null;
-  const resolvingAgent = agentId != null && !agentInScope && fallbackAgent.isLoading;
+  // A thread keeps the scope it was started in — the Home list also holds the member's
+  // project chats, and a reply goes through that project's route (the API refuses a
+  // thread of another scope). A new chat is this workspace's, including once its first
+  // answer gave it an id.
+  const summary = useChatSummary(threadId);
+  const threadScopeKey =
+    threadId != null && threadId !== adoptedThreadId && summary.data
+      ? chatScopeKey(summary.data)
+      : scopeKey;
+  const resolvingThread =
+    threadId != null && threadId !== adoptedThreadId && !summary.data && summary.isLoading;
+  const resolvingAgent =
+    (agentId != null && !agentInScope && fallbackAgent.isLoading) || resolvingThread;
 
   return (
     <div
@@ -138,10 +152,10 @@ export default function ChatWorkspace({
         onNewChat={() => startNewChat(null)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        {selectedAgent ? (
+        {selectedAgent && !resolvingThread ? (
           <ChatThreadView
             key={`${agentId}:${view.session}`}
-            scopeKey={scopeKey}
+            scopeKey={threadScopeKey}
             projectKey={projectKey}
             agent={selectedAgent}
             agents={agents}
@@ -175,7 +189,7 @@ export default function ChatWorkspace({
         open={artifactOpen}
         onClose={() => setArtifactOpen(false)}
         overlay={width > 0 && artifactPlacement(width) === 'overlay'}
-        scopeKey={scopeKey}
+        scopeKey={threadScopeKey}
       />
     </div>
   );
