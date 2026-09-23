@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useHotkeyLabel } from '@/context/useHotkeys';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
+import type { HeaderExtraStore } from '@/utils/headerExtraStore';
 import type { HeaderLayout } from '@/lib/api/endpoints/userPreferences';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { LocaleToggle } from '@/components/locale-toggle';
 import UserMenu from '@/components/layout/UserMenu';
 import WorkspaceToolbar from '@/components/layout/WorkspaceToolbar';
+import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 
 export default function AppHeader({
   title,
@@ -39,7 +41,7 @@ export default function AppHeader({
   // and the account menu to the sidebar footer. 'classic' is today's header exactly
   // as it was: those three controls here, and the page renders its own second row.
   headerLayout: HeaderLayout;
-  headerExtra?: ReactNode;
+  headerExtra: HeaderExtraStore;
   // Receives the page slot's element (see ShellHeaderSlotCtx): a section page renders
   // its actions there instead of in a second row.
   pageSlotRef?: (element: HTMLElement | null) => void;
@@ -69,12 +71,7 @@ export default function AppHeader({
         {title}
       </div>
 
-      {single && headerExtra && (
-        <>
-          <Separator orientation="vertical" className="h-4" />
-          <div className="min-w-0 flex-1 overflow-x-auto">{headerExtra}</div>
-        </>
-      )}
+      {single && <ShellHeaderExtra store={headerExtra} />}
       {single && (
         <div
           ref={pageSlotRef}
