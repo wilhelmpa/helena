@@ -70,7 +70,7 @@ export default function MemberDescriptionDialog({
           <div className="flex h-full w-full flex-col items-center justify-center px-6 py-16">
             <div className="flex w-full max-w-2xl flex-col items-center gap-10">
               <div className="flex flex-col items-center gap-5">
-                <DialogTitle className="max-w-[32ch] text-center text-2xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-3xl">
+                <DialogTitle className="max-w-[32ch] text-center text-xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-3xl">
                   {question}
                 </DialogTitle>
                 <div className="flex min-w-0 items-center gap-2.5">

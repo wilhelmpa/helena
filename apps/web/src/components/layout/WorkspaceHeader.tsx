@@ -7,7 +7,7 @@ import { useShellHeaderSlot } from '@/context/shellHeaderSlot';
 
 export const WORKSPACE_HEADER_CLASS = 'flex h-12 shrink-0 items-center border-b';
 export const WORKSPACE_HEADER_DESCRIPTION_CLASS =
-  'hidden min-w-0 truncate text-caption text-muted-foreground md:block';
+  'hidden min-w-0 truncate text-xs text-muted-foreground md:block';
 
 // The tool panel's own header (chat/terminal/code/browser/mail): one compact row,
 // filigree like the sidebar rather than a second full page header
@@ -63,7 +63,7 @@ export function WorkspacePageHeader({
     <WorkspaceHeader className={cn('bg-background px-4 sm:px-6', className)}>
       <div className={cn('flex min-w-0 flex-1 items-center gap-3', contentClassName)}>
         <div className="flex min-w-0 flex-1 items-baseline gap-2">
-          <h1 className="min-w-0 truncate text-base font-semibold">{title}</h1>
+          <h1 className="min-w-0 truncate text-md font-semibold">{title}</h1>
           {description ? (
             <div className={WORKSPACE_HEADER_DESCRIPTION_CLASS}>{description}</div>
           ) : null}
@@ -75,4 +75,4 @@ export function WorkspacePageHeader({
 }
 
 // The one-line description a page opens with in the single-row layout: 13px, muted.
-export const PAGE_INTRO_CLASS = 'text-caption text-muted-foreground';
+export const PAGE_INTRO_CLASS = 'text-xs text-muted-foreground';

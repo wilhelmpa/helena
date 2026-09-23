@@ -47,7 +47,7 @@ export default function HomeProjectCard({ project }: { project: Project }) {
         ) : null}
       </div>
       {project.description ? (
-        <p className="truncate ps-6 text-caption text-muted-foreground" dir="auto">
+        <p className="truncate ps-6 text-xs text-muted-foreground" dir="auto">
           {project.description}
         </p>
       ) : null}

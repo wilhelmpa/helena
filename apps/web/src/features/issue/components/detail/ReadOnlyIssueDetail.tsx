@@ -53,7 +53,7 @@ export default function ReadOnlyIssueDetail({
           )}
           <span className="text-xs text-muted-foreground tabular-nums">{issue.identifier}</span>
         </div>
-        <h1 className="mt-1 text-xl font-semibold">{issue.title}</h1>
+        <h1 className="mt-1 text-base font-semibold">{issue.title}</h1>
 
         {issue.description.trim() && (
           <MarkdownEditor className="mt-4" defaultValue={issue.description} editable={false} />

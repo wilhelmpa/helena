@@ -50,7 +50,7 @@ export default function TakeoverScreen({
             <p className="text-xs font-medium tracking-[0.12em] text-balance text-muted-foreground uppercase">
               {eyebrow}
             </p>
-            <h1 className="mt-3 text-2xl font-semibold text-balance lg:text-3xl">{title}</h1>
+            <h1 className="mt-3 text-xl font-semibold text-balance">{title}</h1>
           </div>
 
           {sections.length > 1 && (

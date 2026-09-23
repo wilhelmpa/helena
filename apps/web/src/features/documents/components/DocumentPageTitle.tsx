@@ -43,7 +43,7 @@ export default function DocumentPageTitle({
       placeholder={t('untitled')}
       aria-label={t('noteTitle')}
       dir="auto"
-      className="[field-sizing:content] min-h-11 w-full resize-none overflow-hidden bg-transparent pt-0.5 text-2xl font-semibold text-balance outline-none placeholder:text-muted-foreground/35 md:text-3xl"
+      className="[field-sizing:content] min-h-11 w-full resize-none overflow-hidden bg-transparent pt-0.5 text-xl font-semibold text-balance outline-none placeholder:text-muted-foreground/35 md:text-2xl"
       onFocus={(event) => {
         if (autoFocus) event.currentTarget.select();
       }}

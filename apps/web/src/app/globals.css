@@ -1,8 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-/* The typeface is Geist + Geist Mono (SIL OFL 1.1, the `geist` package), self-hosted
-   through next/font in app/layout.tsx: no request ever leaves the instance. next/font
-   sets --font-geist-sans/--font-geist-mono on <html>; the @theme below maps them. */
+/* The upstream Inter build, not the Fontsource one: Google Fonts strips the
+   character variants, and cv05/cv08 are what make l, I and 1 tell apart at the
+   12–14px this UI is set in. It also carries the opsz axis, so small text gets the
+   wider-spaced optical master. The sidebar's typeface — and so the whole app's
+   (owner, 2026-09-24: "Schriftart so wie in der Sidebar"). */
+@import 'inter-ui/inter-variable.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -27,9 +30,7 @@
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans:
-    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: 'InterVariable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -104,23 +105,27 @@
   --shadow-xs: 0 0 #0000;
   --shadow-sm: 0 1px 2px 0 rgb(40 30 20 / 0.06);
   --default-transition-duration: 140ms;
-  /* The one type scale (docs/volition-design-helena-ui.md): 12 · 13 · 14 · 16 · 20 ·
-     24 · 30, every line height on the 4px grid. Each step has one job:
-       text-xs       12/16  label, group label, meta, badge, ID/key (mono), timestamp
-       text-caption  13/20  a description or help line under a title or a field
-       text-sm       14/20  body: rows, table cells, controls, menus, paragraphs
-       text-base     16/24  panel, dialog and card-group titles
-       text-xl       20/28  a page title in the page body
-       text-2xl      24/32  the Home greeting, the sign-in title
-       text-3xl      30/36  a single hero number
+  /* The one type scale (docs/volition-design-helena-ui.md), set in the sidebar's font
+     at the sidebar's size (owner, 2026-09-24: "Schriftart so wie in der Sidebar und
+     auch die Größe" — the sidebar's rows have always been 13px Inter): 12 · 13 · 14 ·
+     16 · 20 · 24 · 30, every line height on the 4px grid. Each step has one job:
+       text-xs    12/16  label, group label, meta, description, badge, ID/key (mono)
+       text-sm    13/20  the standard: every row, cell, control, menu and paragraph,
+                         exactly the sidebar's row text
+       text-md    14/20  a section, panel, card or dialog title (semibold)
+       text-base  16/24  the one title a page may carry (Home greeting, a task's
+                         title), and text fields on a touch screen (no iOS zoom)
+       text-xl    20/28  a figure that is the point of its tile
+       text-2xl   24/32  the sign-in title
+       text-3xl   30/36  a dashboard's hero number
      text-lg (18), text-4xl and up, and bracket sizes (text-[13px]) are off the scale;
      the lint rule in eslint.config.mjs flags them in features and routes. */
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
-  --text-caption: 0.8125rem;
-  --text-caption--line-height: 1.25rem;
-  --text-sm: 0.875rem;
+  --text-sm: 0.8125rem;
   --text-sm--line-height: 1.25rem;
+  --text-md: 0.875rem;
+  --text-md--line-height: 1.25rem;
   --text-base: 1rem;
   --text-base--line-height: 1.5rem;
   --text-base--letter-spacing: -0.006em;
@@ -362,7 +367,7 @@
 }
 [data-slot='dialog-title'],
 [data-slot='sheet-title'] {
-  font-size: var(--text-base);
+  font-size: var(--text-md);
   line-height: 1.4;
   letter-spacing: -0.006em;
 }
@@ -403,8 +408,8 @@
   letter-spacing: 0;
 }
 [data-slot='empty-description'] {
-  font-size: var(--text-caption);
-  line-height: var(--text-caption--line-height);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
 }
 [data-slot='empty-icon'][data-variant='icon'] {
   color: var(--muted-foreground);
@@ -615,18 +620,13 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+  /* cv05/cv08 tell l, I and 1 apart at small sizes. No slashed zero: it read as "Ø"
+     in the Home figures. */
   html {
     @apply font-sans;
-    text-rendering: optimizeLegibility;
-  }
-  /* Counts, dates and keys line up in columns; Geist's tabular figures keep the
-     hyphen and the colon at their normal width, so this is safe app-wide for mono. */
-  .font-mono,
-  code,
-  kbd,
-  samp {
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0;
+    font-feature-settings:
+      'cv05' 1,
+      'cv08' 1;
   }
 }
 

@@ -16,7 +16,7 @@ export default function BrandPanel({ subtitle }: { subtitle?: string }) {
         <HelenaWordmark label={APP_NAME} className="h-6 w-auto text-foreground" />
         <span className="text-xs text-muted-foreground">{APP_BYLINE}</span>
       </div>
-      <p className="max-w-[17rem] text-center text-caption text-balance text-muted-foreground">
+      <p className="max-w-[17rem] text-center text-xs text-balance text-muted-foreground">
         {subtitle ?? t('brandSubtitle')}
       </p>
     </div>

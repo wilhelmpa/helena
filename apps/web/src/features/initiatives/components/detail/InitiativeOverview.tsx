@@ -17,7 +17,7 @@ export default function InitiativeOverview({ initiative }: { initiative: Initiat
     <div className="@container w-full px-8 py-8">
       <div className="flex flex-col gap-8 @4xl:flex-row">
         <div className="max-w-3xl min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{initiative.title}</h1>
+          <h1 className="text-base font-semibold">{initiative.title}</h1>
           {hasDescription ? (
             <MarkdownEditor
               className="mt-4 text-sm"

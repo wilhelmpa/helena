@@ -26,8 +26,8 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-5 lg:px-6">
           <header className="flex flex-col gap-2">
             <div>
-              <h1 className="text-2xl font-semibold">{t('homeGreeting')}</h1>
-              <p className="mt-0.5 text-caption text-muted-foreground">
+              <h1 className="text-base font-semibold">{t('homeGreeting')}</h1>
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {formatLongDate(new Date().toISOString())} · {t('globalHomeHint')}
               </p>
             </div>

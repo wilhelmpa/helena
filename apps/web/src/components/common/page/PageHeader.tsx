@@ -16,8 +16,8 @@ export default function PageHeader({
   return (
     <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold">{title}</h1>
-        <p className="mt-0.5 text-caption text-muted-foreground">{description}</p>
+        <h1 className="text-base font-semibold">{title}</h1>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
       </div>
       {actions && (
         <div className="flex gap-2 sm:shrink-0 [&>button]:flex-1 sm:[&>button]:flex-none">

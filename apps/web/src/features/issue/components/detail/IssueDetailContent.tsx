@@ -117,7 +117,7 @@ export default function IssueDetailContent({
             // Laid out by the script the title is written in, not the interface
             // language, so an Arabic title reads correctly in an English session.
             dir="auto"
-            className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-xl font-semibold outline-none placeholder:text-muted-foreground"
+            className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
             rows={1}
             placeholder={t('titlePlaceholder')}
             defaultValue={issue.title}
@@ -135,7 +135,7 @@ export default function IssueDetailContent({
             }}
           />
         ) : (
-          <h1 dir="auto" className="min-w-0 flex-1 text-xl font-semibold">
+          <h1 dir="auto" className="min-w-0 flex-1 text-base font-semibold">
             {issue.title}
           </h1>
         )}

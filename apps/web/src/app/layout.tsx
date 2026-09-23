@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { GeistMono } from 'geist/font/mono';
-import { GeistSans } from 'geist/font/sans';
 import { ThemeProvider } from 'next-themes';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -38,14 +36,7 @@ export default async function RootLayout({
   const locale = await getLocale();
 
   return (
-    <html
-      lang={locale}
-      dir={localeDirection(locale as Locale)}
-      // Geist and Geist Mono, self-hosted by next/font (no request to a font CDN);
-      // globals.css maps the two variables onto --font-sans/--font-mono.
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang={locale} dir={localeDirection(locale as Locale)} suppressHydrationWarning>
       <body className="antialiased">
         <RuntimeEnvScript />
         <ThemeProvider

@@ -21,7 +21,7 @@ export default function SettingsRow({
     <div className="flex items-center justify-between gap-4 px-4 py-3">
       <div className="max-w-2xl space-y-0.5">
         <div className="text-sm font-medium">{title}</div>
-        <p className="text-caption text-muted-foreground">{description}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
         {note && (
           <Alert className="mt-2 w-fit bg-status-waiting/10 px-3 py-2 text-status-waiting">
             <Info />
