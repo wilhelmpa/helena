@@ -1,7 +1,6 @@
 import {
   db,
   chatAttachment,
-  documentAsset,
   initiative,
   initiativeAttachment,
   issue,
@@ -16,7 +15,6 @@ import {
   projectDeprovisioningJob,
   projectProvisioningJob,
   projectMember,
-  projectDocument,
   teamRole,
   projectSetting,
   team,
@@ -1044,11 +1042,6 @@ export async function deleteProject(projectId: number): Promise<void> {
       .select({ s3Key: chatAttachment.s3Key })
       .from(chatAttachment)
       .where(eq(chatAttachment.projectId, projectId));
-    const documentAssets = await tx
-      .select({ s3Key: documentAsset.s3Key })
-      .from(documentAsset)
-      .innerJoin(projectDocument, eq(projectDocument.id, documentAsset.documentId))
-      .where(eq(projectDocument.projectId, projectId));
     const initiativeAssets = await tx
       .select({ s3Key: initiativeAttachment.s3Key })
       .from(initiativeAttachment)
@@ -1101,8 +1094,8 @@ export async function deleteProject(projectId: number): Promise<void> {
     await tx.delete(project).where(eq(project.id, projectId));
     // An attachment in the vault has no object; its file goes with the project's vault
     // folder, which the deprovisioning moves to the project trash.
-    return [...issueAssets, ...chatAssets, ...documentAssets, ...initiativeAssets].flatMap(
-      (asset) => (asset.s3Key ? [asset.s3Key] : []),
+    return [...issueAssets, ...chatAssets, ...initiativeAssets].flatMap((asset) =>
+      asset.s3Key ? [asset.s3Key] : [],
     );
   });
   await deleteObjects(assetKeys);

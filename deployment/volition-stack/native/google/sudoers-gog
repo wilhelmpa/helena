@@ -1,0 +1,1 @@
+wilhelmpa ALL=(volition-google) NOPASSWD: /usr/local/libexec/volition-gog-bridge *

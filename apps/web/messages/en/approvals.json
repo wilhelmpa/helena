@@ -1,7 +1,10 @@
 {
   "hint": "Agents ask here before they send, publish, pay or delete something outside Plan, and workflows wait here at their approval gate. Your decision and your note start the next step.",
+  "projectHint": "Agents ask here before they send, publish, pay or delete something outside Plan for this project, and its workflows wait here at their approval gate.",
   "pending": "Pending",
   "decided": "Decided",
+  "filterProject": "Filter by project",
+  "filterProjectAll": "All projects",
   "empty": {
     "pending": "Nothing to decide",
     "decided": "No decisions yet"

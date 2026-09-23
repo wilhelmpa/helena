@@ -11,6 +11,7 @@ import {
   syncDocumentEditorEditable,
 } from './DocumentMarkdownEditor';
 import { pasteMarkdown } from '@/components/common/editor/pasteMarkdown';
+import { vaultFileUrl } from '@/lib/api/endpoints/knowledge';
 
 const richDocument: JSONContent = {
   type: 'doc',
@@ -59,8 +60,7 @@ const richDocument: JSONContent = {
   ],
 };
 
-const protectedImage =
-  '/protected-media/projects/MKT/documents/1/assets/123e4567-e89b-12d3-a456-426614174000/raw';
+const protectedImage = vaultFileUrl('Projects/MKT/Docs/Assets/photo 1.png');
 
 let dom: JSDOM;
 let previousWindow: PropertyDescriptor | undefined;
@@ -102,7 +102,7 @@ afterEach(() => {
   }
 });
 
-describe('DocumentMarkdownEditor JSON persistence', () => {
+describe('DocumentMarkdownEditor extensions', () => {
   it('registers one complete rich-text extension surface', () => {
     const extensions = documentEditorExtensions({
       placeholder: '',
@@ -129,6 +129,7 @@ describe('DocumentMarkdownEditor JSON persistence', () => {
       'highlight',
       'textAlign',
       'slashCommand',
+      'wikilink',
       'markdown',
     ]) {
       assert.equal(names.filter((extensionName) => extensionName === name).length, 1, name);
@@ -254,6 +255,13 @@ describe('DocumentMarkdownEditor JSON persistence', () => {
   it('accepts only server-compatible image sources', () => {
     assert.equal(safeDocumentImageSource(protectedImage), protectedImage);
     assert.equal(
+      safeDocumentImageSource(
+        '/protected-media/projects/MKT/documents/1/assets/123e4567-e89b-12d3-a456-426614174000/raw',
+      ),
+      null,
+    );
+    assert.equal(safeDocumentImageSource('/protected-media/knowledge/raw?path=a&x=1'), null);
+    assert.equal(
       safeDocumentImageSource('https://images.example.test/photo.png'),
       'https://images.example.test/photo.png',
     );
@@ -312,6 +320,16 @@ describe('DocumentMarkdownEditor markdown paste', () => {
   const clipboard = (text: string, html = '') =>
     ({ getData: (type: string) => (type === 'text/plain' ? text : html) }) as DataTransfer;
 
+  it('keeps the single line breaks of a note as plain newlines', () => {
+    const editor = editorFor();
+    editor.commands.setContent('First line\nsecond line\n\n- item\n  continued\n\n- not a list');
+    assert.equal(
+      editor.storage.markdown.getMarkdown(),
+      'First line\nsecond line\n\n- item\n  continued\n\n- not a list',
+    );
+    editor.destroy();
+  });
+
   it('parses pasted text as markdown', () => {
     const editor = editorFor();
     assert.equal(pasteMarkdown(editor, clipboard('# Title\n\n- one\n- two')), true);
@@ -336,58 +354,69 @@ describe('DocumentMarkdownEditor markdown paste', () => {
   });
 });
 
-describe('DocumentMarkdownEditor schema attrs', () => {
-  // The API validates the saved JSON against a per-node allowlist and rejects the
-  // whole save on any attr it does not know, null included. This pins the schema
-  // that produces that JSON: an attr added by a tiptap upgrade fails here first,
-  // and the allowlist in apps/api documents service.ts is what has to grow.
-  it('keeps every node and mark to the attrs the API accepts', () => {
-    const editor = new Editor({
+describe('DocumentMarkdownEditor wikilinks', () => {
+  const editorFor = (markdown: string) =>
+    new Editor({
       element: document.querySelector('#one') as HTMLElement,
       extensions: documentEditorExtensions({
         placeholder: '',
         codeBlockLabel: 'Code',
         tableLabel: 'Table',
       }),
+      content: markdown,
     });
 
-    const attrsOf = (types: Record<string, { spec: { attrs?: object } }>) =>
-      Object.fromEntries(
-        Object.entries(types).map(([name, type]) => [
-          name,
-          Object.keys(type.spec.attrs ?? {}).sort(),
-        ]),
-      );
-    assert.deepEqual(attrsOf(editor.schema.nodes), {
-      doc: [],
-      paragraph: ['textAlign'],
-      text: [],
-      blockquote: [],
-      bulletList: ['tight'],
-      orderedList: ['start', 'tight', 'type'],
-      listItem: [],
-      heading: ['level', 'textAlign'],
-      horizontalRule: [],
-      hardBreak: [],
-      codeBlock: ['language'],
-      image: ['alt', 'src', 'style', 'title', 'width'],
-      table: [],
-      tableRow: [],
-      tableHeader: ['align', 'colspan', 'colwidth', 'rowspan'],
-      tableCell: ['align', 'colspan', 'colwidth', 'rowspan'],
-      taskList: [],
-      taskItem: ['checked'],
+  it('reads wikilinks as nodes and writes them back as written', () => {
+    const markdown =
+      'See [[Release]], [[Guides/Deploy|the deploy]], [[Setup#Keys]] and [[VOL-12]].';
+    const editor = editorFor(markdown);
+    const links: string[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'wikilink') links.push(String(node.attrs.inner));
     });
-    assert.deepEqual(attrsOf(editor.schema.marks), {
-      bold: [],
-      italic: [],
-      strike: [],
-      code: [],
-      link: ['class', 'href', 'rel', 'target', 'title'],
-      textStyle: ['color'],
-      underline: [],
-      highlight: ['color'],
+    assert.deepEqual(links, ['Release', 'Guides/Deploy|the deploy', 'Setup#Keys', 'VOL-12']);
+    assert.equal(editor.storage.markdown.getMarkdown(), markdown);
+    editor.destroy();
+  });
+
+  it('leaves a wikilink in code as text', () => {
+    const markdown = 'Write `[[Note]]` like this:\n\n```\n[[Other]]\n```';
+    const editor = editorFor(markdown);
+    let links = 0;
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'wikilink') links += 1;
     });
+    assert.equal(links, 0);
+    assert.equal(editor.storage.markdown.getMarkdown(), markdown);
+    editor.destroy();
+  });
+
+  it('turns a typed wikilink into a link, but not in code', () => {
+    const editor = editorFor('');
+    const typed = (text: string) => {
+      for (const character of text) {
+        const { from, to } = editor.state.selection;
+        const insert = () => editor.state.tr.insertText(character, from, to);
+        const handled = editor.view.someProp('handleTextInput', (handle) =>
+          handle(editor.view, from, to, character, insert),
+        );
+        if (!handled) editor.view.dispatch(insert());
+      }
+    };
+    typed('See [[Release notes]]');
+    assert.equal(editor.state.doc.firstChild?.lastChild?.type.name, 'wikilink');
+    assert.equal(editor.storage.markdown.getMarkdown(), 'See [[Release notes]]');
+
+    editor.commands.setContent({ type: 'doc', content: [{ type: 'codeBlock' }] });
+    editor.commands.setTextSelection(1);
+    typed('[[Code]]');
+    assert.equal(editor.state.doc.firstChild?.textContent, '[[Code]]');
+    editor.destroy();
+  });
+
+  it('keeps an embed as the text before its link', () => {
+    const editor = editorFor('![[Diagram.png]]');
+    assert.equal(editor.storage.markdown.getMarkdown(), '![[Diagram.png]]');
     editor.destroy();
   });
 });

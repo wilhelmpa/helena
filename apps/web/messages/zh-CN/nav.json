@@ -9,6 +9,7 @@
   "cycles": "周期",
   "notes": "便签",
   "documents": "Docs",
+  "docs": "Docs",
   "aiTeam": "AI 团队",
   "aiAgents": "AI 代理",
   "members": "成员",
@@ -57,7 +58,7 @@
     "openExternal": "在新标签页中打开{tool}",
     "unavailable": "尚未配置{tool}",
     "unavailableDescription": "管理员可以为此实例连接该工作区。",
-    "mail": "Mail",
+    "mail": "撰写",
     "openBeside": "在旁边打开",
     "closeSplit": "关闭分屏",
     "browserBar": {
@@ -73,9 +74,15 @@
       "liveTitle": "前台标签页的实时画面",
       "desktop": "桌面",
       "desktopTitle": "桌面（VNC）",
+      "followAgentOn": "正在跟随代理的标签页",
+      "followAgentOff": "跟随代理的标签页",
       "liveKeyboard": "实时浏览器。视图获得焦点时，按键会发送到页面。",
+      "controlAgent": "代理正在操作",
       "connecting": "正在连接浏览器…",
-      "reconnecting": "与浏览器的连接已断开，正在重新连接…"
+      "reconnecting": "与浏览器的连接已断开，正在重新连接…",
+      "dialogTitle": "页面询问",
+      "dialogOk": "确定",
+      "dialogCancel": "取消"
     }
   },
   "groups": {
@@ -91,6 +98,7 @@
   "organization": "Organization",
   "schedules": "定时任务",
   "connections": "Connections",
+  "mailAccounts": "邮箱账户",
   "agentPool": "智能体池",
   "mcps": "MCP",
   "tools": "工具",

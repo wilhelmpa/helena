@@ -11,9 +11,13 @@
     "test": "bun test --env-file=../../.env.test"
   },
   "dependencies": {
+    "@repo/crypto": "workspace:*",
     "@repo/db": "workspace:*",
+    "@repo/mail": "workspace:*",
     "@repo/mailer": "workspace:*",
     "@repo/net": "workspace:*",
+    "@repo/storage": "workspace:*",
+    "@repo/vault": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

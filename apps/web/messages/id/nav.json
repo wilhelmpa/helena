@@ -9,6 +9,7 @@
   "cycles": "Cycle",
   "notes": "Catatan",
   "documents": "Dokumen",
+  "docs": "Dokumen",
   "aiTeam": "Tim AI",
   "aiAgents": "Agen AI",
   "members": "Anggota",
@@ -57,7 +58,7 @@
     "openExternal": "Buka {tool} di tab baru",
     "unavailable": "{tool} belum dikonfigurasi",
     "unavailableDescription": "Administrator dapat menghubungkan ruang kerja ini untuk instans.",
-    "mail": "Mail",
+    "mail": "Tulis",
     "openBeside": "Buka di samping",
     "closeSplit": "Tutup tampilan terbagi",
     "browserBar": {
@@ -73,9 +74,15 @@
       "liveTitle": "Tampilan langsung tab di depan",
       "desktop": "Desktop",
       "desktopTitle": "Desktop (VNC)",
+      "followAgentOn": "Mengikuti tab agen",
+      "followAgentOff": "Ikuti tab agen",
       "liveKeyboard": "Browser langsung. Tombol dikirim ke halaman selama tampilan ini memiliki fokus.",
+      "controlAgent": "Agen sedang bertindak",
       "connecting": "Menghubungkan ke browser…",
-      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…"
+      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…",
+      "dialogTitle": "Halaman bertanya",
+      "dialogOk": "OK",
+      "dialogCancel": "Batal"
     }
   },
   "groups": {
@@ -91,6 +98,7 @@
   "organization": "Organization",
   "schedules": "Jadwal",
   "connections": "Connections",
+  "mailAccounts": "Akun email",
   "agentPool": "Agent Pool",
   "mcps": "MCP",
   "tools": "Alat",

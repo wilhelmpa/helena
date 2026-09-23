@@ -1,7 +1,10 @@
 {
   "hint": "Les agents demandent ici une approbation avant d'envoyer, publier, payer ou supprimer quelque chose en dehors de Plan, et les flux de travail attendent ici à leur étape d'approbation. Votre décision et votre note lancent l'étape suivante.",
+  "projectHint": "Les agents demandent ici une approbation avant d'envoyer, publier, payer ou supprimer quelque chose en dehors de Plan pour ce projet, et ses flux de travail attendent ici à leur étape d'approbation.",
   "pending": "En attente",
   "decided": "Traitées",
+  "filterProject": "Filtrer par projet",
+  "filterProjectAll": "Tous les projets",
   "empty": {
     "pending": "Rien à décider",
     "decided": "Aucune décision pour l'instant"

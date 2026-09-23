@@ -3,7 +3,8 @@ import { api, apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { controlApi } from '#tests/helpers/control';
+import { controlApi, controlPlane } from '#tests/helpers/control';
+import { cancelOrphanedStageRuns } from '../../hermes-team-control';
 
 // The Hermes team bridge queues each agent-team stage as a run of the stage's agent,
 // asks for it again when Mastra retries or continues the stage, and cancels it when the
@@ -32,6 +33,7 @@ async function setup() {
       idempotencyKey: 'a'.repeat(64),
       prompt: 'Complete the assignment.',
       policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
+      workflowRunId: 'team-run-1',
     });
   // The internal routes answer with a Response, which Treaty parses without a type.
   const { runId } = (await queue()).data as unknown as { runId: number };
@@ -101,6 +103,19 @@ describe('Hermes stage cancel', () => {
     expect(status.data).toMatchObject({ status: 'pending' });
   });
 
+  it('cancels a stage by its idempotency key, which Mastra sends for a canceled run', async () => {
+    const { runId } = await setup();
+    const res = await cancel({ idempotencyKey: 'a'.repeat(64), projectRef: 'project:MKT' });
+    expect(res.status).toBe(200);
+    expect(res.data).toMatchObject({ runId, status: 'canceled' });
+    expect(
+      (await cancel({ idempotencyKey: 'c'.repeat(64), projectRef: 'project:MKT' })).status,
+    ).toBe(404);
+    expect(
+      (await cancel({ idempotencyKey: 'a'.repeat(64), projectRef: 'project:OTHER' })).status,
+    ).toBe(404);
+  });
+
   it('refuses a caller without the control token', async () => {
     const { runId } = await setup();
     const res = await api.internal.orchestration['agent-run'].cancel.post({
@@ -137,6 +152,35 @@ describe('Hermes stage replay', () => {
     });
   });
 
+  it('keeps the run of a stage asked for again while it executes', async () => {
+    const { asRunner, runId, queue } = await setup();
+    await asRunner['agent-runs'].claim.post();
+
+    expect((await queue()).data).toMatchObject({ runId, replayed: true });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+    const status = await controlApi().internal.orchestration['agent-run'].status.post({
+      runId,
+      projectRef: 'project:MKT',
+    });
+    expect(status.data).toMatchObject({ status: 'pending', attempts: 1 });
+  });
+
+  it('starts the clock of a failed stage again when it is queued again', async () => {
+    const { asRunner, runId, queue } = await setup();
+    await asRunner['agent-runs'].claim.post();
+    await asRunner['agent-runs']({ runId }).result.post({
+      status: 'failed',
+      error: 'Hermes failed',
+    });
+
+    await queue();
+    const status = await controlApi().internal.orchestration['agent-run'].status.post({
+      runId,
+      projectRef: 'project:MKT',
+    });
+    expect(status.data).toMatchObject({ status: 'pending', attempts: 0, claimedAt: null });
+  });
+
   it('answers a replay of a finished stage with its outcome', async () => {
     const { asRunner, runId, queue } = await setup();
     await asRunner['agent-runs'].claim.post();
@@ -149,6 +193,63 @@ describe('Hermes stage replay', () => {
       projectRef: 'project:MKT',
     });
     expect(status.data).toMatchObject({ status: 'success', output: 'Done' });
+  });
+});
+
+// A stage run whose workflow run was canceled in Mastra, or is gone, executes for nobody
+// when the cancel Mastra sends did not reach Plan. The janitor asks Mastra about the
+// workflow run of every pending stage run and cancels those.
+describe('orphaned stage runs', () => {
+  beforeEach(async () => {
+    await resetDb();
+    controlPlane.reset();
+  });
+
+  const status = (runId: number) =>
+    controlApi().internal.orchestration['agent-run'].status.post({
+      runId,
+      projectRef: 'project:MKT',
+    });
+
+  it('cancels a stage run whose workflow run was canceled', async () => {
+    const { runId } = await setup();
+    controlPlane.answer = (request) =>
+      request.operation === 'run' ? { runId: request.runId, status: 'canceled' } : {};
+
+    expect(await cancelOrphanedStageRuns(0)).toBe(1);
+    expect((await status(runId)).data).toMatchObject({ status: 'canceled' });
+    expect(controlPlane.requests).toContainEqual(
+      expect.objectContaining({ operation: 'run', runId: 'team-run-1', projectRef: 'project:MKT' }),
+    );
+  });
+
+  it('cancels a stage run whose workflow run Mastra does not have', async () => {
+    const { runId } = await setup();
+    controlPlane.answer = () => new Response('{"message":"not found"}', { status: 404 });
+
+    expect(await cancelOrphanedStageRuns(0)).toBe(1);
+    expect((await status(runId)).data).toMatchObject({ status: 'canceled' });
+  });
+
+  it('leaves a stage run alone while its workflow run waits, has failed or Mastra is down', async () => {
+    const { runId } = await setup();
+    for (const answer of [
+      () => ({ status: 'running' }),
+      () => ({ status: 'failed' }),
+      () => new Response('{}', { status: 502 }),
+    ]) {
+      controlPlane.answer = (request) => (request.operation === 'run' ? answer() : {});
+      await cancelOrphanedStageRuns(0).catch(() => 0);
+      expect((await status(runId)).data).toMatchObject({ status: 'pending' });
+    }
+  });
+
+  it('judges no stage run younger than the minimum age', async () => {
+    const { runId } = await setup();
+    controlPlane.answer = () => ({ status: 'canceled' });
+
+    expect(await cancelOrphanedStageRuns()).toBe(0);
+    expect((await status(runId)).data).toMatchObject({ status: 'pending' });
   });
 });
 

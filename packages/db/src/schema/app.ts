@@ -218,22 +218,6 @@ export const projectSetting = pgTable(
   (t) => [primaryKey({ columns: [t.projectId, t.key] })],
 );
 
-// The mail identity assigned to a project. This stores only provider metadata;
-// authentication remains in the external connections runtime.
-export const projectMailAccount = pgTable(
-  'project_mail_account',
-  {
-    projectId: integer('project_id')
-      .primaryKey()
-      .references(() => project.id, { onDelete: 'cascade' }),
-    provider: text('provider').notNull().default('gmail'),
-    account: text('account').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [check('project_mail_account_provider_check', sql`${t.provider} IN ('gmail')`)],
-);
-
 // A user's own interface preferences, held per account rather than per project so
 // the same choices apply on every device. timezone is an IANA zone name used by the
 // web app to render stored UTC timestamps; the API keeps storing and returning UTC.
@@ -580,6 +564,9 @@ export const aiAgent = pgTable(
     // Latest non-secret adapter report. This is operational state, not a second
     // configuration store: external runners such as Hermes use the same shape.
     runtimeState: jsonb('runtime_state').notNull().default({}),
+    // The content of the skills the agent created in its runtime, from the same report.
+    // Kept apart from runtime_state, which every read of the agent returns.
+    runtimeLearnedSkills: jsonb('runtime_learned_skills').notNull().default([]),
     // The member who created the agent. An external agent's runner authenticates
     // with the agent's key, so `owner` scope means the runner only receives runs
     // this member triggered; `team` scope, the default, means any member's.
@@ -667,7 +654,17 @@ export const agentRun = pgTable(
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
+    // The follow-up turn in which the agent kept what the run taught it, when Plan asked
+    // its runner for one: why, how it went, what it saved and what it cost. Its tokens are
+    // also added to the run's own.
+    reflection: jsonb('reflection'),
     startedAt: timestamp('started_at', { withTimezone: true }),
+    // Every claim by a runner counts one up, and nothing counts it down: the runner names
+    // it on its heartbeats and its result, so one whose run was claimed since is refused.
+    // `attempts` cannot do this, since a release and a replayed stage lower it.
+    claims: integer('claims').notNull().default(0),
+    // When the latest claim was made, which is when the run's current attempt started.
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -722,6 +719,27 @@ export const agentEgressEvent = pgTable(
     index('agent_egress_event_run_idx').on(t.runId),
   ],
 );
+
+// When a Volition service was last seen working, for the health overview. A service
+// that reports itself writes its row; one that is probed gets the result of the probe:
+// `error` is null when the last check succeeded, and `lastSeenAt` stays at the last
+// success.
+export const serviceHeartbeat = pgTable('service_heartbeat', {
+  service: text('service').primaryKey(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+  error: text('error'),
+});
+
+// The last run of one of the api's janitor loops, for the health overview: when it last
+// ran, how much it cleaned up (null while a run failed before it could count, which
+// keeps the count of the last run that did), and why it failed, if it did.
+export const janitorRun = pgTable('janitor_run', {
+  job: text('job').primaryKey(),
+  ranAt: timestamp('ran_at', { withTimezone: true }).notNull().defaultNow(),
+  cleaned: integer('cleaned'),
+  error: text('error'),
+});
 
 // An agent's request to take an action outside Plan (send, publish, pay, delete), which
 // a person with the ai_agents edit permission of the project approves or rejects. The
@@ -1220,6 +1238,33 @@ export const agentSkill = pgTable(
     unique().on(t.teamId, t.name),
     check('agent_skill_source_check', sql`${t.source} IN ('upload', 'inline', 'github')`),
     index('agent_skill_team_idx').on(t.teamId),
+  ],
+);
+
+// An owner's decision on what an external agent learned in its runtime: discard or pin a
+// skill it created, or write one of its memory files. The agent's runner receives the
+// pending ones with its runtime policy and reports each result. A done action is deleted;
+// a failed one keeps its error until a newer action on the same target replaces it.
+export const agentRuntimeAction = pgTable(
+  'agent_runtime_action',
+  {
+    id: serial('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    // The skill's directory in the runtime, or the memory file.
+    target: text('target').notNull(),
+    payload: jsonb('payload').notNull().default({}),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'agent_runtime_action_kind_check',
+      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory')`,
+    ),
+    index('agent_runtime_action_agent_idx').on(t.agentId, t.id),
   ],
 );
 
@@ -2180,179 +2225,6 @@ export const projectDashboard = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('project_dashboard_project_idx').on(t.projectId, t.position)],
-);
-
-// Shared Markdown pages arranged as a tree. Version rejects stale autosaves.
-// Private pages are visible only to their owner; project permissions still gate
-// access before that page-level rule is applied.
-export const projectDocument = pgTable(
-  'project_document',
-  {
-    id: serial('id').primaryKey(),
-    projectId: integer('project_id')
-      .notNull()
-      .references(() => project.id, { onDelete: 'cascade' }),
-    parentId: integer('parent_id').references((): AnyPgColumn => projectDocument.id, {
-      onDelete: 'set null',
-    }),
-    title: text('title').notNull().default(''),
-    content: text('content').notNull().default(''),
-    contentJson: jsonb('content_json').$type<Record<string, unknown>>(),
-    icon: text('icon'),
-    metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
-    fullWidth: boolean('full_width').notNull().default(false),
-    isPrivate: boolean('is_private').notNull().default(false),
-    isLocked: boolean('is_locked').notNull().default(false),
-    archivedAt: timestamp('archived_at', { withTimezone: true }),
-    archivedByAncestorId: integer('archived_by_ancestor_id').references(
-      (): AnyPgColumn => projectDocument.id,
-      { onDelete: 'set null' },
-    ),
-    position: doublePrecision('position').notNull().default(0),
-    version: integer('version').notNull().default(1),
-    ownerUserId: text('owner_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    createdByUserId: text('created_by_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    updatedByUserId: text('updated_by_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    index('project_document_project_tree_idx').on(t.projectId, t.parentId, t.position, t.id),
-    index('project_document_owner_idx').on(t.ownerUserId),
-    index('project_document_project_archive_idx').on(t.projectId, t.archivedAt),
-    check('project_document_version_check', sql`${t.version} > 0`),
-  ],
-);
-
-// Immutable snapshots of every persisted document version. A database trigger
-// fills this table so project copies and bulk tree operations receive the same
-// history guarantees as writes made through the Documents API.
-export const projectDocumentRevision = pgTable(
-  'project_document_revision',
-  {
-    id: serial('id').primaryKey(),
-    documentId: integer('document_id')
-      .notNull()
-      .references(() => projectDocument.id, { onDelete: 'cascade' }),
-    version: integer('version').notNull(),
-    parentId: integer('parent_id'),
-    title: text('title').notNull(),
-    content: text('content').notNull(),
-    contentJson: jsonb('content_json').$type<Record<string, unknown>>(),
-    icon: text('icon'),
-    metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
-    fullWidth: boolean('full_width').notNull().default(false),
-    isPrivate: boolean('is_private').notNull().default(false),
-    isLocked: boolean('is_locked').notNull().default(false),
-    archivedAt: timestamp('archived_at', { withTimezone: true }),
-    position: doublePrecision('position').notNull(),
-    ownerUserId: text('owner_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    createdByUserId: text('created_by_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    unique('project_document_revision_document_version_unique').on(t.documentId, t.version),
-    index('project_document_revision_document_idx').on(t.documentId, t.version),
-  ],
-);
-
-// Per-user page preferences. Keeping favorites outside the shared page row means
-// one person's sidebar choices never affect another project member.
-export const projectDocumentPreference = pgTable(
-  'project_document_preference',
-  {
-    documentId: integer('document_id')
-      .notNull()
-      .references(() => projectDocument.id, { onDelete: 'cascade' }),
-    userId: text('user_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    isFavorite: boolean('is_favorite').notNull().default(false),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    primaryKey({ columns: [t.documentId, t.userId] }),
-    index('project_document_preference_user_idx').on(t.userId),
-  ],
-);
-
-// Explicit links between Docs pages and work items. The relation is intentionally
-// separate from page content: renaming either side keeps the link intact, one page
-// can provide context for several work items, and one work item can collect several
-// specs or runbooks. The API verifies that both ends belong to the same project.
-export const projectDocumentIssue = pgTable(
-  'project_document_issue',
-  {
-    documentId: integer('document_id')
-      .notNull()
-      .references(() => projectDocument.id, { onDelete: 'cascade' }),
-    issueId: integer('issue_id')
-      .notNull()
-      .references(() => issue.id, { onDelete: 'cascade' }),
-    createdByUserId: text('created_by_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    primaryKey({ columns: [t.documentId, t.issueId] }),
-    index('project_document_issue_issue_idx').on(t.issueId, t.documentId),
-  ],
-);
-
-// Docs pages linked to an initiative. Mirrors project_document_issue; both sides
-// must belong to the same project, which a trigger enforces.
-export const projectDocumentInitiative = pgTable(
-  'project_document_initiative',
-  {
-    documentId: integer('document_id')
-      .notNull()
-      .references(() => projectDocument.id, { onDelete: 'cascade' }),
-    initiativeId: integer('initiative_id')
-      .notNull()
-      .references(() => initiative.id, { onDelete: 'cascade' }),
-    createdByUserId: text('created_by_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    primaryKey({ columns: [t.documentId, t.initiativeId] }),
-    index('project_document_initiative_initiative_idx').on(t.initiativeId, t.documentId),
-  ],
-);
-
-// Files embedded in Docs pages. Bytes use the same S3-compatible object store as
-// issue/chat attachments; only authenticated document routes expose them, so a
-// private page's unguessable asset id never acts as a public capability URL.
-export const documentAsset = pgTable(
-  'document_asset',
-  {
-    id: serial('id').primaryKey(),
-    publicId: uuid('public_id').notNull().defaultRandom().unique(),
-    documentId: integer('document_id')
-      .notNull()
-      .references(() => projectDocument.id, { onDelete: 'cascade' }),
-    uploadedByUserId: text('uploaded_by_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    s3Key: text('s3_key').notNull(),
-    filename: text('filename').notNull(),
-    contentType: text('content_type').notNull(),
-    sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [index('document_asset_document_idx').on(t.documentId, t.createdAt)],
 );
 
 // Note boards: a freeform canvas of sticky notes. canvas is a jsonb blob owned by

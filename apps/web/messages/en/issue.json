@@ -321,6 +321,7 @@
     "agentStarted": "picked up the issue",
     "agentFinished": "finished working on the issue",
     "agentFailed": "could not finish the issue",
+    "workflowRunLimited": "reached its run limit and skipped <v>{workflow}</v>",
     "pullRequestMerged": "merged pull request <v>{pr}</v>",
     "pullRequestOpened": "opened pull request <v>{pr}</v>",
     "worklogAdded": "logged <v>{time}</v> on <v>{date}</v>",
@@ -391,13 +392,11 @@
       "skipped": "Skipped"
     }
   },
-  "documents": {
-    "title": "Docs",
-    "add": "Link a Docs page",
-    "empty": "No linked Docs yet.",
-    "loadFailed": "Could not load linked Docs. Click to retry.",
-    "remove": "Unlink {title}",
-    "untitled": "Untitled"
+  "knowledge": {
+    "title": "Knowledge",
+    "create": "New note about this task",
+    "empty": "No note links this task yet. A note links it with {link}.",
+    "loadFailed": "Could not load the notes. Click to retry."
   },
   "archived": "Archived",
   "activityHeading": "Activity",

@@ -20,7 +20,14 @@ export const workflowRunPath = (key: string, workflowId: string, runId: string) 
 
 export const agentActivityPath = (key: string) => `${projectPath(key)}/activity`;
 
+// The project's own approvals: the agent requests and workflow gates waiting for a
+// decision, narrowed to this one project (see the global approvalsPath for every
+// project the reader may decide in).
+export const projectApprovalsPath = (key: string) => `${projectPath(key)}/approvals`;
+
 export const connectionsPath = () => '/connections';
+
+export const mailAccountsPath = () => '/mail/accounts';
 
 export const agentsPath = () => '/agents';
 export const teamOrganizationPath = () => '/organization';
@@ -94,8 +101,16 @@ export const homeFilesPath = (folder?: string, location: FilesLocation = {}) =>
 
 export const codePath = (key: string) => `${projectPath(key)}/code`;
 
-export const documentPath = (key: string, documentId: number) =>
-  `${documentsPath(key)}/${documentId}`;
+// The Docs of Home: the notes under Home/Docs in the vault.
+export const homeDocsPath = () => '/docs';
+
+// The Docs page that opens one note of the vault by its vault-relative path: the Docs of
+// its project for a path under Projects/<KEY>/, Home's Docs for any other.
+export const vaultNotePath = (path: string) => {
+  const [top, key] = path.split('/');
+  const base = top === 'Projects' && key ? documentsPath(key) : homeDocsPath();
+  return `${base}?path=${encodeURIComponent(path)}`;
+};
 
 export const settingsPath = (key: string, section: string) =>
   `${projectPath(key)}/settings/${section}`;

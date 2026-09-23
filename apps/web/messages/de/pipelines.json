@@ -431,7 +431,14 @@
     "nobody": "keiner",
     "open": "Öffnen",
     "runs": "Läufe",
-    "problems": "Warum er hier nicht laufen kann"
+    "problems": "Warum er hier nicht laufen kann",
+    "runLimit": {
+      "title": "Workflow-Lauflimit",
+      "hint": "Verhindert, dass sich Workflows über Aufgabenänderungen gegenseitig endlos neu auslösen: höchstens so viele Workflow-Läufe dürfen pro Stunde auf einer Aufgabe starten.",
+      "perHour": "pro Stunde",
+      "save": "Speichern",
+      "saved": "Gespeichert."
+    }
   },
   "issuePanel": {
     "title": "Workflows",

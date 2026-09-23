@@ -93,20 +93,5 @@
         "https://vault.volition.one"
       ]
     }
-  },
-  "pushRoutes": {
-    "push.volition.one": {
-      "path": "/gmail",
-      "target": "http://172.30.254.1:18800/inbox/gmail/push",
-      "tokenFile": "/run/secrets/inbox_push_token",
-      "audience": "https://push.volition.one/gmail",
-      "serviceAccount": "gmail-push@example-project.iam.gserviceaccount.com",
-      "subscription": "projects/<google-project>/subscriptions/<gmail-push-subscription>",
-      "accounts": [
-        "owner@example.com",
-        "archive@example.com",
-        "personal@example.com"
-      ]
-    }
   }
 }

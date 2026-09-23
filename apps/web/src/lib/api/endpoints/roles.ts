@@ -19,6 +19,7 @@ export type PermissionResource =
   | 'labels'
   | 'ai_agents'
   | 'integrations'
+  | 'mail'
   | 'agent_skills'
   | 'agent_tools'
   | 'custom_fields'

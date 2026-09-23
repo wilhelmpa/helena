@@ -291,7 +291,8 @@ class LauncherRequestTest(unittest.TestCase):
         self.assertIn('unknown runtime', self.refused(runtime='bash'))
         self.assertIn('not provisioned', self.refused(slug='beta', profile='beta'))
         self.assertIn('may not set', self.refused(env={'HTTPS_PROXY': 'x'}))
-        self.assertIn('may not set', self.refused(env={'VOLITION_X': 'x'}))
+        self.assertIn('may not set', self.refused(env={'VOLITION_AGENT_SANDBOX': 'x'}))
+        self.worker.check_run({**self.base, 'env': {'VOLITION_VAULT_ACCESS': '{}'}})
         self.assertIn('another agent', self.refused(profile='alpha_7', agentId=8))
         self.assertIn('takes no arguments', self.refused(runtime='profile-helper', args=['x']))
 

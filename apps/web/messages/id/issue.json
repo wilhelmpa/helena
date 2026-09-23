@@ -321,6 +321,7 @@
     "agentStarted": "mulai mengerjakan issue",
     "agentFinished": "selesai mengerjakan issue",
     "agentFailed": "tidak dapat menyelesaikan issue",
+    "workflowRunLimited": "mencapai batas jalannya dan melewati <v>{workflow}</v>",
     "pullRequestMerged": "menggabungkan pull request <v>{pr}</v>",
     "pullRequestOpened": "membuka pull request <v>{pr}</v>",
     "worklogAdded": "mencatat <v>{time}</v> pada <v>{date}</v>",
@@ -391,13 +392,11 @@
       "skipped": "Dilewati"
     }
   },
-  "documents": {
-    "title": "Dokumen",
-    "add": "Tautkan halaman Dokumen",
-    "empty": "Belum ada Dokumen yang ditautkan.",
-    "loadFailed": "Tidak dapat memuat Dokumen yang ditautkan. Klik untuk mencoba lagi.",
-    "remove": "Putuskan tautan {title}",
-    "untitled": "Tanpa judul"
+  "knowledge": {
+    "title": "Pengetahuan",
+    "create": "Catatan baru tentang tugas ini",
+    "empty": "Belum ada catatan yang menautkan tugas ini. Catatan menautkannya dengan {link}.",
+    "loadFailed": "Tidak dapat memuat catatan. Klik untuk mencoba lagi."
   },
   "archived": "Diarsipkan",
   "activityHeading": "Aktivitas",

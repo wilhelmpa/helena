@@ -154,13 +154,5 @@
     "download": "Descargar",
     "downloadFile": "Descargar {name}",
     "deleteFile": "Eliminar {name}"
-  },
-  "documents": {
-    "title": "Documentos",
-    "add": "Enlazar un documento",
-    "empty": "Todavía no hay documentos enlazados.",
-    "loadFailed": "No se han podido cargar los documentos enlazados. Reintenta.",
-    "untitled": "Sin título",
-    "remove": "Desenlazar {title}"
   }
 }

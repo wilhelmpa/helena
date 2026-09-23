@@ -57,10 +57,26 @@ export interface ApprovalDecision {
   note?: string;
 }
 
-export const listApprovals = (params: PageParams, status: ApprovalListStatus) =>
-  request<Page<ApprovalRequest>>(`/approvals${pageQuery(params, { status })}`);
+export interface ApprovalProject {
+  id: number;
+  key: string;
+  name: string;
+}
 
-export const getPendingApprovalCount = () => request<{ count: number }>('/approvals/pending-count');
+export const listApprovals = (
+  params: PageParams,
+  status: ApprovalListStatus,
+  projectKey?: string,
+) => request<Page<ApprovalRequest>>(`/approvals${pageQuery(params, { status, projectKey })}`);
+
+export const getPendingApprovalCount = (projectKey?: string) =>
+  request<{ count: number }>(
+    `/approvals/pending-count${projectKey ? `?projectKey=${encodeURIComponent(projectKey)}` : ''}`,
+  );
+
+// The projects the caller may decide approvals in, behind the global page's project
+// filter and the per-project nav badge.
+export const listApprovalProjects = () => request<ApprovalProject[]>('/approvals/projects');
 
 export const listWorkflowGates = () => request<WorkflowGateList>('/approvals/workflow-gates');
 

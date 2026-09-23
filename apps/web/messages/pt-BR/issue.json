@@ -321,6 +321,7 @@
     "agentStarted": "pegou a issue",
     "agentFinished": "terminou o trabalho na issue",
     "agentFailed": "não conseguiu concluir a issue",
+    "workflowRunLimited": "atingiu o limite de execuções e pulou <v>{workflow}</v>",
     "pullRequestMerged": "mesclou o pull request <v>{pr}</v>",
     "pullRequestOpened": "abriu o pull request <v>{pr}</v>",
     "worklogAdded": "registrou <v>{time}</v> em <v>{date}</v>",
@@ -391,13 +392,11 @@
       "skipped": "Ignorado"
     }
   },
-  "documents": {
-    "title": "Docs",
-    "add": "Vincular uma página de Docs",
-    "empty": "Nenhum Doc vinculado ainda.",
-    "loadFailed": "Não foi possível carregar os Docs vinculados. Clique para tentar novamente.",
-    "remove": "Desvincular {title}",
-    "untitled": "Sem título"
+  "knowledge": {
+    "title": "Conhecimento",
+    "create": "Nova nota sobre esta tarefa",
+    "empty": "Nenhuma nota vincula esta tarefa ainda. Uma nota a vincula com {link}.",
+    "loadFailed": "Não foi possível carregar as notas. Clique para tentar novamente."
   },
   "archived": "Arquivado",
   "activityHeading": "Atividade",

@@ -104,8 +104,6 @@ test("hub event route is private, JSON-only and delegates without reshaping the 
     {},
     null,
     null,
-    null,
-    null,
     { emit: async value => ({ ...result, replayed: value.eventId === "replay" }) },
   );
   server = http.createServer(handler);

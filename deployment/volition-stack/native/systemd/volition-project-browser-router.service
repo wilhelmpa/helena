@@ -2,6 +2,8 @@
 Description=Volition project browser loopback router
 After=network.target
 Wants=network.target
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 # Network: Chromium's CDP and KasmVNC listen on 127.0.0.1 only. Isolated agents cannot reach
@@ -17,8 +19,10 @@ Group=volition
 Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
 Environment=PROJECT_BROWSER_ROUTER_PORT=6082
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/browser/project-router.mjs
-Restart=on-failure
+Restart=always
 RestartSec=2
+RestartSteps=5
+RestartMaxDelaySec=60
 UMask=0077
 NoNewPrivileges=yes
 PrivateDevices=yes

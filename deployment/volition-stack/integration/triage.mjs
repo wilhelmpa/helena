@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
-import { InboxValidationError } from "./inbox.mjs";
 import { createMastraInboxRunner } from "./mastra-inbox.mjs";
+
+export class InboxValidationError extends Error {}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PROJECT_KEY = /^[a-z0-9][a-z0-9_-]{0,31}$/i;

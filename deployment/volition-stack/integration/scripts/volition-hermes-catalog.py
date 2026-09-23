@@ -127,6 +127,11 @@ def require_approval_guard(approvals: dict[str, Any]) -> None:
         raise RuntimeError(f'approvals.single_query_mode: approve needs {APPROVAL_GUARD} in plugins.enabled')
 
 
+def plan_plugins(plugin_root: Path) -> dict[str, str]:
+    """The plugin links the runner keeps in every home it serves, restoring one an agent removed."""
+    return {APPROVAL_GUARD: str(plugin_root / APPROVAL_GUARD)}
+
+
 def link_plan_plugins(home: Path, plugin_root: Path) -> None:
     source = plugin_root / APPROVAL_GUARD
     if not (source / '__init__.py').is_file():
@@ -471,7 +476,7 @@ def write_runtime(
     plugin_root: Path = PLAN_PLUGIN_ROOT,
 ) -> tuple[str, int, int]:
     payload = json.loads(template_path.read_text(encoding='utf-8'))
-    payload['hermes'] = profile
+    payload['hermes'] = {**profile, 'plugins': plan_plugins(plugin_root)}
     provider, _default_model = configured_route()
     if provider:
         payload['provider'] = provider

@@ -7,6 +7,7 @@ import type { RunnerConfig } from '../config';
 import { loadConfig } from '../config';
 import { execute } from '../execute';
 import { isolatedEnv, launch, LaunchError, profileHelper } from '../isolation';
+import { IsolatedProfile } from '../policy';
 
 // A stand-in for volition-agent-launcher: it records the request line and the frames it gets
 // and answers the way the test tells it to.
@@ -184,18 +185,23 @@ describe('isolated environment', () => {
         XAUTHORITY: '/x',
         PATH: '/bin',
         https_proxy: 'http://evil',
-        VOLITION_X: '1',
+        VOLITION_AGENT_SANDBOX: '0',
         LD_PRELOAD: '/tmp/x.so',
         'BAD-NAME': '1',
       },
       { ITSAPLAN_API_KEY: 'key', ITSAPLAN_URL: 'http://127.0.0.1:3000' },
-      { ITSAPLAN_RUN_ID: '12', HERMES_MANAGED_DIR: '/p/run/itsaplan-managed' },
+      {
+        ITSAPLAN_RUN_ID: '12',
+        HERMES_MANAGED_DIR: '/p/run/itsaplan-managed',
+        VOLITION_VAULT_ACCESS: '{}',
+      },
     );
     expect(env).toEqual({
       ITSAPLAN_API_KEY: 'key',
       ITSAPLAN_URL: 'http://127.0.0.1:3000',
       ITSAPLAN_RUN_ID: '12',
       HERMES_MANAGED_DIR: '/p/run/itsaplan-managed',
+      VOLITION_VAULT_ACCESS: '{}',
     });
   });
 });
@@ -322,5 +328,56 @@ describe('isolation in the config', () => {
       }),
     );
     await expect(loadConfig(file)).rejects.toThrow('isolation must name');
+  });
+});
+
+describe('isolated profile', () => {
+  it('does every profile operation through the helper, as the project user', async () => {
+    const calls: Record<string, unknown>[] = [];
+    const answers: Record<string, unknown> = {
+      materialize: { revision: 'r1', conflicts: [], restored: [], mcpSecrets: null },
+      plugins: ['plugins/plan-approval-guard'],
+      actions: [{ id: 1, status: 'done' }],
+      inventory: { inventory: { skills: [] }, learned: [{ name: 'x' }] },
+      'vault-sync': [['handle-1', 5]],
+    };
+    const helper = (async (
+      _isolation: unknown,
+      cwd: string,
+      operation: Record<string, unknown>,
+    ) => {
+      calls.push({ cwd, ...operation });
+      return answers[operation.op as string];
+    }) as typeof profileHelper;
+    const profile = new IsolatedProfile(
+      { slug: 'alpha', profile: 'alpha_7', agentId: 7 },
+      '/srv/volition/workspaces/projects/alpha',
+      '/var/lib/volition/hermes/profiles/alpha_7',
+      { toolsets: ['terminal'], mcpServers: [] },
+      helper,
+    );
+    expect(profile.managedDir).toBe(
+      '/var/lib/volition/hermes/profiles/alpha_7/run/itsaplan-managed',
+    );
+    expect(await profile.apply({ revision: 'r1' } as never)).toMatchObject({ revision: 'r1' });
+    expect(await profile.ensurePlugins()).toEqual(['plugins/plan-approval-guard']);
+    expect(await profile.runActions([])).toEqual([]);
+    expect(await profile.runActions([{ id: 1 } as never])).toEqual([
+      { id: 1, status: 'done' },
+    ] as never);
+    expect(await profile.inventory()).toEqual({ skills: [] } as never);
+    expect(await profile.learnedSkills()).toEqual([{ name: 'x' }] as never);
+    expect(await profile.vault().sync([])).toEqual(new Map([['handle-1', 5]]));
+    expect(calls.map((call) => call.op)).toEqual([
+      'materialize',
+      'plugins',
+      'actions',
+      'inventory',
+      'vault-sync',
+    ]);
+    expect(calls.every((call) => call.cwd === '/srv/volition/workspaces/projects/alpha')).toBe(
+      true,
+    );
+    expect(calls[0].profile).toEqual({ toolsets: ['terminal'], mcpServers: [] });
   });
 });

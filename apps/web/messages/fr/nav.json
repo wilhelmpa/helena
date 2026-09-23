@@ -8,6 +8,7 @@
   "initiatives": "Initiatives",
   "cycles": "Cycles",
   "documents": "Docs",
+  "docs": "Docs",
   "notes": "Notes",
   "aiTeam": "Équipe IA",
   "aiAgents": "Agents IA",
@@ -57,7 +58,7 @@
     "openExternal": "Ouvrir {tool} dans un nouvel onglet",
     "unavailable": "{tool} n’est pas configuré",
     "unavailableDescription": "Un administrateur peut connecter cet espace de travail à l’instance.",
-    "mail": "Mail",
+    "mail": "Rédiger",
     "openBeside": "Ouvrir à côté",
     "closeSplit": "Fermer la vue partagée",
     "browserBar": {
@@ -73,9 +74,15 @@
       "liveTitle": "Vue en direct de l’onglet au premier plan",
       "desktop": "Bureau",
       "desktopTitle": "Bureau (VNC)",
+      "followAgentOn": "Suit l’onglet de l’agent",
+      "followAgentOff": "Suivre l’onglet de l’agent",
       "liveKeyboard": "Navigateur en direct. Les touches vont à la page tant que la vue a le focus.",
+      "controlAgent": "L’agent agit actuellement",
       "connecting": "Connexion au navigateur…",
-      "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…"
+      "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…",
+      "dialogTitle": "La page demande",
+      "dialogOk": "OK",
+      "dialogCancel": "Annuler"
     }
   },
   "groups": {
@@ -91,6 +98,7 @@
   "organization": "Organization",
   "schedules": "Planifications",
   "connections": "Connections",
+  "mailAccounts": "Comptes e-mail",
   "agentPool": "Pool d’agents",
   "mcps": "MCP",
   "tools": "Outils",

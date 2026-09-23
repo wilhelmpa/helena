@@ -116,7 +116,7 @@ export function isolatedEnv(...sources: Record<string, string>[]): Record<string
     for (const [name, value] of Object.entries(source)) {
       if (!NAME.test(name) || typeof value !== 'string') continue;
       if (RESERVED.has(name) || PROXY.has(name.toLowerCase())) continue;
-      if (name.startsWith('VOLITION_') || name.startsWith('SYSTEMD_')) continue;
+      if (name.startsWith('VOLITION_AGENT_') || name.startsWith('SYSTEMD_')) continue;
       env[name] = value;
     }
   }

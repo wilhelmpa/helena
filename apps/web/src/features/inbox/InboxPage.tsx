@@ -2,15 +2,14 @@
 
 import { useShell } from '@/context/shellContext';
 import InboxView from './components/InboxView';
-import HubInboxView from './components/HubInboxView';
+import MailInbox from './components/MailInbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { Bell, MessageSquareText } from 'lucide-react';
 import { WORKSPACE_HEADER_CLASS } from '@/components/layout/WorkspaceHeader';
 
-// The per-project inbox (/project/:projectKey/inbox): a list of the session user's
-// notifications for this project on the left, the selected issue on the right. On a
-// narrow screen only one of the two is on screen at a time.
+// The per-project inbox (/project/:projectKey/inbox): the mail filed under the project,
+// and the session user's notifications for it.
 export default function InboxPage() {
   const t = useTranslations('inbox.hub');
   const { project } = useShell();
@@ -31,7 +30,7 @@ export default function InboxPage() {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="messages" className="min-h-0 flex-1">
-        <HubInboxView key={project.project.teamId} teamId={project.project.teamId} />
+        <MailInbox teamId={project.project.teamId} projectId={project.project.id} />
       </TabsContent>
       <TabsContent value="updates" className="min-h-0 flex-1">
         <InboxView key={project.project.key} project={project} />

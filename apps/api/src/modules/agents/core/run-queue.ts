@@ -2,6 +2,7 @@ import { db, agentRun, issue, project } from '@repo/db';
 import { and, desc, eq, gt, inArray, isNotNull, lt, sql } from 'drizzle-orm';
 import { intEnv, iso } from '#shared/lib';
 import type { AgentRunTrigger } from '../model';
+import { reflectionView, type ReflectionView } from '../runner/reflection';
 
 // The agent_run outbox: data access for triggered runs and run history. The api's
 // run poller claims pending rows, runs them, and records the outcome.
@@ -302,6 +303,7 @@ export interface AgentRunRow {
   output: string | null;
   contextTokens?: number;
   blockedQuestion: string | null;
+  reflection: ReflectionView | null;
   nextAttemptAt: string;
   createdAt: string;
 }
@@ -348,6 +350,8 @@ export async function listAgentRuns(
       inputTokens: agentRun.inputTokens,
       outputTokens: agentRun.outputTokens,
       blockedQuestion: agentRun.blockedQuestion,
+      reflection: agentRun.reflection,
+      finishedAt: agentRun.finishedAt,
       nextAttemptAt: agentRun.nextAttemptAt,
       createdAt: agentRun.createdAt,
       issueSeq: issue.sequenceNumber,
@@ -382,6 +386,7 @@ export async function listAgentRuns(
       output: r.output,
       ...contextTokensOf(r),
       blockedQuestion: r.blockedQuestion,
+      reflection: reflectionView(r.reflection, r.finishedAt),
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),
     })),

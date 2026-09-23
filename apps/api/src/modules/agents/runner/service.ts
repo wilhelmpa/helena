@@ -6,7 +6,7 @@ import {
   project,
   projectMember,
 } from '@repo/db';
-import { and, asc, eq, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt, lte, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { type ContextUsage } from '../chat-usage';
 import { enforceAgentLimits } from '../governance';
@@ -15,7 +15,13 @@ import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activ
 import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy, type AgentKind } from '../core/service';
 import type { AgentRunTrigger } from '../model';
-import { MAX_RUN_OUTPUT_BYTES } from './model';
+import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
+import {
+  REFLECTION_LIMITS,
+  reflectionPrompt,
+  reflectionReason,
+  type ReflectionReason,
+} from './reflection';
 import {
   framePrompt,
   peopleContext,
@@ -122,6 +128,8 @@ export interface RunnerRun {
   // behind it are — for the agent's system prompt rather than its task.
   systemPrompt: string;
   attempts: number;
+  // Names this claim on the run's heartbeats, result and release.
+  claim: number;
   issueId: number | null;
   // The issue's human-readable key ("MKT-42"), so the runner can name the work in its
   // log. Null for a run with no issue, or a deleted one.
@@ -142,6 +150,9 @@ export interface RunnerRun {
 // The claim's raw row, before framing. The extra people columns exist only to build
 // the prompts and are not handed to the runner.
 type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
+  // Claimed before, by a claim that ended without a result: the runner stopped, handed
+  // the run back, or lost its lease.
+  interrupted: boolean;
   // The project the run works in, which is what its system prompt names.
   projectKey: string;
   projectName: string;
@@ -164,25 +175,30 @@ export async function touchRunner(agentId: number): Promise<void> {
   await db.update(aiAgent).set({ lastSeenAt: new Date() }).where(eq(aiAgent.id, agentId));
 }
 
-// Fails runs that were handed out too many times without a result, so a run whose
-// runner keeps dying ends in a visible state instead of being served forever. That is
-// the end of the run, so the issue's timeline gets the same entry a reported failure
-// writes.
-async function expireExhaustedRuns(agent: RunnerAgent): Promise<void> {
+// Fails runs of external agents that were handed out too many times without a result,
+// so a run whose runner keeps dying ends in a visible state instead of being served
+// forever. That is the end of the run, so the issue's timeline gets the same entry a
+// reported failure writes. The claim runs it for its agent; the api's janitor runs it
+// for every agent, so a run whose runner never comes back ends as well.
+export async function expireExhaustedRuns(agentId?: number): Promise<number> {
   const rows = await db
     .update(agentRun)
     .set({ status: 'failed', lastError: 'Runner did not report a result', finishedAt: new Date() })
     .where(
       and(
-        eq(agentRun.agentId, agent.id),
+        agentId === undefined ? undefined : eq(agentRun.agentId, agentId),
         eq(agentRun.status, 'pending'),
         sql`${agentRun.attempts} >= ${agentRunConfig.maxAttempts()}`,
         sql`${agentRun.nextAttemptAt} <= now()`,
+        sql`(SELECT kind FROM ai_agent a WHERE a.id = ${agentRun.agentId}) = 'external'`,
       ),
     )
-    .returning({ issueId: agentRun.issueId });
-  for (const row of rows)
-    await recordAgentRunFinished({ ...row, agentUserId: agent.userId }, 'failed');
+    .returning({
+      issueId: agentRun.issueId,
+      agentUserId: sql<string>`(SELECT user_id FROM ai_agent a WHERE a.id = ${agentRun.agentId})`,
+    });
+  for (const row of rows) await recordAgentRunFinished(row, 'failed');
+  return rows.length;
 }
 
 // Claims the agent's next due run, or null when it has none or may not start it: a
@@ -190,7 +206,7 @@ async function expireExhaustedRuns(agent: RunnerAgent): Promise<void> {
 // the same key from taking the same run.
 export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | null> {
   const agentId = agent.id;
-  await expireExhaustedRuns(agent);
+  await expireExhaustedRuns(agentId);
   await touchRunner(agentId);
   const [next] = await db
     .select({ projectId: agentRun.projectId, issueId: agentRun.issueId })
@@ -208,6 +224,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   const rows = await db.execute(sql`
     UPDATE agent_run r
     SET attempts = r.attempts + 1,
+        claims = r.claims + 1,
+        claimed_at = now(),
         started_at = coalesce(r.started_at, now()),
         next_attempt_at = now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})
     WHERE r.id = (
@@ -222,7 +240,9 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.trigger,
       r.prompt,
       r.attempts,
+      r.claims AS "claim",
       r.issue_id AS "issueId",
+      r.started_at < now() AS "interrupted",
       r.max_turns AS "maxTurns",
       r.run_budget_seconds AS "runBudgetSeconds",
       r.model,
@@ -268,12 +288,14 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     id: row.id,
     trigger: row.trigger,
     prompt: framePrompt(forPrompt),
-    systemPrompt: buildSystemPrompt(
-      agent,
-      { key: row.projectKey, name: row.projectName, description: row.projectDescription },
-      forPrompt,
-    ),
+    systemPrompt:
+      buildSystemPrompt(
+        agent,
+        { key: row.projectKey, name: row.projectName, description: row.projectDescription },
+        forPrompt,
+      ) + (row.interrupted ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,
+    claim: row.claim,
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
     sourceActivityId: row.sourceActivityId,
@@ -284,6 +306,12 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,
   };
 }
+
+// Whatever an interrupted attempt did outside the run has happened.
+const INTERRUPTED_RUN =
+  '## Interrupted run\nAn earlier attempt at this run was interrupted before it reported a ' +
+  'result. Check the work item, its comments and your workspace for what that attempt ' +
+  'already did, and do not repeat an action that already took effect.\n';
 
 // The runtime of an agent that works in one project runs in that project's workspace.
 // The Home agent and an agent of several projects share one working directory outside
@@ -319,19 +347,33 @@ export interface RunAck {
   canceled: boolean;
 }
 
+// The claim a runner holds: the run, still pending, not claimed since. A runner that
+// names no claim is not checked.
+function heldBy(agentId: number, runId: number, claim: number | undefined) {
+  return and(
+    eq(agentRun.id, runId),
+    eq(agentRun.agentId, agentId),
+    eq(agentRun.status, 'pending'),
+    claim === undefined ? undefined : eq(agentRun.claims, claim),
+  );
+}
+
 // Extends a claimed run's lease while the runner is still working on it. A command
 // can outlive the lease by far, so the runner sends this periodically; without it the
-// run would be handed to another runner mid-flight. `canceled` is how the runner
-// learns that the run was canceled while it executes it. Null when the run is not
-// this agent's, or finished otherwise.
-export async function heartbeatRun(agentId: number, runId: number): Promise<RunAck | null> {
+// run would be handed to another runner mid-flight. A lease that ran out is extended as
+// long as nobody claimed the run since. `canceled` tells the runner to kill the command
+// and report nothing: the run was canceled, or, for a runner that names its claim, it
+// was claimed again or finished. Null when the run is not this agent's.
+export async function heartbeatRun(
+  agentId: number,
+  runId: number,
+  claim?: number,
+): Promise<RunAck | null> {
   await touchRunner(agentId);
   const rows = await db
     .update(agentRun)
     .set({ nextAttemptAt: sql`now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})` })
-    .where(
-      and(eq(agentRun.id, runId), eq(agentRun.agentId, agentId), eq(agentRun.status, 'pending')),
-    )
+    .where(heldBy(agentId, runId, claim))
     .returning({ id: agentRun.id });
   if (rows.length > 0) return { canceled: false };
   const [row] = await db
@@ -339,15 +381,99 @@ export async function heartbeatRun(agentId: number, runId: number): Promise<RunA
     .from(agentRun)
     .where(and(eq(agentRun.id, runId), eq(agentRun.agentId, agentId)))
     .limit(1);
-  return row?.status === 'canceled' ? { canceled: true } : null;
+  if (!row) return null;
+  return row.status === 'canceled' || claim !== undefined ? { canceled: true } : null;
+}
+
+// Hands a claimed run back to the queue without spending the attempt, for a runner that
+// stops while the run executes: the run is claimable at once instead of after its lease,
+// and the stop does not count towards the attempts that fail it. False when the runner
+// no longer holds the run.
+export async function releaseRun(agentId: number, runId: number, claim: number): Promise<boolean> {
+  await touchRunner(agentId);
+  const rows = await db
+    .update(agentRun)
+    .set({ attempts: sql`${agentRun.attempts} - 1`, nextAttemptAt: sql`now()` })
+    .where(heldBy(agentId, runId, claim))
+    .returning({ id: agentRun.id });
+  return rows.length > 0;
+}
+
+export interface ReflectionRequest {
+  prompt: string;
+  maxTurns: number;
+  runBudgetSeconds: number;
+}
+
+export interface RunReflection {
+  status: 'pending' | 'success' | 'failed';
+  reason: ReflectionReason;
+  saved: (typeof reflectionBody.static)['saved'];
+  summary: string | null;
+  error: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}
+
+// Rework is the agent coming back to an issue it already finished a run on: a reply to
+// its result, a review that sent the work back, a changed request.
+async function isRework(agentId: number, runId: number, issueId: number | null) {
+  if (issueId == null) return false;
+  const [row] = await db
+    .select({ id: agentRun.id })
+    .from(agentRun)
+    .where(
+      and(
+        eq(agentRun.agentId, agentId),
+        eq(agentRun.issueId, issueId),
+        lt(agentRun.id, runId),
+        inArray(agentRun.status, ['success', 'failed']),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
+}
+
+// The reflection the finished run is worth, noted on the run as waiting, or null. None
+// for an agent its tokens paused, or without the session to continue.
+async function requestReflection(
+  agentId: number,
+  runId: number,
+  run: { status: 'success' | 'failed'; issueId: number | null; paused: boolean },
+  report: { sessionId?: string; toolCalls?: number },
+): Promise<ReflectionRequest | null> {
+  if (run.paused || !report.sessionId) return null;
+  const [agent] = await db
+    .select({ runtimePolicy: aiAgent.runtimePolicy })
+    .from(aiAgent)
+    .where(eq(aiAgent.id, agentId));
+  if (!agent) return null;
+  const reason = reflectionReason(normalizeRuntimePolicy(agent.runtimePolicy), {
+    status: run.status,
+    toolCalls: report.toolCalls ?? 0,
+    rework: await isRework(agentId, runId, run.issueId),
+  });
+  if (!reason) return null;
+  const reflection: RunReflection = {
+    status: 'pending',
+    reason,
+    saved: [],
+    summary: null,
+    error: null,
+    inputTokens: null,
+    outputTokens: null,
+  };
+  await db.update(agentRun).set({ reflection }).where(eq(agentRun.id, runId));
+  return { prompt: reflectionPrompt(reason), ...REFLECTION_LIMITS };
 }
 
 // Records the outcome the runner reports. A failure is terminal: the runner ran the
 // command and it failed, so re-serving the same run would just repeat it. A run in
 // which the agent reported itself blocked ends as a success whatever the command did
 // afterwards. The tokens it used may reach a ceiling, which pauses the agent now rather
-// than at its next run. False when the run is not this agent's, or was already
-// finished.
+// than at its next run. Null when the run is not this agent's, was already finished, or
+// was claimed again after the named claim; otherwise the reflection the runner is to
+// start, if any.
 export async function finishRun(
   agent: RunnerAgent,
   runId: number,
@@ -356,8 +482,11 @@ export async function finishRun(
     output?: string | null;
     error?: string | null;
     usage?: ContextUsage | null;
+    sessionId?: string;
+    toolCalls?: number;
   },
-): Promise<boolean> {
+  claim?: number,
+): Promise<{ reflection: ReflectionRequest | null } | null> {
   if (result.output != null && Buffer.byteLength(result.output, 'utf8') > MAX_RUN_OUTPUT_BYTES) {
     throw new HttpError(413, 'Run output exceeds 128 KiB');
   }
@@ -374,20 +503,66 @@ export async function finishRun(
       outputTokens: result.usage?.outputTokens ?? null,
       finishedAt: new Date(),
     })
-    .where(
-      and(eq(agentRun.id, runId), eq(agentRun.agentId, agent.id), eq(agentRun.status, 'pending')),
-    )
+    .where(heldBy(agent.id, runId, claim))
     .returning({
       issueId: agentRun.issueId,
       projectId: agentRun.projectId,
       status: agentRun.status,
     });
   const row = rows[0];
+  if (!row) return null;
+  const status = row.status as 'success' | 'failed';
+  await recordAgentRunFinished({ issueId: row.issueId, agentUserId: agent.userId }, status);
+  const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);
+  return {
+    reflection: await requestReflection(
+      agent.id,
+      runId,
+      { status, issueId: row.issueId, paused: paused !== null },
+      result,
+    ),
+  };
+}
+
+// Records the reflection a run result asked for, once. Its tokens are added to the run's,
+// so the agent's ceilings count them, and may pause the agent.
+export async function recordReflection(
+  agent: RunnerAgent,
+  runId: number,
+  report: typeof reflectionBody.static,
+): Promise<boolean> {
+  const input = report.usage?.inputTokens ?? null;
+  const output = report.usage?.outputTokens ?? null;
+  const rows = await db
+    .update(agentRun)
+    .set({
+      reflection: sql`${agentRun.reflection} || ${JSON.stringify({
+        status: report.status,
+        saved: report.saved,
+        summary: report.summary?.trim() || null,
+        error: report.status === 'failed' ? (report.error ?? 'Reflection failed') : null,
+        inputTokens: input,
+        outputTokens: output,
+      })}::jsonb`,
+      inputTokens:
+        input === null
+          ? agentRun.inputTokens
+          : sql`COALESCE(${agentRun.inputTokens}, 0) + ${input}`,
+      outputTokens:
+        output === null
+          ? agentRun.outputTokens
+          : sql`COALESCE(${agentRun.outputTokens}, 0) + ${output}`,
+    })
+    .where(
+      and(
+        eq(agentRun.id, runId),
+        eq(agentRun.agentId, agent.id),
+        sql`${agentRun.reflection}->>'status' = 'pending'`,
+      ),
+    )
+    .returning({ projectId: agentRun.projectId, issueId: agentRun.issueId });
+  const row = rows[0];
   if (!row) return false;
-  await recordAgentRunFinished(
-    { issueId: row.issueId, agentUserId: agent.userId },
-    row.status as 'success' | 'failed',
-  );
   await enforceAgentLimits(agent.id, row.projectId, row.issueId);
   return true;
 }

@@ -160,14 +160,28 @@ function hermesFrom(value: unknown): HermesProfile | undefined {
     throw new Error('hermes must be an object');
   }
   const profile = value as Record<string, unknown>;
-  const list = (field: keyof HermesProfile) => {
+  const list = (field: 'toolsets' | 'mcpServers') => {
     const items = profile[field];
     if (!Array.isArray(items) || items.some((item) => typeof item !== 'string')) {
       throw new Error(`hermes.${field} must be an array of strings`);
     }
     return items as string[];
   };
-  return { toolsets: list('toolsets'), mcpServers: list('mcpServers') };
+  const plugins = profile.plugins;
+  if (
+    plugins !== undefined &&
+    (!plugins ||
+      typeof plugins !== 'object' ||
+      Array.isArray(plugins) ||
+      Object.values(plugins).some((source) => typeof source !== 'string'))
+  ) {
+    throw new Error('hermes.plugins must map plugin names to directories');
+  }
+  return {
+    toolsets: list('toolsets'),
+    mcpServers: list('mcpServers'),
+    ...(plugins !== undefined && { plugins: plugins as Record<string, string> }),
+  };
 }
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,28}$/;

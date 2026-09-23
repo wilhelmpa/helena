@@ -21,6 +21,7 @@ import initiatives from '../../messages/en/initiatives.json';
 import invite from '../../messages/en/invite.json';
 import issue from '../../messages/en/issue.json';
 import issueLinks from '../../messages/en/issueLinks.json';
+import mail from '../../messages/en/mail.json';
 import mcp from '../../messages/en/mcp.json';
 import members from '../../messages/en/members.json';
 import meta from '../../messages/en/meta.json';
@@ -63,6 +64,7 @@ const defaultMessages = {
   apiKeys,
   invite,
   mcp,
+  mail,
   projects,
   aiChat,
   inbox,

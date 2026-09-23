@@ -9,6 +9,7 @@
   "cycles": "Циклы",
   "notes": "Заметки",
   "documents": "Docs",
+  "docs": "Docs",
   "aiTeam": "AI-команда",
   "aiAgents": "ИИ-агенты",
   "members": "Участники",
@@ -57,7 +58,7 @@
     "openExternal": "Открыть {tool} в новой вкладке",
     "unavailable": "{tool} не настроен",
     "unavailableDescription": "Администратор может подключить это рабочее пространство к инстансу.",
-    "mail": "Mail",
+    "mail": "Написать",
     "openBeside": "Открыть рядом",
     "closeSplit": "Закрыть разделённый вид",
     "browserBar": {
@@ -73,9 +74,15 @@
       "liveTitle": "Прямой показ активной вкладки",
       "desktop": "Рабочий стол",
       "desktopTitle": "Рабочий стол (VNC)",
+      "followAgentOn": "Следует за вкладкой агента",
+      "followAgentOff": "Следовать за вкладкой агента",
       "liveKeyboard": "Браузер в прямом показе. Нажатия клавиш передаются странице, пока вид в фокусе.",
+      "controlAgent": "Агент сейчас действует",
       "connecting": "Подключение к браузеру…",
-      "reconnecting": "Соединение с браузером потеряно. Повторное подключение…"
+      "reconnecting": "Соединение с браузером потеряно. Повторное подключение…",
+      "dialogTitle": "Страница спрашивает",
+      "dialogOk": "ОК",
+      "dialogCancel": "Отмена"
     }
   },
   "groups": {
@@ -91,6 +98,7 @@
   "organization": "Organization",
   "schedules": "Расписания",
   "connections": "Connections",
+  "mailAccounts": "Почтовые аккаунты",
   "agentPool": "Пул агентов",
   "mcps": "MCP",
   "tools": "Инструменты",

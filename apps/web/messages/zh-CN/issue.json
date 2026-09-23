@@ -321,6 +321,7 @@
     "agentStarted": "接手了该工作项",
     "agentFinished": "完成了该工作项的处理",
     "agentFailed": "未能完成该工作项",
+    "workflowRunLimited": "已达到运行次数上限，跳过了 <v>{workflow}</v>",
     "pullRequestMerged": "合并了拉取请求 <v>{pr}</v>",
     "pullRequestOpened": "打开了拉取请求 <v>{pr}</v>",
     "worklogAdded": "记录了 <v>{date}</v> 的 <v>{time}</v>",
@@ -391,13 +392,11 @@
       "skipped": "已跳过"
     }
   },
-  "documents": {
-    "title": "Docs",
-    "add": "关联 Docs 页面",
-    "empty": "暂无关联的 Docs 页面。",
-    "loadFailed": "无法加载关联页面。点击重试。",
-    "remove": "取消关联 {title}",
-    "untitled": "无标题"
+  "knowledge": {
+    "title": "知识",
+    "create": "为此任务新建笔记",
+    "empty": "还没有笔记链接此任务。笔记用 {link} 链接它。",
+    "loadFailed": "无法加载笔记。点击重试。"
   },
   "archived": "已归档",
   "activityHeading": "活动记录",

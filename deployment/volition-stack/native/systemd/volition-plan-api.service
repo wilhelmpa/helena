@@ -3,11 +3,17 @@ Description=Volition Plan API
 After=network-online.target postgresql.service volition-plan-migrate.service
 Wants=network-online.target
 Requires=postgresql.service volition-plan-migrate.service
+# Restarted however often it fails; RestartSteps spaces the attempts out to a minute.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 User=volition-plan
 Group=volition
+# Private/ of the vault belongs to volition-private. The umask keeps what the API writes
+# into the vault readable and writable for its group.
+SupplementaryGroups=volition-private
+UMask=0007
 WorkingDirectory=/srv/volition/source/plan
 EnvironmentFile=/etc/volition/plan.env
 # In production the auth cookies are marked Secure, and a browser drops those over plain
@@ -18,6 +24,9 @@ Environment=API_PORT=3000
 Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
 Environment=PROJECT_WORKSPACE_ROOT=/srv/volition/workspaces/projects
 Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
+# Files it writes into the vault (mail notes, moved mail attachments) stay writable for
+# the volition group.
+UMask=0007
 LoadCredential=plan_control_token:/etc/volition/plan-control.token
 LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
 Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
@@ -25,8 +34,10 @@ Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 LoadCredential=syncthing_api_key:/etc/volition/syncthing-api.key
 Environment=SYNCTHING_API_KEY_FILE=%d/syncthing_api_key
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/api/src/index.ts
-Restart=on-failure
+Restart=always
 RestartSec=2
+RestartSteps=5
+RestartMaxDelaySec=60
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes

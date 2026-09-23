@@ -179,6 +179,12 @@ export function AgentSheetForm({
     });
   }
 
+  // The server enabled a promoted skill already. The selection only needs it while it is
+  // loaded; one that is not reads the server's links, which include it.
+  function addPromotedSkill(id: number) {
+    setSkillIds((prev) => (prev === null ? null : [...new Set([...prev, id])]));
+  }
+
   function toggleTool(id: number, on: boolean) {
     setToolIds((prev) => {
       const base = prev ?? [];
@@ -331,6 +337,7 @@ export function AgentSheetForm({
       toolsContent={toolsContent}
       toolsBadge={countBadge(selectedTools.length, toolsLibrary.length)}
       mcpServersContent={mcpServersContent}
+      onSkillPromoted={addPromotedSkill}
       revealedKey={revealedKey}
       onRevealedKey={setRevealedKey}
     />

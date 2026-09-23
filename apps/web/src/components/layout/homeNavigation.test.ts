@@ -13,6 +13,7 @@ describe('home sidebar navigation', () => {
       { id: 'agentActivity', group: 'agents', href: '/activity' },
       { id: 'schedules', group: 'agents', href: '/schedules' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
+      { id: 'mailAccounts', group: 'globalSettings', href: '/mail/accounts' },
       { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
@@ -34,6 +35,7 @@ describe('home sidebar navigation', () => {
       { id: 'tools', group: 'globalSettings', href: '/tools' },
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
+      { id: 'mailAccounts', group: 'globalSettings', href: '/mail/accounts' },
       { id: 'credentials', group: 'globalSettings', href: '/credentials' },
       { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
@@ -42,5 +44,22 @@ describe('home sidebar navigation', () => {
     assert.ok(!ids.includes('notifications'));
     assert.ok(!ids.includes('workItems'));
     assert.ok(!ids.includes('apiDocs'));
+  });
+
+  test('lists Home Docs for the instance owner only', () => {
+    const ids = (isOwner: boolean) => homeNavigation(42, isOwner).map((item) => item.id);
+    assert.ok(!ids(false).includes('docs'));
+    assert.deepEqual(
+      homeNavigation(42, true).find((item) => item.id === 'docs'),
+      { id: 'docs', group: 'work', href: '/docs' },
+    );
+    assert.deepEqual(ids(true).slice(0, 6), [
+      'overview',
+      'allWorkItems',
+      'inbox',
+      'files',
+      'approvals',
+      'docs',
+    ]);
   });
 });

@@ -321,6 +321,7 @@
     "agentStarted": "a pris le ticket en charge",
     "agentFinished": "a terminé son travail sur le ticket",
     "agentFailed": "n'a pas pu terminer le ticket",
+    "workflowRunLimited": "a atteint sa limite d'exécutions et a ignoré <v>{workflow}</v>",
     "pullRequestMerged": "a fusionné la pull request <v>{pr}</v>",
     "pullRequestOpened": "a ouvert la pull request <v>{pr}</v>",
     "worklogAdded": "a enregistré <v>{time}</v> le <v>{date}</v>",
@@ -391,13 +392,11 @@
       "skipped": "Ignoré"
     }
   },
-  "documents": {
-    "title": "Docs",
-    "add": "Lier une page Docs",
-    "empty": "Aucune page Docs liée.",
-    "loadFailed": "Impossible de charger les pages liées. Cliquez pour réessayer.",
-    "remove": "Dissocier {title}",
-    "untitled": "Sans titre"
+  "knowledge": {
+    "title": "Connaissances",
+    "create": "Nouvelle note sur cette tâche",
+    "empty": "Aucune note ne renvoie encore à cette tâche. Une note y renvoie avec {link}.",
+    "loadFailed": "Impossible de charger les notes. Cliquez pour réessayer."
   },
   "archived": "Archivé",
   "activityHeading": "Activité",

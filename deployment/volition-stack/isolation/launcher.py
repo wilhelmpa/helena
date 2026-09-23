@@ -76,7 +76,9 @@ RESERVED_ENV = {
     'PYTHONHOME', 'NO_PROXY', 'NODE_USE_ENV_PROXY', 'TMPDIR', 'XDG_RUNTIME_DIR',
     'LD_PRELOAD', 'LD_LIBRARY_PATH', 'LD_AUDIT', 'CREDENTIALS_DIRECTORY', 'NOTIFY_SOCKET',
 }
-RESERVED_ENV_PREFIXES = ('VOLITION_', 'SYSTEMD_')
+# VOLITION_AGENT_* is the sandbox's own; other VOLITION_ variables (the vault access of the
+# approval guard) are the runtime's.
+RESERVED_ENV_PREFIXES = ('VOLITION_AGENT_', 'SYSTEMD_')
 PROXY_ENV = {'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy', 'ftp_proxy'}
 WORK_KINDS = {'run': 'r', 'chat': 'c', 'helper': 'h'}
 REQUEST_KEYS = {

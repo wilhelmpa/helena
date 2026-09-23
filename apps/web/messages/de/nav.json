@@ -8,6 +8,7 @@
   "cycles": "Zyklen",
   "notes": "Notizen",
   "documents": "Dokumente",
+  "docs": "Dokumente",
   "aiTeam": "KI-Team",
   "aiAgents": "KI-Agenten",
   "members": "Mitglieder",
@@ -58,7 +59,7 @@
     "openExternal": "{tool} in neuem Tab öffnen",
     "unavailable": "{tool} ist nicht konfiguriert",
     "unavailableDescription": "Ein Admin kann diesen Workspace für die Instanz verbinden.",
-    "mail": "E-Mail",
+    "mail": "Verfassen",
     "openBeside": "Daneben öffnen",
     "closeSplit": "Geteilte Ansicht schließen",
     "browserBar": {
@@ -74,9 +75,15 @@
       "liveTitle": "Live-Ansicht des vorderen Tabs",
       "desktop": "Desktop",
       "desktopTitle": "Desktop (VNC)",
+      "followAgentOn": "Folgt dem Tab des Agenten",
+      "followAgentOff": "Dem Tab des Agenten folgen",
       "liveKeyboard": "Live-Browser. Tasten gehen an die Seite, solange die Ansicht den Fokus hat.",
+      "controlAgent": "Der Agent handelt gerade",
       "connecting": "Verbindung zum Browser wird hergestellt…",
-      "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…"
+      "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…",
+      "dialogTitle": "Die Seite fragt",
+      "dialogOk": "OK",
+      "dialogCancel": "Abbrechen"
     }
   },
   "groups": {
@@ -92,6 +99,7 @@
   "organization": "Organisation",
   "schedules": "Zeitpläne",
   "connections": "Verbindungen",
+  "mailAccounts": "E-Mail-Konten",
   "agentPool": "Agentenpool",
   "mcps": "MCPs",
   "tools": "Tools",

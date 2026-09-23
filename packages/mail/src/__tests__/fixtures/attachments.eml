@@ -1,0 +1,45 @@
+From: =?UTF-8?B?SsO8cmdlbiBNw7xsbGVy?= <juergen@example.com>
+To: Patrick <patrick@example.org>
+Cc: "Office" <office@example.org>
+Subject: =?UTF-8?Q?Rechnung_f=C3=BCr_M=C3=A4rz?=
+Date: Tue, 10 Mar 2026 12:00:00 +0100
+Message-ID: <invoice-1@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mixed"
+
+--mixed
+Content-Type: multipart/related; boundary="related"
+
+--related
+Content-Type: multipart/alternative; boundary="alt"
+
+--alt
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Hallo Patrick,
+
+anbei die Rechnung.
+
+--alt
+Content-Type: text/html; charset=utf-8
+
+<p>Hallo Patrick,</p><p>anbei die Rechnung.</p><img src="cid:logo@example.com" alt="Logo">
+--alt--
+
+--related
+Content-Type: image/png; name="logo.png"
+Content-ID: <logo@example.com>
+Content-Disposition: inline; filename="logo.png"
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC
+--related--
+
+--mixed
+Content-Type: application/pdf; name="Rechnung.pdf"
+Content-Disposition: attachment; filename*=UTF-8''Rechnung%20M%C3%A4rz.pdf
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJSBQbGFuIHRlc3QgaW52b2ljZQoxIDAgb2JqIDw8ID4+IGVuZG9iagp0cmFpbGVyIDw8ID4+CiUlRU9GCg==
+--mixed--

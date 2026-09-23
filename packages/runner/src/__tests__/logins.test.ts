@@ -332,18 +332,15 @@ describe('run settings with website logins', () => {
     const vault = new WebLoginVault(hermesHome, store);
     await vault.sync([shop]);
     const { value, asked } = client(policy(false), [shop]);
-    const sync = new HermesPolicySynchronizer(
-      value,
-      new HermesPolicyMaterializer({ hermesHome, profile }),
-      { profile, vault },
-    );
+    const materializer = new HermesPolicyMaterializer({ hermesHome, profile });
+    const sync = new HermesPolicySynchronizer(value, materializer, { profile, vault });
     await sync.ensure();
 
     const settings = await sync.runSettings({ messageId: 5 });
     expect(asked).toEqual([]);
     expect(settings).toEqual({
       toolsets: ['file', 'terminal', 'itsaplan'],
-      env: {},
+      env: { HERMES_MANAGED_DIR: materializer.managedDir },
       logins: new Map(),
     });
     expect(items.size).toBe(0);

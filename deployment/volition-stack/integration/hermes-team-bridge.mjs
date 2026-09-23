@@ -27,6 +27,8 @@ function planOrigin() {
   return url.origin;
 }
 
+// Plan not answering, or failing on its side, is `plan_unavailable`: a request the bridge
+// may send again. Any other refusal is Plan's answer.
 async function planRequest(path, body, token) {
   const response = await fetch(planOrigin() + path, {
     method: 'POST',
@@ -38,7 +40,8 @@ async function planRequest(path, body, token) {
   const value = await response.json().catch(() => null);
   if (!response.ok) {
     const message = value && typeof value.error === 'string' ? value.error : 'Plan rejected the request';
-    throw new HermesTeamError(response.status < 500 ? response.status : 502, 'plan_request_failed', message);
+    if (response.status >= 500) throw new HermesTeamError(502, 'plan_unavailable', message);
+    throw new HermesTeamError(response.status, 'plan_request_failed', message);
   }
   return value;
 }
@@ -77,17 +80,15 @@ export function createHermesTeamHandler({ bridgeToken }, service) {
       response.once('close', () => {
         if (!response.writableFinished) abandoned.abort();
       });
-      const result = request.url === '/internal/hermes/team/stages'
-        ? await service.executeStage(body, abandoned.signal)
-        : request.url === '/internal/hermes/team/synchronize'
-          ? await service.synchronize(body)
-          : request.url === '/internal/hermes/team/routine'
-            ? await service.routine(body)
-            : request.url === '/internal/hermes/team/pipeline'
-              ? await service.pipeline(body)
-              : request.url === '/internal/hermes/team/pipeline-agent'
-                ? await service.executePipelineAgent(body, abandoned.signal)
-                : null;
+      const routes = {
+        '/internal/hermes/team/stages': () => service.executeStage(body, abandoned.signal),
+        '/internal/hermes/team/stages/cancel': () => service.cancelStage(body),
+        '/internal/hermes/team/synchronize': () => service.synchronize(body),
+        '/internal/hermes/team/routine': () => service.routine(body),
+        '/internal/hermes/team/pipeline': () => service.pipeline(body),
+        '/internal/hermes/team/pipeline-agent': () => service.executePipelineAgent(body, abandoned.signal),
+      };
+      const result = Object.hasOwn(routes, request.url) ? await routes[request.url]() : null;
       if (!result) throw new HermesTeamError(404, 'not_found', 'Not found');
       response.statusCode = 200;
       response.end(JSON.stringify(result));
@@ -112,6 +113,10 @@ export async function startHermesTeamBridge() {
     routine: body => planRequest('/internal/orchestration/routine', body, planToken),
     pipeline: body => planRequest('/internal/orchestration/pipeline', body, planToken),
   };
+  // Plan's health overview shows when the bridge was last seen.
+  const heartbeat = () => planRequest('/internal/orchestration/heartbeat', { service: 'bridge' }, planToken).catch(() => {});
+  void heartbeat();
+  setInterval(heartbeat, 30_000).unref();
   const service = createHermesTeamService(plan);
   const server = http.createServer(createHermesTeamHandler({ bridgeToken, planToken }, service));
   await lstat(socketPath).then(stat => {

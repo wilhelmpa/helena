@@ -15,7 +15,8 @@ import IssueLinksPanel from './IssueLinksPanel';
 import IssueDevelopmentPanel from './IssueDevelopmentPanel';
 import IssueAgentTeamPanel from './IssueAgentTeamPanel';
 import IssuePipelinesPanel from './IssuePipelinesPanel';
-import IssueDocumentsPanel from './IssueDocumentsPanel';
+import IssueMailsPanel from './IssueMailsPanel';
+import IssueKnowledgePanel from './IssueKnowledgePanel';
 import IssueWorklogPanel from './IssueWorklogPanel';
 import IssueSubtasksPanel from './IssueSubtasksPanel';
 import IssueActivityFeed from './IssueActivityFeed';
@@ -81,7 +82,7 @@ export default function IssueDetailContent({
   const canManageDevelopment = permissions.can('integrations', 'edit');
   const canReadWorkflows = permissions.can('actions', 'read');
   const canReadDocuments = permissions.can('documents', 'read');
-  const canLinkDocuments = canEdit && permissions.can('documents', 'edit');
+  const canCreateNotes = permissions.can('documents', 'edit');
   const features = useProjectFeatures();
   useFilePaste(canEdit && issue ? (files) => void attachFiles(files) : null);
   const properties = usePersistedOpen('issue-properties-open');
@@ -210,11 +211,20 @@ export default function IssueDetailContent({
       />
 
       {features.documents && (
-        <IssueDocumentsPanel
+        <IssueKnowledgePanel
+          projectKey={project.project.key}
+          identifier={issue.identifier}
+          issueTitle={issue.title}
+          canRead={canReadDocuments}
+          canCreate={canCreateNotes}
+        />
+      )}
+
+      {permissions.can('mail', 'read') && (
+        <IssueMailsPanel
+          teamId={project.project.teamId}
           projectKey={project.project.key}
           issueId={issue.id}
-          canRead={canReadDocuments}
-          canLink={canLinkDocuments}
         />
       )}
 

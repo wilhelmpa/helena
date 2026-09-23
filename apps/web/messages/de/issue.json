@@ -321,6 +321,7 @@
     "agentStarted": "hat die Aufgabe übernommen",
     "agentFinished": "hat die Arbeit an der Aufgabe abgeschlossen",
     "agentFailed": "konnte die Aufgabe nicht abschließen",
+    "workflowRunLimited": "hat sein Lauflimit erreicht und <v>{workflow}</v> übersprungen",
     "pullRequestMerged": "hat den Pull Request <v>{pr}</v> gemergt",
     "pullRequestOpened": "hat den Pull Request <v>{pr}</v> geöffnet",
     "worklogAdded": "hat <v>{time}</v> am <v>{date}</v> erfasst",
@@ -391,13 +392,11 @@
       "skipped": "Übersprungen"
     }
   },
-  "documents": {
-    "title": "Dokumente",
-    "add": "Dokument verknüpfen",
-    "empty": "Noch keine verknüpften Dokumente.",
-    "loadFailed": "Verknüpfte Dokumente konnten nicht geladen werden. Klicke, um es erneut zu versuchen.",
-    "remove": "Verknüpfung mit {title} aufheben",
-    "untitled": "Ohne Titel"
+  "knowledge": {
+    "title": "Wissen",
+    "create": "Neue Notiz zu dieser Aufgabe",
+    "empty": "Noch keine Notiz verlinkt diese Aufgabe. Eine Notiz verlinkt sie mit {link}.",
+    "loadFailed": "Die Notizen konnten nicht geladen werden. Klicke, um es erneut zu versuchen."
   },
   "archived": "Archiviert",
   "activityHeading": "Aktivität",

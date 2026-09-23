@@ -32,7 +32,7 @@
     "bases": { "display": 200, "cdp": 19200, "vnc": 15900, "noVnc": 16080 }
   },
   "hide": ["/var/lib/volition", "/srv/volition", "/var/lib/volition-agent-launcher", "/var/lib/volition-egress"],
-  "inaccessible": ["/etc/volition", "/var/lib/postgresql", "/var/lib/redis", "/var/backups", "/var/log"],
+  "inaccessible": ["/etc/volition", "/var/lib/volition-google", "/var/lib/postgresql", "/var/lib/redis", "/var/backups", "/var/log"],
   "path": "/usr/local/bin:/usr/bin:/bin",
   "limits": {
     "memoryMax": "6G",

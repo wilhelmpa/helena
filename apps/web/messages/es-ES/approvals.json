@@ -1,7 +1,10 @@
 {
   "hint": "Los agentes piden aprobación aquí antes de enviar, publicar, pagar o eliminar algo fuera de Plan, y los flujos de trabajo esperan aquí en su punto de aprobación. Tu decisión y tu nota inician el siguiente paso.",
+  "projectHint": "Los agentes piden aprobación aquí antes de enviar, publicar, pagar o eliminar algo fuera de Plan para este proyecto, y sus flujos de trabajo esperan aquí en su punto de aprobación.",
   "pending": "Pendientes",
   "decided": "Decididas",
+  "filterProject": "Filtrar por proyecto",
+  "filterProjectAll": "Todos los proyectos",
   "empty": {
     "pending": "Nada que decidir",
     "decided": "Aún no hay decisiones"

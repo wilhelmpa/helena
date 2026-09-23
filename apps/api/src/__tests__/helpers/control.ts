@@ -47,9 +47,12 @@ function defaultAnswer(request: ControlRequest): unknown {
 export const controlPlane = {
   requests: [] as ControlRequest[],
   answer: defaultAnswer as (request: ControlRequest) => unknown,
+  // Whether its health endpoint answers, which is how Plan checks Mastra.
+  healthy: true,
   reset() {
     this.requests = [];
     this.answer = defaultAnswer;
+    this.healthy = true;
   },
   started() {
     return this.requests.filter((request) => request.operation === 'start');
@@ -60,6 +63,11 @@ const server = Bun.serve({
   hostname: '127.0.0.1',
   port: 0,
   async fetch(request) {
+    if (new URL(request.url).pathname === '/healthz')
+      return Response.json(
+        { ok: controlPlane.healthy },
+        { status: controlPlane.healthy ? 200 : 503 },
+      );
     if (
       new URL(request.url).pathname !== '/internal/mastra/control' ||
       request.headers.get('authorization') !== `Bearer ${MASTRA_CONTROL_TOKEN}`

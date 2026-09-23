@@ -12,6 +12,9 @@ export const RunnerRunResponse = t.Object({
   prompt: t.String(),
   systemPrompt: t.String(),
   attempts: t.Number(),
+  claim: t.Number({
+    description: 'Names this claim on the heartbeats, the result and a release of the run.',
+  }),
   issueId: t.Nullable(t.Number()),
   issueIdentifier: t.Nullable(t.String()),
   sourceActivityId: t.Nullable(t.Number()),
@@ -28,11 +31,23 @@ export const ClaimResponse = t.Object({ run: t.Nullable(RunnerRunResponse) });
 
 export const runParams = t.Object({ runId: t.Numeric() });
 
+// The claim the runner holds, from the claimed run. With it the server refuses a
+// heartbeat, result or release of a runner whose run was claimed again.
+export const runClaimQuery = t.Object({
+  claim: t.Optional(t.Numeric({ minimum: 1, description: 'The claim of the claimed run.' })),
+});
+
+export const releaseQuery = t.Object({
+  claim: t.Numeric({ minimum: 1, description: 'The claim of the claimed run.' }),
+});
+
 // The heartbeat's answer. The server has no connection to the runner, so the cancel
 // is returned on the call the runner already makes.
 export const RunAckResponse = t.Object({
   canceled: t.Boolean({
-    description: 'The run was canceled: kill the command and report nothing for it.',
+    description:
+      'The run was canceled, or claimed again after the named claim: kill the command ' +
+      'and report nothing for it.',
   }),
 });
 
@@ -50,4 +65,41 @@ export const resultBody = t.Object({
   ),
   error: t.Optional(t.Nullable(t.String({ description: 'Why the run failed.' }))),
   usage: contextUsageBody,
+  sessionId: t.Optional(
+    t.String({
+      minLength: 1,
+      maxLength: 200,
+      description: "The agent's session of the run, which a reflection continues.",
+    }),
+  ),
+  toolCalls: t.Optional(
+    t.Integer({ minimum: 0, description: 'How many tool calls the agent made in the run.' }),
+  ),
+});
+
+// The answer to a run result: a reflection the runner starts in the run's session, or
+// null. Plan decides it from the agent's settings and the run.
+export const ResultResponse = t.Object({
+  reflection: t.Nullable(
+    t.Object({
+      prompt: t.String(),
+      maxTurns: t.Number(),
+      runBudgetSeconds: t.Number(),
+    }),
+  ),
+});
+
+// What the agent saved in a reflection, one entry per memory or skill write that succeeded.
+export const reflectionSaved = t.Object({
+  tool: t.Union([t.Literal('memory'), t.Literal('skill')]),
+  action: t.String({ minLength: 1, maxLength: 40 }),
+  target: t.String({ maxLength: 200 }),
+});
+
+export const reflectionBody = t.Object({
+  status: t.Union([t.Literal('success'), t.Literal('failed')]),
+  usage: contextUsageBody,
+  saved: t.Array(reflectionSaved, { maxItems: 50 }),
+  summary: t.Optional(t.Nullable(t.String({ maxLength: 2000 }))),
+  error: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
 });

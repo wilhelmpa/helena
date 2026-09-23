@@ -1,5 +1,6 @@
-import MailPage from '@/features/connections/MailPage';
+import { redirect } from 'next/navigation';
+import { globalInboxPath } from '@/utils/paths';
 
 export default function Mail() {
-  return <MailPage />;
+  redirect(globalInboxPath());
 }

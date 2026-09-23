@@ -87,6 +87,8 @@ export const qk = {
   pipelineVersion: (pipelineId: number, version: number) =>
     ['pipeline', pipelineId, 'versions', version] as const,
   pipelineContext: (scope: string) => ['pipelineContext', scope] as const,
+  pipelineRunLimit: (projectKey: string) =>
+    ['pipelines', 'project', projectKey, 'runLimit'] as const,
   pipelineValidation: (scope: string, draft: string) =>
     ['pipelineValidation', scope, draft] as const,
   anyPipelineRuns: ['pipelineRuns'] as const,
@@ -105,21 +107,17 @@ export const qk = {
   // widgets. `kind` names the metric (stats/pulse/throughput/breakdown/...) and
   // `params` scopes it to the widget's query (window, filters).
   dashboards: (projectKey: string) => ['dashboards', projectKey] as const,
-  documents: (projectKey: string, q = '', archived = false) =>
-    ['documents', projectKey, 'list', archived ? 'archived' : 'active', q] as const,
-  documentListsForProject: (projectKey: string) => ['documents', projectKey, 'list'] as const,
-  document: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId] as const,
-  documentRevisions: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'revisions'] as const,
-  documentAssets: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'assets'] as const,
-  documentIssueLinks: (projectKey: string, documentId: number) =>
-    ['documents', projectKey, 'document', documentId, 'issues'] as const,
-  issueDocumentLinks: (projectKey: string, issueId: number) =>
-    ['documents', projectKey, 'issue', issueId] as const,
-  initiativeDocumentLinks: (projectKey: string, initiativeId: number) =>
-    ['documents', projectKey, 'initiative', initiativeId] as const,
+  // The knowledge vault, addressed by vault-relative path. `knowledge` is the
+  // invalidation base for all of it: a write can move a note between lists.
+  knowledge: ['knowledge'] as const,
+  knowledgeTree: (root: string) => ['knowledge', 'tree', root] as const,
+  knowledgeDocument: (path: string) => ['knowledge', 'document', path] as const,
+  knowledgeBacklinks: (path: string) => ['knowledge', 'backlinks', path] as const,
+  knowledgeTaskNotes: (identifier: string) => ['knowledge', 'task', identifier] as const,
+  knowledgeTrash: (root: string) => ['knowledge', 'trash', root] as const,
+  knowledgeConflicts: (root: string) => ['knowledge', 'conflicts', root] as const,
+  knowledgeHistory: (path: string) => ['knowledge', 'history', path] as const,
+  knowledgeSearch: (q: string, folder = '') => ['knowledge', 'search', folder, q] as const,
   // Note boards (the notes canvases). `noteBoardsForProject` is the invalidation
   // base for every list/search variant; `noteBoardsSearch` is one paged switcher
   // query (scoped by search text); `noteBoard` is a single board with its canvas.
@@ -233,6 +231,11 @@ export const qk = {
     ['credentials', teamId, 'uses', id, params] as const,
   agentMcpServers: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'mcp-servers'] as const,
+  // What an agent learned: the actions waiting for its runner, and one learned skill.
+  agentRuntimeActions: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
+  learnedSkill: (teamId: number, agentId: number, path: string) =>
+    ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,
@@ -296,16 +299,30 @@ export const qk = {
   notifications: (projectKey: string, filters?: unknown) =>
     ['notifications', projectKey, filters ?? {}] as const,
   notificationsUnread: (projectKey: string) => ['notificationsUnread', projectKey] as const,
-  // The approvals inbox: agents' requests, the pending count of the sidebar badge, and
-  // the workflow runs waiting at an approval gate.
+  // The approvals inbox: agents' requests (globally or narrowed to one project), the
+  // pending count of the sidebar badges, and the workflow runs waiting at an approval
+  // gate. approvalsPendingCountAll is the invalidation target for every pending count,
+  // global and per-project alike (a query key prefix match).
   approvalLists: ['approvals', 'list'] as const,
-  approvals: (status: string, params: unknown) => ['approvals', 'list', status, params] as const,
-  approvalsPendingCount: ['approvals', 'pendingCount'] as const,
+  approvals: (status: string, params: unknown, projectKey?: string) =>
+    ['approvals', 'list', status, params, projectKey ?? null] as const,
+  approvalsPendingCountAll: ['approvals', 'pendingCount'] as const,
+  approvalsPendingCount: (projectKey?: string) =>
+    ['approvals', 'pendingCount', projectKey ?? null] as const,
+  approvalProjects: ['approvals', 'projects'] as const,
   workflowGates: ['approvals', 'workflowGates'] as const,
   pipelineApprovals: ['approvals', 'pipelines'] as const,
-  hubInboxSources: (teamId: number) => ['hubInbox', teamId, 'sources'] as const,
-  hubInboxThreads: (teamId: number, filters: unknown) =>
-    ['hubInbox', teamId, 'threads', filters] as const,
+  mail: (teamId: number) => ['mail', teamId] as const,
+  mailAccounts: (teamId: number) => ['mail', teamId, 'accounts'] as const,
+  projectMailAccounts: (projectKey: string) => ['mail', 'project', projectKey, 'accounts'] as const,
+  mailRules: (teamId: number) => ['mail', teamId, 'rules'] as const,
+  mailFolders: (teamId: number, accountId?: number) =>
+    ['mail', teamId, 'folders', accountId ?? null] as const,
+  mailThreads: (teamId: number, filters: unknown) => ['mail', teamId, 'threads', filters] as const,
+  mailThread: (threadId: number) => ['mail', 'thread', threadId] as const,
+  mailDrafts: (teamId: number) => ['mail', teamId, 'drafts'] as const,
+  mailDraft: (draftId: number) => ['mail', 'draft', draftId] as const,
+  issueMailThreads: (issueId: number) => ['mail', 'issue', issueId] as const,
   // The signed-in user's WebAuthn passkeys (account security page).
   passkeys: ['passkeys'] as const,
   // The signed-in user's connected external accounts (accounts page): the linked
@@ -330,6 +347,8 @@ export const qk = {
   instanceTelegramSettings: ['instanceTelegramSettings'] as const,
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
+  // The services around Plan and the agent runs that wait or overran (Home, god only).
+  systemHealth: ['systemHealth'] as const,
   // The upload limits as read by the upload UI (open to any signed-in user).
   storageSettings: ['storageSettings'] as const,
   // The running version (any signed-in user) and the upstream release check (god).

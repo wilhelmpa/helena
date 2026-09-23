@@ -7,6 +7,6 @@ RUN apk upgrade --no-cache \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn \
       /usr/local/bin/yarnpkg /usr/local/bin/corepack
-COPY auth.mjs push.mjs routing.mjs server.mjs ./
+COPY auth.mjs routing.mjs server.mjs ./
 USER node
 CMD ["node", "server.mjs"]

@@ -9,10 +9,18 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { useApprovals } from '../services/approvals.service';
 import ApprovalRequestCard from './ApprovalRequestCard';
 
-export default function ApprovalRequestList({ status }: { status: ApprovalListStatus }) {
+export default function ApprovalRequestList({
+  status,
+  projectKey,
+}: {
+  status: ApprovalListStatus;
+  // Narrows the list to one project (the project's own Approvals page); left out on
+  // the global page, which lists every project the reader may decide in.
+  projectKey?: string;
+}) {
   const t = useTranslations('approvals');
   const paging = usePaging();
-  const query = useApprovals(status, paging.params);
+  const query = useApprovals(status, paging.params, projectKey);
   const total = query.data?.total ?? 0;
 
   if (query.isPending) return <ListSkeleton rows={3} rowClassName="h-24" />;
