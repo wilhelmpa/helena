@@ -71,7 +71,7 @@ describe('queued run', () => {
     );
     const reflection = { prompt: 'Look back.', maxTurns: 8, runBudgetSeconds: 120 };
     const client = {
-      report: async (_runId: number, result: unknown) => {
+      report: async (_runId: number, _claim: number, result: unknown) => {
         reports.push(result);
         return reflection;
       },
@@ -144,7 +144,7 @@ describe('result report', () => {
         sent.push({ claim, result });
       },
     } as unknown as Client;
-    const outcome = await perform(
+    const performed = await perform(
       config,
       client,
       { ...run, attempts: 2, claim: 2 },
@@ -154,7 +154,7 @@ describe('result report', () => {
         wait: noWait,
       },
     );
-    expect(outcome).toMatchObject({ status: 'success' });
+    expect(performed!.outcome).toMatchObject({ status: 'success' });
     expect(sent).toEqual([{ claim: 2, result: expect.objectContaining({ output: 'done' }) }]);
   });
 

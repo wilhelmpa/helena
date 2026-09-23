@@ -674,7 +674,8 @@ describe('agent runner queue', () => {
         { status: 'success', output: 'Done once' },
         { query: { claim: 2 } },
       );
-      expect(current.status).toBe(204);
+      expect(current.status).toBe(200);
+      expect(current.data!.reflection).toBeNull();
     });
 
     it('extends a lease that ran out while nobody claimed the run', async () => {
