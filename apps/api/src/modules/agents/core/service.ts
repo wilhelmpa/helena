@@ -304,6 +304,12 @@ export interface AiAgentRow {
   // Last time this copy was synced from its template; null for a template or a plain
   // agent.
   templateSyncedAt: string | null;
+  // The tokens the agent's runs may use per day and per calendar month (UTC); null is
+  // no ceiling. The 'budgets' template-sync group's other half of runtimePolicy's
+  // maxTurns/runBudgetSeconds. Written by governance.setAgentTokenCeilings and by
+  // copyTemplateIntoProject (from the template) — never here.
+  dailyTokenCeiling: number | null;
+  monthlyTokenCeiling: number | null;
   // When a runner last polled for this agent, which is what presence is derived
   // from. Null until a runner connects.
   lastSeenAt: string | null;
@@ -353,6 +359,8 @@ function mapAgent(row: {
   sourceTemplateId: number | null;
   templateOverrides: unknown;
   templateSyncedAt: Date | null;
+  dailyTokenCeiling: number | null;
+  monthlyTokenCeiling: number | null;
   lastSeenAt: Date | null;
   pausedAt: Date | null;
   pauseReason: string | null;
@@ -393,6 +401,8 @@ function mapAgent(row: {
       ? (row.templateOverrides as TemplateFieldGroup[])
       : [],
     templateSyncedAt: row.templateSyncedAt ? iso(row.templateSyncedAt) : null,
+    dailyTokenCeiling: row.dailyTokenCeiling,
+    monthlyTokenCeiling: row.monthlyTokenCeiling,
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
     pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
     pauseReason: row.pauseReason,
@@ -439,6 +449,8 @@ const agentColumns = {
   sourceTemplateId: aiAgent.sourceTemplateId,
   templateOverrides: aiAgent.templateOverrides,
   templateSyncedAt: aiAgent.templateSyncedAt,
+  dailyTokenCeiling: aiAgent.dailyTokenCeiling,
+  monthlyTokenCeiling: aiAgent.monthlyTokenCeiling,
   lastSeenAt: aiAgent.lastSeenAt,
   pausedAt: aiAgent.pausedAt,
   pauseReason: aiAgent.pauseReason,

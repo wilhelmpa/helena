@@ -181,6 +181,9 @@ export interface AiAgent {
   templateOverrides: TemplateFieldGroup[];
   // Last time this copy was synced from its template.
   templateSyncedAt: string | null;
+  // Null is no ceiling. Days and months are UTC.
+  dailyTokenCeiling: number | null;
+  monthlyTokenCeiling: number | null;
   // When the agent's runner last polled, or null while none ever has.
   lastSeenAt: string | null;
   // Set while the agent takes no new work, with why.

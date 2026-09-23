@@ -52,7 +52,6 @@ if (!API_KEY) {
 // ---------------------------------------------------------------------------
 
 let created = 0;
-let updated = 0;
 let skipped = 0;
 
 function log(line: string): void {

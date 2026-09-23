@@ -291,6 +291,8 @@ export const AiAgentResponse = t.Object({
     description: "Field groups this copy's owner changed by hand; a template sync skips them.",
   }),
   templateSyncedAt: t.Nullable(t.String()),
+  dailyTokenCeiling: t.Nullable(t.Number()),
+  monthlyTokenCeiling: t.Nullable(t.Number()),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({
