@@ -1,6 +1,7 @@
 import { intEnv } from '#shared/lib';
 import { agentRunConfig } from '#modules/agents/core/run-queue';
 import { expireExhaustedRuns } from '#modules/agents/runner/service';
+import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { processAgentRuns } from '#modules/agents/core/run-poller';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
 import { processActionRuns } from '#modules/actions/runner';
@@ -22,6 +23,7 @@ export function startBackgroundJobs(): void {
   // is drained.
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));
   startLoop('run-janitor', runJanitor, () => intEnv('RUN_JANITOR_INTERVAL_MS', 60_000));
+  startLoop('stage-janitor', stageJanitor, () => intEnv('STAGE_JANITOR_INTERVAL_MS', 300_000));
 }
 
 // Ends what nobody else ends: a run of an external agent whose runner stopped reporting
@@ -29,6 +31,12 @@ export function startBackgroundJobs(): void {
 async function runJanitor(): Promise<void> {
   const failed = await expireExhaustedRuns();
   if (failed > 0) console.log(`[background] failed ${failed} runs their runner did not finish`);
+}
+
+async function stageJanitor(): Promise<void> {
+  const canceled = await cancelOrphanedStageRuns();
+  if (canceled > 0)
+    console.log(`[background] canceled ${canceled} stage runs Mastra no longer waits for`);
 }
 
 async function autoArchive(): Promise<void> {

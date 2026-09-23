@@ -65,6 +65,8 @@ Every Hermes stage uses a SHA-256 idempotency key derived from event, correlatio
 
 Mastra connects only through `/run/volition-ipc/hermes-team.sock`. Authentication is read from `HERMES_TEAM_TOKEN_FILE`, which must be below `/run/secrets`. Neither the workflow input nor its stored output contains the token. A stage request waits `timeoutSeconds` plus 30 seconds for the answer.
 
+While the socket is missing, refuses connections or closes a connection (the bridge starts or restarts), Mastra sends the request again every two seconds, for a stage until its timeout and for a synchronization or routine request for five minutes. This does not count as an attempt. The bridge in turn waits out Plan not answering or answering with a server error until the stage's deadline; any other answer of Plan ends the request.
+
 `POST /internal/hermes/team/stages` accepts:
 
 ```json
@@ -81,23 +83,32 @@ Mastra connects only through `/run/volition-ipc/hermes-team.sock`. Authenticatio
   "specialistResults": [],
   "policy": {},
   "execution": {},
+  "workflowRunId": "the Mastra run that waits on the stage",
   "attempt": 1
 }
 ```
 
-It returns the `stageResultSchema` from `src/mastra/team-contracts.ts`. A repeated idempotency key must return the same logical execution and must not create another Hermes session or Plan mutation. The bridge queues each stage as a Plan agent run through `/internal/orchestration/agent-run` with the stage `policy`; Plan stores `maxTurns` and `runBudgetSeconds` on the run and the Hermes runner passes them to `hermes chat`.
+It returns the `stageResultSchema` from `src/mastra/team-contracts.ts`. A repeated idempotency key must return the same logical execution and must not create another Hermes session or Plan mutation. The bridge queues each stage as a Plan agent run through `/internal/orchestration/agent-run` with the stage `policy`; Plan stores `maxTurns` and `runBudgetSeconds` on the run and the Hermes runner passes them to `hermes chat`. Plan stores `workflowRunId` with the key; its janitor cancels a pending stage run whose workflow run was canceled or no longer exists.
 
 Plan refuses a stage with HTTP 409 while the stage's agent is paused, and pauses it first when one of its token ceilings or the project's is reached; the error names the reason. The bridge answers the stage request with the same status and a `message` carrying that error, and the Mastra step fails with it. A run in which the agent marked its task blocked ends as `success` with `blockedQuestion` set in the status document; the bridge fails that stage with HTTP 409 `hermes_run_blocked` and the question, since the run's output is no stage result.
 
 ### Cancellation
 
-A canceled workflow run fires the abort signal of the running step. Mastra aborts the stage request and makes no further attempt, which closes the socket connection. The bridge then stops polling and cancels the stage's Plan run through `/internal/orchestration/agent-run/cancel`:
+A canceled workflow run fires the abort signal of the running step. Mastra aborts the stage request, makes no further attempt, and sends `POST /internal/hermes/team/stages/cancel`:
+
+```json
+{ "schemaVersion": 1, "idempotencyKey": "64 hexadecimal characters", "projectRef": "project:KEY" }
+```
+
+The bridge passes it to `/internal/orchestration/agent-run/cancel`, which takes either that key or the run:
 
 ```json
 { "runId": 7, "projectRef": "project:KEY" }
 ```
 
-It requires the same bearer as the other internal orchestration routes. Plan sets a `pending` run to `canceled` with `finishedAt` and moves the project's control-plane revision; a finished run keeps its outcome. The answer is the same status document `/internal/orchestration/agent-run/status` returns, so a repeated cancel gets the same answer. A runner executing the run learns of the cancel from its next heartbeat, which answers `{ "canceled": true }`: it interrupts the Hermes process group, kills it after five seconds, and reports nothing for the run. A stopping Mastra process closes the connection as well; the canceled run is queued again when Mastra continues the stage after its start.
+It requires the same bearer as the other internal orchestration routes. Plan sets a `pending` run to `canceled` with `finishedAt` and moves the project's control-plane revision; a finished run keeps its outcome. The answer is the same status document `/internal/orchestration/agent-run/status` returns, so a repeated cancel gets the same answer. A runner executing the run learns of the cancel from its next heartbeat, which answers `{ "canceled": true }`: it interrupts the Hermes process group, kills it after five seconds, and reports nothing for the run.
+
+A closed connection only makes the bridge stop polling. A stopping Mastra process closes its connections without canceling anything, so the stage's Plan run keeps executing, and the stage Mastra continues after its start finds that run under the same key: it is executed once. A cancel that does not reach Plan is repaired by Plan's janitor (see above).
 
 `POST /internal/hermes/team/synchronize` accepts the exact project and task references, target state, summary, evidence and idempotency key. It returns the same idempotency key and `synchronizedAt`. The bridge must reject cross-project task references.
 
@@ -163,7 +174,7 @@ Plan controls the workflow through the Mastra control API:
 - `delete-project-schedules` deletes the schedules of every workflow of one project. Plan's worker calls it for a deleted project before provisioning moves the project to the trash, and retries the deletion while it fails.
 - schedule operations create, read, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key. The fires of a schedule Plan creates are real runs, in Europe/Berlin unless the schedule names another time zone. `schedules` lists the schedules of one project (`projectRef`) or of several (`projectRefs`), each with `lastRun`: its newest fire, a manual run included, with run id, fire time, status, output and error. `schedule` reads one schedule of the project and workflow. `update-schedule` changes the cron and the time zone and, with `payload`, the input of the fires.
 
-When Mastra starts, it continues the runs that were active when it stopped, each from the step it was in (`restartActiveRuns` in `src/mastra/index.ts`). The built server does not do this on its own. A continued stage asks the bridge for the same idempotency key.
+When Mastra starts, it continues the runs that were active when it stopped, each from the step it was in (`restartActiveRuns` in `src/mastra/index.ts`). The built server does not do this on its own. A continued stage asks the bridge for the same idempotency key and waits for the Plan run it gets, which is still running, already finished, or queued again after it failed.
 
 Business schedules exist only in Mastra. Hermes cron is limited to Hermes-internal maintenance and must not start Plan workflows.
 

@@ -10,13 +10,15 @@ import {
   projectMember,
   projectSetting,
 } from '@repo/db';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, like, lt, sql } from 'drizzle-orm';
+import { HttpError } from '#shared/lib';
 import { authorizeControlRequest } from './home-agent-bootstrap';
 import { maxTurnsLimit, runBudgetSecondsLimit } from './modules/agents/model';
 import { agentRunConfig } from './modules/agents/core/run-queue';
 import { runLimit } from './modules/agents/core/service';
 import { enforceAgentLimits } from './modules/agents/governance';
 import { listColumns, type ColumnRow } from './modules/columns/service';
+import { controlPlaneRequest } from './modules/control-plane-workflows/service';
 import {
   createIssue,
   enqueueDelegateRun,
@@ -31,6 +33,7 @@ import { bumpControlPlaneRevision } from './modules/sync/service';
 
 const REF = /^[a-z][a-z0-9-]*:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const IDEMPOTENCY = /^[a-f0-9]{64}$/;
+const WORKFLOW_RUN = /^[A-Za-z0-9_-]{1,200}$/;
 const MAX_PROMPT = 48_000;
 
 type JsonObject = Record<string, unknown>;
@@ -94,13 +97,19 @@ export async function enqueueHermesStage(body: unknown) {
   const agentRef = ref(object(input?.agent)?.agentRef, 'agent');
   const idempotencyKey = text(input?.idempotencyKey, 64);
   const prompt = text(input?.prompt, MAX_PROMPT);
+  // The Mastra run that waits on the stage, which the janitor asks about while the stage's
+  // run is pending.
+  const workflowRunId =
+    input?.workflowRunId === undefined ? undefined : text(input.workflowRunId, 200);
   if (
     !projectRef ||
     !taskRef ||
     !agentRef ||
     !idempotencyKey ||
     !IDEMPOTENCY.test(idempotencyKey) ||
-    !prompt
+    !prompt ||
+    workflowRunId === null ||
+    (workflowRunId !== undefined && !WORKFLOW_RUN.test(workflowRunId))
   )
     return { status: 400, body: { error: 'Invalid Hermes stage request' } };
   const executionPolicy = object(input?.policy);
@@ -176,10 +185,17 @@ export async function enqueueHermesStage(body: unknown) {
     if (value) {
       if (value.fingerprint !== requestFingerprint)
         return { conflict: true as const, runId: 0, replayed: false };
-      // A stage is asked for again after its run failed (a retry of the stage or of the
-      // workflow run) or was canceled when Mastra stopped waiting (Mastra restarted and
-      // continues the stage). The run is queued again with its claims counted anew;
-      // Mastra bounds how often it asks.
+      // A stage is asked for again when Mastra continues it after a restart, and after its
+      // run failed or was canceled (a retry of the stage or of the workflow run). A run
+      // still pending is the stage's run as it is; a failed or canceled one is queued again
+      // with its claims counted anew. Mastra bounds how often it asks.
+      if (workflowRunId && value.workflowRunId !== workflowRunId)
+        await tx
+          .update(projectSetting)
+          .set({ value: { ...value, workflowRunId }, updatedAt: new Date() })
+          .where(
+            and(eq(projectSetting.projectId, resolved.project.id), eq(projectSetting.key, key)),
+          );
       await tx
         .update(agentRun)
         .set({
@@ -187,6 +203,7 @@ export async function enqueueHermesStage(body: unknown) {
           attempts: 0,
           output: null,
           lastError: null,
+          startedAt: null,
           finishedAt: null,
           nextAttemptAt: new Date(),
         })
@@ -214,7 +231,14 @@ export async function enqueueHermesStage(body: unknown) {
     await tx.insert(projectSetting).values({
       projectId: resolved.project.id,
       key,
-      value: { fingerprint: requestFingerprint, runId: run.id, projectRef, taskRef, agentRef },
+      value: {
+        fingerprint: requestFingerprint,
+        runId: run.id,
+        projectRef,
+        taskRef,
+        agentRef,
+        ...(workflowRunId ? { workflowRunId } : {}),
+      },
     });
     return { conflict: false as const, runId: run.id, replayed: false };
   });
@@ -284,20 +308,94 @@ export async function hermesStageStatus(body: unknown) {
   };
 }
 
-// Called by the bridge when the workflow run that waits on a stage was canceled. A run
-// that already finished keeps its outcome; a runner executing the run learns of the
-// cancel from its next heartbeat. Answers the status document, so a repeat gets the
-// same answer.
+// The run Plan queued for the stage of an idempotency key, or null when there is none.
+async function stageRunId(projectRef: string, idempotencyKey: string): Promise<number | null> {
+  const [row] = await db
+    .select({ value: projectSetting.value })
+    .from(projectSetting)
+    .innerJoin(project, eq(project.id, projectSetting.projectId))
+    .where(
+      and(
+        eq(project.key, projectRef.slice('project:'.length)),
+        eq(projectSetting.key, settingKey('mastra-agent-run', idempotencyKey)),
+      ),
+    )
+    .limit(1);
+  const runId = Number(object(row?.value)?.runId);
+  return Number.isSafeInteger(runId) ? runId : null;
+}
+
+// Called by the bridge when the workflow run that waits on a stage was canceled, with the
+// run or with the stage's idempotency key. A run that already finished keeps its outcome;
+// a runner executing the run learns of the cancel from its next heartbeat. Answers the
+// status document, so a repeat gets the same answer.
 export async function cancelHermesStage(body: unknown) {
-  const found = await hermesStageStatus(body);
+  const input = object(body);
+  const projectRef = ref(input?.projectRef, 'project');
+  const idempotencyKey = text(input?.idempotencyKey, 64);
+  let request = body;
+  if (projectRef && idempotencyKey && IDEMPOTENCY.test(idempotencyKey)) {
+    const runId = await stageRunId(projectRef, idempotencyKey);
+    if (runId === null) return { status: 404, body: { error: 'Hermes run not found' } };
+    request = { projectRef, runId };
+  }
+  const found = await hermesStageStatus(request);
   if (found.status !== 200) return found;
   const [canceled] = await db
     .update(agentRun)
     .set({ status: 'canceled', finishedAt: new Date() })
-    .where(and(eq(agentRun.id, Number(object(body)?.runId)), eq(agentRun.status, 'pending')))
+    .where(and(eq(agentRun.id, Number(object(request)?.runId)), eq(agentRun.status, 'pending')))
     .returning({ projectId: agentRun.projectId });
   if (canceled) await bumpControlPlaneRevision(canceled.projectId);
-  return hermesStageStatus(body);
+  return hermesStageStatus(request);
+}
+
+// Cancels the pending runs of agent-team stages whose Mastra run no longer waits for
+// them: it was canceled, or Mastra has no such run. The cancel Mastra sends for a
+// canceled run can miss Plan, and the run would then execute for nobody. A stage of a
+// failed workflow run is left alone, since a retry of that run asks for it again. Runs
+// younger than `minAgeSeconds` are skipped, so a stage is not judged while its workflow
+// run is being written. Mastra not answering ends the pass; nothing is canceled on a
+// guess.
+export async function cancelOrphanedStageRuns(minAgeSeconds = 120): Promise<number> {
+  const rows = await db
+    .select({ runId: agentRun.id, projectKey: project.key, value: projectSetting.value })
+    .from(agentRun)
+    .innerJoin(project, eq(project.id, agentRun.projectId))
+    .innerJoin(
+      projectSetting,
+      and(
+        eq(projectSetting.projectId, agentRun.projectId),
+        like(projectSetting.key, 'mastra-agent-run:%'),
+        sql`(${projectSetting.value}->>'runId')::int = ${agentRun.id}`,
+      ),
+    )
+    .where(
+      and(
+        eq(agentRun.status, 'pending'),
+        lt(agentRun.createdAt, sql`now() - make_interval(secs => ${minAgeSeconds})`),
+      ),
+    );
+  let canceled = 0;
+  for (const row of rows) {
+    const workflowRunId = text(object(row.value)?.workflowRunId, 200);
+    if (!workflowRunId) continue;
+    const projectRef = `project:${row.projectKey}`;
+    const orphaned = await controlPlaneRequest<{ status?: unknown }>(
+      { operation: 'run', workflowId: 'agent-team', runId: workflowRunId, projectRef },
+      10_000,
+    ).then(
+      (run) => run?.status === 'canceled',
+      (error: unknown) => {
+        if (error instanceof HttpError && error.status === 404) return true;
+        throw error;
+      },
+    );
+    if (!orphaned) continue;
+    const answer = await cancelHermesStage({ runId: row.runId, projectRef });
+    if (object(answer.body)?.status === 'canceled') canceled += 1;
+  }
+  return canceled;
 }
 
 function syncComment(summary: string, evidence: unknown): string {
