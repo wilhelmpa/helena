@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import { useAiAgentQuery } from '@/services/aiAgents.service';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import { artifactPlacement, chatLayoutMode } from '../../utils/chatLayout';
 import type { Artifact } from '../../utils/artifacts';
@@ -17,6 +19,9 @@ export interface ChatLocation {
 
 export interface ChatWorkspaceProps {
   scopeKey: string;
+  // For useAiAgentQuery's fallback lookup below — null only while the scope itself is
+  // still resolving, in which case there is nothing to look up yet anyway.
+  teamId: number | null;
   projectKey: string | null;
   agents: AiAgent[];
   // Controlled: the caller owns where "here" is — the URL for the full page
@@ -33,6 +38,7 @@ export interface ChatWorkspaceProps {
 // one (see NewChatAgentPicker), it never becomes a group chat.
 export default function ChatWorkspace({
   scopeKey,
+  teamId,
   projectKey,
   agents,
   location,
@@ -89,7 +95,16 @@ export default function ChatWorkspace({
   }, []);
 
   const mode = chatLayoutMode(width || 1024);
-  const selectedAgent = agents.find((agent) => agent.id === agentId) ?? null;
+  const agentInScope = agents.find((agent) => agent.id === agentId) ?? null;
+  // The agent a thread belongs to is not always one this workspace's own picker
+  // offers (a template, one filtered out for some other reason, or simply one the
+  // picker has not loaded yet): fetched directly rather than silently falling back
+  // to "no chat open" and never even asking for the thread's messages. Only tried
+  // once a specific agent is actually wanted and the picker's own list did not carry
+  // it — never while nothing is selected at all.
+  const fallbackAgent = useAiAgentQuery(teamId, agentInScope || agentId == null ? null : agentId);
+  const selectedAgent = agentInScope ?? fallbackAgent.data ?? null;
+  const resolvingAgent = agentId != null && !agentInScope && fallbackAgent.isLoading;
 
   return (
     <div ref={rootRef} className="@container/chat flex h-full min-h-0 flex-1 overflow-hidden">
@@ -121,6 +136,11 @@ export default function ChatWorkspace({
             onToggleArtifact={() => setArtifactOpen((open) => !open)}
             hasArtifact={artifact != null}
           />
+        ) : resolvingAgent ? (
+          <div className="flex h-full min-h-0 flex-col gap-3 p-4">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-full w-full flex-1" />
+          </div>
         ) : (
           <ChatEmptyState
             agents={agents}

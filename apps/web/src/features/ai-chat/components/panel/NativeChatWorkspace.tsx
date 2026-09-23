@@ -55,6 +55,7 @@ export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProp
   return (
     <ChatWorkspace
       scopeKey={scope.scopeKey}
+      teamId={scope.teamId}
       projectKey={chatProjectKey}
       agents={scope.agents}
       location={location}
