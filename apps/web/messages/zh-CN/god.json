@@ -159,7 +159,11 @@
     "saved": "项目默认设置已保存",
     "projectDefaults": "项目默认设置",
     "mcpEnabled": "新项目默认启用 MCP",
-    "mcpEnabledHint": "新项目创建时即纳入所属团队的 MCP 覆盖范围。"
+    "mcpEnabledHint": "新项目创建时即纳入所属团队的 MCP 覆盖范围。",
+    "runResume": "运行恢复",
+    "maxResumes": "恢复次数上限",
+    "maxResumesHint": "在持有该运行的运行器在运行过程中崩溃后，该运行最多可以恢复其编码代理会话多少次，超过后它会自行停止并请求您查看。设为 0 则关闭恢复功能：中断的运行将改为从头重试。",
+    "savedRunResume": "恢复次数上限已保存"
   },
   "authentication": {
     "saved": "身份验证设置已保存",
@@ -336,10 +340,13 @@
     "janitor": {
       "run-janitor": "运行清理器",
       "stage-janitor": "阶段清理器",
-      "workflow-schedules": "日程同步"
+      "workflow-schedules": "日程同步",
+      "resume-janitor": "恢复清理器"
     },
     "janitorRan": "{time}前运行过",
     "janitorCleaned": "{count, plural, other {清理了 # 项}}",
-    "janitorNeverRan": "尚未运行"
+    "janitorNeverRan": "尚未运行",
+    "resuming": "{count, plural, other {# 个运行}}正在崩溃后恢复",
+    "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看"
   }
 }

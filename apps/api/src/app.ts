@@ -136,6 +136,10 @@ export const app = new Elysia()
             description: "Chat with an external agent: the member's messages and its runner's feed",
           },
           {
+            name: 'Chat Prompts',
+            description: "The member's saved prompts for the chat composer",
+          },
+          {
             name: 'Agent Tools',
             description: 'Tools configured on a credential and given to agents',
           },

@@ -46,6 +46,7 @@ import { settingsRoutes } from './modules/settings';
 import { godRoutes } from './modules/god';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
+import { chatPromptRoutes } from './modules/chat-prompts';
 import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
 import { agentRuntimeFileRoutes } from './modules/agents/runtime-files';
 import { notificationRoutes } from './modules/notifications';
@@ -137,6 +138,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(routineRoutes)
   .use(agentRunnerRoutes)
   .use(agentChatRoutes)
+  .use(chatPromptRoutes)
   .use(agentRuntimePolicyRoutes)
   .use(agentRuntimeFileRoutes)
   .use(dashboardRoutes)

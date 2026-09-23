@@ -14,6 +14,7 @@ import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
 import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy, type AgentKind } from '../core/service';
+import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
 import {
@@ -145,6 +146,10 @@ export interface RunnerRun {
   // The folder of the issue's area, relative to the working directory of the agent's
   // runtime, which is the project workspace. The runner starts the run there.
   workdir: string | null;
+  // The coding agent session to resume, when the runner that held this run before died
+  // mid run and reported one: the runner passes this to the command instead of starting
+  // a fresh session. Null for a run claimed for the first time, or resumed past its limit.
+  sessionId: string | null;
 }
 
 // The claim's raw row, before framing. The extra people columns exist only to build
@@ -201,6 +206,41 @@ export async function expireExhaustedRuns(agentId?: number): Promise<number> {
   return rows.length;
 }
 
+// What a run's lastError says once it has reached the resume limit, so the health
+// overview can count these separately from an ordinary failure.
+export const RESUME_LIMIT_ERROR = 'Reached the resume limit; the owner needs to look at this run';
+
+// Fails a run that kept dying and being resumed until it reached the instance's resume
+// limit, so it ends in a visible state the owner can look at instead of sitting pending
+// forever, uncounted by expireExhaustedRuns because its lease keeps making it claimable
+// again. claimRunnerRun already refuses to claim it past the limit; this is what ends
+// it. The run-janitor loop runs it for every agent.
+export async function expireResumeLimitedRuns(): Promise<number> {
+  const { maxResumes } = await getRunResumeSettings();
+  if (maxResumes <= 0) return 0;
+  const rows = await db
+    .update(agentRun)
+    .set({
+      status: 'failed',
+      lastError: RESUME_LIMIT_ERROR,
+      finishedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(agentRun.status, 'pending'),
+        sql`${agentRun.sessionId} IS NOT NULL`,
+        sql`${agentRun.resumes} >= ${maxResumes}`,
+        sql`${agentRun.nextAttemptAt} <= now()`,
+      ),
+    )
+    .returning({
+      issueId: agentRun.issueId,
+      agentUserId: sql<string>`(SELECT user_id FROM ai_agent a WHERE a.id = ${agentRun.agentId})`,
+    });
+  for (const row of rows) await recordAgentRunFinished(row, 'failed');
+  return rows.length;
+}
+
 // Claims the agent's next due run, or null when it has none or may not start it: a
 // paused agent's runs wait in the queue. FOR UPDATE SKIP LOCKED keeps two runners on
 // the same key from taking the same run.
@@ -208,6 +248,12 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   const agentId = agent.id;
   await expireExhaustedRuns(agentId);
   await touchRunner(agentId);
+  const { maxResumes } = await getRunResumeSettings();
+  // A run whose session has already resumed as often as the instance allows is left
+  // pending rather than claimed again: the resume-limit janitor fails it and tells the
+  // owner instead of it being retried silently forever.
+  const claimable = sql`q.status = 'pending' AND q.next_attempt_at <= now()
+    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})`;
   const [next] = await db
     .select({ projectId: agentRun.projectId, issueId: agentRun.issueId })
     .from(agentRun)
@@ -216,6 +262,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         eq(agentRun.agentId, agentId),
         eq(agentRun.status, 'pending'),
         lte(agentRun.nextAttemptAt, sql`now()`),
+        sql`(${agentRun.sessionId} IS NULL OR ${agentRun.resumes} < ${maxResumes})`,
       ),
     )
     .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id))
@@ -227,10 +274,11 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         claims = r.claims + 1,
         claimed_at = now(),
         started_at = coalesce(r.started_at, now()),
+        resumes = CASE WHEN r.session_id IS NOT NULL THEN r.resumes + 1 ELSE r.resumes END,
         next_attempt_at = now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})
     WHERE r.id = (
       SELECT id FROM agent_run q
-      WHERE q.agent_id = ${agentId} AND q.status = 'pending' AND q.next_attempt_at <= now()
+      WHERE q.agent_id = ${agentId} AND ${claimable}
       ORDER BY q.next_attempt_at, q.id
       FOR UPDATE SKIP LOCKED
       LIMIT 1
@@ -246,6 +294,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.max_turns AS "maxTurns",
       r.run_budget_seconds AS "runBudgetSeconds",
       r.model,
+      r.session_id AS "sessionId",
+      r.resumes,
       (SELECT p.key FROM project p WHERE p.id = r.project_id) AS "projectKey",
       (SELECT p.name FROM project p WHERE p.id = r.project_id) AS "projectName",
       (SELECT p.description FROM project p WHERE p.id = r.project_id) AS "projectDescription",
@@ -287,13 +337,13 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   return {
     id: row.id,
     trigger: row.trigger,
-    prompt: framePrompt(forPrompt),
+    prompt: row.sessionId ? RESUME_PROMPT : framePrompt(forPrompt),
     systemPrompt:
       buildSystemPrompt(
         agent,
         { key: row.projectKey, name: row.projectName, description: row.projectDescription },
         forPrompt,
-      ) + (row.interrupted ? INTERRUPTED_RUN : ''),
+      ) + (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,
     claim: row.claim,
     issueId: row.issueId,
@@ -304,6 +354,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     maxTurns: row.maxTurns ?? agent.maxTurns,
     runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
     workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,
+    sessionId: row.sessionId,
   };
 }
 
@@ -312,6 +363,15 @@ const INTERRUPTED_RUN =
   '## Interrupted run\nAn earlier attempt at this run was interrupted before it reported a ' +
   'result. Check the work item, its comments and your workspace for what that attempt ' +
   'already did, and do not repeat an action that already took effect.\n';
+
+// The prompt a resumed run gets instead of the original task: the runner passes the
+// same coding agent session along with it, so the agent already has that context and
+// only needs telling that it was cut off and should pick the work back up.
+const RESUME_PROMPT =
+  'The runner working on this task stopped before it finished, a crash, a restart, or a ' +
+  'deploy. You are continuing the same session. Check the work item, your workspace and ' +
+  'what you already did before you decide what is next; do not repeat an action that ' +
+  'already took effect.';
 
 // The runtime of an agent that works in one project runs in that project's workspace.
 // The Home agent and an agent of several projects share one working directory outside
@@ -383,6 +443,24 @@ export async function heartbeatRun(
     .limit(1);
   if (!row) return null;
   return row.status === 'canceled' || claim !== undefined ? { canceled: true } : null;
+}
+
+// Saves the coding agent session of a claimed run as soon as the runner reads it off
+// the command's own output, not only once the run finishes: a crash before the result
+// still leaves a session the next claim can resume. False when the runner no longer
+// holds the run, which is not fatal to it -- the runner just starts fresh next time.
+export async function reportRunSession(
+  agentId: number,
+  runId: number,
+  claim: number | undefined,
+  sessionId: string,
+): Promise<boolean> {
+  const rows = await db
+    .update(agentRun)
+    .set({ sessionId })
+    .where(heldBy(agentId, runId, claim))
+    .returning({ id: agentRun.id });
+  return rows.length > 0;
 }
 
 // Hands a claimed run back to the queue without spending the attempt, for a runner that

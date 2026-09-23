@@ -198,6 +198,12 @@ with nothing that would renew it, and an external agent's operator rotates it th
 `regenerate-key`. The plugin applies the default to every key it creates, so `issueKey` in
 `apps/api/src/modules/agents/core/service.ts` clears `expires_at` on the row afterwards.
 
+A key's name may be at most `API_KEY_MAX_NAME_LENGTH` (32, the plugin's default, passed as
+`maximumNameLength`) UTF-16 code units; the plugin refuses a longer one with
+`INVALID_NAME_LENGTH`. An agent's display name has no such limit, so `issueKey` cuts the
+key's name (`agent:<display name>`) to fit rather than letting a long name fail the agent's
+creation, a template copy, a coordinator bootstrap or a re-key. The name only labels the row.
+
 A key the plugin will not accept makes it throw out of `auth.api.getSession` rather than
 return no session. `getSessionFromHeaders` turns that back into "no session", so an expired
 key is answered with a 401 instead of a 500. Use it instead of `auth.api.getSession` where

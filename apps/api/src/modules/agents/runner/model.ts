@@ -23,6 +23,13 @@ export const RunnerRunResponse = t.Object({
   maxTurns: t.Nullable(t.Number()),
   runBudgetSeconds: t.Nullable(t.Number()),
   workdir: t.Nullable(t.String()),
+  sessionId: t.Nullable(
+    t.String({
+      description:
+        'The coding agent session to resume: the runner that held this run before died ' +
+        'mid run and reported one. Null for a run claimed for the first time.',
+    }),
+  ),
 });
 
 // The claim result. The run is wrapped so an empty queue is an explicit null rather
@@ -39,6 +46,14 @@ export const runClaimQuery = t.Object({
 
 export const releaseQuery = t.Object({
   claim: t.Numeric({ minimum: 1, description: 'The claim of the claimed run.' }),
+});
+
+export const sessionBody = t.Object({
+  sessionId: t.String({
+    minLength: 1,
+    maxLength: 200,
+    description: "The run's coding agent session, as soon as the runner reads it.",
+  }),
 });
 
 // The heartbeat's answer. The server has no connection to the runner, so the cancel

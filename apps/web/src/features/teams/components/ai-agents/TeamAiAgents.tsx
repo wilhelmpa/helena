@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useAiAgentsQuery, useDeleteAiAgent } from '@/services/aiAgents.service';
 import { useIntegrationCatalogQuery } from '@/services/integrations.service';
@@ -30,9 +31,36 @@ export default function TeamAiAgents() {
   // The agent the sheet edits, by id; null means the sheet is closed. Creating one is
   // the section's own sheet, above this list.
   const [editingId, setEditingId] = useState<number | null>(null);
+  // The section the sheet opens on besides its defaults, set together with editingId
+  // below; cleared once the sheet closes so reopening a different agent by hand starts
+  // from the usual defaults again.
+  const [openSection, setOpenSection] = useState<string | undefined>();
   // The agent whose run history sidebar is open.
   const [runsAgent, setRunsAgent] = useState<AiAgent | null>(null);
   const [deleting, setDeleting] = useState<AiAgent | null>(null);
+
+  // A `/skills` or `/memory` chat command sends the member straight to one agent's
+  // sheet: `?agent=<id>` opens it (`&section=<id>` also expands that section), and the
+  // params are dropped from the URL right away so navigating back or reopening the
+  // page by hand does not reopen it a second time.
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const requested = searchParams.get('agent');
+    if (!requested || agentsQuery.isPending) return;
+    const id = Number(requested);
+    if (agents.some((a) => a.id === id)) {
+      setEditingId(id);
+      setOpenSection(searchParams.get('section') ?? undefined);
+    }
+    const params = new URLSearchParams(searchParams);
+    params.delete('agent');
+    params.delete('section');
+    router.replace(params.size > 0 ? `?${params.toString()}` : window.location.pathname);
+    // Only the deep link itself should ever trigger this; agents/router are stable
+    // enough here not to re-run it on every list refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, agentsQuery.isPending]);
 
   const editing = agents.find((a) => a.id === editingId) ?? null;
   const templates = agents.filter((a) => a.template);
@@ -67,7 +95,11 @@ export default function TeamAiAgents() {
       <TeamAiAgentSheet
         open={editingId != null}
         agent={editing}
-        onClose={() => setEditingId(null)}
+        onClose={() => {
+          setEditingId(null);
+          setOpenSection(undefined);
+        }}
+        initialOpenSection={openSection}
       />
 
       <TeamAiAgentRunsSheet agent={runsAgent} onClose={() => setRunsAgent(null)} />

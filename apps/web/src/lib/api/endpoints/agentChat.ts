@@ -1,4 +1,5 @@
 import { API_URL, apiFailure, request } from '@/lib/api/core/client';
+import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { AgentRunEvent } from '@/lib/api/endpoints/agents';
 
 // The frames of one SSE connection: separated by a blank line, each carrying a single
@@ -30,20 +31,21 @@ async function* readSseFrames(res: Response): AsyncGenerator<{ id: number | null
 // What an external agent's runner reports while it answers, as AG-UI events
 // (https://docs.ag-ui.com). Only the ones the chat renders are named; the rest of the
 // protocol passes through and is ignored here.
-interface AgUiEvent {
+export interface AgUiEvent {
   type: string;
   delta?: string;
   content?: string;
   message?: string;
   toolCallId?: string;
   toolCallName?: string;
+  isError?: boolean;
 }
 
 // How many times a dropped stream is picked up again. The answer keeps being produced
 // on the operator's machine either way; this only decides how long the browser follows it.
 const CHAT_STREAM_RETRIES = 3;
 
-function agentChatBase(scopeKey: string, agentId: number): string {
+export function agentChatBase(scopeKey: string, agentId: number): string {
   const team = /^team:(\d+)$/.exec(scopeKey);
   return team
     ? '/teams/' + team[1] + '/ai-agents/' + agentId
@@ -148,6 +150,25 @@ async function* streamExistingAiAgentChat(
   messageId: number,
   signal?: AbortSignal,
 ): AsyncGenerator<AgentRunEvent> {
+  for await (const event of streamAnswerEvents(scopeKey, agentId, messageId, signal)) {
+    if (event.type === 'RUN_ERROR') {
+      yield { type: 'error', message: event.message ?? 'The agent stopped answering' };
+      continue;
+    }
+    const mapped = toRunEvent(event);
+    if (mapped) yield mapped;
+  }
+}
+
+// The AG-UI events of one answer, from the first, until the answer ends on RUN_FINISHED
+// or RUN_ERROR, which are yielded too. A dropped connection is picked up again from the
+// last event read. Aborting `signal` also asks the API to stop the answer.
+export async function* streamAnswerEvents(
+  scopeKey: string,
+  agentId: number,
+  messageId: number,
+  signal?: AbortSignal,
+): AsyncGenerator<AgUiEvent> {
   const chat = agentChatBase(scopeKey, agentId) + '/chat/' + messageId;
   const cancel = () => {
     // A stop the API refused leaves the answer being produced. The stream this belongs
@@ -170,17 +191,11 @@ async function* streamExistingAiAgentChat(
         for await (const frame of readSseFrames(res)) {
           after = frame.id ?? after;
           const event = JSON.parse(frame.data) as AgUiEvent;
-          if (event.type === 'RUN_FINISHED') {
+          yield event;
+          if (event.type === 'RUN_FINISHED' || event.type === 'RUN_ERROR') {
             ended = true;
             break;
           }
-          if (event.type === 'RUN_ERROR') {
-            ended = true;
-            yield { type: 'error', message: event.message ?? 'The agent stopped answering' };
-            break;
-          }
-          const mapped = toRunEvent(event);
-          if (mapped) yield mapped;
         }
       } catch (err) {
         if (signal?.aborted) throw err;
@@ -247,19 +262,37 @@ export interface AiChatToolPart {
   toolName: string;
   args?: string;
   result?: string;
+  isError?: boolean;
 }
+
+// A vault file or a task a question carries. `path` is relative to the vault.
+export type AiChatAttachment =
+  | { kind: 'file'; path: string; name: string; contentType: string; sizeBytes: number }
+  | { kind: 'task'; issueId: number; identifier: string; title: string };
 
 export type AiChatPart =
   { type: 'text'; text: string } | { type: 'reasoning'; text: string } | AiChatToolPart;
 
 // One restored message of a chat thread's transcript. `stopped` marks an answer the
 // member ended part-way: what the agent had written by then is all there is.
+// An external agent's message also carries its place among its versions (`parentId`,
+// `siblingIds` with itself among them), the agent that answered, what a question
+// carried, and the model, tokens and duration of an answer. `error` is why it failed.
 export interface AiChatMessage {
   id: string;
   role: 'user' | 'assistant';
   parts: AiChatPart[];
   createdAt: string;
   stopped?: boolean;
+  parentId?: string | null;
+  siblingIds?: string[];
+  agentId?: number;
+  attachments?: AiChatAttachment[];
+  model?: string | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  durationMs?: number | null;
+  error?: string;
 }
 
 export interface AiChatThreadPage {
@@ -272,6 +305,7 @@ export interface AiChatMessagePage {
   nextPage: number | null;
   activeAnswer?: {
     messageId: number;
+    agentId?: number;
     status: 'pending' | 'streaming';
     createdAt: string;
   };
@@ -360,3 +394,115 @@ export const deleteAiAgentThread = (scopeKey: string, agentId: number, threadId:
   request<void>(agentChatBase(scopeKey, agentId) + '/threads/' + encodeURIComponent(threadId), {
     method: 'DELETE',
   });
+
+// Sends a question and returns where its answer is produced. `parentId` is the message
+// it follows (null starts the chat over, as an edited first question does); left out,
+// the message the chat shows last.
+export const sendAiAgentChat = (
+  scopeKey: string,
+  agentId: number,
+  input: {
+    prompt: string;
+    threadId?: string;
+    parentId?: number | null;
+    attachments?: { files?: string[]; issueIds?: number[] };
+    model?: string | null;
+    thinkingLevel?: string | null;
+  },
+) =>
+  request<{ threadId: string; messageId: number; userMessageId: number }>(
+    agentChatBase(scopeKey, agentId) + '/chat',
+    { method: 'POST', body: JSON.stringify(input) },
+  );
+
+// Answers a question again, next to the answers it already has.
+export const retryAiAgentChat = (
+  scopeKey: string,
+  agentId: number,
+  input: { threadId: string; questionId: number },
+) =>
+  request<{ threadId: string; messageId: number }>(
+    agentChatBase(scopeKey, agentId) + '/chat/retry',
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+  );
+
+export type ChatListView = 'active' | 'archived' | 'trash';
+
+// One of the caller's chats as the chat list shows it. A chat without a project is a
+// Home chat, addressed through its agent's team.
+export interface ChatSummary {
+  id: string;
+  title: string | null;
+  agent: { id: number; name: string; username: string };
+  teamId: number;
+  project: { id: number; key: string; name: string } | null;
+  issue: { id: number; identifier: string; title: string } | null;
+  pinned: boolean;
+  running: boolean;
+  archivedAt: string | null;
+  deletedAt: string | null;
+  snippet?: string;
+  match?: 'title' | 'user' | 'assistant';
+  createdAt: string;
+  updatedAt: string;
+  // The context size after the chat's last completed answer: absent while no answer
+  // has completed, null where the agent reports no counts that can be read as one.
+  contextTokens?: number | null;
+}
+
+// The scope a chat's agent routes take: its project, or the team for a Home chat.
+export const chatScopeKey = (chat: Pick<ChatSummary, 'project' | 'teamId'>) =>
+  chat.project ? chat.project.key : `team:${chat.teamId}`;
+
+export const listChats = (
+  params: PageParams,
+  filters: { projectKey?: string; agentId?: number; q?: string; view?: ChatListView } = {},
+) =>
+  request<Page<ChatSummary>>(
+    '/chats' +
+      pageQuery(params, {
+        projectKey: filters.projectKey,
+        agentId: filters.agentId == null ? undefined : String(filters.agentId),
+        q: filters.q,
+        view: filters.view,
+      }),
+  );
+
+export const getChat = (threadId: string) =>
+  request<ChatSummary>('/chats/' + encodeURIComponent(threadId));
+
+export const updateChat = (
+  threadId: string,
+  patch: { title?: string; archived?: boolean; issueId?: number | null },
+) =>
+  request<void>('/chats/' + encodeURIComponent(threadId), {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+
+export const setChatPinned = (threadId: string, pinned: boolean) =>
+  request<void>('/chats/' + encodeURIComponent(threadId) + '/pin', {
+    method: pinned ? 'PUT' : 'DELETE',
+  });
+
+export const deleteChat = (threadId: string, permanent = false) =>
+  request<void>('/chats/' + encodeURIComponent(threadId) + (permanent ? '?permanent=true' : ''), {
+    method: 'DELETE',
+  });
+
+export const restoreChat = (threadId: string) =>
+  request<void>('/chats/' + encodeURIComponent(threadId) + '/restore', { method: 'POST' });
+
+// Shows another version of a message, with the newest conversation after it.
+export const showChatVersion = (threadId: string, messageId: number) =>
+  request<void>('/chats/' + encodeURIComponent(threadId) + '/active', {
+    method: 'PUT',
+    body: JSON.stringify({ messageId }),
+  });
+
+// The caller's chats linked to a task.
+export const listIssueChats = (issueId: number) =>
+  request<ChatSummary[]>(`/issues/${issueId}/chats`);
