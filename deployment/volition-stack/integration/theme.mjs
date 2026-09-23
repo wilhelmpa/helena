@@ -101,14 +101,12 @@ async function withRetry(operation) {
 
 export function createThemeService(config, options = {}) {
   const request = options.fetch ?? fetch;
-  const openClaw = options.openClaw;
   let mutation = Promise.resolve();
 
   async function apply(input) {
     const theme = safeTheme(input);
     const operation = mutation.then(async () => {
       const entries = [
-        ["openclaw", () => openClaw.setTheme(theme)],
         ["code", () => updateCodeSettings(config.codeSettingsPath, theme)],
         ["nextcloud", () => updateNextcloud(config, request, theme)],
       ];

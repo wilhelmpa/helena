@@ -13,7 +13,7 @@ import TeamsRail from './components/TeamsRail';
 // The list carries each team's counters, so the section rail beside it shows them
 // without a request of its own.
 export default function ManageTeamsLayout({ children }: { children: ReactNode }) {
-  const t = useTranslations('teams.manage');
+  const t = useTranslations('nav');
   const { data, isPending } = useTeamsQuery();
   const router = useRouter();
   const params = useParams<{ teamId?: string }>();
@@ -23,7 +23,7 @@ export default function ManageTeamsLayout({ children }: { children: ReactNode })
 
   return (
     <TeamsPageView
-      label={t('label')}
+      label={t('projectSettings')}
       list={
         <TeamsRail
           teams={data ?? []}

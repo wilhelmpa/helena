@@ -43,6 +43,7 @@ import { agentScheduleRoutes } from './modules/agents/schedules';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
+import { agentRuntimeFileRoutes } from './modules/agents/runtime-files';
 import { notificationRoutes } from './modules/notifications';
 import { notificationSettingsRoutes } from './modules/notification-settings';
 import { notificationPreferenceRoutes } from './modules/notification-preferences';
@@ -51,6 +52,7 @@ import { telegramRoutes } from './modules/telegram';
 import { syncRoutes } from './modules/sync';
 import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
+import { projectMailAccountRoutes } from './modules/project-mail-accounts';
 
 // The planner API: projects and their columns, issue types, labels, AI agents,
 // custom fields, issues, attachments, saved views, and actions. Mounted on the
@@ -123,6 +125,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentRunnerRoutes)
   .use(agentChatRoutes)
   .use(agentRuntimePolicyRoutes)
+  .use(agentRuntimeFileRoutes)
   .use(dashboardRoutes)
   .use(noteBoardRoutes)
   .use(documentRoutes)
@@ -137,6 +140,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(syncRoutes)
   .use(linkPreviewRoutes)
   .use(hubInboxRoutes)
+  .use(projectMailAccountRoutes)
   .use(organizationRoutes)
   .use(connectionsRoutes)
   .use(settingsRoutes)

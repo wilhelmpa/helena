@@ -33,7 +33,10 @@ import {
 
 export const controlPlaneWorkflowRoutes = new Elysia({
   name: 'control-plane-workflows',
-  detail: { tags: ['Workflows'] },
+  detail: {
+    tags: ['Workflows'],
+    description: 'Manage one project workflow, its runs, approvals, and schedules.',
+  },
 })
   .use(authContext)
   .use(guards)

@@ -570,6 +570,7 @@ export async function createDocument(input: {
   assertValidDocumentContentJson(input.contentJson);
   assertValidMetadata(input.metadata);
   const parentId = input.parentId ?? null;
+  const metadata = documentUserMetadata(input.metadata ?? {});
   return db.transaction(async (tx) => {
     await lockDocumentActor(tx, input.userId);
     await tx.execute(
@@ -585,7 +586,7 @@ export async function createDocument(input: {
         content: input.content ?? '',
         contentJson: input.contentJson ?? null,
         icon: input.icon,
-        metadata: input.metadata ?? {},
+        metadata,
         fullWidth: input.fullWidth ?? false,
         isPrivate: input.isPrivate ?? false,
         position: await nextPosition(tx, input.projectId, parentId),
@@ -942,6 +943,21 @@ function assertValidMetadata(value: Record<string, unknown> | undefined): void {
   assertJsonByteSize(value, MAX_DOCUMENT_METADATA_BYTES, 'metadata');
 }
 
+function documentUserMetadata(value: Record<string, unknown>): Record<string, unknown> {
+  const { markdownSync: _markdownSync, ...metadata } = value;
+  return metadata;
+}
+
+function documentMetadataWithSyncStatus(
+  value: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> {
+  const metadata = documentUserMetadata(value);
+  return current.markdownSync === undefined
+    ? metadata
+    : { ...metadata, markdownSync: current.markdownSync };
+}
+
 export async function updateDocument(
   projectId: number,
   documentId: number,
@@ -1001,7 +1017,9 @@ export async function updateDocument(
         ...(input.content !== undefined ? { content: input.content } : {}),
         ...(input.contentJson !== undefined ? { contentJson: input.contentJson } : {}),
         ...(input.icon !== undefined ? { icon: input.icon } : {}),
-        ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+        ...(input.metadata !== undefined
+          ? { metadata: documentMetadataWithSyncStatus(input.metadata, current.metadata) }
+          : {}),
         ...(input.fullWidth !== undefined ? { fullWidth: input.fullWidth } : {}),
         ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
         ...(input.position !== undefined ? { position: movePlan?.position ?? input.position } : {}),
@@ -1372,7 +1390,7 @@ export async function duplicateDocument(input: {
           content: source.content,
           contentJson: source.contentJson,
           icon: source.icon,
-          metadata: source.metadata,
+          metadata: documentUserMetadata(source.metadata),
           fullWidth: source.fullWidth,
           isPrivate: source.isPrivate,
           position: await nextPosition(tx, input.projectId, parentId),
@@ -1583,7 +1601,7 @@ export async function restoreDocumentRevision(
         content: revision.content,
         contentJson: revision.contentJson,
         icon: revision.icon,
-        metadata: revision.metadata,
+        metadata: documentMetadataWithSyncStatus(revision.metadata, current.metadata),
         fullWidth: revision.fullWidth,
         position: revision.position,
         // A historical secret may never be restored into a public current row.

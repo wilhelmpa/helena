@@ -1,15 +1,18 @@
+'use client';
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { createMailDraft } from '@/lib/api/endpoints/connections';
+import { authorizeMailSend, createMailDraft, sendMailDraft } from '@/lib/api/endpoints/connections';
 import { useTranslations } from 'next-intl';
+import { draftIds } from '../utils/mailPayload';
 
 interface Props {
   account: string;
   reply?: { messageId?: string; threadId?: string; subject?: string };
-  onCreated: () => void;
+  onSent: () => void;
 }
 
-export default function MailComposer({ account, reply, onCreated }: Props) {
+export default function MailComposer({ account, reply, onSent }: Props) {
   const t = useTranslations('connections.mail');
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState(reply?.subject ? `Re: ${reply.subject}` : '');
@@ -17,11 +20,16 @@ export default function MailComposer({ account, reply, onCreated }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
-  const save = async () => {
+  const send = async () => {
+    if (!window.confirm(t('confirmSend'))) {
+      setMessage(t('sendCancelled'));
+      return;
+    }
+
     setBusy(true);
     setMessage('');
     try {
-      await createMailDraft({
+      const draft = await createMailDraft({
         account,
         to: to
           .split(',')
@@ -32,11 +40,17 @@ export default function MailComposer({ account, reply, onCreated }: Props) {
         replyToMessageId: reply?.messageId,
         threadId: reply?.threadId,
       });
+      const draftId = draftIds(draft)[0];
+      if (!draftId) throw new Error(t('errors.saveDraft'));
+      const authorization = await authorizeMailSend(account, draftId);
+      await sendMailDraft(account, draftId, authorization.confirmationToken);
+      setTo('');
+      setSubject('');
       setBody('');
-      setMessage(t('draftSaved'));
-      onCreated();
+      setMessage(t('draftSent'));
+      onSent();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('errors.saveDraft'));
+      setMessage(error instanceof Error ? error.message : t('errors.sendDraft'));
     } finally {
       setBusy(false);
     }
@@ -71,7 +85,7 @@ export default function MailComposer({ account, reply, onCreated }: Props) {
         />
       </label>
       <div className="flex items-center gap-3">
-        <Button disabled={busy || !to.trim() || !subject.trim()} onClick={save}>
+        <Button disabled={busy || !to.trim() || !subject.trim()} onClick={send}>
           {t('saveDraft')}
         </Button>
         <span className="text-xs text-muted-foreground">{t('saveDoesNotSend')}</span>

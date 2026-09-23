@@ -240,6 +240,15 @@ export async function getThreadMessages(
     .offset(page * PAGE_SIZE);
   const hasMore = rows.length > PAGE_SIZE;
   const turns = (hasMore ? rows.slice(0, PAGE_SIZE) : rows).reverse();
+  const newest = page === 0 ? turns.at(-1) : undefined;
+  const activeAnswer =
+    newest?.role === 'assistant' && (newest.status === 'pending' || newest.status === 'streaming')
+      ? {
+          messageId: newest.id,
+          status: newest.status as 'pending' | 'streaming',
+          createdAt: iso(newest.createdAt),
+        }
+      : undefined;
   const answers = await readAnswerParts(
     turns.filter((r) => r.role === 'assistant').map((r) => r.id),
   );
@@ -257,7 +266,11 @@ export async function getThreadMessages(
     // An answer whose runner has reported nothing yet has nothing to show; the browser
     // is streaming it.
     .filter((m) => m.parts.length > 0);
-  return { items, nextPage: hasMore ? page + 1 : null };
+  return {
+    items,
+    nextPage: hasMore ? page + 1 : null,
+    ...(activeAnswer && { activeAnswer }),
+  };
 }
 
 // The event types a transcript is made of: the answer's text, and the tool calls with
@@ -597,28 +610,6 @@ async function validateChatSettings(
 // Binds a thread to the session its runner started, addressed through the answer being
 // produced so the runner needs no separate lookup. The first report wins: a retry of the
 // same answer starts a new session, and rebinding would strand the one already recorded.
-export async function setThreadSession(
-  agentId: number,
-  messageId: number,
-  sessionId: string,
-): Promise<void> {
-  await db
-    .update(agentChatThread)
-    .set({ cliSessionId: sessionId })
-    .where(
-      and(
-        sql`${agentChatThread.cliSessionId} IS NULL`,
-        inArray(
-          agentChatThread.id,
-          db
-            .select({ id: agentChatMessage.threadId })
-            .from(agentChatMessage)
-            .where(and(eq(agentChatMessage.id, messageId), eq(agentChatMessage.agentId, agentId))),
-        ),
-      ),
-    );
-}
-
 async function readQuestion(threadId: string, beforeMessageId: number): Promise<string> {
   const rows = await db
     .select({ content: agentChatMessage.content })
@@ -666,17 +657,37 @@ export async function appendEvents(
   agentId: number,
   messageId: number,
   events: AgUiEventBody[],
+  sessionId?: string,
 ): Promise<ChatAck | null> {
-  const claimed = await db
-    .update(agentChatMessage)
-    .set({
-      content: sql`left(${agentChatMessage.content} || ${textOf(events)}, ${ANSWER_LIMIT})`,
-      nextAttemptAt: leaseUntil(),
-    })
-    .where(liveAnswer(agentId, messageId))
-    .returning({ id: agentChatMessage.id });
-  if (!claimed[0]) return (await wasCanceled(agentId, messageId)) ? { canceled: true } : null;
-  await db.insert(agentChatEvent).values(events.map((event) => ({ messageId, payload: event })));
+  const stored = await db.transaction(async (tx) => {
+    const claimed = await tx
+      .update(agentChatMessage)
+      .set({
+        content: sql`left(${agentChatMessage.content} || ${textOf(events)}, ${ANSWER_LIMIT})`,
+        nextAttemptAt: leaseUntil(),
+      })
+      .where(liveAnswer(agentId, messageId))
+      .returning({ threadId: agentChatMessage.threadId });
+    if (!claimed[0]) return false;
+
+    await tx.insert(agentChatEvent).values(events.map((event) => ({ messageId, payload: event })));
+    if (sessionId) {
+      // The session id and the first events must become durable together. Otherwise a
+      // process crash between two writes can leave a completed transcript that starts a
+      // new Hermes session on its next turn.
+      await tx
+        .update(agentChatThread)
+        .set({ cliSessionId: sessionId })
+        .where(
+          and(
+            eq(agentChatThread.id, claimed[0].threadId),
+            sql`${agentChatThread.cliSessionId} IS NULL`,
+          ),
+        );
+    }
+    return true;
+  });
+  if (!stored) return (await wasCanceled(agentId, messageId)) ? { canceled: true } : null;
   return { canceled: false };
 }
 

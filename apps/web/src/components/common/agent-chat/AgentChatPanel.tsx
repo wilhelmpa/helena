@@ -26,6 +26,7 @@ import {
 import { useTranslations } from 'next-intl';
 
 const MAX_ATTACHMENTS = 10;
+const MAX_PROMPT_CHARS = 32_000;
 
 // The running transcript and the composer for one agent conversation. The
 // conversation state lives above this panel (in the agent chat host), so it is
@@ -213,6 +214,7 @@ export function AgentChatPanel({
                 dir={input ? 'auto' : undefined}
                 className="max-h-[calc(5lh+1.25rem)] min-h-9 px-3.5 py-2.5"
                 value={input}
+                maxLength={MAX_PROMPT_CHARS}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter') return;
@@ -252,7 +254,7 @@ export function AgentChatPanel({
                 }}
               >
                 {composerStart}
-                {projectKey && (
+                {projectKey && !projectKey.startsWith('team:') && (
                   <InputGroupButton
                     type="button"
                     variant="ghost"
@@ -283,7 +285,9 @@ export function AgentChatPanel({
                 <AgentChatSpeechInput
                   disabled={runnerOffline}
                   onTranscript={(text) =>
-                    setInput((current) => `${current}${current ? ' ' : ''}${text}`)
+                    setInput((current) =>
+                      `${current}${current ? ' ' : ''}${text}`.slice(0, MAX_PROMPT_CHARS),
+                    )
                   }
                 />
                 <div className="ms-auto flex items-center gap-1">

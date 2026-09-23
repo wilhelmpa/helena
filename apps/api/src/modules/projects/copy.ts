@@ -26,6 +26,8 @@ import {
   getProjectById,
   mapProject,
   targetTeam,
+  createHermesProjectCoordinator,
+  isHermesProjectCoordinatorUsername,
   type ProjectRow,
 } from './service';
 import { GIT_SETTING_KEY } from '#modules/git/service';
@@ -255,9 +257,15 @@ export async function copyProject(
   // transaction opens so the settings lookup is not part of it.
   const [defaults, teamAgents, defaultRoleId] = await Promise.all([
     getProjectDefaults(),
-    db.select({ userId: aiAgent.userId }).from(aiAgent).where(eq(aiAgent.teamId, ownerTeam.id)),
+    db
+      .select({ userId: aiAgent.userId, username: aiAgent.username })
+      .from(aiAgent)
+      .where(eq(aiAgent.teamId, ownerTeam.id)),
     getDefaultRoleId(ownerTeam.id),
   ]);
+  const sharedTeamAgents = teamAgents.filter(
+    ({ username }) => !isHermesProjectCoordinatorUsername(username),
+  );
   // Agents, integration credentials and roles belong to the team, so what references
   // them survives the copy only when it stays in the same team.
   const sameTeam = ownerTeam.id === source.teamId;
@@ -300,9 +308,9 @@ export async function copyProject(
       teamMcpEnabled: ownerTeam.mcpEnabled,
     });
     await tx.insert(projectMember).values({ projectId: proj.id, userId: ownerId, role: 'owner' });
-    if (teamAgents.length > 0) {
+    if (sharedTeamAgents.length > 0) {
       await tx.insert(projectMember).values(
-        teamAgents.map(({ userId }) => ({
+        sharedTeamAgents.map(({ userId }) => ({
           projectId: proj.id,
           userId,
           role: 'member' as const,
@@ -310,6 +318,14 @@ export async function copyProject(
         })),
       );
     }
+    await createHermesProjectCoordinator(tx, {
+      projectId: proj.id,
+      teamId: ownerTeam.id,
+      projectKey: proj.key,
+      projectName: proj.name,
+      ownerUserId: ownerId,
+      roleId: defaultRoleId,
+    });
 
     // States (columns). When copied, every source column is carried over so views,
     // actions and issues have somewhere to map to. When not copied, the project is
@@ -675,6 +691,7 @@ export async function copyProject(
   // for, and its skills and configured tools would be missing anyway.
   if (inc.agents && sameTeam) {
     for (const a of await listAgents(source.teamId, sourceProjectId)) {
+      if (isHermesProjectCoordinatorUsername(a.username)) continue;
       // The member fields the agent reacts to, remapped onto the copies.
       const fieldTriggers = a.fieldTriggers.flatMap((trigger) => {
         const fieldId = maps.field.get(trigger.fieldId);

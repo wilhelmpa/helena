@@ -1,5 +1,6 @@
 import type { AgUiEvent, ContextUsage } from './agui';
 import type { RunnerConfig } from './config';
+import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
 
 // The agent's API key is the whole authorization: it identifies the agent, and the server
 // only ever hands back that agent's work.
@@ -11,6 +12,8 @@ export interface Run {
   systemPrompt: string;
   issueId: number | null;
   issueIdentifier: string | null;
+  model: string | null;
+  thinkingLevel: string | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -22,6 +25,8 @@ export interface ChatMessage {
   prompt: string;
   systemPrompt: string;
   sessionId: string | null;
+  model: string | null;
+  thinkingLevel: string | null;
 }
 
 // None of these calls does real work on the server, so a request that hangs is a dead
@@ -46,6 +51,20 @@ export class RequestError extends Error {
 export class Client {
   constructor(private readonly config: RunnerConfig) {}
 
+  private async get(path: string): Promise<Response> {
+    const res = await fetch(`${this.config.url}${path}`, {
+      headers: { 'x-api-key': this.config.apiKey },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      throw new RequestError(
+        res.status,
+        `GET ${path} failed with ${res.status}: ${(await res.text()).slice(0, 200)}`,
+      );
+    }
+    return res;
+  }
+
   private async post(
     path: string,
     body?: unknown,
@@ -67,6 +86,14 @@ export class Client {
       );
     }
     return res;
+  }
+
+  async runtimePolicy(): Promise<RuntimePolicySnapshot> {
+    return (await (await this.get('/agent-runtime/policy')).json()) as RuntimePolicySnapshot;
+  }
+
+  async reportRuntimeStatus(status: RuntimeStatus): Promise<void> {
+    await this.post('/agent-runtime/status', status);
   }
 
   async claim(): Promise<Run | null> {
@@ -97,6 +124,10 @@ export class Client {
     const res = await this.post('/agent-chats/claim', undefined, CHAT_CLAIM_TIMEOUT_MS);
     const body = (await res.json()) as { message: ChatMessage | null };
     return body.message;
+  }
+
+  async publishChatCatalog(models: RunnerConfig['models']): Promise<void> {
+    await this.post('/agent-chats/catalog', { models });
   }
 
   // `sessionId` binds the thread to that session for every later message in it. True

@@ -7,7 +7,7 @@ describe('home sidebar navigation', () => {
     assert.deepEqual(homeNavigation(null), [
       { id: 'connections', href: '/connections' },
       { id: 'vault', href: '/vault' },
-      { id: 'manageTeams', href: '/account/teams' },
+      { id: 'projectSettings', href: '/account/teams' },
     ]);
   });
 
@@ -19,11 +19,15 @@ describe('home sidebar navigation', () => {
       { id: 'mcps', href: '/mcps' },
       { id: 'tools', href: '/tools' },
       { id: 'skills', href: '/skills' },
-      { id: 'manageTeams', href: '/account/teams' },
+      { id: 'projectSettings', href: '/account/teams' },
     ]);
     const ids = homeNavigation(42).map((item) => item.id) as string[];
     assert.ok(!ids.includes('notifications'));
     assert.ok(!ids.includes('workItems'));
     assert.ok(!ids.includes('apiDocs'));
+  });
+
+  test('hides the vault when the runtime disables it', () => {
+    assert.ok(!homeNavigation(42, false).some((item) => item.id === 'vault'));
   });
 });

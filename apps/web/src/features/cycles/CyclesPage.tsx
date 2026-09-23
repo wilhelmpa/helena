@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
+import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import { usePlannedCyclesQuery } from '@/services/cycles.service';
 import { cyclesViewPath, type CyclesView } from '@/utils/paths';
 import { rememberCyclesView } from './utils/cyclesView';
@@ -42,15 +43,17 @@ export default function CyclesPage({ view }: { view: CyclesView }) {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex items-center justify-between gap-2 px-4 py-3">
-        <h1 className="text-lg font-semibold">{t('title')}</h1>
-        {can('cycles', 'create') && (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('newCycle')}
-          </Button>
-        )}
-      </div>
+      <WorkspacePageHeader
+        title={t('title')}
+        actions={
+          can('cycles', 'create') && (
+            <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
+              <Plus className="size-3.5" />
+              {t('newCycle')}
+            </Button>
+          )
+        }
+      />
 
       <div className="min-w-0 px-4 pb-2">
         <CyclesViewTabs view={view} onSelect={changeView} />

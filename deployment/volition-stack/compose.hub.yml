@@ -59,7 +59,7 @@ services:
     volumes:
       - /home/pw/services/volition-stack/.secrets/plan_mastra_control_token:/run/secrets/mastra_control_token:ro
     ports: !override ["127.0.0.1:3000:3000"]
-    image: volition/itsaplan-api:2026-09-22-v20-files
+    image: volition/itsaplan-api:2026-09-22-v26-hermes-projects
     user: '1000:1000'
     read_only: true
     cap_drop: [ALL]
@@ -74,7 +74,7 @@ services:
         ipv4_address: 172.30.254.3
   web:
     ports: !override ["127.0.0.1:3001:3001"]
-    image: volition/itsaplan-web:2026-09-22-v22-nav-vault
+    image: volition/itsaplan-web:2026-09-22-v27-tools-ui
     user: '1000:1000'
     read_only: true
     cap_drop: [ALL]
@@ -91,7 +91,8 @@ services:
         condition: service_healthy
     environment:
       WEBHOOK_BATCH_SIZE: '2'
-    image: volition/itsaplan-worker:2026-09-21-v10
+      PROJECT_PROVISIONING_URL: http://172.30.254.1:18800/api/provision
+    image: volition/itsaplan-worker:2026-09-22-v12-project-factory
     user: '1000:1000'
     read_only: true
     cap_drop: [ALL]

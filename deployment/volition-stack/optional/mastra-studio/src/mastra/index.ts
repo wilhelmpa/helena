@@ -2,8 +2,10 @@ import { Mastra } from '@mastra/core/mastra';
 import { LibSQLStore } from '@mastra/libsql';
 import { workflowRegistry } from './registry.ts';
 
+const workflows = process.env.MASTRA_FRESH_MODE === 'true' ? {} : workflowRegistry;
+
 export const mastra = new Mastra({
-  workflows: workflowRegistry,
+  workflows,
   storage: new LibSQLStore({
     id: 'control-plane',
     url: process.env.STUDIO_DATABASE_URL ?? 'file:/data/studio.db',

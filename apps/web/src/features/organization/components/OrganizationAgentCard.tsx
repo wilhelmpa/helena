@@ -49,11 +49,11 @@ export default function OrganizationAgentCard({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Runtime agent ID</span>
+          <span className="text-muted-foreground">{t('fields.hermesAgentId')}</span>
           <Input
             value={runtimeAgentId}
             maxLength={128}
-            placeholder="Agent ID in the connected runtime"
+            placeholder={t('agents.hermesPlaceholder')}
             onChange={(event) => setRuntimeAgentId(event.target.value)}
           />
         </label>

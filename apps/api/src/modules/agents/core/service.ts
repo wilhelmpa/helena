@@ -27,6 +27,7 @@ import { listAgentMemberFieldIds } from '#modules/custom-fields/service';
 import { runsTeam, type TeamStanding } from '#modules/teams/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { deleteAccount } from '#shared/account-deletion';
+import { runtimeFileKind } from '../runtime-files/paths';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -107,7 +108,7 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
   };
 }
 
-function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
+export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
   if (!value || typeof value !== 'object') return { ...EMPTY_RUNTIME_POLICY };
   const policy = value as Partial<AgentRuntimePolicy>;
   const strings = (items: unknown) =>
@@ -128,6 +129,7 @@ function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
           typeof file === 'object' &&
           (file.kind === 'instructions' || file.kind === 'memory') &&
           typeof file.path === 'string' &&
+          runtimeFileKind(file.path) === file.kind &&
           typeof file.content === 'string',
       )
     : [];

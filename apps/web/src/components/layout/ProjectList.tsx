@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Home, SquareKanban } from 'lucide-react';
 import type { Project } from '@/lib/api/endpoints/projects';
+import { runtimeEnv } from '@/utils/runtimeEnv';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -22,6 +23,8 @@ export default function ProjectList({
 }) {
   const t = useTranslations('nav');
   const pathname = usePathname();
+  const homeChatProjectKey = runtimeEnv().workspace.homeChatProjectKey;
+  const visibleProjects = projects.filter((project) => project.key !== homeChatProjectKey);
 
   return (
     <SidebarGroup className="max-h-[45%] min-h-0 shrink-0 overflow-hidden pt-2">
@@ -36,13 +39,13 @@ export default function ProjectList({
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {projects.length === 0 ? (
+        {visibleProjects.length === 0 ? (
           <p className="px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
             {t('noProjects')}
           </p>
         ) : (
           <SidebarMenu className="mt-1 ps-3 group-data-[collapsible=icon]:ps-0">
-            {projects.map((project) => (
+            {visibleProjects.map((project) => (
               <SidebarMenuItem key={project.key}>
                 <SidebarMenuButton
                   isActive={project.key === currentProjectKey}

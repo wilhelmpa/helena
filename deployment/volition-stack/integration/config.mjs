@@ -92,18 +92,38 @@ function boundedText(value, fallback, name, maximum) {
   return selected;
 }
 
-function browserProfile(value) {
-  const profile = value?.trim() || "openclaw";
-  if (!/^[a-z0-9._-]{1,64}$/i.test(profile)) throw new Error("BROWSER_PROFILE is invalid");
-  return profile;
+function projectBrowserPublicUrl(value) {
+  const url = new URL(value || "https://plan.volition.one/browser/");
+  const localHttp =
+    url.protocol === "http:" &&
+    (url.hostname === "127.0.0.1" ||
+      url.hostname === "[::1]" ||
+      url.hostname.endsWith(".local") ||
+      !url.hostname.includes("."));
+  if (
+    (url.protocol !== "https:" && !localHttp) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/[a-z0-9/_-]+\/?$/i.test(url.pathname) ||
+    url.pathname === "/"
+  ) {
+    throw new Error(
+      "PROJECT_BROWSER_PUBLIC_URL must be a credential-free HTTPS URL or loopback HTTP URL with a base path",
+    );
+  }
+  if (!url.pathname.endsWith("/")) url.pathname += "/";
+  return url.toString();
 }
 
-function projectKey(value, fallback) {
-  const key = value?.trim().toLowerCase() || fallback;
-  if (!/^[a-z0-9][a-z0-9._-]{0,63}$/.test(key)) throw new Error("Project key is invalid");
-  return key;
+function integerBase(value, fallback, name) {
+  const selected = Number(value ?? fallback);
+  if (!Number.isInteger(selected) || selected < 1 || selected > 65407) {
+    throw new Error(`${name} is invalid`);
+  }
+  return selected;
 }
-
 function opaqueRef(value, fallback, name) {
   const selected = value?.trim() || fallback;
   if (!/^[a-z][a-z0-9._-]*:[A-Za-z0-9._-]+$/.test(selected)) {
@@ -142,44 +162,10 @@ function privateServiceUrl(value, fallback, expectedPath) {
   return url.toString();
 }
 
-function loopbackWebSocketUrl(value) {
-  const url = new URL(value || "ws://127.0.0.1:18789");
-  if (
-    url.protocol !== "ws:" ||
-    (url.hostname !== "127.0.0.1" && url.hostname !== "[::1]") ||
-    url.username ||
-    url.password ||
-    url.pathname !== "/" ||
-    url.search ||
-    url.hash
-  ) {
-    throw new Error("OPENCLAW_GATEWAY_URL must be an unauthenticated loopback WebSocket URL");
-  }
-  return url.toString();
-}
-
-function triageTransport(value) {
-  const transport = value?.trim() || "cli";
-  if (transport !== "cli" && transport !== "rpc") {
-    throw new Error("OPENCLAW_TRIAGE_TRANSPORT must be cli or rpc");
-  }
-  return transport;
-}
-
 function triageControlPlane(value) {
-  const selected = value?.trim() || "direct";
-  if (selected !== "direct" && selected !== "mastra") {
-    throw new Error("INBOX_TRIAGE_CONTROL_PLANE must be direct or mastra");
-  }
+  const selected = value?.trim() || "mastra";
+  if (selected !== "mastra") throw new Error("INBOX_TRIAGE_CONTROL_PLANE must be mastra");
   return selected;
-}
-
-function inboxAgentId(value) {
-  const agentId = value?.trim() || "inbox-classifier";
-  if (!/^[a-z][a-z0-9-]{0,63}$/.test(agentId)) {
-    throw new Error("OPENCLAW_INBOX_AGENT_ID must be a valid dedicated agent ID");
-  }
-  return agentId;
 }
 
 function jsonStringRecord(value, name) {
@@ -196,31 +182,6 @@ function jsonStringRecord(value, name) {
   const entries = Object.entries(parsed);
   if (entries.some(([key, item]) => !key || typeof item !== "string" || !item)) {
     throw new Error(`${name} must contain non-empty string values`);
-  }
-  return Object.fromEntries(entries);
-}
-
-function jsonPositiveIntegerRecord(value, name) {
-  if (!value) return {};
-  let parsed;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    throw new Error(`${name} must be a JSON object`);
-  }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`${name} must be a JSON object`);
-  }
-  const entries = Object.entries(parsed);
-  if (
-    entries.some(
-      ([key, item]) =>
-        !/^[a-z0-9][a-z0-9._-]{0,63}$/.test(key) ||
-        !Number.isSafeInteger(item) ||
-        item < 1,
-    )
-  ) {
-    throw new Error(`${name} must map safe project keys to positive integers`);
   }
   return Object.fromEntries(entries);
 }
@@ -249,66 +210,72 @@ async function privateCredential(filePath, name) {
 
 export function loadConfig(env = process.env) {
   const home = absolutePath(env.HOME, "/home/pw");
-  const openClawRoot = absolutePath(
-    env.OPENCLAW_ROOT,
-    path.join(home, ".openclaw"),
+  const integrationStateRoot = absolutePath(
+    env.INTEGRATION_STATE_ROOT,
+    "/home/pw/services/volition-workspaces/.state/integration",
   );
   const projectsRoot = absolutePath(
     env.PROJECTS_ROOT,
     "/home/pw/services/volition-workspaces/projects",
   );
+  const provisioningStateRoot = absolutePath(
+    env.PROVISIONING_STATE_ROOT,
+    path.join(path.dirname(projectsRoot), ".state"),
+  );
   return {
     host: bindHost(env.PROVISIONING_HOST, env.PROVISIONING_ALLOW_WILDCARD_BIND === "true"),
     port: port(env.PROVISIONING_PORT),
     token:
-      env.PROVISIONING_TOKEN?.trim() ||
-      env.OPENCLAW_PROVISIONING_TOKEN?.trim() ||
-      "",
+      env.PROVISIONING_TOKEN?.trim() || "",
     provisioningTokenFile: optionalAbsolutePath(env.PROVISIONING_TOKEN_FILE),
     projectsRoot,
+    vaultRoot: absolutePath(env.VOLITION_VAULT_ROOT, "/srv/volition/vault"),
+    projectTrashRoot: absolutePath(
+      env.PROJECT_TRASH_ROOT,
+      "/srv/volition/trash/projects",
+    ),
+    projectTrashRetentionDays: integerBase(
+      env.PROJECT_TRASH_RETENTION_DAYS,
+      30,
+      "PROJECT_TRASH_RETENTION_DAYS",
+    ),
+    workspaceRuntimeRoot: absolutePath(env.WORKSPACE_RUNTIME_ROOT, "/projects"),
     verveProjectPath: absolutePath(
       env.VERVE_PROJECT_PATH,
       "/home/pw/Projekte/Shopify/v1-cart-suite",
     ),
-    openClawBin: absolutePath(
-      env.OPENCLAW_BIN,
-      path.join(home, ".npm-global/bin/openclaw"),
+    hermesBin: absolutePath(
+      env.HERMES_BIN,
+      path.join(home, ".local/bin/hermes"),
     ),
-    openClawGatewayUrl: loopbackWebSocketUrl(env.OPENCLAW_GATEWAY_URL),
-    openClawGatewayPasswordFile: absolutePath(
-      env.OPENCLAW_GATEWAY_PASSWORD_FILE,
-      "/run/credentials/volition-provisioning.service/openclaw_gateway_password",
+    hermesHome: absolutePath(
+      env.HERMES_HOME,
+      "/home/pw/services/volition-stack/data/hermes",
     ),
-    inboxTriageTransport: triageTransport(env.OPENCLAW_TRIAGE_TRANSPORT),
+    hermesAgentsRoot: absolutePath(
+      env.HERMES_AGENTS_ROOT,
+      "/home/pw/services/volition-stack/data/hermes/agents",
+    ),
+    hermesRunnerDescriptorRoot: absolutePath(
+      env.HERMES_RUNNER_DESCRIPTOR_ROOT,
+      "/home/pw/services/volition-stack/data/hermes/run/agents",
+    ),
+    hermesRunnerService: env.HERMES_RUNNER_SERVICE?.trim() || "volition-hermes-runner.service",
     inboxTriageControlPlane: triageControlPlane(env.INBOX_TRIAGE_CONTROL_PLANE),
-    inboxAgentId: inboxAgentId(env.OPENCLAW_INBOX_AGENT_ID),
     connectionsIntegrationTokenFile: absolutePath(
       env.CONNECTIONS_INTEGRATION_TOKEN_FILE,
-      path.join(openClawRoot, "volition/connections-integration-token"),
+      path.join(integrationStateRoot, "connections-integration-token"),
     ),
     connectionsEnabled: env.CONNECTIONS_ENABLED === "true",
     mailEnabled: env.MAIL_ENABLED === "true",
     artifactSyncEnabled: env.ARTIFACT_SYNC_ENABLED === "true",
-    openClawRoot,
-    coordinatorPolicyPath: absolutePath(
-      env.OPENCLAW_COORDINATOR_POLICY_FILE,
-      path.join(openClawRoot, "volition/coordinator-policy.json"),
-    ),
-    agentWorkspaceRoot: absolutePath(
-      env.OPENCLAW_WORKSPACE_ROOT,
-      path.join(openClawRoot, "workspace"),
-    ),
-    agentStateRoot: absolutePath(
-      env.OPENCLAW_AGENT_ROOT,
-      path.join(openClawRoot, "agents"),
-    ),
     registryRoot: absolutePath(
       env.PROVISIONING_REGISTRY_ROOT,
-      path.join(openClawRoot, "volition/projects"),
+      path.join(provisioningStateRoot, "projects"),
     ),
     ledgerPath: absolutePath(
       env.PROVISIONING_LEDGER_PATH,
-      path.join(openClawRoot, "volition/provisioning-ledger.json"),
+      path.join(provisioningStateRoot, "provisioning-ledger.json"),
     ),
     planUrl: publicUrl(env.PLAN_PUBLIC_URL),
     planPublicUrl: publicUrl(env.PLAN_PUBLIC_URL),
@@ -318,6 +285,8 @@ export function loadConfig(env = process.env) {
       "PLAN_INTERNAL_URL",
     ),
     planApiKey: env.ITSAPLAN_MCP_BEARER?.trim() || "",
+    planApiKeyFile: optionalAbsolutePath(env.ITSAPLAN_MCP_BEARER_FILE),
+    planControlTokenFile: optionalAbsolutePath(env.PLAN_CONTROL_TOKEN_FILE),
     planDefaultDepartmentName: boundedText(
       env.PLAN_DEFAULT_DEPARTMENT_NAME,
       "Quality & Operations",
@@ -330,18 +299,46 @@ export function loadConfig(env = process.env) {
       "PLAN_SECRET_ALLOW_HOST",
     ),
     codeUrl: publicUrl(env.CODE_PUBLIC_URL),
+    terminalUrl: publicUrl(env.TERMINAL_PUBLIC_URL),
     codeSettingsPath: absolutePath(
       env.CODE_SETTINGS_PATH,
       "/home/pw/services/volition-stack/.state/code-user-settings/settings.json",
     ),
-    openClawUrl: publicUrl(env.OPENCLAW_PUBLIC_URL),
-    browserStartUrl: publicUrl(env.BROWSER_START_URL || "https://example.com"),
-    browserProfile: browserProfile(env.BROWSER_PROFILE),
+    projectBrowserRoot: absolutePath(
+      env.PROJECT_BROWSER_ROOT,
+      "/var/lib/volition/project-browser/projects",
+    ),
+    projectBrowserPublicUrl: projectBrowserPublicUrl(env.PROJECT_BROWSER_PUBLIC_URL),
+    projectBrowserDisplayBase: integerBase(
+      env.PROJECT_BROWSER_DISPLAY_BASE,
+      200,
+      "PROJECT_BROWSER_DISPLAY_BASE",
+    ),
+    projectBrowserCdpPortBase: integerBase(
+      env.PROJECT_BROWSER_CDP_PORT_BASE,
+      19200,
+      "PROJECT_BROWSER_CDP_PORT_BASE",
+    ),
+    projectBrowserVncPortBase: integerBase(
+      env.PROJECT_BROWSER_VNC_PORT_BASE,
+      15900,
+      "PROJECT_BROWSER_VNC_PORT_BASE",
+    ),
+    projectBrowserNoVncPortBase: integerBase(
+      env.PROJECT_BROWSER_NOVNC_PORT_BASE,
+      16080,
+      "PROJECT_BROWSER_NOVNC_PORT_BASE",
+    ),
+    projectBrowserSystemctlUser: env.PROJECT_BROWSER_SYSTEMCTL_SCOPE === "user",
+    systemctlBin: absolutePath(env.SYSTEMCTL_BIN, "/usr/bin/systemctl"),
+    systemctlUser: env.SYSTEMCTL_SCOPE !== "system",
+    mcookieBin: absolutePath(env.MCOOKIE_BIN, "/usr/bin/mcookie"),
+    xauthBin: absolutePath(env.XAUTH_BIN, "/usr/bin/xauth"),
     filesUrl: publicUrl(env.FILES_PUBLIC_URL),
     nextcloudInternalUrl: nextcloudInternalUrl(env.NEXTCLOUD_INTERNAL_URL),
     artifactSyncStatePath: absolutePath(
       env.ARTIFACT_SYNC_STATE_PATH,
-      path.join(openClawRoot, "volition/artifact-sync.json"),
+      path.join(integrationStateRoot, "volition/artifact-sync.json"),
     ),
     nextcloudHost: hostname(env.NEXTCLOUD_HOST, "cloud.volition.one", "NEXTCLOUD_HOST"),
     nextcloudUser: env.NEXTCLOUD_USER?.trim() || "owner@example.com",
@@ -353,19 +350,19 @@ export function loadConfig(env = process.env) {
     inboxBaselines: jsonStringRecord(env.INBOX_BASELINES, "INBOX_BASELINES"),
     inboxQueuePath: absolutePath(
       env.INBOX_PUSH_QUEUE_PATH,
-      path.join(openClawRoot, "volition/inbox-push.json"),
+      path.join(integrationStateRoot, "volition/inbox-push.json"),
     ),
     inboxTriagePath: absolutePath(
       env.INBOX_TRIAGE_PATH,
-      path.join(openClawRoot, "volition/inbox-triage.json"),
+      path.join(integrationStateRoot, "volition/inbox-triage.json"),
     ),
     inboxTriagePromptRoot: absolutePath(
       env.INBOX_TRIAGE_PROMPT_ROOT,
-      path.join(openClawRoot, "volition/triage-prompts"),
+      path.join(integrationStateRoot, "volition/triage-prompts"),
     ),
     inboxIntegrationTokenFile: absolutePath(
       env.INBOX_INTEGRATION_TOKEN_FILE,
-      path.join(openClawRoot, "volition/inbox-integration-token"),
+      path.join(integrationStateRoot, "volition/inbox-integration-token"),
     ),
     inboxPushTokenFile: absolutePath(
       env.INBOX_PUSH_TOKEN_FILE,
@@ -378,6 +375,16 @@ export function loadConfig(env = process.env) {
     ),
     mastraInboxTokenFile: absolutePath(
       env.MASTRA_INBOX_TOKEN_FILE,
+      "/run/credentials/volition-provisioning.service/mastra_inbox_adapter_token",
+    ),
+    mastraEventIngressEnabled: env.MASTRA_EVENT_INGRESS_ENABLED === "true",
+    mastraEventUrl: privateServiceUrl(
+      env.MASTRA_EVENT_URL,
+      "http://172.30.95.2:4111/internal/events",
+      "/internal/events",
+    ),
+    mastraEventTokenFile: absolutePath(
+      env.MASTRA_EVENT_TOKEN_FILE,
       "/run/credentials/volition-provisioning.service/mastra_inbox_adapter_token",
     ),
     mastraInboxOrganizationRef: opaqueRef(
@@ -397,7 +404,7 @@ export function loadConfig(env = process.env) {
     ),
     mastraInboxClassifierSocketPath: absolutePath(
       env.MASTRA_INBOX_CLASSIFIER_SOCKET,
-      path.join(openClawRoot, "volition/ipc/mastra-inbox-classifier.sock"),
+      path.join(integrationStateRoot, "volition/ipc/mastra-inbox-classifier.sock"),
     ),
     mastraControlEnabled: env.MASTRA_CONTROL_ENABLED === "true",
     mastraControlUrl: privateServiceBaseUrl(
@@ -418,11 +425,11 @@ export function loadConfig(env = process.env) {
     gogBin: absolutePath(env.GOG_BIN, path.join(home, ".local/bin/gog")),
     gogHome: absolutePath(
       env.GOG_HOME,
-      path.join(home, ".local/share/openclaw-gog"),
+      path.join(home, ".local/share/volition-gog"),
     ),
     gogKeyringPasswordFile: absolutePath(
       env.GOG_KEYRING_PASSWORD_FILE,
-      path.join(home, ".local/share/openclaw-gog/keyring.pass"),
+      path.join(home, ".local/share/volition-gog/keyring.pass"),
     ),
   };
 }
@@ -433,37 +440,47 @@ export async function loadServerSecrets(config) {
     (config.provisioningTokenFile
       ? await privateSecret(config.provisioningTokenFile, "PROVISIONING_TOKEN_FILE")
       : "");
+  const planApiKey =
+    config.planApiKey ||
+    (config.planApiKeyFile
+      ? await privateCredential(config.planApiKeyFile, "ITSAPLAN_MCP_BEARER_FILE")
+      : "");
+  const planControlToken = config.planControlTokenFile
+    ? await privateSecret(config.planControlTokenFile, "PLAN_CONTROL_TOKEN_FILE")
+    : "";
   const artifactSecrets = config.artifactSyncEnabled || config.connectionsEnabled
     ? await loadArtifactSyncSecrets(config)
     : {};
   const mastraControlToken = config.mastraControlEnabled
     ? await privateSecret(config.mastraControlTokenFile, "MASTRA_CONTROL_TOKEN_FILE")
     : "";
-  if (config.inboxAccounts.length === 0) return { ...config, token, mastraControlToken, ...artifactSecrets };
+  const mastraEventToken = config.mastraEventIngressEnabled
+    ? await privateSecret(config.mastraEventTokenFile, "MASTRA_EVENT_TOKEN_FILE")
+    : "";
   const connectionsIntegrationToken = config.connectionsEnabled || config.mailEnabled
     ? await privateSecret(config.connectionsIntegrationTokenFile, "CONNECTIONS_INTEGRATION_TOKEN_FILE") : "";
-  const [inboxIntegrationToken, inboxPushToken, gogKeyringPassword, openClawGatewayPassword, mastraInboxToken] =
+  if (config.inboxAccounts.length === 0) {
+    return { ...config, token, planApiKey, planControlToken, mastraControlToken, mastraEventToken, connectionsIntegrationToken, ...artifactSecrets };
+  }
+  const [inboxIntegrationToken, inboxPushToken, gogKeyringPassword, mastraInboxToken] =
     await Promise.all([
       privateSecret(config.inboxIntegrationTokenFile, "INBOX_INTEGRATION_TOKEN_FILE"),
       privateSecret(config.inboxPushTokenFile, "INBOX_PUSH_TOKEN_FILE"),
       privateSecret(config.gogKeyringPasswordFile, "GOG_KEYRING_PASSWORD_FILE"),
-      config.inboxTriageTransport === "rpc" || config.connectionsEnabled
-        ? privateSecret(config.openClawGatewayPasswordFile, "OPENCLAW_GATEWAY_PASSWORD_FILE")
-        : Promise.resolve(""),
-      config.inboxTriageControlPlane === "mastra"
-        ? privateSecret(config.mastraInboxTokenFile, "MASTRA_INBOX_TOKEN_FILE")
-        : Promise.resolve(""),
+      privateSecret(config.mastraInboxTokenFile, "MASTRA_INBOX_TOKEN_FILE"),
     ]);
   return {
     ...config,
     ...artifactSecrets,
     token,
+    planApiKey,
+    planControlToken,
     mastraControlToken,
+    mastraEventToken,
     inboxIntegrationToken,
     connectionsIntegrationToken,
     inboxPushToken,
     gogKeyringPassword,
-    openClawGatewayPassword,
     mastraInboxToken,
   };
 }
@@ -481,22 +498,36 @@ export function assertServerConfig(config) {
   if (Buffer.byteLength(config.token) < 32) {
     throw new Error("PROVISIONING_TOKEN must contain at least 32 bytes");
   }
+  if (config.connectionsEnabled || config.mailEnabled) {
+    if (Buffer.byteLength(config.connectionsIntegrationToken || "") < 32) {
+      throw new Error("CONNECTIONS_INTEGRATION_TOKEN must contain at least 32 bytes");
+    }
+  }
   for (const [name, value] of [
     ["INBOX_INTEGRATION_TOKEN", config.inboxIntegrationToken],
     ["INBOX_PUSH_TOKEN", config.inboxPushToken],
     ...(config.connectionsEnabled || config.mailEnabled ? [["CONNECTIONS_INTEGRATION_TOKEN", config.connectionsIntegrationToken]] : []),
-    ...(config.inboxTriageTransport === "rpc" || config.connectionsEnabled
-      ? [["OPENCLAW_GATEWAY_PASSWORD", config.openClawGatewayPassword]]
-      : []),
-    ...(config.inboxTriageControlPlane === "mastra"
-      ? [["MASTRA_INBOX_TOKEN", config.mastraInboxToken]]
-      : []),
+    ["MASTRA_INBOX_TOKEN", config.mastraInboxToken],
     ...(config.mastraControlEnabled
       ? [["MASTRA_CONTROL_TOKEN", config.mastraControlToken]]
       : []),
   ]) {
     if (config.inboxAccounts?.length && Buffer.byteLength(value || "") < 32) {
       throw new Error(`${name} must contain at least 32 bytes`);
+    }
+  }
+  if (
+    config.mastraControlEnabled &&
+    Buffer.byteLength(config.mastraControlToken || "") < 32
+  ) {
+    throw new Error("MASTRA_CONTROL_TOKEN must contain at least 32 bytes");
+  }
+  if (config.mastraEventIngressEnabled) {
+    if (!config.mastraControlEnabled) {
+      throw new Error("MASTRA_EVENT_INGRESS_ENABLED requires MASTRA_CONTROL_ENABLED");
+    }
+    if (Buffer.byteLength(config.mastraEventToken || "") < 32) {
+      throw new Error("MASTRA_EVENT_TOKEN must contain at least 32 bytes");
     }
   }
   if (config.artifactSyncEnabled) {

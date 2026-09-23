@@ -13,6 +13,7 @@ import { INITIATIVE_SORTS, type InitiativeSort } from '@/lib/api/endpoints/initi
 import { useStripSortSensors } from '@/lib/dnd';
 import { initiativesTabPath, type InitiativesTab } from '@/utils/paths';
 import { Button } from '@/components/ui/button';
+import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import { Tabs, TabsList } from '@/components/ui/tabs';
 import InitiativesList from './components/list/InitiativesList';
 import InitiativesPagination from './components/list/InitiativesPagination';
@@ -102,15 +103,17 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <div className="flex items-center justify-between px-4 py-3">
-        <h1 className="text-lg font-semibold">{t('title')}</h1>
-        {can('initiatives', 'create') && (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('newInitiative')}
-          </Button>
-        )}
-      </div>
+      <WorkspacePageHeader
+        title={t('title')}
+        actions={
+          can('initiatives', 'create') && (
+            <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
+              <Plus className="size-3.5" />
+              {t('newInitiative')}
+            </Button>
+          )
+        }
+      />
 
       <div className="min-w-0 px-4 pb-2">
         {/* The open tab comes from the route, and each trigger navigates on click

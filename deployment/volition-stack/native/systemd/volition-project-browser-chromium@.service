@@ -1,0 +1,39 @@
+[Unit]
+Description=Volition project %i persistent Chromium
+PartOf=volition-project-browser@%i.target
+Requires=volition-project-browser-kasm@%i.service
+After=volition-project-browser-kasm@%i.service
+ConditionPathExists=/var/lib/volition/project-browser/projects/%i/runtime.env
+
+[Service]
+Type=simple
+User=volition-hermes
+Group=volition
+EnvironmentFile=/var/lib/volition/project-browser/projects/%i/runtime.env
+ExecStartPre=/usr/local/libexec/volition-wait-for-x
+ExecStart=/usr/bin/chromium --ozone-platform=x11 --user-data-dir=${PROJECT_BROWSER_PROFILE} --disk-cache-dir=${PROJECT_BROWSER_CACHE} --remote-debugging-address=127.0.0.1 --remote-debugging-port=${PROJECT_BROWSER_CDP_PORT} --no-first-run --no-default-browser-check --restore-last-session about:blank
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=30
+KillMode=mixed
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+ReadWritePaths=/var/lib/volition/project-browser/projects/%i
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+TasksMax=infinity

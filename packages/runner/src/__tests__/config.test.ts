@@ -49,6 +49,61 @@ describe('one agent', () => {
     const [config] = await load(base);
     expect(config.apiKey).toBe('key-env');
   });
+
+  it('lets a provider come from the file or environment', async () => {
+    const [fromFile] = await load({ ...base, apiKey: 'key-a', provider: 'copilot' });
+    expect(fromFile.provider).toBe('copilot');
+
+    process.env.ITSAPLAN_PROVIDER = 'custom-provider';
+    const [fromEnvironment] = await load({ ...base, apiKey: 'key-a', provider: 'copilot' });
+    expect(fromEnvironment.provider).toBe('custom-provider');
+  });
+
+  it('validates the model catalog published for chat settings', async () => {
+    const [config] = await load({
+      ...base,
+      apiKey: 'key-a',
+      models: [
+        {
+          id: 'anthropic/claude-opus-4.6',
+          name: 'Claude Opus 4.6',
+          reasoning: true,
+          thinkingLevels: ['low', 'medium', 'high'],
+          thinkingDefault: 'medium',
+        },
+      ],
+    });
+    expect(config.models).toHaveLength(1);
+    expect(config.models[0]?.thinkingDefault).toBe('medium');
+
+    await expect(
+      load({
+        ...base,
+        apiKey: 'key-a',
+        models: [
+          {
+            id: 'model',
+            reasoning: true,
+            thinkingLevels: ['low'],
+            thinkingDefault: 'high',
+          },
+        ],
+      }),
+    ).rejects.toThrow('thinkingDefault must be one of thinkingLevels');
+  });
+
+  it('refuses to disable Hermes rule loading while Plan policy sync is enabled', async () => {
+    await expect(
+      load({
+        url: base.url,
+        apiKey: 'key-a',
+        agent: 'hermes',
+        cwd: '/work/hermes',
+        env: { HERMES_HOME: '/home/hermes' },
+        args: ['--ignore-rules'],
+      }),
+    ).rejects.toThrow('Hermes cannot use --ignore-rules');
+  });
 });
 
 describe('several agents', () => {

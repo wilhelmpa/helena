@@ -15,6 +15,7 @@ import { SettingsResourceProvider } from './context/settingsPermission';
 import SettingsSubtaskAutomation from './components/configuration/SettingsSubtaskAutomation';
 import SettingsEstimates from './components/configuration/SettingsEstimates';
 import SettingsAutoArchive from './components/configuration/SettingsAutoArchive';
+import SettingsMailAccount from './components/configuration/SettingsMailAccount';
 import { useAutoArchiveForm } from './hooks/useAutoArchiveForm';
 import { useEstimatesForm } from './hooks/useEstimatesForm';
 import { useSubtaskAutomationForm } from './hooks/useSubtaskAutomationForm';
@@ -67,6 +68,7 @@ function ConfigurationPage({ project }: { project: ProjectDetail }) {
             {features.subtasks && <SettingsSubtaskAutomation form={subtasks} />}
             <SettingsEstimates form={estimates} />
             <SettingsAutoArchive form={archive} />
+            <SettingsMailAccount projectKey={project.project.key} />
           </div>
         </RequirePermission>
       </SettingsResourceProvider>

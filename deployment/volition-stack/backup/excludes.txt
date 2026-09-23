@@ -12,7 +12,7 @@
 **/Crashpad
 **/Singleton*
 /home/pw/services/volition-stack/.secrets/backup_restic_password
-/home/pw/.openclaw/quarantine
+/home/pw/services/volition-stack/data/hermes/quarantine
 /home/pw/services/volition-stack/garage/meta
 /home/pw/services/volition-stack/garage/data
 

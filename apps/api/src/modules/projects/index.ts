@@ -36,6 +36,7 @@ import {
 import {
   listProjects,
   createProject,
+  createProjectAsExternalMcpAgent,
   updateProject,
   deleteProject,
   projectFeatures,
@@ -75,9 +76,14 @@ export const projectRoutes = new Elysia({ name: 'projects', detail: { tags: ['Pr
 
   .post(
     '/projects',
-    async ({ body, user, set }) => {
+    async ({ body, user, request, set }) => {
       set.status = 201;
-      return createProject(body, requireUser(user).id);
+      const actor = requireUser(user);
+      if (isMcpRequest(request.headers)) {
+        const delegated = await createProjectAsExternalMcpAgent(body, actor.id);
+        if (delegated) return delegated;
+      }
+      return createProject(body, actor.id);
     },
     {
       body: createProjectBody,

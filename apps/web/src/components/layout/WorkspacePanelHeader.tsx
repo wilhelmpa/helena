@@ -7,12 +7,14 @@ import {
   Minimize2,
   Pin,
   PinOff,
+  RefreshCw,
   Settings2,
   X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { Button } from '@/components/ui/button';
+import { WorkspaceHeader } from './WorkspaceHeader';
 
 export default function WorkspacePanelHeader({
   title,
@@ -28,6 +30,7 @@ export default function WorkspacePanelHeader({
   onToggleBrowserLossless,
   onToggleMode,
   onToggleFullscreen,
+  onReload,
   onClose,
 }: {
   title: string;
@@ -43,13 +46,14 @@ export default function WorkspacePanelHeader({
   onToggleBrowserLossless: () => void;
   onToggleMode: () => void;
   onToggleFullscreen: () => void;
+  onReload: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations('nav.workspace');
   const tChat = useTranslations('aiChat');
   const tCommon = useTranslations('common');
   return (
-    <div className="flex h-12 shrink-0 items-center gap-1 border-b px-3">
+    <WorkspaceHeader className="gap-1 px-3">
       <div className="min-w-0 flex-1 truncate text-sm font-medium">{title}</div>
       {canExpandChat && (
         <Button
@@ -77,17 +81,29 @@ export default function WorkspacePanelHeader({
         </Button>
       )}
       {externalUrl && (
-        <Button variant="ghost" size="icon" className="size-7" asChild>
-          <a
-            href={externalUrl}
-            target="_blank"
-            rel="noreferrer"
-            title={t('openExternal', { tool: title })}
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={onReload}
+            title={tCommon('reload')}
+            aria-label={tCommon('reload')}
           >
-            <ExternalLink />
-            <span className="sr-only">{t('openExternal', { tool: title })}</span>
-          </a>
-        </Button>
+            <RefreshCw />
+          </Button>
+          <Button variant="ghost" size="icon" className="size-7" asChild>
+            <a
+              href={externalUrl}
+              target="_blank"
+              rel="noreferrer"
+              title={t('openExternal', { tool: title })}
+            >
+              <ExternalLink />
+              <span className="sr-only">{t('openExternal', { tool: title })}</span>
+            </a>
+          </Button>
+        </>
       )}
       {!isMobile && !fullscreen && (
         <Button
@@ -120,6 +136,6 @@ export default function WorkspacePanelHeader({
       >
         <X />
       </Button>
-    </div>
+    </WorkspaceHeader>
   );
 }

@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl';
 import type { Dashboard } from '@/lib/api/endpoints/dashboards';
 import { useStripSortSensors } from '@/lib/dnd';
 import { usePermissions } from '@/hooks/usePermissions';
+import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
 import DashboardTab from './DashboardTab';
 import DashboardNameDialog from './DashboardNameDialog';
 
@@ -59,7 +60,7 @@ export default function DashboardTabs({
   }
 
   return (
-    <div className="flex items-center gap-1 border-b px-2 py-1.5 sm:px-3">
+    <WorkspaceHeader className="gap-1 px-2 sm:px-3">
       <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
         {dashboards.length === 0 ? (
           <span className="flex shrink-0 items-center gap-1.5 rounded-md bg-secondary px-2 py-1 text-sm font-medium text-foreground">
@@ -128,6 +129,6 @@ export default function DashboardTabs({
           setDialog(null);
         }}
       />
-    </div>
+    </WorkspaceHeader>
   );
 }

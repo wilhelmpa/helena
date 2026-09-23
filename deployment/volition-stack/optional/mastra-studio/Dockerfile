@@ -13,7 +13,8 @@ ENV NODE_ENV=production MASTRA_TELEMETRY_DISABLED=true DO_NOT_TRACK=1 \
     MASTRA_HIDE_CLOUD_CTA=true MASTRA_AUTO_DETECT_URL=true MASTRA_AGENT_SIGNALS=false \
     MASTRA_STUDIO_PATH=.mastra/output/studio STUDIO_PROXY_HOST=0.0.0.0
 COPY --from=build --chown=node:node /app/.mastra/output ./.mastra/output
-COPY --chown=node:node start.mjs readonly-proxy.mjs ./
+COPY --from=build --chown=node:node /app/src ./src
+COPY --chown=node:node start.mjs readonly-proxy.mjs event-ingress.mjs ./
 COPY --chown=node:node catalog ./catalog
 RUN mkdir /data && chown node:node /data
 USER node

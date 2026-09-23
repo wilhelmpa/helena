@@ -94,7 +94,7 @@ export function createMailService(config, options = {}) {
           maxBuffer,
           encoding: "utf8",
           env: {
-            HOME: path.dirname(config.openClawRoot),
+            HOME: path.dirname(config.integrationStateRoot),
             PATH: `${path.dirname(config.gogBin)}:/usr/local/bin:/usr/bin:/bin`,
             GOG_KEYRING_PASSWORD: config.gogKeyringPassword,
           },

@@ -27,6 +27,7 @@ import { issuePath } from '@/utils/paths';
 import IssuePickerDialog from '@/components/common/overlay/IssuePickerDialog';
 import ArchivedBadge from '@/components/common/ArchivedBadge';
 import { useTranslations } from 'next-intl';
+import DocumentMarkdownSyncStatus from './DocumentMarkdownSyncStatus';
 import {
   useDeleteDocumentAsset,
   useDocumentAssetsQuery,
@@ -47,6 +48,7 @@ export default function DocumentSidePanel({
   canDeleteAssets,
   canReadWorkItems,
   canLinkWorkItems,
+  canRetryMarkdown,
   onOpenHistory,
 }: {
   projectKey: string;
@@ -57,6 +59,7 @@ export default function DocumentSidePanel({
   canDeleteAssets: boolean;
   canReadWorkItems: boolean;
   canLinkWorkItems: boolean;
+  canRetryMarkdown: boolean;
   onOpenHistory: () => void;
 }) {
   const t = useTranslations('documents');
@@ -198,6 +201,12 @@ export default function DocumentSidePanel({
             <dd className="font-mono font-medium">{document.version}</dd>
           </div>
         </dl>
+        <DocumentMarkdownSyncStatus
+          projectKey={projectKey}
+          documentId={document.id}
+          documentVersion={document.version}
+          canRetry={canRetryMarkdown}
+        />
         <Button
           type="button"
           variant="outline"

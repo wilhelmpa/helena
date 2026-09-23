@@ -96,7 +96,7 @@ export const ThemeSyncResponse = t.Object({
   theme: t.Union([t.Literal('light'), t.Literal('dark')]),
   results: t.Array(
     t.Object({
-      service: t.Union([t.Literal('openclaw'), t.Literal('code'), t.Literal('nextcloud')]),
+      service: t.Union([t.Literal('agent_runtime'), t.Literal('code'), t.Literal('nextcloud')]),
       status: t.Union([t.Literal('updated'), t.Literal('failed')]),
       attempts: t.Integer({ minimum: 1, maximum: 2 }),
       error: t.Optional(t.String({ maxLength: 200 })),

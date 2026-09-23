@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
+import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import OrganizationWorkspace from './components/OrganizationWorkspace';
 import { organizationForProject } from './projectOrganization';
 import { useOrganizationQuery } from './services/organization.service';
@@ -25,10 +26,7 @@ export default function ProjectOrganizationPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b px-4 py-3">
-        <h1 className="font-semibold">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
-      </div>
+      <WorkspacePageHeader title={t('title')} description={t('description')} />
       {organization.isPending ? (
         <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>
       ) : organization.isError ? (
@@ -37,6 +35,7 @@ export default function ProjectOrganizationPage() {
         <OrganizationWorkspace
           key={`${scopedOrganization.teamId}:${project.project.key}`}
           organization={scopedOrganization}
+          projectKey={project.project.key}
         />
       ) : null}
     </div>

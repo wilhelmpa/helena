@@ -6,6 +6,7 @@ import {
   useCreateAiAgent,
   useUpdateAiAgent,
   useAgentToolsQuery,
+  useAgentChatCatalogQuery,
 } from '@/services/aiAgents.service';
 import {
   useIntegrationCatalogQuery,
@@ -87,6 +88,10 @@ export function AgentSheetForm({
   const providerModelsQuery = useIntegrationModelsQuery(
     teamId,
     value.kind === 'internal' ? selectedProvider : null,
+  );
+  const chatCatalogQuery = useAgentChatCatalogQuery(
+    teamId,
+    agent?.kind === 'external' ? agent.id : null,
   );
   const skillsLibraryQuery = useSkillOptionsQuery(canManageSkills ? teamId : null);
   const agentSkillsQuery = useAgentSkillsQuery(teamId, agent && canManageSkills ? agent.id : null);
@@ -268,6 +273,9 @@ export function AgentSheetForm({
       catalog={catalog}
       models={providerModelsQuery.data ?? []}
       modelsLoading={providerModelsQuery.isLoading}
+      chatModels={chatCatalogQuery.data?.models ?? []}
+      chatModelsLoading={chatCatalogQuery.isLoading}
+      chatModelsError={chatCatalogQuery.isError}
       agent={agent}
       skillsContent={skillsContent}
       skillsBadge={countBadge(selectedSkills.length, skillsLibrary.length)}

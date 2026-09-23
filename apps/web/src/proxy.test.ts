@@ -25,13 +25,16 @@ function run(path: string, cookie?: string) {
 }
 
 describe('proxy', () => {
-  it('keeps a stale session on the expired screen instead of bouncing it back', () => {
-    const res = run('/login?expired=1', COOKIE);
+  it('keeps a stale session on the expired screen instead of bouncing it back', async () => {
+    const res = await run('/login?expired=1', COOKIE);
     assert.equal(res.headers.get('location'), null);
   });
 
-  it('expires the stale cookies the api could not clear', () => {
-    const res = run('/login?expired=1', `${COOKIE}; __Secure-better-auth.session_data=cached`);
+  it('expires the stale cookies the api could not clear', async () => {
+    const res = await run(
+      '/login?expired=1',
+      `${COOKIE}; __Secure-better-auth.session_data=cached`,
+    );
     const cleared = res.headers.getSetCookie();
     assert.equal(cleared.length, 2);
     assert.match(cleared[0]!, /^better-auth\.session_token=;/);
@@ -41,18 +44,32 @@ describe('proxy', () => {
     assert.match(cleared[1]!, /Secure/);
   });
 
-  it('sends a signed-in user away from the login page', () => {
-    const res = run('/login', COOKIE);
+  it('sends a signed-in user away from the login page', async () => {
+    const res = await run('/login', COOKIE);
     assert.equal(res.headers.get('location'), 'http://localhost/');
   });
 
-  it('sends a visitor without a session to the login page', () => {
-    const res = run('/', undefined);
+  it('sends a visitor without a session to the login page', async () => {
+    const res = await run('/', undefined);
     assert.equal(res.headers.get('location'), 'http://localhost/login?callbackURL=%2F');
   });
 
-  it('keeps the protected destination through sign-in', () => {
-    const res = run('/project/VERV?view=board', undefined);
+  it('does not auto-login a visitor when legacy auto-login variables are present', async () => {
+    process.env.LOCAL_AUTO_LOGIN = 'true';
+    process.env.LOCAL_AUTO_LOGIN_HOSTS = 'localhost';
+    process.env.LOCAL_AUTO_LOGIN_EMAIL = 'legacy@example.test';
+    process.env.LOCAL_AUTO_LOGIN_PASSWORD = 'unused';
+    const res = await run('/', undefined);
+    assert.equal(res.headers.get('location'), 'http://localhost/login?callbackURL=%2F');
+    assert.equal(res.headers.getSetCookie().length, 0);
+    delete process.env.LOCAL_AUTO_LOGIN;
+    delete process.env.LOCAL_AUTO_LOGIN_HOSTS;
+    delete process.env.LOCAL_AUTO_LOGIN_EMAIL;
+    delete process.env.LOCAL_AUTO_LOGIN_PASSWORD;
+  });
+
+  it('keeps the protected destination through sign-in', async () => {
+    const res = await run('/project/VERV?view=board', undefined);
     assert.equal(
       res.headers.get('location'),
       'http://localhost/login?callbackURL=%2Fproject%2FVERV%3Fview%3Dboard',
@@ -61,22 +78,25 @@ describe('proxy', () => {
 });
 
 describe('proxy security headers', () => {
-  it('serves every page with a content security policy naming the api origin', () => {
+  it('serves every page with a content security policy naming the api origin', async () => {
     process.env.API_URL = 'http://api.test:3000/';
-    const csp = run('/login').headers.get('content-security-policy');
+    const csp = (await run('/login')).headers.get('content-security-policy');
     assert.match(csp!, /(^|; )connect-src 'self' http:\/\/api\.test:3000(;|$)/);
     assert.match(csp!, /(^|; )frame-ancestors 'none'(;|$)/);
     assert.match(csp!, /(^|; )object-src 'none'(;|$)/);
   });
 
-  it('keeps the policy on a redirect and on the expired screen', () => {
-    assert.ok(run('/', undefined).headers.get('content-security-policy'));
-    assert.ok(run('/login?expired=1', COOKIE).headers.get('content-security-policy'));
+  it('keeps the policy on a redirect and on the expired screen', async () => {
+    assert.ok((await run('/', undefined)).headers.get('content-security-policy'));
+    assert.ok((await run('/login?expired=1', COOKIE)).headers.get('content-security-policy'));
   });
 
-  it('leaves the media routes to the headers the api sends', () => {
-    assert.equal(run('/media/avatars/u1', COOKIE).headers.get('content-security-policy'), null);
+  it('leaves the media routes to the headers the api sends', async () => {
+    assert.equal(
+      (await run('/media/avatars/u1', COOKIE)).headers.get('content-security-policy'),
+      null,
+    );
     const document = '/protected-media/projects/KEY/documents/1/assets/x/raw';
-    assert.equal(run(document, COOKIE).headers.get('content-security-policy'), null);
+    assert.equal((await run(document, COOKIE)).headers.get('content-security-policy'), null);
   });
 });

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { createProvisioningServer } from "../server.mjs";
+import { ProjectFilesValidationError } from "../project-files.mjs";
 
 const TOKEN = "0123456789abcdef0123456789abcdef"; // gitleaks:allow -- inert test fixture
 const CONNECTIONS_TOKEN = "connections-owner-token-0123456789abcdef";
@@ -17,7 +18,7 @@ beforeEach(async () => {
       connectionsIntegrationToken: CONNECTIONS_TOKEN,
       inboxPushToken: "push-token-0123456789abcdef0123456789",
       inboxTriageTransport: "cli",
-      openClawGatewayPassword: "gateway-password-0123456789abcdef0123456789",
+      mastraInboxToken: "mastra-inbox-token-0123456789abcdef0123456789",
       connectionsEnabled: true,
       mailEnabled: true,
       nextcloudPassword: "nextcloud-password",
@@ -58,7 +59,7 @@ beforeEach(async () => {
         apply: async ({ theme }) => ({
           theme,
           results: [
-            { service: "openclaw", status: "updated", attempts: 1 },
+            { service: "hermes", status: "updated", attempts: 1 },
             { service: "code", status: "updated", attempts: 1 },
             { service: "nextcloud", status: "updated", attempts: 1 },
           ],
@@ -76,6 +77,32 @@ beforeEach(async () => {
           project,
           path,
           created: true,
+        }),
+        ensureFolder: async ({ project, path }) => ({
+          project,
+          path,
+          created: false,
+        }),
+        upsertText: async ({ project, path, expectedEtag }) => {
+          if (expectedEtag === '"conflict"') {
+            throw new ProjectFilesValidationError(
+              "The file changed since it was read",
+              409,
+              "etag_conflict",
+            );
+          }
+          return { project, path, created: false, etag: '"updated"' };
+        },
+        deleteText: async ({ project, path }) => ({
+          project,
+          path,
+          deleted: true,
+        }),
+        moveText: async ({ project, fromPath, toPath }) => ({
+          project,
+          fromPath,
+          toPath,
+          moved: true,
         }),
         download: async () => ({
           bytes: Buffer.from("file"),
@@ -198,5 +225,69 @@ describe("communications routes", () => {
       'attachment; filename="readme.md"',
     );
     assert.equal(await download.text(), "file");
+  });
+
+  it("exposes conditional managed Markdown lifecycle routes", async () => {
+    const headers = { "Content-Type": "application/json" };
+    const upsert = await request("/api/files/upsert-text", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        content: "# Document",
+        expectedEtag: '"current"',
+      }),
+    });
+    assert.equal(upsert.status, 200);
+    assert.deepEqual(await upsert.json(), {
+      project: "demo",
+      path: "Dokumente/Plan/doc-1.md",
+      created: false,
+      etag: '"updated"',
+    });
+
+    const conflict = await request("/api/files/upsert-text", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        content: "changed",
+        expectedEtag: '"conflict"',
+      }),
+    });
+    assert.equal(conflict.status, 409);
+    assert.equal((await conflict.json()).error, "etag_conflict");
+
+    const deleted = await request("/api/files/delete", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+      }),
+    });
+    assert.deepEqual(await deleted.json(), {
+      project: "demo",
+      path: "Dokumente/Plan/doc-1.md",
+      deleted: true,
+    });
+
+    const moved = await request("/api/files/move", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        project: "demo",
+        fromPath: "Dokumente/Plan/doc-1.md",
+        toPath: "Dokumente/Plan/archive/doc-1.md",
+      }),
+    });
+    assert.deepEqual(await moved.json(), {
+      project: "demo",
+      fromPath: "Dokumente/Plan/doc-1.md",
+      toPath: "Dokumente/Plan/archive/doc-1.md",
+      moved: true,
+    });
   });
 });

@@ -350,7 +350,12 @@ describe('analytics', () => {
       const { asOwner } = await setupProject();
       const res = await asOwner.projects({ projectKey: 'MKT' }).analytics.throughput.get();
       expect(res.status).toBe(200);
-      expect(res.data).toEqual([]);
+      expect(res.data).toHaveLength(1);
+      expect(res.data?.[0]).toMatchObject({
+        agentName: expect.stringContaining('Coordinator'),
+        delegatedOpen: 0,
+        runsTotal: 0,
+      });
     });
 
     it('counts created and closed issues in the current week', async () => {
@@ -505,7 +510,12 @@ describe('analytics', () => {
       const { asOwner } = await setupProject();
       const res = await asOwner.projects({ projectKey: 'MKT' })['analytics']['agent-runs'].get();
       expect(res.status).toBe(200);
-      expect(res.data).toEqual([]);
+      expect(res.data).toHaveLength(1);
+      expect(res.data?.[0]).toMatchObject({
+        agentName: expect.stringContaining('Coordinator'),
+        delegatedOpen: 0,
+        runsTotal: 0,
+      });
     });
 
     it('accepts a status filter', async () => {
@@ -514,7 +524,12 @@ describe('analytics', () => {
         .projects({ projectKey: 'MKT' })
         ['analytics']['agent-runs'].get({ query: { status: 'failed' } });
       expect(res.status).toBe(200);
-      expect(res.data).toEqual([]);
+      expect(res.data).toHaveLength(1);
+      expect(res.data?.[0]).toMatchObject({
+        agentName: expect.stringContaining('Coordinator'),
+        delegatedOpen: 0,
+        runsTotal: 0,
+      });
     });
 
     it('rejects an unknown status', async () => {
@@ -576,7 +591,12 @@ describe('analytics', () => {
         .projects({ projectKey: 'MKT' })
         ['analytics']['agent-workload'].get();
       expect(res.status).toBe(200);
-      expect(res.data).toEqual([]);
+      expect(res.data).toHaveLength(1);
+      expect(res.data?.[0]).toMatchObject({
+        agentName: expect.stringContaining('Coordinator'),
+        delegatedOpen: 0,
+        runsTotal: 0,
+      });
     });
 
     it('counts open issues delegated to an agent and reports zero runs', async () => {

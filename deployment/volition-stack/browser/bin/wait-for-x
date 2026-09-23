@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export DISPLAY="${DISPLAY:-:100}"
+export XAUTHORITY="${XAUTHORITY:-/home/pw/services/volition-stack/browser/run/Xauthority}"
+
+for _ in $(seq 1 100); do
+  if /usr/bin/xdpyinfo >/dev/null 2>&1; then
+    exit 0
+  fi
+  sleep 0.1
+done
+
+echo "X display did not become ready" >&2
+exit 1

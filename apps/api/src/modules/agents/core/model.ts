@@ -1,11 +1,18 @@
 import { t } from 'elysia';
 
 import { agentRunTrigger, runContextTokens } from '../model';
+import { instructionsRuntimeFile, memoryRuntimeFile } from '../runtime-files/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
 export const threadParams = t.Object({
   projectKey: t.String(),
+  agentId: t.Numeric(),
+  threadId: t.String(),
+});
+
+export const teamThreadParams = t.Object({
+  teamId: t.Numeric(),
   agentId: t.Numeric(),
   threadId: t.String(),
 });
@@ -28,11 +35,7 @@ const username = t.String({
   description: 'Mention handle (letters, digits, . _ -).',
 });
 
-const runtimeFile = t.Object({
-  kind: t.Union([t.Literal('instructions'), t.Literal('memory')]),
-  path: t.String({ minLength: 1, maxLength: 160 }),
-  content: t.String({ maxLength: 131072 }),
-});
+const runtimeFile = t.Union([instructionsRuntimeFile, memoryRuntimeFile]);
 
 export const runtimePolicy = t.Object({
   reasoningEffort: t.Nullable(t.String({ maxLength: 32 })),
@@ -52,7 +55,7 @@ export const runtimeState = t.Object({
 });
 
 // Agent configuration, all optional so a config can be filled in over time. External
-// agents use model as an OpenClaw model ref and runtimePolicy for host-owned controls;
+// agents use model as an Hermes model ref and runtimePolicy for host-owned controls;
 // modelCredentialId/temperature/maxSteps remain internal-only.
 const configFields = {
   modelCredentialId: t.Optional(
@@ -279,6 +282,13 @@ export const ChatMessagesResponse = t.Object({
     }),
   ),
   nextPage: t.Nullable(t.Number()),
+  activeAnswer: t.Optional(
+    t.Object({
+      messageId: t.Number(),
+      status: t.Union([t.Literal('pending'), t.Literal('streaming')]),
+      createdAt: t.String(),
+    }),
+  ),
 });
 
 export const AiAgentListResponse = t.Array(AiAgentResponse);

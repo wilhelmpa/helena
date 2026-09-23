@@ -215,5 +215,23 @@
     "cancel": "Cancel",
     "create": "Create",
     "creating": "Creating…"
+  },
+  "markdownSync": {
+    "label": "Markdown 文件",
+    "synced": "已同步",
+    "pending": "待同步",
+    "privateNotExported": "私密 · 未导出",
+    "checking": "正在检查…",
+    "checkingHint": "正在加载可移植文件状态。",
+    "syncedHint": "打开“文件”查看此 Markdown 文件。",
+    "pendingHint": "页面已保存，可以安全地重试同步。",
+    "privateHint": "私密页面绝不会复制到共享项目文件夹。",
+    "openFiles": "打开项目文件",
+    "copyPath": "复制文件路径",
+    "pathCopied": "已复制文件路径",
+    "copyFailed": "无法复制文件路径。",
+    "retry": "重试",
+    "retrying": "正在重试…",
+    "retryFailed": "无法重试 Markdown 同步。"
   }
 }

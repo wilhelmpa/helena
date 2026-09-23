@@ -44,7 +44,7 @@ export default function HomeTeamSectionPage({ section }: { section: HomeTeamSect
             <h1 className="text-lg font-semibold">{t('teamScopeRequired')}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{t('teamScopeRequiredHint')}</p>
             <Button asChild className="mt-4">
-              <Link href={manageTeamsPath()}>{t('manageTeams')}</Link>
+              <Link href={manageTeamsPath()}>{t('projectSettings')}</Link>
             </Button>
           </div>
         </div>

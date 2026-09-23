@@ -36,8 +36,13 @@ export function useWorkspacePanel({
   const [fullscreen, setFullscreen] = useState(false);
   const [toolSession, setToolSession] = useState(0);
   const previousProjectKey = useRef(projectKey);
+  const restored = useRef(false);
 
   useEffect(() => {
+    // Restore exactly once for this mounted shell. A delayed hydration effect must
+    // never overwrite a tool the user has already opened.
+    if (restored.current) return;
+    restored.current = true;
     try {
       const savedOpen = localStorage.getItem(OPEN_KEY);
       const storedTool = localStorage.getItem(TOOL_KEY);

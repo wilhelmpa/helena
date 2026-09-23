@@ -28,9 +28,12 @@ describe('interactive communications boundary', () => {
         })
       ).status,
     ).toBe(403);
-    // No bridge is configured in this isolated test, so reaching 503 proves the guard passed.
-    expect((await authedApi(owner.cookie).connections.get()).status).toBe(503);
-    expect((await authedApi(owner.cookie).connections.secrets.get()).status).toBe(503);
+    const connections = await authedApi(owner.cookie).connections.get();
+    expect(connections.status).toBe(200);
+    expect(connections.data?.items).toEqual([]);
+    const secrets = await authedApi(owner.cookie).connections.secrets.get();
+    expect(secrets.status).toBe(200);
+    expect(secrets.data?.entries).toEqual([]);
     expect(
       (
         await authedApi(owner.cookie).connections.secrets.post({

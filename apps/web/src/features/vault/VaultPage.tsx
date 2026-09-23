@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import SectionPageView from '@/components/common/page/SectionPageView';
 import Shell from '@/components/layout/Shell';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,13 +56,8 @@ export default function VaultPage() {
 
   return (
     <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
-      <div className="h-full overflow-y-auto p-4 md:p-6">
-        <div className="mx-auto max-w-5xl space-y-5">
-          <div>
-            <h1 className="text-2xl font-semibold">{t('title')}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
-          </div>
-
+      <SectionPageView title={t('title')} description={t('description')}>
+        <div className="space-y-5">
           {failed ? (
             <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
               {t('loadError')}
@@ -168,7 +164,7 @@ export default function VaultPage() {
             ) : null}
           </section>
         </div>
-      </div>
+      </SectionPageView>
     </Shell>
   );
 }

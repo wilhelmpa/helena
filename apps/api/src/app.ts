@@ -20,6 +20,8 @@ import { gitWebhookRoutes } from './modules/git/webhook';
 import { scimRoutes } from './modules/scim';
 import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
 import { normalizeOpenApiResponse } from './openapi';
+import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
+import { hermesTeamControlRoutes } from './hermes-team-control';
 import pkg from '../../../package.json';
 
 const apiUrl = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
@@ -59,6 +61,8 @@ export const app = new Elysia()
   .onAfterHandle({ as: 'global' }, ({ request, response }) =>
     normalizeOpenApiResponse(request, response),
   )
+  .use(homeAgentBootstrapRoutes)
+  .use(hermesTeamControlRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
   // so the UI at /docs and the spec at /docs/json are reachable without a
   // session. The spec is generated from the `t` schemas on every route.
@@ -277,6 +281,14 @@ export const app = new Elysia()
       },
     },
   )
+  // Reverse-proxy authentication endpoint. It returns no user data: Nginx only
+  // needs the status code before it exposes local tools such as Hermes, VS Code,
+  // the terminal, and the persistent browser under the Plan origin.
+  .get('/auth/verify', async ({ request, status }) => {
+    const session = await getSessionFromHeaders(request.headers);
+    if (!session || session.user.active === false) return status(401);
+    return status(204);
+  })
   // What the sign-in and sign-up screens need before there is a session: whether
   // registration is open, invite-only, or closed, and which sign-in methods are
   // offered. Public on purpose — the screens are reached logged out. It carries no

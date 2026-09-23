@@ -12,7 +12,16 @@ export const RuntimePolicySnapshotResponse = t.Object({
   projects: t.Array(
     t.Object({ id: t.Number(), key: t.String(), name: t.String(), instructions: t.String() }),
   ),
-  skills: t.Array(t.Object({ id: t.Number(), name: t.String(), description: t.String() })),
+  skills: t.Array(
+    t.Object({
+      id: t.Number(),
+      slug: t.String(),
+      name: t.String(),
+      description: t.String(),
+      markdown: t.String(),
+      files: t.Array(t.Object({ path: t.String(), content: t.String() })),
+    }),
+  ),
   configuredTools: t.Array(
     t.Object({ id: t.Number(), toolKey: t.String(), integrationKey: t.String() }),
   ),

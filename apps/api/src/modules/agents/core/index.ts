@@ -40,6 +40,7 @@ import {
   threadListQuery,
   threadPageQuery,
   threadParams,
+  teamThreadParams,
   updateAgentBody,
 } from './model';
 import { runAgent, streamAgent, type AgentRunEvent, type RunOpts } from './runtime';
@@ -352,6 +353,119 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         description: 'Delete an AI agent and its bot user. Irreversible.',
         ...mcpTool('delete_ai_agent'),
       },
+    },
+  )
+
+  // Global Home chat history. A fresh installation has no project, so these routes
+  // enforce team visibility while keeping each member's transcript private.
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/threads',
+    async ({ params, membership, query, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireVisibleAgent(params.agentId, membership);
+      return threadStore(agent.kind).list(caller.id, params.agentId, query);
+    },
+    {
+      params: agentParams,
+      query: threadListQuery,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: ChatThreadListResponse, ...commonErrors },
+      detail: { summary: 'List global Home chat threads' },
+    },
+  )
+
+  .put(
+    '/teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
+    async ({ params, membership, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireVisibleAgent(params.agentId, membership);
+      if (!(await threadStore(agent.kind).owns(params.threadId, caller.id, params.agentId))) {
+        throw new HttpError(404, 'Thread not found');
+      }
+      await addFavorite(caller.id, params.agentId, params.threadId);
+      return noContent();
+    },
+    {
+      params: teamThreadParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Star a global Home chat thread' },
+    },
+  )
+
+  .delete(
+    '/teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
+    async ({ params, membership, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireVisibleAgent(params.agentId, membership);
+      if (!(await threadStore(agent.kind).owns(params.threadId, caller.id, params.agentId))) {
+        throw new HttpError(404, 'Thread not found');
+      }
+      await removeFavorite(caller.id, params.threadId);
+      return noContent();
+    },
+    {
+      params: teamThreadParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Unstar a global Home chat thread' },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/threads/:threadId/messages',
+    async ({ params, membership, query, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireVisibleAgent(params.agentId, membership);
+      const messages = await threadStore(agent.kind).messages(
+        params.threadId,
+        caller.id,
+        query.page,
+      );
+      if (messages === null) throw new HttpError(404, 'Thread not found');
+      return messages;
+    },
+    {
+      params: teamThreadParams,
+      query: threadPageQuery,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: ChatMessagesResponse, ...commonErrors },
+      detail: { summary: 'Get global Home thread messages' },
+    },
+  )
+
+  .patch(
+    '/teams/:teamId/ai-agents/:agentId/threads/:threadId',
+    async ({ params, membership, body, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireVisibleAgent(params.agentId, membership);
+      const renamed = await threadStore(agent.kind).rename(params.threadId, caller.id, body.title);
+      if (!renamed) throw new HttpError(404, 'Thread not found');
+      return noContent();
+    },
+    {
+      params: teamThreadParams,
+      body: renameThreadBody,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Rename a global Home chat thread' },
+    },
+  )
+
+  .delete(
+    '/teams/:teamId/ai-agents/:agentId/threads/:threadId',
+    async ({ params, membership, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireVisibleAgent(params.agentId, membership);
+      const deleted = await threadStore(agent.kind).remove(params.threadId, caller.id);
+      if (!deleted) throw new HttpError(404, 'Thread not found');
+      return noContent();
+    },
+    {
+      params: teamThreadParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Delete a global Home chat thread' },
     },
   )
 

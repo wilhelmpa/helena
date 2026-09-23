@@ -3,14 +3,14 @@ import { db, aiAgent } from '@repo/db';
 import { eq } from 'drizzle-orm';
 
 import { getAgentById, type AgentRuntimeState } from '../core/service';
-import { listAgentSkills } from '../skills/service';
+import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
 
 export async function runtimePolicySnapshot(agentRef: { id: number; teamId: number }) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
   const [skills, tools] = await Promise.all([
-    listAgentSkills(agent.id),
+    listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
   ]);
   const snapshot = {
@@ -25,7 +25,7 @@ export async function runtimePolicySnapshot(agentRef: { id: number; teamId: numb
       name,
       instructions,
     })),
-    skills: skills.map(({ id, name, description }) => ({ id, name, description })),
+    skills,
     configuredTools: tools.map(({ id, toolKey, integrationKey }) => ({
       id,
       toolKey,

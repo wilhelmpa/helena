@@ -12,7 +12,7 @@ test('project context keeps exact scoped links, preserves instructions, and refu
   await fs.mkdir(coordinator.workspace);
   const agents=path.join(coordinator.workspace,'AGENTS.md');
   await fs.writeFile(agents,'Existing instructions stay.\n');
-  const args=[{planUrl:'https://plan.example.com',filesUrl:'https://files.example.com/apps/files',codeUrl:'https://code.example.com'}, {project:{id:9,key:'QA',name:'QA project'}},coordinator,{slug:'qa',containerPath:'/projects/qa'},'Trusted owner-managed organization instructions'];
+  const args=[{planUrl:'https://plan.example.com',codeUrl:'https://code.example.com'}, {project:{id:9,key:'QA',name:'QA project'}},coordinator,{slug:'qa',containerPath:'/projects/qa'},'Trusted owner-managed organization instructions'];
   await writeProjectContext(...args);
   const first=await fs.readFile(agents,'utf8');
   await writeProjectContext(...args);
@@ -22,7 +22,16 @@ test('project context keeps exact scoped links, preserves instructions, and refu
   assert.equal(context.links.plan,'https://plan.example.com/project/QA');
   assert.equal(context.organizationInstructions,'Trusted owner-managed organization instructions');
   assert.equal(context.links.documents,'https://plan.example.com/project/QA/docs');
-  assert.equal(new URL(context.links.files).searchParams.get('dir'),'/Projects/qa');
+  assert.equal(context.links.files,'https://plan.example.com/project/QA/files');
+  assert.match(first,/session="project"/);
+  assert.doesNotMatch(first,/Nextcloud/);
+  assert.match(context.documentLinkRule,/Markdown file path/);
+  await fs.writeFile(agents, first.replace(/Use linked Plan documents and the project Files view[^\n]*?remain visible in Plan\./, "Use linked Plan documents and the project's private Nextcloud folder for durable results.") + '\nUser instructions stay.\n');
+  await writeProjectContext(...args);
+  const migrated = await fs.readFile(agents,'utf8');
+  assert.match(migrated,/session="project"/);
+  assert.match(migrated,/User instructions stay/);
+  assert.doesNotMatch(migrated,/Nextcloud/);
   const contextPath=path.join(coordinator.workspace,'PROJECT.json');
   await fs.writeFile(contextPath,JSON.stringify({userFile:'keep'}));
   await assert.rejects(()=>writeProjectContext(...args),/unrelated PROJECT.json/);

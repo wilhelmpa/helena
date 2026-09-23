@@ -9,7 +9,7 @@ function service(execute, now = () => 1_700_000_000_000) {
       gogBin: "/opt/gog",
       gogHome: "/private/gog",
       gogKeyringPassword: "hidden-password",
-      openClawRoot: "/home/owner/.openclaw",
+      integrationStateRoot: "/home/owner/.integration",
     },
     { execute, now, randomBytes: () => Buffer.alloc(32, 7) },
   );
@@ -56,6 +56,39 @@ describe("mail service", () => {
     assert.ok(commands[0].includes("--enable-commands-exact=gmail.drafts.get"));
     assert.ok(commands[1].includes("--enable-commands-exact=gmail.drafts.send"));
     assert.ok(!commands[1].includes("--gmail-no-send"));
+  });
+
+  it("supports a confirmed compose-to-send flow without an unconfirmed send command", async () => {
+    const commands = [];
+    const mail = service(async (_file, args) => {
+      commands.push(args);
+      if (args.includes("create")) {
+        return { stdout: JSON.stringify({ id: "draft-compose", message: { id: "message-compose" } }) };
+      }
+      return { stdout: JSON.stringify({ id: "draft-compose", message: { id: "message-compose" } }) };
+    });
+
+    const draft = await mail.createDraft({
+      account: "owner@example.com",
+      to: ["recipient@example.com"],
+      subject: "Confirmed message",
+      body: "Plain text",
+    });
+    const authorization = await mail.authorizeSend({
+      account: "owner@example.com",
+      draftId: draft.id,
+    });
+    await mail.sendDraft({
+      account: "owner@example.com",
+      draftId: draft.id,
+      confirmationToken: authorization.confirmationToken,
+    });
+
+    assert.ok(commands[0].includes("--enable-commands-exact=gmail.drafts.create"));
+    assert.ok(!commands[0].includes("--enable-commands-exact=gmail.drafts.send"));
+    assert.ok(commands[1].includes("--enable-commands-exact=gmail.drafts.get"));
+    assert.ok(commands[2].includes("--enable-commands-exact=gmail.drafts.send"));
+    assert.ok(!commands[2].includes("--gmail-no-send"));
   });
 
   it("keeps attachment responses bounded and strips unsafe filenames", async () => {

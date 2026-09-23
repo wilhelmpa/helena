@@ -11,7 +11,8 @@ services:
       DOMAIN: https://vault.volition.one
       ROCKET_PORT: "8080"
       UMASK: "077"
-      SIGNUPS_ALLOWED: "false"
+      # Factory first-run only. Set this back to false immediately after the owner registers.
+      SIGNUPS_ALLOWED: "true"
       SIGNUPS_VERIFY: "false"
       INVITATIONS_ALLOWED: "false"
       ORG_CREATION_USERS: owner@example.com

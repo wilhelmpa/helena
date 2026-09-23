@@ -2,12 +2,12 @@
   "none": "No permissions granted",
   "grantedCount": "{count, plural, one {# permission} other {# permissions}} granted",
   "resources": {
-    "work_items": "Work items",
+    "work_items": "Tasks",
     "initiatives": "Initiatives",
     "cycles": "Cycles",
     "dashboards": "Dashboards",
     "documents": "Docs",
-    "views": "Work item views",
+    "views": "Task views",
     "members_invite": "Invites",
     "members_manage": "Members",
     "states": "States",
@@ -32,7 +32,7 @@
     "delete": "Delete"
   },
   "groups": {
-    "workItems": "Work items",
+    "workItems": "Tasks",
     "dashboards": "Dashboards",
     "documents": "Docs",
     "notes": "Notes",

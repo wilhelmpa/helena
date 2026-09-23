@@ -17,18 +17,12 @@ if [ -f "${settings_dir}/settings.json" ] && [ ! -L "${settings_dir}/settings.js
 fi
 ln -sfn "${runtime_settings}" "${settings_dir}/settings.json"
 
-# Keep the shared checkout's HTTPS origin unchanged. This exact rewrite applies
-# only to the one repository whose deploy key is mounted into this container.
-git config --global --replace-all \
-  url."git@github.com:wilhelmpa/v1-cart-suite.git".insteadOf \
-  "https://github.com/wilhelmpa/v1-cart-suite.git"
-
 declare -a child_pids=()
 
 # ttyd passes only explicit `arg` query parameters to this fixed wrapper. The
 # wrapper validates one lowercase slug, resolves it below /projects, and never
 # evaluates the argument as shell code. This gives future provisioned projects
-# a stable URL without adding ports or weakening an OpenClaw agent sandbox.
+# a stable URL without adding ports or weakening an legacy runtime agent sandbox.
 /usr/local/bin/ttyd \
   --interface 0.0.0.0 \
   --port 8082 \

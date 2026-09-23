@@ -22,6 +22,24 @@ export interface OrganizationGoalNode {
   children: OrganizationGoalNode[];
 }
 
+export type OrganizationAgentRole = 'coordinator' | 'specialist' | 'pool';
+
+export function organizationAgentRole(
+  agent: OrganizationAgent,
+  agents: OrganizationAgent[],
+): OrganizationAgentRole {
+  if (agent.reportsToAgentId != null) return 'specialist';
+  const identity = [agent.roleTitle, agent.runtimeAgentId, agent.username, agent.name]
+    .filter(Boolean)
+    .join(' ');
+  if (
+    /coordinator/i.test(identity) ||
+    agents.some((candidate) => candidate.reportsToAgentId === agent.id)
+  )
+    return 'coordinator';
+  return 'pool';
+}
+
 function goalTree(goals: OrganizationGoal[]): OrganizationGoalNode[] {
   const nodes = new Map<number, OrganizationGoalNode>(
     goals.map((goal) => [goal.id, { goal, children: [] }]),

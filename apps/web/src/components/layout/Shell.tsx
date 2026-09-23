@@ -80,14 +80,19 @@ export default function Shell({
   useProjectRouteSync({ projects, projectsLoaded, projectKey, allowEmpty: globalHome });
 
   const selectWorkspaceTool = workspacePanel.toggleTool;
+  const {
+    activeTool: activeWorkspaceTool,
+    open: workspaceOpen,
+    setOpen: setWorkspaceOpen,
+  } = workspacePanel;
 
   useEffect(() => {
     const routedTool =
       route.sub === 'code' || route.sub === 'files' || route.sub === 'inbox' ? route.sub : null;
-    if (routedTool && workspacePanel.open && workspacePanel.activeTool === routedTool) {
-      workspacePanel.setOpen(false);
+    if (routedTool && workspaceOpen && activeWorkspaceTool === routedTool) {
+      setWorkspaceOpen(false);
     }
-  }, [route.sub, workspacePanel.activeTool, workspacePanel.open, workspacePanel.setOpen]);
+  }, [activeWorkspaceTool, route.sub, setWorkspaceOpen, workspaceOpen]);
 
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.
@@ -175,7 +180,7 @@ export default function Shell({
           projects={projects}
           currentProjectKey={projectKey}
           onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-          onNewTeam={() => overlays.setShowNewTeam(true)}
+          onNewProject={() => overlays.setShowNewProject(true)}
         />
         <SidebarInset className="min-w-0">
           <AppHeader

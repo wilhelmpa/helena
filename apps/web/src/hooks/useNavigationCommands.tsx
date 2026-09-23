@@ -4,6 +4,7 @@ import {
   Building2,
   Code2,
   Folder,
+  FolderCog,
   Inbox,
   LayoutDashboard,
   Server,
@@ -136,11 +137,11 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
   }
 
   add(
-    'nav.manage-teams',
-    t('manageTeams'),
-    <Users />,
+    'nav.project-settings',
+    t('projectSettings'),
+    <FolderCog />,
     manageTeamsPath(),
-    'account rename leave projects delete copy',
+    'account teams rename leave projects delete copy',
   );
   for (const s of ACCOUNT_SECTIONS) {
     add(`nav.account.${s.slug}`, accountLabel(s.slug), <s.icon />, accountPath(s.slug), 'account');

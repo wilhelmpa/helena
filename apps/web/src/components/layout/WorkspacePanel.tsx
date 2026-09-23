@@ -91,6 +91,7 @@ export default function WorkspacePanel({
   const [frames, setFrames] = useState<
     { key: string; url: string; title: string; tool: WorkspaceToolId }[]
   >([]);
+  const [frameReloads, setFrameReloads] = useState<Record<string, number>>({});
   const [visitedContents, setVisitedContents] = useState<WorkspaceToolId[]>([]);
   const activeUrl = useMemo(() => {
     if (activeTool === 'chat' && advanced) return tool.advancedUrl;
@@ -189,6 +190,12 @@ export default function WorkspacePanel({
         }
         onToggleMode={onToggleMode}
         onToggleFullscreen={onToggleFullscreen}
+        onReload={() =>
+          setFrameReloads((current) => ({
+            ...current,
+            [frameKey]: (current[frameKey] ?? 0) + 1,
+          }))
+        }
         onClose={onClose}
       />
 
@@ -199,6 +206,7 @@ export default function WorkspacePanel({
           title={frame.title}
           tool={frame.tool}
           active={open && !Content && frame.key === frameKey}
+          reloadToken={frameReloads[frame.key] ?? 0}
         />
       ))}
       {visitedContents.map((id) => {

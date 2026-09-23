@@ -62,10 +62,10 @@ describe('god teams', () => {
       expect(row).toMatchObject({
         projectCount: 1,
         issueCount: 1,
-        agentCount: 1,
+        agentCount: 2,
         mcpEnabled: true,
         // The owner and the agent's bot user, which belongs to the team too.
-        memberCount: 2,
+        memberCount: 3,
       });
     });
 
@@ -133,7 +133,7 @@ describe('god teams', () => {
       const res = await god.api.god.teams({ teamId }).get();
 
       expect(res.status).toBe(200);
-      expect(res.data).toMatchObject({ id: teamId, projectCount: 1, memberCount: 1 });
+      expect(res.data).toMatchObject({ id: teamId, projectCount: 1, memberCount: 2 });
     });
 
     it('returns 404 for an unknown team and 400 for a non-numeric id', async () => {
@@ -162,7 +162,7 @@ describe('god teams', () => {
       expect(res.data?.items[0]).toMatchObject({
         key: 'MKT',
         name: 'Marketing',
-        memberCount: 1,
+        memberCount: 2,
         issueCount: 1,
       });
     });

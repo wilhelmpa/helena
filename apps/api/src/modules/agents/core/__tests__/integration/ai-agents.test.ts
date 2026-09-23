@@ -344,9 +344,9 @@ describe('ai agents', () => {
     await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot', kind: 'external' });
     const res = await agents(asOwner, teamId).get();
     expect(res.status).toBe(200);
-    expect(res.data).toHaveLength(1);
-    expect(res.data?.[0]).not.toHaveProperty('apiKey');
-    expect(res.data?.[0].apiKeyStart).toBeTruthy();
+    expect(res.data).toHaveLength(2);
+    expect(res.data?.find((a) => a.username === 'bot')).not.toHaveProperty('apiKey');
+    expect(res.data?.find((a) => a.username === 'bot')?.apiKeyStart).toBeTruthy();
   });
 
   it('gets one agent by id, without the secret', async () => {
@@ -556,7 +556,7 @@ describe('ai agents', () => {
     const del = await agents(asOwner, teamId)({ agentId }).delete();
     expect(del.status).toBe(204);
     const list = await agents(asOwner, teamId).get();
-    expect(list.data).toHaveLength(0);
+    expect(list.data).toHaveLength(1);
     const project = await asOwner.projects({ projectKey: 'MKT' }).get();
     expect(project.data?.assignees.some((a) => a.kind === 'agent')).toBe(false);
     expect(

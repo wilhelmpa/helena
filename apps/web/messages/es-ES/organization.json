@@ -4,6 +4,7 @@
   "loading": "Loading organization…",
   "managerRequired": "Only team owners and managers can view and edit the organization.",
   "tabs": {
+    "map": "Organization map",
     "departments": "Departments",
     "goals": "Goals",
     "agents": "Agents",
@@ -21,7 +22,8 @@
     "targetDate": "Target date",
     "roleTitle": "Organization role",
     "reportsTo": "Reports to",
-    "openClawAgentId": "OpenClaw agent ID",
+    "hermesAgentId": "Hermes agent ID",
+    "parentGoal": "Parent goal",
     "projectInstructions": "Project instructions"
   },
   "values": {
@@ -44,13 +46,38 @@
   },
   "agents": {
     "empty": "This team has no agents.",
-    "openClawPlaceholder": "coordinator-agent-id",
+    "hermesPlaceholder": "coordinator-agent-id",
     "projectInstructions": "Project-specific instructions",
     "projectInstructionsPlaceholder": "Describe this agent's responsibility in the project."
   },
   "projects": {
     "empty": "This team has no projects.",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions."
+  },
+  "map": {
+    "empty": "No organization structure yet.",
+    "unassigned": "Unassigned agents"
+  },
+  "summary": {
+    "pool": "Agent pool",
+    "coordinators": "Coordinators",
+    "specialists": "Specialists"
+  },
+  "roles": {
+    "pool": "Pool",
+    "coordinator": "Coordinator",
+    "specialist": "Specialist"
+  },
+  "resources": {
+    "title": "Project resources",
+    "description": "Provisioned code, terminal, browser, files, and agent resources for this project.",
+    "loading": "Loading project resources…",
+    "unavailable": "Project resource status is unavailable.",
+    "status": {
+      "pending": "Provisioning",
+      "succeeded": "Ready",
+      "failed": "Failed"
+    }
   },
   "statuses": {
     "planned": "Planned",

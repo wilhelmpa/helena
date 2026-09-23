@@ -48,6 +48,8 @@ export async function answer(
       prompt: message.prompt,
       systemPrompt: message.systemPrompt,
       sessionId: message.sessionId,
+      model: message.model,
+      thinkingLevel: message.thinkingLevel,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,

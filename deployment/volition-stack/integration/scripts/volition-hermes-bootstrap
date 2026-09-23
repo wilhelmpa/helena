@@ -1,0 +1,101 @@
+#!/bin/sh
+set -eu
+umask 077
+
+plan_root=/home/pw/services/itsaplan
+stack_root=/home/pw/services/volition-stack
+secret_file="$stack_root/.secrets/itsaplan_home_master_agent_api_key"
+control_token_file="$stack_root/.secrets/plan_mastra_control_token"
+runner_artifact="$plan_root/packages/runner/dist/cli.js"
+hermes_home="$stack_root/data/hermes"
+workspace_root=/home/pw/services/volition-workspaces
+unit_root=/home/pw/.config/systemd/user
+source_root="$plan_root/deployment/volition-stack/integration"
+
+install -d -m 700 "$stack_root/.secrets" "$hermes_home" "$workspace_root" "$unit_root"
+install -d -m 700 "$stack_root/integration/scripts" "$stack_root/integration/hermes-runner"
+install -m 700 "$source_root/scripts/volition-hermes-runner" "$stack_root/integration/scripts/volition-hermes-runner"
+install -m 700 "$source_root/scripts/volition-hermes-catalog.py" "$stack_root/integration/scripts/volition-hermes-catalog.py"
+install -m 600 "$source_root/hermes-runner/itsaplan-runner.json" "$stack_root/integration/hermes-runner/itsaplan-runner.json"
+
+if [ ! -s "$hermes_home/config.yaml" ]; then
+  install -m 600 "$source_root/hermes-runner/hermes-config.fragment.yaml" "$hermes_home/config.yaml"
+elif ! grep -q '^[[:space:]]*itsaplan:' "$hermes_home/config.yaml"; then
+  printf '\n' >>"$hermes_home/config.yaml"
+  cat "$source_root/hermes-runner/hermes-config.fragment.yaml" >>"$hermes_home/config.yaml"
+  chmod 600 "$hermes_home/config.yaml"
+fi
+
+if ! grep -q '^[[:space:]]*security:' "$hermes_home/config.yaml"; then
+  cat >>"$hermes_home/config.yaml" <<'EOF'
+security:
+  tirith_enabled: true
+  tirith_path: /home/pw/services/volition-stack/data/hermes/bin/tirith
+  tirith_timeout: 5
+  tirith_fail_open: false
+EOF
+  chmod 600 "$hermes_home/config.yaml"
+fi
+
+for required_setting in \
+  'tirith_enabled:[[:space:]]*true' \
+  'tirith_path:[[:space:]]*/home/pw/services/volition-stack/data/hermes/bin/tirith' \
+  'tirith_timeout:[[:space:]]*5' \
+  'tirith_fail_open:[[:space:]]*false'; do
+  if ! grep -Eq "^[[:space:]]*$required_setting[[:space:]]*$" "$hermes_home/config.yaml"; then
+    echo "Hermes security configuration is not fail-closed for Tirith." >&2
+    exit 1
+  fi
+done
+
+install -m 600 "$source_root/systemd/volition-hermes-runner.service" "$unit_root/volition-hermes-runner.service"
+
+if [ ! -x "$runner_artifact" ]; then
+  echo "The Plan Hermes runner artifact is missing; the installer must build it first." >&2
+  exit 1
+fi
+
+systemctl --user daemon-reload
+
+if [ ! -s "$secret_file" ]; then
+  if [ ! -r "$control_token_file" ]; then
+    echo "The internal bootstrap credential is unavailable." >&2
+    exit 1
+  fi
+  temporary_secret=$(mktemp "$stack_root/.secrets/.home-agent-key.XXXXXX")
+  trap 'rm -f "$temporary_secret"' EXIT INT TERM
+  control_token=$(cat "$control_token_file")
+  set +e
+  http_status=$(
+    {
+      printf 'url = "http://127.0.0.1:3000/internal/bootstrap/home-agent"\n'
+      printf 'request = "POST"\n'
+      printf 'header = "Authorization: Bearer %s"\n' "$control_token"
+      printf 'output = "%s"\n' "$temporary_secret"
+      printf 'write-out = "%%{http_code}"\n'
+      printf 'silent\nshow-error\n'
+    } | /usr/bin/curl --config -
+  )
+  curl_status=$?
+  set -e
+  unset control_token
+  if [ "$curl_status" -ne 0 ]; then
+    exit "$curl_status"
+  fi
+  if [ "$http_status" = 425 ]; then
+    rm -f "$temporary_secret"
+    trap - EXIT INT TERM
+    exit 0
+  fi
+  if [ "$http_status" != 200 ] || [ ! -s "$temporary_secret" ]; then
+    echo "Home agent bootstrap failed with HTTP $http_status." >&2
+    exit 1
+  fi
+  chmod 600 "$temporary_secret"
+  mv "$temporary_secret" "$secret_file"
+  trap - EXIT INT TERM
+fi
+
+systemctl --user enable --now volition-hermes-runner.service
+
+systemctl --user disable --now volition-hermes-bootstrap.timer >/dev/null 2>&1 || true

@@ -29,6 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
 import { useMoveDocument, useSetDocumentFavorite } from '../services/documents.service';
 import { DOCUMENT_LIST_TABS, type DocumentListTab } from '../utils/documentList';
 import DocumentTree, { type DocumentSort } from './DocumentTree';
@@ -127,8 +128,8 @@ export default function DocumentsIndex({
 
   return (
     <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-      <header className="shrink-0 border-b bg-background/95 px-4 backdrop-blur md:px-6">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4">
+      <WorkspaceHeader className="bg-background/95 px-4 backdrop-blur md:px-6">
+        <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="grid size-7 shrink-0 place-items-center rounded-md bg-foreground text-background">
               <BookOpenText className="size-3.5" />
@@ -155,7 +156,7 @@ export default function DocumentsIndex({
             </Button>
           )}
         </div>
-      </header>
+      </WorkspaceHeader>
 
       <div className="shrink-0 border-b px-4 md:px-6">
         <div

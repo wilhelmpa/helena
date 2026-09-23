@@ -1,17 +1,27 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { timingSafeEqual } from 'node:crypto';
+import { createEventIngressService, EventIngressError } from './event-ingress.mjs';
+import { createMastraControlService, MastraControlError } from '../../integration/mastra-control.mjs';
 
 const catalog = JSON.parse(await readFile(new URL('./catalog/flows.json', import.meta.url), 'utf8'));
 const ownerEmail = process.env.STUDIO_OWNER_EMAIL;
 if (!ownerEmail) throw new Error('STUDIO_OWNER_EMAIL is required');
 const inboxAdapterTokenPath = process.env.INBOX_ADAPTER_TOKEN_FILE;
-if (!inboxAdapterTokenPath?.startsWith('/run/secrets/')) {
-  throw new Error('INBOX_ADAPTER_TOKEN_FILE must be a mounted Docker secret');
+if (!inboxAdapterTokenPath || (!inboxAdapterTokenPath.startsWith('/run/secrets/') && !inboxAdapterTokenPath.startsWith('/run/credentials/'))) {
+  throw new Error('INBOX_ADAPTER_TOKEN_FILE must be a runtime credential');
 }
 const inboxAdapterToken = (await readFile(inboxAdapterTokenPath, 'utf8')).trim();
 if (Buffer.byteLength(inboxAdapterToken) < 32 || inboxAdapterToken.length > 2048) {
   throw new Error('The inbox adapter token is invalid');
+}
+const planControlTokenPath = process.env.PLAN_CONTROL_TOKEN_FILE;
+if (!planControlTokenPath || (!planControlTokenPath.startsWith('/run/secrets/') && !planControlTokenPath.startsWith('/run/credentials/'))) {
+  throw new Error('PLAN_CONTROL_TOKEN_FILE must be a runtime credential');
+}
+const planControlToken = (await readFile(planControlTokenPath, 'utf8')).trim();
+if (Buffer.byteLength(planControlToken) < 32 || planControlToken.length > 2048) {
+  throw new Error('The Plan control token is invalid');
 }
 const workflowIds = new Set(catalog.flows.map(flow => flow.id));
 const inboxRuns = new Map();
@@ -80,6 +90,86 @@ async function upstreamJson(path, options = {}) {
   try { value = text ? JSON.parse(text) : null; } catch { /* handled below */ }
   return { status: response.status, ok: response.ok, value };
 }
+const eventIngress = createEventIngressService({
+  catalog,
+  lookupRun: async (workflowId, eventId) => {
+    const response = await upstreamJson(
+      `/workflows/${workflowId}/runs/${encodeURIComponent(eventId)}`,
+    );
+    if (response.status === 404) return null;
+    if (!response.ok || !response.value) {
+      throw new EventIngressError(502, 'mastra_lookup_failed', 'Mastra run lookup failed');
+    }
+    return response.value;
+  },
+  startWorkflow: async ({ workflowId, eventId, projectRef, envelope }) => {
+    const response = await upstreamJson(
+      `/workflows/${workflowId}/start-async?runId=${encodeURIComponent(eventId)}`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          inputData: envelope,
+          resourceId: projectRef,
+          requestContext: envelope.context,
+        }),
+      },
+    );
+    if (!response.ok || !response.value) {
+      throw new EventIngressError(502, 'mastra_start_failed', 'Mastra workflow start failed');
+    }
+    return response.value;
+  },
+});
+const planControl = createMastraControlService({
+  mastraControlUrl: 'http://127.0.0.1:4111/mastra/api/',
+  mastraControlOwnerEmail: ownerEmail,
+});
+
+async function internalControl(req, res) {
+  if (!authorized(req.headers.authorization, planControlToken)) {
+    res.setHeader('www-authenticate', 'Bearer');
+    return json(res, 401, { error: 'unauthorized' });
+  }
+  if (!String(req.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
+    return json(res, 415, { error: 'json_required' });
+  }
+  try {
+    const input = JSON.parse((await readBody(req, 128 * 1024)).toString('utf8'));
+    return json(res, 200, await planControl.execute(input));
+  } catch (error) {
+    if (error instanceof MastraControlError) return json(res, error.status, { message: error.message });
+    return json(res, 502, { message: 'Workflow control plane failed' });
+  }
+}
+
+async function internalEvent(req, res) {
+  if (!authorized(req.headers.authorization, inboxAdapterToken)) {
+    res.setHeader('www-authenticate', 'Bearer');
+    return json(res, 401, { error: 'unauthorized' });
+  }
+  if (!String(req.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
+    return json(res, 415, { error: 'json_required' });
+  }
+  let input;
+  try {
+    input = JSON.parse((await readBody(req, 64 * 1024)).toString('utf8'));
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Request body too large') {
+      return json(res, 413, { error: 'request_too_large' });
+    }
+    return json(res, 400, { error: 'invalid_json' });
+  }
+  try {
+    return json(res, 200, await eventIngress.execute(input));
+  } catch (error) {
+    if (error instanceof EventIngressError) {
+      return json(res, error.status, { error: error.code, message: error.message });
+    }
+    return json(res, 502, { error: 'event_ingress_failed' });
+  }
+}
+
 async function runInboxWorkflow(envelope) {
   const runId = envelope.eventId;
   const existing = await upstreamJson(`/workflows/inbox-triage/runs/${encodeURIComponent(runId)}?fields=result,error`);
@@ -156,8 +246,22 @@ const server = http.createServer(async (req, res) => {
       const response = await fetch('http://127.0.0.1:4112/mastra/api/workflows', { signal: AbortSignal.timeout(2000) });
       return json(res, response.ok ? 200 : 503, { ok: response.ok, mode: 'safe-control-plane', workflows: workflowIds.size });
     }
+    if (req.url === '/internal/events') {
+      if (req.method !== 'POST') {
+        res.setHeader('allow', 'POST');
+        return json(res, 405, { error: 'method_not_allowed' });
+      }
+      return await internalEvent(req, res);
+    }
     if (req.url === '/internal/inbox/triage' && req.method === 'POST') {
       return await internalInbox(req, res);
+    }
+    if (req.url === '/internal/mastra/control') {
+      if (req.method !== 'POST') {
+        res.setHeader('allow', 'POST');
+        return json(res, 405, { error: 'method_not_allowed' });
+      }
+      return await internalControl(req, res);
     }
     if (req.headers['x-volition-auth'] !== 'verified' || req.headers['x-auth-request-email'] !== ownerEmail) {
       return json(res, 403, { error: 'Cloudflare-authenticated gateway access required' });
@@ -208,7 +312,7 @@ const server = http.createServer(async (req, res) => {
       if (type.includes('text/html') && req.method !== 'HEAD') {
         const chunks = [];
         response.on('data', chunk => chunks.push(chunk));
-        response.on('end', () => res.end(Buffer.concat(chunks).toString('utf8').replace(/      \(function \(\) \{[\s\S]*?      \}\)\(\);/, '').replace('</head>', `${style}</head>`).replace(/<body([^>]*)>/, `<body$1>${banner}`)));
+        response.on('end', () => res.end(Buffer.concat(chunks).toString('utf8').replace(/ {6}\(function \(\) \{[\s\S]*? {6}\}\)\(\);/, '').replace('</head>', `${style}</head>`).replace(/<body([^>]*)>/, `<body$1>${banner}`)));
       } else response.pipe(res);
     });
     upstream.on('timeout', () => upstream.destroy(new Error('Upstream timeout')));

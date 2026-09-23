@@ -41,6 +41,7 @@ describe('external agent runtime policy form', () => {
     value.kind = 'external';
     value.name = 'Runtime agent';
     value.username = 'runtime';
+    value.model = 'openai/gpt-6-astra';
     value.runtimePolicy = {
       reasoningEffort: 'medium',
       toolAllow: [' browser ', '', 'browser'],
@@ -52,7 +53,9 @@ describe('external agent runtime policy form', () => {
       ],
     };
 
-    assert.deepEqual(toUpdatePatch(value).runtimePolicy, {
+    const patch = toUpdatePatch(value);
+    assert.equal(patch.model, 'openai/gpt-6-astra');
+    assert.deepEqual(patch.runtimePolicy, {
       reasoningEffort: 'medium',
       toolAllow: ['browser'],
       toolDeny: [],

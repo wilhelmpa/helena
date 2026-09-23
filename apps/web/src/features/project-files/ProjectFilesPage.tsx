@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { ChevronRight, Download, File, FileText, Folder, FolderOpen, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import {
   Dialog,
   DialogContent,
@@ -62,18 +63,18 @@ export default function ProjectFilesPage() {
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 md:px-6">
-          <div>
-            <h1 className="text-lg font-semibold">{t('title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('description')}</p>
-          </div>
-          {canCreate ? (
-            <Button size="sm" onClick={() => setCreating(true)}>
-              <Plus className="size-4" />
-              {t('newText')}
-            </Button>
-          ) : null}
-        </header>
+        <WorkspacePageHeader
+          title={t('title')}
+          description={t('description')}
+          actions={
+            canCreate ? (
+              <Button size="sm" onClick={() => setCreating(true)}>
+                <Plus className="size-4" />
+                {t('newText')}
+              </Button>
+            ) : null
+          }
+        />
 
         <nav
           className="flex min-h-11 items-center gap-1 overflow-x-auto border-b px-4 text-sm md:px-6"

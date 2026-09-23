@@ -21,7 +21,7 @@ without starting Vaultwarden or printing vault contents.
 
 ## Automation vault
 
-OpenClaw's team-scoped SQLite secret store is the machine-secret authority. Store
+legacy runtime's team-scoped SQLite secret store is the machine-secret authority. Store
 credentials as `secret` entries, whose values are write-only through the CLI. Supply new
 values through stdin or a mode-0600 file, never a command-line argument. Use `env` entries
 only for non-secret configuration. Restrict network credentials with `--allow-host` where
@@ -29,16 +29,16 @@ the integration supports an exact host.
 
 Agents, skills, and adapters receive SecretRefs. They must not copy resolved values into
 prompts, Plan, logs, documentation, environment files, or Vaultwarden. Run
-`openclaw secrets audit --check` after migrations and `openclaw secrets reload` only as a
+`hermes secrets audit --check` after migrations and `hermes secrets reload` only as a
 separate reviewed runtime operation.
 
 ## Mastra boundary
 
 Mastra owns workflow state, not credentials. It may receive an adapter token scoped to
-submitting and observing OpenClaw jobs, plus opaque SecretRefs that OpenClaw resolves at
+submitting and observing legacy runtime jobs, plus opaque SecretRefs that legacy runtime resolves at
 execution time. It must not receive mail, Git, browser, provider, or service credentials,
-and it must not mount the OpenClaw store. Consequential external actions remain subject
-to the OpenClaw approval boundary.
+and it must not mount the legacy runtime store. Consequential external actions remain subject
+to the legacy runtime approval boundary.
 
 Run `scripts/probe-secret-boundaries.sh` for a value-free check of these boundaries and
 the latest Vaultwarden restore artifact.

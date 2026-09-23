@@ -5,8 +5,8 @@ After=volition-provisioning.service
 [Service]
 Type=oneshot
 WorkingDirectory=/home/pw/services/volition-ops
-EnvironmentFile=/home/pw/.openclaw/volition/provisioning.env
-EnvironmentFile=/home/pw/.openclaw/credentials/itsaplan-mcp.env
+EnvironmentFile=/home/pw/services/volition-workspaces/.state/integration/provisioning.env
+EnvironmentFile=/home/pw/services/volition-stack/.secrets/itsaplan-mcp.env
 Environment=VOLITION_AUDIT_REPORT=/home/pw/services/volition-ops/integration-audit-result.json
 LoadCredential=nextcloud_app_password:/home/pw/services/volition-stack/.secrets/nextcloud_patrick_app_password
 UMask=0077

@@ -12,7 +12,7 @@
   "leaveDialog": {
     "title": "Leave {name}?",
     "confirm": "Leave project",
-    "description": "You will lose access to <strong>{name}</strong> and its work items. To join again you need a new invite from an owner."
+    "description": "You will lose access to <strong>{name}</strong> and its tasks. To join again you need a new invite from an owner."
   },
   "editDialog": {
     "title": "Edit project",

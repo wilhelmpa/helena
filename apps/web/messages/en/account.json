@@ -125,7 +125,7 @@
     "startPage": "Start page",
     "startPageDescription": "The section that opens when you enter the app, in your last active project.",
     "startPageOptions": {
-      "work-items": "Work items",
+      "work-items": "Tasks",
       "inbox": "Inbox",
       "dashboard": "Dashboards",
       "initiatives": "Initiatives"

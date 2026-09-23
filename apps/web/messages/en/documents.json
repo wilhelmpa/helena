@@ -215,5 +215,23 @@
     "cancel": "Cancel",
     "create": "Create",
     "creating": "Creating…"
+  },
+  "markdownSync": {
+    "label": "Markdown file",
+    "synced": "Synced",
+    "pending": "Pending",
+    "privateNotExported": "Private · not exported",
+    "checking": "Checking…",
+    "checkingHint": "Loading the portable file status.",
+    "syncedHint": "Open Files to view this Markdown file.",
+    "pendingHint": "The page is saved. The Markdown file can be retried safely.",
+    "privateHint": "Private pages are never copied to the shared project folder.",
+    "openFiles": "Open project files",
+    "copyPath": "Copy file path",
+    "pathCopied": "File path copied",
+    "copyFailed": "File path could not be copied.",
+    "retry": "Retry",
+    "retrying": "Retrying…",
+    "retryFailed": "The Markdown sync could not be retried."
   }
 }

@@ -47,7 +47,7 @@ describe('god users', () => {
       const { god } = await setup();
       await god.api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const res = await god.api.god.users.get({ query: ALL });
+      const res = await god.api.god.users.get({ query: { kind: 'human', page: 1, pageSize: 50 } });
 
       expect(res.status).toBe(200);
       expect(res.data?.total).toBe(1);
@@ -81,11 +81,22 @@ describe('god users', () => {
       expect(humans.data?.total).toBe(1);
       expect(humans.data?.items.map((u) => u.id)).toEqual([god.id]);
 
-      expect(agents.data?.total).toBe(1);
-      expect(agents.data?.items[0]).toMatchObject({ id: agentUserId, isAgent: true });
+      expect(agents.data?.total).toBe(2);
+      expect(agents.data?.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: agentUserId, isAgent: true }),
+          expect.objectContaining({ name: 'Hermes MKT Coordinator', isAgent: true }),
+        ]),
+      );
 
-      expect(all.data?.total).toBe(2);
-      expect(all.data?.items.map((u) => u.id).sort()).toEqual([god.id, agentUserId].sort());
+      expect(all.data?.total).toBe(3);
+      expect(all.data?.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: god.id, isAgent: false }),
+          expect.objectContaining({ id: agentUserId, isAgent: true }),
+          expect.objectContaining({ name: 'Hermes MKT Coordinator', isAgent: true }),
+        ]),
+      );
     });
 
     it('defaults to people when no kind is given', async () => {

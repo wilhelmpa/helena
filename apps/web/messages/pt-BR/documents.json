@@ -215,5 +215,23 @@
     "cancel": "Cancel",
     "create": "Create",
     "creating": "Creating…"
+  },
+  "markdownSync": {
+    "label": "Arquivo Markdown",
+    "synced": "Sincronizado",
+    "pending": "Pendente",
+    "privateNotExported": "Privado · não exportado",
+    "checking": "Verificando…",
+    "checkingHint": "Carregando o status do arquivo portátil.",
+    "syncedHint": "Abra Arquivos para ver este arquivo Markdown.",
+    "pendingHint": "A página está salva. A sincronização pode ser repetida com segurança.",
+    "privateHint": "Páginas privadas nunca são copiadas para a pasta compartilhada do projeto.",
+    "openFiles": "Abrir arquivos do projeto",
+    "copyPath": "Copiar caminho do arquivo",
+    "pathCopied": "Caminho do arquivo copiado",
+    "copyFailed": "Não foi possível copiar o caminho do arquivo.",
+    "retry": "Tentar novamente",
+    "retrying": "Tentando novamente…",
+    "retryFailed": "Não foi possível repetir a sincronização Markdown."
   }
 }

@@ -26,7 +26,7 @@ function config() {
     gogBin: "/test/gog",
     gogHome: path.join(temporaryRoot, "gog"),
     gogKeyringPassword: "keyring-password-for-tests",
-    openClawRoot: path.join(temporaryRoot, ".openclaw"),
+    integrationStateRoot: path.join(temporaryRoot, ".integration"),
   };
 }
 

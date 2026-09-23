@@ -14,7 +14,7 @@ import {
   type MailPayload,
 } from '@/lib/api/endpoints/connections';
 import MailComposer from './components/MailComposer';
-import MailDrafts from './components/MailDrafts';
+import MailToolbar from './components/MailToolbar';
 import { mailAttachments, mailRows, safeMailText } from './utils/mailPayload';
 
 export default function MailContent() {
@@ -27,7 +27,6 @@ export default function MailContent() {
   const [threadId, setThreadId] = useState('');
   const [labels, setLabels] = useState<MailPayload>();
   const [labelInput, setLabelInput] = useState('');
-  const [draftRefresh, setDraftRefresh] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const accountRef = useRef('');
@@ -167,30 +166,19 @@ export default function MailContent() {
           {error}
         </p>
       ) : null}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {accounts.map((item) => (
-          <button
-            key={item.account}
-            type="button"
-            className={`rounded border px-3 py-2 text-sm ${account === item.account ? 'border-primary bg-primary/5' : ''}`}
-            disabled={item.status !== 'connected'}
-            onClick={() => selectAccount(item.account)}
-          >
-            {item.account}
-            <span className="ms-2 text-xs text-muted-foreground">{statusLabels[item.status]}</span>
-          </button>
-        ))}
-      </div>
-      <form className="mb-5 flex gap-2" onSubmit={search}>
-        <input
-          className="min-w-0 flex-1 rounded border bg-background px-3 py-2 text-sm"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={t('mail.searchPlaceholder')}
-        />
-        <Button disabled={busy || !account}>{t('mail.search')}</Button>
-      </form>
-      <div className="grid min-h-96 gap-4 @[38rem]:grid-cols-[minmax(14rem,0.75fr)_minmax(20rem,1.25fr)]">
+      <MailToolbar
+        accounts={accounts}
+        account={account}
+        query={query}
+        busy={busy}
+        statusLabels={statusLabels}
+        searchLabel={t('mail.search')}
+        searchPlaceholder={t('mail.searchPlaceholder')}
+        onAccountChange={selectAccount}
+        onQueryChange={setQuery}
+        onSearch={search}
+      />
+      <div className="grid min-h-96 gap-4 @[42rem]:grid-cols-[minmax(14rem,0.7fr)_minmax(20rem,1.3fr)] @[76rem]:grid-cols-[minmax(14rem,0.7fr)_minmax(20rem,1.3fr)_minmax(20rem,1fr)]">
         <section className="rounded-lg border">
           <h2 className="border-b p-3 font-medium">{t('mail.threads')}</h2>
           <div className="divide-y">
@@ -261,13 +249,8 @@ export default function MailContent() {
             <p className="text-sm text-muted-foreground">{t('mail.selectThread')}</p>
           )}
         </section>
+        {account ? <MailComposer account={account} onSent={() => void search()} /> : null}
       </div>
-      {account ? (
-        <div className="mt-5 grid gap-4 xl:grid-cols-2">
-          <MailComposer account={account} onCreated={() => setDraftRefresh((value) => value + 1)} />
-          <MailDrafts account={account} refresh={draftRefresh} />
-        </div>
-      ) : null}
     </div>
   );
 }

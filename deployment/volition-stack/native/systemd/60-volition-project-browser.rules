@@ -1,0 +1,10 @@
+polkit.addRule(function(action, subject) {
+  if (subject.user !== "volition-hermes") return;
+  if (action.id !== "org.freedesktop.systemd1.manage-units") return;
+  var unit = action.lookup("unit") || "";
+  var verb = action.lookup("verb") || "";
+  if (!/^(start|stop|restart)$/.test(verb)) return;
+  if (unit === "volition-hermes-runner.service") return polkit.Result.YES;
+  if (/^volition-project-browser-(kasm|chromium|xvfb|vnc|novnc)@[a-z0-9][a-z0-9-]{0,31}\.service$/.test(unit)) return polkit.Result.YES;
+  if (/^volition-project-browser@[a-z0-9][a-z0-9-]{0,31}\.target$/.test(unit)) return polkit.Result.YES;
+});

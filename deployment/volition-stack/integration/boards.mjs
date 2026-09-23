@@ -26,12 +26,12 @@ export async function provisionBoards(config, envelope, workspace, ensureBoardFi
     const name = `board-${board.id}`;
     const directory = await safeChild(root, name);
     const boardPath = `${workspace.containerPath}/boards/${name}`;
-    const files = await ensureBoardFiles(workspace.slug, board.id);
+    const files = await ensureBoardFiles(workspace.slug, board.id, envelope.project);
     const plan = config.planUrl ? new URL(`/project/${encodeURIComponent(envelope.project.key)}/view/${board.id}`, config.planUrl).toString() : null;
     const metadata = {
       schemaVersion: 1, project: envelope.project, board,
       links: { plan, files: files.url ?? null }, workspace: boardPath,
-      guidance: 'Use exact API-returned document ids and project-scoped ticket sequence numbers. Store deliverables in Nextcloud, link both directions, verify every link before marking done. Never put secrets in this registry.',
+      guidance: 'Use exact API-returned document ids and project-scoped ticket sequence numbers. Store deliverables in the project vault, link both directions, verify every link before marking done. Never put secrets in this registry.',
     };
     await writeJsonAtomic(path.join(directory, 'board.json'), metadata);
     const code = config.codeUrl ? new URL(config.codeUrl) : null;

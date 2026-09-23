@@ -118,8 +118,8 @@ function publicEvent(event) {
 
 export function createGoogleBridge(options = {}) {
   const execute = options.execute ?? execFileAsync;
-  const readWrapper = options.readWrapper ?? "/home/pw/.local/bin/gog-openclaw-read";
-  const writeWrapper = options.writeWrapper ?? "/home/pw/.local/bin/gog-openclaw-write";
+  const readWrapper = options.readWrapper ?? "/home/pw/.local/bin/gog-hermes-read";
+  const writeWrapper = options.writeWrapper ?? "/home/pw/.local/bin/gog-hermes-write";
   const mailAccounts = Object.freeze([...(options.mailAccounts ?? DEFAULT_MAIL_ACCOUNTS)].map((x) => x.toLowerCase()));
   const calendarReadAccounts = mailAccounts;
   const calendarAccount = (options.calendarAccount ?? DEFAULT_CALENDAR_ACCOUNT).toLowerCase();

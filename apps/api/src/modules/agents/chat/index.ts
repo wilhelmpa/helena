@@ -2,11 +2,11 @@ import { Elysia, t } from 'elysia';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
-import { requireUser } from '#shared/access';
+import { requireUser, type TeamMembership } from '#shared/access';
 import { noContent, sseFrame, sseResponse } from '#shared/http';
 import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
-import { getAgentInProject, isTriggerableBy } from '../core/service';
+import { agentScopeOf, getAgentById, getAgentInProject, isTriggerableBy } from '../core/service';
 import { runnerAuth } from '../runner-auth';
 import {
   ChatAckResponse,
@@ -14,11 +14,13 @@ import {
   ChatCatalogResponse,
   ClaimChatResponse,
   SendChatResponse,
+  agentParams,
   projectAgentParams,
   chatEventsBody,
   chatCatalogBody,
   chatEventsQuery,
   chatMessageParams,
+  teamChatMessageParams,
   chatResultBody,
   runnerMessageParams,
   sendChatBody,
@@ -36,7 +38,6 @@ import {
   readChatCatalog,
   sendMessage,
   publishChatCatalog,
-  setThreadSession,
 } from './service';
 
 // Chatting with an external agent: the member's side (send a message, follow the
@@ -102,10 +103,128 @@ async function requireExternalAgent(agentId: number, projectId: number) {
   return agent;
 }
 
+async function requireTeamExternalAgent(agentId: number, membership: TeamMembership) {
+  const agent = await getAgentById(agentId, membership.teamId, agentScopeOf(membership));
+  if (!agent) throw new HttpError(404, 'Agent not found');
+  if (agent.kind !== 'external') {
+    throw new HttpError(400, 'Only external agents are chatted with through the runner feed');
+  }
+  return agent;
+}
+
 export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: ['Agent Chat'] } })
   .use(authContext)
   .use(guards)
   .use(runnerAuth)
+
+  // Global Home chat. It is team-scoped because a fresh installation intentionally
+  // has no project yet; the transcript itself is already keyed by agent and member.
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/chat',
+    async ({ params, membership, body, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireTeamExternalAgent(params.agentId, membership);
+      if (!isTriggerableBy(agent, caller.id)) {
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      }
+      const sent = await sendMessage({
+        agentId: params.agentId,
+        userId: caller.id,
+        prompt: body.prompt,
+        threadId: body.threadId,
+        model: body.model,
+        thinkingLevel: body.thinkingLevel,
+      });
+      if (!sent) throw new HttpError(404, 'Thread not found');
+      return sent;
+    },
+    {
+      body: sendChatBody,
+      params: agentParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: SendChatResponse, ...commonErrors, ...errors(429) },
+      detail: { summary: 'Send a global Home chat message' },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/chat/catalog',
+    async ({ params, membership }) => {
+      await requireTeamExternalAgent(params.agentId, membership);
+      return readChatCatalog(params.agentId);
+    },
+    {
+      params: agentParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: ChatCatalogResponse, ...commonErrors },
+      detail: { summary: 'List global Home chat models' },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/chat/:messageId/events',
+    async ({ params, membership, query, user }) => {
+      const caller = requireUser(user);
+      await requireTeamExternalAgent(params.agentId, membership);
+      const page = await readEvents(params.messageId, params.agentId, caller.id, query.after);
+      if (!page) throw new HttpError(404, 'Message not found');
+      return page;
+    },
+    {
+      params: teamChatMessageParams,
+      query: chatEventsQuery,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: ChatEventsResponse, ...commonErrors },
+      detail: { summary: 'Read global Home answer events' },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/chat/:messageId/stream',
+    async ({ params, membership, query, user }) => {
+      const caller = requireUser(user);
+      await requireTeamExternalAgent(params.agentId, membership);
+      const after = query.after ?? 0;
+      if (!(await readEvents(params.messageId, params.agentId, caller.id, after))) {
+        throw new HttpError(404, 'Message not found');
+      }
+      const release = acquireStream(caller.id);
+      if (!release) throw new HttpError(429, 'Too many chat stream requests. Try again shortly.');
+      return sseResponse(
+        limitedStream(
+          streamChatEvents(params.messageId, params.agentId, caller.id, after),
+          release,
+        ),
+      );
+    },
+    {
+      params: teamChatMessageParams,
+      query: chatEventsQuery,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: t.Any(), ...commonErrors, ...errors(429) },
+      detail: { summary: 'Stream a global Home answer' },
+    },
+  )
+
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/chat/:messageId/cancel',
+    async ({ params, membership, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireTeamExternalAgent(params.agentId, membership);
+      if (!isTriggerableBy(agent, caller.id)) {
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      }
+      const ok = await cancelMessage(params.messageId, params.agentId, caller.id);
+      if (!ok) throw new HttpError(404, 'Message not found');
+      return noContent();
+    },
+    {
+      params: teamChatMessageParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Stop a global Home answer' },
+    },
+  )
 
   .post(
     '/projects/:projectKey/ai-agents/:agentId/chat',
@@ -277,9 +396,8 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .post(
     '/agent-chats/:messageId/events',
     async ({ agent, params, body }) => {
-      const ack = await appendEvents(agent.id, params.messageId, body.events);
+      const ack = await appendEvents(agent.id, params.messageId, body.events, body.sessionId);
       if (!ack) throw new HttpError(404, 'Message not found');
-      if (body.sessionId) await setThreadSession(agent.id, params.messageId, body.sessionId);
       return ack;
     },
     {

@@ -161,6 +161,59 @@ describe('answer stream', () => {
     expect(text(sink.events)).toBe('Checked.');
   });
 
+  it('reads the Hermes stream with session, text, tools, and final usage', async () => {
+    const sink = collect();
+    const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);
+
+    stream.write(
+      [
+        JSON.stringify({
+          type: 'system',
+          subtype: 'init',
+          session_id: '20260922_120000_abcd',
+        }),
+        JSON.stringify({ type: 'text', text: 'Checking ' }),
+        JSON.stringify({
+          type: 'tool_use',
+          name: 'terminal',
+          tool_call_id: 'tool-1',
+          input: { command: 'pwd' },
+        }),
+        JSON.stringify({
+          type: 'tool_result',
+          name: 'terminal',
+          tool_call_id: 'tool-1',
+          output: '/work',
+        }),
+        JSON.stringify({ type: 'text', text: 'done.' }),
+        JSON.stringify({
+          type: 'result',
+          session_id: '20260922_120000_abcd',
+          text: 'Checking done.',
+          tokens: { input: 120, output: 18, total: 138 },
+        }),
+        '',
+      ].join('\n'),
+    );
+    await stream.finish('Checking done.');
+
+    expect(stream.startedSession()).toBe('20260922_120000_abcd');
+    expect(stream.contextUsage()).toEqual({ inputTokens: 120, outputTokens: 18 });
+    expect(text(sink.events)).toBe('Checking done.');
+    expect(types(sink.events)).toEqual([
+      'RUN_STARTED',
+      'TEXT_MESSAGE_START',
+      'TEXT_MESSAGE_CONTENT',
+      'TOOL_CALL_START',
+      'TOOL_CALL_ARGS',
+      'TOOL_CALL_END',
+      'TOOL_CALL_RESULT',
+      'TEXT_MESSAGE_CONTENT',
+      'TEXT_MESSAGE_END',
+      'RUN_FINISHED',
+    ]);
+  });
+
   it("reads opencode's json, adding only what a re-sent part grew by", async () => {
     const sink = collect();
     const stream = new AnswerStream('opencode-json', 'chat:1:u:x', '7', sink.send);

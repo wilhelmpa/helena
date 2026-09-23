@@ -33,6 +33,10 @@ function chatOf(api: Api, agentId: number) {
   return api.projects({ projectKey: 'MKT' })['ai-agents']({ agentId });
 }
 
+function homeChatOf(api: Api, teamId: number, agentId: number) {
+  return api.teams({ teamId })['ai-agents']({ agentId });
+}
+
 function send(api: Api, agentId: number, prompt: string, threadId?: string) {
   return chatOf(api, agentId).chat.post(threadId ? { prompt, threadId } : { prompt });
 }
@@ -89,7 +93,7 @@ describe('external agent chat', () => {
     expect(claimed.data!.message!.systemPrompt).toBe('');
   });
 
-  it('leaves agent policy and memory to OpenClaw', async () => {
+  it('leaves agent policy and memory to Hermes', async () => {
     const { asOwner, asRunner, agent } = await setup();
     await asOwner
       .teams({ teamId: await teamOf(asOwner, 'MKT') })
@@ -233,6 +237,87 @@ describe('external agent chat', () => {
     expect(second.prompt).not.toContain('Who owns the launch?');
     // The session was started with it, so repeating it would only cost context.
     expect(second.systemPrompt).toBe('');
+  });
+
+  it('persists and resumes a Home chat across reload, deletion, and a fresh chat', async () => {
+    const { owner, asOwner, asRunner, agent } = await setup();
+    const teamId = await teamOf(asOwner, 'MKT');
+    const home = homeChatOf(asOwner, teamId, agent.id);
+
+    const sent = await home.chat.post({ prompt: 'Remember this Home conversation' });
+    expect(sent.status).toBe(200);
+    const pendingHistory = await home.threads({ threadId: sent.data!.threadId }).messages.get();
+    expect(pendingHistory.data!.activeAnswer).toMatchObject({
+      messageId: sent.data!.messageId,
+      status: 'pending',
+    });
+    const first = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(first.sessionId).toBeNull();
+    await asRunner['agent-chats']({ messageId: first.id }).events.post({
+      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'home-1', delta: 'Remembered.' }],
+      sessionId: 'hermes-home-session',
+    });
+    await asRunner['agent-chats']({ messageId: first.id }).result.post({ status: 'success' });
+
+    // A new API client is the server-side equivalent of a browser reload: no in-memory
+    // chat state is reused.
+    const reloaded = authedApi(owner.cookie);
+    const restored = homeChatOf(reloaded, teamId, agent.id);
+    const threads = await restored.threads.get();
+    expect(threads.status).toBe(200);
+    expect(threads.data!.items).toMatchObject([
+      {
+        id: sent.data!.threadId,
+        cliSessionId: 'hermes-home-session',
+      },
+    ]);
+    const transcript = await restored.threads({ threadId: sent.data!.threadId }).messages.get();
+    expect(transcript.data!.activeAnswer).toBeUndefined();
+    expect(transcript.data!.items.map((message) => message.parts)).toEqual([
+      [{ type: 'text', text: 'Remember this Home conversation' }],
+      [{ type: 'text', text: 'Remembered.' }],
+    ]);
+
+    await restored.chat.post({
+      prompt: 'Continue after reload',
+      threadId: sent.data!.threadId,
+    });
+    const resumed = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(resumed).toMatchObject({
+      threadId: sent.data!.threadId,
+      prompt: 'Continue after reload',
+      sessionId: 'hermes-home-session',
+    });
+    await asRunner['agent-chats']({ messageId: resumed.id }).result.post({ status: 'success' });
+
+    expect((await restored.threads({ threadId: sent.data!.threadId }).delete()).status).toBe(204);
+    expect((await restored.threads.get()).data!.items).toEqual([]);
+
+    const fresh = await restored.chat.post({ prompt: 'Start over' });
+    expect(fresh.data!.threadId).not.toBe(sent.data!.threadId);
+    const freshClaim = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(freshClaim.sessionId).toBeNull();
+  });
+
+  it('bounds typed and dictated chat text at the same API limit', async () => {
+    const { asOwner, agent } = await setup();
+    const rejected = await chatOf(asOwner, agent.id).chat.post({ prompt: 'x'.repeat(32_001) });
+    expect(rejected.status).toBe(400);
+  });
+
+  it('keeps an attachment marker intact through the Hermes claim and restored history', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    const prompt =
+      'Review the attached plan.\n\n[file: "launch.md" (attachment id: 00000000-0000-4000-8000-000000000001)]';
+    const sent = await send(asOwner, agent.id, prompt);
+    const claimed = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(claimed.prompt).toBe(prompt);
+    await asRunner['agent-chats']({ messageId: claimed.id }).result.post({ status: 'success' });
+
+    const transcript = await chatOf(asOwner, agent.id)
+      .threads({ threadId: sent.data!.threadId })
+      .messages.get();
+    expect(transcript.data!.items[0].parts).toEqual([{ type: 'text', text: prompt }]);
   });
 
   it('keeps the session a thread was first bound to', async () => {

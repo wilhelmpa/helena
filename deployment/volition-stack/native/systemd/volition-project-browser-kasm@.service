@@ -1,0 +1,42 @@
+[Unit]
+Description=Volition project %i KasmVNC display
+PartOf=volition-project-browser@%i.target
+Before=volition-project-browser-chromium@%i.service
+ConditionPathExists=/var/lib/volition/project-browser/projects/%i/runtime.env
+
+[Service]
+Type=simple
+User=volition-hermes
+Group=volition
+EnvironmentFile=/var/lib/volition/project-browser/projects/%i/runtime.env
+ExecStartPre=/usr/bin/test -s ${PROJECT_BROWSER_XAUTHORITY}
+ExecStart=/usr/bin/Xvnc ${PROJECT_BROWSER_DISPLAY} -geometry 1920x1080 -depth 24 -auth ${PROJECT_BROWSER_XAUTHORITY} -interface 127.0.0.1 -websocketPort ${PROJECT_BROWSER_NOVNC_PORT} -rfbport 0 -localhost -nolisten tcp -httpd /usr/share/kasmvnc/www -SecurityTypes None -DisableBasicAuth -AcceptSetDesktopSize -udpFullFrameFrequency 0 -publicIP 127.0.0.1
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=20
+KillMode=mixed
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+ReadWritePaths=/var/lib/volition/project-browser/projects/%i
+IPAddressDeny=any
+IPAddressAllow=localhost
+RestrictNetworkInterfaces=lo
+RestrictAddressFamilies=AF_UNIX AF_INET
+SocketBindDeny=ipv4:udp
+SocketBindDeny=ipv6:udp
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native

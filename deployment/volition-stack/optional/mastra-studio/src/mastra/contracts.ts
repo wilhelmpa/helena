@@ -7,6 +7,7 @@ export const workflowIds = [
   'support',
   'system-audit',
   'document-filing',
+  'agent-team',
 ] as const;
 
 export const workflowIdSchema = z.enum(workflowIds);

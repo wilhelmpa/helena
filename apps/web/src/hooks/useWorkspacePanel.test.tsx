@@ -102,3 +102,18 @@ test('a project-scoped tool never survives a project change or a return Home', (
     test.cleanup();
   }
 });
+
+test('a user click cannot be overwritten by a later restore pass', () => {
+  const test = setup();
+  try {
+    localStorage.setItem('workspace:panel:open', 'closed');
+    act(() => test.root().render(<Probe defaultOpen />));
+    assert.equal(panel.open, false);
+    act(() => panel.openTool('chat'));
+    assert.equal(panel.open, true);
+    act(() => test.root().render(<Probe defaultOpen />));
+    assert.equal(panel.open, true);
+  } finally {
+    test.cleanup();
+  }
+});

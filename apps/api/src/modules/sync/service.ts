@@ -1,5 +1,5 @@
 import { db, projectMember, teamMember, teamRole, revision } from '@repo/db';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
 import { hasPermission, type PermissionResource } from '#shared/permissions';
 
@@ -21,6 +21,7 @@ export const scopeKind: Record<string, ScopeKind> = {
   board: { key: (projectId) => `board:${projectId}`, resource: 'work_items' },
   documents: { key: (projectId) => `documents:${projectId}`, resource: 'documents' },
   actionRuns: { key: (projectId) => `action-runs:${projectId}`, resource: 'actions' },
+  controlPlane: { key: (projectId) => `control-plane:${projectId}`, resource: 'actions' },
   issue: { key: (issueId) => `issue:${issueId}`, resource: 'work_items' },
   initiative: {
     key: (initiativeId) => `initiative:${initiativeId}`,
@@ -29,6 +30,13 @@ export const scopeKind: Record<string, ScopeKind> = {
   inbox: { key: (projectId, userId) => `inbox:${projectId}:${userId}`, resource: null },
   hubInbox: { key: (teamId) => `hub-inbox:${teamId}`, resource: null, teamScoped: true },
 };
+
+export async function bumpControlPlaneRevision(projectId: number): Promise<void> {
+  await db
+    .insert(revision)
+    .values({ scope: `control-plane:${projectId}`, projectId, rev: 1 })
+    .onConflictDoUpdate({ target: revision.scope, set: { rev: sql`${revision.rev} + 1` } });
+}
 
 // A scope with no row has never changed; a client treats it the same as any other
 // unchanged value, so it reads as "0".

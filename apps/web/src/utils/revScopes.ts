@@ -8,5 +8,6 @@ export const revScope = {
   inbox: (projectId: number) => `inbox:${projectId}`,
   documents: (projectId: number) => `documents:${projectId}`,
   actionRuns: (projectId: number) => `action-runs:${projectId}`,
+  controlPlane: (projectId: number) => `control-plane:${projectId}`,
   hubInbox: (teamId: number) => `hubInbox:${teamId}`,
 };

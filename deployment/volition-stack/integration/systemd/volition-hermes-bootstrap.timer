@@ -1,0 +1,12 @@
+[Unit]
+Description=Retry Hermes Home-agent provisioning after first registration
+
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=30s
+AccuracySec=5s
+Persistent=true
+Unit=volition-hermes-bootstrap.service
+
+[Install]
+WantedBy=timers.target

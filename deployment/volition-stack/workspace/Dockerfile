@@ -10,7 +10,7 @@ USER root
 
 # ttyd is intentionally kept inside the existing non-root workspace container.
 # It exposes a human terminal for the mounted projects without creating an
-# unsandboxed OpenClaw agent or granting access to the host Docker socket/home.
+# unsandboxed legacy runtime agent or granting access to the host Docker socket/home.
 ADD --checksum=sha256:8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55 \
     https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 \
     /usr/local/bin/ttyd

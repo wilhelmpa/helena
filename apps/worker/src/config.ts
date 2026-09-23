@@ -4,6 +4,21 @@
 // @repo/db's client).
 
 import { intEnv } from './env';
+import { readFileSync, lstatSync } from 'node:fs';
+
+function projectProvisioningToken(): string | null {
+  const file = process.env.PROJECT_PROVISIONING_TOKEN_FILE?.trim();
+  if (!file) return process.env.PROJECT_PROVISIONING_TOKEN?.trim() || null;
+  const stat = lstatSync(file);
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+    throw new Error('PROJECT_PROVISIONING_TOKEN_FILE must be a private regular file');
+  }
+  const token = readFileSync(file, 'utf8').trim();
+  if (token.length < 32 || token.length > 2048) {
+    throw new Error('PROJECT_PROVISIONING_TOKEN_FILE is invalid');
+  }
+  return token;
+}
 
 export interface WorkerConfig {
   // How often to poll for due deliveries.
@@ -25,7 +40,7 @@ export interface WorkerConfig {
   cleanupEveryTicks: number;
   projectProvisioningUrl: string | null;
   projectProvisioningToken: string | null;
-  // OpenClaw and WebDAV setup can take longer than a regular webhook.
+  // legacy runtime and WebDAV setup can take longer than a regular webhook.
   projectProvisioningTimeoutMs: number;
 }
 
@@ -42,8 +57,8 @@ export function workerConfig(): WorkerConfig {
     leaseSeconds: intEnv('WEBHOOK_LEASE_SECONDS', 120),
     cleanupDays: intEnv('WEBHOOK_CLEANUP_DAYS', 30),
     cleanupEveryTicks: intEnv('WEBHOOK_CLEANUP_EVERY_TICKS', 300),
-    projectProvisioningUrl: process.env.OPENCLAW_PROVISIONING_URL?.trim() || null,
-    projectProvisioningToken: process.env.OPENCLAW_PROVISIONING_TOKEN?.trim() || null,
+    projectProvisioningUrl: process.env.PROJECT_PROVISIONING_URL?.trim() || null,
+    projectProvisioningToken: projectProvisioningToken(),
     projectProvisioningTimeoutMs: intEnv('PROJECT_PROVISIONING_TIMEOUT_MS', 120_000),
   };
   return cached;

@@ -30,18 +30,6 @@ function frameUrl(value: string): string {
   }
 }
 
-function childUrl(base: string, path: string): string {
-  if (!base) return '';
-  try {
-    const url = new URL(base);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
-    url.pathname = `${url.pathname.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
-    return url.toString();
-  } catch {
-    return '';
-  }
-}
-
 function trustedResourceUrl(value: string | undefined, trustedBases: string[]): string {
   const candidate = frameUrl(value ?? '');
   if (!candidate) return '';
@@ -67,29 +55,11 @@ function provisionedResource(
   return resources.find((resource) => resource.kind === kind);
 }
 
-export function coordinatorId(
-  config: WorkspaceRuntimeEnv,
-  projectKey: string | null,
-  resources: ProvisionedProjectResource[] = [],
-): string {
-  if (!projectKey) return config.coordinatorId || 'coordinator';
-  const provisioned = provisionedResource(resources, 'coordinator');
-  if (provisioned?.id) return provisioned.id;
-  const mapped = projectValue(config.projectCoordinators, projectKey);
-  if (mapped) return mapped;
+export function preferredAgentUsername(projectKey: string | null): string {
+  if (!projectKey) return 'master';
   const normalizedKey = projectKey.trim().toUpperCase();
   const slug = normalizedKey === 'VERV' ? 'verve' : normalizedKey.toLowerCase();
-  return /^[a-z0-9][a-z0-9_-]{0,31}$/.test(slug) ? `${slug}-coordinator` : '';
-}
-
-export function coordinatorUsername(
-  config: WorkspaceRuntimeEnv,
-  projectKey: string | null,
-  resources: ProvisionedProjectResource[] = [],
-): string {
-  const id = coordinatorId(config, projectKey, resources);
-  if (!id) return '';
-  return id.startsWith('openclaw-') ? id : `openclaw-${id}`;
+  return /^[a-z0-9][a-z0-9_-]{0,31}$/.test(slug) ? `hermes-${slug}-coordinator` : '';
 }
 
 export function nativeChatProjectKey(
@@ -108,9 +78,15 @@ function codeUrl(
 ): string {
   const provisioned = provisionedResource(resources, 'workspace');
   const provisionedUrl = trustedResourceUrl(provisioned?.url, [config.codeUrl]);
-  if (provisionedUrl) return provisionedUrl;
+  if (
+    provisionedUrl &&
+    new URL(provisionedUrl).pathname.replace(/\/+$/, '') ===
+      new URL(config.codeUrl).pathname.replace(/\/+$/, '')
+  ) {
+    return provisionedUrl;
+  }
   if (!config.codeUrl) return '';
-  const workspacePath = projectValue(config.projectWorkspacePaths, projectKey);
+  const workspacePath = projectValue(config.projectWorkspacePaths, projectKey) || provisioned?.id;
   if (!workspacePath) return frameUrl(config.codeUrl);
   try {
     const url = new URL(config.codeUrl);
@@ -122,30 +98,42 @@ function codeUrl(
   }
 }
 
+function terminalUrl(
+  config: WorkspaceRuntimeEnv,
+  projectKey: string | null,
+  resources: ProvisionedProjectResource[],
+): string {
+  const terminal = provisionedResource(resources, 'terminal');
+  const base = frameUrl(config.terminalUrl);
+  const resourceSlug = terminal?.id.match(/^terminal-project:([a-z0-9][a-z0-9-]{0,31})$/)?.[1];
+  const projectSlug =
+    projectKey?.trim().toUpperCase() === 'VERV' ? 'verve' : projectKey?.trim().toLowerCase();
+  const slug =
+    resourceSlug ??
+    (projectSlug && /^[a-z0-9][a-z0-9-]{0,31}$/.test(projectSlug) ? projectSlug : '');
+  if (base && slug) {
+    const url = new URL(base);
+    if (['/terminal', '/focus/terminal-project'].includes(url.pathname.replace(/\/+$/, ''))) {
+      url.pathname = `/focus/terminal-project/${slug}`;
+      url.search = '';
+      return url.toString();
+    }
+  }
+  return trustedResourceUrl(terminal?.url, [config.terminalUrl]) || base;
+}
+
 export function workspaceTools(
   config: WorkspaceRuntimeEnv,
   projectKey: string | null,
   resources: ProvisionedProjectResource[] = [],
 ): Record<WorkspaceToolId, WorkspaceTool> {
-  const openClawUrl = frameUrl(config.openClawUrl);
-  const coordinator = provisionedResource(resources, 'coordinator');
-  const chatUrl =
-    trustedResourceUrl(coordinator?.url, [openClawUrl]) ||
-    childUrl(
-      openClawUrl,
-      `chat/${encodeURIComponent(coordinatorId(config, projectKey, resources))}`,
-    );
-  const terminal = provisionedResource(resources, 'terminal');
   const browser = provisionedResource(resources, 'browser');
   const files = provisionedResource(resources, 'files');
   const tools = {
-    chat: { id: 'chat', url: chatUrl, advancedUrl: '' },
+    chat: { id: 'chat', url: '', advancedUrl: '' },
     terminal: {
       id: 'terminal',
-      url:
-        trustedResourceUrl(terminal?.url, [config.terminalUrl, openClawUrl]) ||
-        frameUrl(config.terminalUrl) ||
-        childUrl(openClawUrl, 'focus/terminal'),
+      url: terminalUrl(config, projectKey, resources),
       advancedUrl: '',
     },
     code: { id: 'code', url: codeUrl(config, projectKey, resources), advancedUrl: '' },
@@ -168,7 +156,6 @@ export function workspaceTools(
 
 export function workspaceFrameOrigins(config: WorkspaceRuntimeEnv): string[] {
   const candidates = [
-    config.openClawUrl,
     config.terminalUrl,
     config.codeUrl,
     config.browserUrl,

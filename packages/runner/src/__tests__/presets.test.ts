@@ -52,6 +52,29 @@ describe('preset arguments', () => {
     expect(resumed.slice(-4)).toEqual(['--session-id', 'c66bf000', '-p', 'do it']);
   });
 
+  it('streams Hermes, resumes its session, and applies per-message model settings last', () => {
+    const argv = presetArgv(
+      PRESETS.hermes,
+      '20260922_120000_abcd',
+      '',
+      ['--profile', 'default', '--model', 'configured-default'],
+      'do it',
+      { provider: 'copilot', model: 'gpt-4.1', thinkingLevel: 'high' },
+    );
+    expect(argv.slice(0, 5)).toEqual(['chat', '--format', 'stream-json', '--query-file', '-']);
+    expect(argv).toContain('--resume');
+    expect(argv[argv.indexOf('--resume') + 1]).toBe('20260922_120000_abcd');
+    expect(argv.lastIndexOf('--model')).toBeGreaterThan(argv.indexOf('--model'));
+    expect(argv.slice(-6)).toEqual([
+      '--provider',
+      'copilot',
+      '--model',
+      'gpt-4.1',
+      '--reasoning',
+      'high',
+    ]);
+  });
+
   it("appends the operator's arguments after the preset's, so a repeated flag wins", () => {
     const argv = presetArgv(PRESETS.claude, null, '', ['--permission-mode', 'plan'], 'do it');
     expect(argv.lastIndexOf('--permission-mode')).toBeGreaterThan(

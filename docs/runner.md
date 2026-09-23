@@ -1,7 +1,7 @@
 # Coding agent setup
 
 [`@itsaplan/runner`](https://www.npmjs.com/package/@itsaplan/runner) runs an external agent
-on your own machine. It has a preset for each of five coding agent CLIs. A preset builds
+on your own machine. It has a preset for each supported coding agent CLI. A preset builds
 the command itself: the flags for an unattended run, and the session resume.
 
 Each preset needs two files in the working directory:
@@ -14,6 +14,59 @@ runner's own settings are in its
 [README](https://github.com/croffasia/itsaplan/blob/main/packages/runner/README.md).
 
 Enable MCP for the project first, in Settings, MCP Server. It is off by default.
+
+## Hermes Agent
+
+Hermes reads MCP servers from `$HERMES_HOME/config.yaml`. Header values support environment
+references, so the agent key remains in the runner process environment:
+
+```yaml
+mcp_servers:
+  itsaplan:
+    url: http://localhost:3000/mcp
+    headers:
+      Authorization: Bearer ${ITSAPLAN_API_KEY}
+    strict_redirect_headers: true
+```
+
+`itsaplan-runner.json`:
+
+```json
+{
+  "url": "http://localhost:3000",
+  "apiKey": "the key you copied on creation",
+  "agent": "hermes",
+  "provider": "copilot",
+  "cwd": "/path/to/working-dir",
+  "args": ["--profile", "default", "--checkpoints", "--yolo"],
+  "models": [
+    {
+      "id": "gpt-4.1",
+      "name": "GPT-4.1",
+      "reasoning": true,
+      "thinkingLevels": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"],
+      "thinkingDefault": "medium"
+    }
+  ]
+}
+```
+
+- The preset uses `hermes chat --format stream-json`. Text, tool calls, tool results, session
+  IDs and token counts are streamed to the native chat.
+- `provider` is optional and is passed as `--provider`. Set it when the selected Hermes account
+  needs an explicit provider instead of automatic provider selection.
+- A chat resumes with `--resume`. The model and reasoning level selected in It's a Plan are
+  passed as `--model` and `--reasoning` for that request.
+- `--profile` chooses the Hermes memory, skills, credentials and sessions. The profile must
+  already exist. Omit the flag to use the default profile.
+- `--yolo` prevents unattended runs from waiting for tool approval. Restrict the service account,
+  working directory and available tools before using it.
+- For Hermes, set `cwd` and `HERMES_HOME` to dedicated absolute directories. Before a claim,
+  the runner fetches Plan's revisioned runtime policy and atomically materializes its managed
+  `AGENTS.md`, `SOUL.md`, memory and linked skills. A private hash manifest prevents changes to
+  foreign files. `--ignore-rules` is rejected because it would stop Hermes from loading this policy.
+- `models` publishes the chat selector catalog. It does not store provider credentials. List only
+  model IDs that the selected Hermes profile can use.
 
 ## Claude Code
 

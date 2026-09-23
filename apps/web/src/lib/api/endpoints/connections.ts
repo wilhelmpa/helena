@@ -54,6 +54,16 @@ export const runConnectionAction = (id: string, action: 'probe' | 'reconnect') =
     body: JSON.stringify({ id, action }),
   });
 export const getMailAccounts = () => request<{ accounts: MailAccountStatus[] }>('/mail/accounts');
+export interface ProjectMailAccount {
+  provider: 'gmail';
+  account: string;
+  assignmentStatus: 'configured';
+  connectionStatus: ConnectionStatus;
+  lastCheckedAt: string | null;
+  lastError: string | null;
+}
+export const getProjectMailAccount = (projectKey: string) =>
+  request<ProjectMailAccount | null>(`/projects/${projectKey}/mail-account`, { cache: 'no-store' });
 export const searchMail = (input: {
   account: string;
   query: string;
@@ -105,7 +115,7 @@ export const sendMailDraft = (account: string, draftId: string, confirmationToke
 export interface ThemeSyncResult {
   theme: 'light' | 'dark';
   results: Array<{
-    service: 'openclaw' | 'code' | 'nextcloud';
+    service: 'agent_runtime' | 'code' | 'nextcloud';
     status: 'updated' | 'failed';
     attempts: number;
     error?: string;

@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 import { contextUsageBody } from '../model';
 
-export { projectAgentParams } from '../model';
+export { agentParams, projectAgentParams } from '../model';
 
 // A chat with an external agent is carried by AG-UI events (https://docs.ag-ui.com):
 // the runner reports what its coding agent produces as this event stream, and the
@@ -18,6 +18,11 @@ const DELTA_LIMIT = 12_000;
 // The longest arguments or result accepted for one tool call. A runner reports each of
 // them whole, and cutting one breaks the JSON the chat indents and highlights.
 const TOOL_TEXT_LIMIT = 32_000;
+
+// A browser dictation result and typed text take the same path. Bound the complete
+// message at the API boundary so neither can create an unbounded database row or CLI
+// stdin payload. Attachment markers are included in this budget.
+export const CHAT_PROMPT_LIMIT = 32_000;
 
 const RunStartedEvent = t.Object({
   type: t.Literal('RUN_STARTED'),
@@ -101,6 +106,12 @@ export const chatMessageParams = t.Object({
   messageId: t.Numeric(),
 });
 
+export const teamChatMessageParams = t.Object({
+  teamId: t.Numeric(),
+  agentId: t.Numeric(),
+  messageId: t.Numeric(),
+});
+
 export const runnerMessageParams = t.Object({ messageId: t.Numeric() });
 
 const chatModel = t.Object({
@@ -119,7 +130,11 @@ export const ChatCatalogResponse = t.Object({
 });
 
 export const sendChatBody = t.Object({
-  prompt: t.String({ minLength: 1, description: 'Message to send the agent.' }),
+  prompt: t.String({
+    minLength: 1,
+    maxLength: CHAT_PROMPT_LIMIT,
+    description: 'Message to send the agent.',
+  }),
   threadId: t.Optional(
     t.String({ description: 'Thread id of an earlier message, to continue that conversation.' }),
   ),

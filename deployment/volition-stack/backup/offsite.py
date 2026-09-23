@@ -13,10 +13,10 @@ import tempfile
 from offsite_metadata import metadata_name_matches
 
 BASE = Path('/home/pw/services/volition-backups')
-CONFIG = Path('/home/pw/.openclaw/volition/offsite-backup.json')
+CONFIG = Path('/home/pw/services/volition-workspaces/.state/integration/offsite-backup.json')
 STATE = BASE / 'offsite-state.json'
-READ = '/home/pw/.local/bin/gog-openclaw-read'
-WRITE = '/home/pw/.local/bin/gog-openclaw-write'
+READ = '/home/pw/.local/bin/gog-hermes-read'
+WRITE = '/home/pw/.local/bin/gog-hermes-write'
 
 
 def atomic(path, value):

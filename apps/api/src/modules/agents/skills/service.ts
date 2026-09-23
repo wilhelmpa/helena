@@ -343,6 +343,57 @@ export async function listAgentSkills(agentId: number): Promise<SkillRow[]> {
   return rows.map(mapRow);
 }
 
+export interface RuntimeSkillBundle {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  markdown: string;
+  files: { path: string; content: string }[];
+}
+
+function runtimeReferencePath(path: string): boolean {
+  const segments = path.split('/');
+  return (
+    segments.length > 0 &&
+    segments.length <= 8 &&
+    segments.every((segment) => /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(segment)) &&
+    /\.(?:md|markdown)$/i.test(segments[segments.length - 1] ?? '')
+  );
+}
+
+export async function listAgentRuntimeSkills(agentId: number): Promise<RuntimeSkillBundle[]> {
+  const rows = await db
+    .select({
+      id: agentSkill.id,
+      name: agentSkill.name,
+      description: agentSkill.description,
+      s3Prefix: agentSkill.s3Prefix,
+      files: agentSkill.files,
+    })
+    .from(agentSkillLink)
+    .innerJoin(agentSkill, eq(agentSkill.id, agentSkillLink.skillId))
+    .where(eq(agentSkillLink.agentId, agentId))
+    .orderBy(agentSkill.id);
+  return Promise.all(
+    rows.map(async (row) => {
+      const refs = (Array.isArray(row.files) ? (row.files as SkillRef[]) : []).filter((file) =>
+        runtimeReferencePath(file.path),
+      );
+      return {
+        id: row.id,
+        slug: `plan-${row.id}`,
+        name: row.name,
+        description: row.description,
+        markdown: await getObjectText(skillMdKey(row.s3Prefix)),
+        files: await Promise.all(
+          refs.map(async (file) => ({ path: file.path, content: await getObjectText(file.s3Key) })),
+        ),
+      };
+    }),
+  );
+}
+
 // Replaces the set of skills enabled on an agent. Only skills of the team that owns
 // the agent's project are accepted; unknown or cross-team ids are ignored.
 export async function setAgentSkills(

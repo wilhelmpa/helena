@@ -215,5 +215,23 @@
     "cancel": "Cancel",
     "create": "Create",
     "creating": "Creating…"
+  },
+  "markdownSync": {
+    "label": "File Markdown",
+    "synced": "Tersinkron",
+    "pending": "Tertunda",
+    "privateNotExported": "Privat · tidak diekspor",
+    "checking": "Memeriksa…",
+    "checkingHint": "Memuat status file portabel.",
+    "syncedHint": "Buka File untuk melihat file Markdown ini.",
+    "pendingHint": "Halaman telah disimpan. Sinkronisasi dapat dicoba ulang dengan aman.",
+    "privateHint": "Halaman privat tidak pernah disalin ke folder proyek bersama.",
+    "openFiles": "Buka file proyek",
+    "copyPath": "Salin jalur file",
+    "pathCopied": "Jalur file disalin",
+    "copyFailed": "Jalur file tidak dapat disalin.",
+    "retry": "Coba lagi",
+    "retrying": "Mencoba lagi…",
+    "retryFailed": "Sinkronisasi Markdown tidak dapat dicoba ulang."
   }
 }

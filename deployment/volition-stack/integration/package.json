@@ -10,8 +10,6 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@openclaw/gateway-client": "2026.9.5",
-    "@openclaw/gateway-protocol": "2026.9.5",
     "jsonc-parser": "3.3.1"
   }
 }

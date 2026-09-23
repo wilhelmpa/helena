@@ -38,6 +38,21 @@ export interface ProjectDocument extends ProjectDocumentSummary {
   contentJson: Record<string, unknown> | null;
 }
 
+export type DocumentMarkdownSyncState = 'synced' | 'pending' | 'private_not_exported';
+
+/**
+ * Deliberately exposes only presentation-safe sync fields. Storage ETags and
+ * connector diagnostics stay inside the API and are never rendered by the web app.
+ */
+export interface DocumentMarkdownSyncStatus {
+  state: DocumentMarkdownSyncState;
+  path: string;
+  documentVersion: number;
+  attempts: number;
+  lastAttemptAt: string;
+  lastSuccessAt: string | null;
+}
+
 export interface DocumentIssueLink {
   issueId: number;
   sequenceNumber: number;
@@ -125,6 +140,17 @@ export const getDocument = (projectKey: string, documentId: number, signal?: Abo
   request<ProjectDocument>(`/projects/${encodeURIComponent(projectKey)}/documents/${documentId}`, {
     signal,
   });
+
+export const getDocumentMarkdownSync = (projectKey: string, documentId: number) =>
+  request<DocumentMarkdownSyncStatus>(
+    `/projects/${encodeURIComponent(projectKey)}/documents/${documentId}/markdown-sync`,
+  );
+
+export const retryDocumentMarkdownSync = (projectKey: string, documentId: number) =>
+  request<DocumentMarkdownSyncStatus>(
+    `/projects/${encodeURIComponent(projectKey)}/documents/${documentId}/markdown-sync`,
+    { method: 'POST' },
+  );
 
 export const listDocumentIssueLinks = (projectKey: string, documentId: number) =>
   request<DocumentIssueLink[]>(`/projects/${projectKey}/documents/${documentId}/issues`);

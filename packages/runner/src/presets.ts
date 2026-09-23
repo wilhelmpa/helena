@@ -9,7 +9,13 @@ import type { OutputFormat } from './config';
 // Anything else about the invocation — MCP servers, model, working directory — is the
 // operator's, passed through `args` and the `--` tail.
 
-export type PresetName = 'claude' | 'codex' | 'opencode' | 'antigravity' | 'copilot';
+export type PresetName = 'claude' | 'codex' | 'opencode' | 'antigravity' | 'copilot' | 'hermes';
+
+export interface PresetTaskSettings {
+  model?: string | null;
+  thinkingLevel?: string | null;
+  provider?: string | null;
+}
 
 export interface Preset {
   bin: string;
@@ -22,6 +28,7 @@ export interface Preset {
   systemPromptFlag?: string;
   // The arguments before the operator's own, given null for a fresh session.
   head: (sessionId: string | null) => string[];
+  taskArgs?: (settings: PresetTaskSettings) => string[];
   // The arguments after the operator's own: a stdin marker, or the flag the prompt follows.
   tail: string[];
 }
@@ -114,6 +121,29 @@ export const PRESETS: Record<PresetName, Preset> = {
     ],
     tail: ['-p'],
   },
+
+  hermes: {
+    bin: 'hermes',
+    outputFormat: 'hermes-stream-json',
+    promptVia: 'stdin',
+    head: (sessionId) => [
+      'chat',
+      '--format',
+      'stream-json',
+      '--query-file',
+      '-',
+      '--source',
+      'tool',
+      '--accept-hooks',
+      ...(sessionId ? ['--resume', sessionId] : []),
+    ],
+    taskArgs: ({ model, thinkingLevel, provider }) => [
+      ...(provider ? ['--provider', provider] : []),
+      ...(model ? ['--model', model] : []),
+      ...(thinkingLevel ? ['--reasoning', thinkingLevel] : []),
+    ],
+    tail: [],
+  },
 };
 
 export const PRESET_NAMES = Object.keys(PRESETS) as PresetName[];
@@ -138,11 +168,13 @@ export function presetArgv(
   systemPrompt: string,
   extraArgs: string[],
   prompt: string,
+  settings: PresetTaskSettings = {},
 ): string[] {
   return [
     ...preset.head(sessionId),
     ...(preset.systemPromptFlag && systemPrompt ? [preset.systemPromptFlag, systemPrompt] : []),
     ...extraArgs,
+    ...(preset.taskArgs?.(settings) ?? []),
     ...preset.tail,
     ...(preset.promptVia === 'arg' ? [presetPrompt(preset, systemPrompt, prompt)] : []),
   ];

@@ -9,16 +9,19 @@ import {
 } from '@/utils/paths';
 
 export type HomeNavigationId =
-  'agentPool' | 'connections' | 'vault' | 'mcps' | 'tools' | 'skills' | 'manageTeams';
+  'agentPool' | 'connections' | 'vault' | 'mcps' | 'tools' | 'skills' | 'projectSettings';
 
-export function homeNavigation(teamId: number | null): Array<{
+export function homeNavigation(
+  teamId: number | null,
+  vaultEnabled = true,
+): Array<{
   id: HomeNavigationId;
   href: string;
 }> {
   return [
     ...(teamId == null ? [] : [{ id: 'agentPool' as const, href: agentsPath() }]),
     { id: 'connections', href: connectionsPath() },
-    { id: 'vault', href: vaultPath() },
+    ...(vaultEnabled ? [{ id: 'vault' as const, href: vaultPath() }] : []),
     ...(teamId == null
       ? []
       : [
@@ -26,6 +29,6 @@ export function homeNavigation(teamId: number | null): Array<{
           { id: 'tools' as const, href: toolsPath() },
           { id: 'skills' as const, href: skillsPath() },
         ]),
-    { id: 'manageTeams', href: manageTeamsPath() },
+    { id: 'projectSettings', href: manageTeamsPath() },
   ];
 }

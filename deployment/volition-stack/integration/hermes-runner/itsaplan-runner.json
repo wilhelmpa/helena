@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:3000",
+  "agent": "hermes",
+  "cwd": "/home/pw/services/volition-workspaces",
+  "args": [
+    "--profile",
+    "default",
+    "--checkpoints",
+    "--yolo"
+  ],
+  "concurrency": 1,
+  "pollIntervalMs": 3000,
+  "timeoutMs": 1800000,
+  "models": []
+}

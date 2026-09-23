@@ -84,6 +84,22 @@ describe('agent runner queue', () => {
         },
       });
 
+    const skill = await asOwner.teams({ teamId })['agent-skills'].post({
+      source: 'inline',
+      markdown: '---\nname: Triage\ndescription: Triage work\n---\n\n# Skill',
+    });
+    const skillId = skill.data!.id;
+    await asOwner
+      .teams({ teamId })
+      ['agent-skills']({ skillId })
+      .references.post({
+        file: new File(['# Checklist'], 'checklist.md', { type: 'text/markdown' }),
+      });
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .skills.put({ skillIds: [skillId] });
+
     const policy = await asRunner['agent-runtime'].policy.get();
     expect(policy.status).toBe(200);
     expect(typeof policy.data!.revision).toBe('string');
@@ -91,24 +107,58 @@ describe('agent runner queue', () => {
       model: 'openai/gpt-5.6-sol',
       memory: { enabled: true, lastMessages: 20 },
       runtimePolicy: { reasoningEffort: 'high', mcpGrants: ['itsaplan__get_issue'] },
+      skills: [
+        {
+          id: skillId,
+          slug: `plan-${skillId}`,
+          name: 'Triage',
+          markdown: expect.stringContaining('# Skill'),
+          files: [{ path: 'refs/checklist.md', content: '# Checklist' }],
+        },
+      ],
     });
     expect(JSON.stringify(policy.data)).not.toContain('apiKey');
+    expect(JSON.stringify(policy.data)).not.toContain('s3Key');
 
     const reported = await asRunner['agent-runtime'].status.post({
-      adapter: 'openclaw',
+      adapter: 'agent_runtime',
       status: 'online',
       appliedRevision: policy.data!.revision,
       capabilities: ['model', 'reasoning', 'managed-markdown'],
       detail: null,
     });
     expect(reported.status).toBe(200);
-    expect(reported.data).toMatchObject({ adapter: 'openclaw', status: 'online' });
+    expect(reported.data).toMatchObject({ adapter: 'agent_runtime', status: 'online' });
 
     const saved = await asOwner.teams({ teamId })['ai-agents']({ agentId: agent.id }).get();
     expect(saved.data!.runtimeState).toMatchObject({
-      adapter: 'openclaw',
+      adapter: 'agent_runtime',
       status: 'online',
       appliedRevision: policy.data!.revision,
+    });
+  });
+
+  it('hands the configured external model and reasoning to each queued run', async () => {
+    const { asOwner, asRunner, agent, columnId, teamId } = await setup();
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({
+        model: 'anthropic/claude-opus-4.6',
+        runtimePolicy: {
+          reasoningEffort: 'high',
+          toolAllow: [],
+          toolDeny: [],
+          mcpGrants: [],
+          files: [],
+        },
+      });
+    await queueRun(asOwner, columnId, agent.username);
+
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(run).toMatchObject({
+      model: 'anthropic/claude-opus-4.6',
+      thinkingLevel: 'high',
     });
   });
 

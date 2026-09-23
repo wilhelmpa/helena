@@ -218,8 +218,9 @@ describe('members', () => {
       const res = await owner.api.projects({ projectKey: 'MKT' }).members.get();
 
       expect(res.status).toBe(200);
-      expect(res.data?.items).toHaveLength(1);
-      expect(res.data?.items[0]).toMatchObject({
+      expect(res.data?.items.filter((m) => !m.isAgent)).toHaveLength(1);
+      expect(res.data?.items.filter((m) => m.isAgent)).toHaveLength(1);
+      expect(res.data?.items.find((m) => !m.isAgent)).toMatchObject({
         userId: owner.user.userId,
         email: owner.user.email,
         username: expect.any(String),
@@ -236,7 +237,11 @@ describe('members', () => {
       const res = await owner.api.projects({ projectKey: 'MKT' }).members.get();
 
       expect(res.status).toBe(200);
-      expect(res.data?.items.map((m) => m.userId)).toEqual([member.user.userId, owner.user.userId]);
+      expect(res.data?.items.filter((m) => !m.isAgent).map((m) => m.userId)).toEqual([
+        member.user.userId,
+        owner.user.userId,
+      ]);
+      expect(res.data?.items.filter((m) => m.isAgent)).toHaveLength(1);
       const memberRow = res.data?.items.find((m) => m.userId === member.user.userId);
       expect(memberRow).toMatchObject({ role: 'member', roleName: 'Member' });
       expect(memberRow?.roleId).not.toBeNull();
@@ -252,7 +257,9 @@ describe('members', () => {
       expect(people.data?.items.every((m) => !m.isAgent)).toBe(true);
 
       const agents = await members.get({ query: { kind: 'agent' } });
-      expect(agents.data).toMatchObject({ items: [], total: 0 });
+      expect(agents.data?.total).toBe(1);
+      expect(agents.data?.items).toHaveLength(1);
+      expect(agents.data?.items[0]).toMatchObject({ isAgent: true });
     });
 
     it('searches by name, address and handle', async () => {
@@ -276,11 +283,11 @@ describe('members', () => {
 
       const first = await members.get({ query: { page: 1, pageSize: 2 } });
       expect(first.data?.items).toHaveLength(2);
-      expect(first.data).toMatchObject({ total: 3, ownerCount: 1 });
+      expect(first.data).toMatchObject({ total: 4, ownerCount: 1 });
 
       const second = await members.get({ query: { page: 2, pageSize: 2 } });
-      expect(second.data?.items).toHaveLength(1);
-      expect(second.data?.total).toBe(3);
+      expect(second.data?.items).toHaveLength(2);
+      expect(second.data?.total).toBe(4);
     });
 
     it('lets a plain member read the list on the default role', async () => {
@@ -310,7 +317,8 @@ describe('members', () => {
 
       const res = await authedApi(manager.cookie).projects({ projectKey: 'MKT' }).members.get();
       expect(res.status).toBe(200);
-      expect(res.data?.items).toHaveLength(1);
+      expect(res.data?.items.filter((m) => !m.isAgent)).toHaveLength(1);
+      expect(res.data?.items.filter((m) => m.isAgent)).toHaveLength(1);
     });
 
     it('denies a non-member with 403', async () => {
@@ -657,7 +665,10 @@ describe('members', () => {
       expect(res.status).toBe(204);
 
       const list = await owner.api.projects({ projectKey: 'MKT' }).members.get();
-      expect(list.data?.items.map((m) => m.userId)).toEqual([owner.user.userId]);
+      expect(list.data?.items.filter((m) => !m.isAgent).map((m) => m.userId)).toEqual([
+        owner.user.userId,
+      ]);
+      expect(list.data?.items.filter((m) => m.isAgent)).toHaveLength(1);
 
       // The removed member can no longer reach the project.
       const gone = await member.api.projects({ projectKey: 'MKT' }).get();
@@ -742,7 +753,10 @@ describe('members', () => {
       expect(res.status).toBe(204);
 
       const list = await owner.api.projects({ projectKey: 'MKT' }).members.get();
-      expect(list.data?.items.map((m) => m.userId)).toEqual([owner.user.userId]);
+      expect(list.data?.items.filter((m) => !m.isAgent).map((m) => m.userId)).toEqual([
+        owner.user.userId,
+      ]);
+      expect(list.data?.items.filter((m) => m.isAgent)).toHaveLength(1);
     });
 
     it('denies a non-member with 403', async () => {

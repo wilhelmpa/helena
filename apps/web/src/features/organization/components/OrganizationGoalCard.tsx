@@ -106,7 +106,7 @@ export default function OrganizationGoalCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">Parent goal</span>
+          <span className="text-muted-foreground">{t('fields.parentGoal')}</span>
           <select
             className="h-9 w-full rounded-md border bg-background px-3"
             value={parentGoalId}

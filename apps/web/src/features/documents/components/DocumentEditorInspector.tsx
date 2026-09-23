@@ -23,6 +23,7 @@ export default function DocumentEditorInspector({
   canDeleteAssets,
   canReadWorkItems,
   canLinkWorkItems,
+  canRetryMarkdown,
   onOpenChange,
   onOpenHistory,
 }: {
@@ -35,6 +36,7 @@ export default function DocumentEditorInspector({
   canDeleteAssets: boolean;
   canReadWorkItems: boolean;
   canLinkWorkItems: boolean;
+  canRetryMarkdown: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenHistory: () => void;
 }) {
@@ -54,6 +56,7 @@ export default function DocumentEditorInspector({
       canDeleteAssets={canDeleteAssets}
       canReadWorkItems={canReadWorkItems}
       canLinkWorkItems={canLinkWorkItems}
+      canRetryMarkdown={canRetryMarkdown}
       onOpenHistory={onOpenHistory}
     />
   );

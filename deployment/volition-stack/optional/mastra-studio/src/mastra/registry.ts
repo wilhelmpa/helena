@@ -11,6 +11,7 @@ import {
   type WorkflowId,
 } from './contracts.ts';
 import { approvalEffects, planEffects, type EffectSpec } from './effects.ts';
+import { agentTeamWorkflow } from './team-workflow.ts';
 
 export interface WorkflowDefinition {
   id: WorkflowId;
@@ -219,9 +220,12 @@ function buildInboxWorkflow(definition: WorkflowDefinition) {
     .commit();
 }
 
-export const workflowRegistry = Object.fromEntries(
-  workflowDefinitions.map(definition => [
-    definition.id,
-    definition.id === 'inbox-triage' ? buildInboxWorkflow(definition) : buildWorkflow(definition),
-  ]),
-);
+export const workflowRegistry = {
+  ...Object.fromEntries(
+    workflowDefinitions.map(definition => [
+      definition.id,
+      definition.id === 'inbox-triage' ? buildInboxWorkflow(definition) : buildWorkflow(definition),
+    ]),
+  ),
+  'agent-team': agentTeamWorkflow,
+};

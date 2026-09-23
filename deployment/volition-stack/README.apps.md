@@ -6,21 +6,21 @@ This Compose project runs two loopback-only upstreams for the authenticated Voli
 - `http://127.0.0.1:8100` — authenticated-header ttyd 1.7.7 listener for all project terminals. It runs as UID/GID 1000 inside the workspace container and accepts exactly one lowercase project slug through `?arg=<slug>`. A fixed wrapper resolves only an existing `/projects/<slug>` directory and attaches to a slug-specific tmux session. The stable URL survives service restarts and recreates its tmux session lazily.
 - `http://127.0.0.1:8092` — Nextcloud 34.0.4 with PostgreSQL 17.6, Redis 8.2.1 and `user_saml` 8.3.1.
 
-All image tags are pinned by manifest digest. The workspace runs as UID/GID 1000 with no Docker socket, no host home mount, no Linux capabilities and a read-only root filesystem. Its only writable areas are its named home volume, `/projects`, and a bounded `/tmp` tmpfs. code-server authentication is disabled because the upstream is reachable only on host loopback and the Volition gateway is the authentication boundary. Its arbitrary-port proxy, auto-forwarding, telemetry and update checks are disabled. The terminal listeners also bind only to host loopback, require the gateway-provided `X-Forwarded-User` header, reject cross-origin WebSocket handshakes, and never create an unsandboxed OpenClaw agent.
+All image tags are pinned by manifest digest. The workspace runs as UID/GID 1000 with no Docker socket, no host home mount, no Linux capabilities and a read-only root filesystem. Its only writable areas are its named home volume, `/projects`, and a bounded `/tmp` tmpfs. code-server authentication is disabled because the upstream is reachable only on host loopback and the Volition gateway is the authentication boundary. Its arbitrary-port proxy, auto-forwarding, telemetry and update checks are disabled. The terminal listener also binds only to host loopback, requires the gateway-provided `X-Forwarded-User` header, rejects cross-origin WebSocket handshakes, and starts only the project-scoped tmux session.
 
 The workspace, Nextcloud front end, and Nextcloud data tier use separate Docker networks. PostgreSQL and Redis are reachable only on the internal `volition-files-data` network. The workspace has no route to either Nextcloud network; the gateway reaches both published applications through their host-loopback ports.
 
 ## Projects
 
-The canonical host root for projects is `/home/pw/services/volition-workspaces/projects/<projectKey>`, exposed at `/projects/<projectKey>`. Verve is the single explicit exception: `/home/pw/Projekte/Shopify/v1-cart-suite` is mounted at `/projects/verve`. It's a Plan uses a real, independent editor checkout at `/home/pw/services/volition-workspaces/projects/itsaplan`. It carries the Git history and current source changes but excludes runtime `.env` files, credentials, databases, backups and production data. The production checkout under `/home/pw/services/itsaplan` must never be linked or mounted into the workspace.
+The canonical host root for projects is `/home/pw/services/volition-workspaces/projects/<projectKey>`, exposed once at `/projects`. Provisioning creates the project directory and never replaces it, so files and tmux sessions survive container restarts and project changes. Verve is the single explicit legacy exception: `/home/pw/Projekte/Shopify/v1-cart-suite` is mounted at `/projects/verve`. The production checkout under `/home/pw/services/itsaplan` is never linked or mounted into the workspace.
 
-The Verve checkout keeps its HTTPS origin unchanged. Inside code-server only, Git rewrites that exact repository URL to SSH and uses the repository-scoped `verve_git_deploy_key` plus the pinned `github_known_hosts` file. The key is not mounted into other services, and no host GitHub token, SSH directory, home directory, or Docker socket is exposed to the workspace.
+The workspace receives no host GitHub token, deploy key, SSH directory, home directory, Docker socket or application integration token. Repository authentication is an explicit later setup step inside the isolated persistent editor home.
 
 ## Gateway contract
 
 For both upstreams, the gateway must reject requests unless the Cloudflare Access JWT has been verified for the expected issuer, audience and expiry. It must discard any client-supplied identity headers before adding its own.
 
-For `code.volition.one`, proxy to `http://127.0.0.1:8091`, preserve `Host`, forward WebSocket upgrades, remove any upstream `X-Frame-Options`, and set `Content-Security-Policy: frame-ancestors 'self' https://plan.volition.one` so the authenticated Plan hub may embed it.
+Keep both developer tools on the existing owner-only `plan.volition.one` route. Proxy `/workspace/code/` to `http://127.0.0.1:8091`, stripping that prefix, and proxy `/focus/terminal-project/` to `http://127.0.0.1:8100` without stripping it. Forward WebSocket upgrades and discard client-supplied identity headers before the gateway injects the verified owner identity. No separate code or terminal hostname is needed.
 
 The stable human-terminal resources use this single loopback upstream:
 
@@ -33,7 +33,7 @@ The stable human-terminal resources use this single loopback upstream:
 | `/focus/terminal-project/?arg=karr` | `http://127.0.0.1:8100` | `/projects/karr` |
 | `/focus/terminal-project/?arg=<new-slug>` | `http://127.0.0.1:8100` | `/projects/<new-slug>` |
 
-Route the `/focus/terminal-project/` prefix without stripping it or its query string, preserve `Host` and the authenticated `X-Forwarded-User`, and forward WebSocket upgrades to port 8100. ttyd serves the socket at `/focus/terminal-project/ws` and carries the same `arg` query parameter. The wrapper rejects a second argument, anything outside `^[a-z0-9][a-z0-9-]{0,31}$`, a missing directory, and a resolved path outside `/projects`. Arguments are never evaluated as shell code. The OpenClaw native `/terminal/<id>` URL is intentionally not used because its id is process-local and becomes invalid after a Gateway restart.
+Route the `/focus/terminal-project/` prefix without stripping it or its query string, preserve `Host` and the authenticated `X-Forwarded-User`, and forward WebSocket upgrades to port 8100. ttyd serves the socket at `/focus/terminal-project/ws` and carries the same `arg` query parameter. The wrapper rejects a second argument, anything outside `^[a-z0-9][a-z0-9-]{0,31}$`, a missing directory, and a resolved path outside `/projects`. Arguments are never evaluated as shell code.
 
 For `cloud.volition.one`, proxy to `http://127.0.0.1:8092`, preserve `Host`, set `X-Forwarded-Proto: https`, and set exactly `X-Forwarded-User: owner@example.com` from the verified JWT identity. The Nextcloud Apache config maps this trusted header to `REMOTE_USER`; `user_saml` maps `REMOTE_USER` to the Nextcloud user id, display name and email and creates the user on first access. The local login backend remains enabled for recovery and WebDAV app-password use.
 
@@ -57,30 +57,28 @@ The local recovery login is `https://cloud.volition.one/login?direct=1`. The adm
 
 ## Project provisioner
 
-`integration/server.mjs` is the private receiver for It's a Plan project provisioning events. It listens on `PROVISIONING_HOST` and port `18800`; the default host is `127.0.0.1`. It accepts only `POST /api/provision` with the configured bearer token, a UUID `Idempotency-Key`, and `X-Itsaplan-Event: project.provision`. The event id in the body and headers must match. Project keys are restricted to uppercase letters and numbers before they are converted to a workspace path.
+`integration/server.mjs` is the private receiver for It's a Plan project provisioning events. The workspace-only unit binds it to the host side of the internal `volition_control` bridge on port `18800`. It accepts only `POST /api/provision` with the configured bearer token, a UUID `Idempotency-Key`, and `X-Itsaplan-Event: project.provision`. The event id in the body and headers must match. Project keys are restricted to uppercase letters and numbers before they are converted to a workspace path.
 
-The provisioner creates the host project directory, an isolated OpenClaw coordinator through `openclaw agents add`, and internal registry metadata under `~/.openclaw/volition/projects`. It creates `/Projects/<projectKey>` through the loopback-only Nextcloud WebDAV endpoint and returns the files resource only after an exact-folder `PROPFIND` succeeds. Verve uses the existing `/home/pw/Projekte/Shopify/v1-cart-suite` checkout and `/projects/verve` mount. It does not copy or edit that checkout. Browser profiles remain pending until their service API is configured; the response contains a warning and no browser resource record.
+New projects request `workspace` and `terminal` by default. The provisioner creates the persistent host directory, returns a code-server deep link for `/projects/<slug>`, and returns a ttyd link whose fixed wrapper opens a slug-specific tmux session in exactly that directory. It does not create an agent, browser profile, cloud-file folder, repository credential or second workspace overlay. Verve keeps its explicit existing checkout mount and is not copied.
 
-Every accepted event is recorded in an atomically replaced ledger at `~/.openclaw/volition/provisioning-ledger.json`. Repeating the same UUID and payload returns the stored result. Reusing the UUID with another payload returns `409`.
+Every accepted event is recorded in an atomically replaced ledger under `/home/pw/services/volition-workspaces/.state`. Repeating the same UUID and payload returns the stored result. Reusing the UUID with another payload returns `409`. This state and the project directories are independent of the disposable workspace container and editor-home volume.
 
-Copy `integration/.env.example` to `~/.openclaw/volition/provisioning.env`, set only the provisioner values there, and keep the file mode at `0600`. Install the user unit from `integration/systemd/volition-provisioning.service`, then verify the local health endpoint:
+Create a random mode-0600 `project_provisioning_token` in the stack secret directory and configure the same value as `PROJECT_PROVISIONING_TOKEN` for the Plan worker. Install the user unit from `integration/systemd/volition-provisioning.service`, then verify the private health endpoint from the host:
 
 ```sh
-mkdir -p ~/.config/systemd/user
-mkdir -p ~/.openclaw/volition
-install -m 0600 integration/.env.example ~/.openclaw/volition/provisioning.env
-cp integration/systemd/volition-provisioning.service ~/.config/systemd/user/
+mkdir -p ~/.config/systemd/user /home/pw/services/volition-workspaces/.state
+install -m 0600 integration/systemd/volition-provisioning.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now volition-provisioning.service
-curl --fail --silent "http://${PROVISIONING_HOST:-127.0.0.1}:18800/healthz"
+curl --fail --silent http://172.30.254.1:18800/healthz
 ```
 
-The deployed worker reaches the service over the dedicated `volition_control` Docker bridge. Bind `PROVISIONING_HOST` only to the host bridge address, assign the worker its fixed bridge address, and restrict host TCP port 18800 to that source address with the input firewall. The worker keeps its application network for PostgreSQL. Do not expose port 18800 through Cloudflare, the LAN, or a public bind.
+Set `PROJECT_PROVISIONING_URL=http://172.30.254.1:18800/api/provision`. The worker reaches it over the dedicated internal `volition_control` Docker bridge. The service is not exposed through Cloudflare, the LAN, or a public bind; only the returned code and terminal URLs traverse the existing owner-authenticated Plan gateway.
 
 ## Private Google MCP bridge
 
-`google-bridge/server.mjs` is a host-local stdio MCP server for the legacy private mail and career triage jobs. OpenClaw starts it directly; it has no listening socket. The bridge invokes the existing owner-managed gog wrappers with `execFile`, never a shell, and exposes only bounded read operations for three fixed Gmail accounts plus the owner's primary calendar. Credentials remain in the host gog profile.
+`google-bridge/server.mjs` is a host-local stdio MCP server for the legacy private mail and career triage jobs. legacy runtime starts it directly; it has no listening socket. The bridge invokes the existing owner-managed gog wrappers with `execFile`, never a shell, and exposes only bounded read operations for three fixed Gmail accounts plus the owner's primary calendar. Credentials remain in the host gog profile.
 
 The live MCP surface is exactly `gmail_thread_get`, `gmail_search`, `gmail_attachment_metadata`, and `calendar_list`. It has no Gmail mutation, attachment download, calendar write, attendee, invitation, send, delete, or generic command tool. The unattended career job records a calendar proposal in It's a Plan for later owner review. Its model cannot create its own approval.
 
-Install dependencies with `npm ci --ignore-scripts`, run `npm test`, then register the server through `openclaw mcp add` using absolute paths. Probe the saved server and verify an empty diagnostics list before granting exact tool IDs to an agent. The production IDs are prefixed `google-private__`; only the mail tools belong to `itsaplan-inbox`, and only `calendar_list` belongs to `karriere-triage`.
+Install dependencies with `npm ci --ignore-scripts`, run `npm test`, then register the server through `hermes mcp add` using absolute paths. Probe the saved server and verify an empty diagnostics list before granting exact tool IDs to an agent. The production IDs are prefixed `google-private__`; only the mail tools belong to `itsaplan-inbox`, and only `calendar_list` belongs to `karriere-triage`.

@@ -140,7 +140,7 @@ describe('teams', () => {
         name: user.username,
         role: 'owner',
         projectCount: 1,
-        memberCount: 1,
+        memberCount: 2,
         roleCount: 1,
         integrationCount: 0,
       });
@@ -170,7 +170,7 @@ describe('teams', () => {
 
       const first = await members.get({ query: { page: 1, pageSize: 2 } });
       expect(first.data?.items).toHaveLength(2);
-      expect(first.data?.total).toBe(3);
+      expect(first.data?.total).toBe(4);
 
       const second = await members.get({ query: { page: 2, pageSize: 2 } });
       expect(second.data?.items).toHaveLength(1);
@@ -179,7 +179,7 @@ describe('teams', () => {
       expect(found.data?.items).toMatchObject([{ email: user.email }]);
 
       expect((await members.get({ query: { kind: 'human' } })).data?.total).toBe(3);
-      expect((await members.get({ query: { kind: 'agent' } })).data?.total).toBe(0);
+      expect((await members.get({ query: { kind: 'agent' } })).data?.total).toBe(1);
     });
 
     it('carries the owners and the managers of the team on its detail', async () => {
@@ -407,13 +407,13 @@ describe('teams', () => {
       // rule alone, so the ordering has to run in the database rather than on the page.
       const first = await members.get({ query: { page: 1, pageSize: 2 } });
       expect(first.data?.items).toHaveLength(2);
-      expect(first.data?.total).toBe(3);
+      expect(first.data?.total).toBe(4);
       expect(first.data?.items[0]).toMatchObject({ userId: user.userId, role: 'owner' });
 
       const second = await members.get({ query: { page: 2, pageSize: 2 } });
-      expect(second.data?.items).toHaveLength(1);
-      expect(second.data?.total).toBe(3);
-      expect(second.data?.items[0].role).toBe('member');
+      expect(second.data?.items).toHaveLength(2);
+      expect(second.data?.total).toBe(4);
+      expect(second.data?.items.some((m) => m.role === 'member')).toBe(true);
     });
 
     it('narrows the list to the people or to the AI agents', async () => {
@@ -427,7 +427,9 @@ describe('teams', () => {
       expect(people.data?.total).toBe(2);
 
       const agents = await members.get({ query: { kind: 'agent' } });
-      expect(agents.data).toMatchObject({ items: [], total: 0 });
+      expect(agents.data?.total).toBe(1);
+      expect(agents.data?.items).toHaveLength(1);
+      expect(agents.data?.items[0]).toMatchObject({ isAgent: true });
     });
 
     it('searches by name, address and handle', async () => {

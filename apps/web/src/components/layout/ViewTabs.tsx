@@ -19,6 +19,7 @@ import ViewTabChrome from '@/components/layout/ViewTabChrome';
 import ViewTabLabel from '@/components/layout/ViewTabLabel';
 import ViewFolderManager from '@/components/layout/ViewFolderManager';
 import { useUpdateView, useViewFoldersQuery } from '@/services/views.service';
+import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
 
 // The row of saved-view tabs above a project, plus a New view button and, on the
 // right, the filter and display toggles. The leading "All" tab is implicit and
@@ -76,7 +77,7 @@ export default function ViewTabs({
   }
 
   return (
-    <div className="flex h-12 shrink-0 items-center gap-1 border-b px-2 sm:px-3">
+    <WorkspaceHeader className="gap-1 px-2 sm:px-3">
       {/* Mobile: views collapse into a dropdown (no drag reorder there). */}
       <div className="flex min-w-0 flex-1 items-center sm:hidden">
         <MobileViewSwitcher
@@ -157,6 +158,6 @@ export default function ViewTabs({
         </button>
         {displayControl}
       </div>
-    </div>
+    </WorkspaceHeader>
   );
 }

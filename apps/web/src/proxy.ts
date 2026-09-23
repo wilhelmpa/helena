@@ -38,8 +38,8 @@ function clearSession(request: NextRequest): NextResponse {
   return response;
 }
 
-export function proxy(request: NextRequest) {
-  const response = gate(request);
+export async function proxy(request: NextRequest) {
+  const response = await gate(request);
   if (!MEDIA_PATHS.some(matcher(request.nextUrl.pathname))) {
     response.headers.set('Content-Security-Policy', contentSecurityPolicy());
   }
@@ -53,7 +53,7 @@ export function proxy(request: NextRequest) {
 // A cookie the API no longer accepts passes this check, so the client handles that
 // case: `apiFailure` in `lib/api/core/client.ts` signs out on a 401 and lands on
 // `/login?expired=1`, where the cookie is cleared for good.
-function gate(request: NextRequest): NextResponse {
+async function gate(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   const hasSession = getSessionCookie(request) != null;
   const matches = matcher(pathname);

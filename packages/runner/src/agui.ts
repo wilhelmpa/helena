@@ -54,6 +54,8 @@ export class AnswerStream {
   private openTextPart = '';
   private readonly openToolCalls = new Set<string>();
   private readonly closedToolCalls = new Set<string>();
+  private hermesToolCounter = 0;
+  private readonly hermesOpenTools: { id: string; name: string }[] = [];
   // Whether the command reported partial text of its own. Its final message repeats
   // that text, and emitting both would say everything twice.
   private sawPartialText = false;
@@ -200,7 +202,37 @@ export class AnswerStream {
       case 'copilot-json':
         this.readCopilotLine(parsed as CopilotLine);
         break;
+      case 'hermes-stream-json':
+        this.readHermesLine(parsed as HermesLine);
+        break;
     }
+  }
+
+  private readHermesLine(message: HermesLine): void {
+    if (message.session_id) this.sessionId ??= message.session_id;
+    if (message.type === 'text' && typeof message.text === 'string') {
+      this.sawPartialText = true;
+      this.appendText(message.text);
+      return;
+    }
+    if (message.type === 'result') {
+      if (!this.sawAnyText && typeof message.text === 'string') this.appendText(message.text);
+      return;
+    }
+    if (message.type === 'tool_use') {
+      const id = message.tool_call_id ?? `hermes-tool-${++this.hermesToolCounter}`;
+      const name = message.name ?? 'tool';
+      this.hermesOpenTools.push({ id, name });
+      this.pushToolCall(id, name, JSON.stringify(message.input ?? {}));
+      return;
+    }
+    if (message.type !== 'tool_result') return;
+    const openIndex = message.tool_call_id
+      ? this.hermesOpenTools.findIndex((tool) => tool.id === message.tool_call_id)
+      : this.hermesOpenTools.findIndex((tool) => tool.name === (message.name ?? 'tool'));
+    const open = openIndex >= 0 ? this.hermesOpenTools.splice(openIndex, 1)[0] : undefined;
+    const id = message.tool_call_id ?? open?.id;
+    if (id) this.pushToolResult(id, message.output ?? '');
   }
 
   // The answer arrives as deltas that the assistant message then repeats whole, and a
@@ -458,6 +490,9 @@ export class UsageReader {
       case 'antigravity-stream-json':
         this.readAntigravity(parsed as AntigravityLine);
         return;
+      case 'hermes-stream-json':
+        this.readHermes(parsed as HermesLine);
+        return;
     }
   }
 
@@ -514,6 +549,14 @@ export class UsageReader {
     this.last = {
       inputTokens: (usage.input_tokens ?? 0) + (usage.cache_read_tokens ?? 0),
       outputTokens: (usage.output_tokens ?? 0) + (usage.thinking_tokens ?? 0),
+    };
+  }
+
+  private readHermes(message: HermesLine): void {
+    if (message.type !== 'result' || !message.tokens) return;
+    this.last = {
+      inputTokens: message.tokens.input ?? 0,
+      outputTokens: message.tokens.output ?? 0,
     };
   }
 }
@@ -634,6 +677,17 @@ interface CopilotLine {
     result?: { content?: string } | null;
     error?: { message?: string };
   };
+}
+
+interface HermesLine {
+  type?: string;
+  session_id?: string;
+  text?: string;
+  name?: string;
+  tool_call_id?: string;
+  input?: unknown;
+  output?: string;
+  tokens?: { input?: number; output?: number; total?: number };
 }
 
 interface StreamEvent {

@@ -39,7 +39,6 @@ export const useWorkflowRuns = (projectKey: string, workflowId: string | null) =
     queryKey: qk.controlPlaneWorkflowRuns(projectKey, workflowId ?? ''),
     queryFn: () => listWorkflowRuns(projectKey, workflowId!),
     enabled: workflowId != null,
-    refetchInterval: 5000,
   });
 
 export const useWorkflowRun = (projectKey: string, workflowId: string, runId: string | null) =>
@@ -47,7 +46,6 @@ export const useWorkflowRun = (projectKey: string, workflowId: string, runId: st
     queryKey: qk.controlPlaneWorkflowRun(projectKey, workflowId, runId ?? ''),
     queryFn: () => getWorkflowRun(projectKey, workflowId, runId!),
     enabled: runId != null,
-    refetchInterval: 3000,
   });
 
 export function useWorkflowControl(projectKey: string, workflowId: string) {

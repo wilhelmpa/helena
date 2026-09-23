@@ -84,7 +84,11 @@ export default function SavedViewTab({
       {...listeners}
       className={cn(canEdit ? 'cursor-grab' : 'cursor-default', isDragging && 'opacity-40')}
     >
-      <button type="button" onClick={onSelect} className="flex items-center gap-1.5 py-1 pr-1 pl-2">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex h-full items-center gap-1.5 pr-1 pl-2"
+      >
         {folder && (
           <span className="flex max-w-24 items-center gap-1 truncate text-xs text-muted-foreground">
             <FolderClosed className="size-3 shrink-0" /> {folder.name}

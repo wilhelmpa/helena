@@ -1,9 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { streamAiAgentChat, streamAiAgentRun } from '@/lib/api/endpoints/agentChat';
+import {
+  resumeAiAgentChat,
+  streamAiAgentChat,
+  streamAiAgentRun,
+} from '@/lib/api/endpoints/agentChat';
 import { ApiError } from '@/lib/api/core/client';
 import type { AiChatMessage, AiChatPart, AiChatToolPart } from '@/lib/api/endpoints/agentChat';
+import type { AgentRunEvent } from '@/lib/api/endpoints/agents';
 import { uuid } from '@/utils/uuid';
 import { useTranslations } from 'next-intl';
 
@@ -89,47 +94,25 @@ export function useAgentChat(
   const [queuePaused, setQueuePaused] = useState(false);
   const stopRef = useRef<AbortController | null>(null);
 
-  const runTurn = useCallback(
-    async (text: string) => {
-      if (runningRef.current) return;
-      runningRef.current = true;
-      setRunning(true);
-      const stopper = new AbortController();
-      stopRef.current = stopper;
-      // Kept for the transcript rather than reported at once: the session may not be
-      // the one on screen, and the answer is where the user looks for what happened.
+  const consumeAnswer = useCallback(
+    async (
+      stream: AsyncIterable<AgentRunEvent>,
+      assistantId: string,
+      stopper: AbortController,
+    ): Promise<string | null> => {
       let failure: string | null = null;
-
-      const assistantId = uuid();
-      const createdAt = new Date().toISOString();
-      setMessages((m) => [
-        ...m,
-        { id: uuid(), role: 'user', parts: [{ type: 'text', text }], createdAt },
-        { id: assistantId, role: 'assistant', parts: [], createdAt },
-      ]);
-      setStatus(external ? 'queued' : 'streaming');
-      setActiveTool(null);
-
       const growAssistant = (grow: (parts: AiChatPart[]) => AiChatPart[]) =>
-        setMessages((m) =>
-          m.map((msg) => (msg.id === assistantId ? { ...msg, parts: grow(msg.parts) } : msg)),
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === assistantId ? { ...message, parts: grow(message.parts) } : message,
+          ),
         );
 
-      const stream = external ? streamAiAgentChat : streamAiAgentRun;
       try {
-        for await (const event of stream(
-          projectKey,
-          agentId,
-          { prompt: text, threadId: threadRef.current, ...(external ? settingsRef.current : {}) },
-          stopper.signal,
-        )) {
+        for await (const event of stream) {
           switch (event.type) {
             case 'text':
-              // The first thing the agent produces is what says a runner took the
-              // message, so the wait ends here rather than on a status of its own.
               setStatus('streaming');
-              // Writing the answer means the tool it was using is behind it, which is
-              // the only end some CLIs report at all.
               setActiveTool(null);
               growAssistant((parts) => appendText(parts, event.value));
               break;
@@ -176,38 +159,107 @@ export function useAgentChat(
           }
         }
       } catch (err) {
-        // A stop ends the stream by aborting it; that is what was asked for, not a
-        // failure to report, and the queue behind it goes on.
+        // Aborting is the requested stop. Every other break in the stream is surfaced
+        // on the assistant message and pauses anything queued behind it.
         if (!stopper.signal.aborted) {
           failure = err instanceof ApiError ? err.message : t('unreachable');
           setQueuePaused(true);
         }
-      } finally {
-        runningRef.current = false;
-        stopRef.current = null;
-        setRunning(false);
-        setStatus('ready');
-        setActiveTool(null);
-        // Drop the assistant placeholder if the agent never produced anything and there
-        // is nothing to say about it, so an empty bubble is not left behind. A failure
-        // keeps the bubble: it carries the message.
-        const stopped = stopper.signal.aborted;
-        setMessages((m) =>
-          m
-            .filter((msg) => !(msg.id === assistantId && msg.parts.length === 0 && !failure))
-            .map((msg) =>
-              msg.id === assistantId
-                ? {
-                    ...msg,
-                    ...(stopped && { stopped: true }),
-                    ...(failure && { error: failure }),
-                  }
-                : msg,
-            ),
+      }
+      return failure;
+    },
+    [t],
+  );
+
+  const finishAnswer = useCallback(
+    (assistantId: string, stopper: AbortController, failure: string | null) => {
+      runningRef.current = false;
+      stopRef.current = null;
+      setRunning(false);
+      setStatus('ready');
+      setActiveTool(null);
+      const stopped = stopper.signal.aborted;
+      setMessages((current) =>
+        current
+          .filter(
+            (message) => !(message.id === assistantId && message.parts.length === 0 && !failure),
+          )
+          .map((message) =>
+            message.id === assistantId
+              ? {
+                  ...message,
+                  ...(stopped && { stopped: true }),
+                  ...(failure && { error: failure }),
+                }
+              : message,
+          ),
+      );
+    },
+    [],
+  );
+
+  const runTurn = useCallback(
+    async (text: string) => {
+      if (runningRef.current) return;
+      runningRef.current = true;
+      setRunning(true);
+      const stopper = new AbortController();
+      stopRef.current = stopper;
+      let failure: string | null = null;
+
+      const assistantId = uuid();
+      const createdAt = new Date().toISOString();
+      setMessages((m) => [
+        ...m,
+        { id: uuid(), role: 'user', parts: [{ type: 'text', text }], createdAt },
+        { id: assistantId, role: 'assistant', parts: [], createdAt },
+      ]);
+      setStatus(external ? 'queued' : 'streaming');
+      setActiveTool(null);
+
+      const stream = external ? streamAiAgentChat : streamAiAgentRun;
+      try {
+        failure = await consumeAnswer(
+          stream(
+            projectKey,
+            agentId,
+            { prompt: text, threadId: threadRef.current, ...(external ? settingsRef.current : {}) },
+            stopper.signal,
+          ),
+          assistantId,
+          stopper,
         );
+      } finally {
+        finishAnswer(assistantId, stopper, failure);
       }
     },
-    [projectKey, agentId, external, t],
+    [projectKey, agentId, external, consumeAnswer, finishAnswer],
+  );
+
+  // Continues watching an answer that was already in progress when the browser
+  // reloaded. The assistant placeholder comes from the restored transcript; no user
+  // message is inserted and no new runner job is created.
+  const resumeAnswer = useCallback(
+    async (messageId: number, initialStatus: 'pending' | 'streaming') => {
+      if (!external || runningRef.current) return;
+      runningRef.current = true;
+      setRunning(true);
+      const stopper = new AbortController();
+      stopRef.current = stopper;
+      setStatus(initialStatus === 'pending' ? 'queued' : 'streaming');
+      setActiveTool(null);
+      let failure: string | null = null;
+      try {
+        failure = await consumeAnswer(
+          resumeAiAgentChat(projectKey, agentId, messageId, stopper.signal),
+          String(messageId),
+          stopper,
+        );
+      } finally {
+        finishAnswer(String(messageId), stopper, failure);
+      }
+    },
+    [external, projectKey, agentId, consumeAnswer, finishAnswer],
   );
 
   const send = useCallback(
@@ -281,6 +333,7 @@ export function useAgentChat(
     stop,
     removePending,
     loadThread,
+    resumeAnswer,
     prependHistory,
     newChat,
   };

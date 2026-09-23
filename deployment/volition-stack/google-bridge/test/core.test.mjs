@@ -15,7 +15,7 @@ test("gmail thread read uses the read wrapper and exact command allowlist", asyn
   const { calls, bridge } = fake([{ id: "abc", messages: [{ snippet: "safe" }] }]);
   const result = await bridge.gmailThreadGet({ account: "archive@example.com", threadId: "abc_123" });
   assert.equal(result.id, "abc");
-  assert.equal(calls[0][0], "/home/pw/.local/bin/gog-openclaw-read");
+  assert.equal(calls[0][0], "/home/pw/.local/bin/gog-hermes-read");
   assert.ok(calls[0][1].includes("--enable-commands-exact=gmail.thread.get"));
   assert.ok(calls[0][1].includes("--sanitize-content"));
   assert.equal(calls[0][2].shell, false);
@@ -83,7 +83,7 @@ test("calendar upsert creates without attendees and forces notifications off", a
   const result = await bridge.calendarUpsertConfirmed({ account: "personal@example.com", confirmed: true, sourceId: "linkedin:conversation_123", summary: "Confirmed call", start: "2026-09-23T10:00:00+02:00" });
   assert.equal(result.action, "created");
   assert.ok(calls[0][1].some((arg) => arg.startsWith("--private-prop-filter=volitionSourceHash=")));
-  assert.equal(calls[2][0], "/home/pw/.local/bin/gog-openclaw-write");
+  assert.equal(calls[2][0], "/home/pw/.local/bin/gog-hermes-write");
   assert.ok(calls[2][1].includes("--enable-commands-exact=calendar.create"));
   assert.ok(calls[2][1].includes("--send-updates=none"));
   assert.equal(calls[2][1].some((arg) => arg.startsWith("--attendees")), false);

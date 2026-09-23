@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+if (( $# != 1 )) || [[ ! "$1" =~ ^[a-z0-9][a-z0-9-]{0,31}$ ]]; then
+  printf 'invalid project slug\n' >&2
+  exit 64
+fi
+
+root=/srv/volition/workspaces/projects
+root="$(realpath -e -- "$root")"
+target="$(realpath -e -- "$root/$1")" || {
+  printf 'project directory does not exist\n' >&2
+  exit 66
+}
+
+if [[ ! -d "$target" || "$target" != "$root/"* ]]; then
+  printf 'project directory escapes workspace root\n' >&2
+  exit 77
+fi
+
+export TERM=xterm-256color
+exec /usr/bin/tmux new-session -A -s "volition-$1" -c "$target" /bin/bash -l

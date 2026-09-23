@@ -1,0 +1,14 @@
+mcp_servers:
+  itsaplan:
+    url: http://127.0.0.1:3000/mcp
+    headers:
+      Authorization: Bearer ${ITSAPLAN_API_KEY}
+    strict_redirect_headers: true
+    lazy: true
+    connect_timeout: 15
+    timeout: 120
+security:
+  tirith_enabled: true
+  tirith_path: /home/pw/services/volition-stack/data/hermes/bin/tirith
+  tirith_timeout: 5
+  tirith_fail_open: false

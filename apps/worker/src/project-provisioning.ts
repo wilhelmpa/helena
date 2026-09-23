@@ -1,4 +1,10 @@
-import { db, projectProvisioningJob, projectView, projectViewFolder } from '@repo/db';
+import {
+  db,
+  projectDeprovisioningJob,
+  projectProvisioningJob,
+  projectView,
+  projectViewFolder,
+} from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { equalJitterBackoffMs } from './backoff';
 import { workerConfig } from './config';
@@ -10,6 +16,22 @@ interface ClaimedProvisioningJob {
   key: string;
   name: string;
   description: string;
+  requestedResources: string[];
+  attempts: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+interface ClaimedDeprovisioningJob {
+  id: string;
+  projectId: number;
+  project: {
+    id: number;
+    teamId: number;
+    key: string;
+    name: string;
+    description: string;
+  };
   requestedResources: string[];
   attempts: number;
   createdAt: Date | string;
@@ -30,8 +52,14 @@ interface ProvisioningResult {
 export async function processProjectProvisioning(): Promise<void> {
   const config = workerConfig();
   if (!config.projectProvisioningUrl || !config.projectProvisioningToken) return;
-  const jobs = await claimProvisioningJobs();
-  await Promise.all(jobs.map((job) => deliverProvisioningJob(job)));
+  const [provisioning, deprovisioning] = await Promise.all([
+    claimProvisioningJobs(),
+    claimDeprovisioningJobs(),
+  ]);
+  await Promise.all([
+    ...provisioning.map((job) => deliverProvisioningJob(job)),
+    ...deprovisioning.map((job) => deliverDeprovisioningJob(job)),
+  ]);
 }
 
 async function claimProvisioningJobs(): Promise<ClaimedProvisioningJob[]> {
@@ -78,11 +106,53 @@ async function claimProvisioningJobs(): Promise<ClaimedProvisioningJob[]> {
   return rows as unknown as ClaimedProvisioningJob[];
 }
 
+async function claimDeprovisioningJobs(): Promise<ClaimedDeprovisioningJob[]> {
+  const { batchSize, leaseSeconds, maxAttempts, projectProvisioningTimeoutMs } = workerConfig();
+  const provisioningLeaseSeconds = Math.max(
+    leaseSeconds,
+    Math.ceil(projectProvisioningTimeoutMs / 1000) + 30,
+  );
+  await db.execute(sql`
+    UPDATE project_deprovisioning_job
+       SET status = 'failed',
+           last_error = 'Worker lease expired too many times',
+           updated_at = now()
+     WHERE status = 'pending'
+       AND attempts >= ${maxAttempts}
+       AND next_attempt_at <= now()
+  `);
+  const rows = await db.execute(sql`
+    UPDATE project_deprovisioning_job j
+    SET attempts = j.attempts + 1,
+        next_attempt_at = now() + make_interval(secs => ${provisioningLeaseSeconds}),
+        updated_at = date_trunc('milliseconds', now())
+    WHERE j.id IN (
+      SELECT id FROM project_deprovisioning_job
+      WHERE status = 'pending'
+        AND attempts < ${maxAttempts}
+        AND next_attempt_at <= now()
+      ORDER BY next_attempt_at
+      FOR UPDATE SKIP LOCKED
+      LIMIT ${batchSize}
+    )
+    RETURNING
+      j.id,
+      j.project_id AS "projectId",
+      j.project,
+      j.requested_resources AS "requestedResources",
+      j.attempts,
+      j.created_at AS "createdAt",
+      j.updated_at AS "updatedAt"
+  `);
+  return rows as unknown as ClaimedDeprovisioningJob[];
+}
+
 async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void> {
   const config = workerConfig();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.projectProvisioningTimeoutMs);
   try {
+    const requestedResources = withCoordinator(job.requestedResources);
     const boards = await requestedBoards(job);
     const response = await fetch(config.projectProvisioningUrl!, {
       method: 'POST',
@@ -104,14 +174,14 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
           description: job.description,
           teamId: job.teamId,
         },
-        requestedResources: job.requestedResources,
+        requestedResources,
         ...(boards.length ? { boards } : {}),
         createdAt: new Date(job.createdAt).toISOString(),
       }),
     });
     if (response.ok) {
       const raw = await readBoundedBody(response, 256 * 1024);
-      const result = sanitizeResult(parseJson(raw), new Set(job.requestedResources));
+      const result = sanitizeResult(parseJson(raw), new Set(requestedResources));
       await db
         .update(projectProvisioningJob)
         .set({
@@ -130,6 +200,64 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function deliverDeprovisioningJob(job: ClaimedDeprovisioningJob): Promise<void> {
+  const config = workerConfig();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.projectProvisioningTimeoutMs);
+  try {
+    const response = await fetch(config.projectProvisioningUrl!, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${config.projectProvisioningToken}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': job.id,
+        'X-Itsaplan-Event': 'project.deprovision',
+        'X-Itsaplan-Event-Id': job.id,
+      },
+      body: JSON.stringify({
+        eventId: job.id,
+        eventType: 'project.deprovision',
+        project: job.project,
+        requestedResources: job.requestedResources,
+        createdAt: new Date(job.createdAt).toISOString(),
+      }),
+    });
+    if (response.ok) {
+      const raw = await readBoundedBody(response, 256 * 1024);
+      const result = sanitizeResult(parseJson(raw), new Set(job.requestedResources));
+      await db
+        .update(projectDeprovisioningJob)
+        .set({
+          status: 'succeeded',
+          lastError: null,
+          result,
+          completedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(currentDeprovisioningClaim(job));
+      return;
+    }
+    await recordDeprovisioningFailure(
+      job,
+      `HTTP ${response.status}`,
+      isRetryableStatus(response.status),
+    );
+  } catch (error) {
+    await recordDeprovisioningFailure(job, safeRequestError(error), true);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function withCoordinator(resources: readonly string[]): string[] {
+  if (resources.includes('coordinator')) return [...resources];
+  const browser = resources.indexOf('browser');
+  return browser < 0
+    ? [...resources, 'coordinator']
+    : [...resources.slice(0, browser), 'coordinator', ...resources.slice(browser)];
 }
 
 async function requestedBoards(job: ClaimedProvisioningJob) {
@@ -201,6 +329,25 @@ async function recordFailure(
     .where(currentClaim(job));
 }
 
+async function recordDeprovisioningFailure(
+  job: ClaimedDeprovisioningJob,
+  error: string,
+  retryable: boolean,
+): Promise<void> {
+  const config = workerConfig();
+  const retry = retryable && job.attempts < config.maxAttempts;
+  const delaySeconds = Math.max(1, Math.ceil(equalJitterBackoffMs(job.attempts) / 1000));
+  await db
+    .update(projectDeprovisioningJob)
+    .set({
+      status: retry ? 'pending' : 'failed',
+      nextAttemptAt: retry ? sql`now() + make_interval(secs => ${delaySeconds})` : new Date(),
+      lastError: error.slice(0, 500),
+      updatedAt: new Date(),
+    })
+    .where(currentDeprovisioningClaim(job));
+}
+
 function isRetryableStatus(status: number): boolean {
   return status === 408 || status === 429 || status >= 500;
 }
@@ -211,6 +358,15 @@ function currentClaim(job: ClaimedProvisioningJob) {
     eq(projectProvisioningJob.status, 'pending'),
     eq(projectProvisioningJob.attempts, job.attempts),
     eq(projectProvisioningJob.updatedAt, new Date(job.updatedAt)),
+  );
+}
+
+function currentDeprovisioningClaim(job: ClaimedDeprovisioningJob) {
+  return and(
+    eq(projectDeprovisioningJob.id, job.id),
+    eq(projectDeprovisioningJob.status, 'pending'),
+    eq(projectDeprovisioningJob.attempts, job.attempts),
+    eq(projectDeprovisioningJob.updatedAt, new Date(job.updatedAt)),
   );
 }
 
@@ -314,6 +470,16 @@ function sanitizeResourceUrl(kind: string, value: string): string | null {
             ? 'arg'
             : null;
     const deepPath = queryKey ? url.searchParams.get(queryKey) : null;
+    const browserRoute =
+      kind === 'browser'
+        ? /^\/browser\/projects\/([a-z0-9][a-z0-9-]{0,31})\/vnc\.html$/.exec(url.pathname)
+        : null;
+    const browserPath = browserRoute ? url.searchParams.get('path') : null;
+    const validBrowserPath =
+      browserRoute !== null &&
+      browserPath === `browser/projects/${browserRoute[1]}/websockify` &&
+      url.searchParams.get('autoconnect') === '1' &&
+      url.searchParams.get('resize') === 'remote';
     url.search = '';
     const validDeepPath = board
       ? board[2] === ':files'
@@ -332,6 +498,11 @@ function sanitizeResourceUrl(kind: string, value: string): string | null {
             : false;
     if (queryKey && deepPath && validDeepPath) {
       url.searchParams.set(queryKey, deepPath);
+    }
+    if (validBrowserPath) {
+      url.searchParams.set('autoconnect', '1');
+      url.searchParams.set('resize', 'remote');
+      url.searchParams.set('path', browserPath);
     }
     url.hash = '';
     return url.toString();

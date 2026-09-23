@@ -1,4 +1,4 @@
-const EVENT_TYPE = "project.provision";
+const EVENT_TYPES = new Set(["project.provision", "project.deprovision"]);
 const PROJECT_KEY = /^[A-Z][A-Z0-9]{0,31}$/;
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -47,7 +47,11 @@ export function validateEnvelope(value, headers) {
   if (headers.idempotencyKey !== eventId) {
     throw new RequestValidationError("Idempotency-Key must match eventId");
   }
-  if (headers.eventType !== EVENT_TYPE || value.eventType !== EVENT_TYPE) {
+  if (
+    typeof value.eventType !== "string" ||
+    !EVENT_TYPES.has(value.eventType) ||
+    headers.eventType !== value.eventType
+  ) {
     throw new RequestValidationError("The event type is invalid");
   }
   if (headers.eventId && headers.eventId !== eventId) {
@@ -86,6 +90,9 @@ export function validateEnvelope(value, headers) {
   }
   const boards = value.boards ?? [];
   if (!Array.isArray(boards) || boards.length > 200) throw new RequestValidationError("boards is invalid");
+  if (value.eventType === "project.deprovision" && boards.length > 0) {
+    throw new RequestValidationError("boards are not accepted for deprovisioning");
+  }
   const ids = new Set();
   const cleanBoards = boards.map((board) => {
     if (!board || typeof board !== "object") throw new RequestValidationError("board is invalid");
@@ -103,6 +110,7 @@ export function validateEnvelope(value, headers) {
     return { id, resource: board.resource, name: requiredString(board.name, "board.name", 100), slug, folder };
   });
   for (const resource of requestedResources) {
+    if (value.eventType === "project.deprovision") break;
     if (resource.startsWith("board:") && !ids.has(Number(resource.slice(6)))) throw new RequestValidationError("Requested board metadata is missing");
   }
   const createdAt = requiredString(value.createdAt, "createdAt", 40);
@@ -116,7 +124,7 @@ export function validateEnvelope(value, headers) {
 
   return {
     eventId,
-    eventType: EVENT_TYPE,
+    eventType: value.eventType,
     project: {
       id: positiveInteger(project.id, "project.id"),
       key,

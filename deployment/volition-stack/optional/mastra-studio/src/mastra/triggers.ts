@@ -7,12 +7,13 @@ export const eventTriggerRegistry = {
   'support.request.received': 'support',
   'system.audit.requested': 'system-audit',
   'document.received': 'document-filing',
+  'agent.team.requested': 'agent-team',
 } as const satisfies Record<string, WorkflowId>;
 
 export type TriggerEvent = keyof typeof eventTriggerRegistry;
 
 export function workflowForEvent(event: string): WorkflowId | null {
-  return event in eventTriggerRegistry
+  return Object.prototype.hasOwnProperty.call(eventTriggerRegistry, event)
     ? eventTriggerRegistry[event as TriggerEvent]
     : null;
 }

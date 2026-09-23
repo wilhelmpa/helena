@@ -20,6 +20,7 @@ import {
   listAiAgentFavoriteThreads,
   setAiAgentThreadFavorite,
   getAiAgentThreadMessages,
+  getAiAgentChatCatalog,
   renameAiAgentThread,
   deleteAiAgentThread,
 } from '@/lib/api/endpoints/agentChat';
@@ -38,6 +39,20 @@ import { qk } from '@/services/queryKeys';
 // this list: without it the online/offline state stays at whatever it was when the
 // settings page opened.
 const RUNNER_PRESENCE_REFRESH_MS = 30_000;
+
+// The runner is the source of truth for the models and reasoning levels an external
+// agent can use. Team scope makes the catalog available from the agent editor, where
+// no project is necessarily selected.
+export function useAgentChatCatalogQuery(teamId: number | null, agentId: number | null) {
+  const scopeKey = teamId == null ? null : `team:${teamId}`;
+  return useQuery({
+    queryKey: ['agent-chat-catalog', scopeKey ?? '', agentId ?? 0],
+    queryFn: () => getAiAgentChatCatalog(scopeKey!, agentId!),
+    enabled: scopeKey != null && agentId != null,
+    staleTime: 60_000,
+    refetchInterval: RUNNER_PRESENCE_REFRESH_MS,
+  });
+}
 
 // The team's agents, or only the ones working in one of its projects.
 export function useAiAgentsQuery(teamId: number | null, projectId?: number) {

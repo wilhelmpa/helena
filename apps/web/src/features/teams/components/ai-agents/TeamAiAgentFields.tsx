@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { SlidersHorizontal, Sparkles, Wrench } from 'lucide-react';
 import type { TeamProjectOption } from '@/lib/api/endpoints/teams';
 import type { AgentTool, AiAgent } from '@/lib/api/endpoints/agents';
+import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
 import type {
   IntegrationMeta,
   IntegrationOption,
@@ -49,6 +50,9 @@ export default function TeamAiAgentFields({
   catalog,
   models,
   modelsLoading,
+  chatModels,
+  chatModelsLoading,
+  chatModelsError,
   agent,
   skillsContent,
   skillsBadge,
@@ -70,6 +74,9 @@ export default function TeamAiAgentFields({
   catalog: IntegrationMeta[];
   models: ProviderModel[];
   modelsLoading: boolean;
+  chatModels: AiChatModel[];
+  chatModelsLoading: boolean;
+  chatModelsError: boolean;
   // The saved agent, for the state only the server knows (its runner's presence).
   // Null while creating.
   agent: AiAgent | null;
@@ -205,6 +212,9 @@ export default function TeamAiAgentFields({
       {...sectionProps('runtime-policy')}
       value={value}
       onChange={onChange}
+      models={chatModels}
+      modelsLoading={chatModelsLoading}
+      modelsError={chatModelsError}
     />
   );
 

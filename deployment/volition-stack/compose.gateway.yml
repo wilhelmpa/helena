@@ -1,7 +1,7 @@
 name: volition-stack
 services:
   gateway:
-    image: volition/gateway:2026-09-21-v7
+    image: volition/gateway:2026-09-22-v8-project-tools
     build: ./gateway
     network_mode: host
     restart: unless-stopped
@@ -13,7 +13,6 @@ services:
     cpus: 0.5
     volumes:
       - ./config/gateway.json:/config/gateway.json:ro
-      - ./.secrets/inbox_push_token:/run/secrets/inbox_push_token:ro
     logging:
       driver: json-file
       options: {max-size: 5m, max-file: '3'}

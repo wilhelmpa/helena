@@ -24,7 +24,7 @@ function accounts(value) {
 }
 
 const gogBin = process.env.GOG_BIN || "/home/pw/.local/bin/gog";
-const gogHome = process.env.GOG_HOME || "/home/pw/.local/share/openclaw-gog";
+const gogHome = process.env.GOG_HOME || "/home/pw/.local/share/volition-gog";
 const keyringPassword = await privateSecret(process.env.GOG_KEYRING_PASSWORD_FILE);
 const dryRun = process.env.WATCH_DRY_RUN === "1";
 

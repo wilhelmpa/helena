@@ -16,6 +16,7 @@ export interface RunnerConfig {
   url: string;
   apiKey: string;
   agent?: PresetName;
+  provider?: string;
   // Receives the prompt on stdin.
   command?: string;
   // Appended to what the preset builds. Ignored with `command`, which already spells out
@@ -34,6 +35,15 @@ export interface RunnerConfig {
   // it prints; the others read one CLI's own event stream, which also carries the tool
   // calls it makes and the session it started.
   outputFormat: OutputFormat;
+  models: ChatCatalogModel[];
+}
+
+export interface ChatCatalogModel {
+  id: string;
+  name: string;
+  reasoning: boolean;
+  thinkingLevels: string[];
+  thinkingDefault: string | null;
 }
 
 const OUTPUT_FORMATS = [
@@ -43,6 +53,7 @@ const OUTPUT_FORMATS = [
   'opencode-json',
   'antigravity-stream-json',
   'copilot-json',
+  'hermes-stream-json',
 ] as const;
 
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
@@ -100,6 +111,36 @@ function argsFrom(value: unknown): string[] {
     throw new Error('args must be an array of strings');
   }
   return value as string[];
+}
+
+function modelsFrom(value: unknown): ChatCatalogModel[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new Error('models must be an array');
+  return value.map((entry) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error('each model must be an object');
+    }
+    const model = entry as Record<string, unknown>;
+    const id = required(model.id, 'model id');
+    const levels = model.thinkingLevels;
+    if (!Array.isArray(levels) || levels.some((level) => typeof level !== 'string')) {
+      throw new Error('model thinkingLevels must be an array of strings');
+    }
+    const thinkingDefault = model.thinkingDefault;
+    if (thinkingDefault != null && typeof thinkingDefault !== 'string') {
+      throw new Error('model thinkingDefault must be a string or null');
+    }
+    if (thinkingDefault && !levels.includes(thinkingDefault)) {
+      throw new Error('model thinkingDefault must be one of thinkingLevels');
+    }
+    return {
+      id,
+      name: textOf(model.name) ?? id,
+      reasoning: model.reasoning === true,
+      thinkingLevels: levels as string[],
+      thinkingDefault: (thinkingDefault as string | null | undefined) ?? null,
+    };
+  });
 }
 
 function required(value: unknown, field: string): string {
@@ -195,13 +236,18 @@ function configFrom(fields: Fields, name: string, extraArgs: string[]): RunnerCo
       `set either agent (one of ${PRESET_NAMES.join(', ')}) or command in the config file or the environment`,
     );
   }
+  const args = [...argsFrom(fields.args), ...extraArgs];
+  if (agent === 'hermes' && args.includes('--ignore-rules')) {
+    throw new Error('Hermes cannot use --ignore-rules while Plan runtime policy sync is enabled');
+  }
   return {
     name,
     url: required(fields.url, 'url').replace(/\/+$/, ''),
     apiKey: required(fields.apiKey, 'apiKey'),
     agent,
+    provider: textOf(fields.provider),
     command,
-    args: [...argsFrom(fields.args), ...extraArgs],
+    args,
     cwd: textOf(fields.cwd)?.replace(/^~/, process.env.HOME ?? '~'),
     env: (fields.env as Record<string, string> | undefined) ?? {},
     concurrency: intFrom(fields.concurrency, DEFAULTS.concurrency),
@@ -211,6 +257,7 @@ function configFrom(fields: Fields, name: string, extraArgs: string[]): RunnerCo
     ),
     timeoutMs: intFrom(fields.timeoutMs, DEFAULTS.timeoutMs),
     outputFormat: outputFormatFrom(fields.outputFormat, presetOf({ agent, command })),
+    models: modelsFrom(fields.models),
   };
 }
 
@@ -223,6 +270,7 @@ function sharedFields(file: Fields, overrides: ConfigOverrides): Fields {
     url: env.ITSAPLAN_URL,
     apiKey: env.ITSAPLAN_API_KEY,
     agent: overrides.agent ?? env.ITSAPLAN_AGENT,
+    provider: env.ITSAPLAN_PROVIDER,
     command: env.ITSAPLAN_COMMAND,
     cwd: env.ITSAPLAN_CWD,
     concurrency: env.ITSAPLAN_CONCURRENCY,

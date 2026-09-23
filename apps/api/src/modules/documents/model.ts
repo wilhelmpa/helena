@@ -194,6 +194,30 @@ export const DocumentExportResponse = t.Object({
   exportedAt: t.String(),
 });
 
+export const DocumentMarkdownSyncResponse = t.Object({
+  state: t.Union([t.Literal('synced'), t.Literal('pending'), t.Literal('private_not_exported')]),
+  path: t.String(),
+  documentVersion: t.Number(),
+  etag: t.Nullable(t.String()),
+  attempts: t.Number(),
+  lastAttemptAt: t.String(),
+  lastSuccessAt: t.Nullable(t.String()),
+  errorCode: t.Nullable(t.String()),
+  lastError: t.Nullable(t.String()),
+  retryUrl: t.String(),
+});
+
+export const documentMarkdownBatchBody = t.Object({
+  limit: t.Optional(t.Integer({ minimum: 1, maximum: 50, default: 25 })),
+});
+
+export const DocumentMarkdownBatchResponse = t.Object({
+  selected: t.Number(),
+  synced: t.Number(),
+  pending: t.Number(),
+  privateSkipped: t.Number(),
+});
+
 export const uploadDocumentAssetBody = t.Object({ file: t.File() });
 
 export const DocumentAssetResponse = t.Object({

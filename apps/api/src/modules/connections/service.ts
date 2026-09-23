@@ -37,11 +37,18 @@ export interface MailAccountsDto {
 export interface ThemeSyncDto {
   theme: 'light' | 'dark';
   results: Array<{
-    service: 'openclaw' | 'code' | 'nextcloud';
+    service: 'agent_runtime' | 'code' | 'nextcloud';
     status: 'updated' | 'failed';
     attempts: number;
     error?: string;
   }>;
+}
+
+function bridgeConfigured() {
+  return Boolean(
+    process.env.CONNECTIONS_INTEGRATION_URL?.trim() &&
+    process.env.CONNECTIONS_INTEGRATION_TOKEN?.trim(),
+  );
 }
 
 function bridgeConfig() {
@@ -116,10 +123,16 @@ async function json<T>(
   return payload as T;
 }
 
-export const connectionsSnapshot = () => json<ConnectionsDto>('/api/connections');
+export const connectionsSnapshot = () =>
+  bridgeConfigured()
+    ? json<ConnectionsDto>('/api/connections')
+    : Promise.resolve({ checkedAt: new Date().toISOString(), items: [] });
 export const connectionsAction = (body: unknown) =>
   json<ConnectionsDto>('/api/connections/actions', body);
-export const mailAccounts = () => json<MailAccountsDto>('/api/mail/accounts', {});
+export const mailAccounts = () =>
+  bridgeConfigured()
+    ? json<MailAccountsDto>('/api/mail/accounts', {})
+    : Promise.resolve({ accounts: [] });
 export const mailSearch = (body: unknown) => json('/api/mail/search', body);
 export const mailThread = (body: unknown) => json('/api/mail/thread', body);
 export const mailLabels = (body: unknown) => json('/api/mail/labels', body);
@@ -158,7 +171,10 @@ export interface SecretInventoryDto {
   checkedAt: string;
   entries: Array<{ name: string; updatedAt: string | null; allowedHosts: string[] }>;
 }
-export const secretInventory = () => json<SecretInventoryDto>('/api/secrets');
+export const secretInventory = () =>
+  bridgeConfigured()
+    ? json<SecretInventoryDto>('/api/secrets')
+    : Promise.resolve({ checkedAt: new Date().toISOString(), entries: [] });
 export const secretSet = (body: unknown) => json<SecretInventoryDto>('/api/secrets', body);
 
 export type VaultAccessStatus = 'protected' | 'reachable' | 'unavailable' | 'unconfigured';

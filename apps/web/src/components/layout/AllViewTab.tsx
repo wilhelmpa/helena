@@ -29,7 +29,7 @@ export default function AllViewTab({
         ref={setNodeRef}
         type="button"
         onClick={onClick}
-        className="flex items-center gap-1.5 py-1 pr-2 pl-2"
+        className="flex h-full items-center gap-1.5 px-2"
       >
         <Layers className="size-3.5" />
         {t('all')}

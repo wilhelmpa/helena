@@ -42,7 +42,7 @@ describe("project files bridge", () => {
       <d:multistatus xmlns:d="DAV:">
         <d:response><d:href>/remote.php/dav/files/owner%40example.com/Projects/demo/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop></d:propstat></d:response>
         <d:response><d:href>/remote.php/dav/files/owner%40example.com/Projects/demo/Notes/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype><d:getlastmodified>Mon, 21 Sep 2026 10:00:00 GMT</d:getlastmodified></d:prop></d:propstat></d:response>
-        <d:response><d:href>/remote.php/dav/files/owner%40example.com/Projects/demo/readme.md</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>12</d:getcontentlength><d:getcontenttype>text/markdown</d:getcontenttype></d:prop></d:propstat></d:response>
+        <d:response><d:href>/remote.php/dav/files/owner%40example.com/Projects/demo/readme.md</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>12</d:getcontentlength><d:getcontenttype>text/markdown</d:getcontenttype><d:getetag>&quot;file-etag&quot;</d:getetag></d:prop></d:propstat></d:response>
       </d:multistatus>`;
     assert.deepEqual(
       parseDavListing(
@@ -57,6 +57,7 @@ describe("project files bridge", () => {
           sizeBytes: null,
           contentType: null,
           updatedAt: "2026-09-21T10:00:00.000Z",
+          etag: null,
           previewable: false,
         },
         {
@@ -66,6 +67,7 @@ describe("project files bridge", () => {
           sizeBytes: 12,
           contentType: "text/markdown",
           updatedAt: null,
+          etag: '"file-etag"',
           previewable: true,
         },
       ],
@@ -103,5 +105,203 @@ describe("project files bridge", () => {
     assert.equal(new URL(calls[0].url).origin, "http://127.0.0.1:8092");
     assert.equal(calls[0].init.headers["If-None-Match"], "*");
     assert.match(calls[0].init.headers.Authorization, /^Basic /);
+  });
+
+  it("upserts managed Markdown with idempotent folders and If-Match", async () => {
+    const calls = [];
+    const service = createProjectFilesService(config, {
+      fetch: async (url, init) => {
+        calls.push({ url: String(url), init });
+        if (init.method === "MKCOL") return new Response(null, { status: 405 });
+        if (init.method === "HEAD") {
+          return new Response(null, {
+            status: 200,
+            headers: { ETag: '"old-etag"' },
+          });
+        }
+        return new Response(null, {
+          status: 204,
+          headers: { ETag: '"new-etag"' },
+        });
+      },
+    });
+    assert.deepEqual(
+      await service.upsertText({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        content: "# Decision",
+      }),
+      {
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        created: false,
+        etag: '"new-etag"',
+      },
+    );
+    assert.deepEqual(
+      calls.slice(0, 3).map((call) => [call.init.method, new URL(call.url).pathname]),
+      [
+        ["MKCOL", "/remote.php/dav/files/owner%40example.com/Projects/demo"],
+        ["MKCOL", "/remote.php/dav/files/owner%40example.com/Projects/demo/Dokumente"],
+        ["MKCOL", "/remote.php/dav/files/owner%40example.com/Projects/demo/Dokumente/Plan"],
+      ],
+    );
+    assert.equal(calls[4].init.headers["If-Match"], '"old-etag"');
+  });
+
+  it("creates managed Markdown with If-None-Match when absence is expected", async () => {
+    const calls = [];
+    const service = createProjectFilesService(config, {
+      fetch: async (url, init) => {
+        calls.push({ url: String(url), init });
+        if (init.method === "MKCOL") return new Response(null, { status: 405 });
+        return new Response(null, {
+          status: 201,
+          headers: { ETag: '"created-etag"' },
+        });
+      },
+    });
+    assert.deepEqual(
+      await service.upsertText({
+        project: "demo",
+        path: "Dokumente/Plan/doc-2.md",
+        content: "# Public document",
+        expectedEtag: null,
+      }),
+      {
+        project: "demo",
+        path: "Dokumente/Plan/doc-2.md",
+        created: true,
+        etag: '"created-etag"',
+      },
+    );
+    assert.equal(calls.at(-1).init.headers["If-None-Match"], "*");
+    assert.equal(calls.some((call) => call.init.method === "HEAD"), false);
+  });
+
+  it("rejects managed mutations outside Dokumente/Plan", async () => {
+    const service = createProjectFilesService(config, {
+      fetch: async () => {
+        throw new Error("unexpected request");
+      },
+    });
+    await assert.rejects(
+      service.upsertText({
+        project: "demo",
+        path: "private/doc-1.md",
+        content: "private",
+      }),
+      /Dokumente\/Plan/,
+    );
+    await assert.rejects(
+      service.deleteText({ project: "demo", path: "Dokumente/Plan/file.txt" }),
+      /Dokumente\/Plan/,
+    );
+    await assert.rejects(
+      service.deleteText({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        expectedEtag: '"valid"\r\nX-Injected: true',
+      }),
+      /expected ETag is invalid/,
+    );
+  });
+
+  it("maps conditional write conflicts to a stable error code", async () => {
+    const service = createProjectFilesService(config, {
+      fetch: async (_url, init) =>
+        new Response(null, { status: init.method === "MKCOL" ? 405 : 412 }),
+    });
+    await assert.rejects(
+      service.upsertText({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        content: "changed",
+        expectedEtag: '"old-etag"',
+      }),
+      (error) => error.status === 409 && error.code === "etag_conflict",
+    );
+  });
+
+  it("deletes managed Markdown idempotently with If-Match", async () => {
+    const calls = [];
+    const service = createProjectFilesService(config, {
+      fetch: async (url, init) => {
+        calls.push({ url: String(url), init });
+        if (init.method === "HEAD") {
+          return new Response(null, {
+            status: 200,
+            headers: { ETag: '"delete-etag"' },
+          });
+        }
+        return new Response(null, { status: 204 });
+      },
+    });
+    assert.deepEqual(
+      await service.deleteText({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+      }),
+      {
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        deleted: true,
+      },
+    );
+    assert.equal(calls[1].init.headers["If-Match"], '"delete-etag"');
+
+    const missingCalls = [];
+    const missing = createProjectFilesService(config, {
+      fetch: async (_url, init) => {
+        missingCalls.push(init);
+        return new Response(null, { status: 404 });
+      },
+    });
+    assert.deepEqual(
+      await missing.deleteText({
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        expectedEtag: '"already-gone"',
+      }),
+      {
+        project: "demo",
+        path: "Dokumente/Plan/doc-1.md",
+        deleted: false,
+      },
+    );
+    assert.equal(missingCalls[0].method, "DELETE");
+  });
+
+  it("moves managed Markdown without overwriting the destination", async () => {
+    const calls = [];
+    const service = createProjectFilesService(config, {
+      fetch: async (url, init) => {
+        calls.push({ url: String(url), init });
+        if (init.method === "MKCOL") return new Response(null, { status: 405 });
+        return new Response(null, { status: 201 });
+      },
+    });
+    assert.deepEqual(
+      await service.moveText({
+        project: "demo",
+        fromPath: "Dokumente/Plan/doc-1.md",
+        toPath: "Dokumente/Plan/archive/doc-1.md",
+        expectedEtag: '"move-etag"',
+      }),
+      {
+        project: "demo",
+        fromPath: "Dokumente/Plan/doc-1.md",
+        toPath: "Dokumente/Plan/archive/doc-1.md",
+        moved: true,
+      },
+    );
+    const move = calls.at(-1);
+    assert.equal(move.init.method, "MOVE");
+    assert.equal(move.init.headers["If-Match"], '"move-etag"');
+    assert.equal(move.init.headers.Overwrite, "F");
+    assert.equal(
+      move.init.headers.Destination,
+      "https://cloud.example.com/remote.php/dav/files/owner%40example.com/Projects/demo/Dokumente/Plan/archive/doc-1.md",
+    );
   });
 });

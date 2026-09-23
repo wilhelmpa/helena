@@ -1,0 +1,27 @@
+[Unit]
+Description=Provision the global Plan Home agent and Hermes runner
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/home/pw/services/itsaplan/deployment/volition-stack/integration/scripts/volition-hermes-bootstrap
+ConditionPathExists=/home/pw/services/hermes-agent/venv/bin/hermes
+
+[Service]
+Type=oneshot
+ExecStart=/home/pw/services/itsaplan/deployment/volition-stack/integration/scripts/volition-hermes-bootstrap
+UMask=0077
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=-/home/pw/services/itsaplan/packages/runner/dist -/home/pw/services/volition-stack -/home/pw/services/volition-workspaces -/home/pw/.config/systemd/user
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native

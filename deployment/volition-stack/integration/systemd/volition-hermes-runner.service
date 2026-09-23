@@ -1,0 +1,43 @@
+[Unit]
+Description=Run the Volition Home agent with Hermes
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/home/pw/services/itsaplan/packages/runner/dist/cli.js
+ConditionPathExists=/home/pw/services/volition-stack/integration/hermes-runner/itsaplan-runner.json
+ConditionPathExists=/home/pw/services/volition-stack/integration/scripts/volition-hermes-catalog.py
+ConditionPathExists=/home/pw/services/volition-stack/.secrets/itsaplan_home_master_agent_api_key
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pw/services/volition-workspaces
+Environment=HERMES_HOME=/home/pw/services/volition-stack/data/hermes
+Environment=HERMES_PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
+Environment=ITSAPLAN_RUNNER_TEMPLATE=/home/pw/services/volition-stack/integration/hermes-runner/itsaplan-runner.json
+Environment=ITSAPLAN_RUNNER_CONFIG=/home/pw/services/volition-stack/data/hermes/run/itsaplan-runner.json
+LoadCredential=itsaplan_api_key:/home/pw/services/volition-stack/.secrets/itsaplan_home_master_agent_api_key
+ExecStart=/home/pw/services/volition-stack/integration/scripts/volition-hermes-runner
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=30s
+KillMode=mixed
+UMask=0077
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pw/services/volition-stack/data/hermes /home/pw/services/volition-workspaces
+ReadOnlyPaths=/home/pw/services/volition-stack/data/hermes/config.yaml /home/pw/services/volition-stack/data/hermes/.env /home/pw/services/volition-stack/data/hermes/shared /var/lib/volition/project-browser/projects
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=default.target

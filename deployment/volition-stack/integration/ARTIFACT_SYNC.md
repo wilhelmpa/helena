@@ -22,7 +22,7 @@ Set these values in the private service environment:
 
 ```dotenv
 ARTIFACT_SYNC_ENABLED=true
-ARTIFACT_SYNC_STATE_PATH=/home/pw/.openclaw/volition/artifact-sync.json
+ARTIFACT_SYNC_STATE_PATH=/home/pw/services/volition-workspaces/.state/integration/artifact-sync.json
 PLAN_INTERNAL_URL=http://127.0.0.1:3000
 PLAN_PUBLIC_URL=https://plan.volition.one
 FILES_PUBLIC_URL=https://cloud.volition.one/apps/files/files

@@ -165,6 +165,39 @@ export const projectProvisioningJob = pgTable(
   ],
 );
 
+// Durable cleanup request created in the same transaction that deletes a project.
+// It keeps the project identity after the project row and its provisioning job have
+// cascaded away, but contains no credentials or global runtime paths.
+export const projectDeprovisioningJob = pgTable(
+  'project_deprovisioning_job',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: integer('project_id').notNull(),
+    project: jsonb('project')
+      .$type<{ id: number; teamId: number; key: string; name: string; description: string }>()
+      .notNull(),
+    requestedResources: jsonb('requested_resources').$type<string[]>().notNull().default([]),
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+    lastError: text('last_error'),
+    result: jsonb('result'),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('project_deprovisioning_job_project_unique').on(t.projectId),
+    check(
+      'project_deprovisioning_job_status_check',
+      sql`${t.status} IN ('pending', 'succeeded', 'failed')`,
+    ),
+    index('project_deprovisioning_job_due_idx')
+      .on(t.nextAttemptAt)
+      .where(sql`${t.status} = 'pending'`),
+  ],
+);
+
 // Per-project key-value settings, mirroring app_setting but scoped to a project.
 // The value is a jsonb blob owned by whatever feature reads the key, so one table
 // backs many project settings (e.g. auto-archive thresholds under key
@@ -180,6 +213,22 @@ export const projectSetting = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.key] })],
+);
+
+// The mail identity assigned to a project. This stores only provider metadata;
+// authentication remains in the external connections runtime.
+export const projectMailAccount = pgTable(
+  'project_mail_account',
+  {
+    projectId: integer('project_id')
+      .primaryKey()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull().default('gmail'),
+    account: text('account').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check('project_mail_account_provider_check', sql`${t.provider} IN ('gmail')`)],
 );
 
 // A user's own interface preferences, held per account rather than per project so
@@ -526,7 +575,7 @@ export const aiAgent = pgTable(
     // API before they reach this JSON document.
     runtimePolicy: jsonb('runtime_policy').notNull().default({}),
     // Latest non-secret adapter report. This is operational state, not a second
-    // configuration store: OpenClaw and future Hermes runners use the same shape.
+    // configuration store: external runners such as Hermes use the same shape.
     runtimeState: jsonb('runtime_state').notNull().default({}),
     // The member who created the agent. An external agent's runner authenticates
     // with the agent's key, so `owner` scope means the runner only receives runs
@@ -668,7 +717,7 @@ export const agentChatThread = pgTable(
     // Set once the runner reports the session it started; null means the next message
     // starts a fresh one and is sent with the conversation framed into its prompt.
     cliSessionId: text('cli_session_id'),
-    // Requested OpenClaw session settings. Null means the mapped agent's current
+    // Requested external-runner session settings. Null means the mapped agent's current
     // default, so a later model-default change is inherited without rewriting chats.
     model: text('model'),
     thinkingLevel: text('thinking_level'),
@@ -679,7 +728,7 @@ export const agentChatThread = pgTable(
 );
 
 // The non-secret model catalog an external runner publishes for one agent. The
-// OpenClaw gateway stays authoritative and Plan only stores the choices the chat may
+// The external runner stays authoritative and Plan only stores the choices the chat may
 // present. A runner refreshes this row periodically and after startup.
 export const agentChatCatalog = pgTable('agent_chat_catalog', {
   agentId: integer('agent_id')
@@ -2364,7 +2413,7 @@ export const hubInboxEvent = pgTable(
 );
 
 // One unified inbox row per provider thread. Triage is asynchronous because the
-// OpenClaw hook may return a run id before classification completes. A project and
+// The classifier hook may return a run id before classification completes. A project and
 // issue link always reference validated local rows.
 export const hubInboxThread = pgTable(
   'hub_inbox_thread',

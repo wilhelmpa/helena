@@ -90,6 +90,71 @@ test('schedule listing filters by the stored project context', async () => {
   assert.deepEqual(result.schedules.map((item) => item.id), ['one']);
 });
 
+test('schedule creation is idempotent within one project and schedule key', async () => {
+  const calls = [];
+  const control = service(async (url, init = {}) => {
+    calls.push({ url: String(url), init });
+    if (String(url).endsWith('schedules?workflowId=agent-team')) {
+      return json({
+        schedules: [{
+          id: 'existing',
+          requestContext: { projectRef: 'project:PRIV' },
+          metadata: { scheduleKey: 'daily-review' },
+        }],
+      });
+    }
+    throw new Error('unexpected mutation');
+  });
+  const result = await control.execute({
+    schemaVersion: 1,
+    operation: 'create-schedule',
+    workflowId: 'agent-team',
+    projectRef: 'project:PRIV',
+    organizationRef: 'organization:1',
+    capabilityRefs: ['hermes-team.v1'],
+    connectionRefs: [],
+    scheduleKey: 'daily-review',
+    cron: '0 9 * * *',
+    timezone: 'Europe/Berlin',
+    payload: {},
+  });
+  assert.equal(result.id, 'existing');
+  assert.equal(result.replayed, true);
+  assert.equal(calls.length, 1);
+});
+
+test('concurrent schedule creation shares one Mastra mutation', async () => {
+  let mutations = 0;
+  const control = service(async (url, init = {}) => {
+    if (String(url).endsWith('schedules?workflowId=system-audit')) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+      return json({ schedules: [] });
+    }
+    if (String(url).endsWith('/schedules') && init.method === 'POST') {
+      mutations += 1;
+      return json({ id: 'new-schedule' });
+    }
+    throw new Error('unexpected request');
+  });
+  const request = {
+    schemaVersion: 1,
+    operation: 'create-schedule',
+    workflowId: 'system-audit',
+    projectRef: 'project:PRIV',
+    organizationRef: 'organization:1',
+    capabilityRefs: [],
+    connectionRefs: [],
+    scheduleKey: 'daily',
+    cron: '0 7 * * *',
+    timezone: 'Europe/Berlin',
+    payload: {},
+  };
+  const [first, second] = await Promise.all([control.execute(request), control.execute(request)]);
+  assert.equal(first.id, 'new-schedule');
+  assert.deepEqual(second, first);
+  assert.equal(mutations, 1);
+});
+
 test('run listing exposes the status stored in Mastra snapshots', async () => {
   const control = service(async () => json({ runs: [{ runId: 'run-1', snapshot: { status: 'success' } }], total: 1 }));
   const result = await control.execute({

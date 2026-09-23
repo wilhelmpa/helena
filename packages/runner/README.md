@@ -7,7 +7,8 @@ This package runs such agents on your own machine — one, or several at once.
 
 - Polls your instance for the agent's queued runs. Runs each one with a coding agent CLI.
   Reports the result.
-- Has presets for Claude Code, Codex, opencode, Antigravity CLI and GitHub Copilot CLI.
+- Has presets for Claude Code, Codex, opencode, Antigravity CLI, GitHub Copilot CLI and
+  Hermes Agent.
   Each preset sets the unattended flags and the session resume.
 - Runs your own `command` instead, if you prefer. The command takes the task on stdin.
 - Answers the agent's chat. Sends the text and the tool calls while the CLI prints them.
@@ -21,7 +22,7 @@ of kind External. The key appears one time only, at creation.
 agent reads the issue and writes its result through it.
 
 **3. Give the coding agent the address of that server.** Claude Code reads `.mcp.json`
-from the folder it runs in. For the other four CLIs, see
+from the folder it runs in. For the other CLIs, see
 [Coding agent setup](https://github.com/croffasia/itsaplan/blob/main/docs/runner.md).
 
 ```json
@@ -70,6 +71,7 @@ flags for an unattended run, and the session resume. Every preset keeps a chat s
 | `opencode`    | opencode           |
 | `antigravity` | Antigravity CLI    |
 | `copilot`     | GitHub Copilot CLI |
+| `hermes`      | Hermes Agent       |
 
 Each preset needs the CLI's own MCP config.
 [Coding agent setup](https://github.com/croffasia/itsaplan/blob/main/docs/runner.md) holds
@@ -158,21 +160,23 @@ npx -y @itsaplan/runner /path/to/config.json
 The environment variables have priority over the file. The command-line options have
 priority over both. An `agents` entry has priority over all three, for the fields it sets.
 
-| Field            | Environment variable        | Default            | What it does                                                       |
-| ---------------- | --------------------------- | ------------------ | ------------------------------------------------------------------ |
-| `url`            | `ITSAPLAN_URL`              | required           | Your Itsaplan instance                                             |
-| `apiKey`         | `ITSAPLAN_API_KEY`          | required           | The external agent's key. Replaced by `apiKeys` or `agents`        |
-| `apiKeys`        |                             | —                  | Several keys, all with these settings. Not with `agents`           |
+| Field            | Environment variable        | Default            | What it does                                                           |
+| ---------------- | --------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| `url`            | `ITSAPLAN_URL`              | required           | Your Itsaplan instance                                                 |
+| `apiKey`         | `ITSAPLAN_API_KEY`          | required           | The external agent's key. Replaced by `apiKeys` or `agents`            |
+| `apiKeys`        |                             | —                  | Several keys, all with these settings. Not with `agents`               |
 | `agents`         |                             | —                  | Several agents, each with its own key and settings. Not with `apiKeys` |
-| `agent`          | `ITSAPLAN_AGENT`            | —                  | The coding agent to run                                            |
-| `args`           |                             | `[]`               | Arguments added after the preset's                                 |
-| `command`        | `ITSAPLAN_COMMAND`          | —                  | Your own command, instead of `agent`                               |
-| `cwd`            | `ITSAPLAN_CWD`              | where you start it | Working directory for the command                                  |
-| `env`            |                             | `{}`               | Extra variables for the command                                    |
-| `concurrency`    | `ITSAPLAN_CONCURRENCY`      | `1`                | Tasks at once, per agent. Queued runs and chat answers count apart |
-| `pollIntervalMs` | `ITSAPLAN_POLL_INTERVAL_MS` | `3000`             | Wait after an empty queue. Minimum 1000                            |
-| `timeoutMs`      | `ITSAPLAN_TIMEOUT_MS`       | `1800000`          | Time before the runner stops a task                                |
-| `outputFormat`   | `ITSAPLAN_OUTPUT_FORMAT`    | the preset's       | How the runner reads a chat answer                                 |
+| `agent`          | `ITSAPLAN_AGENT`            | —                  | The coding agent to run                                                |
+| `provider`       | `ITSAPLAN_PROVIDER`         | —                  | Inference provider passed to a preset that supports one                |
+| `args`           |                             | `[]`               | Arguments added after the preset's                                     |
+| `command`        | `ITSAPLAN_COMMAND`          | —                  | Your own command, instead of `agent`                                   |
+| `cwd`            | `ITSAPLAN_CWD`              | where you start it | Working directory for the command                                      |
+| `env`            |                             | `{}`               | Extra variables for the command                                        |
+| `concurrency`    | `ITSAPLAN_CONCURRENCY`      | `1`                | Tasks at once, per agent. Queued runs and chat answers count apart     |
+| `pollIntervalMs` | `ITSAPLAN_POLL_INTERVAL_MS` | `3000`             | Wait after an empty queue. Minimum 1000                                |
+| `timeoutMs`      | `ITSAPLAN_TIMEOUT_MS`       | `1800000`          | Time before the runner stops a task                                    |
+| `outputFormat`   | `ITSAPLAN_OUTPUT_FORMAT`    | the preset's       | How the runner reads a chat answer                                     |
+| `models`         |                             | `[]`               | Models and reasoning levels available in the chat selector             |
 
 Set `agent` or `command`. With the environment you need no file at all:
 
@@ -180,6 +184,20 @@ Set `agent` or `command`. With the environment you need no file at all:
 export ITSAPLAN_API_KEY=…
 npx -y @itsaplan/runner --agent claude
 ```
+
+## Hermes runtime policy
+
+For the `hermes` preset, configure a dedicated absolute `cwd` and expose an absolute
+`HERMES_HOME` through `env` or the runner process environment. Before starting work and while
+waiting for new work, the runner fetches the agent's revisioned policy from Plan. It materializes
+`AGENTS.md` and nested instructions under `cwd`, `SOUL.md` under `HERMES_HOME`, memory under
+`HERMES_HOME/memories`, and linked skills under `HERMES_HOME/skills/plan-managed`.
+
+The runner records only paths and content hashes in a private manifest. It updates or removes only
+files that still match that manifest. A byte-identical existing file can be adopted; a differing
+unmanaged file, path traversal, or symlink makes the sync fail closed. Content and provider secrets
+are not included in runtime status. Do not pass `--ignore-rules`: the runner rejects it because it
+would stop Hermes from loading the Plan-managed policy.
 
 ## What the coding agent receives
 
@@ -235,7 +253,7 @@ calls with the answer. `outputFormat` tells the runner how to read the output:
 
 - `text` — all the output is the answer.
 - `claude-stream-json`, `codex-jsonl`, `opencode-json`, `antigravity-stream-json`,
-  `copilot-json` — the event stream of that CLI.
+  `copilot-json`, `hermes-stream-json` — the event stream of that CLI.
 
 A preset sets `outputFormat` for you. Set it yourself only with your own `command`. If the
 output does not agree with the format, the runner sends the output as plain text.
@@ -245,7 +263,7 @@ output does not agree with the format, the runner sends the output as plain text
 Each conversation resumes one session of the coding agent, which keeps its full context.
 Without a session the server sends the last 20 messages of the conversation as plain text.
 
-- The chat header shows the session id. Run `claude --resume <id>` in the runner's working
+- The chat header shows the session id. Use the CLI's resume option in the runner's working
   directory to open the same session in your terminal.
 - Your own `command` keeps no session. Each chat message then includes the conversation.
 - A session stays on the machine that started it. If you delete its files or move the

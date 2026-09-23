@@ -3,12 +3,16 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { CallToolResultSchema, type CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { auth } from '@repo/auth';
-import { app, authedApi } from '#tests/helpers/app';
+import { and, eq } from 'drizzle-orm';
+import { db, teamMember } from '@repo/db';
+import { app, apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
+import { createAgent } from '#tests/helpers/agents';
 import { buildMcpServer } from '../../server';
 
 const clients: Client[] = [];
+let externalAgentSequence = 0;
 
 async function callTool(client: Client, params: CallToolRequest['params']) {
   return CallToolResultSchema.parse(await client.callTool(params));
@@ -16,6 +20,10 @@ async function callTool(client: Client, params: CallToolRequest['params']) {
 
 async function connect(userId: string) {
   const { key } = await auth.api.createApiKey({ body: { userId, name: 'structured-results' } });
+  return connectKey(userId, key);
+}
+
+async function connectKey(userId: string, key: string) {
   const server = await buildMcpServer(app, { kind: 'api-key', apiKey: key }, userId);
   const client = new Client({ name: 'structured-results-test', version: '1.0.0' });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -23,6 +31,38 @@ async function connect(userId: string) {
   await client.connect(clientTransport);
   clients.push(client);
   return client;
+}
+
+async function externalAgentClient(grants: string[]): Promise<{
+  owner: Awaited<ReturnType<typeof signUpTestUser>>;
+  ownerApi: ReturnType<typeof authedApi>;
+  agent: { teamId: number; userId: string; apiKey: string };
+  client: Client;
+}> {
+  const owner = await signUpTestUser();
+  const ownerApi = authedApi(owner.cookie);
+  const seedKey = `SEED${++externalAgentSequence}`;
+  await ownerApi.projects.post({ key: seedKey, name: 'Seed' });
+  const created = await createAgent(ownerApi, seedKey, {
+    name: 'External creator',
+    username: 'external-creator',
+    kind: 'external',
+    runtimePolicy: {
+      reasoningEffort: null,
+      toolAllow: [],
+      toolDeny: [],
+      mcpGrants: grants,
+      files: [],
+    },
+  });
+  const result = created.data!;
+  const apiKey = result.apiKey!;
+  return {
+    owner,
+    ownerApi,
+    agent: { teamId: result.agent.teamId, userId: result.agent.userId, apiKey },
+    client: await connectKey(result.agent.userId, apiKey),
+  };
 }
 
 describe('MCP structured results through the SDK client', () => {
@@ -134,5 +174,88 @@ describe('MCP structured results through the SDK client', () => {
       status: 404,
       error: { code: 'HTTP_404', retryable: false },
     });
+  });
+
+  it('lets an explicitly granted external MCP agent create for its team owner', async () => {
+    const { owner, ownerApi, agent, client } = await externalAgentClient(['itsaplan']);
+    const created = await callTool(client, {
+      name: 'create_project',
+      arguments: { key: 'MCP', name: 'Created by MCP' },
+    });
+
+    expect(created.isError).toBe(false);
+    expect(created.structuredContent).toMatchObject({
+      ok: true,
+      status: 201,
+      data: { key: 'MCP', teamId: agent.teamId },
+    });
+    const members = await ownerApi.projects({ projectKey: 'MCP' }).members.get();
+    expect(members.data?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ userId: owner.userId, role: 'owner' }),
+        expect.objectContaining({ userId: agent.userId, role: 'member', isAgent: true }),
+      ]),
+    );
+  });
+
+  it('accepts the exact create_project grant and rejects an external agent with no grant', async () => {
+    const exact = await externalAgentClient(['create_project']);
+    const allowed = await callTool(exact.client, {
+      name: 'create_project',
+      arguments: { key: 'EXACT', name: 'Exact grant' },
+    });
+    expect(allowed.structuredContent).toMatchObject({ ok: true, status: 201 });
+
+    const denied = await externalAgentClient([]);
+    const rejected = await callTool(denied.client, {
+      name: 'create_project',
+      arguments: { key: 'DENIED', name: 'No grant' },
+    });
+    expect(rejected).toMatchObject({
+      isError: true,
+      structuredContent: { ok: false, status: 403 },
+    });
+    expect((await denied.ownerApi.projects.get()).data).toHaveLength(1);
+  });
+
+  it('rejects an external MCP agent whose recorded owner no longer owns its team', async () => {
+    const { owner, agent, client } = await externalAgentClient(['itsaplan']);
+    await db
+      .update(teamMember)
+      .set({ role: 'member' })
+      .where(and(eq(teamMember.teamId, agent.teamId), eq(teamMember.userId, owner.userId)));
+
+    const rejected = await callTool(client, {
+      name: 'create_project',
+      arguments: { key: 'STALE', name: 'Stale owner' },
+    });
+    expect(rejected).toMatchObject({
+      isError: true,
+      structuredContent: { ok: false, status: 403 },
+    });
+  });
+
+  it('rejects external MCP project creation when the team closes its MCP surface', async () => {
+    const { ownerApi, agent, client } = await externalAgentClient(['itsaplan']);
+    await ownerApi.teams({ teamId: agent.teamId }).mcp.patch({ enabled: false });
+
+    const rejected = await callTool(client, {
+      name: 'create_project',
+      arguments: { key: 'CLOSED', name: 'Closed team' },
+    });
+    expect(rejected).toMatchObject({
+      isError: true,
+      structuredContent: { ok: false, status: 403 },
+    });
+  });
+
+  it('does not extend the external agent exception to normal HTTP', async () => {
+    const { agent, ownerApi } = await externalAgentClient(['itsaplan']);
+    const response = await apiKeyApi(agent.apiKey).projects.post({
+      key: 'HTTP',
+      name: 'Normal HTTP remains unchanged',
+    });
+    expect(response.status).toBe(400);
+    expect((await ownerApi.projects.get()).data).toHaveLength(1);
   });
 });

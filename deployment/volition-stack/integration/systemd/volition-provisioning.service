@@ -1,27 +1,29 @@
 [Unit]
-Description=Volition project provisioning service
-After=network.target
+Description=Volition project workspace provisioning service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/pw/services/volition-stack/integration
-EnvironmentFile=/home/pw/.openclaw/volition/provisioning.env
-EnvironmentFile=/home/pw/.openclaw/credentials/itsaplan-mcp.env
+WorkingDirectory=/home/pw/services/itsaplan/deployment/volition-stack/integration
 Environment=HOME=/home/pw
-Environment=PATH=/home/pw/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
-LoadCredential=nextcloud_app_password:/home/pw/services/volition-stack/.secrets/nextcloud_patrick_app_password
-LoadCredential=connections_integration_token:/home/pw/.openclaw/volition/connections-integration-token
-LoadCredential=inbox_integration_token:/home/pw/.openclaw/volition/inbox-integration-token
-LoadCredential=inbox_push_token:/home/pw/services/volition-stack/.secrets/inbox_push_token
-LoadCredential=gog_keyring_password:/home/pw/.local/share/openclaw-gog/keyring.pass
-LoadCredential=openclaw_gateway_password:/home/pw/.openclaw/credentials/gateway-auth-password
-Environment=NEXTCLOUD_APP_PASSWORD_FILE=%d/nextcloud_app_password
-Environment=CONNECTIONS_INTEGRATION_TOKEN_FILE=%d/connections_integration_token
-Environment=INBOX_INTEGRATION_TOKEN_FILE=%d/inbox_integration_token
-Environment=INBOX_PUSH_TOKEN_FILE=%d/inbox_push_token
-Environment=GOG_KEYRING_PASSWORD_FILE=%d/gog_keyring_password
-Environment=OPENCLAW_GATEWAY_PASSWORD_FILE=%d/openclaw_gateway_password
-ExecStart=/usr/bin/node /home/pw/services/volition-stack/integration/server.mjs
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=PROVISIONING_HOST=172.30.254.1
+Environment=PROVISIONING_PORT=18800
+Environment=PROJECTS_ROOT=/home/pw/services/volition-workspaces/projects
+Environment=PROVISIONING_STATE_ROOT=/home/pw/services/volition-workspaces/.state
+Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
+Environment=PROJECT_BROWSER_PUBLIC_URL=https://plan.volition.one/browser/
+Environment=CODE_PUBLIC_URL=https://plan.volition.one/workspace/code/
+Environment=TERMINAL_PUBLIC_URL=https://plan.volition.one/focus/terminal-project/
+Environment=INBOX_BASELINES={}
+LoadCredential=provisioning_token:/home/pw/services/volition-stack/.secrets/project_provisioning_token
+LoadCredential=plan_api_key:/home/pw/services/volition-stack/.secrets/itsaplan_home_master_agent_api_key
+LoadCredential=plan_control_token:/home/pw/services/volition-stack/.secrets/plan_mastra_control_token
+Environment=PROVISIONING_TOKEN_FILE=%d/provisioning_token
+Environment=ITSAPLAN_MCP_BEARER_FILE=%d/plan_api_key
+Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
+ExecStart=/usr/bin/node /home/pw/services/itsaplan/deployment/volition-stack/integration/server.mjs
 Restart=on-failure
 RestartSec=5
 UMask=0077
@@ -34,10 +36,7 @@ ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/pw/.openclaw /home/pw/.cache/openclaw /home/pw/.cache/openclaw-1000 /home/pw/services/volition-workspaces/projects
-ReadWritePaths=/home/pw/.local/share/openclaw-gog/config/config.lock /home/pw/.local/share/openclaw-gog/data/keyring/.lock
-ReadOnlyPaths=/home/pw/Projekte/Shopify/v1-cart-suite
-ReadWritePaths=/home/pw/Projekte/Shopify/v1-cart-suite/boards
+ReadWritePaths=/home/pw/services/volition-workspaces /var/lib/volition/project-browser/projects /home/pw/services/volition-stack/data/hermes /home/pw/Projekte/Shopify/v1-cart-suite
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictNamespaces=true
 RestrictRealtime=true

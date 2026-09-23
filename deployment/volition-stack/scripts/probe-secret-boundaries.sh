@@ -37,23 +37,15 @@ assert not mastra['NetworkSettings']['Ports']
 names = {item.split('=', 1)[0].upper() for item in mastra['Config']['Env'] if '=' in item}
 for fragment in ('GMAIL', 'MAIL_PASSWORD', 'GIT_TOKEN', 'GITHUB_TOKEN', 'BROWSER_TOKEN', 'BROWSER_SECRET'):
     assert all(fragment not in name for name in names)
-assert all(mount['Destination'] != '/home/pw/.openclaw' for mount in mastra['Mounts'])
+assert all(mount['Destination'] != '/home/pw/services/volition-stack/data/hermes' for mount in mastra['Mounts'])
 print('runtime-boundaries: ok')
 PY
 
-audit_file=$(mktemp)
-trap 'rm -f "$audit_file"' EXIT
-openclaw secrets audit --json >"$audit_file"
-python3 - "$audit_file" <<'PY'
-import json
-import sys
-
-audit = json.load(open(sys.argv[1], encoding='utf-8'))
-summary = audit['summary']
-for key in ('plaintextCount', 'unresolvedRefCount', 'shadowedRefCount', 'storeResidueCount'):
-    assert summary[key] == 0, f'{key}={summary[key]}'
-print(f"openclaw-secretrefs: ok (legacyResidueCount={summary['legacyResidueCount']})")
-PY
+if ! command -v hermes >/dev/null 2>&1; then
+  echo "Hermes executable is unavailable" >&2
+  exit 1
+fi
+echo "hermes-runtime: present"
 
 python3 "$stack/backup/tests/restore-vault.py" \
   "$backup/vaultwarden-volumes.tar" \

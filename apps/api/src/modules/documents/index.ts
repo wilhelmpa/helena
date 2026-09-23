@@ -25,6 +25,8 @@ import {
   documentParams,
   documentRevisionParams,
   DocumentExportResponse,
+  DocumentMarkdownBatchResponse,
+  DocumentMarkdownSyncResponse,
   DocumentAssetListResponse,
   DocumentAssetResponse,
   DocumentPreferenceResponse,
@@ -37,6 +39,7 @@ import {
   DocumentRevisionResponse,
   DocumentSummaryListResponse,
   documentVersionBody,
+  documentMarkdownBatchBody,
   documentIssueParams,
   duplicateDocumentBody,
   issueDocumentsParams,
@@ -72,6 +75,7 @@ import {
   transferDocumentOwnership,
   updateDocument,
   type DocumentAssetRow,
+  type DocumentRow,
 } from './service';
 import {
   addDocumentInitiativeLink,
@@ -82,6 +86,13 @@ import {
   removeDocumentInitiativeLink,
   removeDocumentIssueLink,
 } from './links';
+import {
+  getDocumentMarkdownSyncStatus,
+  removeDocumentMarkdown,
+  syncDocumentMarkdown,
+  syncDocumentMarkdownSubtree,
+  syncPublicDocumentMarkdownBatch,
+} from './markdown-sync';
 
 function documentAssetDto(projectKey: string, documentId: number, asset: DocumentAssetRow) {
   return {
@@ -97,6 +108,34 @@ function documentAssetDto(projectKey: string, documentId: number, asset: Documen
 
 async function isProjectOwner(projectId: number, userId: string): Promise<boolean> {
   return (await getMembership(projectId, userId)) === 'owner';
+}
+
+async function withMarkdownSync(
+  project: { id: number; key: string },
+  document: DocumentRow,
+): Promise<DocumentRow> {
+  const markdownSync = await syncDocumentMarkdown({
+    projectId: project.id,
+    projectKey: project.key,
+    documentId: document.id,
+  });
+  return markdownSync
+    ? { ...document, metadata: { ...document.metadata, markdownSync } }
+    : document;
+}
+
+async function withMarkdownSubtreeSync(
+  project: { id: number; key: string },
+  document: DocumentRow,
+): Promise<DocumentRow> {
+  const markdownSync = await syncDocumentMarkdownSubtree({
+    projectId: project.id,
+    projectKey: project.key,
+    rootDocumentId: document.id,
+  });
+  return markdownSync
+    ? { ...document, metadata: { ...document.metadata, markdownSync } }
+    : document;
 }
 
 export const documentRoutes = new Elysia({
@@ -179,6 +218,11 @@ export const documentRoutes = new Elysia({
         issueId: body.issueId,
         userId: current.id,
       });
+      await syncDocumentMarkdown({
+        projectId: project.id,
+        projectKey: project.key,
+        documentId: params.documentId,
+      });
       set.status = 201;
       return link;
     },
@@ -207,6 +251,11 @@ export const documentRoutes = new Elysia({
         userId: current.id,
       });
       if (!removed) throw new HttpError(404, 'Document link not found');
+      await syncDocumentMarkdown({
+        projectId: project.id,
+        projectKey: project.key,
+        documentId: params.documentId,
+      });
       return noContent();
     },
     {
@@ -495,11 +544,81 @@ export const documentRoutes = new Elysia({
       },
     },
   )
+  .get(
+    '/projects/:projectKey/documents/:documentId/markdown-sync',
+    async ({ project, params, user }) => {
+      const document = await getDocument(project.id, params.documentId, requireUser(user).id);
+      if (!document) throw new HttpError(404, 'Document not found');
+      const status = await getDocumentMarkdownSyncStatus({
+        projectId: project.id,
+        projectKey: project.key,
+        documentId: document.id,
+      });
+      if (!status) throw new HttpError(404, 'Document not found');
+      return status;
+    },
+    {
+      permission: ['documents', 'read'],
+      params: documentParams,
+      response: { 200: DocumentMarkdownSyncResponse, ...commonErrors },
+      detail: {
+        summary: 'Inspect the portable Markdown mirror',
+        description:
+          'Compare the latest public page with its project file and perform at most three lazy retry attempts. Private pages are never exported.',
+        ...mcpTool('get_document_markdown_sync'),
+      },
+    },
+  )
+  .post(
+    '/projects/:projectKey/documents/:documentId/markdown-sync',
+    async ({ project, params, user }) => {
+      const document = await getDocument(project.id, params.documentId, requireUser(user).id);
+      if (!document) throw new HttpError(404, 'Document not found');
+      const status = await syncDocumentMarkdown({
+        projectId: project.id,
+        projectKey: project.key,
+        documentId: document.id,
+      });
+      if (!status) throw new HttpError(404, 'Document not found');
+      return status;
+    },
+    {
+      permission: ['documents', 'edit'],
+      params: documentParams,
+      response: { 200: DocumentMarkdownSyncResponse, ...commonErrors },
+      detail: {
+        summary: 'Retry the portable Markdown mirror',
+        description:
+          'Retry one page immediately. The database remains authoritative and a storage failure is returned as pending sync metadata.',
+        ...mcpTool('retry_document_markdown_sync'),
+      },
+    },
+  )
+  .post(
+    '/projects/:projectKey/documents/markdown-sync/batch',
+    ({ project, body }) =>
+      syncPublicDocumentMarkdownBatch({
+        projectId: project.id,
+        projectKey: project.key,
+        limit: body.limit,
+      }),
+    {
+      permission: ['documents', 'edit'],
+      body: documentMarkdownBatchBody,
+      response: { 200: DocumentMarkdownBatchResponse, ...commonErrors },
+      detail: {
+        summary: 'Bootstrap portable Markdown mirrors',
+        description:
+          'Synchronize at most fifty existing public pages in ID order. Private pages are counted but never read or exported.',
+        ...mcpTool('sync_document_markdown_batch'),
+      },
+    },
+  )
   .post(
     '/projects/:projectKey/documents',
     async ({ project, user, body, set }) => {
       set.status = 201;
-      return createDocument({
+      const document = await createDocument({
         projectId: project.id,
         userId: requireUser(user).id,
         title: body.title,
@@ -511,6 +630,7 @@ export const documentRoutes = new Elysia({
         isPrivate: body.isPrivate,
         parentId: body.parentId,
       });
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'create'],
@@ -534,7 +654,7 @@ export const documentRoutes = new Elysia({
         body,
       );
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'edit'],
@@ -553,15 +673,46 @@ export const documentRoutes = new Elysia({
     '/projects/:projectKey/documents/:documentId/access',
     async ({ project, user, params, body }) => {
       const userId = requireUser(user).id;
-      const document = await setDocumentAccess(
-        project.id,
-        params.documentId,
-        userId,
-        body.version,
-        body.isPrivate,
-      );
+      // The shared project folder has no per-owner ACL. Remove an existing
+      // public mirror before committing a private transition; a storage error
+      // leaves the database public instead of leaking a newly private page.
+      let removedPublicMirror = false;
+      if (body.isPrivate) {
+        const current = await getDocument(project.id, params.documentId, userId);
+        if (!current) throw new HttpError(404, 'Document not found');
+        if (current.ownerUserId !== userId) {
+          throw new HttpError(403, 'Only the document owner can change this setting.');
+        }
+        if (current.version !== body.version) {
+          throw new HttpError(409, 'This document changed elsewhere. Reload it before continuing.');
+        }
+        if (current.archivedAt !== null) {
+          throw new HttpError(409, 'Restore this document before changing it.');
+        }
+        await removeDocumentMarkdown(project.key, params.documentId, current.metadata);
+        removedPublicMirror = true;
+      }
+      let document: DocumentRow | null;
+      try {
+        document = await setDocumentAccess(
+          project.id,
+          params.documentId,
+          userId,
+          body.version,
+          body.isPrivate,
+        );
+      } catch (error) {
+        if (removedPublicMirror) {
+          await syncDocumentMarkdown({
+            projectId: project.id,
+            projectKey: project.key,
+            documentId: params.documentId,
+          });
+        }
+        throw error;
+      }
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'edit'],
@@ -589,7 +740,7 @@ export const documentRoutes = new Elysia({
         await isProjectOwner(project.id, userId),
       );
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'edit'],
@@ -617,7 +768,7 @@ export const documentRoutes = new Elysia({
         await isProjectOwner(project.id, userId),
       );
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'edit'],
@@ -640,7 +791,7 @@ export const documentRoutes = new Elysia({
         await isProjectOwner(project.id, userId),
       );
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'edit'],
@@ -662,7 +813,7 @@ export const documentRoutes = new Elysia({
         await isProjectOwner(project.id, userId),
       );
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSubtreeSync(project, document);
     },
     {
       permission: ['documents', 'delete'],
@@ -689,7 +840,7 @@ export const documentRoutes = new Elysia({
         await isProjectOwner(project.id, userId),
       );
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSubtreeSync(project, document);
     },
     {
       permission: ['documents', 'delete'],
@@ -717,7 +868,7 @@ export const documentRoutes = new Elysia({
       });
       if (!document) throw new HttpError(404, 'Document not found');
       set.status = 201;
-      return document;
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'create'],
@@ -767,7 +918,7 @@ export const documentRoutes = new Elysia({
         body.version,
       );
       if (!document) throw new HttpError(404, 'Document not found');
-      return document;
+      return withMarkdownSync(project, document);
     },
     {
       permission: ['documents', 'edit'],
@@ -786,14 +937,48 @@ export const documentRoutes = new Elysia({
     '/projects/:projectKey/documents/:documentId',
     async ({ project, params, query, user }) => {
       const userId = requireUser(user).id;
-      const assetKeys = await deleteDocument(
-        project.id,
-        params.documentId,
-        userId,
-        query.version,
-        await isProjectOwner(project.id, userId),
-      );
+      const projectOwner = await isProjectOwner(project.id, userId);
+      const current = await getDocument(project.id, params.documentId, userId);
+      if (!current) throw new HttpError(404, 'Document not found');
+      if (current.ownerUserId !== userId && !(projectOwner && !current.isPrivate)) {
+        throw new HttpError(403, 'Only the document owner can change this setting.');
+      }
+      if (current.version !== query.version) {
+        throw new HttpError(409, 'This document changed elsewhere. Reload it before continuing.');
+      }
+      if (current.isLocked) {
+        throw new HttpError(409, 'Unlock this document before changing it.');
+      }
+      if (current.archivedAt === null) {
+        throw new HttpError(409, 'Archive this document before deleting it.');
+      }
+      // Delete the portable copy first so a successfully deleted page cannot
+      // leave readable content behind. If the optimistic DB delete loses a
+      // race, restore the latest public mirror before returning the conflict.
+      await removeDocumentMarkdown(project.key, params.documentId, current.metadata);
+      let assetKeys: string[] | null;
+      try {
+        assetKeys = await deleteDocument(
+          project.id,
+          params.documentId,
+          userId,
+          query.version,
+          projectOwner,
+        );
+      } catch (error) {
+        await syncDocumentMarkdown({
+          projectId: project.id,
+          projectKey: project.key,
+          documentId: params.documentId,
+        });
+        throw error;
+      }
       if (!assetKeys) {
+        await syncDocumentMarkdown({
+          projectId: project.id,
+          projectKey: project.key,
+          documentId: params.documentId,
+        });
         throw new HttpError(404, 'Document not found');
       }
       await Promise.all(assetKeys.map(deleteAttachmentObject));

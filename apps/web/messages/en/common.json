@@ -11,6 +11,7 @@
   "save": "Save",
   "saving": "Saving…",
   "close": "Close",
+  "reload": "Reload",
   "name": "Name",
   "edit": "Edit",
   "language": "Language",
@@ -44,7 +45,7 @@
     "resetShortcut": "Reset this shortcut",
     "groups": {
       "general": "General",
-      "workItems": "Work items"
+      "workItems": "Tasks"
     },
     "commands": {
       "palette": {
@@ -191,7 +192,7 @@
     "internalPreviewUnavailable": "This page is unavailable or you do not have access.",
     "previewNoteCount": "{count, plural, one {# note} other {# notes}}",
     "previewCustomField": "Custom field",
-    "previewAllWorkItems": "All work items",
+    "previewAllWorkItems": "All tasks",
     "previewUpdated": "Updated {date}",
     "previewOtherValues": "({count} more)"
   },

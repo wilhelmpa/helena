@@ -33,7 +33,7 @@ export function trustedHeaders(request, identity) {
   const clientIp = request.headers['cf-connecting-ip'];
   if (typeof clientIp !== 'string' || !isIP(clientIp)) throw new Error('Missing client attribution');
   for (const key of Object.keys(request.headers)) {
-    if (/^(?:x-forwarded-|x-auth-|x-remote-|x-real-ip$|x-openclaw-scopes$|remote-user|forwarded$|cf-access-|x-volition-)/i.test(key)) delete request.headers[key];
+    if (/^(?:x-forwarded-|x-auth-|x-remote-|x-real-ip$$|remote-user|forwarded$|cf-access-|x-volition-)/i.test(key)) delete request.headers[key];
   }
   if (request.headers.cookie) {
     const cookies = request.headers.cookie.split(';').map(value => value.trim()).filter(value => {

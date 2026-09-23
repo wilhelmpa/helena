@@ -278,6 +278,7 @@ export default function DocumentEditor({
         canDeleteAssets={canManageLifecycle && editorEditable}
         canReadWorkItems={canReadWorkItems}
         canLinkWorkItems={canLinkWorkItems && document.archivedAt === null}
+        canRetryMarkdown={canEdit}
         onOpenChange={setInspectorOpen}
         onOpenHistory={() => setHistoryOpen(true)}
       />

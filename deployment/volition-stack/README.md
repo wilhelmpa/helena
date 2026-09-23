@@ -11,7 +11,7 @@ This directory contains the deployable configuration and source used by the Voli
 | `volition-stack` | identity-validating gateway | Host network in the current deployment |
 | `volition-vault` | Vaultwarden | Internal vault network |
 | `volition-mastra-studio` | workflows and run control | Internal isolated network |
-| OpenClaw | gateway, browser, agent sandboxes | User systemd services; agent containers use network mode `none` |
+| Hermes | Home-agent harness and resumable sessions | Hardened user systemd runner; provider credentials remain outside Plan |
 
 Keep these services separate. A single container would combine credentials, writable data, lifecycle, and network privileges. Operate them as one product through Compose and systemd.
 
@@ -24,7 +24,7 @@ The checkpoint excludes `.env`, `.secrets`, application state, databases, object
 - Docker Engine with Compose v2
 - systemd user services
 - Cloudflare Tunnel and Access
-- OpenClaw installed for the operator account
+- Hermes Agent installed for the operator account
 - Node.js 24 and Bun where required
 
 The captured units use `/home/pw`. Replace that path before installing on another host. Review every `ReadWritePaths`, `LoadCredential`, and `EnvironmentFile` entry.
@@ -76,7 +76,9 @@ docker compose -f optional/mastra-studio/compose.yml up -d
 docker compose -f compose.gateway.yml up -d
 ```
 
-Install the required files from `systemd/user` in `~/.config/systemd/user`, adjust host paths, then enable the selected services and timers. Some OpenClaw drop-ins refer to operator-managed helper scripts outside this checkpoint. Install and review those helpers before enabling those drop-ins.
+Install the required files from `systemd/user` in `~/.config/systemd/user` and adjust host paths. The factory reset installs the Hermes Home-agent bootstrap automatically; its retry timer waits for the first owner registration and stops after successful provisioning.
+
+For a guarded Plan database reset and minimal Home-chat bootstrap, follow [`docs/fresh-reset.md`](docs/fresh-reset.md).
 
 ## Verification
 
@@ -96,4 +98,4 @@ Run a secret scanner before each commit.
 
 ## Remaining hardening work
 
-The OpenClaw gateway currently receives Docker group access for sandbox orchestration. Replace it with a rootless, allowlisted sandbox broker before removing that access. The gateway currently uses host networking. Move it to explicit front and control networks after OpenClaw is available through a dedicated Unix socket or bridge listener. Nextcloud capability and root-filesystem changes require a restore-tested rollout.
+The gateway currently uses host networking. Move it to explicit front and control networks after all loopback integrations have dedicated Unix sockets or bridge listeners. Nextcloud capability and root-filesystem changes require a restore-tested rollout.

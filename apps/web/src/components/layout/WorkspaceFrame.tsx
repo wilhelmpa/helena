@@ -1,12 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import { useTheme } from 'next-themes';
+import { useEffect, useRef } from 'react';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import {
   themeServiceForTool,
   WORKSPACE_THEME_SYNCED_EVENT,
-  type WorkspaceTheme,
   type WorkspaceThemeService,
 } from '@/utils/workspaceTheme';
 import { cn } from '@/lib/utils';
@@ -16,46 +14,33 @@ export default function WorkspaceFrame({
   title,
   active,
   tool,
+  reloadToken = 0,
 }: {
   url: string;
   title: string;
   active: boolean;
   tool: WorkspaceToolId;
+  reloadToken?: number;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const reloadPending = useRef(false);
-  const { resolvedTheme } = useTheme();
-
-  const sendOpenClawTheme = useCallback(
-    (theme: WorkspaceTheme) => {
-      if (tool !== 'chat' || !frame.current?.contentWindow) return;
-      const targetOrigin = new URL(url).origin;
-      frame.current.contentWindow.postMessage({ type: 'volition:set-theme', theme }, targetOrigin);
-    },
-    [tool, url],
-  );
-
+  const previousReloadToken = useRef(reloadToken);
   useEffect(() => {
     const service = themeServiceForTool(tool);
     if (!service) return;
     const handleTheme = (event: Event) => {
       const detail = (
         event as CustomEvent<{
-          theme?: WorkspaceTheme;
           services?: WorkspaceThemeService[];
         }>
       ).detail;
       if (!Array.isArray(detail?.services) || !detail.services.includes(service)) return;
-      if (service === 'openclaw' && (detail.theme === 'light' || detail.theme === 'dark')) {
-        sendOpenClawTheme(detail.theme);
-        return;
-      }
       if (active && frame.current) frame.current.src = url;
       else reloadPending.current = true;
     };
     window.addEventListener(WORKSPACE_THEME_SYNCED_EVENT, handleTheme);
     return () => window.removeEventListener(WORKSPACE_THEME_SYNCED_EVENT, handleTheme);
-  }, [active, sendOpenClawTheme, tool, url]);
+  }, [active, tool, url]);
 
   useEffect(() => {
     if (active && reloadPending.current && frame.current) {
@@ -63,6 +48,12 @@ export default function WorkspaceFrame({
       frame.current.src = url;
     }
   }, [active, url]);
+
+  useEffect(() => {
+    if (previousReloadToken.current === reloadToken) return;
+    previousReloadToken.current = reloadToken;
+    if (frame.current) frame.current.src = url;
+  }, [reloadToken, url]);
 
   return (
     <iframe
@@ -74,11 +65,6 @@ export default function WorkspaceFrame({
       allow="clipboard-read; clipboard-write"
       allowFullScreen
       referrerPolicy="strict-origin-when-cross-origin"
-      onLoad={() => {
-        if (resolvedTheme === 'light' || resolvedTheme === 'dark') {
-          sendOpenClawTheme(resolvedTheme);
-        }
-      }}
     />
   );
 }

@@ -1,6 +1,10 @@
 # Volition Mastra control plane
 
-This project exposes six typed Mastra 1.67 workflows in Studio:
+## Fresh deployment
+
+`MASTRA_FRESH_MODE=true` starts Studio with no registered workflows. It is an explicit reset mode. The deployment default registers the control-plane workflows. Stored runs are cleared separately during a fresh reset.
+
+This project exposes seven typed Mastra 1.67 workflows in Studio:
 
 - `inbox-triage`
 - `career-research`
@@ -8,6 +12,7 @@ This project exposes six typed Mastra 1.67 workflows in Studio:
 - `support`
 - `system-audit`
 - `document-filing`
+- `agent-team`
 
 Each workflow accepts the shared envelope in `src/mastra/contracts.ts`, builds a
 deterministic effect plan, and passes it through an approval gate. With
@@ -24,11 +29,54 @@ flows, including provider-neutral `document-store.v1`, still use local planning
 previews only. `src/mastra/triggers.ts` maps
 supported event names to workflow IDs.
 
+`agent-team` is the project-scoped agent orchestration workflow. Mastra owns its
+trigger, retries, checkpoints, schedule and run history. Hermes executes the
+coordinator and specialist stages through a private Unix-socket bridge. Plan
+owns the exact task and receives the reviewed summary, evidence and final
+`Review` or `Done` state. The complete request and response contract is in
+`ORCHESTRATION_CONTRACT.md`.
+
+## Private event ingress
+
+`POST /internal/events` is an internal bearer-authenticated ingress for the
+registered event names in `src/mastra/triggers.ts`. It accepts exactly:
+
+```json
+{
+  "eventId": "stable-id",
+  "eventType": "system.audit.requested",
+  "organizationRef": "organization:volition",
+  "projectRef": "project:PRIV",
+  "actorRef": "service:plan-shadow",
+  "capabilityRefs": [],
+  "connectionRefs": [],
+  "payload": { "projectKey": "PRIV" },
+  "dryRun": true
+}
+```
+
+`actorRef` is optional; all other fields are required. The HTTP body is limited
+to 64 KiB and the payload to 48 KiB, with bounded nesting, collections, keys and
+strings. Scope fields are forbidden inside `payload`; when `projectKey` is
+present it must match `projectRef`. Unknown events and missing workflow
+capabilities are rejected.
+
+The ingress resolves `eventType` through the existing registry, uses `eventId`
+as the Mastra run ID, and checks every registered workflow before starting.
+An identical retry returns the existing run with `replayed: true`; reuse across
+projects, event types or payloads returns `409`. Concurrent identical requests
+share one start operation. The bearer is read by the front proxy from a mounted
+secret and is never forwarded into Mastra or the workflow envelope.
+
+This endpoint is additive and shadow-safe. Existing inbox, Plan Action and
+Plan Agent Schedule paths continue unchanged until a separately verified
+migration.
+
 ## Verification
 
 ```sh
-npm test
-npm run build
+bun run test
+bun run build
 docker build -t volition/mastra-studio:control-plane-test .
 ```
 

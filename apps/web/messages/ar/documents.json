@@ -215,5 +215,23 @@
     "cancel": "Cancel",
     "create": "Create",
     "creating": "Creating…"
+  },
+  "markdownSync": {
+    "label": "ملف Markdown",
+    "synced": "متزامن",
+    "pending": "قيد الانتظار",
+    "privateNotExported": "خاص · غير مُصدّر",
+    "checking": "جارٍ التحقق…",
+    "checkingHint": "جارٍ تحميل حالة الملف القابل للنقل.",
+    "syncedHint": "افتح الملفات لعرض ملف Markdown هذا.",
+    "pendingHint": "تم حفظ الصفحة. يمكن إعادة محاولة ملف Markdown بأمان.",
+    "privateHint": "لا يتم نسخ الصفحات الخاصة إلى مجلد المشروع المشترك.",
+    "openFiles": "فتح ملفات المشروع",
+    "copyPath": "نسخ مسار الملف",
+    "pathCopied": "تم نسخ مسار الملف",
+    "copyFailed": "تعذر نسخ مسار الملف.",
+    "retry": "إعادة المحاولة",
+    "retrying": "جارٍ إعادة المحاولة…",
+    "retryFailed": "تعذرت إعادة محاولة مزامنة Markdown."
   }
 }

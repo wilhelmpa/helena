@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import { db, projectWorkflowAssignment } from '@repo/db';
 import { HttpError, iso } from '#shared/lib';
+import { bumpControlPlaneRevision } from '#modules/sync/service';
 
 interface ProjectContext {
   id: number;
@@ -180,6 +181,7 @@ export async function setProjectWorkflowAssignment(input: {
       },
     })
     .returning();
+  await bumpControlPlaneRevision(input.projectId);
   return row;
 }
 
@@ -233,7 +235,7 @@ export async function startWorkflow(
 ) {
   const row = await enabledAssignment(project.id, workflowId);
   const context = projectWorkflowScope(project);
-  return controlPlaneRequest({
+  const result = await controlPlaneRequest({
     operation: 'start',
     workflowId,
     ...context,
@@ -246,6 +248,8 @@ export async function startWorkflow(
     capabilityRefs: row.capabilityRefs,
     connectionRefs: [],
   });
+  await bumpControlPlaneRevision(project.id);
+  return result;
 }
 
 export async function decideWorkflowApproval(
@@ -256,7 +260,7 @@ export async function decideWorkflowApproval(
   input: { approved: boolean; note?: string },
 ) {
   await enabledAssignment(project.id, workflowId);
-  return controlPlaneRequest({
+  const result = await controlPlaneRequest({
     operation: 'resume',
     workflowId,
     runId,
@@ -264,6 +268,8 @@ export async function decideWorkflowApproval(
     decidedBy: userId,
     ...input,
   });
+  await bumpControlPlaneRevision(project.id);
+  return result;
 }
 
 export async function cancelWorkflowRun(
@@ -272,22 +278,26 @@ export async function cancelWorkflowRun(
   runId: string,
 ) {
   await enabledAssignment(project.id, workflowId);
-  return controlPlaneRequest({
+  const result = await controlPlaneRequest({
     operation: 'cancel',
     workflowId,
     runId,
     projectRef: projectWorkflowScope(project).projectRef,
   });
+  await bumpControlPlaneRevision(project.id);
+  return result;
 }
 
 export async function retryWorkflowRun(project: ProjectContext, workflowId: string, runId: string) {
   await enabledAssignment(project.id, workflowId);
-  return controlPlaneRequest({
+  const result = await controlPlaneRequest({
     operation: 'retry',
     workflowId,
     runId,
     projectRef: projectWorkflowScope(project).projectRef,
   });
+  await bumpControlPlaneRevision(project.id);
+  return result;
 }
 
 export function listWorkflowSchedules(project: ProjectContext, workflowId: string) {
@@ -310,7 +320,7 @@ export async function createWorkflowSchedule(
     connectionRefs: [],
   };
   const eventId = randomUUID();
-  return controlPlaneRequest({
+  const result = await controlPlaneRequest({
     operation: 'create-schedule',
     workflowId,
     ...context,
@@ -331,6 +341,8 @@ export async function createWorkflowSchedule(
       },
     },
   });
+  await bumpControlPlaneRevision(project.id);
+  return result;
 }
 
 export async function scheduleAction(
@@ -340,12 +352,14 @@ export async function scheduleAction(
   action: 'pause-schedule' | 'resume-schedule' | 'run-schedule' | 'delete-schedule',
 ) {
   await enabledAssignment(project.id, workflowId);
-  return controlPlaneRequest({
+  const result = await controlPlaneRequest({
     operation: action,
     workflowId,
     scheduleId,
     projectRef: projectWorkflowScope(project).projectRef,
   });
+  await bumpControlPlaneRevision(project.id);
+  return result;
 }
 
 export async function updateWorkflowSchedule(
@@ -355,13 +369,15 @@ export async function updateWorkflowSchedule(
   input: { cron: string; timezone: string },
 ) {
   await enabledAssignment(project.id, workflowId);
-  return controlPlaneRequest({
+  const result = await controlPlaneRequest({
     operation: 'update-schedule',
     workflowId,
     scheduleId,
     projectRef: projectWorkflowScope(project).projectRef,
     ...input,
   });
+  await bumpControlPlaneRevision(project.id);
+  return result;
 }
 
 export async function listWorkflowScheduleTriggers(

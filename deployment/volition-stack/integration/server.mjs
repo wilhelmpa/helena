@@ -31,6 +31,10 @@ import {
   MastraControlError,
 } from "./mastra-control.mjs";
 import {
+  createMastraEventService,
+  MastraEventError,
+} from "./mastra-events.mjs";
+import {
   createProjectFilesService,
   ProjectFilesValidationError,
 } from "./project-files.mjs";
@@ -41,6 +45,7 @@ import {
 } from "./secret-store.mjs";
 
 const MAX_BODY_BYTES = 256 * 1024;
+const MAX_EVENT_BODY_BYTES = 64 * 1024;
 
 function json(response, status, body) {
   const payload = JSON.stringify(body);
@@ -92,12 +97,12 @@ function authorized(header, expected) {
   );
 }
 
-async function requestBody(request) {
+async function requestBody(request, maxBytes = MAX_BODY_BYTES) {
   const chunks = [];
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > MAX_BODY_BYTES) {
+    if (size > maxBytes) {
       throw new RequestValidationError("The request body is too large", 413);
     }
     chunks.push(chunk);
@@ -120,6 +125,7 @@ export function createRequestHandler(
   secrets = null,
   mastraControl = null,
   files = null,
+  mastraEvents = null,
 ) {
   return async function handle(request, response) {
     if (request.method === "GET" && request.url === "/healthz") {
@@ -169,6 +175,52 @@ export function createRequestHandler(
           });
         } else {
           json(response, 502, { error: "control_plane_failed" });
+        }
+      }
+      return;
+    }
+    const mastraEventRoute =
+      request.method === "POST" && pathname === "/internal/mastra/events";
+    if (mastraEventRoute) {
+      if (!mastraEvents || !config.mastraControlToken) {
+        json(response, 404, { error: "not_found" });
+        return;
+      }
+      if (
+        !authorized(
+          firstHeader(request.headers.authorization),
+          config.mastraControlToken,
+        )
+      ) {
+        response.setHeader("WWW-Authenticate", "Bearer");
+        json(response, 401, { error: "unauthorized" });
+        return;
+      }
+      if (
+        !firstHeader(request.headers["content-type"])
+          ?.toLowerCase()
+          .startsWith("application/json")
+      ) {
+        json(response, 415, { error: "json_required" });
+        return;
+      }
+      try {
+        json(
+          response,
+          200,
+          await mastraEvents.emit(await requestBody(request, MAX_EVENT_BODY_BYTES)),
+        );
+      } catch (error) {
+        if (
+          error instanceof RequestValidationError ||
+          error instanceof MastraEventError
+        ) {
+          json(response, error.status ?? 400, {
+            error: error.code ?? "invalid_event",
+            message: error.message,
+          });
+        } else {
+          json(response, 502, { error: "event_ingress_failed" });
         }
       }
       return;
@@ -330,6 +382,10 @@ export function createRequestHandler(
           ["POST /api/files/list", () => files.list(body)],
           ["POST /api/files/read-text", () => files.readText(body)],
           ["POST /api/files/create-text", () => files.createText(body)],
+          ["POST /api/files/ensure-folder", () => files.ensureFolder(body)],
+          ["POST /api/files/upsert-text", () => files.upsertText(body)],
+          ["POST /api/files/delete", () => files.deleteText(body)],
+          ["POST /api/files/move", () => files.moveText(body)],
           ["POST /api/files/download", () => files.download(body)],
         ]);
         const operation = routes.get(`${request.method} ${pathname}`);
@@ -346,7 +402,10 @@ export function createRequestHandler(
         else
           json(
             response,
-            pathname === "/api/files/create-text" ? 201 : 200,
+            pathname === "/api/files/create-text" ||
+              (pathname === "/api/files/upsert-text" && result.created)
+              ? 201
+              : 200,
             result,
           );
       } catch (error) {
@@ -357,7 +416,7 @@ export function createRequestHandler(
           });
         } else if (error instanceof ProjectFilesValidationError) {
           json(response, error.status, {
-            error: "invalid_request",
+            error: error.code,
             message: error.message,
           });
         } else if (
@@ -491,7 +550,13 @@ export function createRequestHandler(
         eventType: firstHeader(request.headers["x-itsaplan-event"]),
         eventId: firstHeader(request.headers["x-itsaplan-event-id"]),
       });
-      json(response, 200, await provisioner.provision(envelope));
+      json(
+        response,
+        200,
+        envelope.eventType === "project.deprovision"
+          ? await provisioner.deprovision(envelope)
+          : await provisioner.provision(envelope),
+      );
     } catch (error) {
       if (error instanceof RequestValidationError) {
         json(response, error.status, {
@@ -528,7 +593,7 @@ export function createProvisioningServer(config, options = {}) {
       : null);
   const connections =
     options.connections ??
-    (config.inboxAccounts?.length && config.connectionsEnabled
+    (config.connectionsEnabled
       ? createConnectionsService(config, { ...options, artifactSync })
       : null);
   const mail =
@@ -539,7 +604,7 @@ export function createProvisioningServer(config, options = {}) {
   const theme =
     options.theme ??
     (connections && config.connectionsEnabled
-      ? createThemeService(config, { ...options, openClaw: connections })
+      ? createThemeService(config, options)
       : null);
   const secrets =
     options.secrets ??
@@ -554,6 +619,11 @@ export function createProvisioningServer(config, options = {}) {
     (config.connectionsEnabled
       ? createProjectFilesService(config, options)
       : null);
+  const mastraEvents =
+    options.mastraEvents ??
+    (config.mastraEventIngressEnabled && config.mastraEventToken
+      ? createMastraEventService(config, options)
+      : null);
   const handler = createRequestHandler(
     config,
     provisioner,
@@ -565,6 +635,7 @@ export function createProvisioningServer(config, options = {}) {
     secrets,
     mastraControl,
     files,
+    mastraEvents,
   );
   const server = http.createServer(handler);
   server.mastraClassifierServer = http.createServer(handler);

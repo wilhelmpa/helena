@@ -36,6 +36,12 @@ beforeEach(async () => {
             ],
           };
         },
+        async deprovision(envelope) {
+          calls += 1;
+          return {
+            resources: [{ kind: "workspace", id: `quarantine:${envelope.project.key}` }],
+          };
+        },
       },
       inbox: {
         async recordPush(value) {
@@ -109,6 +115,16 @@ describe("provisioning server", () => {
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), {
       resources: [{ kind: "registry", id: "project:DEMO" }],
+    });
+    assert.equal(calls, 1);
+  });
+
+  it("routes an authenticated deprovisioning envelope to cleanup", async () => {
+    const payload = { ...body(), eventType: "project.deprovision" };
+    const response = await request(payload, { "X-Itsaplan-Event": "project.deprovision" });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      resources: [{ kind: "workspace", id: "quarantine:DEMO" }],
     });
     assert.equal(calls, 1);
   });

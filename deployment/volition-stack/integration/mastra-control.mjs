@@ -5,6 +5,7 @@ const PROJECT_REF = /^project:[A-Za-z0-9._-]+$/;
 const ORGANIZATION_REF = /^organization:[A-Za-z0-9._-]+$/;
 const CAPABILITY_REF = /^[a-z][a-z0-9._-]*\.v\d+$/;
 const CONNECTION_REF = /^[a-z][a-z0-9._-]*:[A-Za-z0-9._-]+$/;
+const SCHEDULE_KEY = /^[a-z0-9][a-z0-9._-]{0,99}$/;
 const TERMINAL_STATUSES = new Set(['success', 'failed', 'canceled', 'bailed', 'skipped']);
 
 export class MastraControlError extends Error {
@@ -87,6 +88,7 @@ async function responseJson(response) {
 export function createMastraControlService(config, options = {}) {
   const request = options.fetch ?? fetch;
   const base = new URL(config.mastraControlUrl);
+  const pendingScheduleCreates = new Map();
 
   async function call(path, init = {}) {
     const response = await request(new URL(path, base), {
@@ -190,17 +192,44 @@ export function createMastraControlService(config, options = {}) {
         const organizationRef = string(input.organizationRef, ORGANIZATION_REF, 'organizationRef');
         const capabilityRefs = refs(input.capabilityRefs, CAPABILITY_REF, 'capabilityRefs');
         const connectionRefs = refs(input.connectionRefs, CONNECTION_REF, 'connectionRefs');
-        return call('schedules', {
-          method: 'POST',
-          body: JSON.stringify({
-            workflowId,
-            cron: cron(input.cron),
-            timezone: timezone(input.timezone),
-            inputData: object(input.payload, 'payload'),
-            requestContext: { organizationRef, projectRef, capabilityRefs, connectionRefs },
-            metadata: { projectRef, source: 'itsaplan' },
-          }),
-        });
+        const scheduleKey = input.scheduleKey === undefined
+          ? 'default'
+          : string(input.scheduleKey, SCHEDULE_KEY, 'scheduleKey');
+        const createKey = `${workflowId}\0${projectRef}\0${scheduleKey}`;
+        const current = pendingScheduleCreates.get(createKey);
+        if (current) return current;
+        const pending = (async () => {
+          const existingResult = object(await call(`schedules?workflowId=${workflowId}`), 'Mastra schedules');
+          const existing = Array.isArray(existingResult.schedules)
+            ? existingResult.schedules.find(item =>
+                item?.requestContext?.projectRef === projectRef &&
+                item?.metadata?.scheduleKey === scheduleKey)
+            : null;
+          if (existing) return { ...existing, replayed: true };
+          return call('schedules', {
+            method: 'POST',
+            body: JSON.stringify({
+              workflowId,
+              cron: cron(input.cron),
+              timezone: timezone(input.timezone),
+              inputData: object(input.payload, 'payload'),
+              requestContext: { organizationRef, projectRef, capabilityRefs, connectionRefs },
+              metadata: {
+                projectRef,
+                source: 'itsaplan',
+                scheduleKey,
+                missedRunPolicy: input.missedRunPolicy === 'run-once' ? 'run-once' : 'skip',
+                concurrencyPolicy: input.concurrencyPolicy === 'replace' ? 'replace' : 'forbid',
+              },
+            }),
+          });
+        })();
+        pendingScheduleCreates.set(createKey, pending);
+        try {
+          return await pending;
+        } finally {
+          if (pendingScheduleCreates.get(createKey) === pending) pendingScheduleCreates.delete(createKey);
+        }
       }
       if (input.operation.includes('schedule')) {
         const scheduleId = string(input.scheduleId, SCHEDULE_ID, 'scheduleId');

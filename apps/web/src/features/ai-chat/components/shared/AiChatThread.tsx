@@ -50,6 +50,7 @@ export function AiChatThread({
     stop,
     removePending,
     loadThread,
+    resumeAnswer,
     prependHistory,
   } = useAgentChat(projectKey, agent.id, agent.kind === 'external', chatSettings);
   const messagesQuery = useAgentThreadMessagesQuery(projectKey, agent.id, threadId);
@@ -80,11 +81,30 @@ export function AiChatThread({
   // Restore a selected past thread once its transcript has loaded. Skipped when it
   // is already the active conversation (e.g. the thread just created here).
   useEffect(() => {
-    const latestMessages = messagesQuery.data?.pages[0]?.items;
+    const latestPage = messagesQuery.data?.pages[0];
+    const latestMessages = latestPage?.items;
     if (threadId && threadId !== activeThreadId && latestMessages) {
-      loadThread(threadId, latestMessages);
+      const active = latestPage.activeAnswer;
+      // Replaying the answer's event stream starts at cursor zero, so discard any
+      // partial copy from the history response and rebuild that one assistant turn from
+      // its events. This avoids duplicating text written just before the reload.
+      const restored = active
+        ? [
+            ...latestMessages.filter((message) => message.id !== String(active.messageId)),
+            {
+              id: String(active.messageId),
+              role: 'assistant' as const,
+              parts: [],
+              createdAt: active.createdAt,
+            },
+          ]
+        : latestMessages;
+      loadThread(threadId, restored);
+      if (active && agent.kind === 'external') {
+        void resumeAnswer(active.messageId, active.status);
+      }
     }
-  }, [threadId, messagesQuery.data, activeThreadId, loadThread]);
+  }, [threadId, messagesQuery.data, activeThreadId, loadThread, resumeAnswer, agent.kind]);
 
   // Merge the older pages fetched by "load earlier". They arrive newest-page first,
   // so the new pages are reversed before prepending to stay chronological.

@@ -6,8 +6,8 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 WorkingDirectory=/home/pw/services/volition-stack/integration
-EnvironmentFile=/home/pw/.openclaw/volition/provisioning.env
-EnvironmentFile=/home/pw/.openclaw/credentials/itsaplan-mcp.env
+EnvironmentFile=/home/pw/services/volition-workspaces/.state/integration/provisioning.env
+EnvironmentFile=/home/pw/services/volition-stack/.secrets/itsaplan-mcp.env
 Environment=HOME=/home/pw
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 LoadCredential=nextcloud_app_password:/home/pw/services/volition-stack/.secrets/nextcloud_patrick_app_password
@@ -23,7 +23,7 @@ ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/pw/.openclaw/volition
+ReadWritePaths=/home/pw/services/volition-workspaces/.state/integration
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictNamespaces=true
 RestrictRealtime=true

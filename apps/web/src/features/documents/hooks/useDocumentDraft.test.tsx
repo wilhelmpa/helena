@@ -108,9 +108,6 @@ beforeEach(async () => {
     privacyUrl: '',
     termsUrl: '',
     workspace: {
-      openClawUrl: '',
-      coordinatorId: 'coordinator',
-      projectCoordinators: {},
       homeChatProjectKey: '',
       terminalUrl: '',
       codeUrl: '',
@@ -119,6 +116,7 @@ beforeEach(async () => {
       filesUrl: '',
       inboxUrl: '',
       connectionsUrl: '',
+      vaultEnabled: true,
     },
   };
   Object.defineProperties(globalThis, {

@@ -32,8 +32,7 @@ export const projectFileRoutes = new Elysia({
       response: { 200: ProjectFileListResponse, ...commonErrors },
       detail: {
         summary: 'List project files',
-        description:
-          'List one folder inside the project-scoped Nextcloud root without exposing provider credentials or URLs.',
+        description: 'List one folder inside the project-scoped Markdown and file vault.',
       },
     },
   )

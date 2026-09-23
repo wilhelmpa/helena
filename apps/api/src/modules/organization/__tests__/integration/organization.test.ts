@@ -71,14 +71,27 @@ describe('organization', () => {
     expect(snapshot.data?.goals).toMatchObject([
       { title: 'Ship the customer portal', status: 'active', projectId: project.id },
     ]);
-    expect(snapshot.data?.agents).toMatchObject([
-      {
-        id: agent.id,
-        roleTitle: 'Lead researcher',
-        runtimeAgentId: 'marketing-researcher',
-        projects: [{ id: project.id, instructions: 'Research only verified customer needs.' }],
-      },
-    ]);
+    expect(snapshot.data?.agents).toHaveLength(2);
+    expect(
+      snapshot.data?.agents?.some(
+        (entry) => entry.username === 'hermes-mkt-coordinator' && entry.kind === 'external',
+      ),
+    ).toBe(true);
+    expect(snapshot.data?.agents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: agent.id,
+          roleTitle: 'Lead researcher',
+          runtimeAgentId: 'marketing-researcher',
+          projects: [
+            expect.objectContaining({
+              id: project.id,
+              instructions: 'Research only verified customer needs.',
+            }),
+          ],
+        }),
+      ]),
+    );
     expect(snapshot.data?.projects).toMatchObject([
       {
         id: project.id,

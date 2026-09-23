@@ -25,22 +25,37 @@ export default function ResizeGrip({
   function beginResize(e: React.PointerEvent) {
     e.preventDefault();
     const startX = e.clientX;
+    const grip = e.currentTarget as HTMLDivElement;
+    const pointerId = e.pointerId;
+    grip.setPointerCapture(pointerId);
+    document.documentElement.style.cursor = 'col-resize';
+    document.documentElement.style.userSelect = 'none';
     const onMove = (ev: PointerEvent) => onDrag(ev.clientX - startX);
     const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      grip.removeEventListener('pointermove', onMove);
+      grip.removeEventListener('pointerup', onUp);
+      grip.removeEventListener('pointercancel', onUp);
+      grip.removeEventListener('lostpointercapture', onUp);
+      if (grip.hasPointerCapture(pointerId)) grip.releasePointerCapture(pointerId);
+      document.documentElement.style.cursor = '';
+      document.documentElement.style.userSelect = '';
       endDrag.current = null;
     };
     endDrag.current = onUp;
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    grip.addEventListener('pointermove', onMove);
+    grip.addEventListener('pointerup', onUp);
+    grip.addEventListener('pointercancel', onUp);
+    grip.addEventListener('lostpointercapture', onUp);
   }
 
   return (
     <div
       onPointerDown={beginResize}
       aria-label={label}
-      className={cn('w-1.5 cursor-col-resize hover:bg-primary/40', className)}
+      className={cn(
+        'w-1.5 cursor-col-resize touch-none select-none hover:bg-primary/40',
+        className,
+      )}
     />
   );
 }

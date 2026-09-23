@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
-import { db, projectProvisioningJob } from '@repo/db';
+import { aiAgent, db, projectProvisioningJob } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -16,12 +16,11 @@ import { clearLimits, setLimits } from '#tests/helpers/limits';
 // See apps/api/AGENTS.md "Tests" for the setup.
 //
 // The projects feature owns five routes: list, create, copy, the full work-items
-// view, and delete. createProject seeds five default columns (one per state type);
+// view, and delete. createProject seeds six default workflow columns;
 // it seeds no issue types or assignees.
 
-// createProject seeds one column per state type; a new project always has these
-// five and nothing else.
-const DEFAULT_COLUMN_NAMES = ['Backlog', 'Todo', 'In Progress', 'Done', 'Canceled'];
+// A new project always has these six and nothing else.
+const DEFAULT_COLUMN_NAMES = ['Backlog', 'Todo', 'In Progress', 'Review', 'Done', 'Canceled'];
 
 // Registers a user and returns a Treaty client acting as them.
 async function signUpClient() {
@@ -43,26 +42,43 @@ describe('projects', () => {
     it('creates a project and lists it for its owner', async () => {
       const { api } = await signUpClient();
 
-      const created = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+      const created = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing',
+      });
       expect(created.status).toBe(201);
-      expect(created.data).toMatchObject({ key: 'MKT', name: 'Marketing', description: '' });
+      expect(created.data).toMatchObject({
+        key: 'MKT',
+        name: 'Marketing',
+        description: '',
+      });
       expect(typeof created.data?.id).toBe('number');
 
       const list = await api.projects.get();
       expect(list.status).toBe(200);
       expect(list.data).toHaveLength(1);
       // The list reports the caller's role in each project; the creator is owner.
-      expect(list.data?.[0]).toMatchObject({ key: 'MKT', name: 'Marketing', role: 'owner' });
+      expect(list.data?.[0]).toMatchObject({
+        key: 'MKT',
+        name: 'Marketing',
+        role: 'owner',
+      });
     });
 
     it('puts the project in the team the account owns', async () => {
       const { user, api } = await signUpClient();
       const other = await signUpClient();
 
-      const created = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+      const created = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing',
+      });
       expect(created.data).toMatchObject({ teamName: user.username });
 
-      const theirs = await other.api.projects.post({ key: 'OPS', name: 'Operations' });
+      const theirs = await other.api.projects.post({
+        key: 'OPS',
+        name: 'Operations',
+      });
       expect(theirs.data).toMatchObject({ teamName: other.user.username });
 
       const list = await api.projects.get();
@@ -71,6 +87,38 @@ describe('projects', () => {
         teamId: created.data?.teamId,
         teamName: user.username,
       });
+    });
+
+    it('creates one project-bound Hermes coordinator with the owner-scoped runner policy', async () => {
+      const { user, api } = await signUpClient();
+      const created = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing',
+      });
+      const agents = await api
+        .teams({ teamId: created.data!.teamId })
+        ['ai-agents'].get({ query: { projectId: created.data!.id } });
+
+      expect(agents.data).toEqual([
+        expect.objectContaining({
+          name: 'Hermes MKT Coordinator',
+          username: 'hermes-mkt-coordinator',
+          kind: 'external',
+          ownerUserId: user.userId,
+          runnerScope: 'owner',
+          triggerOnMention: true,
+          triggerOnAssign: true,
+          delegationDelaySec: 0,
+          projects: [expect.objectContaining({ id: created.data!.id, key: 'MKT' })],
+          runtimePolicy: {
+            reasoningEffort: null,
+            toolAllow: [],
+            toolDeny: [],
+            mcpGrants: ['itsaplan'],
+            files: [],
+          },
+        }),
+      ]);
     });
 
     it('adds existing agents from the owning team on the default member role only', async () => {
@@ -94,12 +142,19 @@ describe('projects', () => {
         query: { kind: 'agent' },
       });
       expect(members.status).toBe(200);
-      expect(members.data?.items).toHaveLength(1);
-      expect(members.data?.items[0]).toMatchObject({
-        userId: mine.data!.agent.userId,
-        role: 'member',
-        isAgent: true,
-      });
+      expect(members.data?.items).toHaveLength(2);
+      expect(members.data?.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            userId: mine.data!.agent.userId,
+            role: 'member',
+            isAgent: true,
+          }),
+        ]),
+      );
+      expect(members.data?.items).toEqual(
+        expect.arrayContaining([expect.objectContaining({ username: 'hermes-new-coordinator' })]),
+      );
       expect(
         members.data?.items.some((member) => member.userId === theirs.data!.agent.userId),
       ).toBe(false);
@@ -122,7 +177,10 @@ describe('projects', () => {
       const members = await owner.api
         .projects({ projectKey: 'NEW' })
         .members.get({ query: { kind: 'agent' } });
-      expect(members.data?.items).toHaveLength(0);
+      expect(members.data?.items).toHaveLength(1);
+      expect(members.data?.items?.[0]).toMatchObject({
+        username: 'hermes-new-coordinator',
+      });
     });
 
     it('stores a provided description', async () => {
@@ -135,7 +193,7 @@ describe('projects', () => {
       expect(created.data).toMatchObject({ description: 'Growth work' });
     });
 
-    it('seeds the five default columns', async () => {
+    it('seeds the six default workflow columns', async () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
@@ -160,6 +218,8 @@ describe('projects', () => {
       }
       expect(job.data?.requestedResources).not.toContain('boards');
       expect(job.data?.requestedResources).not.toContain('workflows');
+      expect(job.data?.requestedResources).toContain('coordinator');
+      expect(job.data?.requestedResources).toContain('browser');
     });
 
     it('atomically creates a durable provisioning job with configurable resources', async () => {
@@ -188,7 +248,10 @@ describe('projects', () => {
 
     it('only retries a failed provisioning job', async () => {
       const { api } = await signUpClient();
-      const created = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+      const created = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing',
+      });
 
       const active = await api.projects({ projectKey: 'MKT' }).provisioning.retry.post();
       expect(active.status).toBe(409);
@@ -199,7 +262,11 @@ describe('projects', () => {
         .where(eq(projectProvisioningJob.projectId, created.data!.id));
       const retried = await api.projects({ projectKey: 'MKT' }).provisioning.retry.post();
       expect(retried.status).toBe(200);
-      expect(retried.data).toMatchObject({ status: 'pending', attempts: 0, lastError: null });
+      expect(retried.data).toMatchObject({
+        status: 'pending',
+        attempts: 0,
+        lastError: null,
+      });
     });
 
     it('denies a project member whose rank in the team is member', async () => {
@@ -243,7 +310,10 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const dup = await api.projects.post({ key: 'MKT', name: 'Marketing Two' });
+      const dup = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing Two',
+      });
       expect(dup.status).toBe(409);
     });
 
@@ -283,7 +353,9 @@ describe('projects', () => {
       const bare = await api.projects.get();
       expect(bare.data?.[0].permissions).toBeUndefined();
 
-      const withPerms = await api.projects.get({ query: { permissions: 'true' } });
+      const withPerms = await api.projects.get({
+        query: { permissions: 'true' },
+      });
       expect(withPerms.status).toBe(200);
       // The owner's matrix grants everything. The matrix is a loose Record over the
       // wire, so read it through a typed view.
@@ -302,7 +374,11 @@ describe('projects', () => {
         .projects({ projectKey: 'MKT' })
         .patch({ name: 'Growth', description: 'Growth work' });
       expect(res.status).toBe(200);
-      expect(res.data).toMatchObject({ key: 'MKT', name: 'Growth', description: 'Growth work' });
+      expect(res.data).toMatchObject({
+        key: 'MKT',
+        name: 'Growth',
+        description: 'Growth work',
+      });
 
       const view = await viewOf(api, 'MKT');
       expect(view.data?.project).toMatchObject({
@@ -339,7 +415,10 @@ describe('projects', () => {
 
       const view = await viewOf(api, 'MKT');
       expect(view.status).toBe(200);
-      expect(view.data?.project).toMatchObject({ key: 'MKT', name: 'Marketing' });
+      expect(view.data?.project).toMatchObject({
+        key: 'MKT',
+        name: 'Marketing',
+      });
       expect(view.data?.columns.map((c) => c.name)).toEqual(DEFAULT_COLUMN_NAMES);
       // The permission guard resolved the caller's own access; an owner's viewer
       // reports the owner role, and the sibling permission matrix grants everything.
@@ -359,7 +438,10 @@ describe('projects', () => {
 
       const view = await viewOf(api, 'MKT');
       expect(
-        view.data?.customFields.map((f) => ({ name: f.name, issueTypeId: f.issueTypeId })),
+        view.data?.customFields.map((f) => ({
+          name: f.name,
+          issueTypeId: f.issueTypeId,
+        })),
       ).toEqual(
         expect.arrayContaining([
           { name: 'Severity', issueTypeId: null },
@@ -454,11 +536,11 @@ describe('projects', () => {
       ]);
       const provisioning = await api.projects({ projectKey: 'DST' }).provisioning.get();
       expect(provisioning.data?.requestedResources).toEqual([
-        'coordinator',
         'workspace',
+        'coordinator',
+        'terminal',
         'files',
         'browser',
-        'terminal',
         ...views.data!.map((view) => `board:${view.id}`),
       ]);
     });
@@ -468,7 +550,9 @@ describe('projects', () => {
       await setupSource(owner.api);
       const role = await createRole(owner.api, 'SRC', {
         name: 'Work items only',
-        permissions: { work_items: { create: false, edit: false, read: true, delete: false } },
+        permissions: {
+          work_items: { create: false, edit: false, read: true, delete: false },
+        },
       });
       const member = await addProjectMember(owner.api, 'SRC', role.data!.id);
 
@@ -507,9 +591,9 @@ describe('projects', () => {
     it('copies which optional sections the source project shows', async () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'SRC', name: 'Source' });
-      await api
-        .projects({ projectKey: 'SRC' })
-        .settings.patch({ features: { documents: false, notes: false, dashboards: false } });
+      await api.projects({ projectKey: 'SRC' }).settings.patch({
+        features: { documents: false, notes: false, dashboards: false },
+      });
 
       await api.projects({ projectKey: 'SRC' }).copy.post({ key: 'DST', name: 'Destination' });
 
@@ -581,7 +665,9 @@ describe('projects', () => {
       // A view whose status filter references the source project's Backlog column.
       await api.projects({ projectKey: 'SRC' }).views.post({
         name: 'Open',
-        filters: { conditions: [{ field: 'status', op: 'in', values: [srcBacklog.id] }] },
+        filters: {
+          conditions: [{ field: 'status', op: 'in', values: [srcBacklog.id] }],
+        },
       });
 
       await api.projects({ projectKey: 'SRC' }).copy.post({ key: 'DST', name: 'Destination' });
@@ -644,13 +730,17 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'SRC', name: 'Source' });
       const review = (
-        await api
-          .projects({ projectKey: 'SRC' })
-          .columns.post({ name: 'Review', stateType: 'started', color: '#123456' })
+        await api.projects({ projectKey: 'SRC' }).columns.post({
+          name: 'Review',
+          stateType: 'started',
+          color: '#123456',
+        })
       ).data!;
       await api.projects({ projectKey: 'SRC' }).views.post({
         name: 'In review',
-        filters: { conditions: [{ field: 'status', op: 'in', values: [review.id] }] },
+        filters: {
+          conditions: [{ field: 'status', op: 'in', values: [review.id] }],
+        },
       });
 
       // include names views only; the API must also copy the states the view's
@@ -676,7 +766,9 @@ describe('projects', () => {
       await api.projects.post({ key: 'SRC', name: 'Source' });
       await createRole(api, 'SRC', {
         name: 'Editor',
-        permissions: { work_items: { create: true, edit: true, read: true, delete: false } },
+        permissions: {
+          work_items: { create: true, edit: true, read: true, delete: false },
+        },
       });
 
       // The copy lands in the caller's own team, which shares its roles with every
@@ -687,9 +779,9 @@ describe('projects', () => {
       expect(roles.data?.map((r) => r.name).sort()).toEqual(['Editor', 'Member']);
     });
 
-    // The team owns its agents, so a copy inside it puts the same agent in the new
-    // project — no second agent, no second bot user, no new key.
-    it("puts the source project's agents in a copy inside the team", async () => {
+    // Shared agents follow a same-team copy, while each project keeps its own Hermes
+    // coordinator and never attaches the source coordinator to the destination.
+    it('keeps shared agents and creates a separate coordinator in a same-team copy', async () => {
       const { api, user } = await signUpClient();
       await api.projects.post({ key: 'SRC', name: 'Source' });
       await createAgent(api, 'SRC', {
@@ -706,11 +798,25 @@ describe('projects', () => {
       });
 
       const teamId = await teamOf(api, 'DST');
-      const copied = await api
-        .teams({ teamId })
-        ['ai-agents'].get({ query: { projectId: await projectIdOf(api, 'DST') } });
-      expect(copied.data?.[0]).toMatchObject({ runnerScope: 'owner', ownerUserId: user.userId });
-      expect((await api.teams({ teamId })['ai-agents'].get()).data).toHaveLength(1);
+      const copied = await api.teams({ teamId })['ai-agents'].get({
+        query: { projectId: await projectIdOf(api, 'DST') },
+      });
+      expect(copied.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            username: 'ext',
+            runnerScope: 'owner',
+            ownerUserId: user.userId,
+          }),
+          expect.objectContaining({
+            username: 'hermes-dst-coordinator',
+            runnerScope: 'owner',
+          }),
+        ]),
+      );
+      const all = await api.teams({ teamId })['ai-agents'].get();
+      expect(all.data).toHaveLength(3);
+      expect(copied.data?.some((agent) => agent.username === 'hermes-src-coordinator')).toBe(false);
     });
 
     it('assigns every target-team agent to a copy even without copying agent settings', async () => {
@@ -728,9 +834,9 @@ describe('projects', () => {
       });
 
       const teamId = await teamOf(api, 'DST');
-      const assigned = await api
-        .teams({ teamId })
-        ['ai-agents'].get({ query: { projectId: await projectIdOf(api, 'DST') } });
+      const assigned = await api.teams({ teamId })['ai-agents'].get({
+        query: { projectId: await projectIdOf(api, 'DST') },
+      });
       expect(assigned.data).toHaveLength(1);
       expect(assigned.data?.[0]).toMatchObject({ id: agent.data!.agent.id });
       expect(assigned.data?.[0].projects.find((item) => item.key === 'DST')).toMatchObject({
@@ -741,7 +847,11 @@ describe('projects', () => {
     it('carries no agent into another team', async () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'SRC', name: 'Source' });
-      await createAgent(api, 'SRC', { name: 'Ext', username: 'ext', kind: 'external' });
+      await createAgent(api, 'SRC', {
+        name: 'Ext',
+        username: 'ext',
+        kind: 'external',
+      });
       const target = (await api.teams.post({ name: 'Other Team' })).data!;
       const sourceId = await projectIdOf(api, 'SRC');
 
@@ -819,6 +929,33 @@ describe('projects', () => {
       expect((await api.projects.get()).data).toHaveLength(0);
     });
 
+    it('removes its Hermes coordinator so its key can be recreated', async () => {
+      const { api } = await signUpClient();
+      const first = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+      expect(first.status).toBe(201);
+
+      const deleted = await api.projects({ projectKey: 'MKT' }).delete();
+      expect(deleted.status).toBe(204);
+      expect(
+        await db
+          .select({ username: aiAgent.username })
+          .from(aiAgent)
+          .where(eq(aiAgent.username, 'hermes-mkt-coordinator')),
+      ).toEqual([]);
+
+      const recreated = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing again',
+      });
+      expect(recreated.status).toBe(201);
+      const agents = await api
+        .teams({ teamId: recreated.data!.teamId })
+        ['ai-agents'].get({ query: { projectId: recreated.data!.id } });
+      expect(agents.data).toEqual([
+        expect.objectContaining({ username: 'hermes-mkt-coordinator' }),
+      ]);
+    });
+
     it('returns 404 for an unknown project', async () => {
       const { api } = await signUpClient();
       const res = await api.projects({ projectKey: 'NOPE' }).delete();
@@ -852,7 +989,10 @@ describe('projects', () => {
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
       const view = await viewOf(api, 'MKT');
-      expect(view.data?.project).toMatchObject({ mcpEnabled: true, teamMcpEnabled: true });
+      expect(view.data?.project).toMatchObject({
+        mcpEnabled: true,
+        teamMcpEnabled: true,
+      });
     });
 
     it('no longer takes the toggle on the project settings route', async () => {
@@ -936,7 +1076,10 @@ describe('projects', () => {
 
       const res = await api.projects({ projectKey: 'MKT' }).settings.get();
       expect(res.status).toBe(200);
-      expect(res.data).toMatchObject({ mcpEnabled: true, teamMcpEnabled: true });
+      expect(res.data).toMatchObject({
+        mcpEnabled: true,
+        teamMcpEnabled: true,
+      });
     });
 
     it('starts a new project with every optional section enabled', async () => {
@@ -991,9 +1134,9 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const off = await api
-        .projects({ projectKey: 'MKT' })
-        .settings.patch({ features: { subtasks: false, checklists: false, issueStats: false } });
+      const off = await api.projects({ projectKey: 'MKT' }).settings.patch({
+        features: { subtasks: false, checklists: false, issueStats: false },
+      });
       expect(off.status).toBe(200);
       expect(off.data?.features).toMatchObject({
         subtasks: false,
@@ -1015,9 +1158,9 @@ describe('projects', () => {
         columnId,
         title: 'Parent',
       });
-      await api
-        .projects({ projectKey: 'MKT' })
-        .settings.patch({ features: { initiatives: false, checklists: false, subtasks: false } });
+      await api.projects({ projectKey: 'MKT' }).settings.patch({
+        features: { initiatives: false, checklists: false, subtasks: false },
+      });
 
       expect((await api.projects({ projectKey: 'MKT' }).initiatives.get()).status).toBe(403);
       expect(
@@ -1036,7 +1179,10 @@ describe('projects', () => {
       setLimits({ blockedFeatures: ['initiatives'] });
 
       const settings = await api.projects({ projectKey: 'MKT' }).settings.get();
-      expect(settings.data?.features).toMatchObject({ initiatives: false, dashboards: true });
+      expect(settings.data?.features).toMatchObject({
+        initiatives: false,
+        dashboards: true,
+      });
 
       const project = (await viewOf(api, 'MKT')).data!.project;
       expect(project.initiativesEnabled).toBe(false);
@@ -1073,7 +1219,10 @@ describe('projects', () => {
       const res = await api
         .projects({ projectKey: 'MKT' })
         .settings.patch({ features: { checklists: false } });
-      expect(res.data?.features).toMatchObject({ notes: false, checklists: false });
+      expect(res.data?.features).toMatchObject({
+        notes: false,
+        checklists: false,
+      });
     });
 
     it('denies writing settings to someone outside the project and its team', async () => {
@@ -1139,7 +1288,10 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const patch = await autoArchive(api).patch({ completedDays: 14, canceledDays: 3 });
+      const patch = await autoArchive(api).patch({
+        completedDays: 14,
+        canceledDays: 3,
+      });
       expect(patch.status).toBe(200);
       expect(patch.data).toMatchObject({ completedDays: 14, canceledDays: 3 });
 
@@ -1153,7 +1305,10 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const res = await autoArchive(api).patch({ completedDays: 30, canceledDays: null });
+      const res = await autoArchive(api).patch({
+        completedDays: 30,
+        canceledDays: null,
+      });
       expect(res.status).toBe(200);
       expect(res.data).toMatchObject({ completedDays: 30, canceledDays: null });
     });
@@ -1162,7 +1317,10 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const res = await autoArchive(api).patch({ completedDays: 0, canceledDays: 7 });
+      const res = await autoArchive(api).patch({
+        completedDays: 0,
+        canceledDays: 7,
+      });
       expect(res.status).toBe(400);
     });
 
@@ -1172,7 +1330,10 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const res = await autoArchive(api).patch({ completedDays: 3_000_000, canceledDays: 7 });
+      const res = await autoArchive(api).patch({
+        completedDays: 3_000_000,
+        canceledDays: 7,
+      });
       expect(res.status).toBe(400);
     });
 
@@ -1182,9 +1343,14 @@ describe('projects', () => {
       const member = await addProjectMember(owner.api, 'MKT');
 
       expect((await autoArchive(member).get()).status).toBe(403);
-      expect((await autoArchive(member).patch({ completedDays: 14, canceledDays: 3 })).status).toBe(
-        403,
-      );
+      expect(
+        (
+          await autoArchive(member).patch({
+            completedDays: 14,
+            canceledDays: 3,
+          })
+        ).status,
+      ).toBe(403);
     });
 
     it('lets a granted role read the thresholds but not change them without edit', async () => {
@@ -1197,9 +1363,14 @@ describe('projects', () => {
       const member = await addProjectMember(owner.api, 'MKT', role.data!.id);
 
       expect((await autoArchive(member).get()).status).toBe(200);
-      expect((await autoArchive(member).patch({ completedDays: 14, canceledDays: 3 })).status).toBe(
-        403,
-      );
+      expect(
+        (
+          await autoArchive(member).patch({
+            completedDays: 14,
+            canceledDays: 3,
+          })
+        ).status,
+      ).toBe(403);
     });
 
     it('lets a role with edit change the thresholds', async () => {
@@ -1211,7 +1382,10 @@ describe('projects', () => {
       });
       const member = await addProjectMember(owner.api, 'MKT', role.data!.id);
 
-      const res = await autoArchive(member).patch({ completedDays: 14, canceledDays: 3 });
+      const res = await autoArchive(member).patch({
+        completedDays: 14,
+        canceledDays: 3,
+      });
       expect(res.status).toBe(200);
       expect(res.data).toMatchObject({ completedDays: 14, canceledDays: 3 });
     });
@@ -1222,7 +1396,10 @@ describe('projects', () => {
 
     it('defaults a new project to both kinds and time logging off', async () => {
       const { api } = await signUpClient();
-      const created = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+      const created = await api.projects.post({
+        key: 'MKT',
+        name: 'Marketing',
+      });
 
       expect(created.data).toMatchObject({
         pointsEstimateEnabled: false,
@@ -1235,9 +1412,17 @@ describe('projects', () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const patch = await estimates(api).patch({ points: true, time: false, logging: true });
+      const patch = await estimates(api).patch({
+        points: true,
+        time: false,
+        logging: true,
+      });
       expect(patch.status).toBe(200);
-      expect(patch.data).toMatchObject({ points: true, time: false, logging: true });
+      expect(patch.data).toMatchObject({
+        points: true,
+        time: false,
+        logging: true,
+      });
 
       const view = await viewOf(api, 'MKT');
       expect(view.data?.project).toMatchObject({
@@ -1252,11 +1437,17 @@ describe('projects', () => {
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
       const view = await viewOf(api, 'MKT');
       await estimates(api).patch({ points: true, time: true, logging: false });
-      const issue = await api
-        .projects({ projectKey: 'MKT' })
-        .issues.post({ columnId: view.data!.columns[0].id, title: 'Sized', estimatePoints: 5 });
+      const issue = await api.projects({ projectKey: 'MKT' }).issues.post({
+        columnId: view.data!.columns[0].id,
+        title: 'Sized',
+        estimatePoints: 5,
+      });
 
-      await estimates(api).patch({ points: false, time: false, logging: false });
+      await estimates(api).patch({
+        points: false,
+        time: false,
+        logging: false,
+      });
       expect((await api.issues({ issueId: issue.data!.id }).get()).data).toMatchObject({
         estimatePoints: 5,
       });
@@ -1268,7 +1459,13 @@ describe('projects', () => {
       const member = await addProjectMember(owner.api, 'MKT');
 
       expect(
-        (await estimates(member).patch({ points: true, time: true, logging: true })).status,
+        (
+          await estimates(member).patch({
+            points: true,
+            time: true,
+            logging: true,
+          })
+        ).status,
       ).toBe(403);
     });
 
@@ -1281,9 +1478,17 @@ describe('projects', () => {
       });
       const member = await addProjectMember(owner.api, 'MKT', role.data!.id);
 
-      const res = await estimates(member).patch({ points: true, time: true, logging: true });
+      const res = await estimates(member).patch({
+        points: true,
+        time: true,
+        logging: true,
+      });
       expect(res.status).toBe(200);
-      expect(res.data).toMatchObject({ points: true, time: true, logging: true });
+      expect(res.data).toMatchObject({
+        points: true,
+        time: true,
+        logging: true,
+      });
     });
   });
 
@@ -1296,16 +1501,25 @@ describe('projects', () => {
 
       const res = await subtasks(api).get();
       expect(res.status).toBe(200);
-      expect(res.data).toMatchObject({ completeParent: false, closeSubtasks: false });
+      expect(res.data).toMatchObject({
+        completeParent: false,
+        closeSubtasks: false,
+      });
     });
 
     it('lets an owner set and read back the automations', async () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
 
-      const patch = await subtasks(api).patch({ completeParent: true, closeSubtasks: false });
+      const patch = await subtasks(api).patch({
+        completeParent: true,
+        closeSubtasks: false,
+      });
       expect(patch.status).toBe(200);
-      expect(patch.data).toMatchObject({ completeParent: true, closeSubtasks: false });
+      expect(patch.data).toMatchObject({
+        completeParent: true,
+        closeSubtasks: false,
+      });
 
       expect((await subtasks(api).get()).data).toMatchObject({
         completeParent: true,
@@ -1320,7 +1534,12 @@ describe('projects', () => {
 
       expect((await subtasks(member).get()).status).toBe(403);
       expect(
-        (await subtasks(member).patch({ completeParent: true, closeSubtasks: true })).status,
+        (
+          await subtasks(member).patch({
+            completeParent: true,
+            closeSubtasks: true,
+          })
+        ).status,
       ).toBe(403);
     });
 
@@ -1335,7 +1554,12 @@ describe('projects', () => {
 
       expect((await subtasks(member).get()).status).toBe(200);
       expect(
-        (await subtasks(member).patch({ completeParent: true, closeSubtasks: true })).status,
+        (
+          await subtasks(member).patch({
+            completeParent: true,
+            closeSubtasks: true,
+          })
+        ).status,
       ).toBe(403);
     });
   });

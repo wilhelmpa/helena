@@ -16,6 +16,8 @@ export interface Task {
   env: Record<string, string>;
   // The coding agent session to resume, for a preset that keeps them.
   sessionId?: string | null;
+  model?: string | null;
+  thinkingLevel?: string | null;
 }
 
 export interface Outcome {
@@ -28,6 +30,43 @@ export interface Outcome {
 // the part that says what the agent did — without sending megabytes back.
 const OUTPUT_LIMIT = 8000;
 const ERROR_LIMIT = 400;
+const HERMES_RESULT_LIMIT_BYTES = 128 * 1024;
+
+class HermesResultReader {
+  private line = '';
+  private oversized = false;
+  result: { text: string; exitCode: number } | undefined;
+
+  write(chunk: string): void {
+    const lines = chunk.split('\n');
+    for (let index = 0; index < lines.length; index++) {
+      if (!this.oversized) {
+        this.line += lines[index];
+        if (this.line.length > 1_048_576) {
+          this.line = '';
+          this.oversized = true;
+        }
+      }
+      if (index < lines.length - 1) this.end();
+    }
+  }
+
+  end(): void {
+    try {
+      const value = this.oversized ? null : JSON.parse(this.line);
+      if (value?.type === 'result' && typeof value.text === 'string') {
+        this.result = {
+          text: value.text,
+          exitCode: typeof value.exit_code === 'number' ? value.exit_code : 0,
+        };
+      }
+    } catch {
+      // Non-JSON CLI diagnostics do not replace the final result.
+    }
+    this.line = '';
+    this.oversized = false;
+  }
+}
 
 // Applied as the output arrives, so a command that prints for half an hour does not buffer
 // all of it to have everything but the last few kilobytes thrown away.
@@ -68,7 +107,11 @@ function spawnArgs(
   if (!preset) return ['sh', ['-c', config.command ?? '']];
   return [
     preset.bin,
-    presetArgv(preset, task.sessionId ?? null, task.systemPrompt, config.args, task.prompt),
+    presetArgv(preset, task.sessionId ?? null, task.systemPrompt, config.args, task.prompt, {
+      provider: config.provider,
+      model: task.model,
+      thinkingLevel: task.thinkingLevel,
+    }),
   ];
 }
 
@@ -107,10 +150,13 @@ export async function execute(
 
   let stdout = '';
   let stderr = '';
+  const hermesResult =
+    config.outputFormat === 'hermes-stream-json' ? new HermesResultReader() : null;
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
   child.stdout.on('data', (chunk: string) => {
     stdout = tail(stdout + chunk, OUTPUT_LIMIT);
+    hermesResult?.write(chunk);
     opts.onData?.(chunk);
   });
   child.stderr.on('data', (chunk: string) => {
@@ -135,7 +181,18 @@ export async function execute(
     opts.signal?.removeEventListener('abort', kill);
   }
 
-  const output = stdout.trim();
+  hermesResult?.end();
+  const output = hermesResult?.result?.text ?? stdout.trim();
+  if (hermesResult?.result && Buffer.byteLength(output, 'utf8') > HERMES_RESULT_LIMIT_BYTES)
+    return { status: 'failed', output: '', error: 'Hermes final result exceeds 128 KiB' };
+  if (code === 0 && hermesResult && !hermesResult.result)
+    return { status: 'failed', output: '', error: 'Hermes stream ended without a final result' };
+  if (code === 0 && hermesResult?.result?.exitCode)
+    return {
+      status: 'failed',
+      output,
+      error: `Hermes reported exit code ${hermesResult.result.exitCode}`,
+    };
   if (code === 0) return { status: 'success', output };
   // The timeout says more about the failure than whatever the command printed.
   if (timedOut) return { status: 'failed', output, error: `Timed out after ${config.timeoutMs}ms` };

@@ -14,24 +14,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    environment:
-      GIT_SSH_COMMAND: /usr/local/bin/volition-git-ssh
-    secrets:
-      - source: verve_git_deploy_key
-        target: verve_git_deploy_key
-        uid: "1000"
-        gid: "1000"
-        mode: 0400
-      - source: github_known_hosts
-        target: github_known_hosts
-        uid: "1000"
-        gid: "1000"
-        mode: 0400
-      - source: trading_bridge_token
-        target: trading_bridge_token
-        uid: "1000"
-        gid: "1000"
-        mode: 0400
     ports:
       - "127.0.0.1:8091:8080"
       - "127.0.0.1:8100:8082"
@@ -43,9 +25,6 @@ services:
       - type: bind
         source: ${PROJECTS_ROOT:-/home/pw/services/volition-workspaces/projects}
         target: /projects
-      - type: bind
-        source: ${ITSAPLAN_PROJECT_PATH:-/home/pw/services/volition-workspaces/projects/itsaplan}
-        target: /projects/itsaplan
       - type: bind
         source: ${VERVE_PROJECT_PATH:-/home/pw/Projekte/Shopify/v1-cart-suite}
         target: /projects/verve
@@ -107,6 +86,8 @@ services:
     image: volition/redis:8.2-alpine-patched-20260921-v2
     restart: unless-stopped
     user: redis
+    group_add:
+      - "1000"
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -290,12 +271,6 @@ services:
         ipv4_address: 172.30.92.24
 
 secrets:
-  verve_git_deploy_key:
-    file: ./.secrets/verve_git_deploy_key
-  github_known_hosts:
-    file: ./.secrets/github_known_hosts
-  trading_bridge_token:
-    file: ./.secrets/trading_bridge_token
   nextcloud_db_password:
     file: ./.secrets/nextcloud_db_password
   nextcloud_admin_password:

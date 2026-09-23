@@ -5,6 +5,7 @@ import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
 import { execute } from './execute';
+import { hermesPolicySynchronizer } from './policy';
 
 // The runner holds no state — the queue is the server's — so stopping it mid-task only
 // means that task's lease expires and another runner picks it up.
@@ -43,6 +44,8 @@ function taskOf(run: Run) {
   return {
     prompt: run.prompt,
     systemPrompt: run.systemPrompt,
+    model: run.model,
+    thinkingLevel: run.thinkingLevel,
     env: {
       ITSAPLAN_RUN_ID: String(run.id),
       ITSAPLAN_TRIGGER: run.trigger,
@@ -184,14 +187,23 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
     `running ${config.agent ?? 'the configured command'}, polling ${config.url} every ` +
       `${config.pollIntervalMs}ms, up to ${config.concurrency} at once`,
   );
+  const policy = hermesPolicySynchronizer(config, client);
+  await policy?.ensure();
+  if (config.models.length > 0) await client.publishChatCatalog(config.models);
   let chatSupported = true;
   await Promise.all([
     drain<Run>(
       state,
       log,
       config.concurrency,
-      () => client.claim(),
-      (run) => handle(config, client, log, run),
+      async () => {
+        await policy?.ensure();
+        return client.claim();
+      },
+      async (run) => {
+        await policy?.ensure();
+        return handle(config, client, log, run);
+      },
       async () => {
         await sleep(config.pollIntervalMs);
         return true;
@@ -206,6 +218,7 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
       config.concurrency,
       async () => {
         try {
+          await policy?.ensure();
           return await client.claimChat();
         } catch (err) {
           if (err instanceof RequestError && err.status === 404) {
@@ -216,7 +229,10 @@ async function serve(state: { stopping: boolean }, config: RunnerConfig): Promis
           throw err;
         }
       },
-      (message) => handleChat(config, client, log, message),
+      async (message) => {
+        await policy?.ensure();
+        return handleChat(config, client, log, message);
+      },
       () => Promise.resolve(chatSupported),
     ),
   ]);

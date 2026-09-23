@@ -1,44 +1,24 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
-import { usePermissions } from '@/hooks/usePermissions';
 import RequirePermission from '@/components/common/permissions/RequirePermission';
 import SectionPageView from '@/components/common/page/SectionPageView';
-import { Button } from '@/components/ui/button';
 import { SettingsResourceProvider } from '@/features/settings/context/settingsPermission';
-import SettingsActions from '@/features/settings/components/actions/SettingsActions';
 import { ProjectTemplatesPanel } from './components/workflows/ProjectTemplatesPanel';
 import { ControlPlaneWorkflowPanel } from './components/workflows/ControlPlaneWorkflowPanel';
 
 export default function WorkflowsPage() {
   const t = useTranslations('settings.actions');
-  const { project, customFields } = useShell();
-  const { can } = usePermissions();
-  const [addNew, setAddNew] = useState(false);
+  const { project } = useShell();
   if (!project) return null;
   return (
-    <SectionPageView
-      title={t('workflowTitle')}
-      description={t('workflowDescription')}
-      wide
-      actions={
-        can('actions', 'create') ? (
-          <Button type="button" size="sm" onClick={() => setAddNew(true)}>
-            {t('newWorkflow')}
-          </Button>
-        ) : undefined
-      }
-    >
+    <SectionPageView title={t('workflowTitle')} description={t('workflowDescription')} wide>
       <SettingsResourceProvider resource="actions">
         <RequirePermission resource="actions" action="read">
-          <ControlPlaneWorkflowPanel projectKey={project.project.key} />
-          <SettingsActions
-            project={project}
-            customFields={customFields}
-            requestNew={addNew}
-            onNewHandled={() => setAddNew(false)}
+          <ControlPlaneWorkflowPanel
+            projectId={project.project.id}
+            projectKey={project.project.key}
           />
           <ProjectTemplatesPanel project={project} />
         </RequirePermission>

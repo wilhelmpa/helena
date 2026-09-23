@@ -103,6 +103,14 @@ export type ChatMessageDTO = {
 export type ChatMessagePage = {
   items: ChatMessageDTO[];
   nextPage: number | null;
+  // Present on the newest page while an external runner is still producing its
+  // answer. A reloaded browser uses it to reconnect to that exact answer rather than
+  // sending the member's prompt a second time.
+  activeAnswer?: {
+    messageId: number;
+    status: 'pending' | 'streaming';
+    createdAt: string;
+  };
 };
 
 export type ChatThreadPage = {

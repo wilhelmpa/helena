@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Server, Shield, UserPlus } from 'lucide-react';
+import { FolderPlus, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { useSession } from '@/lib/auth-client';
 import { APP_NAME } from '@/utils/app';
-import { godPath, mcpServerPath } from '@/utils/paths';
+import { godPath, projectPath } from '@/utils/paths';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSettingsNavGroups } from '@/hooks/useSettingsNavGroups';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
@@ -28,19 +28,20 @@ import SidebarHomeNav from '@/components/layout/SidebarHomeNav';
 // The app sidebar. It has two modes driven by the route: the main work
 // navigation, and the project settings navigation reached through the "Project
 // settings" entry. Projects stay visible in the scrollable sidebar in both modes.
-// Creating and deleting a project live in the team panel on Manage teams.
+// Creating a project is available in the header; project administration is under Project settings.
 export default function AppSidebar({
   projects,
   currentProjectKey,
   onSelectProject,
-  onNewTeam,
+  onNewProject,
 }: {
   projects: Project[];
   currentProjectKey: string | null;
   onSelectProject: (key: string) => void;
-  onNewTeam: () => void;
+  onNewProject: () => void;
 }) {
   const t = useTranslations('nav');
+  const newProjectT = useTranslations('newProject');
   const pathname = usePathname();
   const teamIds = new Set(projects.map((project) => project.teamId));
   const homeTeamId = teamIds.size === 1 ? [...teamIds][0]! : null;
@@ -58,8 +59,22 @@ export default function AppSidebar({
   // Members and the AI Team pages are not in those groups, so they keep the main
   // sidebar.
   const settingsNav = useSettingsNavGroups(currentProjectKey);
-  const settingsMode = settingsNav.groups.some((g) => g.items.some((i) => i.active));
-  const onMcp = pathname.endsWith('/mcp');
+  const projectBase = currentProjectKey ? projectPath(currentProjectKey) : '';
+  const configurationRoute =
+    Boolean(projectBase) &&
+    [
+      '/organization',
+      '/workflows',
+      '/cycles',
+      '/ai-agents',
+      '/ai-team/',
+      '/members',
+      '/notifications',
+      '/settings/',
+      '/mcp',
+    ].some((segment) => pathname.startsWith(`${projectBase}${segment}`));
+  const settingsMode =
+    configurationRoute || settingsNav.groups.some((g) => g.items.some((i) => i.active));
   const side = useSidebarSide();
 
   return (
@@ -72,11 +87,11 @@ export default function AppSidebar({
           <button
             type="button"
             className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            title={t('newTeam')}
-            onClick={onNewTeam}
+            title={newProjectT('title')}
+            onClick={onNewProject}
           >
-            <UserPlus className="size-4" />
-            <span className="sr-only">{t('newTeam')}</span>
+            <FolderPlus className="size-4" />
+            <span className="sr-only">{newProjectT('title')}</span>
           </button>
         </div>
       </SidebarHeader>
@@ -101,15 +116,6 @@ export default function AppSidebar({
       {!settingsMode && (
         <SidebarFooter>
           <SidebarMenu>
-            {currentProjectKey && (
-              <SidebarNavItem
-                href={mcpServerPath(currentProjectKey)}
-                icon={Server}
-                label={t('mcpServer')}
-                active={onMcp}
-                disabled={false}
-              />
-            )}
             {/* Instance administration, only for the owner account. The API
                   enforces the same, so hiding it here is about noise, not access. */}
             {isGod && (

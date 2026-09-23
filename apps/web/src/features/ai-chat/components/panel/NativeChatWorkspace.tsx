@@ -2,38 +2,37 @@
 
 import { useMemo } from 'react';
 import type { WorkspaceContentProps } from '@/context/workspaceContents';
+import { soleTeamId } from '@/features/home/homeTeamScope';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
-import { useProjectProvisioningQuery, useProjectQuery } from '@/services/projects.service';
+import { useProjectQuery } from '@/services/projects.service';
+import { useTeamsQuery } from '@/services/teams.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import { coordinatorUsername, nativeChatProjectKey } from '@/utils/workspaceTools';
+import { nativeChatProjectKey, preferredAgentUsername } from '@/utils/workspaceTools';
 import { ChatPanelBody } from './ChatPanelBody';
 
-// The workspace chat is the native It's a Plan transcript and composer, backed by the
-// external OpenClaw runner. Home stores its threads in one configured anchor project,
-// while a project route keeps conversations in that project. The desired coordinator
-// is put first without hiding the other project agents from the selector.
+// Project chats keep their project permission boundary. Home uses the member's sole
+// team directly, so a fresh installation can talk to its global master before the
+// first project exists.
 export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProps) {
   const config = runtimeEnv().workspace;
-  const chatProjectKey = nativeChatProjectKey(config, projectKey);
+  const teams = useTeamsQuery();
+  const homeTeamId = projectKey ? null : soleTeamId(teams.data);
+  const chatProjectKey = projectKey ? nativeChatProjectKey(config, projectKey) : null;
+  const scopeKey = chatProjectKey ?? (homeTeamId == null ? null : `team:${homeTeamId}`);
   const project = useProjectQuery(chatProjectKey);
-  const provisioning = useProjectProvisioningQuery(chatProjectKey);
-  const resources =
-    provisioning.data?.status === 'succeeded' ? (provisioning.data.result?.resources ?? []) : [];
-  const agentsQuery = useAiAgentsQuery(
-    project.data?.project.teamId ?? null,
-    project.data?.project.id,
-  );
-  const desiredUsername = coordinatorUsername(config, projectKey, resources);
+  const teamId = project.data?.project.teamId ?? homeTeamId;
+  const agentsQuery = useAiAgentsQuery(teamId, project.data?.project.id);
+  const desiredUsername = preferredAgentUsername(projectKey);
   const agents = useMemo(() => {
     const available = agentsQuery.data ?? [];
     const desired = available.find((agent) => agent.username === desiredUsername);
     return desired ? [desired, ...available.filter((agent) => agent.id !== desired.id)] : available;
   }, [agentsQuery.data, desiredUsername]);
 
-  if (!chatProjectKey) {
+  if (!scopeKey) {
     return (
       <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
-        Home chat is not configured.
+        Home chat is waiting for the first account.
       </div>
     );
   }
@@ -41,11 +40,11 @@ export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProp
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ChatPanelBody
-        projectKey={chatProjectKey}
+        projectKey={scopeKey}
         newChatAgentId={null}
         onNewChatHandled={() => undefined}
         agents={agents}
-        agentsLoading={project.isLoading || provisioning.isLoading || agentsQuery.isLoading}
+        agentsLoading={teams.isLoading || project.isLoading || agentsQuery.isLoading}
       />
     </div>
   );

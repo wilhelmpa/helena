@@ -1,12 +1,13 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "kind": "control-plane-workflow-registry",
   "title": "Volition control-plane workflows",
   "executionSupported": true,
   "warnings": [
     "Dry-runs only simulate effects. Production inbox triage calls one private provider-neutral classifier capability.",
     "External writes and sends suspend for approval and remain needs-attention after approval until a production adapter is installed.",
-    "The registry contains no credentials, message bodies, document contents, or production run imports."
+    "The registry contains no credentials, message bodies, document contents, or production run imports.",
+    "Mastra owns workflow state, retries, schedules and run history. Hermes executes agent stages and does not own business schedules."
   ],
   "flows": [
     {
@@ -86,6 +87,35 @@
         { "id": "approval-gate", "title": "Require filing approval", "description": "Suspend before metadata or storage writes.", "sourceRefs": ["src/mastra/registry.ts"] }
       ],
       "currentLimits": ["No document or metadata is written until the project has an approved document-store.v1 capability grant."]
+    },
+    {
+      "id": "agent-team",
+      "name": "Project agent team",
+      "description": "Coordinate project work through Hermes specialists, require coordinator review and synchronize evidence to the matching Plan task.",
+      "capabilityRefs": ["hermes-team.v1", "plan-task-sync.v1"],
+      "externalEffects": false,
+      "triggers": ["agent.team.requested"],
+      "ownership": {
+        "workflowState": "mastra",
+        "agentRuntime": "hermes",
+        "humanTaskState": "plan",
+        "schedules": "mastra"
+      },
+      "reliability": {
+        "idempotency": "One deterministic key per event, phase and assignment.",
+        "leases": "Hermes returns bounded leases with current heartbeat timestamps.",
+        "retries": "Mastra retries durable steps and the private adapter applies bounded exponential backoff with the same idempotency key.",
+        "checkpoints": "Each Mastra step persists coordinator, specialist and review results before the next phase.",
+        "history": "Safe stage summaries, attempts and timestamps are stored in the Mastra run output."
+      },
+      "steps": [
+        { "id": "prepare-team", "title": "Validate team", "description": "Validate project scope, task identity, team membership and execution policy.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
+        { "id": "coordinate", "title": "Create delegations", "description": "Ask the Hermes coordinator for bounded assignments to registered project specialists.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
+        { "id": "specialize", "title": "Execute specialist work", "description": "Run independent specialist assignments through the private Hermes bridge with leases, heartbeats and stable idempotency keys.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
+        { "id": "review", "title": "Review evidence", "description": "Require the coordinator to evaluate evidence against the task acceptance criteria.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
+        { "id": "synchronize-plan", "title": "Synchronize Plan", "description": "Write the reviewed summary and evidence to the exact project task and set Review or Done exactly once.", "sourceRefs": ["src/mastra/team-workflow.ts"] }
+      ],
+      "currentLimits": ["The private Hermes team bridge must implement the documented Unix-socket contract before production runs are enabled. Dry-runs make no Hermes or Plan call."]
     }
   ]
 }

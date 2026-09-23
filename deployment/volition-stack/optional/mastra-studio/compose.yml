@@ -13,10 +13,10 @@ services:
     mem_limit: 768m
     cpus: 1.0
     environment:
+      MASTRA_FRESH_MODE: ${MASTRA_FRESH_MODE:-false}
       STUDIO_OWNER_EMAIL: owner@example.com
       INBOX_ADAPTER_TOKEN_FILE: /run/secrets/mastra_inbox_adapter_token
       INBOX_CLASSIFIER_TOKEN_FILE: /run/secrets/mastra_inbox_adapter_token
-      INBOX_CLASSIFIER_SOCKET: /run/volition-ipc/mastra-inbox-classifier.sock
       INBOX_CLASSIFIER_CAPABILITY: inbox-triage.v1
     secrets:
       - mastra_inbox_adapter_token
@@ -25,7 +25,6 @@ services:
         ipv4_address: 172.30.95.2
     volumes:
       - studio-data:/data
-      - /home/pw/.openclaw/volition/ipc:/run/volition-ipc:ro
     tmpfs:
       - /tmp:size=64m,mode=1777,noexec,nosuid
     healthcheck:

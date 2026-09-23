@@ -41,7 +41,7 @@ describe('god projects', () => {
         key: 'ALC',
         name: 'Alice Only',
         mcpEnabled: true,
-        memberCount: 1,
+        memberCount: 2,
         issueCount: 0,
       });
     });
@@ -66,11 +66,11 @@ describe('god projects', () => {
 
       expect(row).toMatchObject({
         // Owner, the joined member, and the agent user (agents are project members).
-        memberCount: 3,
+        memberCount: 4,
         issueCount: 1,
         archivedIssueCount: 0,
         initiativeCount: 1,
-        agentCount: 1,
+        agentCount: 2,
         dashboardCount: 0,
         viewCount: 2,
         skillCount: 0,
@@ -152,8 +152,8 @@ describe('god projects', () => {
       const res = await god.api.god.projects({ projectId: created.data!.id }).get();
 
       expect(res.status).toBe(200);
-      expect(res.data?.members).toHaveLength(1);
-      expect(res.data?.members[0]).toMatchObject({
+      expect(res.data?.members).toHaveLength(2);
+      expect(res.data?.members.find((m) => m.userId === alice.id)).toMatchObject({
         userId: alice.id,
         email: 'alice@example.com',
         isAgent: false,
@@ -162,8 +162,16 @@ describe('god projects', () => {
         roleName: null,
       });
       // An owner bypasses the matrix, so every resource comes back granted.
-      expect(res.data?.members[0].permissions.work_items.create).toBe(true);
-      expect(res.data?.members[0].permissions.members_manage.delete).toBe(true);
+      expect(
+        res.data?.members.find((m) => m.userId === alice.id)!.permissions.work_items.create,
+      ).toBe(true);
+      expect(
+        res.data?.members.find((m) => m.userId === alice.id)!.permissions.members_manage.delete,
+      ).toBe(true);
+      expect(res.data?.members.find((m) => m.isAgent)).toMatchObject({
+        name: 'Hermes MKT Coordinator',
+        isAgent: true,
+      });
     });
 
     it("resolves a member membership to the assigned role's matrix", async () => {

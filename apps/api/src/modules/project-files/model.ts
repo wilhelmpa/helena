@@ -25,6 +25,7 @@ export const ProjectFileTextResponse = t.Object({
   path: t.String(),
   content: t.String(),
   sizeBytes: t.Number(),
+  etag: t.Optional(t.String()),
 });
 
 export const createProjectTextBody = t.Object({

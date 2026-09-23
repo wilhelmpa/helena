@@ -4,11 +4,20 @@ import { Cpu, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
 import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
+import { runtimeSelectionForModel } from './AgentRuntimePolicySection.logic';
 
-const REASONING = ['none', 'low', 'medium', 'high', 'xhigh'] as const;
+const AGENT_DEFAULT = '__agent_default__';
 
 function lines(value: string) {
   return value.split(/\r?\n/);
@@ -19,15 +28,38 @@ export default function AgentRuntimePolicySection({
   onOpenChange,
   value,
   onChange,
+  models,
+  modelsLoading,
+  modelsError,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: AgentFormValue;
   onChange: (patch: Partial<AgentFormValue>) => void;
+  models: AiChatModel[];
+  modelsLoading: boolean;
+  modelsError: boolean;
 }) {
   const policy = value.runtimePolicy;
+  const selectedModel = models.find((entry) => entry.id === value.model);
+  const unavailableModel = value.model.length > 0 && !selectedModel;
+  const unavailableReasoning =
+    policy.reasoningEffort != null &&
+    (!selectedModel || !selectedModel.thinkingLevels.includes(policy.reasoningEffort));
   const patchPolicy = (patch: Partial<typeof policy>) =>
     onChange({ runtimePolicy: { ...policy, ...patch } });
+
+  const selectModel = (nextValue: string) => {
+    const next = runtimeSelectionForModel(
+      models,
+      nextValue === AGENT_DEFAULT ? null : nextValue,
+      policy.reasoningEffort,
+    );
+    onChange({
+      model: next.model ?? '',
+      runtimePolicy: { ...policy, reasoningEffort: next.reasoningEffort },
+    });
+  };
 
   return (
     <AgentFormSection
@@ -42,28 +74,69 @@ export default function AgentRuntimePolicySection({
           <label htmlFor="agent-runtime-model" className="text-sm font-medium">
             Model
           </label>
-          <Input
-            id="agent-runtime-model"
-            placeholder="provider/model"
-            value={value.model}
-            onChange={(event) => onChange({ model: event.target.value })}
-          />
+          <Select
+            value={value.model || AGENT_DEFAULT}
+            onValueChange={selectModel}
+            disabled={modelsLoading}
+          >
+            <SelectTrigger id="agent-runtime-model" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={AGENT_DEFAULT}>Agent default</SelectItem>
+              {unavailableModel && (
+                <SelectItem value={value.model} disabled>
+                  {value.model} (unavailable)
+                </SelectItem>
+              )}
+              {models.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  {model.name} · {model.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {modelsLoading
+              ? 'Loading the connected runner catalog…'
+              : modelsError
+                ? 'The runner catalog is temporarily unavailable.'
+                : models.length === 0
+                  ? 'The connected runner has not published any models yet.'
+                  : 'Models published by the connected runner provider.'}
+          </p>
         </div>
         <div className="space-y-1.5">
-          <span className="text-sm font-medium">Reasoning</span>
-          <div className="flex flex-wrap gap-1.5">
-            {REASONING.map((effort) => (
-              <Button
-                key={effort}
-                type="button"
-                size="sm"
-                variant={policy.reasoningEffort === effort ? 'secondary' : 'outline'}
-                onClick={() => patchPolicy({ reasoningEffort: effort })}
-              >
-                {effort}
-              </Button>
-            ))}
-          </div>
+          <label htmlFor="agent-runtime-reasoning" className="text-sm font-medium">
+            Reasoning
+          </label>
+          <Select
+            value={policy.reasoningEffort ?? AGENT_DEFAULT}
+            onValueChange={(effort) =>
+              patchPolicy({ reasoningEffort: effort === AGENT_DEFAULT ? null : effort })
+            }
+            disabled={modelsLoading || !selectedModel}
+          >
+            <SelectTrigger id="agent-runtime-reasoning" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={AGENT_DEFAULT}>
+                Agent default
+                {selectedModel?.thinkingDefault ? ` · ${selectedModel.thinkingDefault}` : ''}
+              </SelectItem>
+              {unavailableReasoning && policy.reasoningEffort && (
+                <SelectItem value={policy.reasoningEffort} disabled>
+                  {policy.reasoningEffort} (unavailable)
+                </SelectItem>
+              )}
+              {selectedModel?.thinkingLevels.map((effort) => (
+                <SelectItem key={effort} value={effort}>
+                  {effort}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

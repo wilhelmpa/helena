@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type DocumentIssueLink,
   type DocumentAsset,
+  type DocumentMarkdownSyncStatus,
   type IssueDocumentLink,
   type NewProjectDocumentInput,
   type ProjectDocument,
@@ -10,6 +11,7 @@ import {
   type ProjectDocumentSummary,
   listDocuments,
   getDocument,
+  getDocumentMarkdownSync,
   listDocumentIssueLinks,
   listIssueDocumentLinks,
   linkDocumentIssue,
@@ -31,6 +33,7 @@ import {
   restoreDocumentRevision,
   updateDocument,
   deleteDocument,
+  retryDocumentMarkdownSync,
 } from '@/lib/api/endpoints/documents';
 import { qk } from '@/services/queryKeys';
 import { applyOptimisticDocumentMove } from '../utils/documentMove';
@@ -43,6 +46,9 @@ function summaryOf(document: ProjectDocument): ProjectDocumentSummary {
 function invalidateLists(qc: ReturnType<typeof useQueryClient>, projectKey: string) {
   void qc.invalidateQueries({ queryKey: qk.documentListsForProject(projectKey) });
 }
+
+const documentMarkdownSyncKey = (projectKey: string, documentId: number, documentVersion: number) =>
+  [...qk.document(projectKey, documentId), 'markdownSync', documentVersion] as const;
 
 export function useDocumentsQuery(projectKey: string | null, q = '', archived = false) {
   return useQuery({
@@ -58,6 +64,36 @@ export function useDocumentQuery(projectKey: string | null, documentId: number |
     queryFn: () => getDocument(projectKey!, documentId!),
     enabled: projectKey != null && documentId != null,
     refetchOnMount: 'always',
+  });
+}
+
+export function useDocumentMarkdownSyncQuery(
+  projectKey: string | null,
+  documentId: number | null,
+  documentVersion: number,
+) {
+  return useQuery<DocumentMarkdownSyncStatus>({
+    queryKey: documentMarkdownSyncKey(projectKey ?? '', documentId ?? 0, documentVersion),
+    queryFn: () => getDocumentMarkdownSync(projectKey!, documentId!),
+    enabled: projectKey != null && documentId != null,
+  });
+}
+
+export function useRetryDocumentMarkdownSync(
+  projectKey: string | null,
+  documentId: number | null,
+  documentVersion: number,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => retryDocumentMarkdownSync(projectKey!, documentId!),
+    onSuccess: (status) => {
+      if (!projectKey || documentId === null) return;
+      qc.setQueryData<DocumentMarkdownSyncStatus>(
+        documentMarkdownSyncKey(projectKey, documentId, documentVersion),
+        status,
+      );
+    },
   });
 }
 

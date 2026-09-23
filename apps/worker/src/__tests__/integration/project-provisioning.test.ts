@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
   db,
   project,
+  projectDeprovisioningJob,
   projectProvisioningJob,
   projectView,
   projectViewFolder,
@@ -15,6 +16,7 @@ let server: ReturnType<typeof Bun.serve> | null = null;
 
 beforeEach(async () => {
   resetWorkerConfigForTests();
+  await db.delete(projectDeprovisioningJob);
   await db.delete(team);
 });
 
@@ -33,8 +35,8 @@ describe('project provisioning', () => {
         return Response.json({ resources: [] });
       },
     });
-    process.env.OPENCLAW_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
-    process.env.OPENCLAW_PROVISIONING_TOKEN = 'integration-test-token';
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
     const [owner] = await db.insert(team).values({ name: 'Board provisioning' }).returning();
     const [created] = await db
       .insert(project)
@@ -90,7 +92,7 @@ describe('project provisioning', () => {
             {
               kind: 'terminal',
               id: 'terminal-project:verve',
-              url: 'https://openclaw.volition.one/focus/terminal-project/?arg=verve&token=must-not-be-stored',
+              url: 'https://agents.example.com/focus/terminal-project/?arg=verve&token=must-not-be-stored',
             },
             {
               kind: `board:${boardId}`,
@@ -101,6 +103,11 @@ describe('project provisioning', () => {
               kind: `board:${boardId}:files`,
               id: `/Projects/verve/Boards/board-${boardId}`,
               url: `https://cloud.volition.one/apps/files/files?dir=/Projects/verve/Boards/board-${boardId}&share=must-not-be-stored#private`,
+            },
+            {
+              kind: 'browser',
+              id: 'project-browser:verve',
+              url: 'https://plan.volition.one/browser/projects/verve/vnc.html?autoconnect=1&resize=remote&path=browser/projects/verve/websockify&token=must-not-be-stored#private',
             },
             {
               kind: `board:${boardId + 1}:files`,
@@ -115,8 +122,8 @@ describe('project provisioning', () => {
         });
       },
     });
-    process.env.OPENCLAW_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
-    process.env.OPENCLAW_PROVISIONING_TOKEN = 'integration-test-token';
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
 
     const [owner] = await db.insert(team).values({ name: 'Provisioning test' }).returning();
     const [created] = await db
@@ -132,7 +139,14 @@ describe('project provisioning', () => {
       .insert(projectProvisioningJob)
       .values({
         projectId: created.id,
-        requestedResources: ['workspace', 'files', 'terminal', `board:${view.id}`],
+        requestedResources: [
+          'workspace',
+          'files',
+          'terminal',
+          'coordinator',
+          'browser',
+          `board:${view.id}`,
+        ],
       })
       .returning();
 
@@ -146,7 +160,14 @@ describe('project provisioning', () => {
       eventId: job.id,
       eventType: 'project.provision',
       project: { id: created.id, key: created.key, teamId: owner.id },
-      requestedResources: ['workspace', 'files', 'terminal', `board:${view.id}`],
+      requestedResources: [
+        'workspace',
+        'files',
+        'terminal',
+        'coordinator',
+        'browser',
+        `board:${view.id}`,
+      ],
     });
 
     const [stored] = await db
@@ -172,7 +193,7 @@ describe('project provisioning', () => {
           {
             kind: 'terminal',
             id: 'terminal-project:verve',
-            url: 'https://openclaw.volition.one/focus/terminal-project/?arg=verve',
+            url: 'https://agents.example.com/focus/terminal-project/?arg=verve',
           },
           {
             kind: `board:${view.id}`,
@@ -183,6 +204,11 @@ describe('project provisioning', () => {
             kind: `board:${view.id}:files`,
             id: `/Projects/verve/Boards/board-${view.id}`,
             url: `https://cloud.volition.one/apps/files/files?dir=%2FProjects%2Fverve%2FBoards%2Fboard-${view.id}`,
+          },
+          {
+            kind: 'browser',
+            id: 'project-browser:verve',
+            url: 'https://plan.volition.one/browser/projects/verve/vnc.html?autoconnect=1&resize=remote&path=browser%2Fprojects%2Fverve%2Fwebsockify',
           },
           { kind: 'files', id: 'files-2' },
         ],
@@ -196,8 +222,8 @@ describe('project provisioning', () => {
       port: 0,
       fetch: () => new Response(JSON.stringify({ resources: [], secret: 'x'.repeat(300_000) })),
     });
-    process.env.OPENCLAW_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
-    process.env.OPENCLAW_PROVISIONING_TOKEN = 'integration-test-token';
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
 
     const [owner] = await db.insert(team).values({ name: 'Provisioning test' }).returning();
     const [created] = await db
@@ -223,6 +249,63 @@ describe('project provisioning', () => {
     });
   });
 
+  it('delivers deletion snapshots after the project row has been removed', async () => {
+    let receivedHeaders: Record<string, string> | null = null;
+    let receivedBody: unknown = null;
+    server = Bun.serve({
+      port: 0,
+      fetch: async (incoming) => {
+        receivedHeaders = Object.fromEntries(incoming.headers.entries());
+        receivedBody = await incoming.json();
+        return Response.json({
+          resources: [
+            { kind: 'workspace', id: 'quarantine:event:workspace' },
+            { kind: 'secret', id: 'must-not-be-stored' },
+          ],
+        });
+      },
+    });
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
+
+    const [owner] = await db.insert(team).values({ name: 'Cleanup test' }).returning();
+    const [job] = await db
+      .insert(projectDeprovisioningJob)
+      .values({
+        projectId: 7331,
+        project: {
+          id: 7331,
+          teamId: owner.id,
+          key: 'GONE',
+          name: 'Deleted project',
+          description: '',
+        },
+        requestedResources: ['workspace', 'files', 'coordinator', 'browser'],
+      })
+      .returning();
+
+    await processProjectProvisioning();
+
+    expect(receivedHeaders!['idempotency-key']).toBe(job.id);
+    expect(receivedHeaders!['x-itsaplan-event']).toBe('project.deprovision');
+    expect(receivedBody).toMatchObject({
+      eventId: job.id,
+      eventType: 'project.deprovision',
+      project: { id: 7331, key: 'GONE', teamId: owner.id },
+      requestedResources: ['workspace', 'files', 'coordinator', 'browser'],
+    });
+    const [stored] = await db
+      .select()
+      .from(projectDeprovisioningJob)
+      .where(eq(projectDeprovisioningJob.id, job.id));
+    expect(stored).toMatchObject({
+      status: 'succeeded',
+      attempts: 1,
+      lastError: null,
+      result: { resources: [{ kind: 'workspace', id: 'quarantine:event:workspace' }] },
+    });
+  });
+
   it('does not let a stale leased response overwrite a retried job', async () => {
     let jobId = '';
     server = Bun.serve({
@@ -235,8 +318,8 @@ describe('project provisioning', () => {
         return Response.json({ resources: [{ kind: 'workspace', id: 'stale' }] });
       },
     });
-    process.env.OPENCLAW_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
-    process.env.OPENCLAW_PROVISIONING_TOKEN = 'integration-test-token';
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
 
     const [owner] = await db.insert(team).values({ name: 'Provisioning test' }).returning();
     const [created] = await db

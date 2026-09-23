@@ -1,8 +1,9 @@
-import { Bot, BookText, KeyRound, Plug, Radio, Users, Wrench } from 'lucide-react';
+import { Bot, BookText, FolderCog, KeyRound, Plug, Radio, Wrench } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
+import { runtimeEnv } from '@/utils/runtimeEnv';
 import { homeNavigation } from './homeNavigation';
 
 const icons = {
@@ -12,18 +13,19 @@ const icons = {
   mcps: Radio,
   tools: Wrench,
   skills: BookText,
-  manageTeams: Users,
+  projectSettings: FolderCog,
 } as const;
 
 export default function SidebarHomeNav({ teamId }: { teamId: number | null }) {
   const pathname = usePathname();
   const t = useTranslations('nav');
+  const { vaultEnabled } = runtimeEnv().workspace;
 
   return (
     <SidebarGroup>
       <SidebarGroupContent>
         <SidebarMenu>
-          {homeNavigation(teamId).map((item) => (
+          {homeNavigation(teamId, vaultEnabled).map((item) => (
             <SidebarNavItem
               key={item.id}
               href={item.href}

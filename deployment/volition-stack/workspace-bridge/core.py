@@ -12,7 +12,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-REGISTRY = Path(os.environ.get('WORKSPACE_REGISTRY', '/home/pw/.openclaw/volition/projects'))
+REGISTRY = Path(os.environ.get('WORKSPACE_REGISTRY', '/home/pw/services/volition-workspaces/.state/projects'))
 SECRET = Path(os.environ.get('NEXTCLOUD_APP_PASSWORD_FILE', '/home/pw/services/volition-stack/.secrets/nextcloud_patrick_app_password'))
 USER = os.environ.get('NEXTCLOUD_USER', 'owner@example.com')
 ORIGIN = os.environ.get('NEXTCLOUD_INTERNAL_URL', 'http://127.0.0.1:8092')

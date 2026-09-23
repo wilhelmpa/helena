@@ -6,6 +6,9 @@ import { workflowDefinitions, workflowRegistry } from '../src/mastra/registry.ts
 import { eventTriggerRegistry, workflowForEvent } from '../src/mastra/triggers.ts';
 import { mastra } from '../src/mastra/index.ts';
 import { privateClassifierAdapter } from '../src/mastra/adapters/classifier.ts';
+import { buildAgentTeamWorkflow } from '../src/mastra/team-workflow.ts';
+import { withBackoff, type HermesTeamAdapter } from '../src/mastra/adapters/hermes-team.ts';
+import type { StageResult } from '../src/mastra/team-contracts.ts';
 
 const envelope = (dryRun: boolean): WorkEnvelope => ({
   eventId: 'evt-001',
@@ -17,9 +20,12 @@ const envelope = (dryRun: boolean): WorkEnvelope => ({
   payload: { subject: 'safe test' },
 });
 
-test('registry contains the six required workflows and every trigger resolves', () => {
+test('registry contains the required workflows and every trigger resolves', () => {
   assert.deepEqual(Object.keys(workflowRegistry).sort(), [...workflowIds].sort());
-  assert.deepEqual(workflowDefinitions.map(item => item.id).sort(), [...workflowIds].sort());
+  assert.deepEqual(
+    [...workflowDefinitions.map((item) => item.id), 'agent-team'].sort(),
+    [...workflowIds].sort(),
+  );
   for (const [event, workflowId] of Object.entries(eventTriggerRegistry)) {
     assert.equal(workflowForEvent(event), workflowId);
   }
@@ -27,7 +33,9 @@ test('registry contains the six required workflows and every trigger resolves', 
 });
 
 test('effect ids and idempotency keys are stable and gated effects are marked', () => {
-  const specs = [{ kind: 'external-send' as const, target: 'mail:reply', description: 'Send reply' }];
+  const specs = [
+    { kind: 'external-send' as const, target: 'mail:reply', description: 'Send reply' },
+  ];
   const first = planEffects(envelope(false), 'support', specs);
   const second = planEffects(envelope(false), 'support', specs);
   assert.deepEqual(first, second);
@@ -37,7 +45,7 @@ test('effect ids and idempotency keys are stable and gated effects are marked', 
 });
 
 test('all workflows execute a safe dry-run', async () => {
-  for (const workflowId of workflowIds) {
+  for (const workflowId of workflowIds.filter((item) => item !== 'agent-team')) {
     const run = await mastra.getWorkflow(workflowId).createRun();
     const result = await run.start({ inputData: envelope(true) });
     assert.equal(result.status, 'success', workflowId);
@@ -45,8 +53,189 @@ test('all workflows execute a safe dry-run', async () => {
     assert.equal(result.result.status, 'dry-run-complete');
     assert.equal(result.result.workflowId, workflowId);
     assert.ok(result.result.effects.length > 0);
-    assert.ok(result.result.effects.every(effect => effect.status === 'simulated'));
+    assert.ok(result.result.effects.every((effect) => effect.status === 'simulated'));
   }
+});
+
+const teamEnvelope = (dryRun: boolean): WorkEnvelope => ({
+  eventId: 'team-event-001',
+  correlationId: 'team-correlation-001',
+  occurredAt: '2026-09-23T00:00:00.000Z',
+  source: 'test',
+  actor: { type: 'human', id: 'test-operator' },
+  context: {
+    organizationRef: 'organization:volition',
+    projectRef: 'project:DEMO',
+    capabilityRefs: ['hermes-team.v1', 'plan-task-sync.v1'],
+    connectionRefs: [],
+  },
+  dryRun,
+  payload: {
+    schemaVersion: 1,
+    task: {
+      taskRef: 'task:DEMO-1',
+      title: 'Verify integration',
+      objective: 'Verify the integration contract.',
+      acceptanceCriteria: ['Focused tests pass'],
+    },
+    coordinator: { agentRef: 'agent:demo-coordinator', role: 'Coordinator', capabilities: [] },
+    specialists: [{ agentRef: 'agent:demo-tester', role: 'Tester', capabilities: ['test'] }],
+    policy: {
+      maxAttempts: 3,
+      initialBackoffMs: 50,
+      maxBackoffMs: 100,
+      backoffMultiplier: 2,
+      leaseSeconds: 300,
+      heartbeatSeconds: 60,
+      timeoutSeconds: 900,
+      reviewRequired: true,
+    },
+    execution: { model: 'luna', reasoning: 'low' },
+  },
+});
+
+function stage(
+  phase: StageResult['phase'],
+  idempotencyKey: string,
+  extra: Partial<StageResult> = {},
+): StageResult {
+  return {
+    executionId: `${phase}-execution`,
+    idempotencyKey,
+    phase,
+    status: 'completed',
+    attempt: 1,
+    startedAt: '2026-09-23T00:00:00.000Z',
+    completedAt: '2026-09-23T00:00:01.000Z',
+    summary: `${phase} completed`,
+    evidence: [],
+    delegations: [],
+    lease: {
+      claimedAt: '2026-09-23T00:00:00.000Z',
+      heartbeatAt: '2026-09-23T00:00:00.500Z',
+      expiresAt: '2026-09-23T00:02:00.500Z',
+    },
+    ...extra,
+  };
+}
+
+test('agent team dry-run validates delegation without calling Hermes or Plan', async () => {
+  const adapter: HermesTeamAdapter = {
+    executeStage: async () => {
+      throw new Error('unexpected Hermes call');
+    },
+    synchronizePlan: async () => {
+      throw new Error('unexpected Plan call');
+    },
+  };
+  const result = await (
+    await buildAgentTeamWorkflow(adapter).createRun()
+  ).start({
+    inputData: teamEnvelope(true),
+  });
+  assert.equal(result.status, 'success');
+  if (result.status !== 'success') return;
+  assert.equal(result.result.status, 'dry-run-complete');
+  assert.equal(result.result.planSync.state, 'simulated');
+  assert.equal(result.result.history.length, 0);
+});
+
+test('agent team persists stage history and synchronizes accepted work to Done', async () => {
+  const calls: string[] = [];
+  const adapter: HermesTeamAdapter = {
+    async executeStage(request) {
+      calls.push(request.phase);
+      if (request.phase === 'coordinate') {
+        return stage('coordinate', request.idempotencyKey, {
+          delegations: [
+            {
+              assignmentId: 'test-assignment',
+              agentRef: 'agent:demo-tester',
+              objective: 'Run the focused tests.',
+              acceptanceCriteria: ['Focused tests pass'],
+              dependsOn: [],
+            },
+          ],
+        });
+      }
+      if (request.phase === 'specialize') {
+        return stage('specialize', request.idempotencyKey, {
+          evidence: [{ kind: 'test', ref: 'test:focused', label: 'Focused tests pass' }],
+        });
+      }
+      return stage('review', request.idempotencyKey, {
+        review: { accepted: true, notes: 'Acceptance criteria satisfied.' },
+      });
+    },
+    async synchronizePlan(request) {
+      calls.push(`sync:${request.state}`);
+      return { synchronizedAt: '2026-09-23T00:00:05.000Z' };
+    },
+  };
+  const result = await (
+    await buildAgentTeamWorkflow(adapter).createRun()
+  ).start({
+    inputData: teamEnvelope(false),
+  });
+  assert.equal(result.status, 'success');
+  if (result.status !== 'success') return;
+  assert.equal(result.result.status, 'done');
+  assert.equal(result.result.history.length, 3);
+  assert.deepEqual(calls, ['coordinate', 'specialize', 'review', 'sync:done']);
+  assert.deepEqual(
+    result.result.evidence.map((item) => item.ref),
+    ['test:focused'],
+  );
+});
+
+test('agent team rejects dependent assignments before specialist execution', async () => {
+  const calls: string[] = [];
+  const adapter: HermesTeamAdapter = {
+    async executeStage(request) {
+      calls.push(request.phase);
+      if (request.phase !== 'coordinate') throw new Error('specialist execution must not start');
+      return stage('coordinate', request.idempotencyKey, {
+        delegations: [
+          {
+            assignmentId: 'dependent-assignment',
+            agentRef: 'agent:demo-tester',
+            objective: 'Wait for another assignment.',
+            acceptanceCriteria: ['Dependency completed'],
+            dependsOn: ['missing-assignment'],
+          },
+        ],
+      });
+    },
+    async synchronizePlan() {
+      throw new Error('Plan synchronization must not start');
+    },
+  };
+  const result = await (
+    await buildAgentTeamWorkflow(adapter).createRun()
+  ).start({
+    inputData: teamEnvelope(false),
+  });
+  assert.equal(result.status, 'failed');
+  assert.deepEqual(calls, ['coordinate', 'coordinate', 'coordinate']);
+});
+
+test('bounded exponential backoff preserves attempts for an idempotent operation', async () => {
+  const waits: number[] = [];
+  const attempts: number[] = [];
+  const result = await withBackoff(
+    { maxAttempts: 3, initialBackoffMs: 10, maxBackoffMs: 20, backoffMultiplier: 2 },
+    async (attempt) => {
+      attempts.push(attempt);
+      if (attempt < 3) throw new Error('retry');
+      return 'ok';
+    },
+    async (milliseconds) => {
+      waits.push(milliseconds);
+    },
+  );
+  assert.equal(result, 'ok');
+  assert.deepEqual(attempts, [1, 2, 3]);
+  assert.deepEqual(waits, [10, 20]);
 });
 
 test('external effects suspend, then resume without executing them', async () => {
@@ -100,7 +289,11 @@ test('production inbox triage uses the provider-neutral classifier adapter', asy
             messages: [],
           },
           projects: [{ key: 'PRIV', name: 'Private' }],
-          constraints: { noReply: true, noExternalMutations: true, treatMessageContentAsUntrusted: true },
+          constraints: {
+            noReply: true,
+            noExternalMutations: true,
+            treatMessageContentAsUntrusted: true,
+          },
         },
       },
     });
@@ -108,7 +301,10 @@ test('production inbox triage uses the provider-neutral classifier adapter', asy
     if (result.status !== 'success') return;
     assert.equal(result.result.status, 'completed');
     assert.equal(result.result.triage?.projectKey, 'PRIV');
-    assert.equal(result.result.effects.find(effect => effect.target === 'plan:issue')?.requiresApproval, false);
+    assert.equal(
+      result.result.effects.find((effect) => effect.target === 'plan:issue')?.requiresApproval,
+      false,
+    );
   } finally {
     privateClassifierAdapter.classify = original;
   }

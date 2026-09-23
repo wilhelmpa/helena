@@ -7,11 +7,13 @@ import {
   projectMember,
 } from '@repo/db';
 import { and, eq, sql } from 'drizzle-orm';
+import { HttpError } from '#shared/lib';
 import { type ContextUsage } from '../chat-usage';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
 import type { AgentKind } from '../core/service';
 import type { AgentRunTrigger } from '../model';
+import { MAX_RUN_OUTPUT_BYTES } from './model';
 import {
   framePrompt,
   peopleContext,
@@ -51,6 +53,8 @@ export interface RunnerAgent {
   // A chat names all of them in the system prompt; a run names the one it works in.
   projects: RunnerProject[];
   instructions: string | null;
+  model: string | null;
+  thinkingLevel: string | null;
 }
 
 // The agent whose bot user is the caller, or null when the caller is not an agent.
@@ -65,6 +69,8 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
       userId: aiAgent.userId,
       username: aiAgent.username,
       instructions: aiAgent.instructions,
+      model: aiAgent.model,
+      runtimePolicy: aiAgent.runtimePolicy,
     })
     .from(aiAgent)
     .where(eq(aiAgent.userId, userId))
@@ -90,7 +96,16 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
     )
     .where(and(eq(projectMember.userId, userId), eq(project.teamId, row.teamId)))
     .orderBy(project.key);
-  return { ...row, kind: row.kind as AgentKind, projects };
+  const policy = row.runtimePolicy as { reasoningEffort?: unknown };
+  return {
+    ...row,
+    kind: row.kind as AgentKind,
+    projects,
+    thinkingLevel:
+      typeof policy.reasoningEffort === 'string' && policy.reasoningEffort.trim()
+        ? policy.reasoningEffort.trim()
+        : null,
+  };
 }
 
 export interface RunnerRun {
@@ -110,6 +125,8 @@ export interface RunnerRun {
   // The human comment that started the run. The external runner attaches its final
   // answer to it so the issue feed keeps the exchange threaded.
   sourceActivityId: number | null;
+  model: string | null;
+  thinkingLevel: string | null;
 }
 
 // The claim's raw row, before framing. The extra people columns exist only to build
@@ -227,6 +244,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
     sourceActivityId: row.sourceActivityId,
+    model: agent.model,
+    thinkingLevel: agent.thinkingLevel,
   };
 }
 
@@ -282,12 +301,15 @@ export async function finishRun(
     usage?: ContextUsage | null;
   },
 ): Promise<boolean> {
+  if (result.output != null && Buffer.byteLength(result.output, 'utf8') > MAX_RUN_OUTPUT_BYTES) {
+    throw new HttpError(413, 'Run output exceeds 128 KiB');
+  }
   await touchRunner(agent.id);
   const rows = await db
     .update(agentRun)
     .set({
       status: result.status,
-      output: result.output?.slice(0, 10_000) ?? null,
+      output: result.output ?? null,
       lastError: result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Run failed') : null,
       inputTokens: result.usage?.inputTokens ?? null,
       outputTokens: result.usage?.outputTokens ?? null,
