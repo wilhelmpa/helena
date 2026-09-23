@@ -101,6 +101,10 @@
       "label": "仓库",
       "description": "当关联的拉取请求在 GitHub、GitLab、Gitea、Forgejo 或 Bitbucket 上合并时关闭工作项。"
     },
+    "network": {
+      "label": "代理网络",
+      "description": "此项目的隔离代理可以访问互联网上的哪些目标。代理永远无法自行更改此设置。"
+    },
     "ai-agents": {
       "label": "AI 代理",
       "description": "在该项目中工作的 AI 代理。"

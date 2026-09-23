@@ -549,6 +549,68 @@
     "changeState": "更改状态…",
     "noState": "无状态。"
   },
+  "network": {
+    "isolationNote": "服务器启用代理隔离后，这些设置才会生效。",
+    "accessTitle": "访问",
+    "accessHint": "出站连接仅通过 80 和 443 端口。无论哪种模式，本地地址和家庭网络始终被阻止。域名同时覆盖其子域名。",
+    "mode": {
+      "open": {
+        "label": "互联网",
+        "description": "除拒绝列表中的目标外，允许访问所有公共目标。"
+      },
+      "allowlist": {
+        "label": "仅允许列表",
+        "description": "仅允许访问允许列表中的目标，拒绝列表仍然生效。"
+      },
+      "blocked": {
+        "label": "已阻止",
+        "description": "无法访问互联网。Helena API 和浏览器网关仍可访问。"
+      }
+    },
+    "allowLabel": "允许列表",
+    "allowOnlyHint": "仅在“仅允许列表”模式下使用。",
+    "denyLabel": "拒绝列表",
+    "domainsPerLine": "每行一个域名",
+    "domainCount": "{count} / {max}",
+    "mailTitle": "邮件",
+    "mailPortsLabel": "允许邮件端口",
+    "mailPortsHint": "同时为邮件角色开放 465、587 和 993 端口。",
+    "perAgentTitle": "按代理",
+    "perAgentHint": "为单个代理覆盖项目模式。项目的允许列表和拒绝列表仍然生效——处于“仅允许列表”模式的代理使用项目的允许列表。",
+    "followProject": "跟随项目（{mode}）",
+    "noAgents": "此项目暂无代理。",
+    "saved": "已保存",
+    "logTitle": "日志",
+    "logHint": "最近连接的目标、决定和数据量——绝不包含内容本身。",
+    "filterAll": "全部",
+    "filterBlocked": "仅已阻止",
+    "columns": {
+      "time": "时间",
+      "agent": "代理",
+      "target": "目标",
+      "decision": "决定",
+      "connections": "连接数",
+      "data": "数据量"
+    },
+    "decisions": {
+      "allowed": "已允许",
+      "blocked": "已阻止"
+    },
+    "reasons": {
+      "private-address": "私有地址",
+      "port": "端口不被允许",
+      "denylisted": "在拒绝列表中",
+      "not-allowlisted": "不在允许列表中",
+      "dns": "DNS 解析失败",
+      "connect-failed": "连接失败",
+      "bad-request": "无效请求"
+    },
+    "loadMore": "加载更多",
+    "endOfLog": "日志结尾",
+    "empty": "暂无连接",
+    "emptyHint": "此项目的代理建立连接后，将显示在这里。",
+    "loadError": "日志加载失败。"
+  },
   "issueTemplates": {
     "addTemplate": "新建模板",
     "editTemplate": "编辑模板",
