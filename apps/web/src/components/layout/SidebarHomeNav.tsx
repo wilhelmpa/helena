@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Activity,
   AtSign,
-  Bot,
   BookOpenText,
   BookText,
   Bot,

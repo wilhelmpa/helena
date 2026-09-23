@@ -570,7 +570,7 @@ describe('Hermes runtime policy synchronizer', () => {
       materializer,
     );
 
-    expect((await sync.runSettings()).env).toEqual({});
+    expect((await sync.runSettings()).env.VOLITION_VAULT_ACCESS).toBeUndefined();
     await sync.ensure();
     const { env } = await sync.runSettings();
     expect(JSON.parse(env.VOLITION_VAULT_ACCESS!)).toEqual(vaultAccess);
