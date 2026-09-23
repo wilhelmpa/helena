@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open, readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
+import { digest } from './files';
 
 // What an agent can do in its Hermes profile, which Plan shows. The toolsets and MCP
 // servers are static configuration and come from the runner config; the skills and the
@@ -27,13 +27,15 @@ export interface InventorySkill {
   description: string;
   origin: SkillOrigin;
   // The skill's directory below skills/, which an action of the owner names it by.
-  path: string;
+  path?: string;
   // Hermes' review never changes a pinned skill, and its curator never archives one.
   pinned: boolean;
 }
 
+export type MemoryFile = 'MEMORY.md' | 'USER.md';
+
 export interface InventoryMemory {
-  file: 'MEMORY.md' | 'USER.md';
+  file: MemoryFile;
   content: string;
   truncated: boolean;
   // Of the whole file: an edit in Plan names the version it was made on.
@@ -56,11 +58,14 @@ const MAX_NAME = 128;
 const MAX_SKILLS = 300;
 const MAX_DESCRIPTION = 300;
 const MAX_MEMORY = 16 * 1024;
-const MAX_MEMORY_BYTES = 1024 * 1024;
+export const MAX_MEMORY_BYTES = 1024 * 1024;
 const FRONTMATTER_BYTES = 8 * 1024;
 const LIST_BYTES = 256 * 1024;
-const MEMORY_FILES = ['MEMORY.md', 'USER.md'] as const;
-const PLAN_CATEGORY = 'plan-managed';
+export const MEMORY_FILES: MemoryFile[] = ['MEMORY.md', 'USER.md'];
+export const PLAN_CATEGORY = 'plan-managed';
+// The API refuses a longer skill path; a skill with one is listed without it, so no action
+// can name it.
+const MAX_PATH = 260;
 
 // Up to `limit` bytes of a regular file, or null when there is none. A symlink is not
 // followed, so a link placed in the profile cannot send another file's content to Plan.
@@ -191,7 +196,7 @@ async function pinnedNames(skills: string): Promise<Set<string>> {
   }
 }
 
-type FoundSkill = Omit<InventorySkill, 'origin' | 'pinned'>;
+type FoundSkill = Omit<InventorySkill, 'origin' | 'pinned' | 'path'> & { path: string };
 
 async function skillAt(
   dir: string,
@@ -250,10 +255,11 @@ async function readSkills(
     }
   }
   return found
-    .map((skill) => ({
+    .map(({ path, ...skill }) => ({
       ...skill,
-      origin: originOf(skill, bundled, hub, planSkills),
+      origin: originOf({ ...skill, path }, bundled, hub, planSkills),
       pinned: pinned.has(skill.name),
+      ...(path.length <= MAX_PATH && { path }),
     }))
     .sort(
       (a, b) => (a.category ?? '').localeCompare(b.category ?? '') || a.name.localeCompare(b.name),
@@ -270,7 +276,7 @@ async function readMemory(hermesHome: string): Promise<InventoryMemory[]> {
         file,
         content: cut(text, MAX_MEMORY),
         truncated: text.length > MAX_MEMORY || (read !== null && read.size > MAX_MEMORY_BYTES),
-        sha256: createHash('sha256').update(text).digest('hex'),
+        sha256: digest(text),
         chars: text.length,
       };
     }),

@@ -3,7 +3,8 @@ import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { readHermesInventory } from '../inventory';
-import { readLearnedSkills, runActions, setCuratorPaused, sha256 } from '../learning';
+import { digest as sha256 } from '../files';
+import { readLearnedSkills, runActions, setCuratorPaused } from '../learning';
 
 const roots: string[] = [];
 

@@ -14,6 +14,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readHermesInventory, type HermesInventory, type HermesProfile } from '../inventory';
+import { RequestError } from '../client';
 import { readLearnedSkills } from '../learning';
 import {
   allowedToolsets,
@@ -677,7 +678,10 @@ describe('Hermes learning and protected state', () => {
     ).toBe('# Checklist');
     expect(statuses.at(-1)).toMatchObject({
       status: 'online',
-      restored: ['skills/plan-7/SKILL.md', 'skills/plan-7/refs/checklist.md'],
+      restored: [
+        'skills/plan-managed/plan-7/SKILL.md',
+        'skills/plan-managed/plan-7/refs/checklist.md',
+      ],
       conflicts: [{ path: 'skills/plan-7/SKILL.md', content: '# Patched by the agent' }],
     });
 
@@ -807,5 +811,62 @@ describe('Hermes learning and protected state', () => {
         truncated: false,
       },
     ]);
+  });
+
+  it('keeps saying that a revision failed when it restores a plugin link meanwhile', async () => {
+    const { root, hermesHome } = await fixture();
+    const guard = join(root, 'plan-approval-guard');
+    await mkdir(guard, { recursive: true });
+    const profile = {
+      toolsets: ['file'],
+      mcpServers: [],
+      plugins: { 'plan-approval-guard': guard },
+    };
+    const materializer = new HermesPolicyMaterializer({ hermesHome, profile });
+    const statuses: RuntimeStatus[] = [];
+    const bad = snapshot('sha256:bad', [{ kind: 'instructions', path: 'AGENTS.md', content: 'x' }]);
+    const sync = new HermesPolicySynchronizer(sequence([bad], statuses), materializer, {
+      profile,
+    });
+
+    await sync.ensure();
+    // The home has no link yet: the run that starts puts it there.
+    await sync.runSettings();
+    await sync.ensure();
+
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'degraded',
+      detail: expect.stringContaining('Runtime policy sync failed'),
+      restored: ['plugins/plan-approval-guard'],
+    });
+  });
+
+  it('sends a report again only when it did not arrive, not when Plan refused it', async () => {
+    const { materializer } = await fixture();
+    const sent: RuntimeStatus[] = [];
+    let answer: Error | null = new RequestError(400, 'refused');
+    const sync = new HermesPolicySynchronizer(
+      {
+        runtimePolicy: async () => snapshot('sha256:one', soul('# Soul')),
+        reportRuntimeStatus: async (status) => {
+          sent.push(status);
+          if (answer) throw answer;
+        },
+        mcpSecrets: async () => ({}),
+      },
+      materializer,
+    );
+
+    await sync.ensure();
+    await sync.ensure();
+    expect(sent).toHaveLength(1);
+
+    answer = new Error('connection refused');
+    await rm(join(materializer.hermesHome, 'SOUL.md'));
+    sync.inventoryChanged();
+    await sync.ensure();
+    answer = null;
+    await sync.ensure();
+    expect(sent).toHaveLength(3);
   });
 });

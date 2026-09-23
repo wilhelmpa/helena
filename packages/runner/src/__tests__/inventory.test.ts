@@ -106,6 +106,18 @@ describe('Hermes inventory', () => {
     ]);
   });
 
+  it('lists a skill whose path is too long for an action without it', async () => {
+    const category = 'c'.repeat(140);
+    const name = 'n'.repeat(140);
+    const hermesHome = await home({ [`skills/${category}/${name}/SKILL.md`]: skill(name, 'Long') });
+
+    const { skills } = await readHermesInventory(hermesHome, undefined);
+
+    expect(skills).toHaveLength(1);
+    expect(skills[0]).not.toHaveProperty('path');
+    expect(skills[0]).toMatchObject({ origin: 'agent', pinned: false });
+  });
+
   it("marks the skills Hermes keeps pinned and counts Hermes' own cron jobs", async () => {
     const hermesHome = await home({
       'skills/release-notes/SKILL.md': skill('release-notes', 'Writes release notes.'),

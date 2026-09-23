@@ -1,8 +1,16 @@
-import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, readdir, rename } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { installedSkillNames, skillFrontmatter, type InventorySkill } from './inventory';
+import { atomicWrite, digest } from './files';
+import {
+  installedSkillNames,
+  MAX_MEMORY_BYTES,
+  MEMORY_FILES,
+  PLAN_CATEGORY,
+  skillFrontmatter,
+  type InventorySkill,
+  type MemoryFile,
+} from './inventory';
 
 // What the agent learns itself: the memory it writes and the skills it creates. Plan
 // decides whether it may, and the owner reviews, takes over or discards what it learned.
@@ -14,8 +22,6 @@ export interface RuntimeLearning {
   // Hermes' curator marks learned skills stale and archives them after a while unused.
   curator: boolean;
 }
-
-export type MemoryFile = 'MEMORY.md' | 'USER.md';
 
 // An owner's decision Plan hands the runner with the policy. Each is carried out once,
 // after the revision that carries it applied, and its result is reported back.
@@ -72,19 +78,14 @@ export function learningConfig(learning: RuntimeLearning | undefined): Record<st
   };
 }
 
-export const MEMORY_FILES: MemoryFile[] = ['MEMORY.md', 'USER.md'];
-const PLAN_CATEGORY = 'plan-managed';
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const MAX_LEARNED = 50;
 const MAX_LEARNED_FILES = 16;
 const MAX_LEARNED_FILE_BYTES = 64 * 1024;
 const MAX_LEARNED_BYTES = 1024 * 1024;
-const MAX_MEMORY_BYTES = 1024 * 1024;
+// The API refuses a longer path of a learned skill's file.
+const MAX_FILE_PATH = 512;
 const TEXT_FILE = /\.(?:md|markdown)$/i;
-
-export function sha256(content: string): string {
-  return createHash('sha256').update(content).digest('hex');
-}
 
 // The whole of a regular file, or null when there is none. A symlink is not followed.
 async function readFileSafe(path: string, limit: number): Promise<string | null> {
@@ -169,27 +170,6 @@ async function discardSkill(
   await rename(dir, join(archive, taken.has(name) ? `${name}-${stamp}` : name));
 }
 
-async function writeFileAtomic(dir: string, name: string, content: string): Promise<void> {
-  await mkdir(dir, { recursive: true, mode: 0o700 });
-  const info = await lstat(dir);
-  if (info.isSymbolicLink() || !info.isDirectory()) throw new Error(`${basename(dir)} is unsafe`);
-  const target = join(dir, name);
-  const current = await lstat(target).catch((error: unknown) => {
-    if (isMissing(error)) return null;
-    throw error;
-  });
-  if (current && !current.isFile()) throw new Error(`${name} is not a file`);
-  const temp = join(dir, `.itsaplan-${randomUUID()}.tmp`);
-  const handle = await open(temp, 'wx', 0o600);
-  try {
-    await handle.writeFile(content, 'utf8');
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-  await rename(temp, target);
-}
-
 async function readJsonObject(path: string): Promise<Record<string, unknown>> {
   const text = await readFileSafe(path, MAX_MEMORY_BYTES);
   if (text === null || !text.trim()) return {};
@@ -219,7 +199,7 @@ async function pinSkill(
     ...(record && typeof record === 'object' && !Array.isArray(record) ? record : {}),
     pinned,
   };
-  await writeFileAtomic(skills, '.usage.json', `${JSON.stringify(usage, null, 2)}\n`);
+  await atomicWrite(skills, join(skills, '.usage.json'), `${JSON.stringify(usage, null, 2)}\n`);
 }
 
 async function writeMemory(
@@ -233,10 +213,10 @@ async function writeMemory(
   const current = (await readFileSafe(join(dir, file), MAX_MEMORY_BYTES)) ?? '';
   // Already written, by this action before the runner could report it.
   if (current === content) return;
-  if (sha256(current) !== baseSha256) {
+  if (digest(current) !== baseSha256) {
     throw new Error('The memory changed since it was read; reload it and edit again');
   }
-  await writeFileAtomic(dir, file, content);
+  await atomicWrite(dir, join(dir, file), content);
 }
 
 // Never throws: each action's failure is its result. An action is carried out again when
@@ -282,9 +262,9 @@ export async function setCuratorPaused(hermesHome: string, paused: boolean): Pro
     state = {};
   }
   if (state.paused === paused) return false;
-  await writeFileAtomic(
+  await atomicWrite(
     skills,
-    '.curator_state',
+    join(skills, '.curator_state'),
     `${JSON.stringify({ ...state, paused }, null, 2)}\n`,
   );
   return true;
@@ -341,7 +321,11 @@ export async function readLearnedSkills(
         Buffer.byteLength(markdown) +
         files.reduce((sum, file) => sum + Buffer.byteLength(file.content), 0);
       entry.otherFiles = found.other + Math.max(0, found.text.length - MAX_LEARNED_FILES);
-      if (size > budget || found.text.length > MAX_LEARNED_FILES) {
+      if (
+        size > budget ||
+        found.text.length > MAX_LEARNED_FILES ||
+        found.text.some((path) => path.length > MAX_FILE_PATH)
+      ) {
         entry.truncated = true;
         continue;
       }

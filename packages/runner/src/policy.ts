@@ -1,18 +1,8 @@
-import { createHash, randomUUID } from 'node:crypto';
-import {
-  chmod,
-  lstat,
-  mkdir,
-  open,
-  readFile,
-  readlink,
-  rename,
-  rm,
-  symlink,
-  unlink,
-} from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { lstat, readFile, readlink, rename, symlink, unlink } from 'node:fs/promises';
+import { isAbsolute, join, resolve } from 'node:path';
+import { RequestError } from './client';
 import type { RunnerConfig } from './config';
+import { atomicWrite, digest, ensureRoot, ensureSafeParent } from './files';
 import {
   readHermesInventory,
   type HermesInventory,
@@ -160,10 +150,6 @@ const RETRY_FAILED_MS = 60_000;
 // are checked again after this long, and after every run and chat answer.
 const CHECK_INTERVAL_MS = 60_000;
 
-function digest(content: string | Buffer): string {
-  return createHash('sha256').update(content).digest('hex');
-}
-
 function byteLengthWithin(content: string, limit: number): boolean {
   return Buffer.byteLength(content, 'utf8') <= limit;
 }
@@ -173,41 +159,6 @@ function assertRoot(path: string, label: string): string {
   return resolve(path);
 }
 
-async function ensureRoot(path: string): Promise<void> {
-  await mkdir(path, { recursive: true, mode: 0o700 });
-  const info = await lstat(path);
-  if (info.isSymbolicLink() || !info.isDirectory()) throw new Error('managed root is unsafe');
-}
-
-function assertInside(root: string, target: string): void {
-  const rel = relative(root, target);
-  if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
-    if (target !== root) throw new Error('managed path escapes its root');
-  }
-}
-
-async function ensureSafeParent(root: string, target: string): Promise<void> {
-  await ensureRoot(root);
-  assertInside(root, target);
-  const parent = dirname(target);
-  const rel = relative(root, parent);
-  let current = root;
-  if (rel && rel !== '.') {
-    for (const segment of rel.split(sep)) {
-      current = join(current, segment);
-      try {
-        const info = await lstat(current);
-        if (info.isSymbolicLink() || !info.isDirectory()) {
-          throw new Error('managed path contains an unsafe directory');
-        }
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-        await mkdir(current, { mode: 0o700 });
-      }
-    }
-  }
-}
-
 async function existingHash(target: string): Promise<string | null> {
   try {
     const info = await lstat(target);
@@ -215,33 +166,6 @@ async function existingHash(target: string): Promise<string | null> {
     return digest(await readFile(target));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
-  }
-}
-
-async function atomicWrite(root: string, target: string, content: string): Promise<void> {
-  await ensureSafeParent(root, target);
-  const temp = join(dirname(target), `.itsaplan-${randomUUID()}.tmp`);
-  const handle = await open(temp, 'wx', 0o600);
-  try {
-    await handle.writeFile(content, 'utf8');
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-  try {
-    await ensureSafeParent(root, target);
-    const targetInfo = await lstat(target).catch((error: NodeJS.ErrnoException) => {
-      if (error.code === 'ENOENT') return null;
-      throw error;
-    });
-    if (targetInfo?.isSymbolicLink() || (targetInfo && !targetInfo.isFile())) {
-      throw new Error('managed target is unsafe');
-    }
-    await rename(temp, target);
-    await chmod(target, 0o600);
-  } catch (error) {
-    await rm(temp, { force: true });
     throw error;
   }
 }
@@ -362,6 +286,12 @@ function conflictPath(entry: ManifestEntry): string {
   return entry.source === 'runtime' ? entry.path : `skills/${entry.slug}/${entry.path}`;
 }
 
+function homePath(entry: ManifestEntry): string {
+  return entry.source === 'runtime'
+    ? entry.path
+    : `skills/plan-managed/${entry.slug}/${entry.path}`;
+}
+
 // The variable a secret reaches Hermes in. Hermes expands ${NAME} in its configuration
 // with its own environment.
 export function mcpSecretVariable(id: number): string {
@@ -480,7 +410,7 @@ export class HermesPolicyMaterializer {
           content: content.slice(0, MAX_CONFLICT_BYTES),
         });
       }
-      if (old && current !== old.sha256) restored.push(conflictPath(entry.manifest));
+      if (old && current !== old.sha256) restored.push(homePath(entry.manifest));
       await atomicWrite(entry.root, entry.target, entry.content);
     }
     for (const old of previous?.entries ?? []) {
@@ -789,10 +719,11 @@ export class HermesPolicySynchronizer {
       this.pendingRestored = latest([...this.pendingRestored, ...restored]);
       return;
     }
+    // A revision that failed to apply, or a check that failed, still says so.
+    const degraded = this.state.status === 'degraded';
     this.state = {
       ...this.state,
-      status: 'online',
-      detail: RESTORED_DETAIL,
+      detail: degraded ? this.state.detail : RESTORED_DETAIL,
       conflicts: [...(this.state.conflicts ?? []), ...conflicts].slice(-MAX_CONFLICTS),
       restored: latest([...(this.state.restored ?? []), ...restored]),
     };
@@ -826,8 +757,9 @@ export class HermesPolicySynchronizer {
         ...(this.learnedSkills && { learnedSkills: this.learnedSkills }),
       });
       this.unreported = false;
-    } catch {
-      this.unreported = true;
+    } catch (error) {
+      // Plan refuses the same report again, so only one that did not arrive is sent again.
+      this.unreported = !(error instanceof RequestError && error.status < 500);
     }
   }
 }
