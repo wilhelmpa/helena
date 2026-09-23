@@ -170,7 +170,10 @@ export const knowledgeRoutes = new Elysia({
       vault: { action: 'write', fields: ['path'] },
       body: pathBody,
       response: { 201: PathResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Create a folder' },
+      detail: {
+        summary: 'Create a folder',
+        description: 'Create an empty folder, e.g. below a Docs root. 409 if the path exists.',
+      },
     },
   )
   .post(
@@ -199,7 +202,11 @@ export const knowledgeRoutes = new Elysia({
     vault: { action: 'read', fields: ['path'] },
     query: pathQuery,
     response: { 200: TrashListResponse, ...commonErrors },
-    detail: { summary: 'List what was trashed below a folder' },
+    detail: {
+      summary: 'List what was trashed below a folder',
+      description:
+        'The trashed files that came from below the folder, newest first, by their original path.',
+    },
   })
   .post(
     '/knowledge/restore',
@@ -208,7 +215,11 @@ export const knowledgeRoutes = new Elysia({
       vault: { action: 'write', fields: ['path'] },
       body: pathBody,
       response: { 200: PathResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Restore a trashed file to its path' },
+      detail: {
+        summary: 'Restore a trashed file to its path',
+        description:
+          'Move a file back from the trash to its original path. 409 if that path is taken.',
+      },
     },
   )
   .get('/knowledge/conflicts', ({ scope, paths }) => listConflicts(scope, paths.root), {
@@ -234,7 +245,10 @@ export const knowledgeRoutes = new Elysia({
     vault: { action: 'read', fields: ['path'] },
     query: versionQuery,
     response: { 200: VersionResponse, ...commonErrors },
-    detail: { summary: 'Read a note as it was at one commit' },
+    detail: {
+      summary: 'Read a note as it was at one commit',
+      description: 'The whole file, frontmatter included, at one commit of its history.',
+    },
   })
   .get(
     '/knowledge/raw',
@@ -289,6 +303,10 @@ export const knowledgeRoutes = new Elysia({
       vault: { action: 'read', fields: ['from'] },
       query: wikilinkQuery,
       response: { 200: ResolveResponse, ...commonErrors },
-      detail: { summary: 'Find the file a wikilink points to' },
+      detail: {
+        summary: 'Find the file a wikilink points to',
+        description:
+          'The readable file whose name the target of [[target]] matches, preferring the folder and then the project of the note the link is in. null when none matches.',
+      },
     },
   );
