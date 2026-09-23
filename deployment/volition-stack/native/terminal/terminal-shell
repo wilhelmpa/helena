@@ -6,6 +6,13 @@ if (( $# != 1 )) || [[ ! "$1" =~ ^[a-z0-9][a-z0-9-]{0,31}$ ]]; then
   exit 64
 fi
 
+# With agent isolation the terminal runs as the project's user, in the same sandbox as its
+# agents, through the agent launcher; the owner sees exactly what the agents may do.
+if [[ "${AGENT_ISOLATION:-}" == on ]]; then
+  export TERM=xterm-256color
+  exec /usr/bin/python3 -I /usr/local/lib/volition-isolation/launch_client.py terminal "$1"
+fi
+
 root=/srv/volition/workspaces/projects
 root="$(realpath -e -- "$root")"
 if [[ "$1" == home ]]; then

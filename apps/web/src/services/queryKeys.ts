@@ -51,6 +51,11 @@ export const qk = {
   // Configuration settings section).
   autoArchive: (projectKey: string) => ['autoArchive', projectKey] as const,
   subtaskAutomation: (projectKey: string) => ['subtaskAutomation', projectKey] as const,
+  // The project's agent network settings (the Network settings section) and its
+  // connection log, one page per filter.
+  agentNetworkSettings: (projectKey: string) => ['agentNetworkSettings', projectKey] as const,
+  agentNetworkEvents: (projectKey: string, decision: 'all' | 'blocked') =>
+    ['agentNetworkEvents', projectKey, decision] as const,
   // The project's repository integration settings (the Repositories settings section).
   gitSettings: (projectKey: string) => ['gitSettings', projectKey] as const,
   gitConnections: (projectKey: string) => ['gitConnections', projectKey] as const,

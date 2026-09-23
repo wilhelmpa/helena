@@ -23,6 +23,7 @@ import { AgentInstructionsField } from './AgentInstructionsField';
 import AgentRunnerSection from './AgentRunnerSection';
 import AgentRuntimePolicySection from './AgentRuntimePolicySection';
 import AgentAbilitiesSection from './AgentAbilitiesSection';
+import AgentTemplateDriftSection from './AgentTemplateDriftSection';
 import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
 
@@ -190,6 +191,7 @@ export default function TeamAiAgentFields({
           onChange={(template) => onChange({ template })}
         />
       )}
+      {agent && <AgentTemplateDriftSection agent={agent} />}
     </div>
   );
 

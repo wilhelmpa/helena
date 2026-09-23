@@ -171,8 +171,7 @@
     },
     "runtimeExternal": "خارجي",
     "switch": "دردشة مع {agent} — ابدأ دردشة جديدة مع وكيل آخر",
-    "newChatWith": "دردشة جديدة مع…",
-    "templates": "القوالب"
+    "newChatWith": "دردشة جديدة مع…"
   },
   "interrupted": {
     "lost": "انقطع الاتصال بالإجابة. ربما لا يزال {agent} يعمل عليها.",

@@ -56,7 +56,7 @@ export default function ChatWorkspace({
   // view (another agent, another chat), and the text should come along.
   const newChatDraft = useRef('');
 
-  const defaultAgentId = agents.find((agent) => !agent.template)?.id ?? null;
+  const defaultAgentId = agents[0]?.id ?? null;
   const agentId = location.agentId ?? defaultAgentId;
   const threadId = location.threadId;
 

@@ -171,8 +171,7 @@
     },
     "runtimeExternal": "Externo",
     "switch": "Chat com {agent} — iniciar um novo chat com outro agente",
-    "newChatWith": "Novo chat com…",
-    "templates": "Modelos"
+    "newChatWith": "Novo chat com…"
   },
   "interrupted": {
     "lost": "A conexão com a resposta caiu. {agent} talvez ainda esteja trabalhando nela.",

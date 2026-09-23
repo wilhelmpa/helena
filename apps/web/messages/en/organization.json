@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "Has no template and reports to no one. Assign a department or a manager.",
+    "noDepartment": "No department",
+    "templates": "Pool templates"
   },
   "summary": {
     "pool": "Agent pool",

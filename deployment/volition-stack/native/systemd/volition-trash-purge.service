@@ -8,6 +8,7 @@ After=local-fs.target
 Type=oneshot
 WorkingDirectory=/srv/volition/source/plan/deployment/volition-stack/integration
 Environment=PROJECT_TRASH_ROOT=/srv/volition/trash/projects
+Environment=PROJECT_BROWSER_TRASH_ROOT=/var/lib/volition/project-browser/trash
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/purge-trash.mjs
 CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_FOWNER
 NoNewPrivileges=yes
@@ -20,7 +21,7 @@ ProtectKernelLogs=yes
 ProtectKernelModules=yes
 ProtectKernelTunables=yes
 ProtectSystem=strict
-ReadWritePaths=/srv/volition/trash/projects
+ReadWritePaths=/srv/volition/trash/projects -/var/lib/volition/project-browser/trash
 RestrictAddressFamilies=AF_UNIX
 RestrictNamespaces=yes
 RestrictRealtime=yes

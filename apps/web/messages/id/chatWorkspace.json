@@ -171,8 +171,7 @@
     },
     "runtimeExternal": "Eksternal",
     "switch": "Chat dengan {agent} — mulai chat baru dengan agen lain",
-    "newChatWith": "Chat baru dengan …",
-    "templates": "Templat"
+    "newChatWith": "Chat baru dengan …"
   },
   "interrupted": {
     "lost": "Koneksi ke jawaban terputus. {agent} mungkin masih mengerjakannya.",

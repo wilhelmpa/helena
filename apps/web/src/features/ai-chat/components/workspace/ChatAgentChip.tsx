@@ -8,8 +8,8 @@ import type { ChatAgentState } from '../../utils/agentPresence';
 import { useAgentStateText } from '../../hooks/useAgentStateText';
 
 // One agent to start a new chat with: its avatar with the presence dot and runtime
-// code, and its name, as a pill. The picked one sits on the sidebar's accent; a
-// template is shown, dashed and disabled, so it is clear why it cannot be picked.
+// code, and its name, as a pill. The picked one sits on the sidebar's accent; one that
+// cannot be picked is dashed and disabled.
 export default function ChatAgentChip({
   agent,
   state,

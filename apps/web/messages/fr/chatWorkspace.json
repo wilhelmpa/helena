@@ -171,8 +171,7 @@
     },
     "runtimeExternal": "Externe",
     "switch": "Discussion avec {agent} — démarrer une nouvelle discussion avec un autre agent",
-    "newChatWith": "Nouvelle discussion avec …",
-    "templates": "Modèles"
+    "newChatWith": "Nouvelle discussion avec …"
   },
   "interrupted": {
     "lost": "La connexion à la réponse a été perdue. {agent} y travaille peut-être encore.",

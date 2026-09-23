@@ -53,11 +53,7 @@ export default function InboxPage() {
 
   if (!project) return null;
   return (
-    <Tabs
-      value={tab}
-      onValueChange={(v) => setTab(v as InboxTab)}
-      className="h-full min-h-0 gap-0"
-    >
+    <Tabs value={tab} onValueChange={(v) => setTab(v as InboxTab)} className="h-full min-h-0 gap-0">
       {headerLayout !== 'single' && (
         <TabsList
           variant="toolbar"

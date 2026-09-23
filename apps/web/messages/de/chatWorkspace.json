@@ -171,8 +171,7 @@
     },
     "runtimeExternal": "Extern",
     "switch": "Chat mit {agent} – neuen Chat mit einem anderen Agenten beginnen",
-    "newChatWith": "Neuer Chat mit …",
-    "templates": "Vorlagen"
+    "newChatWith": "Neuer Chat mit …"
   },
   "interrupted": {
     "lost": "Die Verbindung zur Antwort ist abgerissen. {agent} arbeitet vielleicht noch daran.",

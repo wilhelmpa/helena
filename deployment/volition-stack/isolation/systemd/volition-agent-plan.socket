@@ -1,0 +1,13 @@
+[Unit]
+Description=Volition Plan API socket for isolated agents
+
+[Socket]
+ListenStream=/run/volition-agents/plan.sock
+SocketUser=root
+SocketGroup=volition-agents
+SocketMode=0660
+DirectoryMode=0755
+Backlog=256
+
+[Install]
+WantedBy=sockets.target

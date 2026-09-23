@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "Não tem um modelo e não se reporta a ninguém. Atribua um departamento ou um responsável.",
+    "noDepartment": "Sem departamento",
+    "templates": "Modelos do pool"
   },
   "summary": {
     "pool": "Agent pool",

@@ -171,8 +171,7 @@
     },
     "runtimeExternal": "外部",
     "switch": "正在与 {agent} 对话——与其他智能体开始新对话",
-    "newChatWith": "新对话，对象…",
-    "templates": "模板"
+    "newChatWith": "新对话，对象…"
   },
   "interrupted": {
     "lost": "与回答的连接已断开。{agent} 可能仍在处理。",

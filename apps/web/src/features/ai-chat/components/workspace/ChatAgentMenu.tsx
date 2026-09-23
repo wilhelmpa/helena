@@ -8,7 +8,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ChatAgentState } from '../../utils/agentPresence';
@@ -32,8 +31,6 @@ export default function ChatAgentMenu({
   const t = useTranslations('chatWorkspace');
   const text = useAgentStateText();
   const state = states.get(agent.id);
-  const usable = agents.filter((candidate) => !candidate.template);
-  const templates = agents.filter((candidate) => candidate.template);
 
   return (
     <DropdownMenu>
@@ -62,7 +59,7 @@ export default function ChatAgentMenu({
         <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
           {t('agents.newChatWith')}
         </DropdownMenuLabel>
-        {usable.map((candidate) => (
+        {agents.map((candidate) => (
           <ChatAgentMenuItem
             key={candidate.id}
             agent={candidate}
@@ -71,23 +68,6 @@ export default function ChatAgentMenu({
             onPick={() => onNewChat(candidate.id)}
           />
         ))}
-        {templates.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-              {t('agents.templates')}
-            </DropdownMenuLabel>
-            {templates.map((candidate) => (
-              <ChatAgentMenuItem
-                key={candidate.id}
-                agent={candidate}
-                state={states.get(candidate.id)}
-                current={false}
-                onPick={() => undefined}
-              />
-            ))}
-          </>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
