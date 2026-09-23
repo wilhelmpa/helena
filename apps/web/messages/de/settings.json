@@ -394,7 +394,6 @@
       "saveConfiguration": "Konfiguration speichern",
       "notConfigured": "Nicht konfiguriert",
       "graph": "Workflow-Graph",
-      "startDryRun": "Testlauf starten",
       "recentRuns": "Letzte Läufe",
       "noRuns": "Keine Läufe für dieses Projekt.",
       "reject": "Ablehnen",

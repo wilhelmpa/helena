@@ -304,6 +304,26 @@ export const app = new Elysia()
     if (!session || session.user.active === false) return status(401);
     return status(204);
   })
+  // The same check for Mastra Studio, which shows the runs of every project and is open
+  // to the instance owner only.
+  .get(
+    '/auth/verify/owner',
+    async ({ request, status }) => {
+      const session = await getSessionFromHeaders(request.headers);
+      if (!session || session.user.active === false) return status(401);
+      return status(session.user.role === 'god' ? 204 : 403);
+    },
+    {
+      detail: {
+        tags: ['System'],
+        summary: 'Check that the session is the instance owner',
+        description:
+          'Answer 204 for an active session of the instance owner, 403 for another ' +
+          'session and 401 without one. Nginx asks it before it forwards a request to ' +
+          'Mastra Studio.',
+      },
+    },
+  )
   // What the sign-in and sign-up screens need before there is a session: whether
   // registration is open, invite-only, or closed, and which sign-in methods are
   // offered. Public on purpose — the screens are reached logged out. It carries no

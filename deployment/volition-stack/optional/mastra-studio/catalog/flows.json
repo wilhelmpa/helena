@@ -5,7 +5,6 @@
   "executionSupported": true,
   "warnings": [
     "Dry-runs only simulate effects. Production inbox triage calls one private provider-neutral classifier capability.",
-    "External writes and sends suspend for approval and remain needs-attention after approval until a production adapter is installed.",
     "The registry contains no credentials, message bodies, document contents, or production run imports.",
     "Mastra owns workflow state, retries, schedules and run history. Hermes executes agent stages and does not own business schedules."
   ],
@@ -22,71 +21,6 @@
         { "id": "classify-inbox", "title": "Classify through capability", "description": "Call the private provider-neutral inbox-triage.v1 capability with bounded retries; the Plan worker applies the result.", "sourceRefs": ["src/mastra/registry.ts"] }
       ],
       "currentLimits": ["Gmail credentials and provider/model configuration remain in the host adapter; Mastra never sends mail or writes Plan issues."]
-    },
-    {
-      "id": "career-research",
-      "name": "Career research",
-      "description": "Research a role and produce a fit report without applying or contacting anyone.",
-      "capabilityRefs": [],
-      "externalEffects": false,
-      "triggers": ["career.job.discovered"],
-      "steps": [
-        { "id": "prepare-plan", "title": "Prepare idempotent plan", "description": "Validate the event envelope and plan research artifacts.", "sourceRefs": ["src/mastra/registry.ts"] },
-        { "id": "approval-gate", "title": "Finalize safe result", "description": "Return the simulated report plan.", "sourceRefs": ["src/mastra/registry.ts"] }
-      ],
-      "currentLimits": ["No browser research or external contact is performed."]
-    },
-    {
-      "id": "application",
-      "name": "Application",
-      "description": "Prepare an application package; submission always requires a human handoff.",
-      "capabilityRefs": [],
-      "externalEffects": true,
-      "triggers": ["career.application.requested"],
-      "steps": [
-        { "id": "prepare-plan", "title": "Prepare idempotent plan", "description": "Plan a draft package and submission effect.", "sourceRefs": ["src/mastra/registry.ts"] },
-        { "id": "approval-gate", "title": "Require submission approval", "description": "Suspend before submission and leave approved work for a future adapter.", "sourceRefs": ["src/mastra/registry.ts"] }
-      ],
-      "currentLimits": ["No application is submitted and no recipient is contacted."]
-    },
-    {
-      "id": "support",
-      "name": "Support",
-      "description": "Triage a support request and prepare a reply; sending remains approval-gated.",
-      "capabilityRefs": [],
-      "externalEffects": true,
-      "triggers": ["support.request.received"],
-      "steps": [
-        { "id": "prepare-plan", "title": "Prepare idempotent plan", "description": "Plan request analysis and a reply effect.", "sourceRefs": ["src/mastra/registry.ts"] },
-        { "id": "approval-gate", "title": "Require send approval", "description": "Suspend before sending and leave approved work for a future adapter.", "sourceRefs": ["src/mastra/registry.ts"] }
-      ],
-      "currentLimits": ["No reply is sent."]
-    },
-    {
-      "id": "system-audit",
-      "name": "System audit",
-      "description": "Create a read-only audit plan and findings envelope.",
-      "capabilityRefs": [],
-      "externalEffects": false,
-      "triggers": ["system.audit.requested"],
-      "steps": [
-        { "id": "prepare-plan", "title": "Prepare idempotent plan", "description": "Plan inventory reads and an audit report.", "sourceRefs": ["src/mastra/registry.ts"] },
-        { "id": "approval-gate", "title": "Finalize safe result", "description": "Return the simulated audit plan.", "sourceRefs": ["src/mastra/registry.ts"] }
-      ],
-      "currentLimits": ["No host command or configuration mutation is performed."]
-    },
-    {
-      "id": "document-filing",
-      "name": "Document filing",
-      "description": "Classify a document and propose a filing destination; storage writes require approval.",
-      "capabilityRefs": ["document-store.v1"],
-      "externalEffects": true,
-      "triggers": ["document.received"],
-      "steps": [
-        { "id": "prepare-plan", "title": "Prepare idempotent plan", "description": "Plan classification and filing effects.", "sourceRefs": ["src/mastra/registry.ts"] },
-        { "id": "approval-gate", "title": "Require filing approval", "description": "Suspend before metadata or storage writes.", "sourceRefs": ["src/mastra/registry.ts"] }
-      ],
-      "currentLimits": ["No document or metadata is written until the project has an approved document-store.v1 capability grant."]
     },
     {
       "id": "agent-team",

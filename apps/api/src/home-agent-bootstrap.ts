@@ -14,7 +14,7 @@ let tokenPromise: Promise<string> | null = null;
 // token file of its own.
 async function bootstrapToken(): Promise<string> {
   const tokenFile =
-    process.env.MASTRA_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/mastra_control_token';
+    process.env.PLAN_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/plan_control_token';
   tokenPromise ??= lstat(tokenFile)
     .then(async (stat) => {
       if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {

@@ -4,17 +4,24 @@ import { join } from 'node:path';
 import { treaty } from '@elysiajs/eden';
 import { app } from '../../app';
 
-// The bearer shared by the internal orchestration routes and the Mastra control
-// endpoint. The file is written when this module loads, once per test process, because
-// the API caches the token it reads first.
-const CONTROL_TOKEN = 'test-control-token-0123456789abcdef0123456789';
-const tokenFile = join(mkdtempSync(join(tmpdir(), 'plan-control-')), 'token');
-writeFileSync(tokenFile, CONTROL_TOKEN, { mode: 0o600 });
-process.env.MASTRA_CONTROL_TOKEN_FILE = tokenFile;
+// The bearer of the internal orchestration routes and the one Plan sends to the Mastra
+// control endpoint. The files are written when this module loads, once per test
+// process, because the API caches the tokens it reads first.
+const PLAN_CONTROL_TOKEN = 'test-plan-control-token-0123456789abcdef012345';
+const MASTRA_CONTROL_TOKEN = 'test-mastra-control-token-0123456789abcdef0123';
+const tokenDirectory = mkdtempSync(join(tmpdir(), 'plan-control-'));
+for (const [variable, token] of [
+  ['PLAN_CONTROL_TOKEN_FILE', PLAN_CONTROL_TOKEN],
+  ['MASTRA_CONTROL_TOKEN_FILE', MASTRA_CONTROL_TOKEN],
+] as const) {
+  const file = join(tokenDirectory, variable);
+  writeFileSync(file, token, { mode: 0o600 });
+  process.env[variable] = file;
+}
 
 // Treaty client that calls the internal routes the way the Hermes team bridge does.
 export function controlApi() {
-  return treaty(app, { headers: { authorization: `Bearer ${CONTROL_TOKEN}` } });
+  return treaty(app, { headers: { authorization: `Bearer ${PLAN_CONTROL_TOKEN}` } });
 }
 
 export type ControlRequest = Record<string, unknown> & { operation: string };
@@ -55,7 +62,7 @@ const server = Bun.serve({
   async fetch(request) {
     if (
       new URL(request.url).pathname !== '/internal/mastra/control' ||
-      request.headers.get('authorization') !== `Bearer ${CONTROL_TOKEN}`
+      request.headers.get('authorization') !== `Bearer ${MASTRA_CONTROL_TOKEN}`
     )
       return new Response('Unauthorized', { status: 401 });
     const body = (await request.json()) as ControlRequest;

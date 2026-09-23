@@ -19,7 +19,8 @@ OVERRIDES = {
     'API_PORT': '3100',
     'NODE_ENV': 'development',
     'MASTRA_CONTROL_URL': 'http://127.0.0.1:4211/internal/mastra/control',
-    'MASTRA_CONTROL_TOKEN_FILE': '/etc/volition/dev/plan-control.token',
+    'MASTRA_CONTROL_TOKEN_FILE': '/etc/volition/dev/mastra-control.token',
+    'PLAN_CONTROL_TOKEN_FILE': '/etc/volition/dev/plan-control.token',
     'BROWSER_URL': f'{DEV_ORIGIN}/browser/projects/home/vnc.html?autoconnect=1&resize=remote'
     '&path=browser%2Fprojects%2Fhome%2Fwebsockify',
 }

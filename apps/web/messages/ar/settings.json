@@ -394,7 +394,6 @@
       "saveConfiguration": "Save configuration",
       "notConfigured": "Not configured",
       "graph": "Workflow graph",
-      "startDryRun": "Start dry run",
       "recentRuns": "Recent runs",
       "noRuns": "No runs for this project.",
       "reject": "Reject",

@@ -33,6 +33,12 @@ if changed packages/db/drizzle; then
   systemctl start volition-plan-migrate.service
 fi
 
+# Creates the Mastra tokens the units below load, before any of them starts.
+if changed deployment/volition-stack/native/nginx/install-mastra-studio.sh \
+  deployment/volition-stack/native/nginx/mastra-studio.conf; then
+  "$live/deployment/volition-stack/native/nginx/install-mastra-studio.sh"
+fi
+
 # The API and the worker run from the checkout's sources; the web app runs from a
 # production build, which web-release.sh installs as a release of its own.
 plan_units=(volition-plan-api.service volition-plan-worker.service volition-plan-web.service)
@@ -66,6 +72,14 @@ fi
 if changed deployment/volition-stack/integration; then
   restart+=(volition-provisioning.service volition-hermes-team-bridge.service)
 fi
+
+for unit in volition-mastra.service volition-provisioning.service; do
+  if changed "deployment/volition-stack/native/systemd/$unit"; then
+    install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+    systemctl daemon-reload
+    restart+=("$unit")
+  fi
+done
 
 # The runner's start script runs an installed copy of the catalog script, which writes the
 # runner config from the Hermes profile.

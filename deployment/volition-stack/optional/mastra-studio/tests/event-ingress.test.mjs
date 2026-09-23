@@ -14,11 +14,11 @@ const catalog = JSON.parse(
 function event(patch = {}) {
   return {
     eventId: 'event-001',
-    eventType: 'system.audit.requested',
+    eventType: 'agent.team.requested',
     organizationRef: 'organization:volition',
     projectRef: 'project:PRIV',
     actorRef: 'service:plan-shadow',
-    capabilityRefs: [],
+    capabilityRefs: ['hermes-team.v1', 'plan-task-sync.v1'],
     connectionRefs: [],
     payload: { projectKey: 'PRIV', mode: 'shadow' },
     dryRun: true,
@@ -33,7 +33,7 @@ function error(code, status) {
 
 test('contract resolves the existing trigger registry and builds a bounded scope', () => {
   const value = validateEventInput(event(), catalog);
-  assert.equal(value.workflowId, 'system-audit');
+  assert.equal(value.workflowId, 'agent-team');
   assert.deepEqual(value.actor, { type: 'service', id: 'plan-shadow' });
   assert.equal(value.projectRef, 'project:PRIV');
 
@@ -60,7 +60,7 @@ test('contract rejects unknown events, ambiguous scope and missing capabilities'
     () =>
       validateEventInput(
         event({
-          eventType: 'document.received',
+          eventType: 'gmail.message.received',
           capabilityRefs: [],
           payload: { projectKey: 'PRIV' },
         }),
@@ -71,12 +71,12 @@ test('contract rejects unknown events, ambiguous scope and missing capabilities'
   assert.equal(
     validateEventInput(
       event({
-        eventType: 'document.received',
-        capabilityRefs: ['document-store.v1'],
+        eventType: 'gmail.message.received',
+        capabilityRefs: ['inbox-triage.v1'],
       }),
       catalog,
     ).workflowId,
-    'document-filing',
+    'inbox-triage',
   );
 });
 
@@ -187,7 +187,13 @@ test('persistent idempotency rejects a changed project, payload or event type', 
     error('idempotency_conflict', 409),
   );
   await assert.rejects(
-    () => service.execute(event({ eventType: 'career.job.discovered' })),
+    () =>
+      service.execute(
+        event({
+          eventType: 'gmail.message.received',
+          capabilityRefs: ['hermes-team.v1', 'plan-task-sync.v1', 'inbox-triage.v1'],
+        }),
+      ),
     error('idempotency_conflict', 409),
   );
 });
