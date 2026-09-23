@@ -350,11 +350,13 @@ def run_stop(report, client) -> None:
         ['/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I', f'{ISO}/launch_client.py', 'run',
          '--slug', 'alpha', '--profile', 'alpha', '--runtime', 'probe', '--cwd', workspace, '--kind', 'run',
          '--work-id', '99', '--', f'exec:sh,-c,{script}'],
-        env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
     time.sleep(4)
     units = subprocess.run(['systemctl', 'list-units', '--plain', '--no-legend', 'vpt-agent-alpha--a0-r99-*'],
                            capture_output=True, text=True).stdout.strip()
-    process.kill()  # the runner's connection goes away
+    import signal  # noqa: PLC0415
+
+    os.killpg(process.pid, signal.SIGKILL)  # the runner's side of the connection goes away
     process.wait()
     deadline = time.time() + 30
     left = units
