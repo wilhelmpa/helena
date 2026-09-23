@@ -684,6 +684,17 @@ export const agentRun = pgTable(
   ],
 );
 
+// When a Volition service was last seen working, for the health overview. A service
+// that reports itself writes its row; one that is probed gets the result of the probe:
+// `error` is null when the last check succeeded, and `lastSeenAt` stays at the last
+// success.
+export const serviceHeartbeat = pgTable('service_heartbeat', {
+  service: text('service').primaryKey(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+  error: text('error'),
+});
+
 // An agent's request to take an action outside Plan (send, publish, pay, delete), which
 // a person with the ai_agents edit permission of the project approves or rejects. The
 // decision queues a run of the agent with the decision in its prompt (followUpRunId).

@@ -1072,6 +1072,13 @@
       "when": 1790172043506,
       "tag": "0152_issue_attachment_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1790173775218,
+      "tag": "0153_agent_team_starts_and_service_heartbeats",
+      "breakpoints": true
     }
   ]
 }
