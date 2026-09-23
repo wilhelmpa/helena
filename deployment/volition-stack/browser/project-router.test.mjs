@@ -189,6 +189,11 @@ describe("project browser control", () => {
       fittedBounds({ windowState: "maximized", left: 0, top: 0, width: 1280, height: 800 }, screen),
       { left: 0, top: 0, width: 1280, height: 800 },
     );
+    // Chromium without a window manager lands one pixel short of what it was given.
+    assert.equal(
+      fittedBounds({ windowState: "normal", left: 0, top: 0, width: 1279, height: 799 }, screen),
+      null,
+    );
     assert.equal(fittedBounds({ windowState: "normal" }, { width: 0, height: 0 }), null);
   });
 });

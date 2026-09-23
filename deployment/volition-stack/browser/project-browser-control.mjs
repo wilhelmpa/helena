@@ -41,6 +41,10 @@ export function targetId(value) {
   return value;
 }
 
+// How far a window may differ from its screen and still count as filling it. Without a
+// window manager Chromium sets a window one pixel smaller than it was asked to.
+const FIT_TOLERANCE = 2;
+
 // The bounds a window needs to fill its screen, or null when it already does.
 export function fittedBounds(bounds, screen) {
   if (!screen.width || !screen.height) return null;
@@ -49,8 +53,8 @@ export function fittedBounds(bounds, screen) {
     bounds.windowState === "normal" &&
     bounds.left === fitted.left &&
     bounds.top === fitted.top &&
-    bounds.width === fitted.width &&
-    bounds.height === fitted.height;
+    Math.abs(bounds.width - fitted.width) <= FIT_TOLERANCE &&
+    Math.abs(bounds.height - fitted.height) <= FIT_TOLERANCE;
   return fits ? null : fitted;
 }
 
