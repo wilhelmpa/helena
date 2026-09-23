@@ -662,7 +662,25 @@
       "toolSkill": "Skill",
       "tokens": "{count} Tokens"
     },
-    "approvalTask": "Freigabe-Entscheidung"
+    "approvalTask": "Freigabe-Entscheidung",
+    "templateSync": {
+      "copyOf": "Kopie von {name}",
+      "copyOfUnknown": "Kopie einer gelöschten Vorlage",
+      "overridden": "weicht ab",
+      "overriddenHint": "Diese Gruppe wurde hier von Hand geändert und folgt der Vorlage nicht mehr.",
+      "followsHint": "Folgt der Vorlage.",
+      "resetToTemplate": "Auf Vorlage zurücksetzen",
+      "resetDone": "{group} auf die Vorlage zurückgesetzt",
+      "groups": {
+        "skills": "Skills",
+        "tools": "Tools",
+        "mcpServers": "MCP-Server",
+        "approvals": "Freigabe-Regeln",
+        "instructions": "Anweisungen",
+        "model": "Modell/Reasoning",
+        "budgets": "Budgets"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

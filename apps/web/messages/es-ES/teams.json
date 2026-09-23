@@ -662,6 +662,24 @@
       "toolMemory": "Memoria",
       "toolSkill": "Habilidad",
       "tokens": "{count} tokens"
+    },
+    "templateSync": {
+      "copyOf": "Copia de {name}",
+      "copyOfUnknown": "Copia de una plantilla eliminada",
+      "overridden": "difiere",
+      "overriddenHint": "Se cambió aquí manualmente y ya no sigue la plantilla.",
+      "followsHint": "Sigue la plantilla.",
+      "resetToTemplate": "Restablecer a la plantilla",
+      "resetDone": "{group} restablecido a la plantilla",
+      "groups": {
+        "skills": "Habilidades",
+        "tools": "Herramientas",
+        "mcpServers": "Servidores MCP",
+        "approvals": "Reglas de aprobación",
+        "instructions": "Instrucciones",
+        "model": "Modelo/razonamiento",
+        "budgets": "Presupuestos"
+      }
     }
   },
   "members": {

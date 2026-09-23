@@ -662,6 +662,24 @@
       "toolMemory": "الذاكرة",
       "toolSkill": "المهارة",
       "tokens": "{count} رمزًا"
+    },
+    "templateSync": {
+      "copyOf": "نسخة من {name}",
+      "copyOfUnknown": "نسخة من قالب محذوف",
+      "overridden": "يختلف",
+      "overriddenHint": "تم تغييره يدويًا هنا ولم يعد يتبع القالب.",
+      "followsHint": "يتبع القالب.",
+      "resetToTemplate": "إعادة الضبط إلى القالب",
+      "resetDone": "تمت إعادة ضبط {group} إلى القالب",
+      "groups": {
+        "skills": "المهارات",
+        "tools": "الأدوات",
+        "mcpServers": "خوادم MCP",
+        "approvals": "قواعد الموافقة",
+        "instructions": "التعليمات",
+        "model": "النموذج/الاستدلال",
+        "budgets": "الميزانيات"
+      }
     }
   },
   "members": {

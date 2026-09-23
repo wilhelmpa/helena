@@ -662,6 +662,24 @@
       "toolMemory": "记忆",
       "toolSkill": "技能",
       "tokens": "{count} 个令牌"
+    },
+    "templateSync": {
+      "copyOf": "复制自 {name}",
+      "copyOfUnknown": "复制自已删除的模板",
+      "overridden": "已偏离",
+      "overriddenHint": "已在此处手动更改，不再跟随模板。",
+      "followsHint": "跟随模板。",
+      "resetToTemplate": "重置为模板",
+      "resetDone": "已将{group}重置为模板",
+      "groups": {
+        "skills": "技能",
+        "tools": "工具",
+        "mcpServers": "MCP 服务器",
+        "approvals": "审批规则",
+        "instructions": "指示",
+        "model": "模型/推理",
+        "budgets": "预算"
+      }
     }
   },
   "members": {

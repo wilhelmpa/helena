@@ -662,6 +662,24 @@
       "toolMemory": "Пам'ять",
       "toolSkill": "Навичка",
       "tokens": "{count} токенів"
+    },
+    "templateSync": {
+      "copyOf": "Копія «{name}»",
+      "copyOfUnknown": "Копія видаленого шаблону",
+      "overridden": "відрізняється",
+      "overriddenHint": "Змінено тут вручну і більше не слідує шаблону.",
+      "followsHint": "Слідує шаблону.",
+      "resetToTemplate": "Скинути до шаблону",
+      "resetDone": "{group}: скинуто до шаблону",
+      "groups": {
+        "skills": "Навички",
+        "tools": "Інструменти",
+        "mcpServers": "MCP-сервери",
+        "approvals": "Правила погодження",
+        "instructions": "Інструкції",
+        "model": "Модель/reasoning",
+        "budgets": "Бюджети"
+      }
     }
   },
   "members": {

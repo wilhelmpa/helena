@@ -662,6 +662,24 @@
       "toolMemory": "Memori",
       "toolSkill": "Skill",
       "tokens": "{count} token"
+    },
+    "templateSync": {
+      "copyOf": "Salinan dari {name}",
+      "copyOfUnknown": "Salinan dari templat yang telah dihapus",
+      "overridden": "berbeda",
+      "overriddenHint": "Diubah secara manual di sini dan tidak lagi mengikuti templat.",
+      "followsHint": "Mengikuti templat.",
+      "resetToTemplate": "Setel ulang ke templat",
+      "resetDone": "{group} disetel ulang ke templat",
+      "groups": {
+        "skills": "Skill",
+        "tools": "Alat",
+        "mcpServers": "Server MCP",
+        "approvals": "Aturan persetujuan",
+        "instructions": "Instruksi",
+        "model": "Model/penalaran",
+        "budgets": "Anggaran"
+      }
     }
   },
   "members": {

@@ -662,6 +662,24 @@
       "toolMemory": "Memória",
       "toolSkill": "Skill",
       "tokens": "{count} tokens"
+    },
+    "templateSync": {
+      "copyOf": "Cópia de {name}",
+      "copyOfUnknown": "Cópia de um modelo excluído",
+      "overridden": "difere",
+      "overriddenHint": "Alterado manualmente aqui e não segue mais o modelo.",
+      "followsHint": "Segue o modelo.",
+      "resetToTemplate": "Redefinir para o modelo",
+      "resetDone": "{group} redefinido para o modelo",
+      "groups": {
+        "skills": "Habilidades",
+        "tools": "Ferramentas",
+        "mcpServers": "Servidores MCP",
+        "approvals": "Regras de aprovação",
+        "instructions": "Instruções",
+        "model": "Modelo/raciocínio",
+        "budgets": "Orçamentos"
+      }
     }
   },
   "members": {
