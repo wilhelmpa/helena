@@ -511,6 +511,11 @@ export interface ChatSummary {
   match?: 'title' | 'user' | 'assistant';
   createdAt: string;
   updatedAt: string;
+  // The model and reasoning level the chat was last sent with (null: the agent's
+  // default), and the coding-agent session an external agent keeps for it.
+  model: string | null;
+  thinkingLevel: string | null;
+  cliSessionId: string | null;
   // The context size after the chat's last completed answer: absent while no answer
   // has completed, null where the agent reports no counts that can be read as one.
   contextTokens?: number | null;
