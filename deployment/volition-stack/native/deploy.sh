@@ -33,6 +33,9 @@ if changed packages/db/drizzle; then
   systemctl start volition-plan-migrate.service
 fi
 
+# The vault folders, code-server's access to the vault, and the attachments moved into it.
+"$live/deployment/volition-stack/native/files-documents.sh"
+
 # The API and the worker run from the checkout's sources; the web app runs from a
 # production build, which web-release.sh installs as a release of its own.
 plan_units=(volition-plan-api.service volition-plan-worker.service volition-plan-web.service)

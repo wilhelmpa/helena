@@ -98,6 +98,14 @@ and makes no decisions.
   and in its vault folder. Plan stores the folder name; the integration service creates,
   moves and trashes the folders with the project's provisioning. A run for a task of an area
   starts in the area's workspace folder.
+- Documents are files in the vault (`PROJECT_VAULT_ROOT`): `Home/`, `Templates/`,
+  `Private/` (the owner's; group `volition-private`, which the agents' user is not in),
+  and `Projects/<KEY>/`. Plan's Files page reads and writes them directly; a file deleted
+  there moves to `.trash/` at the same relative path (`Private/.trash/` for `Private/`).
+  A project's workspace is shown read-only next to its vault folder. Task and comment
+  attachments are stored once, in `Projects/<KEY>/Files/Tasks/<KEY>-<n>/`, and the
+  attachment row keeps the vault path and the sha256; a row can also link a file that
+  was in the vault before. Agents read the same files on disk.
 - Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
   for one run as environment variables, website logins as entries of the profile's Hermes
   vault, and SSH keys as files of the profile. The model sees secret names only.
