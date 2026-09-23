@@ -117,11 +117,14 @@ export function slashItems(query: string, prompts: ChatPrompt[]): SlashItem[] {
     if (score >= 0) items.push({ kind: 'prompt', prompt, score: score + 0.5 });
   }
   for (const entry of CHAT_COMMANDS) {
-    const score = Math.max(
-      ...[entry.name, ...entry.aliases].map((name) => fuzzyScore(query, name)),
-    );
+    const names = [entry.name, ...entry.aliases];
+    const score = Math.max(...names.map((name) => fuzzyScore(query, name)));
     if (score < 0) continue;
-    if (entry.refusal && !(query.length >= 2 && score >= 3)) continue;
+    // A short query is a prefix of many command names at once ("re" starts "retry",
+    // "reasoning" and "restart" alike), so a refused command needs the query to name
+    // it in full — not just share its first couple of letters — before it appears.
+    const namedInFull = names.includes(query.toLowerCase());
+    if (entry.refusal && !namedInFull) continue;
     items.push({ kind: 'command', command: entry, score });
   }
   return items.sort((a, b) => b.score - a.score);

@@ -9,8 +9,12 @@ export type ChatSource =
   | { kind: 'url'; url: string };
 
 const TASK = /\b([A-Z][A-Z0-9_]{0,9})-(\d{1,6})\b/g;
+// Vault file names commonly carry spaces ("Launch plan.md"), so only a newline and the
+// characters that end a quote, a paren or a markdown link close the match — a plain
+// space does not. The match is non-greedy, so it still stops at the first extension it
+// finds rather than running on to a later, unrelated one.
 const VAULT_PATH =
-  /(?:^|[\s"'`(/[])((?:Projects\/[A-Z0-9_-]+|Home|Templates)\/[^\s"'`)\]<>]*?\.[A-Za-z0-9]{1,8})(?=$|[\s"'`)\]<>,;:])/g;
+  /(?:^|[\s"'`(/[])((?:Projects\/[A-Z0-9_-]+|Home|Templates)\/[^\n\r"'`)\]<>]*?\.[A-Za-z0-9]{1,8})(?=$|[\s"'`)\]<>,;:])/g;
 const URL = /\bhttps?:\/\/[^\s"'`)\]<>]+/g;
 
 function textsOf(message: PlanUIMessage): string[] {
