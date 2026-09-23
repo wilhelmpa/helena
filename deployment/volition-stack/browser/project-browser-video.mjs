@@ -21,19 +21,23 @@ export const TIERS = [
   { name: "low", scaleMax: 854, frameRate: 18, crf: 30, keyframeSeconds: 1, threads: 1 },
 ];
 
-// The round trip and the downlink a tier needs, once throughput is informative at all (see
-// chooseTier). Node's own bufferedAmount is bytes not yet handed to the kernel; on a real
-// network, or one shaped for a bench, a socket can be badly backed up well before that number
-// moves, because the kernel and the network path both buffer far more than Node ever sees. A
-// backlog past CONGESTED_BYTES still means the worst tier at once when it does show — sized to
-// a fraction of a second of the busiest tier, not the many megabytes a perfectly healthy
-// stream can briefly hold — but it is a safety net, not the primary signal.
-const DOWNLINK_KBPS = { high: 4000, medium: 1200, low: 0 };
+// The round trip a tier needs to be worth trying (see chooseTier). Node's own bufferedAmount
+// is bytes not yet handed to the kernel; on a real network, or one shaped for a bench, a
+// socket can be badly backed up well before that number moves, because the kernel and the
+// network path both buffer far more than Node ever sees. A backlog past CONGESTED_BYTES still
+// means the worst tier at once when it does show — sized to a fraction of a second of the
+// busiest tier, not the many megabytes a perfectly healthy stream can briefly hold — but it is
+// a safety net, not the primary signal.
 const RTT_MS = { high: 60, medium: 250, low: Infinity };
 const CONGESTED_BYTES = 384 * 1024;
-// Below this, the tier's own encoder is producing too little — a quiet page — for a low
-// measured downlink to say anything about the connection.
+// Below this, the tier's own encoder is producing too little — a quiet page — for its bitrate
+// against what the viewer reports receiving to say anything about the connection.
 const MEANINGFUL_ENCODE_KBPS = 150;
+// A connection genuinely struggling receives well under what its own tier is sending it: this
+// ratio, not a fixed table, is what argues for dropping on throughput grounds, because a lower
+// tier's own bitrate is never proof a better one is out of reach — only a shortfall against
+// what is actually being asked of the connection right now is.
+const SHORTFALL_RATIO = 0.6;
 // A viewer whose last stats report is older than this, despite being on a video tier, is
 // assumed congested: the report that would say so travels the same connection as the video
 // and can itself be stuck behind the backlog it would describe.
@@ -46,24 +50,24 @@ const FEEDBACK_TIMEOUT_MS = 8_000;
 // rises only one step at a time, so a connection that looks better for one sample does not
 // swing the picture straight to the heaviest tier.
 //
-// The round trip alone sets the ceiling ordinarily: a live H.264 stream's own bitrate swings
-// hugely with how much the page is changing, so a quiet page legitimately sends little without
-// that meaning the connection is slow, and holding a low measured downlink against it would
-// leave a fast connection stuck on a low tier it long since outgrew. Downlink only lowers that
-// ceiling once the tier's own encoder is actually producing a meaningful amount to send: that
-// is the point a low number stops being "nothing to send" and starts being "cannot send it
-// fast enough".
+// The round trip alone sets the ceiling for rising: a live H.264 stream's own bitrate swings
+// hugely with how much the page is changing, so the tier a viewer is already on is never proof
+// a better one is unaffordable, and only trying it can tell. A genuine shortfall — reported
+// downlink well under what the current tier is actually sending — argues for dropping instead,
+// on the same terms a stall does: it is evidence the connection cannot keep up with the demand
+// actually being placed on it right now, not with some fixed idea of what a tier "needs".
 export function chooseTier(measurement, currentIndex = null) {
   if (currentIndex === null || currentIndex === undefined) {
     return TIERS.findIndex((tier) => tier.name === "medium");
   }
   const { downlinkKbps = 0, rttMs = 0, bufferedBytes = 0, encodedKbps = 0, feedbackAgeMs = 0 } = measurement;
-  if (bufferedBytes > CONGESTED_BYTES || feedbackAgeMs > FEEDBACK_TIMEOUT_MS) return TIERS.length - 1;
-  const throughputMatters = encodedKbps > MEANINGFUL_ENCODE_KBPS;
+  const strained = encodedKbps > MEANINGFUL_ENCODE_KBPS && downlinkKbps < encodedKbps * SHORTFALL_RATIO;
+  if (bufferedBytes > CONGESTED_BYTES || feedbackAgeMs > FEEDBACK_TIMEOUT_MS || strained) {
+    return TIERS.length - 1;
+  }
   let affordable = TIERS.length - 1;
   for (let index = 0; index < TIERS.length; index++) {
-    const tier = TIERS[index];
-    if (rttMs <= RTT_MS[tier.name] && (!throughputMatters || downlinkKbps >= DOWNLINK_KBPS[tier.name])) {
+    if (rttMs <= RTT_MS[TIERS[index].name]) {
       affordable = index;
       break;
     }

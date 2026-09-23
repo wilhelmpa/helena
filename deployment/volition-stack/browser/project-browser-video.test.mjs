@@ -61,6 +61,22 @@ describe("quality tiers", () => {
     );
   });
 
+  it("judges a shortfall against what the tier is actually sending, not a fixed number", () => {
+    // A downlink comfortably below a fixed "high" threshold is still not a shortfall against
+    // a tier sending far less than that itself.
+    const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 900, rttMs: 20, encodedKbps: 1200 }, mediumIndex)].name,
+      "high",
+    );
+    // The same downlink is a real shortfall once the tier is sending enough that receiving
+    // well under it means the connection cannot keep up, not merely that the tier is modest.
+    assert.equal(
+      TIERS[chooseTier({ downlinkKbps: 900, rttMs: 20, encodedKbps: 6000 }, mediumIndex)].name,
+      "low",
+    );
+  });
+
   it("drops to the worst tier when the socket has a real backlog, or its stats have gone stale", () => {
     const highIndex = TIERS.findIndex((tier) => tier.name === "high");
     assert.equal(
