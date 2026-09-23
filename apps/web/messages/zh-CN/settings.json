@@ -635,5 +635,22 @@
     "propertiesHint": "创建问题时套用，创建前仍可修改。",
     "emptyTitle": "还没有模板",
     "emptyDescription": "模板会为新问题预填标题、描述和属性。"
+  },
+  "browser": {
+    "accessTitle": "域名",
+    "accessHint": "控制代理的项目浏览器可以打开哪些域名。一个域名也涵盖其子域名。",
+    "blocklistLabel": "域名黑名单",
+    "blocklistHint": "即使这些域名在白名单中,它们也始终保持被屏蔽。",
+    "allowlistLabel": "白名单",
+    "allowlistHint": "留空表示允许除被屏蔽域名外的所有域名。非空则只允许这些域名(例如仍然屏蔽网银)。",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "example.com",
+    "removeDomain": "移除 {domain}",
+    "behaviorTitle": "行为",
+    "humanInputLabel": "拟人输入",
+    "humanInputHint": "以拟人化的停顿而非最快速度进行输入和点击。仅在低风险的测试项目中关闭。",
+    "lockTimeoutLabel": "锁定超时",
+    "lockTimeoutHint": "在这段秒数内没有操作后,代理对浏览器的控制会自动释放。",
+    "seconds": "秒"
   }
 }

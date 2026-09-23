@@ -1,0 +1,11 @@
+{
+  "homeTitle": "Navegador",
+  "homeDescription": "Os navegadores de projeto de todos os projetos em que você trabalha: a página atual, quem está no controle e uma miniatura ao vivo assim que o roteador do navegador a fornecer.",
+  "empty": "Ainda não há navegadores de projeto",
+  "emptyHint": "Um projeto ganha seu próprio navegador assim que um agente ativa a ferramenta \"Navegador do projeto\".",
+  "noLiveImage": "Ainda sem imagem ao vivo",
+  "noUrl": "Ainda sem página atual",
+  "controlledByAgent": "{agentName} está no controle",
+  "controlledByOwner": "Você está no controle",
+  "controlledByUnknown": "Controle desconhecido"
+}

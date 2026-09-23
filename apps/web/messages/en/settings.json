@@ -635,5 +635,22 @@
     "propertiesHint": "Applied when the issue is created, and editable before it is.",
     "emptyTitle": "No templates yet",
     "emptyDescription": "A template fills a new issue with a title, a description and properties."
+  },
+  "browser": {
+    "accessTitle": "Domains",
+    "accessHint": "Controls which domains the agents' project browser may open. A domain also covers its subdomains.",
+    "blocklistLabel": "Domain blocklist",
+    "blocklistHint": "These domains stay blocked even if they are on the allow list.",
+    "allowlistLabel": "Allow list",
+    "allowlistHint": "Empty allows every domain except the blocked ones. Non-empty allows only these domains (for example, leave banking blocked).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "example.com",
+    "removeDomain": "Remove {domain}",
+    "behaviorTitle": "Behavior",
+    "humanInputLabel": "Human-like input",
+    "humanInputHint": "Types and clicks with human-like pauses instead of at top speed. Turn off only for a low-risk test project.",
+    "lockTimeoutLabel": "Lock timeout",
+    "lockTimeoutHint": "After this many seconds with no action, an agent's control of the browser is released automatically.",
+    "seconds": "seconds"
   }
 }

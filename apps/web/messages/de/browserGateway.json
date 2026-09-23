@@ -1,0 +1,11 @@
+{
+  "homeTitle": "Browser",
+  "homeDescription": "Die Projekt-Browser aller Projekte, in denen Sie arbeiten: die aktuelle Seite, wer steuert, und ein Live-Vorschaubild, sobald der Browser-Router es liefert.",
+  "empty": "Noch keine Projekt-Browser",
+  "emptyHint": "Ein Projekt bekommt seinen Projekt-Browser, sobald ein Agent das Werkzeug „Projekt-Browser“ eingeschaltet hat.",
+  "noLiveImage": "kein Livebild",
+  "noUrl": "Noch keine aktuelle Seite",
+  "controlledByAgent": "{agentName} steuert",
+  "controlledByOwner": "Sie steuern",
+  "controlledByUnknown": "Steuerung unbekannt"
+}

@@ -86,12 +86,20 @@
       "followAgentOn": "Mengikuti tab agen",
       "followAgentOff": "Ikuti tab agen",
       "liveKeyboard": "Browser langsung. Tombol dikirim ke halaman selama tampilan ini memiliki fokus.",
-      "controlAgent": "Agen sedang bertindak",
       "connecting": "Menghubungkan ke browser…",
       "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…",
       "dialogTitle": "Halaman bertanya",
       "dialogOk": "OK",
-      "dialogCancel": "Batal"
+      "dialogCancel": "Batal",
+      "controlPrefix": "Dikendalikan oleh:",
+      "you": "Anda",
+      "controlledByAgentGeneric": "seorang agen",
+      "takeOver": "Ambil alih",
+      "handBack": "Kembalikan",
+      "takeOverError": "Gagal mengambil alih browser.",
+      "handBackError": "Gagal mengembalikan kendali browser.",
+      "handoverMessage": "Agen membutuhkan bantuan Anda: {reason}",
+      "handoverTitle": "Agen meminta Anda mengambil alih"
     }
   },
   "groups": {
@@ -134,5 +142,6 @@
     "projectOptions": "Opsi proyek",
     "groupOptions": "Opsi grup",
     "dropUngrouped": "Lepaskan di sini untuk mengeluarkan proyek dari grupnya"
-  }
+  },
+  "browser": "Browser"
 }

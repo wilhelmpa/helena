@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, ArrowRight, Bot, RotateCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, Hand, RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
+import { useBrowserLock } from '@/hooks/useBrowserLock';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
@@ -27,6 +28,7 @@ export default function WorkspaceBrowserBar({
 }) {
   const t = useTranslations('nav.workspace.browserBar');
   const { tabs, active, act } = useBrowserControl(base);
+  const { takeOver, takingOver } = useBrowserLock(base);
   // What the person is typing; null while the field shows the tab's own address.
   const [draft, setDraft] = useState<string | null>(null);
   const id = active?.id;
@@ -101,17 +103,34 @@ export default function WorkspaceBrowserBar({
         onNew={() => act({ action: 'new' })}
       />
       {view === 'live' && (
-        <Button
-          variant={followAgent ? 'secondary' : 'ghost'}
-          size="icon"
-          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-pressed={followAgent}
-          onClick={onToggleFollowAgent}
-          title={followAgent ? t('followAgentOn') : t('followAgentOff')}
-          aria-label={followAgent ? t('followAgentOn') : t('followAgentOff')}
-        >
-          <Bot />
-        </Button>
+        <>
+          <Button
+            variant={followAgent ? 'secondary' : 'ghost'}
+            size="icon"
+            className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+            aria-pressed={followAgent}
+            onClick={onToggleFollowAgent}
+            title={followAgent ? t('followAgentOn') : t('followAgentOff')}
+            aria-label={followAgent ? t('followAgentOn') : t('followAgentOff')}
+          >
+            <Bot />
+          </Button>
+          {/* Quick-access Übernehmen (design §5): always reachable here regardless of who the
+              toolbar itself currently knows is in control (unlike the live view's own banner,
+              this bar does not track the control lock's state) — a harmless action to take
+              even while the owner already has it. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+            disabled={takingOver}
+            onClick={() => takeOver()}
+            title={t('takeOver')}
+            aria-label={t('takeOver')}
+          >
+            <Hand />
+          </Button>
+        </>
       )}
       <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
     </div>

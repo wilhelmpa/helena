@@ -635,5 +635,22 @@
     "propertiesHint": "Werden beim Erstellen der Aufgabe übernommen und können vorher noch bearbeitet werden.",
     "emptyTitle": "Noch keine Vorlagen",
     "emptyDescription": "Eine Vorlage füllt eine neue Aufgabe mit Titel, Beschreibung und Eigenschaften."
+  },
+  "browser": {
+    "accessTitle": "Domains",
+    "accessHint": "Steuert, welche Domains der Projekt-Browser der Agenten öffnen darf. Eine Domain deckt auch ihre Subdomains ab.",
+    "blocklistLabel": "Domain-Sperrliste",
+    "blocklistHint": "Diese Domains bleiben immer gesperrt, auch wenn sie auf der Erlaubt-Liste stehen.",
+    "allowlistLabel": "Erlaubt-Liste",
+    "allowlistHint": "Leer erlaubt jede Domain außer den gesperrten. Nicht leer erlaubt nur diese Domains (z. B. Banking gesperrt lassen).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "beispiel.de",
+    "removeDomain": "{domain} entfernen",
+    "behaviorTitle": "Verhalten",
+    "humanInputLabel": "Menschliche Eingabe",
+    "humanInputHint": "Tippt und klickt mit menschenähnlichen Pausen statt in Bestzeit. Nur für unkritische Testprojekte abschalten.",
+    "lockTimeoutLabel": "Sperr-Timeout",
+    "lockTimeoutHint": "Nach so vielen Sekunden ohne Aktion gibt ein Agent die Steuerung des Browsers automatisch wieder frei.",
+    "seconds": "Sekunden"
   }
 }

@@ -1,0 +1,11 @@
+{
+  "homeTitle": "Browser",
+  "homeDescription": "Browser proyek dari setiap proyek tempat Anda bekerja: halaman saat ini, siapa yang mengendalikan, dan thumbnail langsung begitu router browser menyediakannya.",
+  "empty": "Belum ada browser proyek",
+  "emptyHint": "Sebuah proyek mendapatkan browser miliknya sendiri begitu alat \"Browser proyek\" seorang agen diaktifkan.",
+  "noLiveImage": "Belum ada gambar langsung",
+  "noUrl": "Belum ada halaman saat ini",
+  "controlledByAgent": "{agentName} sedang mengendalikan",
+  "controlledByOwner": "Anda sedang mengendalikan",
+  "controlledByUnknown": "Kendali tidak diketahui"
+}

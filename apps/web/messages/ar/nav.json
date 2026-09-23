@@ -86,12 +86,20 @@
       "followAgentOn": "يتابع علامة تبويب الوكيل",
       "followAgentOff": "متابعة علامة تبويب الوكيل",
       "liveKeyboard": "متصفح مباشر. تُرسل المفاتيح إلى الصفحة ما دام العرض في حالة التركيز.",
-      "controlAgent": "الوكيل يتصرف الآن",
       "connecting": "جارٍ الاتصال بالمتصفح…",
       "reconnecting": "انقطع الاتصال بالمتصفح. جارٍ إعادة الاتصال…",
       "dialogTitle": "تسأل الصفحة",
       "dialogOk": "موافق",
-      "dialogCancel": "إلغاء"
+      "dialogCancel": "إلغاء",
+      "controlPrefix": "يتحكم:",
+      "you": "أنت",
+      "controlledByAgentGeneric": "أحد الوكلاء",
+      "takeOver": "تولّي التحكم",
+      "handBack": "إعادة التحكم",
+      "takeOverError": "تعذّر تولّي التحكم بالمتصفح.",
+      "handBackError": "تعذّرت إعادة التحكم بالمتصفح.",
+      "handoverMessage": "يحتاج الوكيل مساعدتك: {reason}",
+      "handoverTitle": "يطلب منك الوكيل تولّي التحكم"
     }
   },
   "groups": {
@@ -134,5 +142,6 @@
     "projectOptions": "خيارات المشروع",
     "groupOptions": "خيارات المجموعة",
     "dropUngrouped": "أفلت هنا لإخراج المشروع من مجموعته"
-  }
+  },
+  "browser": "المتصفح"
 }

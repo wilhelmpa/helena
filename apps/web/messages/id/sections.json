@@ -108,6 +108,10 @@
     "ai-agents": {
       "label": "Agen AI",
       "description": "Agen AI yang bekerja dalam proyek ini."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domain yang boleh dibuka browser proyek, waktu input mirip manusia, dan batas waktu kunci."
     }
   }
 }
