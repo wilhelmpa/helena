@@ -80,8 +80,12 @@ function authorized(header, expected) {
   const wanted = Buffer.from(expected);
   return supplied.length === wanted.length && timingSafeEqual(supplied, wanted);
 }
+// The Mastra server behind this proxy. A second instance (the development one) runs on
+// another port.
+const upstreamPort = Number(process.env.MASTRA_UPSTREAM_PORT ?? 4112);
+
 async function upstreamJson(path, options = {}) {
-  const response = await fetch(`http://127.0.0.1:4112/mastra/api${path}`, {
+  const response = await fetch(`http://127.0.0.1:${upstreamPort}/mastra/api${path}`, {
     ...options,
     signal: AbortSignal.timeout(330_000),
   });
@@ -243,7 +247,7 @@ function catalogHtml() {
 const server = http.createServer(async (req, res) => {
   try {
     if (req.url === '/healthz' && req.method === 'GET') {
-      const response = await fetch('http://127.0.0.1:4112/mastra/api/workflows', { signal: AbortSignal.timeout(2000) });
+      const response = await fetch(`http://127.0.0.1:${upstreamPort}/mastra/api/workflows`, { signal: AbortSignal.timeout(2000) });
       return json(res, response.ok ? 200 : 503, { ok: response.ok, mode: 'safe-control-plane', workflows: workflowIds.size });
     }
     if (req.url === '/internal/events') {
@@ -297,7 +301,7 @@ const server = http.createServer(async (req, res) => {
     }
     const body = isRead ? Buffer.alloc(0) : await readBody(req);
     const upstream = http.request({
-      hostname: '127.0.0.1', port: 4112, path: req.url, method: req.method,
+      hostname: '127.0.0.1', port: upstreamPort, path: req.url, method: req.method,
       // Never send Plan cookies, Access assertions, or authentication material to Mastra.
       headers: {
         accept: req.headers.accept ?? '*/*',

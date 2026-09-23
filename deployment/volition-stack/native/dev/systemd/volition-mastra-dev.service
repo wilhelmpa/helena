@@ -1,0 +1,39 @@
+[Unit]
+Description=Volition Mastra workflow control plane (development instance)
+After=network-online.target volition-hermes-team-bridge-dev.service
+Wants=network-online.target volition-hermes-team-bridge-dev.service
+
+[Service]
+Type=simple
+User=volition-mastra
+Group=volition
+WorkingDirectory=/srv/volition/source/plan-dev/deployment/volition-stack/optional/mastra-studio
+StateDirectory=volition/mastra-dev
+LoadCredential=hermes_team_token:/etc/volition/dev/hermes-team.token
+LoadCredential=plan_control_token:/etc/volition/dev/plan-control.token
+Environment=NODE_ENV=production
+Environment=MASTRA_TELEMETRY_DISABLED=true
+Environment=DO_NOT_TRACK=1
+Environment=MASTRA_HIDE_CLOUD_CTA=true
+Environment=MASTRA_AUTO_DETECT_URL=true
+Environment=MASTRA_AGENT_SIGNALS=false
+Environment=MASTRA_FRESH_MODE=false
+Environment=MASTRA_UPSTREAM_PORT=4212
+Environment=STUDIO_PROXY_HOST=127.0.0.1
+Environment=STUDIO_PROXY_PORT=4211
+Environment=STUDIO_DATABASE_URL=file:/var/lib/volition/mastra-dev/mastra.db
+Environment=HERMES_TEAM_TOKEN_FILE=%d/hermes_team_token
+Environment=HERMES_TEAM_SOCKET=/run/volition-ipc/hermes-team-dev.sock
+Environment=INBOX_ADAPTER_TOKEN_FILE=%d/plan_control_token
+Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
+Environment=STUDIO_OWNER_EMAIL=owner@kingston.invalid
+ExecStart=/usr/local/bin/node start.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/volition/mastra-dev

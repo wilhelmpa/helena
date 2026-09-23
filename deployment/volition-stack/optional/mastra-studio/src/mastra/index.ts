@@ -12,7 +12,7 @@ export const mastra = new Mastra({
   }),
   server: {
     host: '127.0.0.1',
-    port: 4112,
+    port: Number(process.env.MASTRA_UPSTREAM_PORT ?? 4112),
     studioBase: '/mastra',
     apiPrefix: '/mastra/api',
     cors: false,

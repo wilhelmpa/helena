@@ -10,7 +10,9 @@ database, so an edit never reaches the running system before it is merged and de
 | Database | `itsaplan` | `itsaplan_dev` (copy, refreshed on demand) |
 | API / web | `127.0.0.1:3000` / `:3001` | `127.0.0.1:3100` / `:3101` |
 | Entry | Nginx on port 80 | Nginx on the unix socket `/srv/volition/dev-run/plan-dev.sock` |
-| Worker, provisioning, Mastra, Hermes | yes | no (nothing is provisioned from dev) |
+| Mastra | `volition-mastra`, 127.0.0.1:4111 | `volition-mastra-dev`, 127.0.0.1:4211, own database |
+| Mastra to Plan bridge | `hermes-team.sock` → API :3000 | `hermes-team-dev.sock` → API :3100 |
+| Worker, provisioning, Hermes runner | yes | no (nothing is provisioned from dev; start a runner by hand to test agents) |
 
 The dev entry signs the owner in automatically, like the live local-owner mode. It is
 safe only because the socket lives in a directory that root and the developer group
@@ -34,4 +36,8 @@ deployment/volition-stack/native/dev/stop.sh
 `setup.sh` renders `/etc/volition/plan-dev.env` from the live `plan.env` without
 printing any value. It points the database at `itsaplan_dev`, moves the ports, removes
 the tool URLs and the Mastra control URL, and gives the dev instance its own local-owner
-token. Logs are written to `~/.local/state/plan-dev/`.
+token. It also builds the development Mastra instance from this worktree and installs
+`volition-mastra-dev` and `volition-hermes-team-bridge-dev`, which use their own tokens
+under `/etc/volition/dev`. After a change below `optional/mastra-studio`, rebuild it with
+`bun run build` there and restart `volition-mastra-dev`. Logs are written to
+`~/.local/state/plan-dev/`.

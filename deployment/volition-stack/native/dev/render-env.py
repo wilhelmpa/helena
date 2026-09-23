@@ -16,8 +16,11 @@ OVERRIDES = {
     'API_HOST': '127.0.0.1',
     'API_PORT': '3100',
     'NODE_ENV': 'development',
+    'MASTRA_CONTROL_URL': 'http://127.0.0.1:4211/internal/mastra/control',
+    'MASTRA_CONTROL_TOKEN_FILE': '/etc/volition/dev/plan-control.token',
 }
-# Tool frames and the control plane belong to the live instance only.
+# Tool frames belong to the live instance only; the control plane is the development
+# Mastra instance set above.
 DROP = {
     'TERMINAL_URL',
     'CODE_URL',
@@ -25,7 +28,6 @@ DROP = {
     'FILES_URL',
     'HERMES_URL',
     'HERMES_COORDINATOR_ID',
-    'MASTRA_CONTROL_URL',
 }
 
 
