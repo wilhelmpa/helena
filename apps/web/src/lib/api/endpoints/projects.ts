@@ -67,6 +67,8 @@ export interface Assignee {
   // Whether this person may read issues and can therefore receive watcher
   // notifications without leaking work-item content.
   canReadWorkItems: boolean;
+  // An agent that takes no new work: mentioning or delegating to it starts nothing.
+  paused: boolean;
 }
 
 // The caller's own role in a project (owner/member). Returned with the project;

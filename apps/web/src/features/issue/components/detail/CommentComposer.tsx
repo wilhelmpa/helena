@@ -266,6 +266,11 @@ export default function CommentComposer({
                     {a.kind === 'agent' && (
                       <span className="text-[10px] text-muted-foreground uppercase">agent</span>
                     )}
+                    {a.paused && (
+                      <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                        {t('agentPaused')}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}

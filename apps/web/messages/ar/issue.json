@@ -226,7 +226,8 @@
     "edited": "تم التعديل",
     "deleteComment": "حذف التعليق",
     "deleteCommentTitle": "حذف هذا التعليق؟",
-    "deleteCommentConfirmation": "سيتم حذف التعليق وجميع ردوده نهائيًا."
+    "deleteCommentConfirmation": "سيتم حذف التعليق وجميع ردوده نهائيًا.",
+    "agentPaused": "متوقف مؤقتًا"
   },
   "stats": {
     "title": "الإحصاءات",
@@ -428,7 +429,8 @@
     "noCandidates": "مفيش حد تختاره.",
     "area": "المجال",
     "noArea": "بلا مجال",
-    "changeArea": "نقل إلى مجال…"
+    "changeArea": "نقل إلى مجال…",
+    "agentPaused": "متوقف مؤقتًا"
   },
   "watchers": {
     "watch": "متابعة",

@@ -226,7 +226,8 @@
     "edited": "editado",
     "deleteComment": "Excluir comentário",
     "deleteCommentTitle": "Excluir este comentário?",
-    "deleteCommentConfirmation": "O comentário e suas respostas serão excluídos permanentemente."
+    "deleteCommentConfirmation": "O comentário e suas respostas serão excluídos permanentemente.",
+    "agentPaused": "Pausado"
   },
   "stats": {
     "title": "Estatísticas",
@@ -428,7 +429,8 @@
     "noCandidates": "Ninguém para escolher.",
     "area": "Área",
     "noArea": "Sem área",
-    "changeArea": "Mover para área…"
+    "changeArea": "Mover para área…",
+    "agentPaused": "Pausado"
   },
   "watchers": {
     "watch": "Acompanhar",

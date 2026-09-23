@@ -56,6 +56,32 @@
     "capabilitiesHint": "Mots en minuscules séparés par des virgules. Une tâche dont les étiquettes correspondent aux compétences d’un seul spécialiste lui est confiée sans le plan du coordinateur.",
     "saved": "{name} enregistré"
   },
+  "governance": {
+    "title": "Travail et plafonds de tokens",
+    "active": "Accepte de nouvelles tâches.",
+    "pause": "Mettre en pause",
+    "resume": "Reprendre",
+    "paused": "{name} est en pause",
+    "resumed": "{name} accepte de nouveau des tâches"
+  },
+  "tokens": {
+    "today": "Aujourd'hui",
+    "thisMonth": "Ce mois-ci",
+    "dailyCeiling": "Plafond quotidien",
+    "monthlyCeiling": "Plafond mensuel",
+    "noCeiling": "Aucun plafond",
+    "usedOfCeiling": "{used, number} sur {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "Tokens des exécutions de l'agent dans tous les projets, comptés par jour et par mois UTC. Atteindre un plafond met l'agent en pause et avertit son propriétaire.",
+    "invalid": "Saisissez un nombre entier d'au moins 1, ou laissez le champ vide pour ne fixer aucun plafond.",
+    "save": "Enregistrer les plafonds",
+    "saved": "Plafonds de tokens de {name} enregistrés",
+    "projectTitle": "Budget de tokens",
+    "projectDescription": "Tokens des exécutions d'agents de ce projet ce mois-ci (UTC). Atteindre le plafond met en pause l'agent dont l'exécution démarrerait ensuite et avertit les propriétaires du projet.",
+    "projectSaved": "Plafond de tokens de {name} enregistré",
+    "agentsTitle": "Agents",
+    "agentsHint": "Comptés sur tous les projets de l'équipe. Définissez les plafonds d'un agent dans l'onglet Agents."
+  },
   "projects": {
     "empty": "This team has no projects.",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions."

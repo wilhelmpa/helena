@@ -56,6 +56,32 @@
     "capabilitiesHint": "Lowercase words separated by commas. A task whose labels match the capabilities of exactly one specialist goes to that specialist without the coordinator's plan.",
     "saved": "{name} saved"
   },
+  "governance": {
+    "title": "Work and token ceilings",
+    "active": "Takes new work.",
+    "pause": "Pause",
+    "resume": "Resume",
+    "paused": "{name} is paused",
+    "resumed": "{name} takes work again"
+  },
+  "tokens": {
+    "today": "Today",
+    "thisMonth": "This month",
+    "dailyCeiling": "Daily ceiling",
+    "monthlyCeiling": "Monthly ceiling",
+    "noCeiling": "No ceiling",
+    "usedOfCeiling": "{used, number} of {ceiling, number}",
+    "used": "{used, number}",
+    "hint": "Tokens of the agent's runs in all projects, counted per UTC day and month. Reaching a ceiling pauses the agent and notifies its owner.",
+    "invalid": "Enter a whole number of at least 1, or leave the field empty for no ceiling.",
+    "save": "Save ceilings",
+    "saved": "Token ceilings of {name} saved",
+    "projectTitle": "Token budget",
+    "projectDescription": "Tokens of the agent runs of this project this month (UTC). Reaching the ceiling pauses the agent whose run would start next and notifies the project owners.",
+    "projectSaved": "Token ceiling of {name} saved",
+    "agentsTitle": "Agents",
+    "agentsHint": "Counted over every project of the team. Set an agent's ceilings on the Agents tab."
+  },
   "projects": {
     "empty": "This team has no projects.",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions."

@@ -2,6 +2,7 @@
 
 import { Circle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationAgentRole, type OrganizationAgentRole } from '../organizationTree';
 
@@ -50,6 +51,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-1">
+                      <AgentPausedBadge agent={agent} />
                       {agent.capabilities.map((capability) => (
                         <span
                           key={capability}
