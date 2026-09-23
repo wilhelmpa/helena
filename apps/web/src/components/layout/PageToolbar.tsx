@@ -17,8 +17,10 @@ import { cn } from '@/lib/utils';
 import { ShellHeaderRow } from '@/components/layout/WorkspaceHeader';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -298,6 +300,74 @@ export function PageSearch({
         </div>
       ) : null}
     </>
+  );
+}
+
+export type PageSelectOption<T extends string> = { value: T; label: string; icon?: LucideIcon };
+
+// A filter or grouping in the toolbar ("Alle Projekte", "Alle Arten", "Nach Projekt"):
+// a 32px control with its icon and the current choice, a menu of the choices under it.
+// A choice other than `defaultValue` is drawn as selected, so a filter that is on stays
+// visible even when the toolbar has folded the control to its icon.
+export function PageSelect<T extends string>({
+  label,
+  icon: Icon,
+  value,
+  onChange,
+  options,
+  defaultValue,
+}: {
+  label: string;
+  icon: LucideIcon;
+  value: T;
+  onChange: (value: T) => void;
+  options: PageSelectOption<T>[];
+  defaultValue?: T;
+}) {
+  const room = useContext(RoomCtx);
+  const current = options.find((option) => option.value === value);
+  const active = defaultValue !== undefined && value !== defaultValue;
+  const trigger = (
+    <button
+      type="button"
+      aria-label={`${label}: ${current?.label ?? ''}`}
+      className={cn(PAGE_CONTROL_CLASS, active && PAGE_CONTROL_ACTIVE_CLASS)}
+    >
+      <Icon aria-hidden="true" />
+      {room.actions ? <span className="max-w-40 truncate">{current?.label}</span> : null}
+      {room.actions ? (
+        <ChevronDown className="!size-3.5 text-muted-foreground" aria-hidden="true" />
+      ) : null}
+    </button>
+  );
+  return (
+    <DropdownMenu>
+      {room.actions ? (
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>{`${label}: ${current?.label ?? ''}`}</TooltipContent>
+        </Tooltip>
+      )}
+      <DropdownMenuContent align="start" className="min-w-48">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          {label}
+        </DropdownMenuLabel>
+        {options.map((option) => (
+          <DropdownMenuCheckboxItem
+            key={option.value}
+            checked={option.value === value}
+            onCheckedChange={() => onChange(option.value)}
+          >
+            {option.icon ? <option.icon /> : null}
+            {option.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
