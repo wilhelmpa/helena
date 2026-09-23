@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import DocumentExportDialog from './DocumentExportDialog';
+import { copyText } from '@/utils/clipboard';
 
 export default function DocumentOptionsMenu({
   projectKey,
@@ -80,7 +81,7 @@ export default function DocumentOptionsMenu({
 
   const copyMarkdown = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(content);
+      await copyText(content);
     } catch {
       const input = window.document.createElement('textarea');
       input.value = content;

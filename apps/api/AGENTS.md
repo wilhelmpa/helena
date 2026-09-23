@@ -9,7 +9,7 @@ Rules and invariants for this package below; read the code for the walkthrough.
   `index.ts` (controller), `model.ts` (schemas), `service.ts` (Drizzle). Cross-cutting
   code in `shared/`. See `src/modules/` for the current set.
 - Features nest one level deeper only where they already call each other:
-  `modules/agents/{core,chat,runner,skills,tools}`, where `core` holds the
+  `modules/agents/{core,chat,runner,skills,tools,mcp-servers}`, where `core` holds the
   agent itself and its runtime. A feature whose links to its neighbours run one way
   stays flat. A schema several of the nested features share sits in the parent's
   `model.ts` and is re-exported from each child's (`agentParams`).
@@ -154,10 +154,10 @@ Enforced declaratively through macros, never imperative calls in handlers.
 
 ## Team-owned agents
 
-Agents, the skill library, the configured tools and the integration credentials belong
-to the team; the routes are under `:teamId` and use the `teamPermission` guard. What
-stays under `:projectKey` is what happens in one project: an agent's chat, its runs and
-the routines that hand it work. `packages/db/AGENTS.md` has the schema side.
+Agents, the skill library, the configured tools, the MCP server library and the
+integration credentials belong to the team; the routes are under `:teamId` and use the
+`teamPermission` guard. What stays under `:projectKey` is what happens in one project: an
+agent's chat, its runs and the routines that hand it work. `packages/db/AGENTS.md` has the schema side.
 
 Two decisions a reader would otherwise propose again:
 

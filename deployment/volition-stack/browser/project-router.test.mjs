@@ -7,14 +7,24 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import {
   createProjectBrowserRouter,
   isPrivateGatewayHeader,
+  isSameOrigin,
   listProjectBrowsers,
   resolveProjectBrowser,
 } from "./project-router.mjs";
-import { fittedBounds, navigableUrl, targetId } from "./project-browser-control.mjs";
+import {
+  fittedBounds,
+  navigableUrl,
+  setLiveViewport,
+  targetId,
+  windowSize,
+} from "./project-browser-control.mjs";
+import { acceptWebSocket } from "./websocket.mjs";
 
 let root;
 let upstream;
 let router;
+// WebSocket connections, which closing a server does not end.
+const upgraded = new Set();
 
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), "browser-router-"));
@@ -23,6 +33,8 @@ beforeEach(async () => {
 afterEach(async () => {
   router?.closeAllConnections?.();
   upstream?.closeAllConnections?.();
+  for (const socket of upgraded) socket.destroy();
+  upgraded.clear();
   await Promise.all(
     [router, upstream].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))),
   );
@@ -43,6 +55,105 @@ async function state(slug, port, cdpPort = 19200) {
 
 function listen(server) {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server.address().port)));
+}
+
+async function until(check) {
+  for (let attempt = 0; attempt < 300 && !check(); attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  assert.ok(check());
+}
+
+const PAGE = "A".repeat(32);
+const BEHIND = "B".repeat(32);
+
+// A browser window on a 1920x1080 screen with 87 pixels of tab strip and toolbar, showing
+// the first of its tabs that is visible. A tab behind it reports the sizes it had when it
+// was last shown. The browser records every DevTools command and answers a screencast with
+// one frame.
+function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
+  const commands = [];
+  let bounds = { left: 0, top: 0, width: 1920, height: 1080, windowState: "normal" };
+  const server = http.createServer((request, response) => {
+    response.writeHead(200, { "content-type": "application/json" });
+    if (request.url === "/json/version") {
+      const { port } = server.address();
+      return response.end(JSON.stringify({ webSocketDebuggerUrl: `ws://127.0.0.1:${port}/devtools/browser/x` }));
+    }
+    if (request.url === "/json/list") {
+      const list = tabs.map(({ id }) => ({ id, type: "page", title: id, url: "https://a.test/" }));
+      return response.end(JSON.stringify(list));
+    }
+    response.end("{}");
+  });
+  const browser = { server, commands, connections: 0 };
+  server.on("upgrade", (request, socket, head) => {
+    upgraded.add(socket);
+    browser.connections++;
+    const connection = acceptWebSocket(request, socket, head);
+    connection.on("message", (data) => {
+      const message = JSON.parse(data.toString());
+      commands.push(message);
+      const reply = (result = {}) => connection.send(JSON.stringify({ id: message.id, result }));
+      switch (message.method) {
+        case "Target.getTargets":
+          return reply({ targetInfos: tabs.map(({ id }) => ({ targetId: id, type: "page" })) });
+        case "Target.attachToTarget":
+          return reply({ sessionId: `S-${message.params.targetId}` });
+        case "Browser.getWindowForTarget":
+          return reply({ windowId: 1, bounds });
+        case "Browser.setWindowBounds":
+          bounds = { ...bounds, ...message.params.bounds };
+          return reply();
+        case "Runtime.evaluate": {
+          const tab = tabs.find(({ id }) => message.sessionId === `S-${id}`);
+          const sizes = tab.visible ? ["visible", 1920, 1080, 0, 87] : ["hidden", 1920, 1080, 0, 0];
+          const visibilityOnly = message.params.expression === "document.visibilityState";
+          return reply({ result: { value: visibilityOnly ? sizes[0] : sizes } });
+        }
+        case "Page.startScreencast":
+          reply();
+          return connection.send(
+            JSON.stringify({
+              method: "Page.screencastFrame",
+              sessionId: message.sessionId,
+              params: {
+                data: Buffer.from("jpeg").toString("base64"),
+                metadata: { deviceWidth: 800, deviceHeight: 513 },
+                sessionId: 7,
+              },
+            }),
+          );
+        default:
+          return reply();
+      }
+    });
+  });
+  browser.sent = (method) => commands.filter((command) => command.method === method);
+  return browser;
+}
+
+function upgradeStatus(port, path, headers) {
+  return new Promise((resolve) => {
+    const request = http.request({
+      port,
+      host: "127.0.0.1",
+      path,
+      headers: {
+        connection: "Upgrade",
+        upgrade: "websocket",
+        "sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==",
+        "sec-websocket-version": "13",
+        ...headers,
+      },
+    });
+    request.on("response", (response) => resolve(response.statusCode));
+    request.on("upgrade", (response, socket) => {
+      socket.destroy();
+      resolve(response.statusCode);
+    });
+    request.end();
+  });
 }
 
 describe("project browser router", () => {
@@ -153,6 +264,98 @@ describe("project browser router", () => {
     assert.equal((await fetch(`${base}/unknown`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })).status, 404);
   });
 
+  it("streams the tab in front to the live view and sends the viewer's input to it", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.binaryType = "arraybuffer";
+    const received = [];
+    viewer.addEventListener("message", (event) => received.push(event.data));
+
+    await until(() => received.some((message) => message instanceof ArrayBuffer));
+    const frame = Buffer.from(received.find((message) => message instanceof ArrayBuffer));
+    assert.deepEqual([frame.readUInt16BE(0), frame.readUInt16BE(2)], [800, 513]);
+    assert.equal(frame.subarray(4).toString(), "jpeg");
+    assert.ok(received.includes(JSON.stringify({ type: "tab" })));
+    const [screencast] = browser.sent("Page.startScreencast");
+    assert.equal(screencast.sessionId, `S-${PAGE}`);
+    assert.equal(screencast.params.format, "jpeg");
+    await until(() => browser.sent("Page.screencastFrameAck").length === 1);
+    assert.deepEqual(browser.sent("Page.screencastFrameAck")[0].params, { sessionId: 7 });
+
+    viewer.send(JSON.stringify({ type: "key", event: "down", key: "Enter", code: "Enter", keyCode: 13, text: "\r" }));
+    viewer.send(JSON.stringify({ type: "mouse", event: "down", x: 10, y: 20, button: "left", buttons: 1 }));
+    viewer.send(JSON.stringify({ type: "text", text: "pasted" }));
+    viewer.send(JSON.stringify({ type: "navigate", url: "https://b.test/" }));
+    await until(() => browser.sent("Input.insertText").length === 1);
+    const [key] = browser.sent("Input.dispatchKeyEvent");
+    assert.equal(key.sessionId, `S-${PAGE}`);
+    assert.deepEqual([key.params.type, key.params.key, key.params.text], ["keyDown", "Enter", "\r"]);
+    const [mouse] = browser.sent("Input.dispatchMouseEvent");
+    assert.deepEqual([mouse.params.type, mouse.params.x, mouse.params.y], ["mousePressed", 10, 20]);
+    assert.equal(browser.sent("Page.navigate").length, 0);
+
+    // The window takes the view's size plus the browser's own toolbar, and goes back to the
+    // screen's size once nobody watches.
+    viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 513 }));
+    await until(() => browser.sent("Browser.setWindowBounds").length === 1);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds")[0].params, {
+      windowId: 1,
+      bounds: { left: 0, top: 0, width: 800, height: 600 },
+    });
+    viewer.close();
+    await until(() => browser.sent("Browser.setWindowBounds").length === 2);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds")[1].params.bounds, {
+      left: 0,
+      top: 0,
+      width: 1920,
+      height: 1080,
+    });
+  });
+
+  it("sizes a window from its visible tab", async () => {
+    const browser = fakeBrowser([
+      { id: BEHIND, visible: false },
+      { id: PAGE, visible: true },
+    ]);
+    upstream = browser.server;
+    const port = await listen(upstream);
+    // Two callers at once share one DevTools connection.
+    await Promise.all([
+      setLiveViewport(port, { width: 800, height: 513 }),
+      setLiveViewport(port, { width: 800, height: 513 }),
+    ]);
+    assert.equal(browser.connections, 1);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds")[0].params.bounds, {
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 600,
+    });
+    await setLiveViewport(port, null);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds").at(-1).params.bounds, {
+      left: 0,
+      top: 0,
+      width: 1920,
+      height: 1080,
+    });
+  });
+
+  it("accepts the live view's WebSocket from the Plan origin only", async () => {
+    await state("demo", 16000, 19201);
+    router = createProjectBrowserRouter({ root });
+    const port = await listen(router);
+    const path = "/projects/demo/api/screencast";
+    assert.equal(await upgradeStatus(port, path, { host: "plan.test", origin: "http://evil.test" }), 403);
+    assert.equal(await upgradeStatus(port, "/projects/demo/api/tabs", {}), 404);
+    assert.equal(await upgradeStatus(port, "/projects/other/api/screencast", {}), 404);
+    assert.equal(isSameOrigin({ headers: { host: "plan.test", origin: "http://plan.test" } }), true);
+    assert.equal(isSameOrigin({ headers: { host: "plan.test" } }), true);
+    assert.equal(isSameOrigin({ headers: { host: "plan.test", origin: "null" } }), false);
+  });
+
   it("lists the project browsers with a valid state for the window keeper", async () => {
     await state("demo", 16000, 19201);
     await fs.mkdir(path.join(root, "broken"), { mode: 0o700 });
@@ -195,5 +398,12 @@ describe("project browser control", () => {
       null,
     );
     assert.equal(fittedBounds({ windowState: "normal" }, { width: 0, height: 0 }), null);
+  });
+
+  it("sizes a window to the live view's page plus the browser's toolbar while one is watched", () => {
+    const screen = { width: 1920, height: 1080 };
+    const chrome = { width: 0, height: 87 };
+    assert.deepEqual(windowSize(screen, chrome, { width: 800, height: 513 }), { width: 800, height: 600 });
+    assert.deepEqual(windowSize(screen, chrome, undefined), screen);
   });
 });

@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ItsAPlanMark from '@/components/brand/ItsAPlanMark';
+import VolitionMark from '@/components/brand/VolitionMark';
+import VolitionWordmark from '@/components/brand/VolitionWordmark';
+import { APP_NAME } from '@/utils/app';
 import ReleaseHistory from '@/features/whats-new/components/ReleaseHistory';
 import { useSession } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
@@ -35,18 +37,16 @@ export default function SidebarBrandFooter() {
 
   const content = (
     <>
-      <ItsAPlanMark className="size-9 shrink-0 text-sidebar-foreground" />
-      <div className="grid text-left leading-none group-data-[collapsible=icon]:hidden">
-        <span className="text-base font-semibold tracking-tight text-sidebar-foreground">
-          It&apos;s a Plan
-        </span>
+      <VolitionMark className="size-7 shrink-0" />
+      <div className="grid text-start leading-none group-data-[collapsible=icon]:hidden">
+        <VolitionWordmark label={APP_NAME} className="h-3.5 w-auto text-sidebar-foreground" />
         {newerVersion ? (
           <span className="mt-1 flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-primary uppercase">
             {/* A pulsing ring around the dot, so the update is noticed in a footer
                 nobody looks at. */}
             <span className="relative flex size-1.5" aria-hidden>
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-75" />
+              <span className="relative inline-flex size-1.5 rounded-full bg-success" />
             </span>
             {`v${newerVersion} available`}
           </span>

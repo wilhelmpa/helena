@@ -18,7 +18,9 @@ Environment=API_PORT=3000
 Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
 Environment=PROJECT_WORKSPACE_ROOT=/srv/volition/workspaces/projects
 Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
-LoadCredential=mastra_control_token:/etc/volition/plan-control.token
+LoadCredential=plan_control_token:/etc/volition/plan-control.token
+LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
+Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
 Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/api/src/index.ts
 Restart=on-failure

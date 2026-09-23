@@ -35,13 +35,13 @@ systemctl reload nginx
 "$here/refresh-db.sh"
 
 # The development Mastra instance and its bridge to the development API, with tokens of
-# their own. The API reads the control token as the developer, so it is theirs.
+# their own. The API reads the control tokens as the developer, so they are theirs.
 install -d -m 0750 -o root -g "$dev_user" /etc/volition/dev
-for token in plan-control hermes-team; do
+for token in plan-control mastra-control hermes-team; do
   [[ -s /etc/volition/dev/$token.token ]] || openssl rand -hex 32 >"/etc/volition/dev/$token.token"
+  chmod 0600 "/etc/volition/dev/$token.token"
 done
-chown "$dev_user:$dev_user" /etc/volition/dev/plan-control.token
-chmod 0600 /etc/volition/dev/plan-control.token /etc/volition/dev/hermes-team.token
+chown "$dev_user:$dev_user" /etc/volition/dev/plan-control.token /etc/volition/dev/mastra-control.token
 root=$(cd "$here/../../../.." && pwd)
 runuser -u "$dev_user" -- bash -c "cd '$root/deployment/volition-stack/optional/mastra-studio' && bun install --frozen-lockfile >/dev/null && bun run build >/dev/null"
 install -m 0644 "$here"/systemd/volition-*-dev.service /etc/systemd/system/

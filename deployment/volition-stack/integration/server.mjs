@@ -25,10 +25,6 @@ import {
 } from "./connections.mjs";
 import { createMailService, MailValidationError } from "./mail-service.mjs";
 import {
-  createMastraControlService,
-  MastraControlError,
-} from "./mastra-control.mjs";
-import {
   createMastraEventService,
   MastraEventError,
 } from "./mastra-events.mjs";
@@ -116,7 +112,6 @@ export function createRequestHandler(
   connections = null,
   mail = null,
   secrets = null,
-  mastraControl = null,
   mastraEvents = null,
 ) {
   return async function handle(request, response) {
@@ -125,52 +120,6 @@ export function createRequestHandler(
       return;
     }
     const pathname = new URL(request.url || "/", "http://localhost").pathname;
-    const mastraControlRoute =
-      request.method === "POST" && pathname === "/internal/mastra/control";
-    if (mastraControlRoute) {
-      if (!mastraControl || !config.mastraControlToken) {
-        json(response, 404, { error: "not_found" });
-        return;
-      }
-      if (
-        !authorized(
-          firstHeader(request.headers.authorization),
-          config.mastraControlToken,
-        )
-      ) {
-        response.setHeader("WWW-Authenticate", "Bearer");
-        json(response, 401, { error: "unauthorized" });
-        return;
-      }
-      if (
-        !firstHeader(request.headers["content-type"])
-          ?.toLowerCase()
-          .startsWith("application/json")
-      ) {
-        json(response, 415, { error: "json_required" });
-        return;
-      }
-      try {
-        json(
-          response,
-          200,
-          await mastraControl.execute(await requestBody(request)),
-        );
-      } catch (error) {
-        if (
-          error instanceof RequestValidationError ||
-          error instanceof MastraControlError
-        ) {
-          json(response, error.status ?? 400, {
-            error: "control_request_failed",
-            message: error.message,
-          });
-        } else {
-          json(response, 502, { error: "control_plane_failed" });
-        }
-      }
-      return;
-    }
     const mastraEventRoute =
       request.method === "POST" && pathname === "/internal/mastra/events";
     if (mastraEventRoute) {
@@ -542,13 +491,7 @@ export function createRequestHandler(
 
 export function createProvisioningServer(config, options = {}) {
   assertServerConfig(config);
-  const mastraControl =
-    options.mastraControl ??
-    (config.mastraControlEnabled
-      ? createMastraControlService(config, options)
-      : null);
-  const provisioner =
-    options.provisioner ?? createProvisioner(config, { ...options, mastraControl });
+  const provisioner = options.provisioner ?? createProvisioner(config, options);
   const inbox =
     options.inbox ??
     (config.inboxAccounts?.length ? createInboxService(config, options) : null);
@@ -583,7 +526,6 @@ export function createProvisioningServer(config, options = {}) {
     connections,
     mail,
     secrets,
-    mastraControl,
     mastraEvents,
   );
   const server = http.createServer(handler);

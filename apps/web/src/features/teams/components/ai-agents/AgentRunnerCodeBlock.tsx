@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { copyText } from '@/utils/clipboard';
 
 // A snippet the reader is meant to run or save, with a copy button.
 export function AgentRunnerCodeBlock({ code }: { code: string }) {
@@ -10,7 +11,7 @@ export function AgentRunnerCodeBlock({ code }: { code: string }) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(code);
+      await copyText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

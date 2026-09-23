@@ -1,6 +1,10 @@
-<div align="center">
+# Volition
 
-<img src="assets/banner.png" alt="It's a Plan — open-source project management and issue tracking where people and AI agents ship together" width="100%" />
+Volition is a fork of [It's a Plan](https://github.com/croffasia/itsaplan) by Andrii
+Poluosmak and is licensed under the same AGPL-3.0. The upstream description, links and
+licence terms below are kept as they are.
+
+<div align="center">
 
 ### Open-source alternative to Linear, Jira, Trello, and Plane, with AI agents built in
 

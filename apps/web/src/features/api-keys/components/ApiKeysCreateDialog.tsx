@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { copyText } from '@/utils/clipboard';
 
 // Lifetimes offered at creation, in days. The server caps a key at a year, and 90
 // days is the default it applies when none is sent.
@@ -58,7 +59,7 @@ export default function ApiKeysCreateDialog({
   async function copy() {
     if (!createdKey) return;
     try {
-      await navigator.clipboard.writeText(createdKey);
+      await copyText(createdKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

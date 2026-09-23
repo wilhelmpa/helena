@@ -1,15 +1,6 @@
 import { z } from 'zod';
 
-export const workflowIds = [
-  'inbox-triage',
-  'career-research',
-  'application',
-  'support',
-  'system-audit',
-  'document-filing',
-  'agent-team',
-  'agent-routine',
-] as const;
+export const workflowIds = ['inbox-triage', 'agent-team', 'agent-routine'] as const;
 
 export const workflowIdSchema = z.enum(workflowIds);
 
@@ -109,24 +100,10 @@ export const inboxWorkflowStateSchema = workflowStateSchema.extend({
 export const workflowOutputSchema = z.object({
   workflowId: workflowIdSchema,
   correlationId: z.string(),
-  status: z.enum(['completed', 'dry-run-complete', 'needs-attention', 'rejected']),
+  status: z.enum(['completed', 'dry-run-complete']),
   summary: z.string(),
   effects: z.array(effectSchema),
   triage: inboxTriageResultSchema.optional(),
-});
-
-export const approvalSuspendSchema = z.object({
-  kind: z.literal('approval-required'),
-  workflowId: workflowIdSchema,
-  correlationId: z.string(),
-  reason: z.string(),
-  effectIds: z.array(z.string()),
-});
-
-export const approvalResumeSchema = z.object({
-  approved: z.boolean(),
-  decidedBy: z.string().min(1).max(200),
-  note: z.string().max(2000).optional(),
 });
 
 export type WorkflowId = z.infer<typeof workflowIdSchema>;

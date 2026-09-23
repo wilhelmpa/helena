@@ -390,16 +390,10 @@ export function loadConfig(env = process.env) {
       path.join(integrationStateRoot, "volition/ipc/mastra-inbox-classifier.sock"),
     ),
     mastraControlEnabled: env.MASTRA_CONTROL_ENABLED === "true",
-    mastraControlUrl: privateServiceBaseUrl(
-      env.MASTRA_CONTROL_URL,
-      "http://172.30.95.2:4111/mastra/api/",
-      "MASTRA_CONTROL_URL",
-    ),
     mastraControlTokenFile: absolutePath(
       env.MASTRA_CONTROL_TOKEN_FILE,
       "/run/credentials/volition-provisioning.service/plan_mastra_control_token",
     ),
-    mastraControlOwnerEmail: env.MASTRA_CONTROL_OWNER_EMAIL?.trim() || "owner@example.com",
     inboxWorkerWakeUrl: privateServiceUrl(
       env.INBOX_WORKER_WAKE_URL,
       "http://172.30.254.2:18801/internal/inbox/wake",

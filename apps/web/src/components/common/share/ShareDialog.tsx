@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useTranslations } from 'next-intl';
+import { copyText } from '@/utils/clipboard';
 
 // A generic public-share dialog for an issue or a saved view. It shows the current
 // state (shared with a copyable link, or not shared) and toggles it through the
@@ -82,7 +83,7 @@ export default function ShareDialog({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(url);
+      await copyText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

@@ -199,6 +199,10 @@ export const qk = {
   configuredToolOptions: (teamId: number) => ['configuredTools', teamId, 'options'] as const,
   agentToolLinks: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'tool-configs'] as const,
+  // The team's MCP server library, and the servers enabled on one agent.
+  mcpServers: (teamId: number) => ['mcpServers', teamId] as const,
+  agentMcpServers: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'mcp-servers'] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,

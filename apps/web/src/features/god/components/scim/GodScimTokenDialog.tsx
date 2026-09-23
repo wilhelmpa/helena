@@ -7,6 +7,7 @@ import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCreateInstanceScimToken } from '../../services/god.service';
+import { copyText } from '@/utils/clipboard';
 
 // The generated token is kept in this dialog only, never lifted into page state: it
 // is shown once, right after it is generated, and cannot be retrieved later.
@@ -21,7 +22,7 @@ export default function GodScimTokenDialog({ onClose }: { onClose: () => void })
   async function copy() {
     if (!token) return;
     try {
-      await navigator.clipboard.writeText(token);
+      await copyText(token);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

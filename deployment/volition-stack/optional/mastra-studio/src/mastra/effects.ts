@@ -30,7 +30,3 @@ export function planEffects(
     };
   });
 }
-
-export function approvalEffects(effects: readonly Effect[]): Effect[] {
-  return effects.filter(effect => effect.requiresApproval);
-}

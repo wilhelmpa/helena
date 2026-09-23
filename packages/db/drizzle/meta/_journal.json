@@ -1048,15 +1048,29 @@
     {
       "idx": 149,
       "version": "7",
-      "when": 1790167635326,
-      "tag": "0149_area_folders",
+      "when": 1790167108920,
+      "tag": "0149_agent_mcp_servers",
       "breakpoints": true
     },
     {
       "idx": 150,
       "version": "7",
-      "when": 1790169508482,
-      "tag": "0150_issue_attachment_vault",
+      "when": 1790169964027,
+      "tag": "0150_area_folders",
+      "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1790170207981,
+      "tag": "0151_approval_command",
+      "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1790172043506,
+      "tag": "0152_issue_attachment_vault",
       "breakpoints": true
     }
   ]

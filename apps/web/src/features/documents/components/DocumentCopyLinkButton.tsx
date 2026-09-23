@@ -5,12 +5,13 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { copyText } from '@/utils/clipboard';
 
 export default function DocumentCopyLinkButton() {
   const t = useTranslations('documents');
 
   const copy = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    await copyText(window.location.href);
     toast.success(t('linkCopied'));
   };
 

@@ -13,6 +13,7 @@ import {
   teamRole,
   agentSkillLink,
   agentToolLink,
+  agentMcpServerLink,
   agentFieldTrigger,
   customField,
   integrationCredential,
@@ -743,10 +744,11 @@ export interface NewAgentInput {
   projectId?: number;
   template?: boolean;
   // What a copy of a template carries over: the role title and capabilities of its
-  // place in the agent team, and its skills.
+  // place in the agent team, its skills and its MCP servers.
   roleTitle?: string;
   capabilities?: string[];
   skillIds?: number[];
+  mcpServerIds?: number[];
   // External-agent runner scope (default: any member's runs).
   runnerScope?: RunnerScope;
   // The member creating the agent, who owns its runner.
@@ -897,6 +899,11 @@ export async function createAgent(
         await tx
           .insert(agentSkillLink)
           .values(input.skillIds.map((skillId) => ({ agentId: row.id, skillId })));
+      }
+      if (input.mcpServerIds?.length) {
+        await tx
+          .insert(agentMcpServerLink)
+          .values(input.mcpServerIds.map((mcpServerId) => ({ agentId: row.id, mcpServerId })));
       }
       return row.id;
     } catch (err) {
@@ -1170,7 +1177,7 @@ export async function updateAgent(
 }
 
 // A copy of a template for one project: a specialist of that project with the
-// template's configuration, skills and capabilities. Knowledge the copies share goes
+// template's configuration, skills, MCP servers and capabilities. Knowledge the copies share goes
 // through the skills; each copy keeps a memory of its own.
 export async function copyTemplateIntoProject(
   template: AiAgentRow,
@@ -1184,7 +1191,7 @@ export async function copyTemplateIntoProject(
     .where(and(eq(project.id, projectId), eq(project.teamId, template.teamId)));
   if (!target) throw new HttpError(400, 'Project not found in this team');
   const suffix = `-${target.key.toLowerCase()}`;
-  const [assignment, skills] = await Promise.all([
+  const [assignment, skills, mcpServers] = await Promise.all([
     db
       .select({
         roleTitle: organizationAgentAssignment.roleTitle,
@@ -1197,6 +1204,10 @@ export async function copyTemplateIntoProject(
       .select({ skillId: agentSkillLink.skillId })
       .from(agentSkillLink)
       .where(eq(agentSkillLink.agentId, template.id)),
+    db
+      .select({ mcpServerId: agentMcpServerLink.mcpServerId })
+      .from(agentMcpServerLink)
+      .where(eq(agentMcpServerLink.agentId, template.id)),
   ]);
   return createAgent(template.teamId, {
     name: `${template.name} ${target.key}`,
@@ -1220,6 +1231,7 @@ export async function copyTemplateIntoProject(
     roleTitle: assignment?.roleTitle,
     capabilities: assignment?.capabilities,
     skillIds: skills.map(({ skillId }) => skillId),
+    mcpServerIds: mcpServers.map(({ mcpServerId }) => mcpServerId),
   });
 }
 

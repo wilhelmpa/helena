@@ -33,6 +33,7 @@
   "newTeam": "Neues Team",
   "manageTeams": "Teams verwalten",
   "role": "Rolle: {role}",
+  "basedOn": "Basiert auf It’s a Plan (AGPL-3.0)",
   "search": "Suchen oder Befehl ausführen…",
   "searchHint": "Suchen oder Befehl ausführen ({key})",
   "newIssueHint": "Neue Aufgabe ({key})",
@@ -67,7 +68,15 @@
       "reload": "Neu laden",
       "tabs": "Tabs",
       "newTab": "Neuer Tab",
-      "closeTab": "Tab schließen"
+      "closeTab": "Tab schließen",
+      "view": "Browser-Ansicht",
+      "live": "Live",
+      "liveTitle": "Live-Ansicht des vorderen Tabs",
+      "desktop": "Desktop",
+      "desktopTitle": "Desktop (VNC)",
+      "liveKeyboard": "Live-Browser. Tasten gehen an die Seite, solange die Ansicht den Fokus hat.",
+      "connecting": "Verbindung zum Browser wird hergestellt…",
+      "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…"
     }
   },
   "groups": {

@@ -11,6 +11,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from 'next-intl';
 import AgentInstructionsEditor from './AgentInstructionsEditor';
+import { copyText } from '@/utils/clipboard';
 
 // The agent's system-prompt field, written as markdown. An inline editor plus a
 // maximize control next to the label that opens the same value in a large dialog
@@ -31,7 +32,7 @@ export function AgentInstructionsField({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

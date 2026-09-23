@@ -1,6 +1,6 @@
 {
-  "id": "17bb9640-72ce-4426-9bbe-ba6a075e989e",
-  "prevId": "e1074431-3996-4548-a074-c9dbfe550147",
+  "id": "a4cb644c-46c9-499a-b198-3aa17340f4cc",
+  "prevId": "2b442530-b363-4daa-9416-47df5df7ecd9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1742,6 +1742,210 @@
           "value": "\"agent_field_trigger\".\"delay_sec\" >= 0 AND \"agent_field_trigger\".\"delay_sec\" <= 86400"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.agent_mcp_server": {
+      "name": "agent_mcp_server",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "transport": {
+          "name": "transport",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "command": {
+          "name": "command",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "args": {
+          "name": "args",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "env": {
+          "name": "env",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "headers": {
+          "name": "headers",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "agent_mcp_server_team_idx": {
+          "name": "agent_mcp_server_team_idx",
+          "columns": [
+            {
+              "expression": "team_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "agent_mcp_server_team_id_team_id_fk": {
+          "name": "agent_mcp_server_team_id_team_id_fk",
+          "tableFrom": "agent_mcp_server",
+          "tableTo": "team",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agent_mcp_server_team_id_name_unique": {
+          "name": "agent_mcp_server_team_id_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "team_id",
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "agent_mcp_server_transport_check": {
+          "name": "agent_mcp_server_transport_check",
+          "value": "\"agent_mcp_server\".\"transport\" IN ('stdio', 'http', 'sse')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.agent_mcp_server_link": {
+      "name": "agent_mcp_server_link",
+      "schema": "",
+      "columns": {
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mcp_server_id": {
+          "name": "mcp_server_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "agent_mcp_server_link_server_idx": {
+          "name": "agent_mcp_server_link_server_idx",
+          "columns": [
+            {
+              "expression": "mcp_server_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "agent_mcp_server_link_agent_id_ai_agent_id_fk": {
+          "name": "agent_mcp_server_link_agent_id_ai_agent_id_fk",
+          "tableFrom": "agent_mcp_server_link",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_mcp_server_link_mcp_server_id_agent_mcp_server_id_fk": {
+          "name": "agent_mcp_server_link_mcp_server_id_agent_mcp_server_id_fk",
+          "tableFrom": "agent_mcp_server_link",
+          "tableTo": "agent_mcp_server",
+          "columnsFrom": [
+            "mcp_server_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "agent_mcp_server_link_agent_id_mcp_server_id_pk": {
+          "name": "agent_mcp_server_link_agent_id_mcp_server_id_pk",
+          "columns": [
+            "agent_id",
+            "mcp_server_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.agent_run": {
@@ -5659,26 +5863,7 @@
           "name": "s3_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
-        },
-        "vault_path": {
-          "name": "vault_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sha256": {
-          "name": "sha256",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "linked": {
-          "name": "linked",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
+          "notNull": true
         },
         "filename": {
           "name": "filename",
@@ -5721,21 +5906,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "issue_attachment_vault_path_idx": {
-          "name": "issue_attachment_vault_path_idx",
-          "columns": [
-            {
-              "expression": "vault_path",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -5764,12 +5934,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "issue_attachment_storage_check": {
-          "name": "issue_attachment_storage_check",
-          "value": "(\"issue_attachment\".\"s3_key\" IS NULL) <> (\"issue_attachment\".\"vault_path\" IS NULL)"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.issue_checklist": {

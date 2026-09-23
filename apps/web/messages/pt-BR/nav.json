@@ -32,6 +32,7 @@
   "newTeam": "Novo time",
   "manageTeams": "Gerenciar times",
   "role": "Função: {role}",
+  "basedOn": "Baseado no It’s a Plan (AGPL-3.0)",
   "search": "Buscar ou executar um comando…",
   "searchHint": "Buscar ou executar um comando ({key})",
   "newIssueHint": "Nova issue ({key})",
@@ -66,7 +67,15 @@
       "reload": "Recarregar",
       "tabs": "Abas",
       "newTab": "Nova aba",
-      "closeTab": "Fechar aba"
+      "closeTab": "Fechar aba",
+      "view": "Visualização do navegador",
+      "live": "Ao vivo",
+      "liveTitle": "Visualização ao vivo da aba em primeiro plano",
+      "desktop": "Área de trabalho",
+      "desktopTitle": "Área de trabalho (VNC)",
+      "liveKeyboard": "Navegador ao vivo. As teclas vão para a página enquanto a visualização tem o foco.",
+      "connecting": "Conectando ao navegador…",
+      "reconnecting": "A conexão com o navegador foi perdida. Reconectando…"
     }
   },
   "groups": {

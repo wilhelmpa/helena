@@ -1,5 +1,5 @@
 {
-  "id": "e1074431-3996-4548-a074-c9dbfe550147",
+  "id": "2b442530-b363-4daa-9416-47df5df7ecd9",
   "prevId": "e28ef373-29de-4ce8-827c-ff8f32431148",
   "version": "7",
   "dialect": "postgresql",
@@ -1742,6 +1742,210 @@
           "value": "\"agent_field_trigger\".\"delay_sec\" >= 0 AND \"agent_field_trigger\".\"delay_sec\" <= 86400"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.agent_mcp_server": {
+      "name": "agent_mcp_server",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "transport": {
+          "name": "transport",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "command": {
+          "name": "command",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "args": {
+          "name": "args",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "env": {
+          "name": "env",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "headers": {
+          "name": "headers",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "agent_mcp_server_team_idx": {
+          "name": "agent_mcp_server_team_idx",
+          "columns": [
+            {
+              "expression": "team_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "agent_mcp_server_team_id_team_id_fk": {
+          "name": "agent_mcp_server_team_id_team_id_fk",
+          "tableFrom": "agent_mcp_server",
+          "tableTo": "team",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agent_mcp_server_team_id_name_unique": {
+          "name": "agent_mcp_server_team_id_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "team_id",
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "agent_mcp_server_transport_check": {
+          "name": "agent_mcp_server_transport_check",
+          "value": "\"agent_mcp_server\".\"transport\" IN ('stdio', 'http', 'sse')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.agent_mcp_server_link": {
+      "name": "agent_mcp_server_link",
+      "schema": "",
+      "columns": {
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mcp_server_id": {
+          "name": "mcp_server_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "agent_mcp_server_link_server_idx": {
+          "name": "agent_mcp_server_link_server_idx",
+          "columns": [
+            {
+              "expression": "mcp_server_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "agent_mcp_server_link_agent_id_ai_agent_id_fk": {
+          "name": "agent_mcp_server_link_agent_id_ai_agent_id_fk",
+          "tableFrom": "agent_mcp_server_link",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_mcp_server_link_mcp_server_id_agent_mcp_server_id_fk": {
+          "name": "agent_mcp_server_link_mcp_server_id_agent_mcp_server_id_fk",
+          "tableFrom": "agent_mcp_server_link",
+          "tableTo": "agent_mcp_server",
+          "columnsFrom": [
+            "mcp_server_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "agent_mcp_server_link_agent_id_mcp_server_id_pk": {
+          "name": "agent_mcp_server_link_agent_id_mcp_server_id_pk",
+          "columns": [
+            "agent_id",
+            "mcp_server_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.agent_run": {
@@ -10514,12 +10718,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "folder": {
-          "name": "folder",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "position": {
           "name": "position",
           "type": "double precision",
@@ -10581,14 +10779,6 @@
           "columns": [
             "project_id",
             "name"
-          ]
-        },
-        "project_view_folder_project_folder_unique": {
-          "name": "project_view_folder_project_folder_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "project_id",
-            "folder"
           ]
         }
       },
