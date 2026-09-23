@@ -173,6 +173,18 @@ class EgressTest(unittest.TestCase):
         self.assertIsNone(egress.decide(policy, 'example.com', 443, None))
         self.assertEqual(egress.effective_mode({'mode': 'weird'}, None), 'open')
 
+    def test_the_model_endpoints_stay_reachable(self):
+        blocked = {'mode': 'blocked', 'allow': [], 'deny': ['anthropic.com'], 'agents': {}}
+        models = ('api.anthropic.com', 'chatgpt.com')
+        self.assertIsNone(egress.decide(blocked, 'api.anthropic.com', 443, None, models))
+        self.assertEqual(egress.decide(blocked, 'api.anthropic.com', 80, None, models), 'blocked')
+        self.assertEqual(egress.decide(blocked, 'example.com', 443, None, models), 'blocked')
+
+    def test_reads_the_shipped_settings(self):
+        settings = egress.load_settings(str(ISOLATION / 'egress.json'))
+        self.assertIn('api.anthropic.com', settings['modelHosts'])
+        self.assertEqual(egress.load_settings('/nonexistent')['modelHosts'], ())
+
 
 class PlanProxyBodyTest(unittest.TestCase):
     def forwarded(self, data: bytes, length: int, chunked: bool) -> bytes:

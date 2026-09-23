@@ -564,7 +564,7 @@
       },
       "blocked": {
         "label": "Bloqueado",
-        "description": "Sem acesso à internet. A API da Helena e o gateway do navegador continuam acessíveis."
+        "description": "Sem acesso à internet. Apenas a API do Helena, o gateway do navegador e o modelo de IA do agente continuam acessíveis."
       }
     },
     "allowLabel": "Lista de permissões",

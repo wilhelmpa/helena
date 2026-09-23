@@ -564,7 +564,7 @@
       },
       "blocked": {
         "label": "Diblokir",
-        "description": "Tidak ada akses internet. API Helena dan gateway browser tetap dapat diakses."
+        "description": "Tanpa akses internet. Hanya API Helena, gateway browser, dan model AI agen yang tetap dapat dijangkau."
       }
     },
     "allowLabel": "Daftar izin",

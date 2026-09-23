@@ -564,7 +564,7 @@
       },
       "blocked": {
         "label": "Bloqué",
-        "description": "Aucun accès à internet. L'API Helena et la passerelle du navigateur restent accessibles."
+        "description": "Aucun accès à Internet. Seuls l’API Helena, la passerelle du navigateur et le modèle d’IA de l’agent restent accessibles."
       }
     },
     "allowLabel": "Liste d'autorisation",

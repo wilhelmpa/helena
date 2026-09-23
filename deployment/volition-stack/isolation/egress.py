@@ -140,8 +140,13 @@ def effective_mode(policy: dict, agent_id: int | None) -> str:
     return mode if mode in MODES else 'open'
 
 
-def decide(policy: dict, host: str, port: int, agent_id: int | None = None) -> str | None:
-    """The reason a destination is refused before it is resolved, None when it may be tried."""
+def decide(policy: dict, host: str, port: int, agent_id: int | None = None,
+           model_hosts: tuple[str, ...] = ()) -> str | None:
+    """The reason a destination is refused before it is resolved, None when it may be tried.
+    The model endpoints of the runtimes (egress.json) stay reachable in every mode: an agent
+    without its model cannot work at all. They still have to be public, on port 443."""
+    if port == 443 and domain_matches(host, list(model_hosts)):
+        return None
     mode = effective_mode(policy, agent_id)
     if mode == 'blocked':
         return 'blocked'
@@ -257,7 +262,8 @@ class Plan:
 
 class Egress:
     def __init__(self, plan: Plan, user_prefix: str, unit_prefix: str, agents_group: str,
-                 limits: dict | None = None):
+                 limits: dict | None = None, model_hosts: tuple[str, ...] = ()):
+        self.model_hosts = model_hosts
         self.plan = plan
         self.user_prefix = user_prefix
         self.unit_prefix = unit_prefix
@@ -386,7 +392,7 @@ class Egress:
         entry = {'slug': identity['slug'], 'agentId': identity['agentId'], 'runId': identity['runId'],
                  'host': host, 'port': port, 'decision': 'blocked', 'reason': None}
         policy = self.plan.policy(identity['slug'])
-        reason = decide(policy, host, port, identity['agentId'])
+        reason = decide(policy, host, port, identity['agentId'], self.model_hosts)
         if reason:
             return await self.block(writer, entry, reason, 403)
         try:
@@ -447,6 +453,21 @@ class Egress:
         await self.respond(writer, status, reason, f'{entry["host"]}:{entry["port"]} refused ({reason})')
 
 
+def load_settings(path: str) -> dict:
+    """The proxy's own settings (egress.json, root's): the model endpoints every agent keeps."""
+    try:
+        with open(path, encoding='utf-8') as handle:
+            raw = json.load(handle)
+    except FileNotFoundError:
+        raw = {}
+    hosts = []
+    for value in raw.get('modelHosts') or []:
+        host = normalize_host(value) if isinstance(value, str) else None
+        if host:
+            hosts.append(host)
+    return {'modelHosts': tuple(hosts)}
+
+
 async def serve() -> None:
     token_file = os.environ.get('VOLITION_EGRESS_TOKEN_FILE')
     if not token_file and os.environ.get('CREDENTIALS_DIRECTORY'):
@@ -456,9 +477,11 @@ async def serve() -> None:
         token_file,
         os.environ.get('STATE_DIRECTORY', '').split(':')[0] or None,
     )
+    settings = load_settings(os.environ.get('VOLITION_EGRESS_CONFIG', os.path.join(HERE, 'egress.json')))
     egress = Egress(plan, os.environ.get('VOLITION_USER_PREFIX', 'vp-'),
                     os.environ.get('VOLITION_UNIT_PREFIX', 'volition-agent-'),
-                    os.environ.get('VOLITION_AGENTS_GROUP', 'volition-agents'))
+                    os.environ.get('VOLITION_AGENTS_GROUP', 'volition-agents'),
+                    model_hosts=settings['modelHosts'])
     if int(os.environ.get('LISTEN_FDS', '0') or 0) >= 1 and os.environ.get('LISTEN_PID') == str(os.getpid()):
         sock = socket.socket(fileno=3)
     else:

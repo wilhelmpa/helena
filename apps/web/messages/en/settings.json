@@ -564,7 +564,7 @@
       },
       "blocked": {
         "label": "Blocked",
-        "description": "No internet access. The Helena API and browser gateway stay reachable."
+        "description": "No internet access. Only the Helena API, the browser gateway and the agent’s AI model stay reachable."
       }
     },
     "allowLabel": "Allow list",

@@ -75,6 +75,7 @@ install_code() {
     install_file 0644 "$source_dir/$file" "$lib/$file"
   done
   install_file 0644 "$source_dir/launcher.json" "$lib/launcher.json"
+  install_file 0644 "$source_dir/egress.json" "$lib/egress.json"
   install_file 0644 "$stack/native/terminal/tmux.conf" "$lib/tmux.conf"
   for file in project-browser-state.mjs project-browser.mjs atomic-json.mjs move-path.mjs; do
     install_file 0644 "$stack/integration/$file" "$lib/browser/$file"

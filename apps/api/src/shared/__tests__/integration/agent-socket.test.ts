@@ -99,6 +99,14 @@ describe('agent socket', () => {
     expect(res.status).toBe(403);
   });
 
+  it('checks the key on routes outside the planner too', async () => {
+    const { agentKey } = await setup();
+    const own = await get('/me', { 'x-api-key': agentKey, [AGENT_PROJECT_HEADER]: 'mkt' });
+    expect(own.status).toBe(200);
+    const other = await get('/me', { 'x-api-key': agentKey, [AGENT_PROJECT_HEADER]: 'ops' });
+    expect(other.status).toBe(403);
+  });
+
   it('refuses a malformed project name', async () => {
     const { agentKey } = await setup();
     const res = await get('/projects', { 'x-api-key': agentKey, [AGENT_PROJECT_HEADER]: '../x' });

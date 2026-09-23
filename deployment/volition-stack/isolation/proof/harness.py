@@ -147,6 +147,7 @@ def install_tree(source: str) -> None:
         if name.endswith('.py') and os.path.isfile(path):
             shutil.copyfile(path, os.path.join(ISO, name))
     shutil.copyfile(os.path.join(source, 'proof', 'probe.py'), os.path.join(ISO, 'probe.py'))
+    shutil.copyfile(os.path.join(source, 'egress.json'), os.path.join(ISO, 'egress.json'))
     shutil.copyfile(os.path.join(source, 'proof', 'mock_model.py'), os.path.join(ISO, 'mock_model.py'))
     shutil.copyfile(os.path.join(source, 'proof', 'cdp.mjs'), os.path.join(ISO, 'cdp.mjs'))
     shutil.copyfile(os.path.join(source, '..', 'native', 'terminal', 'tmux.conf'), os.path.join(ISO, 'tmux.conf'))

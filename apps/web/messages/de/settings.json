@@ -564,7 +564,7 @@
       },
       "blocked": {
         "label": "Gesperrt",
-        "description": "Kein Internetzugriff. Die Helena-API und das Browser-Gateway bleiben erreichbar."
+        "description": "Kein Internetzugriff. Erreichbar bleiben nur die Helena-API, das Browser-Gateway und das KI-Modell des Agenten."
       }
     },
     "allowLabel": "Erlaubt-Liste",

@@ -6,7 +6,7 @@ import { t } from 'elysia';
 // - `open` (Internet): every public host except the ones on `deny`;
 // - `allowlist`: only the hosts on `allow`, and still not the ones on `deny`;
 // - `blocked`: nothing; the agent keeps the Plan API and the browser gateway, which do not
-//   go through the proxy.
+//   go through the proxy, and its model's endpoints (the proxy's own list, egress.json).
 // A domain covers its subdomains. `mailPorts` also opens 465, 587 and 993. An agent of the
 // project can have a mode of its own (`agents`, by agent id); the lists stay the project's.
 export const AGENT_NETWORK_MODES = ['open', 'allowlist', 'blocked'] as const;

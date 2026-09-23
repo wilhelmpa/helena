@@ -564,7 +564,7 @@
       },
       "blocked": {
         "label": "已阻止",
-        "description": "无法访问互联网。Helena API 和浏览器网关仍可访问。"
+        "description": "无法访问互联网。仅 Helena API、浏览器网关和该代理的 AI 模型保持可访问。"
       }
     },
     "allowLabel": "允许列表",
