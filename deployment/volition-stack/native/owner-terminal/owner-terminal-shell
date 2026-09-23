@@ -1,0 +1,55 @@
+#!/bin/bash
+# Execs one of a fixed set of commands, never a caller-supplied one. The router
+# (owner-terminal-router.mjs) has already restricted the "kind" query parameter to
+# this same fixed list before it gets here (belt and braces: this script re-checks
+# it against a literal case, not a variable built from input).
+set -euo pipefail
+
+if (( $# != 2 )); then
+  printf 'usage: owner-terminal-shell <kind> <session-name>\n' >&2
+  exit 64
+fi
+kind=$1
+name=$2
+if [[ ! "$name" =~ ^[a-z0-9][a-z0-9-]{0,31}$ ]]; then
+  printf 'invalid session name\n' >&2
+  exit 64
+fi
+
+dev_clone=$HOME/volition/plan
+
+case "$kind" in
+  shell)
+    command=(bash -l)
+    workdir=$HOME
+    ;;
+  claude)
+    command=("$HOME/.local/bin/claude")
+    workdir=$HOME
+    ;;
+  codex)
+    command=("$HOME/.local/bin/codex")
+    workdir=$HOME
+    ;;
+  helena-dev-claude)
+    command=("$HOME/.local/bin/claude")
+    workdir=$dev_clone
+    ;;
+  helena-dev-codex)
+    command=("$HOME/.local/bin/codex")
+    workdir=$dev_clone
+    ;;
+  *)
+    printf 'unknown session kind\n' >&2
+    exit 64
+    ;;
+esac
+
+if [[ ! -d "$workdir" ]]; then
+  printf 'working directory does not exist: %s\n' "$workdir" >&2
+  exit 66
+fi
+
+export TERM=xterm-256color
+exec /usr/bin/tmux -f "$(dirname -- "$(realpath -- "$0")")/tmux.conf" \
+  new-session -A -s "owner-$kind-$name" -c "$workdir" "${command[@]}"
