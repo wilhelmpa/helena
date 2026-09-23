@@ -75,9 +75,15 @@
       "liveTitle": "Live-Ansicht des vorderen Tabs",
       "desktop": "Desktop",
       "desktopTitle": "Desktop (VNC)",
+      "followAgentOn": "Folgt dem Tab des Agenten",
+      "followAgentOff": "Dem Tab des Agenten folgen",
       "liveKeyboard": "Live-Browser. Tasten gehen an die Seite, solange die Ansicht den Fokus hat.",
+      "controlAgent": "Der Agent handelt gerade",
       "connecting": "Verbindung zum Browser wird hergestellt…",
-      "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…"
+      "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…",
+      "dialogTitle": "Die Seite fragt",
+      "dialogOk": "OK",
+      "dialogCancel": "Abbrechen"
     }
   },
   "groups": {

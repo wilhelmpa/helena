@@ -2,23 +2,56 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import net from "node:net";
 import { afterEach, describe, it } from "node:test";
-import { frameMessage, viewerMessage } from "./project-browser-screencast.mjs";
+import { InputSender, viewerMessage } from "./project-browser-input.mjs";
+import { frameMessage, pageSize, targetSize } from "./project-browser-screencast.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
 const input = (message) => viewerMessage(JSON.stringify(message));
 
 describe("live view messages", () => {
-  it("reads the view size, clamped to what a window can have", () => {
-    assert.deepEqual(input({ type: "viewport", width: 812.4, height: 600.6 }), {
-      viewport: { width: 812, height: 601 },
+  it("reads the view's CSS size and pixel ratio", () => {
+    assert.deepEqual(input({ type: "viewport", width: 812.4, height: 600.6, dpr: 2 }), {
+      viewport: { width: 812, height: 601, dpr: 2, video: false },
     });
-    assert.deepEqual(input({ type: "viewport", width: 320, height: 90 }), {
-      viewport: { width: 500, height: 200 },
+    assert.deepEqual(input({ type: "viewport", width: 1280, height: 700, dpr: 1.3333333, video: true }), {
+      viewport: { width: 1280, height: 700, dpr: 1.333, video: true },
     });
-    assert.deepEqual(input({ type: "viewport", width: 9000, height: 9000 }), {
-      viewport: { width: 4096, height: 4096 },
+    assert.deepEqual(input({ type: "viewport", width: 50, height: 9000 }), {
+      viewport: { width: 100, height: 8192, dpr: 1, video: false },
     });
     assert.deepEqual(input({ type: "ack" }), { ack: true });
+    assert.deepEqual(input({ type: "dialog", accept: false }), { dialog: { accept: false } });
+    assert.deepEqual(input({ type: "dialog", accept: true, text: "answer" }), {
+      dialog: { accept: true, promptText: "answer" },
+    });
+    assert.deepEqual(input({ type: "hidden", hidden: true }), { hidden: true });
+    assert.deepEqual(input({ type: "stats", rttMs: 42, downlinkKbps: 3500 }), {
+      stats: { rttMs: 42, downlinkKbps: 3500 },
+    });
+    assert.deepEqual(input({ type: "stats" }), { stats: { rttMs: 0, downlinkKbps: 0 } });
+    assert.deepEqual(input({ type: "ping", t: 123.5 }), { ping: 123.5 });
+  });
+
+  it("draws a page at pixel ratio 2 on a high-density screen when the agent's screenshots allow it", () => {
+    assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }), { width: 800, height: 900, ratio: 2 });
+    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.5 }), { width: 1200, height: 700, ratio: 2 });
+    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 3 }), { width: 1200, height: 700, ratio: 2 });
+    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.25 }), { width: 1200, height: 700, ratio: 1 });
+    // A 2x screenshot of a page with a long edge under 785 CSS pixels would reach the agent
+    // at twice the size its clicks use.
+    assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 2 }), { width: 620, height: 780, ratio: 1 });
+    // Chromium keeps a window 500 pixels wide, so a narrower page is drawn wider.
+    assert.deepEqual(pageSize({ width: 360, height: 640, dpr: 1 }), { width: 500, height: 640, ratio: 1 });
+    assert.deepEqual(pageSize({ width: 360, height: 800, dpr: 2 }), { width: 360, height: 800, ratio: 2 });
+  });
+
+  it("keeps the page's CSS size at ratio 1 while the agent acts", () => {
+    const view = { width: 900, height: 900, dpr: 2 };
+    const current = { width: 800, height: 900, ratio: 2 };
+    assert.deepEqual(targetSize(view, current, false), { width: 900, height: 900, ratio: 2 });
+    assert.deepEqual(targetSize(view, current, true), { width: 800, height: 900, ratio: 1 });
+    // Before a live view sized the page, the agent keeps the size it has.
+    assert.equal(targetSize(view, null, true), null);
   });
 
   it("sends mouse input at page coordinates with buttons and modifiers", () => {
@@ -109,19 +142,52 @@ describe("live view messages", () => {
       JSON.stringify({ type: "text", text: "" }),
       JSON.stringify({ type: "text", text: "x".repeat(64 * 1024 + 1) }),
       JSON.stringify({ type: "viewport", width: "800", height: 600 }),
+      JSON.stringify({ type: "viewport", width: 800, height: 600, dpr: "2" }),
+      JSON.stringify({ type: "dialog", accept: "yes" }),
     ]) {
       assert.throws(() => viewerMessage(refused), /Invalid message/, refused);
     }
   });
 
-  it("puts the viewport size in CSS pixels in front of each frame", () => {
+  it("merges pointer moves and wheel turns while the page is busy, in order with clicks", async () => {
+    const sent = [];
+    const answers = [];
+    const sender = new InputSender((method, params) => {
+      sent.push(params);
+      return new Promise((resolve) => answers.push(resolve));
+    });
+    const move = (x) => ({ method: "Input.dispatchMouseEvent", params: { type: "mouseMoved", x, y: 0 } });
+    const wheel = (deltaY) => ({
+      method: "Input.dispatchMouseEvent",
+      params: { type: "mouseWheel", x: 1, y: 1, deltaX: 0, deltaY },
+    });
+    sender.dispatch(move(1));
+    sender.dispatch(move(2));
+    sender.dispatch(move(3));
+    sender.dispatch(wheel(10));
+    sender.dispatch(wheel(20));
+    sender.dispatch(wheel(30));
+    assert.deepEqual(sent.map((params) => params.x ?? params.deltaY), [1, 1]);
+    // A press sends the newest move and the summed wheel turns before it.
+    sender.dispatch({ method: "Input.dispatchMouseEvent", params: { type: "mousePressed", x: 4, y: 0 } });
+    assert.deepEqual(
+      sent.map(({ type, x, deltaY }) => `${type}:${type === "mouseWheel" ? deltaY : x}`),
+      ["mouseMoved:1", "mouseWheel:10", "mouseMoved:3", "mouseWheel:50", "mousePressed:4"],
+    );
+    for (const answer of answers) answer();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(sent.length, 5);
+  });
+
+  it("puts a kind byte and the viewport size in CSS pixels in front of each frame", () => {
     const frame = frameMessage(Buffer.from("jpeg"), { deviceWidth: 812.4, deviceHeight: 70000 }, 1);
-    assert.equal(frame.readUInt16BE(0), 812);
-    assert.equal(frame.readUInt16BE(2), 0xffff);
-    assert.equal(frame.subarray(4).toString(), "jpeg");
-    // At 150 % page zoom a window 1919 pixels wide shows 1279 CSS pixels of the page.
-    const zoomed = frameMessage(Buffer.from("jpeg"), { deviceWidth: 1919, deviceHeight: 992 }, 1.5);
-    assert.deepEqual([zoomed.readUInt16BE(0), zoomed.readUInt16BE(2)], [1279, 661]);
+    assert.equal(frame[0], 0); // JPEG_FRAME, so a viewer tells it apart from video messages
+    assert.equal(frame.readUInt16BE(1), 812);
+    assert.equal(frame.readUInt16BE(3), 0xffff);
+    assert.equal(frame.subarray(5).toString(), "jpeg");
+    // A window 2560 pixels wide at pixel ratio 2 and 125 % page zoom shows 1024 CSS pixels.
+    const scaled = frameMessage(Buffer.from("jpeg"), { deviceWidth: 2560, deviceHeight: 1600 }, 2 * 1.25);
+    assert.deepEqual([scaled.readUInt16BE(1), scaled.readUInt16BE(3)], [1024, 640]);
   });
 });
 

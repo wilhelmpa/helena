@@ -74,9 +74,15 @@
       "liveTitle": "前台标签页的实时画面",
       "desktop": "桌面",
       "desktopTitle": "桌面（VNC）",
+      "followAgentOn": "正在跟随代理的标签页",
+      "followAgentOff": "跟随代理的标签页",
       "liveKeyboard": "实时浏览器。视图获得焦点时，按键会发送到页面。",
+      "controlAgent": "代理正在操作",
       "connecting": "正在连接浏览器…",
-      "reconnecting": "与浏览器的连接已断开，正在重新连接…"
+      "reconnecting": "与浏览器的连接已断开，正在重新连接…",
+      "dialogTitle": "页面询问",
+      "dialogOk": "确定",
+      "dialogCancel": "取消"
     }
   },
   "groups": {
