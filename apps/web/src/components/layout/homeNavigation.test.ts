@@ -8,11 +8,12 @@ describe('home sidebar navigation', () => {
       { id: 'overview', group: 'work', href: '/' },
       { id: 'allWorkItems', group: 'work', href: '/tasks' },
       { id: 'inbox', group: 'work', href: '/inbox' },
+      { id: 'files', group: 'work', href: '/files' },
       { id: 'approvals', group: 'work', href: '/approvals' },
       { id: 'agentActivity', group: 'agents', href: '/activity' },
       { id: 'schedules', group: 'agents', href: '/schedules' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
-      { id: 'vault', group: 'globalSettings', href: '/vault' },
+      { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
   });
@@ -22,6 +23,7 @@ describe('home sidebar navigation', () => {
       { id: 'overview', group: 'work', href: '/' },
       { id: 'allWorkItems', group: 'work', href: '/tasks' },
       { id: 'inbox', group: 'work', href: '/inbox' },
+      { id: 'files', group: 'work', href: '/files' },
       { id: 'approvals', group: 'work', href: '/approvals' },
       { id: 'agentPool', group: 'agents', href: '/agents' },
       { id: 'organization', group: 'agents', href: '/organization' },
@@ -32,16 +34,13 @@ describe('home sidebar navigation', () => {
       { id: 'tools', group: 'globalSettings', href: '/tools' },
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },
       { id: 'connections', group: 'globalSettings', href: '/connections' },
-      { id: 'vault', group: 'globalSettings', href: '/vault' },
+      { id: 'credentials', group: 'globalSettings', href: '/credentials' },
+      { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);
     const ids = homeNavigation(42).map((item) => item.id) as string[];
     assert.ok(!ids.includes('notifications'));
     assert.ok(!ids.includes('workItems'));
     assert.ok(!ids.includes('apiDocs'));
-  });
-
-  test('hides the vault when the runtime disables it', () => {
-    assert.ok(!homeNavigation(42, false).some((item) => item.id === 'vault'));
   });
 });

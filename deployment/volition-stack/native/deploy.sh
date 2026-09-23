@@ -39,6 +39,17 @@ if changed deployment/volition-stack/native/nginx/install-mastra-studio.sh \
   "$live/deployment/volition-stack/native/nginx/install-mastra-studio.sh"
 fi
 
+# Syncthing syncs the vault with the owner's devices. Its setup writes the API key the
+# API unit loads, so it runs before the Plan units are installed.
+if changed deployment/volition-stack/native/syncthing \
+  deployment/volition-stack/native/systemd/volition-syncthing.service; then
+  echo "setting up Syncthing"
+  "$live/deployment/volition-stack/native/syncthing/setup.sh"
+fi
+
+# The vault folders, code-server's access to the vault, and the attachments moved into it.
+"$live/deployment/volition-stack/native/files-documents.sh"
+
 # The API and the worker run from the checkout's sources; the web app runs from a
 # production build, which web-release.sh installs as a release of its own.
 plan_units=(volition-plan-api.service volition-plan-worker.service volition-plan-web.service)
@@ -104,6 +115,14 @@ if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs
   restart+=(volition-terminal.service)
 fi
 
+# Chromium reads its managed policies from this directory; a running project browser applies
+# a change when it reloads its policies, at the latest when it restarts. The project browsers
+# keep no passwords: logins come from Plan through Hermes' vault.
+chromium_policy=deployment/volition-stack/native/chromium/volition-project-browser.json
+if changed "$chromium_policy"; then
+  install -D -m 0644 "$live/$chromium_policy" /etc/chromium/policies/managed/volition-project-browser.json
+fi
+
 # The router runs from this checkout; its unit is installed from here as well.
 if changed deployment/volition-stack/browser deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
   install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
@@ -121,7 +140,7 @@ fi
 failed=0
 for unit in volition-plan-api volition-plan-web volition-plan-worker \
   volition-hermes-runner volition-mastra volition-provisioning volition-terminal \
-  volition-project-browser-router; do
+  volition-project-browser-router volition-syncthing; do
   if ! systemctl is-active --quiet "$unit.service"; then
     echo "deploy.sh: $unit is not running" >&2
     failed=1

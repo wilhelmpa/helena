@@ -1,0 +1,20 @@
+[Unit]
+Description=Volition Plan: move the issue attachments left in the object store into the vault
+After=postgresql.service volition-plan-migrate.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User=volition-plan
+Group=volition
+WorkingDirectory=/srv/volition/source/plan
+EnvironmentFile=/etc/volition/plan.env
+Environment=PROJECT_VAULT_ROOT=/srv/volition/vault
+Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
+ExecStart=/usr/local/bin/bun run apps/api/src/scripts/attachments-to-vault.ts
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/volition/plan /srv/volition/vault
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK

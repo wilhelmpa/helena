@@ -26,7 +26,7 @@ export function WorkspacePageHeader({
     <WorkspaceHeader className={cn('bg-background px-4 sm:px-6', className)}>
       <div className={cn('flex min-w-0 flex-1 items-center gap-3', contentClassName)}>
         <div className="flex min-w-0 flex-1 items-baseline gap-2">
-          <h1 className="min-w-0 truncate text-sm font-semibold">{title}</h1>
+          <h1 className="min-w-0 truncate text-xl font-semibold">{title}</h1>
           {description ? (
             <div className={WORKSPACE_HEADER_DESCRIPTION_CLASS}>{description}</div>
           ) : null}

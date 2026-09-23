@@ -1,0 +1,80 @@
+{
+  "title": "Appareils et Obsidian",
+  "description": "Syncthing synchronise les notes et fichiers de Home, des projets et de Private/ avec Obsidian sur votre Mac et votre téléphone : directement à la maison, via des relais chiffrés en déplacement.",
+  "loadError": "Impossible de lire l'état de la synchronisation.",
+  "ownerOnly": "Seul le propriétaire de l'instance gère les appareils.",
+  "unavailable": {
+    "unconfiguredTitle": "Syncthing n'est pas configuré",
+    "unconfigured": "Plan n'a pas de clé valide pour Syncthing sur ce serveur. Installez le paquet Debian syncthing et exécutez <code>deployment/volition-stack/native/syncthing/setup.sh</code> en tant que root.",
+    "unreachableTitle": "Syncthing est injoignable",
+    "unreachable": "Syncthing n'est pas installé sur ce serveur, ou le service <code>volition-syncthing</code> ne tourne pas."
+  },
+  "server": {
+    "title": "Ce serveur",
+    "hint": "Ajoutez cet identifiant d'appareil dans Syncthing sur votre appareil : scannez le code ou copiez l'identifiant.",
+    "qrAlt": "Code QR de l'identifiant d'appareil de ce serveur",
+    "copied": "Identifiant d'appareil copié",
+    "copyFailed": "Copie impossible. Sélectionnez l'identifiant et copiez-le à la main.",
+    "version": "Syncthing {version}",
+    "discoveryOn": "La découverte globale et les relais sont activés. Un appareil hors de la maison trouve ce serveur via les serveurs de découverte de Syncthing et se connecte via un relais si aucune connexion directe n'est possible. Les fichiers restent chiffrés de bout en bout.",
+    "discoveryOff": "La découverte globale ou les relais sont désactivés. Un appareil ne se connecte que s'il atteint ce serveur directement."
+  },
+  "folder": {
+    "title": "État de la synchronisation",
+    "notSetUp": "Le dossier Volition manque dans Syncthing. Relancez la configuration de Syncthing sur ce serveur.",
+    "state": {
+      "idle": "À jour",
+      "scanning": "Analyse",
+      "syncing": "Synchronisation",
+      "error": "Erreur"
+    },
+    "lastFile": "Dernier fichier reçu",
+    "lastFileValue": "{time} : {name}",
+    "lastScan": "Dernière analyse",
+    "never": "Jamais",
+    "needItems": "{count, plural, one {# fichier reste} other {# fichiers restent}} à synchroniser",
+    "fileErrors": "{count, plural, one {# fichier n'a pas pu} other {# fichiers n'ont pas pu}} être synchronisés",
+    "error": "Erreur du dossier : {error}"
+  },
+  "devices": {
+    "title": "Appareils",
+    "empty": "Aucun appareil ne se synchronise encore. Le guide ci-dessous explique comment en ajouter un.",
+    "connected": "Connecté",
+    "disconnected": "Non connecté",
+    "paused": "En pause",
+    "lastSeen": "Vu {time}",
+    "neverSeen": "Pas encore vu",
+    "notShared": "Le dossier Volition n'est pas partagé avec cet appareil.",
+    "remove": "Retirer",
+    "removeTitle": "Retirer {name} ?",
+    "removeBody": "L'appareil ne se synchronise plus avec ce serveur. Les fichiers restent sur l'appareil."
+  },
+  "pending": {
+    "title": "Appareils demandant à se connecter",
+    "hint": "N'acceptez que vos propres appareils : un appareil accepté reçoit toutes les notes et tous les fichiers, Private/ compris.",
+    "requested": "Demande {time} depuis {address}",
+    "accept": "Accepter",
+    "accepted": "{name} accepté. Acceptez maintenant le dossier Volition sur l'appareil."
+  },
+  "conflicts": {
+    "title": "Conflits",
+    "hint": "Syncthing garde une copie de conflit lorsqu'un fichier a été modifié sur deux appareils avant leur synchronisation. Ouvrez les deux fichiers dans Obsidian, reportez ce que vous voulez garder dans l'original et supprimez la copie de conflit ; la suppression atteint chaque appareil.",
+    "empty": "Aucun conflit.",
+    "loadError": "Impossible de lire les conflits.",
+    "original": "Original : {path}",
+    "modified": "Modifié {time}"
+  },
+  "guide": {
+    "title": "Configurer un appareil",
+    "step1": "Installez Syncthing et Obsidian sur l'appareil. Mac : l'application Syncthing de syncthing.net. iPhone : Möbius Sync depuis l'App Store. Android : Syncthing-Fork depuis F-Droid ou Google Play.",
+    "step2": "Dans Syncthing, ajoutez un appareil et saisissez l'identifiant d'appareil de ce serveur, ou scannez le code QR.",
+    "step2Lan": "Pour synchroniser directement à la maison, saisissez <code>{address}, dynamic</code> comme adresses de l'appareil.",
+    "step3": "L'appareil apparaît ensuite plus haut sous « Appareils demandant à se connecter ». Choisissez Accepter.",
+    "step4": "Sur l'appareil, acceptez le dossier Volition dans un dossier nommé Volition : <code>~/Volition</code> sur le Mac, <code>Volition</code> dans le stockage interne sur Android, le coffre Obsidian Volition sur l'iPhone.",
+    "step5": "Attendez que le dossier affiche « À jour » sur l'appareil, puis ouvrez le dossier Volition comme coffre dans Obsidian. Les liens de Plan ouvrent le coffre Volition.",
+    "iphoneTitle": "iPhone",
+    "iphone": "Sur l'iPhone, Obsidian n'ouvre que ses propres dossiers. Créez d'abord le coffre Volition dans Obsidian (sur l'iPhone, pas dans iCloud) et fermez Obsidian. Puis, dans Möbius Sync, placez le dossier Volition dans Sur mon iPhone › Obsidian › Volition. Obsidian écrit ses propres réglages en créant un coffre : des conflits dans <code>.obsidian</code> peuvent donc apparaître après la première synchronisation ; leurs copies de conflit contiennent les réglages par défaut de ce serveur. Möbius Sync synchronise tant que l'application est ouverte ou qu'iOS la laisse tourner en arrière-plan.",
+    "spaceTitle": "Économiser de l'espace sur le téléphone (facultatif)",
+    "space": "Les motifs d'exclusion ne s'appliquent que sur l'appareil où ils sont saisis. Pour ne pas charger les fichiers de mail sur le téléphone, ouvrez le dossier Volition dans Möbius Sync ou Syncthing-Fork, ajoutez la ligne <code>Files/Mail</code> sous les motifs d'exclusion et enregistrez, de préférence juste après avoir accepté le dossier. Les fichiers restent sur ce serveur et sur les autres appareils."
+  }
+}

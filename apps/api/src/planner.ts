@@ -2,6 +2,7 @@ import { projectTemplateRoutes } from './modules/project-templates';
 import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
 import { routineRoutes } from './modules/routines';
 import { connectionsRoutes } from './modules/connections';
+import { deviceSyncRoutes } from './modules/device-sync';
 import { projectFileRoutes } from './modules/project-files';
 import { organizationRoutes } from './modules/organization';
 import { Elysia } from 'elysia';
@@ -20,6 +21,7 @@ import { integrationRoutes } from './modules/agents/integrations';
 import { agentSkillRoutes } from './modules/agents/skills';
 import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
+import { credentialRoutes } from './modules/agents/credentials';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
 import { issueRoutes } from './modules/issues';
@@ -110,6 +112,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentSkillRoutes)
   .use(agentToolRoutes)
   .use(agentMcpServerRoutes)
+  .use(credentialRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)
@@ -151,5 +154,6 @@ export const planner = new Elysia({ name: 'planner' })
   .use(projectMailAccountRoutes)
   .use(organizationRoutes)
   .use(connectionsRoutes)
+  .use(deviceSyncRoutes)
   .use(settingsRoutes)
   .use(godRoutes);

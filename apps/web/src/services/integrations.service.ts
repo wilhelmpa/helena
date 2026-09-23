@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type CredentialPatch,
-  type IntegrationKind,
+  type IntegrationOptionKind,
   type NewCredentialInput,
   listCredentials,
   listIntegrationOptions,
@@ -26,7 +26,7 @@ export function useCredentialsPageQuery(teamId: number, params: PageParams) {
 
 // The connected integrations as picker options, for the agent and tool forms. Open
 // to any team member, unlike the credential list above.
-export function useIntegrationOptionsQuery(teamId: number | null, kind?: IntegrationKind) {
+export function useIntegrationOptionsQuery(teamId: number | null, kind?: IntegrationOptionKind) {
   return useQuery({
     queryKey: qk.integrationOptions(teamId ?? 0, kind),
     queryFn: () => listIntegrationOptions(teamId!, kind),

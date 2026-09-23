@@ -1,8 +1,9 @@
 # Volition architecture
 
-Volition runs It's a Plan, Mastra and Hermes natively on Kingston (Debian, systemd, no
-Docker). Each component has one responsibility. This document is the reference for where a
-feature belongs; a change that gives a second component the same responsibility is wrong.
+Volition runs Plan (this repository, a fork of It's a Plan), Mastra and Hermes natively on
+Kingston (Debian, systemd, no Docker). Each component has one responsibility. This document is
+the reference for where a feature belongs; a change that gives a second component the same
+responsibility is wrong.
 
 ## Responsibilities
 
@@ -111,9 +112,24 @@ and makes no decisions.
   Plan confirmed the instance owner. No process of the Unix user Hermes runs as can read
   either token. The complete trust model is in
   `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
-- Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
-  for one run as environment variables, website logins as entries of the profile's Hermes
-  vault, and SSH keys as files of the profile. The model sees secret names only.
+- Documents are files in the vault (`PROJECT_VAULT_ROOT`): `Home/`, `Templates/`,
+  `Private/` (the owner's; group `volition-private`, which the agents' user is not in),
+  and `Projects/<KEY>/`. Plan's Files page reads and writes them directly; a file deleted
+  there moves to `.trash/` at the same relative path (`Private/.trash/` for `Private/`).
+  A project's workspace is shown read-only next to its vault folder. Task and comment
+  attachments are stored once, in `Projects/<KEY>/Files/Tasks/<KEY>-<n>/`, and the
+  attachment row keeps the vault path and the sha256; a row can also link a file that
+  was in the vault before. Agents read the same files on disk.
+- Credentials are stored in Plan, encrypted, on its Credentials page: website logins, API keys,
+  SSH keys and secrets, each for the team or one project and granted to agents. Before each
+  run and chat answer the runner makes the agent's Hermes vault hold exactly the website
+  logins granted to it, which Hermes fills in the browser without the model seeing a
+  password; the secrets and API keys an agent's MCP servers name reach Hermes as environment
+  variables. Every delivery and every filled login is recorded in the credential's audit log.
+  Chromium's own password manager is off in the project browsers.
+- A login the vault cannot complete (a captcha, a passkey, a code sent by SMS) goes to the
+  owner as an approval request: the owner signs in in the project's live browser, whose
+  profile keeps the session, and the approval starts the agent's next run.
 - Configuration files (`AGENTS.md`, `SOUL.md`, instruction files, managed skills, toolsets,
   MCP grants, model) are owned by Plan. A change Hermes makes to one of them is imported
   into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are

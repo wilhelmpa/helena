@@ -2,6 +2,7 @@ import { AnswerStream } from './agui';
 import type { ChatMessage, Client } from './client';
 import { presetOf, type RunnerConfig } from './config';
 import { execute } from './execute';
+import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
 
 // The command is the same one that handles a queued run; what differs is that its output
@@ -44,6 +45,7 @@ export async function answer(
   const flushing = setInterval(() => {
     void stream.flush().catch(() => {});
   }, FLUSH_MS);
+  const logins = new LoginUseReader(hermes?.logins ?? new Map());
   const outcome = await execute(
     config,
     {
@@ -62,9 +64,19 @@ export async function answer(
         ...hermes?.env,
       },
     },
-    { onData: (chunk) => stream.write(chunk), signal: stop.signal },
+    {
+      onData: (chunk) => {
+        stream.write(chunk);
+        logins.write(chunk);
+      },
+      signal: stop.signal,
+    },
   ).finally(() => clearInterval(flushing));
   if (stop.signal.aborted) return;
+  const uses = logins.uses();
+  if (uses.length > 0) {
+    await client.reportLoginUses({ messageId: message.id }, uses).catch(() => {});
+  }
   // The context size is read after the stream is closed, which is where the last line of
   // the output is parsed. An answer that failed reports it too: what the command read
   // before it broke is still the size of its session's context.

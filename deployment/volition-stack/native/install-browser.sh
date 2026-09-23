@@ -14,4 +14,6 @@ sudo apt-get install -y "$temporary/$archive"
 sudo install -m 0644 native/systemd/volition-project-browser-kasm@.service /etc/systemd/system/
 sudo install -m 0644 native/systemd/volition-project-browser-chromium@.service /etc/systemd/system/
 sudo install -m 0644 native/systemd/volition-project-browser@.target /etc/systemd/system/
+sudo install -D -m 0644 native/chromium/volition-project-browser.json \
+  /etc/chromium/policies/managed/volition-project-browser.json
 sudo systemctl daemon-reload

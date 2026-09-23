@@ -15,9 +15,10 @@ import {
   teamRole,
   user,
 } from '@repo/db';
-import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
+import { CREDENTIAL_KINDS } from '#modules/agents/credentials/kinds';
 import { defaultMemberPermissions, fullPermissions, type Permissions } from '#shared/permissions';
 import {
   getMemberContext,
@@ -250,7 +251,12 @@ async function loadTeamRows(userId: string, teamId?: number): Promise<TeamRow[]>
     db
       .select({ teamId: integrationCredential.teamId, count: sql<number>`count(*)::int` })
       .from(integrationCredential)
-      .where(inArray(integrationCredential.teamId, ids))
+      .where(
+        and(
+          inArray(integrationCredential.teamId, ids),
+          notInArray(integrationCredential.integrationKey, [...CREDENTIAL_KINDS]),
+        ),
+      )
       .groupBy(integrationCredential.teamId),
     db
       .select({ teamId: aiAgent.teamId, count: sql<number>`count(*)::int` })

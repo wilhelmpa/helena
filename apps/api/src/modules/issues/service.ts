@@ -1332,7 +1332,7 @@ export async function enqueueDelegateRun(after: IssueRow, actor?: ActivityActor)
 
 // Deletes an issue and everything attached to it. Field options/values, labels,
 // attachments, and activity all go by their ON DELETE CASCADE on issue_id. Returns
-// the deleted attachment rows so the caller can remove their objects from the store.
+// the deleted attachment rows so the caller can remove their files.
 // Returns null if the issue did not exist.
 export async function deleteIssue(issueId: number): Promise<AttachmentRow[] | null> {
   const result = await db.transaction(async (tx) => {
@@ -1545,7 +1545,7 @@ export async function bulkArchiveIssues(
 }
 
 // Deletes every listed issue. Returns the count deleted and their attachment rows
-// so the caller can remove the objects from the store.
+// so the caller can remove their files.
 export async function bulkDeleteIssues(
   projectId: number,
   ids: number[],

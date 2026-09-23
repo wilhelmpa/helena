@@ -38,16 +38,6 @@ export interface MailAccountStatus {
 export type MailPayload = Record<string, unknown> | unknown[];
 
 export const getConnections = () => request<ConnectionsSnapshot>('/connections');
-export interface VaultStatus {
-  checkedAt: string;
-  accessUrl: string | null;
-  accessStatus: 'protected' | 'reachable' | 'unavailable' | 'unconfigured';
-  httpStatus: number | null;
-  serviceHealthExposed: false;
-  secretValuesExposed: false;
-}
-
-export const getVaultStatus = () => request<VaultStatus>('/vault/status', { cache: 'no-store' });
 export const runConnectionAction = (id: string, action: 'probe' | 'reconnect') =>
   request<ConnectionsSnapshot>('/connections/actions', {
     method: 'POST',
@@ -112,22 +102,6 @@ export const sendMailDraft = (account: string, draftId: string, confirmationToke
     body: JSON.stringify({ account, draftId, confirmationToken }),
   });
 
-export interface ThemeSyncResult {
-  theme: 'light' | 'dark';
-  results: Array<{
-    service: 'agent_runtime' | 'code' | 'nextcloud';
-    status: 'updated' | 'failed';
-    attempts: number;
-    error?: string;
-  }>;
-}
-
-export const syncWorkspaceTheme = (theme: 'light' | 'dark') =>
-  request<ThemeSyncResult>('/theme/sync', {
-    method: 'POST',
-    body: JSON.stringify({ theme }),
-  });
-
 export async function downloadMailAttachment(input: {
   account: string;
   messageId: string;
@@ -151,16 +125,3 @@ export async function downloadMailAttachment(input: {
   link.click();
   URL.revokeObjectURL(url);
 }
-
-export interface SecretInventory {
-  checkedAt: string;
-  entries: Array<{ name: string; updatedAt: string | null; allowedHosts: string[] }>;
-}
-export const getSecretInventory = () =>
-  request<SecretInventory>('/connections/secrets', { cache: 'no-store' });
-export const setSecret = (input: { name: string; value: string; allowedHosts: string[] }) =>
-  request<SecretInventory>('/connections/secrets', {
-    method: 'POST',
-    cache: 'no-store',
-    body: JSON.stringify(input),
-  });

@@ -92,7 +92,6 @@ services:
       CONNECTIONS_INTEGRATION_URL: ${CONNECTIONS_INTEGRATION_URL:-}
       CONNECTIONS_INTEGRATION_TOKEN: ${CONNECTIONS_INTEGRATION_TOKEN:-}
       CONNECTIONS_INTEGRATION_TIMEOUT_MS: ${CONNECTIONS_INTEGRATION_TIMEOUT_MS:-30000}
-      VAULT_URL: ${VAULT_URL:-}
       NODE_ENV: production
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
       API_PORT: 3000
@@ -232,10 +231,8 @@ services:
       CODE_URL: ${CODE_URL:-}
       PROJECT_WORKSPACE_PATHS: ${PROJECT_WORKSPACE_PATHS:-}
       BROWSER_URL: ${BROWSER_URL:-}
-      FILES_URL: ${FILES_URL:-}
       INBOX_URL: ${INBOX_URL:-}
       CONNECTIONS_URL: ${CONNECTIONS_URL:-}
-      VAULT_UI_ENABLED: ${VAULT_UI_ENABLED:-true}
     # /login renders without a session, and without reaching the api.
     healthcheck:
       test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3001/login']

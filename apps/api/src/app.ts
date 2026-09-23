@@ -79,7 +79,7 @@ export const app = new Elysia()
       },
       documentation: {
         info: {
-          title: "It's a Plan API",
+          title: 'Volition API',
           version: pkg.version,
           description: apiDescription,
         },
@@ -114,6 +114,10 @@ export const app = new Elysia()
           {
             name: 'Agent MCP Servers',
             description: "The team's MCP server library and the servers enabled on each agent",
+          },
+          {
+            name: 'Credentials',
+            description: "The team's web logins, API keys, SSH keys and secrets, and their grants",
           },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
@@ -160,6 +164,10 @@ export const app = new Elysia()
           {
             name: 'Connections',
             description: 'Native runtime connections and human-confirmed mail management',
+          },
+          {
+            name: 'Device sync',
+            description: "Syncthing, which syncs the vault with the owner's devices",
           },
           { name: 'Project templates', description: 'Reusable project and board structures' },
           {
@@ -366,7 +374,7 @@ export const app = new Elysia()
     },
   )
   // Root doubles as the liveness/health endpoint.
-  .get('/', () => ({ name: "It's a Plan api", status: 'ok' }), {
+  .get('/', () => ({ name: 'Volition api', status: 'ok' }), {
     detail: {
       tags: ['System'],
       summary: 'Check that the api is up',

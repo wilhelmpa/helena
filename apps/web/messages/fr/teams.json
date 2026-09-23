@@ -242,18 +242,12 @@
       "tool": {
         "title": "Outils",
         "hint": "Les intégrations qu'un agent peut appeler comme outils"
-      },
-      "secret": {
-        "title": "Secrets",
-        "hint": "Valeurs nommées que lisent les serveurs MCP des agents de l'équipe"
       }
     },
     "columns": {
       "integration": "Intégration",
       "credentials": "Identifiants"
-    },
-    "secretName": "Nom",
-    "secretNameHint": "Les serveurs MCP choisissent le secret par ce nom. La valeur est stockée chiffrée et n'est plus jamais affichée."
+    }
   },
   "skills": {
     "newSkill": "Nouvelle compétence",
@@ -363,7 +357,7 @@
     "literal": "Valeur",
     "secret": "Secret",
     "chooseSecret": "Choisir un secret",
-    "noSecrets": "L'équipe n'a pas encore de secret. Ajoutez-en un dans Intégrations.",
+    "noSecrets": "L’équipe n’a pas encore de secret. Ajoutez-en un dans Identifiants.",
     "secretHint": "La valeur d'un secret n'est transmise qu'au runner d'un agent sur lequel le serveur est activé, jamais à cette page.",
     "missingSecret": "secret supprimé",
     "addValue": "Ajouter",

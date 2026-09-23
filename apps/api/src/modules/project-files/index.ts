@@ -1,52 +1,113 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
+import { requireUser } from '#shared/access';
 import { guards } from '#shared/guards';
-import { commonErrors } from '#shared/responses';
+import { noContent } from '#shared/http';
+import { HttpError } from '#shared/lib';
+import { commonErrors, errors } from '#shared/responses';
+import { getStorageSettings, MB } from '#modules/settings/service';
 import {
-  createProjectTextBody,
-  ProjectFileCreatedResponse,
-  ProjectFileListResponse,
-  ProjectFileTextResponse,
+  createFolderBody,
+  createTextBody,
+  FileItemsResponse,
+  FileListResponse,
+  FilePathResponse,
+  FileTextResponse,
+  homeEntryQuery,
+  homeFilesQuery,
+  homeRawQuery,
+  homeRootQuery,
+  moveBody,
+  projectEntryQuery,
   projectFilesQuery,
+  projectRawQuery,
+  uploadBody,
 } from './model';
+import { homeRoot, projectRoot, type HomeRootName } from './roots';
 import {
-  createProjectText,
-  downloadProjectFile,
-  listProjectFiles,
-  readProjectText,
+  createFolder,
+  createTextFile,
+  fileResponse,
+  listFolder,
+  moveEntry,
+  readTextFile,
+  trashEntry,
+  uploadFiles,
 } from './service';
 
+const maxUploadBytes = async () => (await getStorageSettings()).maxAttachmentMb * MB;
+
+// Two sets of routes over the same operations. The project routes browse the project's
+// vault folder ("vault") and its workspace ("code", read-only) under the documents
+// permissions. The home routes browse Home/, Templates/ and Private/ of the vault;
+// Private/ is the instance owner's alone.
 export const projectFileRoutes = new Elysia({
   name: 'project-files',
   detail: { tags: ['Files'] },
 })
   .use(authContext)
   .use(guards)
+  .macro({
+    homeRoot(_enabled: boolean) {
+      return {
+        resolve({ query, user }) {
+          const current = requireUser(user);
+          const name = (query as { root: HomeRootName }).root;
+          if (name === 'private' && current.role !== 'god') {
+            throw new HttpError(403, 'The private folder is for the owner only');
+          }
+          return { fileRoot: homeRoot(name) };
+        },
+      };
+    },
+  })
   .get(
     '/projects/:projectKey/files',
-    ({ project, query }) => listProjectFiles(project.key, query.path),
+    ({ project, query }) => listFolder(projectRoot(project.key, query.root), query.path),
     {
       permission: ['documents', 'read'],
       feature: 'documents',
       query: projectFilesQuery,
-      response: { 200: ProjectFileListResponse, ...commonErrors },
+      response: { 200: FileListResponse, ...commonErrors },
       detail: {
         summary: 'List project files',
-        description: 'List one folder inside the project-scoped Markdown and file vault.',
+        description:
+          "List one folder of the project's vault folder, or of its workspace with root=code.",
       },
     },
   )
   .get(
     '/projects/:projectKey/files/text',
-    ({ project, query }) => readProjectText(project.key, query.path ?? ''),
+    ({ project, query }) => readTextFile(projectRoot(project.key, query.root), query.path),
     {
       permission: ['documents', 'read'],
       feature: 'documents',
-      query: projectFilesQuery,
-      response: { 200: ProjectFileTextResponse, ...commonErrors },
+      query: projectRawQuery,
+      response: { 200: FileTextResponse, ...commonErrors, ...errors(413) },
       detail: {
         summary: 'Read a project text file',
-        description: 'Read a bounded .txt, .md, or .markdown file from the project file root.',
+        description: 'Read a bounded .txt, .md, or .markdown file.',
+      },
+    },
+  )
+  .get(
+    '/projects/:projectKey/files/raw',
+    ({ project, query, request }) =>
+      fileResponse(
+        projectRoot(project.key, query.root),
+        query.path,
+        request,
+        query.download != null,
+      ),
+    {
+      permission: ['documents', 'read'],
+      feature: 'documents',
+      query: projectRawQuery,
+      response: { ...commonErrors },
+      detail: {
+        summary: 'Open or download a project file',
+        description:
+          'Stream a file. PDF, raster images, audio, video and text open inline unless download is set; everything else is a download.',
       },
     },
   )
@@ -54,13 +115,13 @@ export const projectFileRoutes = new Elysia({
     '/projects/:projectKey/files/text',
     ({ project, body, set }) => {
       set.status = 201;
-      return createProjectText(project.key, body.path, body.content);
+      return createTextFile(projectRoot(project.key), body.path, body.content);
     },
     {
       permission: ['documents', 'create'],
       feature: 'documents',
-      body: createProjectTextBody,
-      response: { 201: ProjectFileCreatedResponse, ...commonErrors },
+      body: createTextBody,
+      response: { 201: FilePathResponse, ...commonErrors, ...errors(409, 413) },
       detail: {
         summary: 'Create a project text file',
         description:
@@ -68,18 +129,156 @@ export const projectFileRoutes = new Elysia({
       },
     },
   )
-  .get(
-    '/projects/:projectKey/files/download',
-    ({ project, query }) => downloadProjectFile(project.key, query.path ?? ''),
+  .post(
+    '/projects/:projectKey/files/folders',
+    ({ project, body, set }) => {
+      set.status = 201;
+      return createFolder(projectRoot(project.key), body.path);
+    },
     {
-      permission: ['documents', 'read'],
+      permission: ['documents', 'create'],
+      feature: 'documents',
+      body: createFolderBody,
+      response: { 201: FilePathResponse, ...commonErrors, ...errors(409) },
+      detail: { summary: 'Create a project folder' },
+    },
+  )
+  .post(
+    '/projects/:projectKey/files/upload',
+    async ({ project, query, body, set }) => {
+      set.status = 201;
+      return uploadFiles(
+        projectRoot(project.key, query.root),
+        query.path ?? '',
+        body.files,
+        await maxUploadBytes(),
+      );
+    },
+    {
+      permission: ['documents', 'create'],
       feature: 'documents',
       query: projectFilesQuery,
-      response: { ...commonErrors },
+      body: uploadBody,
+      response: { 201: FileItemsResponse, ...commonErrors, ...errors(409, 413) },
       detail: {
-        summary: 'Download a project file',
-        description:
-          'Stream a bounded file through the authenticated Plan API without exposing a provider URL or credential.',
+        summary: 'Upload project files',
+        description: 'Store files in a folder. A name that is taken gets a number: "name (2)".',
       },
+    },
+  )
+  .post(
+    '/projects/:projectKey/files/move',
+    ({ project, body }) => moveEntry(projectRoot(project.key), body.from, body.to),
+    {
+      permission: ['documents', 'edit'],
+      feature: 'documents',
+      body: moveBody,
+      response: { 200: FilePathResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Rename or move a project file or folder',
+        description: 'Attachments that point at the moved entry follow it.',
+      },
+    },
+  )
+  .delete(
+    '/projects/:projectKey/files',
+    async ({ project, query }) => {
+      await trashEntry(projectRoot(project.key), query.path);
+      return noContent();
+    },
+    {
+      permission: ['documents', 'delete'],
+      feature: 'documents',
+      query: projectEntryQuery,
+      response: { 204: t.Void(), ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Move a project file or folder to the trash',
+        description: "Moves the entry to the vault's .trash folder at the same relative path.",
+      },
+    },
+  )
+  .get('/files', ({ fileRoot, query }) => listFolder(fileRoot, query.path), {
+    homeRoot: true,
+    query: homeFilesQuery,
+    response: { 200: FileListResponse, ...commonErrors },
+    detail: { summary: 'List Home, Templates or Private files' },
+  })
+  .get('/files/text', ({ fileRoot, query }) => readTextFile(fileRoot, query.path), {
+    homeRoot: true,
+    query: homeRawQuery,
+    response: { 200: FileTextResponse, ...commonErrors, ...errors(413) },
+    detail: { summary: 'Read a Home, Templates or Private text file' },
+  })
+  .get(
+    '/files/raw',
+    ({ fileRoot, query, request }) =>
+      fileResponse(fileRoot, query.path, request, query.download != null),
+    {
+      homeRoot: true,
+      query: homeRawQuery,
+      response: { ...commonErrors },
+      detail: { summary: 'Open or download a Home, Templates or Private file' },
+    },
+  )
+  .post(
+    '/files/text',
+    ({ fileRoot, body, set }) => {
+      set.status = 201;
+      return createTextFile(fileRoot, body.path, body.content);
+    },
+    {
+      homeRoot: true,
+      query: homeRootQuery,
+      body: createTextBody,
+      response: { 201: FilePathResponse, ...commonErrors, ...errors(409, 413) },
+      detail: { summary: 'Create a Home, Templates or Private text file' },
+    },
+  )
+  .post(
+    '/files/folders',
+    ({ fileRoot, body, set }) => {
+      set.status = 201;
+      return createFolder(fileRoot, body.path);
+    },
+    {
+      homeRoot: true,
+      query: homeRootQuery,
+      body: createFolderBody,
+      response: { 201: FilePathResponse, ...commonErrors, ...errors(409) },
+      detail: { summary: 'Create a Home, Templates or Private folder' },
+    },
+  )
+  .post(
+    '/files/upload',
+    async ({ fileRoot, query, body, set }) => {
+      set.status = 201;
+      return uploadFiles(fileRoot, query.path ?? '', body.files, await maxUploadBytes());
+    },
+    {
+      homeRoot: true,
+      query: homeFilesQuery,
+      body: uploadBody,
+      response: { 201: FileItemsResponse, ...commonErrors, ...errors(409, 413) },
+      detail: { summary: 'Upload Home, Templates or Private files' },
+    },
+  )
+  .post('/files/move', ({ fileRoot, body }) => moveEntry(fileRoot, body.from, body.to), {
+    homeRoot: true,
+    query: homeRootQuery,
+    body: moveBody,
+    response: { 200: FilePathResponse, ...commonErrors, ...errors(409) },
+    detail: { summary: 'Rename or move a Home, Templates or Private file or folder' },
+  })
+  .delete(
+    '/files',
+    async ({ fileRoot, query }) => {
+      await trashEntry(fileRoot, query.path);
+      return noContent();
+    },
+    {
+      homeRoot: true,
+      query: homeEntryQuery,
+      response: { 204: t.Void(), ...commonErrors, ...errors(409) },
+      detail: { summary: 'Move a Home, Templates or Private file or folder to the trash' },
     },
   );
