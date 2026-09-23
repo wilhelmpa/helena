@@ -810,6 +810,12 @@ export interface NewAgentInput {
   // Set by copyTemplateIntoProject only: links this new row to the template it came
   // from, so a later change to the template can be synced into it (template-sync.ts).
   sourceTemplateId?: number;
+  // The 'budgets' template-sync group's other half (runtimePolicy.maxTurns/
+  // runBudgetSeconds are inside runtimePolicy, already copied above). Set by
+  // copyTemplateIntoProject from the template; governance.setAgentTokenCeilings is
+  // the only other writer, for an existing agent.
+  dailyTokenCeiling?: number | null;
+  monthlyTokenCeiling?: number | null;
 }
 
 // The coordinator that leads the project's agent team, or null when it has none.
@@ -934,6 +940,8 @@ export async function createAgent(
           template: input.template ?? false,
           sourceTemplateId: input.sourceTemplateId ?? null,
           templateSyncedAt: input.sourceTemplateId != null ? new Date() : null,
+          dailyTokenCeiling: input.dailyTokenCeiling ?? null,
+          monthlyTokenCeiling: input.monthlyTokenCeiling ?? null,
         })
         .returning({ id: aiAgent.id });
       // The agent belongs to the team's member list like a person does, on a standing
@@ -1328,6 +1336,8 @@ export async function copyTemplateIntoProject(
     mcpServerIds: mcpServers.map(({ mcpServerId }) => mcpServerId),
     agentToolIds: agentTools.map(({ agentToolId }) => agentToolId),
     sourceTemplateId: template.id,
+    dailyTokenCeiling: template.dailyTokenCeiling,
+    monthlyTokenCeiling: template.monthlyTokenCeiling,
   });
 }
 

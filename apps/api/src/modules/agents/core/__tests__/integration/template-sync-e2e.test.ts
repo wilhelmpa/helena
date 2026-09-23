@@ -187,4 +187,38 @@ describe('template sync end to end', () => {
     const afterResetSnapshot = await runnerSnapshot(copyAfterReset!.userId);
     expect(afterResetSnapshot.skills.map((s) => s.name).sort()).toEqual(['Base', 'TemplateOnly']);
   });
+
+  it("carries a template's token budget into a new copy, and syncs a later change", async () => {
+    const { asOwner, teamId, project } = await setup();
+
+    const template = (
+      await agents(asOwner, teamId).post({
+        name: 'Finance',
+        username: 'finance',
+        kind: 'external',
+        template: true,
+      })
+    ).data!.agent;
+    await asOwner
+      .teams({ teamId })
+      .organization.agents({ agentId: template.id })
+      ['token-ceilings'].put({ daily: 50_000, monthly: null });
+
+    // copyTemplateIntoProject must copy dailyTokenCeiling/monthlyTokenCeiling itself —
+    // there is no later "sync" event for a brand new copy to catch up on.
+    const copy = (
+      await agents(asOwner, teamId)({ agentId: template.id }).copy.post({ projectId: project.id })
+    ).data!.agent;
+    const copyRow = await getAgentById(copy.id, teamId);
+    expect(copyRow!.dailyTokenCeiling).toBe(50_000);
+
+    // A later change to the template's budget still fans out like any other group.
+    await asOwner
+      .teams({ teamId })
+      .organization.agents({ agentId: template.id })
+      ['token-ceilings'].put({ daily: 80_000, monthly: 500_000 });
+    const copyAfter = await getAgentById(copy.id, teamId);
+    expect(copyAfter!.dailyTokenCeiling).toBe(80_000);
+    expect(copyAfter!.monthlyTokenCeiling).toBe(500_000);
+  });
 });
