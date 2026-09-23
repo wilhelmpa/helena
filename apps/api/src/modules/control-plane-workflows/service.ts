@@ -64,7 +64,10 @@ async function controlToken(): Promise<string> {
   return tokenPromise;
 }
 
-export async function controlPlaneRequest<T = unknown>(body: Record<string, unknown>): Promise<T> {
+export async function controlPlaneRequest<T = unknown>(
+  body: Record<string, unknown>,
+  timeoutMs = 330_000,
+): Promise<T> {
   const response = await fetch(controlUrl(), {
     method: 'POST',
     headers: {
@@ -74,7 +77,7 @@ export async function controlPlaneRequest<T = unknown>(body: Record<string, unkn
     },
     body: JSON.stringify({ schemaVersion: 1, ...body }),
     redirect: 'error',
-    signal: AbortSignal.timeout(330_000),
+    signal: AbortSignal.timeout(timeoutMs),
   }).catch(() => {
     throw new HttpError(502, 'Workflow control plane is unavailable');
   });
@@ -127,7 +130,8 @@ function effectiveConfiguration(workflowId: string, configuration: ProjectWorkfl
 }
 
 // The policy of an agent-team run: the project's settings replace the same fields of a
-// policy the start request carries.
+// policy the start request carries, and a limit the project leaves unset keeps the
+// request's.
 function agentTeamPolicy(configuration: ProjectWorkflowConfiguration, requested: unknown) {
   const settings = agentTeamConfiguration(configuration);
   return {
@@ -291,25 +295,30 @@ export async function startWorkflow(
 ) {
   const row = await enabledAssignment(project.id, workflowId);
   const context = projectWorkflowScope(project);
-  const result = await controlPlaneRequest({
-    operation: 'start',
-    workflowId,
-    ...context,
-    eventId: input.idempotencyKey,
-    correlationId: input.correlationId,
-    occurredAt: new Date().toISOString(),
-    actorId: userId,
-    dryRun: input.dryRun,
-    payload: {
-      ...input.payload,
-      ...(workflowId === 'agent-team'
-        ? { policy: agentTeamPolicy(row.configuration, input.payload.policy) }
-        : {}),
-      configuration: row.configuration,
+  const result = await controlPlaneRequest(
+    {
+      operation: 'start',
+      workflowId,
+      ...context,
+      eventId: input.idempotencyKey,
+      correlationId: input.correlationId,
+      occurredAt: new Date().toISOString(),
+      actorId: userId,
+      dryRun: input.dryRun,
+      payload: {
+        ...input.payload,
+        ...(workflowId === 'agent-team'
+          ? { policy: agentTeamPolicy(row.configuration, input.payload.policy) }
+          : {}),
+        configuration: row.configuration,
+      },
+      capabilityRefs: row.capabilityRefs,
+      connectionRefs: [],
     },
-    capabilityRefs: row.capabilityRefs,
-    connectionRefs: [],
-  });
+    // The control plane starts the run without waiting for it, so a start that takes
+    // longer is a control plane that does not answer; an issue delegation waits on it.
+    30_000,
+  );
   await bumpControlPlaneRevision(project.id);
   return result;
 }
