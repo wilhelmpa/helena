@@ -50,9 +50,9 @@ export default function InitiativeDetailPage({ tab = 'overview' }: { tab?: Initi
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {query.isLoading ? (
-        <PageSkeleton className="mx-0 max-w-none px-6 py-8" />
+        <PageSkeleton className="mx-0 max-w-none px-4 py-6" />
       ) : !initiative ? (
-        <p className="px-6 py-8 text-sm text-muted-foreground">{t('notFound')}</p>
+        <p className="px-4 py-6 text-sm text-muted-foreground">{t('notFound')}</p>
       ) : (
         <>
           <InitiativeHeader initiative={initiative} project={project} />
@@ -63,7 +63,7 @@ export default function InitiativeDetailPage({ tab = 'overview' }: { tab?: Initi
             }
             className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="px-6 pt-3">
+            <div className="px-4 pt-3">
               <TabsList variant="line">
                 <TabsTrigger value="overview">{t('detailTabs.overview')}</TabsTrigger>
                 <TabsTrigger value="progress">{t('detailTabs.progress')}</TabsTrigger>

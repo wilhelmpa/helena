@@ -20,7 +20,7 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
   const t = useTranslations('settings.notifications');
   const { emailEvents, setEmailEvents, telegramEvents, setTelegramEvents } = form;
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-6">
       <SettingsSection title={t('eventsTitle')}>
         <div className="max-w-xl">
           <div className={`${COLS} px-3 pb-1`}>

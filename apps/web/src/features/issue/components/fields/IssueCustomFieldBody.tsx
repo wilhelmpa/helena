@@ -31,7 +31,7 @@ export default function IssueCustomFieldBody({
 }) {
   const t = useTranslations('issue.fields');
   return (
-    <div className="mt-6">
+    <div className="mt-4">
       <h3 className="mb-1 text-xs font-medium text-muted-foreground">{def.name}</h3>
       {def.fieldType === 'markdown' ? (
         <MarkdownEditor

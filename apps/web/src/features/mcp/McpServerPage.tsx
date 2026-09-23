@@ -14,7 +14,7 @@ export default function McpServerPage() {
 
   return (
     <SectionPageView title={t('title')} description={t('description')}>
-      <div className="space-y-10">
+      <div className="space-y-6">
         {detail && !reachable && (
           <McpAccessNotice
             teamId={detail.teamId}

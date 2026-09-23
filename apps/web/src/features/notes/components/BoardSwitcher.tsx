@@ -81,7 +81,7 @@ export default function BoardSwitcher({
           <CommandInput placeholder={t('searchBoards')} value={query} onValueChange={setQuery} />
           <CommandList>
             {isLoading ? (
-              <div className="flex items-center justify-center py-6 text-muted-foreground">
+              <div className="flex items-center justify-center py-4 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
               </div>
             ) : (

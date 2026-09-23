@@ -52,7 +52,7 @@ export default function HomeFilesPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('files')} autoOpenGlobalChat={false}>
-      <div className="flex h-full min-h-0 flex-col gap-4 p-4 md:flex-row md:p-6">
+      <div className="flex h-full min-h-0 flex-col gap-4 p-4 md:flex-row">
         <HomeFilesRoots
           current={current}
           owner={mounted && session?.user.role === 'god'}

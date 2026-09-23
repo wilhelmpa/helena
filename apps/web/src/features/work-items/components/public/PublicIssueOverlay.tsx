@@ -38,7 +38,7 @@ export default function PublicIssueOverlay({
 
   return (
     <Dialog open={issueId != null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="fixed inset-0 top-0 left-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-none border-0 p-0 sm:max-w-none">
+      <DialogContent className="fixed inset-0 top-0 left-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-none border-0 p-0">
         <DialogHeader className="sr-only">
           <DialogTitle>{t('issueTitle')}</DialogTitle>
         </DialogHeader>

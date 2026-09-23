@@ -19,7 +19,7 @@ export default function CycleHeader({ cycle, projectKey }: { cycle: Cycle; proje
   const [transferring, setTransferring] = useState(false);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b px-6 py-2.5">
+    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b px-4 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold">{cycle.name}</span>
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">

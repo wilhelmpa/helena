@@ -43,7 +43,7 @@ export default function PipelineLibrary({ teamId }: { teamId: number }) {
       ) : !permissions.read ? (
         <p className="text-sm text-muted-foreground">{t('noAccess')}</p>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {!permissions.create && <p className="text-xs text-muted-foreground">{t('readOnly')}</p>}
           <PipelineTemplateList teamId={teamId} canDelete={permissions.delete} />
           <PipelineBuiltinList teamId={teamId} canCreate={permissions.create} />

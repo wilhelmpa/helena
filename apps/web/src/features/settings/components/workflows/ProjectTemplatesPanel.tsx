@@ -51,7 +51,7 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
   }
 
   return (
-    <section className="space-y-3 border-t pt-5">
+    <section className="space-y-3 border-t pt-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium">{t('templates')}</h2>

@@ -71,7 +71,7 @@ function TelegramForm({ settings }: { settings: InstanceTelegramSettings }) {
           />
         }
       >
-        <SettingsCard className="space-y-6 p-4">
+        <SettingsCard className="space-y-4 p-4">
           <div className="space-y-1.5 sm:max-w-md">
             <Label htmlFor="telegram-bot-token">{t('botToken')}</Label>
             <SecretInput

@@ -172,7 +172,7 @@ export function AgentRunnerHelpSheet() {
         <SheetHeader>
           <SheetTitle>{t('runnerHelpTitle')}</SheetTitle>
         </SheetHeader>
-        <div className="mx-auto w-full max-w-[720px] flex-1 space-y-6 overflow-y-auto px-4 pb-8">
+        <div className="mx-auto w-full max-w-[720px] flex-1 space-y-4 overflow-y-auto px-4 pb-8">
           <AgentRunnerHelpStep n={1} title={t('runnerHelpKey')}>
             <p className="text-xs text-muted-foreground">{t('runnerHelpKeyHint')}</p>
           </AgentRunnerHelpStep>

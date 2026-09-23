@@ -13,7 +13,7 @@ export const SECTION_COLUMN_CLASS = 'w-full max-w-[67.5rem]';
 
 // The page gutter (docs/volition-design-helena-ui.md "Spacing"): 16px, 24px beside a
 // wide desktop column. Every page body inside the shell uses this one.
-export const PAGE_GUTTER_CLASS = 'px-4 py-4 lg:px-6';
+export const PAGE_GUTTER_CLASS = 'px-4 py-4';
 
 // The chrome for a section page rendered inside the app shell: the scroll
 // container, the content column, and a header (title and description).

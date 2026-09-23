@@ -96,9 +96,9 @@ function StorageForm({ settings }: { settings: FormState }) {
         </Button>
       }
     >
-      <div className="space-y-8">
+      <div className="space-y-6">
         <SettingsSection title={t('fileSize')} description={t('fileSizeHint')}>
-          <SettingsCard className="grid gap-6 p-4 sm:grid-cols-2">
+          <SettingsCard className="grid gap-4 p-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="storage-attachment-mb">{t('attachmentMb')}</Label>
               <Input

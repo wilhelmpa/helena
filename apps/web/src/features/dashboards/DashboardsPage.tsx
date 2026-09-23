@@ -43,7 +43,7 @@ export default function DashboardsPage() {
 
   if (!project || isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-6">
+      <div className="flex-1 space-y-4 p-4">
         <Skeleton className="h-8 w-full max-w-md" />
         <Skeleton className="h-40 w-full" />
       </div>

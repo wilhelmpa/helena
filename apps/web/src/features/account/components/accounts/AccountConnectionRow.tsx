@@ -48,7 +48,7 @@ export default function AccountConnectionRow({
   }
 
   return (
-    <div className="flex items-center justify-between gap-6 py-4">
+    <div className="flex items-center justify-between gap-4 py-4">
       <div className="flex min-w-0 items-center gap-3">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/40">
           {icon}

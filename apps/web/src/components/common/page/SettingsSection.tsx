@@ -18,7 +18,7 @@ export default function SettingsSection({
   children?: ReactNode;
 }) {
   return (
-    <section className="grid grid-cols-1 gap-3 @3xl/page:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] @3xl/page:gap-8">
+    <section className="grid grid-cols-1 gap-3 @3xl/page:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] @3xl/page:gap-6">
       <header className="flex items-start justify-between gap-4 @3xl/page:sticky @3xl/page:top-0 @3xl/page:flex-col @3xl/page:justify-start @3xl/page:self-start">
         <div className="space-y-0.5">
           <h3 className="text-md font-semibold">{title}</h3>

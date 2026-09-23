@@ -89,7 +89,7 @@ export function AgentInstructionsField({
             onChange={(e) => onChange(e.target.value)}
             placeholder={t('instructionsPlaceholder')}
             aria-label={t('instructionsLabel')}
-            className="max-h-43 min-h-24 overflow-y-auto font-mono text-xs md:text-xs"
+            className="max-h-43 min-h-24 overflow-y-auto font-mono text-xs"
           />
         ) : (
           <AgentInstructionsEditor
@@ -105,7 +105,7 @@ export function AgentInstructionsField({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           showCloseButton={false}
-          className="flex h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-none flex-col gap-4 sm:max-w-none"
+          className="flex h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-none flex-col gap-4"
         >
           <DialogHeader className="flex-row items-center justify-between space-y-0">
             <DialogTitle>{t('instructions')}</DialogTitle>

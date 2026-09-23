@@ -84,7 +84,7 @@ export function RoutineDialog({
       wide
     >
       <form
-        className="space-y-5"
+        className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
           void submit();

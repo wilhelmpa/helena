@@ -60,7 +60,7 @@ export default function GodTeamDetailPanel({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="ml-auto flex h-full w-full flex-col border-l bg-card sm:w-[680px] sm:max-w-[92vw]">
-        <div className="flex shrink-0 items-start justify-between gap-3 bg-muted/30 px-6 pt-5 pb-4">
+        <div className="flex shrink-0 items-start justify-between gap-3 bg-muted/30 px-4 pt-4 pb-4">
           <div className="min-w-0 space-y-1.5">
             <h2 className="truncate text-base font-semibold">
               {team ? team.name : tCommon('loading')}
@@ -90,7 +90,7 @@ export default function GodTeamDetailPanel({
           </Button>
         </div>
 
-        <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6">
+        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
           {!team ? (
             <ListSkeleton rows={5} rowClassName="h-12" />
           ) : (

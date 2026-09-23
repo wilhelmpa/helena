@@ -20,7 +20,7 @@ export default function CycleDetailPage({ cycleId }: { cycleId: number }) {
     return query.isLoading ? (
       <Skeleton className="m-6 h-8 w-64" />
     ) : (
-      <p className="px-6 py-8 text-sm text-muted-foreground">{t('notFound')}</p>
+      <p className="px-4 py-6 text-sm text-muted-foreground">{t('notFound')}</p>
     );
 
   return (

@@ -62,7 +62,7 @@ export default function ControlPlaneWorkflowRuntime({
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="space-y-2">
         <h4 className="text-sm font-medium">{t('graph')}</h4>
         <ol className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">

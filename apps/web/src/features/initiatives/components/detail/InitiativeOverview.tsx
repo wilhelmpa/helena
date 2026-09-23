@@ -14,8 +14,8 @@ export default function InitiativeOverview({ initiative }: { initiative: Initiat
   return (
     // A container query, not a viewport one: the sidebar takes width off this
     // column, so the viewport says nothing about whether the two fit side by side.
-    <div className="@container w-full px-8 py-8">
-      <div className="flex flex-col gap-8 @4xl:flex-row">
+    <div className="@container w-full px-6 py-6">
+      <div className="flex flex-col gap-6 @4xl:flex-row">
         <div className="max-w-3xl min-w-0 flex-1">
           <h1 className="text-base font-semibold">{initiative.title}</h1>
           {hasDescription ? (
@@ -30,7 +30,7 @@ export default function InitiativeOverview({ initiative }: { initiative: Initiat
             <p className="mt-4 text-sm text-muted-foreground/60 italic">{t('noDescription')}</p>
           )}
         </div>
-        <aside className="flex flex-col gap-6 @4xl:ms-auto @4xl:w-88 @4xl:shrink-0">
+        <aside className="flex flex-col gap-4 @4xl:ms-auto @4xl:w-88 @4xl:shrink-0">
           <InitiativeAttachments initiativeId={initiative.id} />
         </aside>
       </div>

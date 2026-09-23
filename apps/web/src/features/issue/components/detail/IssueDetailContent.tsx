@@ -342,7 +342,7 @@ export default function IssueDetailContent({
     // wraps the flex row rather than being it — an element cannot query itself.
     return (
       <div className="@container">
-        <div className="flex gap-8">
+        <div className="flex gap-6">
           <div className="min-w-0 flex-1">
             <div className="@3xl:hidden">{actions}</div>
             {heading}

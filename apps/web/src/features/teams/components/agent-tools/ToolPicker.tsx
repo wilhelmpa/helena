@@ -75,9 +75,9 @@ export function ToolPicker({
         />
       </div>
 
-      <div className="max-h-[55vh] space-y-5 overflow-y-auto pe-1">
+      <div className="max-h-[55vh] space-y-4 overflow-y-auto pe-1">
         {matches.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">
+          <p className="py-4 text-center text-sm text-muted-foreground">
             {t('noMatches', { query: query.trim() })}
           </p>
         )}

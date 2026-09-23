@@ -24,7 +24,7 @@ export default function ConnectionsContent() {
 
   return (
     <SectionPageView title={t('title')} description={t('description')} actions={actions}>
-      <div className="space-y-5">
+      <div className="space-y-4">
         {connections.error ? (
           <p className="rounded border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             {t('loadError')}

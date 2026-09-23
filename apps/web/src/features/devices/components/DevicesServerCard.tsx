@@ -21,7 +21,7 @@ export default function DevicesServerCard({ server }: { server: SyncServer }) {
 
   return (
     <DevicesSection title={t('title')} hint={t('hint')}>
-      <div className="flex flex-wrap items-start gap-5">
+      <div className="flex flex-wrap items-start gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element -- a data URL from the API, not a file Next could optimise. */}
         <img
           src={server.qrCode}

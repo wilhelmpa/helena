@@ -10,7 +10,7 @@ import HelenaWordmark from '@/components/brand/HelenaWordmark';
 export default function BrandPanel({ subtitle }: { subtitle?: string }) {
   const t = useTranslations('common');
   return (
-    <div className="relative hidden flex-col items-center justify-center gap-5 bg-sidebar p-8 text-sidebar-foreground md:flex">
+    <div className="relative hidden flex-col items-center justify-center gap-4 bg-sidebar p-6 text-sidebar-foreground md:flex">
       <HelenaMark className="size-16" />
       <div className="flex flex-col items-center gap-1.5">
         <HelenaWordmark label={APP_NAME} className="h-6 w-auto text-foreground" />

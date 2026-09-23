@@ -26,7 +26,7 @@ export default function ProjectApprovalsPage() {
             <TabsTrigger value="pending">{t('pending')}</TabsTrigger>
             <TabsTrigger value="decided">{t('decided')}</TabsTrigger>
           </TabsList>
-          <TabsContent value="pending" className="space-y-8 pt-2">
+          <TabsContent value="pending" className="space-y-6 pt-2">
             <ApprovalRequestList status="pending" projectKey={projectKey} />
             <WorkflowApprovalList projectKey={projectKey} />
           </TabsContent>

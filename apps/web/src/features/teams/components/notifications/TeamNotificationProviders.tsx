@@ -32,7 +32,7 @@ export default function TeamNotificationProviders({
     <Tabs
       value={tab}
       onValueChange={(v) => setTab(v as NotificationTab)}
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-4"
     >
       <div className="flex items-center justify-between gap-2">
         <TabsList variant="line" className="w-auto">

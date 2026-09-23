@@ -14,7 +14,7 @@ export default function McpAuthConfiguration() {
 
   return (
     <SettingsSection title={t('oauth.configuration')}>
-      <Tabs defaultValue="oauth" className="gap-5">
+      <Tabs defaultValue="oauth" className="gap-4">
         <TabsList variant="line" aria-label={t('oauth.methodTabsAria')}>
           <TabsTrigger value="oauth">{t('oauth.method')}</TabsTrigger>
           <TabsTrigger value="api-key">{t('oauth.personalKey')}</TabsTrigger>

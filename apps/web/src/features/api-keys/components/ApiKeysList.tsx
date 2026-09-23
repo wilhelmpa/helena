@@ -27,7 +27,7 @@ export default function ApiKeysList({
   }
 
   if (apiKeys.length === 0) {
-    return <p className="py-6 text-sm text-muted-foreground">{t('empty')}</p>;
+    return <p className="py-4 text-sm text-muted-foreground">{t('empty')}</p>;
   }
 
   return (

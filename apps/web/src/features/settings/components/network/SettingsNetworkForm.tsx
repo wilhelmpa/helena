@@ -22,7 +22,7 @@ export default function SettingsNetworkForm({ form }: { form: Form }) {
   const allowActive = form.allowListActive;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <Alert className="border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300">
         <Info />
         <AlertDescription className="text-xs text-current">{t('isolationNote')}</AlertDescription>
@@ -33,7 +33,7 @@ export default function SettingsNetworkForm({ form }: { form: Form }) {
           <AgentNetworkModePicker value={form.mode} onChange={form.setMode} disabled={disabled} />
         </SettingsCard>
 
-        <SettingsCard className="space-y-5 p-4">
+        <SettingsCard className="space-y-4 p-4">
           <DomainField
             id="agent-network-allow"
             label={t('allowLabel')}

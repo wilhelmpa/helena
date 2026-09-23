@@ -357,11 +357,11 @@ export function AgentSheetForm({
       {expanded ? (
         fields
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-6 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-6">
           <div className={`mx-auto w-full space-y-6 ${contentWidth}`}>{fields}</div>
         </div>
       )}
-      <div className="border-t border-border/60 px-4 py-3 sm:px-6">
+      <div className="border-t border-border/60 px-4 py-3">
         <div className={`mx-auto flex w-full ${contentWidth} ${expanded ? 'justify-end' : ''}`}>
           <Button
             type="submit"

@@ -70,7 +70,7 @@ export default function MembersList({
     agent: t('search.agents'),
   }[kind];
 
-  if (membersQuery.isPending) return <ListSkeleton className="mb-8" rowClassName="h-14" />;
+  if (membersQuery.isPending) return <ListSkeleton className="mb-6" rowClassName="h-14" />;
 
   const targetIsSelf = target?.userId === currentUserId;
   const targetName = target ? target.name || target.email : '';
@@ -88,7 +88,7 @@ export default function MembersList({
   }
 
   return (
-    <div className="mb-8 flex min-h-0 flex-1 flex-col gap-4">
+    <div className="mb-6 flex min-h-0 flex-1 flex-col gap-4">
       <Tabs value={kind} onValueChange={onKindChange}>
         <div className="flex items-center justify-between gap-3">
           <TabsList variant="line" className="w-auto border-b-0">

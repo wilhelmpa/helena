@@ -42,14 +42,14 @@ export default function IssueDetail({
           against the panel edge with nothing showing above it. */}
       <div
         ref={panelRef}
-        className="pointer-events-auto ms-auto flex h-full w-full flex-col overflow-y-auto border-s border-sidebar-border bg-card px-4 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-(--side-panel-shadow) sm:w-[720px] sm:max-w-[92vw] sm:px-6"
+        className="pointer-events-auto ms-auto flex h-full w-full flex-col overflow-y-auto border-s border-sidebar-border bg-card px-4 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-(--side-panel-shadow) sm:w-[720px] sm:max-w-[92vw]"
       >
         {/* The header stays at the top while the body scrolls under it. Negative
             margins cancel the panel padding so its translucent, blurred backdrop
             spans the full panel width. */}
         {/* One 48px row like every panel head: the task's key in mono on the left, its
             actions, "open as page" and close as 32px buttons on the right. */}
-        <div className="sticky top-0 z-10 -mx-4 mb-3 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-card/85 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
+        <div className="sticky top-0 z-10 -mx-4 mb-3 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-card/85 px-4 backdrop-blur-md sm:-mx-6">
           <span className="font-mono text-xs text-muted-foreground">{issue?.identifier ?? ''}</span>
           <div className="flex items-center gap-1">
             {issue && (

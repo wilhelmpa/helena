@@ -160,7 +160,7 @@ export default function InitiativeDialog({
           )}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>

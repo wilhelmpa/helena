@@ -16,7 +16,7 @@ export default function AccountPreferenceRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-8">
+    <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-6">
       <div className="min-w-0 flex-1">
         <p className="text-sm">{label}</p>
         <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>

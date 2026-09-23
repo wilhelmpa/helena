@@ -66,10 +66,10 @@ export default function MemberDescriptionDialog({
         <TooltipContent>{t('editDescription')}</TooltipContent>
       </Tooltip>
       <Dialog open={open} onOpenChange={(next) => !next && setOpen(false)}>
-        <DialogContent className="inset-0 top-0 left-0 h-screen w-full max-w-none translate-x-0 translate-y-0 gap-0 rounded-none border-0 bg-background p-0 sm:max-w-none">
-          <div className="flex h-full w-full flex-col items-center justify-center px-6 py-16">
-            <div className="flex w-full max-w-2xl flex-col items-center gap-10">
-              <div className="flex flex-col items-center gap-5">
+        <DialogContent className="inset-0 top-0 left-0 h-screen w-full max-w-none translate-x-0 translate-y-0 gap-0 rounded-none border-0 bg-background p-0">
+          <div className="flex h-full w-full flex-col items-center justify-center px-4 py-16">
+            <div className="flex w-full max-w-2xl flex-col items-center gap-6">
+              <div className="flex flex-col items-center gap-4">
                 <DialogTitle className="max-w-[32ch] text-center text-xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-3xl">
                   {question}
                 </DialogTitle>
@@ -81,7 +81,7 @@ export default function MemberDescriptionDialog({
                   </div>
                 </div>
               </div>
-              <div className="flex w-full flex-col items-end gap-5">
+              <div className="flex w-full flex-col items-end gap-4">
                 <Textarea
                   autoFocus
                   maxLength={500}
@@ -91,7 +91,7 @@ export default function MemberDescriptionDialog({
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void save();
                   }}
-                  className="min-h-40 w-full rounded-xl border-0 bg-card p-5 text-base leading-relaxed shadow-sm focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-base"
+                  className="min-h-40 w-full rounded-xl border-0 bg-card p-4 text-base leading-relaxed shadow-sm focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 />
                 <Button
                   size="lg"

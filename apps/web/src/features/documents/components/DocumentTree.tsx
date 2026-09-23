@@ -58,7 +58,7 @@ export default function DocumentTree({
   }
   if (tree.isError) {
     return (
-      <div className="px-3 py-8 text-center">
+      <div className="px-3 py-6 text-center">
         <p className="text-sm text-muted-foreground">{t('loadFailed')}</p>
         <Button className="mt-3" variant="outline" size="sm" onClick={() => void tree.refetch()}>
           <RefreshCw />
@@ -68,7 +68,7 @@ export default function DocumentTree({
     );
   }
   if (nodes.length === 0) {
-    return <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t('noNotes')}</p>;
+    return <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t('noNotes')}</p>;
   }
 
   return (

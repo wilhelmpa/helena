@@ -51,9 +51,7 @@ export function WorkspacePageHeader({
           ? createPortal(<div className="flex shrink-0 items-center gap-2">{actions}</div>, slot)
           : null}
         {description ? (
-          <p
-            className={cn(PAGE_INTRO_CLASS, 'shrink-0 truncate px-4 pt-3 pb-1 lg:px-6', className)}
-          >
+          <p className={cn(PAGE_INTRO_CLASS, 'shrink-0 truncate px-4 pt-3 pb-1', className)}>
             {description}
           </p>
         ) : null}
@@ -61,7 +59,7 @@ export function WorkspacePageHeader({
     );
   }
   return (
-    <WorkspaceHeader className={cn('bg-background px-4 sm:px-6', className)}>
+    <WorkspaceHeader className={cn('bg-background px-4', className)}>
       <div className={cn('flex min-w-0 flex-1 items-center gap-3', contentClassName)}>
         <div className="flex min-w-0 flex-1 items-baseline gap-2">
           <h1 className="min-w-0 truncate text-md font-semibold">{title}</h1>

@@ -15,10 +15,10 @@ export default function DocumentTrashList({ root, canEdit }: { root: string; can
 
   if (trash.isPending) return <Skeleton className="m-1 h-10" />;
   if (trash.isError) {
-    return <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t('loadFailed')}</p>;
+    return <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t('loadFailed')}</p>;
   }
   if (trash.data.length === 0) {
-    return <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t('trashEmpty')}</p>;
+    return <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t('trashEmpty')}</p>;
   }
 
   return (

@@ -32,7 +32,7 @@ export default function ProjectFilesPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <WorkspacePageHeader title={t('title')} description={t('projectDescription')} />
-      <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
         <FileRootTabs root={root} onChange={(next) => go({ root: next, path: '' })} />
         <FileBrowser
           key={root}

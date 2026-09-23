@@ -37,7 +37,7 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
       ) : !permissions.read ? (
         <p className="text-sm text-muted-foreground">{t('tools.noAccess')}</p>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-6">
           <TeamMcpServers
             teamId={teamId}
             canManage={team?.role === 'owner' || team?.role === 'manager'}

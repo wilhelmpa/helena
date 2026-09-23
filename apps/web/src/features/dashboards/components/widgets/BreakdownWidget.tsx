@@ -37,7 +37,7 @@ export default function BreakdownWidget({
   function chart() {
     if (isLoading) return <Skeleton className="mx-auto h-[160px] w-[160px] rounded-full" />;
     if (total === 0) {
-      return <p className="py-10 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+      return <p className="py-6 text-center text-sm text-muted-foreground">{t('empty')}</p>;
     }
     return (
       <div className="flex flex-col items-center gap-3 sm:flex-row">

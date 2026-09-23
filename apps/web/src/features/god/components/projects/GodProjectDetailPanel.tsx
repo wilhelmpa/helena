@@ -63,7 +63,7 @@ export default function GodProjectDetailPanel({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="ml-auto flex h-full w-full flex-col border-l bg-card sm:w-[680px] sm:max-w-[92vw]">
-        <div className="flex shrink-0 items-start justify-between gap-3 bg-muted/30 px-6 pt-5 pb-4">
+        <div className="flex shrink-0 items-start justify-between gap-3 bg-muted/30 px-4 pt-4 pb-4">
           <div className="min-w-0 space-y-1.5">
             <div className="flex min-w-0 items-center gap-2">
               <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
@@ -101,7 +101,7 @@ export default function GodProjectDetailPanel({
           </Button>
         </div>
 
-        <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6">
+        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
           {!project ? (
             <ListSkeleton rows={5} rowClassName="h-12" />
           ) : (
@@ -129,7 +129,7 @@ export default function GodProjectDetailPanel({
                   )}
                 </div>
                 {project.members.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 rounded-lg bg-muted/30 px-6 py-10 text-center">
+                  <div className="flex flex-col items-center gap-2 rounded-lg bg-muted/30 px-4 py-6 text-center">
                     <Users className="size-5 text-muted-foreground" />
                     <p className="text-sm font-medium">{t('noMembersTitle')}</p>
                     <p className="max-w-[36ch] text-xs text-muted-foreground">

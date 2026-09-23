@@ -182,7 +182,7 @@ export default function MailInbox({ teamId, projectId }: { teamId: number; proje
               onRemoved={() => select(neighbour())}
             />
           ) : (
-            <p className="m-auto p-6 text-sm text-muted-foreground">{t('inbox.nothingSelected')}</p>
+            <p className="m-auto p-4 text-sm text-muted-foreground">{t('inbox.nothingSelected')}</p>
           )}
         </div>
       </div>

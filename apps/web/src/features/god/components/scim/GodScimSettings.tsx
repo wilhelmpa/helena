@@ -30,7 +30,7 @@ export default function GodScimSettings({ settings }: { settings: InstanceScimSe
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <SettingsSection
         title={t('provisioning')}
         description={t(settings.hasToken ? 'provisioningConfigured' : 'provisioningMissing')}
@@ -42,7 +42,7 @@ export default function GodScimSettings({ settings }: { settings: InstanceScimSe
           />
         }
       >
-        <SettingsCard className="space-y-6 p-4">
+        <SettingsCard className="space-y-4 p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-1">
               <div className="text-sm font-medium">{t('token')}</div>

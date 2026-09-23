@@ -45,7 +45,7 @@ export default function TakeoverScreen({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
       <div className="grid min-h-full w-full lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
-        <aside className="flex flex-col gap-10 bg-muted/40 px-6 py-10 lg:sticky lg:top-0 lg:h-dvh lg:px-10 lg:py-14">
+        <aside className="flex flex-col gap-6 bg-muted/40 px-4 py-6 lg:sticky lg:top-0 lg:h-dvh lg:px-10 lg:py-14">
           <div>
             <p className="text-xs font-medium tracking-[0.12em] text-balance text-muted-foreground uppercase">
               {eyebrow}
@@ -87,7 +87,7 @@ export default function TakeoverScreen({
           </Button>
         </aside>
 
-        <main className="flex w-full max-w-[80rem] min-w-0 flex-col px-6 py-10 lg:px-14 lg:py-14 xl:px-20">
+        <main className="flex w-full max-w-[80rem] min-w-0 flex-col px-4 py-6 lg:px-14 lg:py-14 xl:px-20">
           <div className="flex flex-col gap-14">
             {sections.map((section, index) => (
               <section

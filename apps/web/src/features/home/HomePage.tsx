@@ -23,7 +23,7 @@ export default function HomePage() {
   return (
     <Shell globalHome>
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-5 lg:px-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-5">
           <header className="flex flex-col gap-2">
             <div>
               <h1 className="text-base font-semibold">{t('homeGreeting')}</h1>

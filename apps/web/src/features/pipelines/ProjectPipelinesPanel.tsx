@@ -43,7 +43,7 @@ export default function ProjectPipelinesPanel() {
   const editable = can('actions', 'edit');
 
   return (
-    <section className="mb-8 space-y-3 border-b pb-6">
+    <section className="mb-6 space-y-3 border-b pb-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium">{t('title')}</h2>

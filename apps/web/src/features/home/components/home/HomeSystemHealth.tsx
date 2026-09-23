@@ -40,7 +40,7 @@ export default function HomeSystemHealth() {
     <section className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
       <div className="min-w-0">
         <SectionLabel icon={<Activity />}>{t('title')}</SectionLabel>
-        <ul className="grid grid-cols-1 border-t border-sidebar-border pt-1 sm:grid-cols-2 lg:grid-cols-1">
+        <ul className="grid grid-cols-1 border-t border-sidebar-border pt-1 sm:grid-cols-2">
           {data.services.map((health) => (
             <HomeServiceState key={health.service} health={health} />
           ))}

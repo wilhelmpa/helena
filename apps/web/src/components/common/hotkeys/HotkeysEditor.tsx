@@ -45,7 +45,7 @@ export default function HotkeysEditor({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {HOTKEY_GROUPS.map((group) => (
         <div key={group}>
           <p className="mb-1 text-xs font-medium text-muted-foreground">{t(`groups.${group}`)}</p>

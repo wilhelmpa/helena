@@ -78,7 +78,7 @@ export default function TeamAiAgents() {
       ) : agents.length === 0 ? (
         <EmptyState title={t('empty')} description={t('emptyHint')} />
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <TeamAiAgentTable agents={agents.filter((a) => !a.template)} {...tableProps} />
           {templates.length > 0 && (
             <section className="space-y-3">

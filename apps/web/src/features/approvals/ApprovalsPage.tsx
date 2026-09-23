@@ -63,7 +63,7 @@ export default function ApprovalsPage() {
               <TabsTrigger value="pending">{t('pending')}</TabsTrigger>
               <TabsTrigger value="decided">{t('decided')}</TabsTrigger>
             </TabsList>
-            <TabsContent value="pending" className="space-y-8 pt-2">
+            <TabsContent value="pending" className="space-y-6 pt-2">
               <ApprovalRequestList
                 key={`pending:${projectKey ?? ''}`}
                 status="pending"

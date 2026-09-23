@@ -79,8 +79,8 @@ export default function TeamInviteDialog({
       onClose={onClose}
       wide
     >
-      <form onSubmit={submit} className="space-y-6 py-1">
-        <div className="grid gap-5 sm:grid-cols-2">
+      <form onSubmit={submit} className="space-y-4 py-1">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">{t('emailLabel')}</p>
             <Input
@@ -130,7 +130,7 @@ export default function TeamInviteDialog({
           </div>
         </div>
 
-        <div className="flex justify-end border-t pt-5">
+        <div className="flex justify-end border-t pt-4">
           <Button type="submit" disabled={createInvite.isPending || !address}>
             {t('submit')}
           </Button>

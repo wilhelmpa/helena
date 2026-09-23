@@ -37,7 +37,7 @@ export default function DocumentVersionPreview({
 
   if (commit === null || version.isPending) {
     return (
-      <div className="space-y-3 p-6" aria-hidden>
+      <div className="space-y-3 p-4" aria-hidden>
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-5/6" />
         <Skeleton className="h-4 w-2/3" />
@@ -46,7 +46,7 @@ export default function DocumentVersionPreview({
   }
   if (version.isError) {
     return (
-      <div className="grid min-h-72 place-items-center px-6 text-center">
+      <div className="grid min-h-72 place-items-center px-4 text-center">
         <div>
           <p className="text-sm text-muted-foreground">{t('historyLoadFailed')}</p>
           <Button
@@ -79,7 +79,7 @@ export default function DocumentVersionPreview({
         </div>
       )}
       <pre
-        className="min-h-0 flex-1 overflow-auto p-5 font-mono text-xs leading-5 whitespace-pre-wrap"
+        className="min-h-0 flex-1 overflow-auto p-4 font-mono text-xs leading-5 whitespace-pre-wrap"
         dir="auto"
       >
         {version.data.content}
