@@ -1,66 +1,44 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-} from '@aws-sdk/client-s3';
+import * as local from './storage-local';
+import * as s3 from './storage-s3';
 
-// S3-compatible object store (MinIO) for issue attachments. Only the file
-// bytes live here; the metadata and object key are rows in issue_attachment
-// (see modules/attachments/service.ts).
-//
-// Config comes from env. forcePathStyle is required for MinIO (and most
-// self-hosted S3 gateways) because they do not serve virtual-host-style buckets;
-// hosted stores that only serve virtual-host-style buckets set
-// S3_FORCE_PATH_STYLE=false. region is sent but ignored by MinIO; a value is
-// still required by the SDK.
+// Stored files: attachments, document assets, skill files, avatars. Only the bytes are
+// kept here; the metadata and the object key are in the database rows of the feature
+// that owns the file. The files go to the local disk when STORAGE_ROOT is set, and to an
+// S3-compatible bucket when the S3_* variables are set instead.
 
-let cached: { client: S3Client; bucket: string } | null = null;
+type ObjectStore = Pick<typeof s3, 'putObject' | 'getObject' | 'deleteObject'>;
 
-function getClient(): { client: S3Client; bucket: string } {
-  if (cached) return cached;
-  const endpoint = process.env.S3_ENDPOINT;
-  const bucket = process.env.S3_BUCKET;
-  const accessKeyId = process.env.S3_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
-  if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
-    throw new Error(
-      'S3 storage is not configured: set S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY.',
-    );
-  }
-  cached = {
-    client: new S3Client({
-      endpoint,
-      region: process.env.S3_REGION || 'us-east-1',
-      credentials: { accessKeyId, secretAccessKey },
-      forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== 'false',
-    }),
-    bucket,
-  };
-  return cached;
+const NOT_CONFIGURED =
+  'File storage is not configured: set STORAGE_ROOT to a directory on the local disk, or S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY for an S3-compatible store.';
+
+function selectedStore(): ObjectStore | null {
+  if (process.env.STORAGE_ROOT?.trim()) return local;
+  if (process.env.S3_ENDPOINT?.trim()) return s3;
+  return null;
+}
+
+function store(): ObjectStore {
+  const selected = selectedStore();
+  if (!selected) throw new Error(NOT_CONFIGURED);
+  return selected;
+}
+
+// Without storage the api still serves everything except uploads and downloads.
+export function warnIfStorageNotConfigured(): void {
+  if (!selectedStore()) console.warn(`[planner] ${NOT_CONFIGURED}`);
 }
 
 export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {
-  const { client, bucket } = getClient();
-  await client.send(
-    new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }),
-  );
+  return store().putObject(key, body, contentType);
 }
 
 // Returns a web ReadableStream of the object body so a route can stream it to
 // the client without buffering the whole file (matters for video). contentType
-// and contentLength fall back to sensible defaults when the object store omits them.
+// and contentLength fall back to sensible defaults when the store omits them.
 export async function getObject(
   key: string,
 ): Promise<{ body: ReadableStream; contentType: string; contentLength?: number }> {
-  const { client, bucket } = getClient();
-  const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-  if (!res.Body) throw new Error(`Object '${key}' has no body`);
-  return {
-    body: (res.Body as { transformToWebStream: () => ReadableStream }).transformToWebStream(),
-    contentType: res.ContentType || 'application/octet-stream',
-    contentLength: res.ContentLength,
-  };
+  return store().getObject(key);
 }
 
 // Reads a whole object into a UTF-8 string. For small text objects (skill
@@ -71,8 +49,7 @@ export async function getObjectText(key: string): Promise<string> {
 }
 
 export async function deleteObject(key: string): Promise<void> {
-  const { client, bucket } = getClient();
-  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+  return store().deleteObject(key);
 }
 
 // Deletes several objects, best-effort (a failed delete only orphans bytes).
