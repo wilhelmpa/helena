@@ -89,6 +89,13 @@ class Config:
     runtimes: dict[str, Runtime]
     # Where the browser user's state lives and the script that writes it (browser-state).
     browser: dict[str, Any] | None = None
+    # The browser gateway's per-project sockets (design: volition-design-browser-gateway.md
+    # §3): the router (a Node process, one `net.Server` per provisioned project browser)
+    # listens on `{root}/gateway-<slug>.sock` (Home: `gateway-home.sock`) and knows the caller's
+    # project from which socket accepted the connection — no peer-cred lookup needed, unlike
+    # egress.sock/plan.sock. Bound read-only into every agent unit of that project, at the
+    # fixed in-unit path `target` (see sandbox_properties in launcher.py).
+    browser_gateway_socket: tuple[str, str] | None = None
     systemd_run: str = '/usr/bin/systemd-run'
     systemctl: str = '/usr/bin/systemctl'
     useradd: str = '/usr/sbin/useradd'
@@ -230,7 +237,19 @@ def load_config(path: str, *, require_root: bool = True) -> Config:
         systemd_run=_absolute(raw.get('systemdRun', '/usr/bin/systemd-run'), 'systemdRun'),
         systemctl=_absolute(raw.get('systemctl', '/usr/bin/systemctl'), 'systemctl'),
         browser=_browser(raw.get('browser')),
+        browser_gateway_socket=_browser_gateway_socket(raw.get('browserGatewaySocket')),
         extra={k: v for k, v in raw.items() if k in {'test'}},
+    )
+
+
+def _browser_gateway_socket(value: Any) -> tuple[str, str] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) != {'root', 'target'}:
+        raise IsolationError('config', 'browserGatewaySocket is invalid')
+    return (
+        _absolute(value.get('root'), 'browserGatewaySocket root'),
+        _absolute(value.get('target'), 'browserGatewaySocket target'),
     )
 
 
