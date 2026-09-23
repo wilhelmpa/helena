@@ -597,6 +597,7 @@
       "blocked": "Bloqueada"
     },
     "reasons": {
+      "blocked": "Acceso a la red bloqueado",
       "private-address": "Dirección privada",
       "port": "Puerto no permitido",
       "denylisted": "En la lista de bloqueo",

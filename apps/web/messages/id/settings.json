@@ -597,6 +597,7 @@
       "blocked": "Diblokir"
     },
     "reasons": {
+      "blocked": "Akses jaringan diblokir",
       "private-address": "Alamat privat",
       "port": "Port tidak diizinkan",
       "denylisted": "Ada di daftar tolak",

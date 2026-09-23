@@ -48,6 +48,7 @@ export type AgentNetworkDecision = 'allowed' | 'blocked';
 // string, so an unrecognized value still renders (as its raw text) instead of
 // breaking the row.
 export const AGENT_NETWORK_REASONS = [
+  'blocked',
   'private-address',
   'port',
   'denylisted',

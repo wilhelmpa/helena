@@ -597,6 +597,7 @@
       "blocked": "已阻止"
     },
     "reasons": {
+      "blocked": "网络访问已阻止",
       "private-address": "私有地址",
       "port": "端口不被允许",
       "denylisted": "在拒绝列表中",

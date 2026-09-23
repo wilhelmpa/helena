@@ -597,6 +597,7 @@
       "blocked": "Bloquée"
     },
     "reasons": {
+      "blocked": "Accès réseau bloqué",
       "private-address": "Adresse privée",
       "port": "Port non autorisé",
       "denylisted": "Sur la liste de refus",
