@@ -59,14 +59,16 @@ export const approvalBody = t.Object(
   { additionalProperties: false },
 );
 
-const scheduleTimezone = t.Optional(
-  t.String({ minLength: 1, maxLength: 80, description: 'IANA time zone. Default Europe/Berlin.' }),
-);
-
 export const scheduleBody = t.Object(
   {
     cron: t.String({ minLength: 5, maxLength: 120 }),
-    timezone: scheduleTimezone,
+    timezone: t.Optional(
+      t.String({
+        minLength: 1,
+        maxLength: 80,
+        description: 'IANA time zone. Default Europe/Berlin.',
+      }),
+    ),
     payload: t.Record(t.String(), t.Unknown()),
   },
   { additionalProperties: false },
@@ -75,7 +77,9 @@ export const scheduleBody = t.Object(
 export const scheduleUpdateBody = t.Object(
   {
     cron: t.String({ minLength: 5, maxLength: 120 }),
-    timezone: scheduleTimezone,
+    timezone: t.Optional(
+      t.String({ minLength: 1, maxLength: 80, description: 'IANA time zone. Kept when left out.' }),
+    ),
   },
   { additionalProperties: false },
 );

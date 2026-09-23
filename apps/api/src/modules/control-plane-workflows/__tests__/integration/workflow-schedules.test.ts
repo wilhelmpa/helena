@@ -53,12 +53,60 @@ describe('workflow schedules', () => {
     await workflows({ workflowId: 'support' })
       .schedules({ scheduleId: 'schedule_1' })
       .patch({ cron: '0 8 * * 1-5' });
-    expect(controlPlane.requests.at(-1)).toMatchObject({
+    const update = controlPlane.requests.at(-1)!;
+    expect(update).toMatchObject({
       operation: 'update-schedule',
       scheduleId: 'schedule_1',
       cron: '0 8 * * 1-5',
-      timezone: 'Europe/Berlin',
     });
+    expect(Object.keys(update)).not.toContain('timezone');
+  });
+
+  it('runs an agent-team schedule under the settings of the project', async () => {
+    const { workflows } = await setup();
+    await workflows({ workflowId: 'agent-team' }).put({
+      enabled: true,
+      capabilityRefs: ['hermes-team.v1', 'plan-task-sync.v1'],
+      configuration: { autonomy: 'done', maxTurns: 40 },
+    });
+    await workflows({ workflowId: 'agent-team' }).schedules.post({
+      cron: '0 7 * * 1',
+      payload: { policy: { autonomy: 'review', reviewRequired: false, maxAttempts: 2 } },
+    });
+    const created = controlPlane.requests.find(
+      (request) => request.operation === 'create-schedule',
+    )!;
+    expect((created.payload as { payload: unknown }).payload).toMatchObject({
+      policy: { maxAttempts: 2, reviewRequired: true, autonomy: 'done', maxTurns: 40 },
+      configuration: { autonomy: 'done', maxTurns: 40 },
+    });
+  });
+
+  it('pauses the schedules of a workflow switched off, which can still be paused and deleted', async () => {
+    const { workflows } = await setup();
+    const fallback = controlPlane.answer;
+    controlPlane.answer = (request) =>
+      request.operation === 'schedules'
+        ? {
+            schedules: [
+              { id: 'active_one', status: 'active' },
+              { id: 'paused_one', status: 'paused' },
+            ],
+          }
+        : fallback(request);
+    await workflows({ workflowId: 'support' }).put({ enabled: true, capabilityRefs: [] });
+    await workflows({ workflowId: 'support' }).put({ enabled: false, capabilityRefs: [] });
+    expect(
+      controlPlane.requests
+        .filter((request) => request.operation === 'pause-schedule')
+        .map((request) => request.scheduleId),
+    ).toEqual(['active_one']);
+
+    const schedule = workflows({ workflowId: 'support' }).schedules({ scheduleId: 'active_one' });
+    expect((await schedule({ action: 'pause' }).post()).status).toBe(200);
+    expect((await schedule.delete()).status).toBe(200);
+    expect((await schedule({ action: 'run' }).post()).status).toBe(409);
+    expect((await schedule({ action: 'resume' }).post()).status).toBe(409);
   });
 
   it('refuses a schedule of a workflow the project has not enabled', async () => {

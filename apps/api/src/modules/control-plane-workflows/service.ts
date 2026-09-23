@@ -1,7 +1,12 @@
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
-import { db, projectWorkflowAssignment, type ProjectWorkflowConfiguration } from '@repo/db';
+import {
+  db,
+  project as projectTable,
+  projectWorkflowAssignment,
+  type ProjectWorkflowConfiguration,
+} from '@repo/db';
 import { HttpError, iso } from '#shared/lib';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 
@@ -234,8 +239,34 @@ export async function setProjectWorkflowAssignment(input: {
       },
     })
     .returning();
+  if (!input.enabled) await pauseWorkflowSchedules(input.projectId, input.workflowId);
   await bumpControlPlaneRevision(input.projectId);
   return row;
+}
+
+// A workflow switched off in a project stops firing there: its active schedules are
+// paused, and stay paused when it is switched on again.
+async function pauseWorkflowSchedules(projectId: number, workflowId: string) {
+  const [row] = await db
+    .select({ key: projectTable.key })
+    .from(projectTable)
+    .where(eq(projectTable.id, projectId));
+  if (!row) return;
+  const projectRef = `project:${row.key}`;
+  const result = await controlPlaneRequest<{ schedules?: { id: string; status?: string }[] }>({
+    operation: 'schedules',
+    workflowId,
+    projectRef,
+  });
+  for (const schedule of result.schedules ?? []) {
+    if (schedule.status !== 'active') continue;
+    await controlPlaneRequest({
+      operation: 'pause-schedule',
+      workflowId,
+      scheduleId: schedule.id,
+      projectRef,
+    });
+  }
 }
 
 export function projectWorkflowScope(project: ProjectContext) {
@@ -446,12 +477,18 @@ export async function createWorkflowSchedule(
   input: { cron: string; timezone?: string; payload: Record<string, unknown> },
 ) {
   const row = await enabledAssignment(project.id, workflowId);
+  // The fires run for real, so the payload carries the project's settings the way a
+  // start does.
   return createSchedule(project, workflowId, actorUserId, {
     cron: input.cron,
     timezone: input.timezone ?? DEFAULT_TIMEZONE,
     capabilityRefs: row.capabilityRefs,
     payload: {
       ...input.payload,
+      ...(workflowId === 'agent-team'
+        ? { policy: agentTeamPolicy(row.configuration, input.payload.policy) }
+        : {}),
+      configuration: row.configuration,
       projectKey: project.key,
       workflowRef: `workflow:${workflowId}:v1`,
     },
@@ -480,19 +517,21 @@ export async function scheduleAction(
   scheduleId: string,
   action: 'pause-schedule' | 'resume-schedule' | 'run-schedule' | 'delete-schedule',
 ) {
-  await enabledAssignment(project.id, workflowId);
+  // A schedule of a workflow switched off can still be paused and deleted.
+  if (action === 'resume-schedule' || action === 'run-schedule')
+    await enabledAssignment(project.id, workflowId);
   return controlSchedule(project, workflowId, scheduleId, action);
 }
 
-// Changes the cadence of a schedule and, with `payload`, the input of its fires, which
-// then act for `actorUserId`.
+// Changes the cadence of a schedule and, with `change`, the input of its fires, which
+// then act for `actorUserId`. A schedule updated without a time zone keeps its own.
 export async function updateSchedule(
   project: ProjectContext,
   workflowId: string,
   scheduleId: string,
   input: {
     cron: string;
-    timezone: string;
+    timezone?: string;
     change?: { actorUserId: string; capabilityRefs: string[]; payload: Record<string, unknown> };
   },
 ) {
@@ -502,7 +541,7 @@ export async function updateSchedule(
     scheduleId,
     projectRef: projectWorkflowScope(project).projectRef,
     cron: input.cron,
-    timezone: input.timezone,
+    ...(input.timezone ? { timezone: input.timezone } : {}),
     ...(input.change
       ? {
           payload: scheduleEnvelope(
@@ -525,10 +564,7 @@ export async function updateWorkflowSchedule(
   input: { cron: string; timezone?: string },
 ) {
   await enabledAssignment(project.id, workflowId);
-  return updateSchedule(project, workflowId, scheduleId, {
-    cron: input.cron,
-    timezone: input.timezone ?? DEFAULT_TIMEZONE,
-  });
+  return updateSchedule(project, workflowId, scheduleId, input);
 }
 
 export async function listWorkflowScheduleTriggers(

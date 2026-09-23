@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import Shell from '@/components/layout/Shell';
 import ListPager from '@/components/common/ListPager';
 import { EmptyState } from '@/components/common/page/EmptyState';
@@ -25,7 +26,13 @@ export default function HomeRoutinesPage() {
             <h1 className="text-xl font-semibold">{tNav('schedules')}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t('homeHint')}</p>
           </div>
-          {query.isPending ? (
+          {query.isError ? (
+            <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
+              <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
+                {t('tryAgain')}
+              </Button>
+            </EmptyState>
+          ) : query.isPending ? (
             <ListSkeleton rows={4} rowClassName="h-12" />
           ) : total === 0 ? (
             <EmptyState title={t('empty')} description={t('homeEmptyHint')} />

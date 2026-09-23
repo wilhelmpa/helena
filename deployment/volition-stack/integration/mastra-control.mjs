@@ -322,7 +322,7 @@ export function createMastraControlService(config, options = {}) {
             method: 'PATCH',
             body: JSON.stringify({
               cron: cron(input.cron),
-              timezone: timezone(input.timezone),
+              ...(input.timezone === undefined ? {} : { timezone: timezone(input.timezone) }),
               ...(input.payload === undefined ? {} : { inputData: object(input.payload, 'payload') }),
             }),
           });

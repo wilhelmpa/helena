@@ -267,7 +267,7 @@ test('schedule creation stores the scope and key without policies Mastra does no
   assert.equal(created.timezone, 'Europe/Berlin');
 });
 
-test('a schedule update replaces the stored input when a payload is given', async () => {
+test('a schedule update replaces the stored input when a payload is given and keeps an unnamed time zone', async () => {
   const patches = [];
   const control = service(async (url, init = {}) => {
     if (init.method === 'PATCH') {
@@ -287,9 +287,11 @@ test('a schedule update replaces the stored input when a payload is given', asyn
   };
   await control.execute(request);
   await control.execute({ ...request, payload: { eventId: 'changed' } });
+  await control.execute({ ...request, timezone: undefined });
   assert.deepEqual(patches, [
     { cron: '0 9 * * 1', timezone: 'Europe/Berlin' },
     { cron: '0 9 * * 1', timezone: 'Europe/Berlin', inputData: { eventId: 'changed' } },
+    { cron: '0 9 * * 1' },
   ]);
 });
 

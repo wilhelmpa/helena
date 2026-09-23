@@ -407,8 +407,9 @@ export async function synchronizeHermesStage(body: unknown) {
 
 type RoutineCheckpoint = {
   fingerprint: string;
-  // 'commented' when a reopen has written its comment but not yet moved the task.
-  phase: 'commented' | 'done';
+  // 'pending' while the task is written but not yet delegated: a request with the
+  // same key finishes the delegation.
+  phase: 'pending' | 'done';
   outcome: 'created' | 'reopened' | 'skipped';
   taskRef: string;
 };
@@ -513,21 +514,41 @@ export async function dispatchRoutine(body: unknown) {
   if (stored?.phase === 'done' || (stored && stored.fingerprint !== requestFingerprint))
     return answer(stored);
 
+  const actor = actorId && (await getMembership(projectRow.id, actorId)) ? actorId : null;
+  const finish = async (checkpoint: RoutineCheckpoint) => {
+    await db
+      .update(projectSetting)
+      .set({ value: { ...checkpoint, phase: 'done' }, updatedAt: new Date() })
+      .where(and(eq(projectSetting.projectId, projectRow.id), eq(projectSetting.key, key)));
+    await bumpControlPlaneRevision(projectRow.id);
+    return answer(checkpoint);
+  };
+  if (stored?.outcome === 'created') {
+    const created = await resolveTask(projectRef, stored.taskRef);
+    if (created) await enqueueDelegateRun(created.task, actor);
+    return finish(stored);
+  }
+
   const current = taskRef ? await resolveTask(projectRef, taskRef) : null;
   if (mode === 'reopen' && !current)
     return { status: 404, body: { error: 'Project task not found' } };
   const columns = await listColumns(projectRow.id);
-  const actor = actorId && (await getMembership(projectRow.id, actorId)) ? actorId : null;
-  const done = (outcome: RoutineCheckpoint['outcome'], routineTask: string): RoutineCheckpoint => ({
+  const checkpoint = (
+    outcome: RoutineCheckpoint['outcome'],
+    routineTask: string,
+    phase: RoutineCheckpoint['phase'],
+  ): RoutineCheckpoint => ({
     fingerprint: requestFingerprint,
-    phase: 'done',
+    phase,
     outcome,
     taskRef: routineTask,
   });
 
   if (!stored && current && isOpenTask(current.task, columns)) {
     const skipped = await db.transaction((tx) =>
-      claimRoutineCheckpoint(tx, projectRow.id, key, async () => done('skipped', taskRef!)),
+      claimRoutineCheckpoint(tx, projectRow.id, key, async () =>
+        checkpoint('skipped', taskRef!, 'done'),
+      ),
     );
     return answer(skipped);
   }
@@ -537,7 +558,8 @@ export async function dispatchRoutine(body: unknown) {
   if (mode === 'new') {
     // The checkpoint is stored in the transaction that inserts the task, so a task
     // exists exactly when its checkpoint does. A request that finds one rolls its own
-    // task back.
+    // task back and leaves the delegation to the request that wrote it.
+    let replayed = false;
     try {
       await createIssue(
         projectRow,
@@ -553,16 +575,21 @@ export async function dispatchRoutine(body: unknown) {
             await tx.insert(projectSetting).values({
               projectId: projectRow.id,
               key,
-              value: done('created', `task:${projectRow.key}-${row!.sequenceNumber}`),
+              value: checkpoint(
+                'created',
+                `task:${projectRow.key}-${row!.sequenceNumber}`,
+                'pending',
+              ),
             });
           },
         },
       );
     } catch (error) {
       if (!(error instanceof RoutineReplayed)) throw error;
+      replayed = true;
     }
-    await bumpControlPlaneRevision(projectRow.id);
-    return answer((await readRoutineCheckpoint(db, projectRow.id, key))!);
+    const created = (await readRoutineCheckpoint(db, projectRow.id, key))!;
+    return replayed ? answer(created) : finish(created);
   }
 
   const task = current!.task;
@@ -574,24 +601,19 @@ export async function dispatchRoutine(body: unknown) {
         actorName: 'Schedule',
         body: `Reopened by the schedule "${title}".\n\n${instructions}`,
       });
-      return { ...done('reopened', taskRef!), phase: 'commented' };
+      return checkpoint('reopened', taskRef!, 'pending');
     }),
   );
-  if (reopened.fingerprint === requestFingerprint && reopened.phase !== 'done') {
-    if (task.archivedAt) await restoreIssue(task.id, actor);
-    const after = await updateIssue(
-      task.id,
-      { columnId: unstarted.id, delegateUserId: agent.userId },
-      actor,
-    );
-    if (after && task.delegateUserId === agent.userId) await enqueueDelegateRun(after, actor);
-    await db
-      .update(projectSetting)
-      .set({ value: { ...reopened, phase: 'done' }, updatedAt: new Date() })
-      .where(and(eq(projectSetting.projectId, projectRow.id), eq(projectSetting.key, key)));
-  }
-  await bumpControlPlaneRevision(projectRow.id);
-  return answer(reopened);
+  if (reopened.fingerprint !== requestFingerprint || reopened.phase === 'done')
+    return answer(reopened);
+  if (task.archivedAt) await restoreIssue(task.id, actor);
+  const after = await updateIssue(
+    task.id,
+    { columnId: unstarted.id, delegateUserId: agent.userId },
+    actor,
+  );
+  if (after && task.delegateUserId === agent.userId) await enqueueDelegateRun(after, actor);
+  return finish(reopened);
 }
 
 async function respond(
