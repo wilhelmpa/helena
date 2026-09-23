@@ -53,7 +53,9 @@
     "openExternal": "Buka {tool} di tab baru",
     "unavailable": "{tool} belum dikonfigurasi",
     "unavailableDescription": "Administrator dapat menghubungkan ruang kerja ini untuk instans.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "Buka di samping",
+    "closeSplit": "Tutup tampilan terbagi"
   },
   "groups": {
     "project": "Proyek",

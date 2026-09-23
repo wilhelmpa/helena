@@ -14,6 +14,9 @@ export const WORKSPACE_TOOL_IDS = [
 
 export type WorkspaceToolId = (typeof WORKSPACE_TOOL_IDS)[number];
 
+// The tools the header offers, in its order.
+export const HEADER_WORKSPACE_TOOLS = ['chat', 'terminal', 'code', 'browser', 'mail'] as const;
+
 export interface WorkspaceTool {
   id: WorkspaceToolId;
   url: string;

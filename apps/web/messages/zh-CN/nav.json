@@ -53,7 +53,9 @@
     "openExternal": "在新标签页中打开{tool}",
     "unavailable": "尚未配置{tool}",
     "unavailableDescription": "管理员可以为此实例连接该工作区。",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "在旁边打开",
+    "closeSplit": "关闭分屏"
   },
   "groups": {
     "project": "项目",

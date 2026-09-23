@@ -53,7 +53,9 @@
     "openExternal": "Abrir {tool} en una pestaña nueva",
     "unavailable": "{tool} no está configurado",
     "unavailableDescription": "Un administrador puede conectar este espacio de trabajo a la instancia.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "Abrir al lado",
+    "closeSplit": "Cerrar vista dividida"
   },
   "groups": {
     "project": "Proyecto",

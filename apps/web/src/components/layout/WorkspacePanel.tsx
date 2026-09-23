@@ -10,16 +10,22 @@ import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
-import { workspaceTools } from '@/utils/workspaceTools';
+import { HEADER_WORKSPACE_TOOLS, workspaceTools } from '@/utils/workspaceTools';
 import { cn } from '@/lib/utils';
 import ResizeGrip from '@/components/common/ResizeGrip';
 import WorkspaceFrame from './WorkspaceFrame';
 import WorkspacePanelHeader from './WorkspacePanelHeader';
+import WorkspaceSplitHeader from './WorkspaceSplitHeader';
+import WorkspaceSplitMenu from './WorkspaceSplitMenu';
 import WorkspaceUnavailable from './WorkspaceUnavailable';
 
 const DEFAULT_WIDTH = 620;
 const MIN_WIDTH = 360;
 const MAX_WIDTH = 1200;
+// Two tools side by side need about twice the room of one.
+const SPLIT_DEFAULT_WIDTH = 1180;
+const SPLIT_MIN_WIDTH = 720;
+const SPLIT_MAX_WIDTH = 2400;
 const BROWSER_LOSSLESS_STORAGE_KEY = 'workspace:browser:lossless';
 
 function browserStreamUrl(url: string, lossless: boolean) {
@@ -29,11 +35,17 @@ function browserStreamUrl(url: string, lossless: boolean) {
   return parsed.toString();
 }
 
+// The side of a split panel a tool is shown in. The frames and tool views stay mounted
+// in one list, so moving a tool between halves never reloads it.
+type Side = 'primary' | 'secondary';
+
 export default function WorkspacePanel({
   open,
   activeTool,
   contextProjectKey,
   toolSession,
+  splitTool,
+  onSplitToolChange,
   mode,
   fullscreen,
   onToggleMode,
@@ -44,6 +56,8 @@ export default function WorkspacePanel({
   activeTool: WorkspaceToolId;
   contextProjectKey: string | null;
   toolSession: number;
+  splitTool: WorkspaceToolId | null;
+  onSplitToolChange: (tool: WorkspaceToolId | null) => void;
   mode: WorkspacePanelMode;
   fullscreen: boolean;
   onToggleMode: () => void;
@@ -54,11 +68,12 @@ export default function WorkspacePanel({
   const tChat = useTranslations('aiChat');
   const direction = Direction.useDirection();
   const isMobile = useIsMobile();
+  const secondaryTool = !isMobile && splitTool && splitTool !== activeTool ? splitTool : null;
   const { width, setWidth } = usePersistedWidth(
-    'workspace:panel:width',
-    DEFAULT_WIDTH,
-    MIN_WIDTH,
-    MAX_WIDTH,
+    secondaryTool ? 'workspace:panel:width:split' : 'workspace:panel:width',
+    secondaryTool ? SPLIT_DEFAULT_WIDTH : DEFAULT_WIDTH,
+    secondaryTool ? SPLIT_MIN_WIDTH : MIN_WIDTH,
+    secondaryTool ? SPLIT_MAX_WIDTH : MAX_WIDTH,
   );
   const workspaceConfig = runtimeEnv().workspace;
   const provisioning = useProjectProvisioningQuery(contextProjectKey);
@@ -73,19 +88,20 @@ export default function WorkspacePanel({
   );
   const tool = tools[activeTool];
   const contents = useWorkspaceContents();
-  const RegisteredContent = contents[activeTool];
-  const labels: Record<WorkspaceToolId, string> = {
-    chat: t('chat'),
-    terminal: t('terminal'),
-    code: t('code'),
-    browser: t('browser'),
-    files: t('files'),
-    inbox: t('inbox'),
-    mail: t('mail'),
-    connections: t('connections'),
-  };
+  const labels = useMemo<Record<WorkspaceToolId, string>>(
+    () => ({
+      chat: t('chat'),
+      terminal: t('terminal'),
+      code: t('code'),
+      browser: t('browser'),
+      files: t('files'),
+      inbox: t('inbox'),
+      mail: t('mail'),
+      connections: t('connections'),
+    }),
+    [t],
+  );
   const [advanced, setAdvanced] = useState(false);
-  const Content = activeTool === 'chat' && advanced ? undefined : RegisteredContent;
   const [browserLossless, setBrowserLossless] = useState(false);
   const [browserPreferenceReady, setBrowserPreferenceReady] = useState(false);
   const [frames, setFrames] = useState<
@@ -93,16 +109,42 @@ export default function WorkspacePanel({
   >([]);
   const [frameReloads, setFrameReloads] = useState<Record<string, number>>({});
   const [visitedContents, setVisitedContents] = useState<WorkspaceToolId[]>([]);
-  const activeUrl = useMemo(() => {
-    if (activeTool === 'chat' && advanced) return tool.advancedUrl;
-    if (activeTool !== 'browser' || !tool.url) return tool.url;
-    if (!browserPreferenceReady) return null;
-    return browserStreamUrl(tool.url, browserLossless);
-  }, [activeTool, advanced, browserLossless, browserPreferenceReady, tool]);
-  const frameKey = `${activeTool}:${
-    activeTool === 'browser' ? `${tool.url}:${toolSession}` : activeUrl
-  }`;
-  const activeLabel = labels[activeTool];
+
+  // What a visible tool shows: its own view where one is registered, else a frame. The
+  // advanced chat view is a frame, and only the active tool offers it.
+  const visible = useMemo(() => {
+    const describe = (id: WorkspaceToolId, side: Side) => {
+      const withAdvanced = side === 'primary' && id === 'chat' && advanced;
+      const content = withAdvanced ? undefined : contents[id];
+      const entry = tools[id];
+      let url: string | null = withAdvanced ? entry.advancedUrl : entry.url;
+      if (id === 'browser' && url) {
+        url = browserPreferenceReady ? browserStreamUrl(url, browserLossless) : null;
+      }
+      const key = `${id}:${id === 'browser' ? `${entry.url}:${toolSession}` : url}`;
+      return { id, side, content, url: content ? null : url, key, label: labels[id] };
+    };
+    return [
+      describe(activeTool, 'primary'),
+      ...(secondaryTool ? [describe(secondaryTool, 'secondary')] : []),
+    ];
+  }, [
+    activeTool,
+    advanced,
+    browserLossless,
+    browserPreferenceReady,
+    contents,
+    labels,
+    secondaryTool,
+    toolSession,
+    tools,
+  ]);
+  const primary = visible[0]!;
+  const sideOfFrame = new Map(visible.map((entry) => [entry.key, entry.side]));
+  const sideOfContent = new Map(
+    visible.filter((entry) => entry.content).map((entry) => [entry.id, entry.side]),
+  );
+
   useEffect(() => setAdvanced(false), [activeTool, contextProjectKey]);
   useEffect(() => {
     try {
@@ -115,31 +157,45 @@ export default function WorkspacePanel({
   }, []);
   useEffect(() => {
     if (!open) return;
-    if (Content) {
-      setVisitedContents((current) =>
-        current.includes(activeTool) ? current : [...current, activeTool],
-      );
-      return;
-    }
-    if (!activeUrl) return;
-    setFrames((current) => {
-      const existing = current.find((frame) => frame.key === frameKey);
-      if (existing?.url === activeUrl && existing.title === activeLabel) return current;
-      const nextFrame = {
-        key: frameKey,
-        url: activeUrl,
-        title: activeLabel,
-        tool: activeTool,
-      };
-      const remaining = current.filter(
-        (frame) => frame.key !== frameKey && (activeTool !== 'browser' || frame.tool !== 'browser'),
-      );
-      return [...remaining, nextFrame].slice(-4);
+    const shown = visible.filter((entry) => entry.content).map((entry) => entry.id);
+    setVisitedContents((current) => {
+      const added = shown.filter((id) => !current.includes(id));
+      return added.length > 0 ? [...current, ...added] : current;
     });
-  }, [activeTool, activeLabel, open, activeUrl, frameKey, Content]);
+    const framed = visible.filter(
+      (entry): entry is typeof entry & { url: string } => !entry.content && !!entry.url,
+    );
+    if (framed.length === 0) return;
+    setFrames((current) => {
+      let next = current;
+      for (const entry of framed) {
+        const existing = next.find((frame) => frame.key === entry.key);
+        if (existing?.url === entry.url && existing.title === entry.label) continue;
+        // One browser session at a time: a new browser frame replaces the old one.
+        next = [
+          ...next.filter(
+            (frame) =>
+              frame.key !== entry.key && (entry.id !== 'browser' || frame.tool !== 'browser'),
+          ),
+          { key: entry.key, url: entry.url, title: entry.label, tool: entry.id },
+        ];
+      }
+      if (next === current) return current;
+      // Keep the visible frames when trimming the ones kept warm in the background.
+      const keep = new Set(framed.map((entry) => entry.key));
+      const background = next.filter((frame) => !keep.has(frame.key));
+      return [
+        ...background.slice(-Math.max(0, 4 - keep.size)),
+        ...next.filter((frame) => keep.has(frame.key)),
+      ];
+    });
+  }, [open, visible]);
 
   const overlay = isMobile || mode === 'overlay';
   const title = advanced ? t('advanced') : labels[activeTool];
+  const split = secondaryTool !== null;
+  const placement = (side: Side | undefined) =>
+    side === 'secondary' ? 'col-start-2 row-start-2' : split ? 'col-start-1 row-span-2' : '';
 
   return (
     <aside
@@ -170,12 +226,25 @@ export default function WorkspacePanel({
         title={title}
         advanced={advanced}
         canExpandChat={activeTool === 'chat' && !!tool.advancedUrl}
-        canToggleBrowserLossless={activeTool === 'browser' && !!tool.url && browserPreferenceReady}
+        canToggleBrowserLossless={
+          visible.some((entry) => entry.id === 'browser' && !!tools.browser.url) &&
+          browserPreferenceReady
+        }
         browserLossless={browserLossless}
-        externalUrl={Content ? null : activeUrl}
+        externalUrl={primary.content ? null : primary.url}
         isMobile={isMobile}
         fullscreen={fullscreen}
         mode={mode}
+        splitControl={
+          isMobile ? null : (
+            <WorkspaceSplitMenu
+              tools={HEADER_WORKSPACE_TOOLS.filter((id) => id !== activeTool)}
+              splitTool={secondaryTool}
+              labels={labels}
+              onSplitToolChange={onSplitToolChange}
+            />
+          )
+        }
         onToggleAdvanced={() => setAdvanced((current) => !current)}
         onToggleBrowserLossless={() =>
           setBrowserLossless((current) => {
@@ -193,39 +262,68 @@ export default function WorkspacePanel({
         onReload={() =>
           setFrameReloads((current) => ({
             ...current,
-            [frameKey]: (current[frameKey] ?? 0) + 1,
+            [primary.key]: (current[primary.key] ?? 0) + 1,
           }))
         }
         onClose={onClose}
       />
 
-      {frames.map((frame) => (
-        <WorkspaceFrame
-          key={frame.key}
-          url={frame.url}
-          title={frame.title}
-          tool={frame.tool}
-          active={open && !Content && frame.key === frameKey}
-          reloadToken={frameReloads[frame.key] ?? 0}
-        />
-      ))}
-      {visitedContents.map((id) => {
-        const ToolContent = contents[id];
-        return ToolContent ? (
-          <div
-            key={`${id}:${contextProjectKey ?? 'global'}`}
-            className={cn(
-              'min-h-0 flex-1 overflow-hidden',
-              (!open || activeTool !== id || (id === 'chat' && advanced)) && 'hidden',
-            )}
-          >
-            <ToolContent projectKey={contextProjectKey} />
+      <div
+        className={cn(
+          'min-h-0 flex-1',
+          split ? 'grid grid-cols-2 grid-rows-[auto_minmax(0,1fr)] divide-x' : 'flex flex-col',
+        )}
+      >
+        {secondaryTool && (
+          <div className="col-start-2 row-start-1">
+            <WorkspaceSplitHeader
+              title={labels[secondaryTool]}
+              onClose={() => onSplitToolChange(null)}
+            />
           </div>
-        ) : null;
-      })}
-      {open && !Content && !activeUrl && (activeTool !== 'browser' || browserPreferenceReady) && (
-        <WorkspaceUnavailable tool={labels[activeTool]} />
-      )}
+        )}
+        {frames.map((frame) => {
+          const side = sideOfFrame.get(frame.key);
+          return (
+            <WorkspaceFrame
+              key={frame.key}
+              url={frame.url}
+              title={frame.title}
+              tool={frame.tool}
+              active={open && side !== undefined}
+              className={cn(split && 'h-full w-full', placement(side))}
+              reloadToken={frameReloads[frame.key] ?? 0}
+            />
+          );
+        })}
+        {visitedContents.map((id) => {
+          const ToolContent = contents[id];
+          const side = sideOfContent.get(id);
+          return ToolContent ? (
+            <div
+              key={`${id}:${contextProjectKey ?? 'global'}`}
+              className={cn(
+                'min-h-0 flex-1 overflow-hidden',
+                placement(side),
+                (!open || side === undefined) && 'hidden',
+              )}
+            >
+              <ToolContent projectKey={contextProjectKey} />
+            </div>
+          ) : null;
+        })}
+        {open &&
+          visible
+            .filter(
+              (entry) =>
+                !entry.content && !entry.url && (entry.id !== 'browser' || browserPreferenceReady),
+            )
+            .map((entry) => (
+              <div key={entry.id} className={cn('flex min-h-0 flex-1', placement(entry.side))}>
+                <WorkspaceUnavailable tool={labels[entry.id]} />
+              </div>
+            ))}
+      </div>
     </aside>
   );
 }

@@ -53,7 +53,9 @@
     "openExternal": "Ouvrir {tool} dans un nouvel onglet",
     "unavailable": "{tool} n’est pas configuré",
     "unavailableDescription": "Un administrateur peut connecter cet espace de travail à l’instance.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "Ouvrir à côté",
+    "closeSplit": "Fermer la vue partagée"
   },
   "groups": {
     "project": "Projet",

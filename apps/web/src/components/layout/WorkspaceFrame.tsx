@@ -15,12 +15,14 @@ export default function WorkspaceFrame({
   active,
   tool,
   reloadToken = 0,
+  className,
 }: {
   url: string;
   title: string;
   active: boolean;
   tool: WorkspaceToolId;
   reloadToken?: number;
+  className?: string;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const reloadPending = useRef(false);
@@ -61,7 +63,7 @@ export default function WorkspaceFrame({
       src={url}
       title={title}
       loading="lazy"
-      className={cn('min-h-0 flex-1 border-0 bg-background', !active && 'hidden')}
+      className={cn('min-h-0 flex-1 border-0 bg-background', className, !active && 'hidden')}
       allow="clipboard-read; clipboard-write"
       allowFullScreen
       referrerPolicy="strict-origin-when-cross-origin"

@@ -53,7 +53,9 @@
     "openExternal": "Abrir {tool} em uma nova aba",
     "unavailable": "{tool} não está configurado",
     "unavailableDescription": "Um administrador pode conectar este espaço de trabalho à instância.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "Abrir ao lado",
+    "closeSplit": "Fechar visualização dividida"
   },
   "groups": {
     "project": "Projeto",

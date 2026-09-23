@@ -53,7 +53,9 @@
     "openExternal": "فتح {tool} في علامة تبويب جديدة",
     "unavailable": "لم تتم تهيئة {tool}",
     "unavailableDescription": "يمكن للمسؤول ربط مساحة العمل هذه بالنسخة.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "فتح بجانبه",
+    "closeSplit": "إغلاق العرض المقسوم"
   },
   "groups": {
     "project": "المشروع",

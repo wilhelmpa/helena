@@ -53,7 +53,9 @@
     "openExternal": "Открыть {tool} в новой вкладке",
     "unavailable": "{tool} не настроен",
     "unavailableDescription": "Администратор может подключить это рабочее пространство к инстансу.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "Открыть рядом",
+    "closeSplit": "Закрыть разделённый вид"
   },
   "groups": {
     "project": "Проект",

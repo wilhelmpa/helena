@@ -3,10 +3,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { Code2, Folder, Globe2, Inbox, Mail, MessageSquare, PlugZap, Terminal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { WorkspaceToolId } from '@/utils/workspaceTools';
+import { HEADER_WORKSPACE_TOOLS, type WorkspaceToolId } from '@/utils/workspaceTools';
 import { cn } from '@/lib/utils';
-
-const HEADER_WORKSPACE_TOOLS = ['chat', 'terminal', 'code', 'browser', 'mail'] as const;
 
 const ICONS: Record<WorkspaceToolId, LucideIcon> = {
   chat: MessageSquare,

@@ -11,6 +11,7 @@ import {
   Settings2,
   X,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ export default function WorkspacePanelHeader({
   isMobile,
   fullscreen,
   mode,
+  splitControl,
   onToggleAdvanced,
   onToggleBrowserLossless,
   onToggleMode,
@@ -42,6 +44,7 @@ export default function WorkspacePanelHeader({
   isMobile: boolean;
   fullscreen: boolean;
   mode: WorkspacePanelMode;
+  splitControl: ReactNode;
   onToggleAdvanced: () => void;
   onToggleBrowserLossless: () => void;
   onToggleMode: () => void;
@@ -105,6 +108,7 @@ export default function WorkspacePanelHeader({
           </Button>
         </>
       )}
+      {splitControl}
       {!isMobile && !fullscreen && (
         <Button
           variant="ghost"

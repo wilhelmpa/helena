@@ -56,7 +56,9 @@
     "openExternal": "Open {tool} in a new tab",
     "unavailable": "{tool} is not configured",
     "unavailableDescription": "An administrator can connect this workspace for the instance.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "Open beside",
+    "closeSplit": "Close split view"
   },
   "groups": {
     "project": "Project",

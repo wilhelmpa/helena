@@ -53,7 +53,9 @@
     "openExternal": "Відкрити {tool} у новій вкладці",
     "unavailable": "{tool} не налаштовано",
     "unavailableDescription": "Адміністратор може підключити цей робочий простір до інстансу.",
-    "mail": "Mail"
+    "mail": "Mail",
+    "openBeside": "Відкрити поруч",
+    "closeSplit": "Закрити розділений вигляд"
   },
   "groups": {
     "project": "Проєкт",

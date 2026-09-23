@@ -229,6 +229,8 @@ export default function Shell({
               activeTool={workspacePanel.activeTool}
               contextProjectKey={projectKey}
               toolSession={workspacePanel.toolSession}
+              splitTool={workspacePanel.splitTool}
+              onSplitToolChange={workspacePanel.setSplitTool}
               mode={workspacePanel.mode}
               fullscreen={workspacePanel.fullscreen}
               onToggleMode={workspacePanel.toggleMode}
