@@ -34,7 +34,11 @@ export const agentRuntimePolicyRoutes = new Elysia({
     {
       runnerAgent: true,
       response: { 200: McpSecretsResponse, ...errors(401, 403) },
-      detail: { summary: "Read the secrets of the calling agent's MCP servers" },
+      detail: {
+        summary: "Read the secrets of the calling agent's MCP servers",
+        description:
+          "The values of the secrets the calling agent's MCP servers reference, by secret id.",
+      },
     },
   )
   .post('/agent-runtime/status', ({ agent, body }) => reportRuntimeState(agent.id, body), {

@@ -60,6 +60,7 @@ export default function TeamAiAgentFields({
   skillsBadge,
   toolsContent,
   toolsBadge,
+  mcpServersContent,
   revealedKey,
   onRevealedKey,
 }: {
@@ -92,6 +93,8 @@ export default function TeamAiAgentFields({
   toolsContent?: ReactNode | null;
   // "enabled / available" for the Tools header and nav entry.
   toolsBadge?: string;
+  // The MCP servers of the team's library, in the Abilities section.
+  mcpServersContent?: ReactNode;
   // The plaintext key issued in this sheet (external agents only), shown once in the
   // API key section, and the way to drop it or replace it after a regenerate.
   revealedKey: string | null;
@@ -237,6 +240,7 @@ export default function TeamAiAgentFields({
       agent={agent}
       value={value}
       onChange={onChange}
+      mcpServersContent={mcpServersContent}
     />
   );
 

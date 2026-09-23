@@ -115,7 +115,10 @@ export const agentMcpServerRoutes = new Elysia({
       params: agentParams,
       teamPermission: ['agent_tools', 'read'],
       response: { 200: McpServerListResponse, ...accessErrors },
-      detail: { summary: "List an agent's MCP servers" },
+      detail: {
+        summary: "List an agent's MCP servers",
+        description: 'List the MCP servers of the library enabled on an agent.',
+      },
     },
   )
 

@@ -40,7 +40,7 @@
     },
     "agentTools": {
       "title": "Outils",
-      "description": "Les outils que les agents peuvent appeler, chacun relié aux identifiants d'une intégration."
+      "description": "Les serveurs MCP que lancent les agents Hermes de l'équipe, et les outils liés à un identifiant d'intégration."
     },
     "agents": {
       "title": "Agents IA",
@@ -242,12 +242,18 @@
       "tool": {
         "title": "Outils",
         "hint": "Les intégrations qu'un agent peut appeler comme outils"
+      },
+      "secret": {
+        "title": "Secrets",
+        "hint": "Valeurs nommées que lisent les serveurs MCP des agents de l'équipe"
       }
     },
     "columns": {
       "integration": "Intégration",
       "credentials": "Identifiants"
-    }
+    },
+    "secretName": "Nom",
+    "secretNameHint": "Les serveurs MCP choisissent le secret par ce nom. La valeur est stockée chiffrée et n'est plus jamais affichée."
   },
   "skills": {
     "newSkill": "Nouvelle compétence",
@@ -294,6 +300,8 @@
     "noAccess": "Vous n'avez pas accès aux compétences de cette équipe."
   },
   "tools": {
+    "title": "Outils d'intégration",
+    "hint": "Outils que les agents internes appellent avec un identifiant d'intégration de l'équipe.",
     "add": "Ajouter un outil",
     "delete": "Supprimer l'outil",
     "back": "Retour aux outils",
@@ -317,6 +325,48 @@
     "continue": "Continuer",
     "alreadyAdded": "{count, plural, one {# outil est déjà associé à cet identifiant et est ignoré.} other {# outils sont déjà associés à cet identifiant et sont ignorés.}}",
     "noAccess": "Vous n'avez pas accès aux outils de cette équipe."
+  },
+  "mcpServers": {
+    "title": "Serveurs MCP",
+    "hint": "Les serveurs que lancent les agents Hermes de l'équipe. Activez un serveur sur la page d'un agent.",
+    "add": "Ajouter un serveur MCP",
+    "edit": "Modifier le serveur MCP",
+    "delete": "Supprimer le serveur MCP",
+    "deleteMessage": "Supprimer {name} ? Les agents sur lesquels il est activé perdent ses outils.",
+    "empty": "Aucun serveur MCP",
+    "emptyHint": "Ajoutez un serveur une fois, puis activez-le sur les agents qui en ont besoin.",
+    "saved": "{name} enregistré",
+    "custom": "Autre serveur",
+    "customHint": "Une commande que lance Hermes, ou l'URL d'un serveur distant",
+    "presets": {
+      "shopify-dev": "Recherche dans la documentation et les schémas d'API de Shopify et valide le code GraphQL, Liquid et d'extension. Aucun identifiant nécessaire.",
+      "jev-browser": "Pilote un navigateur sans interface avec le modèle Jev de TypeSafe. Nécessite une clé d'API TypeSafe comme secret TYPESAFE_API_KEY."
+    },
+    "name": "Nom",
+    "nameHint": "Lettres minuscules, chiffres, - et _. Hermes nomme l'ensemble d'outils du serveur ainsi.",
+    "description": "Description",
+    "transport": "Transport",
+    "transports": {
+      "stdio": "Commande (stdio)",
+      "http": "HTTP",
+      "sse": "SSE"
+    },
+    "command": "Commande",
+    "args": "Arguments",
+    "argsHint": "Un argument par ligne.",
+    "url": "URL",
+    "env": "Variables d'environnement",
+    "headers": "En-têtes",
+    "valueName": "Nom",
+    "valueKind": "Type de valeur",
+    "literal": "Valeur",
+    "secret": "Secret",
+    "chooseSecret": "Choisir un secret",
+    "noSecrets": "L'équipe n'a pas encore de secret. Ajoutez-en un dans Intégrations.",
+    "secretHint": "La valeur d'un secret n'est transmise qu'au runner d'un agent sur lequel le serveur est activé, jamais à cette page.",
+    "missingSecret": "secret supprimé",
+    "addValue": "Ajouter",
+    "removeValue": "Retirer"
   },
   "agents": {
     "newAgent": "Nouvel agent IA",
@@ -514,8 +564,14 @@
       "toolsetsReadOnly": "Seuls les membres qui peuvent modifier les agents peuvent désactiver des ensembles d'outils.",
       "noToolsets": "Le runner n'a indiqué aucun ensemble d'outils.",
       "mcpServers": "Serveurs MCP",
-      "mcpServersHint": "Toujours disponibles pour l'agent. Ils sont définis dans le profil Hermes.",
+      "mcpServersHint": "Issus de la configuration Hermes. Désactivez-en un et enregistrez pour que l'agent ne l'utilise pas.",
+      "mcpServersReadOnly": "Issus de la configuration Hermes. Seuls les membres qui peuvent modifier les agents peuvent en désactiver un.",
       "noMcpServers": "Aucun",
+      "libraryMcpServers": "Serveurs MCP de l'équipe",
+      "libraryMcpServersHint": "Un serveur activé démarre avec les chats et les exécutions de l'agent une fois enregistré.",
+      "libraryMcpServersReadOnly": "Seuls les membres qui peuvent modifier les outils peuvent les changer.",
+      "noLibraryMcpServers": "L'équipe n'a pas encore de serveur MCP",
+      "noLibraryMcpServersHint": "Ajoutez-les sur la page Outils, puis activez-les ici.",
       "skills": "Compétences",
       "skillsHint": "Dans le profil Hermes de l'agent : {count}. Lecture seule.",
       "searchSkills": "Filtrer les compétences",

@@ -40,7 +40,7 @@
     },
     "agentTools": {
       "title": "工具",
-      "description": "代理可以调用的工具，每个工具连接到一个集成凭据。"
+      "description": "团队的 Hermes 代理启动的 MCP 服务器，以及绑定集成凭据的工具。"
     },
     "agents": {
       "title": "AI 代理",
@@ -242,12 +242,18 @@
       "tool": {
         "title": "工具",
         "hint": "代理可以作为工具调用的集成"
+      },
+      "secret": {
+        "title": "密钥",
+        "hint": "团队代理的 MCP 服务器读取的命名值"
       }
     },
     "columns": {
       "integration": "集成",
       "credentials": "凭据"
-    }
+    },
+    "secretName": "名称",
+    "secretNameHint": "MCP 服务器按此名称选择密钥。值会加密存储，之后不再显示。"
   },
   "skills": {
     "newSkill": "新建技能",
@@ -294,6 +300,8 @@
     "noAccess": "你没有权限查看该团队的技能。"
   },
   "tools": {
+    "title": "集成工具",
+    "hint": "内部代理使用团队集成凭据调用的工具。",
     "add": "添加工具",
     "delete": "删除工具",
     "back": "返回工具",
@@ -317,6 +325,48 @@
     "continue": "继续",
     "alreadyAdded": "{count, plural, other {其中 # 个工具已在该凭据上配置，将被跳过。}}",
     "noAccess": "你没有权限查看该团队的工具。"
+  },
+  "mcpServers": {
+    "title": "MCP 服务器",
+    "hint": "团队的 Hermes 代理启动的服务器。在代理页面上启用服务器。",
+    "add": "添加 MCP 服务器",
+    "edit": "编辑 MCP 服务器",
+    "delete": "删除 MCP 服务器",
+    "deleteMessage": "删除 {name}？启用了它的代理将失去它的工具。",
+    "empty": "还没有 MCP 服务器",
+    "emptyHint": "服务器只需添加一次，然后为需要它的代理启用。",
+    "saved": "已保存 {name}",
+    "custom": "其他服务器",
+    "customHint": "由 Hermes 启动的命令，或远程服务器的 URL",
+    "presets": {
+      "shopify-dev": "搜索 Shopify 的文档和 API 架构，并校验 GraphQL、Liquid 和扩展代码。无需凭据。",
+      "jev-browser": "使用 TypeSafe 的 Jev 模型操作无头浏览器。需要将 TypeSafe API 密钥保存为密钥 TYPESAFE_API_KEY。"
+    },
+    "name": "名称",
+    "nameHint": "小写字母、数字、- 和 _。Hermes 用它命名服务器的工具集。",
+    "description": "描述",
+    "transport": "传输方式",
+    "transports": {
+      "stdio": "命令 (stdio)",
+      "http": "HTTP",
+      "sse": "SSE"
+    },
+    "command": "命令",
+    "args": "参数",
+    "argsHint": "每行一个参数。",
+    "url": "URL",
+    "env": "环境变量",
+    "headers": "请求头",
+    "valueName": "名称",
+    "valueKind": "值的类型",
+    "literal": "值",
+    "secret": "密钥",
+    "chooseSecret": "选择密钥",
+    "noSecrets": "团队还没有密钥。请在集成中添加。",
+    "secretHint": "密钥的值只会发送给启用了该服务器的代理的运行器，绝不会发送到此页面。",
+    "missingSecret": "已删除的密钥",
+    "addValue": "添加",
+    "removeValue": "移除"
   },
   "agents": {
     "newAgent": "新建 AI 代理",
@@ -514,8 +564,14 @@
       "toolsetsReadOnly": "只有可以编辑代理的成员才能关闭工具集。",
       "noToolsets": "运行器没有报告任何工具集。",
       "mcpServers": "MCP 服务器",
-      "mcpServersHint": "始终对代理可用，在 Hermes 配置文件中设置。",
+      "mcpServersHint": "来自 Hermes 配置。关闭某个服务器并保存后，代理将不再使用它。",
+      "mcpServersReadOnly": "来自 Hermes 配置。只有可以编辑代理的成员才能关闭服务器。",
       "noMcpServers": "无",
+      "libraryMcpServers": "团队的 MCP 服务器",
+      "libraryMcpServersHint": "保存后，已启用的服务器会随代理的聊天和运行一起启动。",
+      "libraryMcpServersReadOnly": "只有可以编辑工具的成员才能更改它们。",
+      "noLibraryMcpServers": "团队还没有 MCP 服务器",
+      "noLibraryMcpServersHint": "先在工具页面添加，然后在这里启用。",
       "skills": "技能",
       "skillsHint": "代理的 Hermes 配置文件中共 {count} 个，只读。",
       "searchSkills": "筛选技能",
