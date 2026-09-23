@@ -30,7 +30,15 @@ export default function ChatListPane(props: ChatListPaneProps) {
   if (mode === 'compact') {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="left" className="w-80 p-0 sm:max-w-sm">
+        {/* The built-in close button is absolutely positioned at the sheet's own top
+            corner, on top of this header's own row (which needs the same corner for
+            its own close button next to the tabs) rather than inside its flow — hide
+            it (it is the only direct <button> child of SheetContent) and close through
+            ChatListPaneBody's own SheetClose instead, so there is exactly one. */}
+        <SheetContent
+          side="left"
+          className="w-80 gap-0 overflow-hidden p-0 sm:max-w-sm [&>button]:hidden"
+        >
           <SheetHeader className="sr-only">
             <SheetTitle>{t('list.title')}</SheetTitle>
           </SheetHeader>

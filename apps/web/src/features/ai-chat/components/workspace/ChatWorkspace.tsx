@@ -94,7 +94,14 @@ export default function ChatWorkspace({
     setArtifactOpen(true);
   }, []);
 
-  const mode = chatLayoutMode(width || 1024);
+  // Before the first real measurement (width 0 — see useContainerWidth), assume
+  // compact rather than split. Split hides the list pane behind a CSS container query
+  // of its own (@3xl/chat) instead of the mode this hook computes, so guessing split
+  // while narrow is not just a wrong guess: nothing in the DOM answers to listOpen
+  // until the state updates it, and "Open chat list" stops doing anything until it
+  // does. Guessing compact while actually wide costs one open-close flicker of a
+  // Sheet at most, self-corrected the moment the real width arrives.
+  const mode = chatLayoutMode(width);
   const agentInScope = agents.find((agent) => agent.id === agentId) ?? null;
   // The agent a thread belongs to is not always one this workspace's own picker
   // offers (a template, one filtered out for some other reason, or simply one the
