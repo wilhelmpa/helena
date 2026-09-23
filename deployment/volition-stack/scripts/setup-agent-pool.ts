@@ -378,7 +378,12 @@ const NEW_TEMPLATES: TemplateSeed[] = [
   {
     key: 'assistant',
     username: 'assistant',
-    name: 'Persönlicher Assistent',
+    // Kept short on purpose: createAgent's issueKey names the agent's API key
+    // "agent:<name> <PROJECT_KEY>", and better-auth's apiKey plugin rejects a name
+    // over 32 characters (found live: "Persönlicher Assistent PRIV" is exactly at the
+    // limit, "... VERVE" already over it) with a generic 500. roleTitle keeps the
+    // full title — only the API-key-bound display name needs to stay short.
+    name: 'Assistent',
     roleTitle: 'Persönlicher Assistent',
     capabilities: ['assistant', 'personal'],
     skills: [],
