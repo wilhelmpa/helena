@@ -5,6 +5,7 @@ import {
   createProjectBrowserStatus,
 } from "./project-browser.mjs";
 import { provisionBoards } from "./boards.mjs";
+import { presentAreas, provisionAreas, validAreas } from "./areas.mjs";
 import { writeProjectContext } from "./project-context.mjs";
 import {
   ensurePlanCoordinator,
@@ -20,7 +21,7 @@ import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
 import { movePath } from "./move-path.mjs";
 
 const execFileAsync = promisify(execFile);
-const PROVISIONER_REVISION = 18;
+const PROVISIONER_REVISION = 19;
 const LEDGER_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const VAULT_PROJECT_FOLDERS = ["Docs", "Files", "Assets", "Inbox"];
 
@@ -173,7 +174,7 @@ export function createProvisioner(config, options = {}) {
     return { slug, hostPath, containerPath, managed: true };
   }
 
-  async function writeRegistry(envelope, workspace, coordinator, planCoordinator, agents, files, terminal, browser) {
+  async function writeRegistry(envelope, workspace, coordinator, planCoordinator, agents, areas, files, terminal, browser) {
     const registryPath = path.join(config.registryRoot, `${workspace.slug}.json`);
     const current = await readJson(registryPath, null);
     if (current && current.project?.id !== envelope.project.id) {
@@ -186,6 +187,7 @@ export function createProvisioner(config, options = {}) {
       requestedResources: envelope.requestedResources,
       boards: validBoards(envelope.boards),
       agents,
+      areas,
       resources: {
         ...(current?.resources ?? {}),
         ...(workspace.hostPath
@@ -277,6 +279,35 @@ export function createProvisioner(config, options = {}) {
     return quarantined;
   }
 
+  // The registry names the areas whose folders the last runs created, moved or found,
+  // which is how a changed folder is moved and the folders of a deleted area are found.
+  async function provisionProjectAreas(envelope, workspace, quarantineRoot) {
+    const registryPath = path.join(config.registryRoot, `${workspace.slug}.json`);
+    const registry = await readJson(registryPath, null);
+    const registered = registry?.project?.id === envelope.project.id;
+    const previous = registered ? validAreas(registry.areas) : [];
+    const areas = envelope.areas ?? [];
+    if (!areas.length && !previous.length) return { areas: [], quarantined: [], warnings: [] };
+    const vault = await ensureProjectVault(workspace.slug, envelope.project);
+    return provisionAreas({
+      project: envelope.project,
+      areas,
+      previous,
+      roots: [
+        ...(workspace.hostPath
+          ? [{ kind: "workspace", path: workspace.hostPath, ensure: ensureDirectory }]
+          : []),
+        { kind: "files", path: vault.id, ensure: ensureSharedVaultDirectory },
+      ],
+      quarantine: (source, allowedRoot, label) =>
+        quarantinePath({ source, allowedRoot, quarantineRoot, label }),
+      // A project's first run has no registry yet; writeRegistry creates it at the end.
+      record: async (recorded) => {
+        if (registered) await writeJsonAtomic(registryPath, { ...registry, areas: recorded });
+      },
+    });
+  }
+
   // Removes the runtime of each agent of the project that is not in `keep`: the
   // descriptor is deleted because it holds the agent's API key, and the profile moves
   // to the trash. The registry names the agents of the last successful run, so a retry
@@ -352,7 +383,8 @@ export function createProvisioner(config, options = {}) {
       requested.has("terminal") ||
       requested.has("browser") ||
       (envelope.boards?.length ?? 0) > 0 ||
-      (envelope.agents?.length ?? 0) > 0;
+      (envelope.agents?.length ?? 0) > 0 ||
+      (envelope.areas?.length ?? 0) > 0;
     const workspace = needsWorkspace
       ? await projectWorkspace(envelope.project)
       : {
@@ -408,8 +440,10 @@ export function createProvisioner(config, options = {}) {
           terminalUrl(config, workspace.slug),
         )
       : null;
+    const projectAreas = await provisionProjectAreas(envelope, workspace, quarantineRoot);
     const quarantined = [
       ...agentRuntimes.quarantined,
+      ...projectAreas.quarantined,
       ...(await quarantineRemovedBoards(envelope, workspace)),
     ];
     if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
@@ -420,6 +454,7 @@ export function createProvisioner(config, options = {}) {
       coordinator,
       planCoordinator,
       agentRuntimes.agents,
+      projectAreas.areas,
       files,
       terminal,
       browser,
@@ -439,7 +474,7 @@ export function createProvisioner(config, options = {}) {
     if (terminal) resources.push(terminal);
     if (browser) resources.push(resource("browser", browser.id, browser.url));
 
-    const warnings = [];
+    const warnings = [...projectAreas.warnings];
     if (!config.planControlToken && envelope.agents?.length) {
       warnings.push("Project agents get no Hermes runtime without the Plan control token.");
     }
@@ -609,6 +644,10 @@ export function createProvisioner(config, options = {}) {
           : [],
         boards: validBoards(registry.boards).map((board) => board.id),
         agents: registeredAgentIds(registry),
+        areas: await presentAreas(registry.areas, [
+          ...(registry.resources?.workspace?.hostPath ? [registry.resources.workspace.hostPath] : []),
+          path.join(config.vaultRoot, "Projects", registry.project.key),
+        ]),
         browserActive: registry.resources?.browser
           ? await projectBrowserActive(registry.slug)
           : null,

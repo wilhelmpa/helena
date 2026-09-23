@@ -58,7 +58,9 @@ export const notePath = (key: string, boardId: number) => `${notesPath(key)}/${b
 
 export const documentsPath = (key: string) => `${projectPath(key)}/docs`;
 
-export const filesPath = (key: string) => `${projectPath(key)}/files`;
+// `folder` opens the Files page in that folder of the project.
+export const filesPath = (key: string, folder?: string) =>
+  `${projectPath(key)}/files${folder ? `?path=${encodeURIComponent(folder)}` : ''}`;
 
 export const codePath = (key: string) => `${projectPath(key)}/code`;
 

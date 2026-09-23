@@ -20,6 +20,7 @@ import {
   useRetryDocumentMarkdownSync,
 } from '../services/documents.service';
 import { documentMarkdownPath, documentMarkdownSyncPresentation } from './documentMarkdownSync';
+import { copyText } from '@/utils/clipboard';
 
 export default function DocumentMarkdownSyncStatus({
   projectKey,
@@ -43,7 +44,7 @@ export default function DocumentMarkdownSyncStatus({
 
   const copyPath = async () => {
     try {
-      await navigator.clipboard.writeText(path);
+      await copyText(path);
       toast.success(t('pathCopied'));
     } catch {
       toast.error(t('copyFailed'));

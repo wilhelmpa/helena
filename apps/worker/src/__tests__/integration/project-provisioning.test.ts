@@ -62,6 +62,46 @@ describe('project provisioning', () => {
     expect(receivedBody.agents).toEqual([coder, writer]);
   });
 
+  it('sends every area of the project with its folder', async () => {
+    let receivedBody: { areas?: unknown } = {};
+    server = Bun.serve({
+      port: 0,
+      fetch: async (incoming) => {
+        receivedBody = (await incoming.json()) as { areas?: unknown };
+        return Response.json({ resources: [] });
+      },
+    });
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
+    const [owner] = await db.insert(team).values({ name: 'Area provisioning' }).returning();
+    const [created, other] = await db
+      .insert(project)
+      .values([
+        { teamId: owner.id, key: `ARE${owner.id}`, name: 'Areas' },
+        { teamId: owner.id, key: `OTA${owner.id}`, name: 'Other' },
+      ])
+      .returning();
+    const [backend, design] = await db
+      .insert(projectViewFolder)
+      .values([
+        { projectId: created.id, name: 'Backend', folder: 'backend' },
+        { projectId: created.id, name: 'Design & UX', folder: 'ux' },
+        { projectId: other.id, name: 'Elsewhere', folder: 'elsewhere' },
+      ])
+      .returning();
+    await db.insert(projectProvisioningJob).values([
+      { projectId: created.id, requestedResources: ['workspace'] },
+      { projectId: other.id, requestedResources: ['workspace'], status: 'succeeded' },
+    ]);
+
+    await processProjectProvisioning();
+
+    expect(receivedBody.areas).toEqual([
+      { id: backend.id, name: 'Backend', folder: 'backend' },
+      { id: design.id, name: 'Design & UX', folder: 'ux' },
+    ]);
+  });
+
   it('includes bounded project-owned board metadata for requested view ids', async () => {
     let receivedBody: { boards?: unknown } = {};
     server = Bun.serve({
@@ -80,7 +120,7 @@ describe('project provisioning', () => {
       .returning();
     const [folder] = await db
       .insert(projectViewFolder)
-      .values({ projectId: created.id, name: 'Leadership & Ops' })
+      .values({ projectId: created.id, name: 'Leadership & Ops', folder: 'leadership-ops' })
       .returning();
     const [view] = await db
       .insert(projectView)

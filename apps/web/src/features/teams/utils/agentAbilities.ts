@@ -10,7 +10,6 @@ export const HERMES_TOOLSETS = [
   'computer_use',
   'connections',
   'context_engine',
-  'cronjob',
   'delegation',
   'file',
   'image_gen',

@@ -19,7 +19,7 @@
   "moveFolderUp": "上移",
   "moveFolderDown": "下移",
   "deleteFolder": "删除区域",
-  "deleteFolderConfirm": "删除 {name}？其中的视图和工作项将保留在项目中，不属于任何区域。",
+  "deleteFolderConfirm": "删除 {name}？其中的视图和工作项将保留在项目中，不属于任何区域。其文件夹将移至项目的回收站。",
   "moveToFolder": "移动到区域",
   "noFolder": "无区域",
   "newBoard": "新建看板",
@@ -27,5 +27,10 @@
   "areaOptions": "区域选项",
   "newFolderDescription": "区域将任务与其专属看板归在一起，便于单独规划项目的一部分。",
   "newBoardDescription": "此看板只显示 {name} 的任务。",
-  "create": "创建"
+  "create": "创建",
+  "areaFolderLabel": "文件夹",
+  "areaFolderHint": "小写字母、数字和连字符。智能体在项目工作区的此文件夹中处理该区域的任务，Files 中也有同名文件夹。",
+  "areaFolderReserved": "项目自身的文件使用 {folder}。请选择其他文件夹。",
+  "areaFolderTaken": "该项目的另一个区域已使用此文件夹。",
+  "openFolder": "打开文件夹"
 }

@@ -12,3 +12,8 @@ security:
   tirith_path: /home/pw/services/volition-stack/data/hermes/bin/tirith
   tirith_timeout: 5
   tirith_fail_open: false
+approvals:
+  single_query_mode: approve
+plugins:
+  enabled:
+    - plan-approval-guard

@@ -20,6 +20,9 @@ MAX_MODELS = 200
 COORDINATOR_DESCRIPTOR = re.compile(r'[a-z0-9][a-z0-9-]{0,63}')
 PROJECT_AGENT_DESCRIPTOR = re.compile(r'([a-z0-9][a-z0-9-]{0,31})_([1-9][0-9]{0,9})')
 PLAN_USERNAME = re.compile(r'[A-Za-z0-9._-]{1,64}')
+APPROVAL_GUARD = 'plan-approval-guard'
+# The live checkout, which the agent user cannot change.
+PLAN_PLUGIN_ROOT = Path('/srv/volition/source/plan/deployment/volition-stack/integration/hermes-plugins')
 
 
 def model_name(model_id: str) -> str:
@@ -104,6 +107,38 @@ def hermes_profile() -> dict[str, list[str]]:
 def require_browser_toolset(profile: dict[str, list[str]]) -> None:
     if 'browser' not in profile['toolsets']:
         raise RuntimeError('The Hermes browser toolset must be enabled for Plan project agents')
+
+
+def hermes_approvals() -> dict[str, Any]:
+    """How Hermes decides a dangerous command in a single-query run, and the plugins it loads."""
+    from hermes_cli.plugins_discovery import _get_disabled_plugins, _get_enabled_plugins
+    from tools.approval_context import _get_single_query_approval_mode
+
+    return {
+        'singleQueryMode': _get_single_query_approval_mode(),
+        'plugins': sorted((_get_enabled_plugins() or set()) - _get_disabled_plugins()),
+    }
+
+
+def require_approval_guard(approvals: dict[str, Any]) -> None:
+    """Runs pass no --yolo. single_query_mode: approve lets Hermes run a dangerous command, so
+    the guard has to be the one that asks Plan."""
+    if approvals['singleQueryMode'] == 'approve' and APPROVAL_GUARD not in approvals['plugins']:
+        raise RuntimeError(f'approvals.single_query_mode: approve needs {APPROVAL_GUARD} in plugins.enabled')
+
+
+def link_plan_plugins(home: Path, plugin_root: Path) -> None:
+    source = plugin_root / APPROVAL_GUARD
+    if not (source / '__init__.py').is_file():
+        raise RuntimeError('The Plan approval guard plugin is missing')
+    plugins = home / 'plugins'
+    plugins.mkdir(mode=0o700, exist_ok=True)
+    target = plugins / APPROVAL_GUARD
+    if target.is_symlink() and target.readlink() == source:
+        return
+    if target.exists() or target.is_symlink():
+        raise RuntimeError('A Hermes plugin conflicts with the Plan approval guard')
+    target.symlink_to(source)
 
 
 def configured_reasoning_default() -> str | None:
@@ -398,6 +433,7 @@ def write_runtime(
     global_home: Path,
     profile: dict[str, list[str]],
     browser_root: Path | None = None,
+    plugin_root: Path = PLAN_PLUGIN_ROOT,
 ) -> tuple[str, int, int]:
     payload = json.loads(template_path.read_text(encoding='utf-8'))
     payload['hermes'] = profile
@@ -419,6 +455,8 @@ def write_runtime(
     agents = [home]
     for entry in descriptor_entries(descriptor_root, global_home, browser_root):
         agents.append({**payload, **entry, 'env': {**payload.get('env', {}), **entry['env']}})
+    for agent in agents:
+        link_plan_plugins(Path(agent['env']['HERMES_HOME']), plugin_root)
     payload.pop('apiKey', None)
     payload['agents'] = agents
 
@@ -453,6 +491,7 @@ def main(argv: list[str]) -> int:
     browser_root = Path(browser_root_value) if browser_root_value else None
     profile = hermes_profile()
     require_browser_toolset(profile)
+    require_approval_guard(hermes_approvals())
     provider, count, agents = write_runtime(
         Path(argv[1]), Path(argv[2]), descriptor_root, global_home, profile, browser_root
     )

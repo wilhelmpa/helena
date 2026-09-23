@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, Download, File, FileText, Folder, FolderOpen, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/hooks/usePermissions';
 import { downloadProjectFile } from '@/lib/api/endpoints/projectFiles';
+import { filesPath } from '@/utils/paths';
 import {
   useCreateProjectText,
   useProjectFilesQuery,
@@ -31,7 +32,10 @@ export default function ProjectFilesPage() {
   const projectKey = params.projectKey;
   const { can } = usePermissions();
   const canCreate = can('documents', 'create');
-  const [path, setPath] = useState('');
+  const router = useRouter();
+  // The open folder is part of the address, so a link can open the page in a folder.
+  const path = useSearchParams().get('path') ?? '';
+  const setPath = (next: string) => router.push(filesPath(projectKey, next));
   const [previewPath, setPreviewPath] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [filename, setFilename] = useState('');

@@ -24,14 +24,30 @@ export interface RuntimeSkill {
   files: RuntimeSkillFile[];
 }
 
+// A literal, or the id of one of the team's secrets, whose value the runner reads from
+// Plan before each run and chat answer.
+export type RuntimeMcpValue = { name: string; value: string } | { name: string; secret: number };
+
+export interface RuntimeMcpServer {
+  name: string;
+  transport: 'stdio' | 'http' | 'sse';
+  command: string | null;
+  args: string[];
+  url: string | null;
+  env: RuntimeMcpValue[];
+  headers: RuntimeMcpValue[];
+}
+
 export interface RuntimePolicySnapshot {
   revision: string;
   runtimePolicy: {
     files: RuntimePolicyFile[];
-    // The Hermes toolsets the agent may not use.
+    // The Hermes toolsets and MCP servers of the Hermes configuration the agent may not use.
     toolDeny?: string[];
   };
   skills: RuntimeSkill[];
+  // The MCP servers of the team library enabled on the agent. An older server sends none.
+  mcpServers?: RuntimeMcpServer[];
 }
 
 // A managed file that was changed outside Plan. Plan's version replaced it; the changed
@@ -54,6 +70,13 @@ export interface RuntimeStatus {
 export interface RuntimePolicyClient {
   runtimePolicy(): Promise<RuntimePolicySnapshot>;
   reportRuntimeStatus(status: RuntimeStatus): Promise<void>;
+  mcpSecrets(): Promise<Record<string, string>>;
+}
+
+// What a run or a chat answer hands Hermes besides the task.
+export interface HermesRunSettings {
+  toolsets: string[] | null;
+  env: Record<string, string>;
 }
 
 type ManifestEntry =
@@ -83,7 +106,14 @@ const SHA256 = /^[a-f0-9]{64}$/;
 const MAX_RUNTIME_BYTES = 128 * 1024;
 const MAX_SKILL_BYTES = 1024 * 1024;
 const MAX_CONFLICT_BYTES = 64 * 1024;
-const CAPABILITIES = ['model', 'reasoning', 'managed-markdown', 'managed-skills'];
+const MCP_SERVER_NAME = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const CAPABILITIES = [
+  'model',
+  'reasoning',
+  'managed-markdown',
+  'managed-skills',
+  'managed-mcp-servers',
+];
 // A revision that failed to apply is tried again after this long, not on every claim.
 const RETRY_FAILED_MS = 60_000;
 // Skills and memory change while the agent works. They are read again after this long, and
@@ -292,6 +322,61 @@ function conflictPath(entry: ManifestEntry): string {
   return entry.source === 'runtime' ? entry.path : `skills/${entry.slug}/${entry.path}`;
 }
 
+// The variable a secret reaches Hermes in. Hermes expands ${NAME} in its configuration
+// with its own environment.
+export function mcpSecretVariable(id: number): string {
+  return `ITSAPLAN_MCP_SECRET_${id}`;
+}
+
+function hermesValues(values: RuntimeMcpValue[]): Record<string, string> {
+  return Object.fromEntries(
+    values.map((entry) => [
+      entry.name,
+      'secret' in entry ? `\${${mcpSecretVariable(entry.secret)}}` : entry.value,
+    ]),
+  );
+}
+
+// The mcp_servers Hermes layers over its config.yaml for this agent: the agent's own
+// servers, and the servers of config.yaml the policy turns off. Null when there is neither.
+// An own server may not take the name of a toolset or a server of the profile: Hermes names
+// a server's toolset after it.
+export function hermesMcpServers(
+  servers: RuntimeMcpServer[],
+  profile: HermesProfile | undefined,
+  denied: string[],
+): Record<string, unknown> | null {
+  const config: Record<string, unknown> = {};
+  const taken = [...(profile?.toolsets ?? []), ...(profile?.mcpServers ?? [])];
+  for (const server of servers) {
+    if (!MCP_SERVER_NAME.test(server.name) || server.name in config) {
+      throw new Error('runtime policy contains an invalid MCP server name');
+    }
+    if (taken.includes(server.name)) {
+      throw new Error(`MCP server ${server.name} has the name of a Hermes toolset or server`);
+    }
+    config[server.name] =
+      server.transport === 'stdio'
+        ? { command: server.command, args: server.args, env: hermesValues(server.env) }
+        : {
+            url: server.url,
+            ...(server.transport === 'sse' && { transport: 'sse' }),
+            headers: hermesValues(server.headers),
+          };
+  }
+  for (const name of profile?.mcpServers ?? []) {
+    if (denied.includes(name)) config[name] = { enabled: false };
+  }
+  return Object.keys(config).length > 0 ? config : null;
+}
+
+function mcpSecretIds(servers: RuntimeMcpServer[]): number[] {
+  const ids = servers
+    .flatMap((server) => [...server.env, ...server.headers])
+    .flatMap((entry) => ('secret' in entry ? [entry.secret] : []));
+  return [...new Set(ids)];
+}
+
 // The message of an error the materializer raises names a rule, never file content; an
 // operating-system error is reduced to its code and path.
 function describeFailure(error: unknown): string {
@@ -303,21 +388,37 @@ function describeFailure(error: unknown): string {
 export class HermesPolicyMaterializer {
   readonly hermesHome: string;
   readonly manifestPath: string;
+  // The directory Hermes reads as HERMES_MANAGED_DIR: its config.yaml is merged over the
+  // profile's own, which the agents share, and cannot be changed from inside Hermes.
+  readonly managedDir: string;
+  private readonly profile: HermesProfile | undefined;
 
-  constructor(options: { hermesHome: string }) {
+  constructor(options: { hermesHome: string; profile?: HermesProfile }) {
     this.hermesHome = assertRoot(options.hermesHome, 'HERMES_HOME');
     this.manifestPath = join(this.hermesHome, 'run', 'itsaplan-policy-manifest.json');
+    this.managedDir = join(this.hermesHome, 'run', 'itsaplan-managed');
+    this.profile = options.profile;
   }
 
   // Plan's version always wins. A file found changed outside Plan (an existing SOUL.md on
   // first sync, or one Hermes edited since) is kept next to it and returned as a conflict.
-  async apply(
-    snapshot: RuntimePolicySnapshot,
-  ): Promise<{ revision: string; conflicts: RuntimeConflict[] }> {
+  // `mcpSecrets` lists the secrets the managed configuration names, and is null when there
+  // is no managed configuration.
+  async apply(snapshot: RuntimePolicySnapshot): Promise<{
+    revision: string;
+    conflicts: RuntimeConflict[];
+    mcpSecrets: number[] | null;
+  }> {
     await ensureRoot(this.hermesHome);
     await ensureSafeParent(this.hermesHome, this.manifestPath);
     const previous = await loadManifest(this.manifestPath, this.hermesHome);
     const desired = desiredEntries(snapshot, this.hermesHome);
+    const servers = snapshot.mcpServers ?? [];
+    const mcpServers = hermesMcpServers(
+      servers,
+      this.profile,
+      snapshot.runtimePolicy.toolDeny ?? [],
+    );
     const oldByKey = new Map((previous?.entries ?? []).map((entry) => [entryKey(entry), entry]));
     const desiredByKey = new Map(desired.map((entry) => [entryKey(entry.manifest), entry]));
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -344,31 +445,55 @@ export class HermesPolicyMaterializer {
       if ((await existingHash(target)) === old.sha256) await unlink(target);
     }
 
+    const managedConfig = join(this.managedDir, 'config.yaml');
+    if (mcpServers) {
+      // JSON is YAML, which is how Hermes reads it.
+      const content = `${JSON.stringify({ mcp_servers: mcpServers }, null, 2)}\n`;
+      if ((await existingHash(managedConfig)) !== digest(content)) {
+        await atomicWrite(this.managedDir, managedConfig, content);
+      }
+    } else {
+      await rm(managedConfig, { force: true });
+    }
+
     const manifest: Manifest = {
       schemaVersion: 1,
       revision: snapshot.revision,
       entries: desired.map(({ manifest }) => manifest),
     };
     await atomicWrite(this.hermesHome, this.manifestPath, `${JSON.stringify(manifest)}\n`);
-    return { revision: snapshot.revision, conflicts };
+    return {
+      revision: snapshot.revision,
+      conflicts,
+      mcpSecrets: mcpServers ? mcpSecretIds(servers) : null,
+    };
   }
 }
 
-// The `--toolsets` list for Hermes: the profile's toolsets without the denied ones, plus
-// every MCP server, which an explicit list has to name to keep. Null while nothing the
-// profile enables is denied, which leaves Hermes on the profile's own selection. Without
-// the profile the runner reports no toolsets, so Plan offers none to turn off.
+// Hermes' own scheduler. Plan schedules work through its routines, so a job Hermes ran
+// on its own would run the work a second time.
+const WITHHELD_TOOLSETS = ['cronjob'];
+
+// The `--toolsets` list for Hermes: the profile's toolsets and MCP servers without the
+// withheld and the denied ones, plus the agent's own servers, which an explicit list has
+// to name to keep. The list is always explicit, so a withheld toolset stays off even
+// where the profile enables it. Without the profile the runner reports no toolsets, so
+// Plan offers none to turn off.
 export function allowedToolsets(
   profile: HermesProfile | undefined,
   denied: string[],
+  ownMcpServers: string[] = [],
 ): string[] | null {
   if (!profile) return null;
-  const kept = profile.toolsets.filter((name) => !denied.includes(name));
-  if (kept.length === profile.toolsets.length) return null;
-  const toolsets = [...kept, ...profile.mcpServers];
+  const enabled = [
+    ...profile.toolsets.filter((name) => !WITHHELD_TOOLSETS.includes(name)),
+    ...profile.mcpServers,
+    ...ownMcpServers,
+  ];
+  const toolsets = enabled.filter((name) => !denied.includes(name));
   // Hermes reads an empty list as no selection and enables every toolset.
   if (toolsets.length === 0) {
-    throw new Error('Every Hermes toolset is turned off and the profile has no MCP server');
+    throw new Error('Every Hermes toolset and MCP server of the agent is turned off');
   }
   return toolsets;
 }
@@ -389,6 +514,10 @@ export class HermesPolicySynchronizer {
   // with it again, since a report replaces the whole state Plan keeps.
   private state: ReportedState | null = null;
   private deniedToolsets: string[] = [];
+  // The agent's own MCP servers and the secrets they name, as the last applied revision
+  // wrote them. mcpSecrets is null while there is no managed configuration.
+  private mcpServerNames: string[] = [];
+  private mcpSecrets: number[] | null = null;
   private inventory: HermesInventory | undefined;
   private inventoryDigest: string | null = null;
   private inventoryReadAt = -Infinity;
@@ -419,7 +548,23 @@ export class HermesPolicySynchronizer {
   }
 
   toolsets(): string[] | null {
-    return allowedToolsets(this.options.profile, this.deniedToolsets);
+    return allowedToolsets(this.options.profile, this.deniedToolsets, this.mcpServerNames);
+  }
+
+  // Read before each run and chat answer, so a secret changed in Plan applies at once.
+  // Plan answers with the secrets of the agent's current servers, which also covers a
+  // revision the other feed applies before Hermes reads the managed configuration.
+  async runSettings(): Promise<HermesRunSettings> {
+    const toolsets = this.toolsets();
+    if (this.mcpSecrets === null) return { toolsets, env: {} };
+    const env: Record<string, string> = { HERMES_MANAGED_DIR: this.materializer.managedDir };
+    const values = await this.client.mcpSecrets();
+    for (const [id, value] of Object.entries(values)) {
+      if (/^\d+$/.test(id)) env[mcpSecretVariable(Number(id))] = value;
+    }
+    // A secret deleted in Plan reaches its server empty.
+    for (const id of this.mcpSecrets) env[mcpSecretVariable(id)] ??= '';
+    return { toolsets, env };
   }
 
   private async sync(): Promise<void> {
@@ -449,6 +594,8 @@ export class HermesPolicySynchronizer {
     try {
       const result = await this.materializer.apply(snapshot);
       this.appliedRevision = result.revision;
+      this.mcpServerNames = (snapshot.mcpServers ?? []).map(({ name }) => name);
+      this.mcpSecrets = result.mcpSecrets;
       this.failed = null;
       this.state = {
         status: 'online',
@@ -507,7 +654,7 @@ export function hermesPolicySynchronizer(
   if (config.agent !== 'hermes') return null;
   const hermesHome = config.env.HERMES_HOME ?? process.env.HERMES_HOME;
   if (!hermesHome) throw new Error('Hermes policy sync requires HERMES_HOME');
-  const materializer = new HermesPolicyMaterializer({ hermesHome });
+  const materializer = new HermesPolicyMaterializer({ hermesHome, profile: config.hermes });
   return new HermesPolicySynchronizer(client, materializer, {
     inventory: () => readHermesInventory(materializer.hermesHome, config.hermes),
     profile: config.hermes,

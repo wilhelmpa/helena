@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SettingsEffectEditor } from './SettingsEffectEditor';
+import { uuid } from '@/utils/uuid';
 
 export function WorkflowGraphEditor({
   workflow,
@@ -50,7 +51,7 @@ export function WorkflowGraphEditor({
 
   function addNode(source: string, branch: WorkflowBranch, type: 'condition' | 'action') {
     if (workflow.nodes.length >= 24 || edgeFrom(source, branch)) return;
-    const id = `node-${crypto.randomUUID().slice(0, 8)}`;
+    const id = `node-${uuid().slice(0, 8)}`;
     const sourceNode = workflow.nodes.find((node) => node.id === source)!;
     const position = {
       x: sourceNode.position.x + (branch === 'false' ? 260 : 0),
@@ -63,10 +64,7 @@ export function WorkflowGraphEditor({
     onChange({
       ...workflow,
       nodes: [...workflow.nodes, node],
-      edges: [
-        ...workflow.edges,
-        { id: `edge-${crypto.randomUUID().slice(0, 8)}`, source, target: id, branch },
-      ],
+      edges: [...workflow.edges, { id: `edge-${uuid().slice(0, 8)}`, source, target: id, branch }],
     });
   }
 

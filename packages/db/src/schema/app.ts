@@ -703,6 +703,9 @@ export const approvalRequest = pgTable(
     kind: text('kind').notNull(),
     action: text('action').notNull(),
     details: text('details').notNull().default(''),
+    // The exact command a blocked tool call asked to run. Hermes' approval guard lets the
+    // follow-up run execute exactly this command once the request is approved.
+    command: text('command'),
     status: text('status').notNull().default('pending'),
     decidedByUserId: text('decided_by_user_id').references(() => user.id, {
       onDelete: 'set null',
@@ -722,10 +725,11 @@ export const approvalRequest = pgTable(
     check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
     index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),
     index('approval_request_agent_idx').on(t.agentId),
-    // One pending request per action of a run, so a repeated tool call cannot queue the
-    // same outward action twice.
+    // One pending request per action and command of a run, so a repeated tool call cannot
+    // queue the same outward action twice. The command is indexed by its hash: a long one
+    // exceeds the size of a b-tree index entry.
     uniqueIndex('approval_request_pending_run_uq')
-      .on(t.runId, t.kind, t.action)
+      .on(t.runId, t.kind, t.action, sql`md5(coalesce(${t.command}, ''))`)
       .where(sql`${t.status} = 'pending' AND ${t.runId} IS NOT NULL`),
   ],
 );
@@ -1175,6 +1179,53 @@ export const agentToolLink = pgTable(
   (t) => [
     primaryKey({ columns: [t.agentId, t.agentToolId] }),
     index('agent_tool_link_tool_idx').on(t.agentToolId),
+  ],
+);
+
+// An MCP server of the team's library, which an external agent's Hermes profile starts
+// once the server is enabled on the agent (agent_mcp_server_link). `name` is the key of
+// the server in Hermes' mcp_servers and the name of its toolset. A stdio server has
+// `command` and `args`, an http or sse server `url`. `env` (stdio) and `headers`
+// (http, sse) hold [{ name, value }] for a literal, or [{ name, credentialId }] for the
+// value of a team secret (an integration_credential of the 'secret' integration),
+// which only the agent's runner receives.
+export const agentMcpServer = pgTable(
+  'agent_mcp_server',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    transport: text('transport').notNull(),
+    command: text('command'),
+    args: jsonb('args').notNull().default([]),
+    url: text('url'),
+    env: jsonb('env').notNull().default([]),
+    headers: jsonb('headers').notNull().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.teamId, t.name),
+    check('agent_mcp_server_transport_check', sql`${t.transport} IN ('stdio', 'http', 'sse')`),
+    index('agent_mcp_server_team_idx').on(t.teamId),
+  ],
+);
+
+export const agentMcpServerLink = pgTable(
+  'agent_mcp_server_link',
+  {
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    mcpServerId: integer('mcp_server_id')
+      .notNull()
+      .references(() => agentMcpServer.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.agentId, t.mcpServerId] }),
+    index('agent_mcp_server_link_server_idx').on(t.mcpServerId),
   ],
 );
 
@@ -1939,11 +1990,15 @@ export const projectViewFolder = pgTable(
       .notNull()
       .references(() => project.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    // The area's directory, relative to the project workspace and to the project's
+    // vault folder. The integration service creates, moves and trashes both.
+    folder: text('folder').notNull(),
     position: doublePrecision('position').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     unique('project_view_folder_project_name_unique').on(t.projectId, t.name),
+    unique('project_view_folder_project_folder_unique').on(t.projectId, t.folder),
     index('project_view_folder_project_idx').on(t.projectId, t.position),
   ],
 );

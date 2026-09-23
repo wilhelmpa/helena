@@ -15,6 +15,7 @@ import {
   workflowLegacyFields,
   workflowTrigger,
 } from '#modules/actions/workflow';
+import { areaFolderSlug, uniqueAreaFolder } from '#modules/views/area-folder';
 import { enqueueBoardProvisioning, ensureDefaultProjectViews } from '#modules/views/service';
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -287,14 +288,17 @@ async function applyFolders(tx: Transaction, projectId: number, folders: Templat
     .from(projectViewFolder)
     .where(eq(projectViewFolder.projectId, projectId));
   const ids = new Map<string, number>();
+  const taken = new Set(current.map((row) => row.folder));
   let next = current.reduce((max, folder) => Math.max(max, Number(folder.position)), -1) + 1;
   for (const folder of folders) {
     const existing = current.find((row) => row.name.toLowerCase() === folder.name.toLowerCase());
     if (existing) ids.set(folder.key, existing.id);
     else {
+      const path = uniqueAreaFolder(areaFolderSlug(folder.name), taken);
+      taken.add(path);
       const [created] = await tx
         .insert(projectViewFolder)
-        .values({ projectId, name: folder.name, position: next++ })
+        .values({ projectId, name: folder.name, folder: path, position: next++ })
         .returning({ id: projectViewFolder.id });
       ids.set(folder.key, created.id);
     }

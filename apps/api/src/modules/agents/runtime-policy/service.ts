@@ -18,15 +18,19 @@ import {
 import type { RunnerAgent } from '../runner/service';
 import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
+import { agentRuntimeMcpServers } from '../mcp-servers/service';
+import { areasSection } from './areas';
 import { structureSection } from './structure';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [skills, tools, structure] = await Promise.all([
+  const [skills, tools, structure, areas, mcpServers] = await Promise.all([
     listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
     structureSection(agent),
+    areasSection(agent),
+    agentRuntimeMcpServers(agent.id),
   ]);
   const snapshot = {
     agent: { id: agent.id, name: agent.name, username: agent.username },
@@ -39,7 +43,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
         {
           kind: 'instructions' as const,
           path: 'SOUL.md',
-          content: soul(agentRef, agent, structure),
+          content: soul(agentRef, agent, structure, areas),
         },
       ],
     },
@@ -55,6 +59,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       toolKey,
       integrationKey,
     })),
+    mcpServers,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.
   // Eden's response parser treats a bare 64-character digest as an encoded value.
@@ -75,6 +80,7 @@ function soul(
   agent: RunnerAgent,
   config: { name: string; runtimePolicy: AgentRuntimePolicy },
   structure: string,
+  areas: string,
 ): string {
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
@@ -91,6 +97,7 @@ function soul(
     ...(instructions ? [`## Instructions\n\n${instructions}`] : []),
     projectsPreamble(agent.projects).trim(),
     ...agent.projects.map((project) => projectInstructionsPreamble(project).trim()),
+    areas,
     structure,
     chatPreamble().trim(),
     blockedPreamble(),
@@ -135,6 +142,10 @@ function approvalPreamble(): string {
   ].join('\n');
 }
 
+// Hermes' own scheduler, which the runner never passes on: Plan schedules work through its
+// routines, so the toggle for it is not offered.
+const WITHHELD_TOOLSETS = ['cronjob'];
+
 export async function reportRuntimeState(
   agentId: number,
   state: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts' | 'inventory'> & {
@@ -142,10 +153,16 @@ export async function reportRuntimeState(
     inventory?: AgentRuntimeInventory;
   },
 ): Promise<AgentRuntimeState> {
+  const inventory = state.inventory;
   const value: AgentRuntimeState = {
     ...state,
     conflicts: state.conflicts ?? [],
-    inventory: state.inventory ?? null,
+    inventory: inventory
+      ? {
+          ...inventory,
+          toolsets: inventory.toolsets.filter((name) => !WITHHELD_TOOLSETS.includes(name)),
+        }
+      : null,
     reportedAt: new Date().toISOString(),
   };
   await db

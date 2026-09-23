@@ -21,6 +21,8 @@ export interface ApprovalRequest {
   kind: ApprovalKind;
   action: string;
   details: string;
+  // The exact command the agent may run once the request is approved.
+  command: string | null;
   status: ApprovalStatus;
   decidedByUserId: string | null;
   decidedByName: string | null;

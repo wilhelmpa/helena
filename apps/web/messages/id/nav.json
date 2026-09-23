@@ -66,7 +66,15 @@
       "reload": "Muat ulang",
       "tabs": "Tab",
       "newTab": "Tab baru",
-      "closeTab": "Tutup tab"
+      "closeTab": "Tutup tab",
+      "view": "Tampilan browser",
+      "live": "Langsung",
+      "liveTitle": "Tampilan langsung tab di depan",
+      "desktop": "Desktop",
+      "desktopTitle": "Desktop (VNC)",
+      "liveKeyboard": "Browser langsung. Tombol dikirim ke halaman selama tampilan ini memiliki fokus.",
+      "connecting": "Menghubungkan ke browser…",
+      "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…"
     }
   },
   "groups": {

@@ -17,6 +17,9 @@ export interface Run {
   // Absent on a server that predates run limits.
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
+  // The folder of the issue's area below `cwd`, where the run starts. Absent on a server
+  // that predates area folders.
+  workdir?: string | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -93,6 +96,14 @@ export class Client {
 
   async runtimePolicy(): Promise<RuntimePolicySnapshot> {
     return (await (await this.get('/agent-runtime/policy')).json()) as RuntimePolicySnapshot;
+  }
+
+  // The values of the secrets the agent's MCP servers name, by secret id.
+  async mcpSecrets(): Promise<Record<string, string>> {
+    const body = (await (await this.get('/agent-runtime/mcp-secrets')).json()) as {
+      secrets?: Record<string, string>;
+    };
+    return body.secrets ?? {};
   }
 
   async reportRuntimeStatus(status: RuntimeStatus): Promise<void> {

@@ -5,6 +5,7 @@ import {
   projectDeprovisioningJob,
   projectProvisioningJob,
   projectView,
+  projectViewFolder,
 } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { workerConfig } from './config';
@@ -15,15 +16,17 @@ interface ProvisionedProject {
   requestedResources: string[];
   boards: number[];
   agents: number[];
+  // The areas whose folders exist in the workspace and in the vault.
+  areas: { id: number; folder: string }[];
   // Null when the project has no browser.
   browserActive: boolean | null;
 }
 
 // Compares what the integration service has provisioned with the projects in the
 // database and queues the idempotent run that repairs a difference: a project whose
-// registry entry, browser units, board folders or agent runtimes do not match is
-// provisioned again, and a registry entry without a project is deprovisioned. Pending
-// and failed jobs are left to their own retries and to the retry routes.
+// registry entry, browser units, board folders, area folders or agent runtimes do not
+// match is provisioned again, and a registry entry without a project is deprovisioned.
+// Pending and failed jobs are left to their own retries and to the retry routes.
 export async function reconcileProjectProvisioning(): Promise<void> {
   const config = workerConfig();
   if (!config.projectProvisioningUrl || !config.projectProvisioningToken) return;
@@ -33,7 +36,7 @@ export async function reconcileProjectProvisioning(): Promise<void> {
     `${config.projectProvisioningUrl.replace(/\/+$/, '')}/state`,
     config.projectProvisioningToken,
   );
-  const [projects, jobs, views, agents] = await Promise.all([
+  const [projects, jobs, views, areas, agents] = await Promise.all([
     db.select({ id: project.id }).from(project),
     db
       .select({
@@ -43,10 +46,24 @@ export async function reconcileProjectProvisioning(): Promise<void> {
       })
       .from(projectProvisioningJob),
     db.select({ id: projectView.id, projectId: projectView.projectId }).from(projectView),
+    db
+      .select({
+        id: projectViewFolder.id,
+        projectId: projectViewFolder.projectId,
+        folder: projectViewFolder.folder,
+      })
+      .from(projectViewFolder),
     projectAgentIds(),
   ]);
   const byProject = new Map(provisioned.map((entry) => [entry.project.id, entry]));
   const liveViews = new Set(views.map((view) => `${view.projectId}:${view.id}`));
+  const areaFolders = new Map<number, string[]>();
+  for (const area of areas) {
+    areaFolders.set(area.projectId, [
+      ...(areaFolders.get(area.projectId) ?? []),
+      `${area.id}:${area.folder}`,
+    ]);
+  }
 
   for (const job of jobs) {
     if (job.status !== 'succeeded') continue;
@@ -57,8 +74,12 @@ export async function reconcileProjectProvisioning(): Promise<void> {
       entry &&
       entry.browserActive !== false &&
       boards.length === requested.length &&
-      sameIds(entry.boards, boards) &&
-      sameIds(entry.agents, agents.get(job.projectId) ?? [])
+      sameMembers(entry.boards, boards) &&
+      sameMembers(entry.agents, agents.get(job.projectId) ?? []) &&
+      sameMembers(
+        entry.areas.map((area) => `${area.id}:${area.folder}`),
+        areaFolders.get(job.projectId) ?? [],
+      )
     ) {
       continue;
     }
@@ -108,6 +129,11 @@ async function readProvisionedProjects(url: string, token: string): Promise<Prov
           : [],
         boards: Array.isArray(entry.boards) ? entry.boards.filter(Number.isSafeInteger) : [],
         agents: Array.isArray(entry.agents) ? entry.agents.filter(Number.isSafeInteger) : [],
+        areas: Array.isArray(entry.areas)
+          ? entry.areas.filter(
+              (area) => Number.isSafeInteger(area?.id) && typeof area?.folder === 'string',
+            )
+          : [],
         browserActive: typeof entry.browserActive === 'boolean' ? entry.browserActive : null,
       },
     ];
@@ -121,9 +147,9 @@ function boardIds(resources: readonly string[]): number[] {
   });
 }
 
-function sameIds(left: readonly number[], right: readonly number[]): boolean {
+function sameMembers<T>(left: readonly T[], right: readonly T[]): boolean {
   const expected = new Set(right);
-  return left.length === expected.size && left.every((id) => expected.has(id));
+  return left.length === expected.size && left.every((member) => expected.has(member));
 }
 
 // The integration service answers a known event id from its ledger, so a new run

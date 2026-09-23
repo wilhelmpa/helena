@@ -66,7 +66,15 @@
       "reload": "重新加载",
       "tabs": "标签页",
       "newTab": "新标签页",
-      "closeTab": "关闭标签页"
+      "closeTab": "关闭标签页",
+      "view": "浏览器视图",
+      "live": "实时",
+      "liveTitle": "前台标签页的实时画面",
+      "desktop": "桌面",
+      "desktopTitle": "桌面（VNC）",
+      "liveKeyboard": "实时浏览器。视图获得焦点时，按键会发送到页面。",
+      "connecting": "正在连接浏览器…",
+      "reconnecting": "与浏览器的连接已断开，正在重新连接…"
     }
   },
   "groups": {

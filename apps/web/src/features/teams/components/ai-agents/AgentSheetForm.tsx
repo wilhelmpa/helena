@@ -24,9 +24,15 @@ import {
   useAgentToolLinksQuery,
   useSetAgentTools,
 } from '@/services/customTools.service';
+import {
+  useAgentMcpServersQuery,
+  useMcpServersQuery,
+  useSetAgentMcpServers,
+} from '@/services/agentMcpServers.service';
 import { Button } from '@/components/ui/button';
 import { useAgentSection } from '../../context/agentSection';
 import { AgentCapabilityList } from './AgentCapabilityList';
+import AgentLibraryMcpServers from './AgentLibraryMcpServers';
 import { AgentEmptyNotice } from './AgentEmptyNotice';
 import TeamAiAgentFields, { AGENT_EXPANDED_WIDTH } from './TeamAiAgentFields';
 import {
@@ -79,6 +85,7 @@ export function AgentSheetForm({
   const team = useTeamQuery(teamId).data;
   const canManageSkills = team?.permissions.agent_skills.edit ?? false;
   const canManageTools = team?.permissions.agent_tools.edit ?? false;
+  const canReadTools = team?.permissions.agent_tools.read ?? false;
 
   const projects = useTeamProjectOptionsQuery(teamId).data ?? [];
   const toolsQuery = useAgentToolsQuery(teamId);
@@ -99,16 +106,23 @@ export function AgentSheetForm({
   const agentSkillsQuery = useAgentSkillsQuery(teamId, agent && canManageSkills ? agent.id : null);
   const toolsLibraryQuery = useConfiguredToolOptionsQuery(canManageTools ? teamId : null);
   const agentToolsQuery = useAgentToolLinksQuery(teamId, agent && canManageTools ? agent.id : null);
+  const mcpLibraryQuery = useMcpServersQuery(canReadTools ? teamId : null);
+  const agentMcpServersQuery = useAgentMcpServersQuery(
+    teamId,
+    agent && canReadTools ? agent.id : null,
+  );
 
   const createAgent = useCreateAiAgent(teamId);
   const updateAgent = useUpdateAiAgent(teamId);
   const setAgentSkills = useSetAgentSkills(teamId);
   const setAgentTools = useSetAgentTools(teamId);
+  const setAgentMcpServers = useSetAgentMcpServers(teamId);
   const saving =
     createAgent.isPending ||
     updateAgent.isPending ||
     setAgentSkills.isPending ||
-    setAgentTools.isPending;
+    setAgentTools.isPending ||
+    setAgentMcpServers.isPending;
 
   // A new agent starts with every action granted. Seed the tool set once the action
   // catalog loads, only while creating and only if the user has not changed it yet.
@@ -139,6 +153,14 @@ export function AgentSheetForm({
   }, [agentToolsQuery.data, toolIds]);
   const selectedTools = toolIds ?? [];
 
+  // The agent's servers of the team's MCP library, seeded from the server once loaded.
+  const [mcpServerIds, setMcpServerIds] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (agentMcpServersQuery.data && mcpServerIds === null) {
+      setMcpServerIds(agentMcpServersQuery.data.map((server) => server.id));
+    }
+  }, [agentMcpServersQuery.data, mcpServerIds]);
+
   function merge(patch: Partial<AgentFormValue>) {
     setValue((prev) => {
       const next = { ...prev, ...patch };
@@ -164,6 +186,13 @@ export function AgentSheetForm({
     });
   }
 
+  function toggleMcpServer(id: number, on: boolean) {
+    setMcpServerIds((prev) => {
+      const base = prev ?? [];
+      return on ? [...new Set([...base, id])] : base.filter((x) => x !== id);
+    });
+  }
+
   async function submit() {
     if (!isAgentFormValid(value) || saving) return;
     if (isCreate) {
@@ -176,6 +205,9 @@ export function AgentSheetForm({
       if (canManageTools && toolIds && toolIds.length > 0) {
         await setAgentTools.mutateAsync({ agentId: res.agent.id, agentToolIds: toolIds });
       }
+      if (canManageTools && mcpServerIds && mcpServerIds.length > 0) {
+        await setAgentMcpServers.mutateAsync({ agentId: res.agent.id, mcpServerIds });
+      }
       setRevealedKey(res.apiKey);
       onCreated(res.agent);
     } else {
@@ -185,6 +217,9 @@ export function AgentSheetForm({
       }
       if (canManageTools && toolIds !== null) {
         await setAgentTools.mutateAsync({ agentId: agent.id, agentToolIds: toolIds });
+      }
+      if (canManageTools && mcpServerIds !== null) {
+        await setAgentMcpServers.mutateAsync({ agentId: agent.id, mcpServerIds });
       }
     }
   }
@@ -253,6 +288,18 @@ export function AgentSheetForm({
     )
   ) : null;
 
+  // Shown once the agent's own servers are known, so a toggle never starts from none.
+  const mcpServersContent =
+    canReadTools && mcpLibraryQuery.data && (isCreate || mcpServerIds !== null) ? (
+      <AgentLibraryMcpServers
+        teamId={teamId}
+        servers={mcpLibraryQuery.data}
+        selected={mcpServerIds ?? []}
+        canEdit={canManageTools}
+        onToggle={toggleMcpServer}
+      />
+    ) : null;
+
   // "enabled / available" over each capability library, shown in the section header
   // and its nav entry. Nothing to count while the library is empty.
   const countBadge = (selected: number, total: number) =>
@@ -283,6 +330,7 @@ export function AgentSheetForm({
       skillsBadge={countBadge(selectedSkills.length, skillsLibrary.length)}
       toolsContent={toolsContent}
       toolsBadge={countBadge(selectedTools.length, toolsLibrary.length)}
+      mcpServersContent={mcpServersContent}
       revealedKey={revealedKey}
       onRevealedKey={setRevealedKey}
     />

@@ -53,12 +53,13 @@ async function handle(
   log(`${label}: started (${run.trigger})`);
   const stop = new AbortController();
   try {
+    const hermes = (await policy?.runSettings()) ?? null;
     const outcome = await withHeartbeat(
       log,
       async () => {
         if (await client.heartbeat(run.id)) stop.abort();
       },
-      perform(config, client, run, stop, policy?.toolsets() ?? null),
+      perform(config, client, run, stop, hermes),
     );
     log(
       outcome
@@ -89,12 +90,13 @@ async function handleChat(
   log(`chat ${message.id}: answering`);
   const stop = new AbortController();
   try {
+    const hermes = (await policy?.runSettings()) ?? null;
     await withHeartbeat(
       log,
       async () => {
         if (await client.chatHeartbeat(message.id)) stop.abort();
       },
-      answer(config, client, message, stop, policy?.toolsets() ?? null),
+      answer(config, client, message, stop, hermes),
     );
   } catch (err) {
     // Without a reported failure the chat waits for an answer that is no longer coming.

@@ -41,8 +41,8 @@ export const runtimePolicy = t.Object({
   toolDeny: t.Array(t.String({ minLength: 1, maxLength: 160 }), {
     maxItems: 256,
     description:
-      "Hermes toolsets the agent may not use in chats and runs, from its runtime state's " +
-      'inventory. MCP servers stay available.',
+      'Hermes toolsets and MCP servers of the Hermes configuration the agent may not use in ' +
+      "chats and runs, from its runtime state's inventory.",
   }),
   mcpGrants: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
   files: t.Array(instructionsRuntimeFile, { maxItems: 32 }),

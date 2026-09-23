@@ -1,4 +1,5 @@
 import { request } from '@/lib/api/core/client';
+import { uuid } from '@/utils/uuid';
 
 export interface WorkflowStep {
   id?: string;
@@ -85,7 +86,7 @@ export const getWorkflowRun = (projectKey: string, workflowId: string, runId: st
 export const startWorkflow = (projectKey: string, workflowId: string) =>
   request<WorkflowRun>(`/projects/${projectKey}/control-plane/workflows/${workflowId}/runs`, {
     method: 'POST',
-    body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), dryRun: true, payload: {} }),
+    body: JSON.stringify({ idempotencyKey: uuid(), dryRun: true, payload: {} }),
   });
 
 export const decideWorkflow = (

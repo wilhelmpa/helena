@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, Copy, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
+import { copyText } from '@/utils/clipboard';
 
 // Bullets stand in for the hidden part of the key: a fixed count, so the key's real
 // length stays private.
@@ -17,7 +18,7 @@ export default function AgentKeyValue({ apiKey }: { apiKey: string }) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(apiKey);
+      await copyText(apiKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

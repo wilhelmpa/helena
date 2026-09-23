@@ -6,6 +6,7 @@ import type { ApprovalRequest } from '@/lib/api/endpoints/approvals';
 import { formatDateTime } from '@/utils/dates';
 import { issuePath } from '@/utils/paths';
 import { Badge } from '@/components/ui/badge';
+import CodeBlock from '@/components/common/CodeBlock';
 import { useDecideApproval } from '../services/approvals.service';
 import ApprovalDecisionForm from './ApprovalDecisionForm';
 import ApprovalDecisionSummary from './ApprovalDecisionSummary';
@@ -46,6 +47,7 @@ export default function ApprovalRequestCard({ request }: { request: ApprovalRequ
           {request.details}
         </p>
       )}
+      {request.command && <CodeBlock code={request.command} />}
       {request.status === 'pending' ? (
         <ApprovalDecisionForm
           pending={decide.isPending}

@@ -69,7 +69,15 @@
       "reload": "Reload",
       "tabs": "Tabs",
       "newTab": "New tab",
-      "closeTab": "Close tab"
+      "closeTab": "Close tab",
+      "view": "Browser view",
+      "live": "Live",
+      "liveTitle": "Live view of the tab in front",
+      "desktop": "Desktop",
+      "desktopTitle": "Desktop (VNC)",
+      "liveKeyboard": "Live browser. Keys go to the page while the view has the focus.",
+      "connecting": "Connecting to the browser…",
+      "reconnecting": "The connection to the browser was lost. Reconnecting…"
     }
   },
   "groups": {

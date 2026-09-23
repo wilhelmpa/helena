@@ -34,6 +34,7 @@ export const ApprovalResponse = t.Object({
   kind: ApprovalKind,
   action: t.String(),
   details: t.String(),
+  command: t.Nullable(t.String()),
   status: ApprovalStatus,
   decidedByUserId: t.Nullable(t.String()),
   decidedByName: t.Nullable(t.String()),
@@ -87,12 +88,25 @@ export const createApprovalBody = t.Object({
         'Everything the person needs to decide: recipients, the full text, amounts, what gets deleted.',
     }),
   ),
+  command: t.Optional(
+    t.String({
+      minLength: 1,
+      maxLength: 32000,
+      description:
+        'The exact command or code a blocked terminal or execute_code call was about to run. ' +
+        'Once approved, the run with the decision may run exactly this.',
+    }),
+  ),
   issueId: t.Optional(
     t.Integer({
       description: 'The issue the action belongs to. Defaults to the issue of the current run.',
     }),
   ),
 });
+
+export const approvedCommandsParams = t.Object({ runId: t.Numeric() });
+
+export const ApprovedCommandsResponse = t.Array(t.String());
 
 export const decisionBody = t.Object({
   approved: t.Boolean(),

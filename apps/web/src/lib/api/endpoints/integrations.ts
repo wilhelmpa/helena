@@ -13,8 +13,9 @@ export interface ConfigField {
 }
 
 // 'llm' is an AI provider (its models an agent runs on, no tools); 'tool' is a tool
-// integration whose `tools` are configured on a credential.
-export type IntegrationKind = 'llm' | 'tool';
+// integration whose `tools` are configured on a credential; 'secret' is one named value,
+// such as the API key an MCP server reads.
+export type IntegrationKind = 'llm' | 'tool' | 'secret';
 
 // An integration the team can store a credential for (server-side catalog).
 export interface IntegrationMeta {
