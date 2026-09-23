@@ -884,6 +884,12 @@ export const agentChatFavorite = pgTable(
 // object with secret fields masked, kept in plaintext for a masked display. The
 // secret is never returned to the client. A team may hold several credentials per
 // integration (e.g. two Jina keys), told apart by `label`.
+//
+// The credentials of the Credentials page (integration keys 'web_login', 'api_key',
+// 'ssh_key' and 'secret') use the same table: their ciphertext holds only the secret
+// fields, `redacted` the other fields and `true` for every secret field that is set.
+// Only they are limited to one project (`project_id`) and granted to agents
+// (integration_credential_grant).
 export const integrationCredential = pgTable(
   'integration_credential',
   {
@@ -893,6 +899,8 @@ export const integrationCredential = pgTable(
       .references(() => team.id, { onDelete: 'cascade' }),
     integrationKey: text('integration_key').notNull(),
     label: text('label'),
+    // Null for a credential of the whole team.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
     ciphertext: text('ciphertext').notNull(),
     iv: text('iv').notNull(),
     authTag: text('auth_tag').notNull(),
@@ -900,8 +908,64 @@ export const integrationCredential = pgTable(
     // the store, derived from the integration's credential schema.
     redacted: jsonb('redacted').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // The runner replaces a login it delivered once this moves.
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('integration_credential_team_idx').on(t.teamId)],
+  (t) => [
+    index('integration_credential_team_idx').on(t.teamId),
+    index('integration_credential_project_idx').on(t.projectId),
+  ],
+);
+
+// The agents that may use a credential of the Credentials page. A credential limited to
+// a project is granted only to agents working in that project.
+export const integrationCredentialGrant = pgTable(
+  'integration_credential_grant',
+  {
+    credentialId: integer('credential_id')
+      .notNull()
+      .references(() => integrationCredential.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.credentialId, t.agentId] }),
+    index('integration_credential_grant_agent_idx').on(t.agentId),
+  ],
+);
+
+// The audit log of the Credentials page: every credential an agent's runner received
+// ('delivered') and every login the agent filled with it ('used'). The label and the
+// agent's name are copied, so an entry outlives the credential, the agent and the run.
+export const integrationCredentialUse = pgTable(
+  'integration_credential_use',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    credentialId: integer('credential_id').references(() => integrationCredential.id, {
+      onDelete: 'set null',
+    }),
+    credentialLabel: text('credential_label').notNull(),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    agentName: text('agent_name').notNull(),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    chatMessageId: integer('chat_message_id').references(() => agentChatMessage.id, {
+      onDelete: 'set null',
+    }),
+    action: text('action').notNull(),
+    // What the credential served: the Hermes vault or an MCP server for a delivery, the
+    // tool and the site for a use.
+    purpose: text('purpose').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('integration_credential_use_action_check', sql`${t.action} IN ('delivered', 'used')`),
+    index('integration_credential_use_credential_idx').on(t.credentialId, t.createdAt),
+    index('integration_credential_use_team_idx').on(t.teamId, t.createdAt),
+  ],
 );
 
 export const gitProviderConnection = pgTable(

@@ -1051,6 +1051,13 @@
       "when": 1790167108920,
       "tag": "0149_agent_mcp_servers",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1790169697607,
+      "tag": "0150_credential_store",
+      "breakpoints": true
     }
   ]
 }

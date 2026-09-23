@@ -94,9 +94,16 @@ and makes no decisions.
   fire of a schedule gets its own event id from its Mastra run id and is listed with the
   runs of its project. A fire that starts more than ten minutes late is skipped, and so is
   one whose routine task is still open.
-- Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
-  for one run as environment variables, website logins as entries of the profile's Hermes
-  vault, and SSH keys as files of the profile. The model sees secret names only.
+- Credentials are stored in Plan, encrypted, on its Credentials page: website logins, API keys,
+  SSH keys and secrets, each for the team or one project and granted to agents. Before each
+  run and chat answer the runner makes the agent's Hermes vault hold exactly the website
+  logins granted to it, which Hermes fills in the browser without the model seeing a
+  password; the secrets and API keys an agent's MCP servers name reach Hermes as environment
+  variables. Every delivery and every filled login is recorded in the credential's audit log.
+  Chromium's own password manager is off in the project browsers.
+- A login the vault cannot complete (a captcha, a passkey, a code sent by SMS) goes to the
+  owner as an approval request: the owner signs in in the project's live browser, whose
+  profile keeps the session, and the approval starts the agent's next run.
 - Configuration files (`AGENTS.md`, `SOUL.md`, instruction files, managed skills, toolsets,
   MCP grants, model) are owned by Plan. A change Hermes makes to one of them is imported
   into Plan as a new revision. Memory and skills Hermes creates are owned by Hermes and are
