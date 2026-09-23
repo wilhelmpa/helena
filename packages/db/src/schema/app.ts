@@ -130,6 +130,9 @@ export const project = pgTable('project', {
   // the same place. Independent of the time estimate: a team can log time without
   // estimating first. Turning it off hides the entries and keeps them.
   timeLoggingEnabled: boolean('time_logging_enabled').notNull().default(false),
+  // The tokens the agent runs of this project may use per calendar month (UTC); null
+  // is no ceiling. Reaching it pauses the agent whose run would start next.
+  monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -585,6 +588,15 @@ export const aiAgent = pgTable(
     // Last time a runner claimed work or sent a heartbeat for this agent, which is
     // what the UI shows as its presence. NULL for an agent no runner ever polled.
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    // Set while the agent takes no new work: its queued runs and chat answers wait, a
+    // mention or a delegation starts nothing, and an agent-team stage is refused.
+    // pause_reason says why, whether a member paused it or a token ceiling did.
+    pausedAt: timestamp('paused_at', { withTimezone: true }),
+    pauseReason: text('pause_reason'),
+    // The tokens the agent's runs may use per day and per calendar month (UTC); null is
+    // no ceiling. Reaching one pauses the agent.
+    dailyTokenCeiling: bigint('daily_token_ceiling', { mode: 'number' }),
+    monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -682,6 +694,9 @@ export const agentRun = pgTable(
     // iterations and wall-clock seconds. Null takes the agent's runtime policy default.
     maxTurns: integer('max_turns'),
     runBudgetSeconds: integer('run_budget_seconds'),
+    // The question the agent asked when it reported itself blocked during the run. A
+    // blocked run ends as a success: the agent did what it could and waits for input.
+    blockedQuestion: text('blocked_question'),
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -699,6 +714,8 @@ export const agentRun = pgTable(
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
     index('agent_run_schedule_idx').on(t.scheduleId),
     index('agent_run_project_idx').on(t.projectId),
+    // The token ceilings sum an agent's runs of the current day and month.
+    index('agent_run_agent_finished_idx').on(t.agentId, t.finishedAt),
   ],
 );
 
