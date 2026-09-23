@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { maxTurnsLimit, runBudgetSecondsLimit } from '#modules/agents/model';
 
 export const workflowParams = t.Object({
   projectKey: t.String(),
@@ -26,6 +27,12 @@ export const assignmentBody = t.Object(
         {
           instructions: t.Optional(t.String({ maxLength: 4000 })),
           retryLimit: t.Optional(t.Integer({ minimum: 0, maximum: 10 })),
+          // Read by agent-team only; agentTeamConfiguration in the service holds the
+          // defaults.
+          autonomy: t.Optional(t.Union([t.Literal('review'), t.Literal('done')])),
+          reviewRequired: t.Optional(t.Boolean()),
+          maxTurns: t.Optional(t.Nullable(t.Integer(maxTurnsLimit))),
+          runBudgetSeconds: t.Optional(t.Nullable(t.Integer(runBudgetSecondsLimit))),
         },
         { additionalProperties: false },
       ),
@@ -75,3 +82,34 @@ export const runQuery = t.Object({
 });
 
 export const ControlPlaneResponse = t.Unknown();
+
+export const startAgentTeamBody = t.Object(
+  {
+    idempotencyKey: t.Optional(
+      t.String({
+        format: 'uuid',
+        description: 'Starts nothing new when a run with this key exists already.',
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+export const AgentTeamStartResponse = t.Object({
+  runId: t.String(),
+  status: t.String(),
+  taskRef: t.String(),
+});
+
+// One agent-team run of an issue as Mastra stores it: the status of each step in
+// execution order, and once it finished the workflow output (summary, evidence, stage
+// history, the Plan state it set) or the error it failed with.
+export const AgentTeamRunResponse = t.Object({
+  runId: t.String(),
+  status: t.String(),
+  createdAt: t.Nullable(t.String()),
+  updatedAt: t.Nullable(t.String()),
+  steps: t.Array(t.Object({ id: t.String(), status: t.String() })),
+  result: t.Any(),
+  error: t.Nullable(t.String()),
+});

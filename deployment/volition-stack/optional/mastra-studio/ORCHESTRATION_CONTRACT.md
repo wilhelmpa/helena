@@ -40,6 +40,15 @@ Mastra owns workflow definitions, event triggers, schedules, retries, checkpoint
 
 Model and reasoning in `execution` are optional provider-neutral strings; Plan rejects a stage whose values differ from the agent's configuration. Tests that exercise a model must use Luna with low reasoning.
 
+## Starting from Plan
+
+Plan starts `agent-team` for an issue in two ways, both only when the project has the workflow enabled:
+
+- An issue delegated to an agent whose organization role is `coordinator` starts the workflow instead of queueing a run for that agent. When the start fails, Plan queues the run for the coordinator as for any other delegation.
+- `POST /issues/:issueId/agent-team` starts it on request. The delegate leads when it is a coordinator, otherwise the project's only coordinator.
+
+Plan builds the payload from the issue: `taskRef` is `task:<KEY>-<number>`, the objective is the description (the title when it is empty, at most 12000 characters), the acceptance criteria are the description's Markdown checklist items (`- [ ]`, `- [x]`) or one default criterion, and the labels are the issue's label names. The specialists are the project's external agents with the organization role `specialist` and their capabilities; without one the coordinator is its own specialist. The correlation ID is the task reference. `reviewRequired`, `autonomy`, `maxTurns` and `runBudgetSeconds` of the policy come from the project's `agent-team` configuration, which replaces the same fields of any policy the start request carries. `GET /issues/:issueId/agent-team/runs` lists the runs whose payload names the issue.
+
 ## Stages
 
 The workflow persists five stages in Mastra:
@@ -85,8 +94,8 @@ It returns the `stageResultSchema` from `src/mastra/team-contracts.ts`. A repeat
 Plan controls the workflow through the Mastra control API:
 
 - `catalog` lists definitions and ownership.
-- `start` starts a project-scoped workflow with an explicit event ID.
-- `runs` and `run` expose stored status, checkpoints and history for one project.
+- `start` creates a project-scoped run with the event ID as run ID and starts it without waiting for it to finish.
+- `runs` and `run` expose stored status, checkpoints and history for one project. `runs` with a `taskRef` returns the runs whose payload names that task, searched among the project's 200 newest runs of the workflow.
 - `retry` restarts only failed runs with the same run ID.
 - `cancel` stops a non-terminal run.
 - schedule operations create, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key.

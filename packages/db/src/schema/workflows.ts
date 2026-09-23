@@ -19,6 +19,11 @@ import { project, projectActionRun, team } from './app';
 export interface ProjectWorkflowConfiguration {
   instructions?: string;
   retryLimit?: number;
+  // Read by the agent-team workflow only.
+  autonomy?: 'review' | 'done';
+  reviewRequired?: boolean;
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 export const projectWorkflowAssignment = pgTable(
