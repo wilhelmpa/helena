@@ -8,10 +8,10 @@ import { organizationAgentRole } from '../organizationTree';
 export default function OrganizationSummary({ agents }: { agents: OrganizationAgent[] }) {
   const t = useTranslations('organization');
   const coordinators = agents.filter(
-    (agent) => organizationAgentRole(agent, agents) === 'coordinator',
+    (agent) => organizationAgentRole(agent) === 'coordinator',
   ).length;
   const specialists = agents.filter(
-    (agent) => organizationAgentRole(agent, agents) === 'specialist',
+    (agent) => organizationAgentRole(agent) === 'specialist',
   ).length;
   const cards = [
     { key: 'pool', value: agents.length, icon: Bot },

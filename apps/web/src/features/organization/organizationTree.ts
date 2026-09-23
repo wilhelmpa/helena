@@ -1,4 +1,5 @@
 import type {
+  AgentTeamRole,
   Organization,
   OrganizationAgent,
   OrganizationDepartment,
@@ -22,22 +23,10 @@ export interface OrganizationGoalNode {
   children: OrganizationGoalNode[];
 }
 
-export type OrganizationAgentRole = 'coordinator' | 'specialist' | 'pool';
+export type OrganizationAgentRole = AgentTeamRole | 'pool';
 
-export function organizationAgentRole(
-  agent: OrganizationAgent,
-  agents: OrganizationAgent[],
-): OrganizationAgentRole {
-  if (agent.reportsToAgentId != null) return 'specialist';
-  const identity = [agent.roleTitle, agent.runtimeAgentId, agent.username, agent.name]
-    .filter(Boolean)
-    .join(' ');
-  if (
-    /coordinator/i.test(identity) ||
-    agents.some((candidate) => candidate.reportsToAgentId === agent.id)
-  )
-    return 'coordinator';
-  return 'pool';
+export function organizationAgentRole(agent: OrganizationAgent): OrganizationAgentRole {
+  return agent.role ?? 'pool';
 }
 
 function goalTree(goals: OrganizationGoal[]): OrganizationGoalNode[] {

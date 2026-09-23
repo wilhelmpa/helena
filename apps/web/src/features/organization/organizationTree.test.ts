@@ -48,6 +48,8 @@ describe('buildOrganizationTree', () => {
           departmentId: 2,
           reportsToAgentId: null,
           roleTitle: 'Lead',
+          role: 'coordinator',
+          capabilities: [],
           kind: 'external',
           runtimeAgentId: 'lead',
           projects: [],
@@ -61,6 +63,8 @@ describe('buildOrganizationTree', () => {
           departmentId: 2,
           reportsToAgentId: 10,
           roleTitle: '',
+          role: null,
+          capabilities: [],
           kind: 'external',
           runtimeAgentId: 'researcher',
           projects: [],
@@ -91,6 +95,8 @@ describe('buildOrganizationTree', () => {
           departmentId: null,
           reportsToAgentId: null,
           roleTitle: '',
+          role: null,
+          capabilities: [],
           kind: 'external',
           runtimeAgentId: null,
           projects: [],
@@ -101,48 +107,13 @@ describe('buildOrganizationTree', () => {
     assert.equal(buildOrganizationTree(organization)[0].department, null);
   });
 
-  test('classifies the agent pool from reporting relationships', () => {
-    const coordinator = {
-      id: 10,
-      reportsToAgentId: null,
-      roleTitle: '',
-      runtimeAgentId: null,
-      username: 'lead',
-      name: 'Lead',
-    } as Organization['agents'][number];
-    const specialist = {
-      id: 11,
-      reportsToAgentId: 10,
-      roleTitle: '',
-      runtimeAgentId: null,
-      username: 'specialist',
-      name: 'Specialist',
-    } as Organization['agents'][number];
-    const poolAgent = {
-      id: 12,
-      reportsToAgentId: null,
-      roleTitle: '',
-      runtimeAgentId: null,
-      username: 'available',
-      name: 'Available',
-    } as Organization['agents'][number];
-    const agents = [coordinator, specialist, poolAgent];
+  test('reads the agent team role from the organization assignment', () => {
+    const agent = (role: Organization['agents'][number]['role']) =>
+      ({ role }) as Organization['agents'][number];
 
-    assert.equal(organizationAgentRole(coordinator, agents), 'coordinator');
-    assert.equal(organizationAgentRole(specialist, agents), 'specialist');
-    assert.equal(organizationAgentRole(poolAgent, agents), 'pool');
-  });
-
-  test('recognizes a provisioned coordinator before it has reports', () => {
-    const coordinator = {
-      id: 20,
-      reportsToAgentId: null,
-      roleTitle: '',
-      runtimeAgentId: 'hermes-demo-coordinator',
-      username: 'hermes-demo-coordinator',
-      name: 'Hermes DEMO Coordinator',
-    } as Organization['agents'][number];
-
-    assert.equal(organizationAgentRole(coordinator, [coordinator]), 'coordinator');
+    assert.equal(organizationAgentRole(agent('coordinator')), 'coordinator');
+    assert.equal(organizationAgentRole(agent('specialist')), 'specialist');
+    assert.equal(organizationAgentRole(agent('reviewer')), 'reviewer');
+    assert.equal(organizationAgentRole(agent(null)), 'pool');
   });
 });

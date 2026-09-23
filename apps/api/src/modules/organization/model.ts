@@ -41,10 +41,22 @@ export const createGoalBody = t.Object({
 });
 export const updateGoalBody = t.Partial(createGoalBody);
 
+export const agentTeamRole = t.Union([
+  t.Literal('coordinator'),
+  t.Literal('specialist'),
+  t.Literal('reviewer'),
+]);
+
 export const setAgentAssignmentBody = t.Object({
   departmentId: t.Optional(nullableId),
   reportsToAgentId: t.Optional(nullableId),
   roleTitle: t.Optional(t.String({ maxLength: 100 })),
+  role: t.Optional(t.Nullable(agentTeamRole)),
+  capabilities: t.Optional(
+    t.Array(t.String({ minLength: 1, maxLength: 32, pattern: '^[a-z0-9][a-z0-9-]*$' }), {
+      maxItems: 16,
+    }),
+  ),
   runtimeAgentId: t.Optional(
     t.Nullable(
       t.String({
@@ -104,6 +116,8 @@ const OrganizationAgentResponse = t.Object({
   departmentId: nullableId,
   reportsToAgentId: nullableId,
   roleTitle: t.String(),
+  role: t.Nullable(agentTeamRole),
+  capabilities: t.Array(t.String()),
   runtimeAgentId: t.Nullable(t.String()),
   runtimeState: t.Object({
     adapter: t.Nullable(t.String()),
