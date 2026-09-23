@@ -67,7 +67,7 @@ export function PermissionsPopover({
                 <tr>
                   <td
                     colSpan={ACTION_ORDER.length + 1}
-                    className="px-3 pt-3 pb-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+                    className="px-3 pt-3 pb-1 text-xs font-medium text-muted-foreground"
                   >
                     {groupLabel(g.key)}
                   </td>

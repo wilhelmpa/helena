@@ -26,7 +26,7 @@ export default function IssuePropertyGroupHeading({
       onClick={onToggle}
     >
       <span className="h-px flex-1 bg-border/60" />
-      <span className="text-[11px] font-medium">{label}</span>
+      <span className="text-xs font-medium">{label}</span>
       <Chevron className="size-3" />
     </button>
   );

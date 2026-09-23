@@ -92,6 +92,15 @@ export default [
           message:
             'No arbitrary text size or row/control height here (text-[13px], h-[37px], …) — that scale lives in components/ui and components/common only. See docs/volition-design-helena-ui.md.',
         },
+        {
+          // The one type scale (globals.css): 12 xs · 13 caption · 14 sm · 16 base · 20 xl ·
+          // 24 2xl · 30 3xl, in regular, medium and semibold. 18px (text-lg), anything
+          // from 36px up, and the thin/light/bold/black weights are off it.
+          selector:
+            'Literal[value=/(?:^|[\\s:])(?:text-(?:lg|[4-9]xl)|font-(?:thin|extralight|light|bold|extrabold|black))(?:$|[\\s])/], TemplateElement[value.raw=/(?:^|[\\s:])(?:text-(?:lg|[4-9]xl)|font-(?:thin|extralight|light|bold|extrabold|black))(?:$|[\\s])/]',
+          message:
+            'Off the type scale — use text-xs/caption/sm/base/xl/2xl/3xl and font-normal/medium/semibold. See the scale in globals.css.',
+        },
       ],
     },
   },

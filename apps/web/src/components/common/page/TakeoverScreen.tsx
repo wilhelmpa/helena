@@ -50,9 +50,7 @@ export default function TakeoverScreen({
             <p className="text-xs font-medium tracking-[0.12em] text-balance text-muted-foreground uppercase">
               {eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance lg:text-4xl">
-              {title}
-            </h1>
+            <h1 className="mt-3 text-2xl font-semibold text-balance lg:text-3xl">{title}</h1>
           </div>
 
           {sections.length > 1 && (
@@ -97,7 +95,7 @@ export default function TakeoverScreen({
                 id={section.id}
                 className={index === 0 ? 'scroll-mt-8' : 'scroll-mt-8 border-t border-border pt-14'}
               >
-                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <h2 className="flex items-center gap-2 text-base font-semibold">
                   {section.icon}
                   {section.href ? (
                     <a

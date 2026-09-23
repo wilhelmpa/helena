@@ -39,7 +39,7 @@ export default function OrganizationOrchestrationUsage({ projectKey }: { project
         <dl className="grid grid-cols-2 gap-3">
           <div>
             <dt className="text-xs text-muted-foreground">{t('month')}</dt>
-            <dd className="text-lg font-semibold" dir="ltr">
+            <dd className="text-xl font-semibold" dir="ltr">
               {compactTokens(data.inputTokens + data.outputTokens)}
             </dd>
             <dd className="text-xs text-muted-foreground">
@@ -51,7 +51,7 @@ export default function OrganizationOrchestrationUsage({ projectKey }: { project
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">{t('perClosedTask')}</dt>
-            <dd className="text-lg font-semibold" dir="ltr">
+            <dd className="text-xl font-semibold" dir="ltr">
               {data.tokensPerClosedTask == null ? '—' : compactTokens(data.tokensPerClosedTask)}
             </dd>
             <dd className="text-xs text-muted-foreground">

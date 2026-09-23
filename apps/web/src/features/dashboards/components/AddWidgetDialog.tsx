@@ -92,7 +92,7 @@ export default function AddWidgetDialog({ onAdd }: { onAdd: (type: WidgetType) =
           )}
           {groups.map((group) => (
             <div key={group.key} className="space-y-1.5">
-              <h3 className="px-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              <h3 className="px-1 text-xs font-semibold text-muted-foreground">
                 {t(`widgetGroups.${group.key}`)}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">

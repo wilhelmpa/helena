@@ -57,11 +57,7 @@ export default function MemberRow({
       <TableCell className="px-3 py-3 align-top whitespace-normal">
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <Avatar
-              name={displayName}
-              image={member.image}
-              className="size-8 shrink-0 text-[11px]"
-            />
+            <Avatar name={displayName} image={member.image} className="size-8 shrink-0" />
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="flex items-center gap-2 text-sm font-medium">
                 <span className="truncate">{displayName}</span>

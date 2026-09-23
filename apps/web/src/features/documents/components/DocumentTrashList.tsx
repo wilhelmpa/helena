@@ -30,10 +30,10 @@ export default function DocumentTrashList({ root, canEdit }: { root: string; can
         >
           <FileText className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px]" dir="auto" title={item.path}>
+            <span className="block truncate text-sm" dir="auto" title={item.path}>
               {item.path.slice(root.length + 1)}
             </span>
-            <span className="block text-[11px] text-muted-foreground">
+            <span className="block text-xs text-muted-foreground">
               {t('trashedAt', { time: relativeTime(item.trashedAt) })}
             </span>
           </span>

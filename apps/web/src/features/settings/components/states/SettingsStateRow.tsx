@@ -67,11 +67,7 @@ export function SettingsStateRow({
           <TooltipTrigger asChild>
             <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
               <UserPlus className="size-3.5" />
-              <Avatar
-                name={autoAssignee.name}
-                image={autoAssignee.image}
-                className="size-4 text-[8px]"
-              />
+              <Avatar name={autoAssignee.name} image={autoAssignee.image} className="size-4" />
               {autoAssignee.name}
             </span>
           </TooltipTrigger>

@@ -25,7 +25,7 @@ export default function OrganizationSummary({ agents }: { agents: OrganizationAg
         <div key={key} className="flex items-center gap-3 rounded-lg border bg-background p-3">
           <Icon className="size-4 text-muted-foreground" />
           <div>
-            <p className="text-lg leading-none font-semibold">{value}</p>
+            <p className="text-xl leading-none font-semibold">{value}</p>
             <p className="mt-1 text-xs text-muted-foreground">{t(`summary.${key}`)}</p>
           </div>
         </div>

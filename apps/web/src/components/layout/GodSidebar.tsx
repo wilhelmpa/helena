@@ -24,8 +24,8 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarNavSubmenu from '@/components/layout/SidebarNavSubmenu';
-import SidebarBrandFooter from '@/components/brand/SidebarBrandFooter';
-import SidebarUtilityRow from '@/components/brand/SidebarUtilityRow';
+import SidebarBrand from '@/components/brand/SidebarBrand';
+import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 
 // The sidebar in god mode. It mirrors the project settings sidebar — a list of
 // sections plus a way back, with the integration sections folded into one item —
@@ -109,14 +109,13 @@ export default function GodSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <SidebarBrand />
         {headerLayout === 'single' && (
           <>
             <SidebarSeparator />
-            <SidebarUtilityRow />
+            <SidebarAccountRow />
           </>
         )}
-        <SidebarSeparator />
-        <SidebarBrandFooter />
       </SidebarFooter>
 
       <SidebarRail />

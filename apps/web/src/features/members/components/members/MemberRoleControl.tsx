@@ -53,7 +53,7 @@ export default function MemberRoleControl({
     return (
       <Badge
         variant={isOwnerRow ? 'secondary' : 'outline'}
-        className="px-1.5 py-0 text-[10px] font-normal"
+        className="px-1.5 py-0 text-xs font-normal"
       >
         {isOwnerRow ? tCommon('owner') : currentName}
       </Badge>

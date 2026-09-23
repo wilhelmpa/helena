@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { ChevronsUpDown, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { signOut, useSession } from '@/lib/auth-client';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
@@ -21,13 +21,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 // Signed-in user control in the header: shows the account avatar and a menu with
 // the email, the role, links to preferences, connected accounts, account security
 // (passkeys) and API keys, sign out, and the project this one is a fork of.
 // Signing out clears the session and the proxy sends the browser back to
 // the login page.
-export default function UserMenu() {
+//
+// `avatar` is the round trigger of the classic header; `row` is the sidebar footer's
+// account row — avatar, name and a chevron in one 32px sidebar row that fills the
+// width (the name hides when the sidebar collapses to icons).
+export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 'row' }) {
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
   const sectionLabel = useAccountSectionLabel();
@@ -40,7 +45,12 @@ export default function UserMenu() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  if (!mounted || isPending) return <Skeleton className="size-7 rounded-full" />;
+  if (!mounted || isPending)
+    return (
+      <Skeleton
+        className={cn('rounded-full', variant === 'row' ? 'size-6 flex-1 rounded-md' : 'size-7')}
+      />
+    );
   if (!session) return null;
 
   const { user } = session;
@@ -70,14 +80,32 @@ export default function UserMenu() {
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <button type="button" aria-label={user.email} className="rounded-full outline-none">
-              <Avatar name={user.name || user.email} image={image} className="size-7 text-[11px]" />
-            </button>
+            {variant === 'row' ? (
+              <button
+                type="button"
+                aria-label={user.email}
+                className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 text-start text-sm text-sidebar-foreground outline-none group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring data-[state=open]:bg-sidebar-accent"
+              >
+                <Avatar name={user.name || user.email} image={image} className="size-6 shrink-0" />
+                <span className="min-w-0 flex-1 truncate group-data-[collapsible=icon]:hidden">
+                  {user.name || user.email}
+                </span>
+                <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+              </button>
+            ) : (
+              <button type="button" aria-label={user.email} className="rounded-full outline-none">
+                <Avatar name={user.name || user.email} image={image} className="size-7" />
+              </button>
+            )}
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent>{user.email}</TooltipContent>
       </Tooltip>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent
+        align={variant === 'row' ? 'start' : 'end'}
+        side={variant === 'row' ? 'top' : undefined}
+        className="w-56"
+      >
         <DropdownMenuLabel className="flex flex-col gap-1">
           <span className="truncate text-sm font-medium">{user.email}</span>
           <span className="text-xs text-muted-foreground capitalize">{t('role', { role })}</span>

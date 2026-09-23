@@ -42,7 +42,7 @@ function wikilinkRule(state: InlineState, silent: boolean): boolean {
 const NOTE_CLASS =
   'cursor-pointer text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary';
 const TASK_CLASS =
-  'cursor-pointer rounded-md border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] hover:bg-accent';
+  'cursor-pointer rounded-md border bg-muted px-1.5 py-0.5 font-mono wikilink-chip hover:bg-accent';
 
 // A wikilink as one inline unit. It keeps the text between the brackets as written,
 // so it saves back unchanged. The markdown-it rule runs before the link rule; the

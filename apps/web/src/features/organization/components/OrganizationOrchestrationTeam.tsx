@@ -29,7 +29,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
         const members = agents.filter((agent) => organizationAgentRole(agent) === role);
         return (
           <div key={role} className="space-y-1.5">
-            <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <h3 className="text-xs font-medium text-muted-foreground">
               {t(`roles.${role}`)} <span className="tabular-nums">{members.length}</span>
             </h3>
             {members.length === 0 ? (
@@ -55,7 +55,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                       {agent.capabilities.map((capability) => (
                         <span
                           key={capability}
-                          className="rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                          className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground"
                         >
                           {capability}
                         </span>

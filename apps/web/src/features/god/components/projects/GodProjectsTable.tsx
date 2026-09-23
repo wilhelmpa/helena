@@ -123,11 +123,11 @@ export default function GodProjectsTable({
 
             <TableCell className="px-3 py-3 align-top">
               {p.mcpEnabled ? (
-                <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
+                <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                   {t('mcpEnabled')}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium">
+                <Badge variant="outline" className="px-1.5 py-0 text-xs font-medium">
                   {t('mcpOff')}
                 </Badge>
               )}

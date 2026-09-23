@@ -16,9 +16,7 @@ export default function ReadOnlyActivityFeed({
   const t = useTranslations('issue');
   return (
     <div className="mt-6 border-t pt-5">
-      <h3 className="mb-4 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {t('activityHeading')}
-      </h3>
+      <h3 className="mb-4 text-xs font-medium text-muted-foreground">{t('activityHeading')}</h3>
       {feed.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('noActivity')}</p>
       ) : (

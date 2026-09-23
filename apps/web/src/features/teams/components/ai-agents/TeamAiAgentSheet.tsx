@@ -115,7 +115,7 @@ function SheetBody({
             </SheetDescription>
           </div>
           {agent && (
-            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {agent.kind}
             </span>
           )}

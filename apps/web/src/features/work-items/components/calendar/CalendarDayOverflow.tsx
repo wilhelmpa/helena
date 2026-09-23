@@ -24,7 +24,7 @@ export function CalendarDayOverflow({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="px-1.5 text-left text-[10px] text-muted-foreground hover:text-foreground"
+          className="px-1.5 text-left text-xs text-muted-foreground hover:text-foreground"
         >
           {t('moreIssues', { count: hidden })}
         </button>

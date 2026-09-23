@@ -32,9 +32,7 @@ export default function InitiativeProgress({
       </div>
 
       <aside className="min-w-0 lg:w-1/3">
-        <h3 className="mb-4 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {t('activity')}
-        </h3>
+        <h3 className="mb-4 text-xs font-medium text-muted-foreground">{t('activity')}</h3>
         <InitiativeActivityFeed initiativeId={initiative.id} projectKey={projectKey} />
       </aside>
     </div>

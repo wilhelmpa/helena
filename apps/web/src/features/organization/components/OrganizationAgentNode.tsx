@@ -28,7 +28,7 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
                 <p className="truncate text-sm font-medium">{agent.name}</p>
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                   {t(`roles.${role}`)}
                 </span>
                 <AgentPausedBadge agent={agent} />
@@ -48,7 +48,7 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
             {agent.capabilities.map((capability) => (
               <span
                 key={capability}
-                className="rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground"
               >
                 {capability}
               </span>
@@ -58,7 +58,7 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
         {agent.projects.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {agent.projects.map((project) => (
-              <span key={project.id} className="rounded bg-muted px-1.5 py-0.5 text-[11px]">
+              <span key={project.id} className="rounded bg-muted px-1.5 py-0.5 text-xs">
                 {project.key}
               </span>
             ))}

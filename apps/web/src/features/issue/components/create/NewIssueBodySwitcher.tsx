@@ -28,7 +28,7 @@ export default function NewIssueBodySwitcher({
             same line as the editor text under it. */}
         <button
           type="button"
-          className="flex h-6 max-w-full min-w-0 items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:text-foreground"
+          className="flex h-6 max-w-full min-w-0 items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <span className="truncate">{active?.label}</span>
           <ChevronDown className="size-3.5 shrink-0" />

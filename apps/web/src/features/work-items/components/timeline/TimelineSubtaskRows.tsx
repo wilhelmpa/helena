@@ -103,7 +103,7 @@ export function TimelineSubtaskRows({
                         : undefined,
                     }}
                   >
-                    <span className="truncate text-[10px] leading-none">{subtask.title}</span>
+                    <span className="truncate text-xs leading-none">{subtask.title}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>

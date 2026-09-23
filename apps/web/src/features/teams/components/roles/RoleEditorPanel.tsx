@@ -141,7 +141,7 @@ export default function RoleEditorPanel({
                   return (
                     <th key={action} className="px-1 py-2">
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-[11px] font-medium text-muted-foreground">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {actionLabel(action)}
                         </span>
                         <MatrixCheckbox

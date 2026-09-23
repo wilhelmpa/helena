@@ -87,10 +87,7 @@ export default function TeamRolesList({
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="truncate text-sm font-medium">{role.name}</span>
                   {role.isDefault && (
-                    <Badge
-                      variant="secondary"
-                      className="shrink-0 px-1.5 py-0 text-[10px] font-normal"
-                    >
+                    <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-xs font-normal">
                       {t('roles.default')}
                     </Badge>
                   )}

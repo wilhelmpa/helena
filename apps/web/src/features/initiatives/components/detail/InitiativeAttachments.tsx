@@ -61,9 +61,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
   return (
     <div className="relative" {...(canEdit ? dragHandlers : {})}>
       <div className="flex h-7 items-center justify-between gap-3">
-        <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {t('title')}
-        </h2>
+        <h2 className="text-xs font-medium text-muted-foreground">{t('title')}</h2>
         {canEdit && (
           <Button
             variant="ghost"
@@ -115,7 +113,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
                   <p className="truncate text-xs" title={a.filename}>
                     {a.filename}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">{formatSize(a.sizeBytes)}</p>
+                  <p className="text-xs text-muted-foreground">{formatSize(a.sizeBytes)}</p>
                 </div>
                 <Button variant="ghost" size="icon" className="size-7" asChild>
                   <a

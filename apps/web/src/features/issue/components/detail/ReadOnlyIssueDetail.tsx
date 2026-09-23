@@ -47,13 +47,13 @@ export default function ReadOnlyIssueDetail({
       <div className="w-full max-w-3xl min-w-0">
         <div className="flex items-center gap-2">
           {issue.archivedAt && (
-            <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase">
+            <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
               {t('archived')}
             </span>
           )}
           <span className="text-xs text-muted-foreground tabular-nums">{issue.identifier}</span>
         </div>
-        <h1 className="mt-1 text-lg font-semibold">{issue.title}</h1>
+        <h1 className="mt-1 text-xl font-semibold">{issue.title}</h1>
 
         {issue.description.trim() && (
           <MarkdownEditor className="mt-4" defaultValue={issue.description} editable={false} />

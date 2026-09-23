@@ -33,7 +33,7 @@ export default function AssigneeSelect({
   const toItem = (a: Assignee): PickItem => ({
     key: a.userId,
     search: a.name,
-    icon: <Avatar name={a.name} image={a.image} className="size-4 text-[8px]" />,
+    icon: <Avatar name={a.name} image={a.image} className="size-4" />,
     label: a.name,
     selected: a.userId === value,
     onSelect: () => onChange(a.userId),
@@ -47,7 +47,7 @@ export default function AssigneeSelect({
       trigger={
         <Pill active={!!assignee}>
           {assignee ? (
-            <Avatar name={assignee.name} image={assignee.image} className="size-4 text-[8px]" />
+            <Avatar name={assignee.name} image={assignee.image} className="size-4" />
           ) : (
             <CircleDashed />
           )}

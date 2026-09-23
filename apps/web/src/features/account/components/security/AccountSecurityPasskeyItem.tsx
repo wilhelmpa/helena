@@ -36,7 +36,7 @@ export default function AccountSecurityPasskeyItem({
         <ItemTitle className="flex items-center gap-2">
           {passkeyLabel(passkey, t('passkeyFallback'))}
           {passkey.deviceType === 'singleDevice' && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
+            <Badge variant="secondary" className="px-1.5 py-0 text-xs font-normal">
               {t('thisDevice')}
             </Badge>
           )}

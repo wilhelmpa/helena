@@ -90,26 +90,23 @@ export default function GodUserDetailPanel({
               {user && (
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                   {user.role === 'god' ? (
-                    <Badge className="gap-1 px-1.5 py-0 text-[10px] font-medium">
+                    <Badge className="gap-1 px-1.5 py-0 text-xs font-medium">
                       <Shield className="size-3" />
                       {t('instanceOwner')}
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
+                    <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                       {t('user')}
                     </Badge>
                   )}
                   {user.isAgent && (
-                    <Badge
-                      variant="secondary"
-                      className="gap-1 px-1.5 py-0 text-[10px] font-medium"
-                    >
+                    <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs font-medium">
                       <Bot className="size-3" />
                       {t('aiAgent')}
                     </Badge>
                   )}
                   {user.emailVerified && (
-                    <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium">
+                    <Badge variant="outline" className="px-1.5 py-0 text-xs font-medium">
                       {t('emailVerified')}
                     </Badge>
                   )}

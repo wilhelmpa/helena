@@ -72,7 +72,7 @@ export default function ControlPlaneWorkflowRuntime({
               className="rounded-lg border bg-muted/20 p-3"
             >
               <div className="flex items-center gap-2 text-sm font-medium">
-                <span className="grid size-5 place-items-center rounded-full bg-primary text-[11px] text-primary-foreground">
+                <span className="grid size-5 place-items-center rounded-full bg-primary text-xs text-primary-foreground">
                   {index + 1}
                 </span>
                 {step.title}

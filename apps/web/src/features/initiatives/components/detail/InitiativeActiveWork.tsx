@@ -33,7 +33,7 @@ export default function InitiativeActiveWork({
 
   return (
     <div className="mt-8">
-      <h3 className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <h3 className="mb-3 text-xs font-medium text-muted-foreground">
         {t('inProgress')} <span className="tabular-nums">· {rows.length}</span>
       </h3>
       <ul className="divide-border overflow-hidden rounded-lg border">
@@ -61,11 +61,7 @@ export default function InitiativeActiveWork({
                 </span>
                 <span className="min-w-0 flex-1 truncate">{issue.title}</span>
                 {owner && (
-                  <Avatar
-                    name={owner.name}
-                    image={owner.image}
-                    className="size-5 shrink-0 text-[8px]"
-                  />
+                  <Avatar name={owner.name} image={owner.image} className="size-5 shrink-0" />
                 )}
               </button>
             </li>

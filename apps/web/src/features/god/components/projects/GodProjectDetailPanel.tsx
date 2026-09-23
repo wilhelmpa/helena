@@ -19,7 +19,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.projectPanel');
   return (
     <div className="rounded-lg bg-muted/40 px-3 py-2.5" title={t('statTitle', { label, value })}>
-      <div className="text-lg font-semibold tabular-nums">{compactCount(value)}</div>
+      <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>
   );
@@ -80,7 +80,7 @@ export default function GodProjectDetailPanel({
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 <Badge
                   variant={project.mcpEnabled ? 'secondary' : 'outline'}
-                  className="px-1.5 py-0 text-[10px] font-medium"
+                  className="px-1.5 py-0 text-xs font-medium"
                 >
                   {t(project.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
                 </Badge>

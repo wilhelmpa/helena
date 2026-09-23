@@ -62,7 +62,7 @@ export default function DocumentHistoryList({
                 <span className="truncate text-xs text-muted-foreground" dir="auto">
                   {revision.message}
                 </span>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {relativeTime(revision.committedAt)}
                 </span>
               </button>

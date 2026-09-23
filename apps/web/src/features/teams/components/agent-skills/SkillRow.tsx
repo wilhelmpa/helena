@@ -37,7 +37,7 @@ export function SkillRow({
           <div className="flex min-w-0 flex-col gap-1 pt-0.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="truncate text-sm font-medium text-foreground">{skill.name}</span>
-              <Badge variant="outline" className="text-[10px] font-medium tracking-wide uppercase">
+              <Badge variant="outline" className="text-xs font-medium">
                 {t(`source.${skill.source}`)}
               </Badge>
             </div>

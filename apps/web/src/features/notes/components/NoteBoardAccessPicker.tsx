@@ -65,11 +65,11 @@ export default function NoteBoardAccessPicker({
     return {
       key: candidate.userId,
       search: candidate.name,
-      icon: <Avatar name={candidate.name} image={candidate.image} className="size-4 text-[8px]" />,
+      icon: <Avatar name={candidate.name} image={candidate.image} className="size-4" />,
       label: candidate.name,
       selected,
       trailing: candidate.canAccess ? undefined : (
-        <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+        <Badge variant="secondary" className="px-1.5 py-0 text-xs">
           {t('noAccessShort')}
         </Badge>
       ),

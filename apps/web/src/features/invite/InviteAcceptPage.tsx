@@ -55,7 +55,7 @@ export default function InviteAcceptPage({ token }: { token: string }) {
           <CardContent className="grid p-0 md:grid-cols-2">
             <div className="p-6 md:p-8">
               <div className="mb-6 flex flex-col gap-1 text-center">
-                <h1 className="text-2xl font-bold">{title}</h1>
+                <h1 className="text-2xl font-semibold">{title}</h1>
                 <p className="text-sm text-balance text-muted-foreground">{subtitle}</p>
               </div>
               {body}

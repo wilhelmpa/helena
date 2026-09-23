@@ -19,5 +19,5 @@ export default function StatWidget({ config }: { config: WidgetConfig }) {
 
   if (!project) return <Skeleton className="h-10 w-16" />;
 
-  return <div className="text-4xl font-semibold tracking-tight tabular-nums">{count}</div>;
+  return <div className="text-3xl font-semibold tabular-nums">{count}</div>;
 }

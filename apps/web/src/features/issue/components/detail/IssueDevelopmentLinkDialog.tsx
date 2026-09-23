@@ -157,7 +157,7 @@ export default function IssueDevelopmentLinkDialog({
                       {pullRequest.title}
                     </span>
                     <span
-                      className="block truncate font-mono text-[11px] text-muted-foreground"
+                      className="block truncate font-mono text-xs text-muted-foreground"
                       dir="ltr"
                     >
                       #{pullRequest.number} · {pullRequest.sourceBranch ?? '?'} →{' '}

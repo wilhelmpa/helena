@@ -11,7 +11,7 @@ export default function OrganizationGoalNode({ node }: { node: GoalNode }) {
       <div className="flex items-center gap-2 text-sm">
         <Target className="size-3.5 text-muted-foreground" />
         <span>{node.goal.title}</span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
           {t(`statuses.${node.goal.status}`)}
         </span>
       </div>

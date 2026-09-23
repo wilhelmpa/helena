@@ -35,10 +35,10 @@ export function CredentialRow({
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="truncate text-sm font-medium">{entry.label}</span>
-          <Badge variant="secondary" className="text-[10px] font-normal">
+          <Badge variant="secondary" className="text-xs font-normal">
             {t(`kinds.${entry.kind}`)}
           </Badge>
-          <Badge variant="outline" className="text-[10px] font-normal">
+          <Badge variant="outline" className="text-xs font-normal">
             {entry.projectKey ?? t('scopeTeam')}
           </Badge>
         </div>

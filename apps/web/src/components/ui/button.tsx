@@ -7,7 +7,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -20,12 +20,15 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-9 px-4 py-2 has-[>svg]:px-3',
-        sm: 'h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5',
-        lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
-        icon: 'size-9',
-        'icon-sm': 'size-8 rounded-md',
-        'icon-xs': "size-7 rounded-md [&_svg:not([class*='size-'])]:size-3.5",
+        // The sidebar's 32px row is the default control height
+        // (docs/volition-design-helena-ui.md "filigran, kompakt"); on a touch screen
+        // globals.css raises every size to a 40px target.
+        default: 'h-8 px-3 has-[>svg]:px-2.5',
+        sm: 'h-7 gap-1.5 rounded-md px-2.5 has-[>svg]:px-2',
+        lg: 'h-9 rounded-md px-4 has-[>svg]:px-3',
+        icon: 'size-8',
+        'icon-sm': 'size-7 rounded-md',
+        'icon-xs': "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3.5",
       },
     },
     defaultVariants: {
@@ -50,6 +53,7 @@ function Button({
   return (
     <Comp
       data-slot="button"
+      data-size={size ?? 'default'}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

@@ -70,7 +70,7 @@ export default function IssueCustomFieldControl({
       if (!member) return <span className="text-sm text-muted-foreground">—</span>;
       return (
         <span className="flex items-center gap-1.5 text-sm">
-          <Avatar name={member.name} image={member.image} className="size-4 text-[8px]" />
+          <Avatar name={member.name} image={member.image} className="size-4" />
           {member.name}
         </span>
       );

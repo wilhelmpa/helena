@@ -1,4 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { GeistMono } from 'geist/font/mono';
+import { GeistSans } from 'geist/font/sans';
 import { ThemeProvider } from 'next-themes';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -14,6 +16,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title'), description: t('description') };
 }
 
+// The page reaches under the notch and the home indicator (viewport-fit=cover); the
+// shell pads itself back with the safe-area insets where it meets an edge. The theme
+// color follows the page background, so the phone's status bar blends into it.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fbfaf7' },
+    { media: '(prefers-color-scheme: dark)', color: '#23201e' },
+  ],
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -22,7 +37,14 @@ export default async function RootLayout({
   const locale = await getLocale();
 
   return (
-    <html lang={locale} dir={localeDirection(locale as Locale)} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={localeDirection(locale as Locale)}
+      // Geist and Geist Mono, self-hosted by next/font (no request to a font CDN);
+      // globals.css maps the two variables onto --font-sans/--font-mono.
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="antialiased">
         <RuntimeEnvScript />
         <ThemeProvider

@@ -154,7 +154,7 @@ export default function IssueAttachmentCard({
         <p className="truncate text-xs" title={attachment.filename}>
           {attachment.filename}
         </p>
-        <p className="text-[11px] text-muted-foreground">{formatSize(attachment.sizeBytes)}</p>
+        <p className="text-xs text-muted-foreground">{formatSize(attachment.sizeBytes)}</p>
       </div>
     </div>
   );

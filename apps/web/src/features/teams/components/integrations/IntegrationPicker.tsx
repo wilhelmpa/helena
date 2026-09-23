@@ -55,7 +55,7 @@ export function IntegrationPicker({
           return (
             <div key={kind} className="space-y-1.5">
               <div className="flex items-baseline gap-2 px-1">
-                <h3 className="text-xs font-semibold tracking-wide text-foreground uppercase">
+                <h3 className="text-xs font-semibold text-foreground">
                   {t(`groups.${kind}.title`)}
                 </h3>
                 <span className="text-xs text-muted-foreground">{t(`groups.${kind}.hint`)}</span>

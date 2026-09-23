@@ -91,7 +91,7 @@ export function TimelineLinkRows({
                   backgroundColor: issueColor(link.issue, maps),
                 }}
               >
-                <span className="truncate text-[10px] leading-none">{link.issue.title}</span>
+                <span className="truncate text-xs leading-none">{link.issue.title}</span>
               </div>
             </div>
           </div>

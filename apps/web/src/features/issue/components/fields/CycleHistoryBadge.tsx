@@ -22,7 +22,7 @@ export default function CycleHistoryBadge({ issueId }: { issueId: number }) {
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <Badge asChild variant="secondary" className="px-1.5 py-0 text-[10px]">
+            <Badge asChild variant="secondary" className="px-1.5 py-0 text-xs">
               <button type="button" aria-label={t('title')}>
                 <History />
                 {entries.length}

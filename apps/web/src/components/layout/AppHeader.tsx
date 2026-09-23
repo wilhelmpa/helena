@@ -80,7 +80,7 @@ export default function AppHeader({
             <span className="sr-only">{t('search')}</span>
             <kbd
               dir="ltr"
-              className="ms-auto hidden rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]"
+              className="ms-auto hidden rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
             >
               {paletteKey}
             </kbd>

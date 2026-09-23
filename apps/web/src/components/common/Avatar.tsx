@@ -10,9 +10,10 @@ import { cn } from '@/lib/utils';
 // (or if the image fails to load) it falls back to a colored circle with their
 // initials, deterministic per name (same name → same color, see
 // avatarColor/initials in lib/avatar). The default size matches the issue-card
-// avatar; pass a size-* / text-* className to scale it (comments use a larger
-// one). forwardRef + spread so it works as a Radix Tooltip/Popover `asChild`
-// trigger.
+// avatar; pass a size-* className to scale it (comments use a larger one) — the
+// initials follow on their own (40% of the avatar, see [data-slot='avatar'] in
+// globals.css), so a call site never sets a text size. forwardRef + spread so it
+// works as a Radix Tooltip/Popover `asChild` trigger.
 const Avatar = forwardRef<
   HTMLSpanElement,
   ComponentProps<'span'> & { name: string; image?: string | null }
@@ -26,8 +27,9 @@ const Avatar = forwardRef<
   return (
     <span
       ref={ref}
+      data-slot="avatar"
       className={cn(
-        'relative inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full text-[9px] font-semibold text-white',
+        'relative inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold text-white',
         className,
       )}
       {...props}
@@ -49,7 +51,7 @@ const Avatar = forwardRef<
           onError={() => setFailedSrc(image!)}
         />
       ) : (
-        initials(name)
+        <span data-slot="avatar-initials">{initials(name)}</span>
       )}
     </span>
   );

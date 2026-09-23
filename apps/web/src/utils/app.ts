@@ -8,6 +8,10 @@ import { runtimeEnv } from './runtimeEnv';
 // ("Helena – by Volition"). Do not conflate the two here.
 export const APP_NAME = 'Helena';
 
+// The company line under the wordmark ("Helena – by Volition"). A brand phrase, the same
+// in every language, so it is not a translation key.
+export const APP_BYLINE = 'by Volition';
+
 // The project this product is a fork of, named with its licence in the user menu.
 export const UPSTREAM_URL = 'https://github.com/croffasia/itsaplan';
 
