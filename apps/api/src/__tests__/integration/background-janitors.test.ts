@@ -43,7 +43,7 @@ describe('janitorJob', () => {
     expect(rows).toHaveLength(1);
     // Whichever call's UPDATE landed last wins the row; the primary key on `job` keeps
     // the concurrent upserts from ever producing two rows for the same job.
-    expect([1, 2, 3]).toContain(rows[0]!.cleaned);
+    expect([1, 2, 3]).toContain(rows[0]!.cleaned!);
   });
 
   it('runs the three janitors independently of each other', async () => {

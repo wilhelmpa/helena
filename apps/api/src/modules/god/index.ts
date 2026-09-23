@@ -137,7 +137,8 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       summary: 'Read the health of the services',
       description:
         'The last time the Hermes runner, Mastra, the Hermes team bridge, the provisioning ' +
-        'service and the worker were seen working, and the agent runs that wait or overran.',
+        'service and the worker were seen working, the agent runs that wait or overran, and ' +
+        'when the janitor loops last ran and what they cleaned up.',
     },
   })
 
