@@ -9,7 +9,7 @@ import {
 } from '@repo/agent-tools';
 import { iso, HttpError } from '#shared/lib';
 import { encryptSecret, decryptSecret } from '@repo/crypto';
-import { credentialSchemaFor } from './catalog';
+import { credentialSchemaFor, SECRET_INTEGRATION_KEY } from './catalog';
 
 // Data access for integration credentials. They belong to the team, so a
 // project-scoped caller resolves its team id first. The full credential object is
@@ -130,12 +130,20 @@ export interface NewCredentialInput {
   credential: Record<string, unknown>;
 }
 
+// A secret is picked by its label, so it cannot go without one.
+function requireSecretName(integrationKey: string, label: string | null | undefined): void {
+  if (integrationKey === SECRET_INTEGRATION_KEY && !label?.trim()) {
+    throw new HttpError(400, 'A secret needs a name.');
+  }
+}
+
 export async function createCredential(
   teamId: number,
   input: NewCredentialInput,
 ): Promise<CredentialRow> {
   const schema = credentialSchemaFor(input.integrationKey);
   if (!schema) throw new HttpError(400, `Unknown integration: ${input.integrationKey}`);
+  requireSecretName(input.integrationKey, input.label);
   const config = coerce(schema, input.credential);
   const enc = encryptSecret(JSON.stringify(config));
   const [row] = await db
@@ -170,7 +178,10 @@ export async function updateCredential(
   if (!schema) throw new HttpError(400, `Unknown integration: ${existing.integrationKey}`);
 
   const set: Partial<typeof integrationCredential.$inferInsert> = {};
-  if (patch.label !== undefined) set.label = patch.label;
+  if (patch.label !== undefined) {
+    requireSecretName(existing.integrationKey, patch.label);
+    set.label = patch.label;
+  }
 
   if (patch.credential !== undefined) {
     // Merge the submitted fields over the stored credential so unchanged secrets (left

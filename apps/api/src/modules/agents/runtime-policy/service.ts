@@ -18,15 +18,17 @@ import {
 import type { RunnerAgent } from '../runner/service';
 import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
+import { agentRuntimeMcpServers } from '../mcp-servers/service';
 import { structureSection } from './structure';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [skills, tools, structure] = await Promise.all([
+  const [skills, tools, structure, mcpServers] = await Promise.all([
     listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
     structureSection(agent),
+    agentRuntimeMcpServers(agent.id),
   ]);
   const snapshot = {
     agent: { id: agent.id, name: agent.name, username: agent.username },
@@ -55,6 +57,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       toolKey,
       integrationKey,
     })),
+    mcpServers,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.
   // Eden's response parser treats a bare 64-character digest as an encoded value.

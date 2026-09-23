@@ -3,17 +3,19 @@ import { integrationDescriptors } from '@repo/agent-tools';
 import { AI_PROVIDERS } from './llm-providers';
 
 // The unified integration catalog: every service a project can store a credential
-// for. Two kinds:
-//   - "llm"  — the AI providers whose models an internal agent runs on. Their
-//              credential is an API key (plus a base URL for OpenAI-compatible
-//              endpoints). They expose no tools.
-//   - "tool" — the tool integrations (Jina, Firecrawl, Telegram, Threads) from
-//              @repo/agent-tools. Their credential schema and tool list come from the
-//              package.
+// for. Three kinds:
+//   - "llm"    — the AI providers whose models an internal agent runs on. Their
+//                credential is an API key (plus a base URL for OpenAI-compatible
+//                endpoints). They expose no tools.
+//   - "tool"   — the tool integrations (Jina, Firecrawl, Telegram, Threads) from
+//                @repo/agent-tools. Their credential schema and tool list come from the
+//                package.
+//   - "secret" — one named value, such as the API key an MCP server of the team's
+//                library reads from its environment. The credential's label names it.
 // The credential form and, for tool integrations, the tool picker are built from a
 // descriptor on the frontend.
 
-export type IntegrationKind = 'llm' | 'tool';
+export type IntegrationKind = 'llm' | 'tool' | 'secret';
 
 export interface UnifiedIntegration {
   key: string;
@@ -57,9 +59,20 @@ const TOOL_INTEGRATIONS: UnifiedIntegration[] = integrationDescriptors().map((d)
   tools: d.tools,
 }));
 
+export const SECRET_INTEGRATION_KEY = 'secret';
+
+const SECRET_INTEGRATION: UnifiedIntegration = {
+  key: SECRET_INTEGRATION_KEY,
+  label: 'Secret',
+  kind: 'secret',
+  credentialSchema: [{ key: 'value', label: 'Value', type: 'secret', required: true }],
+  tools: [],
+};
+
 export const INTEGRATION_CATALOG: UnifiedIntegration[] = [
   ...LLM_INTEGRATIONS,
   ...TOOL_INTEGRATIONS,
+  SECRET_INTEGRATION,
 ];
 
 const BY_KEY = new Map(INTEGRATION_CATALOG.map((i) => [i.key, i]));

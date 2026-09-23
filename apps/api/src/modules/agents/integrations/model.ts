@@ -13,7 +13,7 @@ export const providerParams = t.Object({
 
 export const integrationOptionsQuery = t.Object({
   kind: t.Optional(
-    t.Union([t.Literal('llm'), t.Literal('tool')], {
+    t.Union([t.Literal('llm'), t.Literal('tool'), t.Literal('secret')], {
       description: 'Only the integrations of this kind.',
     }),
   ),
@@ -66,7 +66,7 @@ export const ProviderModelListResponse = t.Array(t.Object({ id: t.String(), name
 const IntegrationOptionResponse = t.Object({
   id: t.Number(),
   integrationKey: t.String(),
-  kind: t.Union([t.Literal('llm'), t.Literal('tool')]),
+  kind: t.Union([t.Literal('llm'), t.Literal('tool'), t.Literal('secret')]),
   label: t.Nullable(t.String()),
 });
 
