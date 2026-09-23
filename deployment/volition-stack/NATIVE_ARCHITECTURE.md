@@ -9,8 +9,9 @@
 - The Hermes runner executes project agent sessions, skills, tools, and model calls.
 - PostgreSQL stores Plan state. Mastra stores its state below `/var/lib/volition/mastra`.
 - The filesystem vault stores durable project documents and files.
-- Nginx is the only application listener exposed to the LAN. It authenticates embedded
-  tools through Plan and removes browser credentials before proxying.
+- Nginx authenticates embedded tools through Plan and removes browser credentials before
+  proxying. While Debian uses the desktop's private network, the desktop HTTP proxy
+  forwards the dedicated LAN hostname to this Nginx entry point.
 
 Systemd starts services and performs service recovery. Business schedules belong to
 Mastra or Plan.
@@ -106,7 +107,7 @@ the native units under `deployment/volition-stack/native/systemd/`.
 
 ## Security invariants
 
-- Only Nginx exposes application routes to the LAN.
+- The dedicated LAN hostname forwards application routes to authenticated Nginx.
 - Internal TCP services bind to loopback or Unix sockets.
 - Embedded tools require a valid Plan session.
 - Nginx does not forward Plan cookies or Authorization headers to tool upstreams.
@@ -139,3 +140,13 @@ the affected service instead of relying on this historical result.
 
 See [NATIVE_ACCEPTANCE.md](NATIVE_ACCEPTANCE.md) for the completed team execution,
 recovery checks, and remaining deployment limits.
+
+## Desktop-hosted LAN access
+
+The running Debian instance is systemd-nspawn at `192.168.122.58`. The unrelated
+libvirt VM with the same name is not the application target. On desktop `192.168.2.220`,
+the existing HTTP proxy routes `kingston-server.local` to Debian. A native user service
+relays LAN SSH on port 2222 to Debian port 22. SSH authentication remains with Debian.
+
+See [the LAN HTTP configuration](native/lan/CADDY_ROUTE.md) and the other files under
+`native/lan/` for the network-specific forwarding and name publication configuration.

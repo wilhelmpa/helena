@@ -1,0 +1,7 @@
+http://kingston-server.local {
+    @home_lan remote_ip 192.168.2.0/24 127.0.0.1/32
+    handle @home_lan {
+        reverse_proxy 192.168.122.58:80
+    }
+    respond "LAN access only" 403
+}

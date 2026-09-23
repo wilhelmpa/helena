@@ -45,13 +45,17 @@ External mailbox authentication and automatic triage are deferred.
 
 ## Access checks
 
-- Only SSH and Nginx TCP ports were reachable from the caller; backend TCP ports bind
-  to loopback.
+- On the Debian instance, only SSH and Nginx TCP ports were reachable from the caller;
+  backend TCP ports bind to loopback. This is not an audit of unrelated desktop services.
 - Anonymous embedded Code, Terminal, Browser, and Hermes requests returned 401.
 - Foreign Origin requests were rejected with 403. Forged forwarding/auth headers did
   not bypass the Plan session gate.
 - Hermes responses carry same-origin framing restrictions. Nginx strips Plan browser
   credentials before forwarding embedded-tool requests.
+- Desktop LAN forwarding was checked separately: Host `kingston-server.local` on
+  `192.168.2.220:80` returned Plan's login page while the existing Plane route remained
+  available. An authenticated SSH connection to desktop port 2222 returned the target
+  hostname and `systemd-nspawn`, confirming the correct Debian instance.
 
 ## Limits and deferred acceptance
 
