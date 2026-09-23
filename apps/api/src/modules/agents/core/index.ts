@@ -14,6 +14,7 @@ import {
   updateAgent,
   deleteAgent,
   regenerateKey,
+  queueAgentRuntime,
   getAgentById,
   getAgentInProject,
   agentScopeOf,
@@ -290,6 +291,8 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         throw new HttpError(400, 'Internal agents do not use an API key');
       const apiKey = await regenerateKey(params.agentId, membership.teamId);
       if (apiKey == null) throw new HttpError(404, 'Agent not found');
+      // The key of an agent's Hermes runtime no longer works, so the runtime is keyed again.
+      await queueAgentRuntime(agent.userId);
       return { apiKey };
     },
     {

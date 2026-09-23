@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const PROJECT_KEY = /^[A-Z0-9][A-Z0-9_-]{0,31}$/;
+const PLAN_USERNAME = /^[A-Za-z0-9._-]{1,64}$/;
 
 export class PlanCoordinatorError extends Error {}
 
@@ -94,14 +95,22 @@ function coordinatorSlug(project) {
   return project.key === "VERV" ? "verve" : project.key.toLowerCase();
 }
 
-function descriptorPath(config, slug) {
-  if (!path.isAbsolute(config.hermesRunnerDescriptorRoot) || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(slug)) {
-    throw new PlanCoordinatorError("The Hermes runner descriptor path is invalid");
-  }
-  return path.join(config.hermesRunnerDescriptorRoot, `${slug}.json`);
+// The name of a project agent's profile and runner descriptor. A project slug holds
+// no underscore, so it cannot be a coordinator's name, and the agent id keeps the
+// profile when the agent is renamed.
+export function projectAgentRuntimeName(slug, agentId) {
+  return `${slug}_${agentId}`;
 }
 
-function descriptorValue(config, project, agent, workspace, browser) {
+// The name is a Hermes profile id.
+function descriptorPath(config, name) {
+  if (!path.isAbsolute(config.hermesRunnerDescriptorRoot) || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(name)) {
+    throw new PlanCoordinatorError("The Hermes runner descriptor path is invalid");
+  }
+  return path.join(config.hermesRunnerDescriptorRoot, `${name}.json`);
+}
+
+function descriptorValue(config, project, agent, runtime, workspace, browser) {
   if (
     !workspace ||
     typeof workspace.hostPath !== "string" ||
@@ -109,9 +118,8 @@ function descriptorValue(config, project, agent, workspace, browser) {
     !path.isAbsolute(config.hermesAgentsRoot) ||
     !path.isAbsolute(config.hermesHome)
   ) {
-    throw new PlanCoordinatorError("The Hermes coordinator workspace is invalid");
+    throw new PlanCoordinatorError("The Hermes runtime workspace is invalid");
   }
-  const slug = coordinatorSlug(project);
   let browserCdpUrl = null;
   if (browser?.cdpUrl != null) {
     const cdp = new URL(browser.cdpUrl);
@@ -134,11 +142,11 @@ function descriptorValue(config, project, agent, workspace, browser) {
     projectId: project.id,
     teamId: project.teamId,
     planAgentId: agent.id,
-    username: `hermes-${slug}-coordinator`,
+    username: runtime.username,
     cwd: path.normalize(workspace.hostPath),
     // Hermes treats homes below profiles/ as native profiles. This keeps each
-    // coordinator's memory isolated while inheriting the global provider grant.
-    hermesHome: path.join(config.hermesHome, "profiles", slug),
+    // agent's memory isolated while inheriting the global provider grant.
+    hermesHome: path.join(config.hermesHome, "profiles", runtime.name),
     globalHermesHome: config.hermesHome,
     browserCdpUrl,
   };
@@ -432,31 +440,32 @@ async function ensureOrganization(config, fetchImpl, project, agent, hermesIdent
 
 // Plan issues a new key only when the stored one no longer works, so a repeated
 // provisioning run leaves the descriptor and the running Hermes runner untouched.
-async function ensureControlledCoordinator(config, project, options) {
+async function ensureKeyedDescriptor(config, project, options, { name, route, body, isAgent }) {
   const fetchImpl = options.fetchImpl ?? fetch;
-  const username = `hermes-${coordinatorSlug(project)}-coordinator`;
-  const filePath = descriptorPath(config, coordinatorSlug(project));
+  const filePath = descriptorPath(config, name);
   const descriptorStore = options.descriptorStore ?? { read: readStoredDescriptor, write: writeDescriptor };
   if (typeof descriptorStore.read !== 'function' || typeof descriptorStore.write !== 'function') {
     throw new PlanCoordinatorError('The Hermes runner descriptor store is invalid');
   }
   const stored = await descriptorStore.read(filePath);
   const storedKey =
-    stored?.projectId === project.id && stored.username === username && apiKeyValue(stored.apiKey)
+    stored?.projectId === project.id &&
+    isAgent(stored.planAgentId, stored.username) &&
+    apiKeyValue(stored.apiKey)
       ? stored.apiKey
       : null;
   const result = await responseJson(
-    await fetchImpl(apiUrl(config, '/internal/bootstrap/project-coordinator'), {
+    await fetchImpl(apiUrl(config, route), {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${config.planControlToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ projectId: project.id, ...(storedKey ? { apiKey: storedKey } : {}) }),
+      body: JSON.stringify({ ...body, ...(storedKey ? { apiKey: storedKey } : {}) }),
       signal: AbortSignal.timeout(15_000),
     }),
-    'Bootstrapping the project coordinator',
+    `Bootstrapping ${name}`,
   );
   const agent = result?.agent;
   const apiKey = result?.apiKey ?? storedKey;
@@ -464,17 +473,36 @@ async function ensureControlledCoordinator(config, project, options) {
     !agent ||
     !Number.isSafeInteger(agent.id) ||
     typeof agent.userId !== 'string' ||
-    agent.username !== username ||
+    !isAgent(agent.id, agent.username) ||
     !apiKeyValue(apiKey)
   ) {
-    throw new PlanCoordinatorError("It's a Plan returned an invalid project coordinator");
+    throw new PlanCoordinatorError(`It's a Plan returned an invalid agent for ${name}`);
   }
   const descriptor = {
-    ...descriptorValue(config, project, agent, options.workspace, options.browser),
+    ...descriptorValue(
+      config,
+      project,
+      agent,
+      { name, username: agent.username },
+      options.workspace,
+      options.browser,
+    ),
     apiKey,
   };
   const descriptorChanged = !stored || !sameDescriptor(stored, descriptor);
   if (descriptorChanged) await descriptorStore.write(filePath, descriptor);
+  return { result, agent, hermesHome: descriptor.hermesHome, descriptorChanged };
+}
+
+async function ensureControlledCoordinator(config, project, options) {
+  const slug = coordinatorSlug(project);
+  const username = `hermes-${slug}-coordinator`;
+  const { result, agent, descriptorChanged } = await ensureKeyedDescriptor(config, project, options, {
+    name: slug,
+    route: '/internal/bootstrap/project-coordinator',
+    body: { projectId: project.id },
+    isAgent: (_id, candidate) => candidate === username,
+  });
   return {
     planAgentId: agent.id,
     planAgentUserId: agent.userId,
@@ -486,6 +514,26 @@ async function ensureControlledCoordinator(config, project, options) {
       agentInstructions: result.agentInstructions ?? '',
     },
   };
+}
+
+// An external agent of the project, other than its coordinator, runs in a Hermes
+// profile of its own with the project's workspace and browser.
+export async function ensurePlanProjectAgent(config, project, agentId, options = {}) {
+  assertProject(project);
+  if (!Number.isSafeInteger(agentId) || agentId < 1) {
+    throw new PlanCoordinatorError("The project agent request is invalid");
+  }
+  if (!config.planControlToken) {
+    throw new PlanCoordinatorError("Project agents need the Plan control token");
+  }
+  const name = projectAgentRuntimeName(coordinatorSlug(project), agentId);
+  const { agent, hermesHome, descriptorChanged } = await ensureKeyedDescriptor(config, project, options, {
+    name,
+    route: '/internal/bootstrap/project-agent',
+    body: { projectId: project.id, agentId },
+    isAgent: (id, username) => id === agentId && PLAN_USERNAME.test(username ?? ''),
+  });
+  return { planAgentId: agent.id, username: agent.username, name, hermesHome, descriptorChanged };
 }
 
 export async function ensurePlanCoordinator(config, project, options = {}) {
@@ -504,6 +552,7 @@ export async function ensurePlanCoordinator(config, project, options = {}) {
     config,
     project,
     agent,
+    { name: slug, username },
     options.workspace,
     options.browser,
   );
