@@ -83,6 +83,7 @@ function authorized(header, expected) {
 // The Mastra server behind this proxy. A second instance (the development one) runs on
 // another port.
 const upstreamPort = Number(process.env.MASTRA_UPSTREAM_PORT ?? 4112);
+const proxyPort = Number(process.env.STUDIO_PROXY_PORT ?? 4111);
 
 async function upstreamJson(path, options = {}) {
   const response = await fetch(`http://127.0.0.1:${upstreamPort}/mastra/api${path}`, {
@@ -126,7 +127,7 @@ const eventIngress = createEventIngressService({
   },
 });
 const planControl = createMastraControlService({
-  mastraControlUrl: 'http://127.0.0.1:4111/mastra/api/',
+  mastraControlUrl: `http://127.0.0.1:${proxyPort}/mastra/api/`,
   mastraControlOwnerEmail: ownerEmail,
 });
 
@@ -328,5 +329,5 @@ const server = http.createServer(async (req, res) => {
 });
 server.requestTimeout = 15000;
 server.headersTimeout = 10000;
-server.listen(Number(process.env.STUDIO_PROXY_PORT ?? 4111), process.env.STUDIO_PROXY_HOST ?? '127.0.0.1');
+server.listen(proxyPort, process.env.STUDIO_PROXY_HOST ?? '127.0.0.1');
 process.on('SIGTERM', () => server.close(() => process.exit(0)));
