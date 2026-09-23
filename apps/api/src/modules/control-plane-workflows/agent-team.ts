@@ -15,7 +15,7 @@ import {
 import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { notHomeAgent } from '#modules/agents/core/home-agent';
-import { listTaskWorkflowRuns, startWorkflow } from './service';
+import { listTaskWorkflowRuns, record, startWorkflow } from './service';
 
 // The Mastra agent-team workflow started for one issue: the issue is the task, its
 // delegate (or the project's only coordinator) leads, and the project's specialists
@@ -165,11 +165,7 @@ export async function startIssueAgentTeam(
   };
 }
 
-export function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
+export { record };
 
 export function text(value: unknown): string | null {
   return typeof value === 'string' ? value : null;

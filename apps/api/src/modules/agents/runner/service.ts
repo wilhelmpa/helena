@@ -122,6 +122,8 @@ export interface RunnerRun {
   // behind it are — for the agent's system prompt rather than its task.
   systemPrompt: string;
   attempts: number;
+  // Names this claim on the run's heartbeats, result and release.
+  claim: number;
   issueId: number | null;
   // The issue's human-readable key ("MKT-42"), so the runner can name the work in its
   // log. Null for a run with no issue, or a deleted one.
@@ -216,6 +218,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   const rows = await db.execute(sql`
     UPDATE agent_run r
     SET attempts = r.attempts + 1,
+        claims = r.claims + 1,
+        claimed_at = now(),
         started_at = coalesce(r.started_at, now()),
         next_attempt_at = now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})
     WHERE r.id = (
@@ -230,6 +234,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.trigger,
       r.prompt,
       r.attempts,
+      r.claims AS "claim",
       r.issue_id AS "issueId",
       r.started_at < now() AS "interrupted",
       r.max_turns AS "maxTurns",
@@ -283,6 +288,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         forPrompt,
       ) + (row.interrupted ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,
+    claim: row.claim,
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
     sourceActivityId: row.sourceActivityId,
@@ -334,16 +340,14 @@ export interface RunAck {
   canceled: boolean;
 }
 
-// The claim a runner holds: the run, still pending, with the attempt count its claim
-// left. A later claim of the same run counts another attempt, so a runner whose lease
-// expired and whose run was claimed again no longer holds it. A runner that names no
-// attempt is not checked.
-function heldBy(agentId: number, runId: number, attempt: number | undefined) {
+// The claim a runner holds: the run, still pending, not claimed since. A runner that
+// names no claim is not checked.
+function heldBy(agentId: number, runId: number, claim: number | undefined) {
   return and(
     eq(agentRun.id, runId),
     eq(agentRun.agentId, agentId),
     eq(agentRun.status, 'pending'),
-    attempt === undefined ? undefined : eq(agentRun.attempts, attempt),
+    claim === undefined ? undefined : eq(agentRun.claims, claim),
   );
 }
 
@@ -351,18 +355,18 @@ function heldBy(agentId: number, runId: number, attempt: number | undefined) {
 // can outlive the lease by far, so the runner sends this periodically; without it the
 // run would be handed to another runner mid-flight. A lease that ran out is extended as
 // long as nobody claimed the run since. `canceled` tells the runner to kill the command
-// and report nothing: the run was canceled, or, for a runner that names its attempt,
-// it was claimed again or finished. Null when the run is not this agent's.
+// and report nothing: the run was canceled, or, for a runner that names its claim, it
+// was claimed again or finished. Null when the run is not this agent's.
 export async function heartbeatRun(
   agentId: number,
   runId: number,
-  attempt?: number,
+  claim?: number,
 ): Promise<RunAck | null> {
   await touchRunner(agentId);
   const rows = await db
     .update(agentRun)
     .set({ nextAttemptAt: sql`now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})` })
-    .where(heldBy(agentId, runId, attempt))
+    .where(heldBy(agentId, runId, claim))
     .returning({ id: agentRun.id });
   if (rows.length > 0) return { canceled: false };
   const [row] = await db
@@ -371,23 +375,19 @@ export async function heartbeatRun(
     .where(and(eq(agentRun.id, runId), eq(agentRun.agentId, agentId)))
     .limit(1);
   if (!row) return null;
-  return row.status === 'canceled' || attempt !== undefined ? { canceled: true } : null;
+  return row.status === 'canceled' || claim !== undefined ? { canceled: true } : null;
 }
 
 // Hands a claimed run back to the queue without spending the attempt, for a runner that
 // stops while the run executes: the run is claimable at once instead of after its lease,
 // and the stop does not count towards the attempts that fail it. False when the runner
 // no longer holds the run.
-export async function releaseRun(
-  agentId: number,
-  runId: number,
-  attempt: number,
-): Promise<boolean> {
+export async function releaseRun(agentId: number, runId: number, claim: number): Promise<boolean> {
   await touchRunner(agentId);
   const rows = await db
     .update(agentRun)
     .set({ attempts: sql`${agentRun.attempts} - 1`, nextAttemptAt: sql`now()` })
-    .where(heldBy(agentId, runId, attempt))
+    .where(heldBy(agentId, runId, claim))
     .returning({ id: agentRun.id });
   return rows.length > 0;
 }
@@ -397,7 +397,7 @@ export async function releaseRun(
 // which the agent reported itself blocked ends as a success whatever the command did
 // afterwards. The tokens it used may reach a ceiling, which pauses the agent now rather
 // than at its next run. False when the run is not this agent's, was already finished,
-// or was claimed again after the named attempt.
+// or was claimed again after the named claim.
 export async function finishRun(
   agent: RunnerAgent,
   runId: number,
@@ -407,7 +407,7 @@ export async function finishRun(
     error?: string | null;
     usage?: ContextUsage | null;
   },
-  attempt?: number,
+  claim?: number,
 ): Promise<boolean> {
   if (result.output != null && Buffer.byteLength(result.output, 'utf8') > MAX_RUN_OUTPUT_BYTES) {
     throw new HttpError(413, 'Run output exceeds 128 KiB');
@@ -425,7 +425,7 @@ export async function finishRun(
       outputTokens: result.usage?.outputTokens ?? null,
       finishedAt: new Date(),
     })
-    .where(heldBy(agent.id, runId, attempt))
+    .where(heldBy(agent.id, runId, claim))
     .returning({
       issueId: agentRun.issueId,
       projectId: agentRun.projectId,

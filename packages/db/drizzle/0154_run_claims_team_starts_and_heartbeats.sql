@@ -23,6 +23,8 @@ CREATE TABLE "agent_team_start" (
 	CONSTRAINT "agent_team_start_status_check" CHECK ("agent_team_start"."status" IN ('pending', 'started', 'refused', 'superseded'))
 );
 --> statement-breakpoint
+ALTER TABLE "agent_run" ADD COLUMN "claims" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "agent_run" ADD COLUMN "claimed_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "agent_team_start" ADD CONSTRAINT "agent_team_start_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "agent_team_start" ADD CONSTRAINT "agent_team_start_issue_id_issue_id_fk" FOREIGN KEY ("issue_id") REFERENCES "public"."issue"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "agent_team_start" ADD CONSTRAINT "agent_team_start_agent_id_ai_agent_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."ai_agent"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

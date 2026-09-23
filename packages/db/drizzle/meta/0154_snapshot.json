@@ -1,5 +1,5 @@
 {
-  "id": "cd3b756c-6017-4ae7-973f-cda4585a2331",
+  "id": "a3e3c0c3-eec8-4cb4-95c0-3bf8ad2c6439",
   "prevId": "ed404c4b-37b4-4505-ad09-f25a4e9fa1a2",
   "version": "7",
   "dialect": "postgresql",
@@ -2060,6 +2060,19 @@
         },
         "started_at": {
           "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "claims": {
+          "name": "claims",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "claimed_at": {
+          "name": "claimed_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

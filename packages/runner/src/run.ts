@@ -12,9 +12,10 @@ import { runCwd } from './workdir';
 // `lost` is aborted only in the first case, which is the one that ends a report.
 
 // The waits between attempts to report a result the server did not take, and how often a
-// server error is taken as passing before it counts as the answer.
+// server error is taken as passing (about ten minutes of them) before it counts as the
+// answer.
 const REPORT_RETRY_MS = [1_000, 2_000, 5_000, 10_000, 30_000];
-const SERVER_ERROR_RETRIES = 5;
+const SERVER_ERROR_RETRIES = 20;
 
 function taskOf(run: Run) {
   return {
@@ -69,11 +70,19 @@ export async function perform(
   // The audit log misses these uses when the report fails; the run itself does not.
   if (uses.length > 0) await client.reportLoginUses({ runId: run.id }, uses).catch(() => {});
   const result = { ...outcome, usage: outcome.usage ?? usage.value() };
-  await reportUntilTaken(
-    () => client.report(run.id, run.attempts, result),
-    options.lost ?? stop.signal,
-    options.wait,
-  );
+  // A result sent under a claim this runner has since replaced is refused; it is sent
+  // again under the new one.
+  const send = async () => {
+    const claim = run.claim;
+    try {
+      await client.report(run.id, claim, result);
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 404 && claim !== run.claim)
+        throw new Error('claimed again while reporting');
+      throw err;
+    }
+  };
+  await reportUntilTaken(send, options.lost ?? stop.signal, options.wait);
   return outcome;
 }
 

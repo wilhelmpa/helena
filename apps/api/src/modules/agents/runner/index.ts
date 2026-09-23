@@ -8,7 +8,7 @@ import {
   releaseQuery,
   resultBody,
   RunAckResponse,
-  runAttemptQuery,
+  runClaimQuery,
   runParams,
 } from './model';
 import { claimRunnerRun, finishRun, heartbeatRun, releaseRun } from './service';
@@ -35,14 +35,14 @@ export const agentRunnerRoutes = new Elysia({
   .post(
     '/agent-runs/:runId/heartbeat',
     async ({ agent, params, query }) => {
-      const ack = await heartbeatRun(agent.id, params.runId, query.attempt);
+      const ack = await heartbeatRun(agent.id, params.runId, query.claim);
       if (!ack) throw new HttpError(404, 'Run not found');
       return ack;
     },
     {
       runnerAgent: true,
       params: runParams,
-      query: runAttemptQuery,
+      query: runClaimQuery,
       response: { 200: RunAckResponse, ...commonErrors },
       detail: {
         summary: 'Extend a run lease',
@@ -56,14 +56,14 @@ export const agentRunnerRoutes = new Elysia({
   .post(
     '/agent-runs/:runId/result',
     async ({ agent, params, query, body }) => {
-      const ok = await finishRun(agent, params.runId, body, query.attempt);
+      const ok = await finishRun(agent, params.runId, body, query.claim);
       if (!ok) throw new HttpError(404, 'Run not found');
       return noContent();
     },
     {
       runnerAgent: true,
       params: runParams,
-      query: runAttemptQuery,
+      query: runClaimQuery,
       body: resultBody,
       response: { 204: t.Void(), ...commonErrors },
       detail: {
@@ -76,7 +76,7 @@ export const agentRunnerRoutes = new Elysia({
   .post(
     '/agent-runs/:runId/release',
     async ({ agent, params, query }) => {
-      if (!(await releaseRun(agent.id, params.runId, query.attempt)))
+      if (!(await releaseRun(agent.id, params.runId, query.claim)))
         throw new HttpError(404, 'Run not found');
       return noContent();
     },

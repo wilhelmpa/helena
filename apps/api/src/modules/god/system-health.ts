@@ -87,7 +87,7 @@ async function runCounts() {
         ),
       overdue: sql<number>`count(*) filter (where ${agentRun.attempts} > 0
         and ${agentRun.nextAttemptAt} > now()
-        and ${agentRun.startedAt} < now() - make_interval(secs =>
+        and ${agentRun.claimedAt} < now() - make_interval(secs =>
           greatest(coalesce(${agentRun.runBudgetSeconds}, 0), ${RUNNER_STOP_SECONDS}) + ${OVERDUE_GRACE_SECONDS}))::int`,
     })
     .from(agentRun)

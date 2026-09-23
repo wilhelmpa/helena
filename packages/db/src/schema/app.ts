@@ -665,6 +665,12 @@ export const agentRun = pgTable(
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
     startedAt: timestamp('started_at', { withTimezone: true }),
+    // Every claim by a runner counts one up, and nothing counts it down: the runner names
+    // it on its heartbeats and its result, so one whose run was claimed since is refused.
+    // `attempts` cannot do this, since a release and a replayed stage lower it.
+    claims: integer('claims').notNull().default(0),
+    // When the latest claim was made, which is when the run's current attempt started.
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

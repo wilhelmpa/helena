@@ -11,10 +11,11 @@ export interface Run {
   trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
   prompt: string;
   systemPrompt: string;
-  // How often the run was claimed, this claim included. The runner names it on every
-  // heartbeat, result and release, so the server can tell it that the run was claimed
-  // again after its lease ran out. It is raised when this runner claims the run again.
   attempts: number;
+  // Names this claim on every heartbeat, result and release, so the server can tell the
+  // runner that the run was claimed again after its lease ran out. It changes when this
+  // runner claims the run again. Absent on a server that predates it.
+  claim?: number;
   issueId: number | null;
   issueIdentifier: string | null;
   model: string | null;
@@ -139,13 +140,13 @@ export class Client {
 
   // True when the run was canceled, for instance with the workflow run of its stage, or
   // is no longer this runner's: claimed again, finished, or deleted.
-  async heartbeat(runId: number, attempt: number): Promise<boolean> {
-    return gone(() => this.post(`/agent-runs/${runId}/heartbeat?attempt=${attempt}`));
+  async heartbeat(runId: number, claim?: number): Promise<boolean> {
+    return gone(() => this.post(`/agent-runs/${runId}/heartbeat${claimQuery(claim)}`));
   }
 
   // Hands a run back to the queue without spending its attempt, for a runner that stops.
-  async release(runId: number, attempt: number): Promise<void> {
-    await this.post(`/agent-runs/${runId}/release?attempt=${attempt}`);
+  async release(runId: number, claim: number): Promise<void> {
+    await this.post(`/agent-runs/${runId}/release${claimQuery(claim)}`);
   }
 
   // `usage` is what the run read and wrote: its totals where the command reports them
@@ -154,7 +155,7 @@ export class Client {
   // A 404 means the run is no longer this runner's to report.
   async report(
     runId: number,
-    attempt: number,
+    claim: number | undefined,
     result: {
       status: 'success' | 'failed';
       output?: string;
@@ -162,7 +163,7 @@ export class Client {
       usage?: ContextUsage | null;
     },
   ): Promise<void> {
-    await this.post(`/agent-runs/${runId}/result?attempt=${attempt}`, result);
+    await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);
   }
 
   async claimChat(): Promise<ChatMessage | null> {
@@ -209,6 +210,10 @@ export class Client {
 
 function workParams(work: WorkRef): Record<string, string> {
   return 'runId' in work ? { runId: String(work.runId) } : { messageId: String(work.messageId) };
+}
+
+function claimQuery(claim: number | undefined): string {
+  return claim === undefined ? '' : `?claim=${claim}`;
 }
 
 // An instance too old to know about stopping answers this with 204 and no body, which

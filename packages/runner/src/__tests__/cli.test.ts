@@ -17,13 +17,14 @@ afterEach(async () => {
   for (const step of cleanup.splice(0).reverse()) await step();
 });
 
-function queuedRun(attempts: number) {
+function queuedRun(claim: number) {
   return {
     id: 5,
     trigger: 'manual',
     prompt: 'Do the stage.',
     systemPrompt: '',
-    attempts,
+    attempts: claim,
+    claim,
     issueId: null,
     issueIdentifier: null,
     model: null,
@@ -117,7 +118,7 @@ describe('runner process', () => {
 
     child.kill('SIGTERM');
     expect(await exited).toBe(0);
-    expect(requests).toContain('/agent-runs/5/release?attempt=1');
+    expect(requests).toContain('/agent-runs/5/release?claim=1');
     expect(requests.some((path) => path.includes('/result'))).toBe(false);
     await until(() => !alive(pid));
   }, 15_000);
@@ -125,7 +126,7 @@ describe('runner process', () => {
   it('keeps one command for a run that comes back to it, and reports under the new claim', async () => {
     const { url, requests } = await plan([queuedRun(1), queuedRun(2)]);
     const { dir, child } = await startRunner(url, 'echo x >> "$DIR/starts"; sleep 2; echo done');
-    await until(() => requests.includes('/agent-runs/5/result?attempt=2'));
+    await until(() => requests.includes('/agent-runs/5/result?claim=2'));
     expect(readFileSync(join(dir, 'starts'), 'utf8')).toBe('x\n');
     child.kill('SIGTERM');
   }, 15_000);

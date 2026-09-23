@@ -76,7 +76,7 @@ describe('system health', () => {
     // A claim fifty minutes old, still leased: past the runner's 30-minute stop.
     await db
       .update(agentRun)
-      .set({ startedAt: sql`now() - interval '50 minutes'` })
+      .set({ claimedAt: sql`now() - interval '50 minutes'` })
       .where(eq(agentRun.id, claimed.id));
     const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
     controlPlane.answer = (request) =>

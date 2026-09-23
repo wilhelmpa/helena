@@ -160,7 +160,7 @@ describe('runner gateway client', () => {
     const paths: string[] = [];
     server = createServer((request, response) => {
       paths.push(request.url ?? '');
-      if (request.url === '/agent-runs/1/heartbeat?attempt=1') {
+      if (request.url === '/agent-runs/1/heartbeat?claim=1') {
         response.setHeader('content-type', 'application/json');
         response.end(JSON.stringify({ canceled: true }));
         return;
@@ -178,10 +178,7 @@ describe('runner gateway client', () => {
 
     expect(await client.heartbeat(1, 1)).toBe(true);
     expect(await client.heartbeat(2, 3)).toBe(false);
-    expect(paths).toEqual([
-      '/agent-runs/1/heartbeat?attempt=1',
-      '/agent-runs/2/heartbeat?attempt=3',
-    ]);
+    expect(paths).toEqual(['/agent-runs/1/heartbeat?claim=1', '/agent-runs/2/heartbeat?claim=3']);
   });
 
   it('stops work the server no longer has, and names the attempt on result and release', async () => {
@@ -204,7 +201,7 @@ describe('runner gateway client', () => {
     await client.report(4, 2, { status: 'success', output: 'done' });
     await client.release(4, 2);
     await expect(client.report(9, 2, { status: 'success' })).rejects.toMatchObject({ status: 404 });
-    expect(paths).toContain('/agent-runs/4/result?attempt=2');
-    expect(paths).toContain('/agent-runs/4/release?attempt=2');
+    expect(paths).toContain('/agent-runs/4/result?claim=2');
+    expect(paths).toContain('/agent-runs/4/release?claim=2');
   });
 });

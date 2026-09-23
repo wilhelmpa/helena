@@ -20,6 +20,7 @@ const run: Run = {
   prompt: 'Do the stage.',
   systemPrompt: '',
   attempts: 1,
+  claim: 1,
   issueId: null,
   issueIdentifier: null,
   model: null,
@@ -45,7 +46,7 @@ async function setup(command: string) {
   };
   const reports: unknown[] = [];
   const client = {
-    report: async (_runId: number, _attempt: number, result: unknown) => {
+    report: async (_runId: number, _claim: number, result: unknown) => {
       reports.push(result);
     },
   } as unknown as Client;
@@ -101,20 +102,20 @@ describe('queued run', () => {
 describe('result report', () => {
   const noWait = () => Promise.resolve();
 
-  it('sends a result again until the server takes it, with the attempt it was claimed at', async () => {
+  it('sends a result again until the server takes it, under the claim it holds', async () => {
     const { config } = await setup('echo done');
-    const sent: { attempt: number; result: unknown }[] = [];
+    const sent: { claim: number; result: unknown }[] = [];
     let unreachable = 2;
     const client = {
-      report: async (_runId: number, attempt: number, result: unknown) => {
+      report: async (_runId: number, claim: number, result: unknown) => {
         if (unreachable-- > 0) throw new TypeError('fetch failed');
-        sent.push({ attempt, result });
+        sent.push({ claim, result });
       },
     } as unknown as Client;
     const outcome = await perform(
       config,
       client,
-      { ...run, attempts: 2 },
+      { ...run, attempts: 2, claim: 2 },
       new AbortController(),
       null,
       {
@@ -122,7 +123,7 @@ describe('result report', () => {
       },
     );
     expect(outcome).toMatchObject({ status: 'success' });
-    expect(sent).toEqual([{ attempt: 2, result: expect.objectContaining({ output: 'done' }) }]);
+    expect(sent).toEqual([{ claim: 2, result: expect.objectContaining({ output: 'done' }) }]);
   });
 
   it('gives up on an answer that is final, and when the run is taken away', async () => {
@@ -161,7 +162,7 @@ describe('result report', () => {
       noWait,
     );
     await expect(failing).rejects.toMatchObject({ status: 500 });
-    expect(errors).toBe(6);
+    expect(errors).toBe(21);
 
     let refused = 0;
     await reportUntilTaken(
@@ -187,5 +188,24 @@ describe('result report', () => {
       await sleep(200);
       expect(() => process.kill(pid, 0)).toThrow();
     }
+  });
+});
+
+describe('result under a new claim', () => {
+  it('is sent again when the runner claimed its run again while it reported', async () => {
+    const { config } = await setup('echo done');
+    const held: Run = { ...run, claim: 1 };
+    const sent: number[] = [];
+    const client = {
+      report: async (_runId: number, claim: number) => {
+        sent.push(claim);
+        if (claim === 1) {
+          held.claim = 2;
+          throw new RequestError(404, 'POST /agent-runs/7/result failed with 404');
+        }
+      },
+    } as unknown as Client;
+    await perform(config, client, held, new AbortController(), null, { wait: async () => {} });
+    expect(sent).toEqual([1, 2]);
   });
 });

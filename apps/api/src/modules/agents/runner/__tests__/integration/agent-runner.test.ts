@@ -661,16 +661,16 @@ describe('agent runner queue', () => {
       const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
       await leaseRunsOut();
       const second = (await asRunner['agent-runs'].claim.post()).data!.run!;
-      expect(second).toMatchObject({ id: first.id, attempts: 2 });
+      expect(second).toMatchObject({ id: first.id, attempts: 2, claim: 2 });
       const runs = asRunner['agent-runs']({ runId: first.id });
 
-      const stale = await runs.heartbeat.post(undefined, { query: { attempt: 1 } });
+      const stale = await runs.heartbeat.post(undefined, { query: { claim: 1 } });
       expect(stale.data).toEqual({ canceled: true });
-      const late = await runs.result.post({ status: 'success' }, { query: { attempt: 1 } });
+      const late = await runs.result.post({ status: 'success' }, { query: { claim: 1 } });
       expect(late.status).toBe(404);
       const current = await runs.result.post(
         { status: 'success', output: 'Done once' },
-        { query: { attempt: 2 } },
+        { query: { claim: 2 } },
       );
       expect(current.status).toBe(204);
     });
@@ -684,7 +684,7 @@ describe('agent runner queue', () => {
       delete process.env.AGENT_RUN_LEASE_SECONDS;
 
       const beat = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post(undefined, {
-        query: { attempt: 1 },
+        query: { claim: 1 },
       });
       expect(beat.data).toEqual({ canceled: false });
       expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
@@ -697,7 +697,7 @@ describe('agent runner queue', () => {
       await asRunner['agent-runs']({ runId: run.id }).result.post({ status: 'success' });
 
       const beat = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post(undefined, {
-        query: { attempt: 1 },
+        query: { claim: 1 },
       });
       expect(beat.data).toEqual({ canceled: true });
     });
@@ -708,10 +708,12 @@ describe('agent runner queue', () => {
       const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
       const runs = asRunner['agent-runs']({ runId: run.id });
 
-      expect((await runs.release.post({}, { query: { attempt: 2 } })).status).toBe(404);
-      expect((await runs.release.post({}, { query: { attempt: 1 } })).status).toBe(204);
+      expect((await runs.release.post({}, { query: { claim: 2 } })).status).toBe(404);
+      expect((await runs.release.post({}, { query: { claim: 1 } })).status).toBe(204);
       const again = (await asRunner['agent-runs'].claim.post()).data!.run!;
-      expect(again).toMatchObject({ id: run.id, attempts: 1 });
+      expect(again).toMatchObject({ id: run.id, attempts: 1, claim: 2 });
+      const stale = await runs.heartbeat.post(undefined, { query: { claim: 1 } });
+      expect(stale.data).toEqual({ canceled: true });
       expect(run.systemPrompt).not.toContain('Interrupted run');
       expect(again.systemPrompt).toContain('Interrupted run');
     });

@@ -273,11 +273,15 @@ interface StoredSchedule {
   inputData?: Record<string, unknown> & { payload?: Record<string, unknown> };
 }
 
-function objectOf(value: unknown): Record<string, unknown> {
+export function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
 }
+
+// A settings save waits for the schedule sync, so a Mastra that does not answer holds
+// it up this long per call at most.
+const SYNC_TIMEOUT_MS = 10_000;
 
 // The payload a fire carries under the project's settings. For agent-team, a run limit
 // the stored settings had put into the policy goes when the settings no longer set it.
@@ -287,8 +291,8 @@ function payloadUnder(
   payload: Record<string, unknown>,
 ) {
   if (workflowId !== 'agent-team') return { ...payload, configuration };
-  const stored = objectOf(payload.configuration);
-  const policy = { ...objectOf(payload.policy) };
+  const stored = record(payload.configuration);
+  const policy = { ...record(payload.policy) };
   for (const limit of ['maxTurns', 'runBudgetSeconds'])
     if (stored[limit] != null && policy[limit] === stored[limit]) delete policy[limit];
   return { ...payload, policy: agentTeamPolicy(configuration, policy), configuration };
@@ -309,40 +313,41 @@ async function syncWorkflowSchedules(
   }[],
 ): Promise<number> {
   const byProject = new Map(assignments.map((item) => [`project:${item.projectKey}`, item]));
-  const result = await controlPlaneRequest<{ schedules?: StoredSchedule[] }>({
-    operation: 'schedules',
-    workflowId,
-    projectRefs: [...byProject.keys()],
-    lastRun: false,
-  });
+  const result = await controlPlaneRequest<{ schedules?: StoredSchedule[] }>(
+    { operation: 'schedules', workflowId, projectRefs: [...byProject.keys()], lastRun: false },
+    SYNC_TIMEOUT_MS,
+  );
   let changed = 0;
   for (const schedule of result.schedules ?? []) {
     const projectRef = String(schedule.requestContext?.projectRef);
     const assignment = byProject.get(projectRef);
     if (!assignment) continue;
-    if (!assignment.enabled) {
-      if (schedule.status !== 'active') continue;
-      await controlPlaneRequest({
-        operation: 'pause-schedule',
-        workflowId,
-        scheduleId: schedule.id,
-        projectRef,
-      });
-      changed += 1;
-      continue;
-    }
-    const payload = objectOf(schedule.inputData?.payload);
+    const scope = { workflowId, scheduleId: schedule.id, projectRef };
+    const payload = record(schedule.inputData?.payload);
     const current = payloadUnder(workflowId, assignment.configuration, payload);
-    if (!schedule.inputData || isDeepStrictEqual(current, payload)) continue;
-    await controlPlaneRequest({
-      operation: 'update-schedule',
-      workflowId,
-      scheduleId: schedule.id,
-      projectRef,
-      cron: schedule.cron,
-      payload: { ...schedule.inputData, payload: current },
-    });
-    changed += 1;
+    const change = !assignment.enabled
+      ? schedule.status === 'active'
+        ? { operation: 'pause-schedule', ...scope }
+        : null
+      : schedule.inputData && !isDeepStrictEqual(current, payload)
+        ? {
+            operation: 'update-schedule',
+            ...scope,
+            cron: schedule.cron,
+            payload: { ...schedule.inputData, payload: current },
+          }
+        : null;
+    if (!change) continue;
+    // One schedule Mastra refuses does not hold up the others.
+    try {
+      await controlPlaneRequest(change, SYNC_TIMEOUT_MS);
+      changed += 1;
+    } catch (error) {
+      console.error(
+        `[planner] schedule ${schedule.id} not brought in line:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
   }
   return changed;
 }
@@ -364,7 +369,13 @@ export async function reconcileWorkflowSchedules(): Promise<number> {
     changed += await syncWorkflowSchedules(
       workflowId,
       rows.filter((row) => row.workflowId === workflowId),
-    );
+    ).catch((error: unknown) => {
+      console.error(
+        `[planner] schedules of ${workflowId} not brought in line:`,
+        error instanceof Error ? error.message : error,
+      );
+      return 0;
+    });
   return changed;
 }
 
@@ -448,13 +459,7 @@ export async function startWorkflow(
       occurredAt: new Date().toISOString(),
       actorId: userId,
       dryRun: input.dryRun,
-      payload: {
-        ...input.payload,
-        ...(workflowId === 'agent-team'
-          ? { policy: agentTeamPolicy(row.configuration, input.payload.policy) }
-          : {}),
-        configuration: row.configuration,
-      },
+      payload: payloadUnder(workflowId, row.configuration, input.payload),
       capabilityRefs: row.capabilityRefs,
       connectionRefs: [],
     },

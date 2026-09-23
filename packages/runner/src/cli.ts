@@ -22,7 +22,7 @@ type Log = (message: string) => void;
 
 // Shared by every agent the runner serves. `stopping` ends the claiming; `releasing` says
 // the runs in flight are handed back instead of finished; `stops` holds the controllers
-// that kill the commands in flight.
+// that kill the commands of those runs. Chat answers in flight are left to finish.
 interface State {
   stopping: boolean;
   releasing: boolean;
@@ -77,16 +77,16 @@ async function handle(
       : await withHeartbeat(
           log,
           async () => {
-            const attempt = run.attempts;
-            if (!(await client.heartbeat(run.id, attempt)) || attempt !== run.attempts) return;
+            const claim = run.claim;
+            if (!(await client.heartbeat(run.id, claim)) || claim !== run.claim) return;
             lost.abort();
             stop.abort();
           },
           perform(config, client, run, stop, hermes, { lost: lost.signal }),
         );
     if (outcome) log(`${label}: ${outcome.status}${outcome.error ? ` — ${outcome.error}` : ''}`);
-    else if (state.releasing)
-      await client.release(run.id, run.attempts).then(
+    else if (state.releasing && run.claim !== undefined)
+      await client.release(run.id, run.claim).then(
         () => log(`${label}: handed back to the queue`),
         (err: unknown) => log(`${label}: could not be handed back — ${String(err)}`),
       );
@@ -99,9 +99,7 @@ async function handle(
     const message = err instanceof Error ? err.message : String(err);
     log(`${label}: runner error — ${message}`);
     if (!lost.signal.aborted && !(err instanceof RequestError && err.status === 404))
-      await client
-        .report(run.id, run.attempts, { status: 'failed', error: message })
-        .catch(() => {});
+      await client.report(run.id, run.claim, { status: 'failed', error: message }).catch(() => {});
   } finally {
     state.stops.delete(stop);
   }
@@ -111,18 +109,14 @@ async function handle(
 // events report while the command writes, the heartbeat while it is silent. Both abort
 // the same controller, which kills the command.
 async function handleChat(
-  state: State,
   config: RunnerConfig,
   client: Client,
   log: Log,
   message: ChatMessage,
   policy: HermesPolicySynchronizer | null,
 ): Promise<void> {
-  // A runner that is stopping leaves the answer to its lease.
-  if (state.releasing) return;
   log(`chat ${message.id}: answering`);
   const stop = new AbortController();
-  state.stops.add(stop);
   try {
     const hermes = (await policy?.runSettings({ messageId: message.id })) ?? null;
     await withHeartbeat(
@@ -141,8 +135,6 @@ async function handleChat(
       await client.chatResult(message.id, { status: 'failed', error: text }).catch(() => {});
       return;
     }
-  } finally {
-    state.stops.delete(stop);
   }
   log(`chat ${message.id}: ${stop.signal.aborted ? 'stopped' : 'answered'}`);
 }
@@ -260,6 +252,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
         // The lease ran out while the server could not be reached, and the run came back
         // to this runner: its command keeps running under the new claim.
         held.attempts = run.attempts;
+        held.claim = run.claim;
         log(`${held.issueIdentifier ?? `run ${held.id}`}: claimed again while it runs`);
         return null;
       },
@@ -300,7 +293,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
       },
       async (message) => {
         await policy?.ensure();
-        await handleChat(state, config, client, log, message, policy);
+        await handleChat(config, client, log, message, policy);
         policy?.inventoryChanged();
       },
       () => Promise.resolve(chatSupported),
