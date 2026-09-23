@@ -190,7 +190,7 @@
     "openPreviewLink": "Abrir {name} en una pestaña nueva",
     "loadingPreview": "Cargando la vista previa…",
     "previewUnavailable": "No hay una vista previa disponible. Abre el enlace para ver esta página.",
-    "internalPage": "Página de ItsAPlan",
+    "internalPage": "Página de Volition",
     "internalPreviewUnavailable": "Esta página no está disponible o no tienes acceso a ella.",
     "previewNoteCount": "{count, plural, one {# nota} other {# notas}}",
     "previewCustomField": "Campo personalizado",
@@ -209,6 +209,5 @@
     "page": "Página {number}",
     "perPage": "por página",
     "range": "{first}-{last} de {total}"
-  },
-  "themeSyncPartial": "Theme updated in Plan, but {count, plural, one {one connected service could not update} other {# connected services could not update}}."
+  }
 }

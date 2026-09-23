@@ -16,9 +16,12 @@ import pkg from '../../../../../package.json';
 const FETCH_TIMEOUT_MS = 10_000;
 const FEED_TTL_MS = 30 * 60_000;
 
-// Fixed: an instance checks the project it is built from, so there is nothing to
-// configure.
-const FEED_URL = 'https://github.com/croffasia/itsaplan/releases.atom';
+// The releases atom feed of the project this build follows. Volition is a fork that
+// does not follow upstream releases, so there is no default: without UPDATE_FEED_URL
+// nothing is fetched and the history comes from this build's CHANGELOG.md alone.
+function feedUrl(): string | null {
+  return process.env.UPDATE_FEED_URL?.trim() || null;
+}
 
 const CHANGELOG_PATH = `${import.meta.dir}/../../../../../CHANGELOG.md`;
 
@@ -135,9 +138,9 @@ async function localHistory(): Promise<Release[]> {
   return changelog;
 }
 
-async function readFeed(): Promise<Release[]> {
-  const res = await fetch(FEED_URL, {
-    headers: { 'User-Agent': 'itsaplan' },
+async function readFeed(url: string): Promise<Release[]> {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'volition' },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`feed returned ${res.status}`);
@@ -157,9 +160,11 @@ async function publishedReleases(force = false): Promise<FeedRead | null> {
   // The suite must not depend on github.com being reachable, and the same
   // NODE_ENV already gates the db reset helper.
   if (process.env.NODE_ENV === 'test') return null;
+  const url = feedUrl();
+  if (!url) return null;
   if (!force && feed && Date.now() - Date.parse(feed.readAt) < FEED_TTL_MS) return feed;
   try {
-    feed = { releases: await readFeed(), readAt: new Date().toISOString() };
+    feed = { releases: await readFeed(url), readAt: new Date().toISOString() };
   } catch (err) {
     console.error('[updates] check failed:', err);
   }

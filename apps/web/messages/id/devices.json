@@ -1,0 +1,80 @@
+{
+  "title": "Perangkat & Obsidian",
+  "description": "Syncthing menyinkronkan catatan dan berkas Home, proyek, dan Private/ dengan Obsidian di Mac dan ponsel Anda: langsung saat di rumah, lewat relay terenkripsi saat bepergian.",
+  "loadError": "Status sinkronisasi tidak dapat dibaca.",
+  "ownerOnly": "Hanya pemilik instans yang mengelola perangkat.",
+  "unavailable": {
+    "unconfiguredTitle": "Syncthing belum disiapkan",
+    "unconfigured": "Plan tidak punya kunci yang valid untuk Syncthing di server ini. Pasang paket Debian syncthing lalu jalankan <code>deployment/volition-stack/native/syncthing/setup.sh</code> sebagai root.",
+    "unreachableTitle": "Syncthing tidak dapat dijangkau",
+    "unreachable": "Syncthing belum terpasang di server ini, atau layanan <code>volition-syncthing</code> tidak berjalan."
+  },
+  "server": {
+    "title": "Server ini",
+    "hint": "Tambahkan ID perangkat ini di Syncthing pada perangkat Anda: pindai kodenya atau salin ID-nya.",
+    "qrAlt": "Kode QR ID perangkat server ini",
+    "copied": "ID perangkat disalin",
+    "copyFailed": "Tidak dapat menyalin. Pilih ID lalu salin secara manual.",
+    "version": "Syncthing {version}",
+    "discoveryOn": "Penemuan global dan relay aktif. Perangkat di luar rumah menemukan server ini lewat server penemuan Syncthing dan terhubung lewat relay bila koneksi langsung tidak memungkinkan. Berkas tetap terenkripsi ujung ke ujung.",
+    "discoveryOff": "Penemuan global atau relay nonaktif. Perangkat hanya terhubung bila dapat menjangkau server ini secara langsung."
+  },
+  "folder": {
+    "title": "Status sinkronisasi",
+    "notSetUp": "Folder Volition tidak ada di Syncthing. Jalankan lagi penyiapan Syncthing di server ini.",
+    "state": {
+      "idle": "Terbaru",
+      "scanning": "Memindai",
+      "syncing": "Menyinkronkan",
+      "error": "Galat"
+    },
+    "lastFile": "Berkas terakhir diterima",
+    "lastFileValue": "{time}: {name}",
+    "lastScan": "Pemindaian terakhir",
+    "never": "Belum pernah",
+    "needItems": "{count, plural, other {# berkas}} masih perlu disinkronkan",
+    "fileErrors": "{count, plural, other {# berkas}} tidak dapat disinkronkan",
+    "error": "Galat folder: {error}"
+  },
+  "devices": {
+    "title": "Perangkat",
+    "empty": "Belum ada perangkat yang tersinkron. Panduan di bawah menunjukkan cara menambahkannya.",
+    "connected": "Terhubung",
+    "disconnected": "Tidak terhubung",
+    "paused": "Dijeda",
+    "lastSeen": "Terakhir terlihat {time}",
+    "neverSeen": "Belum pernah terlihat",
+    "notShared": "Folder Volition tidak dibagikan ke perangkat ini.",
+    "remove": "Hapus",
+    "removeTitle": "Hapus {name}?",
+    "removeBody": "Perangkat berhenti tersinkron dengan server ini. Berkas di perangkat tetap ada."
+  },
+  "pending": {
+    "title": "Perangkat yang meminta terhubung",
+    "hint": "Terima hanya perangkat milik Anda: perangkat yang diterima mendapat semua catatan dan berkas, termasuk Private/.",
+    "requested": "Diminta {time} dari {address}",
+    "accept": "Terima",
+    "accepted": "{name} diterima. Sekarang terima folder Volition di perangkat."
+  },
+  "conflicts": {
+    "title": "Konflik",
+    "hint": "Syncthing menyimpan salinan konflik bila sebuah berkas diubah di dua perangkat sebelum keduanya tersinkron. Buka kedua berkas di Obsidian, pindahkan yang ingin dipertahankan ke berkas asli, lalu hapus salinan konflik; penghapusan itu sampai ke setiap perangkat.",
+    "empty": "Tidak ada konflik.",
+    "loadError": "Konflik tidak dapat dibaca.",
+    "original": "Asli: {path}",
+    "modified": "Diubah {time}"
+  },
+  "guide": {
+    "title": "Menyiapkan perangkat",
+    "step1": "Pasang Syncthing dan Obsidian di perangkat. Mac: aplikasi Syncthing dari syncthing.net. iPhone: Möbius Sync dari App Store. Android: Syncthing-Fork dari F-Droid atau Google Play.",
+    "step2": "Di Syncthing, tambahkan perangkat dan masukkan ID perangkat server ini, atau pindai kode QR-nya.",
+    "step2Lan": "Untuk sinkronisasi langsung di rumah, masukkan <code>{address}, dynamic</code> sebagai alamat perangkat.",
+    "step3": "Perangkat lalu muncul di atas pada “Perangkat yang meminta terhubung”. Pilih Terima.",
+    "step4": "Di perangkat, terima folder Volition ke folder bernama Volition: <code>~/Volition</code> di Mac, <code>Volition</code> di penyimpanan internal Android, vault Obsidian Volition di iPhone.",
+    "step5": "Tunggu sampai folder di perangkat menampilkan “Terbaru”, lalu buka folder Volition sebagai vault di Obsidian. Tautan dari Plan membuka vault Volition.",
+    "iphoneTitle": "iPhone",
+    "iphone": "Di iPhone, Obsidian hanya membuka foldernya sendiri. Buat dulu vault Volition di Obsidian (di iPhone, bukan di iCloud) lalu tutup Obsidian. Kemudian di Möbius Sync, taruh folder Volition di Di iPhone Saya › Obsidian › Volition. Obsidian menulis pengaturannya sendiri saat membuat vault, jadi konflik di <code>.obsidian</code> bisa muncul setelah sinkronisasi pertama; salinan konfliknya berisi pengaturan bawaan server ini. Möbius Sync menyinkronkan selama aplikasi terbuka atau iOS membiarkannya berjalan di latar belakang.",
+    "spaceTitle": "Hemat ruang di ponsel (opsional)",
+    "space": "Pola abaikan hanya berlaku di perangkat tempat pola itu dimasukkan. Agar berkas surel tidak dimuat ke ponsel, buka folder Volition di Möbius Sync atau Syncthing-Fork, tambahkan baris <code>Files/Mail</code> di pola abaikan lalu simpan, sebaiknya tepat setelah menerima folder. Berkasnya tetap ada di server ini dan di perangkat lain."
+  }
+}

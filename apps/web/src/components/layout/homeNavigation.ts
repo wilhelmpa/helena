@@ -2,8 +2,10 @@ import {
   agentsPath,
   approvalsPath,
   connectionsPath,
+  devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
+  homeFilesPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
@@ -11,13 +13,14 @@ import {
   skillsPath,
   tasksPath,
   toolsPath,
-  vaultPath,
+  credentialsPath,
 } from '@/utils/paths';
 
 export type HomeNavigationId =
   | 'overview'
   | 'allWorkItems'
   | 'inbox'
+  | 'files'
   | 'approvals'
   | 'agentPool'
   | 'organization'
@@ -27,7 +30,8 @@ export type HomeNavigationId =
   | 'tools'
   | 'mcps'
   | 'connections'
-  | 'vault'
+  | 'credentials'
+  | 'devices'
   | 'teamSettings';
 
 // The sidebar group an entry is listed under while no project is selected: the work
@@ -42,12 +46,13 @@ export interface HomeNavigationItem {
 
 // The entries that need a single team to point at are left out without one. The
 // schedules read across every project, like the tasks, and need none.
-export function homeNavigation(teamId: number | null, vaultEnabled = true): HomeNavigationItem[] {
+export function homeNavigation(teamId: number | null): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
     { id: 'overview', group: 'work', href: '/' },
     { id: 'allWorkItems', group: 'work', href: tasksPath() },
     { id: 'inbox', group: 'work', href: globalInboxPath() },
+    { id: 'files', group: 'work', href: homeFilesPath() },
     { id: 'approvals', group: 'work', href: approvalsPath() },
     ...teamOnly([
       { id: 'agentPool', group: 'agents', href: agentsPath() },
@@ -61,9 +66,8 @@ export function homeNavigation(teamId: number | null, vaultEnabled = true): Home
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },
     ]),
     { id: 'connections', group: 'globalSettings', href: connectionsPath() },
-    ...(vaultEnabled
-      ? [{ id: 'vault' as const, group: 'globalSettings' as const, href: vaultPath() }]
-      : []),
+    ...teamOnly([{ id: 'credentials', group: 'globalSettings', href: credentialsPath() }]),
+    { id: 'devices', group: 'globalSettings', href: devicesPath() },
     { id: 'teamSettings', group: 'globalSettings', href: manageTeamsPath() },
   ];
 }

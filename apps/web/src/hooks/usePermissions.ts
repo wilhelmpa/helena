@@ -15,7 +15,7 @@ import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 // The project is read from the Shell context. Pass `source` where the context is
 // not readable yet (the Shell itself, which renders the provider). Without either
 // one every check is false: no project loaded means no permissions.
-export function usePermissions(source?: ProjectDetail | null) {
+export function usePermissions(source?: Pick<ProjectDetail, 'viewer' | 'permissions'> | null) {
   const ctx = useContext(ShellCtx);
   const project = source ?? ctx?.project ?? null;
   const viewer = project?.viewer ?? null;

@@ -19,18 +19,20 @@ import type { RunnerAgent } from '../runner/service';
 import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
 import { agentRuntimeMcpServers } from '../mcp-servers/service';
+import { hasWebLoginGrant } from '../credentials/service';
 import { areasSection } from './areas';
 import { structureSection } from './structure';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [skills, tools, structure, areas, mcpServers] = await Promise.all([
+  const [skills, tools, structure, areas, mcpServers, webLogins] = await Promise.all([
     listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
     structureSection(agent),
     areasSection(agent),
     agentRuntimeMcpServers(agent.id),
+    hasWebLoginGrant(agent.id),
   ]);
   const snapshot = {
     agent: { id: agent.id, name: agent.name, username: agent.username },
@@ -43,7 +45,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
         {
           kind: 'instructions' as const,
           path: 'SOUL.md',
-          content: soul(agentRef, agent, structure, areas),
+          content: soul(agentRef, agent, structure, areas, webLogins),
         },
       ],
     },
@@ -60,6 +62,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       integrationKey,
     })),
     mcpServers,
+    webLogins,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.
   // Eden's response parser treats a bare 64-character digest as an encoded value.
@@ -81,6 +84,7 @@ function soul(
   config: { name: string; runtimePolicy: AgentRuntimePolicy },
   structure: string,
   areas: string,
+  webLogins: boolean,
 ): string {
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
@@ -102,6 +106,7 @@ function soul(
     chatPreamble().trim(),
     blockedPreamble(),
     approvalPreamble(),
+    ...(webLogins ? [webLoginPreamble()] : []),
     chartPreamble().trim(),
     attachmentPreamble().trim(),
   ]
@@ -139,6 +144,24 @@ function approvalPreamble(): string {
     'with the action, its kind and every detail the owner needs to decide, then end the run',
     'without taking the action. Plan starts a new run of yours with the decision: act only',
     'on an approved request, exactly as approved. get_approval reads a request.',
+  ].join('\n');
+}
+
+// Hermes fills a login from its vault without the model seeing the password. What the
+// vault cannot fill, the owner does in the project's live browser, whose profile keeps
+// the session for the next run.
+function webLoginPreamble(): string {
+  return [
+    '## Website logins',
+    'The website logins granted to you are in your Hermes vault. browser_vault_list names',
+    'them. Type the username yourself, fill the password with browser_vault_fill and a',
+    'verification code with browser_vault_enter_code. You never see a password; never ask',
+    'anyone for one. When a site asks for what the vault cannot fill (a captcha, a passkey,',
+    'a code sent by SMS or mail, a confirmation in an app), call request_approval with kind',
+    'other, the action "Log in to <site> in the project browser" and what the site asks',
+    'for, then end the run. The owner logs in in the live browser of the project, which',
+    'keeps the session, and Plan starts a new run of yours once the owner approves. In a',
+    'chat, tell the person instead.',
   ].join('\n');
 }
 

@@ -1,61 +1,106 @@
 import { API_URL, apiFailure, request } from '@/lib/api/core/client';
 
-export interface ProjectFileItem {
+export type ProjectFileRoot = 'vault' | 'code';
+export type HomeFileRoot = 'home' | 'private' | 'templates';
+
+// One folder tree the Files page browses: a project's vault folder or workspace, or
+// one of the vault's Home, Private and Templates folders.
+export type FileScope =
+  | { kind: 'project'; projectKey: string; root: ProjectFileRoot }
+  | { kind: 'home'; root: HomeFileRoot };
+
+export interface FileItem {
   name: string;
   path: string;
   kind: 'folder' | 'file';
   sizeBytes: number | null;
   contentType: string | null;
   updatedAt: string | null;
-  previewable: boolean;
 }
 
-export interface ProjectFileList {
-  project: string;
+export interface FileList {
+  root: string;
   path: string;
-  items: ProjectFileItem[];
+  // The listed folder relative to the vault; null in a workspace.
+  vaultPath: string | null;
+  // The folder on the server, which VS Code opens.
+  absolutePath: string;
+  writable: boolean;
+  truncated: boolean;
+  items: FileItem[];
 }
 
-export interface ProjectFileText {
-  project: string;
-  path: string;
-  content: string;
-  sizeBytes: number;
+function base(scope: FileScope): string {
+  return scope.kind === 'project'
+    ? `/projects/${encodeURIComponent(scope.projectKey)}/files`
+    : '/files';
 }
 
-function projectFilesUrl(projectKey: string, suffix = '', path = '') {
-  const params = new URLSearchParams();
-  if (path) params.set('path', path);
-  const query = params.size ? '?' + params : '';
-  return '/projects/' + encodeURIComponent(projectKey) + '/files' + suffix + query;
+function url(scope: FileScope, suffix: string, params: Record<string, string | undefined> = {}) {
+  const query = new URLSearchParams({ root: scope.root });
+  for (const [key, value] of Object.entries(params)) if (value) query.set(key, value);
+  return `${base(scope)}${suffix}?${query}`;
 }
 
-export const listProjectFiles = (projectKey: string, path = '') =>
-  request<ProjectFileList>(projectFilesUrl(projectKey, '', path));
+export const listFiles = (scope: FileScope, path: string) =>
+  request<FileList>(url(scope, '', { path }));
 
-export const readProjectText = (projectKey: string, path: string) =>
-  request<ProjectFileText>(projectFilesUrl(projectKey, '/text', path));
-
-export const createProjectText = (projectKey: string, input: { path: string; content: string }) =>
-  request<{ project: string; path: string; created: true }>(projectFilesUrl(projectKey, '/text'), {
+export const createFolder = (scope: FileScope, path: string) =>
+  request<{ path: string }>(url(scope, '/folders'), {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: JSON.stringify({ path }),
   });
 
-export async function downloadProjectFile(projectKey: string, path: string): Promise<void> {
-  const response = await fetch(API_URL + projectFilesUrl(projectKey, '/download', path), {
+export const createTextFile = (scope: FileScope, path: string, content: string) =>
+  request<{ path: string }>(url(scope, '/text'), {
+    method: 'POST',
+    body: JSON.stringify({ path, content }),
+  });
+
+export const moveFile = (scope: FileScope, from: string, to: string) =>
+  request<{ path: string }>(url(scope, '/move'), {
+    method: 'POST',
+    body: JSON.stringify({ from, to }),
+  });
+
+export const trashFile = (scope: FileScope, path: string) =>
+  request<void>(url(scope, '', { path }), { method: 'DELETE' });
+
+// Multipart, so the browser sets the boundary: request() would force a JSON type.
+export async function uploadFiles(scope: FileScope, folder: string, files: File[]) {
+  const form = new FormData();
+  for (const file of files) form.append('files', file);
+  const res = await fetch(`${API_URL}${url(scope, '/upload', { path: folder })}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  });
+  if (!res.ok) throw await apiFailure(res);
+  return (await res.json()) as FileItem[];
+}
+
+// The file on the web origin (app/protected-media), so a PDF, an image or a video
+// opens in the page and a download keeps the session.
+export function fileRawUrl(scope: FileScope, path: string, download = false): string {
+  const query = new URLSearchParams({ root: scope.root, path });
+  if (download) query.set('download', '1');
+  const prefix =
+    scope.kind === 'project'
+      ? `/protected-media/projects/${encodeURIComponent(scope.projectKey)}/files/raw`
+      : '/protected-media/files/raw';
+  return `${prefix}?${query}`;
+}
+
+// The text the vault index extracted from an office file or a scan; null when there is
+// none. The only caller of the index for this, so the route changes here alone.
+// TODO(hub/vault-knowledge): point this at the extracted-text route of the vault index
+// once that branch is merged; /vault/text is a placeholder and answers 404 until then.
+export async function extractedText(vaultPath: string): Promise<string | null> {
+  const res = await fetch(`${API_URL}/vault/text?${new URLSearchParams({ path: vaultPath })}`, {
     credentials: 'include',
     cache: 'no-store',
   });
-  if (!response.ok) throw await apiFailure(response);
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const disposition = response.headers.get('content-disposition') ?? '';
-  const match = disposition.match(/filename="([^"]+)"/);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = match?.[1] ?? path.split('/').at(-1) ?? 'download';
-  link.rel = 'noopener';
-  link.click();
-  URL.revokeObjectURL(url);
+  if (!res.ok) return null;
+  const body = (await res.json()) as { text?: unknown };
+  return typeof body.text === 'string' ? body.text : null;
 }

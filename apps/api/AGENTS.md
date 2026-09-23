@@ -9,7 +9,7 @@ Rules and invariants for this package below; read the code for the walkthrough.
   `index.ts` (controller), `model.ts` (schemas), `service.ts` (Drizzle). Cross-cutting
   code in `shared/`. See `src/modules/` for the current set.
 - Features nest one level deeper only where they already call each other:
-  `modules/agents/{core,chat,runner,skills,tools,mcp-servers}`, where `core` holds the
+  `modules/agents/{core,chat,runner,skills,tools,mcp-servers,credentials}`, where `core` holds the
   agent itself and its runtime. A feature whose links to its neighbours run one way
   stays flat. A schema several of the nested features share sits in the parent's
   `model.ts` and is re-exported from each child's (`agentParams`).
@@ -78,7 +78,8 @@ Rules and invariants for this package below; read the code for the walkthrough.
 - **`position` is a sparse float** (`MAX(position) + 1000`); do not assume contiguous
   integers.
 - **Deletes cascade in the DB** (every project/issue-scoped FK is `ON DELETE CASCADE`).
-  `deleteIssue` still reads attachment rows first to purge their objects.
+  `deleteIssue` still reads attachment rows first to purge their files (an issue
+  attachment's file moves to the vault trash, a legacy one's object is deleted).
 - **Object-store deletes are best-effort** — log a failed `deleteObject`, do not fail
   the request.
 - **A list route either pages or answers with the whole list, never both.** A paged
@@ -236,6 +237,11 @@ gets — a name missing from a later sync is never removed by this path, only by
 - **`GET /attachments/:publicId/raw` is public and unauthenticated** (used in
   `<img>`/`<video>`). Preserve its defenses if you touch it: `X-Content-Type-Options:
 nosniff`, forced download outside a strict media allowlist, locked-down CSP.
+- The Files routes (`project-files/`) read and write the vault on disk. Every path goes
+  through `relativePath` and `assertNoSymlinks` of `paths.ts`; the viewer allowlist in
+  `serve.ts` opens PDF, raster images, audio, video and text (as `text/plain`) inline
+  and serves everything else as a sandboxed download. `Private/` is for `god` only and is
+  never created by the API: its group keeps the agents out.
 
 ## Tests
 

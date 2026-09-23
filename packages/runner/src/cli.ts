@@ -53,7 +53,7 @@ async function handle(
   log(`${label}: started (${run.trigger})`);
   const stop = new AbortController();
   try {
-    const hermes = (await policy?.runSettings()) ?? null;
+    const hermes = (await policy?.runSettings({ runId: run.id })) ?? null;
     const outcome = await withHeartbeat(
       log,
       async () => {
@@ -90,7 +90,7 @@ async function handleChat(
   log(`chat ${message.id}: answering`);
   const stop = new AbortController();
   try {
-    const hermes = (await policy?.runSettings()) ?? null;
+    const hermes = (await policy?.runSettings({ messageId: message.id })) ?? null;
     await withHeartbeat(
       log,
       async () => {

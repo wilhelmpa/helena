@@ -79,7 +79,7 @@ export const app = new Elysia()
       },
       documentation: {
         info: {
-          title: "It's a Plan API",
+          title: 'Volition API',
           version: pkg.version,
           description: apiDescription,
         },
@@ -114,6 +114,10 @@ export const app = new Elysia()
           {
             name: 'Agent MCP Servers',
             description: "The team's MCP server library and the servers enabled on each agent",
+          },
+          {
+            name: 'Credentials',
+            description: "The team's web logins, API keys, SSH keys and secrets, and their grants",
           },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
@@ -156,6 +160,10 @@ export const app = new Elysia()
           {
             name: 'Connections',
             description: 'Native runtime connections and human-confirmed mail management',
+          },
+          {
+            name: 'Device sync',
+            description: "Syncthing, which syncs the vault with the owner's devices",
           },
           { name: 'Project templates', description: 'Reusable project and board structures' },
           {
@@ -304,6 +312,26 @@ export const app = new Elysia()
     if (!session || session.user.active === false) return status(401);
     return status(204);
   })
+  // The same check for Mastra Studio, which shows the runs of every project and is open
+  // to the instance owner only.
+  .get(
+    '/auth/verify/owner',
+    async ({ request, status }) => {
+      const session = await getSessionFromHeaders(request.headers);
+      if (!session || session.user.active === false) return status(401);
+      return status(session.user.role === 'god' ? 204 : 403);
+    },
+    {
+      detail: {
+        tags: ['System'],
+        summary: 'Check that the session is the instance owner',
+        description:
+          'Answer 204 for an active session of the instance owner, 403 for another ' +
+          'session and 401 without one. Nginx asks it before it forwards a request to ' +
+          'Mastra Studio.',
+      },
+    },
+  )
   // What the sign-in and sign-up screens need before there is a session: whether
   // registration is open, invite-only, or closed, and which sign-in methods are
   // offered. Public on purpose — the screens are reached logged out. It carries no
@@ -342,7 +370,7 @@ export const app = new Elysia()
     },
   )
   // Root doubles as the liveness/health endpoint.
-  .get('/', () => ({ name: "It's a Plan api", status: 'ok' }), {
+  .get('/', () => ({ name: 'Volition api', status: 'ok' }), {
     detail: {
       tags: ['System'],
       summary: 'Check that the api is up',

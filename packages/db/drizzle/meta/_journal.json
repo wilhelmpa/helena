@@ -1065,6 +1065,20 @@
       "when": 1790170207981,
       "tag": "0151_approval_command",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1790172043506,
+      "tag": "0152_issue_attachment_vault",
+      "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1790173166321,
+      "tag": "0153_credential_store",
+      "breakpoints": true
     }
   ]
 }

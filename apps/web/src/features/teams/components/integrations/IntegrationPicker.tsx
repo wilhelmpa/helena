@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { IntegrationIcon } from '@/components/common/IntegrationIcon';
 import { useTranslations } from 'next-intl';
 
-// The kinds of integration, in picker order. Their name and blurb are messages under
-// `teams.integrations.groups`.
-const GROUPS: IntegrationMeta['kind'][] = ['llm', 'tool', 'secret'];
+// The two kinds of integration, in picker order. Their name and blurb are messages
+// under `teams.integrations.groups`.
+const GROUPS: IntegrationMeta['kind'][] = ['llm', 'tool'];
 
 // Step one of adding a credential: pick the integration. The catalog is long (~150 LLM
 // providers), so it is a full-width searchable list grouped by kind rather than a

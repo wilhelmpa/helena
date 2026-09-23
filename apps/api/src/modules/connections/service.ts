@@ -34,15 +34,6 @@ export interface MailAccountsDto {
     lastError: string | null;
   }>;
 }
-export interface ThemeSyncDto {
-  theme: 'light' | 'dark';
-  results: Array<{
-    service: 'agent_runtime' | 'code' | 'nextcloud';
-    status: 'updated' | 'failed';
-    attempts: number;
-    error?: string;
-  }>;
-}
 
 function bridgeConfigured() {
   return Boolean(
@@ -141,7 +132,6 @@ export const mailCreateDraft = (body: unknown) => json('/api/mail/drafts', body)
 export const mailListDrafts = (body: unknown) => json('/api/mail/drafts/list', body);
 export const mailAuthorizeSend = (body: unknown) => json('/api/mail/drafts/authorize-send', body);
 export const mailSendDraft = (body: unknown) => json('/api/mail/drafts/send', body);
-export const syncWorkspaceTheme = (body: unknown) => json<ThemeSyncDto>('/api/theme', body);
 
 export async function mailAttachment(body: unknown): Promise<Response> {
   const response = await bridge('/api/mail/attachment', {
@@ -161,135 +151,6 @@ export async function mailAttachment(body: unknown): Promise<Response> {
   }
   const headers = new Headers();
   headers.set('Content-Type', 'application/octet-stream');
-  headers.set('Content-Disposition', response.headers.get('Content-Disposition') || 'attachment');
-  headers.set('Cache-Control', 'private, no-store');
-  headers.set('X-Content-Type-Options', 'nosniff');
-  return new Response(response.body, { status: 200, headers });
-}
-
-export interface SecretInventoryDto {
-  checkedAt: string;
-  entries: Array<{ name: string; updatedAt: string | null; allowedHosts: string[] }>;
-}
-export const secretInventory = () =>
-  bridgeConfigured()
-    ? json<SecretInventoryDto>('/api/secrets')
-    : Promise.resolve({ checkedAt: new Date().toISOString(), entries: [] });
-export const secretSet = (body: unknown) => json<SecretInventoryDto>('/api/secrets', body);
-
-export type VaultAccessStatus = 'protected' | 'reachable' | 'unavailable' | 'unconfigured';
-
-export interface VaultStatusDto {
-  checkedAt: string;
-  accessUrl: string | null;
-  accessStatus: VaultAccessStatus;
-  httpStatus: number | null;
-  serviceHealthExposed: false;
-  secretValuesExposed: false;
-}
-
-export function parseVaultAccessUrl(raw: string): URL | null {
-  if (!raw.trim()) return null;
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    return null;
-  }
-  if (
-    url.protocol !== 'https:' ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    url.pathname !== '/'
-  ) {
-    return null;
-  }
-  return url;
-}
-
-export function classifyVaultHttpStatus(
-  status: number,
-): Exclude<VaultAccessStatus, 'unconfigured'> {
-  if (status >= 500) return 'unavailable';
-  return status === 401 || status === 403 || (status >= 300 && status < 400)
-    ? 'protected'
-    : 'reachable';
-}
-
-export async function vaultStatus(
-  fetcher: typeof fetch = fetch,
-  rawUrl = process.env.VAULT_URL || '',
-): Promise<VaultStatusDto> {
-  const checkedAt = new Date().toISOString();
-  const url = parseVaultAccessUrl(rawUrl);
-  const base = {
-    checkedAt,
-    accessUrl: url?.toString() ?? null,
-    serviceHealthExposed: false as const,
-    secretValuesExposed: false as const,
-  };
-  if (!url) return { ...base, accessStatus: 'unconfigured', httpStatus: null };
-
-  try {
-    const response = await fetcher(url, {
-      method: 'HEAD',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(5_000),
-      headers: { Accept: 'text/html' },
-    });
-    return {
-      ...base,
-      accessStatus: classifyVaultHttpStatus(response.status),
-      httpStatus: response.status,
-    };
-  } catch {
-    return { ...base, accessStatus: 'unavailable', httpStatus: null };
-  }
-}
-
-export interface ProjectFileListDto {
-  project: string;
-  path: string;
-  items: Array<{
-    name: string;
-    path: string;
-    kind: 'folder' | 'file';
-    sizeBytes: number | null;
-    contentType: string | null;
-    updatedAt: string | null;
-    previewable: boolean;
-  }>;
-}
-
-export interface ProjectFileTextDto {
-  project: string;
-  path: string;
-  content: string;
-  sizeBytes: number;
-}
-
-export const projectFilesJson = <T>(path: string, body: unknown) => json<T>(path, body);
-
-export async function projectFileDownload(body: unknown): Promise<Response> {
-  const response = await bridge('/api/files/download', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) {
-    const payload: unknown = await response.json().catch(() => null);
-    const message =
-      payload &&
-      typeof payload === 'object' &&
-      'message' in payload &&
-      typeof payload.message === 'string'
-        ? payload.message
-        : 'File download failed';
-    throw new HttpError(response.status >= 500 ? 502 : response.status, message);
-  }
-  const headers = new Headers();
-  headers.set('Content-Type', response.headers.get('Content-Type') || 'application/octet-stream');
   headers.set('Content-Disposition', response.headers.get('Content-Disposition') || 'attachment');
   headers.set('Cache-Control', 'private, no-store');
   headers.set('X-Content-Type-Options', 'nosniff');

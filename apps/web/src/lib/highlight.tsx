@@ -31,6 +31,13 @@ export function highlight(value: string): ReactNode | null {
   return render(auto);
 }
 
+// A file's text in the language its name stands for, or null when lowlight does not
+// know that language.
+export function highlightAs(language: string, value: string): ReactNode | null {
+  if (!lowlight.registered(language)) return null;
+  return render(lowlight.highlight(language, value));
+}
+
 function indentJson(value: string): string | null {
   try {
     return JSON.stringify(JSON.parse(value), null, 2);

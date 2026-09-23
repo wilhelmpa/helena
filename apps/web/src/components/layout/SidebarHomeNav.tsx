@@ -4,10 +4,12 @@ import {
   BookText,
   Building2,
   Clock3,
+  Folder,
   Inbox,
   KeyRound,
   LayoutGrid,
   ListTodo,
+  MonitorSmartphone,
   Plug,
   Radio,
   ShieldCheck,
@@ -24,7 +26,6 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
-import { runtimeEnv } from '@/utils/runtimeEnv';
 import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 
@@ -32,6 +33,7 @@ const icons = {
   overview: LayoutGrid,
   allWorkItems: ListTodo,
   inbox: Inbox,
+  files: Folder,
   approvals: ShieldCheck,
   agentPool: Bot,
   organization: Building2,
@@ -41,7 +43,8 @@ const icons = {
   tools: Wrench,
   mcps: Radio,
   connections: Plug,
-  vault: KeyRound,
+  credentials: KeyRound,
+  devices: MonitorSmartphone,
   teamSettings: UsersRound,
 } as const;
 
@@ -60,8 +63,7 @@ export default function SidebarHomeNav({
 }) {
   const pathname = usePathname();
   const t = useTranslations('nav');
-  const { vaultEnabled } = runtimeEnv().workspace;
-  const items = homeNavigation(teamId, vaultEnabled);
+  const items = homeNavigation(teamId);
   const pendingApprovals =
     (usePendingApprovalCount().data?.count ?? 0) + (useWorkflowGates().data?.items.length ?? 0);
 

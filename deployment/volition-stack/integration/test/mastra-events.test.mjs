@@ -8,7 +8,7 @@ const TOKEN = "control-token-0123456789abcdef0123456789";
 const ADAPTER_TOKEN = "adapter-token-0123456789abcdef0123456789";
 const input = {
   eventId: "event-001",
-  eventType: "system.audit.requested",
+  eventType: "agent.team.requested",
   organizationRef: "organization:volition",
   projectRef: "project:PRIV",
   capabilityRefs: [],
@@ -18,8 +18,8 @@ const input = {
 };
 const result = {
   eventId: "event-001",
-  eventType: "system.audit.requested",
-  workflowId: "system-audit",
+  eventType: "agent.team.requested",
+  workflowId: "agent-team",
   projectRef: "project:PRIV",
   runId: "event-001",
   status: "success",
@@ -102,10 +102,6 @@ test("hub event route is private, JSON-only and delegates without reshaping the 
   const handler = createRequestHandler(
     { mastraControlToken: TOKEN },
     {},
-    null,
-    null,
-    null,
-    null,
     null,
     null,
     null,

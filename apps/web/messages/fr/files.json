@@ -1,0 +1,111 @@
+{
+  "title": "Fichiers",
+  "projectDescription": "Documents, pièces jointes et code de ce projet",
+  "roots": {
+    "label": "Dossiers",
+    "vault": "Connaissances",
+    "code": "Code",
+    "home": "Accueil",
+    "private": "Privé",
+    "templates": "Modèles",
+    "projects": "Projets"
+  },
+  "toolbar": {
+    "filter": "Filtrer par nom",
+    "sort": "Trier",
+    "sortName": "Nom",
+    "sortModified": "Modifié",
+    "sortSize": "Taille",
+    "ascending": "Croissant",
+    "descending": "Décroissant",
+    "list": "Liste",
+    "grid": "Grille",
+    "upload": "Téléverser",
+    "newFolder": "Nouveau dossier",
+    "newFile": "Nouvelle note",
+    "openInCode": "Ouvrir dans VS Code"
+  },
+  "breadcrumb": "Chemin du dossier",
+  "modified": "{date, date, medium}",
+  "empty": {
+    "folder": "Ce dossier est vide.",
+    "folderHint": "Déposez des fichiers ici ou utilisez Téléverser.",
+    "filter": "Aucune entrée ne correspond à « {filter} ».",
+    "readOnly": "Plan affiche ce dossier en lecture seule."
+  },
+  "unreadable": {
+    "title": "Plan ne peut pas lire ce dossier",
+    "body": "L'espace de travail appartient à l'utilisateur des agents sur le serveur. Ouvrez-le plutôt dans VS Code.",
+    "missing": "Ce dossier n'existe pas sur le serveur."
+  },
+  "loadError": "Le dossier n'a pas pu être chargé.",
+  "retry": "Réessayer",
+  "truncated": "Seules les {count} premières entrées sont affichées.",
+  "dropToUpload": "Déposer pour téléverser dans {folder}",
+  "uploaded": "{count, plural, one {# fichier téléversé} other {# fichiers téléversés}}",
+  "moved": "Déplacé vers {folder}",
+  "trashed": "{name} a été mis à la corbeille",
+  "pathCopied": "Chemin copié",
+  "copyFailed": "Le chemin n'a pas pu être copié",
+  "actions": {
+    "more": "Actions pour {name}",
+    "download": "Télécharger",
+    "rename": "Renommer",
+    "move": "Déplacer",
+    "copyPath": "Copier le chemin",
+    "openInObsidian": "Ouvrir dans Obsidian",
+    "openInCode": "Ouvrir dans VS Code",
+    "openInDocs": "Ouvrir dans Docs",
+    "linkToTask": "Lier à une tâche",
+    "trash": "Mettre à la corbeille",
+    "showInFolder": "Afficher dans le dossier"
+  },
+  "dialog": {
+    "newFolder": "Nouveau dossier",
+    "newFile": "Nouvelle note",
+    "rename": "Renommer",
+    "name": "Nom",
+    "folderName": "Nouveau dossier",
+    "fileName": "Note.md",
+    "fileHint": "Un fichier .md ou .txt. Une note Markdown s'ouvre dans Docs.",
+    "create": "Créer",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  },
+  "moveDialog": {
+    "title": "Déplacer {name}",
+    "description": "Ouvrez le dossier de destination.",
+    "here": "Déplacer ici"
+  },
+  "trashDialog": {
+    "title": "Mettre {name} à la corbeille ?",
+    "description": "L'élément est déplacé dans la corbeille du coffre et peut y être restauré.",
+    "confirm": "Mettre à la corbeille"
+  },
+  "linkDialog": {
+    "title": "Lier à une tâche",
+    "prompt": "Rechercher des tâches",
+    "linked": "Lié à {identifier}"
+  },
+  "viewer": {
+    "loading": "Chargement…",
+    "tooLarge": "Le fichier est trop volumineux pour être affiché. Téléchargez-le.",
+    "error": "Le fichier n'a pas pu être affiché.",
+    "noPreview": "Aucun aperçu pour ce type de fichier.",
+    "extracted": "Texte extrait",
+    "noExtracted": "Aucun texte extrait n'est encore disponible pour ce fichier.",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "zoomReset": "Ajuster"
+  },
+  "picker": {
+    "up": "Dossier parent",
+    "empty": "Rien ici.",
+    "choose": "Choisir"
+  },
+  "attachment": {
+    "missing": "Fichier manquant",
+    "relink": "Choisir à nouveau le fichier",
+    "relinkTitle": "Choisir le fichier pour {name}"
+  }
+}

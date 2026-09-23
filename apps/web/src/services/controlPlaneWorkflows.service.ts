@@ -9,7 +9,6 @@ import {
   listWorkflowRuns,
   listWorkflowSchedules,
   retryWorkflow,
-  startWorkflow,
   updateProjectWorkflow,
 } from '@/lib/api/endpoints/controlPlaneWorkflows';
 import { qk } from '@/services/queryKeys';
@@ -53,10 +52,6 @@ export function useWorkflowControl(projectKey: string, workflowId: string) {
   const refresh = () =>
     client.invalidateQueries({ queryKey: qk.controlPlaneWorkflowRuns(projectKey, workflowId) });
   return {
-    start: useMutation({
-      mutationFn: () => startWorkflow(projectKey, workflowId),
-      onSuccess: refresh,
-    }),
     decide: useMutation({
       mutationFn: ({ runId, approved }: { runId: string; approved: boolean }) =>
         decideWorkflow(projectKey, workflowId, runId, approved),
