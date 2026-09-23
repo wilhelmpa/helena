@@ -241,15 +241,16 @@ describe('buildOrganizationTree', () => {
       assert.equal(unassignedNode?.agents[0].agent.username, 'stray');
     });
 
-    test('Home, coordinator and specialist land in the "no department" bucket together', () => {
+    test('Home, coordinator and specialist land in the "no department" bucket, nested by reporting line', () => {
       const tree = buildOrganizationTree(organization);
       const noneNode = tree.find((node) => node.kind === 'none');
-      const usernames = noneNode?.agents.map((node) => node.agent.username).sort();
-      assert.deepEqual(usernames, ['hermes-vol-coordinator', 'master']);
-      // The specialist nests under its coordinator's `reports`, not as its own root.
-      const coordinatorNode = noneNode?.agents.find(
-        (node) => node.agent.username === 'hermes-vol-coordinator',
-      );
+      // Only Home is a root here: the coordinator reports to it, so it nests under
+      // Home's `reports`, not as a second top-level entry.
+      assert.equal(noneNode?.agents.length, 1);
+      const homeNode = noneNode?.agents[0];
+      assert.equal(homeNode?.agent.username, 'master');
+      const coordinatorNode = homeNode?.reports[0];
+      assert.equal(coordinatorNode?.agent.username, 'hermes-vol-coordinator');
       assert.equal(coordinatorNode?.reports[0]?.agent.username, 'coder-vol');
     });
 
