@@ -55,9 +55,9 @@ export default function ChatListItem({
         aria-current={selected ? 'true' : undefined}
         className="min-w-0 flex-1 rounded-md py-2 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <span className="flex items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-1.5">
           {chat.pinned && <Pin className="size-3 shrink-0 text-muted-foreground" />}
-          <span dir="auto" className="truncate text-sm font-medium">
+          <span dir="auto" title={title} className="min-w-0 truncate text-sm font-medium">
             {highlighted(title, highlightQuery)}
           </span>
           {chat.running && (
@@ -69,7 +69,9 @@ export default function ChatListItem({
           )}
         </span>
         <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-          <span className="truncate">{chat.agent.name}</span>
+          <span title={chat.agent.name} className="min-w-0 truncate">
+            {chat.agent.name}
+          </span>
           {chat.project && <span className="shrink-0">· {chat.project.name}</span>}
         </span>
         {chat.snippet && (

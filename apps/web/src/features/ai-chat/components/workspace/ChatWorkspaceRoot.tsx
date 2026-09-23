@@ -53,6 +53,7 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
   return (
     <ChatWorkspace
       scopeKey={scope.scopeKey}
+      teamId={scope.teamId}
       projectKey={projectKey}
       agents={scope.agents}
       location={location}

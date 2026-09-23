@@ -157,6 +157,9 @@ export const qk = {
     ['aiAgents', teamId, projectId ?? 'all'] as const,
   anyAiAgents: ['aiAgents'] as const,
   teamAiAgents: (teamId: number) => ['aiAgents', teamId] as const,
+  // One agent by id — the chat workspace's fallback when a thread names an agent its
+  // own (kind- and template-filtered) picker list did not carry.
+  aiAgent: (teamId: number, agentId: number) => ['aiAgents', teamId, 'agent', agentId] as const,
   agentTools: (teamId: number) => ['aiAgents', teamId, 'tools'] as const,
   // The skills enabled on one agent (the agent editor's Skills tab).
   agentSkillLinks: (teamId: number, agentId: number) =>
