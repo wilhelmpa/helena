@@ -1149,6 +1149,13 @@
       "when": 1790199099830,
       "tag": "0163_header-layout-preference",
       "breakpoints": true
+    },
+    {
+      "idx": 164,
+      "version": "7",
+      "when": 1790199824602,
+      "tag": "0164_browser-gateway-schema",
+      "breakpoints": true
     }
   ]
 }
