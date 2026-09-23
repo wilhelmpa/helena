@@ -104,6 +104,13 @@ export async function controlPlaneRequest<T = unknown>(
   });
   const value: unknown = await response.json().catch(() => null);
   if (!response.ok) {
+    // Mastra refusing Plan's own token (401/403) is this server's configuration, not a
+    // bad request of the caller: a 502 with a message the page can show, never a 400.
+    if (response.status === 401 || response.status === 403)
+      throw new HttpError(
+        502,
+        'The workflow control plane rejected the credentials of this server',
+      );
     const status =
       response.status === 404
         ? 404
