@@ -129,7 +129,26 @@
       "documents": "在 Docs 中组织共享项目文档。"
     },
     "featureOn": "已启用{feature}",
-    "featureOff": "已停用{feature}"
+    "featureOff": "已停用{feature}",
+    "setup": {
+      "title": "初始设置",
+      "description": "此项目所需的工作区、文件、协调者、终端和浏览器。项目所有者或团队的所有者或管理者可以重试失败的设置；失败的清理由团队的所有者或管理者重试。",
+      "provisioning": "项目设置",
+      "provisioningHint": "创建工作区、保管库文件夹、协调者、终端和浏览器。",
+      "cleanup": "已删除项目的清理",
+      "cleanupHint": "此团队中一个已删除的项目使用了相同的键。在设置此项目之前，会先移除它的资源。",
+      "status": {
+        "pending": "进行中",
+        "succeeded": "已完成",
+        "failed": "失败"
+      },
+      "meta": "{attempts, plural, =0 {尚未尝试} other {# 次尝试}} · {ago}更改",
+      "lastError": "最近的错误：{error}",
+      "missing": "此项目没有设置任务。",
+      "loading": "正在加载设置状态…",
+      "unavailable": "设置状态不可用。",
+      "retry": "重试"
+    }
   },
   "configuration": {
     "saved": "更改已保存",

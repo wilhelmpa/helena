@@ -157,3 +157,27 @@ export const getBoardIssues = (projectKey: string) =>
 
 export const getProjectProvisioning = (projectKey: string) =>
   request<ProjectProvisioningJob>(`/projects/${encodeURIComponent(projectKey)}/provisioning`);
+
+export const retryProjectProvisioning = (projectKey: string) =>
+  request<ProjectProvisioningJob>(
+    `/projects/${encodeURIComponent(projectKey)}/provisioning/retry`,
+    { method: 'POST' },
+  );
+
+export interface ProjectSetupJob {
+  id: string;
+  status: 'pending' | 'succeeded' | 'failed';
+  attempts: number;
+  lastError: string | null;
+  updatedAt: string;
+}
+
+// The project's provisioning job, and the cleanup of an earlier deleted project of the
+// team with the same key, which has to finish before this project can be set up.
+export interface ProjectSetup {
+  provisioning: ProjectSetupJob | null;
+  deprovisioning: ProjectSetupJob | null;
+}
+
+export const getProjectSetup = (projectKey: string) =>
+  request<ProjectSetup>(`/projects/${encodeURIComponent(projectKey)}/setup`);

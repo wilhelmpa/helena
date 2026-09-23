@@ -1,5 +1,5 @@
 import type { AnalyticsStats } from '@/lib/api/endpoints/analytics';
-import type { Project } from '@/lib/api/endpoints/projects';
+import type { Project, ProjectSetupJob } from '@/lib/api/endpoints/projects';
 import { request } from '@/lib/api/core/client';
 import type { Permissions } from '@/lib/api/endpoints/roles';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
@@ -260,3 +260,9 @@ export const updateTeamProject = (
 
 export const deleteTeamProject = (teamId: number, projectId: number) =>
   request<void>(`/teams/${teamId}/projects/${projectId}`, { method: 'DELETE' });
+
+// Queues the failed cleanup of a deleted project of the team again.
+export const retryProjectDeprovisioning = (teamId: number, jobId: string) =>
+  request<ProjectSetupJob>(`/teams/${teamId}/project-deprovisioning/${jobId}/retry`, {
+    method: 'POST',
+  });

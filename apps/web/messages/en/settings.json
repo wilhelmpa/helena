@@ -129,7 +129,26 @@
       "documents": "Shared project documentation organized into pages."
     },
     "featureOn": "{feature} turned on",
-    "featureOff": "{feature} turned off"
+    "featureOff": "{feature} turned off",
+    "setup": {
+      "title": "Setup",
+      "description": "The workspace, files, coordinator, terminal and browser this project needs. A project owner, or an owner or manager of the team, can retry a failed setup; a failed cleanup is retried by an owner or manager of the team.",
+      "provisioning": "Project setup",
+      "provisioningHint": "Creates the workspace, the vault folders, the coordinator, the terminal and the browser.",
+      "cleanup": "Cleanup of a deleted project",
+      "cleanupHint": "A deleted project of this team had the same key. Its resources are removed before this project can be set up.",
+      "status": {
+        "pending": "In progress",
+        "succeeded": "Done",
+        "failed": "Failed"
+      },
+      "meta": "{attempts, plural, =0 {No attempts yet} one {# attempt} other {# attempts}} · changed {ago}",
+      "lastError": "Last error: {error}",
+      "missing": "No setup job exists for this project.",
+      "loading": "Loading the setup state…",
+      "unavailable": "The setup state is unavailable.",
+      "retry": "Retry"
+    }
   },
   "configuration": {
     "saved": "Changes saved",
