@@ -1,5 +1,5 @@
 {
-  "id": "908afd68-3500-4e74-be77-5847e2e37b01",
+  "id": "b4cca519-ab54-4efd-934f-cf70af0512a3",
   "prevId": "f10123e5-9328-4042-9f67-5870caed9a9c",
   "version": "7",
   "dialect": "postgresql",
@@ -3092,6 +3092,34 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "approval_request_pending_run_uq": {
+          "name": "approval_request_pending_run_uq",
+          "columns": [
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"approval_request\".\"status\" = 'pending' AND \"approval_request\".\"run_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}

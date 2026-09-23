@@ -99,6 +99,27 @@ describe('approval requests', () => {
     expect(other.data!.id).not.toBe(first.data!.id);
   });
 
+  it('ties a request to a run only when one run of the agent matches', async () => {
+    const { asOwner, asAgent, columnId } = await setup();
+    await startRun(asOwner, asAgent, columnId);
+    const second = await startRun(asOwner, asAgent, columnId);
+
+    const unnamed = await requestApproval(asAgent);
+    expect(unnamed.data).toMatchObject({ runId: null, issueId: null });
+
+    const named = await requestApproval(asAgent, { issueId: second.issue.id });
+    expect(named.data).toMatchObject({ runId: second.run.id, issueId: second.issue.id });
+  });
+
+  it('records one request when the same call arrives twice at once', async () => {
+    const { asOwner, asAgent, columnId } = await setup();
+    await startRun(asOwner, asAgent, columnId);
+
+    const [a, b] = await Promise.all([requestApproval(asAgent), requestApproval(asAgent)]);
+    expect([a.status, b.status].sort()).toEqual([200, 201]);
+    expect(a.data!.id).toBe(b.data!.id);
+  });
+
   it('takes a request without a run and without an issue', async () => {
     const { asAgent } = await setup();
     const res = await requestApproval(asAgent, { kind: 'pay' });

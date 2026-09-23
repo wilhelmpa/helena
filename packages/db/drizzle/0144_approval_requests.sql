@@ -27,6 +27,7 @@ ALTER TABLE "approval_request" ADD CONSTRAINT "approval_request_decided_by_user_
 ALTER TABLE "approval_request" ADD CONSTRAINT "approval_request_follow_up_run_id_agent_run_id_fk" FOREIGN KEY ("follow_up_run_id") REFERENCES "public"."agent_run"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "approval_request_project_status_idx" ON "approval_request" USING btree ("project_id","status","id" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "approval_request_agent_idx" ON "approval_request" USING btree ("agent_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "approval_request_pending_run_uq" ON "approval_request" USING btree ("run_id","kind","action") WHERE "approval_request"."status" = 'pending' AND "approval_request"."run_id" IS NOT NULL;--> statement-breakpoint
 ALTER TABLE "agent_run" ADD CONSTRAINT "agent_run_trigger_check" CHECK ("agent_run"."trigger" IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval'));--> statement-breakpoint
 ALTER TABLE "notification" ADD CONSTRAINT "notification_type_check" CHECK ("notification"."type" IN ('assigned', 'mentioned', 'commented', 'state_changed', 'approval_requested'));--> statement-breakpoint
 CREATE FUNCTION rev_approval_request() RETURNS trigger AS $$

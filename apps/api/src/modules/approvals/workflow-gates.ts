@@ -89,7 +89,7 @@ export async function listWorkflowGates(
   try {
     // Only a workflow with external effects has an approval gate to suspend at.
     names = new Map(
-      (await catalogFlows())
+      (await catalogFlows(LIST_TIMEOUT_MS))
         .filter((flow) => flow.externalEffects === true)
         .map((flow) => [flow.id, text(flow.name) ?? flow.id]),
     );

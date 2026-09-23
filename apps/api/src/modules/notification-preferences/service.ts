@@ -69,15 +69,18 @@ export async function getPreferences(
   return rows[0] ? toDto(rows[0]) : defaults();
 }
 
-// Upserts a member's preferences for a project and returns the normalized result.
+// Upserts a member's preferences for a project and returns the normalized result. An
+// event the input leaves out keeps its stored value, so a client that predates an event
+// does not turn it off by saving.
 export async function setPreferences(
   userId: string,
   projectId: number,
   input: { emailEvents: Partial<EventToggles>; telegramEvents: Partial<EventToggles> },
 ): Promise<NotificationPreferenceDto> {
+  const current = await getPreferences(userId, projectId);
   const values = {
-    emailEvents: toToggles(input.emailEvents),
-    telegramEvents: toToggles(input.telegramEvents),
+    emailEvents: toToggles({ ...current.emailEvents, ...input.emailEvents }),
+    telegramEvents: toToggles({ ...current.telegramEvents, ...input.telegramEvents }),
   };
   await db
     .insert(userNotificationPreference)

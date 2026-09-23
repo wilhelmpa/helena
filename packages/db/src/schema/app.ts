@@ -637,7 +637,8 @@ export const agentSchedule = pgTable(
 );
 
 // Queued autonomous runs of an internal agent. Mentions and delegations carry an
-// issue; scheduled and manual runs do not. The worker claims due rows with a lease,
+// issue; scheduled and manual runs do not, and an approval decision carries the issue
+// of its request when it has one. The worker claims due rows with a lease,
 // runs the agent, and records the result for history and retries.
 export const agentRun = pgTable(
   'agent_run',
@@ -740,6 +741,11 @@ export const approvalRequest = pgTable(
     check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
     index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),
     index('approval_request_agent_idx').on(t.agentId),
+    // One pending request per action of a run, so a repeated tool call cannot queue the
+    // same outward action twice.
+    uniqueIndex('approval_request_pending_run_uq')
+      .on(t.runId, t.kind, t.action)
+      .where(sql`${t.status} = 'pending' AND ${t.runId} IS NOT NULL`),
   ],
 );
 

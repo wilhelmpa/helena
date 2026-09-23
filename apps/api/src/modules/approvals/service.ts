@@ -14,7 +14,7 @@ import { and, desc, eq, inArray, isNotNull, sql, type SQL } from 'drizzle-orm';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
 import { listMemberContexts, toMemberContext, type MemberRole } from '#modules/members/service';
 import { notifyApprovalRequested } from '#modules/notifications/service';
-import { HttpError, iso } from '#shared/lib';
+import { HttpError, iso, pgErrorCode } from '#shared/lib';
 import { hasPermission, type PermissionAction, type PermissionResource } from '#shared/permissions';
 
 export type ApprovalKind = 'send' | 'publish' | 'pay' | 'delete' | 'other';
@@ -157,10 +157,12 @@ export async function projectsWithPermission(
     .map(({ id, key, name, teamId }) => ({ id, key, name, teamId }));
 }
 
-// The run the agent is executing in the project: claimed and not finished. A runner
-// takes one run of an agent at a time, so the newest such run is the one that asks.
-async function currentRun(agentId: number, projectId: number) {
-  const [row] = await db
+// The run a request comes from: a claimed, unfinished run of the agent in the project,
+// on the issue the agent names when it names one. A runner can execute several runs of
+// one agent at once and a chat can ask as well, so a request is tied to a run only when
+// exactly one run matches.
+async function askingRun(agentId: number, projectId: number, issueId: number | undefined) {
+  const rows = await db
     .select({ id: agentRun.id, issueId: agentRun.issueId })
     .from(agentRun)
     .where(
@@ -169,11 +171,11 @@ async function currentRun(agentId: number, projectId: number) {
         eq(agentRun.projectId, projectId),
         eq(agentRun.status, 'pending'),
         isNotNull(agentRun.startedAt),
+        issueId == null ? undefined : eq(agentRun.issueId, issueId),
       ),
     )
-    .orderBy(desc(agentRun.id))
-    .limit(1);
-  return row ?? null;
+    .limit(2);
+  return rows.length === 1 ? rows[0]! : null;
 }
 
 // The people who may decide the project's requests, agents left out.
@@ -201,7 +203,6 @@ export async function createApprovalRequest(input: {
   details?: string;
   issueId?: number;
 }): Promise<{ approval: ApprovalDto; created: boolean }> {
-  const run = await currentRun(input.agent.id, input.projectId);
   if (input.issueId != null) {
     const [row] = await db
       .select({ id: issue.id })
@@ -209,11 +210,27 @@ export async function createApprovalRequest(input: {
       .where(and(eq(issue.id, input.issueId), eq(issue.projectId, input.projectId)));
     if (!row) throw new HttpError(400, 'The issue is not in this project');
   }
+  const run = await askingRun(input.agent.id, input.projectId, input.issueId);
   const issueId = input.issueId ?? run?.issueId ?? null;
   const action = input.action.trim();
-  const details = input.details?.trim() ?? '';
 
-  if (run) {
+  let id: number;
+  try {
+    const [created] = await db
+      .insert(approvalRequest)
+      .values({
+        projectId: input.projectId,
+        agentId: input.agent.id,
+        runId: run?.id ?? null,
+        issueId,
+        kind: input.kind,
+        action,
+        details: input.details?.trim() ?? '',
+      })
+      .returning({ id: approvalRequest.id });
+    id = created!.id;
+  } catch (err) {
+    if (!run || pgErrorCode(err) !== '23505') throw err;
     const [existing] = await db
       .select({ id: approvalRequest.id })
       .from(approvalRequest)
@@ -225,21 +242,9 @@ export async function createApprovalRequest(input: {
           eq(approvalRequest.action, action),
         ),
       );
-    if (existing) return { approval: (await getApproval(existing.id))!, created: false };
+    return { approval: (await getApproval(existing!.id))!, created: false };
   }
 
-  const [created] = await db
-    .insert(approvalRequest)
-    .values({
-      projectId: input.projectId,
-      agentId: input.agent.id,
-      runId: run?.id ?? null,
-      issueId,
-      kind: input.kind,
-      action,
-      details,
-    })
-    .returning({ id: approvalRequest.id });
   if (issueId != null) {
     await notifyApprovalRequested({
       projectId: input.projectId,
@@ -249,7 +254,7 @@ export async function createApprovalRequest(input: {
       action,
     });
   }
-  return { approval: (await getApproval(created!.id))!, created: true };
+  return { approval: (await getApproval(id))!, created: true };
 }
 
 // The prompt of the run a decision queues. framePrompt adds what to do with it.
