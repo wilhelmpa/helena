@@ -81,8 +81,8 @@ describe('GET /issues', () => {
       assignee: { userId: owner.userId },
       delegate: null,
       priority: 'high',
-      dueDate: '2030-01-01',
     });
+    expect(new Date(item!.dueDate!).getTime()).toBe(new Date('2030-01-01').getTime());
     expect(typeof item!.stateName).toBe('string');
     expect(res.data!.items.find((i) => i.projectKey === 'OPS')?.areaName).toBeNull();
   });
