@@ -91,7 +91,7 @@
     },
     "schedules": {
       "label": "Zeitpläne",
-      "description": "Agentenaufgaben nach einem wiederkehrenden Zeitplan ausführen."
+      "description": "Aufgaben für einen Agenten nach einem wiederkehrenden Zeitplan erstellen oder erneut öffnen."
     },
     "webhooks": {
       "label": "Webhooks",

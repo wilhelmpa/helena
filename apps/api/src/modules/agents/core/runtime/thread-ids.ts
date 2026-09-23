@@ -19,18 +19,11 @@ export function isOwnChatThread(threadId: string, agentId: number, userId: strin
   return threadId.startsWith(`chat:${agentId}:${userId}:`);
 }
 
-// The thread an autonomous run continues: one per (agent, issue) for an issue run, one
-// per schedule for a scheduled run (a schedule belongs to a single agent, so its id
-// already names the agent). Repeated runs then build on what the agent did before, and
-// a retry sees how the failed attempt ended. A run with neither, the decision on an
+// The thread an autonomous run continues: one per (agent, issue) for an issue run.
+// Repeated runs then build on what the agent did before, and a retry sees how the
+// failed attempt ended. A run without an issue, a manual run or the decision on an
 // approval request made outside an issue, gets a thread of its own.
-export function runThreadId(run: {
-  id: number;
-  agentId: number;
-  issueId: number | null;
-  scheduleId: number | null;
-}): string {
+export function runThreadId(run: { id: number; agentId: number; issueId: number | null }): string {
   if (run.issueId != null) return `issue:${run.issueId}:${run.agentId}`;
-  if (run.scheduleId != null) return `schedule:${run.scheduleId}`;
   return `run:${run.id}`;
 }

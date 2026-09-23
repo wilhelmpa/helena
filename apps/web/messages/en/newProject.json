@@ -39,8 +39,7 @@
     "actions": "Actions",
     "configuration": "Configuration",
     "webhooks": "Webhooks",
-    "agents": "Agents",
-    "schedules": "Schedules"
+    "agents": "Agents"
   },
   "title": "New project",
   "copyTitle": "Copy project \"{name}\"",

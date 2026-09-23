@@ -79,6 +79,7 @@
   "godModeOwnerOnly": "管理模式仅对实例管理员开放。",
   "project": "项目",
   "organization": "Organization",
+  "schedules": "定时任务",
   "connections": "Connections",
   "agentPool": "智能体池",
   "mcps": "MCP",

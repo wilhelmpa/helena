@@ -80,6 +80,7 @@
   "godModeOwnerOnly": "God Mode ist nur für den Inhaber der Instanz zugänglich.",
   "project": "Projekt",
   "organization": "Organisation",
+  "schedules": "Zeitpläne",
   "connections": "Verbindungen",
   "agentPool": "Agentenpool",
   "mcps": "MCPs",

@@ -71,7 +71,7 @@ thinking.
 ```
 apps/api        Elysia (Bun) — better-auth at /api/auth/*, agent runs      :3000
 apps/web        Next.js App Router, SSR (not SPA) + shadcn + TanStack Q :3001
-apps/worker     webhook and notification delivery, agent schedules
+apps/worker     webhook, notification and provisioning delivery
 apps/bot        Telegram bot, long polling
 packages/db     @repo/db     — Drizzle client, schema, migrations, permission matrix, shared config readers
 packages/auth   @repo/auth   — better-auth server instance + instance auth settings

@@ -132,6 +132,7 @@ test('retry refuses a run that did not fail or has no failed step', async () => 
 
 test('schedule listing filters by the stored project context', async () => {
   const control = service(async (url) => {
+    if (String(url).endsWith('/triggers?limit=1')) return json({ triggers: [] });
     assert.match(String(url), /schedules\?workflowId=support$/);
     return json({
       schedules: [
@@ -147,6 +148,151 @@ test('schedule listing filters by the stored project context', async () => {
     projectRef: 'project:PRIV',
   });
   assert.deepEqual(result.schedules.map((item) => item.id), ['one']);
+});
+
+test('schedule listing across projects reports the newest fire of each schedule', async () => {
+  const urls = [];
+  const control = service(async (url) => {
+    urls.push(String(url));
+    const path = new URL(String(url)).pathname + new URL(String(url)).search;
+    if (path.endsWith('schedules?workflowId=agent-routine')) {
+      return json({
+        schedules: [
+          { id: 'one', requestContext: { projectRef: 'project:PRIV' } },
+          { id: 'two', requestContext: { projectRef: 'project:VOL' } },
+          { id: 'three', requestContext: { projectRef: 'project:VOL' } },
+          { id: 'other', requestContext: { projectRef: 'project:OTHER' } },
+        ],
+      });
+    }
+    if (path.endsWith('/schedules/one/triggers?limit=1')) {
+      return json({ triggers: [{ runId: 'manual_one', actualFireAt: 1790000000000, outcome: 'published' }] });
+    }
+    if (path.endsWith('/schedules/two/triggers?limit=1')) {
+      return json({ triggers: [{ runId: 'sched_two_1', actualFireAt: 1790000000001, outcome: 'published' }] });
+    }
+    if (path.endsWith('/schedules/three/triggers?limit=1')) return json({ triggers: [] });
+    if (path.endsWith('/runs/manual_one?fields=result,error')) {
+      return json({
+        runId: 'manual_one',
+        status: 'success',
+        result: { status: 'success', output: { status: 'created', taskRef: 'task:PRIV-4' }, payload: {} },
+      });
+    }
+    return json({ error: 'not found' }, 404);
+  });
+  const result = await control.execute({
+    schemaVersion: 1,
+    operation: 'schedules',
+    workflowId: 'agent-routine',
+    projectRefs: ['project:PRIV', 'project:VOL'],
+  });
+  assert.deepEqual(result.schedules.map((item) => item.id), ['one', 'two', 'three']);
+  assert.deepEqual(result.schedules.map((item) => item.lastRun), [
+    {
+      runId: 'manual_one',
+      firedAt: 1790000000000,
+      status: 'success',
+      result: { status: 'created', taskRef: 'task:PRIV-4' },
+      error: null,
+    },
+    { runId: 'sched_two_1', firedAt: 1790000000001, status: 'pending', result: null, error: null },
+    null,
+  ]);
+  assert.equal(urls.filter((url) => url.includes('OTHER') || url.includes('/other/')).length, 0);
+  await assert.rejects(
+    () =>
+      control.execute({
+        schemaVersion: 1,
+        operation: 'schedules',
+        workflowId: 'agent-routine',
+        projectRefs: ['PRIV'],
+      }),
+    (error) => error instanceof MastraControlError && error.status === 400,
+  );
+});
+
+test('one schedule is read only through its own project and workflow', async () => {
+  const control = service(async (url) => {
+    const path = new URL(String(url)).pathname;
+    if (path.endsWith('/triggers')) return json({ triggers: [] });
+    return json({ id: 'one', workflowId: 'agent-routine', requestContext: { projectRef: 'project:PRIV' } });
+  });
+  const request = {
+    schemaVersion: 1,
+    operation: 'schedule',
+    workflowId: 'agent-routine',
+    projectRef: 'project:PRIV',
+    scheduleId: 'one',
+  };
+  assert.equal((await control.execute(request)).lastRun, null);
+  for (const other of [{ projectRef: 'project:VOL' }, { workflowId: 'agent-team' }]) {
+    await assert.rejects(
+      () => control.execute({ ...request, ...other }),
+      (error) => error instanceof MastraControlError && error.status === 404,
+    );
+  }
+});
+
+test('schedule creation stores the scope and key without policies Mastra does not have', async () => {
+  let created;
+  const control = service(async (url, init = {}) => {
+    if (init.method === 'POST') {
+      created = JSON.parse(init.body);
+      return json({ id: 'schedule_new' });
+    }
+    return json({ schedules: [] });
+  });
+  await control.execute({
+    schemaVersion: 1,
+    operation: 'create-schedule',
+    workflowId: 'agent-routine',
+    projectRef: 'project:PRIV',
+    organizationRef: 'organization:1',
+    capabilityRefs: [],
+    connectionRefs: [],
+    scheduleKey: '123e4567-e89b-42d3-a456-426614174000',
+    cron: '0 9 * * 1',
+    timezone: 'Europe/Berlin',
+    payload: { eventId: 'template' },
+    missedRunPolicy: 'run-once',
+    concurrencyPolicy: 'replace',
+  });
+  assert.deepEqual(created.metadata, {
+    projectRef: 'project:PRIV',
+    source: 'itsaplan',
+    scheduleKey: '123e4567-e89b-42d3-a456-426614174000',
+  });
+  assert.deepEqual(created.inputData, { eventId: 'template' });
+  assert.equal(created.timezone, 'Europe/Berlin');
+});
+
+test('a schedule update replaces the stored input when a payload is given and keeps an unnamed time zone', async () => {
+  const patches = [];
+  const control = service(async (url, init = {}) => {
+    if (init.method === 'PATCH') {
+      patches.push(JSON.parse(init.body));
+      return json({ id: 'schedule_one' });
+    }
+    return json({ id: 'schedule_one', workflowId: 'agent-routine', requestContext: { projectRef: 'project:PRIV' } });
+  });
+  const request = {
+    schemaVersion: 1,
+    operation: 'update-schedule',
+    workflowId: 'agent-routine',
+    projectRef: 'project:PRIV',
+    scheduleId: 'schedule_one',
+    cron: '0 9 * * 1',
+    timezone: 'Europe/Berlin',
+  };
+  await control.execute(request);
+  await control.execute({ ...request, payload: { eventId: 'changed' } });
+  await control.execute({ ...request, timezone: undefined });
+  assert.deepEqual(patches, [
+    { cron: '0 9 * * 1', timezone: 'Europe/Berlin' },
+    { cron: '0 9 * * 1', timezone: 'Europe/Berlin', inputData: { eventId: 'changed' } },
+    { cron: '0 9 * * 1' },
+  ]);
 });
 
 test('schedule creation is idempotent within one project and schedule key', async () => {
@@ -223,6 +369,20 @@ test('run listing exposes the status stored in Mastra snapshots', async () => {
     projectRef: 'project:PRIV',
   });
   assert.equal(result.runs[0].status, 'success');
+});
+
+test('runs of a schedule fire report their output like any other run', async () => {
+  const evented = { status: 'success', output: { status: 'created', taskRef: 'task:PRIV-2' }, payload: {} };
+  const control = service(async (url) =>
+    String(url).includes('/runs?')
+      ? json({ runs: [{ runId: 'sched_one_1', snapshot: { status: 'success', result: evented } }], total: 1 })
+      : json({ runId: 'sched_one_1', resourceId: 'project:PRIV', status: 'success', result: evented }),
+  );
+  const request = { schemaVersion: 1, workflowId: 'agent-routine', projectRef: 'project:PRIV' };
+  const listed = await control.execute({ ...request, operation: 'runs' });
+  assert.deepEqual(listed.runs[0].snapshot.result, evented.output);
+  const run = await control.execute({ ...request, operation: 'run', runId: 'sched_one_1' });
+  assert.deepEqual(run.result, evented.output);
 });
 
 test('run listing by task searches the newest project runs for that task', async () => {

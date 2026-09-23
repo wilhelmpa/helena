@@ -25,7 +25,7 @@ const envelope = (dryRun: boolean): WorkEnvelope => ({
 test('registry contains the required workflows and every trigger resolves', () => {
   assert.deepEqual(Object.keys(workflowRegistry).sort(), [...workflowIds].sort());
   assert.deepEqual(
-    [...workflowDefinitions.map((item) => item.id), 'agent-team'].sort(),
+    [...workflowDefinitions.map((item) => item.id), 'agent-team', 'agent-routine'].sort(),
     [...workflowIds].sort(),
   );
   for (const [event, workflowId] of Object.entries(eventTriggerRegistry)) {
@@ -47,7 +47,7 @@ test('effect ids and idempotency keys are stable and gated effects are marked', 
 });
 
 test('all workflows execute a safe dry-run', async () => {
-  for (const workflowId of workflowIds.filter((item) => item !== 'agent-team')) {
+  for (const workflowId of workflowIds.filter((item) => !['agent-team', 'agent-routine'].includes(item))) {
     const run = await mastra.getWorkflow(workflowId).createRun();
     const result = await run.start({ inputData: envelope(true) });
     assert.equal(result.status, 'success', workflowId);

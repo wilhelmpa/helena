@@ -254,7 +254,6 @@ async function prepareRun(
         projectId,
         kind: isChatThreadId(threadId) ? 'chat' : 'run',
         ...(opts.issueId != null ? { issueId: opts.issueId } : {}),
-        ...(opts.scheduleId != null ? { scheduleId: opts.scheduleId } : {}),
       },
       prompt,
     );
@@ -264,8 +263,8 @@ async function prepareRun(
 }
 
 // Options for a single run. callerUserId owns the memory thread; threadId continues a
-// conversation (memory-enabled agents only); issueId and scheduleId bind an autonomous
-// run's thread to what it runs on, so deleting that deletes the thread; contextPreamble
+// conversation (memory-enabled agents only); issueId binds an autonomous run's thread
+// to its issue, so deleting the issue deletes the thread; contextPreamble
 // is the caller-assembled human-context block (see run-context.ts) prepended to the
 // agent's instructions.
 export type RunOpts = {
@@ -275,7 +274,6 @@ export type RunOpts = {
   abortSignal?: AbortSignal;
   threadId?: string | null;
   issueId?: number | null;
-  scheduleId?: number | null;
   contextPreamble?: string;
 };
 

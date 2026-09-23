@@ -43,6 +43,22 @@ function refs(values, pattern, label) {
   return [...new Set(values)];
 }
 
+// A schedule list covers at most this many projects of one member.
+const MAX_SCHEDULE_PROJECTS = 1_000;
+
+function projectRefs(values) {
+  if (!Array.isArray(values) || values.length > MAX_SCHEDULE_PROJECTS || values.some((value) => typeof value !== 'string' || !PROJECT_REF.test(value))) {
+    throw new MastraControlError(400, 'projectRefs is invalid');
+  }
+  return new Set(values);
+}
+
+// The evented engine, which runs schedule fires, stores the result record of the last
+// step as the run result; the default engine stores the output itself.
+function runOutput(result) {
+  return result && typeof result === 'object' && result.status === 'success' && 'output' in result ? result.output : result;
+}
+
 function page(value, fallback, maximum) {
   if (value === undefined) return fallback;
   if (!Number.isInteger(value) || value < 0 || value > maximum) {
@@ -119,9 +135,33 @@ export function createMastraControlService(config, options = {}) {
     return run;
   }
 
-  async function ownedSchedule(scheduleId, projectRef) {
+  // The newest fire of a schedule, a manual one included, with the output of its run.
+  // Mastra's own lastRunId names the newest cron fire only.
+  async function withLastRun(workflowId, schedule) {
+    if (typeof schedule?.id !== 'string' || !SCHEDULE_ID.test(schedule.id)) return schedule;
+    const { triggers } = object(await call(`schedules/${schedule.id}/triggers?limit=1`), 'Mastra schedule triggers');
+    const trigger = Array.isArray(triggers) ? triggers[0] : null;
+    if (typeof trigger?.runId !== 'string' || !RUN_ID.test(trigger.runId)) return { ...schedule, lastRun: null };
+    const run = await call(`workflows/${workflowId}/runs/${trigger.runId}?fields=result,error`).catch((error) => {
+      if (error instanceof MastraControlError && error.status === 404) return null;
+      throw error;
+    });
+    const runError = typeof run?.error === 'string' ? run.error : run?.error?.message;
+    return {
+      ...schedule,
+      lastRun: {
+        runId: trigger.runId,
+        firedAt: trigger.actualFireAt ?? null,
+        status: run?.status ?? (trigger.outcome === 'failed' ? 'failed' : 'pending'),
+        result: runOutput(run?.result) ?? null,
+        error: trigger.error ?? runError ?? null,
+      },
+    };
+  }
+
+  async function ownedSchedule(workflowId, scheduleId, projectRef) {
     const schedule = object(await call(`schedules/${scheduleId}`), 'Mastra schedule');
-    if (schedule.workflowId == null || schedule.requestContext?.projectRef !== projectRef) {
+    if (schedule.workflowId !== workflowId || schedule.requestContext?.projectRef !== projectRef) {
       throw new MastraControlError(404, 'Workflow schedule not found');
     }
     return schedule;
@@ -154,12 +194,26 @@ export function createMastraControlService(config, options = {}) {
       }
 
       const workflowId = string(input.workflowId, WORKFLOW_ID, 'workflowId');
+      if (input.operation === 'schedules') {
+        const projects = input.projectRefs === undefined
+          ? new Set([string(input.projectRef, PROJECT_REF, 'projectRef')])
+          : projectRefs(input.projectRefs);
+        const result = object(await call(`schedules?workflowId=${workflowId}`), 'Mastra schedules');
+        const owned = Array.isArray(result.schedules)
+          ? result.schedules.filter((item) => projects.has(item?.requestContext?.projectRef))
+          : [];
+        return { schedules: await Promise.all(owned.map((schedule) => withLastRun(workflowId, schedule))) };
+      }
       const projectRef = string(input.projectRef, PROJECT_REF, 'projectRef');
 
       if (input.operation === 'runs') {
         const currentPage = page(input.page, 0, 10_000);
         const pageSize = page(input.pageSize, 20, 100);
-        const withStatus = (run) => ({ ...run, status: run?.status ?? run?.snapshot?.status ?? 'unknown' });
+        const withStatus = (run) => ({
+          ...run,
+          status: run?.status ?? run?.snapshot?.status ?? 'unknown',
+          ...(run?.snapshot ? { snapshot: { ...run.snapshot, result: runOutput(run.snapshot.result) } } : {}),
+        });
         if (input.taskRef !== undefined) {
           const taskRef = string(input.taskRef, TASK_REF, 'taskRef');
           const matches = [];
@@ -178,7 +232,8 @@ export function createMastraControlService(config, options = {}) {
         return { ...result, runs: Array.isArray(result.runs) ? result.runs.map(withStatus) : [] };
       }
       if (input.operation === 'run') {
-        return ownedRun(workflowId, string(input.runId, RUN_ID, 'runId'), projectRef);
+        const run = await ownedRun(workflowId, string(input.runId, RUN_ID, 'runId'), projectRef);
+        return { ...run, result: runOutput(run.result) };
       }
       if (input.operation === 'start') {
         const eventId = string(input.eventId, RUN_ID, 'eventId');
@@ -216,10 +271,6 @@ export function createMastraControlService(config, options = {}) {
         return { runId: created?.runId ?? eventId, resourceId: projectRef, status: 'running' };
       }
 
-      if (input.operation === 'schedules') {
-        const result = object(await call(`schedules?workflowId=${workflowId}`), 'Mastra schedules');
-        return { schedules: Array.isArray(result.schedules) ? result.schedules.filter((item) => item?.requestContext?.projectRef === projectRef) : [] };
-      }
       if (input.operation === 'create-schedule') {
         const organizationRef = string(input.organizationRef, ORGANIZATION_REF, 'organizationRef');
         const capabilityRefs = refs(input.capabilityRefs, CAPABILITY_REF, 'capabilityRefs');
@@ -246,13 +297,7 @@ export function createMastraControlService(config, options = {}) {
               timezone: timezone(input.timezone),
               inputData: object(input.payload, 'payload'),
               requestContext: { organizationRef, projectRef, capabilityRefs, connectionRefs },
-              metadata: {
-                projectRef,
-                source: 'itsaplan',
-                scheduleKey,
-                missedRunPolicy: input.missedRunPolicy === 'run-once' ? 'run-once' : 'skip',
-                concurrencyPolicy: input.concurrencyPolicy === 'replace' ? 'replace' : 'forbid',
-              },
+              metadata: { projectRef, source: 'itsaplan', scheduleKey },
             }),
           });
         })();
@@ -265,14 +310,21 @@ export function createMastraControlService(config, options = {}) {
       }
       if (input.operation.includes('schedule')) {
         const scheduleId = string(input.scheduleId, SCHEDULE_ID, 'scheduleId');
-        await ownedSchedule(scheduleId, projectRef);
+        const schedule = await ownedSchedule(workflowId, scheduleId, projectRef);
+        if (input.operation === 'schedule') {
+          return withLastRun(workflowId, schedule);
+        }
         if (input.operation === 'schedule-triggers') {
           return call(`schedules/${scheduleId}/triggers?limit=${page(input.limit, 20, 100)}`);
         }
         if (input.operation === 'update-schedule') {
           return call(`schedules/${scheduleId}`, {
             method: 'PATCH',
-            body: JSON.stringify({ cron: cron(input.cron), timezone: timezone(input.timezone) }),
+            body: JSON.stringify({
+              cron: cron(input.cron),
+              ...(input.timezone === undefined ? {} : { timezone: timezone(input.timezone) }),
+              ...(input.payload === undefined ? {} : { inputData: object(input.payload, 'payload') }),
+            }),
           });
         }
         if (input.operation === 'pause-schedule' || input.operation === 'resume-schedule' || input.operation === 'run-schedule') {

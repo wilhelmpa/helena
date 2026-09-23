@@ -39,8 +39,7 @@
     "actions": "Aktionen",
     "configuration": "Konfiguration",
     "webhooks": "Webhooks",
-    "agents": "Agenten",
-    "schedules": "Zeitpläne"
+    "agents": "Agenten"
   },
   "title": "Neues Projekt",
   "copyTitle": "Projekt „{name}“ kopieren",

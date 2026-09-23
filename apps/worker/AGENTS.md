@@ -8,7 +8,6 @@ own service (own Dockerfile), separate from `apps/api`. See root `AGENTS.md`.
 
 - Polls `webhook_delivery` for due `pending` rows, claims a batch with
   `FOR UPDATE SKIP LOCKED`, posts each to its webhook URL, records the outcome.
-- Queues an `agent_run` row for every due `agent_schedule`.
 - Signs every request: `X-Itsaplan-Signature: t=<ts>,v1=<hmac-sha256>` over
   `${ts}.${body}` with the webhook's `secret`. Plus `X-Itsaplan-Event`,
   `X-Itsaplan-Delivery`, `X-Itsaplan-Event-Id` (stable across retries).
@@ -41,9 +40,6 @@ own service (own Dockerfile), separate from `apps/api`. See root `AGENTS.md`.
 - **At-least-once delivery.** Duplicates are possible (a 2xx whose ACK is lost);
   the `event_id` is stable across retries so receivers deduplicate. Never mint a
   new id per attempt.
-- **Agent schedules are queued here, run in the api.** A due schedule gets an
-  `agent_run` row; the api drains that queue, where the agent runtime and the model
-  credentials live.
 - **Claim leases, not a status flag.** Claiming pushes `next_attempt_at` forward
   by `WEBHOOK_LEASE_SECONDS`; a crashed delivery is reclaimed after the lease. Keep
   the lease comfortably larger than `WEBHOOK_TIMEOUT_MS`.

@@ -223,6 +223,48 @@ test('synchronization is project-bound and safely replays the same idempotency k
   );
 });
 
+test('a routine request is project-bound and reaches Plan unchanged', async () => {
+  const calls = [];
+  const service = createHermesTeamService({
+    routine: async input => {
+      calls.push(input);
+      return { idempotencyKey: input.idempotencyKey, outcome: 'created', taskRef: 'task:VERV-2' };
+    },
+  });
+  const request = {
+    schemaVersion: 1,
+    idempotencyKey: KEY,
+    projectRef: 'project:VERV',
+    agentRef: 'agent:writer',
+    title: 'Weekly report',
+    instructions: 'Summarize the week.',
+    mode: 'new',
+    taskRef: 'task:VERV-1',
+    actorId: 'user-1',
+  };
+  assert.deepEqual(await service.routine(request), {
+    idempotencyKey: KEY,
+    outcome: 'created',
+    taskRef: 'task:VERV-2',
+  });
+  const { schemaVersion, ...forwarded } = request;
+  assert.equal(schemaVersion, 1);
+  assert.deepEqual(calls, [forwarded]);
+  for (const invalid of [
+    { ...request, taskRef: 'task:OTHER-1' },
+    { ...request, mode: 'reopen', taskRef: undefined },
+    { ...request, mode: 'later' },
+    { ...request, idempotencyKey: 'short' },
+    { ...request, instructions: '' },
+  ]) {
+    await assert.rejects(
+      () => service.routine(invalid),
+      error => error instanceof HermesTeamError && error.code === 'invalid_routine_request',
+    );
+  }
+  assert.equal(calls.length, 1);
+});
+
 test('HTTP bridge requires the private bearer and preserves the stage contract', async () => {
   let stageSignal;
   const service = {
@@ -231,6 +273,7 @@ test('HTTP bridge requires the private bearer and preserves the stage contract',
       return { executionId: 'plan-run:1', idempotencyKey: value.idempotencyKey };
     },
     synchronize: async value => ({ idempotencyKey: value.idempotencyKey, synchronizedAt: '2026-09-23T10:00:00.000Z' }),
+    routine: async value => ({ idempotencyKey: value.idempotencyKey, outcome: 'skipped' }),
   };
   server = http.createServer(createHermesTeamHandler({ bridgeToken: TOKEN, planToken: TOKEN }, service));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -249,6 +292,13 @@ test('HTTP bridge requires the private bearer and preserves the stage contract',
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { executionId: 'plan-run:1', idempotencyKey: KEY });
   assert.equal(stageSignal.aborted, false);
+  const routine = await fetch(`${origin}/internal/hermes/team/routine`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ idempotencyKey: KEY }),
+  });
+  assert.equal(routine.status, 200);
+  assert.deepEqual(await routine.json(), { idempotencyKey: KEY, outcome: 'skipped' });
 });
 
 test('HTTP bridge aborts a stage when Mastra closes the connection before the answer', { timeout: 5_000 }, async () => {

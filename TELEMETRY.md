@@ -63,9 +63,9 @@ The worker logs the exact body before each send.
   email has to be confirmed, whether magic links are on.
 - The interface languages users picked, as language codes.
 - AI agents: how many, how many are internal and how many external, how many runs in
-  the last 30 days (as ranges), how many skills, how many chats, whether schedules are
-  used, whether an external agent's runner polled in the last 30 days, and which
-  triggers started a run (mention, delegation, schedule, manual).
+  the last 30 days (as ranges), how many skills, how many chats, whether an external
+  agent's runner polled in the last 30 days, and which triggers started a run
+  (mention, delegation, schedule, manual).
 - The share of webhook deliveries and of agent runs that failed in the last 30 days.
 
 ## What is never sent

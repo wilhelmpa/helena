@@ -39,8 +39,7 @@
     "actions": "الإجراءات",
     "configuration": "التهيئة",
     "webhooks": "خطافات الويب (webhooks)",
-    "agents": "الوكلاء (agents)",
-    "schedules": "الجدولات"
+    "agents": "الوكلاء (agents)"
   },
   "title": "مشروع جديد",
   "copyTitle": "نسخ المشروع \"{name}\"",

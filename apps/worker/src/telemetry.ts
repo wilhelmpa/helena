@@ -190,7 +190,6 @@ async function readSnapshot(): Promise<Snapshot> {
       (SELECT count(*)::int FROM webhook_delivery
         WHERE created_at > now() - interval '30 days'
           AND status = 'failed') AS "webhookDeliveriesFailed30d",
-      EXISTS(SELECT 1 FROM agent_schedule) AS "hasAgentSchedules",
       -- An external agent is driven by a runner on the operator's own machine, which
       -- stamps last_seen_at when it polls.
       EXISTS(SELECT 1 FROM ai_agent

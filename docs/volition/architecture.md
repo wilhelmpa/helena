@@ -26,14 +26,18 @@ and makes no decisions.
 - **Automated** — assignment, the "Ready for agents" column, field triggers, trigger rules,
   schedules, inbound mail, webhooks. Plan or the integration service sends an event to
   Mastra; a Mastra workflow queues Hermes stages in Plan; results are written back to Plan.
+  A schedule is a routine: a Mastra schedule of the `agent-routine` workflow, which has
+  Plan create or reopen a task and delegate it to an agent. The delegation queues the
+  Hermes run, or starts `agent-team` for a coordinator.
 
 ## Interfaces
 
 1. **Plan → Mastra**: events (`event-ingress`) and the control API (start, cancel, retry,
    schedules, runs).
-2. **Mastra → Plan**: Mastra queues Hermes stages in Plan's run queue and synchronizes results
-   to the issue. Mastra never calls Hermes directly, so every run is visible in Plan. A
-   canceled workflow run cancels the queued run of the stage it waits for.
+2. **Mastra → Plan**: Mastra queues Hermes stages in Plan's run queue, synchronizes results
+   to the issue, and creates or reopens the tasks of routines. Mastra never calls Hermes
+   directly, so every run is visible in Plan. A canceled workflow run cancels the queued run
+   of the stage it waits for.
 3. **Plan ↔ Hermes**: the runner claims queued work and chat messages, sends heartbeats and
    AG-UI events. A heartbeat answers `canceled` for a canceled run or chat answer, and the
    runner then stops Hermes. Hermes reads and writes Plan data through Plan's MCP server
@@ -85,8 +89,11 @@ and makes no decisions.
   claims an agent's runs from all of its projects with one working directory.
 - Plan does not queue automated agent runs itself. Assignment, field triggers and trigger
   rules send an event to Mastra.
-- Business schedules exist only in Mastra; Plan's schedule pages manage them through the
-  control API.
+- Business schedules exist only in Mastra; Plan has no scheduler of its own. The Schedules
+  page of a project and the Home overview manage routines through the control API. Every
+  fire of a schedule gets its own event id from its Mastra run id and is listed with the
+  runs of its project. A fire that starts more than ten minutes late is skipped, and so is
+  one whose routine task is still open.
 - Secrets are stored in Plan, encrypted. The runner delivers the secrets granted to an agent
   for one run as environment variables, website logins as entries of the profile's Hermes
   vault, and SSH keys as files of the profile. The model sees secret names only.

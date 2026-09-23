@@ -35,7 +35,7 @@ const FACTORY_GATEWAY_ROUTES = Object.freeze(['plan-api.volition.one', 'plan.vol
 export const PLAN_PUBLIC_TABLES = Object.freeze([
   'account', 'agent_chat_catalog', 'agent_chat_event', 'agent_chat_favorite',
   'agent_chat_message', 'agent_chat_thread', 'agent_chat_usage', 'agent_field_trigger',
-  'agent_run', 'agent_schedule', 'agent_skill', 'agent_skill_link', 'agent_tool',
+  'agent_run', 'agent_skill', 'agent_skill_link', 'agent_tool',
   'agent_tool_link', 'ai_agent', 'apikey', 'app_secret', 'app_setting',
   'chat_attachment', 'custom_field', 'custom_field_option', 'cycle', 'document_asset',
   'git_managed_repository', 'git_provider_connection', 'hub_inbox_event',

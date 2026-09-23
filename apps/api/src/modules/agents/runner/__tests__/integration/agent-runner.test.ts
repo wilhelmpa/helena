@@ -595,23 +595,4 @@ describe('agent runner queue', () => {
     const { asOwner } = await setup();
     expect((await asOwner['agent-runs'].claim.post()).status).toBe(403);
   });
-
-  it('hands a scheduled run to the runner with the task as its prompt', async () => {
-    const { asOwner, asRunner, agent } = await setup();
-    const schedule = await asOwner.projects({ projectKey: 'MKT' })['agent-schedules'].post({
-      agentId: agent.id,
-      name: 'Nightly triage',
-      prompt: 'Triage the new issues.',
-      cron: '0 9 * * *',
-    });
-    expect(schedule.status).toBe(201);
-    await asOwner
-      .projects({ projectKey: 'MKT' })
-      ['agent-schedules']({ scheduleId: schedule.data!.id })
-      .run.post();
-
-    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
-    expect(run).toMatchObject({ trigger: 'manual', issueId: null, issueIdentifier: null });
-    expect(run.prompt).toContain('Triage the new issues.');
-  });
 });

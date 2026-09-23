@@ -11,6 +11,7 @@ import {
   type WorkflowId,
 } from './contracts.ts';
 import { approvalEffects, planEffects, type EffectSpec } from './effects.ts';
+import { agentRoutineWorkflow } from './routine-workflow.ts';
 import { agentTeamWorkflow } from './team-workflow.ts';
 
 export interface WorkflowDefinition {
@@ -228,4 +229,5 @@ export const workflowRegistry = {
     ]),
   ),
   'agent-team': agentTeamWorkflow,
+  'agent-routine': agentRoutineWorkflow,
 };

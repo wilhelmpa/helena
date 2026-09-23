@@ -115,6 +115,7 @@
         "class-variance-authority": "^0.7.1",
         "cmdk": "^1.1.1",
         "cn": "^0.2.5",
+        "croner": "^10.0.1",
         "date-fns": "^4.4.0",
         "highlight.js": "~11.11.0",
         "inter-ui": "^4.1.1",
@@ -158,7 +159,6 @@
         "@repo/db": "workspace:*",
         "@repo/mailer": "workspace:*",
         "@repo/net": "workspace:*",
-        "croner": "^10.0.1",
         "drizzle-orm": "^0.45.2",
       },
       "devDependencies": {

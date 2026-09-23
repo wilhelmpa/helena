@@ -39,8 +39,7 @@
     "actions": "Tindakan",
     "configuration": "Konfigurasi",
     "webhooks": "Webhook",
-    "agents": "Agen",
-    "schedules": "Jadwal"
+    "agents": "Agen"
   },
   "title": "Proyek baru",
   "copyTitle": "Salin proyek \"{name}\"",

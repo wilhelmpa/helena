@@ -4,6 +4,7 @@ import {
   agentRun,
   aiAgent,
   db,
+  issue,
   issueActivity,
   project,
   projectMember,
@@ -15,8 +16,17 @@ import { maxTurnsLimit, runBudgetSecondsLimit } from './modules/agents/model';
 import { agentRunConfig } from './modules/agents/core/run-queue';
 import { runLimit } from './modules/agents/core/service';
 import { enforceAgentLimits } from './modules/agents/governance';
-import { listColumns } from './modules/columns/service';
-import { getIssueBySequence, updateIssue } from './modules/issues/service';
+import { listColumns, type ColumnRow } from './modules/columns/service';
+import {
+  createIssue,
+  enqueueDelegateRun,
+  getIssueBySequence,
+  restoreIssue,
+  updateIssue,
+  type IssueRow,
+} from './modules/issues/service';
+import { getMembership } from './modules/members/service';
+import { getProjectByKey } from './modules/projects/service';
 import { bumpControlPlaneRevision } from './modules/sync/service';
 
 const REF = /^[a-z][a-z0-9-]*:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
@@ -62,6 +72,7 @@ async function resolveAgent(projectId: number, agentRef: string) {
   const [row] = await db
     .select({
       id: aiAgent.id,
+      userId: aiAgent.userId,
       kind: aiAgent.kind,
       model: aiAgent.model,
       runtimePolicy: aiAgent.runtimePolicy,
@@ -394,6 +405,217 @@ export async function synchronizeHermesStage(body: unknown) {
   return { status: 200, body: { idempotencyKey, synchronizedAt: new Date().toISOString(), state } };
 }
 
+type RoutineCheckpoint = {
+  fingerprint: string;
+  // 'pending' while the task is written but not yet delegated: a request with the
+  // same key finishes the delegation.
+  phase: 'pending' | 'done';
+  outcome: 'created' | 'reopened' | 'skipped';
+  taskRef: string;
+};
+
+class RoutineReplayed extends Error {}
+
+function isOpenTask(task: IssueRow, columns: ColumnRow[]): boolean {
+  const stateType = columns.find((column) => column.id === task.columnId)?.stateType;
+  return !task.archivedAt && stateType !== 'completed' && stateType !== 'canceled';
+}
+
+async function readRoutineCheckpoint(
+  executor: Pick<typeof db, 'select'>,
+  projectId: number,
+  key: string,
+): Promise<RoutineCheckpoint | null> {
+  const [stored] = await executor
+    .select({ value: projectSetting.value })
+    .from(projectSetting)
+    .where(and(eq(projectSetting.projectId, projectId), eq(projectSetting.key, key)))
+    .limit(1);
+  return object(stored?.value) as RoutineCheckpoint | null;
+}
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// The checkpoint stored under the key, read after waiting for any other request with
+// the same key to finish its transaction.
+async function lockRoutineCheckpoint(tx: Transaction, projectId: number, key: string) {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
+  return readRoutineCheckpoint(tx, projectId, key);
+}
+
+// Stores the checkpoint of a routine request inside the transaction of the write it
+// records. A checkpoint stored already was written by an earlier request with the same
+// key, which is answered instead, and `write` does not happen.
+async function claimRoutineCheckpoint(
+  tx: Transaction,
+  projectId: number,
+  key: string,
+  write: () => Promise<RoutineCheckpoint>,
+): Promise<RoutineCheckpoint> {
+  const stored = await lockRoutineCheckpoint(tx, projectId, key);
+  if (stored) return stored;
+  const value = await write();
+  await tx.insert(projectSetting).values({ projectId, key, value });
+  return value;
+}
+
+// Called by the bridge for each fire of a routine: creates a task delegated to the
+// routine's agent, or reopens the task the routine names and delegates it again. The
+// routine's task, the named one or the one it created last, blocks both while it is
+// open, and the fire is answered as skipped. A repeated idempotency key answers what
+// the first request did. The actor is the member the routine acts for, while they are
+// in the project.
+export async function dispatchRoutine(body: unknown) {
+  const input = object(body);
+  const projectRef = ref(input?.projectRef, 'project');
+  const agentRef = ref(input?.agentRef, 'agent');
+  const idempotencyKey = text(input?.idempotencyKey, 64);
+  const title = text(input?.title, 300);
+  const instructions = text(input?.instructions, 20_000);
+  const mode = input?.mode === 'new' || input?.mode === 'reopen' ? input.mode : null;
+  const taskRef = input?.taskRef === undefined ? undefined : ref(input.taskRef, 'task');
+  const actorId = input?.actorId === undefined ? undefined : text(input.actorId, 200);
+  if (
+    !projectRef ||
+    !agentRef ||
+    !idempotencyKey ||
+    !IDEMPOTENCY.test(idempotencyKey) ||
+    !title ||
+    !instructions ||
+    !mode ||
+    taskRef === null ||
+    actorId === null ||
+    (mode === 'reopen' && !taskRef)
+  )
+    return { status: 400, body: { error: 'Invalid routine request' } };
+  const projectRow = await getProjectByKey(projectRef.slice('project:'.length));
+  if (!projectRow) return { status: 404, body: { error: 'Project not found' } };
+  const agent = await resolveAgent(projectRow.id, agentRef);
+  if (!agent) return { status: 409, body: { error: 'The agent does not work in this project' } };
+
+  const key = settingKey('mastra-routine', idempotencyKey);
+  const requestFingerprint = fingerprint({
+    projectRef,
+    agentRef,
+    title,
+    instructions,
+    mode,
+    taskRef,
+    actorId,
+  });
+  const answer = (checkpoint: RoutineCheckpoint) =>
+    checkpoint.fingerprint === requestFingerprint
+      ? {
+          status: 200,
+          body: { idempotencyKey, outcome: checkpoint.outcome, taskRef: checkpoint.taskRef },
+        }
+      : { status: 409, body: { error: 'Idempotency key was reused with another routine request' } };
+  const stored = await readRoutineCheckpoint(db, projectRow.id, key);
+  if (stored?.phase === 'done' || (stored && stored.fingerprint !== requestFingerprint))
+    return answer(stored);
+
+  const actor = actorId && (await getMembership(projectRow.id, actorId)) ? actorId : null;
+  const finish = async (checkpoint: RoutineCheckpoint) => {
+    await db
+      .update(projectSetting)
+      .set({ value: { ...checkpoint, phase: 'done' }, updatedAt: new Date() })
+      .where(and(eq(projectSetting.projectId, projectRow.id), eq(projectSetting.key, key)));
+    await bumpControlPlaneRevision(projectRow.id);
+    return answer(checkpoint);
+  };
+  if (stored?.outcome === 'created') {
+    const created = await resolveTask(projectRef, stored.taskRef);
+    if (created) await enqueueDelegateRun(created.task, actor);
+    return finish(stored);
+  }
+
+  const current = taskRef ? await resolveTask(projectRef, taskRef) : null;
+  if (mode === 'reopen' && !current)
+    return { status: 404, body: { error: 'Project task not found' } };
+  const columns = await listColumns(projectRow.id);
+  const checkpoint = (
+    outcome: RoutineCheckpoint['outcome'],
+    routineTask: string,
+    phase: RoutineCheckpoint['phase'],
+  ): RoutineCheckpoint => ({
+    fingerprint: requestFingerprint,
+    phase,
+    outcome,
+    taskRef: routineTask,
+  });
+
+  if (!stored && current && isOpenTask(current.task, columns)) {
+    const skipped = await db.transaction((tx) =>
+      claimRoutineCheckpoint(tx, projectRow.id, key, async () =>
+        checkpoint('skipped', taskRef!, 'done'),
+      ),
+    );
+    return answer(skipped);
+  }
+  const unstarted = columns.find((column) => column.stateType === 'unstarted');
+  if (!unstarted) return { status: 409, body: { error: 'Project has no unstarted state' } };
+
+  if (mode === 'new') {
+    // The checkpoint is stored in the transaction that inserts the task, so a task
+    // exists exactly when its checkpoint does. A request that finds one rolls its own
+    // task back and leaves the delegation to the request that wrote it.
+    let replayed = false;
+    try {
+      await createIssue(
+        projectRow,
+        { columnId: unstarted.id, title, description: instructions, delegateUserId: agent.userId },
+        actor,
+        {
+          afterInsert: async (tx, issueId) => {
+            if (await lockRoutineCheckpoint(tx, projectRow.id, key)) throw new RoutineReplayed();
+            const [row] = await tx
+              .select({ sequenceNumber: issue.sequenceNumber })
+              .from(issue)
+              .where(eq(issue.id, issueId));
+            await tx.insert(projectSetting).values({
+              projectId: projectRow.id,
+              key,
+              value: checkpoint(
+                'created',
+                `task:${projectRow.key}-${row!.sequenceNumber}`,
+                'pending',
+              ),
+            });
+          },
+        },
+      );
+    } catch (error) {
+      if (!(error instanceof RoutineReplayed)) throw error;
+      replayed = true;
+    }
+    const created = (await readRoutineCheckpoint(db, projectRow.id, key))!;
+    return replayed ? answer(created) : finish(created);
+  }
+
+  const task = current!.task;
+  const reopened = await db.transaction((tx) =>
+    claimRoutineCheckpoint(tx, projectRow.id, key, async () => {
+      await tx.insert(issueActivity).values({
+        issueId: task.id,
+        kind: 'comment',
+        actorName: 'Schedule',
+        body: `Reopened by the schedule "${title}".\n\n${instructions}`,
+      });
+      return checkpoint('reopened', taskRef!, 'pending');
+    }),
+  );
+  if (reopened.fingerprint !== requestFingerprint || reopened.phase === 'done')
+    return answer(reopened);
+  if (task.archivedAt) await restoreIssue(task.id, actor);
+  const after = await updateIssue(
+    task.id,
+    { columnId: unstarted.id, delegateUserId: agent.userId },
+    actor,
+  );
+  if (after && task.delegateUserId === agent.userId) await enqueueDelegateRun(after, actor);
+  return finish(reopened);
+}
+
 async function respond(
   request: Request,
   operation: (body: unknown) => Promise<{ status: number; body: unknown }>,
@@ -418,4 +640,5 @@ export const hermesTeamControlRoutes = new Elysia({ name: 'hermes-team-control' 
   )
   .post('/internal/orchestration/task-sync', ({ request }) =>
     respond(request, synchronizeHermesStage),
-  );
+  )
+  .post('/internal/orchestration/routine', ({ request }) => respond(request, dispatchRoutine));

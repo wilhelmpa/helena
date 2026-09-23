@@ -91,7 +91,7 @@
     },
     "schedules": {
       "label": "定时任务",
-      "description": "按固定时间重复运行代理任务。"
+      "description": "按固定时间为代理创建或重新打开工作项。"
     },
     "webhooks": {
       "label": "Webhook",

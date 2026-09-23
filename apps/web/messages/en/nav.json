@@ -82,6 +82,7 @@
   "godModeOwnerOnly": "God mode is open to the instance owner only.",
   "project": "Project",
   "organization": "Organization",
+  "schedules": "Schedules",
   "connections": "Connections",
   "agentPool": "Agent Pool",
   "mcps": "MCPs",

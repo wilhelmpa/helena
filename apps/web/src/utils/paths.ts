@@ -34,11 +34,12 @@ export const skillsPath = () => '/skills';
 export const vaultPath = () => '/vault';
 
 // The Home pages that read across every project: the task list, the inbox and the
-// agent activity.
+// agent activity, the approvals and the schedules.
 export const tasksPath = () => '/tasks';
 export const globalInboxPath = () => '/inbox';
 export const globalAgentActivityPath = () => '/activity';
 export const approvalsPath = () => '/approvals';
+export const schedulesPath = () => '/schedules';
 
 // Public read-only share pages (no auth). The token is the unguessable share key.
 export const shareIssuePath = (token: string) => `/share/issue/${token}`;

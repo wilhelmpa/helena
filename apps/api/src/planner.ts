@@ -1,5 +1,6 @@
 import { projectTemplateRoutes } from './modules/project-templates';
 import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
+import { routineRoutes } from './modules/routines';
 import { connectionsRoutes } from './modules/connections';
 import { projectFileRoutes } from './modules/project-files';
 import { organizationRoutes } from './modules/organization';
@@ -39,7 +40,6 @@ import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
 import { godRoutes } from './modules/god';
-import { agentScheduleRoutes } from './modules/agents/schedules';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
@@ -123,7 +123,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(controlPlaneWorkflowRoutes)
   .use(webhookRoutes)
   .use(gitSettingsRoutes)
-  .use(agentScheduleRoutes)
+  .use(routineRoutes)
   .use(agentRunnerRoutes)
   .use(agentChatRoutes)
   .use(agentRuntimePolicyRoutes)

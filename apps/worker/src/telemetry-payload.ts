@@ -21,7 +21,6 @@ export interface InstanceCounts {
   agentChats30d: number;
   webhookDeliveries30d: number;
   webhookDeliveriesFailed30d: number;
-  hasAgentSchedules: boolean;
   hasActiveRunners: boolean;
   runByMention30d: boolean;
   runByDelegation30d: boolean;
@@ -147,7 +146,6 @@ export function buildPulse(input: PulseInput) {
       internal: bucket(c.internalAgents),
       external: bucket(c.externalAgents),
       runs30d: bucket(c.agentRuns30d),
-      schedules: c.hasAgentSchedules,
       // An external agent whose runner polled in the last 30 days.
       activeRunners: c.hasActiveRunners,
       skills: bucket(c.agentSkills),

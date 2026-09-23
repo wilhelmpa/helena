@@ -1,5 +1,5 @@
-import SettingsSchedulesPage from '@/features/settings/SettingsSchedulesPage';
+import RoutinesPage from '@/features/routines/RoutinesPage';
 
 export default function Page() {
-  return <SettingsSchedulesPage />;
+  return <RoutinesPage />;
 }

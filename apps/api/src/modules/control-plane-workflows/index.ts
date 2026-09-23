@@ -156,7 +156,8 @@ export const controlPlaneWorkflowRoutes = new Elysia({
   )
   .post(
     '/projects/:projectKey/control-plane/workflows/:workflowId/schedules',
-    ({ project, params, body }) => createWorkflowSchedule(project, params.workflowId, body),
+    ({ project, params, body, user }) =>
+      createWorkflowSchedule(project, params.workflowId, requireUser(user).id, body),
     {
       params: workflowParams,
       body: scheduleBody,

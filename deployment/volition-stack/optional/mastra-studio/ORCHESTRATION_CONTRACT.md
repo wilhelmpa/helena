@@ -101,6 +101,56 @@ It requires the same bearer as the other internal orchestration routes. Plan set
 
 `POST /internal/hermes/team/synchronize` accepts the exact project and task references, target state, summary, evidence and idempotency key. It returns the same idempotency key and `synchronizedAt`. The bridge must reject cross-project task references.
 
+## Routines
+
+A routine is a Mastra schedule of the `agent-routine` workflow. Plan creates it from the Schedules page of a project with the work envelope as the schedule's input. The envelope's actor is the member who saved the routine last, and its payload names the routine:
+
+```json
+{
+  "projectRef": "project:KEY",
+  "agentRef": "agent:writer",
+  "title": "Weekly report",
+  "instructions": "Summarize the week.",
+  "mode": "new",
+  "taskRef": "task:KEY-12"
+}
+```
+
+`mode` is `new` (every fire creates a task) or `reopen` (every fire reopens the task `taskRef` names); `taskRef` is present exactly for `reopen`.
+
+The workflow has two steps:
+
+1. `prepare-routine` takes the event id, the correlation id and the time of the fire from its run id, `sched_<scheduleId>_<fire time in ms>`. It writes the project as the resource id of the run, which a schedule fire starts without, so Plan lists the run with the runs of the project. A fire that starts more than ten minutes after its time is missed: Mastra fires a schedule that came due while it was stopped once when it starts again, and that fire changes nothing.
+2. `dispatch-routine` names the routine's task, the one to reopen or, for `new`, the task recorded by the newest earlier fire of the same schedule, and sends the request below through the private bridge.
+
+`POST /internal/hermes/team/routine` on the bridge passes the request to `POST /internal/orchestration/routine` in Plan, with the same bearer as the other internal orchestration routes:
+
+```json
+{
+  "schemaVersion": 1,
+  "idempotencyKey": "SHA-256 of the fire's event id, 64 hexadecimal characters",
+  "projectRef": "project:KEY",
+  "agentRef": "agent:writer",
+  "title": "Weekly report",
+  "instructions": "Summarize the week.",
+  "mode": "new",
+  "taskRef": "task:KEY-12",
+  "actorId": "the Plan user id of the envelope's actor"
+}
+```
+
+Plan answers `{ "idempotencyKey": "...", "outcome": "created | reopened | skipped", "taskRef": "task:KEY-13" }`:
+
+- While the named task is open, neither in a completed or canceled state nor archived, the answer is `skipped` with that task, and nothing changes.
+- `new` creates a task in the project's first unstarted state, with the title and the instructions as its description, delegated to the agent.
+- `reopen` restores the task when it is archived, moves it to the first unstarted state, delegates it to the agent and adds a comment with the instructions.
+
+The delegation goes through Plan's delegation path: it queues a run of the agent, or starts `agent-team` when the agent is a coordinator of a project that runs it. The agent has to react to delegation. The task is created or reopened for the actor while they are a member of the project. A repeated idempotency key answers what the first request did; the key with another request is refused with 409.
+
+The run output is `{ "workflowId": "agent-routine", "correlationId", "projectRef", "status": "created | reopened | skipped | dry-run-complete", "taskRef", "skipReason": "task-open | missed | null" }`. Every finished fire records the routine's task, a skipped one included, so later fires keep skipping while that task is open.
+
+The other scheduled workflows get the same per-fire ids: `agent-team` takes its event id, correlation id and time from the run id of a schedule fire and writes the project as its resource id. The evented engine, which runs schedule fires, stores the result record of the last step as the run result; mastra-control answers the output of such a run like that of any other.
+
 ## Plan control
 
 Plan controls the workflow through the Mastra control API:
@@ -110,7 +160,7 @@ Plan controls the workflow through the Mastra control API:
 - `runs` and `run` expose stored status, checkpoints and history for one project. `runs` with a `taskRef` returns the runs whose payload names that task, searched among the project's 200 newest runs of the workflow.
 - `retry` runs a failed run again from its failed step with Mastra time travel (`/workflows/:id/time-travel`). The steps before it keep their stored results. Like `start`, it does not wait for the run.
 - `cancel` stops a non-terminal run and cancels the Plan run of the stage it waits for (see Cancellation).
-- schedule operations create, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key.
+- schedule operations create, read, update, pause, resume, run and delete Mastra schedules. `scheduleKey` is idempotent within one project and workflow; omission selects the `default` key. The fires of a schedule Plan creates are real runs, in Europe/Berlin unless the schedule names another time zone. `schedules` lists the schedules of one project (`projectRef`) or of several (`projectRefs`), each with `lastRun`: its newest fire, a manual run included, with run id, fire time, status, output and error. `schedule` reads one schedule of the project and workflow. `update-schedule` changes the cron and the time zone and, with `payload`, the input of the fires.
 
 When Mastra starts, it continues the runs that were active when it stopped, each from the step it was in (`restartActiveRuns` in `src/mastra/index.ts`). The built server does not do this on its own. A continued stage asks the bridge for the same idempotency key.
 

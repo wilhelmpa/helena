@@ -72,14 +72,12 @@ function getReadMemory(): Memory {
 }
 
 // What a thread is bound to, written when it is created. `kind` separates a UI
-// conversation from an autonomous run thread; `issueId` and `scheduleId` are set for
-// an issue run and a scheduled run.
+// conversation from an autonomous run thread; `issueId` is set for an issue run.
 type ThreadMeta = {
   agentId: number;
   projectId: number;
   kind: 'chat' | 'run';
   issueId?: number;
-  scheduleId?: number;
 };
 
 // Creates the thread with its bindings and an initial title (the first prompt,
@@ -128,10 +126,10 @@ export async function deleteChatThread(threadId: string, resourceId: string): Pr
   return true;
 }
 
-// Deletes every thread bound to the given agent, project or schedule, with its
-// messages, and returns how many were deleted. Called when that binding goes away.
+// Deletes every thread bound to the given agent or project, with its messages, and
+// returns how many were deleted. Called when that binding goes away.
 export async function deleteThreadsWhere(
-  binding: { agentId: number } | { projectId: number } | { scheduleId: number },
+  binding: { agentId: number } | { projectId: number },
 ): Promise<number> {
   const memory = getReadMemory();
   const { threads } = await memory.listThreads({ filter: { metadata: binding }, perPage: false });

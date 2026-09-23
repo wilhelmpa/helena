@@ -91,7 +91,7 @@
     },
     "schedules": {
       "label": "Planifications",
-      "description": "Exécutez des tâches d'agent selon une planification récurrente."
+      "description": "Créez ou rouvrez des tâches pour un agent selon une planification récurrente."
     },
     "webhooks": {
       "label": "Webhooks",

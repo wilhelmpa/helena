@@ -1,9 +1,20 @@
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
-import { db, projectWorkflowAssignment, type ProjectWorkflowConfiguration } from '@repo/db';
+import {
+  db,
+  project as projectTable,
+  projectWorkflowAssignment,
+  type ProjectWorkflowConfiguration,
+} from '@repo/db';
 import { HttpError, iso } from '#shared/lib';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
+
+// The workflow a routine of the Schedules page runs.
+export const ROUTINE_WORKFLOW = 'agent-routine';
+
+// The time zone of a schedule that names none.
+export const DEFAULT_TIMEZONE = 'Europe/Berlin';
 
 interface ProjectContext {
   id: number;
@@ -167,25 +178,28 @@ export async function listProjectWorkflows(projectId: number) {
       .orderBy(asc(projectWorkflowAssignment.workflowId)),
   ]);
   const assigned = new Map(assignments.map((row) => [row.workflowId, row]));
-  return flows.map((flow) => {
-    const row = assigned.get(flow.id);
-    return {
-      ...flow,
-      assignment: row
-        ? {
-            enabled: row.enabled,
-            capabilityRefs: row.capabilityRefs,
-            configuration: effectiveConfiguration(flow.id, row.configuration),
-            createdAt: iso(row.createdAt),
-            updatedAt: iso(row.updatedAt),
-          }
-        : {
-            enabled: false,
-            capabilityRefs: [],
-            configuration: effectiveConfiguration(flow.id, {}),
-          },
-    };
-  });
+  // Routines are managed on the Schedules page and need no assignment.
+  return flows
+    .filter((flow) => flow.id !== ROUTINE_WORKFLOW)
+    .map((flow) => {
+      const row = assigned.get(flow.id);
+      return {
+        ...flow,
+        assignment: row
+          ? {
+              enabled: row.enabled,
+              capabilityRefs: row.capabilityRefs,
+              configuration: effectiveConfiguration(flow.id, row.configuration),
+              createdAt: iso(row.createdAt),
+              updatedAt: iso(row.updatedAt),
+            }
+          : {
+              enabled: false,
+              capabilityRefs: [],
+              configuration: effectiveConfiguration(flow.id, {}),
+            },
+      };
+    });
 }
 
 export async function setProjectWorkflowAssignment(input: {
@@ -226,8 +240,34 @@ export async function setProjectWorkflowAssignment(input: {
       },
     })
     .returning();
+  if (!input.enabled) await pauseWorkflowSchedules(input.projectId, input.workflowId);
   await bumpControlPlaneRevision(input.projectId);
   return row;
+}
+
+// A workflow switched off in a project stops firing there: its active schedules are
+// paused, and stay paused when it is switched on again.
+async function pauseWorkflowSchedules(projectId: number, workflowId: string) {
+  const [row] = await db
+    .select({ key: projectTable.key })
+    .from(projectTable)
+    .where(eq(projectTable.id, projectId));
+  if (!row) return;
+  const projectRef = `project:${row.key}`;
+  const result = await controlPlaneRequest<{ schedules?: { id: string; status?: string }[] }>({
+    operation: 'schedules',
+    workflowId,
+    projectRef,
+  });
+  for (const schedule of result.schedules ?? []) {
+    if (schedule.status !== 'active') continue;
+    await controlPlaneRequest({
+      operation: 'pause-schedule',
+      workflowId,
+      scheduleId: schedule.id,
+      projectRef,
+    });
+  }
 }
 
 export function projectWorkflowScope(project: ProjectContext) {
@@ -384,38 +424,93 @@ export function listWorkflowSchedules(project: ProjectContext, workflowId: strin
   });
 }
 
-export async function createWorkflowSchedule(
+// The input Mastra starts every fire of a schedule with. The fires are real runs; each
+// takes its event id, correlation id and time from the run id Mastra gives it, so the
+// ones stored here only identify the schedule's input. The member who saved the
+// schedule is the actor of its runs.
+function scheduleEnvelope(
+  project: ProjectContext,
+  actorUserId: string,
+  capabilityRefs: string[],
+  payload: Record<string, unknown>,
+) {
+  const eventId = randomUUID();
+  return {
+    eventId,
+    correlationId: eventId,
+    occurredAt: new Date().toISOString(),
+    source: 'itsaplan-schedule',
+    actor: { type: 'human', id: actorUserId },
+    context: { ...projectWorkflowScope(project), capabilityRefs, connectionRefs: [] },
+    dryRun: false,
+    payload,
+  };
+}
+
+// Creates a Mastra schedule of the project. `scheduleKey` makes the creation
+// idempotent: a second create with the same key answers the schedule it made.
+export async function createSchedule(
   project: ProjectContext,
   workflowId: string,
-  input: { cron: string; timezone: string; payload: Record<string, unknown> },
+  actorUserId: string,
+  input: {
+    cron: string;
+    timezone: string;
+    scheduleKey?: string;
+    capabilityRefs: string[];
+    payload: Record<string, unknown>;
+  },
 ) {
-  const row = await enabledAssignment(project.id, workflowId);
-  const context = {
-    ...projectWorkflowScope(project),
-    capabilityRefs: row.capabilityRefs,
-    connectionRefs: [],
-  };
-  const eventId = randomUUID();
+  const envelope = scheduleEnvelope(project, actorUserId, input.capabilityRefs, input.payload);
   const result = await controlPlaneRequest({
     operation: 'create-schedule',
     workflowId,
-    ...context,
+    ...envelope.context,
+    ...(input.scheduleKey ? { scheduleKey: input.scheduleKey } : {}),
     cron: input.cron,
     timezone: input.timezone,
+    payload: envelope,
+  });
+  await bumpControlPlaneRevision(project.id);
+  return result;
+}
+
+export async function createWorkflowSchedule(
+  project: ProjectContext,
+  workflowId: string,
+  actorUserId: string,
+  input: { cron: string; timezone?: string; payload: Record<string, unknown> },
+) {
+  const row = await enabledAssignment(project.id, workflowId);
+  // The fires run for real, so the payload carries the project's settings the way a
+  // start does.
+  return createSchedule(project, workflowId, actorUserId, {
+    cron: input.cron,
+    timezone: input.timezone ?? DEFAULT_TIMEZONE,
+    capabilityRefs: row.capabilityRefs,
     payload: {
-      eventId,
-      correlationId: eventId,
-      occurredAt: new Date().toISOString(),
-      source: 'itsaplan-schedule',
-      actor: { type: 'service', id: 'itsaplan-schedule' },
-      context,
-      dryRun: true,
-      payload: {
-        ...input.payload,
-        projectKey: project.key,
-        workflowRef: `workflow:${workflowId}:v1`,
-      },
+      ...input.payload,
+      ...(workflowId === 'agent-team'
+        ? { policy: agentTeamPolicy(row.configuration, input.payload.policy) }
+        : {}),
+      configuration: row.configuration,
+      projectKey: project.key,
+      workflowRef: `workflow:${workflowId}:v1`,
     },
+  });
+}
+
+export async function controlSchedule(
+  project: ProjectContext,
+  workflowId: string,
+  scheduleId: string,
+  action: 'pause-schedule' | 'resume-schedule' | 'run-schedule' | 'delete-schedule',
+) {
+  const result = await controlPlaneRequest({
+    operation: action,
+    workflowId,
+    scheduleId,
+    projectRef: projectWorkflowScope(project).projectRef,
   });
   await bumpControlPlaneRevision(project.id);
   return result;
@@ -427,12 +522,41 @@ export async function scheduleAction(
   scheduleId: string,
   action: 'pause-schedule' | 'resume-schedule' | 'run-schedule' | 'delete-schedule',
 ) {
-  await enabledAssignment(project.id, workflowId);
+  // A schedule of a workflow switched off can still be paused and deleted.
+  if (action === 'resume-schedule' || action === 'run-schedule')
+    await enabledAssignment(project.id, workflowId);
+  return controlSchedule(project, workflowId, scheduleId, action);
+}
+
+// Changes the cadence of a schedule and, with `change`, the input of its fires, which
+// then act for `actorUserId`. A schedule updated without a time zone keeps its own.
+export async function updateSchedule(
+  project: ProjectContext,
+  workflowId: string,
+  scheduleId: string,
+  input: {
+    cron: string;
+    timezone?: string;
+    change?: { actorUserId: string; capabilityRefs: string[]; payload: Record<string, unknown> };
+  },
+) {
   const result = await controlPlaneRequest({
-    operation: action,
+    operation: 'update-schedule',
     workflowId,
     scheduleId,
     projectRef: projectWorkflowScope(project).projectRef,
+    cron: input.cron,
+    ...(input.timezone ? { timezone: input.timezone } : {}),
+    ...(input.change
+      ? {
+          payload: scheduleEnvelope(
+            project,
+            input.change.actorUserId,
+            input.change.capabilityRefs,
+            input.change.payload,
+          ),
+        }
+      : {}),
   });
   await bumpControlPlaneRevision(project.id);
   return result;
@@ -442,18 +566,10 @@ export async function updateWorkflowSchedule(
   project: ProjectContext,
   workflowId: string,
   scheduleId: string,
-  input: { cron: string; timezone: string },
+  input: { cron: string; timezone?: string },
 ) {
   await enabledAssignment(project.id, workflowId);
-  const result = await controlPlaneRequest({
-    operation: 'update-schedule',
-    workflowId,
-    scheduleId,
-    projectRef: projectWorkflowScope(project).projectRef,
-    ...input,
-  });
-  await bumpControlPlaneRevision(project.id);
-  return result;
+  return updateSchedule(project, workflowId, scheduleId, input);
 }
 
 export async function listWorkflowScheduleTriggers(
