@@ -54,8 +54,9 @@ export const integrationRoutes = new Elysia({
     detail: {
       summary: 'List available integrations',
       description:
-        "List the integration catalog: LLM providers (kind 'llm') and tool integrations " +
-        "(kind 'tool'). A provider key here is what list_provider_models takes.",
+        "List the integration catalog: LLM providers (kind 'llm'), tool integrations " +
+        "(kind 'tool') and the named secret (kind 'secret'). A provider key here is what " +
+        'list_provider_models takes.',
       ...mcpTool('list_integrations'),
     },
   })

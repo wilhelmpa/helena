@@ -54,7 +54,9 @@ export const TeamResponse = t.Object({
   integrationCount: t.Number({ description: 'How many integration credentials the team holds.' }),
   agentCount: t.Number({ description: 'How many AI agents the team owns.' }),
   skillCount: t.Number({ description: 'How many agent skills the team library holds.' }),
-  toolCount: t.Number({ description: 'How many configured tools the team holds.' }),
+  toolCount: t.Number({
+    description: 'How many tools the team holds: MCP servers and configured tools.',
+  }),
   createdAt: t.String(),
 });
 

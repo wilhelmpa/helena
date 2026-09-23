@@ -45,6 +45,13 @@ servers `config.yaml` enables for the cli platform, names only. The runner repor
 with each agent's skills and memory, and builds `--toolsets` from them when the owner turns a
 toolset off for an agent. A change to `config.yaml` reaches Plan with the next runner restart.
 
+The MCP servers `config.yaml` names are available to every agent. The owner turns one off for an
+agent, and adds servers of the team's library, on the agent's page in Plan. The runner writes both
+to `run/itsaplan-managed/config.yaml` in the agent's home and starts Hermes with
+`HERMES_MANAGED_DIR` pointing there, so `config.yaml` itself stays shared and unchanged. A stdio
+server of the library runs as the Hermes user with the Hermes `PATH`; an `npx` server downloads
+its package on first start.
+
 ## Run limits
 
 A queued run carries two limits that the runner passes to `hermes chat`: `--max-turns`

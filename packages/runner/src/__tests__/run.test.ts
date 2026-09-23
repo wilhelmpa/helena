@@ -59,6 +59,15 @@ describe('queued run', () => {
     expect(reports).toEqual([expect.objectContaining({ status: 'success', output: 'done' })]);
   });
 
+  it("hands the command the environment of the agent's Hermes settings", async () => {
+    const { config, client } = await setup('echo "$HERMES_MANAGED_DIR $ITSAPLAN_MCP_SECRET_7"');
+    const outcome = await perform(config, client, run, new AbortController(), {
+      toolsets: null,
+      env: { HERMES_MANAGED_DIR: '/hermes/run/itsaplan-managed', ITSAPLAN_MCP_SECRET_7: 'value' },
+    });
+    expect(outcome).toMatchObject({ output: '/hermes/run/itsaplan-managed value' });
+  });
+
   it('kills the command of a canceled run and reports nothing for it', async () => {
     const { config, client, reports, pidFile } = await setup(
       'echo $$ > "$PID_FILE"; exec sleep 30',
