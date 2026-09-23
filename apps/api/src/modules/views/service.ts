@@ -141,7 +141,9 @@ export async function updateViewFolder(
       .returning()
       .then(([updated]) => updated)
       .catch((err: unknown) => rethrowDuplicate(err, 'area'));
-    if (folder !== current.folder) await queueAreaProvisioning(tx, current.projectId);
+    if (folder !== current.folder || name !== current.name) {
+      await queueAreaProvisioning(tx, current.projectId);
+    }
     return mapFolder(row);
   });
 }
@@ -173,8 +175,9 @@ async function areaFolders(
   return new Set(rows.map((row) => row.folder));
 }
 
-// The worker sends the project's current areas with every provisioning request, so a
-// change to them only has to make the request new.
+// The worker sends the project's current areas, names included, with every
+// provisioning request, so a change to them only has to make the request new: a retry
+// of the old one with other contents would be refused by the integration service.
 async function queueAreaProvisioning(tx: Transaction, projectId: number): Promise<void> {
   await tx
     .update(projectProvisioningJob)

@@ -312,7 +312,7 @@ export async function projectAgentIds(projectIds?: number[]): Promise<Map<number
 // Every area of the project with its folder. The integration service creates the
 // folders of new areas, moves those whose folder changed and moves the folders of an
 // area missing from the list to the trash.
-export async function projectAreas(projectId: number) {
+async function projectAreas(projectId: number) {
   return db
     .select({
       id: projectViewFolder.id,

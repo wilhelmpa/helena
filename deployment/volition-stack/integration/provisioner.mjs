@@ -279,11 +279,13 @@ export function createProvisioner(config, options = {}) {
     return quarantined;
   }
 
-  // The registry names the areas of the last successful run, which is how a changed
-  // folder is moved and the folders of a deleted area are found.
+  // The registry names the areas whose folders the last runs created, moved or found,
+  // which is how a changed folder is moved and the folders of a deleted area are found.
   async function provisionProjectAreas(envelope, workspace, quarantineRoot) {
-    const registry = await readJson(path.join(config.registryRoot, `${workspace.slug}.json`), null);
-    const previous = registry?.project?.id === envelope.project.id ? validAreas(registry.areas) : [];
+    const registryPath = path.join(config.registryRoot, `${workspace.slug}.json`);
+    const registry = await readJson(registryPath, null);
+    const registered = registry?.project?.id === envelope.project.id;
+    const previous = registered ? validAreas(registry.areas) : [];
     const areas = envelope.areas ?? [];
     if (!areas.length && !previous.length) return { areas: [], quarantined: [], warnings: [] };
     const vault = await ensureProjectVault(workspace.slug, envelope.project);
@@ -299,6 +301,10 @@ export function createProvisioner(config, options = {}) {
       ],
       quarantine: (source, allowedRoot, label) =>
         quarantinePath({ source, allowedRoot, quarantineRoot, label }),
+      // A project's first run has no registry yet; writeRegistry creates it at the end.
+      record: async (recorded) => {
+        if (registered) await writeJsonAtomic(registryPath, { ...registry, areas: recorded });
+      },
     });
   }
 
