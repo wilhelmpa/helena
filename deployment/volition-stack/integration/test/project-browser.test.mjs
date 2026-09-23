@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import {
   createProjectBrowserDeprovisioner,
   createProjectBrowserProvisioner,
+  createProjectBrowserStatus,
   waitForProjectBrowserCdp,
 } from "../project-browser.mjs";
 
@@ -210,5 +211,33 @@ describe("project browser provisioning", () => {
       await fs.readFile(path.join(root, "projects/other/runtime.json"), "utf8").then(Boolean),
       true,
     );
+  });
+});
+
+describe("project browser status", () => {
+  it("is active only while both project units are active", async () => {
+    const answers = [
+      { stdout: "active\nactive\n" },
+      Object.assign(new Error("Command failed"), { stdout: "active\ninactive\n", code: 3 }),
+    ];
+    const seen = [];
+    const active = createProjectBrowserStatus(config(), {
+      execute: async (file, args) => {
+        seen.push(args);
+        const answer = answers.shift();
+        if (answer instanceof Error) throw answer;
+        return { ...answer, stderr: "" };
+      },
+    });
+    assert.equal(await active("demo"), true);
+    assert.equal(await active("demo"), false);
+    assert.equal(await active("../demo"), false);
+    assert.deepEqual(seen[0], [
+      "--user",
+      "is-active",
+      "volition-project-browser-kasm@demo.service",
+      "volition-project-browser-chromium@demo.service",
+    ]);
+    assert.equal(seen.length, 2);
   });
 });

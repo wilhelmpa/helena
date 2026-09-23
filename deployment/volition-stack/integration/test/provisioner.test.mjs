@@ -283,6 +283,49 @@ describe("createProvisioner", () => {
     await assert.rejects(fs.lstat(path.join(root, "trash/projects/623e4567-e89b-42d3-a456-426614174005")));
   });
 
+  it("reports each registered project with its boards and browser state", async () => {
+    const checked = [];
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensureProjectBrowser: async (_project, slug) => ({
+        id: `project-browser:${slug}`,
+        name: "project-browser",
+        profile: `project:7:${slug}`,
+      }),
+      projectBrowserActive: async (slug) => {
+        checked.push(slug);
+        return false;
+      },
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    assert.deepEqual(await provisioner.state(), { projects: [] });
+
+    const request = envelope();
+    request.requestedResources = ["workspace", "browser", "board:4"];
+    request.boards = [{ resource: "board:4", id: 4, name: "Board", slug: "board", folder: null }];
+    await provisioner.provision(request);
+    await provisioner.provision({
+      ...envelope({ id: 8, key: "PLAIN" }),
+      eventId: "723e4567-e89b-42d3-a456-426614174006",
+      requestedResources: ["workspace"],
+    });
+
+    const state = await provisioner.state();
+    assert.deepEqual(
+      state.projects.map(({ project, boards, browserActive, requestedResources }) => ({
+        id: project.id,
+        boards,
+        browserActive,
+        requestedResources,
+      })),
+      [
+        { id: 7, boards: [4], browserActive: false, requestedResources: request.requestedResources },
+        { id: 8, boards: [], browserActive: null, requestedResources: ["workspace"] },
+      ],
+    );
+    assert.deepEqual(checked, ["demo"]);
+  });
+
   it("rejects reuse of an event id with another request", async () => {
     const provisioner = createProvisioner(config(), {
       ensurePlanCoordinator: fakeCoordinator([]),

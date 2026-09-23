@@ -15,6 +15,11 @@ own service (own Dockerfile), separate from `apps/api`. See root `AGENTS.md`.
 - Retries transient failures (timeout, 429, 5xx) with equal-jitter exponential
   backoff up to `WEBHOOK_MAX_ATTEMPTS`; permanent 4xx fail immediately. After
   `WEBHOOK_DISABLE_THRESHOLD` consecutive failures the webhook is auto-disabled.
+- Delivers `project_provisioning_job` and `project_deprovisioning_job` rows to the
+  integration service at `PROJECT_PROVISIONING_URL`. Every
+  `PROJECT_RECONCILE_INTERVAL_MS` (10 minutes) it reads the service's provisioned state
+  from `<url>/state` and queues a new job for each project that differs from the
+  database; finished deprovisioning rows are removed after 30 days.
 - Drains `notification_delivery` and sends each row itself: email through
   `@repo/mailer`, Telegram through the Bot API. The provider credentials are read
   from the database and decrypted here (`notification-send.ts`), so the process

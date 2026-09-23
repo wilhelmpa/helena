@@ -517,6 +517,20 @@ export function createRequestHandler(
       }
       return;
     }
+    if (request.method === "GET" && pathname === "/api/provision/state") {
+      if (!authorized(firstHeader(request.headers.authorization), config.token)) {
+        response.setHeader("WWW-Authenticate", "Bearer");
+        json(response, 401, { error: "unauthorized" });
+        return;
+      }
+      try {
+        json(response, 200, await provisioner.state());
+      } catch (error) {
+        console.error("Reading the provisioning state failed", error);
+        json(response, 500, { error: "state_failed" });
+      }
+      return;
+    }
     if (request.method !== "POST" || request.url !== "/api/provision") {
       json(response, 404, { error: "not_found" });
       return;

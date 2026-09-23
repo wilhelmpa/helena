@@ -2,6 +2,7 @@ import { ensureProjectGit } from "./project-git.mjs";
 import {
   createProjectBrowserDeprovisioner,
   createProjectBrowserProvisioner,
+  createProjectBrowserStatus,
 } from "./project-browser.mjs";
 import { provisionBoards } from "./boards.mjs";
 import { writeProjectContext } from "./project-context.mjs";
@@ -95,6 +96,8 @@ export function createProvisioner(config, options = {}) {
   const deprovisionProjectBrowser =
     options.deprovisionProjectBrowser ??
     createProjectBrowserDeprovisioner(config, { execute });
+  const projectBrowserActive =
+    options.projectBrowserActive ?? createProjectBrowserStatus(config, { execute });
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
   const ensureBoardFiles =
     options.ensureBoardFiles ?? ensureLocalBoardFiles;
@@ -476,6 +479,33 @@ export function createProvisioner(config, options = {}) {
     return { resources, registryPath: receiptPath };
   }
 
+  // What the registry says is provisioned, for the worker's reconciliation.
+  async function provisionedState() {
+    let names;
+    try {
+      names = await fs.readdir(config.registryRoot);
+    } catch (error) {
+      if (error?.code === "ENOENT") return { projects: [] };
+      throw error;
+    }
+    const projects = [];
+    for (const name of names.filter((item) => item.endsWith(".json")).sort()) {
+      const registry = await readJson(path.join(config.registryRoot, name), null);
+      if (registry?.schemaVersion !== 1 || !Number.isSafeInteger(registry.project?.id)) continue;
+      projects.push({
+        project: registry.project,
+        requestedResources: Array.isArray(registry.requestedResources)
+          ? registry.requestedResources
+          : [],
+        boards: validBoards(registry.boards).map((board) => board.id),
+        browserActive: registry.resources?.browser
+          ? await projectBrowserActive(registry.slug)
+          : null,
+      });
+    }
+    return { projects };
+  }
+
   async function provisionLocked(envelope) {
     const hash = requestHash(envelope);
     const ledger = await readJson(config.ledgerPath, {
@@ -543,6 +573,7 @@ export function createProvisioner(config, options = {}) {
   }
 
   return {
+    state: provisionedState,
     provision(envelope) {
       const operation = queue.then(
         () => provisionLocked(envelope),

@@ -176,6 +176,32 @@ async function stopProjectBrowserUnits(config, execute, slug) {
   }
 }
 
+export function createProjectBrowserStatus(config, options = {}) {
+  const execute = options.execute;
+  if (typeof execute !== "function") throw new Error("Project browser command runner is required");
+
+  return async function projectBrowserActive(slug) {
+    if (!PROJECT_SLUG.test(slug)) return false;
+    const systemctlPrefix = config.projectBrowserSystemctlUser !== false ? ["--user"] : [];
+    try {
+      const { stdout } = await execute(
+        config.systemctlBin,
+        [
+          ...systemctlPrefix,
+          "is-active",
+          `volition-project-browser-kasm@${slug}.service`,
+          `volition-project-browser-chromium@${slug}.service`,
+        ],
+        { timeout: 10_000, maxBuffer: 4_096, encoding: "utf8" },
+      );
+      return stdout.split("\n").filter(Boolean).every((line) => line.trim() === "active");
+    } catch {
+      // systemctl is-active exits non-zero when a unit is not active.
+      return false;
+    }
+  };
+}
+
 export function createProjectBrowserProvisioner(config, options = {}) {
   const execute = options.execute;
   if (typeof execute !== "function") throw new Error("Project browser command runner is required");
