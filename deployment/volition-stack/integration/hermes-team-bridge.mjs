@@ -81,7 +81,9 @@ export function createHermesTeamHandler({ bridgeToken }, service) {
         ? await service.executeStage(body, abandoned.signal)
         : request.url === '/internal/hermes/team/synchronize'
           ? await service.synchronize(body)
-          : null;
+          : request.url === '/internal/hermes/team/routine'
+            ? await service.routine(body)
+            : null;
       if (!result) throw new HermesTeamError(404, 'not_found', 'Not found');
       response.statusCode = 200;
       response.end(JSON.stringify(result));
@@ -103,6 +105,7 @@ export async function startHermesTeamBridge() {
     status: body => planRequest('/internal/orchestration/agent-run/status', body, planToken),
     cancel: body => planRequest('/internal/orchestration/agent-run/cancel', body, planToken),
     synchronize: body => planRequest('/internal/orchestration/task-sync', body, planToken),
+    routine: body => planRequest('/internal/orchestration/routine', body, planToken),
   };
   const service = createHermesTeamService(plan);
   const server = http.createServer(createHermesTeamHandler({ bridgeToken, planToken }, service));

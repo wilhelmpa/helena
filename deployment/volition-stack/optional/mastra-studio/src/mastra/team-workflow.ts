@@ -2,6 +2,7 @@ import { createStep, createWorkflow } from '@mastra/core/workflows';
 import type { HermesTeamAdapter } from './adapters/hermes-team.ts';
 import { privateHermesTeamAdapter, teamIdempotencyKey } from './adapters/hermes-team.ts';
 import { workEnvelopeSchema } from './contracts.ts';
+import { fireEnvelope, scopeRunToProject } from './scheduled-runs.ts';
 import {
   agentTeamOutputSchema,
   agentTeamPayloadSchema,
@@ -91,13 +92,14 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
     description: 'Validate the project team, execution policy and stable task identity.',
     inputSchema: workEnvelopeSchema,
     outputSchema: agentTeamStateSchema,
-    execute: async ({ inputData }) => {
+    execute: async ({ inputData, runId, workflowId, mastra }) => {
       if (!inputData.context?.projectRef)
         throw new Error('Agent team execution requires a project context');
       const input = agentTeamPayloadSchema.parse(inputData.payload);
+      await scopeRunToProject(mastra, workflowId, runId, inputData.context.projectRef);
       return {
         workflowId: 'agent-team' as const,
-        envelope: inputData,
+        envelope: fireEnvelope(inputData, runId),
         input: { ...input, policy: stagePolicy(input.policy) },
         delegations: [],
         specialistResults: [],

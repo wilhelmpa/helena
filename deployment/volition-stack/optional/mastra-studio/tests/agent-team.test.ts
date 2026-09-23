@@ -205,6 +205,19 @@ test('a dry-run records the routing and calls neither Hermes nor Plan', async ()
   );
 });
 
+test('every fire of a schedule runs its stages under keys of its own', async () => {
+  const recorder = recordingAdapter();
+  for (const runId of ['sched_daily_1790000000000', 'sched_daily_1790086400000']) {
+    const workflowRun = await buildAgentTeamWorkflow(recorder.adapter).createRun({ runId });
+    const result = await workflowRun.start({ inputData: envelope(false, payload()) });
+    assert.equal(result.status, 'success');
+    if (result.status === 'success') assert.equal(result.result.correlationId, runId);
+  }
+  const keys = recorder.requests.map((request) => request.idempotencyKey);
+  assert.equal(keys.length, 4);
+  assert.equal(new Set(keys).size, 4);
+});
+
 test('a single specialist gets the task directly and the routing is in the history', async () => {
   const recorder = recordingAdapter();
   const result = await run(recorder.adapter, false, payload());

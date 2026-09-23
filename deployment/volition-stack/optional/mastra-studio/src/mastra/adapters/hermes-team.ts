@@ -120,7 +120,7 @@ function socketPath(): string {
 // The bridge answers a stage only once its Hermes run has finished, so a stage
 // request waits as long as the stage timeout allows. Aborting it closes the
 // connection, which makes the bridge cancel the stage's Plan run.
-async function request(
+export async function bridgeRequest(
   path: string,
   body: unknown,
   timeoutMs = 330_000,
@@ -169,7 +169,7 @@ export const privateHermesTeamAdapter: HermesTeamAdapter = {
     return withBackoff(
       input.policy,
       async attempt => {
-        const raw = await request(
+        const raw = await bridgeRequest(
           '/internal/hermes/team/stages',
           { schemaVersion: 1, ...input, attempt },
           (input.policy.timeoutSeconds + 30) * 1_000,
@@ -186,7 +186,7 @@ export const privateHermesTeamAdapter: HermesTeamAdapter = {
     );
   },
   async synchronizePlan(input) {
-    const raw = await request('/internal/hermes/team/synchronize', { schemaVersion: 1, ...input });
+    const raw = await bridgeRequest('/internal/hermes/team/synchronize', { schemaVersion: 1, ...input });
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
       throw new Error('Hermes team bridge returned an invalid synchronization result');
     }

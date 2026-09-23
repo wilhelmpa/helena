@@ -103,6 +103,10 @@ function validateStage(input) {
   return { ...row, phase, idempotencyKey, projectRef, task, taskRef, agent, agentRef, policy, timeoutSeconds };
 }
 
+function taskInProject(taskRef, projectRef) {
+  return taskRef.slice(5).split('-').slice(0, -1).join('-') === projectRef.slice(8);
+}
+
 function validateSynchronization(input) {
   const row = record(input);
   const idempotencyKey = string(row?.idempotencyKey, 64);
@@ -112,10 +116,33 @@ function validateSynchronization(input) {
   const summary = string(row?.summary, 4_000);
   if (
     row?.schemaVersion !== 1 || !idempotencyKey || !IDEMPOTENCY.test(idempotencyKey) ||
-    !projectRef || !taskRef || taskRef.slice(5).split('-').slice(0, -1).join('-') !== projectRef.slice(8) ||
+    !projectRef || !taskRef || !taskInProject(taskRef, projectRef) ||
     !state || !summary || !Array.isArray(row?.evidence) || row.evidence.length > 500
   ) throw new HermesTeamError(400, 'invalid_sync_request', 'Invalid Plan synchronization request');
   return { ...row, idempotencyKey, projectRef, taskRef, state, summary };
+}
+
+function validateRoutine(input) {
+  const row = record(input);
+  const idempotencyKey = string(row?.idempotencyKey, 64);
+  const projectRef = reference(row?.projectRef, 'project');
+  const agentRef = reference(row?.agentRef, 'agent');
+  const title = string(row?.title, 300);
+  const instructions = string(row?.instructions, 20_000);
+  const mode = row?.mode === 'new' || row?.mode === 'reopen' ? row.mode : null;
+  const taskRef = row?.taskRef === undefined ? undefined : reference(row.taskRef, 'task');
+  const actorId = row?.actorId === undefined ? undefined : string(row.actorId, 200);
+  if (
+    row?.schemaVersion !== 1 || !idempotencyKey || !IDEMPOTENCY.test(idempotencyKey) ||
+    !projectRef || !agentRef || !title || !instructions || !mode ||
+    taskRef === null || (taskRef && !taskInProject(taskRef, projectRef)) ||
+    (mode === 'reopen' && !taskRef) || actorId === null
+  ) throw new HermesTeamError(400, 'invalid_routine_request', 'Invalid routine request');
+  return {
+    idempotencyKey, projectRef, agentRef, title, instructions, mode,
+    ...(taskRef ? { taskRef } : {}),
+    ...(actorId ? { actorId } : {}),
+  };
 }
 
 function prompt(stage) {
@@ -222,6 +249,9 @@ export function createHermesTeamService(plan, options = {}) {
     },
     async synchronize(input) {
       return plan.synchronize(validateSynchronization(input));
+    },
+    async routine(input) {
+      return plan.routine(validateRoutine(input));
     },
   };
 }
