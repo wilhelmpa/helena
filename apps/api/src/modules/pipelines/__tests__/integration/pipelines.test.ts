@@ -955,11 +955,10 @@ describe('workflow run limit', () => {
     });
     expect((await limitApi().get()).data).toEqual({ maxRuns: 3, windowMinutes: 60 });
 
-    // Clamped to the allowed range rather than refused outright.
-    await limitApi().patch({ maxRuns: 5000 });
-    expect((await limitApi().get()).data!.maxRuns).toBe(1000);
-
+    // Outside the allowed range (1-1000) is refused, not clamped.
+    expect((await limitApi().patch({ maxRuns: 5000 })).status).toBe(422);
     expect((await limitApi().patch({ maxRuns: 0 })).status).toBe(422);
+    expect((await limitApi().get()).data).toEqual({ maxRuns: 3, windowMinutes: 60 });
 
     const asMember = await addProjectMember(ctx.asOwner, 'MKT');
     expect(
@@ -1004,13 +1003,13 @@ describe('workflow run limit', () => {
 
     // A second blocked attempt in the same window leaves the trace alone — one
     // notice per workflow per window, not one per retry of the loop this guards
-    // against.
+    // against, so neither the run history nor the activity gets a second entry.
     await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('Todo') });
     await drainPendingStarts();
     expect(controlPlane.started().length).toBe(beforeThird);
     expect(
       (await ctx.asOwner.issues({ issueId: task.id })['pipeline-runs'].get()).data,
-    ).toHaveLength(4);
+    ).toHaveLength(3);
     const feedAfter = (await ctx.asOwner.issues({ issueId: task.id }).feed.get({ query: {} }))
       .data!;
     expect(
@@ -1027,7 +1026,7 @@ describe('workflow run limit', () => {
     });
     const second = await template(ctx, {
       name: 'Second',
-      definition: { ...simple(), trigger: { type: 'label_added' } },
+      definition: { ...simple(), trigger: { type: 'label_added', label: 'Urgent' } },
     });
     expect((await enable(ctx, first.id, { coder: ctx.coder.id })).status).toBe(200);
     expect((await enable(ctx, second.id, { coder: ctx.coder.id })).status).toBe(200);
