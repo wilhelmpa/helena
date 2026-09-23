@@ -20,8 +20,9 @@ and makes no decisions.
 
 ## Two paths
 
-- **Interactive** — chat and @-mentions. The owner is present. Plan queues the message and
-  the Hermes runner answers it. Mastra is not involved.
+- **Interactive** — chat, @-mentions and decisions on approval requests. The owner is
+  present. Plan queues the message, or the run that carries the decision, and the Hermes
+  runner answers it. Mastra is not involved.
 - **Automated** — assignment, the "Ready for agents" column, field triggers, trigger rules,
   schedules, inbound mail, webhooks. Plan or the integration service sends an event to
   Mastra; a Mastra workflow queues Hermes stages in Plan; results are written back to Plan.
@@ -36,7 +37,9 @@ and makes no decisions.
 3. **Plan ↔ Hermes**: the runner claims queued work and chat messages, sends heartbeats and
    AG-UI events. A heartbeat answers `canceled` for a canceled run or chat answer, and the
    runner then stops Hermes. Hermes reads and writes Plan data through Plan's MCP server
-   (issues, mail drafts, secret names).
+   (issues, mail drafts, secret names). Before an agent sends, publishes, pays or deletes
+   anything outside Plan it calls `request_approval` and ends its run; the owner decides
+   on the Approvals page, next to the Mastra runs held at an approval gate.
 4. **Plan and Mastra → integration service**: provisioning, sending mail after the owner
    confirms it, browser control. The integration service reports inbound mail to Mastra as
    an event.

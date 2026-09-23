@@ -39,29 +39,41 @@ export async function countRunsAhead(teamId: number, runId: number): Promise<num
   return row?.count ?? 0;
 }
 
-export async function enqueueAgentRun(input: {
-  agentId: number;
-  // The project the run works in, which is the issue's. An agent works in several
-  // projects, so the run carries its own rather than reading the agent's.
-  projectId: number;
-  issueId: number;
-  sourceActivityId: number | null;
-  prompt: string;
-  trigger?: 'mention' | 'delegation' | 'field';
-  // Seconds the run stays unclaimable after it is queued, so the issue can still be
-  // edited before the agent reads it.
-  delaySeconds?: number;
-}): Promise<void> {
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Returns the id of the queued run. `executor` is the transaction the queueing belongs
+// to, when it has one.
+export async function enqueueAgentRun(
+  input: {
+    agentId: number;
+    // The project the run works in, which is the issue's. An agent works in several
+    // projects, so the run carries its own rather than reading the agent's.
+    projectId: number;
+    // Null only for an approval decision on a request made outside an issue.
+    issueId: number | null;
+    sourceActivityId: number | null;
+    prompt: string;
+    trigger?: 'mention' | 'delegation' | 'field' | 'approval';
+    // Seconds the run stays unclaimable after it is queued, so the issue can still be
+    // edited before the agent reads it.
+    delaySeconds?: number;
+  },
+  executor: typeof db | Transaction = db,
+): Promise<number> {
   const delay = Math.max(0, Math.trunc(input.delaySeconds ?? 0));
-  await db.insert(agentRun).values({
-    agentId: input.agentId,
-    projectId: input.projectId,
-    issueId: input.issueId,
-    sourceActivityId: input.sourceActivityId,
-    prompt: input.prompt,
-    trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
-    nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
-  });
+  const [row] = await executor
+    .insert(agentRun)
+    .values({
+      agentId: input.agentId,
+      projectId: input.projectId,
+      issueId: input.issueId,
+      sourceActivityId: input.sourceActivityId,
+      prompt: input.prompt,
+      trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
+      nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
+    })
+    .returning({ id: agentRun.id });
+  return row!.id;
 }
 
 export interface ClaimedRun {

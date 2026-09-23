@@ -106,7 +106,7 @@ function refs(value: unknown): string[] {
     : [];
 }
 
-async function catalogFlows(): Promise<CatalogFlow[]> {
+export async function catalogFlows(): Promise<CatalogFlow[]> {
   const result = await controlPlaneRequest<{ catalog?: { flows?: CatalogFlow[] } }>({
     operation: 'catalog',
   });

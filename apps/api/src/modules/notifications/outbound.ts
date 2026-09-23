@@ -48,6 +48,12 @@ function issueUrl(projectKey: string, seq: number): string | undefined {
   return base ? `${base}/project/${projectKey}/issue/${seq}` : undefined;
 }
 
+// An approval request is decided on the approvals page, not on the issue.
+function approvalsUrl(): string | undefined {
+  const base = process.env.APP_URL;
+  return base ? `${base}/approvals` : undefined;
+}
+
 interface StateChange {
   from: string;
   to: string;
@@ -72,6 +78,7 @@ function emailPayload(
   actor: string,
   url: string | undefined,
   stateChange: StateChange | null,
+  detail: string | undefined,
 ): DeliveryPayload {
   const line: Record<NotificationType, { subject: string; text: string }> = {
     assigned: { subject: `${ref}: assigned to you`, text: `${actor} assigned this issue to you.` },
@@ -88,9 +95,14 @@ function emailPayload(
         ? `${actor} changed the status of this issue from ${stateChange.from} to ${stateChange.to}.`
         : `${actor} changed the status of this issue.`,
     },
+    approval_requested: {
+      subject: `${ref}: approval requested`,
+      text: `${actor} asks for your approval on this issue.`,
+    },
   };
   const { subject, text } = line[type];
-  return { subject, text: `${text}\n\n${ref}: ${title}`, url };
+  const body = detail ? `${text}\n\n${detail}` : text;
+  return { subject, text: `${body}\n\n${ref}: ${title}`, url };
 }
 
 // Telegram copy. Rendered as HTML (parse_mode HTML) with the issue reference as a
@@ -103,6 +115,7 @@ function telegramPayload(
   actor: string,
   url: string | undefined,
   stateChange: StateChange | null,
+  detail: string | undefined,
 ): DeliveryPayload {
   const meta: Record<NotificationType, { emoji: string; action: string }> = {
     assigned: { emoji: '📌', action: `Assigned by ${actor}` },
@@ -114,6 +127,7 @@ function telegramPayload(
         ? `Status changed from ${stateChange.from} to ${stateChange.to} by ${actor}`
         : `Status changed by ${actor}`,
     },
+    approval_requested: { emoji: '✋', action: `Approval requested by ${actor}` },
   };
   const { emoji, action } = meta[type];
 
@@ -123,18 +137,22 @@ function telegramPayload(
   const refLink = url
     ? `<a href="${escapeHtml(url)}"><b>${escapeHtml(ref)}</b></a>`
     : `<b>${escapeHtml(ref)}</b>`;
-  const html = `${emoji} ${refLink} ${escapeHtml(title)}\n\n<i>${escapeHtml(action)}</i>`;
-  const text = `${emoji} ${ref} ${title}\n\n${action}`;
+  const html =
+    `${emoji} ${refLink} ${escapeHtml(title)}\n\n<i>${escapeHtml(action)}</i>` +
+    (detail ? `\n\n${escapeHtml(detail)}` : '');
+  const text = `${emoji} ${ref} ${title}\n\n${action}` + (detail ? `\n\n${detail}` : '');
   return { text, html, url };
 }
 
 // Enqueues outbound delivery rows for the inbox notifications just created for one
 // issue event. All rows in `notifications` share the same issue and actor (both call
-// sites operate on a single issue). No-op when the team has no enabled provider or
-// no member wants any of the event types present.
+// sites operate on a single issue). `detail` is a line of the event's own, printed
+// under the event text. No-op when the team has no enabled provider or no member wants
+// any of the event types present.
 export async function enqueueOutbound(
   notifications: NewNotificationRow[],
   actorName: string | null,
+  detail?: string,
 ): Promise<void> {
   if (notifications.length === 0) return;
   const projectId = notifications[0].projectId;
@@ -191,6 +209,7 @@ export async function enqueueOutbound(
   for (const n of notifications) {
     const prefs = prefsByUser.get(n.userId);
     if (!prefs) continue; // member has not opted in
+    const link = n.type === 'approval_requested' ? approvalsUrl() : url;
 
     if (emailEnabled && prefs.emailEvents[n.type]) {
       const email = emailById.get(n.userId);
@@ -199,7 +218,7 @@ export async function enqueueOutbound(
           projectId,
           channel: 'email',
           recipient: email,
-          payload: emailPayload(n.type, ref, issueRow.title, actor, url, stateChange),
+          payload: emailPayload(n.type, ref, issueRow.title, actor, link, stateChange, detail),
         });
       }
     }
@@ -212,7 +231,7 @@ export async function enqueueOutbound(
           projectId,
           channel: 'telegram',
           recipient: chatId,
-          payload: telegramPayload(n.type, ref, issueRow.title, actor, url, stateChange),
+          payload: telegramPayload(n.type, ref, issueRow.title, actor, link, stateChange, detail),
         });
       }
     }

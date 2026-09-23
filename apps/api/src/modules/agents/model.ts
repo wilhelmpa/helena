@@ -23,6 +23,7 @@ export const agentRunTrigger = t.Union([
   t.Literal('field'),
   t.Literal('schedule'),
   t.Literal('manual'),
+  t.Literal('approval'),
 ]);
 
 export type AgentRunTrigger = typeof agentRunTrigger.static;

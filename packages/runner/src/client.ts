@@ -7,7 +7,7 @@ import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
 
 export interface Run {
   id: number;
-  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual';
+  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
   prompt: string;
   systemPrompt: string;
   issueId: number | null;

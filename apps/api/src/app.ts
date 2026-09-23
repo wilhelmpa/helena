@@ -156,6 +156,10 @@ export const app = new Elysia()
             description: 'Team departments, goals, and agent reporting lines',
           },
           { name: 'Hub Inbox', description: 'External message triage and task routing' },
+          {
+            name: 'Approvals',
+            description: 'Agent requests to act outside Plan and the decisions on them',
+          },
           { name: 'Sync', description: 'Change markers a client polls for live refresh' },
           {
             name: 'Telegram',

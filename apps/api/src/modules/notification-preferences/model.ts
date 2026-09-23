@@ -5,6 +5,8 @@ const EventToggles = t.Object({
   mentioned: t.Boolean(),
   commented: t.Boolean(),
   state_changed: t.Boolean(),
+  // Optional so a client written before the event existed keeps saving its toggles.
+  approval_requested: t.Optional(t.Boolean()),
 });
 
 // Request body of the PUT and the response of both routes.

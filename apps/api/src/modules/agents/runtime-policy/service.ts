@@ -82,6 +82,7 @@ function soul(
     projectsPreamble(agent.projects).trim(),
     ...agent.projects.map((project) => projectInstructionsPreamble(project).trim()),
     chatPreamble().trim(),
+    approvalPreamble(),
     chartPreamble().trim(),
     attachmentPreamble().trim(),
   ]
@@ -98,6 +99,16 @@ function chatPreamble(): string {
     'A message without a run frame comes from a person chatting with you in the app who is',
     'waiting for your reply. Answer them directly and keep it short. Ask a clarifying',
     'question when you genuinely need one; in an autonomous run nobody is there to answer it.',
+  ].join('\n');
+}
+
+function approvalPreamble(): string {
+  return [
+    '## Approvals',
+    'Before you send, publish, pay or delete anything outside Plan, call request_approval',
+    'with the action, its kind and every detail the owner needs to decide, then end the run',
+    'without taking the action. Plan starts a new run of yours with the decision: act only',
+    'on an approved request, exactly as approved. get_approval reads a request.',
   ].join('\n');
 }
 
