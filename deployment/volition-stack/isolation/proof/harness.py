@@ -148,6 +148,7 @@ def install_tree(source: str) -> None:
             shutil.copyfile(path, os.path.join(ISO, name))
     shutil.copyfile(os.path.join(source, 'proof', 'probe.py'), os.path.join(ISO, 'probe.py'))
     shutil.copyfile(os.path.join(source, 'proof', 'mock_model.py'), os.path.join(ISO, 'mock_model.py'))
+    shutil.copyfile(os.path.join(source, 'proof', 'cdp.mjs'), os.path.join(ISO, 'cdp.mjs'))
     shutil.copyfile(os.path.join(source, '..', 'native', 'terminal', 'tmux.conf'), os.path.join(ISO, 'tmux.conf'))
     plugins = os.path.join(source, '..', 'integration', 'hermes-plugins')
     if os.path.isdir(plugins):

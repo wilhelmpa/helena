@@ -457,7 +457,8 @@ def run_terminal_proofs(report, sh, iso, socket, root) -> None:
         os.kill(pid, signal.SIGWINCH)
         read_for(fd, 1.5)
         size = type_line(fd, 'echo "SIZE=$(stty size)"')
-        report.add('T', 'a resize reaches the terminal', 'SIZE=40 120' in size, size.strip()[-120:])
+        # tmux keeps one row for its status line.
+        report.add('T', 'a resize reaches the terminal', 'SIZE=39 120' in size, size.strip()[-120:])
     finally:
         detach(pid, fd)
     stop = subprocess.run(['/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/bin/python3', '-I', f'{iso}/launch_client.py',

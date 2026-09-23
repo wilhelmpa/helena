@@ -4,8 +4,15 @@ After=network.target
 Wants=network.target
 
 [Service]
+# Network: Chromium's CDP and KasmVNC listen on 127.0.0.1 only. Isolated agents cannot reach
+# them: each agent unit has a network namespace of its own (PrivateNetwork=yes), so its
+# loopback is not this one. IPAddressDeny=, RestrictNetworkInterfaces= and SocketBindDeny=
+# are not used here: they need cgroup BPF, which this nspawn container does not offer, and
+# were measured to have no effect (see isolation/README.md).
 Type=simple
-User=volition-hermes
+# The browser user alone owns the project profiles (0700): no agent and not the runner
+# can read their cookies and sessions.
+User=volition-browser
 Group=volition
 Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
 Environment=PROJECT_BROWSER_ROUTER_PORT=6082
@@ -26,8 +33,6 @@ ProtectKernelTunables=yes
 ProtectProc=invisible
 ProtectSystem=strict
 ReadOnlyPaths=/var/lib/volition/project-browser/projects
-IPAddressDeny=any
-IPAddressAllow=localhost
 RestrictAddressFamilies=AF_UNIX AF_INET
 RestrictRealtime=yes
 RestrictSUIDSGID=yes
