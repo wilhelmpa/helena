@@ -195,6 +195,31 @@
   "hotkeys": {
     "saved": "Raccourcis clavier enregistrés"
   },
+  "security": {
+    "grantTitle": "Autorisation du terminal",
+    "grantDescription": "La fenêtre de 12 heures qu'une vérification renforcée ouvre pour les sessions Shell, Claude Code et Codex.",
+    "grantActive": "Autorisé jusqu'à {time}",
+    "grantInactive": "Aucune autorisation active.",
+    "grantRevoke": "Révoquer",
+    "stepUpTitle": "Méthode de vérification renforcée",
+    "stepUpDescription": "Ce qui prouve que c'est bien le propriétaire qui ouvre le terminal, à chaque fois, même sur le réseau local.",
+    "stepUpMethod": "TOTP (une application d'authentification), configuré dans Compte → Sécurité. La clé d'accès prendra le relais dès que cette instance sera derrière HTTPS.",
+    "sudoTitle": "sudo dans le terminal du navigateur demande un mot de passe",
+    "sudoDescription": "Désactivé rend toute commande sudo du terminal propriétaire sans mot de passe, comme l'est déjà l'automatisation SSH. Activé (par défaut), seules les commandes d'automatisation validées restent sans mot de passe.",
+    "sudoHint": "Prend effet au prochain déploiement : le script de déploiement lit ce réglage en installant la politique sudo, car sudo autorise par compte Unix et ne peut pas distinguer une session navigateur d'une session SSH à l'exécution.",
+    "auditTitle": "Journal d'audit",
+    "auditDescription": "Chaque tentative de vérification renforcée, chaque changement d'autorisation et chaque session de terminal, du plus récent au plus ancien. Aucune frappe clavier.",
+    "auditEmpty": "Aucun événement pour l'instant.",
+    "event": {
+      "step_up_ok": "Vérification renforcée réussie",
+      "step_up_fail": "Vérification renforcée échouée",
+      "rate_limited": "Limite de tentatives atteinte",
+      "grant_revoked": "Autorisation révoquée",
+      "session_start": "Session démarrée",
+      "session_end": "Session terminée",
+      "token_rejected": "Jeton refusé"
+    }
+  },
   "storage": {
     "saved": "Paramètres de stockage enregistrés",
     "fileSize": "Taille des fichiers",

@@ -10,11 +10,13 @@ import { Button } from '@/components/ui/button';
 // real Enter submitting a <form>), not JS listeners. That, plus the iframe being
 // same-origin (both under the Plan host), is what makes sendKey below work at
 // all: a cross-origin iframe's contentDocument would not be reachable.
+// A word key shows its translated name (design: "Strg" in German, not "Ctrl").
+// An arrow or symbol key shows the literal character instead -- universal, and
+// what the design itself lists ("|, ~, /, -"), so `label` skips translation.
+type KeyLabel = 'esc' | 'tab' | 'ctrl' | 'alt';
+
 interface KeySpec {
-  // A word key shows its translated name (design: "Strg" in German, not "Ctrl").
-  // An arrow or symbol key shows the literal character instead -- universal, and
-  // what the design itself lists ("|, ~, /, -"), so `label` skips translation.
-  labelKey?: string;
+  labelKey?: KeyLabel;
   label?: string;
   key: string;
   code: string;

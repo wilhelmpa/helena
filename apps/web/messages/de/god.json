@@ -195,6 +195,31 @@
   "hotkeys": {
     "saved": "Tastenkürzel gespeichert"
   },
+  "security": {
+    "grantTitle": "Terminal-Freigabe",
+    "grantDescription": "Das 12-Stunden-Fenster, das eine erneute Bestätigung für Shell-, Claude-Code- und Codex-Sitzungen öffnet.",
+    "grantActive": "Freigegeben bis {time}",
+    "grantInactive": "Keine aktive Freigabe.",
+    "grantRevoke": "Widerrufen",
+    "stepUpTitle": "Bestätigungsmethode",
+    "stepUpDescription": "Was beweist, dass wirklich der Owner das Terminal öffnet, jedes Mal, auch im LAN.",
+    "stepUpMethod": "TOTP (eine Authenticator-App), eingerichtet unter Konto → Sicherheit. Passkey übernimmt, sobald diese Instanz hinter HTTPS läuft.",
+    "sudoTitle": "sudo im Browser-Terminal verlangt Passwort",
+    "sudoDescription": "Aus macht jeden sudo-Befehl im Owner-Terminal passwortlos, genau wie die SSH-Automatisierung es bereits ist. An (Standard) bleiben nur die geprüften Automatisierungsbefehle passwortlos.",
+    "sudoHint": "Wirkt erst beim nächsten Deploy: Das Deploy-Skript liest diese Einstellung beim Installieren der sudo-Regel, denn sudo entscheidet nach Unix-Konto und kann eine Browser-Sitzung zur Laufzeit nicht von einer SSH-Sitzung unterscheiden.",
+    "auditTitle": "Audit-Protokoll",
+    "auditDescription": "Jeder Bestätigungsversuch, jede Änderung der Freigabe und jede Terminal-Sitzung, neueste zuerst. Keine Tastatureingaben.",
+    "auditEmpty": "Noch keine Ereignisse.",
+    "event": {
+      "step_up_ok": "Bestätigung erfolgreich",
+      "step_up_fail": "Bestätigung fehlgeschlagen",
+      "rate_limited": "Rate-Limit erreicht",
+      "grant_revoked": "Freigabe widerrufen",
+      "session_start": "Sitzung gestartet",
+      "session_end": "Sitzung beendet",
+      "token_rejected": "Token abgelehnt"
+    }
+  },
   "storage": {
     "saved": "Speichereinstellungen gespeichert",
     "fileSize": "Dateigröße",
