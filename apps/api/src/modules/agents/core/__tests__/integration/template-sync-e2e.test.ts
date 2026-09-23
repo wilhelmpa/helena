@@ -65,7 +65,10 @@ describe('template sync end to end', () => {
     ).data!.agent;
     await agents(asOwner, teamId)({ agentId: template.id }).skills.put({ skillIds: [skillA.id] });
 
-    const copyRes = await agents(asOwner, teamId)({ agentId: template.id }).copy.post({
+    const copyRes = await agents(
+      asOwner,
+      teamId,
+    )({ agentId: template.id }).copy.post({
       projectId: project.id,
     });
     expect(copyRes.status).toBe(201);
@@ -79,7 +82,10 @@ describe('template sync end to end', () => {
     expect(before.skills.map((s) => s.name)).toEqual(['Base']);
 
     // The template changes: a second skill is added.
-    await agents(asOwner, teamId)({ agentId: template.id }).skills.put({
+    await agents(
+      asOwner,
+      teamId,
+    )({ agentId: template.id }).skills.put({
       skillIds: [skillA.id, skillB.id],
     });
 
@@ -124,7 +130,10 @@ describe('template sync end to end', () => {
       await skillsRoute(asOwner, teamId).post({ source: 'inline', markdown: skillMd('Base') })
     ).data!;
     const skillB = (
-      await skillsRoute(asOwner, teamId).post({ source: 'inline', markdown: skillMd('TemplateOnly') })
+      await skillsRoute(asOwner, teamId).post({
+        source: 'inline',
+        markdown: skillMd('TemplateOnly'),
+      })
     ).data!;
     const skillC = (
       await skillsRoute(asOwner, teamId).post({ source: 'inline', markdown: skillMd('CopyOnly') })
@@ -144,7 +153,10 @@ describe('template sync end to end', () => {
     ).data!.agent;
 
     // The owner edits the copy's own skills directly (a deliberate divergence).
-    await agents(asOwner, teamId)({ agentId: copy.id }).skills.put({
+    await agents(
+      asOwner,
+      teamId,
+    )({ agentId: copy.id }).skills.put({
       skillIds: [skillA.id, skillC.id],
     });
     const copyAfterEdit = await getAgentById(copy.id, teamId);
@@ -152,7 +164,10 @@ describe('template sync end to end', () => {
 
     // The template changes its own skills. The sync runs, but this copy's 'skills'
     // group is overridden, so it is left alone.
-    await agents(asOwner, teamId)({ agentId: template.id }).skills.put({
+    await agents(
+      asOwner,
+      teamId,
+    )({ agentId: template.id }).skills.put({
       skillIds: [skillA.id, skillB.id],
     });
     const copyStillDiverged = await getAgentById(copy.id, teamId);
@@ -162,9 +177,10 @@ describe('template sync end to end', () => {
 
     // "Auf Vorlage zurücksetzen": the override is dropped and the template's current
     // skills are applied right away.
-    const resetRes = await agents(asOwner, teamId)({ agentId: copy.id })['reset-to-template'].post(
-      { group: 'skills' },
-    );
+    const resetRes = await agents(
+      asOwner,
+      teamId,
+    )({ agentId: copy.id })['reset-to-template'].post({ group: 'skills' });
     expect(resetRes.status).toBe(200);
     const copyAfterReset = await getAgentById(copy.id, teamId);
     expect(copyAfterReset!.templateOverrides).toEqual([]);
