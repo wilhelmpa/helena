@@ -39,6 +39,39 @@ export default [
       ],
     },
   },
+  // The sidebar is the reference for every surface in the app
+  // (docs/volition-design-helena-ui.md): a page never invents its own color or size.
+  // `src/components/ui` and `src/components/common` are the building blocks that
+  // *define* the tokens and the handful of deliberate pixel values the design calls
+  // for (PageBody's 720/1080 content widths, for example); everything built out of
+  // them — every feature and every route — uses only the tokens.
+  {
+    files: ['src/features/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}'],
+    ignores: ['src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "Literal[value=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/], TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(/]",
+          message:
+            'No raw hex/rgb() colors here — use a token (bg-accent, text-muted-foreground, --status-*, --brand, …). See docs/volition-design-helena-ui.md.',
+        },
+        {
+          selector:
+            'Literal[value=/\\b(?:bg|text|border|ring|fill|stroke|from|via|to|divide|outline|accent|caret|decoration|shadow|placeholder)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-[0-9]{2,3}\\b/], TemplateElement[value.raw=/\\b(?:bg|text|border|ring|fill|stroke|from|via|to|divide|outline|accent|caret|decoration|shadow|placeholder)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-[0-9]{2,3}\\b/]',
+          message:
+            'No raw Tailwind palette classes here (bg-blue-500, text-gray-400, …) — use a token instead. See docs/volition-design-helena-ui.md.',
+        },
+        {
+          selector:
+            "Literal[value=/-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/], TemplateElement[value.raw=/-\\[[0-9]+(?:\\.[0-9]+)?(?:px|r?em)\\]/]",
+          message:
+            'No arbitrary Tailwind sizes here (text-[13px], h-[37px], …) — that scale lives in components/ui and components/common only. See docs/volition-design-helena-ui.md.',
+        },
+      ],
+    },
+  },
   ...namespaces.map((namespace) => ({
     files: [`messages/*/${namespace}`],
     plugins: { 'i18n-json': i18nJson },

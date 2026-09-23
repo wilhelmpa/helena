@@ -10,6 +10,8 @@
   "back": "返回",
   "save": "保存",
   "saving": "正在保存…",
+  "unsavedChanges": "未保存的更改",
+  "discard": "放弃",
   "close": "关闭",
   "reload": "重新加载",
   "name": "名称",

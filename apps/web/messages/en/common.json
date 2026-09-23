@@ -10,6 +10,8 @@
   "back": "Back",
   "save": "Save",
   "saving": "Saving…",
+  "unsavedChanges": "Unsaved changes",
+  "discard": "Discard",
   "close": "Close",
   "reload": "Reload",
   "name": "Name",

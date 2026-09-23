@@ -32,6 +32,23 @@
   --color-success: var(--success);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-subtle: var(--brand-subtle);
+  /* The agent/approval/run status hues (docs/volition-design-helena-ui.md "Grundlagen"):
+     one set of tokens, used everywhere a status shows as a badge, a dot or a card
+     border — never a raw Tailwind color in a feature. `status-running` is the brand
+     hue, so a working agent reads as "this app is doing something", not as an error;
+     the others reuse the existing warning/success/destructive hues so there is only
+     ever one amber, one green and one red in the app. */
+  --color-status-running: var(--status-running);
+  --color-status-running-foreground: var(--status-running-foreground);
+  --color-status-waiting: var(--status-waiting);
+  --color-status-waiting-foreground: var(--status-waiting-foreground);
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-foreground: var(--status-danger-foreground);
+  --color-status-idle: var(--status-idle);
+  --color-status-idle-foreground: var(--status-idle-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -105,10 +122,28 @@
   --accent-foreground: oklch(0.26 0.01 65);
   --brand: oklch(0.5 0.085 215);
   --brand-foreground: oklch(0.985 0.004 85);
+  /* A quiet tint of --brand for a resting state that still reads as "selected" or
+     "active" — the active nav row, a selected chip — without the full-strength accent
+     a primary action gets. */
+  --brand-subtle: oklch(0.93 0.025 215);
   --destructive: oklch(0.53 0.17 27);
   --destructive-foreground: oklch(0.99 0 0);
   --warning: oklch(0.55 0.12 70);
   --success: oklch(0.52 0.11 155);
+  /* Status tokens: running reuses --brand (an agent at work is the one status that is
+     also the app's own accent); waiting/success/danger reuse warning/success/destructive
+     so a badge and an alert never disagree on what "amber" means; idle is a plain
+     neutral, quieter than muted-foreground so it recedes next to the others. */
+  --status-running: var(--brand);
+  --status-running-foreground: var(--brand-foreground);
+  --status-waiting: var(--warning);
+  --status-waiting-foreground: oklch(0.99 0 0);
+  --status-success: var(--success);
+  --status-success-foreground: oklch(0.99 0 0);
+  --status-danger: var(--destructive);
+  --status-danger-foreground: var(--destructive-foreground);
+  --status-idle: oklch(0.65 0.01 75);
+  --status-idle-foreground: oklch(0.99 0 0);
   --border: oklch(0.915 0.006 80);
   --input: oklch(0.87 0.008 75);
   --ring: oklch(0.5 0.085 215);
@@ -169,10 +204,21 @@
   --accent-foreground: oklch(0.935 0.007 80);
   --brand: oklch(0.75 0.09 210);
   --brand-foreground: oklch(0.2 0.02 215);
+  --brand-subtle: oklch(0.32 0.045 215);
   --destructive: oklch(0.7 0.15 25);
   --destructive-foreground: oklch(0.2 0.02 25);
   --warning: oklch(0.8 0.12 78);
   --success: oklch(0.76 0.12 155);
+  --status-running: var(--brand);
+  --status-running-foreground: var(--brand-foreground);
+  --status-waiting: var(--warning);
+  --status-waiting-foreground: oklch(0.2 0.02 78);
+  --status-success: var(--success);
+  --status-success-foreground: oklch(0.15 0.02 155);
+  --status-danger: var(--destructive);
+  --status-danger-foreground: var(--destructive-foreground);
+  --status-idle: oklch(0.55 0.012 75);
+  --status-idle-foreground: oklch(0.96 0.006 80);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.75 0.09 210);
@@ -250,7 +296,7 @@
 }
 
 /* The rules from here to the scrollbar tune the generated primitives to the
-   Volition look from the outside, for the same reason as the shadows above. */
+   Helena look from the outside, for the same reason as the shadows above. */
 [data-slot='dropdown-menu-content'],
 [data-slot='dropdown-menu-sub-content'],
 [data-slot='context-menu-content'],

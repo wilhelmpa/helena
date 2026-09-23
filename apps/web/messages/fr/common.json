@@ -10,6 +10,8 @@
   "back": "Retour",
   "save": "Enregistrer",
   "saving": "Enregistrement…",
+  "unsavedChanges": "Modifications non enregistrées",
+  "discard": "Ignorer",
   "close": "Fermer",
   "reload": "Recharger",
   "name": "Nom",

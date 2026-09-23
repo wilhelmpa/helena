@@ -10,6 +10,8 @@
   "back": "Atrás",
   "save": "Guardar",
   "saving": "Guardando…",
+  "unsavedChanges": "Cambios sin guardar",
+  "discard": "Descartar",
   "close": "Cerrar",
   "reload": "Volver a cargar",
   "name": "Nombre",

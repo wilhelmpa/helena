@@ -10,6 +10,8 @@
   "back": "Zurück",
   "save": "Speichern",
   "saving": "Wird gespeichert…",
+  "unsavedChanges": "Nicht gespeicherte Änderungen",
+  "discard": "Verwerfen",
   "close": "Schließen",
   "reload": "Neu laden",
   "name": "Name",
