@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import pwd
+import sqlite3
 import subprocess
 import time
 
@@ -90,6 +91,20 @@ def run_browser_proofs(report, sh, root: str, state: dict) -> None:
         answer = cdp('set', 'vpt_login', 'proof-session-4242')
         report.add('7', 'login cookie set while the browser ran as the runner user', answer.get('ok') is True,
                    json.dumps(answer))
+        # Chromium writes its cookie store every 30 seconds; the proof waits until the login
+        # is on disk, where a real one would long have been.
+        stored = 0
+        database = f'{browser_root}/{SLUG}/profile/Default/Cookies'
+        for _ in range(40):
+            try:
+                with sqlite3.connect(f'file:{database}?mode=ro', uri=True) as connection:
+                    stored = connection.execute("select count(*) from cookies where name = 'vpt_login'").fetchone()[0]
+            except sqlite3.Error:
+                stored = 0
+            if stored:
+                break
+            time.sleep(2)
+        report.add('7', 'the login is in the profile on disk', stored == 1, f'{stored} cookie row(s)')
     finally:
         stop()
     migrate = sh('/usr/bin/python3', '-I', f'{iso}/migrate.py', 'apply', '--config', f'{iso}/launcher.json',
