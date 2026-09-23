@@ -26,6 +26,9 @@ export interface Run {
   // The folder of the issue's area below `cwd`, where the run starts. Absent on a server
   // that predates area folders.
   workdir?: string | null;
+  // The coding agent session to resume, when the runner that held this run before died
+  // mid run and reported one. Absent on a server that predates run resume.
+  sessionId?: string | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -39,6 +42,8 @@ export interface ChatMessage {
   sessionId: string | null;
   model: string | null;
   thinkingLevel: string | null;
+  // Absolute paths of the images attached to the question. Older servers send none.
+  images?: string[];
 }
 
 // A follow-up turn in the session of a finished run, in which the agent keeps what the run
@@ -172,6 +177,14 @@ export class Client {
     await this.post(`/agent-runs/${runId}/release${claimQuery(claim)}`);
   }
 
+  // Saves this run's coding agent session as soon as it is known, not only with the
+  // final result: a crash before the result still leaves a session the next claim can
+  // resume. Best effort -- a stale claim (the run was claimed again) is not fatal, so
+  // the runner keeps working and swallows the refusal itself.
+  async reportSession(runId: number, claim: number | undefined, sessionId: string): Promise<void> {
+    await this.post(`/agent-runs/${runId}/session${claimQuery(claim)}`, { sessionId });
+  }
+
   // `usage` is what the run read and wrote: its totals where the command reports them
   // (Hermes), otherwise its last model call. Left out where the command reported
   // nothing about it, which stores the run without counts.
@@ -234,6 +247,7 @@ export class Client {
       error?: string;
       usage?: ContextUsage | null;
       sessionLost?: boolean;
+      model?: string;
     },
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);

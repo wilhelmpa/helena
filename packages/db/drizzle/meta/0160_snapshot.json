@@ -1,5 +1,5 @@
 {
-  "id": "730eb6af-3ff7-4685-ac7c-00ac5bd7a70b",
+  "id": "8afabb78-fee6-4d62-81c9-5c8991e8cd4b",
   "prevId": "f1423f1c-1275-4ac4-b7ae-79344f5f8993",
   "version": "7",
   "dialect": "postgresql",
@@ -1316,12 +1316,48 @@
           "primaryKey": false,
           "notNull": true
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "content": {
           "name": "content",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "default": "''"
+        },
+        "attachments": {
+          "name": "attachments",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "status": {
           "name": "status",
@@ -1392,6 +1428,21 @@
           "method": "btree",
           "with": {}
         },
+        "agent_chat_message_parent_idx": {
+          "name": "agent_chat_message_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "agent_chat_message_due_idx": {
           "name": "agent_chat_message_due_idx",
           "columns": [
@@ -1435,6 +1486,19 @@
           "tableTo": "ai_agent",
           "columnsFrom": [
             "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_chat_message_parent_id_agent_chat_message_id_fk": {
+          "name": "agent_chat_message_parent_id_agent_chat_message_id_fk",
+          "tableFrom": "agent_chat_message",
+          "tableTo": "agent_chat_message",
+          "columnsFrom": [
+            "parent_id"
           ],
           "columnsTo": [
             "id"
@@ -1504,6 +1568,36 @@
           "primaryKey": false,
           "notNull": false
         },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issue_id": {
+          "name": "issue_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active_message_id": {
+          "name": "active_message_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1546,6 +1640,42 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "agent_chat_thread_user_idx": {
+          "name": "agent_chat_thread_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_chat_thread_issue_idx": {
+          "name": "agent_chat_thread_issue_idx",
+          "columns": [
+            {
+              "expression": "issue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1573,6 +1703,32 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_chat_thread_project_id_project_id_fk": {
+          "name": "agent_chat_thread_project_id_project_id_fk",
+          "tableFrom": "agent_chat_thread",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_chat_thread_issue_id_issue_id_fk": {
+          "name": "agent_chat_thread_issue_id_issue_id_fk",
+          "tableFrom": "agent_chat_thread",
+          "tableTo": "issue",
+          "columnsFrom": [
+            "issue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -2799,6 +2955,13 @@
           "notNull": true,
           "default": 120
         },
+        "max_concurrent_chats": {
+          "name": "max_concurrent_chats",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
         "api_key_ciphertext": {
           "name": "api_key_ciphertext",
           "type": "text",
@@ -3024,6 +3187,10 @@
         "ai_agent_delegation_delay_check": {
           "name": "ai_agent_delegation_delay_check",
           "value": "\"ai_agent\".\"delegation_delay_sec\" >= 0 AND \"ai_agent\".\"delegation_delay_sec\" <= 86400"
+        },
+        "ai_agent_max_concurrent_chats_check": {
+          "name": "ai_agent_max_concurrent_chats_check",
+          "value": "\"ai_agent\".\"max_concurrent_chats\" >= 1 AND \"ai_agent\".\"max_concurrent_chats\" <= 20"
         }
       },
       "isRLSEnabled": false
@@ -3497,6 +3664,124 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.chat_prompt": {
+      "name": "chat_prompt",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "command": {
+          "name": "command",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "chat_prompt_user_scope_command_uq": {
+          "name": "chat_prompt_user_scope_command_uq",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"project_id\", 0)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "command",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "chat_prompt_user_id_user_id_fk": {
+          "name": "chat_prompt_user_id_user_id_fk",
+          "tableFrom": "chat_prompt",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "chat_prompt_project_id_project_id_fk": {
+          "name": "chat_prompt_project_id_project_id_fk",
+          "tableFrom": "chat_prompt",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -11138,13 +11423,6 @@
           "notNull": true,
           "default": "'panel'"
         },
-        "header_layout": {
-          "name": "header_layout",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'single'"
-        },
         "start_page": {
           "name": "start_page",
           "type": "text",
@@ -11260,10 +11538,6 @@
         "user_preference_issue_open_mode_check": {
           "name": "user_preference_issue_open_mode_check",
           "value": "\"user_preference\".\"issue_open_mode\" IN ('panel', 'page')"
-        },
-        "user_preference_header_layout_check": {
-          "name": "user_preference_header_layout_check",
-          "value": "\"user_preference\".\"header_layout\" IN ('single', 'classic')"
         },
         "user_preference_start_page_check": {
           "name": "user_preference_start_page_check",

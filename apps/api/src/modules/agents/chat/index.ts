@@ -1,7 +1,10 @@
 import { Elysia, t } from 'elysia';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { authContext } from '#shared/auth-context';
-import { guards } from '#shared/guards';
+import { entityGuard, guards } from '#shared/guards';
+import { paginate } from '#shared/pagination';
+import { getIssueProjectId } from '#modules/issues/service';
+import { getProjectByKey } from '#modules/projects/service';
 import { requireUser, type TeamMembership } from '#shared/access';
 import { noContent, sseFrame, sseResponse } from '#shared/http';
 import { HttpError } from '#shared/lib';
@@ -11,8 +14,17 @@ import { runnerAuth } from '../runner-auth';
 import {
   ChatAckResponse,
   ChatEventsResponse,
+  ChatListResponse,
+  ChatSummaryResponse,
+  chatListQuery,
+  chatParams,
+  deleteChatQuery,
+  issueChatParams,
+  showVersionBody,
+  updateChatBody,
   ChatCatalogResponse,
   ClaimChatResponse,
+  RetryChatResponse,
   SendChatResponse,
   agentParams,
   projectAgentParams,
@@ -22,6 +34,7 @@ import {
   chatMessageParams,
   teamChatMessageParams,
   chatResultBody,
+  retryChatBody,
   runnerMessageParams,
   sendChatBody,
   type AgUiEventBody,
@@ -38,7 +51,19 @@ import {
   readChatCatalog,
   sendMessage,
   publishChatCatalog,
+  retryMessage,
+  showVersion,
 } from './service';
+import {
+  getChat,
+  listChats,
+  purgeChat,
+  restoreChat,
+  setChatPinned,
+  trashChat,
+  updateChat,
+} from './threads';
+import { resolveAttachments } from './attachments';
 
 // Chatting with an external agent: the member's side (send a message, follow the
 // answer) and the runner's side (take the next answer to produce, report AG-UI events,
@@ -116,6 +141,184 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .use(authContext)
   .use(guards)
   .use(runnerAuth)
+  .macro({
+    chatIssue: entityGuard('work_items', 'Issue not found', (p) =>
+      getIssueProjectId(Number(p.issueId)),
+    ),
+  })
+
+  // The caller's chats across the agents. Every chat is its member's own, so these
+  // routes read and change only the caller's rows.
+  .get(
+    '/chats',
+    async ({ query, user }) => {
+      const caller = requireUser(user);
+      const project = query.projectKey ? await getProjectByKey(query.projectKey) : null;
+      if (query.projectKey && !project) throw new HttpError(404, 'Project not found');
+      return paginate(query, (window) =>
+        listChats(
+          caller.id,
+          {
+            projectId: project?.id,
+            agentId: query.agentId,
+            q: query.q,
+            view: query.view,
+          },
+          window,
+        ),
+      );
+    },
+    {
+      query: chatListQuery,
+      response: { 200: ChatListResponse, ...commonErrors },
+      detail: {
+        summary: 'List chats',
+        description:
+          "The caller's chats with every agent, pinned ones first, then the newest. A search " +
+          'ranks a title hit first.',
+      },
+    },
+  )
+
+  .get(
+    '/chats/:threadId',
+    async ({ params, user }) => {
+      const chat = await getChat(params.threadId, requireUser(user).id);
+      if (!chat) throw new HttpError(404, 'Chat not found');
+      return chat;
+    },
+    {
+      params: chatParams,
+      response: { 200: ChatSummaryResponse, ...commonErrors },
+      detail: { summary: 'Get a chat' },
+    },
+  )
+
+  .patch(
+    '/chats/:threadId',
+    async ({ params, body, user }) => {
+      if (!(await updateChat(params.threadId, requireUser(user), body))) {
+        throw new HttpError(404, 'Chat not found');
+      }
+      return noContent();
+    },
+    {
+      params: chatParams,
+      body: updateChatBody,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: {
+        summary: 'Update a chat',
+        description: 'Rename a chat, archive it or take it out of the archive, or link a task.',
+      },
+    },
+  )
+
+  .put(
+    '/chats/:threadId/pin',
+    async ({ params, user }) => {
+      if (!(await setChatPinned(params.threadId, requireUser(user).id, true))) {
+        throw new HttpError(404, 'Chat not found');
+      }
+      return noContent();
+    },
+    {
+      params: chatParams,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Pin a chat' },
+    },
+  )
+
+  .delete(
+    '/chats/:threadId/pin',
+    async ({ params, user }) => {
+      if (!(await setChatPinned(params.threadId, requireUser(user).id, false))) {
+        throw new HttpError(404, 'Chat not found');
+      }
+      return noContent();
+    },
+    {
+      params: chatParams,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Unpin a chat' },
+    },
+  )
+
+  .delete(
+    '/chats/:threadId',
+    async ({ params, query, user }) => {
+      const caller = requireUser(user);
+      const done = query.permanent
+        ? await purgeChat(params.threadId, caller.id)
+        : await trashChat(params.threadId, caller.id);
+      if (!done) throw new HttpError(404, 'Chat not found');
+      return noContent();
+    },
+    {
+      params: chatParams,
+      query: deleteChatQuery,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: {
+        summary: 'Delete a chat',
+        description:
+          'Move a chat to the trash, where it can be restored. With permanent, delete a chat ' +
+          'that is in the trash for good.',
+      },
+    },
+  )
+
+  .post(
+    '/chats/:threadId/restore',
+    async ({ params, user }) => {
+      if (!(await restoreChat(params.threadId, requireUser(user).id))) {
+        throw new HttpError(404, 'Chat not found');
+      }
+      return noContent();
+    },
+    {
+      params: chatParams,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: { summary: 'Restore a deleted chat' },
+    },
+  )
+
+  .put(
+    '/chats/:threadId/active',
+    async ({ params, body, user }) => {
+      if (!(await showVersion(params.threadId, requireUser(user).id, body.messageId))) {
+        throw new HttpError(404, 'Chat not found');
+      }
+      return noContent();
+    },
+    {
+      params: chatParams,
+      body: showVersionBody,
+      response: { 204: t.Void(), ...commonErrors },
+      detail: {
+        summary: 'Show another version of a message',
+        description:
+          'Show a version of an edited question or a regenerated answer, with the newest ' +
+          'conversation that continued from it.',
+      },
+    },
+  )
+
+  .get(
+    '/issues/:issueId/chats',
+    async ({ params, user }) =>
+      (
+        await listChats(
+          requireUser(user).id,
+          { issueId: params.issueId, view: 'any' },
+          { limit: 100, offset: 0 },
+        )
+      ).items.filter((chat) => chat.deletedAt == null),
+    {
+      params: issueChatParams,
+      chatIssue: 'read',
+      response: { 200: t.Array(ChatSummaryResponse), ...commonErrors },
+      detail: { summary: "List the caller's chats linked to a task" },
+    },
+  )
 
   // Global Home chat. It is team-scoped because a fresh installation intentionally
   // has no project yet; the transcript itself is already keyed by agent and member.
@@ -131,10 +334,14 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       const sent = await sendMessage({
         agentId: params.agentId,
         userId: caller.id,
+        projectId: null,
         prompt: body.prompt,
         threadId: body.threadId,
+        parentId: body.parentId,
+        attachments: await resolveAttachments(caller, body.attachments ?? {}),
         model: body.model,
         thinkingLevel: body.thinkingLevel,
+        maxConcurrentChats: agent.maxConcurrentChats,
       });
       if (!sent) throw new HttpError(404, 'Thread not found');
       return sent;
@@ -145,6 +352,35 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       teamPermission: ['ai_agents', 'read'],
       response: { 200: SendChatResponse, ...commonErrors, ...errors(409, 429) },
       detail: { summary: 'Send a global Home chat message' },
+    },
+  )
+
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/chat/retry',
+    async ({ params, membership, body, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireTeamExternalAgent(params.agentId, membership);
+      if (agent.template) throw new HttpError(400, 'A template does not run');
+      if (!isTriggerableBy(agent, caller.id)) {
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      }
+      const retried = await retryMessage({
+        agentId: params.agentId,
+        userId: caller.id,
+        projectId: null,
+        threadId: body.threadId,
+        questionId: body.questionId,
+        maxConcurrentChats: agent.maxConcurrentChats,
+      });
+      if (!retried) throw new HttpError(404, 'Thread not found');
+      return retried;
+    },
+    {
+      body: retryChatBody,
+      params: agentParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: RetryChatResponse, ...commonErrors, ...errors(409, 429) },
+      detail: { summary: 'Answer a global Home chat question again' },
     },
   )
 
@@ -238,10 +474,14 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       const sent = await sendMessage({
         agentId: params.agentId,
         userId: caller.id,
+        projectId: project.id,
         prompt: body.prompt,
         threadId: body.threadId,
+        parentId: body.parentId,
+        attachments: await resolveAttachments(caller, body.attachments ?? {}),
         model: body.model,
         thinkingLevel: body.thinkingLevel,
+        maxConcurrentChats: agent.maxConcurrentChats,
       });
       if (!sent) throw new HttpError(404, 'Thread not found');
       return sent;
@@ -257,6 +497,39 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
           "Queue a message for an external agent's runner and return the answer it will " +
           'produce. Follow the answer with the stream endpoint. A paused agent takes no ' +
           'message (409).',
+      },
+    },
+  )
+
+  .post(
+    '/projects/:projectKey/ai-agents/:agentId/chat/retry',
+    async ({ params, project, body, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireExternalAgent(params.agentId, project.id);
+      if (!isTriggerableBy(agent, caller.id)) {
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      }
+      const retried = await retryMessage({
+        agentId: params.agentId,
+        userId: caller.id,
+        projectId: project.id,
+        threadId: body.threadId,
+        questionId: body.questionId,
+        maxConcurrentChats: agent.maxConcurrentChats,
+      });
+      if (!retried) throw new HttpError(404, 'Thread not found');
+      return retried;
+    },
+    {
+      body: retryChatBody,
+      params: projectAgentParams,
+      permission: ['ai_agents', 'read'],
+      response: { 200: RetryChatResponse, ...commonErrors, ...errors(409, 429) },
+      detail: {
+        summary: 'Answer a chat question again',
+        description:
+          'Queue another answer to a question of the thread. The answers of a question are ' +
+          'its versions; the new one becomes the one the thread shows.',
       },
     },
   )

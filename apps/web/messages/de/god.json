@@ -160,7 +160,11 @@
     "saved": "Projektvorgaben gespeichert",
     "projectDefaults": "Projektvorgaben",
     "mcpEnabled": "MCP für neue Projekte aktivieren",
-    "mcpEnabledHint": "Ein neues Projekt ist ab seiner Erstellung über den MCP-Zugang seines Teams erreichbar."
+    "mcpEnabledHint": "Ein neues Projekt ist ab seiner Erstellung über den MCP-Zugang seines Teams erreichbar.",
+    "runResume": "Run-Fortsetzung",
+    "maxResumes": "Fortsetzungslimit",
+    "maxResumesHint": "Wie oft ein Run seine Coding-Agent-Sitzung fortsetzen darf, nachdem der Runner, der ihn hielt, mitten im Lauf gestorben ist, bevor er von selbst aufhört und dich bittet, ihn dir anzusehen. 0 schaltet das Fortsetzen aus: ein unterbrochener Run wird stattdessen frisch erneut versucht.",
+    "savedRunResume": "Fortsetzungslimit gespeichert"
   },
   "authentication": {
     "saved": "Authentifizierungseinstellungen gespeichert",
@@ -337,10 +341,13 @@
     "janitor": {
       "run-janitor": "Lauf-Aufräumdienst",
       "stage-janitor": "Stufen-Aufräumdienst",
-      "workflow-schedules": "Zeitplan-Abgleich"
+      "workflow-schedules": "Zeitplan-Abgleich",
+      "resume-janitor": "Fortsetzungs-Aufräumdienst"
     },
     "janitorRan": "lief vor {time}",
     "janitorCleaned": "{count, plural, one {# Eintrag aufgeräumt} other {# Einträge aufgeräumt}}",
-    "janitorNeverRan": "noch nicht gelaufen"
+    "janitorNeverRan": "noch nicht gelaufen",
+    "resuming": "{count, plural, one {# Run wird} other {# Runs werden}} nach einem Absturz fortgesetzt",
+    "needsResumeReview": "{count, plural, one {# Run hat} other {# Runs haben}} das Fortsetzungslimit erreicht und brauchen einen Blick"
   }
 }

@@ -3,7 +3,7 @@ import { intEnv } from '#shared/lib';
 import { JANITOR_JOBS } from '#modules/god/system-health';
 import { agentRunConfig } from '#modules/agents/core/run-queue';
 import { processAgentRuns } from '#modules/agents/core/run-poller';
-import { expireExhaustedRuns } from '#modules/agents/runner/service';
+import { expireExhaustedRuns, expireResumeLimitedRuns } from '#modules/agents/runner/service';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
 import { processActionRuns } from '#modules/actions/runner';
 import { processInboxTasks } from '#modules/hub-inbox/tasks';
@@ -12,7 +12,7 @@ import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/ser
 import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { drainPendingStarts } from '#modules/pipelines/runs';
 
-const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES] = JANITOR_JOBS;
+const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR] = JANITOR_JOBS;
 
 // The api's background jobs, started by index.ts rather than assembled into the app,
 // so importing the app in a test starts nothing. Several api replicas run them without
@@ -40,6 +40,7 @@ export function startBackgroundJobs(): void {
   startLoop(WORKFLOW_SCHEDULES, syncSchedules, () =>
     intEnv('WORKFLOW_SCHEDULE_SYNC_INTERVAL_MS', 600_000),
   );
+  startLoop(RESUME_JANITOR, resumeJanitor, () => intEnv('RESUME_JANITOR_INTERVAL_MS', 60_000));
 }
 
 // Runs one janitor job and records what the health overview shows of it: how much it
@@ -79,6 +80,14 @@ export async function syncSchedules(): Promise<void> {
   const changed = await janitorJob(WORKFLOW_SCHEDULES, reconcileWorkflowSchedules);
   if (changed > 0)
     console.log(`[background] brought ${changed} workflow schedules in line with Plan`);
+}
+
+// Ends a run that kept resuming past the instance's limit: it would otherwise sit
+// pending, its lease renewing it into claimable again without ever being claimed, since
+// claimRunnerRun already refuses it.
+export async function resumeJanitor(): Promise<void> {
+  const failed = await janitorJob(RESUME_JANITOR, expireResumeLimitedRuns);
+  if (failed > 0) console.log(`[background] failed ${failed} runs that reached the resume limit`);
 }
 
 async function autoArchive(): Promise<void> {

@@ -214,6 +214,42 @@ describe('answer stream', () => {
     ]);
   });
 
+  it('reads the model Hermes names and marks a tool that failed', async () => {
+    const sink = collect();
+    const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);
+
+    stream.write(
+      [
+        JSON.stringify({ type: 'system', subtype: 'init', model: 'anthropic/claude-5' }),
+        JSON.stringify({ type: 'tool_use', name: 'terminal', tool_call_id: 't1', input: {} }),
+        JSON.stringify({
+          type: 'tool_result',
+          name: 'terminal',
+          tool_call_id: 't1',
+          output: 'permission denied',
+          is_error: true,
+        }),
+        JSON.stringify({ type: 'tool_use', name: 'read_file', tool_call_id: 't2', input: {} }),
+        JSON.stringify({
+          type: 'tool_result',
+          name: 'read_file',
+          tool_call_id: 't2',
+          output: 'ok',
+        }),
+        '',
+      ].join('\n'),
+    );
+    await stream.finish('');
+
+    expect(stream.model()).toBe('anthropic/claude-5');
+    const results = sink.events.filter((event) => event.type === 'TOOL_CALL_RESULT');
+    expect(results).toMatchObject([
+      { toolCallId: 't1', content: 'permission denied', isError: true },
+      { toolCallId: 't2', content: 'ok' },
+    ]);
+    expect(results[1]).not.toHaveProperty('isError');
+  });
+
   it("keeps Hermes' reasoning apart from the answer and in the order it came", async () => {
     const sink = collect();
     const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);

@@ -1,0 +1,110 @@
+'use client';
+
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import {
+  Archive,
+  ArchiveRestore,
+  MoreVertical,
+  NotebookPen,
+  Pin,
+  PinOff,
+  Trash2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
+import { chatPath, homeChatPath } from '@/utils/paths';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import { useChatListMutations } from '../../hooks/useChatList';
+import { useSaveChatNote } from '../../hooks/useSaveChatNote';
+import type { PlanUIMessage } from '../../utils/chatMessages';
+
+export default function ChatHeaderMenu({
+  scopeKey,
+  threadId,
+  chat,
+  messages,
+  agentName,
+}: {
+  scopeKey: string;
+  threadId: string;
+  chat: ChatSummary | undefined;
+  messages: PlanUIMessage[];
+  agentName: string;
+}) {
+  const t = useTranslations('chatWorkspace');
+  const router = useRouter();
+  const { pin, archive, trash } = useChatListMutations();
+  const saveNote = useSaveChatNote();
+  const [deleting, setDeleting] = useState(false);
+
+  if (!chat) return null;
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={t('list.moreActions')}>
+            <MoreVertical className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => pin.mutate({ threadId, pinned: !chat.pinned })}>
+            {chat.pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+            {t(chat.pinned ? 'list.unpin' : 'list.pin')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={async () => {
+              await saveNote.mutateAsync({
+                scopeKey,
+                title: chat.title || t('list.untitled'),
+                agentName: () => agentName,
+                messages,
+              });
+              toast.success(t('messages.noteSaved'));
+            }}
+          >
+            <NotebookPen className="size-4" /> {t('messages.saveAsNote')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => archive.mutate({ threadId, archived: chat.archivedAt == null })}
+          >
+            {chat.archivedAt != null ? (
+              <ArchiveRestore className="size-4" />
+            ) : (
+              <Archive className="size-4" />
+            )}
+            {t(chat.archivedAt != null ? 'list.unarchive' : 'list.archive')}
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
+            <Trash2 className="size-4" /> {t('list.delete')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {deleting && (
+        <ConfirmDialog
+          title={t('list.deleteConfirmTitle')}
+          confirmLabel={t('list.delete')}
+          onClose={() => setDeleting(false)}
+          onConfirm={async () => {
+            await trash.mutateAsync(threadId);
+            setDeleting(false);
+            router.push(chat.project ? chatPath(chat.project.key) : homeChatPath());
+          }}
+        >
+          <p className="text-sm text-muted-foreground">
+            {t('list.deleteConfirmBody', { title: chat.title || t('list.untitled') })}
+          </p>
+        </ConfirmDialog>
+      )}
+    </>
+  );
+}

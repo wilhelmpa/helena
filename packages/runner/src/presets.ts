@@ -18,6 +18,7 @@ export interface PresetTaskSettings {
   maxTurns?: number | null;
   runBudgetSeconds?: number | null;
   toolsets?: string[] | null;
+  image?: string | null;
 }
 
 export interface Preset {
@@ -143,13 +144,15 @@ export const PRESETS: Record<PresetName, Preset> = {
       '--accept-hooks',
       ...(sessionId ? ['--resume', sessionId] : []),
     ],
-    taskArgs: ({ model, thinkingLevel, provider, maxTurns, runBudgetSeconds, toolsets }) => [
+    taskArgs: ({ model, thinkingLevel, provider, maxTurns, runBudgetSeconds, toolsets, image }) => [
       ...(provider ? ['--provider', provider] : []),
       ...(model ? ['--model', model] : []),
       ...(thinkingLevel ? ['--reasoning', thinkingLevel] : []),
       ...(maxTurns ? ['--max-turns', String(maxTurns)] : []),
       ...(runBudgetSeconds ? ['--run-budget', String(runBudgetSeconds)] : []),
       ...(toolsets ? ['--toolsets', toolsets.join(',')] : []),
+      // Hermes attaches one image to a query; the others are named by path in the prompt.
+      ...(image ? ['--image', image] : []),
     ],
     tail: [],
     sessionLost: (error) => error.includes('Session not found'),

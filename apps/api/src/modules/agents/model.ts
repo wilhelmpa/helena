@@ -1,6 +1,7 @@
 import { t } from 'elysia';
 
 import type { ThreadMatch } from './chat-history';
+import type { ChatAttachment } from './chat/attachments';
 
 // Shared by every route in the domain that addresses an agent by its id. An agent
 // belongs to a team, so that is where it is addressed.
@@ -96,17 +97,32 @@ export type ChatPart =
       toolName: string;
       args?: string;
       result?: string;
+      isError?: boolean;
     };
 
 // One message of a conversation. Only user and assistant turns are returned; a tool
 // turn is folded into the parts of the turn that called it. `stopped` marks an answer
 // the member ended part-way.
+//
+// An external agent's messages also carry their place in the tree of versions
+// (`parentId`, and `siblingIds` with the message itself among them), the agent that
+// answered, the files and tasks of a question, and the model, tokens and duration of an
+// answer. `error` is why an answer failed.
 export type ChatMessageDTO = {
   id: string;
   role: 'user' | 'assistant';
   parts: ChatPart[];
   createdAt: string;
   stopped?: boolean;
+  parentId?: string | null;
+  siblingIds?: string[];
+  agentId?: number;
+  attachments?: ChatAttachment[];
+  model?: string | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  durationMs?: number | null;
+  error?: string;
 };
 
 export type ChatMessagePage = {
@@ -117,6 +133,8 @@ export type ChatMessagePage = {
   // sending the member's prompt a second time.
   activeAnswer?: {
     messageId: number;
+    // The agent producing it, which is the one its stream is read from.
+    agentId?: number;
     status: 'pending' | 'streaming';
     createdAt: string;
   };
