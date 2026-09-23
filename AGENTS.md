@@ -188,10 +188,9 @@ docker compose -f docker-compose.test.yml build
 docker compose -f docker-compose.test.yml run --rm api-test
 ```
 
-`run` starts api-test's dependencies (Postgres healthy, the MinIO bucket init
-completed), runs the suite, and exits with its code. It does not use
-`--abort-on-container-exit`, which tears the stack down the moment the one-shot
-`minio-test-init` exits, before api-test starts.
+`run` starts api-test's dependency (Postgres healthy), runs the suite, and exits
+with its code. The suite stores uploaded files in a temporary directory, so the
+gate runs no object store.
 
 The test database is created by the `postgres-test` service (`POSTGRES_DB=itsaplan_test`,
 tmpfs — nothing persists). The `test` job in `.github/workflows/ci.yml` runs these
