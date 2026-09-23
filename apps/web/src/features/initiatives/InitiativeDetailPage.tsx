@@ -37,7 +37,6 @@ export default function InitiativeDetailPage({ tab = 'overview' }: { tab?: Initi
     targets: [
       qk.initiative(initiativeId ?? 0),
       qk.initiativeAttachments(initiativeId ?? 0),
-      qk.initiativeDocumentLinks(projectKey, initiativeId ?? 0),
       qk.initiativeFeed(initiativeId ?? 0),
       qk.boardIssues(projectKey),
     ],
@@ -72,7 +71,7 @@ export default function InitiativeDetailPage({ tab = 'overview' }: { tab?: Initi
               </TabsList>
             </div>
             <TabsContent value="overview" className="mt-0 flex-1 overflow-y-auto">
-              <InitiativeOverview initiative={initiative} projectKey={projectKey} />
+              <InitiativeOverview initiative={initiative} />
             </TabsContent>
             <TabsContent value="progress" className="mt-0 flex-1 overflow-y-auto">
               <InitiativeProgress initiative={initiative} project={project} />

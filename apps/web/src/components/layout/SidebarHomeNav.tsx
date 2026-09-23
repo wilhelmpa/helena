@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import {
   Activity,
   Bot,
+  BookOpenText,
   BookText,
   Building2,
   Clock3,
@@ -23,6 +25,7 @@ import {
   SidebarMenu,
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
+import { useSession } from '@/lib/auth-client';
 import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
@@ -33,6 +36,7 @@ const icons = {
   allWorkItems: ListTodo,
   inbox: Inbox,
   approvals: ShieldCheck,
+  docs: BookOpenText,
   agentPool: Bot,
   organization: Building2,
   agentActivity: Activity,
@@ -61,7 +65,11 @@ export default function SidebarHomeNav({
   const pathname = usePathname();
   const t = useTranslations('nav');
   const { vaultEnabled } = runtimeEnv().workspace;
-  const items = homeNavigation(teamId, vaultEnabled);
+  const { data: session } = useSession();
+  // Read after mount: the server rendered without the session.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const items = homeNavigation(teamId, vaultEnabled, mounted && session?.user.role === 'god');
   const pendingApprovals =
     (usePendingApprovalCount().data?.count ?? 0) + (useWorkflowGates().data?.items.length ?? 0);
 

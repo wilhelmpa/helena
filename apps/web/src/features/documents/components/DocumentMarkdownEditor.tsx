@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import type { JSONContent } from '@tiptap/core';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
@@ -26,10 +25,12 @@ import { ResizableImage } from '@/components/common/editor/tiptap-image';
 import { MarkdownTable } from '@/components/common/editor/tiptap-table';
 import { pasteMarkdown } from '@/components/common/editor/pasteMarkdown';
 import { SlashCommand } from '@/lib/tiptap-slash-command';
+import { SoftLineBreak } from './softLineBreak';
+import { Wikilink } from './wikilinkNode';
 
 const lowlight = createLowlight(common);
-const DOCUMENT_ASSET_PATH =
-  /^\/(?:protected-media\/)?projects\/[A-Za-z0-9._~%+-]+\/documents\/[1-9]\d*\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/raw$/i;
+// The shape of vaultFileUrl(): a vault file through the web origin.
+const VAULT_FILE_URL = /^\/protected-media\/knowledge\/raw\?path=[^&#]+$/;
 
 function safeDocumentLinkHref(href: string): boolean {
   if (
@@ -70,15 +71,15 @@ type EditorLabels = {
   image?: { label: string; onPick: () => void };
 };
 
-type EditorValue = { markdown: string; json: JSONContent };
-
 export function documentEditorExtensions(labels: EditorLabels) {
   return [
     StarterKit.configure({
       codeBlock: false,
       link: false,
+      hardBreak: false,
       heading: { levels: [1, 2, 3, 4, 5, 6] },
     }),
+    SoftLineBreak,
     CodeBlockLowlight.configure({ lowlight }),
     Placeholder.configure({ placeholder: labels.placeholder }),
     Link.configure({
@@ -97,6 +98,7 @@ export function documentEditorExtensions(labels: EditorLabels) {
     Color,
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
+    Wikilink,
     SlashCommand.configure({
       codeBlockLabel: labels.codeBlockLabel,
       tableLabel: labels.tableLabel,
@@ -107,30 +109,28 @@ export function documentEditorExtensions(labels: EditorLabels) {
   ];
 }
 
-function editorValue(editor: Editor): EditorValue {
-  return { markdown: editor.storage.markdown.getMarkdown(), json: editor.getJSON() };
-}
+const markdownOf = (editor: Editor) => editor.storage.markdown.getMarkdown();
 
 export default function DocumentMarkdownEditor({
   defaultValue,
-  defaultJson,
   editable,
   placeholder,
   className,
   onReady,
   onChange,
   onBlur,
+  onOpenWikilink,
   onPickImage,
   onUploadImage,
 }: {
   defaultValue: string;
-  defaultJson: Record<string, unknown> | null;
   editable: boolean;
   placeholder: string;
   className?: string;
   onReady: (editor: Editor | null) => void;
-  onChange: (value: EditorValue) => void;
-  onBlur: (value: EditorValue) => void;
+  onChange: (markdown: string) => void;
+  onBlur: (markdown: string) => void;
+  onOpenWikilink?: (inner: string) => void;
   onPickImage?: () => void;
   onUploadImage?: (file: File) => Promise<{ url: string; filename: string }>;
 }) {
@@ -139,6 +139,8 @@ export default function DocumentMarkdownEditor({
   const linkKeyboardHandlers = useMemo(createLinkKeyboardHandlers, []);
   const editableRef = useRef(editable);
   editableRef.current = editable;
+  const openWikilinkRef = useRef(onOpenWikilink);
+  openWikilinkRef.current = onOpenWikilink;
 
   const editor = useEditor({
     editable,
@@ -164,11 +166,16 @@ export default function DocumentMarkdownEditor({
       },
       image: onPickImage ? { label: t('uploadImage'), onPick: onPickImage } : undefined,
     }),
-    content: defaultJson ?? defaultValue,
+    content: defaultValue,
     editorProps: {
       handleDOMEvents: linkKeyboardHandlers,
       handleClick(view, _pos, event) {
         return openLinkOnModifierClick(event, view.dom);
+      },
+      handleClickOn(_view, _pos, node) {
+        if (node.type.name !== 'wikilink' || !openWikilinkRef.current) return false;
+        openWikilinkRef.current(String(node.attrs.inner));
+        return true;
       },
       attributes: {
         class: 'md-content flex-1 focus:outline-none selection:bg-primary/15',
@@ -207,18 +214,21 @@ export default function DocumentMarkdownEditor({
     onCreate: ({ editor: currentEditor }) => {
       editorRef.current = currentEditor;
     },
-    onUpdate: ({ editor: currentEditor }) => onChange(editorValue(currentEditor)),
-    onBlur: ({ editor: currentEditor }) => onBlur(editorValue(currentEditor)),
+    onUpdate: ({ editor: currentEditor }) => onChange(markdownOf(currentEditor)),
+    onBlur: ({ editor: currentEditor }) => onBlur(markdownOf(currentEditor)),
     onDestroy: () => {
       editorRef.current = null;
     },
   });
 
+  // Called once per editor: the owner reads the serialized loaded note here.
+  const readyRef = useRef(onReady);
+  readyRef.current = onReady;
   useEffect(() => {
     editorRef.current = editor;
-    onReady(editor);
-    return () => onReady(null);
-  }, [editor, onReady]);
+    readyRef.current(editor);
+    return () => readyRef.current(null);
+  }, [editor]);
 
   useLayoutEffect(() => {
     syncDocumentEditorEditable(editor, editable);
@@ -267,7 +277,7 @@ export function safeDocumentImageSource(source: string): string | null {
   ) {
     return null;
   }
-  if (DOCUMENT_ASSET_PATH.test(normalized)) return normalized;
+  if (VAULT_FILE_URL.test(normalized)) return normalized;
   try {
     const url = new URL(normalized);
     if ((url.protocol === 'http:' || url.protocol === 'https:') && !url.username && !url.password) {

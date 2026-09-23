@@ -11,7 +11,11 @@ describe('internal link targets', () => {
       ['/issue/732', { kind: 'issueId', id: 732 }],
       ['/SYR-13', { kind: 'issue', projectKey: 'SYR', id: 13 }],
       ['/project/SYR/notes/18/', { kind: 'notes', projectKey: 'SYR', id: 18 }],
-      ['/project/SYR/docs/9', { kind: 'document', projectKey: 'SYR', id: 9 }],
+      [
+        '/project/SYR/docs?path=Projects%2FSYR%2FDocs%2FPlan.md',
+        { kind: 'document', path: 'Projects/SYR/Docs/Plan.md' },
+      ],
+      ['/docs?path=Home%2FDocs%2FIdeas.md', { kind: 'document', path: 'Home/Docs/Ideas.md' }],
       ['/project/SYR/view/41', { kind: 'view', projectKey: 'SYR', id: 41 }],
     ] as const;
     for (const [path, expected] of examples)
@@ -29,6 +33,8 @@ describe('internal link targets', () => {
       '/project/SYR%2Fother/notes/1',
       '/project/%E0%A4%A',
       '/project/SYR/issue/1/extra',
+      '/project/SYR/docs/9',
+      '/project/SYR/docs',
     ]) {
       assert.equal(internalLinkTarget(new URL(path, 'https://planner.test')), null, path);
     }

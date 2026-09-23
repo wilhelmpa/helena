@@ -4,6 +4,7 @@ import {
   connectionsPath,
   globalAgentActivityPath,
   globalInboxPath,
+  homeDocsPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
@@ -19,6 +20,7 @@ export type HomeNavigationId =
   | 'allWorkItems'
   | 'inbox'
   | 'approvals'
+  | 'docs'
   | 'agentPool'
   | 'organization'
   | 'agentActivity'
@@ -41,14 +43,20 @@ export interface HomeNavigationItem {
 }
 
 // The entries that need a single team to point at are left out without one. The
-// schedules read across every project, like the tasks, and need none.
-export function homeNavigation(teamId: number | null, vaultEnabled = true): HomeNavigationItem[] {
+// schedules read across every project, like the tasks, and need none. Home's Docs are
+// the instance owner's own notes.
+export function homeNavigation(
+  teamId: number | null,
+  vaultEnabled = true,
+  isOwner = false,
+): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
     { id: 'overview', group: 'work', href: '/' },
     { id: 'allWorkItems', group: 'work', href: tasksPath() },
     { id: 'inbox', group: 'work', href: globalInboxPath() },
     { id: 'approvals', group: 'work', href: approvalsPath() },
+    ...(isOwner ? [{ id: 'docs' as const, group: 'work' as const, href: homeDocsPath() }] : []),
     ...teamOnly([
       { id: 'agentPool', group: 'agents', href: agentsPath() },
       { id: 'organization', group: 'agents', href: teamOrganizationPath() },

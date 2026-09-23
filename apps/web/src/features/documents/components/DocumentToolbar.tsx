@@ -3,9 +3,6 @@
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
   Bold,
   CheckSquare2,
   Code,
@@ -24,19 +21,14 @@ import {
 import { useTranslations } from 'next-intl';
 import DocumentBlockTypeMenu from './DocumentBlockTypeMenu';
 import DocumentImageMenu from './DocumentImageMenu';
-import DocumentTextColorMenu from './DocumentTextColorMenu';
 import DocumentToolbarButton from './DocumentToolbarButton';
 
 export default function DocumentToolbar({
   editor,
-  projectKey,
-  documentId,
-  canUpload,
+  onUploadImage,
 }: {
   editor: Editor | null;
-  projectKey: string;
-  documentId: number;
-  canUpload: boolean;
+  onUploadImage: (file: File) => Promise<{ url: string; filename: string }>;
 }) {
   const t = useTranslations('documents.toolbar');
   const [, renderSelection] = useState(0);
@@ -127,27 +119,6 @@ export default function DocumentToolbar({
     },
   ];
 
-  const alignmentActions = [
-    {
-      label: t('alignLeft'),
-      active: editor.isActive({ textAlign: 'left' }),
-      icon: AlignLeft,
-      run: () => editor.chain().focus().setTextAlign('left').run(),
-    },
-    {
-      label: t('alignCenter'),
-      active: editor.isActive({ textAlign: 'center' }),
-      icon: AlignCenter,
-      run: () => editor.chain().focus().setTextAlign('center').run(),
-    },
-    {
-      label: t('alignRight'),
-      active: editor.isActive({ textAlign: 'right' }),
-      icon: AlignRight,
-      run: () => editor.chain().focus().setTextAlign('right').run(),
-    },
-  ];
-
   return (
     <div
       className="flex h-12 min-w-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-3 md:px-5 [&::-webkit-scrollbar]:hidden"
@@ -169,7 +140,6 @@ export default function DocumentToolbar({
             <action.icon />
           </DocumentToolbarButton>
         ))}
-        <DocumentTextColorMenu editor={editor} />
       </div>
 
       <div className="mx-1 flex shrink-0 items-center gap-0.5 border-s ps-2">
@@ -191,7 +161,7 @@ export default function DocumentToolbar({
         </DocumentToolbarButton>
       </div>
 
-      <div className="me-1 flex shrink-0 items-center gap-0.5 border-e pe-2">
+      <div className="flex shrink-0 items-center gap-0.5">
         <DocumentToolbarButton
           label={t('table')}
           active={editor.isActive('table')}
@@ -203,25 +173,7 @@ export default function DocumentToolbar({
         >
           <Table2 />
         </DocumentToolbarButton>
-        <DocumentImageMenu
-          editor={editor}
-          projectKey={projectKey}
-          documentId={documentId}
-          canUpload={canUpload}
-        />
-      </div>
-
-      <div className="flex shrink-0 items-center gap-0.5">
-        {alignmentActions.map((action) => (
-          <DocumentToolbarButton
-            key={action.label}
-            label={action.label}
-            active={action.active}
-            onPress={action.run}
-          >
-            <action.icon />
-          </DocumentToolbarButton>
-        ))}
+        <DocumentImageMenu editor={editor} onUpload={onUploadImage} />
       </div>
 
       <div className="ms-auto flex shrink-0 items-center gap-0.5 border-s ps-2">

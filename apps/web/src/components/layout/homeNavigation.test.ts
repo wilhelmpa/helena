@@ -40,6 +40,22 @@ describe('home sidebar navigation', () => {
     assert.ok(!ids.includes('apiDocs'));
   });
 
+  test('lists Home Docs for the instance owner only', () => {
+    const ids = (isOwner: boolean) => homeNavigation(42, true, isOwner).map((item) => item.id);
+    assert.ok(!ids(false).includes('docs'));
+    assert.deepEqual(
+      homeNavigation(42, true, true).find((item) => item.id === 'docs'),
+      { id: 'docs', group: 'work', href: '/docs' },
+    );
+    assert.deepEqual(ids(true).slice(0, 5), [
+      'overview',
+      'allWorkItems',
+      'inbox',
+      'approvals',
+      'docs',
+    ]);
+  });
+
   test('hides the vault when the runtime disables it', () => {
     assert.ok(!homeNavigation(42, false).some((item) => item.id === 'vault'));
   });

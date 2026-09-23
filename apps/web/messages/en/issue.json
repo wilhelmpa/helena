@@ -391,13 +391,11 @@
       "skipped": "Skipped"
     }
   },
-  "documents": {
-    "title": "Docs",
-    "add": "Link a Docs page",
-    "empty": "No linked Docs yet.",
-    "loadFailed": "Could not load linked Docs. Click to retry.",
-    "remove": "Unlink {title}",
-    "untitled": "Untitled"
+  "knowledge": {
+    "title": "Knowledge",
+    "create": "New note about this task",
+    "empty": "No note links this task yet. A note links it with {link}.",
+    "loadFailed": "Could not load the notes. Click to retry."
   },
   "archived": "Archived",
   "activityHeading": "Activity",
