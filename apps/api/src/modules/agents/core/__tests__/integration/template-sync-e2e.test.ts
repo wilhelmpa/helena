@@ -5,7 +5,7 @@ import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { loadProjectContext, resolveRoles } from '#modules/pipelines/project-context';
-import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
+import { bootstrapHomeAgent } from '../../../../../scripts/bootstrap-home-agent';
 import { runtimePolicySnapshot } from '../../runtime-policy/service';
 import { getAgentById } from '../service';
 
