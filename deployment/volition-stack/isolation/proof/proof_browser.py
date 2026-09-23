@@ -17,7 +17,6 @@ BASES = {'display': 250, 'cdp': 19250, 'vnc': 15950, 'noVnc': 16150}
 
 def run_browser_proofs(report, sh, root: str, state: dict) -> None:
     source = state['source']
-    repo = os.path.realpath(os.path.join(source, '..', '..', '..'))
     browser_root = f'{root}/project-browser/projects'
     iso = f'{root}/isolation'
     env = {
@@ -33,7 +32,7 @@ def run_browser_proofs(report, sh, root: str, state: dict) -> None:
     os.makedirs(f'{root}/project-browser', exist_ok=True)
     os.chown(f'{root}/project-browser', hermes.pw_uid, hermes.pw_gid)
     os.chmod(f'{root}/project-browser', 0o750)
-    script = os.path.join(repo, 'deployment/volition-stack/integration/project-browser-state.mjs')
+    script = f'{iso}/browser/project-browser-state.mjs'
     made = sh('/usr/sbin/runuser', '-u', 'vpt-hermes', '--', '/usr/local/bin/node', script, 'ensure', SLUG, '1',
               env=env, check=False)
     report.add('7', 'browser state made as the runner user', made.returncode == 0,

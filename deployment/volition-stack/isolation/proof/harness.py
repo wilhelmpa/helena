@@ -150,6 +150,10 @@ def install_tree(source: str) -> None:
     shutil.copyfile(os.path.join(source, 'proof', 'mock_model.py'), os.path.join(ISO, 'mock_model.py'))
     shutil.copyfile(os.path.join(source, 'proof', 'cdp.mjs'), os.path.join(ISO, 'cdp.mjs'))
     shutil.copyfile(os.path.join(source, '..', 'native', 'terminal', 'tmux.conf'), os.path.join(ISO, 'tmux.conf'))
+    # The browser state script with what it imports, as isolation.sh installs it.
+    os.makedirs(os.path.join(ISO, 'browser'), exist_ok=True)
+    for name in ('project-browser-state.mjs', 'project-browser.mjs', 'atomic-json.mjs', 'move-path.mjs'):
+        shutil.copyfile(os.path.join(source, '..', 'integration', name), os.path.join(ISO, 'browser', name))
     plugins = os.path.join(source, '..', 'integration', 'hermes-plugins')
     if os.path.isdir(plugins):
         shutil.rmtree(os.path.join(ISO, 'hermes-plugins'), ignore_errors=True)
