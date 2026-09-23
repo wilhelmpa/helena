@@ -1,0 +1,110 @@
+{
+  "title": "文件",
+  "projectDescription": "此项目的文档、附件和代码",
+  "roots": {
+    "label": "文件夹",
+    "vault": "知识",
+    "code": "代码",
+    "home": "主页",
+    "private": "私人",
+    "templates": "模板",
+    "projects": "项目"
+  },
+  "toolbar": {
+    "filter": "按名称筛选",
+    "sort": "排序",
+    "sortName": "名称",
+    "sortModified": "修改时间",
+    "sortSize": "大小",
+    "ascending": "升序",
+    "descending": "降序",
+    "list": "列表",
+    "grid": "网格",
+    "upload": "上传",
+    "newFolder": "新建文件夹",
+    "newFile": "新建笔记",
+    "openInCode": "在 VS Code 中打开"
+  },
+  "breadcrumb": "文件夹路径",
+  "modified": "{date, date, medium}",
+  "empty": {
+    "folder": "此文件夹为空。",
+    "folderHint": "将文件拖到此处或使用上传。",
+    "filter": "没有与“{filter}”匹配的条目。",
+    "readOnly": "Plan 以只读方式显示此文件夹。"
+  },
+  "unreadable": {
+    "title": "Plan 无法读取此文件夹",
+    "body": "此工作区属于服务器上的智能体用户。请改为在 VS Code 中打开。",
+    "missing": "服务器上不存在此文件夹。"
+  },
+  "loadError": "无法加载此文件夹。",
+  "retry": "重试",
+  "truncated": "仅显示前 {count} 个条目。",
+  "dropToUpload": "松开以上传到 {folder}",
+  "uploaded": "{count, plural, other {已上传 # 个文件}}",
+  "moved": "已移动到 {folder}",
+  "trashed": "{name} 已移到回收站",
+  "pathCopied": "路径已复制",
+  "actions": {
+    "more": "{name} 的操作",
+    "download": "下载",
+    "rename": "重命名",
+    "move": "移动",
+    "copyPath": "复制路径",
+    "openInObsidian": "在 Obsidian 中打开",
+    "openInCode": "在 VS Code 中打开",
+    "openInDocs": "在文档中打开",
+    "linkToTask": "关联到任务",
+    "trash": "移到回收站",
+    "showInFolder": "在文件夹中显示"
+  },
+  "dialog": {
+    "newFolder": "新建文件夹",
+    "newFile": "新建笔记",
+    "rename": "重命名",
+    "name": "名称",
+    "folderName": "新建文件夹",
+    "fileName": "笔记.md",
+    "fileHint": ".md 或 .txt 文件。Markdown 笔记会在文档中打开。",
+    "create": "创建",
+    "save": "保存",
+    "cancel": "取消"
+  },
+  "moveDialog": {
+    "title": "移动 {name}",
+    "description": "打开要移动到的文件夹。",
+    "here": "移动到此处"
+  },
+  "trashDialog": {
+    "title": "将 {name} 移到回收站？",
+    "description": "它会被移到知识库的回收站文件夹，可以从那里恢复。",
+    "confirm": "移到回收站"
+  },
+  "linkDialog": {
+    "title": "关联到任务",
+    "prompt": "搜索任务",
+    "linked": "已关联到 {identifier}"
+  },
+  "viewer": {
+    "loading": "加载中…",
+    "tooLarge": "文件太大，无法在此显示。请下载。",
+    "error": "无法显示此文件。",
+    "noPreview": "此类文件没有预览。",
+    "extracted": "提取的文本",
+    "noExtracted": "此文件尚无可用的提取文本。",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "zoomReset": "适应"
+  },
+  "picker": {
+    "up": "上一级文件夹",
+    "empty": "这里什么都没有。",
+    "choose": "选择"
+  },
+  "attachment": {
+    "missing": "文件缺失",
+    "relink": "重新选择文件",
+    "relinkTitle": "为 {name} 选择文件"
+  }
+}

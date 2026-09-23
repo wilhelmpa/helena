@@ -116,6 +116,7 @@ beforeEach(async () => {
       inboxUrl: '',
       connectionsUrl: '',
       vaultEnabled: true,
+      obsidianVault: 'Volition',
     },
   };
   Object.defineProperties(globalThis, {

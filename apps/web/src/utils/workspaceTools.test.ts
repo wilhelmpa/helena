@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { WorkspaceRuntimeEnv } from './runtimeEnv';
 import {
+  codeFolderUrl,
   nativeChatProjectKey,
   preferredAgentUsername,
   workspaceFrameOrigins,
@@ -17,6 +18,7 @@ const config: WorkspaceRuntimeEnv = {
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
   vaultEnabled: true,
+  obsidianVault: 'Volition',
 };
 
 describe('workspaceTools', () => {
@@ -140,5 +142,19 @@ describe('workspaceTools', () => {
     const unsafe = { ...config, browserUrl: 'javascript:alert(1)' };
     assert.equal(workspaceTools(unsafe, null).browser.url, '');
     assert.ok(!workspaceFrameOrigins(unsafe).includes('null'));
+  });
+});
+
+describe('codeFolderUrl', () => {
+  it('opens code-server on an absolute folder of the server', () => {
+    assert.equal(
+      codeFolderUrl(config, '/srv/volition/vault/Projects/VOL'),
+      'https://plan.example.com/workspace/code/?folder=%2Fsrv%2Fvolition%2Fvault%2FProjects%2FVOL',
+    );
+  });
+
+  it('offers nothing without a code-server or for a relative folder', () => {
+    assert.equal(codeFolderUrl({ ...config, codeUrl: '' }, '/srv/volition/vault'), '');
+    assert.equal(codeFolderUrl(config, 'Projects/VOL'), '');
   });
 });

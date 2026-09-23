@@ -12,7 +12,12 @@ import {
 import { baseName } from '../../utils/filename';
 import IssueImageAnnotator from '../IssueImageAnnotator';
 import IssueAttachmentCard from './IssueAttachmentCard';
-import AttachmentViewer from '@/components/common/attachments/AttachmentViewer';
+import FileViewer from '@/components/common/files/FileViewer';
+import { attachmentViewUrl } from '@/lib/api/endpoints/attachments';
+import { isImage, isVideo } from '@/components/common/editor/attachmentEmbed';
+import { vaultProjectKey } from '@/utils/vaultLinks';
+import IssueAttachmentRelinkDialog from './IssueAttachmentRelinkDialog';
+import IssueAttachmentViewerActions from './IssueAttachmentViewerActions';
 import IssueSectionHeading from './IssueSectionHeading';
 import { useStorageSettingsQuery } from '@/services/storage.service';
 import { attachmentAccept, attachmentError, attachmentLimitHint } from '@/utils/uploadLimits';
@@ -44,6 +49,8 @@ export default function IssueAttachmentsPanel({
   const [error, setError] = useState<string | null>(null);
   const [annotating, setAnnotating] = useState<Attachment | null>(null);
   const [viewing, setViewing] = useState<Attachment | null>(null);
+  const [relinking, setRelinking] = useState<Attachment | null>(null);
+  const relinkProject = relinking?.vaultPath ? vaultProjectKey(relinking.vaultPath) : null;
   // A replaced attachment keeps its URL, which the image optimizer caches its
   // thumbnail under. Stamping the ones replaced here tells the two versions apart.
   const [replacedAt, setReplacedAt] = useState<Record<string, number>>({});
@@ -132,13 +139,38 @@ export default function IssueAttachmentsPanel({
                 onInsert={() => onInsert(a)}
                 onAnnotate={() => setAnnotating(a)}
                 onDelete={() => deleteAttachment.mutate(a.id)}
+                onRelink={() => setRelinking(a)}
                 readOnly={readOnly}
               />
             ))}
           </div>
         ))}
 
-      {viewing && <AttachmentViewer attachment={viewing} onClose={() => setViewing(null)} />}
+      {viewing && (
+        <FileViewer
+          file={{
+            name: viewing.filename,
+            contentType: viewing.contentType,
+            sizeBytes: viewing.sizeBytes,
+            // Images and videos play from the public url like their embeds; the rest
+            // opens through the session-checked view.
+            url: isImage(viewing) || isVideo(viewing) ? viewing.url : attachmentViewUrl(viewing.id),
+            downloadUrl: `${viewing.url}?download=1`,
+            vaultPath: viewing.vaultPath ?? null,
+          }}
+          actions={<IssueAttachmentViewerActions attachment={viewing} />}
+          onClose={() => setViewing(null)}
+        />
+      )}
+
+      {relinking && relinkProject && (
+        <IssueAttachmentRelinkDialog
+          issueId={issueId}
+          projectKey={relinkProject}
+          attachment={relinking}
+          onClose={() => setRelinking(null)}
+        />
+      )}
 
       {annotating && (
         <IssueImageAnnotator

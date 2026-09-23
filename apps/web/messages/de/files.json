@@ -1,0 +1,110 @@
+{
+  "title": "Dateien",
+  "projectDescription": "Dokumente, Anhänge und Code dieses Projekts",
+  "roots": {
+    "label": "Ordner",
+    "vault": "Wissen",
+    "code": "Code",
+    "home": "Home",
+    "private": "Privat",
+    "templates": "Vorlagen",
+    "projects": "Projekte"
+  },
+  "toolbar": {
+    "filter": "Nach Namen filtern",
+    "sort": "Sortieren",
+    "sortName": "Name",
+    "sortModified": "Geändert",
+    "sortSize": "Größe",
+    "ascending": "Aufsteigend",
+    "descending": "Absteigend",
+    "list": "Liste",
+    "grid": "Raster",
+    "upload": "Hochladen",
+    "newFolder": "Neuer Ordner",
+    "newFile": "Neue Notiz",
+    "openInCode": "In VS Code öffnen"
+  },
+  "breadcrumb": "Ordnerpfad",
+  "modified": "{date, date, medium}",
+  "empty": {
+    "folder": "Dieser Ordner ist leer.",
+    "folderHint": "Dateien hierher ziehen oder „Hochladen“ verwenden.",
+    "filter": "Kein Eintrag passt zu „{filter}“.",
+    "readOnly": "Plan zeigt diesen Ordner schreibgeschützt."
+  },
+  "unreadable": {
+    "title": "Plan kann diesen Ordner nicht lesen",
+    "body": "Der Workspace gehört dem Benutzer der Agenten auf dem Server. Öffne ihn stattdessen in VS Code.",
+    "missing": "Dieser Ordner existiert auf dem Server nicht."
+  },
+  "loadError": "Der Ordner konnte nicht geladen werden.",
+  "retry": "Erneut versuchen",
+  "truncated": "Nur die ersten {count} Einträge werden angezeigt.",
+  "dropToUpload": "Ablegen, um in {folder} hochzuladen",
+  "uploaded": "{count, plural, one {# Datei hochgeladen} other {# Dateien hochgeladen}}",
+  "moved": "Nach {folder} verschoben",
+  "trashed": "{name} in den Papierkorb verschoben",
+  "pathCopied": "Pfad kopiert",
+  "actions": {
+    "more": "Aktionen für {name}",
+    "download": "Herunterladen",
+    "rename": "Umbenennen",
+    "move": "Verschieben",
+    "copyPath": "Pfad kopieren",
+    "openInObsidian": "In Obsidian öffnen",
+    "openInCode": "In VS Code öffnen",
+    "openInDocs": "In Docs öffnen",
+    "linkToTask": "Mit Aufgabe verknüpfen",
+    "trash": "In den Papierkorb",
+    "showInFolder": "Im Ordner zeigen"
+  },
+  "dialog": {
+    "newFolder": "Neuer Ordner",
+    "newFile": "Neue Notiz",
+    "rename": "Umbenennen",
+    "name": "Name",
+    "folderName": "Neuer Ordner",
+    "fileName": "Notiz.md",
+    "fileHint": "Eine .md- oder .txt-Datei. Eine Markdown-Notiz öffnet sich in Docs.",
+    "create": "Erstellen",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "moveDialog": {
+    "title": "{name} verschieben",
+    "description": "Öffne den Ordner, in den es verschoben werden soll.",
+    "here": "Hierher verschieben"
+  },
+  "trashDialog": {
+    "title": "{name} in den Papierkorb verschieben?",
+    "description": "Es wird in den Papierkorb-Ordner des Vaults verschoben und kann von dort wiederhergestellt werden.",
+    "confirm": "In den Papierkorb"
+  },
+  "linkDialog": {
+    "title": "Mit Aufgabe verknüpfen",
+    "prompt": "Aufgaben suchen",
+    "linked": "Mit {identifier} verknüpft"
+  },
+  "viewer": {
+    "loading": "Wird geladen …",
+    "tooLarge": "Die Datei ist zu groß für die Anzeige. Lade sie stattdessen herunter.",
+    "error": "Die Datei konnte nicht angezeigt werden.",
+    "noPreview": "Für diese Art Datei gibt es keine Vorschau.",
+    "extracted": "Extrahierter Text",
+    "noExtracted": "Für diese Datei ist noch kein extrahierter Text verfügbar.",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "zoomReset": "Einpassen"
+  },
+  "picker": {
+    "up": "Einen Ordner nach oben",
+    "empty": "Hier ist nichts.",
+    "choose": "Auswählen"
+  },
+  "attachment": {
+    "missing": "Datei fehlt",
+    "relink": "Datei neu auswählen",
+    "relinkTitle": "Datei für {name} auswählen"
+  }
+}

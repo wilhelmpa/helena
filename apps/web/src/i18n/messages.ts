@@ -11,6 +11,7 @@ import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
 import display from '../../messages/en/display.json';
 import documents from '../../messages/en/documents.json';
+import files from '../../messages/en/files.json';
 import filters from '../../messages/en/filters.json';
 import god from '../../messages/en/god.json';
 import inbox from '../../messages/en/inbox.json';
@@ -53,6 +54,7 @@ const defaultMessages = {
   issue,
   display,
   documents,
+  files,
   filters,
   workItems,
   apiKeys,

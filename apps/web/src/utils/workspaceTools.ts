@@ -100,6 +100,15 @@ function codeUrl(
   }
 }
 
+// code-server opened on one folder of the server: a project workspace or a vault folder.
+export function codeFolderUrl(config: WorkspaceRuntimeEnv, folder: string): string {
+  const base = frameUrl(config.codeUrl);
+  if (!base || !folder.startsWith('/')) return '';
+  const url = new URL(base);
+  url.searchParams.set('folder', folder);
+  return url.toString();
+}
+
 function terminalUrl(
   config: WorkspaceRuntimeEnv,
   projectKey: string | null,
