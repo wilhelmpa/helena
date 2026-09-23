@@ -587,6 +587,21 @@ export const aiAgent = pgTable(
     // A template runs nowhere and joins no project. A project adds a copy of it as a
     // specialist of its own.
     template: boolean('template').notNull().default(false),
+    // The template this row was copied from (copyTemplateIntoProject), kept so a later
+    // edit to the template can be synced into this copy. NULL for a template itself and
+    // for an agent nobody copied. set null on the template's deletion: the copy keeps
+    // working, it just stops following a (now gone) template.
+    sourceTemplateId: integer('source_template_id').references((): AnyPgColumn => aiAgent.id, {
+      onDelete: 'set null',
+    }),
+    // Field groups (see agents/core/template-sync.ts TEMPLATE_FIELD_GROUPS) this copy's
+    // owner changed by hand after the copy was made. A synced field is skipped for this
+    // copy the next time its template changes, until "reset to template" clears it.
+    // Meaningless (stays []) for a template itself.
+    templateOverrides: jsonb('template_overrides').notNull().default([]).$type<string[]>(),
+    // Last time this copy was synced from its template (creation counts as the first
+    // sync). NULL for a template itself and for an agent nobody copied.
+    templateSyncedAt: timestamp('template_synced_at', { withTimezone: true }),
     // Last time a runner claimed work or sent a heartbeat for this agent, which is
     // what the UI shows as its presence. NULL for an agent no runner ever polled.
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
@@ -615,6 +630,11 @@ export const aiAgent = pgTable(
       sql`${t.maxConcurrentChats} >= 1 AND ${t.maxConcurrentChats} <= 20`,
     ),
     index('ai_agent_team_idx').on(t.teamId),
+    index('ai_agent_source_template_idx').on(t.sourceTemplateId),
+    check(
+      'ai_agent_template_no_source_check',
+      sql`NOT (${t.template} AND ${t.sourceTemplateId} IS NOT NULL)`,
+    ),
   ],
 );
 
@@ -706,6 +726,42 @@ export const agentRun = pgTable(
     index('agent_run_project_idx').on(t.projectId),
     // The token ceilings sum an agent's runs of the current day and month.
     index('agent_run_agent_finished_idx').on(t.agentId, t.finishedAt),
+  ],
+);
+
+// What the egress proxy of isolated agents (deployment/volition-stack/isolation) let
+// through or refused, summed per unit, destination and decision over a short window. It
+// names hosts and counts bytes; it never holds what was sent. The agent and the run come
+// from the unit the proxy saw the connection come from, so they are null for work that
+// ran outside a run (a chat answer names its message in the unit, not here).
+export const agentEgressEvent = pgTable(
+  'agent_egress_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    // The slug of the Unix user the connection came from: a project's, or 'home' for the
+    // Home agent, which works in no project of its own (project_id is null then).
+    slug: text('slug').notNull(),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    host: text('host').notNull(),
+    port: integer('port').notNull(),
+    // 'allowed' or 'blocked'; `reason` says why a connection was refused.
+    decision: text('decision').notNull(),
+    reason: text('reason'),
+    connections: integer('connections').notNull().default(1),
+    bytesOut: bigint('bytes_out', { mode: 'number' }).notNull().default(0),
+    bytesIn: bigint('bytes_in', { mode: 'number' }).notNull().default(0),
+    firstAt: timestamp('first_at', { withTimezone: true }).notNull(),
+    lastAt: timestamp('last_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_egress_event_decision_check', sql`${t.decision} IN ('allowed', 'blocked')`),
+    check('agent_egress_event_port_check', sql`${t.port} >= 0 AND ${t.port} <= 65535`),
+    index('agent_egress_event_project_idx').on(t.projectId, t.id),
+    index('agent_egress_event_last_idx').on(t.lastAt),
+    index('agent_egress_event_run_idx').on(t.runId),
   ],
 );
 
@@ -1424,6 +1480,34 @@ export const agentMcpServerLink = pgTable(
   (t) => [
     primaryKey({ columns: [t.agentId, t.mcpServerId] }),
     index('agent_mcp_server_link_server_idx').on(t.mcpServerId),
+  ],
+);
+
+// One row per field-group actually propagated from a template into one of its copies
+// (see agents/core/template-sync.ts), so a copy's page can show "picked up <groups>
+// from the template <when>" and a template's page can show its last fan-out. A group a
+// copy has overridden is skipped and logs nothing. This is a narrow, template-specific
+// trail, not the team's general activity feed.
+export const agentTemplateSyncLog = pgTable(
+  'agent_template_sync_log',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    templateId: integer('template_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    copyId: integer('copy_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    groups: jsonb('groups').notNull().$type<string[]>(),
+    syncedAt: timestamp('synced_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('agent_template_sync_log_team_idx').on(t.teamId),
+    index('agent_template_sync_log_template_idx').on(t.templateId, t.syncedAt),
+    index('agent_template_sync_log_copy_idx').on(t.copyId, t.syncedAt),
   ],
 );
 
@@ -2679,4 +2763,61 @@ export const revision = pgTable(
   },
   // Backs both the project cleanup and the membership join the read does.
   (t) => [index('revision_project_idx').on(t.projectId)],
+);
+
+// A step-up terminal grant: the owner re-authenticated (TOTP or passkey) and may open
+// Claude Code, Codex and Shell sessions on the host as `wilhelmpa` for 12 hours. Only
+// the instance owner ever holds one — enforced in the service, not by a column here.
+// One active row per owner: a new step-up replaces it (`ownerTerminalGrant` in the
+// service revokes the previous row rather than stacking). `sessionId` binds the grant
+// to the better-auth session it was issued for, so signing out or a session revoke
+// invalidates it without a separate check.
+export const ownerTerminalGrant = pgTable(
+  'owner_terminal_grant',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    sessionId: text('session_id').notNull(),
+    method: text('method').notNull(),
+    device: text('device').notNull(),
+    ipAddress: text('ip_address').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('owner_terminal_grant_method_check', sql`${t.method} IN ('totp', 'passkey')`),
+    uniqueIndex('owner_terminal_grant_session_uq').on(t.sessionId),
+    // Backs "the owner's current grant": newest first, filtered to unrevoked in the query.
+    index('owner_terminal_grant_user_idx').on(t.userId, t.createdAt.desc()),
+  ],
+);
+
+// Audit trail for the owner terminal: every step-up attempt, rate-limit lockout, grant
+// revocation, session start/end and rejected token. Shown at Home -> Security. `kind` and
+// `sessionName` are set for a session event, null for a step-up/grant event.
+export const ownerTerminalAudit = pgTable(
+  'owner_terminal_audit',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    event: text('event').notNull(),
+    kind: text('kind'),
+    sessionName: text('session_name'),
+    device: text('device'),
+    ipAddress: text('ip_address'),
+    detail: text('detail'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'owner_terminal_audit_event_check',
+      sql`${t.event} IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected')`,
+    ),
+    index('owner_terminal_audit_user_idx').on(t.userId, t.createdAt.desc()),
+    // Backs the rate-limit window query: failures of one user in the last 15 minutes.
+    index('owner_terminal_audit_event_idx').on(t.userId, t.event, t.createdAt),
+  ],
 );

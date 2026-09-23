@@ -11,14 +11,16 @@ export async function readJson(filePath, fallback) {
   }
 }
 
-export async function writeJsonAtomic(filePath, value) {
+// Private by default; a file the project's agents read (PROJECT.json) passes a mode with
+// group bits, which the workspace's ACL then narrows to the users it names.
+export async function writeJsonAtomic(filePath, value, { mode = 0o600 } = {}) {
   const directory = path.dirname(filePath);
   await fs.mkdir(directory, { recursive: true, mode: 0o700 });
   const temporaryPath = path.join(
     directory,
     `.${path.basename(filePath)}.${process.pid}.${crypto.randomUUID()}.tmp`,
   );
-  const handle = await fs.open(temporaryPath, "wx", 0o600);
+  const handle = await fs.open(temporaryPath, "wx", mode);
   try {
     await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, "utf8");
     await handle.sync();

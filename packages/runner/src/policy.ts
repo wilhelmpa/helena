@@ -19,6 +19,7 @@ import {
   type RuntimeActionResult,
   type RuntimeLearning,
 } from './learning';
+import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 
 export interface RuntimePolicyFile {
@@ -373,7 +374,7 @@ function describeFailure(error: unknown): string {
   return error instanceof Error ? error.message.slice(0, 200) : 'unknown error';
 }
 
-export class HermesPolicyMaterializer {
+export class HermesPolicyMaterializer implements PolicyMaterializer {
   readonly hermesHome: string;
   readonly manifestPath: string;
   // The directory Hermes reads as HERMES_MANAGED_DIR: its config.yaml is merged over the
@@ -500,6 +501,10 @@ export class HermesPolicyMaterializer {
     return restored;
   }
 
+  async runActions(actions: RuntimeAction[]): Promise<RuntimeActionResult[]> {
+    return runActions(this.hermesHome, await this.planSkills(), actions);
+  }
+
   // The skill directories below skills/plan-managed that the manifest says Plan wrote.
   async planSkills(): Promise<Set<string>> {
     const manifest = await loadManifest(this.manifestPath, this.hermesHome);
@@ -558,6 +563,27 @@ type ReportedState = Pick<
   'status' | 'detail' | 'conflicts' | 'restored' | 'actions'
 >;
 
+export interface MaterializeResult {
+  revision: string;
+  conflicts: RuntimeConflict[];
+  restored: string[];
+  mcpSecrets: number[] | null;
+}
+
+// What writes the policy into the agent's profile: the runner itself, or, for an isolated
+// agent, the runner's profile helper run as the project's user (see IsolatedProfile).
+export interface PolicyMaterializer {
+  readonly managedDir: string;
+  apply(snapshot: RuntimePolicySnapshot): Promise<MaterializeResult>;
+  ensurePlugins(): Promise<string[]>;
+  // The actions a revision carries (learning), run once after it applied.
+  runActions(actions: RuntimeAction[]): Promise<RuntimeActionResult[]>;
+}
+
+export interface LoginVault {
+  sync(logins: WebLogin[]): Promise<Map<string, number>>;
+}
+
 export interface SynchronizerOptions {
   inventory?: () => Promise<HermesInventory>;
   // The content of the skills the agent created, of those the inventory lists.
@@ -565,7 +591,65 @@ export interface SynchronizerOptions {
   profile?: HermesProfile;
   now?: () => number;
   // The agent's Hermes vault, which receives its website logins.
-  vault?: WebLoginVault;
+  vault?: LoginVault;
+}
+
+// An isolated agent's profile belongs to the project's user, and the runner never opens a
+// file in it: a folder the agent replaced with a link would otherwise lead the runner's
+// writes and reads into another project. The same code runs instead in a helper unit as the
+// project's user (cli.ts `profile-helper`), where such a link leads nowhere it may go.
+export class IsolatedProfile implements PolicyMaterializer {
+  readonly managedDir: string;
+  private learned: LearnedSkill[] | undefined;
+
+  constructor(
+    private readonly isolation: AgentIsolation,
+    private readonly cwd: string,
+    hermesHome: string,
+    private readonly profile: HermesProfile | undefined,
+    private readonly helper: typeof profileHelper = profileHelper,
+  ) {
+    this.managedDir = join(assertRoot(hermesHome, 'HERMES_HOME'), 'run', 'itsaplan-managed');
+  }
+
+  private run<T>(operation: Record<string, unknown>): Promise<T> {
+    return this.helper<T>(this.isolation, this.cwd, {
+      ...operation,
+      profile: this.profile ?? null,
+    });
+  }
+
+  apply(snapshot: RuntimePolicySnapshot): Promise<MaterializeResult> {
+    return this.run({ op: 'materialize', snapshot });
+  }
+
+  ensurePlugins(): Promise<string[]> {
+    return this.run({ op: 'plugins' });
+  }
+
+  runActions(actions: RuntimeAction[]): Promise<RuntimeActionResult[]> {
+    return actions.length === 0 ? Promise.resolve([]) : this.run({ op: 'actions', actions });
+  }
+
+  // One helper run reads the inventory and the content of the skills the agent made.
+  async inventory(): Promise<HermesInventory> {
+    const read = await this.run<{ inventory: HermesInventory; learned: LearnedSkill[] }>({
+      op: 'inventory',
+    });
+    this.learned = read.learned;
+    return read.inventory;
+  }
+
+  learnedSkills(): Promise<LearnedSkill[]> {
+    return Promise.resolve(this.learned ?? []);
+  }
+
+  vault(): LoginVault {
+    return {
+      sync: async (logins) =>
+        new Map(await this.run<[string, number][]>({ op: 'vault-sync', logins })),
+    };
+  }
 }
 
 // Each path once, the most recent last.
@@ -607,7 +691,7 @@ export class HermesPolicySynchronizer {
 
   constructor(
     private readonly client: RuntimePolicyClient,
-    private readonly materializer: HermesPolicyMaterializer,
+    private readonly materializer: PolicyMaterializer,
     private readonly options: SynchronizerOptions = {},
   ) {
     this.now = options.now ?? Date.now;
@@ -715,11 +799,7 @@ export class HermesPolicySynchronizer {
     }
     try {
       const result = await this.materializer.apply(snapshot);
-      const actions = await runActions(
-        this.materializer.hermesHome,
-        await this.materializer.planSkills(),
-        snapshot.actions ?? [],
-      );
+      const actions = await this.materializer.runActions(snapshot.actions ?? []);
       this.appliedRevision = result.revision;
       this.applied = snapshot;
       this.mcpServerNames = (snapshot.mcpServers ?? []).map(({ name }) => name);
@@ -831,6 +911,18 @@ export function hermesPolicySynchronizer(
   if (config.agent !== 'hermes') return null;
   const hermesHome = config.env.HERMES_HOME ?? process.env.HERMES_HOME;
   if (!hermesHome) throw new Error('Hermes policy sync requires HERMES_HOME');
+  if (isolationEnabled()) {
+    if (!config.isolation || !config.cwd) {
+      throw new Error('Agent isolation is on and this agent has no isolated project');
+    }
+    const profile = new IsolatedProfile(config.isolation, config.cwd, hermesHome, config.hermes);
+    return new HermesPolicySynchronizer(client, profile, {
+      inventory: () => profile.inventory(),
+      learned: () => profile.learnedSkills(),
+      profile: config.hermes,
+      vault: profile.vault(),
+    });
+  }
   const materializer = new HermesPolicyMaterializer({ hermesHome, profile: config.hermes });
   const python = config.env.HERMES_PYTHON ?? process.env.HERMES_PYTHON ?? 'python3';
   return new HermesPolicySynchronizer(client, materializer, {

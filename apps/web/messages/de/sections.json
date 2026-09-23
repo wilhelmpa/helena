@@ -35,6 +35,10 @@
       "label": "Tastenkürzel",
       "description": "Die Tastenbelegung jedes Befehls für alle auf dieser Instanz. Jede Person kann ein Tastenkürzel für das eigene Konto in den Einstellungen neu belegen."
     },
+    "security": {
+      "label": "Sicherheit",
+      "description": "Die Freigabe-Richtlinie des Owner-Terminals, die aktuelle Freigabe und das Audit-Protokoll."
+    },
     "storage": {
       "label": "Speicher",
       "description": "Wie viel hochgeladen werden darf: die Größe einer einzelnen Datei, die erlaubten Anhangstypen und der Speicherplatz pro Projekt."
@@ -100,6 +104,10 @@
     "git": {
       "label": "Repositorys",
       "description": "Aufgaben schließen, wenn ihre Pull Requests auf GitHub, GitLab, Gitea, Forgejo oder Bitbucket gemergt werden."
+    },
+    "network": {
+      "label": "Agenten-Netzwerk",
+      "description": "Welche Ziele die isolierten Agenten dieses Projekts im Internet erreichen dürfen. Agenten können das nicht selbst ändern."
     },
     "ai-agents": {
       "label": "KI-Agenten",

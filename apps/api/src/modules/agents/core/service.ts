@@ -33,6 +33,11 @@ import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
 import { isHomeAgent, notHomeAgent } from './home-agent';
+import {
+  onTemplateRelevantChange,
+  runtimePolicyGroupsChanged,
+  type TemplateFieldGroup,
+} from './template-sync';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -292,6 +297,21 @@ export interface AiAgentRow {
   runnerScope: RunnerScope;
   // A template runs nowhere and works in no project; a project adds a copy of it.
   template: boolean;
+  // The template this row was copied from (copyTemplateIntoProject). Null for a
+  // template itself and for an agent nobody copied.
+  sourceTemplateId: number | null;
+  // Field groups (see template-sync.ts) this copy's owner changed by hand, so the next
+  // template sync leaves them alone. Always [] for a template or a plain agent.
+  templateOverrides: TemplateFieldGroup[];
+  // Last time this copy was synced from its template; null for a template or a plain
+  // agent.
+  templateSyncedAt: string | null;
+  // The tokens the agent's runs may use per day and per calendar month (UTC); null is
+  // no ceiling. The 'budgets' template-sync group's other half of runtimePolicy's
+  // maxTurns/runBudgetSeconds. Written by governance.setAgentTokenCeilings and by
+  // copyTemplateIntoProject (from the template) — never here.
+  dailyTokenCeiling: number | null;
+  monthlyTokenCeiling: number | null;
   // When a runner last polled for this agent, which is what presence is derived
   // from. Null until a runner connects.
   lastSeenAt: string | null;
@@ -339,6 +359,11 @@ function mapAgent(row: {
   ownerUserId: string | null;
   runnerScope: string;
   template: boolean;
+  sourceTemplateId: number | null;
+  templateOverrides: unknown;
+  templateSyncedAt: Date | null;
+  dailyTokenCeiling: number | null;
+  monthlyTokenCeiling: number | null;
   lastSeenAt: Date | null;
   pausedAt: Date | null;
   pauseReason: string | null;
@@ -375,6 +400,13 @@ function mapAgent(row: {
     ownerUserId: row.ownerUserId,
     runnerScope: row.runnerScope as RunnerScope,
     template: row.template,
+    sourceTemplateId: row.sourceTemplateId,
+    templateOverrides: Array.isArray(row.templateOverrides)
+      ? (row.templateOverrides as TemplateFieldGroup[])
+      : [],
+    templateSyncedAt: row.templateSyncedAt ? iso(row.templateSyncedAt) : null,
+    dailyTokenCeiling: row.dailyTokenCeiling,
+    monthlyTokenCeiling: row.monthlyTokenCeiling,
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
     pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
     pauseReason: row.pauseReason,
@@ -419,6 +451,11 @@ const agentColumns = {
   ownerUserId: aiAgent.ownerUserId,
   runnerScope: aiAgent.runnerScope,
   template: aiAgent.template,
+  sourceTemplateId: aiAgent.sourceTemplateId,
+  templateOverrides: aiAgent.templateOverrides,
+  templateSyncedAt: aiAgent.templateSyncedAt,
+  dailyTokenCeiling: aiAgent.dailyTokenCeiling,
+  monthlyTokenCeiling: aiAgent.monthlyTokenCeiling,
   lastSeenAt: aiAgent.lastSeenAt,
   pausedAt: aiAgent.pausedAt,
   pauseReason: aiAgent.pauseReason,
@@ -781,10 +818,22 @@ export interface NewAgentInput {
   capabilities?: string[];
   skillIds?: number[];
   mcpServerIds?: number[];
+  // The team's configured tools (agent_tool, not the tool registry keys in `tools`) to
+  // carry over. Only copyTemplateIntoProject sets this today.
+  agentToolIds?: number[];
   // External-agent runner scope (default: any member's runs).
   runnerScope?: RunnerScope;
   // The member creating the agent, who owns its runner.
   ownerUserId?: string | null;
+  // Set by copyTemplateIntoProject only: links this new row to the template it came
+  // from, so a later change to the template can be synced into it (template-sync.ts).
+  sourceTemplateId?: number;
+  // The 'budgets' template-sync group's other half (runtimePolicy.maxTurns/
+  // runBudgetSeconds are inside runtimePolicy, already copied above). Set by
+  // copyTemplateIntoProject from the template; governance.setAgentTokenCeilings is
+  // the only other writer, for an existing agent.
+  dailyTokenCeiling?: number | null;
+  monthlyTokenCeiling?: number | null;
 }
 
 // The coordinator that leads the project's agent team, or null when it has none.
@@ -843,10 +892,10 @@ async function assertUsernameFree(
 // stored secret with nothing that would renew it, and an external agent's key is
 // rotated by its operator through regenerate-key. The plugin puts its default on
 // every key it creates, so the expiry is cleared on the row afterwards.
-async function issueKey(userId: string, name: string): Promise<string> {
+async function issueKey(userId: string, name: string): Promise<{ key: string; id: string }> {
   const created = await auth.api.createApiKey({ body: { userId, name: agentKeyName(name) } });
   await db.update(apikey).set({ expiresAt: null }).where(eq(apikey.id, created.id));
-  return created.key;
+  return { key: created.key, id: created.id };
 }
 
 // The name of an agent's key: "agent:" and the agent's display name. It only labels
@@ -923,6 +972,10 @@ export async function createAgent(
           ownerUserId: input.ownerUserId ?? null,
           runnerScope: input.runnerScope ?? 'team',
           template: input.template ?? false,
+          sourceTemplateId: input.sourceTemplateId ?? null,
+          templateSyncedAt: input.sourceTemplateId != null ? new Date() : null,
+          dailyTokenCeiling: input.dailyTokenCeiling ?? null,
+          monthlyTokenCeiling: input.monthlyTokenCeiling ?? null,
         })
         .returning({ id: aiAgent.id });
       // The agent belongs to the team's member list like a person does, on a standing
@@ -953,6 +1006,11 @@ export async function createAgent(
           .insert(agentMcpServerLink)
           .values(input.mcpServerIds.map((mcpServerId) => ({ agentId: row.id, mcpServerId })));
       }
+      if (input.agentToolIds?.length) {
+        await tx
+          .insert(agentToolLink)
+          .values(input.agentToolIds.map((agentToolId) => ({ agentId: row.id, agentToolId })));
+      }
       return row.id;
     } catch (err) {
       rethrowDuplicate(err, 'An agent with this username');
@@ -965,8 +1023,17 @@ export async function createAgent(
   }
 
   // Issued outside the transaction: better-auth writes the key through its own
-  // connection, so it cannot join this one.
-  const apiKey = await issueKey(userId, input.name);
+  // connection, so it cannot join this one. A key that fails to issue (e.g. the
+  // combined name is too long for better-auth's apiKey plugin) must not leave a
+  // half-created agent behind: with the row already committed, a retry with the same
+  // username would otherwise fail with 409 instead of the original error, hiding it.
+  let apiKey: string;
+  try {
+    apiKey = (await issueKey(userId, input.name)).key;
+  } catch (err) {
+    await deleteAgent(agentId, teamId);
+    throw err;
+  }
   if (isInternal) await storeAgentKey(agentId, apiKey);
   else await queueAgentRuntime(userId);
   const agent = (await getAgentById(agentId, teamId))!;
@@ -1112,12 +1179,15 @@ export async function getInternalAgentApiKey(agent: AiAgentRow): Promise<string>
       .insert(teamMember)
       .values({ teamId: agent.teamId, userId: agent.userId, role: 'agent' })
       .onConflictDoNothing();
-    // Clears any key row left without a stored secret, so the bot user ends with
-    // exactly the one issued here.
-    await db.delete(apikey).where(eq(apikey.referenceId, agent.userId));
-    const apiKey = await issueKey(agent.userId, agent.name);
-    await storeAgentKey(agent.id, apiKey);
-    return apiKey;
+    // Issue before clearing old rows: if issueKey fails, a key row left without a
+    // stored secret (the case this is meant to clean up) is still there for the next
+    // attempt to find and retry, instead of also deleting it first and leaving none.
+    const issued = await issueKey(agent.userId, agent.name);
+    await db
+      .delete(apikey)
+      .where(and(eq(apikey.referenceId, agent.userId), ne(apikey.id, issued.id)));
+    await storeAgentKey(agent.id, issued.key);
+    return issued.key;
   });
 }
 
@@ -1167,6 +1237,28 @@ export async function updateAgent(
   // The display name lives on the bot user.
   if (patch.name !== undefined) {
     await db.update(user).set({ name: patch.name }).where(eq(user.id, agent.userId));
+  }
+
+  // Which template field groups this patch touches (template-sync.ts), gathered before
+  // `set` is written so the runtimePolicy comparison still has the agent's previous
+  // value to diff against.
+  const changedGroups: TemplateFieldGroup[] = [];
+  if (patch.instructions !== undefined && patch.instructions !== agent.instructions) {
+    changedGroups.push('instructions');
+  }
+  if (
+    (patch.model !== undefined && patch.model !== agent.model) ||
+    (patch.modelCredentialId !== undefined && patch.modelCredentialId !== agent.modelCredentialId)
+  ) {
+    changedGroups.push('model');
+  }
+  if (patch.runtimePolicy !== undefined) {
+    changedGroups.push(
+      ...runtimePolicyGroupsChanged(
+        agent.runtimePolicy,
+        normalizeRuntimePolicy(patch.runtimePolicy),
+      ),
+    );
   }
 
   const set: Partial<typeof aiAgent.$inferInsert> = {};
@@ -1223,6 +1315,10 @@ export async function updateAgent(
     await queueAgentRuntime(agent.userId, previousProjectIds);
   }
 
+  if (changedGroups.length > 0) {
+    await onTemplateRelevantChange(id, [...new Set(changedGroups)]);
+  }
+
   return getAgentById(id, teamId);
 }
 
@@ -1241,7 +1337,7 @@ export async function copyTemplateIntoProject(
     .where(and(eq(project.id, projectId), eq(project.teamId, template.teamId)));
   if (!target) throw new HttpError(400, 'Project not found in this team');
   const suffix = `-${target.key.toLowerCase()}`;
-  const [assignment, skills, mcpServers] = await Promise.all([
+  const [assignment, skills, mcpServers, agentTools] = await Promise.all([
     db
       .select({
         roleTitle: organizationAgentAssignment.roleTitle,
@@ -1258,6 +1354,10 @@ export async function copyTemplateIntoProject(
       .select({ mcpServerId: agentMcpServerLink.mcpServerId })
       .from(agentMcpServerLink)
       .where(eq(agentMcpServerLink.agentId, template.id)),
+    db
+      .select({ agentToolId: agentToolLink.agentToolId })
+      .from(agentToolLink)
+      .where(eq(agentToolLink.agentId, template.id)),
   ]);
   return createAgent(template.teamId, {
     name: `${template.name} ${target.key}`,
@@ -1283,6 +1383,10 @@ export async function copyTemplateIntoProject(
     capabilities: assignment?.capabilities,
     skillIds: skills.map(({ skillId }) => skillId),
     mcpServerIds: mcpServers.map(({ mcpServerId }) => mcpServerId),
+    agentToolIds: agentTools.map(({ agentToolId }) => agentToolId),
+    sourceTemplateId: template.id,
+    dailyTokenCeiling: template.dailyTokenCeiling,
+    monthlyTokenCeiling: template.monthlyTokenCeiling,
   });
 }
 
@@ -1293,10 +1397,15 @@ export async function copyTemplateIntoProject(
 export async function regenerateKey(id: number, teamId: number): Promise<string | null> {
   const agent = await getAgentById(id, teamId);
   if (!agent) return null;
-  await db.delete(apikey).where(eq(apikey.referenceId, agent.userId));
-  const apiKey = await issueKey(agent.userId, agent.name);
-  if (agent.kind === 'internal') await storeAgentKey(agent.id, apiKey);
-  return apiKey;
+  // Issue the replacement before dropping the old key(s): if issueKey fails (the same
+  // name-length limit createAgent can hit), the agent keeps working on its current key
+  // instead of being left with none until someone retries.
+  const issued = await issueKey(agent.userId, agent.name);
+  await db
+    .delete(apikey)
+    .where(and(eq(apikey.referenceId, agent.userId), ne(apikey.id, issued.id)));
+  if (agent.kind === 'internal') await storeAgentKey(agent.id, issued.key);
+  return issued.key;
 }
 
 // Deletes an agent: its conversation threads, its API key row(s), then the bot user.

@@ -35,6 +35,10 @@
       "label": "Atalhos de teclado",
       "description": "A tecla à qual cada comando está vinculado para todos nesta instância. Cada pessoa pode reatribuir um atalho para sua própria conta nas preferências."
     },
+    "security": {
+      "label": "Segurança",
+      "description": "A política de verificação adicional do terminal do proprietário, sua concessão atual e seu registro de auditoria."
+    },
     "storage": {
       "label": "Armazenamento",
       "description": "Quanto as pessoas podem enviar: o tamanho de um único arquivo, os tipos de anexo aceitos e o armazenamento que cada projeto recebe."
@@ -100,6 +104,10 @@
     "git": {
       "label": "Repositórios",
       "description": "Feche issues quando seus pull requests mesclam no GitHub, GitLab, Gitea, Forgejo ou Bitbucket."
+    },
+    "network": {
+      "label": "Rede dos agentes",
+      "description": "Quais destinos os agentes isolados deste projeto podem acessar na internet. Os agentes nunca podem alterar isso por conta própria."
     },
     "ai-agents": {
       "label": "Agentes de IA",

@@ -13,6 +13,7 @@ import { RelativeTimeProvider } from '@/context/relativeTimeContext';
 import { Toaster } from '@/components/ui/sonner';
 import PreferencesSync from '@/components/preferences-sync';
 import SessionScope from '@/components/session-scope';
+import { SessionProvider } from '@/lib/auth-client';
 
 // The message shown for a failed mutation: the API's `{ error }` text (carried by
 // ApiError) when present, otherwise a generic fallback.
@@ -62,14 +63,16 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <Direction.Provider dir={dir}>
-        <SessionScope />
-        <PreferencesSync />
-        <SyncProvider>
-          <RelativeTimeProvider>
-            <HotkeysProvider>{children}</HotkeysProvider>
-          </RelativeTimeProvider>
-        </SyncProvider>
-        <Toaster position={dir === 'rtl' ? 'bottom-left' : 'bottom-right'} dir={dir} richColors />
+        <SessionProvider>
+          <SessionScope />
+          <PreferencesSync />
+          <SyncProvider>
+            <RelativeTimeProvider>
+              <HotkeysProvider>{children}</HotkeysProvider>
+            </RelativeTimeProvider>
+          </SyncProvider>
+          <Toaster position={dir === 'rtl' ? 'bottom-left' : 'bottom-right'} dir={dir} richColors />
+        </SessionProvider>
       </Direction.Provider>
     </QueryClientProvider>
   );

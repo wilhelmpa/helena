@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
   // standalone build for a lean docker image.
   output: 'standalone',
   poweredByHeader: false,
+  // Set by web-release.sh to the commit being built: Next then notices when an open page
+  // belongs to an older release and loads the new one in full on its next navigation.
+  ...(process.env.NEXT_DEPLOYMENT_ID ? { deploymentId: process.env.NEXT_DEPLOYMENT_ID } : {}),
   headers: async () => [{ source: '/(.*)', headers: SECURITY_HEADERS }],
   // Monorepo: include the repo root in file tracing for standalone.
   outputFileTracingRoot: tracingRoot,
@@ -43,6 +46,10 @@ const nextConfig: NextConfig = {
   // files (default-stylesheet.css) by a path relative to its module. Bundling it
   // breaks that path, so it is required from node_modules at runtime instead.
   serverExternalPackages: ['isomorphic-dompurify'],
+  // @repo/agent-naming ships plain TypeScript source (no build step, like every
+  // package in this monorepo) — Next only bundles that from a workspace package when
+  // it is listed here, otherwise it is served/imported unprocessed from node_modules.
+  transpilePackages: ['@repo/agent-naming'],
   // next dev otherwise appends a block of its own to apps/web/AGENTS.md on every
   // start, which leaves the working tree dirty for anyone running the dev server.
   agentRules: false,

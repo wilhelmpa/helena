@@ -387,6 +387,7 @@
     "usernamePlaceholder": "z. B. triage-bot",
     "usernameHint": "Buchstaben, Ziffern, Punkte, Bindestriche und Unterstriche. Bis zu 64 Zeichen.",
     "template": "Vorlage",
+    "templateCopyCount": "{count, plural, =0 {keine Kopien} one {# Kopie} other {# Kopien}}",
     "templateHint": "Eine Vorlage läuft nirgends und arbeitet in keinem Projekt. Projekte fügen Kopien davon als eigene Spezialisten hinzu. Wenn du sie einschaltest, verlässt der Agent seine Projekte.",
     "templates": "Vorlagen",
     "templatesHint": "Projekte fügen Kopien davon als eigene Spezialisten hinzu. Wissen, das die Kopien teilen, gehört in die Skill-Bibliothek; jede Kopie hat ihr eigenes Gedächtnis.",
@@ -693,7 +694,25 @@
       "toolSkill": "Skill",
       "tokens": "{count} Tokens"
     },
-    "approvalTask": "Freigabe-Entscheidung"
+    "approvalTask": "Freigabe-Entscheidung",
+    "templateSync": {
+      "copyOf": "Kopie von {name}",
+      "copyOfUnknown": "Kopie einer gelöschten Vorlage",
+      "overridden": "weicht ab",
+      "overriddenHint": "Diese Gruppe wurde hier von Hand geändert und folgt der Vorlage nicht mehr.",
+      "followsHint": "Folgt der Vorlage.",
+      "resetToTemplate": "Auf Vorlage zurücksetzen",
+      "resetDone": "{group} auf die Vorlage zurückgesetzt",
+      "groups": {
+        "skills": "Skills",
+        "tools": "Tools",
+        "mcpServers": "MCP-Server",
+        "approvals": "Freigabe-Regeln",
+        "instructions": "Anweisungen",
+        "model": "Modell/Reasoning",
+        "budgets": "Budgets"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

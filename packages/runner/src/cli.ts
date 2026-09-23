@@ -3,7 +3,14 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
-import { hermesPolicySynchronizer, type HermesPolicySynchronizer } from './policy';
+import { readHermesInventory, type HermesProfile } from './inventory';
+import { readLearnedSkills } from './learning';
+import { pythonVaultStore, WebLoginVault } from './logins';
+import {
+  HermesPolicyMaterializer,
+  hermesPolicySynchronizer,
+  type HermesPolicySynchronizer,
+} from './policy';
 import { reflect } from './reflect';
 import { perform } from './run';
 
@@ -311,7 +318,62 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
   ]);
 }
 
+async function readStdin(limit: number): Promise<string> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of process.stdin) {
+    size += (chunk as Buffer).length;
+    if (size > limit) throw new Error('the request is too large');
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+// `profile-helper`: the part of the runner that reads and writes an agent's profile, run by
+// the launcher as the project's own user when agents are isolated (see policy.ts). It takes
+// one operation on stdin and answers on stdout; HERMES_HOME is the profile the launcher
+// bound into the unit.
+async function profileHelper(): Promise<void> {
+  const home = process.env.HERMES_HOME;
+  let answer: unknown;
+  try {
+    if (!home) throw new Error('HERMES_HOME is not set');
+    const request = JSON.parse(await readStdin(64 * 1024 * 1024)) as {
+      op?: string;
+      snapshot?: unknown;
+      profile?: HermesProfile | null;
+      logins?: unknown;
+      actions?: unknown;
+    };
+    const profile = request.profile ?? undefined;
+    const materializer = new HermesPolicyMaterializer({ hermesHome: home, profile });
+    let result: unknown;
+    if (request.op === 'materialize') {
+      result = await materializer.apply(request.snapshot as never);
+    } else if (request.op === 'plugins') {
+      result = await materializer.ensurePlugins();
+    } else if (request.op === 'actions') {
+      if (!Array.isArray(request.actions)) throw new Error('actions must be a list');
+      result = await materializer.runActions(request.actions as never);
+    } else if (request.op === 'inventory') {
+      const inventory = await readHermesInventory(home, profile, await materializer.planSkills());
+      result = { inventory, learned: await readLearnedSkills(home, inventory.skills) };
+    } else if (request.op === 'vault-sync') {
+      if (!Array.isArray(request.logins)) throw new Error('logins must be a list');
+      const vault = new WebLoginVault(home, pythonVaultStore(home, 'python3', {}));
+      result = [...(await vault.sync(request.logins as never))];
+    } else {
+      throw new Error('unknown operation');
+    }
+    answer = { ok: true, result };
+  } catch (error) {
+    answer = { ok: false, error: error instanceof Error ? error.message.slice(0, 300) : 'failed' };
+  }
+  process.stdout.write(`${JSON.stringify(answer)}\n`);
+}
+
 async function main(): Promise<void> {
+  if (process.argv[2] === 'profile-helper') return profileHelper();
   const cli = parseArgv(process.argv.slice(2));
   const configPath =
     cli.configPath ?? process.env.ITSAPLAN_RUNNER_CONFIG ?? './itsaplan-runner.json';

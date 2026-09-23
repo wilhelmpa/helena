@@ -36,7 +36,7 @@ export default function ChatListItemMenu({
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
+            className="size-7 shrink-0 opacity-0 group-hover/chat-row:opacity-100 group-has-[[aria-current=true]]/chat-row:opacity-100 hover:bg-transparent focus-visible:opacity-100 data-[state=open]:opacity-100"
             aria-label={t('list.moreActions')}
           >
             <MoreHorizontal className="size-4" />

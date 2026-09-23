@@ -26,9 +26,11 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
   };
 
   const onNavigate = useCallback(
-    (next: ChatLocation) => {
+    (next: ChatLocation, options?: { replace?: boolean }) => {
       const query = { agent: next.agentId, thread: next.threadId };
-      router.push(projectKey ? chatPath(projectKey, query) : homeChatPath(query));
+      const href = projectKey ? chatPath(projectKey, query) : homeChatPath(query);
+      if (options?.replace) router.replace(href, { scroll: false });
+      else router.push(href, { scroll: false });
     },
     [router, projectKey],
   );
@@ -53,6 +55,7 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
   return (
     <ChatWorkspace
       scopeKey={scope.scopeKey}
+      teamId={scope.teamId}
       projectKey={projectKey}
       agents={scope.agents}
       location={location}

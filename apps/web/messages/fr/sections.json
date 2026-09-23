@@ -35,6 +35,10 @@
       "label": "Raccourcis clavier",
       "description": "La touche associée à chaque commande pour tous les utilisateurs de cette instance. Chacun peut réattribuer un raccourci pour son propre compte dans ses préférences."
     },
+    "security": {
+      "label": "Sécurité",
+      "description": "La politique de vérification renforcée du terminal propriétaire, son autorisation en cours et son journal d'audit."
+    },
     "storage": {
       "label": "Stockage",
       "description": "Ce que les utilisateurs peuvent envoyer : la taille maximale d'un fichier, les types de pièces jointes acceptés, et l'espace de stockage alloué à chaque projet."
@@ -100,6 +104,10 @@
     "git": {
       "label": "Dépôts",
       "description": "Fermez les tickets quand leurs pull requests sont fusionnées sur GitHub, GitLab, Gitea, Forgejo ou Bitbucket."
+    },
+    "network": {
+      "label": "Réseau des agents",
+      "description": "Les destinations que les agents isolés de ce projet peuvent atteindre sur internet. Les agents ne peuvent jamais modifier ce réglage eux-mêmes."
     },
     "ai-agents": {
       "label": "Agents",

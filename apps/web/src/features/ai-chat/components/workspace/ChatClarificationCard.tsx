@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CornerDownLeft } from 'lucide-react';
+import { CornerDownLeft, MessageCircleQuestion } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -21,8 +21,9 @@ export default function ChatClarificationCard({ onReply }: { onReply: (text: str
   }
 
   return (
-    <div className="w-full max-w-md space-y-2 rounded-lg border border-dashed bg-muted/40 p-3">
-      <p className="text-xs font-medium text-muted-foreground">
+    <div className="w-full max-w-md space-y-2 rounded-lg border border-status-waiting/40 p-3">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <MessageCircleQuestion className="size-3.5 text-status-waiting" />
         {t('messages.clarificationLabel')}
       </p>
       <Textarea

@@ -9,10 +9,11 @@
     "start": "next start -p 3001",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test --preload ./test/setup.ts"
+    "test": "bun test --preload ./test/setup.ts --isolate"
   },
   "dependencies": {
     "@ai-sdk/react": "^4",
+    "@repo/agent-naming": "workspace:*",
     "@base-ui/react": "^1.7.0",
     "@better-auth/api-key": "1.6.27",
     "@better-auth/passkey": "1.6.27",

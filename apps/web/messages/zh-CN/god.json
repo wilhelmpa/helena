@@ -200,6 +200,31 @@
   "hotkeys": {
     "saved": "键盘快捷键已保存"
   },
+  "security": {
+    "grantTitle": "终端授权",
+    "grantDescription": "二次验证为 Shell、Claude Code 和 Codex 会话开启的 12 小时窗口。",
+    "grantActive": "授权至 {time}",
+    "grantInactive": "当前没有有效授权。",
+    "grantRevoke": "撤销",
+    "stepUpTitle": "二次验证方式",
+    "stepUpDescription": "用于证明打开终端的确实是所有者本人,每次都要验证,即使在局域网内也是如此。",
+    "stepUpMethod": "TOTP(身份验证器应用),在「账户 → 安全」中设置。一旦此实例切换到 HTTPS,将改用通行密钥(Passkey)。",
+    "sudoTitle": "浏览器终端中的 sudo 需要输入密码",
+    "sudoDescription": "关闭(默认)会让所有地方的每条 sudo 命令都无需密码,所有者终端与 SSH 自动化中的情况完全一样——sudo 按 Unix 账户授权,无法区分两者。开启会把浏览器终端中的 sudo 限制为一份经过审查的自动化命令清单,其余情况都要求输入 Linux 密码。",
+    "sudoHint": "仅在此处开启还不够:sudo 无法在运行时按会话切换,因此运维人员必须先审查此实例的 SSH 自动化实际运行的每一条 `sudo -n` 命令,将其与 sudo 策略核对,再手动安装该策略。开启前请先与运维人员确认——在此之前,这项设置不会产生任何效果。",
+    "auditTitle": "审计日志",
+    "auditDescription": "每一次二次验证尝试、每一次授权变更和每一次终端会话,最新的排在最前面。不记录任何按键。",
+    "auditEmpty": "暂无事件。",
+    "event": {
+      "step_up_ok": "二次验证成功",
+      "step_up_fail": "二次验证失败",
+      "rate_limited": "已达到频率限制",
+      "grant_revoked": "授权已撤销",
+      "session_start": "会话已开始",
+      "session_end": "会话已结束",
+      "token_rejected": "令牌被拒绝"
+    }
+  },
   "storage": {
     "saved": "存储设置已保存",
     "fileSize": "文件大小",

@@ -1,0 +1,13 @@
+[Unit]
+Description=Volition agent launcher socket (the runner starts agent units through it)
+
+[Socket]
+ListenStream=/run/volition-agent-launcher/launch.sock
+SocketUser=root
+SocketGroup=volition-launcher
+SocketMode=0660
+DirectoryMode=0755
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

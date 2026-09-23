@@ -44,8 +44,9 @@
     "purged": "Chat eliminado definitivamente."
   },
   "empty": {
-    "title": "Ningún chat abierto",
-    "description": "Elige un agente para empezar un nuevo chat. Cada chat es con un agente — para hablar con otro, empieza uno nuevo."
+    "noAgentsTitle": "No hay ningún agente con el que chatear",
+    "noAgentsDescription": "Aquí todavía no hay ningún agente con el que empezar un chat. Añade uno o da acceso a este proyecto a uno existente.",
+    "manageAgents": "Gestionar agentes"
   },
   "messages": {
     "transcript": "Mensajes",
@@ -72,7 +73,11 @@
     "noteSaveFailed": "No se pudo guardar el chat como nota.",
     "noteQuestion": "Pregunta",
     "noteAnswer": "Respuesta de {agent}",
-    "noteSource": "Chat con {agent}, guardado el {date}"
+    "noteSource": "Chat con {agent}, guardado el {date}",
+    "waitingForRunner": "Esperando a {agent}: su runner no está conectado. La respuesta empieza en cuanto vuelva.",
+    "restoreFailedTitle": "No se pudo cargar este chat",
+    "restoreFailed": "No se pudieron leer sus mensajes. Comprueba la conexión y vuelve a intentarlo.",
+    "retry": "Reintentar"
   },
   "composer": {
     "placeholder": "Mensaje para {agent}…",
@@ -108,7 +113,9 @@
       "approvals": "Los comandos de aprobación no se ejecutan desde el chat — usa la tarjeta de aprobación o la página de Aprobaciones.",
       "config": "Esto cambia la configuración del propio agente — usa los ajustes del agente en Helena.",
       "outside": "Esto no es algo que el chat pueda hacer."
-    }
+    },
+    "reasoning": "Esfuerzo de razonamiento",
+    "reasoningDefault": "predeterminado"
   },
   "artifact": {
     "title": "Artefacto",
@@ -146,5 +153,46 @@
     "approvedBy": "Aprobada por {name}",
     "rejectedBy": "Rechazada por {name}",
     "loading": "Cargando la solicitud…"
+  },
+  "newChat": {
+    "title": "Nuevo chat con {agent}",
+    "offlineHint": "Su runner no está conectado ahora mismo. Un mensaje espera en su cola y se responde en cuanto vuelva.",
+    "pickAgent": "Elegir el agente de este chat"
+  },
+  "agents": {
+    "status": {
+      "running": "Trabajando",
+      "waiting": "Te está esperando",
+      "ready": "Listo",
+      "offline": "Sin conexión",
+      "never": "Nunca conectado",
+      "paused": "En pausa",
+      "template": "Plantilla: añádela a un proyecto para chatear con ella"
+    },
+    "runtimeExternal": "Externo",
+    "switch": "Chat con {agent}: empezar un chat nuevo con otro agente",
+    "newChatWith": "Nuevo chat con…"
+  },
+  "interrupted": {
+    "lost": "Se perdió la conexión con la respuesta. Puede que {agent} siga trabajando en ella.",
+    "stopped": "La respuesta se detuvo.",
+    "failed": "La respuesta se cortó antes de terminar.",
+    "sendFailed": "No se pudo enviar el mensaje.",
+    "reconnect": "Volver a conectar",
+    "continue": "Continuar",
+    "continuePrompt": "Por favor, continúa donde te interrumpieron.",
+    "resend": "Enviar de nuevo"
+  },
+  "commands": {
+    "new": "Empezar un chat nuevo",
+    "retry": "Responder de nuevo a la última pregunta",
+    "undo": "Quitar el último intercambio",
+    "title": "Cambiar el nombre de este chat",
+    "model": "Elegir el modelo",
+    "reasoning": "Ajustar el esfuerzo de razonamiento",
+    "skills": "Abrir las habilidades del agente",
+    "memory": "Abrir la memoria del agente",
+    "usage": "Mostrar el uso de tokens de este chat",
+    "stop": "Detener la respuesta"
   }
 }

@@ -143,6 +143,18 @@ if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs
   restart+=(volition-terminal.service)
 fi
 
+# The owner terminal: its own setup.sh installs the unit, the nginx snippet and the
+# signing key, and restarts volition-owner-terminal.service itself (same shape as the
+# Syncthing setup above). It never touches /etc/sudoers.d/90-wilhelmpa here -- that is a
+# separate, deliberate step (setup.sh --install-sudo-policy=...) the orchestrator takes
+# by hand only once the instance's SSH automation has been audited against the sudoers
+# policy; see setup.sh and 90-wilhelmpa's own comments for why. A restart here ends every
+# open owner-terminal session the same way the project terminal's does; the tmux sessions
+# behind them are unaffected and a reconnect finds them again after a fresh step-up.
+if changed deployment/volition-stack/native/owner-terminal; then
+  "$live/deployment/volition-stack/native/owner-terminal/setup.sh"
+fi
+
 # Chromium reads its managed policies from this directory; a running project browser applies
 # a change when it reloads its policies, at the latest when it restarts. The project browsers
 # keep no passwords: logins come from Plan through Hermes' vault.
@@ -156,6 +168,14 @@ if changed deployment/volition-stack/browser deployment/volition-stack/native/sy
   install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
   systemctl daemon-reload
   restart+=(volition-project-browser-router.service)
+fi
+
+# Agent isolation (isolation.sh): an installed launcher, egress proxy and Plan socket get the
+# checkout's code and units. Installing and switching it on is `isolation.sh apply`.
+if changed deployment/volition-stack/isolation deployment/volition-stack/native/isolation.sh \
+  deployment/volition-stack/integration/project-browser.mjs \
+  deployment/volition-stack/integration/project-browser-state.mjs; then
+  "$live/deployment/volition-stack/native/isolation.sh" sync
 fi
 
 if ((${#restart[@]} > 0)); then

@@ -2,6 +2,7 @@ import { db, agentRun, aiAgent, project, projectMember, user } from '@repo/db';
 import { and, eq, gte, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { createComment } from '#modules/issues/activity';
+import { onTemplateRelevantChange } from './core/template-sync';
 
 // What an agent may spend and whether it takes work. A paused agent's queued runs and
 // chat answers wait, and nothing new starts it. The token ceilings count what the
@@ -193,6 +194,7 @@ export async function setAgentTokenCeilings(
     .set({ dailyTokenCeiling: ceilings.daily, monthlyTokenCeiling: ceilings.monthly })
     .where(and(eq(aiAgent.id, agentId), eq(aiAgent.teamId, teamId)))
     .returning({ id: aiAgent.id });
+  if (rows.length > 0) await onTemplateRelevantChange(agentId, ['budgets']);
   return rows.length > 0;
 }
 

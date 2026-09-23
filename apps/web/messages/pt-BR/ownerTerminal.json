@@ -1,0 +1,31 @@
+{
+  "stepUp": {
+    "title": "Confirme que é você",
+    "description": "Digite o código do seu aplicativo autenticador para abrir o terminal por 12 horas.",
+    "codeLabel": "Código",
+    "confirm": "Confirmar",
+    "verifying": "Verificando…",
+    "wrongCode": "O código não foi aceito.",
+    "rateLimited": "Muitas tentativas. Aguarde 15 minutos e tente novamente."
+  },
+  "grant": {
+    "active": "Terminal concedido até {time}",
+    "expired": "A concessão do terminal expirou.",
+    "end": "Encerrar"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "Desenvolver a Helena (Claude Code)",
+    "helena-dev-codex": "Desenvolver a Helena (Codex)",
+    "close": "Fechar aba"
+  },
+  "keys": {
+    "esc": "Esc",
+    "tab": "Tab",
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "paste": "Colar"
+  }
+}

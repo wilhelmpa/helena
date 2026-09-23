@@ -1,0 +1,37 @@
+[Unit]
+Description=Volition agent launcher (starts agent units as the project's own user)
+Requires=volition-agent-launcher.socket
+After=volition-agent-launcher.socket volition-egress.socket volition-agent-plan.socket
+
+[Service]
+Type=simple
+# Root is needed to start a unit as another user and to create project users. Every sandbox
+# property is fixed in launcher.py and launcher.json; the runner can only name a project, a
+# runtime of the list, a profile and a working directory.
+ExecStart=/usr/bin/python3 -I /usr/local/lib/volition-isolation/launcher.py
+Environment=VOLITION_LAUNCHER_CONFIG=/usr/local/lib/volition-isolation/launcher.json
+StateDirectory=volition-agent-launcher
+StateDirectoryMode=0700
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=60
+UMask=0022
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectHome=read-only
+ProtectSystem=true
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+InaccessiblePaths=-/etc/volition
+
+[Install]
+WantedBy=multi-user.target

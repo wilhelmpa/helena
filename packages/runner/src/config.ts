@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import type { HermesProfile } from './inventory';
+import type { AgentIsolation } from './isolation';
 import { PRESETS, PRESET_NAMES, isPresetName, type Preset, type PresetName } from './presets';
 
 // Two ways to say what to run. `agent` names a CLI the runner knows (see presets.ts) and
@@ -40,6 +41,9 @@ export interface RunnerConfig {
   // What the Hermes profile enables, as the deployment reads it from its config.yaml.
   // Reported to Plan, and the list a toolset restriction is taken from.
   hermes?: HermesProfile;
+  // The project and profile the agent runs in when agents are isolated (AGENT_ISOLATION=on):
+  // the launcher starts its commands as that project's user. Written by the deployment.
+  isolation?: AgentIsolation;
 }
 
 export interface ChatCatalogModel {
@@ -180,6 +184,27 @@ function hermesFrom(value: unknown): HermesProfile | undefined {
   };
 }
 
+const SLUG = /^[a-z0-9][a-z0-9-]{0,28}$/;
+const PROFILE = /^[a-z0-9][a-z0-9-]{0,28}(?:_[1-9][0-9]{0,9})?$/;
+
+function isolationFrom(value: unknown): AgentIsolation | undefined {
+  if (value === undefined) return undefined;
+  const entry = value as Record<string, unknown> | null;
+  const agentId = entry?.agentId ?? null;
+  if (
+    !entry ||
+    typeof entry !== 'object' ||
+    typeof entry.slug !== 'string' ||
+    !SLUG.test(entry.slug) ||
+    typeof entry.profile !== 'string' ||
+    !PROFILE.test(entry.profile) ||
+    (agentId !== null && (!Number.isSafeInteger(agentId) || (agentId as number) < 1))
+  ) {
+    throw new Error('isolation must name a project slug, a profile and optionally an agent id');
+  }
+  return { slug: entry.slug, profile: entry.profile, agentId: agentId as number | null };
+}
+
 function required(value: unknown, field: string): string {
   const text = textOf(value);
   if (!text) throw new Error(`${field} is required — set it in the config file or the environment`);
@@ -296,6 +321,7 @@ function configFrom(fields: Fields, name: string, extraArgs: string[]): RunnerCo
     outputFormat: outputFormatFrom(fields.outputFormat, presetOf({ agent, command })),
     models: modelsFrom(fields.models),
     hermes: hermesFrom(fields.hermes),
+    isolation: isolationFrom(fields.isolation),
   };
 }
 

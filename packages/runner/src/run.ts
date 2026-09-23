@@ -93,6 +93,7 @@ export async function perform(
         }
       },
       signal: stop.signal,
+      work: { kind: 'run', id: run.id },
     },
   );
   if (stop.signal.aborted) return null;

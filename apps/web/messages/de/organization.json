@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "Noch keine Organisationsstruktur.",
-    "unassigned": "Nicht zugewiesene Agenten"
+    "unassigned": "Nicht zugewiesene Agenten",
+    "unassignedHint": "Hat keine Vorlage und berichtet an niemanden. Weise eine Abteilung oder einen Vorgesetzten zu.",
+    "noDepartment": "Ohne Abteilung",
+    "templates": "Vorlagen im Pool"
   },
   "summary": {
     "pool": "Agentenpool",

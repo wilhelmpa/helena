@@ -35,6 +35,10 @@
       "label": "Pintasan keyboard",
       "description": "Tombol yang terikat ke setiap perintah untuk semua orang di instance ini. Setiap orang dapat mengatur ulang pintasan untuk akun mereka sendiri di preferensi."
     },
+    "security": {
+      "label": "Keamanan",
+      "description": "Kebijakan verifikasi tambahan terminal pemilik, izin yang sedang aktif, dan log auditnya."
+    },
     "storage": {
       "label": "Penyimpanan",
       "description": "Batas unggahan pengguna: ukuran file tunggal, jenis lampiran yang diterima, dan ruang penyimpanan untuk setiap proyek."
@@ -100,6 +104,10 @@
     "git": {
       "label": "Repositori",
       "description": "Tutup issue saat pull request digabungkan di GitHub, GitLab, Gitea, Forgejo, atau Bitbucket."
+    },
+    "network": {
+      "label": "Jaringan agen",
+      "description": "Tujuan yang boleh diakses oleh agen terisolasi proyek ini di internet. Agen tidak pernah bisa mengubah ini sendiri."
     },
     "ai-agents": {
       "label": "Agen AI",

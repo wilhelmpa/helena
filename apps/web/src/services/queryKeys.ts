@@ -51,6 +51,11 @@ export const qk = {
   // Configuration settings section).
   autoArchive: (projectKey: string) => ['autoArchive', projectKey] as const,
   subtaskAutomation: (projectKey: string) => ['subtaskAutomation', projectKey] as const,
+  // The project's agent network settings (the Network settings section) and its
+  // connection log, one page per filter.
+  agentNetworkSettings: (projectKey: string) => ['agentNetworkSettings', projectKey] as const,
+  agentNetworkEvents: (projectKey: string, decision: 'all' | 'blocked') =>
+    ['agentNetworkEvents', projectKey, decision] as const,
   // The project's repository integration settings (the Repositories settings section).
   gitSettings: (projectKey: string) => ['gitSettings', projectKey] as const,
   gitConnections: (projectKey: string) => ['gitConnections', projectKey] as const,
@@ -157,6 +162,9 @@ export const qk = {
     ['aiAgents', teamId, projectId ?? 'all'] as const,
   anyAiAgents: ['aiAgents'] as const,
   teamAiAgents: (teamId: number) => ['aiAgents', teamId] as const,
+  // One agent by id — the chat workspace's fallback when a thread names an agent its
+  // own (kind- and template-filtered) picker list did not carry.
+  aiAgent: (teamId: number, agentId: number) => ['aiAgents', teamId, 'agent', agentId] as const,
   agentTools: (teamId: number) => ['aiAgents', teamId, 'tools'] as const,
   // The skills enabled on one agent (the agent editor's Skills tab).
   agentSkillLinks: (teamId: number, agentId: number) =>
@@ -193,7 +201,10 @@ export const qk = {
   // thread id" — sharing one key would have a rename overwrite the messages a moment
   // later fetched into the same cache entry, or the reverse.
   chat: (threadId: string) => ['chatWorkspace', 'chat', threadId] as const,
-  chatMessages: (threadId: string) => ['chatWorkspace', 'chatMessages', threadId] as const,
+  // A thread's newest transcript page as the chat workspace restores it (useChatThread),
+  // per agent too: the same thread read through another agent's route is refused.
+  chatMessages: (threadId: string, agentId: number) =>
+    ['chatWorkspace', 'chatMessages', threadId, agentId] as const,
   chatPrompts: (projectKey: string | null) => ['chatWorkspace', 'prompts', projectKey] as const,
   issueChats: (issueId: number) => ['chatWorkspace', 'issueChats', issueId] as const,
   // Everything integration-scoped. A credential belongs to the team, so changing one
@@ -353,6 +364,11 @@ export const qk = {
   instanceScimSettings: ['instanceScimSettings'] as const,
   instanceScimGroups: ['instanceScimGroups'] as const,
   instanceTelegramSettings: ['instanceTelegramSettings'] as const,
+  // The owner terminal: its 12h grant (session-scoped, so no invalidation reaches
+  // another tab's session), its instance policy and its audit trail.
+  ownerTerminalGrant: ['ownerTerminalGrant'] as const,
+  ownerTerminalSettings: ['ownerTerminalSettings'] as const,
+  ownerTerminalAudit: ['ownerTerminalAudit'] as const,
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
   instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,
