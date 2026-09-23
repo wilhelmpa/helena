@@ -76,6 +76,7 @@ export default function WorkItemsPage() {
   useShellHeaderExtra(
     headerLayout === 'single' && project ? (
       <ViewTabs
+        embedded
         views={views}
         projectKey={project.project.key}
         activeViewId={editor.activeViewId}

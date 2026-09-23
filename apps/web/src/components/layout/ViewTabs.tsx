@@ -38,6 +38,7 @@ export default function ViewTabs({
   onReorder,
   onToggleFilter,
   displayControl,
+  embedded = false,
 }: {
   views: View[];
   projectKey: string;
@@ -49,6 +50,10 @@ export default function ViewTabs({
   onReorder: (draggedId: number, targetId: number | null) => void;
   onToggleFilter: () => void;
   displayControl: ReactNode;
+  // Rendered into the Shell's single-row header (useShellHeaderExtra) instead of
+  // standing alone as its own bordered, full-height row: no WorkspaceHeader chrome
+  // of its own, since AppHeader already supplies the row's height and border.
+  embedded?: boolean;
 }) {
   const t = useTranslations('views');
   const { can } = usePermissions();
@@ -76,8 +81,13 @@ export default function ViewTabs({
     if (over.id !== active.id) onReorder(draggedId, Number(over.id));
   }
 
+  const Wrapper = embedded ? 'div' : WorkspaceHeader;
+  const wrapperProps = embedded
+    ? { className: 'flex min-w-0 flex-1 items-center gap-1' }
+    : { className: 'gap-1 px-2 sm:px-3' };
+
   return (
-    <WorkspaceHeader className="gap-1 px-2 sm:px-3">
+    <Wrapper {...wrapperProps}>
       {/* Mobile: views collapse into a dropdown (no drag reorder there). */}
       <div className="flex min-w-0 flex-1 items-center sm:hidden">
         <MobileViewSwitcher
@@ -158,6 +168,6 @@ export default function ViewTabs({
         </button>
         {displayControl}
       </div>
-    </WorkspaceHeader>
+    </Wrapper>
   );
 }

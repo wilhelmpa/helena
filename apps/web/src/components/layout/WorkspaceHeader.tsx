@@ -5,6 +5,14 @@ export const WORKSPACE_HEADER_CLASS = 'flex h-12 shrink-0 items-center border-b'
 export const WORKSPACE_HEADER_DESCRIPTION_CLASS =
   'hidden min-w-0 truncate text-xs text-muted-foreground md:block';
 
+// The tool panel's own header (chat/terminal/code/browser/mail): one compact row,
+// filigree like the sidebar rather than a second full page header
+// (docs/volition-design-helena-ui.md, owner decision 2026-09-23 "so filigran wie
+// die Sidebar"). 40px, not AppHeader/WorkspacePageHeader's 48px — a panel is not a
+// page. Its buttons and icons already are (size-7 buttons, 16px icons by the
+// Button component's own default, see WorkspacePanelHeader).
+export const WORKSPACE_PANEL_HEADER_CLASS = 'flex h-10 shrink-0 items-center border-b';
+
 export function WorkspaceHeader({ className, ...props }: ComponentProps<'div'>) {
   return <div className={cn(WORKSPACE_HEADER_CLASS, className)} {...props} />;
 }
