@@ -1,0 +1,50 @@
+{
+  "name": "Name",
+  "key": "Kürzel (kurz, z. B. MKT)",
+  "copyKey": "Kürzel",
+  "description": "Beschreibung",
+  "issueTypes": "Aufgabentypen",
+  "typesCreated": "{count, plural, one {# Aufgabentyp wird} other {# Aufgabentypen werden}} erstellt",
+  "defaultType": "Neue Aufgaben erhalten standardmäßig den Typ {type}. Typen kannst du in den Einstellungen bearbeiten.",
+  "presets": {
+    "general": "Allgemein",
+    "software": "Software",
+    "product": "Produkt",
+    "content": "Inhalte",
+    "marketing": "Marketing",
+    "design": "Design",
+    "sales": "Vertrieb",
+    "operations": "Betrieb",
+    "support": "Support",
+    "recruiting": "Recruiting"
+  },
+  "copyConfiguration": "Konfiguration kopieren",
+  "selectAll": "Alle auswählen",
+  "clearAll": "Alle abwählen",
+  "copyGroups": {
+    "workflow": "Workflow",
+    "automation": "Automatisierung",
+    "views": "Ansichten",
+    "aiTeam": "KI-Team",
+    "knowledge": "Wissen"
+  },
+  "copyItems": {
+    "states": "Status",
+    "issueTypes": "Aufgabentypen",
+    "labels": "Labels",
+    "customFields": "Benutzerdefinierte Felder",
+    "views": "Ansichten",
+    "dashboards": "Dashboards",
+    "documents": "Dokumente",
+    "actions": "Aktionen",
+    "configuration": "Konfiguration",
+    "webhooks": "Webhooks",
+    "agents": "Agenten",
+    "schedules": "Zeitpläne"
+  },
+  "title": "Neues Projekt",
+  "copyTitle": "Projekt „{name}“ kopieren",
+  "create": "Projekt erstellen",
+  "copyAction": "Projekt kopieren",
+  "copyName": "{name} (Kopie)"
+}

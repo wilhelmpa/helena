@@ -1,0 +1,151 @@
+{
+  "newIssue": "Neue Aufgabe",
+  "pin": "Anheften",
+  "unpin": "Nicht mehr anheften",
+  "collapse": "Einklappen",
+  "expand": "Ausklappen",
+  "hide": "Ausblenden",
+  "show": "Anzeigen",
+  "hiddenColumns": "Ausgeblendete Spalten",
+  "hiddenGroups": "Ausgeblendete Gruppen",
+  "selectAll": "Alle auswählen",
+  "deselectAll": "Auswahl aufheben",
+  "resizeColumn": "Spaltenbreite ändern",
+  "viewNamePlaceholder": "Alle Aufgaben",
+  "sortedOrder": "Aufgaben sind nach {field} sortiert. Stell die Sortierung auf „Manuell“ um, um sie zu verschieben.",
+  "statusSince": "Im aktuellen Status seit {date}",
+  "createdOn": "Erstellt am {date}",
+  "updatedOn": "Aktualisiert am {date}",
+  "subtasksProgress": "Unteraufgaben {done}/{total}",
+  "subtasksDone": "{done} von {total} Unteraufgaben erledigt",
+  "wip": {
+    "reached": "Das Limit von {limit} Aufgaben in {column} ist erreicht.",
+    "tooltip": "WIP-Limit: {max}",
+    "count": "{count} / {max}",
+    "filteredCount": "{shown} von {total} / {max}",
+    "filteredTooltip": "{shown} werden mit den aktuellen Filtern angezeigt. Das Limit von {max} berücksichtigt alle {total} Aufgaben in der Spalte."
+  },
+  "columns": {
+    "title": "Titel",
+    "status": "Status",
+    "statusAge": "Zeit im Status",
+    "priority": "Priorität",
+    "type": "Typ",
+    "initiative": "Initiative",
+    "cycle": "Zyklus",
+    "labels": "Labels",
+    "estimatePoints": "Story Points",
+    "estimateTime": "Zeit",
+    "startDate": "Start",
+    "dueDate": "Fällig",
+    "created": "Erstellt",
+    "updated": "Aktualisiert"
+  },
+  "calendar": {
+    "previousMonth": "Vorheriger Monat",
+    "nextMonth": "Nächster Monat",
+    "today": "Heute",
+    "moreIssues": "+{count} weitere",
+    "issueCount": "{count, plural, one {# Aufgabe} other {# Aufgaben}}",
+    "weekdays": {
+      "sun": "So",
+      "mon": "Mo",
+      "tue": "Di",
+      "wed": "Mi",
+      "thu": "Do",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "noDate": {
+      "dueDate": "Kein Fälligkeitsdatum",
+      "startDate": "Kein Startdatum",
+      "custom": "Kein Datum"
+    },
+    "allDated": {
+      "dueDate": "Alle Aufgaben haben ein Fälligkeitsdatum.",
+      "startDate": "Alle Aufgaben haben ein Startdatum.",
+      "custom": "Alle Aufgaben haben ein Datum."
+    }
+  },
+  "timeline": {
+    "empty": "Noch keine Aufgaben für die Zeitachse.",
+    "expandGroup": "Gruppe ausklappen",
+    "collapseGroup": "Gruppe einklappen",
+    "inferredStart": "Start aus dem Erstellungsdatum abgeleitet",
+    "inferredStartDraggable": "Start aus dem Erstellungsdatum abgeleitet – zum Festlegen ziehen"
+  },
+  "bulk": {
+    "selected": "{count} ausgewählt",
+    "status": "Status",
+    "priority": "Priorität",
+    "assignee": "Zuständig",
+    "delegate": "Delegiert an",
+    "initiative": "Initiative",
+    "cycle": "Zyklus",
+    "labels": "Labels",
+    "noAssignee": "Nicht zugewiesen",
+    "noDelegate": "Nicht delegiert",
+    "noInitiative": "Keine Initiative",
+    "noCycle": "Kein Zyklus",
+    "archive": "Archivieren",
+    "clearSelection": "Auswahl aufheben",
+    "area": "Bereich",
+    "noArea": "Kein Bereich"
+  },
+  "removal": {
+    "archive": {
+      "title": "{count, plural, one {Aufgabe archivieren} other {Aufgaben archivieren}}",
+      "confirm": "{count, plural, one {# Aufgabe archivieren} other {# Aufgaben archivieren}}",
+      "description": "{count, plural, one {# ausgewählte Aufgabe archivieren? Sie verschwindet vom Board und kann später wiederhergestellt werden.} other {# ausgewählte Aufgaben archivieren? Sie verschwinden vom Board und können später wiederhergestellt werden.}}"
+    },
+    "delete": {
+      "title": "{count, plural, one {Aufgabe löschen} other {Aufgaben löschen}}",
+      "confirm": "{count, plural, one {# Aufgabe löschen} other {# Aufgaben löschen}}",
+      "description": "{count, plural, one {# ausgewählte Aufgabe löschen?} other {# ausgewählte Aufgaben löschen?}} Dabei werden auch Kommentare, Aktivität und Anhänge entfernt. Das kann nicht rückgängig gemacht werden."
+    }
+  },
+  "share": {
+    "issueTitle": "Aufgabe",
+    "issueUnavailable": "Diese Aufgabe ist nicht verfügbar.",
+    "boardUnavailable": "Dieses geteilte Board ist nicht verfügbar. Der Link wurde möglicherweise widerrufen."
+  },
+  "groups": {
+    "noAssignee": "Nicht zugewiesen",
+    "noDelegate": "Nicht delegiert",
+    "noPriority": "Keine Priorität",
+    "noType": "Kein Typ",
+    "noInitiative": "Keine Initiative",
+    "noCycle": "Kein Zyklus",
+    "noMember": "Kein Wert",
+    "noArea": "Kein Bereich"
+  },
+  "allTasks": {
+    "hint": "Die Aufgaben aller Projekte, in denen du mitarbeitest. Öffne eine Aufgabe, um sie in ihrem Projekt zu bearbeiten.",
+    "searchPlaceholder": "Aufgaben suchen…",
+    "allProjects": "Alle Projekte",
+    "state": {
+      "open": "Offen",
+      "any": "Beliebiger Status"
+    },
+    "assignee": {
+      "any": "Alle",
+      "me": "Mir zugewiesen",
+      "agents": "An Agenten delegiert",
+      "unassigned": "Nicht zugewiesen"
+    },
+    "due": {
+      "any": "Beliebige Fälligkeit",
+      "overdue": "Überfällig",
+      "week": "Innerhalb einer Woche fällig"
+    },
+    "groupBy": {
+      "project": "Nach Projekt",
+      "state": "Nach Status"
+    },
+    "empty": "Keine Aufgaben",
+    "emptyHint": "Keine Aufgabe entspricht diesen Filtern.",
+    "myOpenTasks": "Meine offenen Aufgaben",
+    "viewAll": "Alle Aufgaben",
+    "noOpenTasks": "Dir ist keine offene Aufgabe zugewiesen."
+  }
+}

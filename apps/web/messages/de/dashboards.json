@@ -1,0 +1,204 @@
+{
+  "noAccess": "Du hast keinen Zugriff auf Dashboards.",
+  "defaultName": "Übersicht",
+  "newDashboard": "Neues Dashboard",
+  "renameDashboard": "Dashboard umbenennen",
+  "namePlaceholder": "Dashboard-Name",
+  "options": "Dashboard-Optionen",
+  "rename": "Umbenennen",
+  "editLayout": "Layout bearbeiten",
+  "discard": "Verwerfen",
+  "saveDashboard": "Dashboard speichern",
+  "saveChanges": "Änderungen speichern",
+  "noWidgets": "Noch keine Widgets. Füge eines hinzu, um dieses Dashboard aufzubauen.",
+  "addWidget": "Widget hinzufügen",
+  "addWidgetTitle": "Widget hinzufügen",
+  "addWidgetDescription": "Wähle ein Widget für dieses Dashboard aus.",
+  "searchWidgets": "Widgets suchen",
+  "clearSearch": "Suche zurücksetzen",
+  "noWidgetMatches": "Kein Widget passt zu „{query}“.",
+  "dragToMove": "Zum Verschieben ziehen",
+  "widgetName": "Widget-Name",
+  "widgetSettings": "Widget-Einstellungen",
+  "widgetOptions": "Widget-Optionen",
+  "removeWidget": "Widget entfernen",
+  "lastDays": "Letzte {days} Tage",
+  "showRows": "{count} anzeigen",
+  "widgetGroups": {
+    "issues": "Aufgaben",
+    "agents": "KI-Agenten & Webhooks"
+  },
+  "widgets": {
+    "stat": {
+      "label": "Kennzahl",
+      "description": "Anzahl der Aufgaben, die einem Filter entsprechen"
+    },
+    "recent_issues": {
+      "label": "Neueste Aufgaben",
+      "description": "Aufgaben, sortiert nach Erstellung oder letzter Aktualisierung"
+    },
+    "activity_feed": {
+      "label": "Aktivitätsfeed",
+      "description": "Projektweites Änderungsprotokoll, filterbar nach Person und Aktion"
+    },
+    "pulse": {
+      "label": "Puls",
+      "description": "Heatmap der täglichen Aktivität im GitHub-Stil"
+    },
+    "throughput": {
+      "label": "Durchsatz",
+      "description": "Erstellte vs. geschlossene Aufgaben pro Woche"
+    },
+    "breakdown": {
+      "label": "Aufschlüsselung",
+      "description": "Anzahl der Aufgaben nach Status, Priorität, Typ oder zuständiger Person"
+    },
+    "agent_runs": {
+      "label": "Agentenläufe",
+      "description": "Letzte Läufe von KI-Agenten mit ihrem Ergebnis"
+    },
+    "agent_health": {
+      "label": "Agentenzustand",
+      "description": "Erfolgsquote und Fehlschläge der Agentenläufe in einem Zeitraum"
+    },
+    "webhook_health": {
+      "label": "Webhook-Zustand",
+      "description": "Zustellergebnisse von Webhooks und deaktivierte Endpunkte"
+    },
+    "agent_workload": {
+      "label": "Agentenauslastung",
+      "description": "Delegierte Aufgaben und Laufergebnisse pro Agent"
+    }
+  },
+  "breakdown": {
+    "empty": "Noch keine Aufgaben.",
+    "by": {
+      "status": "Status",
+      "priority": "Priorität",
+      "type": "Typ",
+      "assignee": "Zuständig",
+      "delegate": "Delegiert an"
+    },
+    "caption": {
+      "status": "Nach Status",
+      "priority": "Nach Priorität",
+      "type": "Nach Typ",
+      "assignee": "Nach zuständiger Person",
+      "delegate": "Nach Delegierung"
+    }
+  },
+  "recentIssues": {
+    "empty": "Keine Aufgaben passen zu diesem Filter.",
+    "captionCreated": "Neueste zuerst",
+    "captionUpdated": "Kürzlich aktualisiert",
+    "filterCount": "{count, plural, one {# Filter} other {# Filter}}",
+    "sort": {
+      "created": "Neueste",
+      "updated": "Aktualisiert"
+    }
+  },
+  "activityFeed": {
+    "empty": "Keine Aktivität passt zu diesem Filter.",
+    "someone": "Jemand",
+    "filterCount": "{count, plural, one {# Filter} other {# Filter}}",
+    "actions": {
+      "all": "Alle Aktivitäten",
+      "status": "Statusänderungen",
+      "assignee": "Zuweisungen",
+      "priority": "Priorität",
+      "created": "Erstellt"
+    },
+    "verbs": {
+      "comment": "kommentierte",
+      "created": "erstellte",
+      "title": "änderte den Titel von",
+      "description": "aktualisierte die Beschreibung von",
+      "status": "änderte den Status von",
+      "assignee": "änderte die Zuständigkeit für",
+      "priority": "änderte die Priorität von",
+      "type": "änderte den Typ von",
+      "start_date": "änderte das Startdatum von",
+      "due_date": "änderte das Fälligkeitsdatum von",
+      "label_add": "ergänzte ein Label bei",
+      "label_remove": "entfernte ein Label von",
+      "field": "aktualisierte ein Feld von",
+      "other": "aktualisierte"
+    }
+  },
+  "pulse": {
+    "caption": {
+      "hour": "Nach Stunde",
+      "day": "Nach Tag",
+      "week": "Nach Woche"
+    },
+    "unit": {
+      "hour": "Stunden",
+      "day": "Tage",
+      "week": "Wochen"
+    },
+    "events": "{count, plural, one {# Ereignis} other {# Ereignisse}}",
+    "eventNoun": "{count, plural, one {Ereignis} other {Ereignisse}}",
+    "active": "{count} aktiv",
+    "less": "Weniger",
+    "more": "Mehr"
+  },
+  "throughput": {
+    "empty": "Keine Aktivität in diesem Zeitraum.",
+    "lastWeeks": "Letzte {weeks} Wochen",
+    "created": "Erstellt",
+    "closed": "Geschlossen"
+  },
+  "agentRuns": {
+    "empty": "Noch keine Agentenläufe.",
+    "filters": {
+      "all": "Alle Läufe",
+      "failed": "Fehlgeschlagen",
+      "pending": "In Warteschlange",
+      "success": "Erfolgreich"
+    },
+    "status": {
+      "pending": "wartend",
+      "success": "erfolgreich",
+      "failed": "fehlgeschlagen",
+      "canceled": "abgebrochen"
+    },
+    "trigger": {
+      "mention": "lief nach Erwähnung in",
+      "delegation": "lief nach Delegierung von",
+      "field": "lief nach Feldänderung in",
+      "manual": "lief manuell",
+      "schedule": "lief nach Zeitplan"
+    }
+  },
+  "agentHealth": {
+    "empty": "Keine Agentenläufe.",
+    "successRate": "Erfolgsquote",
+    "runs": "{count, plural, one {# Lauf} other {# Läufe}}",
+    "failed": "{count} fehlgeschlagen",
+    "queued": "{count} in Warteschlange"
+  },
+  "webhookHealth": {
+    "deliveries": "Zustellungen",
+    "failed": "{count} fehlgeschlagen",
+    "pending": "{count} ausstehend",
+    "allDelivered": "alle zugestellt",
+    "disabled": "{count, plural, one {# deaktivierter Endpunkt} other {# deaktivierte Endpunkte}}"
+  },
+  "agentWorkload": {
+    "empty": "Keine Agenten in diesem Projekt.",
+    "agent": "Agent",
+    "delegated": "Delegiert",
+    "runs": "Läufe",
+    "failed": "{count} fehlgeschlagen",
+    "kind": {
+      "external": "Extern",
+      "internal": "Intern"
+    }
+  },
+  "defaultWidgets": {
+    "open": "Offen",
+    "inProgress": "In Bearbeitung",
+    "backlog": "Backlog",
+    "unassigned": "Nicht zugewiesen"
+  }
+}

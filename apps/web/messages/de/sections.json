@@ -1,0 +1,109 @@
+{
+  "account": {
+    "profile": "Profil",
+    "preferences": "Einstellungen",
+    "accounts": "Konten",
+    "security": "Sicherheit",
+    "api-keys": "API-Schlüssel"
+  },
+  "godGroups": {
+    "management": "Verwaltung",
+    "instance": "Instanz"
+  },
+  "god": {
+    "users": {
+      "label": "Benutzer",
+      "description": "Alle Konten dieser Instanz: die globale Rolle, ob die E-Mail-Adresse bestätigt ist, und die Projekte, auf die jedes Konto Zugriff hat."
+    },
+    "teams": {
+      "label": "Teams",
+      "description": "Alle Teams dieser Instanz: die Projekte, die ihnen gehören, und wer dazugehört."
+    },
+    "projects": {
+      "label": "Projekte",
+      "description": "Alle Projekte dieser Instanz: was jedes enthält, wann es zuletzt aktiv war und wer Zugriff darauf hat."
+    },
+    "general": {
+      "label": "Allgemein",
+      "description": "Standardwerte für neue Projekte."
+    },
+    "authentication": {
+      "label": "Authentifizierung",
+      "description": "Wer sich auf dieser Instanz registrieren darf, wie Konten bestätigt werden und mit welchen Anbietern man sich anmeldet."
+    },
+    "hotkeys": {
+      "label": "Tastenkürzel",
+      "description": "Die Tastenbelegung jedes Befehls für alle auf dieser Instanz. Jede Person kann ein Tastenkürzel für das eigene Konto in den Einstellungen neu belegen."
+    },
+    "storage": {
+      "label": "Speicher",
+      "description": "Wie viel hochgeladen werden darf: die Größe einer einzelnen Datei, die erlaubten Anhangstypen und der Speicherplatz pro Projekt."
+    },
+    "telegram": {
+      "label": "Telegram",
+      "description": "Der Bot, mit dem alle ihr Telegram-Konto verbinden, und der Bot, der Telegram-Benachrichtigungen für Projekte ohne eigenen Bot zustellt."
+    },
+    "email": {
+      "label": "E-Mail-Anbieter",
+      "description": "Der Anbieter, über den die Instanz E-Mails versendet: zum Zurücksetzen von Passwörtern, zur Bestätigung von Adressen und für Anmeldelinks."
+    },
+    "auth-provider": {
+      "label": "Anmeldeanbieter",
+      "description": "Die externen Konten, mit denen man sich anmelden kann."
+    },
+    "scim": {
+      "label": "SCIM",
+      "description": "Lass einen Identitätsanbieter Konten auf dieser Instanz erstellen, aktualisieren und deaktivieren und über seine Gruppen Projektzugriff gewähren."
+    }
+  },
+  "settings": {
+    "general": {
+      "label": "Allgemein",
+      "description": "Name und Beschreibung des Projekts und die Abschnitte, die es anzeigt."
+    },
+    "states": {
+      "label": "Status",
+      "description": "Die Workflow-Status, die Aufgaben durchlaufen, jeweils als Spalte angezeigt."
+    },
+    "issue-types": {
+      "label": "Aufgabentypen",
+      "description": "Die Arten von Aufgaben in diesem Projekt, jede mit eigenen Feldern."
+    },
+    "labels": {
+      "label": "Labels",
+      "description": "Tags zum Organisieren und Filtern von Aufgaben im ganzen Projekt."
+    },
+    "custom-fields": {
+      "label": "Benutzerdefinierte Felder",
+      "description": "Zusätzliche Felder auf Aufgaben, global oder auf einen Aufgabentyp beschränkt."
+    },
+    "issue-templates": {
+      "label": "Aufgabenvorlagen",
+      "description": "Vorlagen, aus denen eine neue Aufgabe erstellt werden kann: Titel, Beschreibung und Eigenschaften."
+    },
+    "configuration": {
+      "label": "Konfiguration",
+      "description": "Wie Unteraufgaben mit ihrer übergeordneten Aufgabe geschlossen werden und wann inaktive Aufgaben archiviert werden."
+    },
+    "actions": {
+      "label": "Aktionen",
+      "description": "Schaltflächen auf einer Aufgabe, die Felder mit einem Klick setzen."
+    },
+    "schedules": {
+      "label": "Zeitpläne",
+      "description": "Agentenaufgaben nach einem wiederkehrenden Zeitplan ausführen."
+    },
+    "webhooks": {
+      "label": "Webhooks",
+      "description": "Projektereignisse an externe URLs senden, signiert mit einem Secret pro Webhook."
+    },
+    "git": {
+      "label": "Repositorys",
+      "description": "Aufgaben schließen, wenn ihre Pull Requests auf GitHub, GitLab, Gitea, Forgejo oder Bitbucket gemergt werden."
+    },
+    "ai-agents": {
+      "label": "KI-Agenten",
+      "description": "KI-Agenten, die in diesem Projekt arbeiten."
+    }
+  }
+}

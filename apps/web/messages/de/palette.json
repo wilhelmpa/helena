@@ -1,0 +1,14 @@
+{
+  "placeholder": "Befehl eingeben oder suchen…",
+  "noResults": "Keine Ergebnisse gefunden.",
+  "issues": "Aufgaben",
+  "searching": "Wird gesucht…",
+  "selectAllIssues": "Alle Aufgaben auswählen",
+  "newIssue": "Neue Aufgabe",
+  "newInitiative": "Neue Initiative",
+  "newProject": "Neues Projekt",
+  "toggleChat": "Coordinator-Chat ein- oder ausblenden",
+  "board": "Board",
+  "commands": "Befehle",
+  "switchProject": "Projekt wechseln"
+}

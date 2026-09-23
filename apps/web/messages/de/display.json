@@ -1,0 +1,96 @@
+{
+  "title": "Anzeige",
+  "layouts": {
+    "kanban": "Board",
+    "table": "Tabelle",
+    "timeline": "Zeitachse",
+    "calendar": "Kalender"
+  },
+  "sortFields": {
+    "manual": "Manuell",
+    "title": "Titel",
+    "identifier": "Aufgabennummer",
+    "status": "Status",
+    "priority": "Priorität",
+    "assignee": "Zuständig",
+    "type": "Typ",
+    "startDate": "Startdatum",
+    "dueDate": "Fälligkeitsdatum",
+    "created": "Erstellt",
+    "updated": "Aktualisiert"
+  },
+  "groupFields": {
+    "none": "Keine Gruppierung",
+    "status": "Status",
+    "assignee": "Zuständig",
+    "delegate": "Delegiert an",
+    "priority": "Priorität",
+    "type": "Typ",
+    "initiative": "Initiative",
+    "cycle": "Zyklus",
+    "area": "Bereich"
+  },
+  "properties": {
+    "id": "ID",
+    "status": "Status",
+    "priority": "Priorität",
+    "type": "Typ",
+    "assignee": "Zuständig",
+    "delegate": "Delegiert an",
+    "initiative": "Initiative",
+    "cycle": "Zyklus",
+    "labels": "Labels",
+    "estimatePoints": "Story Points",
+    "estimateTime": "Zeitschätzung",
+    "startDate": "Startdatum",
+    "dueDate": "Fälligkeitsdatum",
+    "created": "Erstellt",
+    "updated": "Aktualisiert",
+    "statusAge": "Zeit im Status"
+  },
+  "stateTypes": {
+    "backlog": "Backlog",
+    "unstarted": "Nicht begonnen",
+    "started": "Begonnen",
+    "completed": "Abgeschlossen",
+    "canceled": "Abgebrochen"
+  },
+  "timelineScales": {
+    "week": "Woche",
+    "month": "Monat",
+    "quarter": "Quartal"
+  },
+  "weekStart": {
+    "0": "Sonntag",
+    "1": "Montag"
+  },
+  "dateFields": {
+    "dueDate": "Fälligkeitsdatum",
+    "startDate": "Startdatum"
+  },
+  "rows": {
+    "columns": "Spalten",
+    "grouping": "Gruppierung",
+    "swimlanes": "Swimlanes",
+    "subGrouping": "Untergruppierung",
+    "ordering": "Sortierung",
+    "ascending": "Aufsteigend",
+    "descending": "Absteigend",
+    "showEmptyColumns": "Leere Spalten anzeigen",
+    "showEmptyGroups": "Leere Gruppen anzeigen",
+    "showLinks": "Verknüpfungen anzeigen",
+    "separateSubtaskCards": "Unteraufgaben als eigene Karten anzeigen",
+    "separateSubtaskRows": "Unteraufgaben als eigene Zeilen anzeigen",
+    "startSubtasksCollapsed": "Unteraufgaben anfangs einklappen",
+    "showNestedSubtasks": "Verschachtelte Unteraufgaben anzeigen",
+    "nestedSubtasks": "Verschachtelte Unteraufgaben",
+    "displayProperties": "Angezeigte Eigenschaften",
+    "placeBy": "Platzieren nach",
+    "startWeekOn": "Woche beginnt am",
+    "startCollapsed": "Gruppen anfangs einklappen",
+    "scale": "Skala",
+    "addCustomField": "Benutzerdefiniertes Feld hinzufügen",
+    "viewIcon": "Symbol der Ansicht"
+  },
+  "layoutCommand": "Layout: {layout}"
+}

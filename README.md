@@ -118,7 +118,7 @@ release.
 - Outgoing webhooks: subscribe to events, signed payloads, and retries with a delivery log
 - Sign in with an email or a username and a password, a passkey, or Google
 - Notifications by email (SMTP or Resend) and Telegram, with per-member preferences
-- Interface in English, Ukrainian, Russian, Simplified Chinese, Arabic, French, Portuguese (Brazil), Bahasa Indonesia, and Spanish (Spain)
+- Interface in English, Ukrainian, Russian, Simplified Chinese, Arabic, French, Portuguese (Brazil), Bahasa Indonesia, Spanish (Spain), and German
 - Instance administration: storage limits, mail transport, and instance-wide settings
 
 </details>
