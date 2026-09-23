@@ -10,15 +10,11 @@ import { useChatAgentStates } from '../../hooks/useChatAgentStates';
 import { useChatSummary } from '../../hooks/useChatSummary';
 import { artifactPlacement, chatLayoutMode } from '../../utils/chatLayout';
 import type { Artifact } from '../../utils/artifacts';
+import { locationAfterDeletion, type ChatLocation } from '../../utils/chatLocation';
 import ChatListPane from './ChatListPane';
 import ChatThreadView from './ChatThreadView';
 import ChatEmptyState from './ChatEmptyState';
 import ArtifactPanel from './ArtifactPanel';
-
-export interface ChatLocation {
-  agentId: number | null;
-  threadId: string | null;
-}
 
 export interface ChatWorkspaceProps {
   scopeKey: string;
@@ -107,6 +103,18 @@ export default function ChatWorkspace({
     [onNavigate, agentId, threadId],
   );
 
+  // A deleted thread never stays open: the view leaves it (its chat state and cached
+  // transcript go with the remounted view), and the address loses it.
+  const leaveDeletedThread = useCallback(
+    (deletedThreadId: string) => {
+      const next = locationAfterDeletion({ agentId, threadId }, deletedThreadId);
+      if (!next) return;
+      closePanels();
+      onNavigate(next, { replace: true });
+    },
+    [agentId, threadId, closePanels, onNavigate],
+  );
+
   const showArtifact = useCallback((next: Artifact) => {
     setArtifact(next);
     setArtifactOpen(true);
@@ -149,6 +157,7 @@ export default function ChatWorkspace({
         onOpenChange={setListOpen}
         selectedThreadId={threadId}
         onSelectThread={selectThread}
+        onThreadRemoved={leaveDeletedThread}
         onNewChat={() => startNewChat(null)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -163,6 +172,7 @@ export default function ChatWorkspace({
             threadId={threadId}
             newChatDraft={newChatDraft}
             onThreadCreated={onThreadCreated}
+            onThreadDeleted={leaveDeletedThread}
             onNewChat={startNewChat}
             onOpenList={() => setListOpen(true)}
             compact={mode === 'compact'}

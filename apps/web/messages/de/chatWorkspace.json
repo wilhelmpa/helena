@@ -52,7 +52,6 @@
     "transcript": "Nachrichten",
     "loadOlder": "Frühere Nachrichten laden",
     "loading": "Lädt …",
-    "thinking": "Denkt nach …",
     "reasoning": "Denkprozess",
     "reasoningLive": "Denkt nach …",
     "toolCalls": "{count, plural, one {# Werkzeugaufruf} other {# Werkzeugaufrufe}}",
@@ -65,16 +64,12 @@
     "regenerate": "Neu generieren",
     "previousVersion": "Vorherige Version",
     "nextVersion": "Nächste Version",
-    "clarificationLabel": "Wartet auf deine Antwort",
-    "clarificationPlaceholder": "Antwort eingeben …",
-    "reply": "Antworten",
     "saveAsNote": "Als Notiz speichern",
     "noteSaved": "Chat als Notiz in „Docs“ gespeichert.",
     "noteSaveFailed": "Der Chat konnte nicht als Notiz gespeichert werden.",
     "noteQuestion": "Frage",
     "noteAnswer": "Antwort von {agent}",
     "noteSource": "Chat mit {agent}, gespeichert am {date}",
-    "waitingForRunner": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist.",
     "restoreFailedTitle": "Dieser Chat konnte nicht geladen werden",
     "restoreFailed": "Seine Nachrichten konnten nicht gelesen werden. Prüfe die Verbindung und versuche es erneut.",
     "retry": "Erneut versuchen"
@@ -156,8 +151,7 @@
   },
   "newChat": {
     "title": "Neuer Chat mit {agent}",
-    "offlineHint": "Sein Runner ist gerade nicht verbunden. Eine Nachricht wartet in der Warteschlange und wird beantwortet, sobald er wieder da ist.",
-    "pickAgent": "Agent für diesen Chat wählen"
+    "hint": "Den Agenten wählst du unten links im Eingabefeld – dort siehst du auch seinen Status."
   },
   "agents": {
     "status": {
@@ -194,5 +188,10 @@
     "memory": "Gedächtnis des Agenten öffnen",
     "usage": "Token-Verbrauch dieses Chats zeigen",
     "stop": "Antwort stoppen"
+  },
+  "activity": {
+    "thinking": "{agent} denkt nach …",
+    "writing": "{agent} schreibt …",
+    "queued": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist."
   }
 }

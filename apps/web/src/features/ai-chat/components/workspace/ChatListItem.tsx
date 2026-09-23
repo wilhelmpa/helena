@@ -36,12 +36,14 @@ export default function ChatListItem({
   selected,
   onSelect,
   highlightQuery,
+  onRemoved,
 }: {
   chat: ChatSummary;
   view: ChatListView;
   selected: boolean;
   onSelect: () => void;
   highlightQuery?: string;
+  onRemoved: (threadId: string) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const title = chat.title || t('list.untitled');
@@ -84,7 +86,7 @@ export default function ChatListItem({
         )}
       </button>
       <div className="absolute end-0.5 top-0.5">
-        <ChatListItemMenu chat={chat} view={view} />
+        <ChatListItemMenu chat={chat} view={view} onRemoved={onRemoved} />
       </div>
     </div>
   );

@@ -52,7 +52,6 @@
     "transcript": "Messages",
     "loadOlder": "Load earlier messages",
     "loading": "Loading…",
-    "thinking": "Thinking…",
     "reasoning": "Reasoning",
     "reasoningLive": "Reasoning…",
     "toolCalls": "{count, plural, one {# tool call} other {# tool calls}}",
@@ -65,16 +64,12 @@
     "regenerate": "Regenerate",
     "previousVersion": "Previous version",
     "nextVersion": "Next version",
-    "clarificationLabel": "Waiting for your reply",
-    "clarificationPlaceholder": "Type your reply…",
-    "reply": "Reply",
     "saveAsNote": "Save as a note",
     "noteSaved": "Chat saved as a note in Docs.",
     "noteSaveFailed": "Could not save the chat as a note.",
     "noteQuestion": "Question",
     "noteAnswer": "{agent}’s answer",
     "noteSource": "Chat with {agent}, saved {date}",
-    "waitingForRunner": "Waiting for {agent} — its runner is offline. The answer starts once it is back.",
     "restoreFailedTitle": "This chat could not be loaded",
     "restoreFailed": "Its messages could not be read. Check the connection and try again.",
     "retry": "Try again"
@@ -156,8 +151,7 @@
   },
   "newChat": {
     "title": "New chat with {agent}",
-    "offlineHint": "Its runner is not connected right now. A message waits in its queue and is answered once it is back.",
-    "pickAgent": "Pick the agent for this chat"
+    "hint": "Pick the agent at the bottom left of the input — its state is shown there."
   },
   "agents": {
     "status": {
@@ -194,5 +188,10 @@
     "memory": "Open the agent's memory",
     "usage": "Show this chat's token usage",
     "stop": "Stop the answer"
+  },
+  "activity": {
+    "thinking": "{agent} is thinking…",
+    "writing": "{agent} is writing…",
+    "queued": "Waiting for {agent} — its runner is offline. The answer starts once it is back."
   }
 }

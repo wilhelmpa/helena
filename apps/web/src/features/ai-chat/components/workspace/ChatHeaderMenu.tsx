@@ -60,7 +60,7 @@ export default function ChatHeaderMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="size-8" aria-label={t('list.moreActions')}>
             <MoreHorizontal className="size-4" />
@@ -114,8 +114,10 @@ export default function ChatHeaderMenu({
           confirmLabel={t('list.delete')}
           onClose={() => setDeleting(false)}
           onConfirm={async () => {
-            await trash.mutateAsync(threadId);
+            // Closed first: leaving the chat unmounts this menu, and a dialog torn down
+            // while open can leave the page blocked for clicks.
             setDeleting(false);
+            await trash.mutateAsync(threadId);
             onDeleted();
           }}
         >

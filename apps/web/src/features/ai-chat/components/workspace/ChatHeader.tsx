@@ -8,23 +8,20 @@ import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
 import { Button } from '@/components/ui/button';
 import { useChatListMutations } from '../../hooks/useChatList';
 import { useChatSummary } from '../../hooks/useChatSummary';
-import type { ChatAgentState } from '../../utils/agentPresence';
 import { messageText, type PlanUIMessage } from '../../utils/chatMessages';
 import ChatRenameDialog from './ChatRenameDialog';
 import ChatToIssueDialog from './ChatToIssueDialog';
 import ChatHeaderMenu from './ChatHeaderMenu';
-import ChatAgentMenu from './ChatAgentMenu';
 
 export interface ChatHeaderProps {
   scopeKey: string;
   projectKey: string | null;
   agent: AiAgent;
-  agents: AiAgent[];
-  states: Map<number, ChatAgentState>;
   threadId: string | null;
   messages: PlanUIMessage[];
   onOpenList: () => void;
   onNewChat: (agentId: number) => void;
+  onDeleted: (threadId: string) => void;
   compact: boolean;
   artifactOpen: boolean;
   onToggleArtifact: () => void;
@@ -32,19 +29,18 @@ export interface ChatHeaderProps {
 }
 
 // The bar above the conversation, one filigree row like the tool panel's: opening the
-// list on a narrow layout, the chat's title (renamed on click), who it is with (and a
-// new chat with someone else, ChatAgentMenu), a new chat, the artifact panel's toggle
-// and the chat's own menu.
+// list on a narrow layout, the chat's title (renamed on click), a new chat, the artifact
+// panel's toggle and the chat's own menu. Who the chat is with and how the answer is
+// doing live at the composer (ChatComposer), where they are steered.
 export default function ChatHeader({
   scopeKey,
   projectKey,
   agent,
-  agents,
-  states,
   threadId,
   messages,
   onOpenList,
   onNewChat,
+  onDeleted,
   compact,
   artifactOpen,
   onToggleArtifact,
@@ -80,7 +76,6 @@ export default function ChatHeader({
       >
         <span dir="auto">{threadId ? title : t('list.newChat')}</span>
       </button>
-      <ChatAgentMenu agent={agent} agents={agents} states={states} onNewChat={onNewChat} />
       {threadId && (
         <Button
           variant="ghost"
@@ -118,7 +113,7 @@ export default function ChatHeader({
           agentName={agent.name}
           onRename={() => setRenaming(true)}
           onToIssue={projectKey && messages.length > 0 ? () => setIssueOpen(true) : undefined}
-          onDeleted={() => onNewChat(agent.id)}
+          onDeleted={() => onDeleted(threadId)}
         />
       )}
       {renaming && threadId && (

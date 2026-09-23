@@ -14,48 +14,45 @@ import type { ChatAgentState } from '../../utils/agentPresence';
 import { useAgentStateText } from '../../hooks/useAgentStateText';
 import ChatAgentMenuItem from './ChatAgentMenuItem';
 
-// Who this chat is with, in the header: the agent's avatar with its presence and
-// runtime, its name and its state. Opened, it lists every agent — picking one starts a
-// new chat with it, since a chat stays with the agent it began with.
+// Who the chat is with, at the composer's bottom left: the agent's avatar with its
+// presence dot, its name and its state. Opened, it lists every agent with its runtime,
+// model and state — picking another one starts a new chat with it, since a chat stays
+// with the agent it began with.
 export default function ChatAgentMenu({
   agent,
   agents,
   states,
-  onNewChat,
+  onPick,
 }: {
   agent: AiAgent;
   agents: AiAgent[];
   states: Map<number, ChatAgentState>;
-  onNewChat: (agentId: number) => void;
+  onPick: (agentId: number) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const text = useAgentStateText();
   const state = states.get(agent.id);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-8 min-w-0 items-center gap-2 rounded-md px-2 text-sm ring-sidebar-ring outline-hidden transition-colors hover:bg-sidebar-accent focus-visible:ring-2 data-[state=open]:bg-sidebar-accent"
+          className="flex h-8 min-w-0 items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground ring-sidebar-ring outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 data-[state=open]:bg-sidebar-accent"
           aria-label={t('agents.switch', { agent: agent.name })}
+          title={`${agent.name} · ${text.detail(agent, state)}`}
         >
-          <AgentAvatar
-            name={agent.name}
-            presence={state?.presence}
-            runtime={state?.runtime ?? undefined}
-            className="size-5 text-2xl"
-          />
-          <span className="hidden max-w-40 truncate font-medium @md/chat:inline">{agent.name}</span>
+          <AgentAvatar name={agent.name} presence={state?.presence} className="size-5 text-xl" />
+          <span className="hidden max-w-32 truncate text-foreground @sm/chat:inline">
+            {agent.name}
+          </span>
           {state && (
-            <span className="hidden text-xs text-muted-foreground @2xl/chat:inline">
-              {text.status(state.label)}
-            </span>
+            <span className="hidden truncate @xl/chat:inline">{text.status(state.label)}</span>
           )}
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown className="size-3.5 shrink-0" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-h-96 w-72 overflow-y-auto">
+      <DropdownMenuContent align="start" side="top" className="max-h-96 w-72 overflow-y-auto">
         <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
           {t('agents.newChatWith')}
         </DropdownMenuLabel>
@@ -65,7 +62,7 @@ export default function ChatAgentMenu({
             agent={candidate}
             state={states.get(candidate.id)}
             current={candidate.id === agent.id}
-            onPick={() => onNewChat(candidate.id)}
+            onPick={() => onPick(candidate.id)}
           />
         ))}
       </DropdownMenuContent>

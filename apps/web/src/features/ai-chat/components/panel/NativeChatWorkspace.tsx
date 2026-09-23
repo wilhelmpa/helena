@@ -8,7 +8,8 @@ import { runtimeEnv } from '@/utils/runtimeEnv';
 import { nativeChatProjectKey } from '@/utils/workspaceTools';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
-import ChatWorkspace, { type ChatLocation } from '../workspace/ChatWorkspace';
+import ChatWorkspace from '../workspace/ChatWorkspace';
+import type { ChatLocation } from '../../utils/chatLocation';
 
 // The chat tool of the Werkzeug-Panel: the same ChatWorkspace the full page uses (see
 // workspace/ChatWorkspaceRoot), mounted here with its own local location instead of the

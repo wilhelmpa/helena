@@ -85,6 +85,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => {}}
+        onRemoved={() => {}}
         highlightQuery="release"
       />,
     );
@@ -103,6 +104,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => {}}
+        onRemoved={() => {}}
       />,
     );
     assert.equal(document.querySelectorAll('img').length, 0);
@@ -118,6 +120,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => {}}
+        onRemoved={() => {}}
       />,
     );
     assert.ok(document.querySelector('[role="status"]'));
@@ -131,6 +134,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => (selected = true)}
+        onRemoved={() => {}}
       />,
     );
     const button = document.querySelector('button');

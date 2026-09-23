@@ -6,7 +6,8 @@ import { useTranslations } from 'next-intl';
 import { chatPath, homeChatPath } from '@/utils/paths';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
-import ChatWorkspace, { type ChatLocation } from './ChatWorkspace';
+import ChatWorkspace from './ChatWorkspace';
+import type { ChatLocation } from '../../utils/chatLocation';
 
 // The chat page mounted at /chat (Home, every project) and at
 // /project/:projectKey/chat (one project). The open agent and chat stay in the
