@@ -31,6 +31,7 @@
   "newTeam": "Nouvelle équipe",
   "manageTeams": "Gérer les équipes",
   "role": "Rôle : {role}",
+  "basedOn": "Basé sur It’s a Plan (AGPL-3.0)",
   "search": "Rechercher ou lancer une commande…",
   "searchHint": "Rechercher ou lancer une commande ({key})",
   "newIssueHint": "Nouveau ticket ({key})",
@@ -65,7 +66,15 @@
       "reload": "Actualiser",
       "tabs": "Onglets",
       "newTab": "Nouvel onglet",
-      "closeTab": "Fermer l'onglet"
+      "closeTab": "Fermer l'onglet",
+      "view": "Vue du navigateur",
+      "live": "En direct",
+      "liveTitle": "Vue en direct de l’onglet au premier plan",
+      "desktop": "Bureau",
+      "desktopTitle": "Bureau (VNC)",
+      "liveKeyboard": "Navigateur en direct. Les touches vont à la page tant que la vue a le focus.",
+      "connecting": "Connexion au navigateur…",
+      "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…"
     }
   },
   "groups": {

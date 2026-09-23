@@ -703,6 +703,9 @@ export const approvalRequest = pgTable(
     kind: text('kind').notNull(),
     action: text('action').notNull(),
     details: text('details').notNull().default(''),
+    // The exact command a blocked tool call asked to run. Hermes' approval guard lets the
+    // follow-up run execute exactly this command once the request is approved.
+    command: text('command'),
     status: text('status').notNull().default('pending'),
     decidedByUserId: text('decided_by_user_id').references(() => user.id, {
       onDelete: 'set null',
@@ -722,10 +725,11 @@ export const approvalRequest = pgTable(
     check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
     index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),
     index('approval_request_agent_idx').on(t.agentId),
-    // One pending request per action of a run, so a repeated tool call cannot queue the
-    // same outward action twice.
+    // One pending request per action and command of a run, so a repeated tool call cannot
+    // queue the same outward action twice. The command is indexed by its hash: a long one
+    // exceeds the size of a b-tree index entry.
     uniqueIndex('approval_request_pending_run_uq')
-      .on(t.runId, t.kind, t.action)
+      .on(t.runId, t.kind, t.action, sql`md5(coalesce(${t.command}, ''))`)
       .where(sql`${t.status} = 'pending' AND ${t.runId} IS NOT NULL`),
   ],
 );
@@ -2050,11 +2054,15 @@ export const projectViewFolder = pgTable(
       .notNull()
       .references(() => project.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    // The area's directory, relative to the project workspace and to the project's
+    // vault folder. The integration service creates, moves and trashes both.
+    folder: text('folder').notNull(),
     position: doublePrecision('position').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     unique('project_view_folder_project_name_unique').on(t.projectId, t.name),
+    unique('project_view_folder_project_folder_unique').on(t.projectId, t.folder),
     index('project_view_folder_project_idx').on(t.projectId, t.position),
   ],
 );

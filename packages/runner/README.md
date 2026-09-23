@@ -178,6 +178,11 @@ priority over both. An `agents` entry has priority over all three, for the field
 | `outputFormat`   | `ITSAPLAN_OUTPUT_FORMAT`    | the preset's       | How the runner reads a chat answer                                     |
 | `models`         |                             | `[]`               | Models and reasoning levels available in the chat selector             |
 
+A queued run of an issue in an area can name the area's folder (`workdir` in the claim). The
+runner starts that run in the folder of that name below `cwd` when it exists, and in `cwd`
+itself when it does not. A folder that resolves outside `cwd`, also through a symbolic link,
+fails the run. Chat answers always start in `cwd`.
+
 Set `agent` or `command`. With the environment you need no file at all:
 
 ```bash
@@ -229,6 +234,11 @@ each run and chat answer the runner reads the values from `GET /agent-runtime/mc
 passes them to Hermes in those variables, so they are never written to disk. They are part of
 the environment of the Hermes process for that run, which its tools inherit. A server named like
 a toolset or a server of the profile fails the sync.
+Every run and chat answer gets `--toolsets` with these toolsets and every MCP server. A toolset
+turned off for the agent in Plan is left out, and so is `cronjob`, Hermes' own scheduler: Plan
+schedules work through its routines, and a Hermes job would run it a second time. Without the
+`hermes` field no toolsets are reported, none can be turned off, and Hermes uses the profile's
+own selection.
 
 ### Website logins
 

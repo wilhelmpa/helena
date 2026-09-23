@@ -55,7 +55,7 @@ mcp_servers:
   IDs and token counts are streamed to the native chat.
 - `provider` is optional and is passed as `--provider`. Set it when the selected Hermes account
   needs an explicit provider instead of automatic provider selection.
-- A chat resumes with `--resume`. The model and reasoning level selected in It's a Plan are
+- A chat resumes with `--resume`. The model and reasoning level selected in Volition are
   passed as `--model` and `--reasoning` for that request.
 - `--profile` chooses the Hermes memory, skills, credentials and sessions. The profile must
   already exist. Omit the flag to use the default profile.
@@ -67,8 +67,9 @@ mcp_servers:
   `--ignore-rules` is rejected because it would stop Hermes from loading this policy.
 - `hermes` lists the toolsets and MCP servers the profile's `config.yaml` enables for the cli
   platform: `{ "toolsets": ["file", "web"], "mcpServers": ["itsaplan"] }`. The runner reports
-  them to Plan with the profile's skills and memory. A toolset turned off in Plan is left out of
-  the `--toolsets` the runner passes; without this field no toolset can be turned off.
+  them to Plan with the profile's skills and memory, and passes them as `--toolsets`, without a
+  toolset turned off in Plan and without `cronjob`, Hermes' own scheduler. Without this field no
+  toolset can be turned off.
 - `models` publishes the chat selector catalog. It does not store provider credentials. List only
   model IDs that the selected Hermes profile can use.
 

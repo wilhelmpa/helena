@@ -8,6 +8,7 @@ import {
   setViewFavorite,
   reorderViews,
   type ViewFolder,
+  type ViewFolderInput,
   listViewFolders,
   createViewFolder,
   updateViewFolder,
@@ -108,7 +109,7 @@ export function useViewFoldersQuery(projectKey: string | null) {
 export function useCreateViewFolder(projectKey: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => createViewFolder(projectKey!, name),
+    mutationFn: (input: ViewFolderInput) => createViewFolder(projectKey!, input),
     onSuccess: () => {
       if (projectKey) void qc.invalidateQueries({ queryKey: qk.viewFolders(projectKey) });
     },
@@ -118,7 +119,7 @@ export function useCreateViewFolder(projectKey: string | null) {
 export function useUpdateViewFolder(projectKey: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => updateViewFolder(id, name),
+    mutationFn: ({ id, ...input }: ViewFolderInput & { id: number }) => updateViewFolder(id, input),
     onSuccess: () => {
       if (projectKey) void qc.invalidateQueries({ queryKey: qk.viewFolders(projectKey) });
     },

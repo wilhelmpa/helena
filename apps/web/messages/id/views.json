@@ -19,7 +19,7 @@
   "moveFolderUp": "Pindah ke atas",
   "moveFolderDown": "Pindah ke bawah",
   "deleteFolder": "Hapus area",
-  "deleteFolderConfirm": "Hapus {name}? Tampilan dan item pekerjaannya tetap ada di proyek tanpa area.",
+  "deleteFolderConfirm": "Hapus {name}? Tampilan dan item pekerjaannya tetap ada di proyek tanpa area. Foldernya dipindahkan ke tempat sampah proyek.",
   "moveToFolder": "Pindah ke area",
   "noFolder": "Tanpa area",
   "newBoard": "Papan baru",
@@ -27,5 +27,10 @@
   "areaOptions": "Opsi area",
   "newFolderDescription": "Area mengelompokkan tugas dengan papan sendiri, agar sebagian proyek dapat direncanakan terpisah.",
   "newBoardDescription": "Papan hanya menampilkan tugas {name}.",
-  "create": "Buat"
+  "create": "Buat",
+  "areaFolderLabel": "Folder",
+  "areaFolderHint": "Huruf kecil, angka, dan tanda hubung. Agen mengerjakan tugas area ini di folder ini dalam workspace proyek, dan Files memiliki folder dengan nama yang sama.",
+  "areaFolderReserved": "Proyek memakai {folder} untuk berkasnya sendiri. Pilih folder lain.",
+  "areaFolderTaken": "Area lain di proyek ini sudah memakai folder ini.",
+  "openFolder": "Buka folder"
 }

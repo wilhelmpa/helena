@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { looksLikeRoles } from '../utils/rolesTransfer';
+import { readClipboardText } from '@/utils/clipboard';
 
 // Reading the clipboard outside a user gesture works only where clipboard-read has
 // been granted (Chromium). Everywhere else the content stays unknown, and the paste
@@ -12,7 +13,7 @@ async function clipboardHasRoles(): Promise<boolean> {
       name: 'clipboard-read' as PermissionName,
     });
     if (status.state !== 'granted') return true;
-    return looksLikeRoles(await navigator.clipboard.readText());
+    return looksLikeRoles(await readClipboardText());
   } catch {
     return true;
   }

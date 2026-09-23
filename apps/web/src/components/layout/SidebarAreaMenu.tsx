@@ -1,14 +1,17 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { FolderOpen, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ViewFolder } from '@/lib/api/endpoints/views';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { useCreateView, useDeleteViewFolder, useUpdateViewFolder } from '@/services/views.service';
-import { viewPath } from '@/utils/paths';
+import { filesPath, viewPath } from '@/utils/paths';
 import { defaultViewSettings } from '@/utils/viewSettings';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import NameDialog from '@/components/common/overlay/NameDialog';
+import AreaDialog from '@/components/layout/AreaDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,28 +19,33 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// The actions of one area in the sidebar: add a board to it, rename it, delete it.
-// Deleting keeps its boards and tasks in the project without an area.
+// The actions of one area in the sidebar: add a board to it, open its folder on the
+// Files page, rename it, delete it. Deleting keeps its boards and tasks in the project
+// without an area.
 export default function SidebarAreaMenu({
   projectKey,
   area,
+  areas,
 }: {
   projectKey: string;
   area: ViewFolder;
+  areas: ViewFolder[];
 }) {
   const t = useTranslations('views');
   const tCommon = useTranslations('common');
   const [dialog, setDialog] = useState<'board' | 'rename' | 'delete' | null>(null);
   const router = useRouter();
   const { can } = usePermissions();
+  const features = useProjectFeatures();
   const createView = useCreateView(projectKey);
   const updateArea = useUpdateViewFolder(projectKey);
   const deleteArea = useDeleteViewFolder(projectKey);
   const canCreate = can('views', 'create');
   const canEdit = can('views', 'edit');
   const canDelete = can('views', 'delete');
+  const canOpenFolder = features.documents && can('documents', 'read');
 
-  if (!canCreate && !canEdit && !canDelete) return null;
+  if (!canCreate && !canEdit && !canDelete && !canOpenFolder) return null;
 
   async function addBoard(name: string) {
     const created = await createView.mutateAsync({
@@ -68,6 +76,13 @@ export default function SidebarAreaMenu({
               <Plus /> {t('newBoard')}
             </DropdownMenuItem>
           )}
+          {canOpenFolder && (
+            <DropdownMenuItem asChild>
+              <Link href={filesPath(projectKey, area.folder)}>
+                <FolderOpen /> {t('openFolder')}
+              </Link>
+            </DropdownMenuItem>
+          )}
           {canEdit && (
             <DropdownMenuItem onSelect={() => setDialog('rename')}>
               <Pencil /> {t('renameFolder')}
@@ -91,12 +106,12 @@ export default function SidebarAreaMenu({
         />
       )}
       {dialog === 'rename' && (
-        <NameDialog
+        <AreaDialog
           title={t('renameFolder')}
-          label={t('folderNamePrompt')}
-          initialName={area.name}
           submitLabel={tCommon('save')}
-          onSubmit={(name) => updateArea.mutateAsync({ id: area.id, name })}
+          area={area}
+          areas={areas}
+          onSubmit={(input) => updateArea.mutateAsync({ id: area.id, ...input })}
           onClose={() => setDialog(null)}
         />
       )}

@@ -4,6 +4,7 @@ import type { RunnerConfig } from './config';
 import { execute, type Outcome } from './execute';
 import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
+import { runCwd } from './workdir';
 
 // `stop` is aborted when the heartbeat says the run was canceled. The server has already
 // closed the run by then, so the command is killed and nothing is reported for it.
@@ -41,7 +42,7 @@ export async function perform(
   const logins = new LoginUseReader(hermes?.logins ?? new Map());
   const task = taskOf(run);
   const outcome = await execute(
-    config,
+    { ...config, cwd: runCwd(config.cwd, run.workdir) },
     { ...task, toolsets: hermes?.toolsets ?? null, env: { ...task.env, ...hermes?.env } },
     {
       onData: (chunk) => {

@@ -467,9 +467,9 @@ describe('Hermes runtime policy synchronizer', () => {
       { profile },
     );
 
-    expect(sync.toolsets()).toBeNull();
+    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
     await sync.ensure();
-    expect(sync.toolsets()).toBeNull();
+    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
     await sync.ensure();
     expect(sync.toolsets()).toEqual(['file', 'web', 'itsaplan']);
   });
@@ -487,7 +487,7 @@ describe('Hermes runtime policy synchronizer', () => {
       { profile },
     );
 
-    expect(await sync.runSettings()).toEqual({ toolsets: null, env: {} });
+    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web', 'itsaplan'], env: {} });
     await sync.ensure();
     const settings = {
       toolsets: ['file', 'itsaplan', 'jev-browser'],
@@ -508,16 +508,25 @@ describe('Hermes runtime policy synchronizer', () => {
 
     // Without servers there is nothing to read from Plan.
     await sync.ensure();
-    expect(await sync.runSettings()).toEqual({ toolsets: null, env: {} });
+    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web', 'itsaplan'], env: {} });
   });
 });
 
 describe('Hermes toolset restriction', () => {
   const profile = { toolsets: ['browser', 'file', 'terminal'], mcpServers: ['itsaplan'] };
 
-  it('leaves Hermes on its own selection while nothing it enables is denied', () => {
-    expect(allowedToolsets(profile, [])).toBeNull();
-    expect(allowedToolsets(profile, ['message.send'], ['shopify-dev'])).toBeNull();
+  it('names the toolsets, the MCP servers and the agent servers while nothing is denied', () => {
+    expect(allowedToolsets(profile, [])).toEqual(['browser', 'file', 'terminal', 'itsaplan']);
+    expect(allowedToolsets(profile, ['message.send'], ['shopify-dev'])).toEqual([
+      'browser',
+      'file',
+      'terminal',
+      'itsaplan',
+      'shopify-dev',
+    ]);
+  });
+
+  it('leaves Hermes on its own selection without the profile', () => {
     expect(allowedToolsets(undefined, ['terminal'])).toBeNull();
   });
 
@@ -530,6 +539,12 @@ describe('Hermes toolset restriction', () => {
       'terminal',
       'shopify-dev',
     ]);
+  });
+
+  it('never passes the Hermes scheduler on, whatever the policy allows', () => {
+    const withCron = { ...profile, toolsets: ['cronjob', ...profile.toolsets] };
+    expect(allowedToolsets(withCron, [])).toEqual(['browser', 'file', 'terminal', 'itsaplan']);
+    expect(allowedToolsets(withCron, ['terminal'])).toEqual(['browser', 'file', 'itsaplan']);
   });
 
   it('refuses a list Hermes would read as no selection', () => {

@@ -5,6 +5,7 @@ import type { CredentialEntry } from '@/lib/api/endpoints/credentials';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { useRegenerateSshKey } from '@/services/credentials.service';
+import { copyText } from '@/utils/clipboard';
 
 // The public key of an SSH key, to add where the agent signs in. The private key stays in
 // Plan.
@@ -24,7 +25,7 @@ export function CredentialSshKey({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(entry.publicKey ?? '');
+      await copyText(entry.publicKey ?? '');
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

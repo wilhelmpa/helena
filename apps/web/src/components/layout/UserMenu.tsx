@@ -9,6 +9,7 @@ import { signOut, useSession } from '@/lib/auth-client';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
 import { useAccountSectionLabel } from '@/hooks/useSectionLabels';
 import { runtimeEnv } from '@/utils/runtimeEnv';
+import { UPSTREAM_URL } from '@/utils/app';
 import Avatar from '@/components/common/Avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -23,7 +24,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 // Signed-in user control in the header: shows the account avatar and a menu with
 // the email, the role, links to preferences, connected accounts, account security
-// (passkeys) and API keys, and sign out.
+// (passkeys) and API keys, sign out, and the project this one is a fork of.
 // Signing out clears the session and the proxy sends the browser back to
 // the login page.
 export default function UserMenu() {
@@ -94,6 +95,12 @@ export default function UserMenu() {
         <DropdownMenuItem onSelect={onSignOut}>
           <LogOut />
           {tCommon('signOut')}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="min-h-7 text-xs text-muted-foreground">
+          <a href={UPSTREAM_URL} target="_blank" rel="noreferrer">
+            {t('basedOn')}
+          </a>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

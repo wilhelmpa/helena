@@ -20,15 +20,17 @@ import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
 import { agentRuntimeMcpServers } from '../mcp-servers/service';
 import { hasWebLoginGrant } from '../credentials/service';
+import { areasSection } from './areas';
 import { structureSection } from './structure';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [skills, tools, structure, mcpServers, webLogins] = await Promise.all([
+  const [skills, tools, structure, areas, mcpServers, webLogins] = await Promise.all([
     listAgentRuntimeSkills(agent.id),
     listAgentToolLinks(agent.id),
     structureSection(agent),
+    areasSection(agent),
     agentRuntimeMcpServers(agent.id),
     hasWebLoginGrant(agent.id),
   ]);
@@ -43,7 +45,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
         {
           kind: 'instructions' as const,
           path: 'SOUL.md',
-          content: soul(agentRef, agent, structure, webLogins),
+          content: soul(agentRef, agent, structure, areas, webLogins),
         },
       ],
     },
@@ -81,6 +83,7 @@ function soul(
   agent: RunnerAgent,
   config: { name: string; runtimePolicy: AgentRuntimePolicy },
   structure: string,
+  areas: string,
   webLogins: boolean,
 ): string {
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
@@ -98,6 +101,7 @@ function soul(
     ...(instructions ? [`## Instructions\n\n${instructions}`] : []),
     projectsPreamble(agent.projects).trim(),
     ...agent.projects.map((project) => projectInstructionsPreamble(project).trim()),
+    areas,
     structure,
     chatPreamble().trim(),
     blockedPreamble(),
@@ -161,6 +165,10 @@ function webLoginPreamble(): string {
   ].join('\n');
 }
 
+// Hermes' own scheduler, which the runner never passes on: Plan schedules work through its
+// routines, so the toggle for it is not offered.
+const WITHHELD_TOOLSETS = ['cronjob'];
+
 export async function reportRuntimeState(
   agentId: number,
   state: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts' | 'inventory'> & {
@@ -168,10 +176,16 @@ export async function reportRuntimeState(
     inventory?: AgentRuntimeInventory;
   },
 ): Promise<AgentRuntimeState> {
+  const inventory = state.inventory;
   const value: AgentRuntimeState = {
     ...state,
     conflicts: state.conflicts ?? [],
-    inventory: state.inventory ?? null,
+    inventory: inventory
+      ? {
+          ...inventory,
+          toolsets: inventory.toolsets.filter((name) => !WITHHELD_TOOLSETS.includes(name)),
+        }
+      : null,
     reportedAt: new Date().toISOString(),
   };
   await db

@@ -7,8 +7,9 @@ import {
   projectViewFavorite,
   projectViewFolder,
 } from '@repo/db';
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { HttpError, iso, num } from '#shared/lib';
+import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { HttpError, iso, num, rethrowDuplicate } from '#shared/lib';
+import { areaFolderSlug, assertAreaFolder, uniqueAreaFolder } from './area-folder';
 
 export interface ViewRow {
   id: number;
@@ -53,6 +54,7 @@ export interface ViewFolderRow {
   id: number;
   projectId: number;
   name: string;
+  folder: string;
   position: number;
   createdAt: string;
 }
@@ -67,6 +69,7 @@ function mapFolder(row: typeof projectViewFolder.$inferSelect): ViewFolderRow {
     id: row.id,
     projectId: row.projectId,
     name: row.name,
+    folder: row.folder,
     position: num(row.position),
     createdAt: iso(row.createdAt),
   };
@@ -86,33 +89,109 @@ export async function getViewFolder(id: number): Promise<ViewFolderRow | null> {
   return row ? mapFolder(row) : null;
 }
 
-export async function createViewFolder(projectId: number, name: string): Promise<ViewFolderRow> {
-  const normalizedName = name.trim();
-  if (!normalizedName) throw new HttpError(400, 'Folder name is required');
-  const [{ pos }] = await db
-    .select({ pos: sql<number>`COALESCE(MAX(${projectViewFolder.position}) + 1, 0)` })
-    .from(projectViewFolder)
-    .where(eq(projectViewFolder.projectId, projectId));
-  const [row] = await db
-    .insert(projectViewFolder)
-    .values({ projectId, name: normalizedName, position: Number(pos) })
-    .returning();
-  return mapFolder(row);
+export async function createViewFolder(
+  projectId: number,
+  input: { name: string; folder?: string },
+): Promise<ViewFolderRow> {
+  const name = input.name.trim();
+  if (!name) throw new HttpError(400, 'Folder name is required');
+  return db.transaction(async (tx) => {
+    const taken = await areaFolders(tx, projectId);
+    const folder = input.folder ?? uniqueAreaFolder(areaFolderSlug(name), taken);
+    assertAreaFolder(folder, taken);
+    const [{ pos }] = await tx
+      .select({ pos: sql<number>`COALESCE(MAX(${projectViewFolder.position}) + 1, 0)` })
+      .from(projectViewFolder)
+      .where(eq(projectViewFolder.projectId, projectId));
+    const row = await tx
+      .insert(projectViewFolder)
+      .values({ projectId, name, folder, position: Number(pos) })
+      .returning()
+      .then(([created]) => created)
+      .catch((err: unknown) => rethrowDuplicate(err, 'area'));
+    await queueAreaProvisioning(tx, projectId);
+    return mapFolder(row);
+  });
 }
 
-export async function updateViewFolder(id: number, name: string): Promise<ViewFolderRow | null> {
-  const normalizedName = name.trim();
-  if (!normalizedName) throw new HttpError(400, 'Folder name is required');
-  const [row] = await db
-    .update(projectViewFolder)
-    .set({ name: normalizedName })
-    .where(eq(projectViewFolder.id, id))
-    .returning();
-  return row ? mapFolder(row) : null;
+// A folder that still follows the area's name follows a rename too; one set by hand
+// stays until it is changed by hand.
+export async function updateViewFolder(
+  id: number,
+  patch: { name?: string; folder?: string },
+): Promise<ViewFolderRow | null> {
+  return db.transaction(async (tx) => {
+    const [current] = await tx
+      .select()
+      .from(projectViewFolder)
+      .where(eq(projectViewFolder.id, id))
+      .for('update');
+    if (!current) return null;
+    const name = patch.name?.trim() ?? current.name;
+    if (!name) throw new HttpError(400, 'Folder name is required');
+    const taken = await areaFolders(tx, current.projectId, id);
+    const follows = current.folder === uniqueAreaFolder(areaFolderSlug(current.name), taken);
+    const folder =
+      patch.folder ?? (follows ? uniqueAreaFolder(areaFolderSlug(name), taken) : current.folder);
+    if (folder !== current.folder) assertAreaFolder(folder, taken);
+    const row = await tx
+      .update(projectViewFolder)
+      .set({ name, folder })
+      .where(eq(projectViewFolder.id, id))
+      .returning()
+      .then(([updated]) => updated)
+      .catch((err: unknown) => rethrowDuplicate(err, 'area'));
+    if (folder !== current.folder || name !== current.name) {
+      await queueAreaProvisioning(tx, current.projectId);
+    }
+    return mapFolder(row);
+  });
 }
 
 export async function deleteViewFolder(id: number): Promise<void> {
-  await db.delete(projectViewFolder).where(eq(projectViewFolder.id, id));
+  await db.transaction(async (tx) => {
+    const [row] = await tx
+      .delete(projectViewFolder)
+      .where(eq(projectViewFolder.id, id))
+      .returning({ projectId: projectViewFolder.projectId });
+    if (row) await queueAreaProvisioning(tx, row.projectId);
+  });
+}
+
+async function areaFolders(
+  tx: Transaction,
+  projectId: number,
+  exceptId?: number,
+): Promise<Set<string>> {
+  const rows = await tx
+    .select({ folder: projectViewFolder.folder })
+    .from(projectViewFolder)
+    .where(
+      and(
+        eq(projectViewFolder.projectId, projectId),
+        exceptId === undefined ? undefined : ne(projectViewFolder.id, exceptId),
+      ),
+    );
+  return new Set(rows.map((row) => row.folder));
+}
+
+// The worker sends the project's current areas, names included, with every
+// provisioning request, so a change to them only has to make the request new: a retry
+// of the old one with other contents would be refused by the integration service.
+async function queueAreaProvisioning(tx: Transaction, projectId: number): Promise<void> {
+  await tx
+    .update(projectProvisioningJob)
+    .set({
+      id: randomUUID(),
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: new Date(),
+      lastError: null,
+      result: null,
+      completedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(projectProvisioningJob.projectId, projectId));
 }
 
 function assertExactIds(actual: number[], ordered: number[], subject: string): void {

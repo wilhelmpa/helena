@@ -172,6 +172,7 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
     const requestedResources = withCoordinator(job.requestedResources);
     const boards = await requestedBoards(job);
     const agents = (await projectAgentIds([job.projectId])).get(job.projectId) ?? [];
+    const areas = await projectAreas(job.projectId);
     const response = await fetch(config.projectProvisioningUrl!, {
       method: 'POST',
       signal: controller.signal,
@@ -195,6 +196,7 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
         requestedResources,
         ...(boards.length ? { boards } : {}),
         ...(agents.length ? { agents } : {}),
+        ...(areas.length ? { areas } : {}),
         createdAt: new Date(job.createdAt).toISOString(),
       }),
     });
@@ -221,11 +223,46 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
   }
 }
 
+// The schedules of a deleted project would keep firing in Mastra. They are deleted before
+// the job reaches provisioning, and a retry deletes the ones that are left.
+function deleteMastraSchedules(job: ClaimedDeprovisioningJob, signal: AbortSignal) {
+  const config = workerConfig();
+  return fetch(config.mastraControlUrl!, {
+    method: 'POST',
+    signal,
+    redirect: 'error',
+    headers: {
+      Authorization: `Bearer ${config.mastraControlToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      schemaVersion: 1,
+      operation: 'delete-project-schedules',
+      projectRef: `project:${job.project.key}`,
+    }),
+  });
+}
+
 async function deliverDeprovisioningJob(job: ClaimedDeprovisioningJob): Promise<void> {
   const config = workerConfig();
+  if (config.mastraControlUrl && !config.mastraControlToken) {
+    await recordDeprovisioningFailure(job, 'MASTRA_CONTROL_TOKEN_FILE is not set', false);
+    return;
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.projectProvisioningTimeoutMs);
   try {
+    if (config.mastraControlUrl) {
+      const deleted = await deleteMastraSchedules(job, controller.signal);
+      if (!deleted.ok) {
+        await recordDeprovisioningFailure(
+          job,
+          `Mastra control HTTP ${deleted.status}`,
+          isRetryableStatus(deleted.status),
+        );
+        return;
+      }
+    }
     const response = await fetch(config.projectProvisioningUrl!, {
       method: 'POST',
       signal: controller.signal,
@@ -305,6 +342,21 @@ export async function projectAgentIds(projectIds?: number[]): Promise<Map<number
     byProject.set(projectId, [...(byProject.get(projectId) ?? []), agentId]);
   }
   return byProject;
+}
+
+// Every area of the project with its folder. The integration service creates the
+// folders of new areas, moves those whose folder changed and moves the folders of an
+// area missing from the list to the trash.
+async function projectAreas(projectId: number) {
+  return db
+    .select({
+      id: projectViewFolder.id,
+      name: projectViewFolder.name,
+      folder: projectViewFolder.folder,
+    })
+    .from(projectViewFolder)
+    .where(eq(projectViewFolder.projectId, projectId))
+    .orderBy(asc(projectViewFolder.id));
 }
 
 async function requestedBoards(job: ClaimedProvisioningJob) {

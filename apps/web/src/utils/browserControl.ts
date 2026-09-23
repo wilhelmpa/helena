@@ -1,4 +1,4 @@
-// The project browser's toolbar routes, served by the browser router next to the stream
+// The project browser's toolbar routes, served by the browser router next to the views
 // the browser tool shows (`/browser/projects/<slug>/api/...`), on the same origin.
 
 export interface BrowserTab {
@@ -11,6 +11,10 @@ export interface BrowserTab {
 
 export type BrowserAction =
   'navigate' | 'back' | 'forward' | 'reload' | 'activate' | 'close' | 'new';
+
+export function browserTabsQueryKey(base: string) {
+  return ['browser-tabs', base] as const;
+}
 
 // The control routes of the browser a stream URL shows, or null for a URL that is not a
 // project browser stream.

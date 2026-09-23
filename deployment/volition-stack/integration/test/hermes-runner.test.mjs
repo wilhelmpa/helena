@@ -17,7 +17,7 @@ describe("Hermes runner deployment", () => {
     assert.equal(config.agent, "hermes");
     assert.equal(config.apiKey, undefined);
     assert.equal(config.cwd, "/srv/volition/workspaces");
-    assert.deepEqual(config.args, ["--checkpoints", "--yolo"]);
+    assert.deepEqual(config.args, ["--checkpoints"]);
     assert.equal(config.concurrency, 3);
     assert.ok(catalog.includes("descriptor_entries"));
     assert.ok(catalog.includes("private_file(descriptor_path"));
@@ -63,6 +63,8 @@ describe("Hermes runner deployment", () => {
     assert.ok(config.includes("Bearer " + "$" + "{ITSAPLAN_API_KEY}"));
     assert.ok(config.includes("tirith_enabled: true"));
     assert.ok(config.includes("tirith_fail_open: false"));
+    assert.ok(config.includes("single_query_mode: approve"));
+    assert.ok(config.includes("- plan-approval-guard"));
     assert.equal(catalog.includes("print(item['apiKey']"), false);
     assert.equal(catalog.includes("apiKey={"), false);
   });

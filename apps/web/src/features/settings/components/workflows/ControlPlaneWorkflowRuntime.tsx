@@ -64,19 +64,7 @@ export default function ControlPlaneWorkflowRuntime({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <h4 className="text-sm font-medium">{t('graph')}</h4>
-          {editable && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => controls.start.mutate()}
-              disabled={controls.start.isPending}
-            >
-              <Play className="size-4" /> {t('startDryRun')}
-            </Button>
-          )}
-        </div>
+        <h4 className="text-sm font-medium">{t('graph')}</h4>
         <ol className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {workflow.steps.map((step, index) => (
             <li

@@ -6,16 +6,16 @@
 import { intEnv } from './env';
 import { readFileSync, lstatSync } from 'node:fs';
 
-function projectProvisioningToken(): string | null {
-  const file = process.env.PROJECT_PROVISIONING_TOKEN_FILE?.trim();
-  if (!file) return process.env.PROJECT_PROVISIONING_TOKEN?.trim() || null;
+function tokenFile(variable: string): string | null {
+  const file = process.env[variable]?.trim();
+  if (!file) return null;
   const stat = lstatSync(file);
   if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
-    throw new Error('PROJECT_PROVISIONING_TOKEN_FILE must be a private regular file');
+    throw new Error(`${variable} must be a private regular file`);
   }
   const token = readFileSync(file, 'utf8').trim();
   if (token.length < 32 || token.length > 2048) {
-    throw new Error('PROJECT_PROVISIONING_TOKEN_FILE is invalid');
+    throw new Error(`${variable} is invalid`);
   }
   return token;
 }
@@ -44,6 +44,9 @@ export interface WorkerConfig {
   projectProvisioningTimeoutMs: number;
   // How often the provisioned state is compared with the projects in the database.
   projectReconcileIntervalMs: number;
+  // Plan's Mastra control endpoint, where a deleted project's schedules are deleted.
+  mastraControlUrl: string | null;
+  mastraControlToken: string | null;
 }
 
 let cached: WorkerConfig | null = null;
@@ -60,9 +63,13 @@ export function workerConfig(): WorkerConfig {
     cleanupDays: intEnv('WEBHOOK_CLEANUP_DAYS', 30),
     cleanupEveryTicks: intEnv('WEBHOOK_CLEANUP_EVERY_TICKS', 300),
     projectProvisioningUrl: process.env.PROJECT_PROVISIONING_URL?.trim() || null,
-    projectProvisioningToken: projectProvisioningToken(),
+    projectProvisioningToken:
+      tokenFile('PROJECT_PROVISIONING_TOKEN_FILE') ??
+      (process.env.PROJECT_PROVISIONING_TOKEN?.trim() || null),
     projectProvisioningTimeoutMs: intEnv('PROJECT_PROVISIONING_TIMEOUT_MS', 120_000),
     projectReconcileIntervalMs: intEnv('PROJECT_RECONCILE_INTERVAL_MS', 600_000),
+    mastraControlUrl: process.env.MASTRA_CONTROL_URL?.trim() || null,
+    mastraControlToken: tokenFile('MASTRA_CONTROL_TOKEN_FILE'),
   };
   return cached;
 }

@@ -316,7 +316,11 @@ describe('run settings with website logins', () => {
 
     const settings = await sync.runSettings({ messageId: 5 });
     expect(asked).toEqual([]);
-    expect(settings).toEqual({ toolsets: null, env: {}, logins: new Map() });
+    expect(settings).toEqual({
+      toolsets: ['file', 'terminal', 'itsaplan'],
+      env: {},
+      logins: new Map(),
+    });
     expect(items.size).toBe(0);
   });
 });
@@ -324,9 +328,8 @@ describe('run settings with website logins', () => {
 describe('toolsets with the browser', () => {
   it('adds the browser to what the agent may use', () => {
     const profile = { toolsets: ['browser', 'file'], mcpServers: ['itsaplan'] };
-    expect(toolsetsWithBrowser(profile, [])).toBeNull();
-    expect(toolsetsWithBrowser(profile, ['browser'])).toBeNull();
-    expect(toolsetsWithBrowser(profile, ['file'])).toEqual(['browser', 'itsaplan']);
+    expect(toolsetsWithBrowser(profile, [])).toEqual(['browser', 'file', 'itsaplan']);
+    expect(toolsetsWithBrowser(profile, ['browser', 'file'])).toEqual(['browser', 'itsaplan']);
     const without = { toolsets: ['file'], mcpServers: [] };
     expect(toolsetsWithBrowser(without, [], ['shop'])).toEqual(['file', 'shop', 'browser']);
     expect(toolsetsWithBrowser(undefined, ['browser'])).toBeNull();

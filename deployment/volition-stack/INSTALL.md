@@ -48,6 +48,21 @@ root-owned regular files with mode `0600`. Units receive credentials through
 arguments, logs, or this document. Validate only ownership, mode, file type, and non-empty
 length during installation.
 
+| Credential | Loaded by |
+| --- | --- |
+| `plan-control.token` | Plan API (bearer of the internal orchestration routes), Hermes team bridge, provisioning |
+| `mastra-control.token` | Plan API and worker (Mastra control requests), Mastra |
+| `mastra-gateway.token` | Mastra; Nginx sends it with Studio requests |
+| `hermes-team.token` | Mastra, Hermes team bridge |
+| `provisioning.token` | Plan worker, provisioning |
+| `hermes-plan-key` | Hermes runner, provisioning |
+
+`native/nginx/install-mastra-studio.sh` creates `mastra-control.token` and
+`mastra-gateway.token` when they are missing and installs the Nginx part of Studio (see
+`native/nginx/README.md`); `deploy.sh` runs it when it changes. `plan.env` sets
+`MASTRA_CONTROL_URL=http://127.0.0.1:4111/internal/mastra/control` for the API and the
+worker.
+
 After creating the vault, verify its shared boundary without displaying document content:
 
 ```sh
@@ -137,7 +152,7 @@ sudo nginx -t
 ```
 
 Expected internal listeners include Plan on `127.0.0.1:3000` and `:3001`, provisioning
-on `:18800`, Mastra on `:4111` and `:4112`, code-server on `:8443`, project terminals on
+on `:18800`, the Mastra proxy on `:4111` and Mastra on `:4112`, code-server on `:8443`, project terminals on
 `:8444`, and the browser router on `:6082`. PostgreSQL and Redis remain loopback-only.
 
 After a change, verify the public route through Nginx, anonymous denial, HTTP assets, and

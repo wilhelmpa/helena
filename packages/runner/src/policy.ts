@@ -476,21 +476,27 @@ export class HermesPolicyMaterializer {
   }
 }
 
+// Hermes' own scheduler. Plan schedules work through its routines, so a job Hermes ran
+// on its own would run the work a second time.
+const WITHHELD_TOOLSETS = ['cronjob'];
+
 // The `--toolsets` list for Hermes: the profile's toolsets and MCP servers without the
-// denied ones, plus the agent's own servers, which an explicit list has to name to keep.
-// Null while nothing the profile enables is denied: Hermes then uses the profile's own
-// selection, and the managed configuration adds the agent's servers to it. The list keeps
-// a denied server out even while the managed configuration failed to apply. Without the
-// profile the runner reports no toolsets, so Plan offers none to turn off.
+// withheld and the denied ones, plus the agent's own servers, which an explicit list has
+// to name to keep. The list is always explicit, so a withheld toolset stays off even
+// where the profile enables it. Without the profile the runner reports no toolsets, so
+// Plan offers none to turn off.
 export function allowedToolsets(
   profile: HermesProfile | undefined,
   denied: string[],
   ownMcpServers: string[] = [],
 ): string[] | null {
   if (!profile) return null;
-  const enabled = [...profile.toolsets, ...profile.mcpServers];
-  if (!enabled.some((name) => denied.includes(name))) return null;
-  const toolsets = [...enabled, ...ownMcpServers].filter((name) => !denied.includes(name));
+  const enabled = [
+    ...profile.toolsets.filter((name) => !WITHHELD_TOOLSETS.includes(name)),
+    ...profile.mcpServers,
+    ...ownMcpServers,
+  ];
+  const toolsets = enabled.filter((name) => !denied.includes(name));
   // Hermes reads an empty list as no selection and enables every toolset.
   if (toolsets.length === 0) {
     throw new Error('Every Hermes toolset and MCP server of the agent is turned off');
@@ -507,9 +513,7 @@ export function toolsetsWithBrowser(
 ): string[] | null {
   const kept = denied.filter((name) => name !== 'browser');
   const toolsets = allowedToolsets(profile, kept, ownMcpServers);
-  if (!profile || profile.toolsets.includes('browser')) return toolsets;
-  const enabled = [...profile.toolsets, ...profile.mcpServers, ...ownMcpServers];
-  return [...(toolsets ?? enabled.filter((name) => !kept.includes(name))), 'browser'];
+  return toolsets && !toolsets.includes('browser') ? [...toolsets, 'browser'] : toolsets;
 }
 
 type ReportedState = Pick<RuntimeStatus, 'status' | 'detail' | 'conflicts'>;

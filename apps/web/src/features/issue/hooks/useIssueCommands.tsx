@@ -41,6 +41,7 @@ import { dueDatePresets } from '../utils/dueDatePresets';
 import { useDueDatePresetLabel } from './useDueDatePresetLabel';
 import { buildIssuePrompt } from '../utils/issuePrompt';
 import { delegatableAgents } from '../utils/delegates';
+import { copyText } from '@/utils/clipboard';
 
 // The palette commands for the issue the user is looking at — the issue page or
 // the open detail panel. They are the context menu's actions in command form and
@@ -104,12 +105,12 @@ export function useIssueCommands(
   const currentColumn = project.columns.find((c) => c.id === issue.columnId);
 
   const copyPrompt = async () => {
-    await navigator.clipboard.writeText(buildIssuePrompt(issue, project, session?.user));
+    await copyText(buildIssuePrompt(issue, project, session?.user));
     toast.success(t('promptCopied'));
   };
 
   const copyLink = async () => {
-    await navigator.clipboard.writeText(`${window.location.origin}/${issue.identifier}`);
+    await copyText(`${window.location.origin}/${issue.identifier}`);
     toast.success(t('shortLinkCopied'));
   };
 

@@ -590,7 +590,6 @@
         "computer_use": "Controla el escritorio con el ratón y el teclado.",
         "connections": "Usa cuentas conectadas y conectores remotos.",
         "context_engine": "Herramientas del motor de contexto activo.",
-        "cronjob": "Crea y gestiona tareas programadas.",
         "delegation": "Encarga subtareas a subagentes.",
         "file": "Lee, escribe, edita y busca archivos.",
         "image_gen": "Genera imágenes.",
