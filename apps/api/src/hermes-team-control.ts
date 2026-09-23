@@ -11,7 +11,9 @@ import {
 } from '@repo/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { authorizeControlRequest } from './home-agent-bootstrap';
+import { maxTurnsLimit, runBudgetSecondsLimit } from './modules/agents/model';
 import { agentRunConfig } from './modules/agents/core/run-queue';
+import { runLimit } from './modules/agents/core/service';
 import { listColumns } from './modules/columns/service';
 import { getIssueBySequence, updateIssue } from './modules/issues/service';
 import { bumpControlPlaneRevision } from './modules/sync/service';
@@ -101,6 +103,13 @@ export async function enqueueHermesStage(body: unknown) {
     Number(maxAttempts) > agentRunConfig.maxAttempts()
   )
     return { status: 400, body: { error: 'Invalid Hermes retry limit' } };
+  const maxTurns = runLimit(executionPolicy?.maxTurns, maxTurnsLimit);
+  const runBudgetSeconds = runLimit(executionPolicy?.runBudgetSeconds, runBudgetSecondsLimit);
+  if (
+    (executionPolicy?.maxTurns != null && maxTurns === null) ||
+    (executionPolicy?.runBudgetSeconds != null && runBudgetSeconds === null)
+  )
+    return { status: 400, body: { error: 'Invalid Hermes run budget' } };
   if (Number(leaseBound) < agentRunConfig.leaseSeconds() || Number(heartbeatBound) < 60)
     return {
       status: 409,
@@ -133,6 +142,8 @@ export async function enqueueHermesStage(body: unknown) {
     prompt,
     execution,
     maxAttempts,
+    maxTurns: maxTurns ?? undefined,
+    runBudgetSeconds: runBudgetSeconds ?? undefined,
   });
   const result = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
@@ -171,6 +182,8 @@ export async function enqueueHermesStage(body: unknown) {
         issueId: resolved.task.id,
         prompt,
         trigger: 'manual',
+        maxTurns,
+        runBudgetSeconds,
       })
       .returning({ id: agentRun.id });
     if (!run) throw new Error('Hermes stage could not be queued');

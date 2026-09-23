@@ -18,6 +18,9 @@ export interface Task {
   sessionId?: string | null;
   model?: string | null;
   thinkingLevel?: string | null;
+  // Limits of a queued run; a chat answer has none.
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 export interface Outcome {
@@ -121,6 +124,8 @@ function spawnArgs(
       provider: config.provider,
       model: task.model,
       thinkingLevel: task.thinkingLevel,
+      maxTurns: task.maxTurns,
+      runBudgetSeconds: task.runBudgetSeconds,
     }),
   ];
 }

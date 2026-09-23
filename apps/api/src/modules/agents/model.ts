@@ -27,6 +27,11 @@ export const agentRunTrigger = t.Union([
 
 export type AgentRunTrigger = typeof agentRunTrigger.static;
 
+// The limits a run hands to Hermes: tool-calling iterations (`--max-turns`) and
+// wall-clock seconds (`--run-budget`).
+export const maxTurnsLimit = { minimum: 1, maximum: 200 };
+export const runBudgetSecondsLimit = { minimum: 60, maximum: 7_200 };
+
 // The token counts of one run, in the agent's run history and in a schedule's. Shared
 // by both listings, which return the same runs under different filters.
 export const runContextTokens = t.Optional(

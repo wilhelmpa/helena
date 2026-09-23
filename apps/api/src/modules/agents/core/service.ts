@@ -28,6 +28,7 @@ import { runsTeam, type TeamStanding } from '#modules/teams/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
+import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -60,6 +61,8 @@ export interface AgentRuntimePolicy {
   toolDeny: string[];
   mcpGrants: string[];
   files: { kind: 'instructions'; path: string; content: string }[];
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 export interface AgentRuntimeConflict {
@@ -83,7 +86,22 @@ const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
   toolDeny: [],
   mcpGrants: [],
   files: [],
+  maxTurns: null,
+  runBudgetSeconds: null,
 };
+
+// The value when it is a whole number inside the limit, otherwise null.
+export function runLimit(
+  value: unknown,
+  limit: { minimum: number; maximum: number },
+): number | null {
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= limit.minimum &&
+    value <= limit.maximum
+    ? value
+    : null;
+}
 
 const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   adapter: null,
@@ -158,6 +176,8 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     toolDeny: strings(policy.toolDeny),
     mcpGrants: strings(policy.mcpGrants),
     files,
+    maxTurns: runLimit(policy.maxTurns, maxTurnsLimit),
+    runBudgetSeconds: runLimit(policy.runBudgetSeconds, runBudgetSecondsLimit),
   };
 }
 

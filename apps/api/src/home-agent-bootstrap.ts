@@ -4,17 +4,19 @@ import { Elysia } from 'elysia';
 
 import { bootstrapHomeAgent, bootstrapProjectCoordinator } from './scripts/bootstrap-home-agent';
 
-const TOKEN_FILE =
-  process.env.MASTRA_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/mastra_control_token';
 let tokenPromise: Promise<string> | null = null;
 
+// The path is read on first use rather than at import, so a test can point it at a
+// token file of its own.
 async function bootstrapToken(): Promise<string> {
-  tokenPromise ??= lstat(TOKEN_FILE)
+  const tokenFile =
+    process.env.MASTRA_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/mastra_control_token';
+  tokenPromise ??= lstat(tokenFile)
     .then(async (stat) => {
       if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
         throw new Error('invalid secret file');
       }
-      const token = (await readFile(TOKEN_FILE, 'utf8')).trim();
+      const token = (await readFile(tokenFile, 'utf8')).trim();
       if (Buffer.byteLength(token) < 32 || token.length > 2048) {
         throw new Error('invalid token');
       }

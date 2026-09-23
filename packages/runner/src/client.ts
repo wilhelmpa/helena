@@ -14,6 +14,9 @@ export interface Run {
   issueIdentifier: string | null;
   model: string | null;
   thinkingLevel: string | null;
+  // Absent on a server that predates run limits.
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,

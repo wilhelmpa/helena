@@ -35,6 +35,10 @@ export interface AgentRuntimePolicy {
   toolDeny: string[];
   mcpGrants: string[];
   files: AgentRuntimeFile[];
+  // Defaults for the agent's queued runs: Hermes --max-turns (1-200) and --run-budget
+  // seconds (60-7200). Chat answers are not limited.
+  maxTurns?: number | null;
+  runBudgetSeconds?: number | null;
 }
 
 // A managed file the runtime found changed outside Plan. It wrote Plan's version and kept

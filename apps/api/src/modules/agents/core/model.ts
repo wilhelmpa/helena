@@ -1,6 +1,6 @@
 import { t } from 'elysia';
 
-import { agentRunTrigger, runContextTokens } from '../model';
+import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
 
 export { agentParams, projectAgentParams } from '../model';
@@ -41,6 +41,9 @@ export const runtimePolicy = t.Object({
   toolDeny: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
   mcpGrants: t.Array(t.String({ minLength: 1, maxLength: 160 }), { maxItems: 256 }),
   files: t.Array(instructionsRuntimeFile, { maxItems: 32 }),
+  // Defaults for every queued run of the agent; a chat answer is not limited.
+  maxTurns: t.Optional(t.Nullable(t.Integer(maxTurnsLimit))),
+  runBudgetSeconds: t.Optional(t.Nullable(t.Integer(runBudgetSecondsLimit))),
 });
 
 // A managed file the runtime found changed outside Plan. The runtime kept a copy and

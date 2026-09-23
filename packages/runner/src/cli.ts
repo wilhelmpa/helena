@@ -47,6 +47,8 @@ function taskOf(run: Run) {
     systemPrompt: run.systemPrompt,
     model: run.model,
     thinkingLevel: run.thinkingLevel,
+    maxTurns: run.maxTurns,
+    runBudgetSeconds: run.runBudgetSeconds,
     env: {
       ITSAPLAN_RUN_ID: String(run.id),
       ITSAPLAN_TRIGGER: run.trigger,

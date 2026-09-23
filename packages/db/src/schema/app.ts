@@ -677,6 +677,10 @@ export const agentRun = pgTable(
     // the run history shows nothing for either.
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
+    // The limits the runner hands to the agent's command for this run: tool-calling
+    // iterations and wall-clock seconds. Null takes the agent's runtime policy default.
+    maxTurns: integer('max_turns'),
+    runBudgetSeconds: integer('run_budget_seconds'),
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
