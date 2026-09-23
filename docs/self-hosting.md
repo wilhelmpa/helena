@@ -34,6 +34,22 @@ becomes the instance admin.
 `.env.example` documents every variable, including the optional ones: legal document URLs,
 passkey and cookie settings, telemetry opt-out, and worker tuning.
 
+## File storage
+
+Uploaded files — attachments, document assets, skill files and avatars — are stored in
+the stack's MinIO by default, through the `S3_*` variables. Any S3-compatible store works
+the same way.
+
+To store them on the local disk instead, set `STORAGE_ROOT` to an absolute directory the
+api can write. It takes precedence over `S3_*`. Below it, `objects/<key>` holds the bytes
+of a file, `content-types/<key>` its content type, and `tmp/` the writes in progress. In a
+container the directory has to be on a volume, or the files are deleted with the
+container. Back it up together with the database: a row whose file is missing answers 404.
+Changing the setting does not move files that are already stored.
+
+With neither set the api still starts and logs a warning; an upload then fails with an
+error that names both settings.
+
 ## Single sign-on
 
 Any provider with an OpenID Connect discovery document works: Keycloak, Authentik, KanIDM,
