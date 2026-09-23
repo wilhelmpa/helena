@@ -19,7 +19,7 @@
   "moveFolderUp": "Déplacer vers le haut",
   "moveFolderDown": "Déplacer vers le bas",
   "deleteFolder": "Supprimer le domaine",
-  "deleteFolderConfirm": "Supprimer {name} ? Ses vues et tickets restent dans le projet, sans domaine.",
+  "deleteFolderConfirm": "Supprimer {name} ? Ses vues et tickets restent dans le projet, sans domaine. Ses dossiers sont déplacés dans la corbeille du projet.",
   "moveToFolder": "Déplacer vers le domaine",
   "noFolder": "Aucun domaine",
   "newBoard": "Nouveau tableau",
@@ -27,5 +27,10 @@
   "areaOptions": "Options du domaine",
   "newFolderDescription": "Une zone regroupe des tâches avec leurs propres tableaux, pour planifier une partie du projet séparément.",
   "newBoardDescription": "Le tableau n’affiche que les tâches de {name}.",
-  "create": "Créer"
+  "create": "Créer",
+  "areaFolderLabel": "Dossier",
+  "areaFolderHint": "Lettres minuscules, chiffres et tirets. Les agents traitent les tâches de ce domaine dans ce dossier de l'espace de travail du projet, et Files contient un dossier du même nom.",
+  "areaFolderReserved": "Le projet utilise {folder} pour ses propres fichiers. Choisissez un autre dossier.",
+  "areaFolderTaken": "Un autre domaine de ce projet utilise ce dossier.",
+  "openFolder": "Ouvrir le dossier"
 }

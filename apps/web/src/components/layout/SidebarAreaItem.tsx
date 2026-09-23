@@ -14,10 +14,12 @@ import SidebarAreaMenu from '@/components/layout/SidebarAreaMenu';
 export default function SidebarAreaItem({
   projectKey,
   area,
+  areas,
   views,
 }: {
   projectKey: string;
   area: ViewFolder;
+  areas: ViewFolder[];
   views: View[];
 }) {
   const pathname = usePathname();
@@ -35,7 +37,7 @@ export default function SidebarAreaItem({
             </button>
           </SidebarMenuSubButton>
         </CollapsibleTrigger>
-        <SidebarAreaMenu projectKey={projectKey} area={area} />
+        <SidebarAreaMenu projectKey={projectKey} area={area} areas={areas} />
         <CollapsibleContent>
           <SidebarMenuSub className="me-0 pe-0">
             {views.map((view) => (

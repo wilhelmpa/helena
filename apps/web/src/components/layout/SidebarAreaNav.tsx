@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import NameDialog from '@/components/common/overlay/NameDialog';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCreateViewFolder, useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import {
@@ -10,6 +9,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import AreaDialog from '@/components/layout/AreaDialog';
 import SidebarAreaItem from '@/components/layout/SidebarAreaItem';
 
 // The project's areas under its Tasks entry, each with the boards (saved views) it
@@ -33,6 +33,7 @@ export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
             key={area.id}
             projectKey={projectKey}
             area={area}
+            areas={areas}
             views={views
               .filter((view) => view.folderId === area.id)
               .sort((a, b) => a.position - b.position || a.id - b.id)}
@@ -50,12 +51,12 @@ export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
         )}
       </SidebarMenuSub>
       {creating && (
-        <NameDialog
+        <AreaDialog
           title={t('newFolder')}
           description={t('newFolderDescription')}
-          label={t('folderNamePrompt')}
           submitLabel={t('create')}
-          onSubmit={(name) => createArea.mutateAsync(name)}
+          areas={areas}
+          onSubmit={(input) => createArea.mutateAsync(input)}
           onClose={() => setCreating(false)}
         />
       )}
