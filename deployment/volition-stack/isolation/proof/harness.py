@@ -333,9 +333,10 @@ def start(args: argparse.Namespace) -> None:
     for slug, profiles in (('home', ['home']), ('alpha', ['alpha', 'alpha_7']), ('beta', ['beta'])):
         answer = client(['ensure-project-user', slug, *sum((['--profile', p] for p in profiles), [])])
         print(f'ensure-project-user {slug}: {answer.stdout.decode().strip()}')
+    # On the host the profiles root is the runner's alone, so the files are put there by root.
     for slug, profile in (('alpha', 'alpha'), ('alpha', 'alpha_7'), ('beta', 'beta'), ('home', 'home')):
-        memory = f'{ROOT}/hermes/profiles/{profile}/MEMORY.md'
-        sh('/usr/sbin/runuser', '-u', f'vpt-{slug}', '--', 'sh', '-c', f'echo "memory of {profile}" > {memory}')
+        write(f'{ROOT}/hermes/profiles/{profile}/MEMORY.md', f'memory of {profile}\n',
+              f'vpt-{slug}', f'vpt-{slug}', 0o600)
     print('started')
 
 
