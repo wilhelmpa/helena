@@ -88,7 +88,9 @@
     "noInitiative": "Sin iniciitiva",
     "noCycle": "Sin ciclo",
     "archive": "Archivar",
-    "clearSelection": "Limpiar la selección"
+    "clearSelection": "Limpiar la selección",
+    "area": "Área",
+    "noArea": "Sin área"
   },
   "removal": {
     "archive": {
@@ -114,6 +116,36 @@
     "noType": "Sin tipo",
     "noInitiative": "Sin iniciitiva",
     "noCycle": "Sin ciclo",
-    "noMember": "Sin valor"
+    "noMember": "Sin valor",
+    "noArea": "Sin área"
+  },
+  "allTasks": {
+    "hint": "Los elementos de trabajo de todos tus proyectos. Abre uno para editarlo en su proyecto.",
+    "searchPlaceholder": "Buscar elementos de trabajo…",
+    "allProjects": "Todos los proyectos",
+    "state": {
+      "open": "Abiertos",
+      "any": "Cualquier estado"
+    },
+    "assignee": {
+      "any": "Cualquiera",
+      "me": "Asignados a mí",
+      "agents": "Delegados a agentes",
+      "unassigned": "Sin asignar"
+    },
+    "due": {
+      "any": "Cualquier fecha límite",
+      "overdue": "Vencidos",
+      "week": "Vencen en una semana"
+    },
+    "groupBy": {
+      "project": "Por proyecto",
+      "state": "Por estado"
+    },
+    "empty": "Ningún elemento de trabajo",
+    "emptyHint": "Ningún elemento de trabajo coincide con estos filtros.",
+    "myOpenTasks": "Mis elementos abiertos",
+    "viewAll": "Todos los elementos de trabajo",
+    "noOpenTasks": "No tienes ningún elemento de trabajo abierto asignado."
   }
 }

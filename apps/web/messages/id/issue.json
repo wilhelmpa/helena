@@ -33,7 +33,8 @@
     "groupLabels": "Label",
     "groupCustom": "Bidang kustom",
     "empty": "Kosong",
-    "openInNewTab": "Buka di tab baru"
+    "openInNewTab": "Buka di tab baru",
+    "area": "Area"
   },
   "menu": {
     "preview": "Pratinjau",
@@ -325,7 +326,10 @@
     "worklogChanged": "mengubah catatan <v>{from}</v> pada <v>{fromDate}</v> menjadi <v>{to}</v> pada <v>{date}</v>",
     "worklogRemoved": "menghapus catatan <v>{time}</v> pada <v>{date}</v>",
     "commentEdited": "mengedit komentar",
-    "commentDeleted": "menghapus komentar"
+    "commentDeleted": "menghapus komentar",
+    "areaSet": "memindahkan ke area <v>{area}</v>",
+    "areaMoved": "memindahkan dari area <v>{from}</v> ke <v>{to}</v>",
+    "areaRemoved": "menghapus dari area <v>{area}</v>"
   },
   "development": {
     "title": "Pengembangan",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, one {# label} other {# label}}",
     "noMember": "Belum diatur",
     "pickMember": "Pilih anggota…",
-    "noCandidates": "Tidak ada yang dapat dipilih."
+    "noCandidates": "Tidak ada yang dapat dipilih.",
+    "area": "Area",
+    "noArea": "Tanpa area",
+    "changeArea": "Pindah ke area…"
   },
   "watchers": {
     "watch": "Ikuti",

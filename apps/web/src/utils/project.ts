@@ -48,6 +48,7 @@ export type NewIssueDefaults = Partial<
     | 'typeId'
     | 'initiativeId'
     | 'cycleId'
+    | 'folderId'
     | 'assigneeUserId'
     | 'delegateUserId'
     | 'priority'
@@ -112,6 +113,7 @@ export function defaultsFromFilters(
     typeId: pinnedId('type'),
     initiativeId: pinnedEntity('initiative', planned.initiatives),
     cycleId: pinnedEntity('cycle', planned.cycles),
+    folderId: pinnedId('area'),
     assigneeUserId: pinnedText('assignee'),
     delegateUserId: pinnedText('delegate'),
     priority: pinnedText('priority'),
@@ -304,6 +306,7 @@ export interface GroupLabels {
   noType: string;
   noInitiative: string;
   noCycle: string;
+  noArea: string;
   // The "No value" group of a member custom field, which has no name of its own.
   noMember: string;
   priority: (value: string) => string;
@@ -459,6 +462,21 @@ function allGroups(project: ProjectDetail, group: GroupField, labels: GroupLabel
           })),
       ];
     }
+    case 'area':
+      return [
+        {
+          key: 'f-none',
+          name: labels.noArea,
+          assign: patchOnly({ folderId: null }),
+          values: [null],
+        },
+        ...project.areas.map((a) => ({
+          key: `f${a.id}`,
+          name: a.name,
+          assign: patchOnly({ folderId: a.id }),
+          values: [a.id],
+        })),
+      ];
     case 'none':
       return [{ key: 'all', name: '', assign: null, values: [] }];
   }
@@ -538,6 +556,8 @@ export function groupKeyOf(issue: Issue, group: GroupField): string {
       return issue.initiative != null ? `i${issue.initiative.id}` : 'i-none';
     case 'cycle':
       return issue.cycle != null ? `y${issue.cycle.id}` : 'y-none';
+    case 'area':
+      return issue.folderId != null ? `f${issue.folderId}` : 'f-none';
     case 'none':
       return 'all';
   }

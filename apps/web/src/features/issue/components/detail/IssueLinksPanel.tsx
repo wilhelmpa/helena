@@ -130,6 +130,7 @@ export default function IssueLinksPanel({
           defaults={{
             typeId: issue.typeId,
             initiativeId: issue.initiative?.id ?? null,
+            folderId: issue.folderId,
             assigneeUserId: issue.assigneeUserId,
             delegateUserId: null,
             priority: issue.priority,

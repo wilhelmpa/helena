@@ -81,6 +81,11 @@ export function useActivityText() {
         return {
           line: from ? rich('cycleMoved', { from, to }) : rich('cycleSet', { cycle: to }),
         };
+      case 'area':
+        if (!to) return { line: rich('areaRemoved', { area: from ?? '' }) };
+        return {
+          line: from ? rich('areaMoved', { from, to }) : rich('areaSet', { area: to }),
+        };
       case 'estimate': {
         // The value arrives formatted, unlike a date or a priority.
         const kind = subject === 'time' ? 'Time' : 'Points';

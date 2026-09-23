@@ -45,6 +45,7 @@ export const BUILTIN_FILTER_FIELDS = [
   'type',
   'initiative',
   'cycle',
+  'area',
   'labels',
   'dueDate',
   'startDate',

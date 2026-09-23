@@ -34,5 +34,6 @@ export function toPublicProjectDetail(
     // A share bundle carries no cycle list; a view grouped by cycle gets its lanes
     // from the cycles the shared issues are planned into.
     plannedCycles: [],
+    areas: scaffold.areas,
   };
 }

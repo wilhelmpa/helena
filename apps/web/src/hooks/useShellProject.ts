@@ -5,7 +5,7 @@ import {
   useProjectQuery,
   useProjectsQuery,
 } from '@/services/projects.service';
-import { useViewsQuery } from '@/services/views.service';
+import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import { useCycleOptionsQuery } from '@/services/cycles.service';
 import { ApiError } from '@/lib/api/core/client';
 import { applyFilters } from '@/utils/filters';
@@ -38,6 +38,7 @@ export function useShellProject(projectKey: string | null, activeViewId: number 
   // whole list is not loaded: it grows with every finished cycle, and a finished
   // one only needs a lane while its issues name it.
   const cyclesQuery = useCycleOptionsQuery(scaffold?.project.cyclesEnabled ? projectKey : null);
+  const areasQuery = useViewFoldersQuery(projectKey);
   const project = useMemo(
     () =>
       scaffold
@@ -45,9 +46,10 @@ export function useShellProject(projectKey: string | null, activeViewId: number 
             ...scaffold,
             issues: boardIssuesQuery.data?.issues ?? [],
             plannedCycles: cyclesQuery.data ?? [],
+            areas: areasQuery.data ?? [],
           }
         : null,
-    [scaffold, boardIssuesQuery.data, cyclesQuery.data],
+    [scaffold, boardIssuesQuery.data, cyclesQuery.data, areasQuery.data],
   );
 
   const viewsQuery = useViewsQuery(projectKey);

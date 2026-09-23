@@ -27,7 +27,8 @@
     "priority": "优先级",
     "type": "类型",
     "initiative": "计划",
-    "cycle": "周期"
+    "cycle": "周期",
+    "area": "区域"
   },
   "properties": {
     "id": "ID",

@@ -230,6 +230,15 @@ export function useFilterFields(projectKey?: string) {
         ],
       },
       {
+        field: 'area',
+        label: t('fields.area'),
+        kind: 'set',
+        options: [
+          ...project.areas.map((a) => ({ value: a.id, label: a.name })),
+          { value: null, label: t('unset.area') },
+        ],
+      },
+      {
         field: 'labels',
         label: t('fields.labels'),
         kind: 'set',

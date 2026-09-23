@@ -32,6 +32,7 @@ const GROUP_FIELDS: BuiltinGroupField[] = [
   'type',
   'initiative',
   'cycle',
+  'area',
 ];
 
 // The grouping, sub-grouping, ordering, empty-group, links and subtasks rows.

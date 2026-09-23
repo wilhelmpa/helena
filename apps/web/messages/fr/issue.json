@@ -33,7 +33,8 @@
     "groupLabels": "Étiquettes",
     "groupCustom": "Champs personnalisés",
     "empty": "Vide",
-    "openInNewTab": "Ouvrir dans un nouvel onglet"
+    "openInNewTab": "Ouvrir dans un nouvel onglet",
+    "area": "Domaine"
   },
   "menu": {
     "preview": "Aperçu",
@@ -325,7 +326,10 @@
     "worklogChanged": "a remplacé les <v>{from}</v> enregistrées le <v>{fromDate}</v> par <v>{to}</v> le <v>{date}</v>",
     "worklogRemoved": "a supprimé les <v>{time}</v> enregistrées le <v>{date}</v>",
     "commentEdited": "a modifié un commentaire",
-    "commentDeleted": "a supprimé un commentaire"
+    "commentDeleted": "a supprimé un commentaire",
+    "areaSet": "a déplacé dans le domaine <v>{area}</v>",
+    "areaMoved": "a déplacé du domaine <v>{from}</v> vers <v>{to}</v>",
+    "areaRemoved": "a retiré du domaine <v>{area}</v>"
   },
   "development": {
     "title": "Développement",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, one {# étiquette} other {# étiquettes}}",
     "noMember": "Non défini",
     "pickMember": "Choisir quelqu'un…",
-    "noCandidates": "Personne à choisir."
+    "noCandidates": "Personne à choisir.",
+    "area": "Domaine",
+    "noArea": "Aucun domaine",
+    "changeArea": "Déplacer vers un domaine…"
   },
   "watchers": {
     "watch": "Suivre",

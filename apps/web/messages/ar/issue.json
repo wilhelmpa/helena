@@ -33,7 +33,8 @@
     "groupLabels": "الوسوم",
     "groupCustom": "حقول مخصصة",
     "empty": "فارغ",
-    "openInNewTab": "فتح في تبويب جديد"
+    "openInNewTab": "فتح في تبويب جديد",
+    "area": "المجال"
   },
   "menu": {
     "preview": "معاينة",
@@ -325,7 +326,10 @@
     "worklogChanged": "غيّر التسجيل من <v>{from}</v> ليوم <v>{fromDate}</v> إلى <v>{to}</v> ليوم <v>{date}</v>",
     "worklogRemoved": "حذف تسجيل <v>{time}</v> ليوم <v>{date}</v>",
     "commentEdited": "عدّل تعليقًا",
-    "commentDeleted": "حذف تعليقًا"
+    "commentDeleted": "حذف تعليقًا",
+    "areaSet": "نقلها إلى المجال <v>{area}</v>",
+    "areaMoved": "نقلها من المجال <v>{from}</v> إلى <v>{to}</v>",
+    "areaRemoved": "أزالها من المجال <v>{area}</v>"
   },
   "development": {
     "title": "التطوير",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, zero {لا وسوم} one {وسم واحد} two {وسمان} few {# وسوم} many {# وسمًا} other {# وسم}}",
     "noMember": "مش متحدد",
     "pickMember": "اختار حد…",
-    "noCandidates": "مفيش حد تختاره."
+    "noCandidates": "مفيش حد تختاره.",
+    "area": "المجال",
+    "noArea": "بلا مجال",
+    "changeArea": "نقل إلى مجال…"
   },
   "watchers": {
     "watch": "متابعة",

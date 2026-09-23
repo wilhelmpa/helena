@@ -81,7 +81,9 @@
     "noInitiative": "بلا مبادرة",
     "noCycle": "بلا دورة",
     "archive": "أرشفة",
-    "clearSelection": "مسح التحديد"
+    "clearSelection": "مسح التحديد",
+    "area": "المجال",
+    "noArea": "بلا مجال"
   },
   "removal": {
     "archive": {
@@ -107,7 +109,8 @@
     "noType": "بلا نوع",
     "noInitiative": "بلا مبادرة",
     "noCycle": "بلا دورة",
-    "noMember": "بدون قيمة"
+    "noMember": "بدون قيمة",
+    "noArea": "بلا مجال"
   },
   "wip": {
     "reached": "{column} وصل لحدّه الأقصى وهو {limit} مهمة.",
@@ -115,5 +118,34 @@
     "count": "{count} / {max}",
     "filteredCount": "{shown} من {total} / {max}",
     "filteredTooltip": "{shown} ظاهرة بالفلاتر الحالية. الحدّ {max} بيتحسب على كل المهام اللي في العمود وعددها {total}، مش الظاهر بس."
+  },
+  "allTasks": {
+    "hint": "عناصر العمل في كل مشروع تعمل فيه. افتح أحدها لتحريره في مشروعه.",
+    "searchPlaceholder": "ابحث في عناصر العمل…",
+    "allProjects": "كل المشاريع",
+    "state": {
+      "open": "مفتوحة",
+      "any": "أي حالة"
+    },
+    "assignee": {
+      "any": "أي شخص",
+      "me": "المسندة إليّ",
+      "agents": "المفوّضة إلى الوكلاء",
+      "unassigned": "غير مسندة"
+    },
+    "due": {
+      "any": "أي تاريخ استحقاق",
+      "overdue": "متأخرة",
+      "week": "مستحقة خلال أسبوع"
+    },
+    "groupBy": {
+      "project": "حسب المشروع",
+      "state": "حسب الحالة"
+    },
+    "empty": "لا توجد عناصر عمل",
+    "emptyHint": "لا يطابق أي عنصر عمل هذه المرشحات.",
+    "myOpenTasks": "عناصر عملي المفتوحة",
+    "viewAll": "كل عناصر العمل",
+    "noOpenTasks": "لا يوجد عنصر عمل مفتوح مسند إليك."
   }
 }

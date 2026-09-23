@@ -33,7 +33,8 @@
     "groupLabels": "Мітки",
     "groupCustom": "Власні поля",
     "empty": "Порожньо",
-    "openInNewTab": "Відкрити в новій вкладці"
+    "openInNewTab": "Відкрити в новій вкладці",
+    "area": "Область"
   },
   "menu": {
     "preview": "Попередній перегляд",
@@ -325,7 +326,10 @@
     "worklogChanged": "змінив(-ла) запис <v>{from}</v> за <v>{fromDate}</v> на <v>{to}</v> за <v>{date}</v>",
     "worklogRemoved": "видалив(-ла) запис <v>{time}</v> за <v>{date}</v>",
     "commentEdited": "змінив коментар",
-    "commentDeleted": "видалив коментар"
+    "commentDeleted": "видалив коментар",
+    "areaSet": "перемістив(-ла) до області <v>{area}</v>",
+    "areaMoved": "перемістив(-ла) з області <v>{from}</v> до <v>{to}</v>",
+    "areaRemoved": "прибрав(-ла) з області <v>{area}</v>"
   },
   "development": {
     "title": "Розробка",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, one {# мітка} few {# мітки} many {# міток} other {# мітки}}",
     "noMember": "Не задано",
     "pickMember": "Вибрати…",
-    "noCandidates": "Нема кого вибрати."
+    "noCandidates": "Нема кого вибрати.",
+    "area": "Область",
+    "noArea": "Без області",
+    "changeArea": "Перемістити до області…"
   },
   "watchers": {
     "watch": "Стежити",

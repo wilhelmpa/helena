@@ -41,6 +41,7 @@ export type ActivityAction =
   | 'estimate'
   | 'type'
   | 'cycle'
+  | 'area'
   | 'start_date'
   | 'due_date'
   | 'label_add'

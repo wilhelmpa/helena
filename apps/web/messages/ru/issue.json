@@ -33,7 +33,8 @@
     "groupLabels": "Метки",
     "groupCustom": "Свои поля",
     "empty": "Пусто",
-    "openInNewTab": "Открыть в новой вкладке"
+    "openInNewTab": "Открыть в новой вкладке",
+    "area": "Область"
   },
   "menu": {
     "preview": "Предпросмотр",
@@ -325,7 +326,10 @@
     "worklogChanged": "изменил(а) запись <v>{from}</v> за <v>{fromDate}</v> на <v>{to}</v> за <v>{date}</v>",
     "worklogRemoved": "удалил(а) запись <v>{time}</v> за <v>{date}</v>",
     "commentEdited": "изменил комментарий",
-    "commentDeleted": "удалил комментарий"
+    "commentDeleted": "удалил комментарий",
+    "areaSet": "переместил(а) в область <v>{area}</v>",
+    "areaMoved": "переместил(а) из области <v>{from}</v> в <v>{to}</v>",
+    "areaRemoved": "убрал(а) из области <v>{area}</v>"
   },
   "development": {
     "title": "Разработка",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, one {# метка} few {# метки} many {# меток} other {# метки}}",
     "noMember": "Не задано",
     "pickMember": "Выбрать…",
-    "noCandidates": "Некого выбрать."
+    "noCandidates": "Некого выбрать.",
+    "area": "Область",
+    "noArea": "Без области",
+    "changeArea": "Переместить в область…"
   },
   "watchers": {
     "watch": "Следить",

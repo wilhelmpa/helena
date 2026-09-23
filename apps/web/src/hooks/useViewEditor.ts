@@ -43,6 +43,19 @@ function mergeFilters(base: FilterSet | null | undefined, extra: FilterSet): Fil
   };
 }
 
+// A view inside an area shows only that area's issues. The condition is added
+// behind the view's own ones and is never stored with them, so moving the view to
+// another area moves what it shows.
+function withArea(filters: FilterSet, areaId: number | null): FilterSet {
+  if (areaId == null) return filters;
+  return {
+    conditions: [
+      ...filters.conditions,
+      { id: 'area-scope', field: 'area', op: 'is', values: [areaId] },
+    ],
+  };
+}
+
 // A saved view's display snapshot is the current layout plus that layout's
 // settings.
 function toDisplay(view: WorkItemsView, settings: ViewSettings): SavedViewDisplay {
@@ -79,6 +92,9 @@ export function useViewEditor(
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [draftIcon, setDraftIcon] = useState<string | null>(null);
+  // The area a new view is drafted in: the one of the view New view was started
+  // from, so the view is created there.
+  const [draftAreaId, setDraftAreaId] = useState<number | null>(null);
   // Whether the filter row is shown. It is also shown once the live filters differ
   // from the selection's own filters, so ad-hoc filters can never be hidden.
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -91,11 +107,14 @@ export function useViewEditor(
   const activeView =
     activeViewId != null ? (views.find((v) => v.id === activeViewId) ?? null) : null;
 
+  const areaId = activeView ? activeView.folderId : editing ? draftAreaId : null;
+
   // What actually filters the screen: the active view's own conditions plus the
-  // ad-hoc ones. While editing, the row already holds the view's conditions.
+  // ad-hoc ones, inside the view's area. While editing, the row already holds the
+  // view's conditions.
   const effectiveFilters = useMemo(
-    () => (editing ? filters : mergeFilters(activeView?.filters, filters)),
-    [editing, filters, activeView],
+    () => withArea(editing ? filters : mergeFilters(activeView?.filters, filters), areaId),
+    [editing, filters, activeView, areaId],
   );
 
   // Load the live layout/settings for a selection and drop the ad-hoc filters: the
@@ -153,6 +172,7 @@ export function useViewEditor(
   // (not updates).
   function beginNewView() {
     setFilters(mergeFilters(activeView?.filters, filters));
+    setDraftAreaId(activeView?.folderId ?? null);
     if (activeViewId != null) {
       openEditNext.current = true;
       keepLiveNext.current = true;
@@ -210,7 +230,9 @@ export function useViewEditor(
     } else {
       if (!name) return; // Save is disabled without a name for a new view.
       const created = normalizeView(
-        await createView.mutateAsync({ input: { name, icon: draftIcon, filters, display } }),
+        await createView.mutateAsync({
+          input: { name, icon: draftIcon, filters, display, folderId: draftAreaId },
+        }),
       );
       setFilters(EMPTY_FILTER_SET);
       setEditing(false);

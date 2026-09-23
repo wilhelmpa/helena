@@ -33,7 +33,8 @@
     "groupLabels": "Etiquetas",
     "groupCustom": "Campos personalizados",
     "empty": "Vazio",
-    "openInNewTab": "Abrir em nova aba"
+    "openInNewTab": "Abrir em nova aba",
+    "area": "Área"
   },
   "menu": {
     "preview": "Visualizar",
@@ -325,7 +326,10 @@
     "worklogChanged": "alterou o registro de <v>{from}</v> em <v>{fromDate}</v> para <v>{to}</v> em <v>{date}</v>",
     "worklogRemoved": "removeu os <v>{time}</v> registrados em <v>{date}</v>",
     "commentEdited": "editou um comentário",
-    "commentDeleted": "excluiu um comentário"
+    "commentDeleted": "excluiu um comentário",
+    "areaSet": "moveu para a área <v>{area}</v>",
+    "areaMoved": "moveu da área <v>{from}</v> para <v>{to}</v>",
+    "areaRemoved": "removeu da área <v>{area}</v>"
   },
   "development": {
     "title": "Desenvolvimento",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, one {# etiqueta} other {# etiquetas}}",
     "noMember": "Não definido",
     "pickMember": "Escolha alguém…",
-    "noCandidates": "Ninguém para escolher."
+    "noCandidates": "Ninguém para escolher.",
+    "area": "Área",
+    "noArea": "Sem área",
+    "changeArea": "Mover para área…"
   },
   "watchers": {
     "watch": "Acompanhar",

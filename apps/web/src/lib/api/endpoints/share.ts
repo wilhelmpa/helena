@@ -3,12 +3,15 @@ import { request } from '@/lib/api/core/client';
 import type { FeedItem } from '@/lib/api/endpoints/activity';
 import type { BoardIssue, IssueRelations } from '@/lib/api/endpoints/issues';
 import type { Assignee, ProjectScaffold } from '@/lib/api/endpoints/projects';
+import type { ViewFolder } from '@/lib/api/endpoints/views';
 
 // Public read-only share bundles, returned by the /share/* routes with no session.
 // The scaffold mirrors ProjectScaffold minus the caller's viewer/permissions and
 // member emails and handles (a public page shows names and avatars only).
 export type PublicScaffold = Omit<ProjectScaffold, 'viewer' | 'permissions' | 'assignees'> & {
   assignees: Omit<Assignee, 'email' | 'username' | 'canReadWorkItems'>[];
+  // The project's areas; empty on a link that is not extended.
+  areas: ViewFolder[];
 };
 
 export interface SharedIssueBundle {

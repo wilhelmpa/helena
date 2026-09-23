@@ -88,7 +88,9 @@
     "noInitiative": "无计划",
     "noCycle": "无周期",
     "archive": "归档",
-    "clearSelection": "清除选择"
+    "clearSelection": "清除选择",
+    "area": "区域",
+    "noArea": "无区域"
   },
   "removal": {
     "archive": {
@@ -114,6 +116,36 @@
     "noType": "无类型",
     "noInitiative": "无计划",
     "noCycle": "无周期",
-    "noMember": "无值"
+    "noMember": "无值",
+    "noArea": "无区域"
+  },
+  "allTasks": {
+    "hint": "你参与的所有项目中的工作项。打开一项即可在其所属项目中编辑。",
+    "searchPlaceholder": "搜索工作项…",
+    "allProjects": "全部项目",
+    "state": {
+      "open": "未完成",
+      "any": "任意状态"
+    },
+    "assignee": {
+      "any": "任何人",
+      "me": "分配给我",
+      "agents": "委派给智能体",
+      "unassigned": "未分配"
+    },
+    "due": {
+      "any": "任意截止日期",
+      "overdue": "已逾期",
+      "week": "一周内到期"
+    },
+    "groupBy": {
+      "project": "按项目",
+      "state": "按状态"
+    },
+    "empty": "没有工作项",
+    "emptyHint": "没有符合这些筛选条件的工作项。",
+    "myOpenTasks": "我的未完成工作项",
+    "viewAll": "全部工作项",
+    "noOpenTasks": "没有分配给你的未完成工作项。"
   }
 }

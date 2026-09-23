@@ -10,6 +10,7 @@ import type { MemberRole } from '@/lib/api/endpoints/members';
 import type { Permissions } from '@/lib/api/endpoints/roles';
 import type { ProjectFeatures } from '@/lib/api/endpoints/settings';
 import type { TeamRole } from '@/lib/api/endpoints/teams';
+import type { ViewFolder } from '@/lib/api/endpoints/views';
 
 export interface Project {
   id: number;
@@ -98,11 +99,12 @@ export interface ProjectScaffold {
   permissions: Permissions;
 }
 
-// The scaffold composed with its issues and the project's unfinished cycles, as
-// the Shell assembles it and passes it down. Downstream reads project.issues off
-// this composite. `plannedCycles` is empty while the Cycles section is off and on a
-// public share (whose bundle carries no cycle list).
-export type ProjectDetail = ProjectScaffold & BoardIssues & { plannedCycles: CycleOption[] };
+// The scaffold composed with its issues, the project's unfinished cycles and its
+// areas, as the Shell assembles it and passes it down. Downstream reads
+// project.issues off this composite. `plannedCycles` is empty while the Cycles
+// section is off and on a public share (whose bundle carries no cycle list).
+export type ProjectDetail = ProjectScaffold &
+  BoardIssues & { plannedCycles: CycleOption[]; areas: ViewFolder[] };
 
 // The instance upload limits. Readable by any signed-in user, because the upload UI
 // states them before a file is picked; only god mode can change them.

@@ -33,7 +33,8 @@
     "groupLabels": "Labels",
     "groupCustom": "Custom fields",
     "empty": "Empty",
-    "openInNewTab": "Open in new tab"
+    "openInNewTab": "Open in new tab",
+    "area": "Area"
   },
   "menu": {
     "preview": "Preview",
@@ -325,7 +326,10 @@
     "worklogChanged": "changed the logged <v>{from}</v> on <v>{fromDate}</v> to <v>{to}</v> on <v>{date}</v>",
     "worklogRemoved": "removed the <v>{time}</v> logged on <v>{date}</v>",
     "commentEdited": "edited a comment",
-    "commentDeleted": "deleted a comment"
+    "commentDeleted": "deleted a comment",
+    "areaSet": "moved into area <v>{area}</v>",
+    "areaMoved": "moved from area <v>{from}</v> to <v>{to}</v>",
+    "areaRemoved": "removed from area <v>{area}</v>"
   },
   "development": {
     "title": "Development",
@@ -421,7 +425,10 @@
     "labelCount": "{count, plural, one {# label} other {# labels}}",
     "noMember": "Not set",
     "pickMember": "Pick someone…",
-    "noCandidates": "Nobody to pick."
+    "noCandidates": "Nobody to pick.",
+    "area": "Area",
+    "noArea": "No area",
+    "changeArea": "Move to area…"
   },
   "watchers": {
     "watch": "Watch",
