@@ -6,7 +6,7 @@ import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { passkey } from '@better-auth/passkey';
 import { apiKey } from '@better-auth/api-key';
-import { mcp, openAPI, magicLink, username, genericOAuth } from 'better-auth/plugins';
+import { mcp, openAPI, magicLink, username, genericOAuth, twoFactor } from 'better-auth/plugins';
 import type { GenericOAuthConfig } from 'better-auth/plugins/generic-oauth';
 import * as schema from '@repo/db/schema';
 import {
@@ -290,6 +290,7 @@ export const auth = betterAuth({
       verification: schema.verification,
       passkey: schema.passkey,
       apikey: schema.apikey,
+      twoFactor: schema.twoFactor,
       oauthApplication: schema.oauthApplication,
       oauthAccessToken: schema.oauthAccessToken,
       oauthConsent: schema.oauthConsent,
@@ -653,6 +654,20 @@ export const auth = betterAuth({
         consentPage: `${trustedOrigins[0]}/oauth/consent`,
       },
     }),
+    // TOTP, the step-up factor for the owner terminal (Home -> Terminal): a code
+    // from an authenticator app, valid until Cloudflare Access puts the instance
+    // behind HTTPS and passkey step-up (which needs a secure context) can replace
+    // it. The owner enrolls at Account -> Security, which calls enableTwoFactor
+    // and getTotpUri directly -- nothing here mounts a sign-in-time 2FA challenge,
+    // since ordinary sign-in stays LAN auto-login / password as it is today.
+    // apps/api's owner-terminal step-up calls auth.api.verifyTOTP against the
+    // caller's own already-open session (see packages/auth/AGENTS.md and
+    // apps/api/src/modules/owner-terminal/service.ts), which is what makes this a
+    // re-authentication check rather than a second sign-in step. The plugin also
+    // mounts email/SMS OTP and backup-code endpoints; nothing in the app calls
+    // them (no sendOTP is configured, so a call to /two-factor/send-otp fails
+    // rather than silently doing nothing), and the account UI offers TOTP only.
+    twoFactor({ issuer: 'Volition' }),
     // OpenAPI reference for the better-auth handler. Serves a Scalar UI at
     // /api/auth/reference and the raw schema at /api/auth/open-api/generate-schema.
     // The schema is built from every active plugin, so the passkey and apiKey

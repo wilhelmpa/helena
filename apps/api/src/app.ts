@@ -22,6 +22,8 @@ import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
 import { normalizeOpenApiResponse } from './openapi';
 import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
 import { hermesTeamControlRoutes } from './hermes-team-control';
+import { issueProxyToken } from './modules/owner-terminal/service';
+import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
 import pkg from '../../../package.json';
 
 const apiUrl = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
@@ -174,6 +176,10 @@ export const app = new Elysia()
           {
             name: 'Device sync',
             description: "Syncthing, which syncs the vault with the owner's devices",
+          },
+          {
+            name: 'Owner terminal',
+            description: 'Step-up, the 12h terminal grant it opens, and its audit trail',
           },
           { name: 'Project templates', description: 'Reusable project and board structures' },
           {
@@ -343,6 +349,41 @@ export const app = new Elysia()
           'Answer 204 for an active session of the instance owner, 403 for another ' +
           'session and 401 without one. Nginx asks it before it forwards a request to ' +
           'Mastra Studio.',
+      },
+    },
+  )
+  // The owner-terminal proxy's auth_request target (see
+  // deployment/volition-stack/native/owner-terminal/nginx-owner-terminal.conf).
+  // Session, owner role and a live 12h grant are all checked here, on every request
+  // nginx forwards -- a 204 carries a freshly minted, 60-second signed token in
+  // X-Owner-Terminal-Token, which nginx's auth_request_set/proxy_set_header relay to
+  // the owner-terminal service. That service verifies the token itself (see its
+  // header comment): a nginx location pointed at the wrong kind, or missing this
+  // auth_request entirely, opens nothing.
+  .get(
+    '/auth/verify/owner-terminal/:kind',
+    async ({ request, params, set, status }) => {
+      const session = await getSessionFromHeaders(request.headers);
+      if (!session || session.user.active === false) return status(401);
+      if (session.user.role !== 'god') return status(403);
+      try {
+        set.headers['X-Owner-Terminal-Token'] = await issueProxyToken(
+          request,
+          params.kind as OwnerTerminalKind,
+        );
+        return status(204);
+      } catch {
+        return status(403);
+      }
+    },
+    {
+      params: OwnerTerminalKindParam,
+      detail: {
+        tags: ['Owner terminal'],
+        summary: 'Check the terminal grant and mint the owner-terminal proxy token',
+        description:
+          '204 with X-Owner-Terminal-Token for the owner with a live grant, 403 for ' +
+          'anyone else or an expired/revoked grant, 401 without a session.',
       },
     },
   )
