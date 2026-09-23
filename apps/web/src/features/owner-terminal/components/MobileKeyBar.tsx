@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { readClipboardText } from '@/utils/clipboard';
 
 // One physical key or literal character. wetty's xterm.js instance reads
 // keydown/keyup off its own hidden textarea with a plain addEventListener, which
@@ -59,20 +60,21 @@ export default function MobileKeyBar({ frame }: { frame: HTMLIFrameElement | nul
     const doc = frame?.contentDocument;
     if (!doc) return;
     try {
-      const text = await navigator.clipboard.readText();
+      const text = await readClipboardText();
+      // A synthetic ClipboardEvent cannot carry clipboardData in every browser,
+      // which is what xterm.js listens for on a real paste -- typing the text as
+      // individual keydown events is what actually reaches the shell everywhere.
       const element = (doc.activeElement as HTMLElement | null) ?? doc.body;
-      element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, clipboardData: undefined }));
-      // xterm listens for the real paste event's clipboardData, which a synthetic
-      // ClipboardEvent cannot carry in every browser -- falling back to typing the
-      // text as individual input is what actually reaches the shell everywhere.
       for (const char of text) {
         element.dispatchEvent(
           new KeyboardEvent('keydown', { key: char, bubbles: true, cancelable: true }),
         );
       }
     } catch {
-      // Clipboard read needs a permission the mobile browser may refuse; nothing
-      // to recover here, the owner can still select-and-paste inside the frame.
+      // readClipboardText needs a secure context or a permission the mobile
+      // browser may refuse; nothing to recover here (this LAN instance is plain
+      // http -- see @/utils/clipboard), the owner can still select-and-paste
+      // inside the frame itself.
     }
   }
 
