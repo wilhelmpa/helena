@@ -267,7 +267,7 @@ def setup(args: argparse.Namespace) -> None:
     token = os.urandom(24).hex()
     write(f'{PROOF}/egress.token', token, 'root', 'root', 0o600)
     api_copy = os.path.expanduser('~wilhelmpa/agent-work/plan-isolation-proof/egress.token')
-    os.makedirs(os.path.dirname(api_copy), exist_ok=True)
+    mkdir(os.path.dirname(api_copy), 'wilhelmpa', 'wilhelmpa', 0o700)
     write(api_copy, token, 'wilhelmpa', 'wilhelmpa', 0o600)
     save_state({'planPort': args.plan_port, 'modelPort': args.model_port, 'source': source})
     print('setup done')
