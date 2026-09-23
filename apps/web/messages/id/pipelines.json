@@ -1,0 +1,449 @@
+{
+  "kinds": {
+    "agent": "Agen",
+    "approval": "Persetujuan",
+    "condition": "Kondisi",
+    "action": "Aksi pada tugas",
+    "wait": "Tunggu"
+  },
+  "kindHints": {
+    "agent": "Agen mengerjakan tugas",
+    "approval": "Seseorang menyetujui atau mengembalikan tugas",
+    "condition": "Membagi eksekusi menjadi Ya dan Tidak",
+    "action": "Mengubah tugas",
+    "wait": "Menjeda eksekusi"
+  },
+  "triggers": {
+    "manual": "Dimulai secara manual",
+    "task_created": "Tugas dibuat",
+    "task_assigned": "Tugas ditugaskan",
+    "status_changed": "Status berubah",
+    "label_added": "Label ditambahkan",
+    "schedule": "Jadwal"
+  },
+  "triggerSummary": {
+    "statusTo": "Status berubah menjadi {status}",
+    "label": "Label {label} ditambahkan",
+    "schedule": "Jadwal {cron}"
+  },
+  "library": {
+    "hint": "Templat alur kerja tim Anda. Sebuah proyek mengaktifkan templat dan menetapkan agen untuk setiap perannya.",
+    "newTemplate": "Templat baru",
+    "newTemplateDescription": "Templat dimulai dengan satu langkah agen. Anda membangunnya di editor.",
+    "name": "Nama",
+    "create": "Buat",
+    "templates": "Templat",
+    "empty": "Belum ada templat",
+    "emptyHint": "Tambahkan templat bawaan di bawah atau buat templat baru.",
+    "builtins": "Templat bawaan",
+    "builtinsHint": "Menambahkannya menyalinnya ke pustaka Anda dalam bahasa Anda, tempat Anda dapat mengubahnya.",
+    "addToLibrary": "Tambahkan ke pustaka",
+    "added": "{name} ditambahkan ke pustaka.",
+    "steps": "{count, plural, other {# langkah}}",
+    "version": "Versi {version}",
+    "delete": "Hapus",
+    "deleteTitle": "Hapus templat",
+    "deleteConfirm": "Hapus {name}? Semua versi dan eksekusinya akan dihapus, dan setiap proyek yang menggunakannya berhenti menjalankannya.",
+    "loadFailed": "Templat tidak dapat dimuat.",
+    "tryAgain": "Coba lagi",
+    "noAccess": "Anda mungkin tidak dapat melihat alur kerja tim ini.",
+    "readOnly": "Hanya anggota yang boleh membuat alur kerja yang dapat menambahkan templat di sini."
+  },
+  "starter": {
+    "name": "Alur kerja baru",
+    "role": "Koordinator",
+    "step": "Kerjakan tugas",
+    "instruction": "Kerjakan tugas {identifier} “{title}”.\n\n{description}"
+  },
+  "builtin": {
+    "agent-team": {
+      "name": "Tim agen (default)",
+      "description": "Koordinator merencanakan, spesialis mengerjakan tugasnya, koordinator meninjaunya, dan tugas dipindahkan ke Tinjauan.",
+      "roles": {
+        "coordinator": "Koordinator",
+        "specialist": "Spesialis"
+      },
+      "steps": {
+        "plan": "Koordinator merencanakan pekerjaan",
+        "implement": "Spesialis mengerjakan pekerjaan",
+        "review": "Koordinator meninjau hasilnya",
+        "accepted": "Tinjauan diterima?",
+        "report-accepted": "Laporkan hasil yang diterima",
+        "report-changes": "Laporkan perubahan yang diminta",
+        "to-review": "Pindahkan tugas ke Tinjauan"
+      }
+    },
+    "release-notes": {
+      "name": "Implementasikan, setujui, catatan rilis",
+      "description": "Seorang pengembang mengimplementasikan tugas, Anda menyetujuinya atau mengembalikannya, dan agen konten menulis catatan rilis.",
+      "roles": {
+        "coder": "Pengembang",
+        "writer": "Agen konten"
+      },
+      "steps": {
+        "implement": "Pengembang mengimplementasikan",
+        "approve": "Persetujuan",
+        "release-notes": "Agen konten menulis catatan rilis",
+        "post-notes": "Publikasikan catatan rilis"
+      }
+    }
+  },
+  "editor": {
+    "back": "Alur kerja",
+    "template": "Templat",
+    "projectWorkflow": "Alur kerja proyek",
+    "version": "Versi {version}",
+    "unsaved": "Perubahan belum disimpan",
+    "save": "Simpan",
+    "saved": "{name} disimpan.",
+    "blocked": "Perbaiki kesalahan untuk dapat menyimpan.",
+    "tabs": {
+      "build": "Bangun",
+      "runs": "Eksekusi",
+      "versions": "Versi"
+    },
+    "name": "Nama",
+    "description": "Deskripsi",
+    "descriptionPlaceholder": "Apa yang dilakukan alur kerja ini",
+    "noDescription": "Tidak ada deskripsi",
+    "readOnly": "Anda dapat membaca alur kerja ini. Anggota yang boleh mengubah alur kerja dapat mengubahnya.",
+    "loadFailed": "Alur kerja tidak dapat dimuat.",
+    "templateElsewhere": "Alur kerja ini adalah templat dari pustaka tim. Templat ini diedit di Beranda.",
+    "openTemplate": "Buka templat",
+    "issuesTitle": "{count, plural, other {# masalah}}",
+    "warningsTitle": "{count, plural, other {# masalah dalam proyek ini}}",
+    "warningsHint": "Alur kerja dapat disimpan, tetapi tidak dapat diaktifkan di proyek sampai masalah ini diperbaiki."
+  },
+  "trigger": {
+    "title": "Pemicu",
+    "type": "Dimulai saat",
+    "status": "Status",
+    "anyStatus": "Status apa pun",
+    "statusHint": "Kosongkan untuk memulai pada setiap perubahan status.",
+    "label": "Label",
+    "cron": "Ekspresi cron",
+    "cronHint": "Menit, jam, tanggal, bulan, dan hari dalam seminggu. 0 9 * * 1-5 berjalan pada hari kerja pukul 9:00.",
+    "timezone": "Zona waktu",
+    "taskTitle": "Judul tugas",
+    "taskTitleHint": "Setiap eksekusi membuat tugas dengan judul ini dan menjalankan alur kerja padanya."
+  },
+  "roles": {
+    "title": "Peran",
+    "hint": "Langkah agen menyebutkan sebuah peran. Proyek menetapkan agen untuk setiap peran, atau aturan di bawah menemukannya.",
+    "add": "Tambah peran",
+    "newRole": "Peran baru",
+    "name": "Nama",
+    "match": "Ditemukan dengan",
+    "matchTypes": {
+      "coordinator": "Koordinator proyek",
+      "capability": "Agen dengan kapabilitas tertentu",
+      "template": "Salinan dari agen templat",
+      "none": "Ditetapkan di proyek"
+    },
+    "capability": "Kapabilitas",
+    "templateAgent": "Agen templat",
+    "chooseAgent": "Pilih agen",
+    "remove": "Hapus peran",
+    "empty": "Belum ada peran."
+  },
+  "steps": {
+    "title": "Langkah",
+    "add": "Langkah",
+    "addHere": "Tambahkan langkah di sini",
+    "empty": "Belum ada langkah.",
+    "drag": "Tarik untuk mengatur ulang",
+    "yes": "Ya",
+    "no": "Tidak",
+    "endsRun": "Eksekusi berakhir setelah langkah ini",
+    "limit": "Sebuah alur kerja memuat paling banyak {max} langkah.",
+    "problems": "{count, plural, other {# masalah}}"
+  },
+  "summary": {
+    "agentRole": "Peran {role}",
+    "agentDirect": "@{username}",
+    "noInstruction": "Belum ada instruksi",
+    "approvalEnd": "Ditolak: eksekusi berakhir",
+    "approvalGoto": "Ditolak: kembali ke {step}",
+    "outcome": "Hasil adalah {outcomes}",
+    "keyword": "Hasil mengandung {keyword}",
+    "taskIs": "{field} adalah {values}",
+    "taskIsNot": "{field} bukan {values}",
+    "setStatus": "Atur status ke {status}",
+    "addLabels": "Tambahkan {labels}",
+    "removeLabels": "Hapus {labels}",
+    "assignRole": "Tugaskan ke peran {role}",
+    "assignMember": "Tugaskan ke {name}",
+    "unassign": "Hapus penerima tugas",
+    "comment": "Komentar: {text}",
+    "subtask": "Subtugas: {title}",
+    "waitDelay": "Tunggu {duration}",
+    "waitUntil": "Sampai {field} pada {time}"
+  },
+  "duration": {
+    "minutes": "{count, plural, other {# menit}}",
+    "hours": "{count, plural, other {# jam}}",
+    "days": "{count, plural, other {# hari}}"
+  },
+  "inspector": {
+    "title": "Langkah",
+    "empty": "Pilih langkah untuk mengubahnya.",
+    "name": "Nama",
+    "delete": "Hapus langkah",
+    "insertVariable": "Sisipkan variabel",
+    "variableGroups": {
+      "task": "Tugas",
+      "previous": "Langkah sebelumnya",
+      "step": "Langkah {name}"
+    },
+    "variables": {
+      "title": "Judul",
+      "description": "Deskripsi",
+      "identifier": "Nomor issue",
+      "status": "Status",
+      "summary": "Hasil",
+      "outcome": "Keluaran",
+      "note": "Catatan persetujuan"
+    },
+    "agent": {
+      "assignee": "Penerima tugas",
+      "roles": "Peran",
+      "agents": "Agen proyek",
+      "instruction": "Instruksi",
+      "instructionPlaceholder": "Apa yang harus dilakukan agen. Variabel meneruskan tugas dan hasil sebelumnya.",
+      "timeout": "Batas waktu dalam menit",
+      "maxTurns": "Giliran paling banyak",
+      "runBudget": "Menit paling banyak",
+      "noLimit": "Batas agen",
+      "model": "Model",
+      "agentModel": "Model agen",
+      "limitsHint": "Sebuah langkah dapat menurunkan batas agen sendiri, tetapi tidak menaikkannya."
+    },
+    "approval": {
+      "message": "Pesan",
+      "messagePlaceholder": "Apa yang harus diperiksa oleh pemberi persetujuan",
+      "onReject": "Saat ditolak",
+      "end": "Akhiri eksekusi",
+      "goto": "Kembali ke langkah sebelumnya",
+      "target": "Kembali ke",
+      "chooseStep": "Pilih langkah",
+      "maxLoops": "Paling banyak sekian kali",
+      "noEarlierSteps": "Tidak ada langkah sebelumnya untuk dituju."
+    },
+    "condition": {
+      "kind": "Memeriksa",
+      "kinds": {
+        "outcome": "Keluaran langkah sebelumnya",
+        "keyword": "Kata dalam hasil sebelumnya",
+        "task": "Bidang pada tugas"
+      },
+      "outcomes": {
+        "success": "Berhasil",
+        "failed": "Gagal",
+        "blocked": "Diblokir"
+      },
+      "keyword": "Kata",
+      "keywordHint": "Ya jika hasil langkah sebelumnya mengandungnya, tanpa membedakan huruf besar/kecil.",
+      "field": "Bidang",
+      "fields": {
+        "status": "Status",
+        "statusType": "Jenis status",
+        "labels": "Label",
+        "area": "Area",
+        "priority": "Prioritas"
+      },
+      "op": "Perbandingan",
+      "ops": {
+        "is": "adalah",
+        "is_not": "bukan"
+      },
+      "values": "Nilai",
+      "namesHint": "Nama, dipisahkan dengan koma. Proyek menamainya dengan cara yang sama.",
+      "choose": "Pilih"
+    },
+    "action": {
+      "kind": "Aksi",
+      "kinds": {
+        "set_status": "Atur status",
+        "add_labels": "Tambahkan label",
+        "remove_labels": "Hapus label",
+        "set_assignee": "Atur penerima tugas",
+        "comment": "Tulis komentar",
+        "create_subtask": "Buat subtugas"
+      },
+      "status": "Status",
+      "labels": "Label",
+      "assignee": "Penerima tugas",
+      "nobody": "Tidak ada",
+      "roles": "Peran",
+      "members": "Anggota proyek",
+      "body": "Komentar",
+      "title": "Judul",
+      "description": "Deskripsi"
+    },
+    "wait": {
+      "kind": "Menunggu",
+      "kinds": {
+        "delay": "Selama beberapa waktu",
+        "until": "Sampai tanggal pada tugas"
+      },
+      "amount": "Durasi",
+      "unit": "Satuan",
+      "units": {
+        "minutes": "Menit",
+        "hours": "Jam",
+        "days": "Hari"
+      },
+      "field": "Tanggal",
+      "fields": {
+        "dueDate": "tanggal jatuh tempo",
+        "startDate": "tanggal mulai"
+      },
+      "time": "Waktu",
+      "timeHint": "Waktu di Europe/Berlin."
+    }
+  },
+  "issues": {
+    "invalid": "Nilainya tidak valid.",
+    "required": "Wajib diisi.",
+    "too_long": "Paling banyak {max} karakter.",
+    "too_many": "Paling banyak {max} entri.",
+    "out_of_range": "Antara {min} dan {max}.",
+    "too_deep": "Kondisi bertingkat paling banyak {max} level.",
+    "invalid_cron": "Ekspresi cron tidak valid.",
+    "invalid_timezone": "Zona waktu tidak valid.",
+    "no_steps": "Alur kerja ini tidak memiliki langkah.",
+    "duplicate_role_key": "Dua peran memiliki kunci yang sama.",
+    "duplicate_step_id": "Dua langkah memiliki id yang sama.",
+    "unknown_role": "Peran {role} tidak ada.",
+    "agent_in_template": "Templat menyebutkan peran, bukan agen.",
+    "member_in_template": "Templat tidak dapat menyebutkan anggota.",
+    "invalid_rework_target": "Langkah tujuan kembali harus berada sebelum persetujuan ini.",
+    "unknown_variable": "Variabel {variable} tidak ada.",
+    "unknown_step_variable": "{variable} menyebutkan langkah yang tidak ada.",
+    "step_variable_not_before": "{variable} menyebutkan langkah yang tidak berjalan sebelum langkah ini.",
+    "no_previous_step": "Tidak ada langkah sebelum langkah ini yang meninggalkan hasil untuk {variable}.",
+    "unreachable_step": "Tidak ada eksekusi yang mencapai langkah ini: kedua cabang kondisi sebelumnya mengakhiri eksekusi.",
+    "role_unresolved": "Tidak ada agen proyek yang mengisi peran {role}.",
+    "agent_not_in_project": "Agen tidak bekerja di proyek ini.",
+    "member_not_in_project": "Anggota tidak berada di proyek ini.",
+    "unknown_status": "Proyek tidak memiliki status {name}.",
+    "unknown_label": "Proyek tidak memiliki label {name}.",
+    "unknown_area": "Proyek tidak memiliki area {name}.",
+    "model_not_allowed": "Tidak ada agen tim yang menjalankan model {model}.",
+    "schedule_too_frequent": "Jadwal ini berjalan lebih sering daripada yang diizinkan tim."
+  },
+  "runs": {
+    "status": {
+      "pending": "Dalam antrean",
+      "running": "Berjalan",
+      "waiting": "Menunggu",
+      "succeeded": "Berhasil",
+      "failed": "Gagal",
+      "canceled": "Dibatalkan",
+      "rejected": "Ditolak"
+    },
+    "stepStatus": {
+      "running": "Berjalan",
+      "waiting": "Menunggu",
+      "succeeded": "Selesai",
+      "failed": "Gagal",
+      "canceled": "Dibatalkan",
+      "simulated": "Disimulasikan"
+    },
+    "outcomes": {
+      "success": "Berhasil",
+      "failed": "Gagal",
+      "blocked": "Diblokir",
+      "approved": "Disetujui",
+      "rejected": "Ditolak",
+      "true": "Ya",
+      "false": "Tidak"
+    },
+    "agentRunStatus": {
+      "pending": "Dalam antrean",
+      "running": "Berjalan",
+      "success": "Selesai",
+      "failed": "Gagal",
+      "canceled": "Dibatalkan"
+    },
+    "testRun": "Uji coba",
+    "version": "Versi {version}",
+    "trigger": "Pemicu: {trigger}",
+    "startedBy": "Dimulai oleh {name}",
+    "iteration": "Putaran {iteration}",
+    "attempt": "Percobaan {attempt}",
+    "agentRun": "Eksekusi agen #{id}",
+    "showResult": "Tampilkan hasil",
+    "hideResult": "Sembunyikan hasil",
+    "note": "Catatan: {note}",
+    "decidedBy": "Diputuskan oleh {name}",
+    "wakeAt": "Berlanjut {time}",
+    "cancel": "Batalkan eksekusi",
+    "retry": "Coba lagi",
+    "approvedToast": "Disetujui. Alur kerja berlanjut.",
+    "rejectedToast": "Ditolak. Alur kerja mengikuti jalur penolakannya.",
+    "empty": "Belum ada eksekusi.",
+    "loadFailed": "Eksekusi tidak dapat dimuat.",
+    "allStatuses": "Semua status",
+    "allRuns": "Semua eksekusi",
+    "onlyTestRuns": "Uji coba",
+    "onlyRealRuns": "Eksekusi nyata",
+    "allProjects": "Semua proyek"
+  },
+  "versions": {
+    "empty": "Tidak ada versi.",
+    "current": "Saat ini",
+    "createdBy": "oleh {name}",
+    "open": "Buka",
+    "viewing": "Versi {version} dari {date}. Hanya baca.",
+    "back": "Kembali ke versi"
+  },
+  "testRun": {
+    "button": "Uji coba",
+    "saveFirst": "Simpan dulu perubahan Anda. Uji coba menjalankan versi yang tersimpan.",
+    "title": "Uji coba",
+    "hint": "Langkah agen disimulasikan, kondisi dievaluasi, dan tidak ada perubahan pada tugas.",
+    "project": "Proyek",
+    "chooseProject": "Pilih proyek",
+    "task": "Tugas",
+    "search": "Cari tugas",
+    "noMatches": "Tidak ada tugas yang cocok",
+    "typeToSearch": "Ketik untuk mencari tugas proyek",
+    "start": "Mulai uji coba",
+    "again": "Jalankan lagi"
+  },
+  "project": {
+    "title": "Pembuat alur kerja",
+    "hint": "Templat dari pustaka tim dan alur kerja milik proyek ini sendiri. Aktifkan salah satu, tetapkan agen untuk perannya, dan alur kerja itu berjalan sesuai pemicunya.",
+    "create": "Buat alur kerja",
+    "createDescription": "Alur kerja milik proyek ini saja. Dimulai dengan satu langkah agen.",
+    "name": "Nama",
+    "empty": "Belum ada alur kerja. Tambahkan templat ke pustaka di Beranda atau buat alur kerja di sini.",
+    "loadFailed": "Alur kerja tidak dapat dimuat.",
+    "template": "Templat",
+    "own": "Alur kerja proyek",
+    "enabled": "Aktif",
+    "disabled": "Nonaktif",
+    "readOnly": "Anggota yang boleh mengubah alur kerja dapat mengaktifkannya dan menetapkan agen untuk perannya.",
+    "roles": "Agen untuk setiap peran",
+    "automatic": "Otomatis ({agent})",
+    "automaticPlain": "Otomatis",
+    "nobody": "tidak ada",
+    "open": "Buka",
+    "runs": "Eksekusi",
+    "problems": "Mengapa tidak dapat berjalan di sini"
+  },
+  "issuePanel": {
+    "title": "Alur kerja",
+    "start": "Mulai alur kerja",
+    "empty": "Belum ada alur kerja yang berjalan pada tugas ini.",
+    "unavailable": "Eksekusi alur kerja tidak dapat dimuat saat ini.",
+    "showMore": "{count, plural, other {Tampilkan # eksekusi lagi}}",
+    "showLess": "Tampilkan lebih sedikit eksekusi"
+  },
+  "approvals": {
+    "of": "{workflow} di {project}",
+    "step": "Langkah: {step}",
+    "waitingSince": "Menunggu sejak {time}"
+  }
+}

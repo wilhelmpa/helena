@@ -105,7 +105,8 @@ export default function PipelineEditor({
               editable,
               selectedId,
               select,
-              change: (change) => setDraft((current) => ({ ...current, definition: change(current.definition) })),
+              change: (change) =>
+                setDraft((current) => ({ ...current, definition: change(current.definition) })),
             }}
           >
             <PipelineBuilder

@@ -27,8 +27,7 @@ export default function PipelineEditorLoader({
   const { can } = usePermissions();
 
   if (pipeline.isPending) return <ListSkeleton rows={4} rowClassName="h-14" className="p-6" />;
-  if (pipeline.isError)
-    return <p className="p-6 text-sm text-destructive">{t('loadFailed')}</p>;
+  if (pipeline.isError) return <p className="p-6 text-sm text-destructive">{t('loadFailed')}</p>;
   const data = pipeline.data;
   if (projectKey && data.projectId === null)
     return (
@@ -40,9 +39,7 @@ export default function PipelineEditorLoader({
       </div>
     );
   const editable =
-    data.projectId === null
-      ? team.data?.permissions.actions.edit === true
-      : can('actions', 'edit');
+    data.projectId === null ? team.data?.permissions.actions.edit === true : can('actions', 'edit');
   const roles = usage.data?.find((entry) => entry.pipeline.id === data.id)?.roles;
 
   return <PipelineEditor pipeline={data} editable={editable} projectRoles={roles} />;

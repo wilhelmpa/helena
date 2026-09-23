@@ -5,7 +5,7 @@ import { ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
 import type { PipelineApproval } from '@/lib/api/endpoints/pipelines';
-import { useRelativeTime } from '@/context/relativeTimeContext';
+import { formatDateTime } from '@/utils/dates';
 import { useDecidePipelineApproval } from '@/services/pipelines.service';
 import { issueIdentifierPath } from '@/utils/paths';
 
@@ -13,7 +13,6 @@ import { issueIdentifierPath } from '@/utils/paths';
 // the approver to check, and the decision controls.
 export default function PipelineApprovalCard({ approval }: { approval: PipelineApproval }) {
   const t = useTranslations('pipelines.approvals');
-  const relativeTime = useRelativeTime();
   const decide = useDecidePipelineApproval();
 
   return (
@@ -33,7 +32,7 @@ export default function PipelineApprovalCard({ approval }: { approval: PipelineA
           </Link>
         )}
         <span className="ms-auto">
-          {t('waitingSince', { time: relativeTime(approval.waitingSince) })}
+          {t('waitingSince', { time: formatDateTime(approval.waitingSince) })}
         </span>
       </div>
       <p className="font-medium" dir="auto">

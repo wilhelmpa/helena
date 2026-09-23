@@ -1,0 +1,449 @@
+{
+  "kinds": {
+    "agent": "Agent",
+    "approval": "Freigabe",
+    "condition": "Bedingung",
+    "action": "Aufgabenaktion",
+    "wait": "Warten"
+  },
+  "kindHints": {
+    "agent": "Ein Agent arbeitet an der Aufgabe",
+    "approval": "Eine Person gibt frei oder schickt zurück",
+    "condition": "Verzweigt den Lauf in Ja und Nein",
+    "action": "Ändert die Aufgabe",
+    "wait": "Pausiert den Lauf"
+  },
+  "triggers": {
+    "manual": "Von Hand gestartet",
+    "task_created": "Aufgabe erstellt",
+    "task_assigned": "Aufgabe zugewiesen",
+    "status_changed": "Status geändert",
+    "label_added": "Label hinzugefügt",
+    "schedule": "Zeitplan"
+  },
+  "triggerSummary": {
+    "statusTo": "Status wechselt zu {status}",
+    "label": "Label {label} wird hinzugefügt",
+    "schedule": "Zeitplan {cron}"
+  },
+  "library": {
+    "hint": "Die Workflow-Vorlagen deines Teams. Ein Projekt schaltet eine Vorlage ein und legt die Agenten ihrer Rollen fest.",
+    "newTemplate": "Neue Vorlage",
+    "newTemplateDescription": "Die Vorlage beginnt mit einem Agentenschritt. Du baust sie im Editor aus.",
+    "name": "Name",
+    "create": "Erstellen",
+    "templates": "Vorlagen",
+    "empty": "Noch keine Vorlagen",
+    "emptyHint": "Füge unten eine mitgelieferte Vorlage hinzu oder erstelle eine neue.",
+    "builtins": "Mitgelieferte Vorlagen",
+    "builtinsHint": "Eine hinzugefügte Vorlage wird in deiner Sprache in deine Bibliothek kopiert, wo du sie ändern kannst.",
+    "addToLibrary": "Zur Bibliothek hinzufügen",
+    "added": "{name} wurde zur Bibliothek hinzugefügt.",
+    "steps": "{count, plural, one {# Schritt} other {# Schritte}}",
+    "version": "Version {version}",
+    "delete": "Löschen",
+    "deleteTitle": "Vorlage löschen",
+    "deleteConfirm": "{name} löschen? Ihre Versionen und Läufe werden gelöscht, und jedes Projekt, das sie nutzt, führt sie nicht mehr aus.",
+    "loadFailed": "Die Vorlagen konnten nicht geladen werden.",
+    "tryAgain": "Erneut versuchen",
+    "noAccess": "Du darfst die Workflows dieses Teams nicht sehen.",
+    "readOnly": "Nur Mitglieder, die Workflows erstellen dürfen, fügen hier Vorlagen hinzu."
+  },
+  "starter": {
+    "name": "Neuer Workflow",
+    "role": "Koordinator",
+    "step": "An der Aufgabe arbeiten",
+    "instruction": "Arbeite an der Aufgabe {identifier} „{title}“.\n\n{description}"
+  },
+  "builtin": {
+    "agent-team": {
+      "name": "Agententeam (Standard)",
+      "description": "Der Koordinator plant, ein Spezialist setzt um, der Koordinator prüft das Ergebnis und die Aufgabe geht in Review.",
+      "roles": {
+        "coordinator": "Koordinator",
+        "specialist": "Spezialist"
+      },
+      "steps": {
+        "plan": "Koordinator plant die Arbeit",
+        "implement": "Spezialist setzt um",
+        "review": "Koordinator prüft das Ergebnis",
+        "accepted": "Review angenommen?",
+        "report-accepted": "Angenommenes Ergebnis melden",
+        "report-changes": "Gewünschte Änderungen melden",
+        "to-review": "Aufgabe nach Review verschieben"
+      }
+    },
+    "release-notes": {
+      "name": "Umsetzen, freigeben, Release-Notes",
+      "description": "Ein Coder setzt die Aufgabe um, du gibst sie frei oder schickst sie zurück, und ein Content-Agent schreibt die Release-Notes.",
+      "roles": {
+        "coder": "Coder",
+        "writer": "Content-Agent"
+      },
+      "steps": {
+        "implement": "Coder setzt um",
+        "approve": "Freigabe",
+        "release-notes": "Content-Agent schreibt Release-Notes",
+        "post-notes": "Release-Notes veröffentlichen"
+      }
+    }
+  },
+  "editor": {
+    "back": "Workflows",
+    "template": "Vorlage",
+    "projectWorkflow": "Projekt-Workflow",
+    "version": "Version {version}",
+    "unsaved": "Ungespeicherte Änderungen",
+    "save": "Speichern",
+    "saved": "{name} gespeichert.",
+    "blocked": "Behebe die Fehler, um zu speichern.",
+    "tabs": {
+      "build": "Aufbau",
+      "runs": "Läufe",
+      "versions": "Versionen"
+    },
+    "name": "Name",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Was der Workflow tut",
+    "noDescription": "Keine Beschreibung",
+    "readOnly": "Du kannst diesen Workflow lesen. Mitglieder, die Workflows bearbeiten dürfen, ändern ihn.",
+    "loadFailed": "Der Workflow konnte nicht geladen werden.",
+    "templateElsewhere": "Dieser Workflow ist eine Vorlage aus der Bibliothek des Teams. Er wird in Home bearbeitet.",
+    "openTemplate": "Vorlage öffnen",
+    "issuesTitle": "{count, plural, one {# Fehler} other {# Fehler}}",
+    "warningsTitle": "{count, plural, one {# Problem in diesem Projekt} other {# Probleme in diesem Projekt}}",
+    "warningsHint": "Der Workflow lässt sich speichern, aber erst im Projekt einschalten, wenn diese Probleme behoben sind."
+  },
+  "trigger": {
+    "title": "Auslöser",
+    "type": "Startet, wenn",
+    "status": "Status",
+    "anyStatus": "Beliebiger Status",
+    "statusHint": "Leer lassen, um bei jedem Statuswechsel zu starten.",
+    "label": "Label",
+    "cron": "Cron-Ausdruck",
+    "cronHint": "Minute, Stunde, Tag im Monat, Monat und Wochentag. 0 9 * * 1-5 läuft werktags um 9:00.",
+    "timezone": "Zeitzone",
+    "taskTitle": "Aufgabentitel",
+    "taskTitleHint": "Jeder Lauf erstellt eine Aufgabe mit diesem Titel und führt den Workflow darauf aus."
+  },
+  "roles": {
+    "title": "Rollen",
+    "hint": "Ein Agentenschritt nennt eine Rolle. Ein Projekt legt den Agenten jeder Rolle fest, oder die Regel unten findet ihn.",
+    "add": "Rolle hinzufügen",
+    "newRole": "Neue Rolle",
+    "name": "Name",
+    "match": "Gefunden über",
+    "matchTypes": {
+      "coordinator": "Den Koordinator des Projekts",
+      "capability": "Einen Agenten mit einer Fähigkeit",
+      "template": "Die Kopie eines Vorlagen-Agenten",
+      "none": "Wird im Projekt festgelegt"
+    },
+    "capability": "Fähigkeit",
+    "templateAgent": "Vorlagen-Agent",
+    "chooseAgent": "Agent auswählen",
+    "remove": "Rolle entfernen",
+    "empty": "Noch keine Rollen."
+  },
+  "steps": {
+    "title": "Schritte",
+    "add": "Schritt",
+    "addHere": "Hier einen Schritt einfügen",
+    "empty": "Noch keine Schritte.",
+    "drag": "Zum Umsortieren ziehen",
+    "yes": "Ja",
+    "no": "Nein",
+    "endsRun": "Lauf endet danach",
+    "limit": "Ein Workflow hat höchstens {max} Schritte.",
+    "problems": "{count, plural, one {# Problem} other {# Probleme}}"
+  },
+  "summary": {
+    "agentRole": "Rolle {role}",
+    "agentDirect": "@{username}",
+    "noInstruction": "Noch keine Anweisung",
+    "approvalEnd": "Abgelehnt: Der Lauf endet",
+    "approvalGoto": "Abgelehnt: zurück zu {step}",
+    "outcome": "Ergebnis ist {outcomes}",
+    "keyword": "Ergebnis enthält {keyword}",
+    "taskIs": "{field} ist {values}",
+    "taskIsNot": "{field} ist nicht {values}",
+    "setStatus": "Status auf {status} setzen",
+    "addLabels": "{labels} hinzufügen",
+    "removeLabels": "{labels} entfernen",
+    "assignRole": "Der Rolle {role} zuweisen",
+    "assignMember": "{name} zuweisen",
+    "unassign": "Zuweisung entfernen",
+    "comment": "Kommentar: {text}",
+    "subtask": "Unteraufgabe: {title}",
+    "waitDelay": "{duration} warten",
+    "waitUntil": "Bis zum {field} um {time}"
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
+    "hours": "{count, plural, one {# Stunde} other {# Stunden}}",
+    "days": "{count, plural, one {# Tag} other {# Tage}}"
+  },
+  "inspector": {
+    "title": "Schritt",
+    "empty": "Wähle einen Schritt aus, um ihn zu ändern.",
+    "name": "Name",
+    "delete": "Schritt löschen",
+    "insertVariable": "Variable einfügen",
+    "variableGroups": {
+      "task": "Aufgabe",
+      "previous": "Vorheriger Schritt",
+      "step": "Schritt {name}"
+    },
+    "variables": {
+      "title": "Titel",
+      "description": "Beschreibung",
+      "identifier": "Kennung",
+      "status": "Status",
+      "summary": "Ergebnis",
+      "outcome": "Ausgang",
+      "note": "Notiz der Freigabe"
+    },
+    "agent": {
+      "assignee": "Zuständig",
+      "roles": "Rollen",
+      "agents": "Agenten des Projekts",
+      "instruction": "Anweisung",
+      "instructionPlaceholder": "Was der Agent tun soll. Variablen geben die Aufgabe und frühere Ergebnisse weiter.",
+      "timeout": "Zeitlimit in Minuten",
+      "maxTurns": "Höchstens Runden",
+      "runBudget": "Höchstens Minuten",
+      "noLimit": "Limit des Agenten",
+      "model": "Modell",
+      "agentModel": "Modell des Agenten",
+      "limitsHint": "Ein Schritt kann die Limits des Agenten senken, nicht erhöhen."
+    },
+    "approval": {
+      "message": "Nachricht",
+      "messagePlaceholder": "Was die freigebende Person prüfen soll",
+      "onReject": "Bei Ablehnung",
+      "end": "Lauf beenden",
+      "goto": "Zu einem früheren Schritt zurück",
+      "target": "Zurück zu",
+      "chooseStep": "Schritt auswählen",
+      "maxLoops": "Höchstens so oft",
+      "noEarlierSteps": "Es gibt keinen früheren Schritt, zu dem es zurückgehen kann."
+    },
+    "condition": {
+      "kind": "Prüft",
+      "kinds": {
+        "outcome": "Ausgang des vorherigen Schritts",
+        "keyword": "Wort im vorherigen Ergebnis",
+        "task": "Feld der Aufgabe"
+      },
+      "outcomes": {
+        "success": "Erfolg",
+        "failed": "Fehlgeschlagen",
+        "blocked": "Blockiert"
+      },
+      "keyword": "Wort",
+      "keywordHint": "Ja, wenn das Ergebnis des vorherigen Schritts es enthält, unabhängig von Groß- und Kleinschreibung.",
+      "field": "Feld",
+      "fields": {
+        "status": "Status",
+        "statusType": "Statustyp",
+        "labels": "Labels",
+        "area": "Bereich",
+        "priority": "Priorität"
+      },
+      "op": "Vergleich",
+      "ops": {
+        "is": "ist",
+        "is_not": "ist nicht"
+      },
+      "values": "Werte",
+      "namesHint": "Namen, durch Kommas getrennt. Das Projekt muss sie genauso benennen.",
+      "choose": "Auswählen"
+    },
+    "action": {
+      "kind": "Aktion",
+      "kinds": {
+        "set_status": "Status setzen",
+        "add_labels": "Labels hinzufügen",
+        "remove_labels": "Labels entfernen",
+        "set_assignee": "Zuständige Person setzen",
+        "comment": "Kommentar schreiben",
+        "create_subtask": "Unteraufgabe erstellen"
+      },
+      "status": "Status",
+      "labels": "Labels",
+      "assignee": "Zuständig",
+      "nobody": "Niemand",
+      "roles": "Rollen",
+      "members": "Mitglieder des Projekts",
+      "body": "Kommentar",
+      "title": "Titel",
+      "description": "Beschreibung"
+    },
+    "wait": {
+      "kind": "Wartet",
+      "kinds": {
+        "delay": "Eine Zeit lang",
+        "until": "Bis zu einem Datum der Aufgabe"
+      },
+      "amount": "Dauer",
+      "unit": "Einheit",
+      "units": {
+        "minutes": "Minuten",
+        "hours": "Stunden",
+        "days": "Tage"
+      },
+      "field": "Datum",
+      "fields": {
+        "dueDate": "Fälligkeitsdatum",
+        "startDate": "Startdatum"
+      },
+      "time": "Uhrzeit",
+      "timeHint": "Uhrzeit in Europe/Berlin."
+    }
+  },
+  "issues": {
+    "invalid": "Der Wert ist ungültig.",
+    "required": "Das ist ein Pflichtfeld.",
+    "too_long": "Höchstens {max} Zeichen.",
+    "too_many": "Höchstens {max} Einträge.",
+    "out_of_range": "Zwischen {min} und {max}.",
+    "too_deep": "Bedingungen lassen sich höchstens {max} Ebenen tief verschachteln.",
+    "invalid_cron": "Der Cron-Ausdruck ist ungültig.",
+    "invalid_timezone": "Die Zeitzone ist ungültig.",
+    "no_steps": "Der Workflow hat keine Schritte.",
+    "duplicate_role_key": "Zwei Rollen haben denselben Schlüssel.",
+    "duplicate_step_id": "Zwei Schritte haben dieselbe ID.",
+    "unknown_role": "Die Rolle {role} gibt es nicht.",
+    "agent_in_template": "Eine Vorlage nennt Rollen, keine Agenten.",
+    "member_in_template": "Eine Vorlage kann kein Mitglied nennen.",
+    "invalid_rework_target": "Der Schritt, zu dem es zurückgeht, muss vor dieser Freigabe liegen.",
+    "unknown_variable": "Die Variable {variable} gibt es nicht.",
+    "unknown_step_variable": "{variable} nennt einen Schritt, den es nicht gibt.",
+    "step_variable_not_before": "{variable} nennt einen Schritt, der nicht vor diesem läuft.",
+    "no_previous_step": "Kein Schritt vor diesem liefert ein Ergebnis für {variable}.",
+    "unreachable_step": "Kein Lauf erreicht diesen Schritt: Beide Zweige der Bedingung davor beenden den Lauf.",
+    "role_unresolved": "Kein Agent des Projekts übernimmt die Rolle {role}.",
+    "agent_not_in_project": "Der Agent arbeitet nicht in diesem Projekt.",
+    "member_not_in_project": "Das Mitglied gehört nicht zu diesem Projekt.",
+    "unknown_status": "Das Projekt hat keinen Status {name}.",
+    "unknown_label": "Das Projekt hat kein Label {name}.",
+    "unknown_area": "Das Projekt hat keinen Bereich {name}.",
+    "model_not_allowed": "Kein Agent des Teams nutzt das Modell {model}.",
+    "schedule_too_frequent": "Der Zeitplan läuft öfter, als das Team erlaubt."
+  },
+  "runs": {
+    "status": {
+      "pending": "In der Warteschlange",
+      "running": "Läuft",
+      "waiting": "Wartet",
+      "succeeded": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "canceled": "Abgebrochen",
+      "rejected": "Abgelehnt"
+    },
+    "stepStatus": {
+      "running": "Läuft",
+      "waiting": "Wartet",
+      "succeeded": "Erledigt",
+      "failed": "Fehlgeschlagen",
+      "canceled": "Abgebrochen",
+      "simulated": "Simuliert"
+    },
+    "outcomes": {
+      "success": "Erfolg",
+      "failed": "Fehlgeschlagen",
+      "blocked": "Blockiert",
+      "approved": "Freigegeben",
+      "rejected": "Abgelehnt",
+      "true": "Ja",
+      "false": "Nein"
+    },
+    "agentRunStatus": {
+      "pending": "In der Warteschlange",
+      "running": "Läuft",
+      "success": "Beendet",
+      "failed": "Fehlgeschlagen",
+      "canceled": "Abgebrochen"
+    },
+    "testRun": "Testlauf",
+    "version": "Version {version}",
+    "trigger": "Auslöser: {trigger}",
+    "startedBy": "Gestartet von {name}",
+    "iteration": "{iteration}. Durchlauf",
+    "attempt": "{attempt}. Versuch",
+    "agentRun": "Agentenlauf #{id}",
+    "showResult": "Ergebnis anzeigen",
+    "hideResult": "Ergebnis ausblenden",
+    "note": "Notiz: {note}",
+    "decidedBy": "Entschieden von {name}",
+    "wakeAt": "Geht weiter am {time}",
+    "cancel": "Lauf abbrechen",
+    "retry": "Erneut versuchen",
+    "approvedToast": "Freigegeben. Der Workflow läuft weiter.",
+    "rejectedToast": "Abgelehnt. Der Workflow folgt seinem Weg für Ablehnungen.",
+    "empty": "Noch keine Läufe.",
+    "loadFailed": "Die Läufe konnten nicht geladen werden.",
+    "allStatuses": "Alle Status",
+    "allRuns": "Alle Läufe",
+    "onlyTestRuns": "Testläufe",
+    "onlyRealRuns": "Echte Läufe",
+    "allProjects": "Alle Projekte"
+  },
+  "versions": {
+    "empty": "Keine Versionen.",
+    "current": "Aktuell",
+    "createdBy": "von {name}",
+    "open": "Öffnen",
+    "viewing": "Version {version} vom {date}. Nur lesen.",
+    "back": "Zurück zu den Versionen"
+  },
+  "testRun": {
+    "button": "Testlauf",
+    "saveFirst": "Speichere zuerst deine Änderungen. Ein Testlauf führt die gespeicherte Version aus.",
+    "title": "Testlauf",
+    "hint": "Agentenschritte werden simuliert, Bedingungen ausgewertet, und an der Aufgabe ändert sich nichts.",
+    "project": "Projekt",
+    "chooseProject": "Projekt auswählen",
+    "task": "Aufgabe",
+    "search": "Aufgaben suchen",
+    "noMatches": "Keine passenden Aufgaben",
+    "typeToSearch": "Tippe, um die Aufgaben des Projekts zu durchsuchen",
+    "start": "Testlauf starten",
+    "again": "Weiteren starten"
+  },
+  "project": {
+    "title": "Workflow-Baukasten",
+    "hint": "Vorlagen aus der Bibliothek des Teams und die eigenen Workflows dieses Projekts. Schalte einen ein, lege die Agenten seiner Rollen fest, und er läuft bei seinem Auslöser.",
+    "create": "Workflow erstellen",
+    "createDescription": "Ein Workflow nur für dieses Projekt. Er beginnt mit einem Agentenschritt.",
+    "name": "Name",
+    "empty": "Noch keine Workflows. Füge in Home Vorlagen zur Bibliothek hinzu oder erstelle hier einen Workflow.",
+    "loadFailed": "Die Workflows konnten nicht geladen werden.",
+    "template": "Vorlage",
+    "own": "Projekt-Workflow",
+    "enabled": "An",
+    "disabled": "Aus",
+    "readOnly": "Mitglieder, die Workflows bearbeiten dürfen, schalten sie ein und legen die Agenten ihrer Rollen fest.",
+    "roles": "Agenten der Rollen",
+    "automatic": "Automatisch ({agent})",
+    "automaticPlain": "Automatisch",
+    "nobody": "keiner",
+    "open": "Öffnen",
+    "runs": "Läufe",
+    "problems": "Warum er hier nicht laufen kann"
+  },
+  "issuePanel": {
+    "title": "Workflows",
+    "start": "Workflow starten",
+    "empty": "Auf dieser Aufgabe ist noch kein Workflow gelaufen.",
+    "unavailable": "Die Workflow-Läufe können gerade nicht geladen werden.",
+    "showMore": "{count, plural, one {# weiteren Lauf anzeigen} other {# weitere Läufe anzeigen}}",
+    "showLess": "Weniger Läufe anzeigen"
+  },
+  "approvals": {
+    "of": "{workflow} in {project}",
+    "step": "Schritt: {step}",
+    "waitingSince": "Wartet seit {time}"
+  }
+}

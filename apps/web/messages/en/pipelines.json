@@ -41,7 +41,6 @@
     "added": "{name} was added to the library.",
     "steps": "{count, plural, one {# step} other {# steps}}",
     "version": "Version {version}",
-    "open": "Open",
     "delete": "Delete",
     "deleteTitle": "Delete template",
     "deleteConfirm": "Delete {name}? Its versions and runs are deleted, and every project that uses it stops running it.",
@@ -113,8 +112,7 @@
     "openTemplate": "Open the template",
     "issuesTitle": "{count, plural, one {# problem} other {# problems}}",
     "warningsTitle": "{count, plural, one {# problem in this project} other {# problems in this project}}",
-    "warningsHint": "The workflow can be saved, but not enabled in the project until these are fixed.",
-    "general": "Workflow"
+    "warningsHint": "The workflow can be saved, but not enabled in the project until these are fixed."
   },
   "trigger": {
     "title": "Trigger",
@@ -380,7 +378,6 @@
     "note": "Note: {note}",
     "decidedBy": "Decided by {name}",
     "wakeAt": "Continues {time}",
-    "waitsForApproval": "Waits for your approval",
     "cancel": "Cancel run",
     "retry": "Retry",
     "approvedToast": "Approved. The workflow continues.",
@@ -391,8 +388,7 @@
     "allRuns": "All runs",
     "onlyTestRuns": "Test runs",
     "onlyRealRuns": "Real runs",
-    "allProjects": "All projects",
-    "task": "Task"
+    "allProjects": "All projects"
   },
   "versions": {
     "empty": "No versions.",
@@ -421,6 +417,7 @@
     "hint": "Templates of the team's library and this project's own workflows. Turn one on, name the agents of its roles, and it runs on its trigger.",
     "create": "Create workflow",
     "createDescription": "A workflow of this project alone. It starts with one agent step.",
+    "name": "Name",
     "empty": "No workflows yet. Add templates to the library in Home or create a workflow here.",
     "loadFailed": "The workflows could not be loaded.",
     "template": "Template",
@@ -430,6 +427,7 @@
     "readOnly": "Members who may edit workflows turn them on and name the agents of their roles.",
     "roles": "Agents of the roles",
     "automatic": "Automatic ({agent})",
+    "automaticPlain": "Automatic",
     "nobody": "nobody",
     "open": "Open",
     "runs": "Runs",
@@ -438,7 +436,6 @@
   "issuePanel": {
     "title": "Workflows",
     "start": "Start workflow",
-    "started": "{name} started.",
     "empty": "No workflow has run on this task yet.",
     "unavailable": "The workflow runs cannot be loaded right now.",
     "showMore": "{count, plural, one {Show # more run} other {Show # more runs}}",

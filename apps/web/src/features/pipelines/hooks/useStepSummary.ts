@@ -13,8 +13,7 @@ export function useStepSummary() {
   const t = useTranslations('pipelines');
   const { definition, context } = usePipelineEditor();
   const labels = usePipelineLabels();
-  const roleName = (key: string) =>
-    definition.roles.find((role) => role.key === key)?.name ?? key;
+  const roleName = (key: string) => definition.roles.find((role) => role.key === key)?.name ?? key;
 
   return (step: PipelineStep): string => {
     switch (step.type) {
@@ -45,7 +44,10 @@ export function useStepSummary() {
               .join(' / '),
           });
         if (test.kind === 'keyword') return t('summary.keyword', { keyword: test.keyword });
-        const values = { field: t(`inspector.condition.fields.${test.field}`), values: test.values.join(', ') };
+        const values = {
+          field: t(`inspector.condition.fields.${test.field}`),
+          values: test.values.join(', '),
+        };
         return test.op === 'is' ? t('summary.taskIs', values) : t('summary.taskIsNot', values);
       }
       case 'action': {

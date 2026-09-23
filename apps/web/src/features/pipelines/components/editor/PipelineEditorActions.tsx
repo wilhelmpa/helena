@@ -53,7 +53,12 @@ export default function PipelineEditorActions({
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
-              <Button size="sm" className="h-8" disabled={!dirty || blocked || busy} onClick={onSave}>
+              <Button
+                size="sm"
+                className="h-8"
+                disabled={!dirty || blocked || busy}
+                onClick={onSave}
+              >
                 <Save /> {t('editor.save')}
               </Button>
             </span>

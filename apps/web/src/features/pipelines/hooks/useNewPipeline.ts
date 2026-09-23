@@ -10,8 +10,7 @@ import { localizeDefinition, starterDefinition } from '../utils/editorState';
 export function useNewPipeline() {
   const t = useTranslations('pipelines');
   const text = byKey(t);
-  const lookup = (key: string) =>
-    t.has(key as Parameters<typeof t.has>[0]) ? text(key) : null;
+  const lookup = (key: string) => (t.has(key as Parameters<typeof t.has>[0]) ? text(key) : null);
 
   const starter = (name: string): PipelineInput => ({
     name,

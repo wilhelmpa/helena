@@ -1,0 +1,449 @@
+{
+  "kinds": {
+    "agent": "Agente",
+    "approval": "Aprobación",
+    "condition": "Condición",
+    "action": "Acción sobre la tarea",
+    "wait": "Espera"
+  },
+  "kindHints": {
+    "agent": "Un agente trabaja en la tarea",
+    "approval": "Una persona aprueba o la devuelve",
+    "condition": "Divide la ejecución en Sí y No",
+    "action": "Cambia la tarea",
+    "wait": "Pausa la ejecución"
+  },
+  "triggers": {
+    "manual": "Iniciado a mano",
+    "task_created": "Tarea creada",
+    "task_assigned": "Tarea asignada",
+    "status_changed": "Estado cambiado",
+    "label_added": "Etiqueta añadida",
+    "schedule": "Programación"
+  },
+  "triggerSummary": {
+    "statusTo": "El estado cambia a {status}",
+    "label": "Se añade la etiqueta {label}",
+    "schedule": "Programación {cron}"
+  },
+  "library": {
+    "hint": "Las plantillas de flujo de trabajo de tu equipo. Un proyecto activa una plantilla y nombra los agentes de sus roles.",
+    "newTemplate": "Nueva plantilla",
+    "newTemplateDescription": "La plantilla empieza con un paso de agente. La construyes en el editor.",
+    "name": "Nombre",
+    "create": "Crear",
+    "templates": "Plantillas",
+    "empty": "Todavía no hay plantillas",
+    "emptyHint": "Añade una plantilla integrada abajo o crea una nueva.",
+    "builtins": "Plantillas integradas",
+    "builtinsHint": "Al añadir una se copia en tu biblioteca en tu idioma, donde puedes cambiarla.",
+    "addToLibrary": "Añadir a la biblioteca",
+    "added": "{name} se ha añadido a la biblioteca.",
+    "steps": "{count, plural, one {# paso} other {# pasos}}",
+    "version": "Versión {version}",
+    "delete": "Eliminar",
+    "deleteTitle": "Eliminar plantilla",
+    "deleteConfirm": "¿Eliminar {name}? Sus versiones y ejecuciones se eliminan, y todos los proyectos que la usan dejan de ejecutarla.",
+    "loadFailed": "No se han podido cargar las plantillas.",
+    "tryAgain": "Inténtalo otra vez",
+    "noAccess": "Puede que no veas los flujos de trabajo de este equipo.",
+    "readOnly": "Solo los miembros que pueden crear flujos de trabajo añaden plantillas aquí."
+  },
+  "starter": {
+    "name": "Nuevo flujo de trabajo",
+    "role": "Coordinador",
+    "step": "Trabajar en la tarea",
+    "instruction": "Trabaja en la tarea {identifier} «{title}».\n\n{description}"
+  },
+  "builtin": {
+    "agent-team": {
+      "name": "Equipo de agentes (por defecto)",
+      "description": "El coordinador planifica, un especialista hace el trabajo, el coordinador lo revisa y la tarea pasa a Revisión.",
+      "roles": {
+        "coordinator": "Coordinador",
+        "specialist": "Especialista"
+      },
+      "steps": {
+        "plan": "El coordinador planifica el trabajo",
+        "implement": "El especialista hace el trabajo",
+        "review": "El coordinador revisa el resultado",
+        "accepted": "¿Revisión aceptada?",
+        "report-accepted": "Informar del resultado aceptado",
+        "report-changes": "Informar de los cambios solicitados",
+        "to-review": "Mover la tarea a Revisión"
+      }
+    },
+    "release-notes": {
+      "name": "Implementar, aprobar, notas de la versión",
+      "description": "Un programador implementa la tarea, tú la apruebas o la devuelves, y un agente de contenido escribe las notas de la versión.",
+      "roles": {
+        "coder": "Programador",
+        "writer": "Agente de contenido"
+      },
+      "steps": {
+        "implement": "El programador implementa",
+        "approve": "Aprobación",
+        "release-notes": "El agente de contenido escribe las notas de la versión",
+        "post-notes": "Publicar las notas de la versión"
+      }
+    }
+  },
+  "editor": {
+    "back": "Flujos de trabajo",
+    "template": "Plantilla",
+    "projectWorkflow": "Flujo de trabajo del proyecto",
+    "version": "Versión {version}",
+    "unsaved": "Cambios sin guardar",
+    "save": "Guardar",
+    "saved": "{name} guardado.",
+    "blocked": "Corrige los errores para guardar.",
+    "tabs": {
+      "build": "Construir",
+      "runs": "Ejecuciones",
+      "versions": "Versiones"
+    },
+    "name": "Nombre",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Qué hace el flujo de trabajo",
+    "noDescription": "Sin descripción",
+    "readOnly": "Puedes leer este flujo de trabajo. Los miembros que pueden editar flujos de trabajo lo cambian.",
+    "loadFailed": "No se ha podido cargar el flujo de trabajo.",
+    "templateElsewhere": "Este flujo de trabajo es una plantilla de la biblioteca del equipo. Se edita en Inicio.",
+    "openTemplate": "Abrir la plantilla",
+    "issuesTitle": "{count, plural, one {# problema} other {# problemas}}",
+    "warningsTitle": "{count, plural, one {# problema en este proyecto} other {# problemas en este proyecto}}",
+    "warningsHint": "El flujo de trabajo se puede guardar, pero no se puede activar en el proyecto hasta que se resuelvan."
+  },
+  "trigger": {
+    "title": "Activador",
+    "type": "Empieza cuando",
+    "status": "Estado",
+    "anyStatus": "Cualquier estado",
+    "statusHint": "Déjalo vacío para empezar en cada cambio de estado.",
+    "label": "Etiqueta",
+    "cron": "Expresión cron",
+    "cronHint": "Minuto, hora, día del mes, mes y día de la semana. 0 9 * * 1-5 se ejecuta los días laborables a las 9:00.",
+    "timezone": "Zona horaria",
+    "taskTitle": "Título de la tarea",
+    "taskTitleHint": "Cada ejecución crea una tarea con este título y ejecuta en ella el flujo de trabajo."
+  },
+  "roles": {
+    "title": "Roles",
+    "hint": "Un paso de agente nombra un rol. Un proyecto nombra el agente de cada rol, o la regla de abajo lo encuentra.",
+    "add": "Añadir rol",
+    "newRole": "Nuevo rol",
+    "name": "Nombre",
+    "match": "Se encuentra por",
+    "matchTypes": {
+      "coordinator": "El coordinador del proyecto",
+      "capability": "Un agente con una capacidad",
+      "template": "La copia de un agente de la plantilla",
+      "none": "Nombrado en el proyecto"
+    },
+    "capability": "Capacidad",
+    "templateAgent": "Agente de la plantilla",
+    "chooseAgent": "Elegir un agente",
+    "remove": "Quitar rol",
+    "empty": "Todavía no hay roles."
+  },
+  "steps": {
+    "title": "Pasos",
+    "add": "Paso",
+    "addHere": "Añadir un paso aquí",
+    "empty": "Todavía no hay pasos.",
+    "drag": "Arrastra para reordenar",
+    "yes": "Sí",
+    "no": "No",
+    "endsRun": "La ejecución termina después de esto",
+    "limit": "Un flujo de trabajo tiene como máximo {max} pasos.",
+    "problems": "{count, plural, one {# problema} other {# problemas}}"
+  },
+  "summary": {
+    "agentRole": "Rol {role}",
+    "agentDirect": "@{username}",
+    "noInstruction": "Todavía no hay instrucción",
+    "approvalEnd": "Rechazado: la ejecución termina",
+    "approvalGoto": "Rechazado: vuelve a {step}",
+    "outcome": "El resultado es {outcomes}",
+    "keyword": "El resultado contiene {keyword}",
+    "taskIs": "{field} es {values}",
+    "taskIsNot": "{field} no es {values}",
+    "setStatus": "Definir el estado a {status}",
+    "addLabels": "Añadir {labels}",
+    "removeLabels": "Quitar {labels}",
+    "assignRole": "Asignar al rol {role}",
+    "assignMember": "Asignar a {name}",
+    "unassign": "Quitar el asignatario",
+    "comment": "Comentario: {text}",
+    "subtask": "Subtarea: {title}",
+    "waitDelay": "Esperar {duration}",
+    "waitUntil": "Hasta la {field} a las {time}"
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minuto} other {# minutos}}",
+    "hours": "{count, plural, one {# hora} other {# horas}}",
+    "days": "{count, plural, one {# día} other {# días}}"
+  },
+  "inspector": {
+    "title": "Paso",
+    "empty": "Selecciona un paso para cambiarlo.",
+    "name": "Nombre",
+    "delete": "Eliminar paso",
+    "insertVariable": "Insertar variable",
+    "variableGroups": {
+      "task": "Tarea",
+      "previous": "Paso anterior",
+      "step": "Paso {name}"
+    },
+    "variables": {
+      "title": "Título",
+      "description": "Descripción",
+      "identifier": "Identificador",
+      "status": "Estado",
+      "summary": "Resultado",
+      "outcome": "Resultado final",
+      "note": "Nota de aprobación"
+    },
+    "agent": {
+      "assignee": "Asignatario",
+      "roles": "Roles",
+      "agents": "Agentes del proyecto",
+      "instruction": "Instrucción",
+      "instructionPlaceholder": "Qué debe hacer el agente. Las variables transmiten la tarea y los resultados anteriores.",
+      "timeout": "Tiempo límite en minutos",
+      "maxTurns": "Turnos como máximo",
+      "runBudget": "Minutos como máximo",
+      "noLimit": "Límite del agente",
+      "model": "Modelo",
+      "agentModel": "El modelo del agente",
+      "limitsHint": "Un paso puede reducir los límites propios del agente, no aumentarlos."
+    },
+    "approval": {
+      "message": "Mensaje",
+      "messagePlaceholder": "Qué debe comprobar quien aprueba",
+      "onReject": "Cuando se rechaza",
+      "end": "Terminar la ejecución",
+      "goto": "Volver a un paso anterior",
+      "target": "Volver a",
+      "chooseStep": "Elegir un paso",
+      "maxLoops": "Veces como máximo",
+      "noEarlierSteps": "No hay un paso anterior al que volver."
+    },
+    "condition": {
+      "kind": "Comprueba",
+      "kinds": {
+        "outcome": "Resultado final del paso anterior",
+        "keyword": "Palabra en el resultado anterior",
+        "task": "Campo de la tarea"
+      },
+      "outcomes": {
+        "success": "Éxito",
+        "failed": "Fallido",
+        "blocked": "Bloqueado"
+      },
+      "keyword": "Palabra",
+      "keywordHint": "Sí cuando el resultado del paso anterior la contiene, sin distinguir mayúsculas de minúsculas.",
+      "field": "Campo",
+      "fields": {
+        "status": "Estado",
+        "statusType": "Tipo de estado",
+        "labels": "Etiquetas",
+        "area": "Área",
+        "priority": "Prioridad"
+      },
+      "op": "Comparación",
+      "ops": {
+        "is": "es",
+        "is_not": "no es"
+      },
+      "values": "Valores",
+      "namesHint": "Nombres, separados por comas. El proyecto los nombra de la misma manera.",
+      "choose": "Elegir"
+    },
+    "action": {
+      "kind": "Acción",
+      "kinds": {
+        "set_status": "Definir el estado",
+        "add_labels": "Añadir etiquetas",
+        "remove_labels": "Quitar etiquetas",
+        "set_assignee": "Definir el asignatario",
+        "comment": "Escribir un comentario",
+        "create_subtask": "Crear una subtarea"
+      },
+      "status": "Estado",
+      "labels": "Etiquetas",
+      "assignee": "Asignatario",
+      "nobody": "Nadie",
+      "roles": "Roles",
+      "members": "Miembros del proyecto",
+      "body": "Comentario",
+      "title": "Título",
+      "description": "Descripción"
+    },
+    "wait": {
+      "kind": "Esperas",
+      "kinds": {
+        "delay": "Durante un tiempo",
+        "until": "Hasta una fecha de la tarea"
+      },
+      "amount": "Duración",
+      "unit": "Unidad",
+      "units": {
+        "minutes": "Minutos",
+        "hours": "Horas",
+        "days": "Días"
+      },
+      "field": "Fecha",
+      "fields": {
+        "dueDate": "fecha de vencimiento",
+        "startDate": "fecha de inicio"
+      },
+      "time": "Hora",
+      "timeHint": "Hora en Europe/Berlin."
+    }
+  },
+  "issues": {
+    "invalid": "El valor no es válido.",
+    "required": "Esto es obligatorio.",
+    "too_long": "Como máximo {max} caracteres.",
+    "too_many": "Como máximo {max} entradas.",
+    "out_of_range": "Entre {min} y {max}.",
+    "too_deep": "Las condiciones se anidan como máximo {max} niveles.",
+    "invalid_cron": "La expresión cron no es válida.",
+    "invalid_timezone": "La zona horaria no es válida.",
+    "no_steps": "El flujo de trabajo no tiene pasos.",
+    "duplicate_role_key": "Dos roles comparten una clave.",
+    "duplicate_step_id": "Dos pasos comparten un id.",
+    "unknown_role": "El rol {role} no existe.",
+    "agent_in_template": "Una plantilla nombra roles, no agentes.",
+    "member_in_template": "Una plantilla no puede nombrar a un miembro.",
+    "invalid_rework_target": "El paso al que se vuelve debe estar antes de esta aprobación.",
+    "unknown_variable": "La variable {variable} no existe.",
+    "unknown_step_variable": "{variable} nombra un paso que no existe.",
+    "step_variable_not_before": "{variable} nombra un paso que no se ejecuta antes de este.",
+    "no_previous_step": "Ningún paso anterior a este deja un resultado para {variable}.",
+    "unreachable_step": "Ninguna ejecución llega a este paso: las dos ramas de la condición anterior terminan la ejecución.",
+    "role_unresolved": "Ningún agente del proyecto cubre el rol {role}.",
+    "agent_not_in_project": "El agente no trabaja en este proyecto.",
+    "member_not_in_project": "El miembro no está en este proyecto.",
+    "unknown_status": "El proyecto no tiene el estado {name}.",
+    "unknown_label": "El proyecto no tiene la etiqueta {name}.",
+    "unknown_area": "El proyecto no tiene el área {name}.",
+    "model_not_allowed": "Ningún agente del equipo ejecuta el modelo {model}.",
+    "schedule_too_frequent": "La programación se ejecuta con más frecuencia de la que el equipo permite."
+  },
+  "runs": {
+    "status": {
+      "pending": "En cola",
+      "running": "En curso",
+      "waiting": "En espera",
+      "succeeded": "Terminado",
+      "failed": "Fallido",
+      "canceled": "Cancelado",
+      "rejected": "Rechazado"
+    },
+    "stepStatus": {
+      "running": "En curso",
+      "waiting": "En espera",
+      "succeeded": "Hecho",
+      "failed": "Fallido",
+      "canceled": "Cancelado",
+      "simulated": "Simulado"
+    },
+    "outcomes": {
+      "success": "Éxito",
+      "failed": "Fallido",
+      "blocked": "Bloqueado",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "true": "Sí",
+      "false": "No"
+    },
+    "agentRunStatus": {
+      "pending": "En cola",
+      "running": "En curso",
+      "success": "Terminado",
+      "failed": "Fallido",
+      "canceled": "Cancelado"
+    },
+    "testRun": "Ejecución de prueba",
+    "version": "Versión {version}",
+    "trigger": "Activador: {trigger}",
+    "startedBy": "Iniciada por {name}",
+    "iteration": "Pasada {iteration}",
+    "attempt": "Intento {attempt}",
+    "agentRun": "Ejecución del agente n.º {id}",
+    "showResult": "Mostrar el resultado",
+    "hideResult": "Ocultar el resultado",
+    "note": "Nota: {note}",
+    "decidedBy": "Decidido por {name}",
+    "wakeAt": "Continúa {time}",
+    "cancel": "Cancelar la ejecución",
+    "retry": "Reintentar",
+    "approvedToast": "Aprobado. El flujo de trabajo continúa.",
+    "rejectedToast": "Rechazado. El flujo de trabajo sigue su ruta de rechazo.",
+    "empty": "Todavía no hay ejecuciones.",
+    "loadFailed": "No se han podido cargar las ejecuciones.",
+    "allStatuses": "Todos los estados",
+    "allRuns": "Todas las ejecuciones",
+    "onlyTestRuns": "Ejecuciones de prueba",
+    "onlyRealRuns": "Ejecuciones reales",
+    "allProjects": "Todos los proyectos"
+  },
+  "versions": {
+    "empty": "Sin versiones.",
+    "current": "Actual",
+    "createdBy": "por {name}",
+    "open": "Abrir",
+    "viewing": "Versión {version} del {date}. Solo lectura.",
+    "back": "Volver a las versiones"
+  },
+  "testRun": {
+    "button": "Ejecución de prueba",
+    "saveFirst": "Guarda primero tus cambios. Una ejecución de prueba ejecuta la versión guardada.",
+    "title": "Ejecución de prueba",
+    "hint": "Los pasos de agente se simulan, las condiciones se evalúan y nada cambia en la tarea.",
+    "project": "Proyecto",
+    "chooseProject": "Elegir un proyecto",
+    "task": "Tarea",
+    "search": "Buscar tareas",
+    "noMatches": "No hay tareas que coincidan",
+    "typeToSearch": "Escribe para buscar en las tareas del proyecto",
+    "start": "Iniciar ejecución de prueba",
+    "again": "Iniciar otra"
+  },
+  "project": {
+    "title": "Constructor de flujos de trabajo",
+    "hint": "Plantillas de la biblioteca del equipo y flujos de trabajo propios de este proyecto. Actívalo, nombra los agentes de sus roles y se ejecutará según su activador.",
+    "create": "Crear flujo de trabajo",
+    "createDescription": "Un flujo de trabajo solo de este proyecto. Empieza con un paso de agente.",
+    "name": "Nombre",
+    "empty": "Todavía no hay flujos de trabajo. Añade plantillas a la biblioteca en Inicio o crea uno aquí.",
+    "loadFailed": "No se han podido cargar los flujos de trabajo.",
+    "template": "Plantilla",
+    "own": "Flujo de trabajo del proyecto",
+    "enabled": "Activado",
+    "disabled": "Desactivado",
+    "readOnly": "Los miembros que pueden editar flujos de trabajo los activan y nombran los agentes de sus roles.",
+    "roles": "Agentes de los roles",
+    "automatic": "Automático ({agent})",
+    "automaticPlain": "Automático",
+    "nobody": "nadie",
+    "open": "Abrir",
+    "runs": "Ejecuciones",
+    "problems": "Por qué no puede ejecutarse aquí"
+  },
+  "issuePanel": {
+    "title": "Flujos de trabajo",
+    "start": "Iniciar flujo de trabajo",
+    "empty": "Todavía no se ha ejecutado ningún flujo de trabajo en esta tarea.",
+    "unavailable": "Las ejecuciones del flujo de trabajo no se pueden cargar ahora.",
+    "showMore": "{count, plural, one {Mostrar # ejecución más} other {Mostrar # ejecuciones más}}",
+    "showLess": "Mostrar menos ejecuciones"
+  },
+  "approvals": {
+    "of": "{workflow} en {project}",
+    "step": "Paso: {step}",
+    "waitingSince": "Esperando desde {time}"
+  }
+}
