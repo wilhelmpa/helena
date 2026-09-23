@@ -214,7 +214,7 @@ const walk = async (env: EnvFile, fields: Record<string, string>) => {
   }
 };
 
-p.intro("It's a Plan setup");
+p.intro('Helena setup');
 
 const mode = answer(
   await p.select({

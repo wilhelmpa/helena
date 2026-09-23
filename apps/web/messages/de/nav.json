@@ -34,7 +34,7 @@
   "newTeam": "Neues Team",
   "manageTeams": "Teams verwalten",
   "role": "Rolle: {role}",
-  "basedOn": "Basiert auf It’s a Plan (AGPL-3.0)",
+  "basedOn": "Helena ist ein Fork von It’s a Plan (AGPL-3.0)",
   "search": "Suchen oder Befehl ausführen…",
   "searchHint": "Suchen oder Befehl ausführen ({key})",
   "newIssueHint": "Neue Aufgabe ({key})",

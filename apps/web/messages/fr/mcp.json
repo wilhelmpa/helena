@@ -24,18 +24,18 @@
     "methodTabsAria": "Méthode de connexion",
     "method": "OAuth",
     "personalKey": "Clé d'API",
-    "description": "Pour tout client MCP compatible OAuth, par exemple ChatGPT ou Claude. Vous vous connectez avec votre compte Volition. Le client ne reçoit aucune clé d'API.",
+    "description": "Pour tout client MCP compatible OAuth, par exemple ChatGPT ou Claude. Vous vous connectez avec votre compte Helena. Le client ne reçoit aucune clé d'API.",
     "discovery": "Découverte OAuth",
     "steps": {
       "add": "Ajoutez une application MCP dans votre client.",
       "paste": "Collez le point d'accès MCP.",
       "choose": "Choisissez OAuth lorsque le client demande la méthode de connexion.",
-      "signIn": "Connectez-vous à Volition et approuvez l'accès."
+      "signIn": "Connectez-vous à Helena et approuvez l'accès."
     },
-    "security": "OAuth utilise PKCE (S256), l'enregistrement dynamique des clients et des jetons d'accès limités à votre compte Volition.",
+    "security": "OAuth utilise PKCE (S256), l'enregistrement dynamique des clients et des jetons d'accès limités à votre compte Helena.",
     "consent": {
-      "title": "Autoriser Volition",
-      "description": "Autorisez ce client MCP à agir avec les droits de votre compte Volition.",
+      "title": "Autoriser Helena",
+      "description": "Autorisez ce client MCP à agir avec les droits de votre compte Helena.",
       "missingCode": "Cette demande d'autorisation n'a pas de code de consentement.",
       "cancel": "Annuler",
       "pending": "Autorisation…",

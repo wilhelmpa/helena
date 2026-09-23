@@ -33,7 +33,7 @@
   "newTeam": "Новая команда",
   "manageTeams": "Управление командами",
   "role": "Роль: {role}",
-  "basedOn": "Основано на It’s a Plan (AGPL-3.0)",
+  "basedOn": "Helena — форк It’s a Plan (AGPL-3.0)",
   "search": "Поиск или команда…",
   "searchHint": "Поиск или команда ({key})",
   "newIssueHint": "Новая задача ({key})",

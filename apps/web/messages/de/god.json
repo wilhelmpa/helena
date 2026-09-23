@@ -156,6 +156,7 @@
     "joined": "beigetreten am {date}"
   },
   "general": {
+    "about": "Info",
     "saved": "Projektvorgaben gespeichert",
     "projectDefaults": "Projektvorgaben",
     "mcpEnabled": "MCP für neue Projekte aktivieren",

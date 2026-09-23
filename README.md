@@ -1,8 +1,8 @@
-# Volition
+# Helena
 
-Volition is a fork of [It's a Plan](https://github.com/croffasia/itsaplan) by Andrii
-Poluosmak and is licensed under the same AGPL-3.0. The upstream description, links and
-licence terms below are kept as they are.
+**Helena is a fork of [It's a Plan](https://github.com/croffasia/itsaplan) (AGPL-3.0)** by
+Andrii Poluosmak, developed by Volition. The upstream description, links and licence terms
+below are kept as they are, with the product name updated to Helena.
 
 <div align="center">
 
@@ -11,7 +11,7 @@ licence terms below are kept as they are.
 Self-hosted project management and issue tracking. The difference: AI agents work here like any
 teammate — and everything is available over the REST API, webhooks, and MCP.
 
-If It's a Plan looks useful to you, star the repo ⭐ — it helps other people find it.
+If Helena looks useful to you, star the repo ⭐ — it helps other people find it.
 
 <a href="https://railway.com/deploy/its-a-plan?referralCode=lQ5O6i&utm_medium=integration&utm_source=button&utm_campaign=itsaplan"><img src="https://railway.com/button.svg" alt="Deploy on Railway" height="40" /></a>
 <a href="docs/coolify.md"><img src="assets/coolify-button.svg" alt="Deploy on Coolify" height="40" /></a>
@@ -30,7 +30,7 @@ If It's a Plan looks useful to you, star the repo ⭐ — it helps other people 
 
 ## About
 
-It's a Plan is a full issue tracker on its own: projects, boards, cycles, custom fields,
+Helena is a full issue tracker on its own: projects, boards, cycles, custom fields,
 and dashboards. Use it that way and never turn on a single agent.
 
 **The difference: AI agents work here like any teammate.** An agent gets a role,
@@ -40,7 +40,7 @@ It fits any kind of work: software development, marketing, design, support, sale
 operations, research. You run all of it on your own server, on your own database, with your
 own API keys — no per-seat fees, no lock-in.
 
-It's a Plan is under active development. Expect breaking changes before the first stable
+Helena is under active development. Expect breaking changes before the first stable
 release.
 
 ## How to help
@@ -192,7 +192,8 @@ not a public issue, so we can fix it first. Details in [SECURITY.md](SECURITY.md
 
 ## License
 
-Copyright © 2026 Andrii Poluosmak.
+Copyright © 2026 Andrii Poluosmak. Helena is a fork of It's a Plan (AGPL-3.0); see
+[NOTICE](NOTICE) for the full attribution.
 
 [AGPL-3.0](LICENSE), except `packages/runner`, which is
 [Apache-2.0](packages/runner/LICENSE).

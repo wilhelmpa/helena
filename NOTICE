@@ -1,0 +1,13 @@
+Helena
+Copyright (C) 2026 Volition
+
+Helena is a fork of It's a Plan (AGPL-3.0), copyright (C) 2026 Andrii Poluosmak.
+Upstream project: https://github.com/croffasia/itsaplan
+
+Helena is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0), the
+same license as the upstream project, except `packages/runner`, which is licensed under
+the Apache License 2.0 (see packages/runner/LICENSE). See LICENSE for the full AGPL-3.0
+text.
+
+This NOTICE file exists to carry the upstream copyright and license notice forward, as
+required by AGPL-3.0 section 5(a)/(c). It does not modify the terms of the license.

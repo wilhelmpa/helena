@@ -156,6 +156,7 @@
     "joined": "加入于 {date}"
   },
   "general": {
+    "about": "关于",
     "saved": "项目默认设置已保存",
     "projectDefaults": "项目默认设置",
     "mcpEnabled": "新项目默认启用 MCP",

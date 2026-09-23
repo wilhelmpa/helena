@@ -571,7 +571,7 @@ export const auth = betterAuth({
     // then used to sign in (signIn.passkey). Adds the `passkey` table.
     passkey({
       rpID: passkeyRpID,
-      rpName: process.env.PASSKEY_RP_NAME ?? 'Volition',
+      rpName: process.env.PASSKEY_RP_NAME ?? 'Helena',
       // Expected origin(s) of the WebAuthn ceremony — the frontend origins.
       origin: trustedOrigins,
     }),

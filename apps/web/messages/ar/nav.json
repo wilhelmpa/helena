@@ -33,7 +33,7 @@
   "newTeam": "فريق جديد",
   "manageTeams": "إدارة الفرق",
   "role": "الدور: {role}",
-  "basedOn": "مبني على It’s a Plan (AGPL-3.0)",
+  "basedOn": "Helena نسخة مشتقة من It’s a Plan (AGPL-3.0)",
   "search": "ابحث أو نفّذ أمرًا…",
   "searchHint": "ابحث أو نفّذ أمرًا ({key})",
   "newIssueHint": "مهمة جديدة ({key})",
