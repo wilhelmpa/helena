@@ -83,54 +83,54 @@ export default function ChatMessageList({
   // without it the first rendered message throws and takes the page down.
   return (
     <MessageScrollerProvider>
-    <MessageScroller>
-      <InitialScrollToEnd hasMessages={messages.length > 0} />
-      <MessageScrollerViewport aria-label={t('messages.transcript')}>
-        <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-6 p-4 pb-8">
-          {hasOlder && (
-            <div className="flex justify-center pb-2">
-              <Button variant="outline" size="sm" disabled={loadingOlder} onClick={onLoadOlder}>
-                {loadingOlder ? t('messages.loading') : t('messages.loadOlder')}
-              </Button>
-            </div>
-          )}
-          {messages.map((message, index) => {
-            const createdAt = message.metadata?.createdAt;
-            const day = createdAt ? formatLongDate(createdAt) : '';
-            const showDate = day !== '' && day !== lastDate;
-            if (showDate) lastDate = day;
-            return (
-              <MessageScrollerItem
-                key={message.id}
-                messageId={message.id}
-                scrollAnchor={message.role === 'user'}
-                className="flex flex-col gap-6"
-              >
-                {showDate && (
-                  <Marker variant="separator">
-                    <MarkerContent>{day}</MarkerContent>
-                  </Marker>
-                )}
-                <ChatMessageItem
-                  message={message}
-                  isLast={index === messages.length - 1}
-                  status={status}
-                  projectKey={projectKey}
-                  threadId={threadId}
-                  agentId={agent.id}
-                  onRegenerate={() => onRegenerate(message.id)}
-                  onEdit={(text) => onEdit(index, text)}
-                  onReply={onReply}
-                  onShowArtifact={onShowArtifact}
-                  onSwitchVersion={onSwitchVersion}
-                />
-              </MessageScrollerItem>
-            );
-          })}
-        </MessageScrollerContent>
-      </MessageScrollerViewport>
-      <MessageScrollerButton />
-    </MessageScroller>
+      <MessageScroller>
+        <InitialScrollToEnd hasMessages={messages.length > 0} />
+        <MessageScrollerViewport aria-label={t('messages.transcript')}>
+          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-6 p-4 pb-8">
+            {hasOlder && (
+              <div className="flex justify-center pb-2">
+                <Button variant="outline" size="sm" disabled={loadingOlder} onClick={onLoadOlder}>
+                  {loadingOlder ? t('messages.loading') : t('messages.loadOlder')}
+                </Button>
+              </div>
+            )}
+            {messages.map((message, index) => {
+              const createdAt = message.metadata?.createdAt;
+              const day = createdAt ? formatLongDate(createdAt) : '';
+              const showDate = day !== '' && day !== lastDate;
+              if (showDate) lastDate = day;
+              return (
+                <MessageScrollerItem
+                  key={message.id}
+                  messageId={message.id}
+                  scrollAnchor={message.role === 'user'}
+                  className="flex flex-col gap-6"
+                >
+                  {showDate && (
+                    <Marker variant="separator">
+                      <MarkerContent>{day}</MarkerContent>
+                    </Marker>
+                  )}
+                  <ChatMessageItem
+                    message={message}
+                    isLast={index === messages.length - 1}
+                    status={status}
+                    projectKey={projectKey}
+                    threadId={threadId}
+                    agentId={agent.id}
+                    onRegenerate={() => onRegenerate(message.id)}
+                    onEdit={(text) => onEdit(index, text)}
+                    onReply={onReply}
+                    onShowArtifact={onShowArtifact}
+                    onSwitchVersion={onSwitchVersion}
+                  />
+                </MessageScrollerItem>
+              );
+            })}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <MessageScrollerButton />
+      </MessageScroller>
     </MessageScrollerProvider>
   );
 }
