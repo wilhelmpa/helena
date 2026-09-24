@@ -8,6 +8,8 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { ensureBuiltinMcpServers } from '../../../agents/mcp-servers/service';
 import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
+import { agentMcpServerLink, db } from '@repo/db';
+import { eq } from 'drizzle-orm';
 
 // The browser gateway's Plan-side surface (design: docs/volition-design-browser-gateway.md):
 // the "Projekt-Browser" builtin MCP server entry, its per-project settings, and the internal
@@ -644,19 +646,25 @@ describe('browser gateway', () => {
     }
   });
 
-  it('turns the gateway on for the Home-Master and the coordinators, and only once', async () => {
+  it('finds the Home-Master and the coordinators on, and turns a removed one on again once', async () => {
     const { asOwner, mkt } = await setup();
     const home = await bootstrapHomeAgent();
     if (home.status !== 'ready') throw new Error('no Home agent');
     await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
     const { setupBrowserGateway } = await import('../../../../scripts/setup-browser-gateway');
+    // Agents made now have it from the start: the Home agent at bootstrap, a coordinator
+    // with its project.
+    const initial = await setupBrowserGateway(false);
+    expect(initial.enabled).toEqual([]);
+    expect(
+      initial.skipped.filter((entry) => entry.why === 'already on').map((entry) => entry.username),
+    ).toEqual(expect.arrayContaining(['hermes-ops-coordinator']));
+    // An installation from before that: the script turns it on, and only once.
+    await db.delete(agentMcpServerLink).where(eq(agentMcpServerLink.agentId, home.agentId));
     const dry = await setupBrowserGateway(true);
     const first = await setupBrowserGateway(false);
-    expect(first.enabled.map((entry) => entry.why).sort()).toEqual(
-      dry.enabled.map((entry) => entry.why).sort(),
-    );
-    expect(first.enabled.some((entry) => entry.why === 'home')).toBe(true);
-    expect(first.enabled.some((entry) => entry.username === 'hermes-ops-coordinator')).toBe(true);
+    expect(first.enabled).toEqual(dry.enabled);
+    expect(first.enabled.map((entry) => entry.why)).toEqual(['home']);
     const again = await setupBrowserGateway(false);
     expect(again.enabled).toEqual([]);
     const resolved = await internal('/internal/browser-gateway/resolve', {
