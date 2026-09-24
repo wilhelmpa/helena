@@ -27,6 +27,12 @@ import { useSession } from '@/lib/auth-client';
 import { shareIssuePath } from '@/utils/paths';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  PageActions,
+  PageToolbar,
+  PageToolbarSpacer,
+  type PageAction,
+} from '@/components/layout/PageToolbar';
 import ShareDialog from '@/components/common/share/ShareDialog';
 import { useTranslations } from 'next-intl';
 import { copyText } from '@/utils/clipboard';
@@ -44,8 +50,9 @@ export default function IssueActionsBar({
   project: ProjectDetail;
   issue: IssueDetailRow;
   // 'row' wraps the buttons in a right-aligned row of its own. 'header' renders
-  // them bare, at the smaller size the side panel's header row uses.
-  variant?: 'row' | 'header';
+  // them bare, at the smaller size the side panel's header row uses. 'toolbar' puts
+  // them into the page's header row (PageToolbar) — the full-page issue view.
+  variant?: 'row' | 'header' | 'toolbar';
   onDeleted?: () => void;
 }) {
   const t = useTranslations('issue.actionsBar');
@@ -222,9 +229,68 @@ export default function IssueActionsBar({
     </div>
   );
 
+  // The same actions as the page's header row: icons with their tooltip, delete in
+  // the "…" menu.
+  const toolbarActions: PageAction[] = [
+    { id: 'link', label: t('copyShortLink'), icon: Share2, onClick: () => void copyLink() },
+    { id: 'branch', label: t('copyBranch'), icon: GitBranch, onClick: () => void copyBranch() },
+    {
+      id: 'prompt',
+      label: copied ? t('copied') : t('copyPrompt'),
+      icon: copied ? Check : ClipboardCopy,
+      onClick: () => void copyPrompt(),
+    },
+    ...(canEdit
+      ? [
+          {
+            id: 'share',
+            label: issue.shareToken ? t('sharedPublicly') : t('sharePublicly'),
+            icon: Globe,
+            onClick: () => setSharing(true),
+          },
+        ]
+      : []),
+    ...issueActions.map((a) => ({
+      id: `action-${a.id}`,
+      label: a.name,
+      icon: actionIcon(a.icon),
+      onClick: () => setConfirmingAction(a),
+    })),
+    ...(canEdit
+      ? [
+          {
+            id: 'archive',
+            label: issue.archivedAt ? t('restore') : t('archive'),
+            icon: issue.archivedAt ? ArchiveRestore : Archive,
+            onClick: () => (issue.archivedAt ? restoreIssue.mutate(issue.id) : archive(issue)),
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            id: 'delete',
+            label: t('delete'),
+            icon: Trash2,
+            menuOnly: true,
+            onClick: () => setConfirmingDelete(true),
+          },
+        ]
+      : []),
+  ];
+
   return (
     <>
-      {variant === 'header' ? buttons : <div className="mb-3 flex justify-end px-1">{buttons}</div>}
+      {variant === 'toolbar' ? (
+        <PageToolbar>
+          <PageToolbarSpacer />
+          <PageActions actions={toolbarActions} />
+        </PageToolbar>
+      ) : variant === 'header' ? (
+        buttons
+      ) : (
+        <div className="mb-3 flex justify-end px-1">{buttons}</div>
+      )}
 
       {confirmingDelete && (
         <DeleteIssueDialog
