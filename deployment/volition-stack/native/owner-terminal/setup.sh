@@ -88,7 +88,10 @@ run systemctl daemon-reload
 # Enabled only: the router's Wants= starts it when the router (re)starts, so the sessions
 # move to it at one restart and never split between two servers.
 run systemctl enable helena-owner-tmux.service
-run systemctl enable --now volition-owner-terminal.service
+# Start it only when it is not running: a start of a running unit still pulls in its Wants=,
+# which would start helena-owner-tmux next to the router's own tmux server (2026-09-24).
+run systemctl enable volition-owner-terminal.service
+systemctl is-active --quiet volition-owner-terminal.service || run systemctl start volition-owner-terminal.service
 
 log "installing the nginx snippet"
 run install -m 0644 -o root -g root "$here/nginx-owner-terminal.conf" \
