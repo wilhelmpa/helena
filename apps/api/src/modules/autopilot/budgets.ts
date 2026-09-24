@@ -121,10 +121,15 @@ const METRIC_TEXT: Record<BudgetMetric, string> = {
   time: 'time',
 };
 
-function amount(metric: BudgetMetric, value: number): string {
-  if (metric === 'cost') return `€${value.toFixed(2)}`;
-  if (metric === 'time') return `${Math.round(value / 60).toLocaleString('en-US')} min`;
-  return `${Math.round(value).toLocaleString('en-US')} tokens`;
+function number(value: number): string {
+  return Math.round(value).toLocaleString('en-US');
+}
+
+// "110 of 100 tokens", "€1.20 of €1.00", "12 of 10 min".
+function usedOf(metric: BudgetMetric, used: number, limit: number): string {
+  if (metric === 'cost') return `€${used.toFixed(2)} of €${limit.toFixed(2)}`;
+  if (metric === 'time') return `${number(used / 60)} of ${number(limit / 60)} min`;
+  return `${number(used)} of ${number(limit)} tokens`;
 }
 
 // The reason an exhausted budget gives, in the words the pause reason and the comments use.
@@ -134,8 +139,8 @@ export function budgetReason(status: BudgetStatus, projectKey?: string | null): 
   const of = status.scope === 'project' && projectKey ? ` of project ${projectKey}` : '';
   const when = status.period === 'day' ? 'today (UTC)' : 'this month (UTC)';
   return (
-    `${BUDGET_REASON_PREFIX}: ${periodText} ${METRIC_TEXT[status.metric]} budget${of}: ` +
-    `${amount(status.metric, status.used)} of ${amount(status.metric, status.limit)} used ${when}.`
+    `${BUDGET_REASON_PREFIX}: ${periodText.toLowerCase()} ${METRIC_TEXT[status.metric]} budget${of}, ` +
+    `${usedOf(status.metric, status.used, status.limit)} used ${when}.`
   );
 }
 
@@ -300,7 +305,7 @@ export async function enforceBudgets(
         ...handles,
         `Heads-up: ${percent} % of my ${status.period === 'day' ? 'daily' : 'monthly'} ` +
           `${METRIC_TEXT[status.metric]} budget${status.scope === 'project' && key ? ` of project ${key}` : ''} ` +
-          `is used (${amount(status.metric, status.used)} of ${amount(status.metric, status.limit)}). ` +
+          `is used (${usedOf(status.metric, status.used, status.limit)}). ` +
           'I stop taking new work when it is used up.',
       ].join(' '),
     });
