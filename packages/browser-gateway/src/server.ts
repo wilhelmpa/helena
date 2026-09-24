@@ -1,13 +1,16 @@
 import type { Holder } from './lock.ts';
 import { ProjectBrowserLocks } from './lock.ts';
 import {
+  BROWSER_TOOLS,
   CREDENTIAL_TOOLS,
+  TASK_TOOLS,
   categoryOf,
   normalizeArgs,
   requiresLock,
   toolByName,
   type ToolDef,
 } from './tools.ts';
+import { runCheckTool, runChooseTool, runTaskTool, type TaskContext } from './task/run.ts';
 import type { ActionCategory } from './agent-tool.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
 import { hostAllowed, resolvesLocally, type HostLookup } from './domain.ts';
@@ -217,6 +220,14 @@ export class GatewayDispatcher {
       return { ok: false, error: 'The Projekt-Browser tool is not enabled for this agent.' };
     }
     this.#onActor(slug, request.agentKey, resolved.settings);
+    if (TASK_TOOLS.has(request.tool) && !resolved.browserTask?.enabled) {
+      return {
+        ok: false,
+        error:
+          "This project's browser has no decision model (Projekt → Einstellungen → Browser: " +
+          'Browser-Steuerung "Standard"). Use the step tools (browser_snapshot, browser_click, …).',
+      };
+    }
 
     const holder: Holder = {
       kind: 'agent',
@@ -273,11 +284,12 @@ export class GatewayDispatcher {
 
     if (
       request.tool === 'browser_navigate' ||
+      (request.tool === 'browser_task' && str(request.args, 'startUrl')) ||
       (request.tool === 'browser_tabs' &&
         str(request.args, 'action') === 'new' &&
         str(request.args, 'url'))
     ) {
-      const url = str(request.args, 'url');
+      const url = str(request.args, 'url') ?? str(request.args, 'startUrl');
       const host = url ? hostOf(url) : null;
       if (
         host &&
@@ -315,10 +327,15 @@ export class GatewayDispatcher {
           error: "The project's domain rules could not be applied, so nothing was done.",
         };
       }
-      const decided = await this.#decide(request, tool, session, slug);
+      // browser_task decides each of its actions itself, like the step tool it stands for.
+      const decided = TASK_TOOLS.has(request.tool)
+        ? { category: tool.category }
+        : await this.#decide(request, tool, session, slug);
       if ('refusal' in decided) return decided.refusal;
       try {
-        const output = await this.#runTool(request, session, slug, resolved);
+        const output = TASK_TOOLS.has(request.tool)
+          ? await this.#runTaskTool(request, session, slug, resolved, holder, lock)
+          : await this.#runTool(request, session, slug, resolved);
         if (!CREDENTIAL_TOOLS.has(request.tool)) {
           void this.#helena
             .audit({
@@ -344,6 +361,66 @@ export class GatewayDispatcher {
         return { ok: false as const, error: session.guard.redact(first) };
       }
     });
+  }
+
+  // browser_task/check/choose (task/run.ts): the loop on this project's browser, holding the
+  // agent's lock for its whole run — every step touches it, and the owner's "Übernehmen" ends
+  // the task before its next action.
+  async #runTaskTool(
+    request: GatewayRequest,
+    session: GatewaySession,
+    slug: string,
+    resolved: ResolveResult,
+    holder: Holder,
+    lock: ReturnType<ProjectBrowserLocks['of']>,
+  ) {
+    const ctx: TaskContext = {
+      request: {
+        tool: request.tool,
+        args: request.args ?? {},
+        agentKey: request.agentKey,
+        runId: request.runId,
+        messageId: request.messageId,
+      },
+      slug,
+      via: this.#ownSlug,
+      session,
+      helena: this.#helena,
+      resolved,
+      holdsControl: () => lock.touch(holder),
+      navigate: async (url: string) => {
+        const navigate = toolByName('browser_navigate')!;
+        const decided = await this.#decide(
+          { ...request, tool: 'browser_navigate', args: { url } },
+          navigate,
+          session,
+          slug,
+        );
+        if ('refusal' in decided) {
+          throw new Error(decided.refusal.ok ? 'Not done.' : decided.refusal.error);
+        }
+        await session.navigate(url);
+      },
+    };
+    if (request.tool === 'browser_check') return runCheckTool(ctx);
+    if (request.tool === 'browser_choose') return runChooseTool(ctx);
+    return runTaskTool(ctx);
+  }
+
+  // The tools this agent is offered on this socket (the shim's tools/list): every tool, except
+  // the fast path's where the project's "Browser-Steuerung" is Standard. Without an answer from
+  // Helena, the step tools only.
+  async listTools(agentKey: string): Promise<string[]> {
+    const steps = BROWSER_TOOLS.filter((tool) => !TASK_TOOLS.has(tool.name)).map(
+      (tool) => tool.name,
+    );
+    try {
+      const resolved = await this.#helena.resolve(agentKey, this.#ownSlug, this.#ownSlug);
+      if (!resolved.browserTask?.enabled) return steps;
+      return BROWSER_TOOLS.map((tool) => tool.name);
+    } catch {
+      return steps;
+    }
   }
 
   // Helena's policy for this one call (docs/volition-helena-oss.md §3a "Richtlinien"): the

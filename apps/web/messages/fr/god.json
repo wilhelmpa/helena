@@ -442,6 +442,7 @@
       "autopilot": "Autopilot",
       "logins": "Connexions",
       "updates": "Mises à jour",
+      "browserTask": "Tâches du navigateur",
       "localAi": "IA locale"
     },
     "problems": {

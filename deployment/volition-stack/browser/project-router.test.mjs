@@ -10,6 +10,7 @@ import {
   isSameOrigin,
   listProjectBrowsers,
   resolveProjectBrowser,
+  setGatewayTasks,
 } from "./project-router.mjs";
 import {
   BrowserLink,
@@ -802,5 +803,55 @@ describe("project browser control", () => {
       height: 600,
     });
     assert.deepEqual(windowSize(screen, chrome, undefined), screen);
+  });
+});
+
+describe("Browser 2.0's internal routes", () => {
+  it("start a run only for the API: loopback, POST, the gateway token, no forwarding headers", async () => {
+    const started = [];
+    setGatewayTasks({
+      authorized: (header) => header === "Bearer gateway-token-0123456789abcdef",
+      startLab: async (body) => void started.push(["lab", body.slug]),
+      startJevBrowser: async (body) => void started.push(["jev-browser", body.slug]),
+    });
+    router = createProjectBrowserRouter({ root });
+    const base = `http://127.0.0.1:${await listen(router)}/internal/gateway`;
+    const post = (path, headers = {}) =>
+      fetch(`${base}/${path}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer gateway-token-0123456789abcdef",
+          connection: "close",
+          ...headers,
+        },
+        body: JSON.stringify({ slug: "demo" }),
+      });
+
+    assert.equal((await post("lab")).status, 202);
+    assert.equal((await post("jev-browser")).status, 202);
+    assert.deepEqual(started, [
+      ["lab", "demo"],
+      ["jev-browser", "demo"],
+    ]);
+    // Through nginx (forwarding headers), with another token, or not a POST: refused, nothing starts.
+    assert.equal((await post("lab", { "x-real-ip": "192.168.2.10" })).status, 404);
+    assert.equal((await post("lab", { "x-forwarded-for": "192.168.2.10" })).status, 404);
+    assert.equal((await post("lab", { authorization: "Bearer wrong" })).status, 401);
+    assert.equal((await fetch(`${base}/lab`, { headers: { connection: "close" } })).status, 404);
+    assert.equal((await post("other")).status, 404);
+    assert.equal(started.length, 2);
+    setGatewayTasks(null);
+  });
+
+  it("answers 404 while the gateway is not running", async () => {
+    setGatewayTasks(null);
+    router = createProjectBrowserRouter({ root });
+    const response = await fetch(`http://127.0.0.1:${await listen(router)}/internal/gateway/lab`, {
+      method: "POST",
+      headers: { connection: "close" },
+      body: "{}",
+    });
+    assert.equal(response.status, 404);
   });
 });

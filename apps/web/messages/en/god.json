@@ -442,6 +442,7 @@
       "autopilot": "Autopilot",
       "logins": "Logins",
       "updates": "Updates",
+      "browserTask": "Browser tasks",
       "localAi": "Local AI"
     },
     "problems": {

@@ -1526,7 +1526,8 @@ export const agentRuntimeAction = pgTable(
   ],
 );
 
-// The token ledger: one row per run, chat answer or reflection a runner reported, with the
+// The token ledger: one row per run, chat answer or reflection a runner reported (and per
+// browser_task a decision model answered, kind 'tool'), with the
 // model that actually ran. Usage per agent, model, project and day and the budgets are read
 // from here; cost is computed when read, from the price of the model at that time. The token
 // columns follow the OpenTelemetry GenAI conventions (gen_ai.usage.*): input_tokens includes
@@ -1562,7 +1563,7 @@ export const agentUsage = pgTable(
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check('agent_usage_kind_check', sql`${t.kind} IN ('run', 'chat', 'reflection')`),
+    check('agent_usage_kind_check', sql`${t.kind} IN ('run', 'chat', 'reflection', 'tool')`),
     index('agent_usage_agent_time_idx').on(t.agentId, t.occurredAt),
     index('agent_usage_project_time_idx').on(t.projectId, t.occurredAt),
     index('agent_usage_time_idx').on(t.occurredAt),

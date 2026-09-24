@@ -18,9 +18,12 @@
 //   -> {"tool": "browser_navigate", "args": {...}, "agentKey": "...", "runId"?, "messageId"?,
 //       "uploads"?: [{"name","mimeType","data"}, …]}
 //   <- {"ok": true, "content": "...", "image"?: {"data","mimeType"}} | {"ok": false, "error": "..."}
+import { spawn } from "node:child_process";
+import { timingSafeEqual } from "node:crypto";
 import fs from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 // A relative import into the package's own source, not the bare "@repo/browser-gateway"
 // specifier: this directory is plain deployment code, not a bun workspace member, so
 // nothing links node_modules/@repo/browser-gateway here. The package's own node_modules
@@ -72,6 +75,10 @@ const REFRESH_MS = 5_000;
 // A browser_file_upload carries its files (at most 50 MB together) base64-encoded in its one line.
 const MAX_REQUEST_BYTES = 72 * 1024 * 1024;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
+// jev-browser's throwaway browser in Browser 2.0 (packages/browser-gateway/src/jev-browser-lab.ts).
+const JEV_BROWSER_LAB = fileURLToPath(new URL("../../../packages/browser-gateway/src/jev-browser-lab.ts", import.meta.url));
+const JEV_BROWSER_CHROMIUM = process.env.HELENA_JEV_BROWSER_CHROMIUM || "/usr/bin/chromium";
+const MAX_JEV_BROWSER_RUNS = 2;
 
 export function socketDirectory(slug, root = SOCKET_ROOT) {
   if (!SLUG.test(slug)) throw new Error("Invalid project slug");
@@ -160,7 +167,11 @@ export function handleConnection(socket, dispatcher) {
       let response;
       try {
         const request = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-        if (
+        // The shim's tools/list: which tools this agent is offered here (browser_task only
+        // where the project has a decision model).
+        if (request && request.list === true && typeof request.agentKey === "string") {
+          response = { ok: true, tools: await dispatcher.listTools(request.agentKey) };
+        } else if (
           !request ||
           typeof request !== "object" ||
           typeof request.tool !== "string" ||
@@ -231,6 +242,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
       }),
   );
   const servers = new Map(); // slug -> net.Server
+  const dispatchers = new Map(); // slug -> GatewayDispatcher
   await fs.mkdir(SOCKET_ROOT, { recursive: true, mode: 0o711 });
   await fs.chmod(SOCKET_ROOT, 0o711);
   const gid = await groupId(SOCKET_GROUP);
@@ -275,6 +287,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
           if (settings?.agentViewport) viewports.set(target, settings.agentViewport);
         },
       });
+      dispatchers.set(slug, dispatcher);
       try {
         servers.set(slug, await bindSocket(slug, dispatcher, gid));
         log(`browser gateway: listening for ${slug}`);
@@ -286,6 +299,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
       if (wanted.has(slug)) continue;
       server.close();
       servers.delete(slug);
+      dispatchers.delete(slug);
       sessions.drop(slug);
       cdpPorts.delete(slug);
       await fs.rm(socketDirectory(slug), { recursive: true, force: true }).catch(() => {});
@@ -299,8 +313,106 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
     void reconcile().catch((error) => log(`browser gateway: ${error.message}`));
   }, REFRESH_MS);
 
+  // Browser 2.0 (docs/helena-decisions/browser-task.md §3.5). A decision-model run is an ordinary
+  // browser_task call made as the agent the owner chose: `labKey` ("lab:<token>") stands in for
+  // that agent's key, and Helena maps it to the agent. A run the gateway refuses before it
+  // starts (the owner holds the browser, the agent lacks the tool) is closed with the reason.
+  const failRun = (taskToken, summary) =>
+    helena.taskFinish({ taskToken, result: { status: "error", summary: String(summary).slice(0, 300) } }).catch(() => {});
+  let jevRuns = 0;
+  const tasks = {
+    authorized(header) {
+      const given = Buffer.from(typeof header === "string" && header.startsWith("Bearer ") ? header.slice(7) : "");
+      const expected = Buffer.from(token);
+      return given.length === expected.length && timingSafeEqual(given, expected);
+    },
+    async startLab(body) {
+      const slug = typeof body?.slug === "string" ? body.slug : "";
+      const labKey = typeof body?.labKey === "string" ? body.labKey : "";
+      const dispatcher = dispatchers.get(slug);
+      if (!dispatcher) throw new Error("No project browser for this project");
+      if (!labKey.startsWith("lab:")) throw new Error("Invalid run");
+      const args = body.args && typeof body.args === "object" ? body.args : {};
+      void dispatcher
+        .handle({ tool: "browser_task", args, agentKey: labKey })
+        .then((response) => {
+          if (!response.ok) void failRun(labKey.slice(4), response.error);
+        })
+        .catch((error) => void failRun(labKey.slice(4), error?.message ?? "failed"));
+    },
+    async startJevBrowser(body) {
+      const slug = typeof body?.slug === "string" ? body.slug : "";
+      const runToken = typeof body?.token === "string" ? body.token : "";
+      if (!SLUG.test(slug) || runToken.length < 20) throw new Error("Invalid run");
+      if (jevRuns >= MAX_JEV_BROWSER_RUNS) throw new Error("Two jev-browser runs are already going");
+      const policies = await helena.policy().catch(() => ({}));
+      const policy = policies[slug] ?? { domainAllowlist: [], domainBlocklist: [] };
+      const startUrl = typeof body.startUrl === "string" && /^https?:\/\//i.test(body.startUrl) ? body.startUrl : "about:blank";
+      jevRuns += 1;
+      // A minimal environment: no service token, no path to one.
+      const child = spawn(process.execPath, [JEV_BROWSER_LAB], {
+        env: {
+          PATH: process.env.PATH ?? "/usr/bin:/bin",
+          HOME: process.env.HOME ?? "/tmp",
+          TMPDIR: process.env.TMPDIR ?? "/tmp",
+          LANG: "de_DE.UTF-8",
+        },
+        stdio: ["pipe", "pipe", "ignore"],
+      });
+      const timer = setTimeout(() => child.kill("SIGKILL"), 15 * 60 * 1000);
+      let finished = false;
+      let buffer = "";
+      child.stdout.on("data", (chunk) => {
+        buffer += chunk.toString("utf8");
+        let newline;
+        while ((newline = buffer.indexOf("\n")) >= 0) {
+          const line = buffer.slice(0, newline);
+          buffer = buffer.slice(newline + 1);
+          let message;
+          try {
+            message = JSON.parse(line);
+          } catch {
+            continue;
+          }
+          if (message?.type === "round") {
+            void helena.taskProgress({ taskToken: runToken, step: message.step, usage: {} }).then(
+              (answer) => {
+                if (answer?.cancelled) child.kill("SIGTERM");
+              },
+              () => {},
+            );
+          } else if (message?.type === "result") {
+            finished = true;
+            void helena.taskFinish({ taskToken: runToken, result: message.result }).catch(() => {});
+          }
+        }
+      });
+      child.on("exit", () => {
+        clearTimeout(timer);
+        jevRuns -= 1;
+        if (!finished) void failRun(runToken, "jev-browser stopped without a result");
+      });
+      child.stdin.end(
+        `${JSON.stringify({
+          apiUrl: `${HELENA_URL.replace(/\/+$/, "")}/internal/systemone`,
+          token: runToken,
+          model: typeof body.model === "string" ? body.model : "jev-latest",
+          goal: String(body.goal ?? ""),
+          values: body.values && typeof body.values === "object" ? body.values : {},
+          startUrl,
+          maxSteps: Number(body.maxSteps) || 10,
+          allowIrreversible: body.allowIrreversible === true,
+          chromium: JEV_BROWSER_CHROMIUM,
+          domainAllowlist: policy.domainAllowlist ?? [],
+          domainBlocklist: policy.domainBlocklist ?? [],
+        })}\n`,
+      );
+    },
+  };
+
   return {
     locks,
+    tasks,
     home: HOME_SLUG,
     stop() {
       clearInterval(timer);

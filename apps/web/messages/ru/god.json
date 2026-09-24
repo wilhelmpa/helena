@@ -442,6 +442,7 @@
       "autopilot": "Autopilot",
       "logins": "Входы",
       "updates": "Обновления",
+      "browserTask": "Задачи браузера",
       "localAi": "Локальный ИИ"
     },
     "problems": {

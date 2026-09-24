@@ -11,6 +11,7 @@ import approvals from '../../messages/en/approvals.json';
 import autopilot from '../../messages/en/autopilot.json';
 import auth from '../../messages/en/auth.json';
 import browserGateway from '../../messages/en/browserGateway.json';
+import browserLab from '../../messages/en/browserLab.json';
 import chatWorkspace from '../../messages/en/chatWorkspace.json';
 import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
@@ -100,6 +101,7 @@ const defaultMessages = {
   agentActivity,
   agentRuntime,
   browserGateway,
+  browserLab,
   routines,
   pipelines,
   devices,

@@ -1,0 +1,156 @@
+{
+  "at": "2026-09-24T20:23:20.493Z",
+  "set": "local",
+  "backends": [
+    {
+      "name": "laya",
+      "kind": "systemone",
+      "url": "http://127.0.0.1:18791",
+      "model": "laya-browser-v10s",
+      "policy": "laya"
+    }
+  ],
+  "summary": [
+    {
+      "backend": "laya",
+      "correct": 10,
+      "tasks": 10,
+      "seconds": 20.3,
+      "decisions": 29,
+      "inputTokens": 22086,
+      "msPerDecision": 300
+    }
+  ],
+  "rows": [
+    {
+      "backend": "laya",
+      "task": "local-contact",
+      "set": "local",
+      "status": "done",
+      "correct": true,
+      "steps": 5,
+      "decisions": 6,
+      "inputTokens": 9462,
+      "durationMs": 6404,
+      "decisionMsAvg": 738,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-search",
+      "set": "local",
+      "status": "likely_done",
+      "correct": true,
+      "steps": 3,
+      "decisions": 4,
+      "inputTokens": 3156,
+      "durationMs": 2742,
+      "decisionMsAvg": 352,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-sort",
+      "set": "local",
+      "status": "done",
+      "correct": true,
+      "steps": 1,
+      "decisions": 2,
+      "inputTokens": 1217,
+      "durationMs": 1131,
+      "decisionMsAvg": 275,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-checkout",
+      "set": "local",
+      "status": "needs_confirmation",
+      "correct": true,
+      "steps": 3,
+      "decisions": 4,
+      "inputTokens": 2650,
+      "durationMs": 3077,
+      "decisionMsAvg": 330,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-late-content",
+      "set": "local",
+      "status": "done",
+      "correct": true,
+      "steps": 2,
+      "decisions": 3,
+      "inputTokens": 1113,
+      "durationMs": 1736,
+      "decisionMsAvg": 176,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-shadow",
+      "set": "local",
+      "status": "done",
+      "correct": true,
+      "steps": 2,
+      "decisions": 3,
+      "inputTokens": 1107,
+      "durationMs": 1686,
+      "decisionMsAvg": 177,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-frame",
+      "set": "local",
+      "status": "likely_done",
+      "correct": true,
+      "steps": 2,
+      "decisions": 3,
+      "inputTokens": 1119,
+      "durationMs": 1754,
+      "decisionMsAvg": 186,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-login-wall",
+      "set": "local",
+      "status": "needs_login",
+      "correct": true,
+      "steps": 0,
+      "decisions": 1,
+      "inputTokens": 750,
+      "durationMs": 354,
+      "decisionMsAvg": 334,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-delete-guard",
+      "set": "local",
+      "status": "needs_agent",
+      "correct": true,
+      "steps": 1,
+      "decisions": 1,
+      "inputTokens": 343,
+      "durationMs": 240,
+      "decisionMsAvg": 155,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "local-read-nav",
+      "set": "local",
+      "status": "done",
+      "correct": true,
+      "steps": 1,
+      "decisions": 2,
+      "inputTokens": 1169,
+      "durationMs": 1168,
+      "decisionMsAvg": 278,
+      "model": "laya-browser-v10s"
+    }
+  ]
+}

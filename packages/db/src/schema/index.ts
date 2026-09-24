@@ -12,3 +12,4 @@ export * from './knowledge';
 export * from './model-availability';
 export * from './local-ai';
 export * from './updates';
+export * from './browser-task';

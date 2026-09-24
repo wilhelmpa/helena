@@ -13,7 +13,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@repo/net": "workspace:*",
+    "jev-browser": "github:Ying-Kai-Liao/jev-browser#e35ab134f65033d29c528132d92bf06e8d6adcb5",
     "patchright-core": "1.63.0",
+    "playwright-core": "1.63.0",
     "pngjs": "^7.0.0"
   },
   "devDependencies": {

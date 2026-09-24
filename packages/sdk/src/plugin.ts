@@ -13,6 +13,7 @@ import type { AnyAgentTool } from './tools';
 import type { UiSlot } from './ui';
 import type { RuntimeLoginSource } from './runtime-logins';
 import type { UpdateSource } from './updates';
+import type { DecisionBackendType } from './decision-backends';
 import type { UsageLimitSource } from './usage-limits';
 import type { TriggerType, WorkflowStepType } from './workflows';
 
@@ -72,6 +73,8 @@ export interface PluginContext {
   localAiTaskClasses: Registrar<LocalAiTaskClass>;
   // What Helena runs on and whether a newer version exists (the update center).
   updateSources: Registrar<UpdateSource>;
+  // System One services the browser's fast path (browser_task) can ask (API).
+  decisionBackends: Registrar<DecisionBackendType>;
   events: {
     // Only event types under the plugin's own id: `<pluginId>.<name>`.
     publish(init: EventInit): Promise<HelenaEvent>;

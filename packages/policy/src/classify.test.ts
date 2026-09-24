@@ -173,9 +173,18 @@ describe('prices', () => {
       anthropic: { models: { 'Claude-X': { cost: { input: 3, output: 15, cache_read: 0.3 } } } },
       other: { models: { y: { cost: { input: 1, output: 1 } } } },
     });
-    expect([...prices.entries()]).toEqual([
+    expect([...prices.entries()].filter(([, entry]) => entry.provider !== 'typesafe')).toEqual([
       ['claude-x', { provider: 'anthropic', input: 3, output: 15, cacheRead: 0.3 }],
     ]);
+  });
+
+  test("Jev's price comes with both imports (models.dev does not list it)", () => {
+    expect(pricesFromModelsDev({}).get('jev-1.13.0')).toEqual({
+      provider: 'typesafe',
+      input: 0.042,
+      output: 0,
+    });
+    expect(snapshotPrices().get('jev-latest')?.input).toBe(0.042);
   });
 
   test('cost counts cached tokens at their own price', () => {
@@ -232,5 +241,22 @@ describe('the canonical category list (D-C1, from @helena/sdk)', () => {
         mcp: { server: 'shop', annotations: {}, action: 'write' },
       }).category,
     ).toBe('write');
+  });
+});
+
+describe('browser_task', () => {
+  test('the fast path is a write before it runs; its checks only read', () => {
+    const mcp = { server: 'projekt-browser' };
+    expect(
+      classifyToolCall({ runtime: 'hermes', tool: 'mcp_projekt_browser_browser_task', mcp })
+        .category,
+    ).toBe('write');
+    expect(
+      classifyToolCall({ runtime: 'claude', tool: 'mcp__projekt-browser__browser_check', mcp })
+        .category,
+    ).toBe('read');
+    expect(classifyToolCall({ runtime: 'codex', tool: 'browser_choose', mcp }).category).toBe(
+      'read',
+    );
   });
 });

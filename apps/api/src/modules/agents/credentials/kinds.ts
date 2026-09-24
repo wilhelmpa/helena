@@ -11,7 +11,15 @@ export const CREDENTIAL_KINDS = [
   'ssh_key',
   'secret',
   'runtime_login',
+  'decision_model',
 ] as const;
+
+// A decision_model ("Entscheidungsmodell (Jev)", docs/helena-decisions/browser-task.md §3.3) is
+// the connection the browser's fast path asks: a System One service (TypeSafe's Jev, Jev through
+// the Vercel AI Gateway, or a Jev-compatible server such as Laya), its address, its model and
+// its key. Helena itself calls it; no agent ever gets the key.
+export const DECISION_KEY_SOURCES = ['stored', 'local-laya'] as const;
+export type DecisionKeySource = (typeof DECISION_KEY_SOURCES)[number];
 
 // The runtimes a runtime login signs in, and how. Codex takes an API key here; its
 // ChatGPT login is made on the agent's own runtime home instead (device login), because
@@ -53,6 +61,7 @@ export const SECRET_FIELDS = {
   ssh_key: ['privateKey'],
   secret: ['value'],
   runtime_login: ['value'],
+  decision_model: ['value'],
   mcp_oauth: ['tokens', 'client'],
 } as const satisfies Record<ListedKind, readonly string[]>;
 
@@ -63,6 +72,15 @@ const INPUT_FIELDS: Record<CredentialKind, readonly string[]> = {
   ssh_key: ['notes'],
   secret: ['value', 'notes'],
   runtime_login: ['runtime', 'method', 'value', 'notes'],
+  decision_model: [
+    'provider',
+    'baseUrl',
+    'model',
+    'allowPrivateAddress',
+    'keySource',
+    'value',
+    'notes',
+  ],
 };
 
 export interface CredentialFields {
@@ -75,6 +93,12 @@ export interface CredentialFields {
   notes?: string;
   runtime?: LoginRuntime;
   method?: LoginMethod;
+  // decision_model
+  provider?: string;
+  baseUrl?: string;
+  model?: string;
+  allowPrivateAddress?: boolean;
+  keySource?: DecisionKeySource;
 }
 
 export function assertFieldsOfKind(kind: CredentialKind, fields: CredentialFields): void {

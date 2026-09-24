@@ -12,9 +12,9 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { BROWSER_INSTRUCTIONS, BROWSER_TOOLS } from './tools.ts';
+import { BROWSER_INSTRUCTIONS, BROWSER_TOOLS, TASK_TOOLS } from './tools.ts';
 import { mcpToolOf } from './agent-tool.ts';
-import { callGateway } from './shim-protocol.ts';
+import { callGateway, listGatewayTools } from './shim-protocol.ts';
 
 const server = new Server(
   { name: 'projekt-browser', title: 'Projekt-Browser', version: '1.0.0' },
@@ -22,10 +22,16 @@ const server = new Server(
 );
 
 // Each tool with its action category (as MCP annotations and in _meta), the shape Helena's
-// framework registers agent tools in.
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: BROWSER_TOOLS.map(mcpToolOf),
-}));
+// framework registers agent tools in. The fast path (browser_task, browser_check,
+// browser_choose) only where the gateway says the project has a decision model; without an
+// answer, the step tools.
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  const offered = await listGatewayTools();
+  const tools = offered
+    ? BROWSER_TOOLS.filter((tool) => offered.includes(tool.name))
+    : BROWSER_TOOLS.filter((tool) => !TASK_TOOLS.has(tool.name));
+  return { tools: tools.map(mcpToolOf) };
+});
 
 server.setRequestHandler(CallToolRequestSchema, async (request) =>
   callGateway(request.params.name, request.params.arguments ?? {}),

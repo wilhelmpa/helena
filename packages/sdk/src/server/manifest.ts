@@ -73,6 +73,7 @@ export const pluginManifestSchema = z
         modelServers: ids.optional(),
         localAiTaskClasses: ids.optional(),
         updateSources: ids.optional(),
+        decisionBackends: ids.optional(),
         events: ids.optional(),
         mcpServers: z.array(mcpServer).max(50).optional(),
       })

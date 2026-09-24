@@ -47,6 +47,8 @@ export interface PluginProvides {
   localAiTaskClasses?: string[];
   // Update sources (whether a newer version of something Helena runs on exists).
   updateSources?: string[];
+  // Decision backends (System One services the browser's fast path asks).
+  decisionBackends?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

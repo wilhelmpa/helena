@@ -1,0 +1,156 @@
+{
+  "at": "2026-09-24T20:24:50.913Z",
+  "set": "public",
+  "backends": [
+    {
+      "name": "laya",
+      "kind": "systemone",
+      "url": "http://127.0.0.1:18791",
+      "model": "laya-browser-v10s",
+      "policy": "laya"
+    }
+  ],
+  "summary": [
+    {
+      "backend": "laya",
+      "correct": 3,
+      "tasks": 10,
+      "seconds": 75.2,
+      "decisions": 36,
+      "inputTokens": 74712,
+      "msPerDecision": 1021
+    }
+  ],
+  "rows": [
+    {
+      "backend": "laya",
+      "task": "wiki-search",
+      "set": "public",
+      "status": "needs_agent",
+      "correct": false,
+      "steps": 2,
+      "decisions": 4,
+      "inputTokens": 14605,
+      "durationMs": 9397,
+      "decisionMsAvg": 1888,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "hn-newest",
+      "set": "public",
+      "status": "max_steps",
+      "correct": false,
+      "steps": 4,
+      "decisions": 4,
+      "inputTokens": 16716,
+      "durationMs": 12231,
+      "decisionMsAvg": 2187,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "books-travel",
+      "set": "public",
+      "status": "max_steps",
+      "correct": false,
+      "steps": 5,
+      "decisions": 5,
+      "inputTokens": 16380,
+      "durationMs": 11221,
+      "decisionMsAvg": 1594,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "quotes-next",
+      "set": "public",
+      "status": "needs_login",
+      "correct": false,
+      "steps": 1,
+      "decisions": 2,
+      "inputTokens": 3966,
+      "durationMs": 2698,
+      "decisionMsAvg": 962,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "python-downloads",
+      "set": "public",
+      "status": "done",
+      "correct": true,
+      "steps": 1,
+      "decisions": 2,
+      "inputTokens": 6326,
+      "durationMs": 4080,
+      "decisionMsAvg": 1589,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "heroku-dropdown",
+      "set": "public",
+      "status": "stuck",
+      "correct": false,
+      "steps": 3,
+      "decisions": 4,
+      "inputTokens": 2031,
+      "durationMs": 3122,
+      "decisionMsAvg": 229,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "heroku-checkboxes",
+      "set": "public",
+      "status": "done",
+      "correct": true,
+      "steps": 1,
+      "decisions": 2,
+      "inputTokens": 1602,
+      "durationMs": 1844,
+      "decisionMsAvg": 383,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "heroku-dynamic-loading",
+      "set": "public",
+      "status": "stuck",
+      "correct": false,
+      "steps": 3,
+      "decisions": 4,
+      "inputTokens": 2017,
+      "durationMs": 12587,
+      "decisionMsAvg": 236,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "selenium-web-form",
+      "set": "public",
+      "status": "max_steps",
+      "correct": false,
+      "steps": 6,
+      "decisions": 6,
+      "inputTokens": 8139,
+      "durationMs": 10733,
+      "decisionMsAvg": 661,
+      "model": "laya-browser-v10s"
+    },
+    {
+      "backend": "laya",
+      "task": "todomvc-add",
+      "set": "public",
+      "status": "likely_done",
+      "correct": true,
+      "steps": 2,
+      "decisions": 3,
+      "inputTokens": 2930,
+      "durationMs": 7250,
+      "decisionMsAvg": 484,
+      "model": "laya-browser-v10s"
+    }
+  ]
+}
