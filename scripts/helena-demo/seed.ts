@@ -6,8 +6,9 @@
  *       [--team-id=N] [--dry-run] [--with-skills] [--start-work]
  *
  * What it makes (scripts/helena-demo/demo-data.ts):
- *   - the agent pool templates (the pool setup's `templates` section; `--with-skills` also
- *     imports their skills from GitHub, pinned to a commit)
+ *   - the pool templates the demo copies, imported from the pool bundle (bundles/agent-pool)
+ *     through the bundle import; `--with-skills` also imports their skills and MCP servers
+ *     (GitHub skills are pinned to a commit and need the network)
  *   - two projects, SITE and OPS; Helena gives each its coordinator, which reports to the
  *     Home agent
  *   - specialists copied from pool templates into each project, reporting to its coordinator
@@ -19,13 +20,14 @@
  * of agents Helena creates are dropped unread.
  */
 
-import {
-  keyTransport,
-  runAgentPool,
-  type Section,
-  type Transport,
-} from '../../deployment/volition-stack/scripts/setup-agent-pool.ts';
+import { join } from 'node:path';
+import type { TemplateBundle } from '../helena-bundle.ts';
+import { readBundle } from '../helena-bundle-files.ts';
+import { importBundle, keyTransport, SyncLog, type Transport } from '../helena-bundle-sync.ts';
 import { DEMO_PROJECTS, DEMO_ROUTINE, DEMO_WORKFLOW, type DemoProject } from './demo-data.ts';
+
+// Helena's agent pool, a template bundle (docs/helena-decisions/template-bundles.md).
+const POOL_BUNDLE = join(import.meta.dir, '..', '..', 'bundles', 'agent-pool');
 
 export interface DemoOptions {
   dryRun?: boolean;
@@ -147,16 +149,35 @@ export class DemoSeed {
   }
 
   private async pool(teamId: number): Promise<void> {
-    const sections: Section[] = this.opts.withSkills ? ['skills', 'templates'] : ['templates'];
-    const result = await runAgentPool(
-      { dryRun: this.opts.dryRun, sections, teamId },
-      this.send,
-      () => {},
-    );
-    this.written += result.written;
+    // Only the templates the demo copies. Without --with-skills they come without skills and
+    // MCP servers, so the seed needs no network and names nothing it did not import.
+    const full = readBundle(POOL_BUNDLE);
+    const wanted = new Set(DEMO_PROJECTS.flatMap((project) => project.specialists));
+    const agents = full.agents.filter((agent) => wanted.has(agent.name.toLowerCase()));
+    const skillNames = new Set(agents.flatMap((agent) => agent.skills));
+    const serverNames = new Set(agents.flatMap((agent) => agent.mcpServers));
+    const bundle: TemplateBundle = this.opts.withSkills
+      ? {
+          ...full,
+          agents,
+          skills: full.skills.filter((skill) => skillNames.has(skill.name)),
+          mcpServers: Object.fromEntries(
+            Object.entries(full.mcpServers).filter(([name]) => serverNames.has(name)),
+          ),
+        }
+      : {
+          ...full,
+          agents: agents.map((agent) => ({ ...agent, skills: [], mcpServers: [] })),
+          skills: [],
+          mcpServers: {},
+        };
+    const log = new SyncLog(this.send, { dryRun: !!this.opts.dryRun, update: false });
+    await importBundle(log, teamId, bundle);
+    this.written += log.written;
+    this.warnings += log.warnings;
     this.log(
-      `pool templates: ${result.written} write(s), ${result.unchanged} unchanged` +
-        (this.opts.withSkills ? '' : ' (skills not imported; --with-skills adds them)'),
+      `pool templates (${agents.map((agent) => agent.name).join(', ')}): ${log.summary()}` +
+        (this.opts.withSkills ? '' : ' Skills not imported; --with-skills adds them.'),
     );
   }
 

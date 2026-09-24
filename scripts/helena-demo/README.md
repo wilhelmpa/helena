@@ -12,12 +12,14 @@ HELENA_API_KEY=<your personal API key> bun scripts/helena-demo/seed.ts --base-ur
 | Flag | Effect |
 |---|---|
 | `--dry-run` | Prints what it would create, writes nothing |
-| `--with-skills` | Also imports the pool templates' skills from GitHub (pinned commits, needs network) |
+| `--with-skills` | Also imports the templates' skills and MCP servers from the pool bundle (GitHub skills are pinned to a commit and need the network) |
 | `--start-work` | Assigns the first task of each project to a specialist, which queues a real agent run |
 | `--team-id=N` | The team to seed; default is the key owner's first team |
 
 It creates:
-- the agent pool templates;
+- the pool templates the demo copies, imported from the pool bundle `bundles/agent-pool`
+  through the template-bundle import (`scripts/helena-bundle-sync.ts`). Once bundles also
+  carry project and workflow templates, the demo itself becomes a bundle (`bundles/demo`);
 - two projects (`SITE` "Demo: Website relaunch", `OPS` "Demo: Operations"), each with the
   coordinator Helena gives every project, reporting to the Home agent;
 - specialists copied from templates (researcher, tech-writer and qa in SITE; planner and

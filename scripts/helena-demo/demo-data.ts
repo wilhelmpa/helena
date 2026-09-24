@@ -17,8 +17,8 @@ export interface DemoProject {
   name: string;
   description: string;
   preset: 'general' | 'software';
-  // Pool template usernames (deployment/volition-stack/agent-pool/pool.ts) copied into
-  // the project as its specialists.
+  // Pool template names (bundles/agent-pool/agents/<name>.md) copied into the project as
+  // its specialists.
   specialists: string[];
   tasks: DemoTask[];
 }

@@ -116,9 +116,9 @@ Legend:
 
 | Path | Class | Note |
 |---|---|---|
-| `agent-pool/pool.ts`, `agent-pool/skills/` | core | The pool templates. Their instructions are German; English versions (i18n of templates) are a follow-up |
-| `agent-pool/legacy.ts` | priv | COPIES, COORDINATOR_SKILLS, ROADMAP_GOALS name the owner's projects |
-| `scripts/setup-agent-pool.ts` (+ `.browser.ts`) | core | Without the sections `copies`, `org`, `shopify`, `goals`, which move to `helena-ops` as their own script |
+| `bundles/agent-pool/` (moved out of this directory on volition/hub) | core | The pool as a template bundle (agents/*.md, skills/, helena.bundle.json). Instructions are German; English versions are a follow-up |
+| `scripts/setup-agent-pool.ts` (+ `.browser.ts`), root `scripts/helena-bundle*.ts` | core | Bundle import/export through the API |
+| `scripts/setup-agent-pool.ops.ts` | priv | The owner's steps: running agents, project copies, org, goals |
 | `scripts/fresh-reset.mjs`, `probe-secret-boundaries.sh`, `verify-checkpoint.py`, `scripts/test/` | retire | Compose era |
 | `browser/` (router, screencast, input, video) | core | Starts per-project Chromium through systemd today; §8.3 |
 | `integration/` provisioning service: `server.mjs`, `provisioner.mjs`, `config.mjs`, `project-*.mjs`, `areas.mjs`, `boards.mjs`, `plan-coordinator.mjs`, `agent-launcher.mjs`, `purge-trash.mjs`, `move-path.mjs`, `atomic-json.mjs`, `validation.mjs` | core | The only component that changes OS resources. Long term it folds into the runner (hub/hermes-sync already materialises profiles) and the router |
@@ -186,7 +186,7 @@ helena-ops/                  private repository (owner's GitHub or Kingston only
                              config (host, CIDRs), dev mode (native/dev)
   kiosk/  lan/  google/      from native/kiosk, native/lan (runs on the m5 host), native/google
   owner-terminal/            sudoers 90-wilhelmpa
-  agent-pool/                legacy.ts + a setup script for copies, org, shopify, goals
+  agent-pool/                setup-agent-pool.ops.ts: copies, org, goals for the owner's projects
   runbooks/                  NATIVE_*.md, INSTALL.md, the rename kit and its journal
   docs/                      the handoff (CLAUDE.md, helena-*.md)
   scan/private.gitleaks.toml rules that find the owner's private data (§4.2)
@@ -672,9 +672,10 @@ prebuilt multi-arch images on GHCR.
 
 ## 9. Demo
 
-- **Seed:** `scripts/helena-demo/seed.ts`, idempotent and API-only (the same transport as the
-  pool setup). It uses the Home agent, the pool templates (`researcher`, `tech-writer`,
-  `planner`, `qa`), two projects ("Website relaunch" `SITE`, "Operations" `OPS`) each with its
+- **Seed:** `scripts/helena-demo/seed.ts`, idempotent and API-only. It imports the pool
+  templates it needs (`researcher`, `tech-writer`, `planner`, `qa`) from the template bundle
+  `bundles/agent-pool` through the bundle import (the extension point "Vorlagen und Pakete"),
+  and uses the Home agent, two projects ("Website relaunch" `SITE`, "Operations" `OPS`) each with its
   coordinator and specialists copied from templates, sample tasks, a weekly routine and a
   builder workflow (research → write → review with an approval step). Nothing is assigned
   unless `--start-work` is given, so no model runs without the user deciding it.
