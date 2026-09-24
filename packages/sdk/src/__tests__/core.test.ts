@@ -12,16 +12,17 @@ import {
   createRegistry,
   decide,
   matchesEventPattern,
-  parseBundle,
   resolveText,
   toCallToolResult,
   toJsonSchema,
   toMcpTool,
   toolCategory,
   validate,
+  validateBundle,
   type AgentTool,
   type CliCommand,
   type PolicyEvaluator,
+  type TemplateBundle,
 } from '../index';
 
 describe('Registry', () => {
@@ -244,16 +245,21 @@ describe('text and bundles', () => {
     expect(resolveText('Plain', 'de')).toBe('Plain');
   });
 
-  test('reads a bundle envelope', () => {
-    expect(() => parseBundle({ format: 'x' })).toThrow(/Unknown bundle format/);
-    const bundle = parseBundle({
-      format: 'helena.bundle/v1',
-      kind: 'agent-template',
-      id: 'writer',
-      name: 'Writer',
+  test('validates a template bundle', () => {
+    const bundle: TemplateBundle = {
+      format: 'helena.template-bundle',
+      formatVersion: 1,
+      name: 'demo-pack',
+      displayName: 'Demo',
       version: '1.0.0',
-      items: [],
-    });
-    expect(bundle.kind).toBe('agent-template');
+      description: 'A demo.',
+      license: 'MIT',
+      author: { name: 'Acme' },
+      skills: [],
+      mcpServers: {},
+      agents: [],
+    };
+    expect(validateBundle(bundle)).toEqual([]);
+    expect(validateBundle({ ...bundle, license: 'SSPL-1.0' })).toEqual(['license SSPL-1.0']);
   });
 });

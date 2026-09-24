@@ -4,7 +4,7 @@ import type { McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
 import { Registry, createRegistry } from './registry';
 import type { RuntimeAdapter } from './runtime';
-import type { TemplateKind } from './templates';
+import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
 import type { TriggerType, WorkflowStepType } from './workflows';
@@ -22,7 +22,7 @@ export interface HelenaRegistries {
   uiSlots: Registry<UiSlot>;
   knowledgeSources: Registry<KnowledgeSource>;
   captureTargets: Registry<CaptureTarget>;
-  templateKinds: Registry<TemplateKind<unknown>>;
+  bundles: Registry<BundleOffer>;
   mcpServers: Registry<McpServerContribution>;
 }
 
@@ -37,7 +37,7 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
     uiSlots: given.uiSlots ?? new Registry<UiSlot>('UI slot', uiSlotKey),
     knowledgeSources: given.knowledgeSources ?? createRegistry<KnowledgeSource>('knowledge source'),
     captureTargets: given.captureTargets ?? createRegistry<CaptureTarget>('capture target'),
-    templateKinds: given.templateKinds ?? createRegistry<TemplateKind<unknown>>('template kind'),
+    bundles: given.bundles ?? createRegistry<BundleOffer>('template bundle'),
     mcpServers:
       given.mcpServers ??
       new Registry<McpServerContribution>('MCP server', (server) => server.name),

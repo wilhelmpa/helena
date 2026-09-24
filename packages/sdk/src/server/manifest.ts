@@ -66,7 +66,7 @@ export const pluginManifestSchema = z
         uiSlots: ids.optional(),
         knowledgeSources: ids.optional(),
         captureTargets: ids.optional(),
-        templateKinds: ids.optional(),
+        bundles: ids.optional(),
         events: ids.optional(),
         mcpServers: z.array(mcpServer).max(50).optional(),
       })

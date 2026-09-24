@@ -16,7 +16,8 @@ import { decide, type PolicyDecision, type PolicyEvaluator, type PolicyRequest }
 import { Registry } from '../registry';
 import { createRegistries, type HelenaRegistries } from '../registries';
 import type { RuntimeAdapter } from '../runtime';
-import type { TemplateKind } from '../templates';
+import type { BundleOffer } from '../templates';
+import { validateBundle } from '../templates';
 import { declaredCategory, type AnyAgentTool } from '../tools';
 import { uiSlotKey, type UiSlot } from '../ui';
 import type { TriggerType, WorkflowStepType } from '../workflows';
@@ -76,7 +77,7 @@ export class PluginHost {
   readonly uiSlots: Registry<UiSlot>;
   readonly knowledgeSources: Registry<KnowledgeSource>;
   readonly captureTargets: Registry<CaptureTarget>;
-  readonly templateKinds: Registry<TemplateKind<unknown>>;
+  readonly bundles: Registry<BundleOffer>;
   readonly mcpServers: Registry<McpServerContribution>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
@@ -98,7 +99,7 @@ export class PluginHost {
     this.uiSlots = registries.uiSlots;
     this.knowledgeSources = registries.knowledgeSources;
     this.captureTargets = registries.captureTargets;
-    this.templateKinds = registries.templateKinds;
+    this.bundles = registries.bundles;
     this.mcpServers = registries.mcpServers;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
@@ -195,7 +196,7 @@ export class PluginHost {
       this.uiSlots,
       this.knowledgeSources,
       this.captureTargets,
-      this.templateKinds,
+      this.bundles,
       this.mcpServers,
     ] as unknown as Registry<never>[];
   }
@@ -308,7 +309,10 @@ export class PluginHost {
         'knowledgeSources',
       ),
       captureTargets: registrar(this.captureTargets, provides.captureTargets, 'captureTargets'),
-      templateKinds: registrar(this.templateKinds, provides.templateKinds, 'templateKinds'),
+      bundles: registrar(this.bundles, provides.bundles, 'bundles', (offer) => {
+        const problems = validateBundle(offer.bundle);
+        if (problems.length) fail(`bundle ${offer.id} is invalid: ${problems.join('; ')}`);
+      }),
       mcpServers: registrar(
         this.mcpServers,
         (provides.mcpServers ?? []).map((server) => server.name),

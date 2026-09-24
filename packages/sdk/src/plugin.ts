@@ -6,7 +6,7 @@ import type { CaptureTarget, KnowledgeSource } from './knowledge';
 import type { PluginManifest, McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
 import type { RuntimeAdapter } from './runtime';
-import type { TemplateKind } from './templates';
+import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import type { UiSlot } from './ui';
 import type { TriggerType, WorkflowStepType } from './workflows';
@@ -50,7 +50,8 @@ export interface PluginContext {
   uiSlots: Registrar<UiSlot>;
   knowledgeSources: Registrar<KnowledgeSource>;
   captureTargets: Registrar<CaptureTarget>;
-  templateKinds: Registrar<TemplateKind<unknown>>;
+  // Template bundles (agent templates, skills, MCP servers) offered for import.
+  bundles: Registrar<BundleOffer>;
   mcpServers: Registrar<McpServerContribution>;
   events: {
     // Only event types under the plugin's own id: `<pluginId>.<name>`.

@@ -185,7 +185,7 @@
             "maxLength": 160
           }
         },
-        "templateKinds": {
+        "bundles": {
           "maxItems": 500,
           "type": "array",
           "items": {

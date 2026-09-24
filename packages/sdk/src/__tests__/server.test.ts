@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { createEvent, createEventBus, type HelenaEvent, type PluginManifest } from '../index';
 import {
   PluginHost,
+  bundleJsonSchema,
   createOutboxDispatcher,
   loadExternalPlugins,
   manifestJsonSchema,
@@ -36,11 +37,15 @@ describe('manifest', () => {
     expect(() => parseManifest({ ...base, unknown: true })).toThrow(/Invalid plugin manifest/);
   });
 
-  test('the published JSON Schema is up to date', async () => {
-    const file = JSON.parse(
-      await readFile(join(import.meta.dir, '../../schema/helena.plugin.schema.json'), 'utf8'),
+  test('the published JSON Schemas are up to date', async () => {
+    const read = async (name: string) =>
+      JSON.parse(await readFile(join(import.meta.dir, '../../schema', name), 'utf8'));
+    expect(await read('helena.plugin.schema.json')).toEqual(
+      JSON.parse(JSON.stringify(manifestJsonSchema())),
     );
-    expect(file).toEqual(JSON.parse(JSON.stringify(manifestJsonSchema())));
+    expect(await read('helena.bundle.schema.json')).toEqual(
+      JSON.parse(JSON.stringify(bundleJsonSchema())),
+    );
   });
 });
 

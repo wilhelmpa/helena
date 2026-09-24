@@ -158,15 +158,19 @@ export {
   type UiSlotName,
 } from './ui';
 export {
+  ACCEPTED_LICENSES,
   BUNDLE_FORMAT,
-  BundleError,
-  createBundle,
-  parseBundle,
-  type ImportContext,
-  type ImportReport,
+  BUNDLE_FORMAT_VERSION,
+  BUNDLE_MANIFEST,
+  parseBundleJson,
+  skillMarkdownName,
+  validateBundle,
+  type BundleAgent,
+  type BundleMcpServer,
+  type BundleOffer,
+  type BundleSkill,
+  type SkillSource,
   type TemplateBundle,
-  type TemplateKind,
-  type TemplateKindId,
 } from './templates';
 export {
   definePlugin,
