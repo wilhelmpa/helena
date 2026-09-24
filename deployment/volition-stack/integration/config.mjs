@@ -2,6 +2,14 @@ import path from "node:path";
 import net from "node:net";
 import fs from "node:fs/promises";
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file) {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 function absolutePath(value, fallback) {
   const selected = value?.trim() || fallback;
   if (!path.isAbsolute(selected))
@@ -177,7 +185,7 @@ function mailAddresses(value) {
 
 async function privateSecret(filePath, name) {
   const stat = await fs.lstat(filePath);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(filePath)) !== 0) {
     throw new Error(`${name} must be a private regular file`);
   }
   const value = (await fs.readFile(filePath, "utf8")).replace(/[\r\n]+$/, "");
@@ -189,7 +197,7 @@ async function privateSecret(filePath, name) {
 
 async function privateCredential(filePath, name) {
   const stat = await fs.lstat(filePath);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(filePath)) !== 0) {
     throw new Error(`${name} must be a private regular file`);
   }
   const value = (await fs.readFile(filePath, "utf8")).replace(/[\r\n]+$/, "");
