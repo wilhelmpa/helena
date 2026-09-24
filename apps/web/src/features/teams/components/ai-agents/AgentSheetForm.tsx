@@ -296,6 +296,7 @@ export function AgentSheetForm({
       chatModels={chatCatalogQuery.data?.models ?? []}
       chatModelsLoading={chatCatalogQuery.isLoading}
       chatModelsError={chatCatalogQuery.isError}
+      chatModelsUnavailable={chatCatalogQuery.data?.unavailable ?? []}
       agent={agent}
       skillsContent={skillsContent}
       skillsBadge={countBadge(selectedSkills.length, skillsLibrary.length)}

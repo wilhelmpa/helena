@@ -716,7 +716,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .post(
     '/agent-chats/:messageId/result',
     async ({ agent, params, body }) => {
-      const ok = await finishMessage(agent.id, params.messageId, body);
+      const ok = await finishMessage(agent.id, params.messageId, body, agent.runtime);
       if (!ok) throw new HttpError(404, 'Message not found');
       return noContent();
     },

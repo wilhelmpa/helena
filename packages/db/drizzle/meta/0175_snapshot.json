@@ -1,5 +1,5 @@
 {
-  "id": "18fc118d-c594-4a80-a0a1-1af0981f1f0e",
+  "id": "5afeea7b-2dce-4110-aab1-81a335a65cab",
   "prevId": "60fdde39-309e-4e84-9dc5-2bfe19b12475",
   "version": "7",
   "dialect": "postgresql",
@@ -1462,6 +1462,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "failure": {
+          "name": "failure",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "input_tokens": {
           "name": "input_tokens",
           "type": "integer",
@@ -2862,12 +2868,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "reasoning": {
-          "name": "reasoning",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "blocked_question": {
           "name": "blocked_question",
           "type": "text",
@@ -2882,6 +2882,12 @@
         },
         "model_check": {
           "name": "model_check",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failure": {
+          "name": "failure",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -3080,7 +3086,7 @@
         },
         "agent_run_trigger_check": {
           "name": "agent_run_trigger_check",
-          "value": "\"agent_run\".\"trigger\" IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest')"
+          "value": "\"agent_run\".\"trigger\" IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval', 'workspace')"
         }
       },
       "isRLSEnabled": false
@@ -20371,77 +20377,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.helena_system_job": {
-      "name": "helena_system_job",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "fired_through": {
-          "name": "fired_through",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "schedule_key": {
-          "name": "schedule_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "last_started_at": {
-          "name": "last_started_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_finished_at": {
-          "name": "last_finished_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_status": {
-          "name": "last_status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_error": {
-          "name": "last_error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_workflow_id": {
-          "name": "last_workflow_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_trigger": {
-          "name": "last_trigger",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.helena_update": {
-      "name": "helena_update",
+    "public.helena_model_availability": {
+      "name": "helena_model_availability",
       "schema": "",
       "columns": {
         "id": {
@@ -20450,84 +20387,34 @@
           "primaryKey": true,
           "notNull": true
         },
-        "source": {
-          "name": "source",
+        "runtime": {
+          "name": "runtime",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "component": {
-          "name": "component",
+        "provider": {
+          "name": "provider",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "installed": {
-          "name": "installed",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "available": {
-          "name": "available",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "update_available": {
-          "name": "update_available",
-          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": "''"
         },
-        "security": {
-          "name": "security",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "source_url": {
-          "name": "source_url",
+        "model": {
+          "name": "model",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "notes_url": {
-          "name": "notes_url",
+        "state": {
+          "name": "state",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "group_key": {
-          "name": "group_key",
+        "reason": {
+          "name": "reason",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "applicable": {
-          "name": "applicable",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "hint": {
-          "name": "hint",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -20537,93 +20424,33 @@
           "primaryKey": false,
           "notNull": false
         },
-        "error": {
-          "name": "error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "data": {
-          "name": "data",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "summary": {
-          "name": "summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "highlights": {
-          "name": "highlights",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "risk": {
-          "name": "risk",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "breaking": {
-          "name": "breaking",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "summary_for": {
-          "name": "summary_for",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "summary_run_id": {
-          "name": "summary_run_id",
+        "agent_id": {
+          "name": "agent_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "summary_run_for": {
-          "name": "summary_run_for",
-          "type": "text",
+        "run_id": {
+          "name": "run_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "summary_model": {
-          "name": "summary_model",
-          "type": "text",
+        "chat_message_id": {
+          "name": "chat_message_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "summary_error": {
-          "name": "summary_error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "summarized_at": {
-          "name": "summarized_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "available_since": {
-          "name": "available_since",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "checked_at": {
-          "name": "checked_at",
+        "since": {
+          "name": "since",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "created_at": {
-          "name": "created_at",
+        "observed_at": {
+          "name": "observed_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -20631,17 +20458,23 @@
         }
       },
       "indexes": {
-        "helena_update_component_uq": {
-          "name": "helena_update_component_uq",
+        "helena_model_availability_route_idx": {
+          "name": "helena_model_availability_route_idx",
           "columns": [
             {
-              "expression": "source",
+              "expression": "runtime",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "component",
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "model",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -20654,191 +20487,38 @@
         }
       },
       "foreignKeys": {
-        "helena_update_summary_run_id_agent_run_id_fk": {
-          "name": "helena_update_summary_run_id_agent_run_id_fk",
-          "tableFrom": "helena_update",
+        "helena_model_availability_agent_id_ai_agent_id_fk": {
+          "name": "helena_model_availability_agent_id_ai_agent_id_fk",
+          "tableFrom": "helena_model_availability",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "helena_model_availability_run_id_agent_run_id_fk": {
+          "name": "helena_model_availability_run_id_agent_run_id_fk",
+          "tableFrom": "helena_model_availability",
           "tableTo": "agent_run",
           "columnsFrom": [
-            "summary_run_id"
+            "run_id"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "helena_update_risk_check": {
-          "name": "helena_update_risk_check",
-          "value": "\"helena_update\".\"risk\" IS NULL OR \"helena_update\".\"risk\" IN ('low', 'medium', 'high')"
         },
-        "helena_update_kind_check": {
-          "name": "helena_update_kind_check",
-          "value": "\"helena_update\".\"kind\" IN ('runtime', 'system', 'tool', 'app')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.helena_update_action": {
-      "name": "helena_update_action",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "component": {
-          "name": "component",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "components": {
-          "name": "components",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "from_version": {
-          "name": "from_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "to_version": {
-          "name": "to_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'running'"
-        },
-        "ref": {
-          "name": "ref",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "backup_path": {
-          "name": "backup_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "log": {
-          "name": "log",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "error": {
-          "name": "error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "result": {
-          "name": "result",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "health": {
-          "name": "health",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "requested_by_user_id": {
-          "name": "requested_by_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "requested_at": {
-          "name": "requested_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "finished_at": {
-          "name": "finished_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "helena_update_action_requested_idx": {
-          "name": "helena_update_action_requested_idx",
-          "columns": [
-            {
-              "expression": "requested_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "helena_update_action_running_uq": {
-          "name": "helena_update_action_running_uq",
-          "columns": [
-            {
-              "expression": "source",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "component",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"helena_update_action\".\"state\" = 'running'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "helena_update_action_requested_by_user_id_user_id_fk": {
-          "name": "helena_update_action_requested_by_user_id_user_id_fk",
-          "tableFrom": "helena_update_action",
-          "tableTo": "user",
+        "helena_model_availability_chat_message_id_agent_chat_message_id_fk": {
+          "name": "helena_model_availability_chat_message_id_agent_chat_message_id_fk",
+          "tableFrom": "helena_model_availability",
+          "tableTo": "agent_chat_message",
           "columnsFrom": [
-            "requested_by_user_id"
+            "chat_message_id"
           ],
           "columnsTo": [
             "id"
@@ -20851,9 +20531,9 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "helena_update_action_state_check": {
-          "name": "helena_update_action_state_check",
-          "value": "\"helena_update_action\".\"state\" IN ('running', 'done', 'failed')"
+        "helena_model_availability_state_check": {
+          "name": "helena_model_availability_state_check",
+          "value": "\"helena_model_availability\".\"state\" IN ('unavailable', 'works')"
         }
       },
       "isRLSEnabled": false

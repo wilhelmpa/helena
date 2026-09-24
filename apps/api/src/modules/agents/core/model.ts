@@ -3,6 +3,7 @@ import { t } from 'elysia';
 import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
 import { modelCheck, profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
+import { runFailure } from '#modules/model-availability/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -333,6 +334,19 @@ export const AiAgentResponse = t.Object({
 export const CreateAgentResponse = t.Object({
   agent: AiAgentResponse,
   apiKey: t.String(),
+  modelFallback: t.Optional(
+    t.Object(
+      {
+        model: t.String(),
+        detail: t.Nullable(t.String()),
+      },
+      {
+        description:
+          'A copy of a template whose model the provider refused this account runs on its ' +
+          "runtime's default model instead: the template's model and the provider's words.",
+      },
+    ),
+  ),
 });
 
 // The new API key secret returned once by regenerate-key.
@@ -395,6 +409,7 @@ export const AgentRunResponse = t.Object({
     ),
   ),
   modelCheck: t.Nullable(modelCheck),
+  failure: t.Nullable(runFailure),
   nextAttemptAt: t.String(),
   createdAt: t.String(),
 });
@@ -492,6 +507,14 @@ export const ChatMessagesResponse = t.Object({
       outputTokens: t.Optional(t.Nullable(t.Number())),
       durationMs: t.Optional(t.Nullable(t.Number())),
       error: t.Optional(t.String()),
+      errorCode: t.Optional(
+        t.String({
+          description:
+            "Why the answer failed, where the runtime's words said ('model-unavailable': " +
+            'the provider does not serve the model to this account).',
+        }),
+      ),
+      errorModel: t.Optional(t.Nullable(t.String())),
     }),
   ),
   nextPage: t.Nullable(t.Number()),

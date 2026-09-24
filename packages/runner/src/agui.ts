@@ -13,7 +13,7 @@ export const AG_UI_PROTOCOL_VERSION = '1.0';
 export type AgUiEvent =
   | { type: 'RUN_STARTED'; threadId: string; runId: string; protocolVersion: string }
   | { type: 'RUN_FINISHED'; threadId: string; runId: string }
-  | { type: 'RUN_ERROR'; message: string }
+  | { type: 'RUN_ERROR'; message: string; code?: string }
   | { type: 'TEXT_MESSAGE_START'; messageId: string; role: 'assistant' }
   | { type: 'TEXT_MESSAGE_CONTENT'; messageId: string; delta: string }
   | { type: 'TEXT_MESSAGE_END'; messageId: string }
@@ -165,9 +165,10 @@ export class AnswerStream {
     await this.flush();
   }
 
-  async fail(message: string, fallback = ''): Promise<void> {
+  // `code` names a failure the reader's chat words itself (model-unavailable).
+  async fail(message: string, fallback = '', code?: string): Promise<void> {
     this.closeText(fallback);
-    this.queued.push({ type: 'RUN_ERROR', message });
+    this.queued.push({ type: 'RUN_ERROR', message, ...(code && { code }) });
     await this.flush();
   }
 

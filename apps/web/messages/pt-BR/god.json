@@ -388,6 +388,29 @@
     "agentSync": {
       "title": "Perfis dos agentes",
       "synced": "{synced} de {total} sincronizados"
+    },
+    "logins": {
+      "title": "Logins",
+      "summaryOk": "todos válidos",
+      "summaryProblems": "{count, plural, one {# precisa de você} other {# precisam de você}}",
+      "state": {
+        "ok": "válido",
+        "okFor": "válido por {time}",
+        "expiring": "será renovado em breve",
+        "expired": "expirado",
+        "error": "a renovação está falhando no momento",
+        "invalid": "inválido",
+        "unknown": "desconhecido"
+      },
+      "separate": "login próprio, apenas exibido",
+      "codexCli": "CLI do Codex",
+      "relogin": "Entre novamente no {provider} no Hermes – execute no terminal do proprietário:",
+      "stale": "O guardião de tokens não se reporta há {time}; os logins não estão sendo renovados.",
+      "copyCommand": "Copiar comando",
+      "copied": "Copiado",
+      "sources": {
+        "keeper": "Guardião de tokens"
+      }
     }
   },
   "plugins": {
@@ -417,6 +440,7 @@
       "bundles": "Pacotes de modelos",
       "limits": "Limites",
       "autopilot": "Autopilot",
+      "logins": "Logins",
       "updates": "Atualizações"
     },
     "problems": {

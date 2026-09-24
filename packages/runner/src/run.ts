@@ -183,7 +183,11 @@ export async function perform(
   await (
     outcome.status === 'success'
       ? timeline.stream.finish(outcome.output)
-      : timeline.stream.fail(outcome.error ?? 'The run failed', outcome.output)
+      : timeline.stream.fail(
+          outcome.error ?? 'The run failed',
+          outcome.output,
+          outcome.failure?.code,
+        )
   ).catch(() => {});
   const uses = logins.uses();
   // The audit log misses these uses when the report fails; the run itself does not.
@@ -191,7 +195,11 @@ export async function perform(
   const sessionId = outcome.sessionId ?? answer.sessionId() ?? undefined;
   const runtime = await runModelReport(
     options.runtime ?? null,
-    { model: run.model, reasoning: run.thinkingLevel },
+    {
+      model: run.model,
+      reasoning: run.thinkingLevel,
+      provider: modelProvider(config, run.model) ?? null,
+    },
     sessionId,
     usage.model(),
   );

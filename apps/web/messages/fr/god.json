@@ -388,6 +388,29 @@
     "agentSync": {
       "title": "Profils des agents",
       "synced": "{synced} sur {total} synchronisés"
+    },
+    "logins": {
+      "title": "Connexions",
+      "summaryOk": "toutes valides",
+      "summaryProblems": "{count, plural, one {# a besoin de vous} other {# ont besoin de vous}}",
+      "state": {
+        "ok": "valide",
+        "okFor": "valide encore {time}",
+        "expiring": "bientôt renouvelée",
+        "expired": "expirée",
+        "error": "le renouvellement échoue pour l’instant",
+        "invalid": "invalide",
+        "unknown": "inconnue"
+      },
+      "separate": "connexion propre, seulement affichée",
+      "codexCli": "CLI Codex",
+      "relogin": "Reconnecter {provider} dans Hermes – à exécuter dans le terminal du propriétaire :",
+      "stale": "Le gardien de jetons ne s’est pas manifesté depuis {time} ; les connexions ne sont plus renouvelées.",
+      "copyCommand": "Copier la commande",
+      "copied": "Copié",
+      "sources": {
+        "keeper": "Gardien de jetons"
+      }
     }
   },
   "plugins": {
@@ -417,6 +440,7 @@
       "bundles": "Paquets de modèles",
       "limits": "Limites",
       "autopilot": "Autopilot",
+      "logins": "Connexions",
       "updates": "Mises à jour"
     },
     "problems": {

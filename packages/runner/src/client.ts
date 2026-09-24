@@ -1,4 +1,4 @@
-import type { UsageLimitSnapshot } from '@helena/sdk';
+import type { RuntimeFailure, UsageLimitSnapshot } from '@helena/sdk';
 import type { AgUiEvent, ContextUsage } from './agui';
 import type { CliLogin, CliLoginState } from './cli-login';
 import type { RunnerConfig } from './config';
@@ -296,6 +296,9 @@ export class Client {
       spend?: Spend | null;
       // The model and reasoning requested, the runtime's defaults and what really ran.
       runtime?: RunModelReport;
+      // Why it failed, where the runtime's words say: Helena records a model the provider
+      // does not serve this account and retries nothing that cannot pass.
+      failure?: RuntimeFailure;
     },
   ): Promise<ReflectionRequest | null> {
     const res = await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);
@@ -363,6 +366,7 @@ export class Client {
       model?: string;
       spend?: Spend | null;
       runtime?: RunModelReport;
+      failure?: RuntimeFailure;
     },
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);

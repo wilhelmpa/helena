@@ -20,6 +20,10 @@ export interface PlanChatMetadata {
   durationMs?: number | null;
   stopped?: boolean;
   error?: string;
+  // Why it failed, where the runtime's words said ('model-unavailable'), and the model: the
+  // chat words it in the reader's language.
+  errorCode?: string;
+  errorModel?: string | null;
   // The browser lost the answer's stream before it ended (see AgUiChunkMapper.end); the
   // answer itself may still have finished on the operator's machine.
   interrupted?: boolean;
@@ -79,6 +83,8 @@ export function toUIMessage(message: AiChatMessage): PlanUIMessage {
       durationMs: message.durationMs,
       stopped: message.stopped,
       error: message.error,
+      ...(message.errorCode && { errorCode: message.errorCode }),
+      ...(message.errorModel !== undefined && { errorModel: message.errorModel }),
     },
   };
 }

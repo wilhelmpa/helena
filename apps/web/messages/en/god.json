@@ -388,6 +388,29 @@
     "agentSync": {
       "title": "Agent profiles",
       "synced": "{synced} of {total} in sync"
+    },
+    "logins": {
+      "title": "Logins",
+      "summaryOk": "all valid",
+      "summaryProblems": "{count, plural, one {# needs you} other {# need you}}",
+      "state": {
+        "ok": "valid",
+        "okFor": "valid for {time}",
+        "expiring": "renewed soon",
+        "expired": "expired",
+        "error": "renewal failing for now",
+        "invalid": "invalid",
+        "unknown": "unknown"
+      },
+      "separate": "own login, only shown",
+      "codexCli": "Codex CLI",
+      "relogin": "Sign {provider} in to Hermes again – run in the owner terminal:",
+      "stale": "The token keeper has not reported for {time}; the logins are not being renewed.",
+      "copyCommand": "Copy command",
+      "copied": "Copied",
+      "sources": {
+        "keeper": "Token keeper"
+      }
     }
   },
   "plugins": {
@@ -417,6 +440,7 @@
       "bundles": "Template bundles",
       "limits": "Limits",
       "autopilot": "Autopilot",
+      "logins": "Logins",
       "updates": "Updates"
     },
     "problems": {

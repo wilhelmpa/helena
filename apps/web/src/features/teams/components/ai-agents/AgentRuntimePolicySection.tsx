@@ -14,12 +14,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
+import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import {
   AGENT_RUNTIME_KINDS,
   type AgentRuntimeConflict,
   type AgentRuntimeKind,
+  type AiAgent,
 } from '@/lib/api/endpoints/agents';
+import AgentModelIssue from '@/features/model-availability/components/AgentModelIssue';
+import {
+  isUnverified,
+  refusalOf,
+  refusedModels,
+  templateFallbackModel,
+} from '@/features/model-availability/utils/modelFailure';
+import { useTeamModelAvailability } from '@/features/model-availability/services/modelAvailability.service';
+import { useAiAgentsQuery } from '@/services/aiAgents.service';
+import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import AgentRuntimeConflicts from './AgentRuntimeConflicts';
@@ -41,6 +52,8 @@ export default function AgentRuntimePolicySection({
   modelsLoading,
   modelsError,
   conflicts,
+  unavailable = [],
+  agent = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,8 +63,30 @@ export default function AgentRuntimePolicySection({
   modelsLoading: boolean;
   modelsError: boolean;
   conflicts: AgentRuntimeConflict[];
+  // Models the provider refused this account, which the list leaves out, and the agent
+  // (for a template copy that fell back to the default).
+  unavailable?: UnavailableChatModel[];
+  agent?: AiAgent | null;
 }) {
   const t = useTranslations('teams.agents.runtimePolicy');
+  const tModel = useTranslations('modelAvailability');
+  const { teamId } = useAgentSection();
+  const canEdit = useAgentCan()('edit');
+  // The template library is already cached for the editor (AgentTemplateDriftSection).
+  const template = useAiAgentsQuery(agent?.sourceTemplateId != null ? teamId : null).data?.find(
+    (entry) => entry.id === agent?.sourceTemplateId,
+  );
+  // What the agent's catalog refuses, and what the team knows besides (a copy whose runner
+  // has not published a catalog yet).
+  const runtime = value.runtimePolicy.runtime ?? 'hermes';
+  const findings = useTeamModelAvailability(teamId).data;
+  const refused = refusedModels(unavailable, findings?.entries, runtime);
+  // The Hermes login the saved model runs through, when the provider rejected it (the token
+  // keeper's status); a model changed in the form is not the one it was worked out for.
+  const deadLogin =
+    agent && value.model === (agent.model ?? '')
+      ? findings?.deadLogins?.find((login) => login.agents.some((entry) => entry.id === agent.id))
+      : undefined;
   const tFallback = useTranslations('agentRuntime.fallback');
   const fallbackId = useId();
   const policy = value.runtimePolicy;
@@ -149,10 +184,19 @@ export default function AgentRuntimePolicySection({
               {models.map((model) => (
                 <SelectItem key={model.id} value={model.id}>
                   {model.name} · {model.id}
+                  {isUnverified(model) && (
+                    <span
+                      className="ms-1.5 text-xs text-muted-foreground"
+                      title={tModel('unverifiedHint')}
+                    >
+                      {tModel('unverified')}
+                    </span>
+                  )}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           <p className="text-xs text-muted-foreground">
             {modelsLoading
               ? t('modelsLoading')
@@ -196,6 +240,25 @@ export default function AgentRuntimePolicySection({
           </Select>
         </div>
       </div>
+
+      <AgentModelIssue
+        teamId={teamId}
+        refusal={refusalOf(value.model, refused)}
+        runtime={runtime}
+        templateModel={
+          agent
+            ? templateFallbackModel(
+                { model: value.model || null, sourceTemplateId: agent.sourceTemplateId },
+                template,
+                refused,
+              )
+            : null
+        }
+        deadLogin={deadLogin}
+        model={value.model || null}
+        canEdit={canEdit}
+        onUseDefault={() => selectModel(AGENT_DEFAULT)}
+      />
 
       {(policy.runtime ?? 'hermes') === 'hermes' && (
         <div className="space-y-2">

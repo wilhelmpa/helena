@@ -103,10 +103,13 @@ export class AgUiChunkMapper {
       }
       case EventType.RUN_FINISHED:
         return this.finish();
-      case EventType.RUN_ERROR:
+      case EventType.RUN_ERROR: {
+        const { message, code } = as<RunErrorEvent>(event);
         return this.finish({
-          error: as<RunErrorEvent>(event).message || 'The agent stopped answering',
+          error: message || 'The agent stopped answering',
+          ...(code && { errorCode: code }),
         });
+      }
       default:
         return [];
     }

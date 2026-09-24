@@ -71,7 +71,8 @@ export interface CoreEventData {
   'helena.comment.deleted': CommentRef & { snapshot?: unknown };
   'helena.run.started': RunEventData;
   'helena.run.finished': RunEventData;
-  'helena.run.failed': RunEventData & { error: string | null };
+  // `failure` names a failure the runtime explained (@helena/sdk RuntimeFailureCode).
+  'helena.run.failed': RunEventData & { error: string | null; failure?: string };
   'helena.approval.requested': ApprovalEventData;
   'helena.approval.decided': ApprovalEventData & {
     decision: 'approved' | 'rejected';

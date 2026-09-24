@@ -1,3 +1,4 @@
+import type { RuntimeFailure } from '@helena/sdk';
 import { recordActivity, textSide } from '#modules/issues/activity';
 import { publishDomainEvent } from '#shared/helena';
 
@@ -48,10 +49,13 @@ export async function recordAgentRunStarted(
 }
 
 // Records how the agent's run of the issue ended.
+// A failure the runtime explained (a model the provider refused) is named on the task, with
+// the model, so the task says why nothing happened and what to change.
 export async function recordAgentRunFinished(
   run: RunRef,
   status: 'success' | 'failed',
   error: string | null = null,
+  failure: Pick<RuntimeFailure, 'code' | 'model'> | null = null,
 ): Promise<void> {
   if (run.id != null && run.agentId != null) {
     const data = runEvent({ ...run, id: run.id, agentId: run.agentId });
@@ -63,13 +67,26 @@ export async function recordAgentRunFinished(
     if (status === 'success') {
       await publishDomainEvent({ ...common, type: 'helena.run.finished', data });
     } else {
-      await publishDomainEvent({ ...common, type: 'helena.run.failed', data: { ...data, error } });
+      await publishDomainEvent({
+        ...common,
+        type: 'helena.run.failed',
+        data: { ...data, error, ...(failure && { failure: failure.code }) },
+      });
     }
   }
   if (run.issueId == null) return;
+  const modelRefused = status === 'failed' && failure?.code === 'model-unavailable';
   await recordActivity(
     run.issueId,
-    [{ action: 'agent_finished', subject: textSide(status) }],
+    [
+      modelRefused
+        ? {
+            action: 'agent_finished',
+            subject: textSide('model-unavailable'),
+            ...(failure.model && { to: textSide(failure.model) }),
+          }
+        : { action: 'agent_finished', subject: textSide(status) },
+    ],
     run.agentUserId,
   );
 }

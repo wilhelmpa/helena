@@ -696,6 +696,10 @@ export const agentRun = pgTable(
     // really ran on, as the runner read them back, with any mismatch named. Null for a run
     // whose runner reports neither.
     modelCheck: jsonb('model_check'),
+    // Why the run failed, where the runtime's words said (@helena/sdk RuntimeFailure: a
+    // model the provider does not serve this account, a refusal no retry passes). A
+    // failure that is not retryable is never run again, by the queue or the engine.
+    failure: jsonb('failure'),
     // The follow-up turn in which the agent kept what the run taught it, when Plan asked
     // its runner for one: why, how it went, what it saved and what it cost. Its tokens are
     // also added to the run's own.
@@ -981,6 +985,8 @@ export const agentChatMessage = pgTable(
     // The configured model and reasoning next to what the answer's session ran on (as on
     // agent_run). Null for an answer whose runner reports neither.
     modelCheck: jsonb('model_check'),
+    // Why the answer failed, where the runtime's words said (as on agent_run).
+    failure: jsonb('failure'),
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
     status: text('status').notNull().default('pending'),

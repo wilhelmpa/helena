@@ -127,6 +127,13 @@ describe('AgUiChunkMapper', () => {
       { type: 'RUN_ERROR', message: 'The runner gave up' },
     ]);
     assert.equal(failed.metadata?.error, 'The runner gave up');
+    assert.equal(failed.metadata?.errorCode, undefined);
+    // A failure the runtime explained carries its code, which the chat words itself.
+    const refused = await messageOf([
+      { type: 'RUN_ERROR', message: 'HTTP 400: not supported', code: 'model-unavailable' },
+    ]);
+    assert.equal(refused.metadata?.error, 'HTTP 400: not supported');
+    assert.equal(refused.metadata?.errorCode, 'model-unavailable');
     const cut = await messageOf([{ type: 'TEXT_MESSAGE_CONTENT', delta: 'Half' }], true);
     assert.equal(cut.metadata?.interrupted, true);
     assert.deepEqual(plain(cut), [{ type: 'text', text: 'Half' }]);

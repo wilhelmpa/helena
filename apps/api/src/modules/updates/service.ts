@@ -392,7 +392,8 @@ export async function collectDigests(): Promise<number> {
         .where(inArray(helenaUpdate.id, ids));
       continue;
     }
-    if (settings.model === null && run.model && isModelRefusal(run.error)) {
+    const refused = run.failureCode === 'model-unavailable' || isModelRefusal(run.error);
+    if (settings.model === null && run.model && refused) {
       // The account does not serve the cheapest model: the next check takes the next one.
       await rememberRefusedModel(run.model);
     }

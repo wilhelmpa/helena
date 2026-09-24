@@ -3,11 +3,14 @@ import { useTranslations } from 'next-intl';
 import type { EngineHealth } from '@/lib/api/endpoints/god';
 import { formatDurationShort } from '@/utils/dates';
 import { workflowsPath } from '@/utils/paths';
+import { useModelFailureText } from '@/features/model-availability/hooks/useModelFailureText';
 
 // What the Helena engine is doing, in one line under the services, and the newest runs
 // that failed, each a link to the project's workflows.
 export default function HomeEngineState({ engine }: { engine: EngineHealth }) {
   const t = useTranslations('god.systemHealth.engine');
+  // A failure the runtime explained (a model the provider refused) in the reader's language.
+  const explained = useModelFailureText();
   return (
     <div className="mt-1 space-y-0.5 px-2 text-xs text-muted-foreground">
       <p>
@@ -29,7 +32,7 @@ export default function HomeEngineState({ engine }: { engine: EngineHealth }) {
               time: failure.at ? formatDurationShort(failure.at) : '',
             })}
           </Link>{' '}
-          {failure.error}
+          {explained(failure.failure) ?? failure.error}
         </p>
       ))}
     </div>

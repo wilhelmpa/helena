@@ -214,7 +214,9 @@ export function canonicalJson(value: unknown): string {
 // when nothing was asked for ("Agent default"), and what the session really ran on. Helena
 // compares them and shows a run whose model or reasoning differs.
 export interface RunModelReport {
-  requested: { model: string | null; reasoning: string | null };
+  // `provider` is the provider the runner routed the model to (a model the catalog lists
+  // under another provider runs there), where the runtime takes one.
+  requested: { model: string | null; reasoning: string | null; provider?: string | null };
   defaults: RuntimeDefaults | null;
   used: SessionFacts | null;
 }
@@ -223,7 +225,7 @@ export interface RunModelReport {
 // store the adapter cannot read.
 export async function runModelReport(
   runtime: RuntimeAdapter | null,
-  requested: { model: string | null; reasoning: string | null },
+  requested: RunModelReport['requested'],
   sessionId: string | undefined,
   streamModel: string | null,
 ): Promise<RunModelReport | undefined> {

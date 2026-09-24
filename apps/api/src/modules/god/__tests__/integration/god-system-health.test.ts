@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   agentRun,
   db,
@@ -54,6 +57,51 @@ const service = (
 
 describe('system health', () => {
   beforeEach(resetDb);
+
+  it('shows the shared model logins the token keeper reports, with the owners command', async () => {
+    const dir = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), 'logins-'));
+    const saved = process.env.HELENA_LOGIN_STATUS_DIR;
+    process.env.HELENA_LOGIN_STATUS_DIR = dir;
+    try {
+      await writeFile(
+        join(dir, 'hermes.json'),
+        JSON.stringify({
+          version: 1,
+          reporter: 'helena-token-keeper',
+          checkedAt: new Date().toISOString(),
+          intervalSeconds: 600,
+          logins: [
+            {
+              store: 'hermes',
+              provider: 'anthropic',
+              id: 'abc123',
+              label: 'anthropic-oauth-1',
+              managed: true,
+              state: 'invalid',
+              expiresAt: null,
+              refreshedAt: null,
+              error: 'HTTP 400 invalid_grant',
+              command: 'hermes auth add anthropic --type oauth',
+            },
+          ],
+          errors: [],
+        }),
+      );
+      const { god } = await setup();
+      const health = (await god.api.god['system-health'].get()).data!;
+      expect(health.logins.problems).toBe(1);
+      expect(health.logins.reports[0]).toMatchObject({ source: 'token-keeper', stale: false });
+      expect(health.logins.reports[0]!.logins[0]).toMatchObject({
+        provider: 'anthropic',
+        state: 'invalid',
+        command: 'hermes auth add anthropic --type oauth',
+      });
+    } finally {
+      if (saved === undefined) delete process.env.HELENA_LOGIN_STATUS_DIR;
+      else process.env.HELENA_LOGIN_STATUS_DIR = saved;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 
   it('shows who reported and who was never seen', async () => {
     const { god } = await setup();

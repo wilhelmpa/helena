@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { byKey } from '@/utils/messageKey';
 import { formatDateTime } from '@/utils/dates';
 import { PIPELINE_STEP_ICONS } from '@/utils/pipelineStepIcons';
+import ModelFailureNote from '@/features/model-availability/components/ModelFailureNote';
+import { knownFailure } from '@/features/model-availability/utils/modelFailure';
 import PipelineRunStepSummary from './PipelineRunStepSummary';
 
 // The name of a step the engine built itself (an agent team and its stages), to show in
@@ -41,6 +43,13 @@ export default function PipelineRunStepItem({
   const known = (group: string, value: string) =>
     t.has(`${group}.${value}` as Parameters<typeof t.has>[0]) ? label(`${group}.${value}`) : value;
   const built = builtName(step);
+  // A step that failed because one of its parts did (an agent team's stage) says why that
+  // part failed, where it was explained.
+  const failure =
+    step.failure ??
+    (step.status === 'failed'
+      ? parts.find((part) => part.status === 'failed' && part.failure)?.failure
+      : null);
   const name = !built
     ? step.name
     : built.key === 'agentTeam'
@@ -103,10 +112,14 @@ export default function PipelineRunStepItem({
             {t('note', { note: step.note })}
           </p>
         )}
-        {step.error && (
-          <p className="text-destructive" dir="auto">
-            {step.error}
-          </p>
+        {knownFailure(failure) ? (
+          <ModelFailureNote failure={failure} error={step.error} />
+        ) : (
+          step.error && (
+            <p className="text-destructive" dir="auto">
+              {step.error}
+            </p>
+          )
         )}
         {step.summary && <PipelineRunStepSummary summary={step.summary} />}
         {parts.length > 0 && (

@@ -10,6 +10,7 @@ import {
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { notHomeAgent } from '#modules/agents/core/home-agent';
 import { listColumns } from '#modules/columns/service';
+import { loadModelAvailability, runtimeOfPolicy } from '#modules/model-availability/service';
 import {
   flattenSteps,
   type DefinitionIssue,
@@ -38,7 +39,8 @@ export interface ProjectContext {
   statuses: { id: number; name: string; stateType: string }[];
   labels: { id: number; name: string }[];
   areas: { id: number; name: string }[];
-  // The models the team's agents run, the only ones a step may run instead.
+  // The models the team's agents run, the only ones a step may run instead; a model the
+  // provider refused this account is left out.
   models: string[];
   // The team's template agents by id, whose copies a template role finds.
   templates: { id: number; username: string; name: string }[];
@@ -49,7 +51,7 @@ export async function loadProjectContext(project: {
   key: string;
   teamId: number;
 }): Promise<ProjectContext> {
-  const [agents, members, statuses, labels, areas, teamAgents] = await Promise.all([
+  const [agents, members, statuses, labels, areas, teamAgents, availability] = await Promise.all([
     db
       .select({
         id: aiAgent.id,
@@ -99,10 +101,12 @@ export async function loadProjectContext(project: {
         name: user.name,
         model: aiAgent.model,
         template: aiAgent.template,
+        runtimePolicy: aiAgent.runtimePolicy,
       })
       .from(aiAgent)
       .innerJoin(user, eq(user.id, aiAgent.userId))
       .where(eq(aiAgent.teamId, project.teamId)),
+    loadModelAvailability(),
   ]);
   return {
     projectId: project.id,
@@ -117,7 +121,15 @@ export async function loadProjectContext(project: {
     labels,
     areas,
     models: [
-      ...new Set(teamAgents.map((agent) => agent.model?.trim()).filter((m): m is string => !!m)),
+      ...new Set(
+        teamAgents
+          .filter(
+            (agent) =>
+              !availability.refusal(runtimeOfPolicy(agent.runtimePolicy), agent.model?.trim()),
+          )
+          .map((agent) => agent.model?.trim())
+          .filter((m): m is string => !!m),
+      ),
     ].sort(),
     templates: teamAgents
       .filter((agent) => agent.template)

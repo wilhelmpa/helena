@@ -14,6 +14,7 @@ import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { recordModelUnavailable } from '#modules/model-availability/service';
 import {
   answerStep,
   finishAgentRun,
@@ -397,6 +398,68 @@ describe('agent team runs', () => {
     const failed = await waitForStatus(started.runId, 'failed');
     expect(failed.error).toContain('failed after 3 attempts');
     expect(new Set([first.id, second.id, third.id]).size).toBe(3);
+  });
+
+  it('fails a stage at once when the provider refuses its model for good, and names it', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await enableAgentTeam(asOwner, { reviewRequired: false });
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    const refused = await answerStep(started.runId, 'team.s1', {
+      status: 'failed',
+      output: "ChatGPT or Codex Subscription rejected the request and retrying won't help.",
+      error: 'HTTP 400: not supported\nsession_id: 20260924_190648_b02504',
+      failure: {
+        code: 'model-unavailable',
+        retryable: false,
+        model: 'gpt-6-terra',
+        detail: "The 'gpt-6-terra' model is not supported when using Codex with a ChatGPT account.",
+      },
+    });
+    const failed = await waitForStatus(started.runId, 'failed');
+    // One attempt, not the three the policy allows, and the provider's words, not the session.
+    expect(failed.error).toContain('the model gpt-6-terra is not available for this account');
+    expect(failed.error).toContain('not supported when using Codex with a ChatGPT account');
+    expect(failed.error).not.toContain('session_id');
+    const stageRuns = await db
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(eq(agentRun.agentId, refused.agentId));
+    expect(stageRuns).toEqual([{ id: refused.id }]);
+    // The run views name it, for the reader's language.
+    const runs = (await asOwner.issues({ issueId: task.id })['agent-team'].runs.get()).data!;
+    expect(runs[0]).toMatchObject({
+      status: 'failed',
+      failure: { code: 'model-unavailable', model: 'gpt-6-terra' },
+    });
+  });
+
+  it('does not start a stage on a model the provider already refused', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await asOwner.teams({ teamId })['ai-agents']({ agentId: designer.id }).patch({
+      model: 'gpt-6-terra',
+    });
+    await recordModelUnavailable(
+      { runtime: 'hermes', provider: 'openai-codex', model: 'gpt-6-terra' },
+      { agentId: designer.id },
+      { code: 'model-unavailable', detail: 'not supported with a ChatGPT account' },
+    );
+    await enableAgentTeam(asOwner, { reviewRequired: false });
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    const failed = await waitForStatus(started.runId, 'failed');
+    expect(failed.error).toContain('@designer runs gpt-6-terra, which openai-codex does not serve');
+    expect(
+      await db.select({ id: agentRun.id }).from(agentRun).where(eq(agentRun.agentId, designer.id)),
+    ).toEqual([]);
+    const stage = (await runSteps(started.runId)).find((row) => row.stepId === 'team.s1');
+    expect(stage).toMatchObject({ status: 'failed' });
+    expect((stage!.state as { runtimeFailure?: unknown }).runtimeFailure).toMatchObject({
+      code: 'model-unavailable',
+      model: 'gpt-6-terra',
+    });
   });
 
   it('fails a stage whose agent is blocked and asks, and a retry runs only that stage again', async () => {

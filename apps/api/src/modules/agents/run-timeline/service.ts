@@ -1,3 +1,4 @@
+import type { RuntimeFailure } from '@helena/sdk';
 import { db, agentRun, agentRunEvent, agentUsage, aiAgent, issue, project, user } from '@repo/db';
 import { and, asc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { HttpError, intEnv, iso } from '#shared/lib';
@@ -115,6 +116,8 @@ export interface RunDetail {
   reflection: ReflectionView | null;
   // The model the run was configured with against the one its session ran on.
   modelCheck: ModelCheck | null;
+  // Why the run failed, where the runtime's words said (a model the provider refused).
+  failure: RuntimeFailure | null;
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;
@@ -202,6 +205,7 @@ export async function getRunDetail(
     blockedQuestion: run.blockedQuestion,
     reflection: reflectionView(run.reflection, run.finishedAt),
     modelCheck: (run.modelCheck as ModelCheck | null) ?? null,
+    failure: (run.failure as RuntimeFailure | null) ?? null,
     startedAt: run.startedAt ? iso(run.startedAt) : null,
     finishedAt: run.finishedAt ? iso(run.finishedAt) : null,
     createdAt: iso(run.createdAt),

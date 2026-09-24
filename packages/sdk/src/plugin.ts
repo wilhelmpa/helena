@@ -10,6 +10,7 @@ import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import type { UiSlot } from './ui';
+import type { RuntimeLoginSource } from './runtime-logins';
 import type { UpdateSource } from './updates';
 import type { UsageLimitSource } from './usage-limits';
 import type { TriggerType, WorkflowStepType } from './workflows';
@@ -61,6 +62,8 @@ export interface PluginContext {
   // Where Helena reads how much of a subscription's limits is used (runner: probes and
   // observers over a runtime's login; API: polls).
   usageLimitSources: Registrar<UsageLimitSource>;
+  // Where Helena reads whether the model logins agents share are usable (API: polls).
+  runtimeLoginSources: Registrar<RuntimeLoginSource>;
   // What Helena runs on and whether a newer version exists (the update center).
   updateSources: Registrar<UpdateSource>;
   events: {

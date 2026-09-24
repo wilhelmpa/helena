@@ -388,6 +388,29 @@
     "agentSync": {
       "title": "ملفات الوكلاء",
       "synced": "{synced} من {total} متزامنة"
+    },
+    "logins": {
+      "title": "تسجيلات الدخول",
+      "summaryOk": "كلها صالحة",
+      "summaryProblems": "{count, plural, zero {لا شيء يحتاجك} one {واحد يحتاجك} two {اثنان يحتاجانك} few {# تحتاجك} many {# تحتاجك} other {# تحتاجك}}",
+      "state": {
+        "ok": "صالح",
+        "okFor": "صالح لمدة {time}",
+        "expiring": "سيُجدَّد قريبًا",
+        "expired": "منتهي الصلاحية",
+        "error": "التجديد يفشل حاليًا",
+        "invalid": "غير صالح",
+        "unknown": "غير معروف"
+      },
+      "separate": "تسجيل دخول مستقل، للعرض فقط",
+      "codexCli": "Codex CLI",
+      "relogin": "سجّل دخول {provider} في Hermes من جديد – نفّذ في طرفية المالك:",
+      "stale": "لم يُبلغ حارس الرموز منذ {time}؛ لا تُجدَّد تسجيلات الدخول.",
+      "copyCommand": "نسخ الأمر",
+      "copied": "تم النسخ",
+      "sources": {
+        "keeper": "حارس الرموز"
+      }
     }
   },
   "plugins": {
@@ -417,6 +440,7 @@
       "bundles": "حزم القوالب",
       "limits": "الحدود",
       "autopilot": "Autopilot",
+      "logins": "تسجيلات الدخول",
       "updates": "التحديثات"
     },
     "problems": {

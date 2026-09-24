@@ -56,6 +56,13 @@ export interface ChatCatalogModel {
   thinkingDefault: string | null;
   // The provider that serves the model, when the catalog lists more than one.
   provider?: string;
+  // Whether the account's own model list names it (true), or the runtime only expects it to
+  // work (false: Hermes adds newer models it has not seen listed). Unset when the catalog
+  // could not ask the account.
+  listed?: boolean;
+  // The model this one is a variant of (a larger context window of the same model), which
+  // the provider serves or refuses together with it.
+  variantOf?: string;
 }
 
 const OUTPUT_FORMATS = [
@@ -161,6 +168,8 @@ function modelsFrom(value: unknown): ChatCatalogModel[] {
       thinkingLevels: levels as string[],
       thinkingDefault: (thinkingDefault as string | null | undefined) ?? null,
       ...(textOf(model.provider) ? { provider: textOf(model.provider) } : {}),
+      ...(typeof model.listed === 'boolean' ? { listed: model.listed } : {}),
+      ...(textOf(model.variantOf) ? { variantOf: textOf(model.variantOf) } : {}),
     };
   });
 }

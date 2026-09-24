@@ -388,6 +388,29 @@
     "agentSync": {
       "title": "Profil agen",
       "synced": "{synced} dari {total} tersinkron"
+    },
+    "logins": {
+      "title": "Login",
+      "summaryOk": "semua valid",
+      "summaryProblems": "{count, plural, other {# membutuhkan Anda}}",
+      "state": {
+        "ok": "valid",
+        "okFor": "valid selama {time}",
+        "expiring": "segera diperbarui",
+        "expired": "kedaluwarsa",
+        "error": "pembaruan sedang gagal",
+        "invalid": "tidak valid",
+        "unknown": "tidak diketahui"
+      },
+      "separate": "login sendiri, hanya ditampilkan",
+      "codexCli": "CLI Codex",
+      "relogin": "Masuk ulang {provider} di Hermes – jalankan di terminal pemilik:",
+      "stale": "Penjaga token belum melapor selama {time}; login tidak diperbarui.",
+      "copyCommand": "Salin perintah",
+      "copied": "Disalin",
+      "sources": {
+        "keeper": "Penjaga token"
+      }
     }
   },
   "plugins": {
@@ -417,6 +440,7 @@
       "bundles": "Paket templat",
       "limits": "Batas",
       "autopilot": "Autopilot",
+      "logins": "Login",
       "updates": "Pembaruan"
     },
     "problems": {

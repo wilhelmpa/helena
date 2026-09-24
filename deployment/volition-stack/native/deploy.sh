@@ -235,12 +235,25 @@ if changed deployment/volition-stack/browser packages/browser-gateway \
   restart+=(volition-project-browser-router.service)
 fi
 
+# The token keeper (token-keeper/install.sh, docs/helena-decisions/token-keeper.md) renews the
+# logins agents share and writes the views isolated agents get of them. `sync` keeps an
+# installed keeper current and installs it where agent isolation is installed, whose launcher
+# refuses a run without the views; so it runs before isolation.sh sync.
+if changed deployment/volition-stack/native/token-keeper deployment/volition-stack/isolation/launcher.json; then
+  "$live/deployment/volition-stack/native/token-keeper/install.sh" sync
+fi
+
 # Agent isolation (isolation.sh): an installed launcher, egress proxy and Plan socket get the
 # checkout's code and units. Installing and switching it on is `isolation.sh apply`.
 if changed deployment/volition-stack/isolation deployment/volition-stack/native/isolation.sh \
   deployment/volition-stack/integration/project-browser.mjs \
   deployment/volition-stack/integration/project-browser-state.mjs; then
   "$live/deployment/volition-stack/native/isolation.sh" sync
+fi
+# Now that the installed launcher binds the views, the keeper's sync takes the agents' group's
+# read access to the real stores away (idempotent; nothing to do on later deploys).
+if changed deployment/volition-stack/native/token-keeper deployment/volition-stack/isolation/launcher.json; then
+  "$live/deployment/volition-stack/native/token-keeper/install.sh" sync
 fi
 
 if ((${#restart[@]} > 0)); then

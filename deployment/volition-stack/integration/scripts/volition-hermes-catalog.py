@@ -157,7 +157,30 @@ def configured_reasoning_default() -> str | None:
     return value or None
 
 
-def provider_model_ids(provider: str) -> list[str]:
+def codex_listed_models(access_token: str) -> list[str] | None:
+    """The models the account's own Codex catalog lists, before Hermes adds the newer ones it
+    expects to work there (its forward-compat models) and their large-context variants. The
+    same request Hermes' live discovery makes; None when it cannot be read."""
+    try:
+        import httpx
+        from agent.codex_headers import codex_account_headers
+        from agent.model_metadata import CODEX_MODELS_CATALOG_URL
+        from hermes_cli.codex_models import _ranked_slugs
+
+        headers = {'Authorization': f'Bearer {access_token}', **codex_account_headers(access_token)}
+        response = httpx.get(CODEX_MODELS_CATALOG_URL, headers=headers, timeout=10)
+        if response.status_code != 200:
+            return None
+        data = response.json()
+        entries = data.get('models', []) if isinstance(data, dict) else []
+        return _ranked_slugs(entries) or None
+    except Exception:  # noqa: BLE001 - Hermes' own discovery is the fallback
+        return None
+
+
+def provider_model_ids(provider: str) -> tuple[list[str], set[str] | None]:
+    """The provider's models, and those of them the account's own list names. The second is
+    None when the catalog could not ask the account, so nothing is marked either way."""
     # Hermes deliberately keeps diagnostics read-only. For the selected Codex provider we may
     # still read the Codex CLI's existing, unexpired login and ask the account-scoped endpoint;
     # this neither copies nor refreshes a credential and is what lets gated models such as Astra
@@ -169,18 +192,42 @@ def provider_model_ids(provider: str) -> list[str]:
         tokens = _import_codex_cli_tokens()
         access_token = str((tokens or {}).get('access_token') or '').strip()
         if access_token:
+            listed = codex_listed_models(access_token)
+            if listed:
+                try:
+                    from hermes_cli.codex_models import _finalize_codex_models
+
+                    return _finalize_codex_models(listed), set(listed)
+                except Exception:  # noqa: BLE001 - Hermes' own discovery follows
+                    pass
             live = get_codex_model_ids(access_token=access_token)
             if live:
-                return live
+                return live, None
 
     from hermes_cli.models import cached_provider_model_ids
 
-    return cached_provider_model_ids(provider, force_refresh=True)
+    return cached_provider_model_ids(provider, force_refresh=True), None
+
+
+def context_variant_suffix(provider: str) -> str | None:
+    """The suffix Hermes gives a larger context window of a Codex model (gpt-5.6-sol-900k).
+    The variant is a picker entry only: on the wire it is the base model, so the provider
+    serves or refuses both together."""
+    if provider != 'openai-codex':
+        return None
+    try:
+        from agent.model_metadata import CODEX_CONTEXT_VARIANT_SUFFIX
+
+        return CODEX_CONTEXT_VARIANT_SUFFIX
+    except Exception:  # noqa: BLE001 - the suffix Hermes has always used
+        return '-900k'
 
 
 def discover_catalog(provider: str) -> list[dict[str, Any]]:
-    ids = provider_model_ids(provider)
+    ids, listed = provider_model_ids(provider)
     default_reasoning = configured_reasoning_default()
+    suffix = context_variant_suffix(provider)
+    known = {str(raw or '').strip() for raw in ids}
     result: list[dict[str, Any]] = []
     seen: set[str] = set()
     for raw in ids:
@@ -189,19 +236,24 @@ def discover_catalog(provider: str) -> list[dict[str, Any]]:
             continue
         seen.add(model_id)
         levels = list(dict.fromkeys(reasoning_levels(provider, model_id)))
-        result.append(
-            {
-                'id': model_id,
-                'name': model_name(model_id),
-                'reasoning': bool(levels),
-                'thinkingLevels': levels,
-                'thinkingDefault': default_reasoning if default_reasoning in levels else None,
-            }
-        )
+        entry: dict[str, Any] = {
+            'id': model_id,
+            'name': model_name(model_id),
+            'reasoning': bool(levels),
+            'thinkingLevels': levels,
+            'thinkingDefault': default_reasoning if default_reasoning in levels else None,
+        }
+        base = model_id[: -len(suffix)] if suffix and model_id.endswith(suffix) else None
+        if base and base in known:
+            entry['variantOf'] = base
+        # Hermes lists models the account's list does not name yet (gpt-6-sol before the
+        # account shows it); Helena shows those as not confirmed until one works.
+        if listed is not None:
+            entry['listed'] = (entry.get('variantOf') or model_id) in listed
+        result.append(entry)
         if len(result) == MAX_MODELS:
             break
     return result
-
 
 
 # Providers besides the configured one whose models the catalog also lists once Hermes
@@ -210,9 +262,13 @@ ADDITIONAL_PROVIDERS = ('anthropic',)
 
 
 def logged_in(provider: str) -> bool:
-    from agent.credential_pool import load_pool
+    """Whether Hermes holds a login for `provider` an agent can use: a pool row that is not dead.
+    A login whose refresh token the provider rejected is dead (the token keeper marks it in the
+    root store, docs/helena-decisions/token-keeper.md); its models stay out of the catalog until
+    the owner signs Hermes in again."""
+    from agent.credential_pool import STATUS_DEAD, load_pool
 
-    return load_pool(provider).has_credentials()
+    return any(entry.last_status != STATUS_DEAD for entry in load_pool(provider).entries())
 
 
 def catalog_models(provider: str) -> list[dict[str, Any]]:

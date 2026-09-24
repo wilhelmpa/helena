@@ -311,6 +311,8 @@ export interface DigestRunState {
   // The model the run was configured with and the one its session really ran on.
   model: string | null;
   usedModel: string | null;
+  // The runtime's own reading of a failure (hub/model-availability: `model-unavailable`).
+  failureCode: string | null;
 }
 
 export async function digestRunState(runId: number): Promise<DigestRunState> {
@@ -321,6 +323,7 @@ export async function digestRunState(runId: number): Promise<DigestRunState> {
       error: agentRun.lastError,
       model: agentRun.model,
       modelCheck: agentRun.modelCheck,
+      failure: agentRun.failure,
     })
     .from(agentRun)
     .where(eq(agentRun.id, runId));
@@ -331,6 +334,7 @@ export async function digestRunState(runId: number): Promise<DigestRunState> {
       error: 'The run is gone',
       model: null,
       usedModel: null,
+      failureCode: null,
     };
   const check = row.modelCheck as { used?: { model?: string | null } | null } | null;
   return {
@@ -339,6 +343,7 @@ export async function digestRunState(runId: number): Promise<DigestRunState> {
     error: row.error,
     model: row.model,
     usedModel: check?.used?.model ?? null,
+    failureCode: (row.failure as { code?: unknown } | null)?.code?.toString() ?? null,
   };
 }
 

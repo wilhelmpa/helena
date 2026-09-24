@@ -9,7 +9,13 @@ import {
   type Assignee,
 } from '#modules/pipelines/definition';
 import { renderTemplate } from '#modules/pipelines/render';
-import { cancelStepRun, queueStepRun, stepRunStatus, summaryOf } from '../../agent-runs';
+import {
+  cancelStepRun,
+  ModelRefusedFailure,
+  queueStepRun,
+  stepRunStatus,
+  summaryOf,
+} from '../../agent-runs';
 import {
   assigneeAgent,
   clip,
@@ -125,6 +131,8 @@ async function prepare(runId: string, step: AgentStep, at: StepExecution): Promi
       agentId: agent.id,
       outcome: 'failed',
       error: clip(error instanceof Error ? error.message : String(error), 2_000),
+      // A model the provider refused this account: the run view words it (runs.ts stepFailure).
+      ...(error instanceof ModelRefusedFailure && { state: { runtimeFailure: error.failure } }),
       finishedAt: new Date(),
     });
     throw error;

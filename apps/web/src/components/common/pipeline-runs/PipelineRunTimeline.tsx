@@ -3,6 +3,8 @@
 import type { PipelineRun, PipelineRunStep } from '@/lib/api/endpoints/pipelines';
 import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
 import { useDecidePipelineApproval } from '@/services/pipelines.service';
+import ModelFailureNote from '@/features/model-availability/components/ModelFailureNote';
+import { knownFailure } from '@/features/model-availability/utils/modelFailure';
 import PipelineRunControls from './PipelineRunControls';
 import PipelineRunHeader from './PipelineRunHeader';
 import PipelineRunStepItem from './PipelineRunStepItem';
@@ -33,10 +35,18 @@ export default function PipelineRunTimeline({
   return (
     <article className="space-y-3 rounded-md border bg-card p-3">
       <PipelineRunHeader run={run} showIssue={showIssue} />
-      {run.error && (
-        <p className="text-xs text-destructive" dir="auto">
-          {run.error}
-        </p>
+      {knownFailure(run.failure) ? (
+        <ModelFailureNote
+          failure={run.failure}
+          error={run.error}
+          className="text-xs text-destructive"
+        />
+      ) : (
+        run.error && (
+          <p className="text-xs text-destructive" dir="auto">
+            {run.error}
+          </p>
+        )
       )}
       {steps.length > 0 && (
         <ol className="space-y-2 border-s ps-3">

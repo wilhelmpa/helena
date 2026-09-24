@@ -3,6 +3,8 @@ import { and, eq } from 'drizzle-orm';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '#modules/agents/model';
 import { runLimit } from '#modules/agents/core/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
+import type { RuntimeFailure } from '@helena/sdk';
+import { agentModelRefusal } from '#modules/model-availability/service';
 import { policyDecider } from './registry';
 import { StepFailure } from './sdk';
 
@@ -62,6 +64,14 @@ export async function queueStepRun(request: StepRunRequest): Promise<number> {
   const model = request.model?.trim() || null;
   if (model && !(await teamRunsModel(agent.teamId, model)))
     throw new StepFailure(`No agent of the team runs the model ${model}`);
+  // A model the provider already refused this account is not tried again here: the stage
+  // fails at once, naming it (a run or chat answer on it that succeeds clears the finding).
+  const refusal = await agentModelRefusal({
+    model: model ?? agent.model,
+    runtimePolicy: agent.runtimePolicy,
+  });
+  if (refusal)
+    throw new ModelRefusedFailure(agent.username, refusal.model, refusal.provider, refusal.detail);
   const decision = await policyDecider().decide({
     agentId: agent.id,
     projectId: request.projectId,
@@ -87,12 +97,29 @@ export async function queueStepRun(request: StepRunRequest): Promise<number> {
   return run!.id;
 }
 
+// A step on a model the provider refused this account. The failure rides on the step's state
+// (`failure`), so the run view words it in the reader's language.
+export class ModelRefusedFailure extends StepFailure {
+  readonly failure: RuntimeFailure;
+
+  constructor(username: string, model: string, provider: string, detail: string | null) {
+    super(
+      `@${username} runs ${model}, which ${provider || 'the provider'} does not serve this ` +
+        `account${detail ? ` (${detail})` : ''}. Choose another model for the agent; ` +
+        'retrying does not help.',
+    );
+    this.failure = { code: 'model-unavailable', retryable: false, model };
+  }
+}
+
 export interface StepRunStatus {
   id: number;
   // pending while queued or held by a runner; then success, failed or canceled.
   status: 'pending' | 'success' | 'failed' | 'canceled';
   output: string | null;
   error: string | null;
+  // Why it failed, where the runtime's words said; not retryable means no new attempt.
+  failure: RuntimeFailure | null;
   blockedQuestion: string | null;
   claimedAt: string | null;
   finishedAt: string | null;
@@ -108,6 +135,7 @@ export async function stepRunStatus(runId: number): Promise<StepRunStatus> {
       blockedQuestion: agentRun.blockedQuestion,
       claimedAt: agentRun.claimedAt,
       finishedAt: agentRun.finishedAt,
+      failure: agentRun.failure,
     })
     .from(agentRun)
     .where(eq(agentRun.id, runId));
@@ -117,6 +145,7 @@ export async function stepRunStatus(runId: number): Promise<StepRunStatus> {
       status: 'canceled',
       output: null,
       error: 'The agent run is gone',
+      failure: null,
       blockedQuestion: null,
       claimedAt: null,
       finishedAt: null,
@@ -126,6 +155,7 @@ export async function stepRunStatus(runId: number): Promise<StepRunStatus> {
     status: row.status as StepRunStatus['status'],
     output: row.output,
     error: row.error,
+    failure: (row.failure as RuntimeFailure | null) ?? null,
     blockedQuestion: row.blockedQuestion,
     claimedAt: row.claimedAt?.toISOString() ?? null,
     finishedAt: row.finishedAt?.toISOString() ?? null,

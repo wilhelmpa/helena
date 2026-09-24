@@ -3,7 +3,7 @@ import { StringDecoder } from 'node:string_decoder';
 import type { ContextUsage } from './agui';
 import { presetOf, type RunnerConfig } from './config';
 import { isolatedEnv, isolationEnabled, launch, LaunchError, type WorkKind } from './isolation';
-import type { CliCommand } from '@helena/sdk';
+import type { CliCommand, RuntimeFailure } from '@helena/sdk';
 import { presetArgv, presetPrompt } from './presets';
 import type { CommandHooks } from './runtime';
 import { runtimeOf } from './runtimes';
@@ -47,6 +47,9 @@ export interface Outcome {
   // The Hermes session the command ran in, and the tool calls it made there.
   sessionId?: string;
   toolCalls?: number;
+  // Why it failed, where the runtime's words say (its type's classifyFailure): a model the
+  // provider does not serve this account, a refusal no retry passes.
+  failure?: RuntimeFailure;
 }
 
 // Only the tail of each stream is reported, so a long transcript still shows its ending —
@@ -60,7 +63,17 @@ const HERMES_RESULT_LIMIT_BYTES = 128 * 1024;
 class HermesResultReader {
   private line = '';
   private oversized = false;
-  result: { text: string; exitCode: number } | undefined;
+  // `error` is Hermes' own summary of a failed turn (the provider's words), `reason` and
+  // `retryable` its verdict on it where the result line carries one.
+  result:
+    | {
+        text: string;
+        exitCode: number;
+        error?: string;
+        reason?: string;
+        retryable?: boolean;
+      }
+    | undefined;
   usage: ContextUsage | undefined;
   // Named on the first line and again on the result, after a compression that moved the
   // session to a new id.
@@ -97,6 +110,11 @@ class HermesResultReader {
         this.result = {
           text: value.text,
           exitCode: typeof value.exit_code === 'number' ? value.exit_code : 0,
+          ...(typeof value.error === 'string' && value.error && { error: value.error }),
+          ...(typeof value.failure_reason === 'string' && { reason: value.failure_reason }),
+          ...(typeof value.failure_retryable === 'boolean' && {
+            retryable: value.failure_retryable,
+          }),
         };
       }
       const tokens = value?.type === 'result' ? value.tokens : undefined;
@@ -380,14 +398,12 @@ async function executeLocal(
   }
 
   hermesResult?.end();
-  const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
-  if (!hermesResult) return outcome;
-  return {
-    ...outcome,
-    ...(hermesResult.usage && { usage: hermesResult.usage }),
-    ...(hermesResult.sessionId && { sessionId: hermesResult.sessionId }),
-    ...(hermesResult.toolCalls > 0 && { toolCalls: hermesResult.toolCalls }),
-  };
+  return finalOutcome(
+    config,
+    preset,
+    settle(code, signal, timedOut, stdout, stderr, config, hermesResult),
+    hermesResult,
+  );
 }
 
 // The same command, started by the launcher as the project's user in its sandbox. The
@@ -476,14 +492,48 @@ async function executeIsolated(
   }
   onStdout(out.end());
   hermesResult?.end();
-  const outcome = settle(code, signal, timedOut, stdout, stderr, config, hermesResult);
-  if (!hermesResult) return outcome;
-  return {
-    ...outcome,
-    ...(hermesResult.usage && { usage: hermesResult.usage }),
-    ...(hermesResult.sessionId && { sessionId: hermesResult.sessionId }),
-    ...(hermesResult.toolCalls > 0 && { toolCalls: hermesResult.toolCalls }),
-  };
+  return finalOutcome(
+    config,
+    preset,
+    settle(code, signal, timedOut, stdout, stderr, config, hermesResult),
+    hermesResult,
+  );
+}
+
+// What Hermes' result line adds to the outcome (the session's token totals, its id and its
+// tool calls), and why a preset's command failed.
+function finalOutcome(
+  config: RunnerConfig,
+  preset: CliCommand | undefined,
+  settled: Outcome,
+  hermesResult: HermesResultReader | null,
+): Outcome {
+  const outcome = hermesResult
+    ? {
+        ...settled,
+        ...(hermesResult.usage && { usage: hermesResult.usage }),
+        ...(hermesResult.sessionId && { sessionId: hermesResult.sessionId }),
+        ...(hermesResult.toolCalls > 0 && { toolCalls: hermesResult.toolCalls }),
+      }
+    : settled;
+  return preset ? withFailure(config, outcome, hermesResult?.result) : outcome;
+}
+
+// A failed command's reason, in the words of its runtime type (classifyFailure), with
+// Hermes' own verdict where its result line carried one.
+export function withFailure(
+  config: Pick<RunnerConfig, 'agent'>,
+  outcome: Outcome,
+  verdict?: { reason?: string; retryable?: boolean },
+): Outcome {
+  if (outcome.status !== 'failed' || outcome.failure) return outcome;
+  const failure = runtimeOf(config.agent)?.classifyFailure?.({
+    output: outcome.output,
+    error: outcome.error ?? null,
+    reason: verdict?.reason ?? null,
+    retryable: verdict?.retryable ?? null,
+  });
+  return failure ? { ...outcome, failure } : outcome;
 }
 
 function settle(
@@ -500,11 +550,12 @@ function settle(
     return { status: 'failed', output: '', error: 'Hermes final result exceeds 128 KiB' };
   if (code === 0 && hermesResult && !hermesResult.result)
     return { status: 'failed', output: '', error: 'Hermes stream ended without a final result' };
-  if (code === 0 && hermesResult?.result?.exitCode)
+  const result = hermesResult?.result;
+  if (code === 0 && result?.exitCode)
     return {
       status: 'failed',
       output,
-      error: `Hermes reported exit code ${hermesResult.result.exitCode}`,
+      error: hermesError(result, stderr, false) ?? `Hermes reported exit code ${result.exitCode}`,
     };
   if (code === 0) return { status: 'success', output };
   // The timeout says more about the failure than whatever the command printed.
@@ -513,6 +564,30 @@ function settle(
     status: 'failed',
     output,
     error:
-      stderr.trim() || (signal ? `Command killed by ${signal}` : `Command exited with ${code}`),
+      (hermesResult ? hermesError(result, stderr, true) : stderr.trim()) ||
+      (signal ? `Command killed by ${signal}` : `Command exited with ${code}`),
   };
+}
+
+// Hermes ends its stderr with the session it ran in ("session_id: …"), which says nothing
+// about a failure. What failed is on its result line: the provider's summary in `error`, and,
+// for a process that failed, Hermes' own account of the failed turn in the text ("…
+// rejected the request and retrying won't help … Provider said: HTTP 400: …"). Anything
+// else on stderr (a sandbox note, a traceback) is kept after it.
+const HERMES_SESSION_LINE = /^\s*session_id:\s*\S*\s*$/gm;
+const HERMES_ERROR_LIMIT = 500;
+
+export function hermesError(
+  result: HermesResultReader['result'],
+  stderr: string,
+  fromText: boolean,
+): string | undefined {
+  const printed = stderr.replace(HERMES_SESSION_LINE, '').trim();
+  const text = fromText ? (result?.text.trim() ?? '') : '';
+  const told =
+    result?.error ||
+    (!printed && text ? (/Provider said:\s*([^\n]+)/.exec(text)?.[1] ?? text.split('\n')[0]!) : '');
+  const error = [told, printed].filter(Boolean).join('\n');
+  if (!error) return undefined;
+  return error.length > HERMES_ERROR_LIMIT ? `${error.slice(0, HERMES_ERROR_LIMIT - 1)}…` : error;
 }

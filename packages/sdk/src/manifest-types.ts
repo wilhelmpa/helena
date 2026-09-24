@@ -40,6 +40,8 @@ export interface PluginProvides {
   profileContributions?: string[];
   // Usage-limit sources (how much of a subscription's limits is used).
   usageLimitSources?: string[];
+  // Runtime login sources (whether the model logins agents share are usable).
+  runtimeLoginSources?: string[];
   // Update sources (whether a newer version of something Helena runs on exists).
   updateSources?: string[];
   // Event types the plugin publishes; always under its own id.

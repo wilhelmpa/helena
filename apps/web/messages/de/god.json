@@ -388,6 +388,29 @@
     "agentSync": {
       "title": "Agenten-Profile",
       "synced": "{synced} von {total} synchron"
+    },
+    "logins": {
+      "title": "Anmeldungen",
+      "summaryOk": "alle gültig",
+      "summaryProblems": "{count, plural, one {# braucht dich} other {# brauchen dich}}",
+      "state": {
+        "ok": "gültig",
+        "okFor": "gültig, noch {time}",
+        "expiring": "wird bald erneuert",
+        "expired": "abgelaufen",
+        "error": "Erneuern klappt gerade nicht",
+        "invalid": "ungültig",
+        "unknown": "unbekannt"
+      },
+      "separate": "eigene Anmeldung, nur angezeigt",
+      "codexCli": "Codex-CLI",
+      "relogin": "{provider} in Hermes neu anmelden – im Owner-Terminal ausführen:",
+      "stale": "Der Token-Keeper hat sich seit {time} nicht gemeldet; die Anmeldungen werden nicht erneuert.",
+      "copyCommand": "Befehl kopieren",
+      "copied": "Kopiert",
+      "sources": {
+        "keeper": "Token-Keeper"
+      }
     }
   },
   "plugins": {
@@ -417,6 +440,7 @@
       "bundles": "Vorlagen-Pakete",
       "limits": "Limits",
       "autopilot": "Autopilot",
+      "logins": "Anmeldungen",
       "updates": "Updates"
     },
     "problems": {

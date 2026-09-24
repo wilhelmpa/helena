@@ -9,6 +9,7 @@ import type { Artifact } from '../../utils/artifacts';
 import { ARTIFACT_RENDERERS, ArtifactOpenContext } from './ChatArtifactCard';
 import ChatApprovalCard from './ChatApprovalCard';
 import ChatSources from './ChatSources';
+import { useModelFailureText } from '@/features/model-availability/hooks/useModelFailureText';
 
 export interface ChatMessageBubbleAssistantProps {
   message: PlanUIMessage;
@@ -37,6 +38,15 @@ export default function ChatMessageBubbleAssistant({
     [message, projectKey, streaming],
   );
   const error = message.metadata?.error;
+  // A failure the runtime explained (a model the provider refused) in the reader's language.
+  const explained = useModelFailureText()(
+    message.metadata?.errorCode
+      ? {
+          code: message.metadata.errorCode,
+          model: message.metadata.errorModel ?? message.metadata.model,
+        }
+      : null,
+  );
 
   return (
     <ArtifactOpenContext.Provider value={onShowArtifact}>
@@ -48,8 +58,8 @@ export default function ChatMessageBubbleAssistant({
           renderers={ARTIFACT_RENDERERS}
         />
         {error && (
-          <p dir="auto" className="text-sm text-destructive">
-            {error}
+          <p dir="auto" className="text-sm text-destructive" title={explained ? error : undefined}>
+            {explained ?? error}
           </p>
         )}
         {sources.length > 0 && <ChatSources sources={sources} projectKey={projectKey} />}

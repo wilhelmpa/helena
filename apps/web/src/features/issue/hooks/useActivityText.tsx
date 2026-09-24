@@ -27,6 +27,7 @@ const isLongValue = (text: string | null): text is string =>
 // connective words — the whole row stays secondary to a comment.
 export function useActivityText() {
   const t = useTranslations('issue.activity');
+  const modelLine = useTranslations('modelAvailability');
   const phrase = byKey(useTranslations('issueLinks.phrases'));
   const priorityLabel = usePriorityLabel();
 
@@ -179,6 +180,9 @@ export function useActivityText() {
           ),
         };
       case 'agent_finished':
+        // A run the provider refused names the model it was set to.
+        if (subject === 'model-unavailable')
+          return { line: modelLine('activity', { model: to ?? '' }) };
         return { line: line(subject === 'failed' ? 'agentFailed' : 'agentFinished') };
       case 'workflow_run_limited':
         return { line: rich('workflowRunLimited', { workflow: subject ?? '' }) };
