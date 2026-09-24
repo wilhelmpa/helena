@@ -206,7 +206,7 @@ export const app = new Elysia()
           { name: 'Workflows', description: 'Project-bound Mastra workflows and runs' },
           {
             name: 'Workflow builder',
-            description: 'Workflows members put together in Plan, which Mastra runs',
+            description: 'Workflows members put together in Helena, which Mastra runs',
           },
           { name: 'Webhooks', description: 'Outgoing webhook subscriptions' },
           {
@@ -255,7 +255,7 @@ export const app = new Elysia()
           },
           {
             name: 'Approvals',
-            description: 'Agent requests to act outside Plan and the decisions on them',
+            description: 'Agent requests to act outside Helena and the decisions on them',
           },
           { name: 'Sync', description: 'Change markers a client polls for live refresh' },
           {

@@ -84,7 +84,7 @@ export async function stageJanitor(): Promise<void> {
 export async function syncSchedules(): Promise<void> {
   const changed = await janitorJob(WORKFLOW_SCHEDULES, reconcileWorkflowSchedules);
   if (changed > 0)
-    console.log(`[background] brought ${changed} workflow schedules in line with Plan`);
+    console.log(`[background] brought ${changed} workflow schedules in line with Helena`);
 }
 
 // Ends a run that kept resuming past the instance's limit: it would otherwise sit

@@ -91,7 +91,7 @@ export interface RuntimeStatus {
   capabilities: string[];
   detail: string | null;
   conflicts?: RuntimeConflict[];
-  // What the runner put back after it was changed or removed outside Plan: managed files
+  // What the runner put back after it was changed or removed outside Helena: managed files
   // and plugin links, by their path in the Hermes home.
   restored?: string[];
   inventory?: HermesInventory;
@@ -748,7 +748,7 @@ function latest(paths: string[]): string[] {
 }
 
 const RESTORED_DETAIL =
-  'Files or plugin links changed outside Plan were restored; a changed file is kept next to it.';
+  'Files or plugin links changed outside Helena were restored; a changed file is kept next to it.';
 
 // How often the runner reads back what Hermes loads when nothing it knows of changed: the
 // shared configuration can change under it. A new revision, a run or chat answer, a restored

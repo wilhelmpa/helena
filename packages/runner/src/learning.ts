@@ -91,7 +91,7 @@ async function readFileSafe(path: string, limit: number): Promise<string | null>
 }
 
 // A skill directory below skills/, one or two segments deep, that is neither a link nor
-// one of Plan's skills, which `planSkills` names by their directory below plan-managed.
+// one of Helena's skills, which `planSkills` names by their directory below plan-managed.
 async function learnedSkillDir(
   hermesHome: string,
   path: string,
@@ -102,7 +102,7 @@ async function learnedSkillDir(
     throw new Error('The skill path is invalid');
   }
   if (segments[0] === PLAN_CATEGORY && (segments.length === 1 || planSkills.has(segments[1]))) {
-    throw new Error("Plan's own skills are changed in Plan");
+    throw new Error("Helena's own skills are changed in Helena");
   }
   let current = join(hermesHome, 'skills');
   for (const segment of segments) {

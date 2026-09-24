@@ -149,7 +149,7 @@ export const runtimeInventory = t.Object({
         {
           description:
             "'bundled' ships with Hermes, 'hub' was installed from the Skills Hub, 'plan' is " +
-            "one of Plan's skills, 'agent' was created by the agent.",
+            "one of Helena's skills, 'agent' was created by the agent.",
         },
       ),
       path: t.Optional(
@@ -192,7 +192,7 @@ export const runtimeState = t.Object({
   conflicts: t.Array(runtimeConflict),
   restored: t.Array(t.String(), {
     description:
-      'What the runtime put back after it was changed or removed outside Plan: managed ' +
+      'What the runtime put back after it was changed or removed outside Helena: managed ' +
       'files and plugin links, by their path in the runtime.',
   }),
   inventory: t.Nullable(runtimeInventory),

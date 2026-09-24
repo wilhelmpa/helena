@@ -179,7 +179,7 @@ export const gitSettingsRoutes = new Elysia({
       detail: {
         summary: 'Disconnect a repository and remove its managed webhook',
         description:
-          'Delete the repository connection and remove the webhook that Plan installed at the provider.',
+          'Delete the repository connection and remove the webhook that Helena installed at the provider.',
       },
     },
   );

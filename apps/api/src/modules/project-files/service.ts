@@ -63,14 +63,14 @@ function fileSystemError(error: unknown, notFound: string): never {
   const code = errorCode(error);
   if (code === 'ENOENT') throw new HttpError(404, notFound);
   if (code === 'EACCES' || code === 'EPERM') {
-    throw new HttpError(403, 'Plan has no access to this folder', 'not_readable');
+    throw new HttpError(403, 'Helena has no access to this folder', 'not_readable');
   }
   if (code === 'ENOTDIR') throw new HttpError(400, 'File path is invalid');
   throw error;
 }
 
 function assertWritable(root: FileRoot) {
-  if (!root.writable) throw new HttpError(403, 'This folder is read-only in Plan', 'read_only');
+  if (!root.writable) throw new HttpError(403, 'This folder is read-only in Helena', 'read_only');
 }
 
 function textPath(relative: string): string {

@@ -354,7 +354,7 @@ export const SystemHealthResponse = t.Object({
       t.Number({
         description:
           'Active agent-team runs Mastra has not moved on for 15 minutes that wait on no ' +
-          'stage run in Plan. Null while Mastra cannot be asked.',
+          'stage run in Helena. Null while Mastra cannot be asked.',
       }),
     ),
   }),

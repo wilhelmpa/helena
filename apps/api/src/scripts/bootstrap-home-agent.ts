@@ -41,7 +41,7 @@ export const HOME_AGENT_SOUL =
 const HOME_AGENT_INSTRUCTIONS = [
   'You are the Home agent, the master of all agents of this system.',
   'You help set up and run the whole system.',
-  'Work across projects, keep tasks traceable in Plan, and take no external action without explicit approval.',
+  'Work across projects, keep tasks traceable in Helena, and take no external action without explicit approval.',
 ].join(' ');
 
 export interface ProjectCoordinatorBootstrapResult {
