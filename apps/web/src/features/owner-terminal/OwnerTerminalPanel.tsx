@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { OwnerTerminalKind } from '@/lib/api/endpoints/owner-terminal';
@@ -18,6 +17,7 @@ import GrantBanner from './components/GrantBanner';
 import TerminalTabBar from './components/TerminalTabBar';
 import MobileKeyBar from './components/MobileKeyBar';
 import { attachTerminalClipboard } from './utils/terminalClipboard';
+import { terminalClipboardToasts } from './utils/terminalClipboardToasts';
 
 export interface OpenTerminalTab {
   kind: OwnerTerminalKind;
@@ -112,11 +112,13 @@ export default function OwnerTerminalPanel() {
   // können im Terminal"); see utils/terminalClipboard.ts.
   useEffect(() => {
     if (!grant.data?.active) return;
-    const copied = () =>
-      toast.success(t('clipboard.copied'), { id: 'terminal-copied', duration: 1500 });
+    const notes = terminalClipboardToasts({
+      copied: t('clipboard.copied'),
+      pressToCopy: (keys) => t('clipboard.pressToCopy', { keys }),
+    });
     const cleanups = Object.values(frames.current)
       .filter((frame): frame is HTMLIFrameElement => !!frame)
-      .map((frame) => attachTerminalClipboard(frame, copied));
+      .map((frame) => attachTerminalClipboard(frame, notes.copied, notes.pending));
     return () => cleanups.forEach((cleanup) => cleanup());
   }, [tabs, grant.data?.active, t]);
 

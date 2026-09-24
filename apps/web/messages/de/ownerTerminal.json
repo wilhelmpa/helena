@@ -32,6 +32,7 @@
     "paste": "Einfügen"
   },
   "clipboard": {
-    "copied": "In die Zwischenablage kopiert"
+    "copied": "In die Zwischenablage kopiert",
+    "pressToCopy": "Markiert – zum Kopieren {keys} drücken"
   }
 }

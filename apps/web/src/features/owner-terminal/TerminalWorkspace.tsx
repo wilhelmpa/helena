@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import WorkspaceFrame from '@/components/layout/WorkspaceFrame';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
@@ -10,6 +9,7 @@ import { workspaceTools } from '@/utils/workspaceTools';
 import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import OwnerTerminalPanel from './OwnerTerminalPanel';
 import { attachTerminalClipboard } from './utils/terminalClipboard';
+import { terminalClipboardToasts } from './utils/terminalClipboardToasts';
 
 // The "terminal" tool in the Werkzeug-Panel: the owner terminal in Home, the
 // existing project terminal (a plain iframe, unchanged) everywhere else. See
@@ -44,11 +44,11 @@ export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps)
     const observer = new ResizeObserver(fit);
     observer.observe(node);
     const frame = node.querySelector('iframe');
-    const detach = frame
-      ? attachTerminalClipboard(frame, () =>
-          toast.success(tTerminal('clipboard.copied'), { id: 'terminal-copied', duration: 1500 }),
-        )
-      : undefined;
+    const notes = terminalClipboardToasts({
+      copied: tTerminal('clipboard.copied'),
+      pressToCopy: (keys) => tTerminal('clipboard.pressToCopy', { keys }),
+    });
+    const detach = frame ? attachTerminalClipboard(frame, notes.copied, notes.pending) : undefined;
     return () => {
       observer.disconnect();
       detach?.();

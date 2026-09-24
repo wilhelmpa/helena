@@ -32,6 +32,7 @@
     "paste": "Pegar"
   },
   "clipboard": {
-    "copied": "Copiado al portapapeles"
+    "copied": "Copiado al portapapeles",
+    "pressToCopy": "Seleccionado: pulsa {keys} para copiar"
   }
 }

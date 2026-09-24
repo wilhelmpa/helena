@@ -19,6 +19,7 @@ interface Disposable {
 }
 
 interface TerminalLike {
+  options: { macOptionClickForcesSelection?: boolean };
   hasSelection(): boolean;
   getSelection(): string;
   clearSelection(): void;
@@ -91,21 +92,43 @@ function copyInFrame(win: TerminalWindow, term: TerminalLike, text: string): boo
 export function attachTerminalClipboard(
   frame: HTMLIFrameElement,
   onCopied: () => void,
+  onPending: () => void = () => {},
 ): () => void {
   const attached = new WeakSet<TerminalLike>();
   const quieted = new WeakSet<Window>();
   const disposables: Disposable[] = [];
+  // A marking tmux handed over when the browser would not copy it: Safari lets a page copy
+  // only inside the click or key press itself, and tmux's OSC 52 arrives a moment after the
+  // mouse button came up. The next Cmd+C / Ctrl+Shift+C, a key press, copies it.
+  let pending: string | null = null;
 
-  function copy(win: TerminalWindow, term: TerminalLike, text: string) {
+  function copy(win: TerminalWindow, term: TerminalLike, text: string, fromKey = false) {
     if (!text) return;
+    const refused = () => {
+      if (fromKey) return;
+      pending = text;
+      onPending();
+    };
     const secure = win.navigator.clipboard as (Clipboard & { helenaFallback?: true }) | undefined;
     if (secure?.writeText && !secure.helenaFallback) {
-      secure.writeText(text).then(onCopied, () => {
-        if (copyInFrame(win, term, text)) onCopied();
-      });
+      secure.writeText(text).then(
+        () => {
+          pending = null;
+          onCopied();
+        },
+        () => {
+          if (copyInFrame(win, term, text)) {
+            pending = null;
+            onCopied();
+          } else refused();
+        },
+      );
       return;
     }
-    if (copyInFrame(win, term, text)) onCopied();
+    if (copyInFrame(win, term, text)) {
+      pending = null;
+      onCopied();
+    } else refused();
   }
 
   function attach() {
@@ -120,6 +143,13 @@ export function attachTerminalClipboard(
     if (!term || attached.has(term)) return;
     attached.add(term);
     const frameWindow = win;
+    // On a Mac, Option+drag marks in the terminal itself even while tmux has the mouse
+    // (Shift+drag does so elsewhere); Cmd+C then copies it.
+    try {
+      term.options.macOptionClickForcesSelection = true;
+    } catch {
+      // an older terminal without the option
+    }
 
     // wetty asks "Leave site?" before its page unloads, so reloading or leaving Helena asked
     // too. The session lives on in tmux, so nothing is lost: a capture listener at the
@@ -154,8 +184,12 @@ export function attachTerminalClipboard(
       if (action !== 'copy') return true;
       if (event.type === 'keydown') {
         event.preventDefault();
-        copy(frameWindow, term, term.getSelection());
-        if (!event.shiftKey && !event.metaKey) term.clearSelection();
+        if (term.hasSelection()) {
+          copy(frameWindow, term, term.getSelection(), true);
+          if (!event.shiftKey && !event.metaKey) term.clearSelection();
+        } else if (pending) {
+          copy(frameWindow, term, pending, true);
+        }
       }
       return false;
     });

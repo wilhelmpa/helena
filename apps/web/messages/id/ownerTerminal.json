@@ -32,6 +32,7 @@
     "paste": "Tempel"
   },
   "clipboard": {
-    "copied": "Disalin ke papan klip"
+    "copied": "Disalin ke papan klip",
+    "pressToCopy": "Dipilih – tekan {keys} untuk menyalin"
   }
 }

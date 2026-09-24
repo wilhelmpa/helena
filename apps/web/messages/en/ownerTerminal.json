@@ -32,6 +32,7 @@
     "paste": "Paste"
   },
   "clipboard": {
-    "copied": "Copied to clipboard"
+    "copied": "Copied to clipboard",
+    "pressToCopy": "Selected – press {keys} to copy"
   }
 }

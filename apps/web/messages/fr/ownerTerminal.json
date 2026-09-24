@@ -32,6 +32,7 @@
     "paste": "Coller"
   },
   "clipboard": {
-    "copied": "Copié dans le presse-papiers"
+    "copied": "Copié dans le presse-papiers",
+    "pressToCopy": "Sélectionné – appuyez sur {keys} pour copier"
   }
 }
