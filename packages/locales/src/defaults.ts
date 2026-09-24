@@ -102,11 +102,30 @@ export function findState<T extends { name: string }>(
 
 export type IssueTypeKey = keyof DefaultNames['issueTypes'];
 
+// The spheres of work the create dialog offers, in its order.
+export const PROJECT_PRESET_KEYS = [
+  'general',
+  'software',
+  'product',
+  'content',
+  'marketing',
+  'design',
+  'sales',
+  'operations',
+  'support',
+  'recruiting',
+] as const;
+
+export type ProjectPresetKey = (typeof PROJECT_PRESET_KEYS)[number];
+
 // The issue types a new project starts with, picked by sphere of work in the create
 // dialog. The first entry becomes the project's default type. "general" is the fallback
 // when no preset is chosen: a single Task, so the project is usable without committing
 // to a classification.
-export const PROJECT_PRESETS = {
+export const PROJECT_PRESETS: Record<
+  ProjectPresetKey,
+  readonly { type: IssueTypeKey; color: string }[]
+> = {
   general: [{ type: 'task', color: '#0ea5e9' }],
   software: [
     { type: 'feature', color: '#8b5cf6' },
@@ -165,11 +184,7 @@ export const PROJECT_PRESETS = {
     { type: 'request', color: '#8b5cf6' },
     { type: 'policy', color: '#6b7280' },
   ],
-} as const satisfies Record<string, readonly { type: IssueTypeKey; color: string }[]>;
-
-export type ProjectPresetKey = keyof typeof PROJECT_PRESETS;
-
-export const PROJECT_PRESET_KEYS = Object.keys(PROJECT_PRESETS) as ProjectPresetKey[];
+};
 
 export const DEFAULT_PROJECT_PRESET: ProjectPresetKey = 'general';
 
@@ -181,8 +196,7 @@ export function isProjectPreset(value: unknown): value is ProjectPresetKey {
 // "general".
 export function presetIssueTypes(preset: string | undefined, locale: Locale) {
   const names = defaultNames(locale).issueTypes;
-  const entries: readonly { type: IssueTypeKey; color: string }[] =
-    PROJECT_PRESETS[isProjectPreset(preset) ? preset : DEFAULT_PROJECT_PRESET];
+  const entries = PROJECT_PRESETS[isProjectPreset(preset) ? preset : DEFAULT_PROJECT_PRESET];
   return entries.map(({ type, color }) => ({ key: type, name: names[type], color }));
 }
 
