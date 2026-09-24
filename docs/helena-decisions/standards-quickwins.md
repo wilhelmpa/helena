@@ -20,6 +20,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-04 | done | see git log | Popover + Command (cmdk); `@base-ui/react` removed |
 | WEB-15 | done | see git log | Next.js nonce pattern, no library |
 | WEB-07 | done | see git log | next-intl `timeZone`, `@date-fns/tz` 1.5.0 (MIT), date-fns, `Intl.DurationFormat` |
+| WEB-05 | done (panels later, as the audit says) | see git log | Radix AlertDialog, RadioGroup, ToggleGroup, Dialog (`radix-ui`) |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -145,3 +146,11 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - **Durations:** `formatDuration` (9 call sites) is `Intl.DurationFormat` narrow in the display language: "5m/3h/11d" in English as before, "0 Min." on the German board where it used to say "0m"; the timeline's "<1m" too.
 - **Plurals and English text:** the subtask disposal dialog printed "…2 Unteraufgaben.s. Choose what happens to them." and "New parent:" in every language; the integration picker "3 tools". New ICU messages `issue.subtaskDisposal.choose`, `.newParent`, `teams.integrations.toolCount` in all 10 locales. The Administrator security page and its audit list used `toLocaleString()` in the browser's language and zone; they use `formatDateTime` now, and chart tooltips format numbers in the display language.
 - Checked in the browser: the cookie follows the browser zone signed out and the account zone signed in; the German board shows "0 Min.".
+
+## WEB-05: Radix widgets instead of hand-written ARIA
+
+- `ConfirmDialog` (41 callers, API unchanged) is a Radix **AlertDialog** (`components/ui/alert-dialog.tsx`, shadcn's): announced as an alert dialog, focus starts on Cancel, a click beside it no longer dismisses it (Cancel and Escape do). The one `window.confirm` (disconnecting a git provider) uses it too.
+- The five hand-built radio groups (registration mode, agent network mode, new-project preset, custom field type and member scope) are Radix **RadioGroup**: one tab stop, the arrow keys move the choice. The e-mail `ProviderToggle`, a "tablist" without tab panels, is a Radix **ToggleGroup** (single).
+- The narrow chat list (`ChatListDrawer`) is a Radix **Dialog** rendered in place (no portal, so it stays inside the chat's own box): focus is trapped and restored, the page behind is inert, Escape and a click beside it close it; a visually hidden close button replaces the unlabeled backdrop button.
+- `ResizeGrip` is a focusable `role="separator"` that the arrow keys move (10 px, Shift 50 px). Moving the resizable layouts to `react-resizable-panels` stays for later, as the audit says (persisted pixel widths need a spike).
+- Checked in the browser: alert dialog role, focus on Cancel, outside click ignored, Escape closes; radio groups select by click and by arrow keys (a CDP key with a real hold: Radix checks on focus while the key is down); the provider toggle renders as radios. The drawer check was cut short when Kingston went down.
