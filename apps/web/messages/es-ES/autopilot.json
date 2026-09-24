@@ -160,7 +160,7 @@
     "perMTok": "€ por 1 M de tokens",
     "sourceLabel": "Fuente",
     "source": {
-      "models.dev": "models.dev",
+      "modelsDev": "models.dev",
       "manual": "a mano"
     },
     "import": "Actualizar desde models.dev",
@@ -172,7 +172,7 @@
     "importedAt": "Última actualización: {date} ({from})",
     "from": {
       "snapshot": "lista incluida en Helena",
-      "models.dev": "models.dev"
+      "modelsDev": "models.dev"
     },
     "add": "Introducir un precio",
     "edit": "Editar",

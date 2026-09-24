@@ -160,7 +160,7 @@
     "perMTok": "€ per 1 jt token",
     "sourceLabel": "Sumber",
     "source": {
-      "models.dev": "models.dev",
+      "modelsDev": "models.dev",
       "manual": "manual"
     },
     "import": "Perbarui dari models.dev",
@@ -172,7 +172,7 @@
     "importedAt": "Terakhir diperbarui: {date} ({from})",
     "from": {
       "snapshot": "daftar bawaan Helena",
-      "models.dev": "models.dev"
+      "modelsDev": "models.dev"
     },
     "add": "Masukkan harga",
     "edit": "Ubah",

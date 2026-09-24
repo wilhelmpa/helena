@@ -160,7 +160,7 @@
     "perMTok": "€ за 1 млн токенов",
     "sourceLabel": "Источник",
     "source": {
-      "models.dev": "models.dev",
+      "modelsDev": "models.dev",
       "manual": "вручную"
     },
     "import": "Обновить из models.dev",
@@ -172,7 +172,7 @@
     "importedAt": "Обновлено: {date} ({from})",
     "from": {
       "snapshot": "список из поставки Helena",
-      "models.dev": "models.dev"
+      "modelsDev": "models.dev"
     },
     "add": "Ввести цену",
     "edit": "Изменить",

@@ -160,7 +160,7 @@
     "perMTok": "€ pro 1 Mio. Tokens",
     "sourceLabel": "Quelle",
     "source": {
-      "models.dev": "models.dev",
+      "modelsDev": "models.dev",
       "manual": "von Hand"
     },
     "import": "Von models.dev aktualisieren",
@@ -172,7 +172,7 @@
     "importedAt": "Zuletzt aktualisiert: {date} ({from})",
     "from": {
       "snapshot": "mitgelieferte Liste",
-      "models.dev": "models.dev"
+      "modelsDev": "models.dev"
     },
     "add": "Preis eintragen",
     "edit": "Bearbeiten",

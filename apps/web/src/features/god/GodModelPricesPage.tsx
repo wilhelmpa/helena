@@ -111,7 +111,9 @@ export default function GodModelPricesPage() {
         <p className="text-xs text-muted-foreground">
           {t('importedAt', {
             date: formatDateTime(settings.importedAt),
-            from: settings.importedFrom ? t(`from.${settings.importedFrom}`) : '',
+            from: settings.importedFrom
+              ? t(settings.importedFrom === 'snapshot' ? 'from.snapshot' : 'from.modelsDev')
+              : '',
           })}
         </p>
       )}
@@ -156,7 +158,7 @@ export default function GodModelPricesPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={item.source === 'manual' ? 'secondary' : 'outline'}>
-                      {t(`source.${item.source}`)}
+                      {t(item.source === 'manual' ? 'source.manual' : 'source.modelsDev')}
                     </Badge>
                   </TableCell>
                   <TableCell>

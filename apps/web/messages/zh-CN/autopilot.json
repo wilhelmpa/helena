@@ -160,7 +160,7 @@
     "perMTok": "每 100 万令牌 €",
     "sourceLabel": "来源",
     "source": {
-      "models.dev": "models.dev",
+      "modelsDev": "models.dev",
       "manual": "手动"
     },
     "import": "从 models.dev 更新",
@@ -172,7 +172,7 @@
     "importedAt": "上次更新：{date}（{from}）",
     "from": {
       "snapshot": "Helena 自带列表",
-      "models.dev": "models.dev"
+      "modelsDev": "models.dev"
     },
     "add": "输入价格",
     "edit": "编辑",

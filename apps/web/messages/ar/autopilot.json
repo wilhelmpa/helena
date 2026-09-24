@@ -160,7 +160,7 @@
     "perMTok": "€ لكل مليون رمز",
     "sourceLabel": "المصدر",
     "source": {
-      "models.dev": "models.dev",
+      "modelsDev": "models.dev",
       "manual": "يدويًا"
     },
     "import": "التحديث من models.dev",
@@ -172,7 +172,7 @@
     "importedAt": "آخر تحديث: {date} ({from})",
     "from": {
       "snapshot": "القائمة المرفقة مع Helena",
-      "models.dev": "models.dev"
+      "modelsDev": "models.dev"
     },
     "add": "إدخال سعر",
     "edit": "تعديل",
