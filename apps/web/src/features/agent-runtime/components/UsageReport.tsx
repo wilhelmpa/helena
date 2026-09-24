@@ -10,6 +10,9 @@ import { compactTokens, formatElapsed } from '@/utils/agentUsage';
 import { useAgentUsage } from '../services/agentRuntime.service';
 
 const PERIODS = [7, 30, 90] as const;
+
+// The name a grouping is offered under (agentRuntime.usage.grouping).
+export type UsageGrouping = 'agent' | 'model' | 'project' | 'day';
 const DAY_MS = 86_400_000;
 
 // What agents spent, from Helena's token ledger: tokens (OpenTelemetry GenAI counts, input
@@ -23,7 +26,7 @@ export default function UsageReport({
   teamId: number;
   agentId?: number;
   // The groupings offered, the first shown first: each a list of dimensions.
-  groupings: { id: string; by: UsageDimension[] }[];
+  groupings: { id: UsageGrouping; by: UsageDimension[] }[];
 }) {
   const t = useTranslations('agentRuntime.usage');
   const format = useFormatter();

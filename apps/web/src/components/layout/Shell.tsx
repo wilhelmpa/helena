@@ -27,6 +27,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/AppSidebar';
 import AppHeader from '@/components/layout/AppHeader';
 import CommandLayer from '@/components/layout/CommandLayer';
+import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
@@ -263,6 +264,8 @@ export default function Shell({
                 <ShellHeaderExtra store={headerExtra} bare />
               </div>
             )}
+
+            <EmergencyStopBanner />
 
             {errorMsg && !forbidden && (
               <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">

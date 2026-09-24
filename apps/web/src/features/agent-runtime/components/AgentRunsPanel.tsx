@@ -108,6 +108,16 @@ function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
         )}
       </Badge>
       <span className="min-w-0 flex-1 truncate">{subject}</span>
+      {run.blockedQuestion && (
+        <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
+          {t('blocked')}
+        </Badge>
+      )}
+      {run.modelCheck && run.modelCheck.mismatch.length > 0 && (
+        <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
+          {t('modelMismatch')}
+        </Badge>
+      )}
       {run.contextTokens !== undefined && (
         <span className="shrink-0 text-xs text-muted-foreground" dir="ltr">
           {compactTokens(run.contextTokens)}

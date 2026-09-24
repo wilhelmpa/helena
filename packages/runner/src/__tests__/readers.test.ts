@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { answerRuntimeRequest, isRuntimeRequest, readerCapabilities } from '../readers';
@@ -333,6 +333,36 @@ describe('runtime requests', () => {
     expect(readerCapabilities('hermes')).toContain('transcripts');
     expect(readerCapabilities('claude')).not.toContain('logs');
     expect(readerCapabilities('opencode')).toEqual([]);
+  });
+
+  it('pins and unpins a skill through the Hermes CLI', async () => {
+    const home = await tempHome();
+    const bin = join(home, 'hermes');
+    const calls = join(home, 'calls');
+    await writeFile(
+      bin,
+      `#!/bin/sh\necho "$@" >> '${calls}'\nif [ "$2" = status ]; then echo 'curator: PAUSED'; fi\n`,
+    );
+    await chmod(bin, 0o755);
+    const context = { runtime: 'hermes', home, cwd: home, env: { HERMES_BIN: bin } };
+    const status = (await answerRuntimeRequest(
+      { op: 'curator.set', action: 'pin', skill: 'release-notes' },
+      context,
+    )) as { paused: boolean | null };
+    expect(status.paused).toBe(true);
+    await answerRuntimeRequest(
+      { op: 'curator.set', action: 'unpin', skill: 'release-notes' },
+      context,
+    );
+    expect((await readFile(calls, 'utf8')).trim().split('\n')).toEqual([
+      'curator pin release-notes',
+      'curator status',
+      'curator unpin release-notes',
+      'curator status',
+    ]);
+    await expect(
+      answerRuntimeRequest({ op: 'curator.set', action: 'pin', skill: '--all' }, context),
+    ).rejects.toThrow('Not a skill name');
   });
 
   it('refuses what the runtime cannot answer', async () => {

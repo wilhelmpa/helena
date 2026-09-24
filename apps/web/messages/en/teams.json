@@ -656,7 +656,7 @@
         "enabled": "Self-learning",
         "enabledHint": "The agent saves memory and creates skills during its chats and runs; the tokens it spends on that count toward its usage. Off, it saves nothing new and its memory is not loaded.",
         "curator": "Curator",
-        "curatorHint": "Hermes' curator archives learned skills that were not used for 30 days. It runs in Hermes' own maintenance, such as the Hermes dashboard, not in chats and runs from Plan.",
+        "curatorHint": "Hermes' curator archives learned skills that were not used for 30 days. Helena asks it for a review every week; the agent's runtime tab runs one now and pins skills it must leave alone.",
         "reflectionTitle": "Reflection",
         "reflectionHint": "A short follow-up turn in the run's own session, right after it ends, in which the agent keeps only what that run taught it. Its tokens count toward the run's usage.",
         "reflectionOff": "Off",
@@ -685,8 +685,12 @@
         "memoryEditTitle": "Edit {file}",
         "memoryEditHint": "Hermes keeps one entry per paragraph, with § on a line of its own between entries. The runner writes your version unless the agent changed the file since.",
         "memoryClearTitle": "Clear {file}?",
-        "memoryClearBody": "The agent loses these notes with the runner's next sync."
-      }
+        "memoryClearBody": "The agent loses these notes with the runner's next sync.",
+        "memoryApproval": "Approve memory changes",
+        "memoryApprovalHint": "What the agent writes into its memory waits on the approvals page as a diff; until approved it keeps the approved version."
+      },
+      "skillEnabled": "{name} on",
+      "skillsDisabled": "{count} off"
     },
     "paused": "Paused",
     "pausedNoReason": "Paused. No reason was given.",

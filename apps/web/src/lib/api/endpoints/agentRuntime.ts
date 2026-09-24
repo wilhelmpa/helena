@@ -1,6 +1,7 @@
 import { request } from '@/lib/api/core/client';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
-import type { FallbackModel } from '@/lib/api/endpoints/agents';
+import type { ModelCheck } from '@/lib/api/endpoints/agentRuntimeSync';
+import type { AgentRun, FallbackModel, ReflectionView } from '@/lib/api/endpoints/agents';
 
 // What an agent's runtime keeps, read through its runner (sessions, transcripts, logs,
 // health, version, curator), a run's timeline, the token ledger, the runtime's proposals
@@ -143,6 +144,12 @@ export const getRuntimeVersion = (teamId: number, agentId: number) =>
 export const getCuratorStatus = (teamId: number, agentId: number) =>
   request<CuratorStatus>(`${agentPath(teamId, agentId)}/runtime/curator`);
 
+export const pinSkill = (teamId: number, agentId: number, skill: string, pinned: boolean) =>
+  request<CuratorStatus>(`${agentPath(teamId, agentId)}/runtime/curator`, {
+    method: 'POST',
+    body: JSON.stringify({ action: pinned ? 'pin' : 'unpin', skill }),
+  });
+
 export const runCurator = (teamId: number, agentId: number) =>
   request<{ requestId: number }>(`${agentPath(teamId, agentId)}/runtime/curator/run`, {
     method: 'POST',
@@ -175,7 +182,7 @@ export interface RunDetail {
   projectId: number;
   projectKey: string;
   status: 'pending' | 'success' | 'failed' | 'canceled';
-  trigger: string;
+  trigger: AgentRun['trigger'];
   issueId: number | null;
   issueIdentifier: string | null;
   issueTitle: string | null;
@@ -191,6 +198,10 @@ export interface RunDetail {
   finishedAt: string | null;
   createdAt: string;
   usage: SpendRow[];
+  // The question a run that ended blocked asked, and the reflection turn after it.
+  blockedQuestion: string | null;
+  reflection: ReflectionView | null;
+  modelCheck: ModelCheck | null;
 }
 
 export interface RunEventPage {
@@ -222,7 +233,7 @@ export interface UsageRow {
   projectId: number | null;
   projectKey: string | null;
   day: string | null;
-  kind: string | null;
+  kind: 'run' | 'chat' | 'reflection' | null;
   inputTokens: number;
   outputTokens: number;
   cacheReadTokens: number;
@@ -338,13 +349,18 @@ export const setEmergencyStop = (active: boolean, reason?: string | null) =>
     body: JSON.stringify({ active, reason: reason ?? null }),
   });
 
-export const getRuntimeDefaults = () =>
-  request<{ fallbackModels: FallbackModel[] }>('/god/agent-runtime-settings');
+export interface RuntimeDefaults {
+  fallbackModels: FallbackModel[];
+  // Days Hermes keeps the sessions of ended runs and chats; null keeps Hermes' own (90).
+  sessionRetentionDays: number | null;
+}
 
-export const setRuntimeDefaults = (fallbackModels: FallbackModel[]) =>
-  request<{ fallbackModels: FallbackModel[] }>('/god/agent-runtime-settings', {
+export const getRuntimeDefaults = () => request<RuntimeDefaults>('/god/agent-runtime-settings');
+
+export const setRuntimeDefaults = (patch: Partial<RuntimeDefaults>) =>
+  request<RuntimeDefaults>('/god/agent-runtime-settings', {
     method: 'PUT',
-    body: JSON.stringify({ fallbackModels }),
+    body: JSON.stringify(patch),
   });
 
 export interface VersionRef {
@@ -369,7 +385,7 @@ export interface HermesUpdateState {
   } | null;
   proposal: {
     id: number;
-    status: string;
+    status: ProposalStatus;
     title: string;
     error: string | null;
     decidedAt: string | null;

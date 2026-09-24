@@ -1,4 +1,5 @@
 import {
+  Bot,
   Building2,
   FolderKanban,
   HardDrive,
@@ -51,6 +52,11 @@ export const GOD_SECTIONS: GodSection[] = [
     slug: 'general',
     group: 'instance',
     icon: SlidersHorizontal,
+  },
+  {
+    slug: 'agent-runtime',
+    group: 'instance',
+    icon: Bot,
   },
   {
     slug: 'authentication',

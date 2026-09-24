@@ -23,6 +23,8 @@ import {
   useTranscript,
 } from '../services/agentRuntime.service';
 import { runEventsToMessage, transcriptToMessages } from '../utils/messages';
+import AgentRunModel from '@/features/teams/components/ai-agents/AgentRunModel';
+import ReflectionBlock from './ReflectionBlock';
 import SpendChips from './SpendChips';
 import TranscriptMessages from './TranscriptMessages';
 import RuntimeError from './RuntimeError';
@@ -201,6 +203,14 @@ export default function RunView({
             {run.status === 'failed' && run.lastError && (
               <p className="text-sm text-destructive">{run.lastError}</p>
             )}
+            {run.blockedQuestion && (
+              <div className="rounded-md border border-border/60 bg-card p-3 text-sm">
+                <p className="text-xs font-medium text-muted-foreground">{t('blocked')}</p>
+                <p className="mt-1 whitespace-pre-wrap">{run.blockedQuestion}</p>
+              </div>
+            )}
+            {run.modelCheck && <AgentRunModel check={run.modelCheck} />}
+            {run.reflection && <ReflectionBlock reflection={run.reflection} />}
           </div>
         )}
         {view === 'transcript' && (

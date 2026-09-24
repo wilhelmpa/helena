@@ -12,6 +12,7 @@ import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/ser
 import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { drainPendingStarts } from '#modules/pipelines/runs';
 import { pruneRuntimeRequests } from '#modules/agents/runtime-requests/service';
+import { scheduleCuratorRuns } from '#modules/agents/runtime-requests/curator-schedule';
 import { pruneRunEvents } from '#modules/agents/run-timeline/service';
 
 const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR, RUNTIME_JANITOR] =
@@ -94,12 +95,13 @@ export async function resumeJanitor(): Promise<void> {
   if (failed > 0) console.log(`[background] failed ${failed} runs that reached the resume limit`);
 }
 
-// Removes the answered and stale questions to agents' runtimes, and the timelines of runs
-// that finished long ago.
+// Removes the answered and stale questions to agents' runtimes and the timelines of runs
+// that finished long ago, and asks the curators that are due for their review.
 export async function runtimeJanitor(): Promise<void> {
   await janitorJob(
     RUNTIME_JANITOR,
-    async () => (await pruneRuntimeRequests()) + (await pruneRunEvents()),
+    async () =>
+      (await pruneRuntimeRequests()) + (await pruneRunEvents()) + (await scheduleCuratorRuns()),
   );
 }
 

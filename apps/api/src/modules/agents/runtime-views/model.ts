@@ -102,6 +102,14 @@ export const CuratorStatusResponse = t.Object({
   report: t.String(),
 });
 
+export const curatorActionBody = t.Object({
+  action: t.Union([t.Literal('pin'), t.Literal('unpin')]),
+  skill: t.String({
+    pattern: '^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$',
+    description: 'The skill to pin or unpin, by name.',
+  }),
+});
+
 export const RuntimeRequestStateResponse = t.Object({
   id: t.Number(),
   status: t.Union([

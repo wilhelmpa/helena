@@ -348,6 +348,22 @@ async function curatorRun(context: ReaderContext): Promise<{ report: string }> {
   return { report: stripAnsi(result.stdout).trim().slice(-8000) };
 }
 
+// A skill name as Hermes names a skill directory; never one that reads as an option.
+const SKILL_NAME = /^[A-Za-z0-9][\w.-]{0,127}$/;
+
+// Pinning a skill so the curator never archives or changes it, or unpinning it. Whether the
+// curator works at all is the agent's setting, which the runner applies as its pause.
+async function curatorSet(
+  context: ReaderContext,
+  request: Extract<RuntimeRequest, { op: 'curator.set' }>,
+): Promise<CuratorStatus> {
+  if (request.action !== 'pin' && request.action !== 'unpin') throw new Error('Unknown action');
+  if (!SKILL_NAME.test(request.skill)) throw new Error('Not a skill name');
+  const result = await hermes(context, ['curator', request.action, request.skill]);
+  if (result.code !== 0) throw failure(`curator ${request.action}`, result);
+  return curatorStatus(context);
+}
+
 // Hermes' own emergency stop: while the ESTOP file is in the profile, its scheduler, board
 // dispatch and gateway start no new work. Helena stops handing out runs itself.
 async function estop(
@@ -373,6 +389,7 @@ export const hermesReaders: RuntimeReaders = {
     'version.read',
     'curator.status',
     'curator.run',
+    'curator.set',
     'estop.set',
   ],
   async handle(request, context) {
@@ -413,6 +430,8 @@ export const hermesReaders: RuntimeReaders = {
         return curatorStatus(context);
       case 'curator.run':
         return curatorRun(context);
+      case 'curator.set':
+        return curatorSet(context, request);
       case 'estop.set':
         return estop(context, request);
     }

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   CheckCircle2,
   LoaderCircle,
+  Pin,
+  PinOff,
   RefreshCw,
   Stethoscope,
   TriangleAlert,
@@ -11,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { SectionLabel } from '@/components/common/page/RowList';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
@@ -18,6 +21,7 @@ import { cn } from '@/lib/utils';
 import {
   useCuratorStatus,
   useRunCurator,
+  usePinSkill,
   useRuntimeHealth,
   useRuntimeLogs,
   useRuntimeVersion,
@@ -27,17 +31,21 @@ import RuntimeError from './RuntimeError';
 const LEVELS = [null, 'WARNING', 'ERROR'] as const;
 
 // The agent's runtime as its runner reads it: the version it runs, a health check (Hermes'
-// own doctor), its log, and its skill curator. The curator's pause is a setting of the agent.
+// own doctor), its log, and its skill curator: its state, a review now (Helena also asks for
+// one every week), and pinning a skill it must leave alone. Whether the curator works at all
+// is a setting of the agent (its pause).
 export default function AgentRuntimePanel({
   teamId,
   agentId,
   canEdit,
   capabilities,
+  learnedSkills,
 }: {
   teamId: number;
   agentId: number;
   canEdit: boolean;
   capabilities: string[];
+  learnedSkills: string[];
 }) {
   const t = useTranslations('agentRuntime.runtime');
   return (
@@ -45,7 +53,12 @@ export default function AgentRuntimePanel({
       <VersionRow teamId={teamId} agentId={agentId} />
       {capabilities.includes('health') && <Health teamId={teamId} agentId={agentId} />}
       {capabilities.includes('curator') && (
-        <Curator teamId={teamId} agentId={agentId} canEdit={canEdit} />
+        <Curator
+          teamId={teamId}
+          agentId={agentId}
+          canEdit={canEdit}
+          learnedSkills={learnedSkills}
+        />
       )}
       {capabilities.includes('logs') ? (
         <Logs teamId={teamId} agentId={agentId} />
@@ -135,14 +148,20 @@ function Curator({
   teamId,
   agentId,
   canEdit,
+  learnedSkills,
 }: {
   teamId: number;
   agentId: number;
   canEdit: boolean;
+  // The skills the agent learned itself: the ones the curator manages.
+  learnedSkills: string[];
 }) {
   const t = useTranslations('agentRuntime.runtime');
   const status = useCuratorStatus(teamId, agentId);
   const run = useRunCurator(teamId, agentId);
+  const pin = usePinSkill(teamId, agentId);
+  const [skill, setSkill] = useState('');
+  const listId = useId();
   return (
     <section className="space-y-2">
       <SectionLabel
@@ -172,12 +191,61 @@ function Curator({
       ) : status.error ? (
         <RuntimeError error={status.error} />
       ) : (
-        <pre
-          dir="ltr"
-          className="overflow-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
-        >
-          {status.data?.report}
-        </pre>
+        <>
+          {status.data?.paused && (
+            <p className="text-sm text-muted-foreground">{t('curatorPaused')}</p>
+          )}
+          <pre
+            dir="ltr"
+            className="overflow-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
+          >
+            {status.data?.report}
+          </pre>
+          {canEdit && (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (skill.trim()) pin.mutate({ skill: skill.trim(), pinned: true });
+              }}
+            >
+              <Input
+                className="h-8 w-56"
+                value={skill}
+                list={`${listId}-skills`}
+                placeholder={t('pinSkill')}
+                aria-label={t('pinSkill')}
+                dir="ltr"
+                onChange={(event) => setSkill(event.target.value)}
+              />
+              <datalist id={`${listId}-skills`}>
+                {learnedSkills.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+              <Button
+                type="submit"
+                variant="outline"
+                size="sm"
+                disabled={!skill.trim() || pin.isPending}
+              >
+                <Pin />
+                {t('pin')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={!skill.trim() || pin.isPending}
+                onClick={() => pin.mutate({ skill: skill.trim(), pinned: false })}
+              >
+                <PinOff />
+                {t('unpin')}
+              </Button>
+              <span className="text-xs text-muted-foreground">{t('pinHint')}</span>
+            </form>
+          )}
+        </>
       )}
     </section>
   );
@@ -230,7 +298,7 @@ function Logs({ teamId, agentId }: { teamId: number; agentId: number }) {
       ) : (
         <pre
           dir="ltr"
-          className="max-h-[32rem] overflow-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
+          className="max-h-128 overflow-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
         >
           {logs.data.lines.join('\n')}
         </pre>

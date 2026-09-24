@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { tasksPath, approvalsPath, globalAgentActivityPath } from '@/utils/paths';
 import { usePendingApprovalCount } from '@/services/approvals.service';
+import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
 import { useCrossProjectIssuesQuery } from '../../services/tasks.service';
 import { useHomeRunningAgentsCount } from '../../services/homeKpis.service';
 import StatusBadge from '@/components/common/page/StatusBadge';
@@ -46,6 +47,10 @@ export default function HomeKpiRow() {
     { assignee: 'me', stateType: 'open' },
   );
   const approvals = usePendingApprovalCount();
+  // Memory writes and Hermes updates wait on the same page.
+  const proposals = useProposalCount();
+  const pendingApprovals =
+    approvals.data == null ? null : approvals.data.count + (proposals.data?.count ?? 0);
   const runningAgents = useHomeRunningAgentsCount();
 
   return (
@@ -59,8 +64,8 @@ export default function HomeKpiRow() {
       <Kpi
         href={approvalsPath()}
         label={t('homeKpiPendingApprovals')}
-        value={approvals.data?.count ?? null}
-        status={(approvals.data?.count ?? 0) > 0 ? 'waiting' : undefined}
+        value={pendingApprovals}
+        status={(pendingApprovals ?? 0) > 0 ? 'waiting' : undefined}
         loading={approvals.isPending}
       />
       <Kpi

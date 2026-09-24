@@ -113,6 +113,7 @@ export type RuntimeRequest =
   | { op: 'version.read' }
   | { op: 'curator.status' }
   | { op: 'curator.run' }
+  | { op: 'curator.set'; action: 'pin' | 'unpin'; skill: string }
   | { op: 'estop.set'; engaged: boolean; reason?: string | null }
   | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null };
 
@@ -129,6 +130,7 @@ export const REQUEST_CAPABILITY: Record<RuntimeRequestOp, string> = {
   'version.read': 'version',
   'curator.status': 'curator',
   'curator.run': 'curator',
+  'curator.set': 'curator',
   'estop.set': 'estop',
   'runtime.update': 'update',
 };

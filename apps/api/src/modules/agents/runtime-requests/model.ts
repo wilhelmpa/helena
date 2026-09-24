@@ -9,6 +9,7 @@ const op = t.Union([
   t.Literal('version.read'),
   t.Literal('curator.status'),
   t.Literal('curator.run'),
+  t.Literal('curator.set'),
   t.Literal('estop.set'),
   t.Literal('runtime.update'),
 ]);

@@ -9,6 +9,7 @@ import { agentForPerson } from '../people-access';
 import { askRuntime, getRuntimeRequest, queueRuntimeRequest } from '../runtime-requests/service';
 import {
   CuratorStatusResponse,
+  curatorActionBody,
   HealthResponse,
   LogLinesResponse,
   QueuedResponse,
@@ -205,6 +206,30 @@ export const runtimeViewRoutes = new Elysia({
         summary: "Run an agent's skill curator now",
         description:
           'Queues a curator review in the runtime; read its outcome with the request route.',
+      },
+    },
+  )
+
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/runtime/curator',
+    async ({ params, membership, user, body }) => {
+      await agentForPerson(params.agentId, membership);
+      return askRuntime<typeof CuratorStatusResponse.static>(
+        params.agentId,
+        { op: 'curator.set', action: body.action, skill: body.skill },
+        { userId: requireUser(user).id },
+      );
+    },
+    {
+      params: agentParams,
+      body: curatorActionBody,
+      teamPermission: ['ai_agents', 'edit'],
+      response: { 200: CuratorStatusResponse, ...failures },
+      detail: {
+        summary: "Pin or unpin a skill for an agent's curator",
+        description:
+          'A pinned skill is never archived or changed by the curator. Whether the curator ' +
+          "works at all is the agent's learning setting. Answers the curator's state afterwards.",
       },
     },
   )

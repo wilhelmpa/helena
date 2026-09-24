@@ -262,7 +262,7 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'run', runId] as const,
   memoryRevisions: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'memory-revisions'] as const,
-  agentUsage: (teamId: number, params: unknown) => ['agentUsage', teamId, params] as const,
+  agentSpend: (teamId: number, params: unknown) => ['agentSpend', teamId, params] as const,
   proposals: (status: string) => ['agentProposals', status] as const,
   proposalCount: ['agentProposals', 'count'] as const,
   emergencyStop: ['emergencyStop'] as const,

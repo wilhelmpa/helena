@@ -4,6 +4,8 @@ import { HttpError, intEnv, iso } from '#shared/lib';
 import { heldBy, touchRunner, type RunAck } from '../runner/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { priceRows } from '../usage/service';
+import { reflectionView, type ReflectionView } from '../runner/reflection';
+import type { ModelCheck } from '../runtime-sync/model-check';
 
 // A run's timeline: the AG-UI events its runner read from the command's output, redacted on
 // the runner, stored while the run runs. The run view reads them live and replays them later;
@@ -109,6 +111,10 @@ export interface RunDetail {
   sessionId: string | null;
   model: string | null;
   continuedFromRunId: number | null;
+  blockedQuestion: string | null;
+  reflection: ReflectionView | null;
+  // The model the run was configured with against the one its session ran on.
+  modelCheck: ModelCheck | null;
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;
@@ -193,6 +199,9 @@ export async function getRunDetail(
     sessionId: run.sessionId,
     model: run.model,
     continuedFromRunId: run.continuedFromRunId,
+    blockedQuestion: run.blockedQuestion,
+    reflection: reflectionView(run.reflection, run.finishedAt),
+    modelCheck: (run.modelCheck as ModelCheck | null) ?? null,
     startedAt: run.startedAt ? iso(run.startedAt) : null,
     finishedAt: run.finishedAt ? iso(run.finishedAt) : null,
     createdAt: iso(run.createdAt),

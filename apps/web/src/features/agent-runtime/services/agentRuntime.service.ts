@@ -7,7 +7,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
-import type { FallbackModel } from '@/lib/api/endpoints/agents';
 import {
   checkHermesUpdate,
   continueRun,
@@ -31,7 +30,9 @@ import {
   requestHermesUpdate,
   runCurator,
   setEmergencyStop,
+  pinSkill,
   setRuntimeDefaults,
+  type RuntimeDefaults,
   type UsageDimension,
 } from '@/lib/api/endpoints/agentRuntime';
 import { qk } from '@/services/queryKeys';
@@ -111,6 +112,16 @@ export function useCuratorStatus(teamId: number, agentId: number) {
     queryKey: qk.agentRuntime(teamId, agentId, 'curator'),
     queryFn: () => getCuratorStatus(teamId, agentId),
     ...RUNTIME_READ,
+  });
+}
+
+// Pinning or unpinning a skill for the curator: answered with the curator's new state.
+export function usePinSkill(teamId: number, agentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { skill: string; pinned: boolean }) =>
+      pinSkill(teamId, agentId, input.skill, input.pinned),
+    onSuccess: (value) => qc.setQueryData(qk.agentRuntime(teamId, agentId, 'curator'), value),
   });
 }
 
@@ -211,7 +222,7 @@ export function useAgentUsage(
   params: { from?: string; to?: string; agentId?: number; by: UsageDimension[] },
 ) {
   return useQuery({
-    queryKey: qk.agentUsage(teamId, params),
+    queryKey: qk.agentSpend(teamId, params),
     queryFn: () => getAgentUsage(teamId, params),
   });
 }
@@ -276,7 +287,7 @@ export function useRuntimeDefaults(enabled: boolean) {
 export function useSetRuntimeDefaults() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (fallbackModels: FallbackModel[]) => setRuntimeDefaults(fallbackModels),
+    mutationFn: (patch: Partial<RuntimeDefaults>) => setRuntimeDefaults(patch),
     onSuccess: (value) => qc.setQueryData(qk.runtimeDefaults, value),
   });
 }

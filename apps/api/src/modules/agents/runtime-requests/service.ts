@@ -20,6 +20,7 @@ export type RuntimeRequest =
   | { op: 'version.read' }
   | { op: 'curator.status' }
   | { op: 'curator.run' }
+  | { op: 'curator.set'; action: 'pin' | 'unpin'; skill: string }
   | { op: 'estop.set'; engaged: boolean; reason?: string | null }
   | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null };
 
