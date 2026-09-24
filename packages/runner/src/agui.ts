@@ -1,17 +1,25 @@
 import type { OutputFormat } from './config';
 
-// Turns what the command prints into AG-UI events (https://docs.ag-ui.com), which is what
-// the server stores and the chat reads. A CLI that reports its own stream also carries the
-// tool calls it makes, and those become tool events rather than text.
+// Turns what the command prints into AG-UI 1.0 events (https://docs.ag-ui.com), which is
+// what the server stores and the chat reads. A CLI that reports its own stream also carries
+// the tool calls it makes, and those become tool events rather than text.
+
+// The AG-UI version these events follow (@ag-ui/core's PROTOCOL_VERSION), announced on
+// RUN_STARTED.
+export const AG_UI_PROTOCOL_VERSION = '1.0';
 
 export type AgUiEvent =
-  | { type: 'RUN_STARTED'; threadId: string; runId: string }
+  | { type: 'RUN_STARTED'; threadId: string; runId: string; protocolVersion: string }
   | { type: 'RUN_FINISHED'; threadId: string; runId: string }
   | { type: 'RUN_ERROR'; message: string }
   | { type: 'TEXT_MESSAGE_START'; messageId: string; role: 'assistant' }
   | { type: 'TEXT_MESSAGE_CONTENT'; messageId: string; delta: string }
   | { type: 'TEXT_MESSAGE_END'; messageId: string }
-  | { type: 'THINKING_TEXT_MESSAGE_CONTENT'; delta: string }
+  | { type: 'REASONING_START'; messageId: string }
+  | { type: 'REASONING_MESSAGE_START'; messageId: string; role: 'reasoning' }
+  | { type: 'REASONING_MESSAGE_CONTENT'; messageId: string; delta: string }
+  | { type: 'REASONING_MESSAGE_END'; messageId: string }
+  | { type: 'REASONING_END'; messageId: string }
   | { type: 'TOOL_CALL_START'; toolCallId: string; toolCallName: string; parentMessageId: string }
   | { type: 'TOOL_CALL_ARGS'; toolCallId: string; delta: string }
   | { type: 'TOOL_CALL_END'; toolCallId: string }
@@ -20,8 +28,9 @@ export type AgUiEvent =
       messageId: string;
       toolCallId: string;
       content: string;
-      // Not part of AG-UI: the tool failed and `content` is its error.
-      isError?: boolean;
+      // AG-UI has no error flag on a result: a failed tool says so here, with MCP's name
+      // for it, and `content` is its error.
+      metadata?: { isError: true };
     };
 
 // What one model call of the answer read and wrote, normalised across the commands: the
@@ -50,8 +59,11 @@ export class AnswerStream {
   private readonly messageId: string;
   private queued: AgUiEvent[] = [];
   private text = '';
-  // The model's reasoning, reported apart from the answer where the command streams it.
+  // The model's reasoning, reported apart from the answer where the command streams it,
+  // as an AG-UI reasoning message of its own; the id of the one open now, if any.
   private thinking = '';
+  private reasoningId: string | null = null;
+  private reasoningCount = 0;
   private started = false;
   private line = '';
   // Most formats name their session on the line that opens the stream; Copilot names it
@@ -84,7 +96,12 @@ export class AnswerStream {
   ) {
     this.usage = new UsageReader(format);
     this.messageId = `msg-${runId}`;
-    this.queued.push({ type: 'RUN_STARTED', threadId, runId });
+    this.queued.push({
+      type: 'RUN_STARTED',
+      threadId,
+      runId,
+      protocolVersion: AG_UI_PROTOCOL_VERSION,
+    });
   }
 
   write(chunk: string): void {
@@ -156,6 +173,7 @@ export class AnswerStream {
     }
     if (!this.sawAnyText && fallback) this.appendText(fallback);
     this.drainText();
+    this.closeReasoning();
     if (this.started) this.queued.push({ type: 'TEXT_MESSAGE_END', messageId: this.messageId });
     this.started = false;
   }
@@ -163,6 +181,7 @@ export class AnswerStream {
   private appendText(text: string): void {
     if (!text) return;
     this.drainThinking();
+    this.closeReasoning();
     this.sawAnyText = true;
     this.text += text;
     if (this.text.length >= FLUSH_CHARS) this.drainText();
@@ -176,11 +195,30 @@ export class AnswerStream {
   }
 
   private drainThinking(): void {
+    if (this.thinking.length > 0 && !this.reasoningId) {
+      const messageId = `reasoning-${this.runId}-${++this.reasoningCount}`;
+      this.reasoningId = messageId;
+      this.queued.push(
+        { type: 'REASONING_START', messageId },
+        { type: 'REASONING_MESSAGE_START', messageId, role: 'reasoning' },
+      );
+    }
     while (this.thinking.length > 0) {
       const delta = this.thinking.slice(0, DELTA_LIMIT);
       this.thinking = this.thinking.slice(DELTA_LIMIT);
-      this.queued.push({ type: 'THINKING_TEXT_MESSAGE_CONTENT', delta });
+      this.queued.push({ type: 'REASONING_MESSAGE_CONTENT', messageId: this.reasoningId!, delta });
     }
+  }
+
+  // Ends the reasoning message once the answer moves on to text, a tool or its end.
+  private closeReasoning(): void {
+    if (!this.reasoningId) return;
+    const messageId = this.reasoningId;
+    this.reasoningId = null;
+    this.queued.push(
+      { type: 'REASONING_MESSAGE_END', messageId },
+      { type: 'REASONING_END', messageId },
+    );
   }
 
   // Reasoning and answer text alternate, and each drains the other's buffer before it
@@ -453,6 +491,7 @@ export class AnswerStream {
   // it and the words said after it.
   private pushToolCall(toolCallId: string, toolCallName: string, args: string): void {
     this.drainText();
+    this.closeReasoning();
     this.queued.push(
       { type: 'TOOL_CALL_START', toolCallId, toolCallName, parentMessageId: this.messageId },
       { type: 'TOOL_CALL_ARGS', toolCallId, delta: tail(args, TOOL_TEXT_LIMIT) },
@@ -462,12 +501,13 @@ export class AnswerStream {
 
   private pushToolResult(toolCallId: string, content: string, isError = false): void {
     this.drainText();
+    this.closeReasoning();
     this.queued.push({
       type: 'TOOL_CALL_RESULT',
       messageId: this.messageId,
       toolCallId,
       content: tail(content, TOOL_TEXT_LIMIT),
-      ...(isError && { isError }),
+      ...(isError && { metadata: { isError: true as const } }),
     });
   }
 }

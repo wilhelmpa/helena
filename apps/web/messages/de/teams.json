@@ -779,7 +779,8 @@
         "model": "Modell",
         "reasoning": "Reasoning"
       }
-    }
+    },
+    "chatTemplate": "Eine Vorlage läuft nicht selbst. Füge sie einem Projekt als Agent hinzu, um ihn hier auszuprobieren."
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

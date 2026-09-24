@@ -30,6 +30,8 @@ const RunStartedEvent = t.Object({
   type: t.Literal('RUN_STARTED'),
   threadId: t.Optional(t.String()),
   runId: t.Optional(t.String()),
+  // The AG-UI version the runner speaks (AG-UI 1.0 names it on RUN_STARTED).
+  protocolVersion: t.Optional(t.String({ maxLength: 40 })),
 });
 
 const RunFinishedEvent = t.Object({
@@ -61,10 +63,39 @@ const TextMessageEndEvent = t.Object({
   messageId: t.String({ maxLength: 200 }),
 });
 
-// The model's reasoning while it answers, kept apart from the answer text.
+// The model's reasoning while it answers, kept apart from the answer text: AG-UI 1.0's
+// REASONING_* events. THINKING_TEXT_MESSAGE_CONTENT is the name before 1.0, still
+// accepted from runners that predate it (for one release).
 const ThinkingTextMessageContentEvent = t.Object({
   type: t.Literal('THINKING_TEXT_MESSAGE_CONTENT'),
   delta: t.String({ maxLength: DELTA_LIMIT }),
+});
+
+const ReasoningStartEvent = t.Object({
+  type: t.Literal('REASONING_START'),
+  messageId: t.Optional(t.String({ maxLength: 200 })),
+});
+
+const ReasoningMessageStartEvent = t.Object({
+  type: t.Literal('REASONING_MESSAGE_START'),
+  messageId: t.String({ maxLength: 200 }),
+  role: t.Optional(t.Literal('reasoning')),
+});
+
+const ReasoningMessageContentEvent = t.Object({
+  type: t.Literal('REASONING_MESSAGE_CONTENT'),
+  messageId: t.String({ maxLength: 200 }),
+  delta: t.String({ maxLength: DELTA_LIMIT }),
+});
+
+const ReasoningMessageEndEvent = t.Object({
+  type: t.Literal('REASONING_MESSAGE_END'),
+  messageId: t.String({ maxLength: 200 }),
+});
+
+const ReasoningEndEvent = t.Object({
+  type: t.Literal('REASONING_END'),
+  messageId: t.Optional(t.String({ maxLength: 200 })),
 });
 
 const ToolCallStartEvent = t.Object({
@@ -91,7 +122,10 @@ const ToolCallResultEvent = t.Object({
   toolCallId: t.String({ maxLength: 200 }),
   content: t.String({ maxLength: TOOL_TEXT_LIMIT }),
   role: t.Optional(t.Literal('tool')),
-  // Not part of AG-UI: the tool reported a failure, and `content` is its error.
+  // AG-UI has no error flag on a result, so a failed tool says so in the event's
+  // metadata, with MCP's name for it: `{ isError: true }`, `content` being the error.
+  metadata: t.Optional(t.Object({ isError: t.Optional(t.Boolean()) })),
+  // The same flag as runners before AG-UI 1.0 sent it (accepted for one release).
   isError: t.Optional(t.Boolean()),
 });
 
@@ -103,6 +137,11 @@ export const AgUiEvent = t.Union([
   TextMessageContentEvent,
   TextMessageEndEvent,
   ThinkingTextMessageContentEvent,
+  ReasoningStartEvent,
+  ReasoningMessageStartEvent,
+  ReasoningMessageContentEvent,
+  ReasoningMessageEndEvent,
+  ReasoningEndEvent,
   ToolCallStartEvent,
   ToolCallArgsEvent,
   ToolCallEndEvent,

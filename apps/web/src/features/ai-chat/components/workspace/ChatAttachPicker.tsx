@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { FolderOpen, Paperclip, Upload } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PromptInputButton } from '@/components/ai-elements/prompt-input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,16 +31,9 @@ export default function ChatAttachPicker({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-8 text-muted-foreground hover:text-foreground"
-            aria-label={t('composer.attach')}
-            title={t('composer.attach')}
-          >
+          <PromptInputButton aria-label={t('composer.attach')} title={t('composer.attach')}>
             <Paperclip className="size-4" />
-          </Button>
+          </PromptInputButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuItem onSelect={onUpload}>

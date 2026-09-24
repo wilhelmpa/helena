@@ -1,17 +1,43 @@
 import type { InferUIMessageChunk } from 'ai';
+import {
+  EventType,
+  contentToText,
+  type ReasoningMessageChunkEvent,
+  type ReasoningMessageContentEvent,
+  type RunErrorEvent,
+  type TextMessageChunkEvent,
+  type TextMessageContentEvent,
+  type ToolCallArgsEvent,
+  type ToolCallChunkEvent,
+  type ToolCallResultEvent,
+  type ToolCallStartEvent,
+} from '@ag-ui/core';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
 import { parseToolText, type PlanChatMetadata, type PlanUIMessage } from './chatMessages';
 
 export type PlanChunk = InferUIMessageChunk<PlanUIMessage>;
 
-// Turns the AG-UI events of one answer, as Plan's runner reports them, into the chunks
-// the AI SDK builds a message from. Text and reasoning arrive as deltas and are opened
-// and closed as blocks here; a tool call becomes a dynamic tool part that goes from its
-// arguments to its result or its error.
+// AG-UI before 1.0 named the reasoning events THINKING_*; Helena's runner still reports
+// the model's thinking that way.
+const LEGACY_THINKING_CONTENT = 'THINKING_TEXT_MESSAGE_CONTENT';
+const LEGACY_THINKING_END = 'THINKING_TEXT_MESSAGE_END';
+
+// The fields an event of a given AG-UI type carries (events arrive as parsed JSON).
+const as = <T>(event: AgUiEvent) => event as unknown as Partial<T>;
+
+// Turns the AG-UI events of one answer, as Helena's runner reports them, into the chunks
+// the AI SDK builds a message from — the one piece between the two standards that no
+// library provides (AG-UI's own Vercel integration goes the other way). Text and
+// reasoning arrive as deltas and are opened and closed as blocks here; a tool call
+// becomes a dynamic tool part that goes from its arguments to its result or its error.
+// Both the AG-UI 1.0 names (REASONING_*, the *_CHUNK shorthands) and the older THINKING_*
+// are read.
 export class AgUiChunkMapper {
   private open: { kind: 'text' | 'reasoning'; id: string } | null = null;
   private blocks = 0;
   private readonly tools = new Map<string, { name: string; args: string; ready: boolean }>();
+  // The tool call a TOOL_CALL_CHUNK without an id continues.
+  private lastTool: string | null = null;
   private finished = false;
 
   constructor(
@@ -25,46 +51,62 @@ export class AgUiChunkMapper {
 
   map(event: AgUiEvent): PlanChunk[] {
     switch (event.type) {
-      case 'TEXT_MESSAGE_CONTENT':
-        return event.delta ? this.delta('text', event.delta) : [];
-      case 'THINKING_TEXT_MESSAGE_CONTENT':
-        return event.delta ? this.delta('reasoning', event.delta) : [];
-      case 'TEXT_MESSAGE_END':
+      case EventType.TEXT_MESSAGE_CONTENT:
+      case EventType.TEXT_MESSAGE_CHUNK: {
+        const { delta } = as<TextMessageContentEvent | TextMessageChunkEvent>(event);
+        return delta ? this.delta('text', delta) : [];
+      }
+      case EventType.REASONING_MESSAGE_CONTENT:
+      case EventType.REASONING_MESSAGE_CHUNK:
+      case LEGACY_THINKING_CONTENT: {
+        const { delta } = as<ReasoningMessageContentEvent | ReasoningMessageChunkEvent>(event);
+        return delta ? this.delta('reasoning', delta) : [];
+      }
+      case EventType.TEXT_MESSAGE_END:
+      case EventType.REASONING_MESSAGE_END:
+      case EventType.REASONING_END:
+      case LEGACY_THINKING_END:
         return this.close();
-      case 'TOOL_CALL_START': {
-        const id = event.toolCallId ?? '';
-        const name = event.toolCallName || 'tool';
-        this.tools.set(id, { name, args: '', ready: false });
-        return [
-          ...this.close(),
-          { type: 'tool-input-start', toolCallId: id, toolName: name, dynamic: true },
-        ];
+      case EventType.TOOL_CALL_START: {
+        const { toolCallId, toolCallName } = as<ToolCallStartEvent>(event);
+        return this.startTool(toolCallId ?? '', toolCallName);
       }
-      case 'TOOL_CALL_ARGS': {
-        const tool = this.tools.get(event.toolCallId ?? '');
-        if (!tool || !event.delta) return [];
-        tool.args += event.delta;
-        return [
-          { type: 'tool-input-delta', toolCallId: event.toolCallId!, inputTextDelta: event.delta },
-        ];
+      case EventType.TOOL_CALL_ARGS: {
+        const { toolCallId, delta } = as<ToolCallArgsEvent>(event);
+        return this.toolArgs(toolCallId ?? '', delta);
       }
-      case 'TOOL_CALL_END':
-        return this.toolReady(event.toolCallId ?? '');
-      case 'TOOL_CALL_RESULT': {
-        const id = event.toolCallId ?? '';
+      case EventType.TOOL_CALL_CHUNK: {
+        // The shorthand for START + ARGS: the first chunk of a call names it.
+        const chunk = as<ToolCallChunkEvent>(event);
+        const id = chunk.toolCallId ?? this.lastTool ?? '';
+        const started = this.tools.has(id) ? [] : this.startTool(id, chunk.toolCallName);
+        return [...started, ...this.toolArgs(id, chunk.delta)];
+      }
+      case EventType.TOOL_CALL_END:
+        return this.toolReady(as<ToolCallArgsEvent>(event).toolCallId ?? '');
+      case EventType.TOOL_CALL_RESULT: {
+        const result = as<ToolCallResultEvent & { isError?: boolean }>(event);
+        const id = result.toolCallId ?? '';
         if (!this.tools.has(id)) return [];
-        const content = event.content ?? '';
+        // AG-UI has no error flag on a result; Helena's runner puts MCP's `isError` into
+        // the event's metadata (older runners sent it on the event itself).
+        const failed = result.metadata?.isError === true || result.isError === true;
+        // AG-UI 1.0 lets a result be content parts; the chat shows their text.
+        const content =
+          typeof result.content === 'string' ? result.content : contentToText(result.content ?? []);
         return [
           ...this.toolReady(id),
-          event.isError
+          failed
             ? { type: 'tool-output-error', toolCallId: id, errorText: content, dynamic: true }
             : { type: 'tool-output-available', toolCallId: id, output: content, dynamic: true },
         ];
       }
-      case 'RUN_FINISHED':
+      case EventType.RUN_FINISHED:
         return this.finish();
-      case 'RUN_ERROR':
-        return this.finish({ error: event.message || 'The agent stopped answering' });
+      case EventType.RUN_ERROR:
+        return this.finish({
+          error: as<RunErrorEvent>(event).message || 'The agent stopped answering',
+        });
       default:
         return [];
     }
@@ -72,7 +114,7 @@ export class AgUiChunkMapper {
 
   // Closes the message when the stream ended without a terminal event: the browser lost
   // the answer rather than the answer ending, so it is marked as interrupted, for the
-  // chat to offer picking it up again (see ChatInterruptedBar).
+  // chat to offer picking it up again.
   end(): PlanChunk[] {
     return this.finished ? [] : this.finish({ interrupted: true });
   }
@@ -93,6 +135,20 @@ export class AgUiChunkMapper {
     const { kind, id } = this.open;
     this.open = null;
     return [{ type: `${kind}-end`, id }];
+  }
+
+  private startTool(id: string, name: string | undefined): PlanChunk[] {
+    const toolName = name || 'tool';
+    this.tools.set(id, { name: toolName, args: '', ready: false });
+    this.lastTool = id;
+    return [...this.close(), { type: 'tool-input-start', toolCallId: id, toolName, dynamic: true }];
+  }
+
+  private toolArgs(id: string, delta: string | undefined): PlanChunk[] {
+    const tool = this.tools.get(id);
+    if (!tool || !delta) return [];
+    tool.args += delta;
+    return [{ type: 'tool-input-delta', toolCallId: id, inputTextDelta: delta }];
   }
 
   // A call's arguments are complete once it ends, or once its result arrives from a

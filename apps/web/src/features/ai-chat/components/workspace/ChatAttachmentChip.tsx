@@ -1,38 +1,87 @@
 'use client';
 
-import { FileText, ListTodo } from 'lucide-react';
+import { FileText, ListTodo, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import type { AiChatAttachment } from '@/lib/api/endpoints/agentChat';
 import { issuePath } from '@/utils/paths';
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentMedia,
+  AttachmentTitle,
+  AttachmentTrigger,
+} from '@/components/ui/attachment';
 
-// One attachment of a question: a vault file (shown by name, no preview — the composer
-// already showed one before sending) or a task the member pointed the agent at.
+// One attachment of a question, as shadcn's Attachment: a vault file (by name — the
+// composer already showed it before sending) or a task the member pointed the agent at,
+// which opens the task.
 export default function ChatAttachmentChip({ attachment }: { attachment: AiChatAttachment }) {
   if (attachment.kind === 'task') {
     const [projectKey] = attachment.identifier.split('-');
     const sequence = Number(attachment.identifier.slice(projectKey.length + 1));
     return (
-      <Link
-        href={issuePath(projectKey, sequence)}
-        className="flex max-w-full items-center gap-1.5 rounded-md border bg-background/60 px-2 py-1 text-xs hover:bg-background"
-      >
-        <ListTodo className="size-3.5 shrink-0" />
-        <span dir="ltr" className="shrink-0 font-medium">
-          {attachment.identifier}
-        </span>
-        <span dir="auto" className="truncate text-muted-foreground">
-          {attachment.title}
-        </span>
-      </Link>
+      <Attachment size="xs" className="min-w-0 bg-background/60">
+        <AttachmentMedia>
+          <ListTodo />
+        </AttachmentMedia>
+        <AttachmentContent>
+          <AttachmentTitle>
+            <span dir="ltr" className="font-medium">
+              {attachment.identifier}
+            </span>{' '}
+            <span dir="auto" className="font-normal text-muted-foreground">
+              {attachment.title}
+            </span>
+          </AttachmentTitle>
+        </AttachmentContent>
+        <AttachmentTrigger asChild>
+          <Link href={issuePath(projectKey, sequence)} aria-label={attachment.identifier} />
+        </AttachmentTrigger>
+      </Attachment>
     );
   }
 
   return (
-    <span className="flex max-w-full items-center gap-1.5 rounded-md border bg-background/60 px-2 py-1 text-xs">
-      <FileText className="size-3.5 shrink-0" />
-      <span dir="auto" className="truncate">
-        {attachment.name}
-      </span>
-    </span>
+    <Attachment size="xs" className="min-w-0 bg-background/60">
+      <AttachmentMedia>
+        <FileText />
+      </AttachmentMedia>
+      <AttachmentContent>
+        <AttachmentTitle dir="auto">{attachment.name}</AttachmentTitle>
+      </AttachmentContent>
+    </Attachment>
+  );
+}
+
+// A file attached to the message being written: uploading, or ready and removable.
+export function ChatPendingAttachment({
+  name,
+  uploading = false,
+  removeLabel,
+  onRemove,
+}: {
+  name: string;
+  uploading?: boolean;
+  removeLabel?: string;
+  onRemove?: () => void;
+}) {
+  return (
+    <Attachment size="xs" state={uploading ? 'uploading' : 'done'} className="max-w-48 min-w-0">
+      <AttachmentMedia>
+        {uploading ? <Loader2 className="animate-spin" /> : <FileText />}
+      </AttachmentMedia>
+      <AttachmentContent>
+        <AttachmentTitle dir="auto">{name}</AttachmentTitle>
+      </AttachmentContent>
+      {onRemove && (
+        <AttachmentActions>
+          <AttachmentAction onClick={onRemove} aria-label={removeLabel} title={removeLabel}>
+            <X />
+          </AttachmentAction>
+        </AttachmentActions>
+      )}
+    </Attachment>
   );
 }

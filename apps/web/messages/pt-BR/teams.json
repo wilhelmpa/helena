@@ -779,7 +779,8 @@
         "model": "modelo",
         "reasoning": "raciocínio"
       }
-    }
+    },
+    "chatTemplate": "Um modelo não é executado. Adicione-o a um projeto como agente para testá-lo aqui."
   },
   "members": {
     "roleSaved": "{name} agora é {role}",
