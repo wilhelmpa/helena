@@ -91,7 +91,10 @@ export const hermesSource: UpdateSource = {
     ].join('\n');
   },
   async apply(_request, context) {
-    const proposalId = await requestHermesUpdate();
+    // An update someone requested on the approvals page is the same update: it is decided
+    // here instead of being requested twice.
+    const pending = (await hermesUpdateState(context.userId)).proposal;
+    const proposalId = pending?.status === 'pending' ? pending.id : await requestHermesUpdate();
     // The owner's click in the update center is the approval: the proposal is decided as
     // theirs, which hands the update to the helper.
     await decideProposal({ id: context.userId, isOwner: true }, proposalId, true, 'Update center');

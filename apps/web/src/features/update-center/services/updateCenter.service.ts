@@ -33,7 +33,12 @@ export function useCheckForUpdates() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: checkForUpdates,
-    onSuccess: (value) => qc.setQueryData(updateCenterKey, value),
+    onSuccess: (value) => {
+      qc.setQueryData(updateCenterKey, value);
+      // The check starts in the background; a moment later it reads as running, and the
+      // list then follows it every few seconds.
+      setTimeout(() => void qc.invalidateQueries({ queryKey: updateCenterKey }), 1_500);
+    },
   });
 }
 

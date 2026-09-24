@@ -160,10 +160,9 @@ export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestA
       desc(aiAgent.lastSeenAt),
       asc(aiAgent.id),
     );
+  // Only Hermes has the switches that make a run text only (packages/runner/src/digest.ts).
   const hermes = rows.filter(
-    (row) =>
-      (row.runtimeState as { adapter?: unknown } | null)?.adapter === 'hermes' ||
-      row.id === settings.agentId,
+    (row) => (row.runtimeState as { adapter?: unknown } | null)?.adapter === 'hermes',
   );
   const chosen =
     hermes.find((row) => row.id === settings.agentId) ??

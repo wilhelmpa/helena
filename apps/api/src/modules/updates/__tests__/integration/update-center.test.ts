@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm, unlink, writeFile } from 'node:f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { agentRun, aiAgent, db, helenaSystemJob, helenaUpdate, helenaUpdateAction } from '@repo/db';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, inArray } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { createAgent } from '#tests/helpers/agents';
@@ -591,6 +591,120 @@ describe('update center: applying', () => {
       return action.state === 'failed' ? action : null;
     });
     expect(failed.error).toBe('the manifest is not signed');
+  });
+});
+
+describe('update center: Hermes', () => {
+  const ref = (version: string, commit: string) => ({ commit, describe: `v${version}`, version });
+
+  async function answerNext(
+    runner: ReturnType<typeof apiKeyApi>,
+    answer: (request: Record<string, unknown>) => unknown,
+  ) {
+    for (let i = 0; i < 100; i++) {
+      const claimed = (await runner['agent-runtime'].requests.claim.post()).data?.request;
+      if (!claimed) continue;
+      await runner['agent-runtime']
+        .requests({ requestId: claimed.id })
+        .answer.post({ ok: true, result: answer(claimed.request as Record<string, unknown>) });
+      return claimed.request as Record<string, unknown>;
+    }
+    throw new Error('no request arrived');
+  }
+
+  it('checks through the runner, and updates as the owner who clicked', async () => {
+    const { user, api } = await owner();
+    const { agent, runner } = await hermesAgent(api);
+    // The runner is online now, so the Hermes check goes to it.
+    await db
+      .update(aiAgent)
+      .set({
+        runtimeState: { adapter: 'hermes', capabilities: ['update'] },
+        lastSeenAt: new Date(),
+      })
+      .where(eq(aiAgent.id, agent.id));
+    startFakeHelper(helperAnswers);
+    const checking = runUpdateCheck({ only: 'hermes', manual: true });
+    await answerNext(runner, () => ({
+      current: ref('0.21.4', 'a'.repeat(40)),
+      latest: ref('0.22.0', 'b'.repeat(40)),
+      commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
+      localPatches: [{ commit: 'c'.repeat(40), date: '2026-09-24', subject: 'local patch' }],
+    }));
+    await checking;
+    const hermes = (await rows()).find((row) => row.source === 'hermes')!;
+    expect(hermes).toMatchObject({
+      installed: '0.21.4 (aaaaaaaa)',
+      available: '0.22.0 (bbbbbbbb)',
+      updateAvailable: true,
+      applicable: true,
+      detail: '1 commits · 1 local',
+    });
+
+    const applying = applyUpdate(user.userId, hermes.id);
+    const apply = await answerNext(runner, () => ({ id: 'helper-1', state: 'started' }));
+    expect(apply).toEqual({ op: 'runtime.update', action: 'apply', target: 'b'.repeat(40) });
+    const actionId = await applying;
+
+    const following = followActions();
+    await answerNext(runner, () => ({
+      id: 'helper-1',
+      state: 'done',
+      ok: true,
+      log: '$ git fetch',
+    }));
+    await following;
+    // Then Hermes is asked again what is installed now.
+    await answerNext(runner, () => ({
+      current: ref('0.22.0', 'b'.repeat(40)),
+      latest: ref('0.22.0', 'b'.repeat(40)),
+      commits: [],
+      localPatches: [],
+    }));
+    await waitFor(async () => {
+      const row = (await rows()).find((entry) => entry.source === 'hermes');
+      return row?.updateAvailable === false ? row : null;
+    });
+    const [action] = await db
+      .select()
+      .from(helenaUpdateAction)
+      .where(eq(helenaUpdateAction.id, actionId));
+    expect(action).toMatchObject({
+      state: 'done',
+      log: '$ git fetch',
+      fromVersion: '0.21.4 (aaaaaaaa)',
+    });
+  });
+});
+
+describe('update center: stuck updates', () => {
+  it('fails an update the helper never took or never finished', async () => {
+    const { user } = await owner();
+    const [neverStarted, neverFinished] = await db
+      .insert(helenaUpdateAction)
+      .values([
+        { source: 'apt', component: 'openssl', name: 'openssl', requestedByUserId: user.userId },
+        {
+          source: 'cli-runtimes',
+          component: 'claude',
+          name: 'Claude Code',
+          ref: '11111111-1111-4111-8111-111111111111',
+          requestedByUserId: user.userId,
+        },
+      ])
+      .returning({ id: helenaUpdateAction.id });
+    expect(await followActions(Date.now() + 60_000)).toBe(0);
+    expect(await followActions(Date.now() + 11 * 60_000)).toBe(1);
+    expect(await followActions(Date.now() + 4 * 3_600_000)).toBe(1);
+    const states = await db
+      .select()
+      .from(helenaUpdateAction)
+      .where(inArray(helenaUpdateAction.id, [neverStarted!.id, neverFinished!.id]))
+      .orderBy(asc(helenaUpdateAction.id));
+    expect(states.map((row) => [row.state, row.error])).toEqual([
+      ['failed', 'The update did not start'],
+      ['failed', expect.stringContaining('did not finish in time')],
+    ]);
   });
 });
 

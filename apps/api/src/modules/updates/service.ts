@@ -439,6 +439,9 @@ function backupDir(): string {
 
 export type ApplyScope = 'item' | 'group' | 'security';
 
+const UNSTARTED_AFTER_MS = 10 * 60_000;
+const UNFINISHED_AFTER_MS = 3 * 3_600_000;
+
 // Starts the update of one component (or, for a group, of every component of it, or of
 // its security updates). The owner's click is the approval: this is the only place an
 // update starts, and only for a version the last check found.
@@ -564,20 +567,35 @@ async function finishAction(
     .where(and(eq(helenaUpdateAction.id, actionId), eq(helenaUpdateAction.state, 'running')))
     .returning({ source: helenaUpdateAction.source });
   // What is installed now: the source is asked again, past any cache (Hermes' last check).
-  if (action) await runUpdateCheck({ only: action.source, manual: true }).catch(() => {});
+  // In the background: the Hermes check waits minutes for its runner, and this runs while
+  // the list is read.
+  if (action) void runUpdateCheck({ only: action.source, manual: true }).catch(() => {});
 }
 
 // Follows every update that is running to its end. Called when the list is read and by the
 // background loop.
-export async function followActions(): Promise<number> {
+export async function followActions(now = Date.now()): Promise<number> {
   const running = await db
     .select()
     .from(helenaUpdateAction)
-    .where(and(eq(helenaUpdateAction.state, 'running'), isNotNull(helenaUpdateAction.ref)));
+    .where(eq(helenaUpdateAction.state, 'running'));
   let finished = 0;
   for (const action of running) {
+    const age = now - action.requestedAt.getTime();
+    // A helper that never took the request, or never finished it (its unit gives up after
+    // two hours), would block every further update of the source.
+    if ((!action.ref && age > UNSTARTED_AFTER_MS) || age > UNFINISHED_AFTER_MS) {
+      await finishAction(action.id, {
+        state: 'failed',
+        error: action.ref
+          ? 'The update did not finish in time; look at the helper (journalctl -u helena-update)'
+          : 'The update did not start',
+      });
+      finished += 1;
+      continue;
+    }
     const source = host.updateSources.get(action.source);
-    if (!source?.progress) continue;
+    if (!action.ref || !source?.progress) continue;
     try {
       const progress = await source.progress(action.ref!, {
         log: consoleLogger(`updates:${source.id}`),
