@@ -237,6 +237,7 @@ describe('webhooks', () => {
       for (const title of ['a', 'b', 'c']) {
         await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title });
       }
+      await deliverDomainEvents();
 
       const first = await asOwner
         .webhooks({ webhookId: id })

@@ -39,18 +39,18 @@ describe('domain events', () => {
     expect(types).toContain('helena.issue.assigned');
 
     const createdEvent = events.find((event) => event.type === 'helena.issue.created')!;
-    expect(createdEvent).toMatchObject({
-      specversion: '1.0',
-      datacontenttype: 'application/json',
-      subject: `issues/${issueId}`,
-      helenaproject: view.data!.id,
-      data: expect.objectContaining({
-        issueId,
-        identifier: 'EVT-1',
-        title: 'Write the report',
-        parentId: null,
-      }),
+    expect(createdEvent.specversion).toBe('1.0');
+    expect(createdEvent.datacontenttype).toBe('application/json');
+    expect(createdEvent.subject).toBe(`issues/${issueId}`);
+    expect(createdEvent.source).toBe(`/projects/${createdEvent.helenaproject}`);
+    expect(createdEvent.data).toMatchObject({
+      issueId,
+      identifier: 'EVT-1',
+      title: 'Write the report',
+      parentId: null,
     });
+    // The resource as the API returns it, for consumers that forward it (webhooks).
+    expect((createdEvent.data as { snapshot: { id: number } }).snapshot.id).toBe(issueId);
     const assigned = events.find((event) => event.type === 'helena.issue.assigned')!;
     expect(assigned.data).toMatchObject({
       field: 'assignee',
