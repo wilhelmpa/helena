@@ -14,7 +14,14 @@ export {
 } from './git';
 export { extractText, isExtractable, type Extraction } from './extract';
 export { extractPending, requeueInstalledExtractions } from './extraction-queue';
-export { indexVaultPaths, rescanVault, sha256Of, walkVault } from './indexer';
+export {
+  EXTERNAL_PROVENANCE,
+  indexVaultPaths,
+  rescanVault,
+  sha256Of,
+  walkVault,
+  type VaultWriteProvenance,
+} from './indexer';
 export {
   belowPattern,
   findEntry,

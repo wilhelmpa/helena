@@ -96,13 +96,29 @@ async function saveFolder(relative: string, stats: Stats): Promise<void> {
   );
 }
 
-async function saveFile(relative: string, stats: Stats, knownSha?: string): Promise<void> {
+// Who wrote a change the index records: the API names the person or agent it wrote
+// for; a change the watcher or a rescan finds on disk came from outside Helena.
+export interface VaultWriteProvenance {
+  author: string;
+  runId?: number | null;
+}
+
+export const EXTERNAL_PROVENANCE: VaultWriteProvenance = { author: 'extern' };
+
+async function saveFile(
+  relative: string,
+  stats: Stats,
+  knownSha: string | undefined,
+  provenance: VaultWriteProvenance,
+): Promise<void> {
   const absolute = absoluteVaultPath(relative);
   const base = {
     path: relative,
     mime: vaultMime(relative),
     sizeBytes: stats.size,
     mtime: mtimeOf(stats),
+    lastAuthor: provenance.author,
+    lastRunId: provenance.runId ?? null,
   };
   if (isTextFile(relative) && stats.size <= MAX_TEXT_BYTES) {
     const bytes = await readFile(absolute);
@@ -172,7 +188,12 @@ async function takeOverMovedEntry(
   return false;
 }
 
-async function indexExisting(relative: string, stats: Stats, gone: Set<string>): Promise<void> {
+async function indexExisting(
+  relative: string,
+  stats: Stats,
+  gone: Set<string>,
+  provenance: VaultWriteProvenance,
+): Promise<void> {
   if (stats.isDirectory()) {
     await saveFolder(relative, stats);
     return;
@@ -182,14 +203,21 @@ async function indexExisting(relative: string, stats: Stats, gone: Set<string>):
   if (entry && entry.kind !== 'folder' && unchangedOnDisk(entry, stats)) return;
   const sha256 = await hashFile(absoluteVaultPath(relative));
   if (entry?.sha256 === sha256) {
-    await touchEntry(entry.id, mtimeOf(stats), stats.size);
+    // The same content: an outside look (the watcher after the API's own write) keeps
+    // the author the API recorded; the API's own index call names it.
+    await touchEntry(
+      entry.id,
+      mtimeOf(stats),
+      stats.size,
+      provenance === EXTERNAL_PROVENANCE ? undefined : provenance,
+    );
     return;
   }
   if (!entry && (await takeOverMovedEntry(relative, sha256, gone))) {
     // The file's name or folder changed, which changes a note's title and where its
     // relative links point; the text and extraction carry over.
     if (isTextFile(relative)) {
-      await saveFile(relative, stats, sha256);
+      await saveFile(relative, stats, sha256, provenance);
     } else {
       const moved = (await findEntry(relative))!;
       await saveEntry(
@@ -204,14 +232,17 @@ async function indexExisting(relative: string, stats: Stats, gone: Set<string>):
     }
     return;
   }
-  await saveFile(relative, stats, sha256);
+  await saveFile(relative, stats, sha256, provenance);
 }
 
 // Brings the index in line with the given vault paths, which changed on disk: each is
 // indexed again if it exists (a folder with everything in it) and removed if it does
 // not. The paths that exist are handled first, so a file that disappeared at one path
 // and appeared at another in the same batch is recognised as moved.
-export async function indexVaultPaths(relativePaths: string[]): Promise<void> {
+export async function indexVaultPaths(
+  relativePaths: string[],
+  provenance: VaultWriteProvenance = EXTERNAL_PROVENANCE,
+): Promise<void> {
   const present = new Map<string, Stats>();
   const gone = new Set<string>();
   for (const relative of new Set(relativePaths)) {
@@ -235,7 +266,7 @@ export async function indexVaultPaths(relativePaths: string[]): Promise<void> {
   const ordered = [...present.keys()].sort();
   for (const relative of ordered) {
     try {
-      await indexExisting(relative, present.get(relative)!, gone);
+      await indexExisting(relative, present.get(relative)!, gone, provenance);
     } catch (error) {
       if (isMissing(error)) gone.add(relative);
       else if (!isUnreadable(error)) console.error(`[vault] indexing ${relative} failed:`, error);
