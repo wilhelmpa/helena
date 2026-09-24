@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import WorkspaceFrame from '@/components/layout/WorkspaceFrame';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
@@ -17,6 +17,25 @@ export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps)
   const t = useTranslations('nav.workspace');
   const workspaceConfig = runtimeEnv().workspace;
   const provisioning = useProjectProvisioningQuery(projectKey);
+  const area = useRef<HTMLDivElement | null>(null);
+  // The terminal (xterm in the frame) fits itself on its window's resize event; the panel
+  // resizing or the frame coming back from hidden does not always fire it, so the frame is
+  // told to fit whenever the area changes (owner, 2026-09-24: "das Terminal überall groß
+  // und responsive").
+  useEffect(() => {
+    const node = area.current;
+    if (!node) return;
+    const fit = () => {
+      try {
+        node.querySelector('iframe')?.contentWindow?.dispatchEvent(new Event('resize'));
+      } catch {
+        // Another origin or not loaded yet: its own load fits it.
+      }
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [projectKey]);
   const resources = useMemo(
     () =>
       provisioning.data?.status === 'succeeded' ? (provisioning.data.result?.resources ?? []) : [],
@@ -27,5 +46,9 @@ export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps)
 
   const url = workspaceTools(workspaceConfig, projectKey, resources).terminal.url;
   if (!url) return null;
-  return <WorkspaceFrame url={url} title={t('terminal')} active className="flex-1" />;
+  return (
+    <div ref={area} className="flex h-full min-h-0 flex-1 flex-col">
+      <WorkspaceFrame url={url} title={t('terminal')} active className="flex-1" />
+    </div>
+  );
 }

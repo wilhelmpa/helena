@@ -379,9 +379,16 @@ export async function controlBrowser(port, action, body) {
     case "activate":
       await activateTab(port, body.id);
       return { ok: true };
-    case "close":
+    case "close": {
+      // Closing the last tab ends Chromium, and the browser is away until systemd starts it
+      // again ("The browser did not answer"). The last tab is replaced by Google instead.
+      const pages = ((await devtoolsJson(port, "/json/list")) ?? []).filter((target) => target.type === "page");
+      if (pages.length <= 1) {
+        await devtoolsJson(port, `/json/new?${encodeURIComponent("https://www.google.com/")}`, "PUT");
+      }
       await devtoolsJson(port, `/json/close/${targetId(body.id)}`);
       return { ok: true };
+    }
     case "new": {
       // A new tab opens Google unless it was given an address (owner, 2026-09-24).
       const url = body.url ? navigableUrl(body.url) : "https://www.google.com/";
