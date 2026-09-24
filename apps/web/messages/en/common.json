@@ -77,6 +77,9 @@
       },
       "board": {
         "select-all": "Select all issues on the board"
+      },
+      "layout": {
+        "cycle": "Next layout"
       }
     },
     "conflict": "Already used by {command}"

@@ -77,6 +77,9 @@
       },
       "board": {
         "select-all": "Pilih semua issue di papan"
+      },
+      "layout": {
+        "cycle": "Tata letak berikutnya"
       }
     },
     "conflict": "Sudah digunakan oleh {command}"

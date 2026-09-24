@@ -15,6 +15,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { LocaleToggle } from '@/components/locale-toggle';
 import UserMenu from '@/components/layout/UserMenu';
 import WorkspaceToolbar from '@/components/layout/WorkspaceToolbar';
+import WorkspaceLayoutMenu from '@/components/layout/WorkspaceLayoutMenu';
 import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 
 export default function AppHeader({
@@ -22,19 +23,19 @@ export default function AppHeader({
   hasProject,
   onOpenCommand,
   onNewIssue,
-  workspaceOpen,
-  activeWorkspaceTool,
+  shownWorkspaceTools,
   onSelectWorkspaceTool,
   headerLayout,
   headerExtra,
   pageSlotRef,
+  pageHidden = false,
 }: {
   title: ReactNode;
   hasProject: boolean;
   onOpenCommand: () => void;
   onNewIssue: () => void;
-  workspaceOpen: boolean;
-  activeWorkspaceTool: WorkspaceToolId;
+  // The tools the workspace layout shows right now.
+  shownWorkspaceTools: readonly WorkspaceToolId[];
   onSelectWorkspaceTool: (tool: WorkspaceToolId) => void;
   // 'single' (the default, docs/volition-design-helena-ui.md) merges the page's own
   // view tabs/filters into this one row (`headerExtra`) and leaves language, theme
@@ -46,6 +47,9 @@ export default function AppHeader({
   // Receives the page slot's element (see ShellHeaderSlotCtx): a section page renders
   // its actions there instead of in a second row.
   pageSlotRef?: (element: HTMLElement | null) => void;
+  // The workspace layout shows no page (the chat or a tool in its place): the page's own
+  // controls stay mounted but out of sight, so they never act on a page nobody sees.
+  pageHidden?: boolean;
 }) {
   const t = useTranslations('nav');
   const { can } = usePermissions();
@@ -72,12 +76,15 @@ export default function AppHeader({
         {title}
       </div>
 
-      {single && headerExtra ? <ShellHeaderExtra store={headerExtra} /> : null}
+      {single && headerExtra && !pageHidden ? <ShellHeaderExtra store={headerExtra} /> : null}
       {single && (
         <div
           ref={pageSlotRef}
           data-slot="app-header-page"
-          className="flex min-w-0 flex-1 items-center justify-end gap-2 empty:hidden"
+          className={cn(
+            'flex min-w-0 flex-1 items-center justify-end gap-2 empty:hidden',
+            pageHidden && 'hidden',
+          )}
         />
       )}
 
@@ -121,11 +128,8 @@ export default function AppHeader({
           </Tooltip>
         )}
 
-        <WorkspaceToolbar
-          open={workspaceOpen}
-          activeTool={activeWorkspaceTool}
-          onSelectTool={onSelectWorkspaceTool}
-        />
+        <WorkspaceToolbar shown={shownWorkspaceTools} onSelectTool={onSelectWorkspaceTool} />
+        <WorkspaceLayoutMenu />
         {!single && (
           <>
             <LocaleToggle />

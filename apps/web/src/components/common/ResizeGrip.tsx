@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 
 // The grip on the edge of a resizable column or panel. It reports how far the
@@ -10,10 +10,13 @@ import { cn } from '@/lib/utils';
 export default function ResizeGrip({
   label,
   className,
+  style,
   onDrag,
 }: {
   label: string;
   className?: string;
+  // Where it sits, such as its column in a grid.
+  style?: CSSProperties;
   onDrag: (deltaX: number) => void;
 }) {
   // The drag listens on the window, since the pointer leaves the 6px grip as soon
@@ -70,6 +73,7 @@ export default function ResizeGrip({
       tabIndex={0}
       onPointerDown={beginResize}
       onKeyDown={onKeyDown}
+      style={style}
       className={cn(
         'w-1.5 cursor-col-resize touch-none outline-none select-none hover:bg-primary/40 focus-visible:bg-primary/40',
         className,

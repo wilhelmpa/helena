@@ -19,6 +19,7 @@ export type HotkeyId =
   | 'project.new'
   | 'project.settings'
   | 'chat.toggle'
+  | 'layout.cycle'
   | 'board.select-all';
 
 // The heading a shortcut is listed under in the editor. The name of a group, and
@@ -70,6 +71,8 @@ export const HOTKEYS: HotkeyDef[] = [
     scope: 'app',
   },
   { id: 'chat.toggle', group: 'general', combo: 'c', scope: 'app' },
+  // The next workspace layout (hooks/useWorkspaceLayout).
+  { id: 'layout.cycle', group: 'general', combo: 'l', scope: 'app' },
   { id: 'view.kanban', group: 'workItems', combo: '1', scope: 'app' },
   { id: 'view.table', group: 'workItems', combo: '2', scope: 'app' },
   { id: 'view.timeline', group: 'workItems', combo: '3', scope: 'app' },

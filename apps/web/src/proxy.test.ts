@@ -98,9 +98,11 @@ describe('proxy security headers', () => {
     assert.notEqual(nonce, nonceOf(second));
     // Next reads the nonce from the policy on the request; the layout reads x-nonce.
     assert.equal(first.headers.get('x-middleware-request-x-nonce'), nonce);
-    assert.match(
-      first.headers.get('x-middleware-request-content-security-policy') ?? '',
-      new RegExp(`'nonce-${nonce}'`),
+    // A plain substring test: a base64 nonce may hold "+", which a RegExp would read.
+    assert.ok(
+      (first.headers.get('x-middleware-request-content-security-policy') ?? '').includes(
+        `'nonce-${nonce}'`,
+      ),
     );
   });
 
