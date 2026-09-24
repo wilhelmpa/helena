@@ -113,11 +113,7 @@ describe('column auto-assignee', () => {
     it('is cleared when an agent is detached from the project', async () => {
       const { asOwner } = await setupProject();
       const teamId = await teamOf(asOwner, 'MKT');
-      const created = await createAgent(asOwner, 'MKT', {
-        name: 'Triage Bot',
-        username: 'triage',
-        kind: 'internal',
-      });
+      const created = await createAgent(asOwner, 'MKT', { name: 'Triage Bot', username: 'triage' });
       const agent = created.data!.agent;
       const column = await columnByName(asOwner, 'In Progress');
       await setAutoAssignee(asOwner, column.id, agent.userId);

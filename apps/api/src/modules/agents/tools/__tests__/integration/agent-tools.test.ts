@@ -61,13 +61,13 @@ describe('agent tools', () => {
 
   it('rejects binding a tool to a credential of a different integration', async () => {
     const { asOwner, teamId } = await setup();
-    const openaiId = await createCredential(asOwner, 'MKT', {
-      integrationKey: 'openai',
-      credential: { apiKey: 'sk-1' },
+    const telegramId = await createCredential(asOwner, 'MKT', {
+      integrationKey: 'telegram',
+      credential: { botToken: '123:secret-aaaa', defaultChatId: '42' },
     });
     const res = await tools(asOwner, teamId).post({
       toolKey: 'jina_reader',
-      credentialId: openaiId,
+      credentialId: telegramId,
     });
     expect(res.status).toBe(400);
   });
@@ -125,11 +125,7 @@ describe('agent tools', () => {
     const credentialId = await jinaCredential(asOwner);
     const tool = await tools(asOwner, teamId).post({ toolKey: 'jina_reader', credentialId });
 
-    const agent = await createAgent(asOwner, 'SUP', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const agent = await createAgent(asOwner, 'SUP', { name: 'Bot', username: 'bot' });
     const set = await agents(
       asOwner,
       teamId,
@@ -146,15 +142,11 @@ describe('agent tools', () => {
     expect((await tools(asOwner, teamId).get()).data?.items).toHaveLength(0);
   });
 
-  it('enables tools on an internal agent and lists them', async () => {
+  it('enables tools on an agent and lists them', async () => {
     const { asOwner, teamId } = await setup();
     const credentialId = await jinaCredential(asOwner);
     const tool = await tools(asOwner, teamId).post({ toolKey: 'jina_reader', credentialId });
-    const agent = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const agent = await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' });
     const agentId = agent.data!.agent.id;
 
     const set = await agents(
@@ -193,11 +185,7 @@ describe('agent tools', () => {
         credential: { apiKey: 'jina-other' },
       }),
     });
-    const agent = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const agent = await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' });
 
     const set = await agents(
       asOwner,

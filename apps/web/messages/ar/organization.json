@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "فريق الوكلاء",
     "teamDescription": "تنطبق الأدوار والقدرات على كل مشاريع الفريق. يشارك في تشغيل الفريق الوكلاء الذين يعملون في Hermes فقط.",
-    "internal": "ليس في Hermes",
     "editRoles": "حدّد الأدوار والقدرات في تبويب الوكلاء.",
     "policyTitle": "سير عمل فريق الوكلاء",
     "policyDescription": "يعمل في Mastra عند إسناد مهمة إلى منسق.",

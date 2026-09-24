@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "Équipe d’agents",
     "teamDescription": "Les rôles et compétences s’appliquent à tous les projets de l’équipe. Seuls les agents qui tournent dans Hermes participent à une exécution d’équipe.",
-    "internal": "hors Hermes",
     "editRoles": "Définissez rôles et compétences dans l’onglet Agents.",
     "policyTitle": "Workflow agent-team",
     "policyDescription": "S’exécute dans Mastra quand une tâche est déléguée à un coordinateur.",

@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "Tim agen",
     "teamDescription": "Peran dan kemampuan berlaku untuk semua proyek tim. Hanya agen yang berjalan di Hermes yang ikut dalam proses tim.",
-    "internal": "tidak di Hermes",
     "editRoles": "Atur peran dan kemampuan di tab Agen.",
     "policyTitle": "Alur kerja agent-team",
     "policyDescription": "Berjalan di Mastra saat tugas didelegasikan ke koordinator.",

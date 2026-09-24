@@ -15,7 +15,6 @@ import { swagger } from '@elysiajs/swagger';
 import { Elysia } from 'elysia';
 import { planner } from './planner';
 import { mountMcp } from './mcp/mount';
-import { setMcpApp } from './mcp/app-ref';
 import { gitWebhookRoutes } from './modules/git/webhook';
 import { scimRoutes } from './modules/scim';
 import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
@@ -471,11 +470,6 @@ export const app = new Elysia()
 // type) stays the REST surface; the MCP endpoint is JSON-RPC, not called via Eden.
 // Its tools are generated from the planner routes tagged with mcpTool().
 mountMcp(app);
-
-// Hands the assembled app to the internal agent runtime, which builds an agent's
-// tools from the same mcpTool() routes and dispatches them in process. It cannot
-// import this module without a cycle, so the reference is passed here.
-setMcpApp(app);
 
 // App type — useful for Eden Treaty (type-safe client) on the frontend and in tests.
 export type App = typeof app;

@@ -398,9 +398,8 @@ export async function deleteComment(
 // If the comment reaches agents, queue a run for each so they can reply. A mention
 // reaches the agents it names; a reply reaches the author of the comment it answers,
 // so answering an agent in its own thread does not have to tag it again. Only quick
-// queries run here; the work happens later — in the poller for an internal agent, on
-// the operator's runner for an external one — so creating a comment is never blocked
-// on it. Comments authored by an agent's bot user never trigger runs, which stops
+// queries run here; the work happens later, on the agent's runner, so creating a
+// comment is never blocked on it. Comments authored by an agent's bot user never trigger runs, which stops
 // agents from setting each other (or themselves) off.
 async function enqueueMentionRuns(
   projectId: number,

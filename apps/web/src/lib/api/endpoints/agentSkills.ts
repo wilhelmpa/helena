@@ -9,7 +9,7 @@ export interface SkillRef {
 }
 
 // A skill in the team library: a SKILL.md plus optional reference files, given to
-// the internal agents of the team's projects. Content lives in the object store;
+// the agents of the team's projects. Content lives in the object store;
 // this is the metadata.
 export interface AgentSkill {
   id: number;

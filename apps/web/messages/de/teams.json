@@ -28,7 +28,7 @@
     },
     "integrations": {
       "title": "Integrationen",
-      "description": "Die Schlüssel für KI-Anbieter und die Zugangsdaten für Tools, mit denen die Projekte des Teams arbeiten."
+      "description": "Die Zugangsdaten für Tools, mit denen die Projekte des Teams arbeiten."
     },
     "mcp": {
       "title": "MCP",
@@ -36,7 +36,7 @@
     },
     "agentSkills": {
       "title": "Skills",
-      "description": "Wiederverwendbare Anweisungen, die interne Agenten bei Bedarf laden."
+      "description": "Wiederverwendbare Anweisungen, die Agenten bei Bedarf laden."
     },
     "agentTools": {
       "title": "Tools",
@@ -232,13 +232,9 @@
     "search": "Integrationen suchen",
     "noMatches": "Keine Integration passt zu „{query}“.",
     "empty": "Noch keine Zugangsdaten",
-    "emptyHint": "Ohne Zugangsdaten können Agenten weder einen KI-Anbieter noch ein Tool nutzen.",
+    "emptyHint": "Ohne Zugangsdaten können Agenten kein Tool nutzen.",
     "deleteMessage": "Zugangsdaten für {integration} löschen? Agenten und Tools, die sie nutzen, funktionieren erst wieder, wenn du neue hinzufügst.",
     "groups": {
-      "llm": {
-        "title": "KI-Anbieter",
-        "hint": "Das Modell, auf dem ein interner Agent läuft"
-      },
       "tool": {
         "title": "Tools",
         "hint": "Integrationen, die ein Agent als Tools aufrufen kann"
@@ -295,7 +291,7 @@
   },
   "tools": {
     "title": "Integrations-Tools",
-    "hint": "Tools, die interne Agenten mit Zugangsdaten einer Integration des Teams aufrufen.",
+    "hint": "Tools, die Agenten mit Zugangsdaten einer Integration des Teams aufrufen.",
     "add": "Tool hinzufügen",
     "delete": "Tool löschen",
     "back": "Zurück zu den Tools",
@@ -370,17 +366,11 @@
     "delete": "KI-Agent löschen",
     "edit": "KI-Agent bearbeiten",
     "empty": "Noch keine KI-Agenten",
-    "emptyHint": "Ein Agent läuft auf der integrierten Runtime oder über die API.",
+    "emptyHint": "Ein Agent wird von seinem Runner über die API gesteuert.",
     "agent": "KI-Agent",
     "sheetSubtitle": "Ein Bot-Konto, an das du Aufgaben delegieren kannst",
-    "kind": "Typ",
     "kindLabel": {
-      "external": "Extern",
-      "internal": "Intern"
-    },
-    "kindHint": {
-      "external": "Über die API gesteuert",
-      "internal": "Von der integrierten Runtime ausgeführt"
+      "external": "Extern"
     },
     "namePlaceholder": "z. B. Triage-Bot",
     "username": "Benutzername",
@@ -393,20 +383,6 @@
     "templatesHint": "Projekte fügen Kopien davon als eigene Spezialisten hinzu. Wissen, das die Kopien teilen, gehört in die Skill-Bibliothek; jede Kopie hat ihr eigenes Gedächtnis.",
     "access": "Verfügbarkeit",
     "accessHint": "Wer diesem Agenten Aufgaben geben kann",
-    "model": "Modell",
-    "modelHint": "Anbieter und Modell",
-    "credential": "Zugangsdaten",
-    "chooseCredential": "Zugangsdaten auswählen",
-    "searchCredential": "Zugangsdaten suchen",
-    "noCredentialsFound": "Keine Zugangsdaten gefunden.",
-    "noCredential": "Kein KI-Anbieter verbunden",
-    "noCredentialHint": "Verbinde einen Anbieterschlüssel in den Integrationen des Teams, um ein Modell für diesen Agenten auszuwählen.",
-    "addKey": "Zu den Team-Einstellungen",
-    "chooseModel": "Modell auswählen",
-    "searchModel": "Modell-ID suchen oder eingeben",
-    "loadingModels": "Modelle werden geladen…",
-    "noModels": "Keine Modelle gefunden.",
-    "noModel": "Kein Modell festgelegt",
     "runtimePolicy": {
       "title": "Runtime-Richtlinie",
       "hint": "Runtime-neutrale Richtlinie, angewendet vom verbundenen Adapter",
@@ -418,9 +394,6 @@
       "modelsEmpty": "Der verbundene Runner hat noch keine Modelle veröffentlicht.",
       "modelsHint": "Vom verbundenen Runner-Anbieter veröffentlichte Modelle.",
       "reasoning": "Reasoning",
-      "memory": "Gesprächsgedächtnis",
-      "memoryWindowLabel": "Nachrichtenfenster des Gedächtnisses",
-      "memoryWindowPlaceholder": "Fenster der letzten Nachrichten",
       "maxConcurrentChats": "Parallele Chats",
       "maxConcurrentChatsHint": "Wie viele Chats dieses Agenten ein Mitglied gleichzeitig antworten lassen kann. Weitere Nachrichten werden abgelehnt, bis einer fertig ist.",
       "toolAllow": "Erlaubte Tools",
@@ -486,21 +459,6 @@
     "runnerStateOffline": "Offline",
     "runnerStateNone": "Nicht verbunden",
     "runnerSeen": "Zuletzt aktiv vor {time}",
-    "actions": "Aktionen",
-    "actionsHint": "Was der Agent im Projekt tun kann",
-    "searchActions": "Aktionen suchen",
-    "actionGroup": {
-      "issues": "Aufgaben",
-      "initiatives": "Initiativen",
-      "cycles": "Zyklen",
-      "documents": "Dokumente",
-      "notes": "Notiz-Boards",
-      "project": "Projekt"
-    },
-    "loadingActions": "Aktionen werden geladen…",
-    "noActions": "Keine Aktionen verfügbar.",
-    "clearAll": "Auswahl aufheben",
-    "selectAll": "Alle auswählen",
     "skills": "Skills",
     "skillsHint": "Wiederverwendbare Anweisungen, die der Agent laden kann",
     "noSkills": "Noch keine Skills",
@@ -514,15 +472,6 @@
     "noToolsHint": "Richte ein Tool ein und aktiviere es dann hier.",
     "goToTools": "Zu den Tools",
     "searchTools": "Tools suchen",
-    "advanced": "Erweitert",
-    "advancedHint": "Sampling, Schrittlimit und Gedächtnis",
-    "temperature": "Temperatur",
-    "optional": "Optional",
-    "maxSteps": "Max. Schritte",
-    "memory": "Gesprächsgedächtnis",
-    "memoryHint": "Merkt sich die letzten Nachrichten innerhalb eines Gesprächsverlaufs.",
-    "memoryCount": "Letzte N Nachrichten merken",
-    "memoryCountPlaceholder": "z. B. 20",
     "keyWarning": "Kopiere ihn jetzt. Der Schlüssel wird nur einmal angezeigt.",
     "apiKeyHint": "Der Schlüssel, mit dem sich der Agent authentifiziert",
     "keyOnCreate": "Wird beim Erstellen des Agenten ausgegeben und nur einmal angezeigt.",
@@ -552,14 +501,9 @@
     "runsSubtitle": "@{username} · ausgelöste Läufe",
     "regenerateMessage": "Der aktuelle Schlüssel für <v>{name}</v> funktioniert ab sofort nicht mehr. Aktualisiere alles, was ihn nutzt, mit dem neuen Schlüssel.",
     "deleteMessage": "<v>{name}</v> und sein API-Schlüssel werden entfernt, und er wird aus allen Aufgaben entfernt, die ihm zugewiesen oder an ihn delegiert waren. Das kann nicht rückgängig gemacht werden.",
-    "actionCount": "{count, plural, one {# Aktion} other {# Aktionen}}",
-    "toolCount": "{count, plural, one {# Tool} other {# Tools}}",
-    "skillCount": "{count, plural, one {# Skill} other {# Skills}}",
     "triggerMention": "Erwähnung",
     "triggerDelegation": "Delegierung",
     "noMatch": "Kein Treffer für „{query}“.",
-    "useCustomModel": "„{query}“ verwenden",
-    "readOnlyAlwaysOn": "Lesezugriff ist immer aktiv und kann nicht deaktiviert werden.",
     "instructionsLabel": "Anweisungen",
     "copyInstructions": "Markdown kopieren",
     "showSource": "Markdown-Quelltext bearbeiten",

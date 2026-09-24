@@ -106,18 +106,6 @@ describe('agent runtime files', () => {
     expect((await files.get()).data).toEqual([]);
   });
 
-  it('requires an external agent', async () => {
-    const { asOwner, teamId } = await setup();
-    const internal = await createAgent(asOwner, 'HOME', {
-      name: 'Internal',
-      username: 'internal',
-      kind: 'internal',
-    });
-    const files = runtimeFiles(asOwner, teamId, internal.data!.agent.id);
-    expect((await files.get()).status).toBe(400);
-    expect((await files.put({ path: 'SOUL.md', content: '# Soul' })).status).toBe(400);
-  });
-
   it('keeps project-limited members away from agents they cannot see', async () => {
     const { asOwner, teamId, agentId } = await setup();
     await asOwner.teams({ teamId }).projects.post({ key: 'OPS', name: 'Operations' });

@@ -18,7 +18,7 @@ import { ToolConfigRow } from './ToolConfigRow';
 import TableCard from '@/components/common/page/TableCard';
 
 // The team's configured tools as a table: a catalog tool bound to an integration
-// credential, callable by the internal agents of every project the team owns. Adding
+// credential, callable by the agents of every project the team owns. Adding
 // happens in a dialog opened from the section header; deleting confirms first.
 // Enabling a configured tool on an agent is done in the agent editor.
 export default function TeamAgentTools({

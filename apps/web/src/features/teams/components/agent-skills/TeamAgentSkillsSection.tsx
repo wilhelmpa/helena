@@ -10,7 +10,7 @@ import { SkillCreateDialog } from './SkillCreateDialog';
 import TeamAgentSkills from './TeamAgentSkills';
 import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 
-// The skill library of a team: the SKILL.md documents its projects' internal agents
+// The skill library of a team: the SKILL.md documents its projects' agents
 // load on demand, shared by every one of them.
 export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
   const t = useTranslations('teams');

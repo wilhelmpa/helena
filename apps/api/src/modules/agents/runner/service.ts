@@ -13,7 +13,7 @@ import { enforceAgentLimits } from '../governance';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
 import { isHomeAgent } from '../core/home-agent';
-import { normalizeRuntimePolicy, type AgentKind } from '../core/service';
+import { normalizeRuntimePolicy } from '../core/service';
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
@@ -32,12 +32,11 @@ import {
   type RunForPrompt,
 } from '../core/prompt/framing';
 
-// The queue an external agent's runner drains. The runner is a process the operator
-// starts on their own machine; it authenticates with the agent's API key, claims one
-// run at a time, executes whatever command it is configured with, and reports the
-// result back. The task is framed here, the same way it is for an internal agent, so
-// every runner gets a task that says what started the run and what to do about it
-// without having to build that itself. Claiming works exactly like the worker's: the
+// The queue an agent's runner drains. The runner is a process the operator starts on
+// their own machine; it authenticates with the agent's API key, claims one run at a
+// time, executes whatever command it is configured with, and reports the result back.
+// The task is framed here, so every runner gets a task that says what started the run
+// and what to do about it without having to build that itself. Claiming works exactly like the worker's: the
 // row stays 'pending' and its next_attempt_at is pushed forward by a lease, so a run
 // whose runner dies mid-flight becomes claimable again once the lease expires.
 
@@ -53,7 +52,6 @@ export interface RunnerProject {
 export interface RunnerAgent {
   id: number;
   teamId: number;
-  kind: AgentKind;
   // The agent's bot user, so a run's prompts do not name the agent to itself, and
   // the handle it is addressed by.
   userId: string;
@@ -77,7 +75,6 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
     .select({
       id: aiAgent.id,
       teamId: aiAgent.teamId,
-      kind: aiAgent.kind,
       userId: aiAgent.userId,
       username: aiAgent.username,
       instructions: aiAgent.instructions,
@@ -111,7 +108,6 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
   const policy = normalizeRuntimePolicy(row.runtimePolicy);
   return {
     ...row,
-    kind: row.kind as AgentKind,
     projects,
     thinkingLevel: policy.reasoningEffort,
     maxTurns: policy.maxTurns ?? null,
@@ -123,7 +119,7 @@ export interface RunnerRun {
   id: number;
   trigger: AgentRunTrigger;
   // The task as the agent should read it: the trigger text framed with what started
-  // the run and what to do about it, the same framing an internal agent gets.
+  // the run and what to do about it.
   prompt: string;
   // Instructions about the run itself — that it is autonomous, and who the people
   // behind it are — for the agent's system prompt rather than its task.

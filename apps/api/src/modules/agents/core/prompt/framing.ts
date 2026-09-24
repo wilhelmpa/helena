@@ -5,11 +5,10 @@ import type { AgentRunTrigger } from '../../model';
 
 // Frames a triggered run into the text an agent receives: the framed user
 // prompt (framePrompt) and the system-instruction blocks about the run mode
-// (runModePreamble) and the people involved (peopleContext). The interactive test
-// chat does not use this path — it frames its own prompt in the controller.
+// (runModePreamble) and the people involved (peopleContext). A chat does not use this
+// path: its runner frames the conversation itself.
 
-// The fields of a claimed run this module reads, as both the queue poller and the
-// external runner build them.
+// The fields of a claimed run this module reads, as the runner feed builds them.
 export interface RunForPrompt {
   id: number;
   trigger: AgentRunTrigger;
@@ -167,8 +166,8 @@ function frameMention(run: RunForPrompt, titled: string): string {
 }
 
 // A leading system-instruction block naming the project the agent works in. Grounds
-// every run — the test chat, the issue-triggered runs, and the ones a runner executes
-// — so the agent knows which project its tools act on and how issue keys are formed.
+// every run a runner executes, so the agent knows which project its tools act on and how
+// issue keys are formed.
 export function projectPreamble(project: {
   key: string;
   name: string;

@@ -8,10 +8,6 @@ import { useAgentWorkloadQuery } from '../../services/analytics.service';
 export default function AgentWorkloadWidget({ projectKey }: { projectKey: string }) {
   const t = useTranslations('dashboards.agentWorkload');
   const { data, isLoading } = useAgentWorkloadQuery(projectKey);
-  // The API types the agent kind as a plain string; one the messages do not carry
-  // is shown as it came.
-  const kindLabel = (kind: string) =>
-    kind === 'external' || kind === 'internal' ? t(`kind.${kind}`) : kind;
   const items = data ?? [];
 
   if (isLoading) {
@@ -42,7 +38,6 @@ export default function AgentWorkloadWidget({ projectKey }: { projectKey: string
           <tr key={a.agentId}>
             <td className="min-w-0 py-1.5">
               <span className="block truncate">{a.agentName}</span>
-              <span className="text-xs text-muted-foreground">{kindLabel(a.kind)}</span>
             </td>
             <td className="py-1.5 text-right tabular-nums">{a.delegatedOpen}</td>
             <td className="py-1.5 text-right tabular-nums">

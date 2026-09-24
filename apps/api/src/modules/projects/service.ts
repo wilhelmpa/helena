@@ -32,7 +32,6 @@ import {
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { PROJECT_FEATURES, featureLabel, type ProjectFeature } from '#shared/features';
 import { getLimits } from '#shared/limits';
-import { deleteThreadsWhere } from '#modules/agents/core/runtime/memory';
 import { HOME_AGENT_USERNAME, isHomeAgent } from '#modules/agents/core/home-agent';
 import { getProjectDefaults } from '#modules/settings/service';
 import { dropUnusedTeamMembership } from '#modules/scim/reconcile';
@@ -383,16 +382,12 @@ export { hermesProjectCoordinatorUsername, isHermesProjectCoordinatorUsername };
 // editable instructions, model, runtime policy/files, skills, and runner state.
 
 // The bot users of the agents a new project of the team starts with, beside its own
-// coordinator: the Home agent always, and the internal agents of the team unless the
-// creator opts out. Every other external agent keeps to its one project, which is what
+// coordinator: the Home agent. Every other agent keeps to its one project, which is what
 // gives it a Hermes runtime of its own. A specialist belongs to the project it was made
 // for, and a template to none.
-export async function newProjectAgentUserIds(
-  teamId: number,
-  withTeamAgents: boolean,
-): Promise<string[]> {
+export async function newProjectAgentUserIds(teamId: number): Promise<string[]> {
   const rows = await db
-    .select({ userId: aiAgent.userId, username: aiAgent.username, kind: aiAgent.kind })
+    .select({ userId: aiAgent.userId, username: aiAgent.username })
     .from(aiAgent)
     .where(
       and(
@@ -401,11 +396,7 @@ export async function newProjectAgentUserIds(
         sql`not exists (select 1 from ${organizationAgentAssignment} a where a.agent_id = ${aiAgent.id} and a.role = 'specialist')`,
       ),
     );
-  return rows
-    .filter(
-      ({ username, kind }) => isHomeAgent(username) || (withTeamAgents && kind === 'internal'),
-    )
-    .map(({ userId }) => userId);
+  return rows.filter(({ username }) => isHomeAgent(username)).map(({ userId }) => userId);
 }
 
 function hermesProjectCoordinatorInstructions(projectKey: string, projectName: string): string {
@@ -478,7 +469,6 @@ export async function createHermesProjectCoordinator(
       username,
       kind: 'external',
       instructions: hermesProjectCoordinatorInstructions(input.projectKey, input.projectName),
-      tools: [],
       triggerOnMention: true,
       triggerOnAssign: true,
       delegationDelaySec: 0,
@@ -673,7 +663,6 @@ export async function createProject(
     description?: string;
     preset?: string;
     templateId?: number;
-    autoAssignTeamAgents?: boolean;
     provisionResources?: string[];
   },
   ownerId: string,
@@ -684,7 +673,7 @@ export async function createProject(
   // transaction opens so the settings lookup is not part of it.
   const [defaults, agentUserIds, defaultRoleId] = await Promise.all([
     getProjectDefaults(),
-    newProjectAgentUserIds(ownerTeam.id, input.autoAssignTeamAgents !== false),
+    newProjectAgentUserIds(ownerTeam.id),
     getDefaultRoleId(ownerTeam.id),
   ]);
   return db.transaction(async (tx) => {
@@ -780,7 +769,6 @@ export async function createProjectAsExternalMcpAgent(
     description?: string;
     preset?: string;
     templateId?: number;
-    autoAssignTeamAgents?: boolean;
     provisionResources?: string[];
   },
   actorUserId: string,
@@ -1017,11 +1005,9 @@ export async function setSubtaskAutomationSettings(
 // actions, which in turn cascade to their own dependents (an issue's labels, field
 // values/options, attachments, and activity; a custom field's values). The
 // issue.column_id foreign key is NO ACTION, checked at end of statement — both the
-// issues and their columns are deleted by the same cascade, so it is satisfied. The
-// conversation threads of the project's agents are deleted first, since they live
-// outside those cascades.
+// issues and their columns are deleted by the same cascade, so it is satisfied, and so
+// are the chats started in the project.
 export async function deleteProject(projectId: number): Promise<void> {
-  await deleteThreadsWhere({ projectId });
   // A team membership the SCIM reconciliation granted stands on the project
   // memberships it granted with it, and no group change follows the delete to re-check
   // it, so the members are read while they still exist and re-checked afterwards.

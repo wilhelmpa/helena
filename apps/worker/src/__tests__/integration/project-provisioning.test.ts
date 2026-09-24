@@ -96,7 +96,6 @@ describe('project provisioning', () => {
     const coder = await insertAgent(owner.id, 'coder', [created.id]);
     const writer = await insertAgent(owner.id, 'writer', [created.id]);
     await insertAgent(owner.id, 'shared', [created.id, other.id]);
-    await insertAgent(owner.id, 'internal', [created.id], 'internal');
     await insertAgent(owner.id, 'master', [created.id]);
     await insertAgent(owner.id, `hermes-agt${owner.id}-coordinator`, [created.id]);
     await insertAgent(owner.id, 'elsewhere', [other.id]);

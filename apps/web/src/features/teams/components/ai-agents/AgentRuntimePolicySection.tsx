@@ -3,7 +3,6 @@
 import { Cpu, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -152,25 +151,6 @@ export default function AgentRuntimePolicySection({
           </Select>
         </div>
       </div>
-
-      <label className="flex items-start gap-2">
-        <Checkbox
-          className="mt-0.5"
-          checked={value.memoryEnabled}
-          onCheckedChange={(checked) => onChange({ memoryEnabled: checked === true })}
-        />
-        <span className="text-sm font-medium">{t('memory')}</span>
-      </label>
-      {value.memoryEnabled && (
-        <Input
-          type="number"
-          min="1"
-          aria-label={t('memoryWindowLabel')}
-          placeholder={t('memoryWindowPlaceholder')}
-          value={value.memoryLastMessages}
-          onChange={(event) => onChange({ memoryLastMessages: event.target.value })}
-        />
-      )}
 
       <div className="space-y-1.5">
         <label htmlFor="agent-max-concurrent-chats" className="text-sm font-medium">

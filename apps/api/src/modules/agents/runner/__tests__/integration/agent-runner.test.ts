@@ -131,8 +131,6 @@ describe('agent runner queue', () => {
       ['ai-agents']({ agentId: agent.id })
       .patch({
         model: 'openai/gpt-5.6-sol',
-        memoryEnabled: true,
-        memoryLastMessages: 20,
         runtimePolicy: {
           reasoningEffort: 'high',
           toolAllow: ['browser'],
@@ -163,7 +161,6 @@ describe('agent runner queue', () => {
     expect(typeof policy.data!.revision).toBe('string');
     expect(policy.data).toMatchObject({
       model: 'openai/gpt-5.6-sol',
-      memory: { enabled: true, lastMessages: 20 },
       runtimePolicy: { reasoningEffort: 'high', mcpGrants: ['itsaplan__get_issue'] },
       skills: [
         {

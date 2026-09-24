@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "Agententeam",
     "teamDescription": "Rollen und Fähigkeiten gelten für alle Projekte des Teams. Nur Agenten, die in Hermes laufen, nehmen an einem Teamlauf teil.",
-    "internal": "nicht in Hermes",
     "editRoles": "Rollen und Fähigkeiten legst du im Tab „Agenten“ fest.",
     "policyTitle": "Agententeam-Workflow",
     "policyDescription": "Läuft in Mastra, wenn eine Aufgabe an einen Coordinator delegiert wird.",

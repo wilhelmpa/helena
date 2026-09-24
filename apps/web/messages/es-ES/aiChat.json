@@ -4,7 +4,6 @@
   "overlayMode": "Flotar el panel",
   "resizePanel": "Redimensionar el panel del chat",
   "emptyTitle": "No hay agentes con los que chatear",
-  "emptyDescription": "Chatea con un agente de este proyecto: uno interno, o uno externo a través de su ejecutor.",
   "createAgent": "Crear un agente",
   "agents": "Agentes",
   "newChat": "Nuevo chat",

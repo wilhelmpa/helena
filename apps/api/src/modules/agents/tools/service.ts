@@ -1,15 +1,14 @@
 import { db, agentTool, agentToolLink, integrationCredential } from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { getTool, type ToolConfig } from '@repo/agent-tools';
+import { getTool } from '@repo/agent-tools';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
-import { decryptSecret } from '@repo/crypto';
 import { getCredentialById } from '../integrations/service';
 import { onTemplateRelevantChange } from '../core/template-sync';
 
 // Data access for configured tools, shared by every project the team owns. A
 // configured tool binds a catalog tool (tool_key) to one integration_credential of the
-// team. The secret lives on the credential, so a row here carries no secret; the
-// runtime decrypts the bound credential at call time. The list DTO enriches a row with
+// team. The secret lives on the credential, so a row here carries no secret. The list
+// DTO enriches a row with
 // its credential's integration and label for display.
 
 export interface AgentToolRow {
@@ -122,32 +121,6 @@ export async function listAgentToolLinks(agentId: number): Promise<AgentToolRow[
     .where(eq(agentToolLink.agentId, agentId))
     .orderBy(agentTool.toolKey);
   return rows.map(mapRow);
-}
-
-// The decrypted tools enabled on an agent, for the runtime to build tools: each tool's
-// key and its bound credential. Not exposed over HTTP.
-export async function listAgentToolsForRun(
-  agentId: number,
-): Promise<{ id: number; toolKey: string; credential: ToolConfig }[]> {
-  const rows = await db
-    .select({
-      id: agentTool.id,
-      toolKey: agentTool.toolKey,
-      ciphertext: integrationCredential.ciphertext,
-      iv: integrationCredential.iv,
-      authTag: integrationCredential.authTag,
-    })
-    .from(agentToolLink)
-    .innerJoin(agentTool, eq(agentTool.id, agentToolLink.agentToolId))
-    .innerJoin(integrationCredential, eq(integrationCredential.id, agentTool.credentialId))
-    .where(eq(agentToolLink.agentId, agentId));
-  return rows.map((r) => ({
-    id: r.id,
-    toolKey: r.toolKey,
-    credential: JSON.parse(
-      decryptSecret({ ciphertext: r.ciphertext, iv: r.iv, authTag: r.authTag }),
-    ) as ToolConfig,
-  }));
 }
 
 // Unknown ids and ids from another team are ignored, not rejected.

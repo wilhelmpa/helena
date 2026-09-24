@@ -42,9 +42,9 @@ async function organizationAgent(api: Api, teamId: number, username: string) {
 describe('Home agent', () => {
   beforeEach(resetDb);
 
-  it('joins every new project, also when the team agents are left out', async () => {
+  it('joins every new project', async () => {
     const { asOwner, teamId } = await setup();
-    await asOwner.projects.post({ key: 'NEW', name: 'New', autoAssignTeamAgents: false });
+    await asOwner.projects.post({ key: 'NEW', name: 'New' });
 
     const home = await teamAgent(asOwner, teamId, 'master');
     expect(home.projects.map((p) => p.key)).toEqual(['MKT', 'NEW']);
@@ -189,10 +189,11 @@ describe('agents created in a project', () => {
     await agents(asOwner, teamId).post({
       name: 'Shared',
       username: 'shared',
-      kind: 'internal',
       projectIds: [project.id],
     });
-    // A specialist stays in its project even when it reports to nobody.
+    // A specialist stays in its project even when it reports to nobody, and so does an
+    // agent attached to it by hand: a new project starts with the Home agent and its own
+    // coordinator only.
     await asOwner
       .teams({ teamId })
       .organization.agents({ agentId: created.data!.agent.id })
@@ -203,7 +204,6 @@ describe('agents created in a project', () => {
     ]);
     expect((await teamAgent(asOwner, teamId, 'shared')).projects.map((p) => p.key)).toEqual([
       'MKT',
-      'NEW',
     ]);
   });
 

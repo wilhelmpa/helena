@@ -157,8 +157,7 @@ export type CopyProjectIncludeKey =
   | 'documents'
   | 'actions'
   | 'configuration'
-  | 'webhooks'
-  | 'agents';
+  | 'webhooks';
 
 export const listTeams = () => request<Team[]>('/teams');
 

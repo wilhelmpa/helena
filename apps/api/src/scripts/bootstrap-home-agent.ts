@@ -156,7 +156,6 @@ export async function bootstrapProjectAgent(
       userId: aiAgent.userId,
       username: aiAgent.username,
       teamId: aiAgent.teamId,
-      kind: aiAgent.kind,
       projects: sql<number>`(select count(*)::int from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId})`,
     })
     .from(aiAgent)
@@ -169,7 +168,6 @@ export async function bootstrapProjectAgent(
     .limit(1);
   if (
     !agent ||
-    agent.kind !== 'external' ||
     isHomeAgent(agent.username) ||
     isHermesProjectCoordinatorUsername(agent.username) ||
     agent.projects !== 1
@@ -194,17 +192,12 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   if (!owner) return { status: 'pending' };
 
   const [existing] = await db
-    .select({ id: aiAgent.id, kind: aiAgent.kind })
+    .select({ id: aiAgent.id })
     .from(aiAgent)
     .where(and(eq(aiAgent.teamId, owner.teamId), eq(aiAgent.username, HOME_AGENT_USERNAME)))
     .limit(1);
 
   if (existing) {
-    if (existing.kind !== 'external') {
-      throw new Error(
-        `The reserved Home agent handle "${HOME_AGENT_USERNAME}" belongs to a non-external agent`,
-      );
-    }
     const apiKey = await regenerateKey(existing.id, owner.teamId);
     if (!apiKey) throw new Error('The existing Home agent could not be re-keyed');
     return { status: 'ready', agentId: existing.id, apiKey };
@@ -213,13 +206,10 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   const created = await createAgent(owner.teamId, {
     name: 'Home',
     username: HOME_AGENT_USERNAME,
-    kind: 'external',
     projectIds: [],
     ownerUserId: owner.userId,
     runnerScope: 'owner',
     instructions: HOME_AGENT_INSTRUCTIONS,
-    memoryEnabled: true,
-    memoryLastMessages: 50,
     triggerOnMention: true,
     triggerOnAssign: false,
     delegationDelaySec: 0,

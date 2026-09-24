@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Bot, MessageSquare, X } from 'lucide-react';
-import { AGENT_KIND_ICON } from '../../utils/agentKindIcon';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import {
@@ -21,8 +20,8 @@ import { useTranslations } from 'next-intl';
 
 // Full-width sheet for one agent. Opened for create (agent null) or to edit an
 // existing one. Create and edit share the same form (AgentSheetForm): on create the
-// sheet stays open and switches to editing the new agent. An internal agent also gets
-// the test chat, shown alongside the form.
+// sheet stays open and switches to editing the new agent. The test chat is shown
+// alongside the form.
 export function TeamAiAgentSheet({
   open,
   agent,
@@ -91,19 +90,18 @@ function SheetBody({
   const chatProject = agent?.projects[0] ?? null;
   // Held here so the transcript and thread survive re-renders. No agent yet during
   // create → id 0; the chat is only reachable once the agent exists.
-  const chat = useAgentChat(chatProject?.key ?? '', agent?.id ?? 0, agent?.kind === 'external');
+  const chat = useAgentChat(chatProject?.key ?? '', agent?.id ?? 0);
 
   // The form and the test chat always sit side by side, so the sheet keeps its shape
   // from create through edit. There is nothing to chat in until the agent exists and
   // works in a project, and until then the chat side says what is missing.
   const chatReady = !!agent && chatProject != null;
-  const KindIcon = agent ? AGENT_KIND_ICON[agent.kind] : Bot;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-3 border-b border-border/60 px-4 pt-4 pb-3.5">
         <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground ring-1 ring-border/60">
-          <KindIcon className="size-4.5" />
+          <Bot className="size-4.5" />
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="min-w-0">
@@ -114,11 +112,6 @@ function SheetBody({
               {agent ? `@${agent.username}` : t('sheetSubtitle')}
             </SheetDescription>
           </div>
-          {agent && (
-            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {agent.kind}
-            </span>
-          )}
         </div>
         <SheetClose asChild>
           <Button

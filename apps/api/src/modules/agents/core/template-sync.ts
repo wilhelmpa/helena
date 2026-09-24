@@ -129,7 +129,6 @@ interface TemplateRow {
   teamId: number;
   instructions: string | null;
   model: string | null;
-  modelCredentialId: number | null;
   runtimePolicy: unknown;
   dailyTokenCeiling: number | null;
   monthlyTokenCeiling: number | null;
@@ -143,7 +142,6 @@ async function loadTemplateRow(id: number): Promise<TemplateRow | null> {
       template: aiAgent.template,
       instructions: aiAgent.instructions,
       model: aiAgent.model,
-      modelCredentialId: aiAgent.modelCredentialId,
       runtimePolicy: aiAgent.runtimePolicy,
       dailyTokenCeiling: aiAgent.dailyTokenCeiling,
       monthlyTokenCeiling: aiAgent.monthlyTokenCeiling,
@@ -221,10 +219,7 @@ async function applyGroupsToCopy(
 ): Promise<void> {
   const set: Partial<typeof aiAgent.$inferInsert> = {};
   if (groups.includes('instructions')) set.instructions = template.instructions;
-  if (groups.includes('model')) {
-    set.model = template.model;
-    set.modelCredentialId = template.modelCredentialId;
-  }
+  if (groups.includes('model')) set.model = template.model;
   if (groups.includes('budgets')) {
     set.dailyTokenCeiling = template.dailyTokenCeiling;
     set.monthlyTokenCeiling = template.monthlyTokenCeiling;

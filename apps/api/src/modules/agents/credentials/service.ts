@@ -396,7 +396,6 @@ export async function setCredentialGrants(
           .select({
             id: aiAgent.id,
             name: user.name,
-            kind: aiAgent.kind,
             template: aiAgent.template,
           })
           .from(aiAgent)
@@ -404,7 +403,7 @@ export async function setCredentialGrants(
           .where(and(eq(aiAgent.teamId, teamId), inArray(aiAgent.id, unique)));
   if (agents.length !== unique.length) throw new HttpError(400, 'An agent is not of this team.');
   for (const agent of agents) {
-    if (agent.kind !== 'external' || agent.template) {
+    if (agent.template) {
       throw new HttpError(400, `${agent.name} does not run in Hermes.`);
     }
     if (existing.projectId !== null && !(await agentWorksInProject(agent.id, existing.projectId))) {

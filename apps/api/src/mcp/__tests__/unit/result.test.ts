@@ -188,13 +188,7 @@ describe('MCP output schemas', () => {
       union: 'false',
     };
     for (const tool of routeTools(app)) {
-      const result = await dispatchTool(
-        app,
-        tool,
-        {},
-        { kind: 'api-key', apiKey: 'unused' },
-        { viaMcpEndpoint: true },
-      );
+      const result = await dispatchTool(app, tool, {}, { kind: 'api-key', apiKey: 'unused' });
       expect(result.text).toBe(String(expected[tool.name]));
       expect(result.isError).toBe(false);
       expect(result.structuredContent).toEqual({

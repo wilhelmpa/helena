@@ -40,7 +40,7 @@ export interface ShareScaffold {
     name: string;
     image: string | null;
     kind: 'member' | 'agent';
-    agentKind: 'external' | 'internal' | null;
+    agentKind: 'external' | null;
   }>;
   customFields: Awaited<ReturnType<typeof listCustomFields>>;
   areas: Awaited<ReturnType<typeof listViewFolders>>;

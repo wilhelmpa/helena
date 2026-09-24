@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "Equipe de agentes",
     "teamDescription": "Papéis e capacidades valem para todos os projetos da equipe. Só agentes que rodam no Hermes participam de uma execução da equipe.",
-    "internal": "fora do Hermes",
     "editRoles": "Defina papéis e capacidades na aba Agentes.",
     "policyTitle": "Fluxo agent-team",
     "policyDescription": "Roda no Mastra quando uma tarefa é delegada a um coordenador.",

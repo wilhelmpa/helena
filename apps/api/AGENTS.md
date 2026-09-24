@@ -10,22 +10,23 @@ Rules and invariants for this package below; read the code for the walkthrough.
   code in `shared/`. See `src/modules/` for the current set.
 - Features nest one level deeper only where they already call each other:
   `modules/agents/{core,chat,runner,skills,tools,mcp-servers,credentials,learning}`, where `core` holds the
-  agent itself and its runtime. A feature whose links to its neighbours run one way
+  agent itself, its run queue and the framing of its tasks. Helena runs no model: every
+  agent is driven by its runner (Hermes) over HTTP with the agent's key. A feature whose links to its neighbours run one way
   stays flat. A schema several of the nested features share sits in the parent's
   `model.ts` and is re-exported from each child's (`agentParams`).
 - `src/app.ts` assembles and exports the app (`export const app`, no `.listen()`);
   `src/index.ts` binds the port and starts `src/background.ts`.
   `export type App = typeof app` types the Eden Treaty client (web + tests).
 - **Background jobs are started from `index.ts`, never assembled into the app**, so
-  importing the app in a test starts nothing. `background.ts` drains the `agent_run`
-  queue in one loop and runs the auto-archive sweep in a loop of its own, so neither
-  waits on the other. The same goes for the agent-team starts waiting for Mastra and the
-  janitors that repair what a restart leaves behind: runs whose runner never reported,
-  stage runs whose Mastra run is gone, and schedules out of line with the workflow
-  settings. Several api replicas run them without overlapping: the queue is
-  claimed with `FOR UPDATE SKIP LOCKED`, and the sweep only touches rows it has not
-  archived yet. An agent run is built from the queue row alone — the project it works
-  in and the bot user it acts as are read there, never handed in. Each janitor run goes
+  importing the app in a test starts nothing. `background.ts` runs each job in a loop
+  of its own, so none waits on another: the auto-archive sweep, the agent-team starts
+  waiting for Mastra and the janitors that repair what a restart leaves behind: runs
+  whose runner never reported, stage runs whose Mastra run is gone, and schedules out of
+  line with the workflow settings. Several api replicas run them without overlapping:
+  a queue is claimed with `FOR UPDATE SKIP LOCKED`, and the sweep only touches rows it
+  has not archived yet. The `agent_run` queue itself is drained by the agents' runners
+  over HTTP (`modules/agents/runner`). An agent run is built from the queue row alone —
+  the project it works in and the bot user it acts as are read there, never handed in. Each janitor run goes
   through `janitorJob`, which writes what it cleaned up, or why it failed, to
   `janitor_run`; `/god/system-health` reads that for the owner's health overview on Home.
 - `index.ts`: `new Elysia({ name: "<feature>", detail: { tags: ["<Tag>"] } })` —

@@ -163,9 +163,8 @@ export const qk = {
   anyAiAgents: ['aiAgents'] as const,
   teamAiAgents: (teamId: number) => ['aiAgents', teamId] as const,
   // One agent by id — the chat workspace's fallback when a thread names an agent its
-  // own (kind- and template-filtered) picker list did not carry.
+  // own (template-filtered) picker list did not carry.
   aiAgent: (teamId: number, agentId: number) => ['aiAgents', teamId, 'agent', agentId] as const,
-  agentTools: (teamId: number) => ['aiAgents', teamId, 'tools'] as const,
   // The skills enabled on one agent (the agent editor's Skills tab).
   agentSkillLinks: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'skills'] as const,
@@ -216,8 +215,6 @@ export const qk = {
   teamCredentialPage: (teamId: number, params: unknown) =>
     ['integrations', 'team', teamId, 'page', params] as const,
   integrationCatalog: (teamId: number) => ['integrations', 'team', teamId, 'catalog'] as const,
-  integrationModels: (teamId: number, provider: string) =>
-    ['integrations', 'team', teamId, 'models', provider] as const,
   // The connected integrations as picker options, under the same prefix so a
   // credential mutation refreshes them too.
   integrationOptions: (teamId: number, kind?: string) =>

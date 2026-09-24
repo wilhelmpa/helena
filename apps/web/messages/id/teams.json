@@ -28,7 +28,7 @@
     },
     "integrations": {
       "title": "Integrasi",
-      "description": "Kunci penyedia AI dan kredensial alat yang dijalankan proyek tim."
+      "description": "Kredensial alat yang dijalankan proyek tim."
     },
     "mcp": {
       "title": "MCP",
@@ -36,7 +36,7 @@
     },
     "agentSkills": {
       "title": "Keahlian",
-      "description": "Instruksi yang dapat digunakan kembali dan dimuat agen internal saat diperlukan."
+      "description": "Instruksi yang dapat digunakan kembali dan dimuat agen saat diperlukan."
     },
     "agentTools": {
       "title": "Alat",
@@ -232,13 +232,9 @@
     "search": "Cari integrasi",
     "noMatches": "Tidak ada integrasi yang cocok dengan “{query}”.",
     "empty": "Belum ada kredensial",
-    "emptyHint": "Agen tidak dapat menggunakan penyedia AI atau alat tanpa kredensial tersebut.",
+    "emptyHint": "Agen tidak dapat menggunakan alat tanpa kredensial tersebut.",
     "deleteMessage": "Hapus kredensial {integration}? Agen dan alat yang menggunakannya akan berhenti bekerja hingga Anda menambahkan yang baru.",
     "groups": {
-      "llm": {
-        "title": "Penyedia AI",
-        "hint": "Model yang dijalankan oleh agen internal"
-      },
       "tool": {
         "title": "Alat",
         "hint": "Integrasi yang dapat dipanggil agen sebagai alat"
@@ -295,7 +291,7 @@
   },
   "tools": {
     "title": "Alat integrasi",
-    "hint": "Alat yang dipanggil agen internal dengan kredensial integrasi tim.",
+    "hint": "Alat yang dipanggil agen dengan kredensial integrasi tim.",
     "add": "Tambah alat",
     "delete": "Hapus alat",
     "back": "Kembali ke alat",
@@ -370,17 +366,11 @@
     "delete": "Hapus agen AI",
     "edit": "Ubah agen AI",
     "empty": "Belum ada agen AI",
-    "emptyHint": "Agen berjalan pada runtime bawaan atau melalui API.",
+    "emptyHint": "Agen dijalankan oleh runner-nya melalui API.",
     "agent": "Agen AI",
     "sheetSubtitle": "Pengguna bot yang dapat didelegasikan issue",
-    "kind": "Jenis",
     "kindLabel": {
-      "external": "Eksternal",
-      "internal": "Internal"
-    },
-    "kindHint": {
-      "external": "Dijalankan melalui API",
-      "internal": "Dijalankan oleh runtime bawaan"
+      "external": "Eksternal"
     },
     "namePlaceholder": "cth. Bot Triage",
     "username": "Nama pengguna",
@@ -393,20 +383,6 @@
     "templatesHint": "Proyek menambahkan salinan templat ini sebagai spesialis mereka sendiri. Pengetahuan yang dibagikan antarsalinan disimpan di pustaka keahlian; setiap salinan memiliki memorinya sendiri.",
     "access": "Ketersediaan",
     "accessHint": "Siapa yang dapat memberi tugas kepada agen ini",
-    "model": "Model",
-    "modelHint": "Penyedia dan model",
-    "credential": "Kredensial",
-    "chooseCredential": "Pilih kredensial",
-    "searchCredential": "Cari kredensial",
-    "noCredentialsFound": "Kredensial tidak ditemukan.",
-    "noCredential": "Tidak ada penyedia AI yang terhubung",
-    "noCredentialHint": "Hubungkan kunci penyedia di integrasi tim untuk memilih model bagi agen ini.",
-    "addKey": "Buka pengaturan tim",
-    "chooseModel": "Pilih model",
-    "searchModel": "Cari atau ketik ID model",
-    "loadingModels": "Memuat model…",
-    "noModels": "Model tidak ditemukan.",
-    "noModel": "Belum ada model yang diatur",
     "runtimePolicy": {
       "title": "Kebijakan runtime",
       "hint": "Kebijakan netral-runtime yang diterapkan oleh adaptor yang terhubung",
@@ -418,9 +394,6 @@
       "modelsEmpty": "Runner yang terhubung belum menerbitkan model apa pun.",
       "modelsHint": "Model yang diterbitkan oleh penyedia runner yang terhubung.",
       "reasoning": "Penalaran",
-      "memory": "Memori percakapan",
-      "memoryWindowLabel": "Jendela pesan memori",
-      "memoryWindowPlaceholder": "Jendela pesan terbaru",
       "maxConcurrentChats": "Obrolan paralel",
       "maxConcurrentChatsHint": "Berapa banyak obrolan agen ini yang dapat dibiarkan menjawab bersamaan oleh seorang anggota. Pengiriman di atas batas ditolak hingga salah satunya selesai.",
       "toolAllow": "Alat yang diizinkan",
@@ -486,21 +459,6 @@
     "runnerStateOffline": "Offline",
     "runnerStateNone": "Tidak terhubung",
     "runnerSeen": "Terakhir terlihat {time} lalu",
-    "actions": "Tindakan",
-    "actionsHint": "Apa yang dapat dilakukan agen dalam proyek",
-    "searchActions": "Cari tindakan",
-    "actionGroup": {
-      "issues": "Issue",
-      "initiatives": "Inisiatif",
-      "cycles": "Cycle",
-      "documents": "Dokumen",
-      "notes": "Papan catatan",
-      "project": "Proyek"
-    },
-    "loadingActions": "Memuat tindakan…",
-    "noActions": "Tidak ada tindakan yang tersedia.",
-    "clearAll": "Hapus semua",
-    "selectAll": "Pilih semua",
     "skills": "Keahlian",
     "skillsHint": "Instruksi yang dapat digunakan kembali dan dimuat oleh agen",
     "noSkills": "Belum ada keahlian",
@@ -514,15 +472,6 @@
     "noToolsHint": "Konfigurasikan alat, lalu aktifkan di sini.",
     "goToTools": "Buka Alat",
     "searchTools": "Cari alat",
-    "advanced": "Tingkat lanjut",
-    "advancedHint": "Sampling, batas langkah, dan memori",
-    "temperature": "Temperatur",
-    "optional": "Opsional",
-    "maxSteps": "Maks langkah",
-    "memory": "Memori percakapan",
-    "memoryHint": "Mengingat pesan terbaru dalam utas percakapan.",
-    "memoryCount": "Ingat N pesan terakhir",
-    "memoryCountPlaceholder": "cth. 20",
     "keyWarning": "Salin sekarang. Kunci hanya ditampilkan sekali.",
     "apiKeyHint": "Kunci yang digunakan agen untuk autentikasi",
     "keyOnCreate": "Diberikan saat Anda membuat agen, ditampilkan sekali.",
@@ -553,14 +502,9 @@
     "runsSubtitle": "@{username} · eksekusi yang dipicu",
     "regenerateMessage": "Kunci saat ini untuk <v>{name}</v> akan langsung berhenti berfungsi. Perbarui semua hal yang menggunakannya dengan kunci baru.",
     "deleteMessage": "<v>{name}</v> dan kunci API-nya akan dihapus. Agen ini juga akan dihapus dari issue mana pun tempat agen tersebut ditetapkan atau didelegasikan. Tindakan ini tidak dapat dibatalkan.",
-    "actionCount": "{count, plural, one {# tindakan} other {# tindakan}}",
-    "toolCount": "{count, plural, one {# alat} other {# alat}}",
-    "skillCount": "{count, plural, one {# keahlian} other {# keahlian}}",
     "triggerMention": "Sebutan",
     "triggerDelegation": "Delegasi",
     "noMatch": "Tidak ada yang cocok dengan “{query}”.",
-    "useCustomModel": "Gunakan \"{query}\"",
-    "readOnlyAlwaysOn": "Akses baca-saja selalu aktif dan tidak dapat dinonaktifkan.",
     "instructionsLabel": "Instruksi",
     "copyInstructions": "Salin markdown",
     "showSource": "Ubah sumber markdown",

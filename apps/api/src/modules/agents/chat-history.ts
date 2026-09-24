@@ -3,10 +3,8 @@ import { toIso } from './core/helpers/dates';
 import { contextField, readContextSizes } from './chat-usage';
 import type { ChatThreadSummary } from './model';
 
-// The chat history list, as far as both stores build it the same way. An external
-// agent's conversations are read from agent_chat_thread and an internal agent's from
-// Mastra's tables, but they are searched by the same rules, ranked the same way, and
-// come back as the same summaries.
+// The chat history list: how a conversation of agent_chat_thread is searched, ranked
+// and summarized for it.
 //
 // The list has three shapes: the starred conversations, then the rest of them a page at
 // a time — a starred one is in the group and not in the page, so it is shown once — and,
@@ -57,7 +55,7 @@ export function snippetOf(text: SQL, term: string): SQL {
   return sql`substring(${text} from greatest(position(lower(${term}) in lower(${text})) - ${SNIPPET_RADIUS}, 1) for ${SNIPPET_LENGTH})`;
 }
 
-// One conversation as the two stores read it, before the parts every list adds. Each
+// One conversation as the list reads it, before the parts every list adds. Each
 // list knows the star of its rows without looking it up: the page leaves the starred
 // ones out, the favorites group holds only those, and a search reads it per row.
 export interface ThreadRow {

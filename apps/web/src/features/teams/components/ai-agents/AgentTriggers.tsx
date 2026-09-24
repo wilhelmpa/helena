@@ -5,8 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { AgentTriggerChip, TRIGGER_CHIP } from './AgentTriggerChip';
 import { useTranslations } from 'next-intl';
 
-// The enabled run triggers for an internal agent (mention, delegation, member
-// fields). Nothing is shown when none are on: an empty cell already says so. The
+// The enabled run triggers of an agent (mention, delegation, member fields). Nothing is shown when none are on: an empty cell already says so. The
 // field triggers carry their count, and name the fields in a popover.
 export function AgentTriggers({ agent }: { agent: AiAgent }) {
   const t = useTranslations('teams.agents');

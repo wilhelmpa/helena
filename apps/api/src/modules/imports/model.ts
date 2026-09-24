@@ -2,6 +2,17 @@ import { t } from 'elysia';
 
 export const importIdParams = t.Object({ importId: t.String() });
 
+export const projectKeyParams = t.Object({ projectKey: t.String() });
+
+export const prepareImportBody = t.Object({
+  attachmentId: t.String({
+    description: 'The attachment id from the [file: "name" (attachment id: …)] marker.',
+  }),
+  mapping: t.Record(t.String(), t.String(), {
+    description: 'Issue field -> column header, e.g. {"title": "Task", "dueDate": "Deadline"}.',
+  }),
+});
+
 // The draft the UI renders and confirms against. `mapping` passes through as the
 // agent saved it (field -> column header); it is only ever read back, not edited
 // from here.

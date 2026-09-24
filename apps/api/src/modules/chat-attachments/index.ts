@@ -32,8 +32,7 @@ import {
 } from './service';
 
 // Chat attachments: files uploaded in an agent chat. The upload and read routes
-// are MCP tools, so an internal agent and an external MCP client can both drop a
-// file and read one back; the download route is public, like an issue
+// are MCP tools, so an agent can drop a file and read one back over MCP; the download route is public, like an issue
 // attachment's, so the link a chat message renders works for anyone viewing it.
 
 // A browser reports no type for a .md or .txt file on some platforms, and the

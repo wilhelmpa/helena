@@ -23,9 +23,8 @@ export default function OrganizationOrchestrationPolicy({
   const flow = workflows.data?.find((item) => item.id === 'agent-team');
   const enabled = flow?.assignment.enabled ?? false;
   const config = flow?.assignment.configuration ?? {};
-  const hermesAgents = agents.filter((agent) => agent.kind === 'external');
-  const coordinators = hermesAgents.filter((agent) => agent.role === 'coordinator').length;
-  const specialists = hermesAgents.filter((agent) => agent.role === 'specialist').length;
+  const coordinators = agents.filter((agent) => agent.role === 'coordinator').length;
+  const specialists = agents.filter((agent) => agent.role === 'specialist').length;
   const warnings = [
     coordinators === 0 && t('warnings.noCoordinator'),
     coordinators > 1 && t('warnings.severalCoordinators'),

@@ -4,7 +4,6 @@
   "overlayMode": "Panel schwebend anzeigen",
   "resizePanel": "Größe des Chat-Panels ändern",
   "emptyTitle": "Keine Agenten zum Chatten",
-  "emptyDescription": "Chatte mit einem Agenten dieses Projekts: mit einem internen oder mit einem externen über seinen Runner.",
   "createAgent": "Einen Agenten erstellen",
   "agents": "Agenten",
   "newChat": "Neuer Chat",

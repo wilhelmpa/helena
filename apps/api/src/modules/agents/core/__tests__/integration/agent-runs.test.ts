@@ -8,11 +8,11 @@ import { addProjectMember } from '#tests/helpers/members';
 
 // The run-history endpoint: GET /projects/:key/ai-agents/:agentId/runs lists an agent's
 // triggered runs (a mention or a delegation), newest first, keyset-paginated. Runs are
-// created by the same paths the runtime uses: mentioning the agent in a comment queues
+// created by the paths that trigger them: mentioning the agent in a comment queues
 // a mention run; delegating an issue to an agent with trigger_on_assign queues a
 // delegation run; setting it into a member custom field it carries a trigger for
-// queues a field run, held back by that trigger's own delay. The poller (a live LLM
-// call) is not exercised, so runs stay pending.
+// queues a field run, held back by that trigger's own delay. No runner claims them
+// here, so runs stay pending.
 
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -30,8 +30,9 @@ function createIssue(client: Api, columnId: number, title = 'Task') {
   return client.projects({ projectKey: 'MKT' }).issues.post({ columnId, title });
 }
 
-async function createInternalAgent(asOwner: Api, name: string, username: string) {
-  const res = await createAgent(asOwner, 'MKT', { name, username, kind: 'internal' });
+// An agent that reacts to mentions. The trigger is off by default, so it is turned on.
+async function createRunAgent(asOwner: Api, name: string, username: string) {
+  const res = await createAgent(asOwner, 'MKT', { name, username, triggerOnMention: true });
   return res.data!.agent;
 }
 
@@ -73,7 +74,7 @@ describe('agent run history', () => {
 
   it('returns an empty page for an agent with no runs', async () => {
     const { asOwner, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
 
     const res = await agents(asOwner, teamId)({ agentId: agent.id }).runs.get();
     expect(res.status).toBe(200);
@@ -82,7 +83,7 @@ describe('agent run history', () => {
 
   it('lists a mention run with the issue, trigger, and rendered prompt', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId, 'Landing page')).data!;
     await mentionAgent(asOwner, issue.id, agent.username);
 
@@ -102,7 +103,7 @@ describe('agent run history', () => {
 
   it('lists a delegation run when an issue is delegated to the agent', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     await agents(asOwner, teamId)({ agentId: agent.id }).patch({ triggerOnAssign: true });
     const issue = (await createIssue(asOwner, columnId)).data!;
 
@@ -116,7 +117,7 @@ describe('agent run history', () => {
 
   it('queues a run when the agent is set into a field it reacts to', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     const field = (
       await asOwner
         .projects({ projectKey: 'MKT' })
@@ -143,7 +144,7 @@ describe('agent run history', () => {
 
   it('queues nothing when the agent carries no trigger for the field', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     const field = (
       await asOwner
         .projects({ projectKey: 'MKT' })
@@ -162,7 +163,7 @@ describe('agent run history', () => {
 
   it('holds a delegation run back by the agent delay, and a mention run not at all', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     await agents(asOwner, teamId)({ agentId: agent.id }).patch({ triggerOnAssign: true });
     const delegated = (await createIssue(asOwner, columnId)).data!;
     const mentioned = (await createIssue(asOwner, columnId, 'Other')).data!;
@@ -180,7 +181,7 @@ describe('agent run history', () => {
 
   it('starts a delegation run at once when the delay is zero', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     await agents(
       asOwner,
       teamId,
@@ -199,7 +200,7 @@ describe('agent run history', () => {
 
   it("holds a field run back by that field trigger's own delay", async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     const now = await memberField(asOwner, 'Reviewer');
     const later = await memberField(asOwner, 'Owner');
     await agents(
@@ -237,7 +238,7 @@ describe('agent run history', () => {
 
   it('queues nothing when the same member is set again', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     const field = await fieldTrigger(asOwner, teamId, agent.id, 'Reviewer', 0);
     const issue = (await createIssue(asOwner, columnId)).data!;
     const value = asOwner.issues({ issueId: issue.id }).fields({ fieldId: field.id });
@@ -251,7 +252,7 @@ describe('agent run history', () => {
 
   it('drops the trigger when the field stops taking agents', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     const field = await fieldTrigger(asOwner, teamId, agent.id, 'Reviewer', 0);
     await asOwner
       .projects({ projectKey: 'MKT' })
@@ -274,7 +275,7 @@ describe('agent run history', () => {
 
   it('paginates newest first with a keyset cursor', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     for (const title of ['One', 'Two', 'Three']) {
       const issue = (await createIssue(asOwner, columnId, title)).data!;
       await mentionAgent(asOwner, issue.id, agent.username);
@@ -302,8 +303,8 @@ describe('agent run history', () => {
 
   it('scopes runs to the requested agent', async () => {
     const { asOwner, columnId, teamId } = await setup();
-    const a = await createInternalAgent(asOwner, 'Bot A', 'bota');
-    const b = await createInternalAgent(asOwner, 'Bot B', 'botb');
+    const a = await createRunAgent(asOwner, 'Bot A', 'bota');
+    const b = await createRunAgent(asOwner, 'Bot B', 'botb');
     const issue = (await createIssue(asOwner, columnId)).data!;
     await mentionAgent(asOwner, issue.id, a.username);
 
@@ -332,7 +333,7 @@ describe('agent run history', () => {
     const { asOwner, columnId, teamId } = await setup();
     const ops = await asOwner.teams({ teamId }).projects.post({ key: 'OPS', name: 'Operations' });
     const opsColumn = (await asOwner.projects({ projectKey: 'OPS' }).get()).data!.columns[0].id;
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     await agents(
       asOwner,
       teamId,
@@ -369,7 +370,7 @@ describe('agent run history', () => {
 
   it('denies a non-member with 404', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createRunAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     await mentionAgent(asOwner, issue.id, agent.username);
 

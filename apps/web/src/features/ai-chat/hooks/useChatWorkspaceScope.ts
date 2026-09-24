@@ -23,9 +23,7 @@ export function useChatWorkspaceScope(projectKey: string | null) {
   const agentsQuery = useAiAgentsQuery(teamId, project.data?.project.id);
   const desiredUsername = preferredAgentUsername(projectKey);
   const agents = useMemo(() => {
-    const usable = (agentsQuery.data ?? []).filter(
-      (agent) => agent.kind === 'external' && !agent.template,
-    );
+    const usable = (agentsQuery.data ?? []).filter((agent) => !agent.template);
     const desired = usable.find((agent) => agent.username === desiredUsername);
     return desired ? [desired, ...usable.filter((agent) => agent.id !== desired.id)] : usable;
   }, [agentsQuery.data, desiredUsername]);

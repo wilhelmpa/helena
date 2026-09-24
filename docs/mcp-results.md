@@ -2,8 +2,7 @@
 
 Every MCP tool result contains an object in `structuredContent`. The existing text block
 contains the original REST response body, including an empty string for HTTP 204. Existing
-clients can continue reading that text. The internal agent runtime keeps its existing result
-format.
+clients can continue reading that text.
 
 A successful call returns:
 

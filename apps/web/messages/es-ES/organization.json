@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "Equipo de agentes",
     "teamDescription": "Los roles y las capacidades se aplican a todos los proyectos del equipo. Solo los agentes que se ejecutan en Hermes participan en una ejecución del equipo.",
-    "internal": "fuera de Hermes",
     "editRoles": "Define roles y capacidades en la pestaña Agentes.",
     "policyTitle": "Flujo agent-team",
     "policyDescription": "Se ejecuta en Mastra cuando una tarea se delega a un coordinador.",

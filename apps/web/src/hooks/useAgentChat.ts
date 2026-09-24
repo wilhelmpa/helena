@@ -1,11 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  resumeAiAgentChat,
-  streamAiAgentChat,
-  streamAiAgentRun,
-} from '@/lib/api/endpoints/agentChat';
+import { resumeAiAgentChat, streamAiAgentChat } from '@/lib/api/endpoints/agentChat';
 import { ApiError } from '@/lib/api/core/client';
 import type { AiChatMessage, AiChatPart, AiChatToolPart } from '@/lib/api/endpoints/agentChat';
 import type { AgentRunEvent } from '@/lib/api/endpoints/agents';
@@ -36,8 +32,8 @@ function updateToolPart(
   );
 }
 
-// 'queued' is the wait an external agent's message goes through: it is on the feed and
-// no runner has taken it yet, so nothing is being written.
+// 'queued' is the wait a message goes through: it is on the feed and no runner has taken
+// it yet, so nothing is being written.
 export type ChatStatus = 'ready' | 'queued' | 'streaming';
 
 // A message typed while the agent was answering, waiting for its turn.
@@ -47,13 +43,11 @@ export type PendingMessage = { id: string; text: string };
 // SSE, and exposes the running transcript, the stream status, and the tool the agent
 // is currently using (for the status marker).
 //
-// An internal agent answers in the API process (streamAiAgentRun); an external one is
-// answered by its runner on the operator's machine (streamAiAgentChat), which is why
-// its answer starts only once that runner picks the message up. Both produce the same
-// events, so everything below is the same for either.
+// The agent is answered by its runner on the operator's machine (streamAiAgentChat),
+// which is why its answer starts only once that runner picks the message up.
 //
-// When the agent has memory enabled, the run belongs to a conversation thread: the
-// thread id returned by the first message is kept so follow-up messages continue it,
+// A message belongs to a conversation thread: the thread id returned by the first
+// message is kept so follow-up messages continue it,
 // and it is surfaced as `threadId` so the host can reflect the new thread in the
 // history list. loadThread() restores a past conversation; newChat() starts a fresh
 // one. threadId is null while a new conversation has not produced its first reply.
@@ -65,13 +59,11 @@ export type PendingMessage = { id: string; text: string };
 // produced and the message waiting behind it is sent next.
 //
 // stop() ends the reply being produced. What the agent wrote before it stays in the
-// transcript, marked stopped. An internal agent's run is bound to the stream, so
-// dropping it is the stop; an external one is answered on the operator's machine and is
-// stopped through the API, which its runner reads on its next report.
+// transcript, marked stopped. The answer is produced on the operator's machine, so it
+// is stopped through the API, which its runner reads on its next report.
 export function useAgentChat(
   projectKey: string,
   agentId: number,
-  external: boolean,
   settings?: { model: string | null; thinkingLevel: string | null },
 ) {
   const t = useTranslations('common.agentChat');
@@ -219,16 +211,15 @@ export function useAgentChat(
         { id: uuid(), role: 'user', parts: [{ type: 'text', text }], createdAt },
         { id: assistantId, role: 'assistant', parts: [], createdAt },
       ]);
-      setStatus(external ? 'queued' : 'streaming');
+      setStatus('queued');
       setActiveTool(null);
 
-      const stream = external ? streamAiAgentChat : streamAiAgentRun;
       try {
         failure = await consumeAnswer(
-          stream(
+          streamAiAgentChat(
             projectKey,
             agentId,
-            { prompt: text, threadId: threadRef.current, ...(external ? settingsRef.current : {}) },
+            { prompt: text, threadId: threadRef.current, ...settingsRef.current },
             stopper.signal,
           ),
           assistantId,
@@ -238,7 +229,7 @@ export function useAgentChat(
         finishAnswer(assistantId, stopper, failure);
       }
     },
-    [projectKey, agentId, external, consumeAnswer, finishAnswer],
+    [projectKey, agentId, consumeAnswer, finishAnswer],
   );
 
   // Continues watching an answer that was already in progress when the browser
@@ -246,7 +237,7 @@ export function useAgentChat(
   // message is inserted and no new runner job is created.
   const resumeAnswer = useCallback(
     async (messageId: number, initialStatus: 'pending' | 'streaming') => {
-      if (!external || runningRef.current) return;
+      if (runningRef.current) return;
       runningRef.current = true;
       setRunning(true);
       const stopper = new AbortController();
@@ -264,7 +255,7 @@ export function useAgentChat(
         finishAnswer(String(messageId), stopper, failure);
       }
     },
-    [external, projectKey, agentId, consumeAnswer, finishAnswer],
+    [projectKey, agentId, consumeAnswer, finishAnswer],
   );
 
   const send = useCallback(

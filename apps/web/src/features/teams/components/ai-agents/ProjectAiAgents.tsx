@@ -1,10 +1,8 @@
-import { MessageSquarePlus, Shield, UserMinus } from 'lucide-react';
+import { Bot, MessageSquarePlus, Shield, UserMinus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useShell } from '@/context/shellContext';
-import { useIntegrationCatalogQuery } from '@/services/integrations.service';
 import { useAiAgentsQuery, useUpdateAiAgent } from '@/services/aiAgents.service';
-import { integrationLabel } from '@/utils/integrationLabels';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
 import ListPager from '@/components/common/ListPager';
@@ -21,10 +19,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { AGENT_KIND_ICON } from '../../utils/agentKindIcon';
 import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { AgentMetaChip } from './AgentMetaChip';
-import { AgentMetaRow } from './AgentMetaRow';
 import { AgentTriggers } from './AgentTriggers';
 import ProjectAgentAssignmentDialog from './ProjectAgentAssignmentDialog';
 import TableCard from '@/components/common/page/TableCard';
@@ -47,8 +43,6 @@ export default function ProjectAiAgents() {
   // The project's agents come in one list — it is read whole by the chat panel and the
   // schedule editor too — so the page is cut here rather than asked for.
   const shown = paging.slice(agents);
-  // The integration catalog maps a provider key to a readable label for the meta row.
-  const catalog = useIntegrationCatalogQuery(teamId).data ?? [];
 
   if (query.isPending) return <ListSkeleton rows={3} rowClassName="h-12" />;
   if (agents.length === 0) return <EmptyState title={t('empty')} description={t('emptyHint')} />;
@@ -85,7 +79,6 @@ export default function ProjectAiAgents() {
           </TableHeader>
           <TableBody>
             {shown.map((agent) => {
-              const KindIcon = AGENT_KIND_ICON[agent.kind];
               const assignment = project
                 ? agent.projects.find((entry) => entry.id === project.project.id)
                 : undefined;
@@ -94,7 +87,7 @@ export default function ProjectAiAgents() {
                   <TableCell className="px-3 py-3 align-middle whitespace-normal">
                     <div className="flex min-w-0 items-center gap-2.5">
                       <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
-                        <KindIcon className="size-4" />
+                        <Bot className="size-4" />
                       </div>
                       <div className="flex min-w-0 flex-col gap-0.5">
                         <div className="flex min-w-0 items-center gap-2">
@@ -123,21 +116,14 @@ export default function ProjectAiAgents() {
                     <AgentTriggers agent={agent} />
                   </TableCell>
                   <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
-                    {agent.kind === 'internal' ? (
-                      <AgentMetaRow
-                        agent={agent}
-                        providerLabel={(key: string) => integrationLabel(catalog, key)}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-start gap-1">
-                        <AgentRunnerStatus agent={agent} />
-                        <AgentMetaChip icon={Shield}>
-                          {agent.runnerScope === 'owner'
-                            ? tTeam('runnerScopeOwner')
-                            : tTeam('runnerScopeTeam')}
-                        </AgentMetaChip>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-start gap-1">
+                      <AgentRunnerStatus agent={agent} />
+                      <AgentMetaChip icon={Shield}>
+                        {agent.runnerScope === 'owner'
+                          ? tTeam('runnerScopeOwner')
+                          : tTeam('runnerScopeTeam')}
+                      </AgentMetaChip>
+                    </div>
                   </TableCell>
                   <TableCell className="px-3 py-2 align-middle">
                     <div className="flex items-center justify-end gap-1">

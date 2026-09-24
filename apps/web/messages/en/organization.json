@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "Agent team",
     "teamDescription": "Roles and capabilities apply to every project of the team. Only agents that run in Hermes take part in a team run.",
-    "internal": "not in Hermes",
     "editRoles": "Set roles and capabilities on the Agents tab.",
     "policyTitle": "Agent-team workflow",
     "policyDescription": "Runs in Mastra when a task is delegated to a coordinator.",
