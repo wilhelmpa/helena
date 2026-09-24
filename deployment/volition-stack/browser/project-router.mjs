@@ -280,7 +280,10 @@ if (import.meta.main) {
   if (process.env.BROWSER_GATEWAY_TOKEN_FILE) {
     import("./browser-gateway-server.mjs")
       .then(({ startBrowserGateway }) =>
-        startBrowserGateway({ listBrowsers: () => listProjectBrowsers(root), log: (message) => console.log(message) }),
+        startBrowserGateway({
+          listBrowsers: () => listProjectBrowsers(root),
+          log: (message) => console.log(message),
+        }),
       )
       .then((started) => {
         gateway = started;

@@ -45,6 +45,11 @@ ProtectKernelTunables=yes
 ProtectProc=invisible
 ProtectSystem=strict
 ReadOnlyPaths=/var/lib/volition/project-browser/projects
+# The browser gateway has the project browsers save downloads below its TMPDIR, until it
+# hands them to Helena (the project's Inbox) and removes them: a directory the Chromium units
+# may write as well (install-browser-gateway.sh creates it).
+Environment=TMPDIR=/var/lib/volition/project-browser/downloads
+ReadWritePaths=-/var/lib/volition/project-browser/downloads
 RestrictAddressFamilies=AF_UNIX AF_INET
 RestrictRealtime=yes
 RestrictSUIDSGID=yes

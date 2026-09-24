@@ -4,9 +4,11 @@
 // timing, and never offers a raw evaluate as a tool (design §4's "Bewusst nicht
 // vorhanden"): the only evaluate calls in this file are the fixed, internal ones below,
 // none of them runs caller-supplied script, and patchright runs them in an isolated world.
+import { readFile, stat } from 'node:fs/promises';
 import type {
   Browser,
   BrowserContext,
+  CDPSession,
   Dialog,
   Download,
   ElementHandle,
@@ -92,7 +94,7 @@ export function safeDownloadName(name: string): string {
 export interface SessionOptions {
   humanInput: boolean;
   random?: () => number;
-  // Stores a finished download (the vault Inbox of the project, through Plan) and returns
+  // Stores a finished download (the vault Inbox of the project, through Helena) and returns
   // where it went. Without it, downloads are listed but not kept.
   onDownload?: (fileName: string, bytes: Buffer) => Promise<string>;
 }
@@ -121,6 +123,9 @@ export class PatchrightGatewaySession implements GatewaySession {
   #onDownload: SessionOptions['onDownload'];
   #policyJson: string | null = null;
   #routeHandler: ((route: Route) => Promise<void>) | null = null;
+  // Told when a page opens a dialog, so an action it blocks can return (see #orDialog).
+  #dialogListeners = new Set<(page: Page, dialog: Dialog) => void>();
+  #logSessions = new WeakMap<Page, CDPSession>();
 
   private constructor(browser: Browser, context: BrowserContext, page: Page, options: SessionOptions) {
     this.#browser = browser;
@@ -184,15 +189,35 @@ export class PatchrightGatewaySession implements GatewaySession {
     if (this.#wired.has(page)) return;
     this.#wired.add(page);
     const tab = this.#tabId(page);
-    page.on('console', (message) => {
-      this.#console.push({ tab, type: message.type(), text: message.text().slice(0, 2000) });
-      if (this.#console.length > MAX_BUFFER) this.#console.shift();
-    });
+    // What the browser logs for the tab (failed requests, blocked content, security
+    // warnings). The page's own console.log is not among it: reading that needs the
+    // Runtime domain, the classic sign of an automated browser, which patchright avoids.
+    void this.#context
+      .newCDPSession(page)
+      .then(async (cdp) => {
+        this.#logSessions.set(page, cdp);
+        cdp.on('Log.entryAdded', (event: { entry: { level: string; source: string; text: string; url?: string } }) => {
+          const entry = event.entry;
+          this.#console.push({
+            tab,
+            type: `${entry.source}/${entry.level}`,
+            text: `${entry.text}${entry.url ? ` (${redactUrl(entry.url)})` : ''}`.slice(0, 2000),
+          });
+          if (this.#console.length > MAX_BUFFER) this.#console.shift();
+        });
+        await cdp.send('Log.enable');
+      })
+      .catch(() => {});
     page.on('dialog', (dialog) => {
       this.#dialogs.set(page, dialog);
+      for (const listener of [...this.#dialogListeners]) listener(page, dialog);
     });
+    // Every download of the browser — an agent's, or the owner's in the live view. Chromium
+    // saves it into patchright's artifacts directory, which is below this process's TMPDIR:
+    // the router unit points that at a directory the browser units may write
+    // (volition-project-browser-router.service).
     page.on('download', (download) => {
-      void this.#saveDownload(download);
+      void this.#keepDownload(download);
     });
     page.on('response', (response) => {
       this.#network.push({
@@ -216,22 +241,28 @@ export class PatchrightGatewaySession implements GatewaySession {
     });
   }
 
-  async #saveDownload(download: Download): Promise<void> {
+  async #keepDownload(download: Download): Promise<void> {
     const fileName = safeDownloadName(download.suggestedFilename());
     try {
-      const path = await download.path();
-      if (!path) return;
-      const { readFile, stat } = await import('node:fs/promises');
-      const size = (await stat(path)).size;
+      const file = await download.path();
+      // The completion event can arrive a moment before Chromium has renamed the file.
+      let size = -1;
+      for (let attempt = 0; attempt < 50 && size < 0; attempt++) {
+        size = await stat(file).then(
+          (info) => info.size,
+          () => -1,
+        );
+        if (size < 0) await sleep(100);
+      }
+      if (size < 0) throw new Error('the browser did not save the file');
       if (size > MAX_TRANSFER_BYTES) {
-        this.#downloads.push({ fileName, savedAs: '(too large, not kept)', at: Date.now() });
+        this.#downloads.push({ fileName, savedAs: '(larger than 50 MB, not kept)', at: Date.now() });
         return;
       }
       const savedAs = this.#onDownload
-        ? await this.#onDownload(fileName, await readFile(path))
+        ? await this.#onDownload(fileName, await readFile(file))
         : '(not kept)';
       this.#downloads.push({ fileName, savedAs, at: Date.now() });
-      if (this.#downloads.length > 100) this.#downloads.shift();
     } catch (error) {
       this.#downloads.push({
         fileName,
@@ -239,7 +270,48 @@ export class PatchrightGatewaySession implements GatewaySession {
         at: Date.now(),
       });
     } finally {
+      if (this.#downloads.length > 100) this.#downloads.shift();
       await download.delete().catch(() => {});
+    }
+  }
+
+  // An action a page answers with a dialog (confirm, alert, a leave-page prompt) does not
+  // finish until the dialog is answered — which the agent can only do once the tool returns.
+  // So a tool returns as soon as a dialog opens, saying so; the action finishes in the
+  // background once browser_dialog answers it.
+  async #orDialog(action: Promise<string>): Promise<string> {
+    const page = this.#page;
+    let off = () => {};
+    const opened = new Promise<Dialog>((resolve) => {
+      const listener = (from: Page, dialog: Dialog) => {
+        if (from === page) resolve(dialog);
+      };
+      this.#dialogListeners.add(listener);
+      off = () => this.#dialogListeners.delete(listener);
+    });
+    try {
+      const first = await Promise.race([
+        action.then((text) => ({ text })),
+        opened.then((dialog) => ({ dialog })),
+      ]);
+      if ('text' in first) return first.text;
+      action.catch(() => {});
+      return (
+        `A ${first.dialog.type()} dialog opened: "${first.dialog.message().slice(0, 300)}". ` +
+        'Answer it with browser_dialog (accept or dismiss) before anything else.'
+      );
+    } finally {
+      off();
+    }
+  }
+
+  // Nothing but the dialog can be done on a page that shows one.
+  #assertNoDialog(): void {
+    const dialog = this.#dialogs.get(this.#page);
+    if (dialog) {
+      throw new Error(
+        `A ${dialog.type()} dialog is open: "${dialog.message().slice(0, 200)}". Answer it with browser_dialog first.`,
+      );
     }
   }
 
@@ -290,12 +362,18 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async navigate(url: string): Promise<string> {
-    await this.#page.goto(url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
-    await this.#settle();
-    return `Navigated to ${await this.#describe()}. Call browser_snapshot to see the page.`;
+    this.#assertNoDialog();
+    return this.#orDialog(
+      (async () => {
+        await this.#page.goto(url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+        await this.#settle();
+        return `Navigated to ${await this.#describe()}. Call browser_snapshot to see the page.`;
+      })(),
+    );
   }
 
   async back(): Promise<string> {
+    this.#assertNoDialog();
     const response = await this.#page.goBack({
       waitUntil: 'domcontentloaded',
       timeout: LOAD_TIMEOUT_MS,
@@ -306,6 +384,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async reload(): Promise<string> {
+    this.#assertNoDialog();
     await this.#page.reload({ waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
     await this.#settle();
     return `Reloaded ${await this.#describe()}`;
@@ -334,6 +413,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async snapshot(): Promise<string> {
+    this.#assertNoDialog();
     const text = await this.#page.ariaSnapshot({ mode: 'ai', timeout: 15_000 });
     const clean = redactValues(text, await this.#credentialValues());
     const header = `Tab ${this.#tabId(this.#page)}: ${await this.#describe()}\n`;
@@ -390,24 +470,33 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async click(ref: string, button: 'left' | 'right' | 'middle' = 'left'): Promise<string> {
+    this.#assertNoDialog();
     const locator = await this.#resolveOne(ref);
     await this.#humanMoveTo(locator);
-    await locator.click({ button, timeout: ACTION_TIMEOUT_MS });
-    await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
-    return `Clicked ${ref}. Now on ${await this.#describe()}`;
+    return this.#orDialog(
+      (async () => {
+        await locator.click({ button, timeout: ACTION_TIMEOUT_MS });
+        await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
+        return `Clicked ${ref}. Now on ${await this.#describe()}`;
+      })(),
+    );
   }
 
   async type(ref: string, text: string, submit?: boolean): Promise<string> {
+    this.#assertNoDialog();
     const locator = await this.#resolveOne(ref);
     await this.#assertNotCredential(locator, ref);
     await this.#humanMoveTo(locator);
     await locator.click({ timeout: ACTION_TIMEOUT_MS });
     await this.#typeHumanLike(text);
-    if (submit) {
-      await this.#page.keyboard.press('Enter');
-      await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
-    }
-    return `Typed into ${ref}${submit ? ' and pressed Enter' : ''}`;
+    if (!submit) return `Typed into ${ref}`;
+    return this.#orDialog(
+      (async () => {
+        await this.#page.keyboard.press('Enter');
+        await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
+        return `Typed into ${ref} and pressed Enter. Now on ${await this.#describe()}`;
+      })(),
+    );
   }
 
   async #typeHumanLike(text: string): Promise<void> {
@@ -429,12 +518,14 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async select(ref: string, values: string[]): Promise<string> {
+    this.#assertNoDialog();
     const locator = await this.#resolveOne(ref);
     const chosen = await locator.selectOption(values, { timeout: ACTION_TIMEOUT_MS });
     return `Selected ${chosen.join(', ')} in ${ref}`;
   }
 
   async hover(ref: string): Promise<string> {
+    this.#assertNoDialog();
     const locator = await this.#resolveOne(ref);
     await this.#humanMoveTo(locator);
     await locator.hover({ timeout: ACTION_TIMEOUT_MS });
@@ -442,6 +533,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async drag(fromRef: string, toRef: string): Promise<string> {
+    this.#assertNoDialog();
     const from = await this.#resolveOne(fromRef);
     const to = await this.#resolveOne(toRef);
     await this.#humanMoveTo(from);
@@ -450,8 +542,8 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async press(key: string): Promise<string> {
-    await this.#page.keyboard.press(key);
-    return `Pressed ${key}`;
+    this.#assertNoDialog();
+    return this.#orDialog(this.#page.keyboard.press(key).then(() => `Pressed ${key}`));
   }
 
   async scroll(
@@ -459,6 +551,7 @@ export class PatchrightGatewaySession implements GatewaySession {
     amount: number,
     ref?: string,
   ): Promise<string> {
+    this.#assertNoDialog();
     const dx = direction === 'left' ? -1 : direction === 'right' ? 1 : 0;
     const dy = direction === 'up' ? -1 : direction === 'down' ? 1 : 0;
     const target = ref ? await this.#resolveOne(ref) : null;
@@ -500,6 +593,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async screenshot(ref?: string): Promise<ToolOutput> {
+    this.#assertNoDialog();
     const rects = await this.#coverRects();
     let png: Buffer;
     let offset = { x: 0, y: 0 };
@@ -603,6 +697,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async upload(ref: string, file: UploadFile): Promise<string> {
+    this.#assertNoDialog();
     if (file.buffer.length > MAX_TRANSFER_BYTES) throw new Error('The file is larger than 50 MB.');
     const locator = await this.#resolveOne(ref);
     await locator.setInputFiles(
@@ -652,6 +747,7 @@ export class PatchrightGatewaySession implements GatewaySession {
     password: string,
     origin: string,
   ): Promise<string> {
+    this.#assertNoDialog();
     const usernameLocator = await this.#resolveOne(usernameRef);
     const passwordLocator = await this.#resolveOne(passwordRef);
     const passwordField = await this.#fieldAttributes(passwordLocator);
@@ -685,6 +781,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   async fillCode(ref: string, code: string): Promise<string> {
+    this.#assertNoDialog();
     const locator = await this.#resolveOne(ref);
     const field = await this.#fieldAttributes(locator);
     if (field.tag !== 'input' && field.tag !== 'textarea') {

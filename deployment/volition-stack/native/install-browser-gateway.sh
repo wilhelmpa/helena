@@ -71,6 +71,20 @@ install_token() {
   fi
 }
 
+# Where the project browsers save downloads until the gateway hands them to Helena: owned
+# like the browser state it sits in (the runner's user, or the browser user once isolated).
+install_downloads() {
+  local state=${GATEWAY_BROWSER_STATE:-/var/lib/volition/project-browser}
+  local directory=$state/downloads
+  [[ -d $state ]] || return 0
+  if [[ -d $directory ]]; then return; fi
+  say "create $directory"
+  if ((!dry_run)); then
+    if [[ ${GATEWAY_TEST:-} == 1 ]]; then install -d -m 0700 "$directory"
+    else install -d -m 0700 -o "$(stat -c %U "$state")" -g "$(stat -c %G "$state")" "$directory"; fi
+  fi
+}
+
 install_dropins() {
   local changed=0
   for unit in "${dropin_units[@]}"; do
@@ -101,6 +115,7 @@ case $command in
   install)
     install_shim
     install_token
+    install_downloads
     install_dropins
     echo "install-browser-gateway.sh: restart volition-plan-api and volition-project-browser-router to start it"
     ;;

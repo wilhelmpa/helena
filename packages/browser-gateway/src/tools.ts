@@ -277,7 +277,10 @@ export const BROWSER_TOOLS: ToolDef[] = [
   {
     name: 'browser_console',
     title: 'Console',
-    description: 'Recent console messages of the tabs, newest last.',
+    description:
+      'Recent browser log entries of the tabs, newest last: failed requests, blocked ' +
+      "content, security warnings. The page's own console.log is not available (reading it " +
+      'would show the page an automated browser).',
     inputSchema: {
       type: 'object',
       properties: { ...project, limit: { type: 'number', minimum: 1, maximum: 200, default: 50 } },
