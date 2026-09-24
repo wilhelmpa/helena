@@ -9,7 +9,13 @@ import {
   readJsonBody,
   startWindowKeeper,
 } from "./project-browser-control.mjs";
-import { joinScreencast, noteViewerAction, watchDesktop } from "./project-browser-screencast.mjs";
+import {
+  joinScreencast,
+  noteViewerAction,
+  setViewportAuthority,
+  viewportAuthority,
+  watchDesktop,
+} from "./project-browser-screencast.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
@@ -96,12 +102,35 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
-// The toolbar's routes: GET api/tabs lists the tabs, POST api/<action> acts on one. Only a
-// JSON body is accepted, which a form on another site cannot send.
+// Who decides a project browser's page size, for the browser gateway, which holds a working
+// size while an agent steers: { mode: "follow" } or { mode: "fixed", width, height } (see
+// setViewportAuthority in project-browser-screencast.mjs). size is optional.
+export async function setProjectViewportAuthority(root, slug, mode, size) {
+  const target = await resolveProjectBrowser(root, `/projects/${slug}/`);
+  setViewportAuthority(target.cdpPort, mode, size);
+  return viewportAuthority(target.cdpPort);
+}
+
+// The toolbar's routes: GET api/tabs lists the tabs, POST api/<action> acts on one; GET and
+// POST api/viewport read and set who decides the page's size ({"mode":"fixed","width":1440,
+// "height":900} or {"mode":"follow"}). Only a JSON body is accepted, which a form on another
+// site cannot send.
 async function handleControl(request, response, target) {
   try {
     if (target.api === "tabs" && request.method === "GET") {
       return sendJson(response, 200, { tabs: await listTabs(target.cdpPort) });
+    }
+    if (target.api === "viewport") {
+      if (request.method === "POST") {
+        const body = await readJsonBody(request);
+        const size = body.width === undefined ? undefined : { width: body.width, height: body.height };
+        try {
+          setViewportAuthority(target.cdpPort, body.mode, size);
+        } catch (error) {
+          throw new BrowserControlError(400, error.message);
+        }
+      } else if (request.method !== "GET") throw new BrowserControlError(405, "Method not allowed");
+      return sendJson(response, 200, viewportAuthority(target.cdpPort));
     }
     if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
     const body = await readJsonBody(request);

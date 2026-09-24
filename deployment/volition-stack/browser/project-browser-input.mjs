@@ -99,9 +99,11 @@ function keyMessage(message, modifiers) {
 // in, its acknowledgement of a frame, or its answer to a dialog. A message that is none of
 // these throws.
 //
-//   {"type":"viewport","width":800,"height":600,"dpr":2,"video":true}
+//   {"type":"viewport","width":800,"height":600,"dpr":2,"video":true,"hold":false}
 //                                                         CSS pixels and pixel ratio of the view,
-//                                                         and whether it plays H.264 video
+//                                                         whether it plays H.264 video, and
+//                                                         whether it keeps the page's size
+//                                                         ("Größe festhalten": it only scales)
 //   {"type":"ack"}                                        a JPEG frame was drawn
 //   {"type":"dialog","accept":true,"text":"answer"}       closes a JavaScript dialog
 //   {"type":"follow","agent":true}                        shows the agent's tab
@@ -137,6 +139,7 @@ export function viewerMessage(data) {
           height: Math.round(number(message.height, MIN_VIEWPORT, MAX_VIEWPORT)),
           dpr: Math.round(number(message.dpr ?? 1, MIN_RATIO, MAX_RATIO) * 1000) / 1000,
           video: message.video === true,
+          hold: message.hold === true,
         },
       };
     case "follow":

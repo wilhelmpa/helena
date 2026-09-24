@@ -367,7 +367,7 @@ describe("project browser router", () => {
     assert.equal(browser.sent("Page.navigate").length, 0);
 
     // The first view sized the window for its page, and the viewers were told the page's size.
-    await until(() => received.includes(JSON.stringify({ type: "page", width: 800, height: 600, zoom: 1 })));
+    await until(() => received.includes(JSON.stringify({ type: "page", width: 800, height: 600, zoom: 1, fixed: false })));
     assert.deepEqual(browser.page(), { width: 800, height: 600, ratio: 2 });
 
     // A retina view: the window takes the view's CSS size plus the browser's own toolbar, in
@@ -377,7 +377,7 @@ describe("project browser router", () => {
     // this resize is counted from there on, not from zero.
     const priorBounds = browser.sent("Browser.setWindowBounds").length;
     viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 900, dpr: 2 }));
-    await until(() => received.includes(JSON.stringify({ type: "page", width: 800, height: 900, zoom: 1 })));
+    await until(() => received.includes(JSON.stringify({ type: "page", width: 800, height: 900, zoom: 1, fixed: false })));
     assert.deepEqual(browser.sent("Browser.setWindowBounds")[priorBounds].params, {
       windowId: 1,
       bounds: { left: 0, top: 0, width: 800, height: 987 },
@@ -462,6 +462,60 @@ describe("project browser router", () => {
       mobile: false,
     });
     viewer.close();
+  });
+
+  it("lets the view that last changed size set the page's size, not a held, hidden or fixed one", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const routerPort = await listen(router);
+    const open = async () => {
+      const viewer = new WebSocket(`ws://127.0.0.1:${routerPort}/projects/demo/api/screencast`);
+      viewer.messages = [];
+      viewer.addEventListener("message", (event) => viewer.messages.push(event.data));
+      await new Promise((resolve) => viewer.addEventListener("open", resolve));
+      return viewer;
+    };
+    const view = (viewer, size) => viewer.send(JSON.stringify({ type: "viewport", dpr: 2, ...size }));
+    const mac = await open();
+    view(mac, { width: 900, height: 800 });
+    await until(() => browser.page().width === 900);
+    // A second view joins: it takes the size, and the first shows the page scaled.
+    const kiosk = await open();
+    view(kiosk, { width: 1900, height: 1000 });
+    await until(() => browser.page().width === 1900);
+    // The first one resizes its panel: the page follows it again.
+    view(mac, { width: 1000, height: 800 });
+    await until(() => browser.page().width === 1000);
+    // A view that holds the size ("Größe festhalten") only scales; a hidden one does not count.
+    view(kiosk, { width: 1800, height: 1000, hold: true });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.equal(browser.page().width, 1000);
+    mac.send(JSON.stringify({ type: "hidden", hidden: true }));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.equal(browser.page().width, 1000);
+    mac.send(JSON.stringify({ type: "hidden", hidden: false }));
+
+    // The gateway holds a working size while an agent steers: no view changes it.
+    const post = (body) =>
+      fetch(`http://127.0.0.1:${routerPort}/projects/demo/api/viewport`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }).then(async (response) => [response.status, await response.json()]);
+    assert.deepEqual(await post({ mode: "fixed" }), [200, { mode: "fixed", width: 1440, height: 900 }]);
+    await until(() => browser.page().width === 1440);
+    assert.deepEqual(browser.page(), { width: 1440, height: 900, ratio: 2 });
+    await until(() => mac.messages.some((message) => typeof message === "string" && message.includes('"fixed":true')));
+    view(mac, { width: 700, height: 700 });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.equal(browser.page().width, 1440);
+    assert.equal((await post({ mode: "fixed", width: 10, height: 10 }))[0], 400);
+    assert.deepEqual(await post({ mode: "follow" }), [200, { mode: "follow" }]);
+    await until(() => browser.page().width === 700);
+    mac.close();
+    kiosk.close();
   });
 
   it("sizes a window from its visible tab", async () => {

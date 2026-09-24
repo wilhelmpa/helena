@@ -197,6 +197,8 @@ class Viewer {
   constructor(socket, send) {
     this.socket = socket;
     this.input = new InputSender(send);
+    // When the view last joined or changed size, which makes it the one the page follows.
+    this.drivenAt = 0;
     this.inFlight = 0;
     this.missed = false;
     this.viewport = null;
@@ -406,14 +408,11 @@ class ScreencastStream {
     if (message.viewport) {
       const previous = viewer.viewport;
       viewer.viewport = message.viewport;
-      // The set keeps insertion order, so its last viewer with a view is the most recent,
-      // whose size the page takes. A view that only switches between video and JPEG keeps
-      // its place: it does not take the page's size from another viewer.
-      const resized = !previous || ["width", "height", "dpr"].some((key) => previous[key] !== message.viewport[key]);
-      if (resized) {
-        this.viewers.delete(viewer);
-        this.viewers.add(viewer);
-      }
+      // A view that joins or changes size takes the page's size (see drivingViewport); one
+      // that only switches between video and JPEG, or repeats its size after a reconnect of
+      // the router's side, does not take it from another viewer.
+      const resized = !previous || ["width", "height", "dpr", "hold"].some((key) => previous[key] !== message.viewport[key]);
+      if (resized) viewer.drivenAt = Date.now();
       if (previous && previous.video !== message.viewport.video) {
         viewer.tierIndex = null;
         viewer.waitingForKeyframe = true;
@@ -507,11 +506,32 @@ class ScreencastStream {
     return Boolean(viewer.viewport) && !viewer.hidden && !(viewer.viewport.video && this.videoLive);
   }
 
-  // The view whose size the page takes: the most recent one that is shown, else the most
-  // recent one at all.
+  // The view whose size the page takes: of the shown views that do not hold the page's size,
+  // the one that most recently joined or changed size; else the page keeps its size. Every
+  // other view shows the page scaled.
   drivingViewport() {
-    const recent = [...this.viewers].reverse();
-    return (recent.find((viewer) => viewer.viewport && !viewer.hidden) ?? recent.find((viewer) => viewer.viewport))?.viewport;
+    let driver = null;
+    for (const viewer of this.viewers) {
+      if (!viewer.viewport || viewer.hidden || viewer.viewport.hold) continue;
+      if (!driver || viewer.drivenAt > driver.drivenAt) driver = viewer;
+    }
+    return driver?.viewport ?? null;
+  }
+
+  // The view the page's size is taken from: the fixed size while the gateway holds one (an
+  // agent steers), the driving view, or the page's own size — the first view's before it has
+  // one — each with the highest pixel ratio of the shown views, so every one of them gets
+  // frames as sharp as its screen.
+  sizingViewport() {
+    const shown = this.shownViewers();
+    const dpr = Math.max(1, ...shown.map((viewer) => viewer.viewport.dpr));
+    const authority = viewportAuthorities.get(this.port);
+    if (authority?.mode === "fixed") return { ...authority.size, dpr };
+    const driver = this.drivingViewport();
+    if (driver) return { ...driver, dpr };
+    if (this.size) return { width: this.size.width, height: this.size.height, dpr };
+    const first = [...this.viewers].find((viewer) => viewer.viewport)?.viewport;
+    return first ? { ...first, dpr } : null;
   }
 
   // How far behind a viewer may be on its tier before it waits for a keyframe.
@@ -627,7 +647,7 @@ class ScreencastStream {
       this.stream = stream;
       if (this.screencasting) this.startScreencast(this.session).catch(() => {});
     }
-    const viewport = this.drivingViewport();
+    const viewport = this.sizingViewport();
     this.scale = windowChrome(this.port)?.scale ?? this.scale;
     const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.allVideo(), this.agentInBrowser, this.scale);
     const current = this.size;
@@ -658,7 +678,8 @@ class ScreencastStream {
   // Tells the viewers the page's size once it has it, for them to show frames one to one.
   announcePage() {
     if (!this.size || this.resizing) return;
-    const message = JSON.stringify({ type: "page", width: this.size.width, height: this.size.height, zoom: this.zoom });
+    const fixed = viewportAuthorities.get(this.port)?.mode === "fixed";
+    const message = JSON.stringify({ type: "page", width: this.size.width, height: this.size.height, zoom: this.zoom, fixed });
     if (message === this.pageMessage) return;
     this.pageMessage = message;
     for (const viewer of this.viewers) viewer.socket.send(message);
@@ -1099,6 +1120,37 @@ class ScreencastStream {
 const streams = new Map();
 // Open desktop (VNC) connections, by DevTools port.
 const desktopViewers = new Map();
+// Who decides a browser's page size, by DevTools port: absent for "follow" (the driving view,
+// see drivingViewport), or { mode: "fixed", size } while the browser gateway holds a working
+// size for an agent that steers.
+const viewportAuthorities = new Map();
+export const FIXED_VIEWPORT = { width: 1440, height: 900 };
+
+// Hands a browser's page size to the viewers ("follow") or holds it at a size ("fixed", the
+// browser gateway while an agent steers: FIXED_VIEWPORT unless it gives one), so the agent's
+// layout, snapshots and references do not change when a person resizes a panel; the views then
+// show the page scaled. Applies at once, whether or not anyone watches.
+export function setViewportAuthority(port, mode, size) {
+  if (mode !== "follow" && mode !== "fixed") throw new Error("Unknown viewport mode");
+  if (mode === "follow") viewportAuthorities.delete(port);
+  else {
+    const valid = (value, max) => Number.isInteger(value) && value >= 250 && value <= max;
+    const fixed = size ?? FIXED_VIEWPORT;
+    if (!valid(fixed.width, 8192) || !valid(fixed.height, 8192)) throw new Error("Invalid viewport size");
+    viewportAuthorities.set(port, { mode, size: { width: fixed.width, height: fixed.height } });
+  }
+  const stream = streams.get(port);
+  if (stream) return stream.resize();
+  if (mode === "fixed") {
+    const { width, height } = viewportAuthorities.get(port).size;
+    setLiveViewport(port, { width, height, ratio: 1, pin1: false }).catch(() => {});
+  }
+}
+
+export function viewportAuthority(port) {
+  const authority = viewportAuthorities.get(port);
+  return authority ? { mode: authority.mode, ...authority.size } : { mode: "follow" };
+}
 
 // Adds a WebSocket as a viewer of the browser on the given DevTools port, whose display the
 // video grabs. The first viewer starts the stream and the last one to leave ends it.

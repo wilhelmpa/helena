@@ -11,13 +11,13 @@ const input = (message) => viewerMessage(JSON.stringify(message));
 describe("live view messages", () => {
   it("reads the view's CSS size and pixel ratio", () => {
     assert.deepEqual(input({ type: "viewport", width: 812.4, height: 600.6, dpr: 2 }), {
-      viewport: { width: 812, height: 601, dpr: 2, video: false },
+      viewport: { width: 812, height: 601, dpr: 2, video: false, hold: false },
     });
-    assert.deepEqual(input({ type: "viewport", width: 1280, height: 700, dpr: 1.3333333, video: true }), {
-      viewport: { width: 1280, height: 700, dpr: 1.333, video: true },
+    assert.deepEqual(input({ type: "viewport", width: 1280, height: 700, dpr: 1.3333333, video: true, hold: true }), {
+      viewport: { width: 1280, height: 700, dpr: 1.333, video: true, hold: true },
     });
     assert.deepEqual(input({ type: "viewport", width: 50, height: 9000 }), {
-      viewport: { width: 100, height: 8192, dpr: 1, video: false },
+      viewport: { width: 100, height: 8192, dpr: 1, video: false, hold: false },
     });
     assert.deepEqual(input({ type: "ack" }), { ack: true });
     assert.deepEqual(input({ type: "dialog", accept: false }), { dialog: { accept: false } });
