@@ -1,0 +1,49 @@
+# Private-data rules for the public cut (package G). This file itself names private data, so
+# it is private: it moves to helena-ops/scan/ and is never part of the public tree. Run it on
+# the export next to the public rules:
+#   gitleaks dir --config private.gitleaks.toml --redact <export-dir>
+title = "Helena private data"
+
+[extend]
+useDefault = false
+
+[[rules]]
+id = "owner-names"
+description = "The owner's names and accounts"
+regex = '''(?i)\b(wilhelmpa|emrani|patrick\.wilhelm|patrick wilhelm)\b'''
+keywords = ["wilhelmpa", "emrani", "patrick"]
+
+[[rules]]
+id = "owner-mail"
+description = "The owner's mail addresses and domains"
+regex = '''(?i)[a-z0-9._%+-]+@(volition\.one|emrani-wilhelm\.de)\b|wilhelmpa@gmail\.com'''
+keywords = ["volition.one", "emrani-wilhelm", "wilhelmpa@"]
+
+[[rules]]
+id = "owner-hosts"
+description = "Host names and domains of the owner's installation"
+regex = '''(?i)\bkingston(-server)?(\.local)?\b|\b[a-z0-9-]+\.volition\.one\b'''
+keywords = ["kingston", "volition.one"]
+
+[[rules]]
+id = "owner-lan"
+description = "The owner's LAN and container networks"
+regex = '''\b192\.168\.(2|122)\.\d{1,3}\b|\b172\.30\.(95|254)\.\d{1,3}\b'''
+
+[[rules]]
+id = "owner-paths"
+description = "Paths of the owner's machines and the pre-rename layout"
+regex = '''/home/pw/|/Users/wilhelmpa|/srv/volition|/var/lib/volition|/etc/volition'''
+keywords = ["/home/pw", "wilhelmpa", "volition"]
+
+[[rules]]
+id = "owner-projects"
+description = "The owner's projects and repositories"
+regex = '''\b(VERVE|verve_\d+|v1-cart-suite|Keller-?Server)\b'''
+keywords = ["verve", "cart-suite", "keller"]
+
+[[rules]]
+id = "old-brand"
+description = "The old brand outside the attribution (the naming test covers the upstream phrase)"
+regex = '''(?i)\bvolition\b'''
+keywords = ["volition"]

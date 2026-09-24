@@ -1,0 +1,137 @@
+# Draft (package G): moves to .github/workflows/ci.yml at the public cut. Never pushed before.
+# At publication every `uses:` is pinned to a commit SHA (OpenSSF Scorecard) with the tag in
+# a trailing comment.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Format, lint, typecheck, licenses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bun run format:check
+      - run: bun run lint
+      - run: bun run typecheck
+      - name: Third-party licenses (fails on a forbidden or unreviewed runtime license)
+        run: bun scripts/helena-licenses.ts --check
+      - name: Script tests
+        run: bun test scripts/
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: helena
+          POSTGRES_PASSWORD: helena
+          POSTGRES_DB: helena_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U helena" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://helena:helena@localhost:5432/helena_test
+      BETTER_AUTH_SECRET: ci-secret-not-for-production-use-only
+      APP_ENCRYPTION_KEY: ci-secret-not-for-production-use-only
+      API_URL: http://localhost:3000
+      APP_URL: http://localhost:3001
+      NODE_ENV: test
+      SKIP_PRE_MIGRATION_BACKUP: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bun packages/db/src/migrate.ts
+      # Each run copies the migrated database (apps/api/src/__tests__/helpers/clone-db.ts).
+      - run: bun test
+        working-directory: apps/api
+
+  suites:
+    name: Web, worker, runner, integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: helena
+          POSTGRES_PASSWORD: helena
+          POSTGRES_DB: helena_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U helena" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://helena:helena@localhost:5432/helena_test
+      BETTER_AUTH_SECRET: ci-secret-not-for-production-use-only
+      APP_ENCRYPTION_KEY: ci-secret-not-for-production-use-only
+      API_URL: http://localhost:3000
+      APP_URL: http://localhost:3001
+      NODE_ENV: test
+      SKIP_PRE_MIGRATION_BACKUP: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: bun install --frozen-lockfile
+      - run: bun packages/db/src/migrate.ts
+      - run: bun run test
+        working-directory: apps/web
+      - run: bun test
+        working-directory: apps/worker
+      - run: bun test
+        working-directory: packages/runner
+      - name: Integration and browser router
+        run: |
+          (cd deployment/helena/integration && npm ci && node --test test/*.test.mjs)
+          (cd deployment/helena/browser && node --test)
+      - name: Isolation (Python)
+        run: python3 -m unittest discover -s deployment/helena/isolation/tests
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'

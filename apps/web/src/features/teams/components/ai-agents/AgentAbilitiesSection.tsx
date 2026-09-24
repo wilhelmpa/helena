@@ -4,9 +4,11 @@ import type { ReactNode } from 'react';
 import { Blocks } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { useRuntimeActionsQuery } from '../../services/agentLearning.service';
 import type { AgentFormValue } from '../../utils/agentForm';
+import { templateToolsets } from '../../utils/agentAbilities';
 import { canActOnLearning } from '../../utils/agentLearning';
 import { AgentFormSection } from './AgentFormSection';
 import AgentLearningSettings from './AgentLearningSettings';
@@ -45,6 +47,10 @@ export default function AgentAbilitiesSection({
   const canEdit = useAgentCan()('edit');
   const inventory = agent?.runtimeState.inventory ?? null;
   const policy = value.runtimePolicy;
+  // A template runs nowhere, so no runner reports what it has: it offers the toolsets
+  // of the team's runners, where its copies will run, and denies them for every copy.
+  const isTemplate = agent?.template === true;
+  const teamAgents = useAiAgentsQuery(isTemplate ? teamId : null).data;
   const actingAgent = agent && canActOnLearning(agent.runtimeState) ? agent.id : null;
   const actions = useRuntimeActionsQuery(teamId, actingAgent).data;
 
@@ -61,11 +67,24 @@ export default function AgentAbilitiesSection({
         canEdit={canEdit}
         onChange={(runtimePolicy) => onChange({ runtimePolicy })}
       />
-      {agent && agent.kind === 'external' && !agent.template && (
+      {agent && agent.kind === 'external' && !isTemplate && (
         <AgentProfileSync teamId={teamId} agentId={agent.id} canEdit={canEdit} />
       )}
-      {agent && <AgentRuntimeNotices state={agent.runtimeState} />}
-      {!inventory ? (
+      {agent && !isTemplate && <AgentRuntimeNotices state={agent.runtimeState} />}
+      {isTemplate ? (
+        <>
+          <AgentToolsetList
+            title={t('toolsets')}
+            hint={canEdit ? t('templateToolsetsHint') : t('toolsetsReadOnly')}
+            empty={t('noToolsets')}
+            toolsets={templateToolsets(teamAgents ?? [], policy.toolDeny)}
+            denied={policy.toolDeny}
+            canEdit={canEdit}
+            onChange={(toolDeny) => onChange({ runtimePolicy: { ...policy, toolDeny } })}
+          />
+          {mcpServersContent}
+        </>
+      ) : !inventory ? (
         <>
           <p className="text-sm text-muted-foreground">{t('notReported')}</p>
           {mcpServersContent}

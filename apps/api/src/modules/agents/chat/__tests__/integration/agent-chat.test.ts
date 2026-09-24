@@ -329,6 +329,35 @@ describe('external agent chat', () => {
     expect(second.systemPrompt).toBe('');
   });
 
+  it("offers a template the models its team's runners published", async () => {
+    const { asOwner, asRunner } = await setup();
+    const teamId = await teamOf(asOwner, 'MKT');
+    const models = [
+      {
+        id: 'claude-opus-5',
+        name: 'Claude Opus 5',
+        reasoning: true,
+        thinkingLevels: ['low', 'high'],
+        thinkingDefault: null,
+        provider: 'anthropic',
+      },
+    ];
+    expect((await asRunner['agent-chats'].catalog.post({ models })).status).toBe(204);
+    const template = (
+      await asOwner.teams({ teamId })['ai-agents'].post({
+        name: 'Code-Reviewer',
+        username: 'code-reviewer',
+        kind: 'external',
+        template: true,
+      })
+    ).data!.agent;
+
+    // No runner publishes for a template; it offers what the team's runners run.
+    const catalog = await homeChatOf(asOwner, teamId, template.id).chat.catalog.get();
+    expect(catalog.status).toBe(200);
+    expect(catalog.data!.models).toEqual(models);
+  });
+
   it('persists and resumes a Home chat across reload, deletion, and a fresh chat', async () => {
     const { owner, asOwner, asRunner, agent } = await setup();
     const teamId = await teamOf(asOwner, 'MKT');

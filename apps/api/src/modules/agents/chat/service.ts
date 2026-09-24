@@ -872,6 +872,28 @@ export async function readChatCatalog(agentId: number): Promise<{
   };
 }
 
+// A template runs nowhere, so no runner publishes a catalog of its own. Its model and
+// reasoning are picked for the copies it will have, which run on the team's runners:
+// it offers every model those runners published, newest catalog first.
+export async function readTeamChatCatalog(teamId: number): Promise<{
+  models: ChatCatalogModel[];
+  updatedAt: string | null;
+}> {
+  const rows = await db
+    .select({ models: agentChatCatalog.models, updatedAt: agentChatCatalog.updatedAt })
+    .from(agentChatCatalog)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentChatCatalog.agentId))
+    .where(and(eq(aiAgent.teamId, teamId), eq(aiAgent.template, false)))
+    .orderBy(desc(agentChatCatalog.updatedAt));
+  const models = new Map<string, ChatCatalogModel>();
+  for (const row of rows) {
+    for (const model of (row.models as ChatCatalogModel[] | null) ?? []) {
+      if (!models.has(model.id)) models.set(model.id, model);
+    }
+  }
+  return { models: [...models.values()], updatedAt: rows[0] ? iso(rows[0].updatedAt) : null };
+}
+
 async function validateChatSettings(
   agentId: number,
   model: string | null | undefined,

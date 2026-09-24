@@ -62,7 +62,7 @@ const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   browserUrl: '',
   inboxUrl: '',
   connectionsUrl: '',
-  obsidianVault: 'Volition',
+  obsidianVault: 'Helena',
 });
 
 export function serverRuntimeEnv(): RuntimeEnv {
@@ -79,7 +79,7 @@ export function serverRuntimeEnv(): RuntimeEnv {
       browserUrl: readOrigin('BROWSER_URL'),
       inboxUrl: readOrigin('INBOX_URL'),
       connectionsUrl: readOrigin('CONNECTIONS_URL'),
-      obsidianVault: readOrigin('OBSIDIAN_VAULT_NAME') || 'Volition',
+      obsidianVault: readOrigin('OBSIDIAN_VAULT_NAME') || 'Helena',
     },
   };
 }

@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "حالة المزامنة",
-    "notSetUp": "المجلد Volition غير موجود في Syncthing. شغّل إعداد Syncthing على هذا الخادم مرة أخرى.",
+    "notSetUp": "المجلد Helena غير موجود في Syncthing. شغّل إعداد Syncthing على هذا الخادم مرة أخرى.",
     "state": {
       "idle": "محدَّث",
       "scanning": "جارٍ الفحص",
@@ -44,7 +44,7 @@
     "paused": "متوقف مؤقتًا",
     "lastSeen": "آخر ظهور {time}",
     "neverSeen": "لم يظهر بعد",
-    "notShared": "المجلد Volition غير مشارَك مع هذا الجهاز.",
+    "notShared": "المجلد Helena غير مشارَك مع هذا الجهاز.",
     "remove": "إزالة",
     "removeTitle": "إزالة {name}؟",
     "removeBody": "يتوقف الجهاز عن المزامنة مع هذا الخادم. تبقى الملفات على الجهاز."
@@ -54,7 +54,7 @@
     "hint": "اقبل أجهزتك فقط: يتلقى الجهاز المقبول كل الملاحظات والملفات، بما فيها Private/.",
     "requested": "طُلب {time} من {address}",
     "accept": "قبول",
-    "accepted": "تم قبول {name}. اقبل الآن المجلد Volition على الجهاز."
+    "accepted": "تم قبول {name}. اقبل الآن المجلد Helena على الجهاز."
   },
   "conflicts": {
     "title": "التعارضات",
@@ -70,11 +70,11 @@
     "step2": "في Syncthing، أضف جهازًا وأدخل معرّف جهاز هذا الخادم، أو امسح رمز QR.",
     "step2Lan": "للمزامنة المباشرة في المنزل، أدخل <code>{address}, dynamic</code> عناوينَ للجهاز.",
     "step3": "يظهر الجهاز بعدها في الأعلى ضمن «أجهزة تطلب الاتصال». اختر «قبول».",
-    "step4": "على الجهاز، اقبل المجلد Volition في مجلد اسمه Volition: <code>~/Volition</code> على Mac، و<code>Volition</code> في وحدة التخزين الداخلية على Android، وخزنة Obsidian ‏Volition على iPhone.",
-    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث»، ثم افتح المجلد Volition كخزنة في Obsidian. تفتح الروابط من Helena الخزنة Volition.",
+    "step4": "على الجهاز، اقبل المجلد Helena في مجلد اسمه Helena: <code>~/Helena</code> على Mac، و<code>Helena</code> في وحدة التخزين الداخلية على Android، وخزنة Obsidian ‏Helena على iPhone.",
+    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث»، ثم افتح المجلد Helena كخزنة في Obsidian. تفتح الروابط من Helena الخزنة Helena.",
     "iphoneTitle": "iPhone",
-    "iphone": "على iPhone لا يفتح Obsidian إلا مجلداته. أنشئ أولًا الخزنة Volition في Obsidian (على iPhone، لا في iCloud) ثم أغلق Obsidian. بعد ذلك، في Möbius Sync، ضع المجلد Volition في «على iPhone» › Obsidian › Volition. يكتب Obsidian إعداداته الخاصة عند إنشاء خزنة، لذا قد تظهر تعارضات في <code>.obsidian</code> بعد المزامنة الأولى؛ وتحتوي نسخ التعارض على الإعدادات الافتراضية لهذا الخادم. يزامن Möbius Sync ما دام التطبيق مفتوحًا أو سمح له iOS بالعمل في الخلفية.",
+    "iphone": "على iPhone لا يفتح Obsidian إلا مجلداته. أنشئ أولًا الخزنة Helena في Obsidian (على iPhone، لا في iCloud) ثم أغلق Obsidian. بعد ذلك، في Möbius Sync، ضع المجلد Helena في «على iPhone» › Obsidian › Helena. يكتب Obsidian إعداداته الخاصة عند إنشاء خزنة، لذا قد تظهر تعارضات في <code>.obsidian</code> بعد المزامنة الأولى؛ وتحتوي نسخ التعارض على الإعدادات الافتراضية لهذا الخادم. يزامن Möbius Sync ما دام التطبيق مفتوحًا أو سمح له iOS بالعمل في الخلفية.",
     "spaceTitle": "توفير المساحة على الهاتف (اختياري)",
-    "space": "تنطبق أنماط التجاهل على الجهاز الذي أُدخلت فيه فقط. لكي لا تُحمَّل ملفات البريد على الهاتف، افتح المجلد Volition في Möbius Sync أو Syncthing-Fork، وأضف السطر <code>Files/Mail</code> ضمن أنماط التجاهل واحفظ، ويُفضَّل فعل ذلك مباشرةً بعد قبول المجلد. تبقى الملفات على هذا الخادم وعلى الأجهزة الأخرى."
+    "space": "تنطبق أنماط التجاهل على الجهاز الذي أُدخلت فيه فقط. لكي لا تُحمَّل ملفات البريد على الهاتف، افتح المجلد Helena في Möbius Sync أو Syncthing-Fork، وأضف السطر <code>Files/Mail</code> ضمن أنماط التجاهل واحفظ، ويُفضَّل فعل ذلك مباشرةً بعد قبول المجلد. تبقى الملفات على هذا الخادم وعلى الأجهزة الأخرى."
   }
 }
