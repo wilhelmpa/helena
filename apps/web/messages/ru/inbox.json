@@ -40,5 +40,11 @@
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…"
+  },
+  "mailFilter": {
+    "read": "Статус прочтения",
+    "attachments": "Вложения",
+    "any": "Все",
+    "reset": "Сбросить фильтры"
   }
 }

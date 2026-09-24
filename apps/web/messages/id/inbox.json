@@ -40,5 +40,11 @@
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…"
+  },
+  "mailFilter": {
+    "read": "Status baca",
+    "attachments": "Lampiran",
+    "any": "Semua",
+    "reset": "Atur ulang filter"
   }
 }

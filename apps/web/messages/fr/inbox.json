@@ -40,5 +40,11 @@
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…"
+  },
+  "mailFilter": {
+    "read": "Statut de lecture",
+    "attachments": "Pièces jointes",
+    "any": "Tous",
+    "reset": "Réinitialiser les filtres"
   }
 }
