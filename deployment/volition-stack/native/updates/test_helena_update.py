@@ -158,6 +158,9 @@ class AptTest(HelperTest):
         install = next(c for c in self.fake.commands if c[:3] == ["apt-get", "install", "--only-upgrade"])
         self.assertEqual(install[-2:], ["libssl3t64", "openssl"])
         self.assertIn("Dpkg::Options::=--force-confold", install)
+        # apt's own hooks run as always (on Kingston: DPkg::Post-Invoke mirrors the ESP of the
+        # RAID 1 to the second disk, /etc/apt/apt.conf.d/99helena-esp-sync).
+        self.assertFalse(any("Invoke" in arg or "no-triggers" in arg for arg in install))
         result = answer["result"]
         self.assertEqual(result["skipped"], ["vim"])
         self.assertEqual({e["package"]: e["to"] for e in result["upgraded"]},

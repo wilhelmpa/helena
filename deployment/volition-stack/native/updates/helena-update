@@ -13,7 +13,8 @@ hand:
 package, security updates marked by their origin), the CLI runtimes Helena installed, and the
 versions of the tools Helena's services run on, read from their files. `apt` upgrades exactly
 the packages named that are still upgradable after an `apt-get update`, keeping changed
-configuration files; `cli-runtime` hands the version to the root-owned copy of
+configuration files, with apt's own hooks untouched (a DPkg::Post-Invoke hook such as the RAID
+1 ESP mirror, /etc/apt/apt.conf.d/99helena-esp-sync, runs as after any apt run); `cli-runtime` hands the version to the root-owned copy of
 install-cli-runtimes.sh (`upgrade`), which verifies what it downloads and keeps the version
 before for rollback. Every answer is JSON: on stdout, and for a spool request in
 `status/<id>.json`.
