@@ -86,6 +86,32 @@ import { mailAccountRoutes } from './modules/mail/accounts';
 import { mailDraftRoutes } from './modules/mail/drafts';
 import { mailThreadRoutes } from './modules/mail/threads';
 
+// The last route groups sit in an Elysia of their own: one chain of every group runs into
+// TypeScript's instantiation limit (TS2589). The planner's error handler is global, so it
+// covers these routes as well.
+const plannerOperations = new Elysia({ name: 'planner-operations' })
+  .use(agentActivityRoutes)
+  .use(agentNetworkRoutes)
+  .use(agentBrowserGatewayRoutes)
+  .use(browserTaskRoutes)
+  .use(approvalRoutes)
+  .use(modelPriceRoutes)
+  .use(autopilotRoutes)
+  .use(pipelineRoutes)
+  .use(mailAccountRoutes)
+  .use(mailThreadRoutes)
+  .use(mailDraftRoutes)
+  .use(organizationRoutes)
+  .use(connectionsRoutes)
+  .use(deviceSyncRoutes)
+  .use(ownerTerminalRoutes)
+  .use(settingsRoutes)
+  .use(godRoutes)
+  .use(pluginAdminRoutes)
+  .use(pluginSlotRoutes)
+  .use(templateBundleRoutes)
+  .use(modelAvailabilityRoutes);
+
 // The planner API: projects and their columns, issue types, labels, AI agents,
 // custom fields, issues, attachments, saved views, and actions. Mounted on the
 // main app in ./index.ts.
@@ -196,24 +222,4 @@ export const planner = new Elysia({ name: 'planner' })
   .use(syncRoutes)
   .use(linkPreviewRoutes)
   .use(hubInboxRoutes)
-  .use(agentActivityRoutes)
-  .use(agentNetworkRoutes)
-  .use(agentBrowserGatewayRoutes)
-  .use(browserTaskRoutes)
-  .use(approvalRoutes)
-  .use(modelPriceRoutes)
-  .use(autopilotRoutes)
-  .use(pipelineRoutes)
-  .use(mailAccountRoutes)
-  .use(mailThreadRoutes)
-  .use(mailDraftRoutes)
-  .use(organizationRoutes)
-  .use(connectionsRoutes)
-  .use(deviceSyncRoutes)
-  .use(ownerTerminalRoutes)
-  .use(settingsRoutes)
-  .use(godRoutes)
-  .use(pluginAdminRoutes)
-  .use(pluginSlotRoutes)
-  .use(templateBundleRoutes)
-  .use(modelAvailabilityRoutes);
+  .use(plannerOperations);
