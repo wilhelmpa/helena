@@ -4,6 +4,7 @@ import { isUpdateRisk, type UpdateRisk } from '@helena/sdk';
 import { readChatCatalog, type ChatCatalogModel } from '#modules/agents/chat/service';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
 import { normalizeRuntimePolicy } from '#modules/agents/core/service';
+import { registerBuiltins } from '#modules/engine/builtin/index';
 import { policyDecider } from '#modules/engine/registry';
 import { price } from '#modules/model-prices/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
@@ -267,6 +268,8 @@ export async function queueDigestRun(
   prompt: string,
   choice: { model: string | null; reasoning: string | null },
 ): Promise<number> {
+  // The engine's built-ins bring the default policy (an API without the engine running too).
+  registerBuiltins();
   const decision = await policyDecider().decide({
     agentId: agent.id,
     projectId: agent.projectId,
