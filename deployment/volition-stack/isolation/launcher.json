@@ -95,7 +95,11 @@
         "/srv/volition/source/plan/packages/runner/dist",
         "/var/lib/volition/hermes/venv",
         "/var/lib/volition/hermes/python",
-        "/srv/volition/source/hermes"
+        "/srv/volition/source/hermes",
+        "/var/lib/volition/hermes/config.yaml"
+      ],
+      "optionalReadOnly": [
+        "/var/lib/volition/hermes/.env"
       ],
       "env": {
         "PATH": "/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin",
