@@ -9,6 +9,7 @@ values (none is a secret); every other line of the file is copied through unread
   COOKIE_DOMAIN=host-only           never a cookie for all of volition.one (the company's
                                     other sites would receive the session)
   PASSKEY_RP_ID=<host>              passkeys bound to the public name
+  SERVICE_URL_API=http://127.0.0.1:3000   the web server's own api calls stay on loopback
   any other value that starts with http://kingston-server.local → https://<host>
 and it adds <host> to the terminals' allowed Host headers (systemd drop-ins). The LAN
 owner sign-in's origin is local-owner/configure.py --https-host's job.
@@ -45,6 +46,9 @@ def rewrite(lines: list[str], host: str) -> tuple[list[str], list[str]]:
         'API_URL': f'{origin}/backend',
         'COOKIE_DOMAIN': 'host-only',
         'PASSKEY_RP_ID': host,
+        # The web server's own calls to the api (media and file proxies) stay on loopback:
+        # the public name leads through Cloudflare Access, which a server cannot pass.
+        'SERVICE_URL_API': 'http://127.0.0.1:3000',
     }
     seen: set[str] = set()
     out: list[str] = []

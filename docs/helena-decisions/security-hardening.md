@@ -336,7 +336,8 @@ The origin does not switch yet.
    Protect with Access.
 
 **6.7 Go-live switch** (one window, ~10 min):
-1. `sudo python3 $H/cloudflare/switch_origin.py` (read), then `--apply`.
+1. `sudo python3 $H/cloudflare/switch_origin.py` (read), then `--apply` (it also points the web
+   server's own api calls at loopback: `SERVICE_URL_API`). Update OAuth redirect URIs at Google etc.
 2. `sudo python3 $H/local-owner/configure.py --https-host helena.volition.one` (option B) — it
    restarts API and web itself; for option A it is not needed (no LAN sign-in on the tunnel).
 3. API unit `NODE_ENV=production` (drop-in `Environment=NODE_ENV=production`), then restart
@@ -478,3 +479,11 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
 - Browser egress restriction (M-05) as an nft rule once the owner decides.
 - `code-server` could listen on a Unix socket instead of 127.0.0.1:8443 (removes H-02 for it
   without the ACL).
+- **Inbound webhooks** (Git providers, a Telegram webhook, if one is ever used) cannot pass
+  Cloudflare Access, and a bypass policy would not carry the assertion the API demands. When one is
+  needed: a separate hostname (e.g. `hooks.helena.volition.one`) on the same tunnel to a second
+  nginx entry that exposes only the webhook paths (they verify their own signatures), marked with a
+  different entry value the API allows for those routes only. Not built now; nothing uses one yet.
+- **OAuth redirect URIs** registered elsewhere (Google sign-in/connector, MCP OAuth clients) move
+  with `API_URL` to `https://helena.volition.one/backend/…`; update them at the provider in the
+  go-live window (Administrator shows the exact values).
