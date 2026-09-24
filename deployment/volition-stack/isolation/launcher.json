@@ -76,6 +76,7 @@
       "profileLinks": {
         "config.yaml": "/var/lib/volition/hermes/config.yaml",
         ".env": "/var/lib/volition/hermes/.env",
+        ".local/bin/hermes": "/var/lib/volition/hermes/venv/bin/hermes",
         "plugins/plan-approval-guard": "/srv/volition/source/plan/deployment/volition-stack/integration/hermes-plugins/plan-approval-guard"
       }
     },
