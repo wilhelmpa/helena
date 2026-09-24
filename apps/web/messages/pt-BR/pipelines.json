@@ -47,7 +47,8 @@
     "loadFailed": "Não foi possível carregar os modelos.",
     "tryAgain": "Tentar novamente",
     "noAccess": "Você pode não ver os fluxos de trabalho desta equipe.",
-    "readOnly": "Somente membros que podem criar fluxos de trabalho adicionam modelos aqui."
+    "readOnly": "Somente membros que podem criar fluxos de trabalho adicionam modelos aqui.",
+    "noAccessTitle": "Sem acesso"
   },
   "starter": {
     "name": "Novo fluxo de trabalho",
@@ -112,7 +113,8 @@
     "openTemplate": "Abrir o modelo",
     "issuesTitle": "{count, plural, one {# problema} other {# problemas}}",
     "warningsTitle": "{count, plural, one {# problema neste projeto} other {# problemas neste projeto}}",
-    "warningsHint": "O fluxo de trabalho pode ser salvo, mas não ativado no projeto até que sejam corrigidos."
+    "warningsHint": "O fluxo de trabalho pode ser salvo, mas não ativado no projeto até que sejam corrigidos.",
+    "loadFailedHint": "O servidor não respondeu. Tente de novo em instantes."
   },
   "trigger": {
     "title": "Gatilho",

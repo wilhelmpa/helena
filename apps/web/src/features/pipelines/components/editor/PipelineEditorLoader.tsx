@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -21,21 +22,32 @@ export default function PipelineEditorLoader({
   projectKey: string | null;
 }) {
   const t = useTranslations('pipelines.editor');
+  const tCommon = useTranslations('common');
   const pipeline = usePipeline(pipelineId);
   const team = useTeamQuery(pipeline.data?.projectId === null ? pipeline.data.teamId : null);
   const usage = useProjectPipelines(projectKey);
   const { can } = usePermissions();
 
   if (pipeline.isPending) return <ListSkeleton rows={4} rowClassName="h-14" className="p-4" />;
-  if (pipeline.isError) return <p className="p-4 text-sm text-destructive">{t('loadFailed')}</p>;
+  if (pipeline.isError)
+    return (
+      <div className="flex h-full flex-col p-4">
+        <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
+          <Button size="sm" variant="outline" onClick={() => void pipeline.refetch()}>
+            {tCommon('reload')}
+          </Button>
+        </EmptyState>
+      </div>
+    );
   const data = pipeline.data;
   if (projectKey && data.projectId === null)
     return (
-      <div className="space-y-3 p-4 text-sm">
-        <p className="text-muted-foreground">{t('templateElsewhere')}</p>
-        <Button asChild size="sm" variant="outline">
-          <Link href={pipelinePath(data.id)}>{t('openTemplate')}</Link>
-        </Button>
+      <div className="flex h-full flex-col p-4">
+        <EmptyState title={t('template')} description={t('templateElsewhere')}>
+          <Button asChild size="sm" variant="outline">
+            <Link href={pipelinePath(data.id)}>{t('openTemplate')}</Link>
+          </Button>
+        </EmptyState>
       </div>
     );
   const editable =

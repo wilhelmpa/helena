@@ -47,7 +47,8 @@
     "loadFailed": "Les modèles n’ont pas pu être chargés.",
     "tryAgain": "Réessayer",
     "noAccess": "Vous ne pouvez pas voir les flux de travail de cette équipe.",
-    "readOnly": "Seuls les membres autorisés à créer des flux de travail ajoutent des modèles ici."
+    "readOnly": "Seuls les membres autorisés à créer des flux de travail ajoutent des modèles ici.",
+    "noAccessTitle": "Aucun accès"
   },
   "starter": {
     "name": "Nouveau flux de travail",
@@ -112,7 +113,8 @@
     "openTemplate": "Ouvrir le modèle",
     "issuesTitle": "{count, plural, one {# problème} other {# problèmes}}",
     "warningsTitle": "{count, plural, one {# problème dans ce projet} other {# problèmes dans ce projet}}",
-    "warningsHint": "Le flux de travail peut être enregistré, mais pas activé dans le projet tant que ces éléments ne sont pas corrigés."
+    "warningsHint": "Le flux de travail peut être enregistré, mais pas activé dans le projet tant que ces éléments ne sont pas corrigés.",
+    "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
   },
   "trigger": {
     "title": "Déclencheur",

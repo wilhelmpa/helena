@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RowEmpty, RowList } from '@/components/common/page/RowList';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useCreateDepartment } from '../services/organization.service';
 import OrganizationDepartmentCard from './OrganizationDepartmentCard';
@@ -45,9 +44,9 @@ export default function OrganizationDepartments({
         </Button>
       </form>
       {departments.length === 0 ? (
-        <RowList className="bg-card">
-          <RowEmpty>{t('departments.empty')}</RowEmpty>
-        </RowList>
+        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+          {t('departments.empty')}
+        </p>
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
           {departments.map((department) => (

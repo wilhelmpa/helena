@@ -6,8 +6,9 @@ import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import NameDialog from '@/components/common/overlay/NameDialog';
 import SectionPageView from '@/components/common/page/SectionPageView';
+import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { Button } from '@/components/ui/button';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import { useCreatePipelineTemplate } from '@/services/pipelines.service';
 import { useTeamQuery } from '@/services/teams.service';
 import { pipelinePath } from '@/utils/paths';
@@ -15,6 +16,8 @@ import { useNewPipeline } from '../../hooks/useNewPipeline';
 import PipelineBuiltinList from './PipelineBuiltinList';
 import PipelineTemplateList from './PipelineTemplateList';
 
+// The team's library of workflow templates: its own templates, then the ones Helena
+// ships to add. "Neue Vorlage" is the page's one primary action, in the header row.
 export default function PipelineLibrary({ teamId }: { teamId: number }) {
   const t = useTranslations('pipelines.library');
   const tNav = useTranslations('nav');
@@ -25,28 +28,31 @@ export default function PipelineLibrary({ teamId }: { teamId: number }) {
   const [creating, setCreating] = useState(false);
 
   return (
-    <SectionPageView
-      title={tNav('workflows')}
-      description={t('hint')}
-      wide
-      actions={
-        permissions?.create ? (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('newTemplate')}
-          </Button>
-        ) : undefined
-      }
-    >
+    <SectionPageView title={tNav('workflows')} description={t('hint')} wide>
+      {permissions?.create ? (
+        <PageToolbar>
+          <PageToolbarSpacer />
+          <PageActions
+            primary={{
+              id: 'new',
+              label: t('newTemplate'),
+              icon: Plus,
+              onClick: () => setCreating(true),
+            }}
+          />
+        </PageToolbar>
+      ) : null}
       {!permissions ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : !permissions.read ? (
-        <p className="text-sm text-muted-foreground">{t('noAccess')}</p>
+        <EmptyState title={t('noAccessTitle')} description={t('noAccess')} />
       ) : (
-        <div className="space-y-6">
-          {!permissions.create && <p className="text-xs text-muted-foreground">{t('readOnly')}</p>}
+        <div className="flex flex-col gap-5">
           <PipelineTemplateList teamId={teamId} canDelete={permissions.delete} />
           <PipelineBuiltinList teamId={teamId} canCreate={permissions.create} />
+          {!permissions.create && (
+            <p className="px-2 text-xs text-muted-foreground">{t('readOnly')}</p>
+          )}
         </div>
       )}
       {creating && (

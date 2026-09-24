@@ -47,7 +47,8 @@
     "loadFailed": "No se han podido cargar las plantillas.",
     "tryAgain": "Inténtalo otra vez",
     "noAccess": "Puede que no veas los flujos de trabajo de este equipo.",
-    "readOnly": "Solo los miembros que pueden crear flujos de trabajo añaden plantillas aquí."
+    "readOnly": "Solo los miembros que pueden crear flujos de trabajo añaden plantillas aquí.",
+    "noAccessTitle": "Sin acceso"
   },
   "starter": {
     "name": "Nuevo flujo de trabajo",
@@ -112,7 +113,8 @@
     "openTemplate": "Abrir la plantilla",
     "issuesTitle": "{count, plural, one {# problema} other {# problemas}}",
     "warningsTitle": "{count, plural, one {# problema en este proyecto} other {# problemas en este proyecto}}",
-    "warningsHint": "El flujo de trabajo se puede guardar, pero no se puede activar en el proyecto hasta que se resuelvan."
+    "warningsHint": "El flujo de trabajo se puede guardar, pero no se puede activar en el proyecto hasta que se resuelvan.",
+    "loadFailedHint": "El servidor no respondió. Vuelve a intentarlo en un momento."
   },
   "trigger": {
     "title": "Activador",

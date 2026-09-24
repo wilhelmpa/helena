@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import type { Organization } from '@/lib/api/endpoints/organization';
-import { RowEmpty, RowList } from '@/components/common/page/RowList';
 import { buildOrganizationTree } from '../organizationTree';
 import OrganizationDepartmentNode from './OrganizationDepartmentNode';
 import OrganizationSummary from './OrganizationSummary';
@@ -12,9 +11,9 @@ export default function OrganizationTree({ organization }: { organization: Organ
   const tree = buildOrganizationTree(organization);
   if (tree.length === 0) {
     return (
-      <RowList className="bg-card">
-        <RowEmpty>{t('map.empty')}</RowEmpty>
-      </RowList>
+      <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        {t('map.empty')}
+      </p>
     );
   }
   return (
