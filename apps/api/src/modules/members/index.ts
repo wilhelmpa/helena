@@ -152,7 +152,7 @@ export const memberRoutes = new Elysia({ name: 'members', detail: { tags: ['Memb
           "Add a member of the project's team to the project, as an owner or on a custom role " +
           "(roleId, or null for the team's default role). Only a project owner or a team owner " +
           'or manager adds an owner.',
-        ...mcpTool('add_member'),
+        ...mcpTool('add_member', undefined, { category: 'credentials' }),
       },
     },
   )
@@ -200,7 +200,7 @@ export const memberRoutes = new Elysia({ name: 'members', detail: { tags: ['Memb
           "owner or manager may grant; 'member' assigns a custom role by roleId, or null for " +
           'the default. You cannot change your own role, the last owner cannot be demoted, and ' +
           'a membership granted by a provisioned group is managed by the identity provider.',
-        ...mcpTool('set_member_role'),
+        ...mcpTool('set_member_role', undefined, { category: 'credentials' }),
       },
     },
   )
@@ -250,7 +250,7 @@ export const memberRoutes = new Elysia({ name: 'members', detail: { tags: ['Memb
         description:
           'Remove a member from the project, or leave it yourself. A membership granted by a ' +
           'provisioned group is managed by the identity provider.',
-        ...mcpTool('remove_member'),
+        ...mcpTool('remove_member', undefined, { category: 'credentials' }),
       },
     },
   );

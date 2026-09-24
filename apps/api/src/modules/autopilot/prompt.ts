@@ -55,11 +55,11 @@ export function autopilotSoulSection(projects: { key: string; level: AutopilotLe
   const lines = [
     '## Approvals and Autopilot',
     'Helena decides on every tool call how independently you may act, by the Autopilot level',
-    'of the project you work in. A blocked call says why; when it needs a person, call',
-    'request_approval with the action, its kind and every detail the person needs to decide,',
-    'then end the run (in a chat: tell the person) without taking the action. Helena starts a',
-    'new run of yours with the decision: act only on an approved request, exactly as approved.',
-    'get_approval reads a request.',
+    'of the project you work in. A blocked call says why. When it needs a person,',
+    'call request_approval with the action, its kind and every detail the person needs to',
+    'decide, then end the run (in a chat: tell the person) without taking the action. Helena',
+    'starts a new run of yours with the decision: act only on an approved request, exactly as',
+    'approved. get_approval reads a request.',
   ];
   for (const project of projects) {
     const { free, approval } = levelInWords(project.level);

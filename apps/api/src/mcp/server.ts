@@ -8,6 +8,7 @@ import { dispatchTool } from './dispatch';
 import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
 import { toolError } from './result';
+import { decideMcpCall } from '#modules/autopilot/mcp';
 
 // The path param of every team-scoped route.
 const TEAM_PARAM = 'teamId';
@@ -88,6 +89,15 @@ export async function buildMcpServer(
           structuredContent: toolError(400, text),
         };
       }
+    }
+    // Helena's policy engine decides an agent's call before it reaches the route.
+    const verdict = await decideMcpCall(tool, args, userId);
+    if (verdict && verdict.outcome !== 'allow') {
+      return {
+        content: [{ type: 'text', text: verdict.message }],
+        isError: true,
+        structuredContent: toolError(403, verdict.message),
+      };
     }
     const { text, isError, structuredContent } = await dispatchTool(app, tool, args, credential, {
       viaMcpEndpoint: true,

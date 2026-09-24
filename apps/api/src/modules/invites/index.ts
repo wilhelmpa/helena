@@ -134,7 +134,7 @@ export const inviteRoutes = new Elysia({ name: 'invites', detail: { tags: ['Invi
           'Create an invite link for an email and role (owner or member). For a member, roleId ' +
           "picks the custom role, or null for the default role. Accepting it joins the project's " +
           'team as well. Queues an email when the instance email provider is configured.',
-        ...mcpTool('create_invite'),
+        ...mcpTool('create_invite', undefined, { category: 'credentials' }),
       },
     },
   )
@@ -160,7 +160,7 @@ export const inviteRoutes = new Elysia({ name: 'invites', detail: { tags: ['Invi
         description:
           'Queue an email for a pending project invite. Returns false when the instance email ' +
           'provider is not configured.',
-        ...mcpTool('send_invite_email'),
+        ...mcpTool('send_invite_email', undefined, { category: 'send', scope: 'external' }),
       },
     },
   )
@@ -305,7 +305,7 @@ export const inviteRoutes = new Elysia({ name: 'invites', detail: { tags: ['Invi
         description:
           'Accept an invite (email must match your session). An invite into a project you are ' +
           'already a member of is refused: accepting it would rewrite the membership you hold.',
-        ...mcpTool('accept_invite'),
+        ...mcpTool('accept_invite', undefined, { category: 'credentials' }),
       },
     },
   )
@@ -324,7 +324,7 @@ export const inviteRoutes = new Elysia({ name: 'invites', detail: { tags: ['Invi
         summary: 'Reject an invite',
         description: 'Reject an invite (email must match your session).',
         // Rejecting consumes the invite; it has to be issued again to rejoin.
-        ...mcpTool('reject_invite', { destructiveHint: true }),
+        ...mcpTool('reject_invite', { destructiveHint: true }, { category: 'credentials' }),
       },
     },
   );

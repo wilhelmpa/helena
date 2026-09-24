@@ -1,3 +1,4 @@
+import type { ActionCategory, ActionScope } from '@helena/policy';
 import type { Permission } from '#shared/guards';
 import type { McpApp } from './types';
 import { outputSchema, type McpOutputSchema } from './result';
@@ -44,6 +45,18 @@ export interface McpRouteTool {
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
   permission?: Permission;
+  // The action category the tool declares for Helena's policy engine, where its annotations
+  // say too little (a comment is a report, a role change a credential change), and where
+  // the action lands. Absent, the engine derives the category from the annotations.
+  category?: ActionCategory;
+  scope?: ActionScope;
+}
+
+// What a tool tells Helena's policy engine about itself (docs/helena-decisions/
+// policy-engine.md), beyond its MCP annotations.
+export interface McpToolPolicy {
+  category?: ActionCategory;
+  scope?: ActionScope;
 }
 
 // Marks a route as an MCP tool. Spread into a route's `detail`:
@@ -60,11 +73,17 @@ export interface McpRouteTool {
 // `x-mcp` is an OpenAPI extension key, so it rides along in the route's detail,
 // is read back from app.routes by generateRouteTools, and does not show up as a
 // real field in the REST/OpenAPI docs.
+//
+// The third argument declares the tool's action category for Helena's policy engine where
+// the annotations say too little:
+//
+//   detail: { ...mcpTool("add_comment", undefined, { category: "report" }) }
 export function mcpTool(
   tool: string,
   annotations?: McpToolAnnotations,
-): { 'x-mcp': { tool: string; annotations?: McpToolAnnotations } } {
-  return { 'x-mcp': { tool, annotations } };
+  policy?: McpToolPolicy,
+): { 'x-mcp': { tool: string; annotations?: McpToolAnnotations; policy?: McpToolPolicy } } {
+  return { 'x-mcp': { tool, annotations, ...(policy && { policy }) } };
 }
 
 // What the HTTP method alone says about a route. A GET only reads; a DELETE
@@ -162,7 +181,7 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       | {
           summary?: string;
           description?: string;
-          'x-mcp'?: { tool?: string; annotations?: McpToolAnnotations };
+          'x-mcp'?: { tool?: string; annotations?: McpToolAnnotations; policy?: McpToolPolicy };
           'x-permission'?: Permission;
         }
       | undefined;
@@ -182,6 +201,8 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       inputSchema: mergeInputSchema(hooks, pathParams),
       outputSchema: outputSchema(hooks.response),
       permission: detail?.['x-permission'],
+      category: detail?.['x-mcp']?.policy?.category,
+      scope: detail?.['x-mcp']?.policy?.scope,
       // Every tool acts on this tracker's own data and reaches nothing outside it,
       // so openWorldHint is false throughout; the route may still override it.
       annotations: {

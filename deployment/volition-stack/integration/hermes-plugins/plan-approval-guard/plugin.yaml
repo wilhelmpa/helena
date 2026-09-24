@@ -1,6 +1,6 @@
 name: plan-approval-guard
-version: "1.0.0"
-description: "Blocks a dangerous terminal command or an execute_code call in a Plan agent run until a person approved exactly that command in Plan, and blocks Hermes cron jobs."
-author: "Volition"
+version: "2.0.0"
+description: "Helena's Autopilot in Hermes: asks Helena's policy engine before every tool call of a Helena run or chat that is not a plain read, blocks what needs a person's approval or is not allowed, and blocks Hermes cron jobs."
+author: "Helena"
 provides_hooks:
   - pre_tool_call

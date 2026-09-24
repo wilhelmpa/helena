@@ -113,7 +113,7 @@ export const approvalRoutes = new Elysia({
           'in command: the run with the approval may run exactly that. Returns the request ' +
           'with its id and status; asking again for the same action in the same run returns ' +
           'the existing request.',
-        ...mcpTool('request_approval'),
+        ...mcpTool('request_approval', undefined, { category: 'report' }),
       },
     },
   )

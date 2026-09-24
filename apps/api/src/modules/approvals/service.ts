@@ -12,12 +12,16 @@ import {
 import { alias } from 'drizzle-orm/pg-core';
 import { and, desc, eq, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
+import { decide } from '#modules/autopilot/engine';
+import { categoryOfApprovalKind } from '@helena/policy';
 import { listMemberContexts, toMemberContext, type MemberRole } from '#modules/members/service';
 import { notifyApprovalRequested } from '#modules/notifications/service';
 import { HttpError, iso, pgErrorCode } from '#shared/lib';
 import { hasPermission, type PermissionAction, type PermissionResource } from '#shared/permissions';
 
-export type ApprovalKind = 'send' | 'publish' | 'pay' | 'delete' | 'other';
+export type ApprovalKind =
+  'send' | 'publish' | 'pay' | 'delete' | 'write' | 'execute' | 'credentials' | 'budget' | 'other';
+export type RequestKind = Exclude<ApprovalKind, 'budget'>;
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export interface ApprovalDto {
@@ -37,6 +41,10 @@ export interface ApprovalDto {
   action: string;
   details: string;
   command: string | null;
+  category: string | null;
+  autopilotLevel: number | null;
+  policyReason: string | null;
+  payload: Record<string, unknown> | null;
   status: ApprovalStatus;
   decidedByUserId: string | null;
   decidedByName: string | null;
@@ -70,6 +78,10 @@ function selectApprovals() {
       action: approvalRequest.action,
       details: approvalRequest.details,
       command: approvalRequest.command,
+      category: approvalRequest.category,
+      autopilotLevel: approvalRequest.autopilotLevel,
+      policyReason: approvalRequest.policyReason,
+      payload: approvalRequest.payload,
       status: approvalRequest.status,
       decidedByUserId: approvalRequest.decidedByUserId,
       decidedByName: decider.name,
@@ -94,6 +106,7 @@ function toDto(row: ApprovalRow): ApprovalDto {
     issueIdentifier:
       row.issueSequenceNumber == null ? null : `${row.projectKey}-${row.issueSequenceNumber}`,
     kind: row.kind as ApprovalKind,
+    payload: (row.payload as Record<string, unknown> | null) ?? null,
     status: row.status as ApprovalStatus,
     decidedAt: row.decidedAt ? iso(row.decidedAt) : null,
     createdAt: iso(row.createdAt),
@@ -200,7 +213,7 @@ async function deciders(projectId: number): Promise<string[]> {
 export async function createApprovalRequest(input: {
   projectId: number;
   agent: { id: number; userId: string };
-  kind: ApprovalKind;
+  kind: RequestKind;
   action: string;
   details?: string;
   command?: string;
@@ -217,6 +230,19 @@ export async function createApprovalRequest(input: {
   const issueId = input.issueId ?? run?.issueId ?? null;
   const action = input.action.trim();
   const command = input.command?.trim() || null;
+  // What the policy engine says about the action at this level, for the card. The request
+  // is filed whatever it says: the agent chose to ask.
+  const category = categoryOfApprovalKind(input.kind);
+  const view = await decide({
+    adapter: 'approval',
+    agentId: input.agent.id,
+    projectId: input.projectId,
+    runId: run?.id ?? null,
+    category,
+    scope: category === 'delete' || category === 'execute' ? 'external' : 'workspace',
+    tool: 'request_approval',
+    summary: action,
+  });
 
   let id: number;
   try {
@@ -231,6 +257,9 @@ export async function createApprovalRequest(input: {
         action,
         details: input.details?.trim() ?? '',
         command,
+        category,
+        autopilotLevel: view.level,
+        policyReason: view.reason,
       })
       .returning({ id: approvalRequest.id });
     id = created!.id;
@@ -298,6 +327,9 @@ export async function decideApprovalRequest(
       .where(and(eq(approvalRequest.id, id), eq(approvalRequest.status, 'pending')))
       .returning();
     if (!decided) throw new HttpError(409, 'This request has already been decided');
+    // A budget card has its own answers (raise, continue once, keep stopped).
+    if (decided.kind === 'budget')
+      throw new HttpError(409, 'A budget card is decided with its own actions');
     const [person] = await tx
       .select({ name: user.name })
       .from(user)
