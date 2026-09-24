@@ -18,14 +18,14 @@
       "triggers": ["gmail.message.received"],
       "steps": [
         { "id": "prepare-inbox", "title": "Prepare inbox context", "description": "Validate the event envelope, project capability grant and stable effect identifiers.", "sourceRefs": ["src/mastra/registry.ts"] },
-        { "id": "classify-inbox", "title": "Classify through capability", "description": "Call the private provider-neutral inbox-triage.v1 capability with bounded retries; the Plan worker applies the result.", "sourceRefs": ["src/mastra/registry.ts"] }
+        { "id": "classify-inbox", "title": "Classify through capability", "description": "Call the private provider-neutral inbox-triage.v1 capability with bounded retries; the Helena worker applies the result.", "sourceRefs": ["src/mastra/registry.ts"] }
       ],
-      "currentLimits": ["Gmail credentials and provider/model configuration remain in the host adapter; Mastra never sends mail or writes Plan issues."]
+      "currentLimits": ["Gmail credentials and provider/model configuration remain in the host adapter; Mastra never sends mail or writes Helena issues."]
     },
     {
       "id": "agent-team",
       "name": "Project agent team",
-      "description": "Coordinate project work through Hermes specialists, require coordinator review and synchronize evidence to the matching Plan task.",
+      "description": "Coordinate project work through Hermes specialists, require coordinator review and synchronize evidence to the matching Helena task.",
       "capabilityRefs": ["hermes-team.v1", "plan-task-sync.v1"],
       "externalEffects": false,
       "triggers": ["agent.team.requested"],
@@ -47,14 +47,14 @@
         { "id": "coordinate", "title": "Create delegations", "description": "Route the task to one specialist when the team has one or the task labels match the capabilities of exactly one; otherwise ask the Hermes coordinator for bounded assignments with dependencies.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
         { "id": "specialize", "title": "Execute specialist work", "description": "Run specialist assignments in dependency order, independent ones in parallel, through the private Hermes bridge with leases, run limits and stable idempotency keys.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
         { "id": "review", "title": "Review evidence", "description": "Have the coordinator evaluate evidence against the task acceptance criteria when the project requires a review.", "sourceRefs": ["src/mastra/team-workflow.ts"] },
-        { "id": "synchronize-plan", "title": "Synchronize Plan", "description": "Write the summary and evidence to the exact project task exactly once and set Review, or Done when the project autonomy is done and the review accepted the work.", "sourceRefs": ["src/mastra/team-workflow.ts"] }
+        { "id": "synchronize-plan", "title": "Synchronize Helena", "description": "Write the summary and evidence to the exact project task exactly once and set Review, or Done when the project autonomy is done and the review accepted the work.", "sourceRefs": ["src/mastra/team-workflow.ts"] }
       ],
-      "currentLimits": ["The private Hermes team bridge must implement the documented Unix-socket contract before production runs are enabled. Dry-runs make no Hermes or Plan call."]
+      "currentLimits": ["The private Hermes team bridge must implement the documented Unix-socket contract before production runs are enabled. Dry-runs make no Hermes or Helena call."]
     },
     {
       "id": "agent-routine",
       "name": "Agent routine",
-      "description": "Create or reopen a Plan task on a schedule and delegate it to a project agent, one open task at a time.",
+      "description": "Create or reopen a Helena task on a schedule and delegate it to a project agent, one open task at a time.",
       "capabilityRefs": [],
       "externalEffects": false,
       "triggers": [],
@@ -66,14 +66,14 @@
       },
       "steps": [
         { "id": "prepare-routine", "title": "Prepare the fire", "description": "Take the event id of the fire from its run id, list the run in its project and mark a fire that started more than ten minutes late as missed.", "sourceRefs": ["src/mastra/routine-workflow.ts"] },
-        { "id": "dispatch-routine", "title": "Create or reopen the task", "description": "Ask Plan through the private bridge to create the task, or reopen the named one, and delegate it to the agent. Plan changes nothing while the task of the routine is still open.", "sourceRefs": ["src/mastra/routine-workflow.ts"] }
+        { "id": "dispatch-routine", "title": "Create or reopen the task", "description": "Ask Helena through the private bridge to create the task, or reopen the named one, and delegate it to the agent. Helena changes nothing while the task of the routine is still open.", "sourceRefs": ["src/mastra/routine-workflow.ts"] }
       ],
-      "currentLimits": ["Routines are created and changed on the Schedules page of a Plan project. A fire that starts more than ten minutes after its time is skipped."]
+      "currentLimits": ["Routines are created and changed on the Schedules page of a Helena project. A fire that starts more than ten minutes after its time is skipped."]
     },
     {
       "id": "plan-pipeline",
       "name": "Workflow builder",
-      "description": "Run a workflow a member put together in Plan: agent steps, approvals, conditions, task actions and waits.",
+      "description": "Run a workflow a member put together in Helena: agent steps, approvals, conditions, task actions and waits.",
       "capabilityRefs": [],
       "externalEffects": false,
       "triggers": [],
@@ -84,11 +84,11 @@
         "schedules": "mastra"
       },
       "steps": [
-        { "id": "prepare-pipeline", "title": "Take the run", "description": "Ask Plan for the task and the pinned version of the workflow. A schedule fire gets a task and a run of its own; one that starts more than ten minutes late is skipped.", "sourceRefs": ["src/mastra/pipeline-workflow.ts"] },
-        { "id": "run-pipeline-step", "title": "Run one step", "description": "A loop that executes one step per iteration: an agent step through the Plan run queue, an approval that suspends until a person decides it in Plan, a condition or task action Plan evaluates, or a wait.", "sourceRefs": ["src/mastra/pipeline-workflow.ts", "src/mastra/adapters/plan-pipeline.ts"] },
-        { "id": "finish-pipeline", "title": "Finish", "description": "Record in Plan that the run succeeded or ended at a rejected approval.", "sourceRefs": ["src/mastra/pipeline-workflow.ts"] }
+        { "id": "prepare-pipeline", "title": "Take the run", "description": "Ask Helena for the task and the pinned version of the workflow. A schedule fire gets a task and a run of its own; one that starts more than ten minutes late is skipped.", "sourceRefs": ["src/mastra/pipeline-workflow.ts"] },
+        { "id": "run-pipeline-step", "title": "Run one step", "description": "A loop that executes one step per iteration: an agent step through the Helena run queue, an approval that suspends until a person decides it in Helena, a condition or task action Helena evaluates, or a wait.", "sourceRefs": ["src/mastra/pipeline-workflow.ts", "src/mastra/adapters/plan-pipeline.ts"] },
+        { "id": "finish-pipeline", "title": "Finish", "description": "Record in Helena that the run succeeded or ended at a rejected approval.", "sourceRefs": ["src/mastra/pipeline-workflow.ts"] }
       ],
-      "currentLimits": ["Workflows are built, started and decided in Plan. Plan records every step; a failed run is retried from its failed step."]
+      "currentLimits": ["Workflows are built, started and decided in Helena. Helena records every step; a failed run is retried from its failed step."]
     }
   ]
 }
