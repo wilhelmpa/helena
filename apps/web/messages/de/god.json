@@ -375,7 +375,11 @@
     "janitorCleaned": "{count, plural, one {# Eintrag aufgeräumt} other {# Einträge aufgeräumt}}",
     "janitorNeverRan": "noch nicht gelaufen",
     "resuming": "{count, plural, one {# Run wird} other {# Runs werden}} nach einem Absturz fortgesetzt",
-    "needsResumeReview": "{count, plural, one {# Run hat} other {# Runs haben}} das Fortsetzungslimit erreicht und brauchen einen Blick"
+    "needsResumeReview": "{count, plural, one {# Run hat} other {# Runs haben}} das Fortsetzungslimit erreicht und brauchen einen Blick",
+    "agentSync": {
+      "title": "Agenten-Profile",
+      "synced": "{synced} von {total} synchron"
+    }
   },
   "plugins": {
     "externalTitle": "Externe Plugins",

@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'bun:test';
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { CliRuntimeAdapter } from '@helena/sdk';
+import type { CliRuntimeType } from '@helena/sdk';
 import { AnswerStream, UsageReader, type AgUiEvent } from '../agui';
 import { loadConfig, presetOf } from '../config';
 import { loadRunnerPlugins } from '../plugins';
@@ -83,7 +83,7 @@ describe('a plugin runtime', () => {
     const logs: string[] = [];
     const [loaded] = await loadRunnerPlugins(configPath, (line) => logs.push(line));
     expect(loaded?.status).toBe('loaded');
-    expect((runtimes.get('echo') as CliRuntimeAdapter).command.bin).toBe('echo-agent');
+    expect((runtimes.get('echo') as CliRuntimeType).command.bin).toBe('echo-agent');
 
     const [config] = await loadConfig(configPath);
     expect(config?.agent).toBe('echo');

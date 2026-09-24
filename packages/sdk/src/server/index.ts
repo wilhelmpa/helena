@@ -38,3 +38,4 @@ export {
   type OutboxStore,
 } from './outbox';
 export { bundleJsonSchema, checkBundle, templateBundleSchema } from './bundle-schema';
+export { maskValue, profileDigest } from './digest';

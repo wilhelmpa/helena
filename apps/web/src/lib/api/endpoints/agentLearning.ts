@@ -8,7 +8,8 @@ export type MemoryFile = 'MEMORY.md' | 'USER.md';
 // action is not listed.
 export interface RuntimeAction {
   id: number;
-  kind: 'discard-skill' | 'pin-skill' | 'write-memory';
+  // 'rewrite-profile' is "Neu schreiben" (agentRuntimeSync), not a learning decision.
+  kind: 'discard-skill' | 'pin-skill' | 'write-memory' | 'rewrite-profile';
   // The skill's path in the runtime, or the memory file.
   target: string;
   pinned: boolean | null;

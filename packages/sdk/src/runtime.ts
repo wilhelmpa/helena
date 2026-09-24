@@ -1,3 +1,5 @@
+import type { RuntimePolicySnapshot } from './runtime-policy';
+import type { RuntimeAdapter, RuntimeId } from './runtime-profile';
 import type { RuntimeReaders } from './runtime-readers';
 import type { LocalizedText } from './text';
 
@@ -83,49 +85,47 @@ export interface AcpLaunch {
   env?: Record<string, string>;
 }
 
-// Profile materialization: before a run the runner writes what Helena configured for the
-// agent (instructions, skills, MCP servers, model defaults) where the runtime reads it,
-// and reports drift. The snapshot is Helena's runtime policy for the agent.
-export interface RuntimeProfileContext {
-  agentId: number;
-  // The runtime's home for this agent (HERMES_HOME, CLAUDE_CONFIG_DIR, CODEX_HOME).
-  home: string;
-  snapshot: unknown;
+// What the runner hands a plugin runtime's `adapter` factory for one agent it serves.
+export interface RuntimeAdapterContext {
+  // The agent's name in the runner's log lines.
+  name: string;
+  // Where Helena's API answers.
+  url: string;
+  env: Record<string, string>;
+  cwd: string | null;
+  // The agent's runtime policy as Helena has it now.
+  policy(): Promise<RuntimePolicySnapshot>;
 }
 
-export interface RuntimeProfileResult {
-  changed: boolean;
-  // Files a person changed outside Helena, kept aside instead of overwritten.
-  conflicts?: string[];
-}
-
-export interface RuntimeProfile {
-  materialize(ctx: RuntimeProfileContext): Promise<RuntimeProfileResult>;
-}
-
-interface RuntimeAdapterBase {
-  id: string;
+// A kind of runtime, as the runner's registry holds it: how to start it (a one-shot CLI
+// or an ACP agent), what it can do, the per-agent profile adapter that keeps it in line
+// with Helena (runtime-profile.ts RuntimeAdapter), and what Helena can read back from it
+// (runtime-readers.ts).
+interface RuntimeTypeBase {
+  id: RuntimeId;
   label: LocalizedText;
   description?: LocalizedText;
   capabilities: RuntimeCapabilities;
-  profile?: RuntimeProfile;
+  // Builds the agent's profile adapter. The built-in runtimes build theirs in the runner
+  // (packages/runner/src/adapters.ts); a plugin runtime brings its own here.
+  adapter?(context: RuntimeAdapterContext): RuntimeAdapter;
   // What Helena can read back (sessions, transcripts, logs, health, version) and the
   // controls besides running work (curator, emergency stop).
   readers?: RuntimeReaders;
 }
 
-export interface CliRuntimeAdapter extends RuntimeAdapterBase {
+export interface CliRuntimeType extends RuntimeTypeBase {
   protocol: 'cli';
   command: CliCommand;
   parser?: () => RuntimeStreamParser;
 }
 
-export interface AcpRuntimeAdapter extends RuntimeAdapterBase {
+export interface AcpRuntimeType extends RuntimeTypeBase {
   protocol: 'acp';
   launch(settings: RuntimeTaskSettings): AcpLaunch;
 }
 
-export type RuntimeAdapter = CliRuntimeAdapter | AcpRuntimeAdapter;
+export type RuntimeType = CliRuntimeType | AcpRuntimeType;
 
 // The prompt as a CLI adapter receives it: without a system-prompt flag, the run's
 // context goes in front of the task.

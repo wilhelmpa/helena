@@ -1,14 +1,14 @@
 import {
   createRegistry,
   type CliCommand,
-  type CliRuntimeAdapter,
-  type RuntimeAdapter,
+  type CliRuntimeType,
+  type RuntimeType,
   type RuntimeCapabilities,
   type RuntimeStreamParser,
 } from '@helena/sdk';
 import { PRESETS, PRESET_NAMES, type PresetName } from './presets';
 
-// The runtimes this runner can drive, as a registry (@helena/sdk RuntimeAdapter): the
+// The runtimes this runner can drive, as a registry (@helena/sdk RuntimeType): the
 // built-in presets, registered here as the internal plugin `helena.runtimes`, and those of
 // the plugins its config names (see plugins.ts). Everything that used to look a preset up
 // by name looks it up here.
@@ -79,7 +79,7 @@ const CAPABILITIES: Record<PresetName, RuntimeCapabilities> = {
   },
 };
 
-export function builtinRuntimes(): CliRuntimeAdapter[] {
+export function builtinRuntimes(): CliRuntimeType[] {
   return PRESET_NAMES.map((name) => ({
     id: name,
     label: LABELS[name],
@@ -89,10 +89,10 @@ export function builtinRuntimes(): CliRuntimeAdapter[] {
   }));
 }
 
-export const runtimes = createRegistry<RuntimeAdapter>('runtime');
+export const runtimes = createRegistry<RuntimeType>('runtime');
 for (const adapter of builtinRuntimes()) runtimes.register(adapter, BUILTIN_RUNTIMES_PLUGIN);
 
-export function runtimeOf(name: string | undefined): RuntimeAdapter | undefined {
+export function runtimeOf(name: string | undefined): RuntimeType | undefined {
   return name ? runtimes.get(name) : undefined;
 }
 

@@ -36,6 +36,8 @@ export interface PluginProvides {
   captureTargets?: string[];
   // Template bundles offered for import (agent templates, skills, MCP servers).
   bundles?: string[];
+  // Contributions to every agent's runtime profile (runner).
+  profileContributions?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

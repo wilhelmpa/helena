@@ -35,7 +35,7 @@ describe("Hermes runner deployment", () => {
 
   it("exports the native Hermes runtime environment before starting the runner", () => {
     const wrapper = readFileSync(resolve(integration, "scripts/volition-hermes-runner"), "utf8");
-    const setup = wrapper.split("\n/var/lib/volition/hermes/venv/bin/python", 1)[0];
+    const setup = wrapper.split("\n# A runner that cannot start", 1)[0];
     const root = mkdtempSync(join(tmpdir(), "hermes-runner-env-"));
     try {
       const credentials = join(root, "credentials");
@@ -54,6 +54,16 @@ describe("Hermes runner deployment", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  it("names why the runner could not start in Helena before systemd tries again", () => {
+    const wrapper = readFileSync(resolve(integration, "scripts/volition-hermes-runner"), "utf8");
+    assert.ok(wrapper.includes("/agent-runtime/runner-health"));
+    assert.ok(wrapper.includes('report_failure "$(cat "$catalog_errors")"'));
+    // The key reaches Python in the environment, never on a command line.
+    assert.ok(!/python[^\n]*ITSAPLAN_API_KEY=/.test(wrapper));
+    const deploy = readFileSync(resolve(integration, "../native/deploy.sh"), "utf8");
+    assert.ok(deploy.includes("/usr/local/libexec/volition-hermes-runner"));
   });
 
   it("keeps provider credentials out of the template and runner logs", () => {

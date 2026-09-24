@@ -375,7 +375,11 @@
     "janitorCleaned": "{count, plural, zero {لم يتم تنظيف شيء} one {تم تنظيف عنصر واحد} two {تم تنظيف عنصرين} few {تم تنظيف # عناصر} many {تم تنظيف # عنصرًا} other {تم تنظيف # عنصر}}",
     "janitorNeverRan": "لم يعمل بعد",
     "resuming": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد يُستأنف} two {تشغيلان يُستأنفان} few {# تشغيلات تُستأنف} many {# تشغيلًا يُستأنف} other {# تشغيل يُستأنف}} بعد تعطل",
-    "needsResumeReview": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد بلغ} two {تشغيلان بلغا} few {# تشغيلات بلغت} many {# تشغيلًا بلغ} other {# تشغيل بلغ}} حد الاستئناف ويحتاج إلى مراجعة"
+    "needsResumeReview": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد بلغ} two {تشغيلان بلغا} few {# تشغيلات بلغت} many {# تشغيلًا بلغ} other {# تشغيل بلغ}} حد الاستئناف ويحتاج إلى مراجعة",
+    "agentSync": {
+      "title": "ملفات الوكلاء",
+      "synced": "{synced} من {total} متزامنة"
+    }
   },
   "plugins": {
     "externalTitle": "الإضافات الخارجية",

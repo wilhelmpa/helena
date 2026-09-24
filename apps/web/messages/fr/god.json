@@ -375,7 +375,11 @@
     "janitorCleaned": "{count, plural, one {a nettoyé # élément} other {a nettoyé # éléments}}",
     "janitorNeverRan": "n'a pas encore tourné",
     "resuming": "{count, plural, one {# exécution reprend} other {# exécutions reprennent}} après un crash",
-    "needsResumeReview": "{count, plural, one {# exécution a atteint} other {# exécutions ont atteint}} la limite de reprises et nécessitent un examen"
+    "needsResumeReview": "{count, plural, one {# exécution a atteint} other {# exécutions ont atteint}} la limite de reprises et nécessitent un examen",
+    "agentSync": {
+      "title": "Profils des agents",
+      "synced": "{synced} sur {total} synchronisés"
+    }
   },
   "plugins": {
     "externalTitle": "Plugins externes",
