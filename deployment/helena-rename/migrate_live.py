@@ -900,8 +900,10 @@ class Migration:
                     self._retire(path)
                     return
                 new_target = os.path.join(os.path.dirname(new_target), unit) if os.path.dirname(new_target) else unit
-            elif not base:
-                new_target = target
+            elif base:
+                # The file it points to is renamed by the same file-name rules.
+                renamed = self.rules["config"].rename_name(base)
+                new_target = new_target[: len(new_target) - len(base)] + renamed
             if new_target != target:
                 action = "ln:" + self.unp(path)
                 if action not in self.done:
