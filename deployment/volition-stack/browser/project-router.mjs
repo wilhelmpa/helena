@@ -273,8 +273,7 @@ async function handleUpgrade(root, request, socket, head) {
   if (target.api !== null) {
     if (target.api !== "screencast") return refuse(socket, "404 Not Found");
     if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
-    const connection = acceptWebSocket(request, socket, head);
-    if (connection) joinScreencast(target.cdpPort, target.display, connection);
+    acceptWebSocket(request, socket, head, (connection) => joinScreencast(target.cdpPort, target.display, connection));
     return;
   }
   watchDesktop(target.cdpPort, socket);

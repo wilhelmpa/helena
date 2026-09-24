@@ -201,12 +201,14 @@
   },
   "subtaskDisposal": {
     "intro": "{issues, plural, one {Diese Aufgabe hat} other {Diese Aufgaben haben}} {count, plural, one {# Unteraufgabe} other {# Unteraufgaben}}.",
+    "choose": "Wähle, was mit {count, plural, one {ihr} other {ihnen}} geschehen soll.",
     "deleteToo": "{count, plural, one {Ebenfalls löschen} other {Alle ebenfalls löschen}}",
     "archiveToo": "{count, plural, one {Ebenfalls archivieren} other {Alle ebenfalls archivieren}}",
     "detach": "{count, plural, one {Ohne übergeordnete Aufgabe behalten} other {Alle ohne übergeordnete Aufgabe behalten}}",
     "reassign": "{count, plural, one {In eine andere Aufgabe verschieben} other {Alle in eine andere Aufgabe verschieben}}",
     "reassignTitle": "Unteraufgaben in eine andere Aufgabe verschieben",
     "change": "Ändern",
+    "newParent": "Neue übergeordnete Aufgabe:",
     "searchParent": "Neue übergeordnete Aufgabe suchen…"
   },
   "comments": {

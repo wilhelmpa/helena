@@ -1,0 +1,12 @@
+{
+  "name": "@helena/browser-router",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "mp4box": "^2.4.1"
+  }
+}

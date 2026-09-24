@@ -229,6 +229,7 @@
     "labelPlaceholder": "p. ej. Cuenta del equipo",
     "labelHint": "Ayuda a distinguir credenciales de la misma integración. Los secretos se guardan cifrados.",
     "noFields": "Sin campos",
+    "toolCount": "{count, plural, one {# herramienta} other {# herramientas}}",
     "search": "Buscar integraciones",
     "noMatches": "Ninguna integración coincide con «{query}».",
     "empty": "Todavía no hay credenciales",

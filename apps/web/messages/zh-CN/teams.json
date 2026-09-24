@@ -229,6 +229,7 @@
     "labelPlaceholder": "例如：团队账户",
     "labelHint": "用于区分同一集成的不同凭据。密钥会加密存储。",
     "noFields": "无字段",
+    "toolCount": "{count, plural, other {# 个工具}}",
     "search": "搜索集成",
     "noMatches": "没有与“{query}”匹配的集成。",
     "empty": "暂无凭据",

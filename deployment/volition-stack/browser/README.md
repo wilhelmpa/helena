@@ -18,7 +18,8 @@ This directory holds the router and the display wait helper:
 | `project-browser-video.mjs` | the H.264 encoder (ffmpeg) and its quality tiers |
 | `project-browser-mp4.mjs` | ffmpeg's FLV output read tag by tag and written out as fragmented MP4, one fragment per frame |
 | `project-browser-input.mjs` | the viewers' messages and the order their input reaches the page in |
-| `websocket.mjs` | the server side of WebSocket for the live view |
+| `websocket.mjs` | the live view's WebSocket server: the `ws` library plus a 30 s heartbeat |
+| `package.json` | the router's dependencies (`ws`); a workspace member, so the checkout's `bun install` links them next to it |
 | `bin/wait-for-x` | `/usr/local/libexec/volition-wait-for-x`, the `ExecStartPre` of the Chromium unit |
 
 The video path needs `ffmpeg` on the host, built with `libx264` (`ffmpeg -encoders | grep libx264`);

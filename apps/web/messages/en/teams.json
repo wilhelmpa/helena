@@ -229,6 +229,7 @@
     "labelPlaceholder": "e.g. Team account",
     "labelHint": "Helps tell apart credentials of the same integration. Secrets are stored encrypted.",
     "noFields": "No fields",
+    "toolCount": "{count, plural, one {# tool} other {# tools}}",
     "search": "Search integrations",
     "noMatches": "No integration matches “{query}”.",
     "empty": "No credentials yet",

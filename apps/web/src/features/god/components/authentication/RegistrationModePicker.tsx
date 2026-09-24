@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { RadioGroup as RadioGroupPrimitive } from 'radix-ui';
 import { useTranslations } from 'next-intl';
 import type { RegistrationMode } from '@/lib/api/endpoints/god';
 import { cn } from '@/lib/utils';
@@ -20,17 +21,18 @@ export default function RegistrationModePicker({
   const t = useTranslations('god.authentication.modes');
 
   return (
-    <div role="radiogroup">
+    // Radix RadioGroup: one tab stop, the arrow keys move the choice (WAI-ARIA radio group).
+    <RadioGroupPrimitive.Root
+      value={value}
+      onValueChange={(next) => onChange(next as RegistrationMode)}
+      disabled={disabled}
+    >
       {MODES.map((mode) => {
         const active = value === mode;
         return (
-          <button
+          <RadioGroupPrimitive.Item
             key={mode}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            disabled={disabled}
-            onClick={() => onChange(mode)}
+            value={mode}
             className={cn(
               'flex w-full items-start gap-3 p-4 text-left transition-colors',
               '-outline-offset-1 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50',
@@ -53,9 +55,9 @@ export default function RegistrationModePicker({
                 {t(`${mode}.description`)}
               </span>
             </span>
-          </button>
+          </RadioGroupPrimitive.Item>
         );
       })}
-    </div>
+    </RadioGroupPrimitive.Root>
   );
 }

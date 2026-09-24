@@ -229,6 +229,7 @@
     "labelPlaceholder": "ex. Compte de l'équipe",
     "labelHint": "Aide à distinguer plusieurs identifiants d'une même intégration. Les secrets sont stockés chiffrés.",
     "noFields": "Aucun champ",
+    "toolCount": "{count, plural, one {# outil} other {# outils}}",
     "search": "Rechercher une intégration",
     "noMatches": "Aucune intégration ne correspond à « {query} ».",
     "empty": "Aucun identifiant pour l'instant",

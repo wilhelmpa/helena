@@ -6,6 +6,7 @@ import { app } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { patchOps, setupScim } from '#modules/scim/__tests__/helpers';
+import pkg from '../../../../../../package.json';
 
 // The MCP endpoint resolves the API key itself instead of going through
 // authContext, so the rules that gate a planner route have to hold here too.
@@ -32,6 +33,34 @@ async function initialize(apiKey: string) {
     }),
   );
 }
+
+describe('MCP transport', () => {
+  beforeEach(resetDb);
+
+  // Streamable HTTP: a stateless server offers no GET stream and no session to DELETE.
+  it('answers GET and DELETE with 405 and Allow: POST', async () => {
+    for (const method of ['GET', 'DELETE']) {
+      const res = await app.handle(new Request('http://localhost/mcp', { method }));
+      expect(res.status).toBe(405);
+      expect(res.headers.get('allow')).toBe('POST');
+      expect(await res.json()).toMatchObject({ jsonrpc: '2.0', error: { code: -32000 } });
+    }
+  });
+
+  it('introduces itself as Helena with the release version', async () => {
+    const user = await signUpTestUser();
+    const created = await auth.api.createApiKey({ body: { userId: user.userId, name: 'mcp' } });
+    const response = await initialize(created.key);
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    const message = JSON.parse(text.includes('data:') ? text.split('data: ')[1]! : text);
+    expect(message.result.serverInfo).toEqual({
+      name: 'helena',
+      title: 'Helena',
+      version: pkg.version,
+    });
+  });
+});
 
 describe('MCP authentication', () => {
   beforeEach(resetDb);

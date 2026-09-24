@@ -6,6 +6,7 @@ import type { GitProviderConnection } from '@/lib/api/endpoints/git';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import SettingsCard from '@/components/common/page/SettingsCard';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import {
   useDisconnectGitProvider,
   useDisconnectGitRepository,
@@ -24,6 +25,7 @@ export default function GitProviderConnectionCard({
 }) {
   const t = useTranslations('settings.git');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
   const disconnectProvider = useDisconnectGitProvider(projectKey);
   const disconnectRepository = useDisconnectGitRepository(projectKey, connection.id);
   const providerLabel = GIT_PROVIDER_CONFIG[connection.provider].label;
@@ -37,18 +39,25 @@ export default function GitProviderConnectionCard({
     }
   }
 
+  // A failure is toasted by the global mutation handler and keeps the dialog open.
   async function removeProvider() {
-    if (!window.confirm(t('nativeDisconnectConfirm', { provider: providerLabel }))) return;
-    try {
-      await disconnectProvider.mutateAsync(connection.id);
-      toast.success(t('nativeDisconnected', { provider: providerLabel }));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('nativeDisconnectFailed'));
-    }
+    await disconnectProvider.mutateAsync(connection.id);
+    toast.success(t('nativeDisconnected', { provider: providerLabel }));
+    setConfirmingDisconnect(false);
   }
 
   return (
     <>
+      {confirmingDisconnect && (
+        <ConfirmDialog
+          title={t('nativeDisconnectProvider')}
+          confirmLabel={t('nativeDisconnectProvider')}
+          onConfirm={removeProvider}
+          onClose={() => setConfirmingDisconnect(false)}
+        >
+          <p>{t('nativeDisconnectConfirm', { provider: providerLabel })}</p>
+        </ConfirmDialog>
+      )}
       <SettingsCard>
         <div className="flex flex-wrap items-start justify-between gap-4 p-4">
           <div className="min-w-0 space-y-1">
@@ -71,7 +80,7 @@ export default function GitProviderConnectionCard({
                 size="icon-sm"
                 aria-label={t('nativeDisconnectProvider')}
                 disabled={disconnectProvider.isPending}
-                onClick={() => void removeProvider()}
+                onClick={() => setConfirmingDisconnect(true)}
               >
                 <Trash2 className="size-4" />
               </Button>

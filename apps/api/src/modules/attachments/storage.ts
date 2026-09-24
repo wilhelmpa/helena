@@ -9,6 +9,7 @@ import {
   project,
 } from '@repo/db';
 import { and, eq, sql } from 'drizzle-orm';
+import { detectUploadType, UploadTypeMismatchError } from '@repo/storage/mime';
 import { putObject, getObject, deleteObject } from '#shared/s3';
 import { HttpError, num } from '#shared/lib';
 import { getStorageSettings, mimeAllowed, MB } from '#modules/settings/service';
@@ -120,6 +121,22 @@ export async function assertAttachmentUploadAllowed(
 ): Promise<void> {
   await assertAttachmentFileAllowed(size, contentType);
   await assertAttachmentStorageCapacity(projectId, size, replacedBytes);
+}
+
+// The type an upload is stored and served as: the bytes decide over the client's claim
+// (see detectUploadType), so the allowlist below judges what the file is. A claim the
+// bytes contradict is a 400.
+export async function uploadContentType(
+  bytes: Uint8Array,
+  filename: string,
+  declared?: string | null,
+): Promise<string> {
+  try {
+    return await detectUploadType(bytes, filename, declared);
+  } catch (error) {
+    if (error instanceof UploadTypeMismatchError) throw new HttpError(400, error.message);
+    throw error;
+  }
 }
 
 export async function assertAttachmentFileAllowed(

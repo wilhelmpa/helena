@@ -118,17 +118,14 @@ inside — some may still set their own larger text or looser spacing).
 
 ## Known stumbling blocks
 
-**The lint ratchet, not a pass/fail gate.** `apps/web/eslint.config.mjs` has three
-`no-restricted-syntax` rules (raw hex/rgb, raw Tailwind palette classes, arbitrary
-`text-`/`h-`/`size-`/`leading-[Npx]`) at **`warn`**, not `error` — `bun run lint` is a hard
-gate other branches merge behind, and these rules found a real, large pre-existing backlog
-that failing the build on would have blocked everyone. The actual enforcement is
-`apps/web/src/design/lintRatchet.test.ts` (runs `eslint . --format json` itself, sums the
-`no-restricted-syntax` warnings, fails only if the count goes **above** `BASELINE`, currently
-**203**, last verified at 201 after this branch's own cleanups — headroom, not drift).
-**When you fix files, lower BASELINE to match** (grep the eslint JSON output's `filePath`s to
-see what changed) — that is what makes the ratchet mean something instead of just being a
-number. Raising it needs a reason in the commit. Two deliberate scope narrowings versus the
+**Bulk suppressions, not a ratchet (since 2026-09-24).** The design rules in
+`apps/web/eslint.config.mjs` (raw palette classes, arbitrary `text-`/`h-`/`size-`/`leading-`
+sizes and off-scale type through `eslint-plugin-better-tailwindcss`'s `no-restricted-classes`;
+raw hex/rgb through `no-restricted-syntax`) are **errors** now, like the React Hooks 7,
+jsx-a11y, logical-property and `jsx-no-literals` rules. What existed when they arrived is
+listed in `apps/web/eslint-suppressions.json` (ESLint's bulk suppressions): those places pass,
+anything new fails. When you fix a suppressed place, run `bunx eslint --prune-suppressions .`
+in `apps/web` so the list shrinks. The old `lintRatchet.test.ts` count is gone. Two deliberate scope narrowings versus the
 design doc's literal wording, both explained in comments at the point of decision: the
 arbitrary-size rule only covers `text-`/`h-`/`size-`/`leading-` (not `max-w-`/`min-w-`, which
 are legitimate per-field truncation widths, not a type-scale violation), and there is

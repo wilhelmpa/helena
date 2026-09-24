@@ -1,7 +1,7 @@
 import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import ExcelJS from 'exceljs';
+import readXlsxFile, { type CellValue, type Sheet } from 'read-excel-file/node';
 import JSZip from 'jszip';
 import { hasProgram, runProgram } from './process';
 
@@ -148,36 +148,30 @@ async function extractWithPandoc(file: string): Promise<Extraction> {
   return { status: 'done', text: bounded(result.stdout) };
 }
 
-function cellText(value: ExcelJS.CellValue): string {
+function cellText(value: CellValue | null): string {
   if (value == null) return '';
   if (value instanceof Date) return value.toISOString().slice(0, 10);
-  if (typeof value !== 'object') return String(value);
-  if ('richText' in value) return value.richText.map((part) => part.text).join('');
-  if ('text' in value) return String(value.text ?? '');
-  if ('result' in value) return String(value.result ?? '');
-  return '';
+  return String(value);
 }
 
-// Every sheet as tab-separated rows under its name.
+// Every sheet as tab-separated rows under its name. read-excel-file pads the rows to the
+// sheet's width and keeps blank rows; a row is written without its trailing empty cells,
+// and a blank row not at all.
 async function extractXlsx(file: string): Promise<Extraction> {
-  const workbook = new ExcelJS.Workbook();
+  let sheets: Sheet[];
   try {
-    await workbook.xlsx.load(
-      (await readFile(file)) as unknown as Parameters<typeof workbook.xlsx.load>[0],
-    );
+    sheets = await readXlsxFile(await readFile(file), { trim: false });
   } catch (error) {
     return { status: 'failed', error: `xlsx: ${error instanceof Error ? error.message : error}` };
   }
   const lines: string[] = [];
-  for (const sheet of workbook.worksheets) {
-    lines.push(`# ${sheet.name}`);
-    sheet.eachRow((row) => {
-      const cells: string[] = [];
-      row.eachCell({ includeEmpty: true }, (cell) => {
-        cells[Number(cell.col) - 1] = cellText(cell.value);
-      });
-      lines.push(Array.from(cells, (cell) => cell ?? '').join('\t'));
-    });
+  for (const { sheet, data } of sheets) {
+    lines.push(`# ${sheet}`);
+    for (const row of data) {
+      const cells = row.map(cellText);
+      while (cells.length > 0 && cells.at(-1) === '') cells.pop();
+      if (cells.length > 0) lines.push(cells.join('\t'));
+    }
     lines.push('');
   }
   return { status: 'done', text: bounded(lines.join('\n')) };

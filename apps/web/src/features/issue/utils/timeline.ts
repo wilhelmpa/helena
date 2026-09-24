@@ -58,11 +58,11 @@ export interface LifecycleMetrics {
   cycleMs: number | null;
 }
 
-// "<1m" where formatDuration reads "0m", and empty for a figure the issue has not
-// reached yet.
+// "<1m" where formatDuration reads "0m" (in the display language), and empty for a
+// figure the issue has not reached yet.
 export function durationLabel(ms: number | null): string {
   if (ms == null) return '';
-  return ms < 60_000 ? '<1m' : formatDuration(ms);
+  return ms < 60_000 ? `<${formatDuration(60_000)}` : formatDuration(ms);
 }
 
 // A status carries the column name it was logged with, so it is matched against the

@@ -1,3 +1,4 @@
+import { ToggleGroup as ToggleGroupPrimitive } from 'radix-ui';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
@@ -24,30 +25,31 @@ export default function ProviderToggle({
   const label = (option: EmailProvider) =>
     option === 'system' ? t('system') : option === 'smtp' ? 'SMTP' : 'Resend';
 
+  // One choice of a few: a Radix ToggleGroup (single), whose items are radios with one tab
+  // stop and arrow-key movement. It used to call itself a tablist without tab panels.
   return (
-    <div className="flex w-fit items-center gap-0.5" role="tablist">
-      {options.map((option) => {
-        const active = value === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            disabled={disabled}
-            onClick={() => onChange(option)}
-            className={cn(
-              'inline-flex h-7 items-center rounded-md px-2.5 text-sm transition-colors outline-none',
-              'focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50',
-              active
-                ? 'bg-accent font-medium text-foreground'
-                : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
-            )}
-          >
-            {label(option)}
-          </button>
-        );
-      })}
-    </div>
+    <ToggleGroupPrimitive.Root
+      type="single"
+      value={value}
+      // A second press on the chosen option would clear it; one is always chosen.
+      onValueChange={(next) => next && onChange(next as EmailProvider)}
+      disabled={disabled}
+      className="flex w-fit items-center gap-0.5"
+    >
+      {options.map((option) => (
+        <ToggleGroupPrimitive.Item
+          key={option}
+          value={option}
+          className={cn(
+            'inline-flex h-7 items-center rounded-md px-2.5 text-sm transition-colors outline-none',
+            'focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50',
+            'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+            'data-[state=on]:bg-accent data-[state=on]:font-medium data-[state=on]:text-foreground',
+          )}
+        >
+          {label(option)}
+        </ToggleGroupPrimitive.Item>
+      ))}
+    </ToggleGroupPrimitive.Root>
   );
 }

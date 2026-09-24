@@ -1,6 +1,7 @@
 import { db, user } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import { detectUploadType } from '@repo/storage/mime';
 import { HttpError } from '#shared/lib';
 import { putObject, getObject, deleteObject } from '#shared/s3';
 import { getStorageSettings, MB } from '#modules/settings/service';
@@ -56,7 +57,10 @@ export async function replaceAvatar(
   if (file.size > maxAvatarMb * MB) {
     throw new HttpError(413, `Image exceeds the ${maxAvatarMb} MB limit`);
   }
-  const contentType = file.type || '';
+  // The bytes decide, not the declared type: a file must carry the signature of one of
+  // the raster formats to be stored and served as one.
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const contentType = await detectUploadType(bytes, file.name, file.type).catch(() => '');
   if (!ALLOWED_TYPES.test(contentType)) {
     throw new HttpError(400, 'Avatar must be a PNG, JPEG, GIF, WebP, or AVIF image');
   }
@@ -64,7 +68,7 @@ export async function replaceAvatar(
   const id = randomUUID();
   const key = avatarKey(id);
   try {
-    await putObject(key, Buffer.from(await file.arrayBuffer()), contentType);
+    await putObject(key, bytes, contentType);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[planner] avatar PUT failed (key=${key}, size=${file.size}):`, err);
