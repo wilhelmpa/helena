@@ -174,7 +174,7 @@ export default function AgentRuntimePolicySection({
 
       <div className="space-y-1.5">
         <label htmlFor="agent-max-concurrent-chats" className="text-sm font-medium">
-          Parallel chats
+          {t('maxConcurrentChats')}
         </label>
         <Input
           id="agent-max-concurrent-chats"
@@ -185,10 +185,7 @@ export default function AgentRuntimePolicySection({
           value={value.maxConcurrentChats}
           onChange={(event) => onChange({ maxConcurrentChats: event.target.value })}
         />
-        <p className="text-xs text-muted-foreground">
-          How many of the agent&apos;s chats a member may leave answering at once. A send past the
-          limit is refused until one finishes.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('maxConcurrentChatsHint')}</p>
       </div>
 
       {(
