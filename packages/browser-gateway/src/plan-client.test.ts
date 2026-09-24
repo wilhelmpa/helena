@@ -17,7 +17,7 @@ describe('PlanClient', () => {
       serviceToken: 'tok',
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
-    await client.loginCode('agent-key', 5);
+    await client.loginCode('agent-key', 5, 'https://example.com');
     const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect((init.headers as Record<string, string>).authorization).toBe('Bearer tok');
   });
@@ -37,7 +37,9 @@ describe('PlanClient', () => {
       serviceToken: 'tok',
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
-    const result = await client.login('agent-key', 'MKT', 'https://example.com');
+    const result = await client.login('agent-key', 'mkt', 'mkt', 'https://example.com');
+    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({ projectSlug: 'mkt', via: 'mkt' });
     expect(result.status).toBe('filled');
   });
 
@@ -50,9 +52,9 @@ describe('PlanClient', () => {
       serviceToken: 'tok',
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
-    await expect(client.resolve('agent-key', 'MKT')).rejects.toThrow(PlanApiError);
+    await expect(client.resolve('agent-key', 'mkt', 'mkt')).rejects.toThrow(PlanApiError);
     try {
-      await client.resolve('agent-key', 'MKT');
+      await client.resolve('agent-key', 'mkt', 'mkt');
       throw new Error('unreachable');
     } catch (error) {
       expect(error).toBeInstanceOf(PlanApiError);

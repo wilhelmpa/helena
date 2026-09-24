@@ -10,8 +10,8 @@ import {
   startWindowKeeper,
 } from "./project-browser-control.mjs";
 import { joinScreencast, noteViewerAction, watchDesktop } from "./project-browser-screencast.mjs";
+import { browserOverview, browserThumbnail } from "./project-browser-overview.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
-import { startBrowserGateway } from "./browser-gateway-server.mjs";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const ROUTE = /^\/projects\/([a-z0-9][a-z0-9-]{0,31})(\/.*)?$/;
@@ -106,25 +106,37 @@ export function setGatewayLocks(locks) {
   gatewayLocks = locks;
 }
 
-// The toolbar's routes: GET api/tabs lists the tabs, POST api/<action> acts on one. Only a
-// JSON body is accepted, which a form on another site cannot send. lock-takeover/
-// lock-release are the two the browser gateway adds (design §5); every other action is
-// controlBrowser's own CDP toolbar action.
+// The toolbar's routes: GET api/tabs lists the tabs, GET api/thumbnail is a small picture of
+// the tab in front (Home's overview), POST api/<action> acts on one. Only a JSON body is
+// accepted, which a form on another site cannot send. lock-takeover/lock-release are the two
+// the browser gateway adds (design §5); every other action is controlBrowser's own CDP
+// toolbar action.
 async function handleControl(request, response, target) {
   try {
     if (target.api === "tabs" && request.method === "GET") {
       return sendJson(response, 200, { tabs: await listTabs(target.cdpPort) });
     }
+    if (target.api === "thumbnail" && request.method === "GET") {
+      const jpeg = await browserThumbnail(target.cdpPort);
+      if (!jpeg) throw new BrowserControlError(404, "No page to show");
+      response.writeHead(200, {
+        "content-type": "image/jpeg",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+      });
+      return response.end(jpeg);
+    }
     if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
+    const body = await readJsonBody(request);
     if (target.api === "lock-takeover" || target.api === "lock-release") {
       if (!gatewayLocks) throw new BrowserControlError(503, "The browser gateway is not running");
       const lock = gatewayLocks.of(target.slug);
       if (target.api === "lock-takeover") lock.takeover();
       else lock.release({ kind: "owner" });
       noteViewerAction(target.cdpPort);
-      return sendJson(response, 200, { holder: lock.state().holder });
+      const state = lock.state();
+      return sendJson(response, 200, { holder: state.holder, since: state.since });
     }
-    const body = await readJsonBody(request);
     noteViewerAction(target.cdpPort);
     return sendJson(response, 200, await controlBrowser(target.cdpPort, target.api, body));
   } catch (error) {
@@ -212,6 +224,10 @@ export function createProjectBrowserRouter(options = {}) {
   const root = options.root ?? "/var/lib/volition/project-browser/projects";
   const server = http.createServer(async (request, response) => {
     try {
+      if (new URL(request.url || "/", "http://127.0.0.1").pathname === "/api/overview") {
+        if (request.method !== "GET") throw new Error("Method denied");
+        return sendJson(response, 200, { browsers: await browserOverview(await listProjectBrowsers(root)) });
+      }
       const target = await resolveProjectBrowser(root, request.url || "/");
       if (target.api !== null) return await handleControl(request, response, target);
       if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
@@ -256,18 +272,20 @@ if (import.meta.main) {
     listBrowsers: () => listProjectBrowsers(root),
     log: (message) => console.log(message),
   });
-  // The gateway (design §3) runs in this same process, so it shares the router's CDP
-  // access and its window keeper's view of which project browsers exist. Its own token
-  // (BROWSER_GATEWAY_TOKEN_FILE) is optional at this layer only so a router without the
-  // gateway installed yet still starts — the browser gateway MCP tools simply answer
-  // "unavailable" until it is configured; the live view's own control still works either
-  // way since setGatewayLocks below is only set once the gateway starts successfully.
+  // The gateway (design §3) runs in this same process, so it shares the router's view of
+  // which project browsers exist and the live view's state. It is loaded only when its
+  // token is configured, and a gateway that fails to load or start leaves the router and its
+  // live views working: the MCP tools then answer that the gateway cannot be reached.
   let gateway = null;
   if (process.env.BROWSER_GATEWAY_TOKEN_FILE) {
-    startBrowserGateway({ listBrowsers: () => listProjectBrowsers(root), log: (message) => console.log(message) })
+    import("./browser-gateway-server.mjs")
+      .then(({ startBrowserGateway }) =>
+        startBrowserGateway({ listBrowsers: () => listProjectBrowsers(root), log: (message) => console.log(message) }),
+      )
       .then((started) => {
         gateway = started;
         setGatewayLocks(started.locks);
+        console.log("browser gateway: started");
       })
       .catch((error) => console.error("browser gateway did not start:", error));
   } else {

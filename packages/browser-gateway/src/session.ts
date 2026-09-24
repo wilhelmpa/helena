@@ -1,209 +1,369 @@
 // The real, patchright-backed GatewaySession (design §3/§7): connects over CDP to a
 // project's already-running Chromium (never launches one itself — the systemd unit does,
 // with no automation flags), drives it through patchright's locator API with human-like
-// timing, and never uses a raw evaluate as a tool primitive (design §4's "Bewusst nicht
-// vorhanden"): the only evaluate calls in this file are the fixed, internal ones the
-// snapshot pipeline and the download/console/network capture need, none of them accept
-// caller-supplied script.
-import type { Browser, BrowserContext, Page, Download, Dialog } from 'patchright-core';
+// timing, and never offers a raw evaluate as a tool (design §4's "Bewusst nicht
+// vorhanden"): the only evaluate calls in this file are the fixed, internal ones below,
+// none of them runs caller-supplied script, and patchright runs them in an isolated world.
+import type {
+  Browser,
+  BrowserContext,
+  Dialog,
+  Download,
+  ElementHandle,
+  Locator,
+  Page,
+  Route,
+} from 'patchright-core';
 import { chromium } from 'patchright-core';
 import { SecretGuard, isCredentialField } from './redact.ts';
 import {
-  REF_ATTR,
-  TAG_SCRIPT,
+  CREDENTIAL_SELECTOR,
   isValidRef,
+  redactValues,
   refSelector,
-  renderSnapshot,
-  type RawSnapshotNode,
+  truncateSnapshot,
 } from './snapshot.ts';
 import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts';
 import { hostAllowed, type DomainPolicy } from './domain.ts';
-import type { GatewaySession } from './session-types.ts';
+import { maskPng, type Rect } from './png.ts';
+import type {
+  BrowserStatus,
+  GatewaySession,
+  ToolOutput,
+  UploadFile,
+} from './session-types.ts';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 interface ConsoleEntry {
+  tab: string;
   type: string;
   text: string;
-  at: number;
 }
 
 interface NetworkEntry {
+  tab: string;
   method: string;
   url: string;
-  status: number | null;
-  at: number;
+  status: number;
 }
 
 const MAX_BUFFER = 500;
+const ACTION_TIMEOUT_MS = 10_000;
+const LOAD_TIMEOUT_MS = 30_000;
+export const MAX_TRANSFER_BYTES = 50 * 1024 * 1024;
+
+// Query values that authenticate (an OAuth code, a magic-link token, a signature) are
+// replaced in what browser_network reports; the rest of a URL stays readable.
+const SENSITIVE_PARAM = /token|code|secret|key|pass|session|sig|auth|ticket|otp/i;
+
+export function redactUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return value.slice(0, 500);
+  }
+  if (url.username || url.password) {
+    url.username = '';
+    url.password = '';
+  }
+  for (const [name] of [...url.searchParams]) {
+    if (SENSITIVE_PARAM.test(name)) url.searchParams.set(name, '…');
+  }
+  url.hash = url.hash && SENSITIVE_PARAM.test(url.hash) ? '#…' : url.hash;
+  return url.toString().slice(0, 500);
+}
+
+// A downloaded file's name as the vault gets it: no directory part, no control characters,
+// nothing hidden, bounded in length.
+export function safeDownloadName(name: string): string {
+  const base = name.split(/[\\/]/).pop() ?? '';
+  const cleaned = base
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/^\.+/, '')
+    .trim()
+    .slice(0, 180);
+  return cleaned || 'download';
+}
+
+export interface SessionOptions {
+  humanInput: boolean;
+  random?: () => number;
+  // Stores a finished download (the vault Inbox of the project, through Plan) and returns
+  // where it went. Without it, downloads are listed but not kept.
+  onDownload?: (fileName: string, bytes: Buffer) => Promise<string>;
+}
 
 export class PatchrightGatewaySession implements GatewaySession {
   guard = new SecretGuard();
-  #page: Page;
-  #context: BrowserContext;
   #browser: Browser;
-  #ownTabIds = new Set<string>();
+  #context: BrowserContext;
+  #page: Page;
+  #connected = true;
+  #tabIds = new WeakMap<Page, string>();
+  #nextTab = 1;
+  #tabOwners = new Map<Page, number>();
+  #wired = new WeakSet<Page>();
   #console: ConsoleEntry[] = [];
   #network: NetworkEntry[] = [];
-  // The actual pending Dialog object, not just its data — Playwright/patchright's dialog
-  // protocol needs the exact object accept()ed/dismiss()ed; a *new* page.on('dialog', ...)
-  // registered later never fires again for the same, already-delivered dialog event.
-  #dialog: Dialog | null = null;
-  #downloads: { fileName: string; path: string; at: number }[] = [];
-  #vaultInbox: string;
+  // The pending Dialog object per page: a dialog event fires once per real dialog, and
+  // accept/dismiss has to happen on that same object.
+  #dialogs = new Map<Page, Dialog>();
+  #downloads: { fileName: string; savedAs: string; at: number }[] = [];
+  // The fields a secret was typed into, so a screenshot covers them whatever the page does
+  // to them afterwards ("Passwort anzeigen" turns a password field into a text field).
+  #filled: ElementHandle[] = [];
   #humanInput: boolean;
   #random: () => number;
-  #domainPolicyJson: string | null = null;
+  #onDownload: SessionOptions['onDownload'];
+  #policyJson: string | null = null;
+  #routeHandler: ((route: Route) => Promise<void>) | null = null;
 
-  private constructor(
-    browser: Browser,
-    context: BrowserContext,
-    page: Page,
-    options: { vaultInbox: string; humanInput: boolean; random?: () => number },
-  ) {
+  private constructor(browser: Browser, context: BrowserContext, page: Page, options: SessionOptions) {
     this.#browser = browser;
     this.#context = context;
     this.#page = page;
-    this.#vaultInbox = options.vaultInbox;
     this.#humanInput = options.humanInput;
     this.#random = options.random ?? Math.random;
-    this.#wireCapture(page);
+    this.#onDownload = options.onDownload;
+    browser.on('disconnected', () => {
+      this.#connected = false;
+    });
+    for (const existing of context.pages()) this.#wire(existing);
+    // Every tab, also one the page or the person opens, is wired: its console, network and
+    // downloads are captured, and it has a dialog listener — without one, patchright would
+    // dismiss every dialog of that tab on its own, including one the person is answering in
+    // the live view.
+    context.on('page', (opened) => this.#wire(opened));
   }
 
-  // Connects to an already-running Chromium's CDP endpoint and picks (or opens) the page
-  // that is in front — the gateway never launches or closes the browser itself.
-  static async connect(
-    cdpUrl: string,
-    options: { vaultInbox: string; humanInput: boolean; random?: () => number },
-  ): Promise<PatchrightGatewaySession> {
-    const browser = await chromium.connectOverCDP(cdpUrl);
+  // Connects to an already-running Chromium's CDP endpoint and starts on the tab in front —
+  // the gateway never launches or closes the browser itself.
+  static async connect(cdpUrl: string, options: SessionOptions): Promise<PatchrightGatewaySession> {
+    const browser = await chromium.connectOverCDP(cdpUrl, { timeout: 15_000 });
     const context = browser.contexts()[0] ?? (await browser.newContext());
-    const page = context.pages()[0] ?? (await context.newPage());
-    return new PatchrightGatewaySession(browser, context, page, options);
+    const pages = context.pages();
+    let page = pages[0];
+    for (const candidate of pages) {
+      const state = await candidate
+        .evaluate(() => document.visibilityState)
+        .catch(() => 'hidden' as const);
+      if (state === 'visible') {
+        page = candidate;
+        break;
+      }
+    }
+    return new PatchrightGatewaySession(browser, context, page ?? (await context.newPage()), options);
   }
 
-  async close(): Promise<void> {
-    await this.#browser.close();
+  isConnected(): boolean {
+    return this.#connected && this.#browser.isConnected();
   }
 
-  // The project's "menschliche Eingabe" setting (design §8) can change between calls; the
-  // deployment glue re-applies it from the latest resolved settings each time it hands out
-  // a cached session rather than reconnecting.
+  // Never browser.close(): on a DevTools connection that could end the project's browser
+  // itself, which belongs to its systemd unit. A session is dropped instead, and the
+  // connection ends with the process.
+
   setHumanInput(value: boolean): void {
     this.#humanInput = value;
   }
 
-  #wireCapture(page: Page): void {
+  #tabId(page: Page): string {
+    let id = this.#tabIds.get(page);
+    if (!id) {
+      id = `t${this.#nextTab++}`;
+      this.#tabIds.set(page, id);
+    }
+    return id;
+  }
+
+  #wire(page: Page): void {
+    if (this.#wired.has(page)) return;
+    this.#wired.add(page);
+    const tab = this.#tabId(page);
     page.on('console', (message) => {
-      this.#console.push({ type: message.type(), text: message.text(), at: Date.now() });
+      this.#console.push({ tab, type: message.type(), text: message.text().slice(0, 2000) });
       if (this.#console.length > MAX_BUFFER) this.#console.shift();
     });
     page.on('dialog', (dialog) => {
-      this.#dialog = dialog;
+      this.#dialogs.set(page, dialog);
     });
-    page.on('download', (download: Download) => {
+    page.on('download', (download) => {
       void this.#saveDownload(download);
     });
     page.on('response', (response) => {
-      const request = response.request();
       this.#network.push({
-        method: request.method(),
-        url: response.url(),
+        tab,
+        method: response.request().method(),
+        url: redactUrl(response.url()),
         status: response.status(),
-        at: Date.now(),
       });
       if (this.#network.length > MAX_BUFFER) this.#network.shift();
     });
-    page.on('framenavigated', () => {
-      this.#dialog = null;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) this.#dialogs.delete(page);
+    });
+    page.on('close', () => {
+      this.#dialogs.delete(page);
+      this.#tabOwners.delete(page);
+      if (page === this.#page) {
+        const remaining = this.#context.pages().filter((candidate) => !candidate.isClosed());
+        if (remaining.length > 0) this.#page = remaining[remaining.length - 1]!;
+      }
     });
   }
 
   async #saveDownload(download: Download): Promise<void> {
-    const fileName = download.suggestedFilename();
-    const target = `${this.#vaultInbox}/${Date.now()}-${fileName}`;
-    await download.saveAs(target);
-    this.#downloads.push({ fileName, path: target, at: Date.now() });
+    const fileName = safeDownloadName(download.suggestedFilename());
+    try {
+      const path = await download.path();
+      if (!path) return;
+      const { readFile, stat } = await import('node:fs/promises');
+      const size = (await stat(path)).size;
+      if (size > MAX_TRANSFER_BYTES) {
+        this.#downloads.push({ fileName, savedAs: '(too large, not kept)', at: Date.now() });
+        return;
+      }
+      const savedAs = this.#onDownload
+        ? await this.#onDownload(fileName, await readFile(path))
+        : '(not kept)';
+      this.#downloads.push({ fileName, savedAs, at: Date.now() });
+      if (this.#downloads.length > 100) this.#downloads.shift();
+    } catch (error) {
+      this.#downloads.push({
+        fileName,
+        savedAs: `(failed: ${error instanceof Error ? error.message.slice(0, 120) : 'unknown'})`,
+        at: Date.now(),
+      });
+    } finally {
+      await download.delete().catch(() => {});
+    }
   }
 
-  async status(): Promise<{ url: string; tabCount: number; dialogOpen: boolean }> {
+  async status(): Promise<BrowserStatus> {
     return {
       url: this.#page.url(),
+      title: await this.#page.title().catch(() => ''),
       tabCount: this.#context.pages().length,
-      dialogOpen: this.#dialog !== null,
+      dialogOpen: this.#dialogs.has(this.#page),
     };
   }
 
-  // Design §8: the project's domain block/allowlist. Applied two ways — this explicit,
-  // up-front check on browser_navigate's own target (a clear, immediate error rather than a
-  // navigation that just hangs), and a page.route() network guard (applyDomainPolicy,
-  // called before every page-touching tool by the dispatcher) that also catches a click on
-  // a link, a redirect, or a sub-resource/iframe load the agent never explicitly navigated
-  // to — "Banking gesperrt" has to mean the page can never load it, not only that
-  // browser_navigate refuses the top address.
-  async navigate(url: string): Promise<string> {
-    await this.#page.goto(url, { waitUntil: 'load', timeout: 30_000 });
-    await this.#page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => {});
-    return `Navigated to ${this.#page.url()}`;
-  }
-
-  // Idempotent: re-applying the same policy is a no-op, so the dispatcher can call this
-  // before every tool without piling up duplicate route handlers.
+  // Design §8: the project's domain block/allowlist, for every request of every tab —
+  // a link click, a redirect, an iframe, a tab the page opens. Installed only while a list
+  // is set: intercepting every request of every page costs time for nothing otherwise.
   async applyDomainPolicy(policy: DomainPolicy): Promise<void> {
     const json = JSON.stringify(policy);
-    if (json === this.#domainPolicyJson) return;
-    this.#domainPolicyJson = json;
-    await this.#page.unroute('**/*').catch(() => {});
-    await this.#page.route('**/*', async (route) => {
+    if (json === this.#policyJson) return;
+    this.#policyJson = json;
+    if (this.#routeHandler) {
+      await this.#context.unroute('**/*', this.#routeHandler).catch(() => {});
+      this.#routeHandler = null;
+    }
+    if (policy.domainBlocklist.length === 0 && policy.domainAllowlist.length === 0) return;
+    this.#routeHandler = async (route) => {
       let host: string;
       try {
-        host = new URL(route.request().url()).hostname;
+        const url = new URL(route.request().url());
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return route.continue();
+        host = url.hostname;
       } catch {
         return route.continue();
       }
       if (hostAllowed(policy, host)) return route.continue();
       return route.abort('blockedbyclient');
-    });
+    };
+    await this.#context.route('**/*', this.#routeHandler);
+  }
+
+  async #describe(): Promise<string> {
+    const title = await this.#page.title().catch(() => '');
+    return `${this.#page.url()}${title ? ` — "${title.slice(0, 120)}"` : ''}`;
+  }
+
+  async #settle(): Promise<void> {
+    await this.#page.waitForLoadState('load', { timeout: 15_000 }).catch(() => {});
+    await this.#page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => {});
+  }
+
+  async navigate(url: string): Promise<string> {
+    await this.#page.goto(url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+    await this.#settle();
+    return `Navigated to ${await this.#describe()}. Call browser_snapshot to see the page.`;
   }
 
   async back(): Promise<string> {
-    await this.#page.goBack({ waitUntil: 'load', timeout: 30_000 });
-    return `Went back to ${this.#page.url()}`;
+    const response = await this.#page.goBack({
+      waitUntil: 'domcontentloaded',
+      timeout: LOAD_TIMEOUT_MS,
+    });
+    if (response === null && this.#page.url() === 'about:blank') return 'There is no page to go back to.';
+    await this.#settle();
+    return `Went back to ${await this.#describe()}`;
   }
 
   async reload(): Promise<string> {
-    await this.#page.reload({ waitUntil: 'load', timeout: 30_000 });
-    return `Reloaded ${this.#page.url()}`;
+    await this.#page.reload({ waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+    await this.#settle();
+    return `Reloaded ${await this.#describe()}`;
+  }
+
+  // The current values of every credential-shaped field in every frame of the tab, read in
+  // the isolated world, never returned: they are what redactValues removes from a snapshot.
+  async #credentialValues(): Promise<string[]> {
+    const values: string[] = [];
+    for (const frame of this.#page.frames()) {
+      const found = await frame
+        .locator(CREDENTIAL_SELECTOR)
+        .evaluateAll((elements) =>
+          elements.map((element) => (element as HTMLInputElement).value ?? ''),
+        )
+        .catch(() => [] as string[]);
+      values.push(...found);
+    }
+    for (const handle of this.#filled) {
+      const value = await handle
+        .evaluate((element) => (element as HTMLInputElement).value ?? '')
+        .catch(() => '');
+      if (value) values.push(value);
+    }
+    return values;
   }
 
   async snapshot(): Promise<string> {
-    const nodes = (await this.#page.evaluate(TAG_SCRIPT)) as RawSnapshotNode[];
-    return renderSnapshot(nodes);
+    const text = await this.#page.ariaSnapshot({ mode: 'ai', timeout: 15_000 });
+    const clean = redactValues(text, await this.#credentialValues());
+    const header = `Tab ${this.#tabId(this.#page)}: ${await this.#describe()}\n`;
+    return truncateSnapshot(header + clean);
   }
 
-  #locatorFor(ref: string) {
+  #locatorFor(ref: string): Locator {
     if (!isValidRef(ref)) throw new Error(`Unknown ref: ${ref}. Call browser_snapshot again.`);
     return this.#page.locator(refSelector(ref));
   }
 
-  async #resolveOne(ref: string) {
+  async #resolveOne(ref: string): Promise<Locator> {
     const locator = this.#locatorFor(ref);
-    const count = await locator.count();
+    const count = await locator.count().catch(() => 0);
     if (count === 0) throw new Error(`Stale ref: ${ref}. Call browser_snapshot again.`);
     return locator.first();
   }
 
-  async #humanMoveTo(locator: ReturnType<Page['locator']>): Promise<void> {
+  async #humanMoveTo(locator: Locator): Promise<void> {
     if (!this.#humanInput) return;
-    const box = await locator.boundingBox();
+    await locator.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS }).catch(() => {});
+    const box = await locator.boundingBox().catch(() => null);
     if (!box) return;
-    const target = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-    // patchright/Playwright do not expose the mouse's current position, so each move
-    // starts from the target's own viewport area — still a curved, multi-step path, not a
-    // teleport, which is what design §7 asks for ("Mausbewegung als Kurve zum Ziel").
-    const from = { x: target.x - 40, y: target.y - 20 };
+    const target = {
+      x: box.x + box.width * (0.35 + this.#random() * 0.3),
+      y: box.y + box.height * (0.35 + this.#random() * 0.3),
+    };
+    // patchright does not expose the pointer's current position, so each move starts a
+    // short distance off the target: still a curved, multi-step path, not a teleport.
+    const from = { x: target.x - 30 - this.#random() * 40, y: target.y - 10 - this.#random() * 30 };
     const steps = stepsFor(from, target);
     for (const point of mouseCurve(from, target, steps, this.#random)) {
       await this.#page.mouse.move(point.x, point.y);
@@ -212,35 +372,42 @@ export class PatchrightGatewaySession implements GatewaySession {
     await sleep(preClickPauseMs(this.#random));
   }
 
-  async click(ref: string, button: 'left' | 'right' | 'middle' = 'left'): Promise<string> {
-    const locator = await this.#resolveOne(ref);
-    await this.#assertNotCredential(locator, ref);
-    await this.#humanMoveTo(locator);
-    await locator.click({ button, timeout: 10_000 });
-    return `Clicked ${ref}`;
+  async #fieldAttributes(locator: Locator) {
+    return locator.evaluate((element) => ({
+      tag: element.tagName.toLowerCase(),
+      type: element.getAttribute('type'),
+      autocomplete: element.getAttribute('autocomplete'),
+      name: element.getAttribute('name'),
+    }));
   }
 
-  async #assertNotCredential(locator: ReturnType<Page['locator']>, ref: string): Promise<void> {
-    const attrs = await locator.evaluate((el: Element) => ({
-      type: el.getAttribute('type'),
-      autocomplete: el.getAttribute('autocomplete'),
-      name: el.getAttribute('name'),
-    }));
-    if (isCredentialField(attrs)) {
+  async #assertNotCredential(locator: Locator, ref: string): Promise<void> {
+    if (isCredentialField(await this.#fieldAttributes(locator))) {
       throw new Error(
         `${ref} is a password/2FA field — use browser_login / browser_login_code instead.`,
       );
     }
   }
 
+  async click(ref: string, button: 'left' | 'right' | 'middle' = 'left'): Promise<string> {
+    const locator = await this.#resolveOne(ref);
+    await this.#humanMoveTo(locator);
+    await locator.click({ button, timeout: ACTION_TIMEOUT_MS });
+    await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
+    return `Clicked ${ref}. Now on ${await this.#describe()}`;
+  }
+
   async type(ref: string, text: string, submit?: boolean): Promise<string> {
     const locator = await this.#resolveOne(ref);
     await this.#assertNotCredential(locator, ref);
     await this.#humanMoveTo(locator);
-    await locator.click({ timeout: 10_000 });
+    await locator.click({ timeout: ACTION_TIMEOUT_MS });
     await this.#typeHumanLike(text);
-    if (submit) await this.#page.keyboard.press('Enter');
-    return `Typed into ${ref}`;
+    if (submit) {
+      await this.#page.keyboard.press('Enter');
+      await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
+    }
+    return `Typed into ${ref}${submit ? ' and pressed Enter' : ''}`;
   }
 
   async #typeHumanLike(text: string): Promise<void> {
@@ -254,12 +421,8 @@ export class PatchrightGatewaySession implements GatewaySession {
     }
   }
 
-  // Selects and deletes whatever the field already holds, via real key events (Ctrl+A then
-  // Backspace — this gateway only ever runs against Linux Chromium, so no Cmd/Ctrl split to
-  // handle) — not locator.fill('')'s DOM-level clear, for the same reason typing itself
-  // never uses el.value = .... A login form's own fields should start empty regardless of
-  // anything typed into them earlier in the session (a field that already had "wrong" text
-  // in it must not end up with the login appended after it).
+  // Selects and deletes whatever the field already holds, with real key events — never a
+  // DOM value set: a login field must start empty whatever was typed into it before.
   async #clearField(): Promise<void> {
     await this.#page.keyboard.press('Control+A');
     await this.#page.keyboard.press('Backspace');
@@ -267,14 +430,14 @@ export class PatchrightGatewaySession implements GatewaySession {
 
   async select(ref: string, values: string[]): Promise<string> {
     const locator = await this.#resolveOne(ref);
-    await locator.selectOption(values, { timeout: 10_000 });
-    return `Selected ${values.join(', ')} in ${ref}`;
+    const chosen = await locator.selectOption(values, { timeout: ACTION_TIMEOUT_MS });
+    return `Selected ${chosen.join(', ')} in ${ref}`;
   }
 
   async hover(ref: string): Promise<string> {
     const locator = await this.#resolveOne(ref);
     await this.#humanMoveTo(locator);
-    await locator.hover({ timeout: 10_000 });
+    await locator.hover({ timeout: ACTION_TIMEOUT_MS });
     return `Hovering ${ref}`;
   }
 
@@ -282,7 +445,7 @@ export class PatchrightGatewaySession implements GatewaySession {
     const from = await this.#resolveOne(fromRef);
     const to = await this.#resolveOne(toRef);
     await this.#humanMoveTo(from);
-    await from.dragTo(to, { timeout: 10_000 });
+    await from.dragTo(to, { timeout: ACTION_TIMEOUT_MS });
     return `Dragged ${fromRef} to ${toRef}`;
   }
 
@@ -299,186 +462,238 @@ export class PatchrightGatewaySession implements GatewaySession {
     const dx = direction === 'left' ? -1 : direction === 'right' ? 1 : 0;
     const dy = direction === 'up' ? -1 : direction === 'down' ? 1 : 0;
     const target = ref ? await this.#resolveOne(ref) : null;
-    if (target) await this.#humanMoveTo(target);
-    const totalPx = amount * 120;
-    const perStep = totalPx / 4;
-    for (let i = 0; i < 4; i++) {
-      if (target) {
-        await target.evaluate(
-          (el: Element, args: { dx: number; dy: number }) => {
-            el.scrollBy(args.dx, args.dy);
-          },
-          { dx: dx * perStep, dy: dy * perStep },
-        );
-      } else {
-        await this.#page.mouse.wheel(dx * perStep, dy * perStep);
-      }
+    if (target) {
+      await this.#humanMoveTo(target);
+      const box = await target.boundingBox().catch(() => null);
+      if (box) await this.#page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    }
+    const steps = 4;
+    const perStep = (Math.max(1, Math.min(10, amount)) * 120) / steps;
+    for (let i = 0; i < steps; i++) {
+      // A wheel turn over the element scrolls whatever the page scrolls there, the way a
+      // person's wheel does; no script moves the page.
+      await this.#page.mouse.wheel(dx * perStep, dy * perStep);
       await sleep(this.#humanInput ? 40 + Math.round(this.#random() * 40) : 0);
     }
     return `Scrolled ${direction}`;
   }
 
-  async screenshot(ref?: string): Promise<string> {
-    const covered = await this.#coverCredentialFields();
-    try {
-      const buffer = ref
-        ? await (await this.#resolveOne(ref)).screenshot({ timeout: 10_000 })
-        : await this.#page.screenshot({ timeout: 10_000 });
-      return `data:image/png;base64,${buffer.toString('base64')}`;
-    } finally {
-      await covered.uncover();
+  // The rectangles (CSS pixels, relative to the viewport) a screenshot covers: every
+  // credential-shaped field in every frame, and every field the gateway typed a secret into.
+  async #coverRects(): Promise<Rect[]> {
+    const rects: Rect[] = [];
+    for (const frame of this.#page.frames()) {
+      const fields = await frame
+        .locator(CREDENTIAL_SELECTOR)
+        .all()
+        .catch(() => [] as Locator[]);
+      for (const field of fields) {
+        const box = await field.boundingBox({ timeout: 2_000 }).catch(() => null);
+        if (box) rects.push(box);
+      }
     }
+    for (const handle of this.#filled) {
+      const box = await handle.boundingBox().catch(() => null);
+      if (box) rects.push(box);
+    }
+    return rects;
   }
 
-  // Design §6: "Gefüllte Login-Felder werden vorher abgedeckt" — an opaque overlay is drawn
-  // over every credential-shaped input before the screenshot, removed right after, so a
-  // filled password never appears in the image even for the instant the picture is taken.
-  async #coverCredentialFields(): Promise<{ uncover: () => Promise<void> }> {
-    const marker = `volition-cover-${Date.now()}`;
-    await this.#page.evaluate(
-      (args: { attr: string; marker: string }) => {
-        for (const el of document.querySelectorAll(`[${args.attr}]`)) {
-          const type = (el.getAttribute('type') || '').toLowerCase();
-          const autocomplete = (el.getAttribute('autocomplete') || '').toLowerCase();
-          if (
-            type !== 'password' &&
-            !autocomplete.includes('password') &&
-            autocomplete !== 'one-time-code'
-          ) {
-            continue;
-          }
-          const rect = el.getBoundingClientRect();
-          const cover = document.createElement('div');
-          cover.dataset.volitionCoverOf = args.marker;
-          cover.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;background:#111;z-index:2147483647;pointer-events:none;`;
-          document.body.appendChild(cover);
-        }
-      },
-      { attr: REF_ATTR, marker },
-    );
+  async screenshot(ref?: string): Promise<ToolOutput> {
+    const rects = await this.#coverRects();
+    let png: Buffer;
+    let offset = { x: 0, y: 0 };
+    if (ref) {
+      const locator = await this.#resolveOne(ref);
+      const box = await locator.boundingBox().catch(() => null);
+      if (box) offset = { x: box.x, y: box.y };
+      png = await locator.screenshot({ type: 'png', scale: 'css', timeout: ACTION_TIMEOUT_MS });
+    } else {
+      png = await this.#page.screenshot({ type: 'png', scale: 'css', timeout: ACTION_TIMEOUT_MS });
+    }
+    let covered: Buffer;
+    try {
+      covered = maskPng(
+        png,
+        rects.map((rect) => ({ ...rect, x: rect.x - offset.x, y: rect.y - offset.y })),
+      );
+    } catch {
+      // A picture that cannot be covered is not returned at all.
+      if (rects.length > 0) {
+        throw new Error('The screenshot could not be taken without showing a login field.');
+      }
+      covered = png;
+    }
     return {
-      uncover: async () => {
-        await this.#page
-          .evaluate((m: string) => {
-            for (const el of document.querySelectorAll(`[data-volition-cover-of="${m}"]`))
-              el.remove();
-          }, marker)
-          .catch(() => {});
-      },
+      text: `Screenshot of ${ref ?? 'the viewport'} on ${await this.#describe()}${rects.length ? ` (${rects.length} login field(s) covered)` : ''}`,
+      image: { data: covered.toString('base64'), mimeType: 'image/png' },
     };
   }
 
   async tabs(
     action: 'list' | 'open' | 'focus' | 'close',
-    url?: string,
-    tabId?: string,
+    options: { url?: string; tabId?: string; agentId?: number } = {},
   ): Promise<string> {
-    const pages = this.#context.pages();
+    const pages = this.#context.pages().filter((page) => !page.isClosed());
     if (action === 'list') {
-      const lines = pages.map(
-        (page, index) => `[t${index}] ${page.url()}${page === this.#page ? ' (active)' : ''}`,
+      const lines = await Promise.all(
+        pages.map(async (page) => {
+          const title = await page.title().catch(() => '');
+          const marks = [
+            page === this.#page ? 'active' : null,
+            options.agentId !== undefined && this.#tabOwners.get(page) === options.agentId
+              ? 'yours'
+              : null,
+          ].filter(Boolean);
+          return `[${this.#tabId(page)}] ${page.url()}${title ? ` — "${title.slice(0, 80)}"` : ''}${marks.length ? ` (${marks.join(', ')})` : ''}`;
+        }),
       );
       return lines.join('\n') || '(no tabs)';
     }
     if (action === 'open') {
-      if (!url) throw new Error('url is required to open a tab.');
+      if (!options.url) throw new Error('url is required to open a tab.');
       const page = await this.#context.newPage();
-      const id = `t${pages.length}`;
-      this.#ownTabIds.add(id);
+      this.#wire(page);
+      if (options.agentId !== undefined) this.#tabOwners.set(page, options.agentId);
       this.#page = page;
-      this.#wireCapture(page);
-      await page.goto(url, { waitUntil: 'load', timeout: 30_000 });
-      return `Opened ${url} as ${id}`;
+      await page.goto(options.url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+      await this.#settle();
+      return `Opened ${this.#tabId(page)}: ${await this.#describe()}`;
     }
-    const index = tabId ? Number(tabId.replace(/^t/, '')) : NaN;
-    const target = pages[index];
-    if (!target) throw new Error(`Unknown tab: ${tabId}`);
+    const target = pages.find((page) => this.#tabId(page) === options.tabId);
+    if (!target) throw new Error(`Unknown tab: ${options.tabId}. Call browser_tabs list.`);
     if (action === 'focus') {
       this.#page = target;
       await target.bringToFront();
-      return `Focused ${tabId}`;
+      return `Focused ${options.tabId}: ${await this.#describe()}`;
     }
     if (action === 'close') {
-      const wasActive = target === this.#page;
+      if (pages.length === 1) throw new Error('The last tab stays open.');
       await target.close();
-      if (wasActive) {
-        // The closed tab was the one every other method acts on (this.#page) — fall back
-        // to whatever tab is left, or the closed handle would make the very next call
-        // ("Target page, context or browser has been closed") instead of a clean error.
-        const remaining = this.#context.pages();
-        if (remaining.length > 0) {
-          this.#page = remaining[remaining.length - 1];
-          await this.#page.bringToFront().catch(() => {});
-        }
+      if (target === this.#page) {
+        const remaining = this.#context.pages().filter((page) => !page.isClosed());
+        this.#page = remaining[remaining.length - 1]!;
+        await this.#page.bringToFront().catch(() => {});
       }
-      return `Closed ${tabId}`;
+      return `Closed ${options.tabId}`;
     }
     throw new Error(`Unknown tabs action: ${action}`);
   }
 
-  async dialogAction(action: 'accept' | 'dismiss', promptText?: string): Promise<string> {
-    // #wireCapture's page.on('dialog', ...) listener already holds the one-and-only Dialog
-    // object for the pending dialog — a dialog event fires exactly once per real browser
-    // dialog, so accept/dismiss has to happen on that same object, not by waiting for a
-    // second event that will never come.
-    const dialog = this.#dialog;
-    if (!dialog) throw new Error('No dialog is open.');
-    this.#dialog = null;
-    await (action === 'accept' ? dialog.accept(promptText) : dialog.dismiss());
-    return `Dialog ${action === 'accept' ? 'accepted' : 'dismissed'}`;
+  // Design §4: the tabs an agent opened close when it gives control back. The last tab of
+  // the browser always stays.
+  async closeTabsOf(agentId: number): Promise<void> {
+    for (const [page, owner] of [...this.#tabOwners]) {
+      if (owner !== agentId || page.isClosed()) continue;
+      if (this.#context.pages().filter((candidate) => !candidate.isClosed()).length <= 1) break;
+      await page.close().catch(() => {});
+    }
   }
 
-  async upload(ref: string, absolutePath: string): Promise<string> {
+  async dialogAction(action: 'accept' | 'dismiss', promptText?: string): Promise<string> {
+    const dialog = this.#dialogs.get(this.#page);
+    if (!dialog) throw new Error('No dialog is open in the active tab.');
+    this.#dialogs.delete(this.#page);
+    try {
+      await (action === 'accept' ? dialog.accept(promptText) : dialog.dismiss());
+    } catch {
+      return 'The dialog was already answered (from the live view, most likely).';
+    }
+    return `Dialog ${action === 'accept' ? 'accepted' : 'dismissed'}: "${dialog.message().slice(0, 200)}"`;
+  }
+
+  async upload(ref: string, file: UploadFile): Promise<string> {
+    if (file.buffer.length > MAX_TRANSFER_BYTES) throw new Error('The file is larger than 50 MB.');
     const locator = await this.#resolveOne(ref);
-    await locator.setInputFiles(absolutePath, { timeout: 10_000 });
-    return `Uploaded ${absolutePath.split('/').pop()} to ${ref}`;
+    await locator.setInputFiles(
+      { name: file.name, mimeType: file.mimeType, buffer: file.buffer },
+      { timeout: ACTION_TIMEOUT_MS },
+    );
+    return `Uploaded ${file.name} (${file.buffer.length} bytes) to ${ref}`;
   }
 
   async downloads(): Promise<string> {
     if (this.#downloads.length === 0) return '(no downloads)';
-    return this.#downloads.map((d) => `${d.fileName} -> ${d.path}`).join('\n');
+    return this.#downloads.map((entry) => `${entry.fileName} -> ${entry.savedAs}`).join('\n');
   }
 
   async console(limit: number): Promise<string> {
-    const entries = this.#console.slice(-limit);
+    const entries = this.#console.slice(-Math.max(1, Math.min(200, limit)));
     if (entries.length === 0) return '(no console messages)';
-    return entries.map((e) => `[${e.type}] ${e.text}`).join('\n');
+    return entries.map((entry) => `${entry.tab} [${entry.type}] ${entry.text}`).join('\n');
   }
 
   async network(limit: number): Promise<string> {
-    const entries = this.#network.slice(-limit);
+    const entries = this.#network.slice(-Math.max(1, Math.min(200, limit)));
     if (entries.length === 0) return '(no network requests)';
-    return entries.map((e) => `${e.method} ${e.status ?? '?'} ${e.url}`).join('\n');
+    return entries
+      .map((entry) => `${entry.tab} ${entry.method} ${entry.status} ${entry.url}`)
+      .join('\n');
   }
 
-  // Filled via input events (keyboard.type through the same click+type path as an ordinary
-  // field), never el.value = ... — design §6: "Das Gateway füllt per Eingabe-Events (kein
-  // DOM-value-Setzen)". The caller (server.ts) has already tracked the secret in `guard`
-  // before this runs.
+  async #remember(handle: ElementHandle | null): Promise<void> {
+    if (!handle) return;
+    this.#filled.push(handle);
+    if (this.#filled.length > 16) await this.#filled.shift()?.dispose().catch(() => {});
+  }
+
+  async #originOf(locator: Locator): Promise<string> {
+    return locator.evaluate(() => location.origin);
+  }
+
+  async frameOrigin(ref: string): Promise<string> {
+    return this.#originOf(await this.#resolveOne(ref));
+  }
+
   async fillLogin(
     usernameRef: string,
     passwordRef: string,
     username: string,
     password: string,
+    origin: string,
   ): Promise<string> {
     const usernameLocator = await this.#resolveOne(usernameRef);
+    const passwordLocator = await this.#resolveOne(passwordRef);
+    const passwordField = await this.#fieldAttributes(passwordLocator);
+    const isPasswordInput =
+      passwordField.tag === 'input' &&
+      ((passwordField.type ?? '').toLowerCase() === 'password' ||
+        (passwordField.autocomplete ?? '').toLowerCase().includes('password'));
+    if (!isPasswordInput) {
+      throw new Error(`${passwordRef} is not a password field; the password is typed only into one.`);
+    }
+    if (isCredentialField(await this.#fieldAttributes(usernameLocator))) {
+      throw new Error(`${usernameRef} is a password field, not the username field.`);
+    }
+    // Right before typing: both fields are still on the origin the login was chosen for.
+    if (
+      (await this.#originOf(usernameLocator)) !== origin ||
+      (await this.#originOf(passwordLocator)) !== origin
+    ) {
+      throw new Error('The login fields are no longer on the page the login was chosen for.');
+    }
     await this.#humanMoveTo(usernameLocator);
-    await usernameLocator.click({ timeout: 10_000 });
+    await usernameLocator.click({ timeout: ACTION_TIMEOUT_MS });
     await this.#clearField();
     await this.#typeHumanLike(username);
-    const passwordLocator = await this.#resolveOne(passwordRef);
     await this.#humanMoveTo(passwordLocator);
-    await passwordLocator.click({ timeout: 10_000 });
+    await passwordLocator.click({ timeout: ACTION_TIMEOUT_MS });
     await this.#clearField();
+    await this.#remember(await passwordLocator.elementHandle({ timeout: ACTION_TIMEOUT_MS }));
     await this.#typeHumanLike(password);
     return 'Login filled.';
   }
 
   async fillCode(ref: string, code: string): Promise<string> {
     const locator = await this.#resolveOne(ref);
+    const field = await this.#fieldAttributes(locator);
+    if (field.tag !== 'input' && field.tag !== 'textarea') {
+      throw new Error(`${ref} is not a text field.`);
+    }
     await this.#humanMoveTo(locator);
-    await locator.click({ timeout: 10_000 });
+    await locator.click({ timeout: ACTION_TIMEOUT_MS });
     await this.#clearField();
+    await this.#remember(await locator.elementHandle({ timeout: ACTION_TIMEOUT_MS }));
     await this.#typeHumanLike(code);
     return 'Code filled.';
   }

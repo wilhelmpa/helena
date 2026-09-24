@@ -6,9 +6,9 @@
 // tool, reading or setting cookies, raw CDP access, chrome-devtools-mcp. Nothing below
 // takes an arbitrary script or a raw CDP method name as input.
 //
-// Every tool but browser_status/browser_acquire takes an optional `project` (a project's
-// key), for the Home-Master only — checked server-side against the caller's grants, never
-// trusted from the input alone (see the gateway server's resolve() call per request).
+// Every tool takes an optional `project` (a project's key, or "home"), for the Home-Master
+// only — checked by the gateway (only the Home socket accepts it) and again by Helena
+// against the caller, never trusted from the input alone.
 
 export interface ToolDef {
   name: string;
@@ -21,10 +21,21 @@ const project = {
   project: {
     type: 'string',
     description:
-      "A project's key. Only the Home-Master may set this — checked against the caller's " +
-      "grants on every call. Every other agent's calls always act on its own project.",
+      "Home-Master only: the key of the project whose browser to use (e.g. \"VOL\"), or " +
+      '"home" for Home\'s own browser. Leave it out otherwise — every other agent always ' +
+      'works in its own project\'s browser.',
   },
 };
+
+// The way of working every tool description relies on, also sent as the MCP server's
+// instructions (browser-gateway-mcp-shim.mjs).
+export const BROWSER_INSTRUCTIONS = [
+  "This is the project's own, always-on browser, shared with the owner and other agents; its sign-ins persist.",
+  'Work like this: browser_acquire, then browser_snapshot to see the page with refs, act on refs (browser_click, browser_type, …), take a new snapshot after the page changed, and browser_release when done.',
+  'Never type a password or 2FA code yourself and never ask for one: browser_login fills a login granted to you in Zugänge for the page it is on, browser_login_code the current code.',
+  'A CAPTCHA, a question only the owner can answer, or anything you are unsure about: browser_handover and wait.',
+  'Files: browser_upload sends a file of your workspace or project folder; downloads land in the project\'s Inbox (browser_downloads lists them).',
+].join(' ');
 
 const ref = {
   ref: { type: 'string', description: 'A stable ref from the most recent browser_snapshot.' },
@@ -35,16 +46,17 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_status',
     title: 'Browser status',
     description:
-      'Who controls the project browser, its open tabs, the current URL, and whether a ' +
-      'dialog is open.',
+      'Who controls the project browser (you, another agent, the owner, or nobody), the ' +
+      'active tab, the number of tabs, and whether a dialog is open.',
     inputSchema: { type: 'object', properties: { ...project }, additionalProperties: false },
   },
   {
     name: 'browser_acquire',
     title: 'Take control',
     description:
-      'Take control of the project browser, waiting up to timeoutSec if someone else holds ' +
-      'it. Reports who is blocking if it gives up.',
+      'Take control of the project browser before acting on it, waiting up to timeoutSec ' +
+      'if someone else holds it; reports who is blocking if it gives up. Control lapses ' +
+      'after a while without any action (the project setting, 2 minutes by default).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -57,7 +69,9 @@ export const BROWSER_TOOLS: ToolDef[] = [
   {
     name: 'browser_release',
     title: 'Give control back',
-    description: 'Give control of the project browser back.',
+    description:
+      'Give control of the project browser back when you are done. Tabs you opened ' +
+      'are closed.',
     inputSchema: { type: 'object', properties: { ...project }, additionalProperties: false },
   },
   {
@@ -89,9 +103,9 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_snapshot',
     title: 'Accessibility snapshot',
     description:
-      'An accessibility snapshot of the page with stable refs for the click/type/... tools ' +
-      'below. Password fields and any field currently holding a filled login are shown ' +
-      'redacted, never their value.',
+      'The active tab as an accessibility tree: its text, and a [ref=…] on every element ' +
+      'the other tools act on (iframes included). Take a new one after the page changed; ' +
+      'refs of an old snapshot go stale. What a password or code field holds is never shown.',
     inputSchema: { type: 'object', properties: { ...project }, additionalProperties: false },
   },
   {
@@ -191,8 +205,8 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_screenshot',
     title: 'Screenshot',
     description:
-      'A screenshot of the viewport or one element by ref. A filled login field is covered ' +
-      'before the picture is taken.',
+      'A picture of the viewport or of one element by ref, for what a snapshot cannot ' +
+      'say (layout, images, a chart). Login fields are covered in the picture.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -239,11 +253,15 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_upload',
     title: 'Upload a file',
     description:
-      "Upload a file from the project's workspace or vault to a file input by ref. The path " +
-      'is resolved server-side inside the project — it cannot reach outside it.',
+      'Upload a file to a file input by ref. `path` is a file you can read yourself (your ' +
+      'workspace or your project folder); it is read on your side and sent, at most 50 MB.',
     inputSchema: {
       type: 'object',
-      properties: { ...project, ...ref, path: { type: 'string' } },
+      properties: {
+        ...project,
+        ...ref,
+        path: { type: 'string', description: 'Absolute, or relative to your working directory.' },
+      },
       required: ['ref', 'path'],
       additionalProperties: false,
     },
@@ -251,15 +269,15 @@ export const BROWSER_TOOLS: ToolDef[] = [
   {
     name: 'browser_downloads',
     title: 'Downloads',
-    description: "List the files the page has downloaded, saved under the project's vault Inbox.",
+    description:
+      "The files this browser downloaded, and where each was kept (the project's Inbox " +
+      'folder, which you can read).',
     inputSchema: { type: 'object', properties: { ...project }, additionalProperties: false },
   },
   {
     name: 'browser_console',
     title: 'Console',
-    description:
-      'Recent console messages, filtered: no cookie or authorization header ever appears ' +
-      'here because none of these tools read them in the first place.',
+    description: 'Recent console messages of the tabs, newest last.',
     inputSchema: {
       type: 'object',
       properties: { ...project, limit: { type: 'number', minimum: 1, maximum: 200, default: 50 } },
@@ -270,8 +288,8 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_network',
     title: 'Network',
     description:
-      'Recent network requests: method, URL, status, timing. No request or response body, ' +
-      'no cookie or authorization header.',
+      'Recent network responses of the tabs: method, status, URL (values of token-like ' +
+      'query parameters hidden). No headers, no bodies.',
     inputSchema: {
       type: 'object',
       properties: { ...project, limit: { type: 'number', minimum: 1, maximum: 200, default: 50 } },
@@ -282,11 +300,10 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_login',
     title: 'Fill a login',
     description:
-      "Fill a granted login's username and password for the origin of the frame the login " +
-      'field is in. Omit credentialId to match by origin; if more than one login matches, ' +
-      'the result lists them by label and username (never a password) so the tool can be ' +
-      'called again with the chosen credentialId. The password is typed as input events, ' +
-      'never set as a DOM value, and is never returned to the caller.',
+      'Fill a login granted to you in Zugänge into a login form: the username field and ' +
+      'the password field by ref. The login is chosen for the site of the frame the ' +
+      'password field is in; if several match, the answer lists them (label and username) ' +
+      'and you call again with credentialId. You never see the password.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -303,8 +320,8 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_login_code',
     title: 'Fill the current 2FA code',
     description:
-      "Compute and type the login's current TOTP code into a field by ref. The " +
-      'authenticator key never leaves Plan; only the current code does.',
+      'Type the current 2FA code of a login (credentialId, as browser_login named it) into ' +
+      'the code field by ref. Only on a page of that login\'s site.',
     inputSchema: {
       type: 'object',
       properties: { ...project, ...ref, credentialId: { type: 'number' } },
@@ -316,13 +333,14 @@ export const BROWSER_TOOLS: ToolDef[] = [
     name: 'browser_handover',
     title: 'Ask the owner to take over',
     description:
-      'Raises a handover card for the owner (e.g. a CAPTCHA) with a link to the live view, ' +
-      'and waits up to timeoutSec for them to finish and give control back.',
+      'Ask the owner to take over (a CAPTCHA, a question only they can answer). Shows a ' +
+      'card in the live view and in Helena, and waits up to timeoutSec until the owner ' +
+      'has taken over and given control back.',
     inputSchema: {
       type: 'object',
       properties: {
         ...project,
-        reason: { type: 'string' },
+        reason: { type: 'string', description: 'What the owner should do, in one sentence.' },
         timeoutSec: { type: 'number', minimum: 30, maximum: 1800, default: 300 },
       },
       required: ['reason'],

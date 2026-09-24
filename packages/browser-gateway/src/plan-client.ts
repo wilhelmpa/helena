@@ -15,9 +15,16 @@ export interface ResolveResult {
   agentId: number;
   agentName: string;
   teamId: number;
-  projectId: number;
+  // Null for Home's own browser, which belongs to no project.
+  projectId: number | null;
+  projectKey: string | null;
   browserGatewayEnabled: boolean;
   settings: BrowserGatewaySettingsWire;
+}
+
+export interface WorkRef {
+  runId?: number;
+  messageId?: number;
 }
 
 export type LoginResult =
@@ -82,20 +89,24 @@ export class PlanClient {
     return text ? (JSON.parse(text) as T) : (undefined as T);
   }
 
-  resolve(agentKey: string, projectSlug: string): Promise<ResolveResult> {
-    return this.#post('/internal/browser-gateway/resolve', { agentKey, projectSlug });
+  // `via` is the slug of the socket the call came through: Helena checks that only the
+  // Home-Master calls through Home's socket, and that nobody else names another project.
+  resolve(agentKey: string, projectSlug: string, via: string): Promise<ResolveResult> {
+    return this.#post('/internal/browser-gateway/resolve', { agentKey, projectSlug, via });
   }
 
   login(
     agentKey: string,
     projectSlug: string,
+    via: string,
     frameOrigin: string,
     credentialId?: number,
-    work?: { runId?: number; messageId?: number },
+    work?: WorkRef,
   ): Promise<LoginResult> {
     return this.#post('/internal/browser-gateway/login', {
       agentKey,
       projectSlug,
+      via,
       frameOrigin,
       credentialId,
       ...work,
@@ -105,19 +116,55 @@ export class PlanClient {
   loginCode(
     agentKey: string,
     credentialId: number,
-    work?: { runId?: number; messageId?: number },
+    frameOrigin: string,
+    work?: WorkRef,
   ): Promise<LoginCodeResult> {
-    return this.#post('/internal/browser-gateway/login-code', { agentKey, credentialId, ...work });
+    return this.#post('/internal/browser-gateway/login-code', {
+      agentKey,
+      credentialId,
+      frameOrigin,
+      ...work,
+    });
   }
 
   audit(input: {
     agentKey: string;
     projectSlug: string;
+    via: string;
     actor: 'agent' | 'owner';
     tool: string;
     target?: string;
   }): Promise<void> {
     return this.#post('/internal/browser-gateway/audit', input);
+  }
+
+  // browser_handover: a card in Helena's Freigaben (a project's browser only; Home's own
+  // browser has no project to file it under, so approvalId is null there).
+  handover(input: {
+    agentKey: string;
+    projectSlug: string;
+    via: string;
+    reason: string;
+    runId?: number;
+    messageId?: number;
+  }): Promise<{ approvalId: number | null }> {
+    return this.#post('/internal/browser-gateway/handover', input);
+  }
+
+  // Closes the card once the owner gave control back (finished), or leaves it open.
+  handoverDone(input: { approvalId: number; finished: boolean }): Promise<void> {
+    return this.#post('/internal/browser-gateway/handover-done', input);
+  }
+
+  // A file the browser downloaded, into the project's Inbox folder (Home: Home/Inbox).
+  // `agentKey` names the agent that controlled the browser, if one did.
+  download(input: {
+    projectSlug: string;
+    agentKey: string | null;
+    fileName: string;
+    data: string;
+  }): Promise<{ path: string }> {
+    return this.#post('/internal/browser-gateway/download', input);
   }
 
   async policy(): Promise<Record<string, BrowserGatewaySettingsWire & { projectId: number }>> {

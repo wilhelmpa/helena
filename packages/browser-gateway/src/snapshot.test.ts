@@ -1,87 +1,56 @@
 import { describe, expect, it } from 'bun:test';
-import { isValidRef, refSelector, renderSnapshot, type RawSnapshotNode } from './snapshot';
+import {
+  CREDENTIAL_SELECTOR,
+  isValidRef,
+  redactValues,
+  refSelector,
+  truncateSnapshot,
+} from './snapshot';
 
-function node(overrides: Partial<RawSnapshotNode>): RawSnapshotNode {
-  return {
-    ref: 'e1',
-    role: 'button',
-    name: 'Submit',
-    value: null,
-    checked: null,
-    disabled: false,
-    credential: false,
-    depth: 0,
-    ...overrides,
-  };
-}
-
-describe('renderSnapshot', () => {
-  it('renders a placeholder for an empty tree', () => {
-    expect(renderSnapshot([])).toBe('(no interactive elements found)');
+describe('refs of the AI snapshot', () => {
+  it('accepts element refs and refs inside iframes', () => {
+    expect(isValidRef('e1')).toBe(true);
+    expect(isValidRef('e123')).toBe(true);
+    expect(isValidRef('f2e14')).toBe(true);
   });
 
-  it('renders ref, role and name for an ordinary node', () => {
-    const text = renderSnapshot([node({ ref: 'e3', role: 'button', name: 'Login' })]);
-    expect(text).toBe('[e3] button "Login"');
+  it('refuses anything that could be a selector', () => {
+    for (const ref of ['', 'e', 'x1', 'e1 >> css=input', '#id', 'f1', 'e1"]', 'aria-ref=e1']) {
+      expect(isValidRef(ref)).toBe(false);
+    }
   });
 
-  it('never shows the value of a credential field, only a placeholder', () => {
-    const text = renderSnapshot([
-      node({
-        ref: 'e5',
-        role: 'textbox:password',
-        credential: true,
-        value: 'super-secret',
-        name: 'Password',
-      }),
-    ]);
-    expect(text).not.toContain('super-secret');
-    expect(text).not.toContain('Password');
-    expect(text).toContain('[password — never shown]');
-  });
-
-  it('never shows the value of a filled non-password credential field (a 2FA code) either', () => {
-    const text = renderSnapshot([
-      node({ ref: 'e6', role: 'textbox', credential: true, value: '123456' }),
-    ]);
-    expect(text).not.toContain('123456');
-    expect(text).toContain('[filled — never shown]');
-  });
-
-  it('shows checked state and disabled for a checkbox', () => {
-    const text = renderSnapshot([
-      node({ ref: 'e2', role: 'checkbox', name: 'Remember me', checked: true, disabled: true }),
-    ]);
-    expect(text).toContain('checked');
-    expect(text).toContain('disabled');
-  });
-
-  it('indents nested nodes by depth', () => {
-    const text = renderSnapshot([
-      node({ ref: 'e1', role: 'generic', name: 'Form', depth: 0 }),
-      node({ ref: 'e2', role: 'button', name: 'Submit', depth: 1 }),
-    ]);
-    const lines = text.split('\n');
-    expect(lines[0].startsWith(' ')).toBe(false);
-    expect(lines[1].startsWith('  ')).toBe(true);
+  it('resolves a ref through the aria-ref engine', () => {
+    expect(refSelector('f1e3')).toBe('aria-ref=f1e3');
   });
 });
 
-describe('refSelector / isValidRef', () => {
-  it('builds a data-attribute selector for a ref', () => {
-    expect(refSelector('e7')).toBe('[data-volition-ref="e7"]');
+describe('redactValues', () => {
+  it('removes what credential fields hold, longest first, and leaves short values', () => {
+    const text = '- textbox "Password": hunter22secret\n- textbox "Code": 123456\n- text: ab';
+    expect(redactValues(text, ['hunter22secret', '123456', 'ab', 'hunter22'])).toBe(
+      '- textbox "Password": [hidden]\n- textbox "Code": [hidden]\n- text: ab',
+    );
   });
 
-  it("accepts the tagging script's own ref shape", () => {
-    expect(isValidRef('e1')).toBe(true);
-    expect(isValidRef('e42')).toBe(true);
+  it('changes nothing without values', () => {
+    expect(redactValues('- button "Login"', [])).toBe('- button "Login"');
   });
+});
 
-  it('rejects anything that is not exactly that shape, so a bad ref is caught before it becomes a selector', () => {
-    expect(isValidRef('e0')).toBe(false); // the tagging script counts from 1
-    expect(isValidRef('')).toBe(false);
-    expect(isValidRef('e1"] , [onclick="evil()')).toBe(false);
-    expect(isValidRef('E1')).toBe(false);
-    expect(isValidRef('1')).toBe(false);
+describe('truncateSnapshot', () => {
+  it('keeps a short snapshot and cuts a long one at a line end', () => {
+    expect(truncateSnapshot('a\nb', 10)).toBe('a\nb');
+    const cut = truncateSnapshot('line one\nline two\nline three', 20);
+    expect(cut.startsWith('line one\nline two\n…')).toBe(true);
+    expect(cut).toContain('snapshot cut at 20 characters');
+  });
+});
+
+describe('CREDENTIAL_SELECTOR', () => {
+  it('names password inputs, password autocomplete and one-time codes', () => {
+    expect(CREDENTIAL_SELECTOR).toContain('input[type="password" i]');
+    expect(CREDENTIAL_SELECTOR).toContain('autocomplete*="password"');
+    expect(CREDENTIAL_SELECTOR).toContain('one-time-code');
   });
 });

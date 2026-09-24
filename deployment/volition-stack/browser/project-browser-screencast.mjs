@@ -26,9 +26,12 @@
 // the viewport in CSS pixels; {"type":"tab"} when the streamed tab, its address or its title
 // changes; {"type":"dialog", ...} while a JavaScript dialog is open;
 // {"type":"dialog","open":false} when it closes; {"type":"pong","t":..} answering a viewer's
-// {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"} when who last acted on the
-// page changes (informational only, see ScreencastStream's controlBy). Viewer to server: JSON
-// text, see viewerMessage.
+// {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"|"free","agentName","since",
+// "locked"} when who controls the page changes: the browser gateway's control lock once it
+// runs (locked true, the agent by name, since as epoch ms), otherwise who last acted on it
+// (locked false); {"type":"handover","open":true,"reason","agentName","since"} while an agent
+// waits for the owner to take over (browser_handover), {"type":"handover","open":false} after.
+// Viewer to server: JSON text, see viewerMessage.
 import { activateTab, listTabs, openBrowser, setLiveViewport, windowChrome } from "./project-browser-control.mjs";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
 import { AreaEncoder, chooseTier, sameArea, TIERS } from "./project-browser-video.mjs";
@@ -183,9 +186,37 @@ class Viewer {
   }
 }
 
-// Exported for tests only (controlMessage()/setControlHolder() need no live CDP
-// connection — everything else about this class does, so a test constructs one and calls
-// only those two, never start()). Not used as a public constructor anywhere else.
+// The browser gateway's state of each project browser, by DevTools port, kept here rather
+// than on a stream so a viewer who opens the live view later still gets it: the control
+// lock's holder and since when (browser-gateway-server.mjs sets it on every change), and an
+// agent's open handover request.
+const controlStates = new Map();
+const handovers = new Map();
+
+export function controlMessageFor(port, activityBy) {
+  const state = controlStates.get(port);
+  if (state) {
+    const holder = state.holder;
+    return {
+      type: "control",
+      by: holder ? holder.kind : "free",
+      agentName: holder?.kind === "agent" ? holder.agentName : null,
+      since: holder ? state.since : null,
+      locked: true,
+    };
+  }
+  return { type: "control", by: activityBy === "agent" ? "agent" : "free", agentName: null, since: null, locked: false };
+}
+
+function handoverMessageFor(port) {
+  const notice = handovers.get(port);
+  return notice
+    ? { type: "handover", open: true, reason: notice.reason, agentName: notice.agentName, since: notice.since }
+    : { type: "handover", open: false };
+}
+
+// Exported for tests only (controlMessage() needs no live CDP connection — everything else
+// about this class does, so a test constructs one and calls only that, never start()).
 export class ScreencastStream {
   constructor(port, display, onEnd) {
     this.port = port;
@@ -218,14 +249,9 @@ export class ScreencastStream {
     this.viewerActionAt = 0;
     this.pageNavigationAt = 0;
     this.agentActiveAt = 0;
-    // Who the "Steuert: …" banner names. Until the browser gateway calls
-    // setControlHolder() at least once for this project browser (only once something with
-    // an actual lock — an agent's MCP session or the live view's Übernehmen — has acted),
-    // this stays the old activity-based guess (see broadcastControl()); once it has, that
-    // guess is retired and this field alone decides it, including whose name a viewer sees.
+    // Who last acted on the page, the live view's guess while the browser gateway has not
+    // reported a control lock for this browser (see controlMessageFor).
     this.controlBy = "owner";
-    this.controlHolder = null;
-    this.controlHolderSet = false;
     this.resizeTimer = null;
     this.timer = null;
     this.tierTimer = null;
@@ -253,6 +279,7 @@ export class ScreencastStream {
     this.viewers.add(viewer);
     if (this.dialog) socket.send(JSON.stringify(this.dialog));
     socket.send(JSON.stringify(this.controlMessage()));
+    if (handovers.has(this.port)) socket.send(JSON.stringify(handoverMessageFor(this.port)));
     socket.on("message", (data, binary) => {
       if (!binary) this.receive(viewer, data.toString("utf8"));
     });
@@ -374,45 +401,17 @@ export class ScreencastStream {
     if (wasQuiet) this.resize();
   }
 
-  // The current "{type:'control', by, agentName?}" message: the real lock's holder once
-  // the gateway has ever reported one for this project browser, the old activity guess
-  // until then (a project whose gateway was never used, or whose router just restarted
-  // and has not heard from it yet, still shows something reasonable rather than nothing).
   controlMessage() {
-    if (this.controlHolderSet) {
-      const holder = this.controlHolder;
-      return holder
-        ? { type: "control", by: holder.kind, agentName: holder.agentName ?? null }
-        : { type: "control", by: "owner", agentName: null };
-    }
-    return { type: "control", by: this.controlBy, agentName: null };
+    return controlMessageFor(this.port, this.controlBy);
   }
 
-  // Called by the browser gateway (same process, see
-  // deployment/volition-stack/browser/browser-gateway-server.mjs) whenever the real
-  // control lock of this project browser changes: acquired, released, expired, or taken
-  // over. From here on this stream stops guessing from activity timing and reports
-  // exactly what the lock says, including the agent's name.
-  setControlHolder(holder) {
-    this.controlHolderSet = true;
-    const changed =
-      !this.controlHolder ||
-      !holder ||
-      this.controlHolder.kind !== holder.kind ||
-      this.controlHolder.agentName !== holder.agentName;
-    this.controlHolder = holder;
-    if (changed) this.broadcast(this.controlMessage());
-  }
-
-  // Tells a fresh or changed control state to every viewer; a viewer that joins gets it in
-  // add(). Retired once setControlHolder() has ever been called for this stream — see
-  // controlMessage().
+  // Tells a changed activity guess to every viewer; a viewer that joins gets the state in
+  // add(). Once the gateway reports the lock (controlStates), the guess is not sent.
   broadcastControl() {
-    if (this.controlHolderSet) return;
     const by = Date.now() - this.agentActiveAt < AGENT_QUIET_MS ? "agent" : "owner";
     if (by === this.controlBy) return;
     this.controlBy = by;
-    this.broadcast({ type: "control", by, agentName: null });
+    if (!controlStates.has(this.port)) this.broadcast(this.controlMessage());
   }
 
   // The activity is read once a second; a view that changes size right after the agent's
@@ -843,13 +842,24 @@ export function joinScreencast(port, display, socket) {
   stream.add(socket);
 }
 
-// The browser gateway's own hook (browser-gateway-server.mjs): tells the live view of one
-// project browser who its control lock's holder is now, `null` for free. A silent no-op
-// when nobody is watching that project browser's live view yet — there is no stream to
-// tell, and the next viewer who joins gets the gateway's answer to browser_status instead
-// (the gateway, not this file, is the lock's source of truth either way).
-export function notifyControlHolder(port, holder) {
-  streams.get(port)?.setControlHolder(holder);
+// The browser gateway's hooks (browser-gateway-server.mjs). setControlState: the control
+// lock of one project browser changed ({holder, since}; holder null for free). setHandover:
+// an agent asks the owner to take over ({reason, agentName, since}), or null once it stopped
+// waiting. Both are kept for viewers who join later and told to those watching now.
+export function setControlState(port, state) {
+  controlStates.set(port, { holder: state?.holder ?? null, since: state?.since ?? null });
+  streams.get(port)?.broadcast(controlMessageFor(port));
+}
+
+export function setHandover(port, notice) {
+  if (notice) handovers.set(port, notice);
+  else if (!handovers.delete(port)) return;
+  streams.get(port)?.broadcast(handoverMessageFor(port));
+}
+
+// The gateway state of one project browser, for the Home overview.
+export function controlStateOf(port) {
+  return { control: controlMessageFor(port, "owner"), handover: handovers.get(port) ?? null };
 }
 
 // A desktop (VNC) viewer sizes the display to its panel, so the windows fill the display

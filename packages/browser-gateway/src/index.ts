@@ -4,6 +4,7 @@ export * from './domain.ts';
 export * from './tools.ts';
 export * from './snapshot.ts';
 export * from './human.ts';
+export * from './png.ts';
 export * from './plan-client.ts';
 export * from './project-slug.ts';
 export type * from './session-types.ts';
