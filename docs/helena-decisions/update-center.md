@@ -108,7 +108,8 @@ hardening rules as `helena-hermes-update`:
   security origin), non-interactive, keeping changed config files, waiting for the dpkg lock
   (`apt-daily-upgrade` may hold it). The answer names every package with its old and new
   version, the failed units afterwards, and whether a reboot is asked for. Before the request
-  the API takes a **database dump** (`@repo/db` `writeBackup`, into the backups folder). There is
+  the API takes a **database dump** (`@repo/db` `writeBackup`, into the backups folder; a
+  source asks for it with `backupFirst`). There is
   no automatic way back for apt: the answer carries the command that installs the old
   versions (`apt-get install <pkg>=<old>`, from the cache or snapshot.debian.org).
 - Hermes keeps its own helper (`helena-hermes-update`, with venv rollback); the update center
@@ -128,6 +129,9 @@ is recorded like every other run's. What makes it text-only:
   no MCP server is started), without the agent's standing instructions or skills arguments;
 - `agent_run.model` and the new `agent_run.reasoning` override the agent's model and
   reasoning for this run only; no reflection turn follows a digest run.
+- Helena queues a digest run only on an agent whose runner reports the capability
+  `digest-runs`: a runner from before this change would run the untrusted notes with the
+  agent's tools.
 
 The model: the Administrator picks one, or leaves "Automatisch": the cheapest model of the
 summarizing agent's catalog that has a price (`helena_model_price`) and that the account
@@ -145,6 +149,8 @@ crash). "Jetzt prüfen" starts the same workflow under a manual id. The update j
 every source (one recorded step), queue the digest runs (one recorded step each), wait for
 them with durable sleeps (up to 45 minutes), store the summaries. Default `0 6 * * *`
 Europe/Berlin; the Administrator changes it (German schedule words work, as in routines).
+A job may ask to run once when the engine first sees it (`runWhenNew`, the update job does),
+so a fresh installation shows its state at once.
 
 ### 4.5 What the owner sees
 
