@@ -150,6 +150,16 @@ export type ChatMessageDTO = {
   // language (a model the provider refused this account).
   errorCode?: string;
   errorModel?: string | null;
+  // What the model router did for an answer (decisions.md §4).
+  modelRoute?: {
+    fromModel: string;
+    toModel: string;
+    routed: boolean;
+    tier: string | null;
+    confidence: number | null;
+    needsContext: number | null;
+    reason: string;
+  } | null;
 };
 
 export type ChatMessagePage = {

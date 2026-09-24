@@ -29,6 +29,12 @@ import {
   BUILTIN_DECISION_BACKENDS,
   browserTaskPlugin,
 } from '#modules/browser-task/backends';
+import {
+  BUILTIN_DECISION_CLASSES,
+  DECISIONS_BACKENDS,
+  DECISIONS_PLUGIN_ID,
+  decisionsPlugin,
+} from '#modules/decisions/classes';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -182,6 +188,17 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     browserTaskPlugin,
     builtinManifest(BROWSER_TASK_PLUGIN_ID, 'browserTask', {
       provides: { decisionBackends: BUILTIN_DECISION_BACKENDS.map((backend) => backend.id) },
+    }),
+  );
+  // Typed decisions (docs/helena-decisions/decisions.md): the classes Helena's own features ask
+  // and the local logit and JSON backends.
+  await host.load(
+    decisionsPlugin,
+    builtinManifest(DECISIONS_PLUGIN_ID, 'decisions', {
+      provides: {
+        decisionBackends: DECISIONS_BACKENDS.map((backend) => backend.id),
+        decisionClasses: BUILTIN_DECISION_CLASSES.map((entry) => entry.id),
+      },
     }),
   );
   // The second brain: Helena's knowledge sources and capture targets live in the host's

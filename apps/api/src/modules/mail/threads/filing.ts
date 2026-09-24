@@ -72,6 +72,7 @@ export async function createTaskFromThread(
   threadId: number,
   projectId: number | null,
   actorUserId: string,
+  options: { assigneeUserId?: string } = {},
 ): Promise<{ issueId: number; sequenceNumber: number; projectKey: string }> {
   const [current] = await db.select().from(mailThread).where(eq(mailThread.id, threadId));
   if (!current) throw new HttpError(404, 'Mail thread not found');
@@ -107,7 +108,13 @@ export async function createTaskFromThread(
   const title = (thread.subject.trim() || `Mail from ${sender(latest)}`).slice(0, 300);
   const created = await createIssue(
     target,
-    { columnId: column.id, title, description: lines.join('\n'), labelIds: [] },
+    {
+      columnId: column.id,
+      title,
+      description: lines.join('\n'),
+      labelIds: [],
+      ...(options.assigneeUserId ? { assigneeUserId: options.assigneeUserId } : {}),
+    },
     actorUserId,
     {
       afterInsert: async (tx, issueId) => {

@@ -6,6 +6,9 @@
 #
 #   sudo deployment/volition-stack/native/laya/install.sh install     # or: status, rotate-key,
 #                                                                     #     uninstall [--purge]
+#   sudo deployment/volition-stack/native/laya/install.sh typed-decisions   # add the general
+#        checkpoint for Helena's typed decisions (docs/helena-decisions/decisions.md §3.1; owner OK
+#        2026-09-25): convaiinnovations/laya-typed-decisions, 842 MB, served next to the browser one
 #
 # What it does (install): a system user helena-laya; a venv in /opt/helena/laya with pinned
 # PyTorch (CPU) and Laya; the checkpoint at a pinned revision in /var/lib/helena-laya/models
@@ -23,6 +26,10 @@ MODEL_REVISION=4219958196e2c566c141688c773e08da10c1ff3b
 SUBFOLDER=v10s
 # SHA-256 of v10s/model.safetensors at MODEL_REVISION (Hugging Face LFS oid).
 MODEL_SHA256=${HELENA_LAYA_MODEL_SHA256:-b11217df18bf79cfcd4ab639caf1ae8652b91c9c44fcb9457fbe480237332335}
+# The general typed-decisions checkpoint (English; ModernBERT-large, 421M), pinned.
+TYPED_REPO=convaiinnovations/laya-typed-decisions
+TYPED_REVISION=1a793eb568e6718f15941d08f85432581df534e3
+TYPED_SHA256=4fa56de72383a9d3efa9cfa78955733c81b9fc8067a587ca4beb82c78107a24e
 
 SERVICE_USER=helena-laya
 PREFIX=/opt/helena/laya
@@ -128,9 +135,43 @@ rotate_key() {
   log "key rotated; Helena reads it on the next call"
 }
 
+# Adds laya-typed-decisions next to the browser checkpoint: download at the pinned revision,
+# check the weights, and a drop-in that serves both (the browser one stays the default) with
+# the memory the second one needs.
+typed_decisions() {
+  [ -x "$PREFIX/venv/bin/python" ] || die "install first"
+  log "checkpoint $TYPED_REPO@$TYPED_REVISION"
+  sudo -u "$SERVICE_USER" HF_HOME="$STATE/hf" "$PREFIX/venv/bin/python" - <<PY
+from huggingface_hub import snapshot_download
+snapshot_download("$TYPED_REPO", revision="$TYPED_REVISION",
+                  allow_patterns=["model.safetensors", "rl_agent_config.json", "encoder/*", "tokenizer/*"],
+                  local_dir="$STATE/models/laya-typed-decisions")
+PY
+  local weights="$STATE/models/laya-typed-decisions/model.safetensors"
+  echo "$TYPED_SHA256  $weights" | sha256sum -c --quiet - || die "typed-decisions checksum mismatch"
+  install -d -o root -g root -m 0755 /etc/systemd/system/helena-laya.service.d
+  cat >/etc/systemd/system/helena-laya.service.d/typed-decisions.conf <<CONF
+# Written by install.sh typed-decisions: both checkpoints, the browser one the default.
+[Service]
+Environment=HELENA_LAYA_MODELS=laya-browser-$SUBFOLDER=$STATE/models/laya-browser:$SUBFOLDER,laya-typed-decisions=$STATE/models/laya-typed-decisions
+MemoryHigh=5G
+MemoryMax=6G
+CONF
+  systemctl daemon-reload
+  systemctl restart helena-laya.service
+  for _ in $(seq 1 120); do
+    curl -sf -m 2 "http://127.0.0.1:$PORT/health" | grep -q laya-typed-decisions && break
+    sleep 2
+  done
+  curl -sf -m 2 "http://127.0.0.1:$PORT/health" | grep -q laya-typed-decisions ||
+    die "the service does not serve laya-typed-decisions (journalctl -u helena-laya)"
+  log "ready: model laya-typed-decisions on http://127.0.0.1:$PORT (Zugänge → Entscheidungsmodell → Laya, Modell laya-typed-decisions)"
+}
+
 uninstall() {
   systemctl disable --now helena-laya.service 2>/dev/null || true
   rm -f "$UNIT"
+  rm -rf /etc/systemd/system/helena-laya.service.d
   systemctl daemon-reload
   if [ "${1:-}" = "--purge" ]; then
     rm -rf "$PREFIX" "$STATE" /var/cache/helena-laya "$KEY_FILE"
@@ -143,8 +184,9 @@ uninstall() {
 
 case "${1:-}" in
   install) install_all ;;
+  typed-decisions) typed_decisions ;;
   status) status ;;
   rotate-key) rotate_key ;;
   uninstall) uninstall "${2:-}" ;;
-  *) echo "usage: $0 install|status|rotate-key|uninstall [--purge]" >&2; exit 2 ;;
+  *) echo "usage: $0 install|typed-decisions|status|rotate-key|uninstall [--purge]" >&2; exit 2 ;;
 esac

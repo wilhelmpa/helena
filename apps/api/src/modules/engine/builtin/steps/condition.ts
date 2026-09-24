@@ -87,7 +87,7 @@ async function evaluate(runId: string, step: ConditionStep, at: StepExecution): 
         and(
           eq(pipelineRunStep.runId, runId),
           lt(pipelineRunStep.seq, at.seq),
-          sql`${pipelineRunStep.kind} IN ('agent', 'approval', 'action', 'webhook', 'notify')`,
+          sql`${pipelineRunStep.kind} IN ('agent', 'approval', 'action', 'webhook', 'notify', 'decision')`,
           sql`${pipelineRunStep.stepId} NOT LIKE '%.%'`,
         ),
       )

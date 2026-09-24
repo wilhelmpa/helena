@@ -102,6 +102,7 @@ export const browserTaskRoutes = new Elysia({
           defaultBaseUrl: backend.defaultBaseUrl,
           defaultModel: backend.defaultModel,
           policy: backend.policy,
+          protocol: backend.protocol ?? 'systemone',
           keyRequired: backend.keyRequired,
           signupUrl: backend.signupUrl ?? null,
           presets: (backend.presets ?? []).map((preset) => ({
@@ -111,6 +112,7 @@ export const browserTaskRoutes = new Elysia({
             model: preset.model,
             allowPrivateAddress: preset.allowPrivateAddress === true,
             keySource: preset.keySource ?? null,
+            modelServer: preset.modelServer ?? null,
           })),
         })),
       };

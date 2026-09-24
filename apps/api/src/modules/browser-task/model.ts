@@ -54,6 +54,11 @@ export const DecisionBackendsResponse = t.Object({
       defaultBaseUrl: t.Nullable(t.String()),
       defaultModel: t.String(),
       policy: t.Union([t.Literal('jev'), t.Literal('laya')]),
+      protocol: t.Union([
+        t.Literal('systemone'),
+        t.Literal('openai-logprobs'),
+        t.Literal('openai-json'),
+      ]),
       keyRequired: t.Boolean(),
       signupUrl: t.Nullable(t.String()),
       presets: t.Array(
@@ -63,7 +68,8 @@ export const DecisionBackendsResponse = t.Object({
           baseUrl: t.String(),
           model: t.String(),
           allowPrivateAddress: t.Boolean(),
-          keySource: t.Nullable(t.Literal('local-laya')),
+          keySource: t.Nullable(t.Union([t.Literal('local-laya'), t.Literal('local-ai')])),
+          modelServer: t.Nullable(t.String()),
         }),
       ),
     }),

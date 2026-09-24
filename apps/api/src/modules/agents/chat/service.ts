@@ -31,6 +31,7 @@ import { appendReasoningPart, appendTextPart } from '../chat-parts';
 import type { ChatMessageDTO, ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { touchRunner, type RunnerAgent } from '../runner/service';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
+import { routeRequest, routesOfChatMessages } from '#modules/model-router/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
 import { notifyChatAnswer } from './wake';
 import { questionText, imagePaths, type ChatAttachment } from './attachments';
@@ -329,6 +330,9 @@ export async function getThreadMessages(
   const answers = await readAnswerParts(
     turns.filter((r) => r.role === 'assistant').map((r) => r.id),
   );
+  const routes = await routesOfChatMessages(
+    turns.filter((r) => r.role === 'assistant').map((r) => r.id),
+  );
   const items = turns
     .map((r) => ({
       id: String(r.id),
@@ -348,6 +352,7 @@ export async function getThreadMessages(
         outputTokens: r.outputTokens,
         durationMs:
           r.startedAt && r.finishedAt ? r.finishedAt.getTime() - r.startedAt.getTime() : null,
+        modelRoute: routes.get(r.id) ?? null,
       }),
       ...(r.status === 'canceled' ? { stopped: true } : {}),
       ...failedFields(r),
@@ -856,16 +861,31 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const history = await readBranch(row.threadId, row.id);
   const question = history.pop();
   const sessionId = await resumableSession(row.threadId, history, agent.id);
-  // A thread without its own model follows the agent's settings, the way a run does.
-  const settings = row.model
+  const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
+  const text = questionText(question?.content ?? '', attachments);
+  // A thread without its own model follows the agent's settings, the way a run does, and the
+  // model router may send the answer to a cheaper model (decisions.md §4). A model the owner
+  // chose for the thread is never routed.
+  let settings = row.model
     ? { model: row.model, thinkingLevel: row.thinkingLevel }
     : { model: agent.model, thinkingLevel: agent.thinkingLevel };
+  if (!row.model) {
+    const routed = await routeRequest({
+      teamId: agent.teamId,
+      agentId: agent.id,
+      projectId: row.projectId,
+      configuredModel: settings.model,
+      thinkingLevel: settings.thinkingLevel,
+      text,
+      chatMessageId: row.id,
+    });
+    if (routed.route?.routed && routed.model)
+      settings = { model: routed.model, thinkingLevel: routed.thinkingLevel };
+  }
   await db
     .update(agentChatMessage)
     .set({ model: settings.model, sessionId })
     .where(eq(agentChatMessage.id, row.id));
-  const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
-  const text = questionText(question?.content ?? '', attachments);
   const earlier = sessionId ? [] : history.slice(-agentChatConfig.historyMessages());
   return {
     id: row.id,

@@ -38,6 +38,17 @@ export const ThreadRowResponse = t.Object({
   unread: t.Boolean(),
   flagged: t.Boolean(),
   hasAttachments: t.Boolean(),
+  // What the mail classifier made of it (docs/helena-decisions/decisions.md §5).
+  triage: t.Optional(
+    t.Nullable(
+      t.Object({
+        status: t.String(),
+        category: t.Nullable(t.String()),
+        priority: t.Nullable(t.String()),
+        needsReply: t.Nullable(t.Boolean()),
+      }),
+    ),
+  ),
 });
 
 export const ThreadPageResponse = t.Object({
