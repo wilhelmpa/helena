@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
+import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
 import WorkspaceBrowserViewSwitch from './WorkspaceBrowserViewSwitch';
 
@@ -81,7 +82,7 @@ export default function WorkspaceBrowserBar({
           placeholder={t('address')}
           dir="ltr"
           spellCheck={false}
-          className="h-7 w-full rounded-md border bg-muted/40 px-2 text-xs outline-none focus:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="h-7 w-full rounded-md border bg-muted/40 px-2 text-sm outline-none focus:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/50"
           value={draft ?? active?.url ?? ''}
           onChange={(event) => setDraft(event.target.value)}
           onFocus={(event) => event.currentTarget.select()}
@@ -113,8 +114,9 @@ export default function WorkspaceBrowserBar({
           <Bot />
         </Button>
       )}
-      {/* A phone keeps reload, the address, the tabs and "follow the agent"; back,
-          forward and the Live/Desktop switch need a wider panel. */}
+      {view === 'live' && <WorkspaceBrowserStreamMenu />}
+      {/* A phone keeps reload, the address, the tabs, "follow the agent" and the stream menu;
+          back, forward and the Live/Desktop switch need a wider panel. */}
       <div className="contents max-sm:hidden">
         <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
       </div>

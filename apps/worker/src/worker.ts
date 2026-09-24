@@ -3,7 +3,6 @@ import { deliver } from './delivery';
 import { processNotificationDeliveries } from './notification-delivery';
 import { equalJitterBackoffMs } from './backoff';
 import { startPollLoop, type WorkerHandle } from './poll-loop';
-import { TELEMETRY_CHECK_EVERY_TICKS, processTelemetry } from './telemetry';
 import {
   processProjectProvisioning,
   pruneFinishedDeprovisioningJobs,
@@ -21,8 +20,6 @@ import {
 } from './store';
 
 let ticksSinceCleanup = 0;
-// Starts due, so an install is visible even if the instance is removed minutes later.
-let ticksSinceTelemetry = TELEMETRY_CHECK_EVERY_TICKS;
 let lastProjectReconcileAt = 0;
 let lastHeartbeatAt = 0;
 
@@ -31,8 +28,8 @@ export function startWorker(): WorkerHandle {
 }
 
 // One poll: claim a batch of due deliveries, send them concurrently, record each
-// outcome, then run the project reconciliation, the cleanup and the telemetry check
-// on their own intervals.
+// outcome, then run the project reconciliation and the cleanup on their own intervals.
+// Helena sends no telemetry: the upstream daily snapshot to telemetry.itsaplan.dev is gone.
 async function tick(): Promise<void> {
   const cfg = workerConfig();
   if (Date.now() - lastHeartbeatAt >= HEARTBEAT_INTERVAL_MS) {
@@ -64,15 +61,6 @@ async function tick(): Promise<void> {
     if (removed > 0) console.log(`[worker] cleaned up ${removed} old deliveries`);
     const cleanups = await pruneFinishedDeprovisioningJobs();
     if (cleanups > 0) console.log(`[worker] pruned ${cleanups} finished project cleanups`);
-  }
-  if (++ticksSinceTelemetry >= TELEMETRY_CHECK_EVERY_TICKS) {
-    ticksSinceTelemetry = 0;
-    // An unreachable collector must not read as a failed tick.
-    try {
-      await processTelemetry();
-    } catch (error) {
-      console.error('[worker] telemetry send failed:', error);
-    }
   }
 }
 
