@@ -394,7 +394,8 @@ export const HERMES_TOOL_CATEGORY: Record<string, ActionCategory> = {
   browser_vault_save_login: 'credentials',
   browser_cdp: 'execute',
   browser_exec: 'execute',
-  process_manage: 'execute',
+  // Polls, reads and stops the processes the agent's own terminal started.
+  process_manage: 'write',
   execute_code: 'execute',
   computer_use: 'execute',
   ha_call_service: 'execute',
@@ -452,6 +453,26 @@ export const BROWSER_GATEWAY_TOOL_CATEGORY: Record<string, ActionCategory> = {
   browser_login: 'write',
   browser_login_code: 'write',
   browser_upload: 'send',
+  // The browser-harness MCP server (Chrome DevTools into the project browser) that agents use
+  // until the gateway replaces it. Its tools carry no annotations.
+  browser_goto: 'read',
+  browser_new_tab: 'read',
+  browser_page_info: 'read',
+  browser_list_tabs: 'read',
+  browser_current_tab: 'read',
+  browser_switch_tab: 'read',
+  browser_close_tab: 'read',
+  browser_ensure_real_tab: 'read',
+  browser_wait: 'read',
+  browser_wait_for_load: 'read',
+  browser_wait_for_element: 'read',
+  browser_http_get: 'read',
+  browser_start_recording: 'read',
+  browser_stop_recording: 'read',
+  browser_fill: 'write',
+  browser_js: 'write',
+  browser_cdp: 'execute',
+  browser_upload_file: 'send',
 };
 
 // The step types of a workflow (hub/native-engine). An agent task's own actions are
@@ -508,7 +529,13 @@ function baseCategory(call: ToolCall): Classified {
   const workspace = call.workspace ?? null;
   if (call.mcp) {
     const table = call.mcp.server.includes('browser') ? BROWSER_GATEWAY_TOOL_CATEGORY : null;
-    const known = table?.[call.tool] ?? table?.[call.tool.replace(/^.*__/, '')];
+    // The tool as its server names it: Claude Code calls it mcp__<server>__<tool>, Hermes
+    // mcp_<server>_<tool> with the server's name made safe.
+    const hermesPrefix = `mcp_${call.mcp.server.replace(/[^A-Za-z0-9]/g, '_')}_`;
+    const bare = call.tool.startsWith(hermesPrefix)
+      ? call.tool.slice(hermesPrefix.length)
+      : call.tool.replace(/^.*__/, '');
+    const known = table?.[call.tool] ?? table?.[bare];
     const category = known ?? categoryFromAnnotations(call.mcp.annotations, call.mcp.action);
     return {
       category,

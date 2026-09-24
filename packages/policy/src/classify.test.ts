@@ -129,6 +129,14 @@ describe('tool calls', () => {
         mcp: { server: 'helena-browser' },
       }).category,
     ).toBe('send');
+    // The browser-harness server agents use today: browsing reads, filling writes.
+    expect(
+      classifyToolCall({
+        runtime: 'hermes',
+        tool: 'mcp_browser_harness_browser_goto',
+        mcp: { server: 'browser-harness', annotations: { readOnlyHint: false } },
+      }).category,
+    ).toBe('read');
   });
 
   test('a declared intent only makes a call weightier', () => {
