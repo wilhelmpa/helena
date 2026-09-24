@@ -72,5 +72,7 @@
   "dragFailed": "无法移动周期",
   "notFound": "未找到周期。",
   "defaultName": "迭代 {n}",
-  "issuesDone": "已完成工作项"
+  "issuesDone": "已完成工作项",
+  "daysLeft": "剩余 {count} 天",
+  "lengthDays": "{count} 天"
 }

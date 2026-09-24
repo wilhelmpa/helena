@@ -72,5 +72,7 @@
   "dragFailed": "تعذّر نقل الدورة",
   "notFound": "الدورة غير موجودة.",
   "defaultName": "سبرنت {n}",
-  "issuesDone": "المهام المنجزة"
+  "issuesDone": "المهام المنجزة",
+  "daysLeft": "متبقٍ {count} يوم",
+  "lengthDays": "{count} يوم"
 }

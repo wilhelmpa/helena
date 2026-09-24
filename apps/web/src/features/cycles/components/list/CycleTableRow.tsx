@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { Cycle } from '@/lib/api/endpoints/cycles';
 import { cyclePath } from '@/utils/paths';
 import ProgressBar from '@/components/common/ProgressBar';
@@ -20,13 +21,14 @@ export default function CycleTableRow({
   gridTemplate: string;
   onTransfer: (cycle: Cycle) => void;
 }) {
+  const t = useTranslations('cycles');
   const router = useRouter();
   const href = cyclePath(projectKey, cycle.id);
 
   return (
     <div
       onClick={() => router.push(href)}
-      className="grid cursor-pointer items-center gap-3 border-b px-4 py-2 text-sm hover:bg-accent/40"
+      className="grid h-10 cursor-pointer items-center gap-3 border-b px-3 text-sm last:border-b-0 hover:bg-accent"
       style={{ gridTemplateColumns: gridTemplate }}
     >
       <div className="flex min-w-0 items-center gap-2">
@@ -42,10 +44,12 @@ export default function CycleTableRow({
 
       <span className="text-xs text-muted-foreground">
         <CycleRange cycle={cycle} />
-        {cycle.status === 'active' && ` · ${daysLeft(cycle)}d left`}
+        {cycle.status === 'active' && ` · ${t('daysLeft', { count: daysLeft(cycle) })}`}
       </span>
 
-      <span className="text-xs text-muted-foreground tabular-nums">{cycleLength(cycle)}d</span>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {t('lengthDays', { count: cycleLength(cycle) })}
+      </span>
 
       <span className="text-xs text-muted-foreground tabular-nums">{cycle.progress.total}</span>
 

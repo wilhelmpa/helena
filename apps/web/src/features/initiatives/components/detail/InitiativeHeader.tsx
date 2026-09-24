@@ -1,12 +1,10 @@
 'use client';
 
-import { Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { Initiative, InitiativePatch } from '@/lib/api/endpoints/initiatives';
 import { useUpdateInitiative } from '@/services/initiatives.service';
 import { parseDate } from '@/utils/dates';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AssigneeSelect from '@/components/common/fields/AssigneeSelect';
 import DatePill from '@/components/common/fields/DatePill';
 import LabelsSelect from '@/components/common/fields/LabelsSelect';
@@ -15,11 +13,10 @@ import InitiativeStatusSelect from '@/components/common/fields/InitiativeStatusS
 import HealthBadge from '../shared/HealthBadge';
 import HealthInfoPopover from '../shared/HealthInfoPopover';
 import ProgressBar from '@/components/common/ProgressBar';
-import InitiativeActions from './InitiativeActions';
 
-// The initiative detail header. The pills patch the initiative inline; title and
-// description are read-only here and edited from the overflow menu dialog, which
-// is also the only way in on a narrow screen, where the pills are not shown.
+// The top of the initiative's overview: its title (the page's one 16px title) and
+// its properties as pills that patch it inline, with its health and progress. The
+// title and the description are edited from the Edit action in the header row.
 export default function InitiativeHeader({
   initiative,
   project,
@@ -29,7 +26,6 @@ export default function InitiativeHeader({
 }) {
   const t = useTranslations('initiatives');
   const update = useUpdateInitiative(project.project.key);
-  const hasDescription = initiative.description.trim().length > 0;
   // The calendars grey out days that would put one date on the wrong side of the
   // other. Equal dates are allowed.
   const latestStart = parseDate(initiative.targetDate);
@@ -45,80 +41,49 @@ export default function InitiativeHeader({
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b px-4 py-2.5">
+    <div className="flex flex-col gap-3">
+      <h1 className="text-base font-semibold" dir="auto">
+        {initiative.title}
+      </h1>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1">
-          <span className="text-sm font-semibold" dir="auto">
-            {initiative.title}
-          </span>
-          {hasDescription && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={t('showDescription')}
-                  className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground"
-                >
-                  <Info className="size-3.5" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-80">
-                <div className="text-sm font-semibold">{initiative.title}</div>
-                <p className="mt-1.5 max-h-64 overflow-y-auto text-sm whitespace-pre-wrap text-muted-foreground">
-                  {initiative.description}
-                </p>
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
-
-        {/* Narrow screens wrap these into three rows that push the tabs off the
-            fold; there the same fields are edited from the overflow menu dialog. */}
-        <div className="hidden flex-wrap items-center gap-2 md:flex">
-          <span className="mx-1 h-4 w-px bg-border" />
-
-          <InitiativeStatusSelect
-            value={initiative.status}
-            onChange={(status) => patch({ status })}
-          />
-          <AssigneeSelect
-            assignees={project.assignees}
-            value={initiative.ownerUserId}
-            onChange={(ownerUserId) => patch({ ownerUserId })}
-            placeholder={t('noOwner')}
-          />
-          <PrioritySelect
-            value={initiative.priority ?? ''}
-            onChange={(v) => patch({ priority: v || null })}
-          />
-          <DatePill
-            value={initiative.startDate}
-            placeholder={t('startDate')}
-            onChange={(v) => patch({ startDate: v })}
-            disabled={latestStart ? { after: latestStart } : undefined}
-          />
-          <DatePill
-            value={initiative.targetDate}
-            placeholder={t('targetDate')}
-            onChange={(v) => patch({ targetDate: v })}
-            disabled={earliestTarget ? { before: earliestTarget } : undefined}
-          />
-          <LabelsSelect
-            labels={project.labels}
-            groups={project.labelGroups}
-            value={initiative.labelIds}
-            onToggle={toggleLabel}
-          />
-        </div>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-3">
+        <InitiativeStatusSelect
+          value={initiative.status}
+          onChange={(status) => patch({ status })}
+        />
+        <AssigneeSelect
+          assignees={project.assignees}
+          value={initiative.ownerUserId}
+          onChange={(ownerUserId) => patch({ ownerUserId })}
+          placeholder={t('noOwner')}
+        />
+        <PrioritySelect
+          value={initiative.priority ?? ''}
+          onChange={(v) => patch({ priority: v || null })}
+        />
+        <DatePill
+          value={initiative.startDate}
+          placeholder={t('startDate')}
+          onChange={(v) => patch({ startDate: v })}
+          disabled={latestStart ? { after: latestStart } : undefined}
+        />
+        <DatePill
+          value={initiative.targetDate}
+          placeholder={t('targetDate')}
+          onChange={(v) => patch({ targetDate: v })}
+          disabled={earliestTarget ? { before: earliestTarget } : undefined}
+        />
+        <LabelsSelect
+          labels={project.labels}
+          groups={project.labelGroups}
+          value={initiative.labelIds}
+          onToggle={toggleLabel}
+        />
+        <span className="mx-1 hidden h-4 w-px bg-border sm:block" />
         <div className="flex items-center gap-1">
           <HealthInfoPopover />
           <HealthBadge health={initiative.health} />
         </div>
         <ProgressBar progress={initiative.progress} />
-        <InitiativeActions initiative={initiative} projectKey={project.project.key} />
       </div>
     </div>
   );

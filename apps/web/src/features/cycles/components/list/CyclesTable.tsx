@@ -36,10 +36,10 @@ export default function CyclesTable({
   const [transferring, setTransferring] = useState<Cycle | null>(null);
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="min-w-[760px]">
+    <div className="flex-1 overflow-auto p-4">
+      <div className="min-w-[760px] overflow-hidden rounded-lg border bg-card">
         <div
-          className="sticky top-0 z-10 grid items-center gap-3 border-b bg-background px-4 py-2 text-xs font-medium text-muted-foreground"
+          className="grid h-8 items-center gap-3 border-b px-3 text-xs text-muted-foreground"
           style={{ gridTemplateColumns: GRID }}
         >
           <span>{t('columns.name')}</span>

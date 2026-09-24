@@ -72,5 +72,7 @@
   "dragFailed": "Не вдалося перемістити цикл",
   "notFound": "Цикл не знайдено.",
   "defaultName": "Спринт {n}",
-  "issuesDone": "Задач виконано"
+  "issuesDone": "Задач виконано",
+  "daysLeft": "залишилось {count} дн.",
+  "lengthDays": "{count} дн."
 }

@@ -21,7 +21,7 @@ export default function InitiativeProgress({
   const projectKey = project.project.key;
 
   return (
-    <div className="flex w-full flex-col gap-6 px-6 py-6 lg:flex-row">
+    <div className="flex w-full flex-col gap-6 p-4 lg:flex-row">
       <div className="min-w-0 lg:w-2/3">
         <div className="grid gap-6 sm:grid-cols-2">
           <InitiativeStateBreakdown project={project} initiativeId={initiative.id} />
@@ -32,7 +32,7 @@ export default function InitiativeProgress({
       </div>
 
       <aside className="min-w-0 lg:w-1/3">
-        <h3 className="mb-4 text-xs font-medium text-muted-foreground">{t('activity')}</h3>
+        <h2 className="mb-3 text-xs font-medium text-muted-foreground">{t('activity')}</h2>
         <InitiativeActivityFeed initiativeId={initiative.id} projectKey={projectKey} />
       </aside>
     </div>
