@@ -542,7 +542,7 @@ class Migration:
             os.makedirs(self.backup_dir, mode=0o700, exist_ok=True)
             os.chmod(self.backup_dir, 0o700)
         if not resuming:
-            self.record({"id": "start", "kind": "start", "map": os.path.abspath(self.args.map)})
+            self.record({"id": "begin", "kind": "begin", "map": os.path.abspath(self.args.map)})
         self.step_dump_databases()
         self.step_record_units()
         self.step_stop_units()

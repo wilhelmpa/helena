@@ -41,5 +41,15 @@ if not found:
     print("usermod: user '%s' does not exist" % old, file=sys.stderr)
     sys.exit(6)
 open(path, "w", encoding="utf-8").write("\n".join(out) + "\n")
+# Like shadow-utils, a new login name replaces the old one in every group's member list.
+if new and new != old:
+    group_path = os.path.join(root, "etc/group")
+    rows = []
+    for line in open(group_path, encoding="utf-8").read().splitlines():
+        parts = line.split(":")
+        if len(parts) == 4 and parts[3]:
+            parts[3] = ",".join(new if member == old else member for member in parts[3].split(","))
+        rows.append(":".join(parts))
+    open(group_path, "w", encoding="utf-8").write("\n".join(rows) + "\n")
 with open(os.path.join(root, "calls.log"), "a", encoding="utf-8") as log:
     log.write("usermod " + " ".join(args) + "\n")

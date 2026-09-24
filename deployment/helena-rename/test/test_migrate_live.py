@@ -163,11 +163,12 @@ FILES = {
         "volition-plan:x:999:990::/var/lib/volition/plan:/usr/sbin/nologin\n"
         "volition-hermes:x:996:990::/var/lib/volition/hermes:/usr/sbin/nologin\n"
         "volition-google:x:986:983::/var/lib/volition-google:/usr/sbin/nologin\n"
+        "volition-sync:x:987:985::/var/lib/volition/syncthing:/usr/sbin/nologin\n"
     ),
     "etc/group": (
         "root:x:0:\nwilhelmpa:x:1000:\nvolition:x:990:wilhelmpa,volition-sync\n"
         "volition-plan-secrets:x:989:volition-plan\nvolition-private:x:1001:volition-plan,wilhelmpa\n"
-        "volition-google:x:983:\n"
+        "volition-google:x:983:\nvolition-sync:x:985:\n"
     ),
     "etc/volition/plan.env": (
         "DATABASE_URL=postgres://itsaplan_rt:secretpw@127.0.0.1:5432/itsaplan_rt\n"
