@@ -44,7 +44,9 @@
       "field": "字段变更",
       "schedule": "计划任务",
       "manual": "手动任务",
-      "approval": "审批决定"
+      "approval": "审批决定",
+      "workspace": "工作区任务",
+      "digest": "摘要"
     }
   },
   "sessions": {

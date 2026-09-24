@@ -416,7 +416,8 @@
       "webhooks": "Вебхуки",
       "bundles": "Пакети шаблонів",
       "limits": "Ліміти",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "updates": "Оновлення"
     },
     "problems": {
       "external-off": "Завантажиться, щойно зовнішні плагіни буде ввімкнено.",

@@ -23,9 +23,11 @@ import { and, desc, eq, inArray, isNotNull, notInArray } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { host } from '#shared/helena';
 import { systemHealth } from '#modules/god/system-health';
+import { readChatCatalog } from '#modules/agents/chat/service';
 import {
   DigestRefused,
   digestPrompt,
+  hermesAgents,
   digestRunState,
   isModelRefusal,
   parseDigest,
@@ -747,6 +749,30 @@ export async function listUpdateItems(): Promise<UpdateItemView[]> {
     );
 }
 
+// Who writes the summaries and on which model, as the settings resolve today ("Automatisch"
+// included), and what the pickers offer.
+async function digestView(settings: Awaited<ReturnType<typeof getUpdateSettings>>) {
+  const [agent, agents] = await Promise.all([pickDigestAgent(settings), hermesAgents()]);
+  const catalog = agent ? (await readChatCatalog(agent.id)).models : [];
+  const choice = agent
+    ? await pickDigestModel(agent.id, settings)
+    : { model: null, reasoning: settings.reasoning };
+  return {
+    agentId: agent?.id ?? null,
+    agentName: agent
+      ? (agents.find((entry) => entry.id === agent.id)?.name ?? agent.username)
+      : null,
+    model: choice.model,
+    reasoning: choice.reasoning,
+    agents,
+    models: catalog.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      thinkingLevels: entry.thinkingLevels,
+    })),
+  };
+}
+
 export async function updateCenterState() {
   await followActions();
   await collectDigests();
@@ -776,5 +802,6 @@ export async function updateCenterState() {
     items,
     actions,
     settings,
+    digest: await digestView(settings),
   };
 }

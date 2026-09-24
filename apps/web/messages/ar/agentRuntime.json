@@ -44,7 +44,9 @@
       "field": "تغيير حقل",
       "schedule": "مهمة مجدولة",
       "manual": "مهمة يدوية",
-      "approval": "قرار موافقة"
+      "approval": "قرار موافقة",
+      "workspace": "مهمة مساحة العمل",
+      "digest": "ملخص"
     }
   },
   "sessions": {

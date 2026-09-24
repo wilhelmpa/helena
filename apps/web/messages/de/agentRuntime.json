@@ -44,7 +44,9 @@
       "field": "Feldänderung",
       "schedule": "Geplante Aufgabe",
       "manual": "Manuelle Aufgabe",
-      "approval": "Freigabe-Entscheidung"
+      "approval": "Freigabe-Entscheidung",
+      "workspace": "Arbeitsbereich-Auftrag",
+      "digest": "Zusammenfassung"
     }
   },
   "sessions": {

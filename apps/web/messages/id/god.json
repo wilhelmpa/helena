@@ -416,7 +416,8 @@
       "webhooks": "Webhook",
       "bundles": "Paket templat",
       "limits": "Batas",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "updates": "Pembaruan"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

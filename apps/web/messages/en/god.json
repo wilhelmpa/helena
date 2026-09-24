@@ -416,7 +416,8 @@
       "webhooks": "Webhooks",
       "bundles": "Template bundles",
       "limits": "Limits",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "updates": "Updates"
     },
     "problems": {
       "external-off": "Loads once external plugins are switched on.",

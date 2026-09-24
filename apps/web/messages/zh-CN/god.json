@@ -416,7 +416,8 @@
       "webhooks": "Webhook",
       "bundles": "模板包",
       "limits": "限额",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "updates": "更新"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

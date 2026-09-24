@@ -44,7 +44,9 @@
       "field": "Perubahan bidang",
       "schedule": "Tugas terjadwal",
       "manual": "Tugas manual",
-      "approval": "Keputusan persetujuan"
+      "approval": "Keputusan persetujuan",
+      "workspace": "Tugas ruang kerja",
+      "digest": "Ringkasan"
     }
   },
   "sessions": {

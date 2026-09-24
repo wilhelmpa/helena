@@ -122,6 +122,18 @@ export const UpdateCenterResponse = t.Object({
   items: t.Array(UpdateItem),
   actions: t.Array(UpdateAction),
   settings: UpdateSettings,
+  digest: t.Object({
+    agentId: t.Nullable(t.Number({ description: 'The agent the summaries run on now' })),
+    agentName: t.Nullable(t.String()),
+    model: t.Nullable(
+      t.String({ description: 'The model they run on now (null: the agent’s own)' }),
+    ),
+    reasoning: t.Nullable(t.String()),
+    agents: t.Array(t.Object({ id: t.Number(), username: t.String(), name: t.String() })),
+    models: t.Array(
+      t.Object({ id: t.String(), name: t.String(), thinkingLevels: t.Array(t.String()) }),
+    ),
+  }),
   job: UpdateJob,
 });
 

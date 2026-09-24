@@ -416,7 +416,8 @@
       "webhooks": "Webhooks",
       "bundles": "Vorlagen-Pakete",
       "limits": "Limits",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "updates": "Updates"
     },
     "problems": {
       "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",

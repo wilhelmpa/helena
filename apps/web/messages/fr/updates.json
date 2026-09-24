@@ -1,12 +1,105 @@
 {
-  "updateAvailable": "Mise à jour disponible",
-  "releaseHistory": "Historique des versions",
-  "running": "Vous utilisez actuellement {current}.",
-  "badgeRunning": "En cours",
-  "badgeNew": "Nouveau",
-  "check": "Rechercher des mises à jour",
-  "checking": "Recherche",
-  "lastChecked": "Dernière vérification {date}",
-  "allReleases": "Toutes les versions",
-  "noNotes": "Cette version n'a pas de notes."
+  "title": "Mises à jour",
+  "check": "Vérifier maintenant",
+  "checking": "Vérification …",
+  "checkedAt": "Vérifié il y a {time}",
+  "neverChecked": "Pas encore vérifié",
+  "nextRun": "Prochaine vérification {time}",
+  "jobFailed": "La dernière vérification a échoué : {error}",
+  "allCurrent": "Tout est à jour",
+  "count": "{count, plural, one {# mise à jour} other {# mises à jour}}",
+  "securityCount": "{count, plural, one {# mise à jour de sécurité} other {# mises à jour de sécurité}}",
+  "open": "Disponibles",
+  "current": "À jour",
+  "history": "Historique",
+  "noHistory": "Aucune mise à jour lancée pour l’instant.",
+  "helperMissing": "L’assistant de mise à jour n’est pas installé : les paquets Debian et les versions des outils manquent, et seul Hermes peut être mis à jour.",
+  "helperError": "L’assistant de mise à jour n’a pas répondu : {error}",
+  "sourceFailed": "{source} : {error}",
+  "badges": {
+    "security": "Sécurité",
+    "breaking": "Changements incompatibles"
+  },
+  "risk": {
+    "low": "Risque faible",
+    "medium": "Risque moyen",
+    "high": "Risque élevé"
+  },
+  "summary": {
+    "pending": "Résumé en cours …",
+    "none": "Pas encore de résumé.",
+    "failed": "Échec du résumé : {error}",
+    "by": "Résumé avec {model}",
+    "run": "Voir l’exécution"
+  },
+  "notes": "Notes de version",
+  "source": "Source",
+  "apply": "Mettre à jour",
+  "applyGroup": "Tout installer ({count})",
+  "applySecurity": "Installer les mises à jour de sécurité ({count})",
+  "updating": "Mise à jour …",
+  "dialog": {
+    "title": "Mettre à jour {name} ?",
+    "titleGroup": "{count, plural, one {Mettre à jour # paquet ?} other {Mettre à jour # paquets ?}}",
+    "download": "Helena télécharge la nouvelle version chez l’éditeur et l’installe ({source}).",
+    "downloadApt": "apt télécharge les paquets depuis les sources Debian et les installe. Helena sauvegarde d’abord la base de données.",
+    "downloadHermes": "L’assistant Hermes récupère le nouvel état depuis le dépôt Hermes et le réinstalle.",
+    "wayBack": "Retour arrière : la version actuelle est conservée et peut être restaurée.",
+    "wayBackApt": "Retour arrière : apt n’en a pas d’automatique. Le journal indique ensuite la commande pour les anciennes versions.",
+    "wayBackHermes": "Retour arrière : en cas d’échec, l’assistant restaure lui-même l’état précédent.",
+    "approval": "« Mettre à jour maintenant » autorise ce téléchargement et l’installation.",
+    "confirm": "Mettre à jour maintenant"
+  },
+  "action": {
+    "running": "En cours",
+    "done": "Terminé",
+    "failed": "Échec",
+    "log": "Journal",
+    "backup": "Base de données sauvegardée : {path}",
+    "rollback": "Retour arrière : {command}",
+    "services": "Services après la mise à jour",
+    "failedUnits": "Services en échec : {units}",
+    "reboot": "Un redémarrage est recommandé.",
+    "started": "Mise à jour lancée"
+  },
+  "sources": {
+    "hermes": "Hermes",
+    "cliRuntimes": "Environnements d’agents",
+    "apt": "Paquets Debian",
+    "hostTools": "Outils",
+    "helena": "Helena"
+  },
+  "hints": {
+    "manual": "Pas d’installateur dans Helena : mis à jour à la main.",
+    "notInstalled": "Non installé.",
+    "deploy": "Mis à jour avec le déploiement."
+  },
+  "settings": {
+    "title": "Paramètres",
+    "schedule": "Vérifier automatiquement",
+    "scheduleDescription": "Helena cherche de nouvelles versions selon ce calendrier.",
+    "cron": "Calendrier",
+    "timezone": "Fuseau horaire",
+    "summarize": "Résumer avec l’IA",
+    "summarizeDescription": "Un petit modèle résume les nouvelles notes de version et évalue le risque.",
+    "agent": "Agent",
+    "model": "Modèle",
+    "reasoning": "Raisonnement",
+    "automatic": "Automatique",
+    "automaticAgent": "Automatique ({name})",
+    "automaticModel": "Automatique ({model})",
+    "agentModel": "Modèle de l’agent",
+    "noAgent": "Aucun agent Hermes",
+    "claudeChannel": "Canal Claude Code",
+    "channels": {
+      "latest": "Dernière",
+      "stable": "Stable"
+    },
+    "save": "Enregistrer",
+    "saved": "Enregistré"
+  },
+  "home": {
+    "more": "Toutes les mises à jour",
+    "empty": "Tout est à jour"
+  }
 }

@@ -416,7 +416,8 @@
       "webhooks": "Webhooks",
       "bundles": "Paquets de modèles",
       "limits": "Limites",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "updates": "Mises à jour"
     },
     "problems": {
       "external-off": "Se charge une fois les plugins externes activés.",

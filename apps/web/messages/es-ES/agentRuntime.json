@@ -44,7 +44,9 @@
       "field": "Cambio de campo",
       "schedule": "Tarea programada",
       "manual": "Tarea manual",
-      "approval": "Decisión de aprobación"
+      "approval": "Decisión de aprobación",
+      "workspace": "Tarea del espacio de trabajo",
+      "digest": "Resumen"
     }
   },
   "sessions": {

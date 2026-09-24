@@ -416,7 +416,8 @@
       "webhooks": "خطافات الويب",
       "bundles": "حزم القوالب",
       "limits": "الحدود",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "updates": "التحديثات"
     },
     "problems": {
       "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",

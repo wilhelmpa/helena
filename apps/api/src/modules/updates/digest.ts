@@ -1,4 +1,4 @@
-import { agentRun, aiAgent, db, projectMember } from '@repo/db';
+import { agentRun, aiAgent, db, projectMember, user } from '@repo/db';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { isUpdateRisk, type UpdateRisk } from '@helena/sdk';
 import { readChatCatalog, type ChatCatalogModel } from '#modules/agents/chat/service';
@@ -178,6 +178,24 @@ export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestA
     .limit(1);
   if (!membership) return null;
   return { id: chosen.id, username: chosen.username, projectId: membership.projectId };
+}
+
+// The Hermes agents a summary can run on, for the settings' picker.
+export async function hermesAgents(): Promise<{ id: number; username: string; name: string }[]> {
+  const rows = await db
+    .select({
+      id: aiAgent.id,
+      username: aiAgent.username,
+      name: user.name,
+      runtimeState: aiAgent.runtimeState,
+    })
+    .from(aiAgent)
+    .innerJoin(user, eq(user.id, aiAgent.userId))
+    .where(and(eq(aiAgent.kind, 'external'), eq(aiAgent.template, false)))
+    .orderBy(asc(aiAgent.id));
+  return rows
+    .filter((row) => (row.runtimeState as { adapter?: unknown } | null)?.adapter === 'hermes')
+    .map(({ id, username, name }) => ({ id, username, name: name || username }));
 }
 
 type CatalogEntry = ChatCatalogModel & { listed?: boolean; verified?: boolean; variantOf?: string };

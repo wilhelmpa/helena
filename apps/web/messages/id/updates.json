@@ -1,12 +1,105 @@
 {
-  "updateAvailable": "Pembaruan tersedia",
-  "releaseHistory": "Riwayat rilis",
-  "running": "Anda menjalankan {current}.",
-  "badgeRunning": "Berjalan",
-  "badgeNew": "Baru",
-  "check": "Periksa pembaruan",
-  "checking": "Memeriksa",
-  "lastChecked": "Terakhir diperiksa",
-  "allReleases": "Semua rilis",
-  "noNotes": "Rilis ini tidak memiliki catatan."
+  "title": "Pembaruan",
+  "check": "Periksa sekarang",
+  "checking": "Memeriksa …",
+  "checkedAt": "Diperiksa {time} lalu",
+  "neverChecked": "Belum diperiksa",
+  "nextRun": "Pemeriksaan berikutnya {time}",
+  "jobFailed": "Pemeriksaan terakhir gagal: {error}",
+  "allCurrent": "Semua sudah terbaru",
+  "count": "{count, plural, other {# pembaruan}}",
+  "securityCount": "{count, plural, other {# pembaruan keamanan}}",
+  "open": "Tersedia",
+  "current": "Terbaru",
+  "history": "Riwayat",
+  "noHistory": "Belum ada pembaruan yang dimulai.",
+  "helperMissing": "Pembantu pembaruan belum terpasang: paket Debian dan versi alat tidak tersedia, dan hanya Hermes yang dapat diperbarui.",
+  "helperError": "Pembantu pembaruan tidak menjawab: {error}",
+  "sourceFailed": "{source}: {error}",
+  "badges": {
+    "security": "Keamanan",
+    "breaking": "Perubahan tidak kompatibel"
+  },
+  "risk": {
+    "low": "Risiko rendah",
+    "medium": "Risiko sedang",
+    "high": "Risiko tinggi"
+  },
+  "summary": {
+    "pending": "Sedang diringkas …",
+    "none": "Belum ada ringkasan.",
+    "failed": "Ringkasan gagal: {error}",
+    "by": "Diringkas dengan {model}",
+    "run": "Lihat eksekusi"
+  },
+  "notes": "Catatan rilis",
+  "source": "Sumber",
+  "apply": "Perbarui",
+  "applyGroup": "Pasang semua ({count})",
+  "applySecurity": "Pasang pembaruan keamanan ({count})",
+  "updating": "Memperbarui …",
+  "dialog": {
+    "title": "Perbarui {name}?",
+    "titleGroup": "{count, plural, other {Perbarui # paket?}}",
+    "download": "Helena mengunduh versi baru dari vendor dan memasangnya ({source}).",
+    "downloadApt": "apt mengunduh paket dari sumber Debian dan memasangnya. Sebelumnya Helena mencadangkan basis data.",
+    "downloadHermes": "Pembantu Hermes mengambil keadaan baru dari repositori Hermes dan memasangnya ulang.",
+    "wayBack": "Jalan kembali: versi saat ini disimpan dan dapat dipulihkan.",
+    "wayBackApt": "Jalan kembali: apt tidak punya yang otomatis. Setelahnya log menyebutkan perintah untuk versi lama.",
+    "wayBackHermes": "Jalan kembali: jika ada yang gagal, pembantu memulihkan keadaan sebelumnya sendiri.",
+    "approval": "“Perbarui sekarang” menyetujui unduhan dan pemasangan ini.",
+    "confirm": "Perbarui sekarang"
+  },
+  "action": {
+    "running": "Berjalan",
+    "done": "Selesai",
+    "failed": "Gagal",
+    "log": "Log",
+    "backup": "Basis data dicadangkan: {path}",
+    "rollback": "Jalan kembali: {command}",
+    "services": "Layanan sesudahnya",
+    "failedUnits": "Layanan gagal: {units}",
+    "reboot": "Disarankan untuk memulai ulang.",
+    "started": "Pembaruan dimulai"
+  },
+  "sources": {
+    "hermes": "Hermes",
+    "cliRuntimes": "Runtime agen",
+    "apt": "Paket Debian",
+    "hostTools": "Alat",
+    "helena": "Helena"
+  },
+  "hints": {
+    "manual": "Tanpa pemasang di Helena: diperbarui secara manual.",
+    "notInstalled": "Tidak terpasang.",
+    "deploy": "Diperbarui bersama deploy."
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "schedule": "Periksa otomatis",
+    "scheduleDescription": "Helena mencari versi baru sesuai jadwal ini.",
+    "cron": "Jadwal",
+    "timezone": "Zona waktu",
+    "summarize": "Ringkas dengan AI",
+    "summarizeDescription": "Model kecil meringkas catatan rilis baru dan menilai risikonya.",
+    "agent": "Agen",
+    "model": "Model",
+    "reasoning": "Penalaran",
+    "automatic": "Otomatis",
+    "automaticAgent": "Otomatis ({name})",
+    "automaticModel": "Otomatis ({model})",
+    "agentModel": "Model agen",
+    "noAgent": "Tidak ada agen Hermes",
+    "claudeChannel": "Kanal Claude Code",
+    "channels": {
+      "latest": "Terbaru",
+      "stable": "Stabil"
+    },
+    "save": "Simpan",
+    "saved": "Tersimpan"
+  },
+  "home": {
+    "more": "Semua pembaruan",
+    "empty": "Semua sudah terbaru"
+  }
 }

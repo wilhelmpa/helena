@@ -1,12 +1,105 @@
 {
-  "updateAvailable": "Actualización disponible",
-  "releaseHistory": "Historial de versiones",
-  "running": "Estás usando {current}.",
-  "badgeRunning": "En uso",
-  "badgeNew": "Nueva",
-  "check": "Comprobar actualizaciones",
-  "checking": "Comprobando",
-  "lastChecked": "Última comprobación",
-  "allReleases": "Todas las versiones",
-  "noNotes": "Esta versión no tiene notas."
+  "title": "Actualizaciones",
+  "check": "Comprobar ahora",
+  "checking": "Comprobando …",
+  "checkedAt": "Comprobado hace {time}",
+  "neverChecked": "Aún no comprobado",
+  "nextRun": "Próxima comprobación {time}",
+  "jobFailed": "La última comprobación falló: {error}",
+  "allCurrent": "Todo está al día",
+  "count": "{count, plural, one {# actualización} other {# actualizaciones}}",
+  "securityCount": "{count, plural, one {# actualización de seguridad} other {# actualizaciones de seguridad}}",
+  "open": "Disponibles",
+  "current": "Al día",
+  "history": "Historial",
+  "noHistory": "Todavía no se ha iniciado ninguna actualización.",
+  "helperMissing": "El asistente de actualizaciones no está instalado: faltan los paquetes de Debian y las versiones de las herramientas, y solo se puede actualizar Hermes.",
+  "helperError": "El asistente de actualizaciones no respondió: {error}",
+  "sourceFailed": "{source}: {error}",
+  "badges": {
+    "security": "Seguridad",
+    "breaking": "Cambios incompatibles"
+  },
+  "risk": {
+    "low": "Riesgo bajo",
+    "medium": "Riesgo medio",
+    "high": "Riesgo alto"
+  },
+  "summary": {
+    "pending": "Resumiendo …",
+    "none": "Aún no hay resumen.",
+    "failed": "El resumen falló: {error}",
+    "by": "Resumido con {model}",
+    "run": "Ver ejecución"
+  },
+  "notes": "Notas de la versión",
+  "source": "Origen",
+  "apply": "Actualizar",
+  "applyGroup": "Instalar todo ({count})",
+  "applySecurity": "Instalar actualizaciones de seguridad ({count})",
+  "updating": "Actualizando …",
+  "dialog": {
+    "title": "¿Actualizar {name}?",
+    "titleGroup": "{count, plural, one {¿Actualizar # paquete?} other {¿Actualizar # paquetes?}}",
+    "download": "Helena descarga la nueva versión del fabricante y la instala ({source}).",
+    "downloadApt": "apt descarga los paquetes de las fuentes de Debian y los instala. Antes, Helena hace una copia de seguridad de la base de datos.",
+    "downloadHermes": "El asistente de Hermes obtiene el nuevo estado del repositorio de Hermes y lo reinstala.",
+    "wayBack": "Vuelta atrás: la versión actual se conserva y se puede restaurar.",
+    "wayBackApt": "Vuelta atrás: apt no tiene una automática. Después, el registro indica el comando para las versiones anteriores.",
+    "wayBackHermes": "Vuelta atrás: si algo falla, el asistente restaura por sí mismo el estado anterior.",
+    "approval": "«Actualizar ahora» autoriza esta descarga y la instalación.",
+    "confirm": "Actualizar ahora"
+  },
+  "action": {
+    "running": "En curso",
+    "done": "Hecho",
+    "failed": "Fallido",
+    "log": "Registro",
+    "backup": "Base de datos respaldada: {path}",
+    "rollback": "Vuelta atrás: {command}",
+    "services": "Servicios después",
+    "failedUnits": "Servicios con fallo: {units}",
+    "reboot": "Se recomienda reiniciar.",
+    "started": "Actualización iniciada"
+  },
+  "sources": {
+    "hermes": "Hermes",
+    "cliRuntimes": "Entornos de agentes",
+    "apt": "Paquetes de Debian",
+    "hostTools": "Herramientas",
+    "helena": "Helena"
+  },
+  "hints": {
+    "manual": "Sin instalador en Helena: se actualiza a mano.",
+    "notInstalled": "No instalado.",
+    "deploy": "Se actualiza con el despliegue."
+  },
+  "settings": {
+    "title": "Ajustes",
+    "schedule": "Comprobar automáticamente",
+    "scheduleDescription": "Helena busca nuevas versiones según esta programación.",
+    "cron": "Programación",
+    "timezone": "Zona horaria",
+    "summarize": "Resumir con IA",
+    "summarizeDescription": "Un modelo pequeño resume las nuevas notas de versión y valora el riesgo.",
+    "agent": "Agente",
+    "model": "Modelo",
+    "reasoning": "Razonamiento",
+    "automatic": "Automático",
+    "automaticAgent": "Automático ({name})",
+    "automaticModel": "Automático ({model})",
+    "agentModel": "Modelo del agente",
+    "noAgent": "Ningún agente Hermes",
+    "claudeChannel": "Canal de Claude Code",
+    "channels": {
+      "latest": "Más reciente",
+      "stable": "Estable"
+    },
+    "save": "Guardar",
+    "saved": "Guardado"
+  },
+  "home": {
+    "more": "Todas las actualizaciones",
+    "empty": "Todo está al día"
+  }
 }
