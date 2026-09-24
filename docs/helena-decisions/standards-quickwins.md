@@ -15,6 +15,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-17 | done | see git log | `negotiator` 1.1 + `@formatjs/intl-localematcher` 0.8 (MIT), in `@helena/locales` |
 | WEB-18 | done | see git log | no library |
 | WEB-19 | done | see git log | no library (Puppeteer's US layout as reference) |
+| WEB-08 / JOB-04 | done | see git log | `croner` 10.0.1 (already the API's) |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -102,3 +103,10 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 
 - `utils/browserLive.ts` `virtualKeyCode()` builds the Windows virtual key code DevTools wants from `KeyboardEvent.key` and `.code` instead of passing the deprecated `keyCode` on. Deviation from "map from `code`" alone: a letter or digit follows `key` (what the person's layout typed), because mapping German Z (physical `KeyY`) by place would turn Ctrl+Z (undo) into Ctrl+Y (redo). A letter of another script (Russian м) and every other key follow the US place of `code`, which is what browsers themselves report, and named keys (Enter, arrows, F1–F24) follow `key`. The raw `keyCode` is only the last fallback (never 229).
 - The paste-shortcut check uses the same code, so Ctrl+V is found when a browser reports keyCode 0.
+
+## WEB-08 / JOB-04: croner decides what a schedule is
+
+- `features/routines/utils/cronDescription.ts` (the English describer, 146 lines) is deleted: its text was only used to decide validity and was never shown; the dialog shows the translated describer (`cronDescribe.ts` with the reader's words).
+- `parseScheduleInput()` validates the resulting cron with croner, the library and options the API uses (`new Cron(expr, {paused: true})`), so the form accepts exactly what the server does. A cron the field parser can read is still normalized (names to numbers); one only croner reads (`L`, `5#2`) is kept as typed and shown raw.
+- Kept: the text→cron parser (English and German, no maintained library does this) and the translated describer. `cronstrue` was optional in the audit and is not added: the describer already speaks all ten languages through the message files.
+- For hub/native-engine (JOB-04 "agree the cron syntax"): the UI now validates with croner 10 and the same options as `apps/api/src/modules/routines/cron.ts`; keep croner on the engine side.
