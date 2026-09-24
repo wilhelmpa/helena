@@ -21,7 +21,7 @@ import { activeTool, composerActivity, pendingChoices } from '../../utils/compos
 import { useAutoSpeak } from '../../hooks/useAutoSpeak';
 import { messageText } from '../../utils/chatMessages';
 import { speak } from '../../utils/speak';
-import type { QueuedMessage } from './ChatQueuedMessages';
+import type { QueuedMessage } from './ChatComposerQueue';
 
 type Queued = QueuedMessage & { options: PlanSendOptions; metadata: PlanChatMetadata };
 
@@ -102,6 +102,10 @@ export default function ChatThreadView({
       setModel({ model: data.model, thinkingLevel: data.thinkingLevel, chosen: false });
     }
   }, [summary.data, model]);
+  // The member's own message open for editing, if any (the pencil under it, or ↑ in the
+  // empty composer for the last one).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const lastOwnMessage = plan.messages.findLast((message) => message.role === 'user');
   const state = states.get(agent.id);
   const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
   const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
@@ -174,6 +178,8 @@ export default function ChatThreadView({
           agent={agent}
           projectKey={projectKey}
           threadId={threadId}
+          editingId={editingId}
+          onEditingChange={setEditingId}
           onShowArtifact={onArtifact}
         />
       )}
@@ -216,6 +222,7 @@ export default function ChatThreadView({
         onContinue={() => void plan.send(t('interrupted.continuePrompt'), { agentId: agent.id })}
         onResend={() => void plan.retrySend()}
         onUndo={plan.undo}
+        onEditLast={lastOwnMessage ? () => setEditingId(lastOwnMessage.id) : undefined}
       />
     </div>
   );

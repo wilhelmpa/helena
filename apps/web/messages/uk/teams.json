@@ -779,7 +779,8 @@
         "model": "модель",
         "reasoning": "міркування"
       }
-    }
+    },
+    "chatTemplate": "Шаблон сам не запускається. Додайте його до проєкту як агента, щоб спробувати тут."
   },
   "members": {
     "roleSaved": "{name} тепер {role}",
@@ -804,5 +805,22 @@
   "settingState": {
     "on": "Увімкнено",
     "off": "Вимкнено"
+  },
+  "templateBundles": {
+    "importAction": "Імпортувати шаблони",
+    "exportAction": "Експортувати шаблони",
+    "importTitle": "Імпорт шаблонів",
+    "counts": "{agents} шаблонів агентів · {skills} навичок · {servers} MCP-серверів",
+    "chooseFile": "Вибрати файл пакета",
+    "fileChosen": "Файл: {name}",
+    "dryRun": "Лише перевірити (нічого не змінювати)",
+    "update": "Перезаписати відмінності",
+    "check": "Перевірити",
+    "import": "Імпортувати",
+    "close": "Закрити",
+    "failed": "Не вдалося.",
+    "notJson": "Файл не є пакетом JSON.",
+    "summary": "{written} записано · {unchanged} без змін · {drift} відрізняється · {warnings} попереджень",
+    "summaryDryRun": "Лише перевірка, нічого не змінено · {unchanged} без змін · {drift} відрізняється · {warnings} попереджень"
   }
 }

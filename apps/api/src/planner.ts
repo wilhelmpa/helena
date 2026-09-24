@@ -47,6 +47,8 @@ import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
 import { godRoutes } from './modules/god';
+import { pluginAdminRoutes, pluginSlotRoutes } from './modules/plugins';
+import { templateBundleRoutes } from './modules/template-bundles';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
@@ -183,4 +185,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(deviceSyncRoutes)
   .use(ownerTerminalRoutes)
   .use(settingsRoutes)
-  .use(godRoutes);
+  .use(godRoutes)
+  .use(pluginAdminRoutes)
+  .use(pluginSlotRoutes)
+  .use(templateBundleRoutes);

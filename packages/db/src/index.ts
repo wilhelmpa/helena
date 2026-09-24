@@ -1,4 +1,4 @@
-export { db } from './client';
+export { db, listen } from './client';
 export * from './schema';
 export * from './permissions';
 export { getSetting, getOrCreateSetting, setSetting } from './settings';
@@ -34,3 +34,19 @@ export {
   sealCredential,
 } from './credential-crypto';
 export { reencryptAll } from './reencrypt';
+export {
+  WEBHOOK_CONSUMER_ID,
+  WEBHOOK_EVENT_PATTERNS,
+  WEBHOOK_EVENT_SHAPE,
+  fanOutWebhooks,
+  webhookEventOf,
+  type WebhookEventName,
+} from './domains/webhook-fanout';
+export {
+  DEFAULT_PLUGIN_SETTINGS,
+  PLUGIN_SETTINGS_KEY,
+  getPluginSettings,
+  pluginsDir,
+  setPluginSettings,
+  type PluginSettings,
+} from './domains/plugins';

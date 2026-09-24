@@ -1,76 +1,25 @@
 // The contracts of Helena's extension points that connectors use: action categories, the
-// connector and its tools, and policy evaluators. They mirror `@helena/sdk`
-// (packages/sdk on hub/framework) name for name, so that once the SDK lands this file
-// becomes a re-export of it and nothing else changes.
+// connector and its tools, and policy evaluators. The action categories and the MCP
+// annotations come from @helena/sdk itself (one list for all of Helena, decision D-C1). The
+// connector, tool and policy shapes below are the access center's own until its Google
+// connector registers through the SDK's connector registry (see the decision record).
 
-// mirror of @helena/sdk ACTION_CATEGORIES (orchestrator decision D-C1): nine categories in
-// the order of their risk.
-export const ACTION_CATEGORIES = [
-  // Looks, changes nothing.
-  'read',
-  // Posts status or results into Helena itself (a comment on its own task, a run report).
-  'report',
-  // Changes data; undoable.
-  'write',
-  // Reaches a person or system outside Helena: a mail, an invitation.
-  'send',
-  // Makes something visible to others: a shared file, a post.
-  'publish',
-  // Runs code or a command.
-  'execute',
-  // Removes something.
-  'delete',
-  // Spends money.
-  'pay',
-  // Changes logins, keys or grants.
-  'credentials',
-] as const;
+export {
+  ACTION_CATEGORIES,
+  actionRank,
+  annotationsForCategory,
+  categoryFromAnnotations,
+  isActionCategory,
+  type ActionCategory,
+} from '@helena/sdk';
+import type { ActionCategory } from '@helena/sdk';
 
-export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
-
-export function isActionCategory(value: unknown): value is ActionCategory {
-  return typeof value === 'string' && (ACTION_CATEGORIES as readonly string[]).includes(value);
-}
-
-export function actionRank(category: ActionCategory): number {
-  return ACTION_CATEGORIES.indexOf(category);
-}
-
-// The standard MCP tool annotations a category implies.
+// The standard MCP tool annotations (the shape @helena/sdk's helpers take and return).
 export interface ToolAnnotations {
   readOnlyHint?: boolean;
   destructiveHint?: boolean;
   idempotentHint?: boolean;
   openWorldHint?: boolean;
-}
-
-export function annotationsForCategory(category: ActionCategory): ToolAnnotations {
-  switch (category) {
-    case 'read':
-      return { readOnlyHint: true, destructiveHint: false };
-    case 'report':
-    case 'write':
-      return { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
-    case 'send':
-    case 'publish':
-    case 'pay':
-      return { readOnlyHint: false, destructiveHint: false, openWorldHint: true };
-    case 'execute':
-      return { readOnlyHint: false, destructiveHint: true, openWorldHint: true };
-    case 'delete':
-    case 'credentials':
-      return { readOnlyHint: false, destructiveHint: true };
-  }
-}
-
-// A tool that declares no category counts by its annotations, with the MCP defaults for
-// what it leaves out (destructive, open world): without any it is a `send`, never a
-// `write`.
-export function categoryFromAnnotations(annotations: ToolAnnotations | undefined): ActionCategory {
-  if (annotations?.readOnlyHint === true) return 'read';
-  if (annotations?.destructiveHint ?? true) return annotations ? 'delete' : 'send';
-  if (annotations?.openWorldHint ?? true) return 'send';
-  return 'write';
 }
 
 export type JsonSchema = Record<string, unknown>;

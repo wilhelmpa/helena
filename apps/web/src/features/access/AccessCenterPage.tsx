@@ -72,7 +72,7 @@ export default function AccessCenterPage({ tab }: { tab: AccessTab }) {
   else if (tab === 'log') body = <AccessLogSection teamId={teamId} leading={leading} />;
   else {
     body = (
-      <SectionPageView title={t('tabs.mail')} description="">
+      <SectionPageView title={t('tabs.mail')} description="" wide>
         <MailAccountSettings teamId={teamId} page toolbarStart={leading} />
       </SectionPageView>
     );

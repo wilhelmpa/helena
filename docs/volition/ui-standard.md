@@ -21,3 +21,8 @@ The owner's rules, in one place. Every page follows them; a page that does not i
 
 ## Mobile
 - Must look good at 390px: header = toggle, page name, tools; page toolbar in the bar below; no horizontal page scroll; touch targets ≥ 40px (globals.css raises controls on coarse pointers).
+
+## Spacing (owner, 2026-09-24: "Padding im Hauptbereich überall homogen wie beim Dashboard"; "Dashboard-Grid identisch zum Rand")
+- The main area has a 16px gutter on every side at every width (`PAGE_GUTTER_CLASS`). No centred columns, no `xl:px-12`.
+- Lists, tables, grids and overviews use the whole width (`SectionPageView wide`). Forms keep the left-aligned column (`SECTION_COLUMN_CLASS`), so the left edge is the same everywhere.
+- Gaps between cards and grid cells are 16px, the same as the gutter (dashboard `COL_GAP`/`ROW_GAP`, Home grids).

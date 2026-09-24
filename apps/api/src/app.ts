@@ -36,6 +36,8 @@ import { HttpError } from './shared/lib';
 import { issueProxyToken } from './modules/owner-terminal/service';
 import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
 import pkg from '../../../package.json';
+import { loadBuiltinPlugins } from '#modules/plugins/builtin';
+import { pluginUiRoutes } from './modules/plugins';
 
 const apiUrl = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
 const appUrl = (process.env.APP_URL?.split(',')[0]?.trim() || 'http://localhost:3001').replace(
@@ -88,7 +90,8 @@ export const app = new Elysia()
       origin: trustedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+      // Last-Event-ID: a chat stream's reader resumes with it (the SSE standard's way).
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'Last-Event-ID'],
     }),
   )
   .onAfterHandle({ as: 'global' }, ({ request, response }) =>
@@ -480,6 +483,8 @@ export const app = new Elysia()
   })
   // Inbound repository webhook receiver (authenticated by its per-project secret).
   .use(gitWebhookRoutes)
+  // Plugin UI pages for sandboxed frames: static, public like the web app's own files.
+  .use(pluginUiRoutes)
   // SCIM 2.0 provisioning (authenticated by the instance SCIM bearer token). Mounted
   // here rather than under the planner: the planner's session guard would answer 401
   // before the bearer check runs, and its error handler emits a body SCIM does not
@@ -497,6 +502,10 @@ mountMcp(app);
 // tools from the same mcpTool() routes and dispatches them in process. It cannot
 // import this module without a cycle, so the reference is passed here.
 setMcpApp(app);
+
+// Helena's own features as internal plugins (@helena/sdk registries): the tool
+// integrations and the MCP route tools. External plugins load at start (index.ts).
+await loadBuiltinPlugins(app);
 
 // App type — useful for Eden Treaty (type-safe client) on the frontend and in tests.
 export type App = typeof app;

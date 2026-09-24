@@ -24,7 +24,7 @@ export default function HomePage() {
   return (
     <Shell globalHome>
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 p-4">
+        <div className="flex w-full flex-col gap-4 p-4">
           <header className="flex flex-col gap-3">
             <div className="px-1">
               <h1 className="text-base font-semibold">{t('homeGreeting')}</h1>
@@ -33,7 +33,7 @@ export default function HomePage() {
             <HomeKpiRow />
           </header>
 
-          <div className="grid grid-cols-1 gap-x-4 gap-y-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <HomeNeedsYou />
             <HomeAgentsNow />
           </div>
@@ -43,7 +43,7 @@ export default function HomePage() {
           {(projects.data?.length ?? 0) > 0 && (
             <section className="min-w-0">
               <SectionLabel>{t('projects')}</SectionLabel>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-2">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
                 {projects.data?.map((project) => (
                   <HomeProjectCard key={project.id} project={project} />
                 ))}

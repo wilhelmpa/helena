@@ -127,14 +127,30 @@ export function mseVideo(
       element.playbackRate = lag > LIVE_EDGE_S ? CATCH_UP_RATE : 1;
     }
     const start = ranges.start(0);
-    if (queue.length === 0 && element.currentTime - start > 2 * KEEP_S) {
-      buffer.remove(start, element.currentTime - KEEP_S);
+    // Only between two appends: a SourceBuffer still busy with one throws on remove (the
+    // uncaught InvalidStateError the owner saw as a Next error). The next frame tries again.
+    if (
+      queue.length === 0 &&
+      !buffer.updating &&
+      source.readyState === 'open' &&
+      element.currentTime - start > 2 * KEEP_S
+    ) {
+      try {
+        buffer.remove(start, element.currentTime - KEEP_S);
+      } catch {
+        // Closed or busy in the meantime; nothing to drop this frame.
+      }
     }
   };
   const append = () => {
-    if (closed || !buffer || buffer.updating) return;
+    if (closed || !buffer || buffer.updating || source.readyState !== 'open') return;
     const next = queue.shift();
-    if (next) buffer.appendBuffer(next as Uint8Array<ArrayBuffer>);
+    if (!next) return;
+    try {
+      buffer.appendBuffer(next as Uint8Array<ArrayBuffer>);
+    } catch {
+      // The source ended or was removed (a reconnect replaces it); the new one starts over.
+    }
   };
   source.addEventListener(
     'sourceopen',

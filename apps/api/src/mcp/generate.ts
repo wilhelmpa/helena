@@ -1,3 +1,4 @@
+import { categoryFromAnnotations, type ActionCategory } from '@helena/sdk';
 import type { Permission } from '#shared/guards';
 import type { McpApp } from './types';
 import { outputSchema, type McpOutputSchema } from './result';
@@ -40,13 +41,13 @@ export interface McpRouteTool {
   inputSchema: McpInputSchema;
   outputSchema: McpOutputSchema;
   annotations: McpToolAnnotations;
+  // What calling it does (@helena/sdk action category): declared on the route, or what
+  // its annotations imply (GET reads, DELETE deletes, the rest writes).
+  category: ActionCategory;
   // The cell of the role matrix the route's guard asserts, published by the guard as
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
   permission?: Permission;
-  // The action category of the tool (read, write, send …), for the policy and for MCP
-  // clients as `_meta["helena/action"]`. Absent on a tool that does not declare one.
-  category?: string;
   // The connector whose accounts the tool acts with. The tool is listed only to an
   // agent that holds a grant on one of them.
   connector?: string;
@@ -66,17 +67,31 @@ export interface McpRouteTool {
 // `x-mcp` is an OpenAPI extension key, so it rides along in the route's detail,
 // is read back from app.routes by generateRouteTools, and does not show up as a
 // real field in the REST/OpenAPI docs.
-export interface McpToolOptions {
-  category?: string;
-  connector?: string;
-}
-
+//
+// The third argument is the action category where the annotations understate it: a POST
+// that starts an agent run executes, one that mails an invite sends. The fourth names the
+// connector whose accounts the tool acts with (see McpRouteTool.connector).
 export function mcpTool(
   tool: string,
   annotations?: McpToolAnnotations,
-  options?: McpToolOptions,
-): { 'x-mcp': { tool: string; annotations?: McpToolAnnotations } & McpToolOptions } {
-  return { 'x-mcp': { tool, annotations, ...options } };
+  category?: ActionCategory,
+  connector?: string,
+): {
+  'x-mcp': {
+    tool: string;
+    annotations?: McpToolAnnotations;
+    category?: ActionCategory;
+    connector?: string;
+  };
+} {
+  return {
+    'x-mcp': {
+      tool,
+      annotations,
+      ...(category ? { category } : {}),
+      ...(connector ? { connector } : {}),
+    },
+  };
 }
 
 // What the HTTP method alone says about a route. A GET only reads; a DELETE
@@ -174,13 +189,23 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       | {
           summary?: string;
           description?: string;
-          'x-mcp'?: { tool?: string; annotations?: McpToolAnnotations } & McpToolOptions;
+          'x-mcp'?: {
+            tool?: string;
+            annotations?: McpToolAnnotations;
+            category?: ActionCategory;
+            connector?: string;
+          };
           'x-permission'?: Permission;
         }
       | undefined;
     const tool = detail?.['x-mcp']?.tool;
     if (!tool) continue;
     const pathParams = extractPathParams(route.path);
+    const annotations: McpToolAnnotations = {
+      ...methodAnnotations(route.method),
+      openWorldHint: false,
+      ...detail?.['x-mcp']?.annotations,
+    };
     tools.push({
       name: tool,
       // The MCP tool description is the full text an LLM reads to pick a tool.
@@ -194,15 +219,11 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       inputSchema: mergeInputSchema(hooks, pathParams),
       outputSchema: outputSchema(hooks.response),
       permission: detail?.['x-permission'],
-      ...(detail?.['x-mcp']?.category && { category: detail['x-mcp'].category }),
       ...(detail?.['x-mcp']?.connector && { connector: detail['x-mcp'].connector }),
       // Every tool acts on this tracker's own data and reaches nothing outside it,
       // so openWorldHint is false throughout; the route may still override it.
-      annotations: {
-        ...methodAnnotations(route.method),
-        openWorldHint: false,
-        ...detail?.['x-mcp']?.annotations,
-      },
+      annotations,
+      category: detail?.['x-mcp']?.category ?? categoryFromAnnotations(annotations),
     });
   }
   return tools;
