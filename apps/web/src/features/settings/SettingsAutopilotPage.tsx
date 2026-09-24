@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -58,10 +58,9 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
 
   const [draft, setDraft] = useState<Record<BudgetCellKey, string> | null>(null);
   const stored = useMemo(() => (data ? draftFrom(data.budgets) : null), [data]);
-  // A fresh read replaces the draft only when nothing was typed since.
-  useEffect(() => {
-    setDraft((current) => current ?? stored);
-  }, [stored]);
+  // The first read fills the draft; later reads leave what was typed (adjusted during
+  // render, not in an effect).
+  if (draft === null && stored !== null) setDraft(stored);
   const changes = data && draft ? changedBudgets(data.budgets, draft) : [];
   const dirty = changes === null || changes.length > 0;
 

@@ -169,12 +169,15 @@ export function useRunEvents(teamId: number, agentId: number, runId: number | nu
   const [events, setEvents] = useState<AgUiEvent[]>([]);
   const [loaded, setLoaded] = useState(false);
   const after = useRef(0);
-  useEffect(() => {
+  // Another run starts from an empty timeline (adjusted during render, not in an effect).
+  const [shownRun, setShownRun] = useState(runId);
+  if (shownRun !== runId) {
+    setShownRun(runId);
     setEvents([]);
     setLoaded(false);
-    after.current = 0;
-  }, [runId]);
+  }
   useEffect(() => {
+    after.current = 0;
     if (runId == null) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;

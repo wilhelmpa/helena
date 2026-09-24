@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Gauge } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
@@ -59,9 +59,9 @@ export default function AgentAutopilotSection({
 
   const [draft, setDraft] = useState<Record<BudgetCellKey, string> | null>(null);
   const stored = useMemo(() => (data ? draftFrom(data.budgets) : null), [data]);
-  useEffect(() => {
-    setDraft((current) => current ?? stored);
-  }, [stored]);
+  // The first read fills the draft; later reads leave what was typed (adjusted during
+  // render, not in an effect).
+  if (draft === null && stored !== null) setDraft(stored);
   const changes = data && draft ? changedBudgets(data.budgets, draft) : [];
   const dirty = changes === null || changes.length > 0;
 
@@ -168,18 +168,19 @@ export default function AgentAutopilotSection({
                 </SelectContent>
               </Select>
             </div>
-            <label className="flex items-start gap-3 rounded-md border border-sidebar-border bg-card px-3 py-2">
+            <div className="flex items-start gap-3 rounded-md border border-sidebar-border bg-card px-3 py-2">
               <Switch
+                id={`agent-${agent.id}-autopilot-raise`}
                 checked={data.raise}
                 disabled={!editable || data.agentLevel == null || setLevel.isPending}
                 onCheckedChange={(raise) => void saveLevel(data.agentLevel, raise)}
                 className="mt-0.5"
               />
-              <span className="space-y-0.5">
+              <label htmlFor={`agent-${agent.id}-autopilot-raise`} className="space-y-0.5">
                 <span className="block text-sm">{t('agent.raise')}</span>
                 <span className="block text-xs text-muted-foreground">{t('agent.raiseHint')}</span>
-              </span>
-            </label>
+              </label>
+            </div>
           </div>
 
           <div className="space-y-2">
