@@ -64,7 +64,7 @@ export function knowledgeSection(
   return [
     '## Knowledge',
     'The knowledge vault holds the notes and files of your projects: Markdown notes, PDFs,',
-    "scans and office files, the same files the owner reads in Plan's Docs and in Obsidian.",
+    "scans and office files, the same files the owner reads in Helena's Docs and in Obsidian.",
     'Search it with search_knowledge, read a note or the text of a file with read_document,',
     'list a folder with list_folder, and find the notes linking to a note or a task with',
     'backlinks. read_document also names the file on disk: look at an image or a scan with',

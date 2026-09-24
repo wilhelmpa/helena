@@ -8,6 +8,7 @@ import { atomicWrite, digest, ensureRoot, ensureSafeParent } from './files';
 import {
   enabledMcpServers,
   ensureConfigLink,
+  ensureEnvFile,
   hermesDrift,
   hermesManagedMcp,
   hermesSessionFacts,
@@ -485,6 +486,8 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
     const restored: string[] = [];
     const shared = this.profile?.sharedConfig;
     if (shared && (await ensureConfigLink(this.hermesHome, shared))) restored.push('config.yaml');
+    // Not a change made outside Helena: a new or older home simply has none yet.
+    await ensureEnvFile(this.hermesHome);
     const plugins = join(this.hermesHome, 'plugins');
     for (const [name, source] of Object.entries(this.profile?.plugins ?? {})) {
       if (!PLUGIN_NAME.test(name) || !isAbsolute(source)) {

@@ -16,7 +16,7 @@ export function projectAreasSection(
   return [
     '## Areas',
     'Each area of a project has a folder of its own, at the same relative path in the',
-    "project workspace and in the project's vault folder (the Files page in Plan). A run",
+    "project workspace and in the project's vault folder (the Files page in Helena). A run",
     'for a task of an area starts in its folder of the project workspace; keep the files of',
     "that area's work there.",
     '',
