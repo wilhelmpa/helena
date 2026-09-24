@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { createFile, MP4BoxBuffer } from "mp4box";
 import { fragment, initSegment, readFlvTags } from "./project-browser-mp4.mjs";
 import {
   chooseTier,
@@ -291,6 +292,60 @@ describe("FLV in, fragmented MP4 out", () => {
     assert.deepEqual([...out.subarray(dataOffset)], [...frame]);
     assert.equal(out.readUInt32BE(trun + 16), 1500);
     assert.equal(out.readUInt32BE(trun + 24), 0x02000000);
+  });
+});
+
+// Our fragments read back by an independent MP4 parser (mp4box.js, the library GPAC's
+// players use): what Media Source Extensions and WebCodecs see of the stream.
+describe("fragmented MP4 as mp4box.js reads it", () => {
+  it("parses the init segment and every fragment with the samples and times the router wrote", () => {
+    const sps = Buffer.from([0x67, 0x42, 0xc0, 0x1f, 0x8c, 0x8d, 0x40]);
+    const pps = Buffer.from([0x68, 0xce, 0x3c, 0x80]);
+    const avcC = Buffer.concat([
+      Buffer.from([1, 0x42, 0xc0, 0x1f, 0xff, 0xe1, 0, sps.length]),
+      sps,
+      Buffer.from([1, 0, pps.length]),
+      pps,
+    ]);
+    const frames = [
+      { keyframe: true, sample: Buffer.concat([nal(5), nal(1)]) },
+      { keyframe: false, sample: nal(1, 2, [0xaa, 0xbb]) },
+      { keyframe: false, sample: nal(1, 0, [0xcc]) },
+      { keyframe: true, sample: nal(5, 3, [0x01, 0x02, 0x03]) },
+    ];
+    const stream = Buffer.concat([
+      initSegment({ width: 1920, height: 1080, avcC }),
+      ...frames.map((frame, index) =>
+        fragment({ sequence: index + 1, decodeTime: 4500 + index * 1500, duration: 1500, ...frame }),
+      ),
+    ]);
+
+    const file = createFile();
+    let info = null;
+    const samples = [];
+    file.onError = (error) => assert.fail(error);
+    file.onReady = (ready) => {
+      info = ready;
+      file.setExtractionOptions(ready.tracks[0].id, null, { nbSamples: frames.length });
+      file.start();
+    };
+    file.onSamples = (_id, _user, parsed) => samples.push(...parsed);
+    const bytes = stream.buffer.slice(stream.byteOffset, stream.byteOffset + stream.length);
+    file.appendBuffer(MP4BoxBuffer.fromArrayBuffer(bytes, 0));
+    file.flush();
+
+    assert.ok(info);
+    assert.equal(info.isFragmented, true);
+    const [track] = info.tracks;
+    assert.equal(info.tracks.length, 1);
+    assert.equal(track.codec, "avc1.42c01f");
+    assert.equal(track.timescale, 90_000);
+    assert.deepEqual([track.video.width, track.video.height], [1920, 1080]);
+    assert.deepEqual(
+      samples.map((sample) => [sample.dts, sample.duration, sample.is_sync, sample.size]),
+      frames.map((frame, index) => [4500 + index * 1500, 1500, frame.keyframe, frame.sample.length]),
+    );
+    assert.deepEqual([...samples[1].data], [...frames[1].sample]);
   });
 });
 

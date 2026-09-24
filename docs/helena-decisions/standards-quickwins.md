@@ -11,6 +11,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | F18 | done | see git log | `read-excel-file` 9.3.10 (MIT); `write-excel-file` 4.1.1 (MIT) for test fixtures |
 | DB-2 | done | see git log | no library: `escapeLike`/`containsPattern` in `@repo/db` |
 | BRW-01 | done | see git log | `ws` 8.21.3 (MIT) |
+| BRW-03 | done | see git log | `mp4box` 2.4.1 (BSD-3), test only |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -77,3 +78,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - `ws` (not Bun's server): the router runs under Node, and the browser gateway (hub/agent-browser-mcp) puts patchright into the same process, so switching the runtime was not a quick win.
 - Dependency: `deployment/volition-stack/browser/package.json` (`@helena/browser-router`) is a workspace member (first entry of the root `workspaces`, so hub/framework's added entry does not collide), and the deploy's `bun install --frozen-lockfile` links `ws` next to the router. The gateway could import `@repo/browser-gateway` by name the same way later.
 - Gains: UTF-8 validation (bad text → 1007, test added), permessage-deflate negotiation handled (declined), 64-bit lengths, the close handshake. The old protocol tests stay and pass (61 with `node --test`); the unmasked-frame test now checks the close code, not `ws`'s reason text.
+
+## BRW-03: our fMP4 checked by mp4box.js
+
+- The muxer (`project-browser-mp4.mjs`) stays, as the audit says (latency). The router tests now also parse an init segment plus four fragments with `mp4box` 2.4.1 (a devDependency of `@helena/browser-router`) and check what a player sees: fragmented, one track, `avc1.42c01f`, timescale 90000, 1920x1080, and each sample's decode time, duration, sync flag, size and bytes.
