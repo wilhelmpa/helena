@@ -19,10 +19,10 @@ Rules and invariants for this package below; read the code for the walkthrough.
   `export type App = typeof app` types the Eden Treaty client (web + tests).
 - **Background jobs are started from `index.ts`, never assembled into the app**, so
   importing the app in a test starts nothing. `background.ts` runs each job in a loop
-  of its own, so none waits on another: the auto-archive sweep, the agent-team starts
-  waiting for Mastra and the janitors that repair what a restart leaves behind: runs
-  whose runner never reported, stage runs whose Mastra run is gone, and schedules out of
-  line with the workflow settings. Several api replicas run them without overlapping:
+  of its own, so none waits on another: the auto-archive sweep, the janitors that repair
+  what a restart leaves behind (runs whose runner never reported, runs past their resume
+  limit), and the Helena engine (`modules/engine/`, off with `HELENA_ENGINE=off`) with its
+  quick tick and its maintenance pass. Several api replicas run them without overlapping:
   a queue is claimed with `FOR UPDATE SKIP LOCKED`, and the sweep only touches rows it
   has not archived yet. The `agent_run` queue itself is drained by the agents' runners
   over HTTP (`modules/agents/runner`). An agent run is built from the queue row alone —
@@ -197,21 +197,23 @@ flag reaches: the agents, the skills, the tools, the roles and the credentials.
 
 `modules/pipelines/` stores the workflows members put together (`pipeline`, versions in
 `pipeline_version`, a project's use in `project_pipeline`) and their runs
-(`pipeline_run`, `pipeline_run_step`). Mastra's `plan-pipeline` runs them. Three things a
-reader would otherwise get wrong:
+(`pipeline_run`, `pipeline_run_step`). The Helena engine (`modules/engine/`, DBOS Transact
+in this process, state in the schema `helena_engine`) runs them, and the agent team and
+routines too. Three things a reader would otherwise get wrong:
 
 - **The definition body is `t.Any()`.** `definition.ts` reads and checks it and names every
   problem with its step and field, which the editor shows inline; a `t` schema would answer
   a draft with one generic 400. A save refuses any problem; the problems of a project
   (`project-context.ts`: roles no agent fills, unknown status names) refuse enabling.
-- **Plan writes a run before Mastra starts it.** A task event plans a `pending` run and
-  `drainPendingStarts` in `background.ts` starts it, so the write that fired the event never
-  waits for Mastra. A task change made by a workflow (the system actor `Workflow`) starts no
-  workflow.
-- **Mastra decides the next step, Plan does the step.** `control.ts` holds the operations
-  Mastra calls through the bridge (`/internal/orchestration/pipeline`); each answers a
-  repeated call for the same step execution with what the first one did. The contract is
-  in `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
+- **A task event goes through the engine's outbox.** `triggers.ts` publishes it as a domain
+  event (the DBOS queue `helena-events`), so the write that fired it never waits for a run;
+  the engine's triggers plan and start the runs. A task change made by a workflow (the
+  system actor `Workflow`) starts no workflow.
+- **Step and trigger types are registries.** `engine/registry.ts` holds them; the built-in
+  ones register in `engine/builtin/` like a plugin would. One DBOS workflow,
+  `helena.run` (`engine/workflows.ts`), walks a run's pinned definition, and every step is
+  a sequence of recorded operations, so a restart continues inside the step and a retry
+  forks at the failed one. The design is in `docs/helena-decisions/workflow-engine.md`.
 
 ## Mail
 

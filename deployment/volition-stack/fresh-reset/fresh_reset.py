@@ -21,7 +21,6 @@ BACKUP_STAGING = BACKUPS / "current"
 REPO = Path("/home/pw/services/itsaplan")
 PROJECTS = Path("/home/pw/Projekte")
 WORKSPACES = Path("/home/pw/services/volition-workspaces")
-MASTRA_ANALYTICS = Path("/home/pw/.mastra/analytics.json")
 RESET_STATE = STACK / "reset-state"
 BACKUP_MARKER = BACKUPS / "fresh-reset-marker.json"
 PLAN_MARKER = RESET_STATE / "plan-reset.complete.json"
@@ -50,7 +49,6 @@ BACKUP_SCOPE = (
     "/home/pw/services/volition-backups/current/garage-manifest.json",
     "/home/pw/services/volition-backups/current/garage-volumes.tar",
     "/home/pw/services/volition-backups/current/itsaplan.dump",
-    "/home/pw/services/volition-backups/current/mastra-data.tar",
     "/home/pw/services/volition-backups/current/nextcloud.dump",
     "/home/pw/services/volition-backups/current/vaultwarden-volumes.tar",
     "/home/pw/services/volition-stack/.secrets/nextcloud_admin_password",
@@ -61,7 +59,6 @@ BACKUP_SCOPE = (
     "/home/pw/services/volition-stack/config/gateway.json",
     "/home/pw/services/volition-stack/data/hermes/auth.json",
     "/home/pw/services/volition-workspaces/projects",
-    "/home/pw/.mastra/analytics.json",
 )
 
 
@@ -199,33 +196,10 @@ def verify_backup_restore_probe(snapshot_id):
             env=RESTIC_ENV,
         )
         value = json.loads(counts.stdout)
-        if not isinstance(value, dict) or set(value) != {"plan", "nextcloud"}:
-            raise ResetError("restored database-count manifest is invalid")
-        archive = subprocess.run(
-            [
-                "restic",
-                "dump",
-                snapshot_id,
-                "/home/pw/services/volition-backups/current/mastra-data.tar",
-            ],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            env={**os.environ, **RESTIC_ENV},
-            timeout=1800,
-        )
-        listing = subprocess.run(
-            ["tar", "-tf", "-"],
-            check=True,
-            input=archive.stdout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            timeout=300,
-        )
     except (json.JSONDecodeError, subprocess.SubprocessError) as error:
         raise ResetError("encrypted backup restore probe failed") from error
-    if not listing.stdout.strip():
-        raise ResetError("restored Mastra archive is empty")
+    if not isinstance(value, dict) or set(value) != {"plan", "nextcloud"}:
+        raise ResetError("restored database-count manifest is invalid")
 
 
 def verify_legacy_plan_volumes_empty():
@@ -391,7 +365,6 @@ def validate_completion_marker(marker):
         "vaultUiHidden": True,
         "hermesDataFresh": True,
         "hermesRunnerActive": True,
-        "mastraDataFresh": True,
         "nextcloudDataFresh": True,
         "nextcloudCredentialsRotated": True,
         "finalAcceptanceComplete": True,
@@ -443,7 +416,6 @@ def prepared_payload(snapshot_id, browser_blank_at=None):
         "hermesBootstrapProvider": "copilot",
         "hermesDataFresh": True,
         "hermesRunnerActive": True,
-        "mastraDataFresh": True,
         "nextcloudDataFresh": True,
         "nextcloudCredentialsRotated": True,
     }
@@ -674,15 +646,6 @@ def verify_empty_directory(path):
         raise ResetError(f"directory is not safely empty: {path}")
 
 
-def remove_exact_file(path, allowed):
-    if path.is_symlink():
-        raise ResetError(f"refusing to follow symlink during reset: {path}")
-    path = safe_path(path, allowed)
-    if path.exists() and not path.is_file():
-        raise ResetError(f"expected a regular reset file: {path}")
-    path.unlink(missing_ok=True)
-
-
 def copilot_only(auth):
     pool = auth.get("credential_pool") or {}
     copilot = pool.get("copilot")
@@ -835,17 +798,16 @@ def wait_active(unit, timeout=30, stable_seconds=5):
 def reset_plan():
     return [
         "stop reset-sensitive timers and services",
-        "stop Mastra, Nextcloud, workspace, Vaultwarden, and standalone browser",
-        "remove allowlisted Mastra, Nextcloud, workspace Docker volumes",
+        "stop Nextcloud, workspace, Vaultwarden, and standalone browser",
+        "remove allowlisted Nextcloud, workspace Docker volumes",
         "clear Vaultwarden state, code settings, browser profile, IPC, and Hermes home",
-        "remove the exact Mastra analytics state file",
         "clear app-generated project workspaces and recreate an empty project root",
         "purge only the versioned Paperless and legacy-app trash allowlist",
         "clear plaintext backup staging after encrypted restore probes",
         "rotate Nextcloud database, admin, and Redis secrets without printing values",
         "restore only the single Copilot credential into a fresh Hermes HOME master",
         "remove the local Vault gateway route and keep Vaultwarden stopped",
-        "start fresh Mastra, Nextcloud, workspace, and standalone browser services",
+        "start fresh Nextcloud, workspace, and standalone browser services",
         "verify fresh services and write only a secret-free prepared marker",
         "run a separate post-rebuild E2E acceptance and finalize only when every gate passes",
     ]
@@ -938,7 +900,6 @@ def prepare_reset(snapshot_id):
 
     apps = STACK / "compose.apps.yml"
     vault = STACK / "compose.vault.yml"
-    mastra = STACK / "optional/mastra-studio/compose.yml"
 
     for unit in (
         "volition-backup.timer",
@@ -955,7 +916,6 @@ def prepare_reset(snapshot_id):
     ):
         service("stop", unit, check=False)
 
-    compose([mastra], "down", project="volition-mastra-studio", check=False)
     compose(
         [apps],
         "stop",
@@ -984,7 +944,6 @@ def prepare_reset(snapshot_id):
     compose([vault], "down", project="volition-vault", check=False)
 
     for name in (
-        "volition-mastra-studio_studio-data",
         "volition-apps_workspace_home",
         "volition-apps_nextcloud_html",
         "volition-apps_nextcloud_data",
@@ -1008,7 +967,6 @@ def prepare_reset(snapshot_id):
         clear_directory(path, allowed)
     verify_empty_directory(STACK / "browser/profile")
     browser_blank_at = utc_now()
-    remove_exact_file(MASTRA_ANALYTICS, [MASTRA_ANALYTICS])
     project_root = WORKSPACES / "projects"
     itsaplan_workspace = project_root / "itsaplan"
     itsaplan_workspace.mkdir(mode=0o700, parents=True)
@@ -1041,7 +999,6 @@ def prepare_reset(snapshot_id):
         "nextcloud-cron",
         project="volition-apps",
     )
-    compose([mastra], "up", "-d", project="volition-mastra-studio")
     service("start", "volition-standalone-browser.target")
     run(["docker", "restart", "volition-stack-gateway-1"])
 
@@ -1051,7 +1008,6 @@ def prepare_reset(snapshot_id):
         "volition-apps-nextcloud-redis-1",
         "volition-apps-nextcloud-1",
         "volition-apps-nextcloud-cron-1",
-        "volition-mastra-studio-studio-1",
     ):
         wait_healthy(container)
     wait_exited_success("volition-apps-nextcloud-init-1")
@@ -1071,8 +1027,6 @@ def prepare_reset(snapshot_id):
     if service("is-active", "--quiet", "volition-backup.timer", check=False).returncode == 0:
         raise ResetError("backup timer restarted before plaintext staging was hardened")
 
-    if MASTRA_ANALYTICS.exists():
-        raise ResetError("Mastra analytics state remains after reset")
     atomic_json(PREPARED_MARKER, prepared_payload(snapshot_id, browser_blank_at))
 
 
@@ -1117,8 +1071,6 @@ def verify_final_live_state(expected_identities=None):
     verify_empty_directory(BACKUP_STAGING)
     verify_vault_disabled()
     verify_legacy_plan_volumes_empty()
-    if MASTRA_ANALYTICS.exists():
-        raise ResetError("Mastra analytics state has reappeared")
     if service("is-active", "--quiet", "volition-backup.timer", check=False).returncode == 0:
         raise ResetError("backup timer is active before its staging cleanup is hardened")
     wait_active("volition-hermes-runner.service")
@@ -1136,7 +1088,6 @@ def verify_final_live_state(expected_identities=None):
         "volition-apps-nextcloud-redis-1",
         "volition-apps-nextcloud-1",
         "volition-apps-nextcloud-cron-1",
-        "volition-mastra-studio-studio-1",
     ):
         wait_healthy(container, timeout=30)
     if expected_identities is not None and current_runtime_identities() != expected_identities:

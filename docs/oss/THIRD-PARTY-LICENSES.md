@@ -8,21 +8,21 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 
 | License | Policy | Runtime | Development only |
 |---|---|---:|---:|
-| MIT | allowed | 1046 | 65 |
-| Apache-2.0 | allowed | 93 | 0 |
-| ISC | allowed | 49 | 0 |
-| BSD-2-Clause | allowed | 25 | 2 |
-| BSD-3-Clause | allowed | 17 | 1 |
-| BlueOak-1.0.0 | allowed | 4 | 0 |
+| MIT | allowed | 1011 | 65 |
+| Apache-2.0 | allowed | 80 | 0 |
+| ISC | allowed | 47 | 0 |
+| BSD-2-Clause | allowed | 23 | 3 |
+| BSD-3-Clause | allowed | 15 | 1 |
 | MIT-0 | allowed | 4 | 0 |
+| Unlicense | allowed | 3 | 0 |
+| (MIT OR CC0-1.0) | allowed | 2 | 0 |
 | 0BSD | allowed | 2 | 0 |
 | Apache-2.0 AND MIT | allowed | 2 | 0 |
+| BlueOak-1.0.0 | allowed | 2 | 0 |
 | LGPL-3.0-or-later | notice | 2 | 0 |
 | MIT/X11 | allowed | 2 | 0 |
-| Unlicense | allowed | 2 | 0 |
 | (AFL-2.1 OR BSD-3-Clause) | allowed | 1 | 0 |
 | (MIT AND Zlib) | allowed | 1 | 0 |
-| (MIT OR CC0-1.0) | allowed | 1 | 0 |
 | (MIT OR EUPL-1.1+) | allowed | 1 | 0 |
 | (MIT OR GPL-3.0-or-later) | allowed | 1 | 0 |
 | (MPL-2.0 OR Apache-2.0) | allowed | 1 | 0 |
@@ -49,20 +49,13 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 
 | Package | Version | License | Scope | Source |
 |---|---|---|---|---|
-| @a2a-js/sdk | 0.3.14 | Apache-2.0 | runtime | bun.lock |
-| @a2a-js/sdk | 1.0.1 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/gateway | 3.0.13 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/gateway | 4.0.90 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/mcp | 2.0.56 | Apache-2.0 | runtime | bun.lock |
-| @ai-sdk/openai | 4.0.73 | Apache-2.0 | runtime | bun.lock |
-| @ai-sdk/provider | 2.0.3 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/provider | 3.0.14 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/provider | 3.0.2 | Apache-2.0 | runtime | bun.lock |
-| @ai-sdk/provider | 4.0.17 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/provider | 4.0.18 | Apache-2.0 | runtime | bun.lock |
-| @ai-sdk/provider | 4.0.4 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/provider-utils | 4.0.40 | Apache-2.0 | runtime | bun.lock |
-| @ai-sdk/provider-utils | 5.0.13 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/provider-utils | 5.0.46 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/react | 4.0.115 | Apache-2.0 | runtime | bun.lock |
 | @ai-sdk/vue | 3.0.33 | Apache-2.0 | runtime | bun.lock |
@@ -130,6 +123,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @csstools/css-syntax-patches-for-csstree | 1.1.14 | MIT-0 | runtime | bun.lock |
 | @csstools/css-tokenizer | 4.0.1 | MIT | runtime | bun.lock |
 | @date-fns/tz | 1.5.0 | MIT | runtime | bun.lock |
+| @dbos-inc/dbos-sdk | 5.0.2 | MIT | runtime | bun.lock |
 | @dnd-kit/accessibility | 3.1.1 | MIT | runtime | bun.lock |
 | @dnd-kit/core | 6.3.1 | MIT | runtime | bun.lock |
 | @dnd-kit/sortable | 10.0.0 | MIT | runtime | bun.lock |
@@ -182,7 +176,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @headlessui/vue | 1.7.23 | MIT | runtime | bun.lock |
 | @hexagon/base64 | 1.1.28 | MIT | runtime | bun.lock |
 | @hono/node-server | 2.1.1 | MIT | runtime | bun.lock |
-| @hono/standard-validator | 0.4.0 | MIT | runtime | bun.lock |
 | @humanfs/core | 0.19.2 | Apache-2.0 | runtime | bun.lock |
 | @humanfs/node | 0.16.8 | Apache-2.0 | runtime | bun.lock |
 | @humanfs/types | 0.15.0 | Apache-2.0 | runtime | bun.lock |
@@ -195,7 +188,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @img/sharp-linuxmusl-x64 | 0.35.4 | Apache-2.0 | runtime | bun.lock |
 | @internationalized/date | 3.12.4 | Apache-2.0 | runtime | bun.lock |
 | @internationalized/number | 3.6.8 | Apache-2.0 | runtime | bun.lock |
-| @isaacs/ttlcache | 2.1.5 | BlueOak-1.0.0 | runtime | bun.lock |
 | @jridgewell/gen-mapping | 0.3.13 | MIT | development | bun.lock |
 | @jridgewell/remapping | 2.3.5 | MIT | development | bun.lock |
 | @jridgewell/resolve-uri | 3.1.2 | MIT | development | bun.lock |
@@ -211,13 +203,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @lezer/lr | 1.4.10 | MIT | runtime | bun.lock |
 | @lezer/xml | 1.0.6 | MIT | runtime | bun.lock |
 | @lezer/yaml | 1.0.4 | MIT | runtime | bun.lock |
-| @lukeed/csprng | 1.1.0 | MIT | runtime | bun.lock |
-| @lukeed/uuid | 2.0.1 | MIT | runtime | bun.lock |
 | @marijn/find-cluster-break | 1.0.4 | MIT | runtime | bun.lock |
-| @mastra/core | 1.69.0 | Apache-2.0 | runtime | bun.lock |
-| @mastra/memory | 1.31.0 | Apache-2.0 | runtime | bun.lock |
-| @mastra/pg | 1.26.0 | Apache-2.0 | runtime | bun.lock |
-| @mastra/schema-compat | 1.3.11 | Apache-2.0 | runtime | bun.lock |
 | @modelcontextprotocol/sdk | 1.30.1 | MIT | runtime | bun.lock |
 | @next/env | 16.3.6 | MIT | runtime | bun.lock |
 | @next/eslint-plugin-next | 16.3.6 | MIT | runtime | bun.lock |
@@ -248,8 +234,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @peculiar/x509 | 1.14.3 | MIT | runtime | bun.lock |
 | @phosphor-icons/core | 2.1.1 | MIT | runtime | bun.lock |
 | @pinojs/redact | 0.4.0 | MIT | runtime | bun.lock |
-| @posthog/core | 1.55.2 | MIT | runtime | bun.lock |
-| @posthog/types | 1.412.4 | MIT | runtime | bun.lock |
 | @radix-ui/number | 1.1.3 | MIT | runtime | bun.lock |
 | @radix-ui/primitive | 1.1.7 | MIT | runtime | bun.lock |
 | @radix-ui/react-accessible-icon | 1.1.15 | MIT | runtime | bun.lock |
@@ -341,21 +325,18 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @scalar/validation | 0.6.4 | MIT | runtime | bun.lock |
 | @scalar/workspace-store | 0.65.0 | MIT | runtime | bun.lock |
 | @schummar/icu-type-parser | 1.21.5 | MIT | runtime | bun.lock |
-| @sec-ant/readable-stream | 0.4.1 | MIT | runtime | bun.lock |
 | @selderee/plugin-htmlparser2 | 0.12.0 | MIT | runtime | bun.lock |
 | @shadcn/react | 0.3.1 | MIT | runtime | bun.lock |
 | @simplewebauthn/browser | 13.3.0 | MIT | runtime | bun.lock |
 | @simplewebauthn/server | 13.3.3 | MIT | runtime | bun.lock |
 | @sinclair/typebox | 0.34.52 | MIT | runtime | bun.lock |
-| @sindresorhus/merge-streams | 4.0.0 | MIT | runtime | bun.lock |
 | @smithy/core | 3.35.0 | Apache-2.0 | runtime | bun.lock |
 | @smithy/credential-provider-imds | 4.5.2 | Apache-2.0 | runtime | bun.lock |
 | @smithy/fetch-http-handler | 5.8.0 | Apache-2.0 | runtime | bun.lock |
 | @smithy/node-http-handler | 4.12.1 | Apache-2.0 | runtime | bun.lock |
 | @smithy/signature-v4 | 5.7.3 | Apache-2.0 | runtime | bun.lock |
 | @smithy/types | 4.19.0 | Apache-2.0 | runtime | bun.lock |
-| @standard-community/standard-json | 0.3.6 | MIT | runtime | bun.lock |
-| @standard-community/standard-openapi | 0.2.10 | MIT | runtime | bun.lock |
+| @stablelib/base64 | 1.0.1 | MIT | runtime | bun.lock |
 | @standard-schema/spec | 1.1.0 | MIT | runtime | bun.lock |
 | @standard-schema/utils | 0.3.0 | MIT | runtime | bun.lock |
 | @swc/core | 1.16.2 | Apache-2.0 | runtime | bun.lock |
@@ -516,7 +497,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @vueuse/shared | 10.11.1 | MIT | runtime | bun.lock |
 | @vueuse/shared | 13.9.0 | MIT | runtime | bun.lock |
 | @workflow/serde | 4.1.0 | Apache-2.0 | runtime | bun.lock |
-| @workflow/serde | 4.1.0-beta.2 | Apache-2.0 | runtime | bun.lock |
 | @xmldom/xmldom | 0.8.15 | MIT | runtime | bun.lock |
 | @xyflow/react | 12.11.6 | MIT | runtime | bun.lock |
 | @xyflow/system | 0.0.82 | MIT | runtime | bun.lock |
@@ -549,7 +529,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | asn1js | 3.0.10 | BSD-3-Clause | runtime | bun.lock |
 | async | 3.2.6 | MIT | runtime | bun.lock |
 | async-function | 1.0.0 | MIT | runtime | bun.lock |
-| async-mutex | 0.5.0 | MIT | runtime | bun.lock |
 | atomic-sleep | 1.0.0 | MIT | runtime | bun.lock |
 | available-typed-arrays | 1.0.7 | MIT | runtime | bun.lock |
 | bail | 2.0.2 | MIT | runtime | bun.lock |
@@ -591,7 +570,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | character-entities-html4 | 2.1.0 | MIT | runtime | bun.lock |
 | character-entities-legacy | 3.0.0 | MIT | runtime | bun.lock |
 | character-reference-invalid | 2.0.1 | MIT | runtime | bun.lock |
-| chat | 4.41.0 | MIT | runtime | bun.lock |
 | class-variance-authority | 0.7.1 | Apache-2.0 | runtime | bun.lock |
 | classcat | 5.0.5 | MIT | runtime | bun.lock |
 | client-only | 0.0.1 | MIT | runtime | bun.lock |
@@ -605,6 +583,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | colors-named | 1.0.5 | MIT | runtime | bun.lock |
 | colors-named-hex | 1.0.4 | MIT | runtime | bun.lock |
 | comma-separated-tokens | 2.0.3 | MIT | runtime | bun.lock |
+| commander | 12.1.0 | MIT | runtime | bun.lock |
 | compress-commons | 4.1.2 | MIT | runtime | bun.lock |
 | concat-map | 0.0.1 | MIT | runtime | bun.lock |
 | content-disposition | 1.1.0 | MIT | runtime | bun.lock |
@@ -613,6 +592,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | cookie | 0.7.2 | MIT | runtime | bun.lock |
 | cookie | 1.1.1 | MIT | runtime | bun.lock |
 | cookie-signature | 1.2.2 | MIT | runtime | bun.lock |
+| copy-anything | 3.0.5 | MIT | runtime | bun.lock |
 | core-util-is | 1.0.3 | MIT | runtime | bun.lock |
 | cors | 2.8.6 | MIT | runtime | bun.lock |
 | crc-32 | 1.2.2 | Apache-2.0 | runtime | bun.lock |
@@ -645,8 +625,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | data-view-byte-offset | 1.0.1 | MIT | runtime | bun.lock |
 | date-fns | 4.4.0 | MIT | runtime | bun.lock |
 | dayjs | 1.11.23 | MIT | runtime | bun.lock |
-| debug | 2.6.9 | MIT | runtime | bun.lock |
-| debug | 3.2.7 | MIT | runtime | bun.lock |
 | debug | 4.4.3 | MIT | runtime | bun.lock |
 | decimal.js | 10.6.0 | MIT | runtime | bun.lock |
 | decimal.js-light | 2.5.1 | MIT | runtime | bun.lock |
@@ -663,7 +641,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | detect-node-es | 1.1.0 | MIT | runtime | bun.lock |
 | devlop | 1.1.0 | MIT | runtime | bun.lock |
 | diff | 3.5.1 | BSD-3-Clause | development | bun.lock |
-| diff | 8.0.4 | BSD-3-Clause | runtime | bun.lock |
 | dingbat-to-unicode | 1.0.2 | BSD-2-Clause | runtime | bun.lock |
 | doctrine | 2.1.0 | Apache-2.0 | runtime | bun.lock |
 | dom-serializer | 2.0.0 | MIT | runtime | bun.lock |
@@ -676,7 +653,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | domutils | 3.2.2 | BSD-2-Clause | runtime | bun.lock |
 | domutils | 4.0.2 | BSD-2-Clause | runtime | bun.lock |
 | dotenv | 16.6.1 | BSD-2-Clause | development | bun.lock |
-| dotenv | 17.4.2 | BSD-2-Clause | runtime | bun.lock |
+| dotenv | 17.4.2 | BSD-2-Clause | development | bun.lock |
 | dotenv-cli | 11.0.0 | MIT | development | bun.lock |
 | dotenv-expand | 12.0.3 | BSD-2-Clause | development | bun.lock |
 | drizzle-kit | 0.31.11 | MIT | runtime | bun.lock |
@@ -720,7 +697,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | eslint-visitor-keys | 4.2.1 | Apache-2.0 | runtime | bun.lock |
 | eslint-visitor-keys | 5.0.1 | Apache-2.0 | runtime | bun.lock |
 | espree | 10.4.0 | BSD-2-Clause | runtime | bun.lock |
-| esprima | 4.0.1 | BSD-2-Clause | runtime | bun.lock |
 | esquery | 1.7.0 | BSD-3-Clause | runtime | bun.lock |
 | esrecurse | 4.3.0 | BSD-2-Clause | runtime | bun.lock |
 | estraverse | 5.3.0 | BSD-2-Clause | runtime | bun.lock |
@@ -734,11 +710,9 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | eventsource-parser | 3.1.1 | MIT | runtime | bun.lock |
 | exact-mirror | 0.2.7 | MIT | runtime | bun.lock |
 | exceljs | 4.4.0 | MIT | runtime | bun.lock |
-| execa | 9.6.1 | MIT | runtime | bun.lock |
 | express | 5.2.1 | MIT | runtime | bun.lock |
 | express-rate-limit | 8.7.0 | MIT | runtime | bun.lock |
 | extend | 3.0.2 | MIT | runtime | bun.lock |
-| extend-shallow | 2.0.1 | MIT | runtime | bun.lock |
 | fast-csv | 4.3.6 | MIT | runtime | bun.lock |
 | fast-decode-uri-component | 1.0.1 | MIT | runtime | bun.lock |
 | fast-deep-equal | 3.1.3 | MIT | runtime | bun.lock |
@@ -747,13 +721,13 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | fast-glob | 3.3.1 | MIT | runtime | bun.lock |
 | fast-json-stable-stringify | 2.1.0 | MIT | runtime | bun.lock |
 | fast-levenshtein | 2.0.6 | MIT | runtime | bun.lock |
+| fast-sha256 | 1.3.0 | Unlicense | runtime | bun.lock |
 | fast-string-truncated-width | 3.0.3 | MIT | development | bun.lock |
 | fast-string-width | 3.0.2 | MIT | development | bun.lock |
 | fast-uri | 3.1.8 | BSD-3-Clause | runtime | bun.lock |
 | fast-wrap-ansi | 0.2.2 | MIT | development | bun.lock |
 | fastq | 1.20.3 | ISC | runtime | bun.lock |
 | fdir | 6.5.0 | MIT | runtime | bun.lock |
-| figures | 6.1.0 | MIT | runtime | bun.lock |
 | file-entry-cache | 8.0.0 | MIT | runtime | bun.lock |
 | file-type | 22.1.1 | MIT | runtime | bun.lock |
 | fill-range | 7.1.1 | MIT | runtime | bun.lock |
@@ -776,7 +750,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | get-intrinsic | 1.3.0 | MIT | runtime | bun.lock |
 | get-nonce | 1.0.1 | MIT | runtime | bun.lock |
 | get-proto | 1.0.1 | MIT | runtime | bun.lock |
-| get-stream | 9.0.1 | MIT | runtime | bun.lock |
 | get-symbol-description | 1.1.0 | MIT | runtime | bun.lock |
 | get-tsconfig | 4.14.3 | MIT | runtime | bun.lock |
 | glob | 7.2.3 | ISC | runtime | bun.lock |
@@ -788,7 +761,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | gopd | 1.2.0 | MIT | runtime | bun.lock |
 | graceful-fs | 4.2.11 | ISC | runtime | bun.lock |
 | grammy | 1.46.0 | MIT | runtime | bun.lock |
-| gray-matter | 4.0.3 | MIT | runtime | bun.lock |
 | guess-json-indent | 3.0.1 | MIT | runtime | bun.lock |
 | has-bigints | 1.1.0 | MIT | runtime | bun.lock |
 | has-flag | 3.0.0 | MIT | development | bun.lock |
@@ -820,7 +792,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | he | 1.2.0 | MIT | runtime | bun.lock |
 | highlight.js | 11.11.2 | BSD-3-Clause | runtime | bun.lock |
 | hono | 4.13.8 | MIT | runtime | bun.lock |
-| hono-openapi | 1.3.3 | MIT | runtime | bun.lock |
 | hookable | 6.1.2 | MIT | runtime | bun.lock |
 | html-encoding-sniffer | 7.0.0 | MIT | runtime | bun.lock |
 | html-to-text | 10.0.1 | MIT | runtime | bun.lock |
@@ -830,8 +801,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | htmlparser2 | 10.1.0 | MIT | runtime | bun.lock |
 | htmlparser2 | 12.0.0 | MIT | runtime | bun.lock |
 | http-errors | 2.0.1 | MIT | runtime | bun.lock |
-| human-signals | 8.0.1 | Apache-2.0 | runtime | bun.lock |
-| iconv-lite | 0.4.24 | MIT | runtime | bun.lock |
 | iconv-lite | 0.6.3 | MIT | development | bun.lock |
 | iconv-lite | 0.7.3 | MIT | runtime | bun.lock |
 | icu-minify | 4.14.6 | MIT | runtime | bun.lock |
@@ -868,7 +837,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | is-date-object | 1.1.0 | MIT | runtime | bun.lock |
 | is-decimal | 2.0.1 | MIT | runtime | bun.lock |
 | is-document.all | 1.0.0 | MIT | runtime | bun.lock |
-| is-extendable | 0.1.1 | MIT | runtime | bun.lock |
 | is-extglob | 2.1.1 | MIT | runtime | bun.lock |
 | is-finalizationregistry | 1.1.1 | MIT | runtime | bun.lock |
 | is-generator-function | 1.1.2 | MIT | runtime | bun.lock |
@@ -876,7 +844,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | is-hexadecimal | 2.0.1 | MIT | runtime | bun.lock |
 | is-map | 2.0.3 | MIT | runtime | bun.lock |
 | is-negative-zero | 2.0.3 | MIT | runtime | bun.lock |
-| is-network-error | 1.3.2 | MIT | runtime | bun.lock |
 | is-number | 7.0.0 | MIT | runtime | bun.lock |
 | is-number-object | 1.1.1 | MIT | runtime | bun.lock |
 | is-plain-obj | 4.1.0 | MIT | runtime | bun.lock |
@@ -886,14 +853,13 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | is-regex | 1.2.1 | MIT | runtime | bun.lock |
 | is-set | 2.0.3 | MIT | runtime | bun.lock |
 | is-shared-array-buffer | 1.0.4 | MIT | runtime | bun.lock |
-| is-stream | 4.0.1 | MIT | runtime | bun.lock |
 | is-string | 1.1.1 | MIT | runtime | bun.lock |
 | is-symbol | 1.1.1 | MIT | runtime | bun.lock |
 | is-typed-array | 1.1.15 | MIT | runtime | bun.lock |
-| is-unicode-supported | 2.1.0 | MIT | runtime | bun.lock |
 | is-weakmap | 2.0.2 | MIT | runtime | bun.lock |
 | is-weakref | 1.1.1 | MIT | runtime | bun.lock |
 | is-weakset | 2.0.4 | MIT | runtime | bun.lock |
+| is-what | 4.1.16 | MIT | runtime | bun.lock |
 | isarray | 1.0.0 | MIT | runtime | bun.lock |
 | isarray | 2.0.5 | MIT | runtime | bun.lock |
 | isexe | 2.0.0 | ISC | runtime | bun.lock |
@@ -903,16 +869,13 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | jest-get-type | 22.4.3 | MIT | development | bun.lock |
 | jiti | 2.7.0 | MIT | runtime | bun.lock |
 | jose | 6.2.12 | MIT | runtime | bun.lock |
-| jpeg-js | 0.4.4 | BSD-3-Clause | runtime | bun.lock |
 | js-base64 | 3.9.4 | BSD-3-Clause | runtime | bun.lock |
 | js-tokens | 4.0.0 | MIT | runtime | bun.lock |
-| js-yaml | 3.15.2 | MIT | runtime | bun.lock |
 | js-yaml | 4.3.2 | MIT | runtime | bun.lock |
 | jsdom | 30.1.1 | MIT | runtime | bun.lock |
 | json-buffer | 3.0.1 | MIT | runtime | bun.lock |
 | json-parse-even-better-errors | 2.3.1 | MIT | development | bun.lock |
 | json-schema | 0.4.0 | (AFL-2.1 OR BSD-3-Clause) | runtime | bun.lock |
-| json-schema-to-zod | 2.8.1 | ISC | runtime | bun.lock |
 | json-schema-traverse | 0.4.1 | MIT | runtime | bun.lock |
 | json-schema-traverse | 1.0.0 | MIT | runtime | bun.lock |
 | json-schema-typed | 8.0.2 | BSD-2-Clause | runtime | bun.lock |
@@ -921,7 +884,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | jsx-ast-utils | 3.3.5 | MIT | runtime | bun.lock |
 | jszip | 3.10.2 | (MIT OR GPL-3.0-or-later) | runtime | bun.lock |
 | keyv | 4.5.4 | MIT | runtime | bun.lock |
-| kind-of | 6.0.3 | MIT | runtime | bun.lock |
 | kysely | 0.29.6 | MIT | runtime | bun.lock |
 | launder | 1.7.1 | MIT | runtime | bun.lock |
 | lazystream | 1.0.1 | MIT | runtime | bun.lock |
@@ -1030,13 +992,11 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | minimatch | 5.1.9 | ISC | runtime | bun.lock |
 | minimist | 1.2.8 | MIT | development | bun.lock |
 | mkdirp | 3.0.1 | MIT | runtime | bun.lock |
-| ms | 2.0.0 | MIT | runtime | bun.lock |
 | ms | 2.1.3 | MIT | runtime | bun.lock |
 | nanoid | 3.3.19 | MIT | runtime | bun.lock |
 | nanoid | 5.1.16 | MIT | runtime | bun.lock |
 | nanostores | 1.5.3 | MIT | runtime | bun.lock |
 | natural-compare | 1.4.0 | MIT | runtime | bun.lock |
-| needle | 2.9.1 | MIT | runtime | bun.lock |
 | negotiator | 1.1.0 | MIT | runtime | bun.lock |
 | neverpanic | 0.0.8 | MIT | runtime | bun.lock |
 | next | 16.3.6 | MIT | runtime | bun.lock |
@@ -1049,7 +1009,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | nodemailer | 10.0.10 | MIT-0 | runtime | bun.lock |
 | nodemailer | 9.1.1 | MIT-0 | runtime | bun.lock |
 | normalize-path | 3.0.0 | MIT | runtime | bun.lock |
-| npm-run-path | 6.0.0 | MIT | runtime | bun.lock |
 | object-assign | 4.1.1 | MIT | runtime | bun.lock |
 | object-inspect | 1.13.4 | MIT | runtime | bun.lock |
 | object-keys | 1.1.1 | MIT | runtime | bun.lock |
@@ -1068,8 +1027,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | own-keys | 1.0.2 | MIT | runtime | bun.lock |
 | p-limit | 3.1.0 | MIT | runtime | bun.lock |
 | p-locate | 5.0.0 | MIT | runtime | bun.lock |
-| p-map | 7.0.8 | MIT | runtime | bun.lock |
-| p-retry | 7.1.1 | MIT | runtime | bun.lock |
 | pako | 1.0.11 | (MIT AND Zlib) | runtime | bun.lock |
 | parent-module | 1.0.1 | MIT | runtime | bun.lock |
 | parse-entities | 4.0.2 | MIT | runtime | bun.lock |
@@ -1084,7 +1041,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | path-exists | 4.0.0 | MIT | runtime | bun.lock |
 | path-is-absolute | 1.0.1 | MIT | runtime | bun.lock |
 | path-key | 3.1.1 | MIT | runtime | bun.lock |
-| path-key | 4.0.0 | MIT | runtime | bun.lock |
 | path-parse | 1.0.7 | MIT | runtime | bun.lock |
 | path-to-regexp | 8.4.2 | MIT | runtime | bun.lock |
 | pathe | 1.1.2 | MIT | runtime | bun.lock |
@@ -1116,13 +1072,11 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | postgres-bytea | 1.0.1 | MIT | runtime | bun.lock |
 | postgres-date | 1.0.7 | MIT | runtime | bun.lock |
 | postgres-interval | 1.2.0 | MIT | runtime | bun.lock |
-| posthog-node | 5.53.0 | MIT | runtime | bun.lock |
 | prelude-ls | 1.2.1 | MIT | runtime | bun.lock |
 | prettier | 3.9.6 | MIT | development | bun.lock |
 | prettier-plugin-tailwindcss | 0.8.1 | MIT | development | bun.lock |
 | pretty-format | 22.4.3 | MIT | development | bun.lock |
 | pretty-ms | 9.3.1 | MIT | runtime | bun.lock |
-| probe-image-size | 7.4.0 | MIT | runtime | bun.lock |
 | process-nextick-args | 2.0.1 | MIT | runtime | bun.lock |
 | process-warning | 5.1.0 | MIT | runtime | bun.lock |
 | prop-types | 15.8.1 | MIT | runtime | bun.lock |
@@ -1147,7 +1101,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | pvtsutils | 1.3.6 | MIT | runtime | bun.lock |
 | pvutils | 1.2.0 | MIT | runtime | bun.lock |
 | qs | 6.16.0 | BSD-3-Clause | runtime | bun.lock |
-| quansync | 0.2.11 | MIT | runtime | bun.lock |
 | queue-microtask | 1.2.3 | MIT | runtime | bun.lock |
 | quick-format-unescaped | 4.0.4 | MIT | runtime | bun.lock |
 | radix-ui | 1.6.7 | MIT | runtime | bun.lock |
@@ -1209,15 +1162,14 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | safe-stable-stringify | 2.5.0 | MIT | runtime | bun.lock |
 | safer-buffer | 2.1.2 | MIT | runtime | bun.lock |
 | sanitize-html | 2.17.7 | MIT | runtime | bun.lock |
-| sax | 1.6.1 | BlueOak-1.0.0 | runtime | bun.lock |
 | saxes | 5.0.1 | ISC | runtime | bun.lock |
 | saxes | 6.0.0 | ISC | runtime | bun.lock |
 | scheduler | 0.28.0 | MIT | runtime | bun.lock |
-| section-matter | 1.0.0 | MIT | runtime | bun.lock |
 | selderee | 0.12.0 | MIT | runtime | bun.lock |
 | semver | 6.3.1 | ISC | runtime | bun.lock |
 | semver | 7.8.5 | ISC | runtime | bun.lock |
 | send | 1.2.1 | MIT | runtime | bun.lock |
+| serialize-error | 8.1.0 | MIT | runtime | bun.lock |
 | serve-static | 2.2.1 | MIT | runtime | bun.lock |
 | set-cookie-parser | 3.1.0 | MIT | runtime | bun.lock |
 | set-cookie-parser | 3.1.2 | MIT | runtime | bun.lock |
@@ -1233,7 +1185,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | side-channel-list | 1.0.1 | MIT | runtime | bun.lock |
 | side-channel-map | 1.0.1 | MIT | runtime | bun.lock |
 | side-channel-weakmap | 1.0.2 | MIT | runtime | bun.lock |
-| signal-exit | 4.1.0 | ISC | runtime | bun.lock |
 | sisteransi | 1.0.5 | MIT | development | bun.lock |
 | smart-buffer | 4.2.0 | MIT | runtime | bun.lock |
 | socks | 2.8.10 | MIT | runtime | bun.lock |
@@ -1245,9 +1196,9 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | space-separated-tokens | 2.0.2 | MIT | runtime | bun.lock |
 | split2 | 4.2.0 | ISC | runtime | bun.lock |
 | sprintf-js | 1.0.3 | BSD-3-Clause | runtime | bun.lock |
+| standardwebhooks | 1.1.1 | MIT | runtime | bun.lock |
 | statuses | 2.0.2 | MIT | runtime | bun.lock |
 | stop-iteration-iterator | 1.1.0 | MIT | runtime | bun.lock |
-| stream-parser | 0.3.1 | MIT | runtime | bun.lock |
 | streamdown | 2.6.0 | Apache-2.0 | runtime | bun.lock |
 | string_decoder | 1.1.1 | MIT | runtime | bun.lock |
 | string-byte-length | 3.0.1 | MIT | runtime | bun.lock |
@@ -1258,14 +1209,13 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | string.prototype.trimend | 1.0.10 | MIT | runtime | bun.lock |
 | string.prototype.trimstart | 1.0.8 | MIT | runtime | bun.lock |
 | stringify-entities | 4.0.4 | MIT | runtime | bun.lock |
-| strip-bom-string | 1.0.0 | MIT | runtime | bun.lock |
-| strip-final-newline | 4.0.0 | MIT | runtime | bun.lock |
 | strip-json-comments | 3.1.1 | MIT | runtime | bun.lock |
 | strtok3 | 10.3.5 | MIT | runtime | bun.lock |
 | style-mod | 4.1.4 | MIT | runtime | bun.lock |
 | style-to-js | 1.1.21 | MIT | runtime | bun.lock |
 | style-to-object | 1.0.14 | MIT | runtime | bun.lock |
 | styled-jsx | 5.1.6 | MIT | runtime | bun.lock |
+| superjson | 1.13.3 | MIT | runtime | bun.lock |
 | supports-color | 5.5.0 | MIT | development | bun.lock |
 | supports-color | 7.2.0 | MIT | runtime | bun.lock |
 | supports-preserve-symlinks-flag | 1.0.0 | MIT | runtime | bun.lock |
@@ -1306,6 +1256,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | turbo | 2.11.3 | MIT | development | bun.lock |
 | tw-animate-css | 1.4.0 | MIT | development | bun.lock |
 | type-check | 0.4.0 | MIT | runtime | bun.lock |
+| type-fest | 0.20.2 | (MIT OR CC0-1.0) | runtime | bun.lock |
 | type-fest | 5.10.0 | (MIT OR CC0-1.0) | runtime | bun.lock |
 | type-is | 2.1.0 | MIT | runtime | bun.lock |
 | typed-array-buffer | 1.0.3 | MIT | runtime | bun.lock |
@@ -1324,7 +1275,6 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | undici-types | 7.18.2 | MIT | runtime | bun.lock |
 | undici-types | 8.9.0 | MIT | runtime | bun.lock |
 | unhead | 2.1.17 | MIT | runtime | bun.lock |
-| unicorn-magic | 0.3.0 | MIT | runtime | bun.lock |
 | unified | 11.0.5 | MIT | runtime | bun.lock |
 | unist-util-find-after | 5.0.0 | MIT | runtime | bun.lock |
 | unist-util-is | 6.0.1 | MIT | runtime | bun.lock |
@@ -1371,13 +1321,10 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | xmlbuilder | 10.1.1 | MIT | runtime | bun.lock |
 | xmlchars | 2.2.0 | MIT | runtime | bun.lock |
 | xtend | 4.0.2 | MIT | runtime | bun.lock |
-| xxhash-wasm | 1.1.0 | MIT | runtime | bun.lock |
 | yaml | 2.9.1 | ISC | runtime | bun.lock |
 | yocto-queue | 0.1.0 | MIT | runtime | bun.lock |
-| yoctocolors | 2.2.0 | MIT | runtime | bun.lock |
 | zip-stream | 4.1.1 | MIT | runtime | bun.lock |
 | zod | 4.6.5 | MIT | runtime | bun.lock |
-| zod-from-json-schema | 0.5.6 | MIT | runtime | bun.lock |
 | zod-to-json-schema | 3.25.2 | ISC | runtime | bun.lock |
 | zustand | 4.5.7 | MIT | runtime | bun.lock |
 | zwitch | 2.0.4 | MIT | runtime | bun.lock |

@@ -10,14 +10,15 @@ This directory contains the deployable configuration and source used by the Voli
 | `volition-apps` | code workspace, Nextcloud, PostgreSQL, Redis, cron | Workspace, files-front, and internal files-data networks |
 | `volition-stack` | identity-validating gateway | Host network in the current deployment |
 | `volition-vault` | Vaultwarden | Internal vault network |
-| `volition-mastra-studio` | workflows and run control | Internal isolated network |
 | Hermes | Home-agent harness and resumable sessions | Hardened user systemd runner; provider credentials remain outside Plan |
+
+Workflows, agent teams and routines run in the API itself (the Helena engine); there is no separate workflow service.
 
 Keep these services separate. A single container would combine credentials, writable data, lifecycle, and network privileges. Operate them as one product through Compose and systemd.
 
 ## Excluded data
 
-The checkpoint excludes `.env`, `.secrets`, application state, databases, object data, backups, logs, generated Mastra state, dependency directories, deploy keys, and historical staging copies. Production identities and provider identifiers are replaced with examples. `config/gateway.example.json` contains placeholders for deployment-specific Cloudflare identifiers.
+The checkpoint excludes `.env`, `.secrets`, application state, databases, object data, backups, logs, dependency directories, deploy keys, and historical staging copies. Production identities and provider identifiers are replaced with examples. `config/gateway.example.json` contains placeholders for deployment-specific Cloudflare identifiers.
 
 ## Prerequisites
 
@@ -33,11 +34,10 @@ The captured units use `/home/pw`. Replace that path before installing on anothe
 
 Create `.secrets` with mode `0700`. Create these files with mode `0600`:
 
-- `mastra_inbox_adapter_token`
 - `nextcloud_admin_password`
 - `nextcloud_db_password`
 - `nextcloud_patrick_app_password`
-- `plan_mastra_control_token`
+- `plan_control_token`
 - `redis_password`
 - `trading_bridge_token`
 - `verve_git_deploy_key`
@@ -71,7 +71,6 @@ From this directory:
 docker compose -f compose.apps.yml config --quiet
 docker compose -f compose.apps.yml up -d
 docker compose -f compose.vault.yml up -d
-docker compose -f optional/mastra-studio/compose.yml up -d
 docker compose -f compose.gateway.yml up -d
 ```
 

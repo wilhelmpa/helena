@@ -1,8 +1,19 @@
 import crypto from "node:crypto";
 import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
-import { createMastraInboxRunner } from "./mastra-inbox.mjs";
 
 export class InboxValidationError extends Error {}
+
+class MissingClassifierError extends Error {}
+
+// No classifier is built in. The Mastra inbox workflow used to classify threads; it went with
+// Mastra (package D). A classifier on Hermes is an open item. Until it exists, a caller passes
+// one as `options.classifier` ({ run(input) }), and without one every run ends as "failed"
+// with a message that says so.
+const NO_CLASSIFIER = {
+  async run() {
+    throw new MissingClassifierError();
+  },
+};
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PROJECT_KEY = /^[a-z0-9][a-z0-9_-]{0,31}$/i;
@@ -109,7 +120,7 @@ function validatedResult(value, input) {
 }
 
 export function createTriageService(config, options = {}) {
-  const mastraInbox = options.mastraInbox ?? createMastraInboxRunner(config, options);
+  const classifier = options.classifier ?? NO_CLASSIFIER;
   const now = options.now ?? (() => new Date().toISOString());
   const pending = [];
   let active = 0;
@@ -159,7 +170,7 @@ export function createTriageService(config, options = {}) {
   }
 
   async function classify(input) {
-    return validatedResult(await mastraInbox.run(input), input);
+    return validatedResult(await classifier.run(input), input);
   }
 
   async function run({ runId, input }) {
@@ -172,12 +183,15 @@ export function createTriageService(config, options = {}) {
       await mutate((store) => {
         store.jobs[runId] = { ...store.jobs[runId], status: "completed", result, updatedAt: now() };
       });
-    } catch {
+    } catch (error) {
       await mutate((store) => {
         store.jobs[runId] = {
           ...store.jobs[runId],
           status: "failed",
-          error: "The read-only inbox triage run failed.",
+          error:
+            error instanceof MissingClassifierError
+              ? "No inbox classifier is configured."
+              : "The read-only inbox triage run failed.",
           updatedAt: now(),
         };
       });
@@ -185,11 +199,6 @@ export function createTriageService(config, options = {}) {
   }
 
   return {
-    async classify(value, idempotencyKey) {
-      const input = validateTriageRequest(value, config.inboxAccounts);
-      if (!UUID.test(idempotencyKey)) throw new InboxValidationError("The classifier idempotency key is invalid");
-      return await classify(input, idempotencyKey);
-    },
     async start(value) {
       await ready;
       const input = validateTriageRequest(value, config.inboxAccounts);

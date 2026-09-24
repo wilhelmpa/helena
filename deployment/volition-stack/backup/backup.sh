@@ -19,8 +19,7 @@ cleanup_services() {
 cleanup() {
   cleanup_services
   rm -f \
-    "$stage/plan-residual-volumes.tar.new" "$stage/plan-residual-volumes.tar" \
-    "$stage/mastra-data.tar.new" "$stage/mastra-data.tar"
+    "$stage/plan-residual-volumes.tar.new" "$stage/plan-residual-volumes.tar"
 }
 pause_containers() {
   local container
@@ -35,7 +34,7 @@ trap cleanup EXIT
 docker exec --user www-data volition-apps-nextcloud-1 php occ maintenance:mode --on >/dev/null
 # Keep each database dump consistent with its corresponding mutable file store.
 # The writers remain paused only for their own dump and small storage archive.
-pause_containers itsaplan-api-1 itsaplan-worker-1 itsaplan-garage-1 volition-mastra-studio-studio-1
+pause_containers itsaplan-api-1 itsaplan-worker-1 itsaplan-garage-1
 docker exec itsaplan-postgres-1 pg_dump -U itsaplan -d itsaplan --format=custom > "$stage/itsaplan.dump.new"
 plan_counts=$(docker exec itsaplan-postgres-1 psql -U itsaplan -d itsaplan -At -F, -c 'select (select count(*) from project),(select count(*) from issue),(select count(*) from ai_agent),(select count(*) from agent_run),(select count(*) from team);')
 docker run --rm --network none --read-only --security-opt no-new-privileges:true \
@@ -50,11 +49,6 @@ docker run --rm --network none --read-only --security-opt no-new-privileges:true
   -v itsaplan_minio-data:/data/itsaplan-minio-data:ro \
   -v "$stage:/backup" postgres:17-alpine \
   -c 'umask 077; tar -C /data -cf /backup/plan-residual-volumes.tar.new ./itsaplan-db-backups ./itsaplan-minio-data; chown 1000:1000 /backup/plan-residual-volumes.tar.new'
-docker run --rm --network none --read-only --security-opt no-new-privileges:true \
-  --pids-limit 32 --memory 256m --cpus 1 --entrypoint /bin/sh \
-  -v volition-mastra-studio_studio-data:/data/mastra-data:ro \
-  -v "$stage:/backup" postgres:17-alpine \
-  -c 'umask 077; tar -C /data -cf /backup/mastra-data.tar.new ./mastra-data; chown 1000:1000 /backup/mastra-data.tar.new'
 unpause_containers
 # Vaultwarden uses SQLite WAL: capture database, WAL and encrypted attachments
 # together with the writer paused. The live directory is excluded from restic.
@@ -124,16 +118,13 @@ unpause_containers
 docker exec -i -w /app/apps/api itsaplan-api-1 bun - \
   < /home/pw/services/volition-stack/backup/tests/garage-manifest.mjs \
   > "$stage/garage-manifest.json.new"
-for name in itsaplan.dump nextcloud.dump database-counts.json garage-volumes.tar plan-residual-volumes.tar mastra-data.tar application-volumes.tar garage-manifest.json vaultwarden-volumes.tar vaultwarden-manifest.json; do mv "$stage/$name.new" "$stage/$name"; done
+for name in itsaplan.dump nextcloud.dump database-counts.json garage-volumes.tar plan-residual-volumes.tar application-volumes.tar garage-manifest.json vaultwarden-volumes.tar vaultwarden-manifest.json; do mv "$stage/$name.new" "$stage/$name"; done
 cleanup_services
 trap - EXIT
 sensitive_archive="$stage/plan-residual-volumes.tar"
-sensitive_mastra_archive="$stage/mastra-data.tar"
 restore_probe=
 cleanup_encrypted_phase() {
-  rm -f \
-    "$sensitive_archive" "$sensitive_archive.new" \
-    "$sensitive_mastra_archive" "$sensitive_mastra_archive.new"
+  rm -f "$sensitive_archive" "$sensitive_archive.new"
   if [[ -n "$restore_probe" ]]; then rm -rf "$restore_probe"; fi
 }
 trap cleanup_encrypted_phase EXIT
@@ -153,7 +144,7 @@ for runtime_path in \
 done
 backup_result=$(restic backup --read-concurrency 1 --quiet --json --tag volition --exclude-file /home/pw/services/volition-stack/backup/excludes.txt \
   "$stage" /home/pw/services/itsaplan /home/pw/services/volition-stack \
-  /home/pw/services/volition-workspaces /home/pw/.mastra/analytics.json \
+  /home/pw/services/volition-workspaces \
   /home/pw/services/volition-stack/data/hermes /home/pw/.config/systemd/user /home/pw/.config/itsaplan \
   /home/pw/.local/share/hermes-gog /home/pw/Projekte/Shopify/v1-cart-suite "${runtime_paths[@]}")
 snapshot_id=$(python3 -c '
@@ -171,8 +162,7 @@ restore_probe=$(mktemp -d "$base/.restore-probe.XXXXXX")
 chmod 700 "$restore_probe"
 restic restore "$snapshot_id" --target "$restore_probe" \
   --include /home/pw/services/volition-backups/current/database-counts.json \
-  --include /home/pw/services/volition-backups/current/plan-residual-volumes.tar \
-  --include /home/pw/services/volition-backups/current/mastra-data.tar >/dev/null
+  --include /home/pw/services/volition-backups/current/plan-residual-volumes.tar >/dev/null
 python3 - "$restore_probe/home/pw/services/volition-backups/current/database-counts.json" <<'PY'
 import json,re,sys
 data=json.load(open(sys.argv[1],encoding='utf-8'))
@@ -185,13 +175,11 @@ restored_residual="$restore_probe/home/pw/services/volition-backups/current/plan
 tar -tf "$restored_residual" > "$restore_probe/residual-volume-files.txt"
 grep -Eq '^\./itsaplan-db-backups(/|$)' "$restore_probe/residual-volume-files.txt"
 grep -Eq '^\./itsaplan-minio-data(/|$)' "$restore_probe/residual-volume-files.txt"
-python3 /home/pw/services/volition-stack/backup/tests/verify-mastra-archive.py \
-  "$restore_probe/home/pw/services/volition-backups/current/mastra-data.tar"
 rm -rf "$restore_probe"
 restore_probe=
 staging_allowlist=(
   itsaplan.dump nextcloud.dump database-counts.json garage-volumes.tar
-  plan-residual-volumes.tar mastra-data.tar application-volumes.tar garage-manifest.json
+  plan-residual-volumes.tar application-volumes.tar garage-manifest.json
   vaultwarden-volumes.tar vaultwarden-manifest.json
 )
 for name in "${staging_allowlist[@]}"; do rm -f "$stage/$name" "$stage/$name.new"; done

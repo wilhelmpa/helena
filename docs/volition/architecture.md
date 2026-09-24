@@ -1,63 +1,69 @@
 # Volition architecture
 
 Volition runs Plan — the app is called **Helena** since 2026-09-23 (a fork of It's a Plan,
-AGPL-3.0); "Plan" below still means this app, as elsewhere in this repository's docs — Mastra
-and Hermes natively on Kingston (Debian, systemd, no Docker). Each component has one
+AGPL-3.0); "Plan" below still means this app, as elsewhere in this repository's docs — and
+Hermes natively on Kingston (Debian, systemd, no Docker). Plan's API runs the workflow
+engine (the Helena engine, on DBOS Transact) in its own process. Each component has one
 responsibility. This document is the reference for where a feature belongs; a change that gives
 a second component the same responsibility is wrong.
 
 ## Responsibilities
 
-| | Hermes | Mastra | Plan |
+| | Hermes | Engine (in Plan's API) | Plan |
 |---|---|---|---|
 | Role | Executes agent work | Decides what runs, when, by whom and in which order | Stores all configuration and results; the only user interface |
-| Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Workflows, event ingress, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, run history. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, the definitions and run history of builder workflows, secrets, connections, mail accounts, browser logins, approvals, activity. |
-| Does not | Schedule business work (Hermes cron is limited to Hermes maintenance). Delegate inside automated runs, apart from a coordinator's sub-agents (see Agent structure). Hold its own configuration: profiles are generated from Plan. | Call an LLM provider directly. Serve a user interface (Studio is a debugging tool). Store project or agent data of its own. | Run agents itself. Schedule work. Contain workflow logic beyond simple issue rules. |
-| Stores | Sessions, memory, learned skills | Run state: runs and checkpoints for 90 days, schedules | Configuration and results |
+| Owns | Every LLM call: chat, task execution, inbox classification, coordinator planning, review. Tool execution (terminal, files, code, browser over CDP, MCP clients). Sessions, memory, skills Hermes creates itself. | Builder workflows, the agent team and routines as durable workflows: event triggers, schedules, deterministic routing, budgets, retries, idempotency, approval suspension, checkpoints. | Projects, issues, organization (agents, roles, departments, routing rules, policies), agent configuration, trigger rules, the definitions and run history of workflows, routines and schedules, secrets, connections, mail accounts, browser logins, approvals, activity. |
+| Does not | Schedule business work (Hermes cron is limited to Hermes maintenance). Delegate inside automated runs, apart from a coordinator's sub-agents (see Agent structure). Hold its own configuration: profiles are generated from Plan. | Call an LLM provider. Serve a user interface of its own: Plan shows its runs, steps and schedules. Store project or agent data of its own. | Run agents itself. Contain workflow logic outside the engine beyond simple issue rules. |
+| Stores | Sessions, memory, learned skills | Execution state in the schema `helena_engine`: checkpoints, queues, the records of finished workflows (events for 7 days, runs for 30, failed runs for 90) | Configuration and results; the run history in `pipeline_run`, schedules in `helena_schedule` |
 
 The Kingston integration service (`deployment/volition-stack/integration/server.mjs`) is the
 only component that changes operating-system resources: project workspaces, browser units,
 terminal sessions and Hermes profiles. It has no user interface and makes no decisions.
 
 Plan imports mail over IMAP in its worker and sends mail over SMTP after the owner confirms
-it. For an account with triage switched on, the worker hands new inbox mail to the Mastra
-`inbox-triage` workflow through the integration service's triage route
-(`POST /api/inbox/triage`). Hermes reads and drafts mail through Plan's MCP tools
+it. For an account with triage switched on, the worker hands new inbox mail to the
+integration service's triage route (`POST /api/inbox/triage`). That route has no classifier
+since Mastra's `inbox-triage` workflow went; a classifier on Hermes is an open item. New
+mail also reaches the engine as a `mail_received` event, which starts the builder workflows
+with a mail trigger. Hermes reads and drafts mail through Plan's MCP tools
 `search_mail`, `read_mail`, `draft_reply` and `request_mail_send`.
 
 ## Two paths
 
 - **Interactive** — chat, @-mentions and decisions on approval requests. The owner is
   present. Plan queues the message, or the run that carries the decision, and the Hermes
-  runner answers it. Mastra is not involved.
+  runner answers it. The engine is not involved.
 - **Automated** — assignment, the "Ready for agents" column, field triggers, trigger rules,
-  schedules, inbound mail, webhooks. Plan or the integration service sends an event to
-  Mastra; a Mastra workflow queues Hermes stages in Plan; results are written back to Plan.
-  A schedule is a routine: a Mastra schedule of the `agent-routine` workflow, which has
-  Plan create or reopen a task and delegate it to an agent. The delegation queues the
-  Hermes run, or starts `agent-team` for a coordinator. A workflow a member put
-  together in Plan's workflow builder runs as `plan-pipeline`, started by hand, by a
-  task event of its project or by its schedule.
+  schedules, inbound mail, webhooks. Plan publishes a domain event to the engine's outbox
+  (the worker does so for new mail); an engine workflow queues Hermes stages in Plan's run
+  queue; results are written back to Plan. A schedule is a routine: a row of
+  `helena_schedule` whose fire has the engine create or reopen a task and delegate it to an
+  agent. The delegation queues the Hermes run, or starts the agent team for a coordinator.
+  A workflow a member put together in Plan's workflow builder runs on the engine as well,
+  started by hand, by a task event of its project, by its schedule, by a webhook or by
+  incoming mail.
 
 ## Interfaces
 
-1. **Plan → Mastra**: events (`event-ingress`) and the control API (start, cancel, retry,
-   schedules, runs).
-2. **Mastra → Plan**: Mastra queues Hermes stages in Plan's run queue, synchronizes results
-   to the issue, and creates or reopens the tasks of routines. For a builder workflow it
-   decides which step runs next, and Plan evaluates, applies and records each step
-   through its pipeline control API. Mastra never calls Hermes
-   directly, so every run is visible in Plan. A canceled workflow run cancels the queued run
-   of the stage it waits for.
+1. **Plan → engine** (in the API process): domain events through the engine's outbox (the
+   DBOS queue `helena-events`; the worker enqueues through a DBOS client), starts, cancels,
+   retries from the failed step, and signals: a finished agent run or a decided approval
+   wakes the workflow that waits for it.
+2. **Engine → Plan**: the engine queues Hermes stages in Plan's run queue, synchronizes
+   results to the issue, creates or reopens the tasks of routines, and records each step in
+   `pipeline_run_step`. Step types and trigger types are registries
+   (`apps/api/src/modules/engine/registry.ts`). The engine never calls Hermes directly, so
+   every run is visible in Plan. A canceled workflow run cancels the queued run of the stage
+   it waits for.
 3. **Plan ↔ Hermes**: the runner claims queued work and chat messages, sends heartbeats and
    AG-UI events. A heartbeat answers `canceled` for a canceled run or chat answer, and the
    runner then stops Hermes. Hermes reads and writes Plan data through Plan's MCP server
    (issues, mail drafts, secret names). Before an agent sends, publishes, pays or deletes
    anything outside Plan it calls `request_approval` and ends its run; the owner decides
-   on the Approvals page, next to the Mastra runs held at an approval gate. A command
+   on the Approvals page, next to the workflow runs held at an approval step. A command
    Hermes flags as dangerous goes the same way in a run: Hermes' `plan-approval-guard`
    plugin blocks it until Plan lists it as approved for that run.
-4. **Plan and Mastra → integration service**: provisioning, inbox triage, browser control.
+4. **Plan → integration service**: provisioning, inbox triage, browser control.
 
 ```
           owner
@@ -65,14 +71,15 @@ it. For an account with triage switched on, the worker hands new inbox mail to t
             ▼
   ┌──────────────────── Plan ─────────────────────┐
   │ UI · data · run queue (agent_run, agent_chat) │
-  └──┬─────────▲──────────────┬──────────▲────────┘
-     │ events, │ queue stages,│ claim,   │ MCP
-     │ control │ sync results │ events   │
-     ▼         │              ▼          │
-  ┌── Mastra ──┴──┐        ┌──── Hermes ─┴─┐
-  │ workflows     │        │ one profile   │
-  │ schedules     │        │ per agent     │
-  └───────────────┘        └───────────────┘
+  │ engine: workflows, schedules (API process)    │
+  └──────────────────────┬──────────▲─────────────┘
+                         │ claim,   │ MCP
+                         │ events   │
+                         ▼          │
+                      ┌──── Hermes ─┴─┐
+                      │ one profile   │
+                      │ per agent     │
+                      └───────────────┘
 ```
 
 ## Agent structure
@@ -130,24 +137,25 @@ Plan keeps only an index of them in Postgres (`vault_entry`, `vault_link`, `vaul
   project's workspace and browser. The integration service provisions it with the
   project. An agent that works in several projects has no runtime, because the runner
   claims an agent's runs from all of its projects with one working directory.
-- Plan does not queue automated agent runs itself. Assignment, field triggers and trigger
-  rules send an event to Mastra.
-- Business schedules exist only in Mastra; Plan has no scheduler of its own. The Schedules
-  page of a project and the Home overview manage routines through the control API. Every
-  fire of a schedule gets its own event id from its Mastra run id and is listed with the
-  runs of its project. A fire that starts more than ten minutes late is skipped, and so is
-  one whose routine task is still open. Agents get no Hermes cron: the runner never passes
+- Automated agent work goes through the engine. Assignment, field triggers and trigger
+  rules publish an event that the engine's triggers match.
+- Business schedules exist only in the engine: `helena_schedule` holds them, and the engine
+  fires each scheduled time once (croner computes the times in the schedule's time zone, the
+  DBOS workflow ID `fire:<schedule>:<time>` keeps a second replica from firing it again).
+  The Schedules page of a project and the Home overview manage routines. Every fire is
+  listed with the runs of its routine. After downtime only the newest missed time counts:
+  by default it is skipped when it starts more than ten minutes late; a schedule set to
+  catch up runs it once. A fire whose routine task is still open is skipped. Agents get no Hermes cron: the runner never passes
   the `cronjob` toolset, and the approval guard plugin blocks the tool.
 - Each area of a project has a folder at the same relative path in the project's workspace
   and in its vault folder. Plan stores the folder name; the integration service creates,
   moves and trashes the folders with the project's provisioning. A run for a task of an area
   starts in the area's workspace folder.
-- A local process is not trusted for being local. Mastra answers only its proxy, which
-  holds a token created on every start. The proxy accepts control requests with a token
-  only Plan's API and worker hold, and Studio requests only with a token Nginx adds after
-  Plan confirmed the instance owner. No process of the Unix user Hermes runs as can read
-  either token. The complete trust model is in
-  `deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
+- A local process is not trusted for being local. The engine has no port and no token: it
+  runs inside the API process and keeps its state in Plan's database, which only Plan's
+  database role reaches. Its public webhook trigger (`POST /hooks/workflows/:hookId`)
+  accepts only requests signed with the hook's secret (Standard Webhooks) or, for senders
+  that cannot sign, carrying the secret as a bearer token.
 - Documents are files in the vault (`PROJECT_VAULT_ROOT`): `Home/`, `Templates/`,
   `Private/` (the owner's; group `volition-private`, which the agents' user is not in),
   and `Projects/<KEY>/`. Plan's Files page reads and writes them directly; a file deleted
@@ -197,10 +205,10 @@ Plan keeps only an index of them in Postgres (`vault_entry`, `vault_link`, `vaul
 - Automated runs use the toolsets of the agent's role. In chat, Hermes may delegate freely.
 - Whether an agent takes work is stored and enforced in Plan, at its run queue: a paused
   agent's runs and chat answers are not claimed, a mention or a delegation queues nothing,
-  and an agent-team stage for it is refused, which fails the Mastra run with the reason.
+  and an agent-team stage for it is refused, which fails the engine run with the reason.
   Token ceilings (per agent per UTC day and month, per project per month) count the tokens
-  the runs report; reaching one pauses the agent. Mastra's own budgets are the limits of
-  one workflow run.
+  the runs report; reaching one pauses the agent. The agent team's own budgets (attempts,
+  time per stage) are the limits of one workflow run.
 - An agent that needs a person's answer calls Plan's `mark_issue_blocked` tool: the issue
   gets the Blocked label and the question as a comment to the person the agent reports to,
   and the run ends as a success marked blocked.

@@ -49,21 +49,6 @@ function publicUrl(value) {
   return url.toString();
 }
 
-function nextcloudInternalUrl(value) {
-  const url = new URL(value || "http://127.0.0.1:8092");
-  if (
-    url.protocol !== "http:" ||
-    !["127.0.0.1", "[::1]", "nextcloud"].includes(url.hostname) ||
-    url.username ||
-    url.password
-  ) {
-    throw new Error(
-      "NEXTCLOUD_INTERNAL_URL must use loopback or the known internal nextcloud service",
-    );
-  }
-  return url.toString();
-}
-
 function privateServiceBaseUrl(value, fallback, name) {
   const url = new URL(value || fallback);
   const host = url.hostname;
@@ -124,50 +109,6 @@ function integerBase(value, fallback, name) {
   }
   return selected;
 }
-function opaqueRef(value, fallback, name) {
-  const selected = value?.trim() || fallback;
-  if (!/^[a-z][a-z0-9._-]*:[A-Za-z0-9._-]+$/.test(selected)) {
-    throw new Error(`${name} is invalid`);
-  }
-  return selected;
-}
-
-function capabilityRef(value, fallback, name) {
-  const selected = value?.trim() || fallback;
-  if (!/^[a-z][a-z0-9._-]*\.v\d+$/.test(selected)) throw new Error(`${name} is invalid`);
-  return selected;
-}
-
-function privateServiceUrl(value, fallback, expectedPath) {
-  const url = new URL(value || fallback);
-  const host = url.hostname;
-  const privateHost =
-    host === "127.0.0.1" ||
-    host === "[::1]" ||
-    host === "worker" ||
-    /^10\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host);
-  if (
-    url.protocol !== "http:" ||
-    !privateHost ||
-    url.username ||
-    url.password ||
-    url.pathname !== expectedPath ||
-    url.search ||
-    url.hash
-  ) {
-    throw new Error("The private service URL is invalid");
-  }
-  return url.toString();
-}
-
-function triageControlPlane(value) {
-  const selected = value?.trim() || "mastra";
-  if (selected !== "mastra") throw new Error("INBOX_TRIAGE_CONTROL_PLANE must be mastra");
-  return selected;
-}
-
 function mailAddresses(value) {
   return (value ?? "")
     .split(",")
@@ -249,7 +190,6 @@ export function loadConfig(env = process.env) {
       "/var/lib/volition/hermes/run/agents",
     ),
     hermesRunnerService: env.HERMES_RUNNER_SERVICE?.trim() || "volition-hermes-runner.service",
-    inboxTriageControlPlane: triageControlPlane(env.INBOX_TRIAGE_CONTROL_PLANE),
     connectionsIntegrationTokenFile: absolutePath(
       env.CONNECTIONS_INTEGRATION_TOKEN_FILE,
       path.join(integrationStateRoot, "connections-integration-token"),
@@ -322,7 +262,6 @@ export function loadConfig(env = process.env) {
     systemctlUser: env.SYSTEMCTL_SCOPE !== "system",
     mcookieBin: absolutePath(env.MCOOKIE_BIN, "/usr/bin/mcookie"),
     xauthBin: absolutePath(env.XAUTH_BIN, "/usr/bin/xauth"),
-    nextcloudInternalUrl: nextcloudInternalUrl(env.NEXTCLOUD_INTERNAL_URL),
     inboxAccounts: mailAddresses(env.INBOX_TRIAGE_ACCOUNTS),
     inboxTriagePath: absolutePath(
       env.INBOX_TRIAGE_PATH,
@@ -331,49 +270,6 @@ export function loadConfig(env = process.env) {
     inboxIntegrationTokenFile: absolutePath(
       env.INBOX_INTEGRATION_TOKEN_FILE,
       path.join(integrationStateRoot, "volition/inbox-integration-token"),
-    ),
-    mastraInboxUrl: privateServiceUrl(
-      env.MASTRA_INBOX_URL,
-      "http://172.30.95.2:4111/internal/inbox/triage",
-      "/internal/inbox/triage",
-    ),
-    mastraInboxTokenFile: absolutePath(
-      env.MASTRA_INBOX_TOKEN_FILE,
-      "/run/credentials/volition-provisioning.service/mastra_inbox_adapter_token",
-    ),
-    mastraEventIngressEnabled: env.MASTRA_EVENT_INGRESS_ENABLED === "true",
-    mastraEventUrl: privateServiceUrl(
-      env.MASTRA_EVENT_URL,
-      "http://172.30.95.2:4111/internal/events",
-      "/internal/events",
-    ),
-    mastraEventTokenFile: absolutePath(
-      env.MASTRA_EVENT_TOKEN_FILE,
-      "/run/credentials/volition-provisioning.service/mastra_inbox_adapter_token",
-    ),
-    mastraInboxOrganizationRef: opaqueRef(
-      env.MASTRA_INBOX_ORGANIZATION_REF,
-      "organization:volition",
-      "MASTRA_INBOX_ORGANIZATION_REF",
-    ),
-    mastraInboxProjectRef: opaqueRef(
-      env.MASTRA_INBOX_PROJECT_REF,
-      "project:PRIV",
-      "MASTRA_INBOX_PROJECT_REF",
-    ),
-    mastraInboxCapabilityRef: capabilityRef(
-      env.MASTRA_INBOX_CAPABILITY_REF,
-      "inbox-triage.v1",
-      "MASTRA_INBOX_CAPABILITY_REF",
-    ),
-    mastraInboxClassifierSocketPath: absolutePath(
-      env.MASTRA_INBOX_CLASSIFIER_SOCKET,
-      path.join(integrationStateRoot, "volition/ipc/mastra-inbox-classifier.sock"),
-    ),
-    mastraControlEnabled: env.MASTRA_CONTROL_ENABLED === "true",
-    mastraControlTokenFile: absolutePath(
-      env.MASTRA_CONTROL_TOKEN_FILE,
-      "/run/credentials/volition-provisioning.service/plan_mastra_control_token",
     ),
   };
 }
@@ -392,31 +288,22 @@ export async function loadServerSecrets(config) {
   const planControlToken = config.planControlTokenFile
     ? await privateSecret(config.planControlTokenFile, "PLAN_CONTROL_TOKEN_FILE")
     : "";
-  const mastraControlToken = config.mastraControlEnabled
-    ? await privateSecret(config.mastraControlTokenFile, "MASTRA_CONTROL_TOKEN_FILE")
-    : "";
-  const mastraEventToken = config.mastraEventIngressEnabled
-    ? await privateSecret(config.mastraEventTokenFile, "MASTRA_EVENT_TOKEN_FILE")
-    : "";
   const connectionsIntegrationToken = config.connectionsEnabled
     ? await privateSecret(config.connectionsIntegrationTokenFile, "CONNECTIONS_INTEGRATION_TOKEN_FILE") : "";
   if (config.inboxAccounts.length === 0) {
-    return { ...config, token, planApiKey, planControlToken, mastraControlToken, mastraEventToken, connectionsIntegrationToken };
+    return { ...config, token, planApiKey, planControlToken, connectionsIntegrationToken };
   }
-  const [inboxIntegrationToken, mastraInboxToken] = await Promise.all([
-    privateSecret(config.inboxIntegrationTokenFile, "INBOX_INTEGRATION_TOKEN_FILE"),
-    privateSecret(config.mastraInboxTokenFile, "MASTRA_INBOX_TOKEN_FILE"),
-  ]);
+  const inboxIntegrationToken = await privateSecret(
+    config.inboxIntegrationTokenFile,
+    "INBOX_INTEGRATION_TOKEN_FILE",
+  );
   return {
     ...config,
     token,
     planApiKey,
     planControlToken,
-    mastraControlToken,
-    mastraEventToken,
     inboxIntegrationToken,
     connectionsIntegrationToken,
-    mastraInboxToken,
   };
 }
 
@@ -429,30 +316,10 @@ export function assertServerConfig(config) {
       throw new Error("CONNECTIONS_INTEGRATION_TOKEN must contain at least 32 bytes");
     }
   }
-  for (const [name, value] of [
-    ["INBOX_INTEGRATION_TOKEN", config.inboxIntegrationToken],
-    ...(config.connectionsEnabled ? [["CONNECTIONS_INTEGRATION_TOKEN", config.connectionsIntegrationToken]] : []),
-    ["MASTRA_INBOX_TOKEN", config.mastraInboxToken],
-    ...(config.mastraControlEnabled
-      ? [["MASTRA_CONTROL_TOKEN", config.mastraControlToken]]
-      : []),
-  ]) {
-    if (config.inboxAccounts?.length && Buffer.byteLength(value || "") < 32) {
-      throw new Error(`${name} must contain at least 32 bytes`);
-    }
-  }
   if (
-    config.mastraControlEnabled &&
-    Buffer.byteLength(config.mastraControlToken || "") < 32
+    config.inboxAccounts?.length &&
+    Buffer.byteLength(config.inboxIntegrationToken || "") < 32
   ) {
-    throw new Error("MASTRA_CONTROL_TOKEN must contain at least 32 bytes");
-  }
-  if (config.mastraEventIngressEnabled) {
-    if (!config.mastraControlEnabled) {
-      throw new Error("MASTRA_EVENT_INGRESS_ENABLED requires MASTRA_CONTROL_ENABLED");
-    }
-    if (Buffer.byteLength(config.mastraEventToken || "") < 32) {
-      throw new Error("MASTRA_EVENT_TOKEN must contain at least 32 bytes");
-    }
+    throw new Error("INBOX_INTEGRATION_TOKEN must contain at least 32 bytes");
   }
 }

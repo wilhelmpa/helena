@@ -18,7 +18,7 @@ Environment=CODE_PUBLIC_URL=https://plan.volition.one/workspace/code/
 Environment=TERMINAL_PUBLIC_URL=https://plan.volition.one/focus/terminal-project/
 LoadCredential=provisioning_token:/home/pw/services/volition-stack/.secrets/project_provisioning_token
 LoadCredential=plan_api_key:/home/pw/services/volition-stack/.secrets/itsaplan_home_master_agent_api_key
-LoadCredential=plan_control_token:/home/pw/services/volition-stack/.secrets/plan_mastra_control_token
+LoadCredential=plan_control_token:/home/pw/services/volition-stack/.secrets/plan_control_token
 Environment=PROVISIONING_TOKEN_FILE=%d/provisioning_token
 Environment=ITSAPLAN_MCP_BEARER_FILE=%d/plan_api_key
 Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token

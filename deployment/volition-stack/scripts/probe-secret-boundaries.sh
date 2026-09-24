@@ -4,9 +4,8 @@ set -euo pipefail
 stack=/home/pw/services/volition-stack
 backup=/home/pw/services/volition-backups/current
 vault_container=volition-vault-vaultwarden-1
-mastra_container=volition-mastra-studio-studio-1
 
-python3 - "$vault_container" "$mastra_container" <<'PY'
+python3 - "$vault_container" <<'PY'
 import json
 import subprocess
 import sys
@@ -31,13 +30,6 @@ networks = list(vault['NetworkSettings']['Networks'])
 assert len(networks) == 1
 network = json.loads(subprocess.check_output(['docker', 'network', 'inspect', networks[0]], text=True))[0]
 assert network['Internal'] is True
-
-mastra = inspect(sys.argv[2])
-assert not mastra['NetworkSettings']['Ports']
-names = {item.split('=', 1)[0].upper() for item in mastra['Config']['Env'] if '=' in item}
-for fragment in ('GMAIL', 'MAIL_PASSWORD', 'GIT_TOKEN', 'GITHUB_TOKEN', 'BROWSER_TOKEN', 'BROWSER_SECRET'):
-    assert all(fragment not in name for name in names)
-assert all(mount['Destination'] != '/home/pw/services/volition-stack/data/hermes' for mount in mastra['Mounts'])
 print('runtime-boundaries: ok')
 PY
 

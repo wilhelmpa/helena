@@ -10,7 +10,6 @@ garage/meta/
 **/__pycache__/
 **/*.pyc
 **/.state/
-**/.mastra/
 *.log
 *.sqlite
 *.sqlite-*

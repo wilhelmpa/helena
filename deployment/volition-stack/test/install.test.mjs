@@ -22,9 +22,9 @@ test('installs the bootstrap timer only after compose validation and starts ever
     'docker-compose.yml',
     'compose.apps.yml',
     'compose.vault.yml',
-    'optional/mastra-studio/compose.yml',
     'compose.gateway.yml',
   ]) expect(installer).toContain(compose);
+  expect(installer).not.toContain('mastra');
   expect(installer).toContain('config --quiet');
   expect(installer).toContain('docker run --rm -v "$PLAN_ROOT:/repo"');
   expect(installer).toContain('docker network create --internal --subnet 172.30.254.0/29 --gateway 172.30.254.1 volition_control');

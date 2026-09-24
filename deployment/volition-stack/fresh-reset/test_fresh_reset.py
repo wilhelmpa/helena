@@ -101,23 +101,19 @@ class FreshResetTest(unittest.TestCase):
             self.assertEqual(completed, dt.datetime(2026, 9, 22, 11, 45, tzinfo=dt.timezone.utc))
             self.assertEqual(snapshot_id, self.snapshot)
 
-    def test_backup_scope_fails_when_mastra_archive_is_missing(self):
+    def test_backup_scope_fails_when_an_archive_is_missing(self):
         rows = [
             json.dumps({"struct_type": "node", "path": path})
             for path in fresh_reset.BACKUP_SCOPE
-            if not path.endswith("/mastra-data.tar")
+            if not path.endswith("/vaultwarden-volumes.tar")
         ]
         with mock.patch.object(fresh_reset, "run", return_value=mock.Mock(stdout="\n".join(rows))):
             with self.assertRaises(fresh_reset.ResetError):
                 fresh_reset.verify_backup_scope(self.snapshot)
 
-    def test_backup_restore_probe_checks_manifest_and_mastra_archive(self):
+    def test_backup_restore_probe_checks_manifest(self):
         counts = mock.Mock(stdout=json.dumps({"plan": "0,0,0,0,0", "nextcloud": "0,0,0"}))
-        archive = mock.Mock(stdout=b"tar-bytes")
-        listing = mock.Mock(stdout=b"./studio.db\n")
-        with mock.patch.object(fresh_reset, "run", return_value=counts), mock.patch.object(
-            fresh_reset.subprocess, "run", side_effect=[archive, listing]
-        ):
+        with mock.patch.object(fresh_reset, "run", return_value=counts):
             fresh_reset.verify_backup_restore_probe(self.snapshot)
 
     def test_backup_restore_probe_rejects_wrong_manifest(self):
@@ -349,7 +345,6 @@ class FreshResetTest(unittest.TestCase):
                     "vaultUiHidden": True,
                     "hermesDataFresh": True,
                     "hermesRunnerActive": True,
-                    "mastraDataFresh": True,
                     "nextcloudDataFresh": True,
                     "nextcloudCredentialsRotated": True,
                     "finalAcceptanceComplete": True,

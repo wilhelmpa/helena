@@ -15,8 +15,9 @@ retry timer. No project is created. The Home chat is team-scoped and therefore w
 project exists.
 
 The API bootstrap endpoint listens on loopback with the rest of Plan and requires the independent
-`plan_mastra_control_token`. The bearer is supplied to curl over stdin, and the returned agent key is
-written directly to a mode `0600` temporary file before an atomic rename. Neither value is printed.
+control token (`PLAN_CONTROL_TOKEN_FILE`; `/etc/volition/plan-control.token` on Kingston). The
+bearer is supplied to curl over stdin, and the returned agent key is written directly to a mode
+`0600` temporary file before an atomic rename. Neither value is printed.
 
 ## Prompt and model ownership
 
@@ -103,12 +104,13 @@ restored on the agent in Plan.
 
 ## Hermes cron
 
-Recurring work is a routine in Plan, run through Mastra; a Hermes cron job would run the same work
-a second time. The runner never passes the `cronjob` toolset to Hermes, Plan does not offer it as a
-toggle, and the plugin blocks the `cronjob_manage` tool in every session. The Hermes cron ticker
-has no switch in `config.yaml`: `hermes dashboard` starts it when `HERMES_DESKTOP=1` is set, which
-`volition-hermes-serve.service` does, and it ticks the store of every profile. The runner reports
-the jobs in each home's `cron/jobs.json` to Plan, which shows them as a warning on the agent.
+Recurring work is a routine in Plan, run by the Helena engine in the API; a Hermes cron job would
+run the same work a second time. The runner never passes the `cronjob` toolset to Hermes, Plan does
+not offer it as a toggle, and the plugin blocks the `cronjob_manage` tool in every session. The
+Hermes cron ticker has no switch in `config.yaml`: `hermes dashboard` starts it when
+`HERMES_DESKTOP=1` is set, which `volition-hermes-serve.service` does, and it ticks the store of
+every profile. The runner reports the jobs in each home's `cron/jobs.json` to Plan, which shows them
+as a warning on the agent.
 
 ## Learning
 

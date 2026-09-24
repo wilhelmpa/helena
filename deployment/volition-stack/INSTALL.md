@@ -1,8 +1,10 @@
 # Kingston native installation and operation
 
 Kingston runs the Volition stack directly on Debian 13. The production source is
-`/srv/volition/source/plan`. PostgreSQL, Redis, Nginx, Plan, Mastra, Hermes execution,
-code-server, project terminals, and project browsers are native system services. Docker
+`/srv/volition/source/plan`. PostgreSQL, Redis, Nginx, Plan, Hermes execution,
+code-server, project terminals, and project browsers are native system services. The
+workflow engine (builder workflows, agent teams, routines and their schedules) runs inside
+the Plan API; it is not a service of its own. Docker
 Compose is not the installation or operating procedure for Kingston.
 
 The Compose files and `install.sh` in this directory describe the earlier container
@@ -13,8 +15,8 @@ on Kingston and do not use Compose health as evidence for the native stack.
 
 The verified host uses Debian 13, Node.js 24.21 at `/usr/local/bin/node`, Bun 1.4 at
 `/usr/local/bin/bun`, PostgreSQL 17, Redis 8, Wetty 3.2.2, code-server 4.138, and Nginx.
-Create the `volition` group and dedicated `volition-plan`, `volition-hermes`, and
-`volition-mastra` system users before installing units. Runtime users have no login shell.
+Create the `volition` group and dedicated `volition-plan` and `volition-hermes` system
+users before installing units. Runtime users have no login shell.
 Plan, provisioning, and other approved native writers share vault access through the
 `volition` group. Vault directories use mode `2770`: group inheritance is required so a
 Markdown file created by one service remains editable by the others.
@@ -31,7 +33,6 @@ Markdown file created by one service remains editable by the others.
 /var/lib/volition/hermes
 /var/lib/volition/hermes/profiles/<slug>
 /var/lib/volition/hermes/profiles/<slug>_<agentId>
-/var/lib/volition/mastra
 /var/lib/volition/project-browser/projects/<slug>
 ```
 
@@ -50,18 +51,14 @@ length during installation.
 
 | Credential | Loaded by |
 | --- | --- |
-| `plan-control.token` | Plan API (bearer of the internal orchestration routes), Hermes team bridge, provisioning |
-| `mastra-control.token` | Plan API and worker (Mastra control requests), Mastra |
-| `mastra-gateway.token` | Mastra; Nginx sends it with Studio requests |
-| `hermes-team.token` | Mastra, Hermes team bridge |
+| `plan-control.token` | Plan API (bearer of the internal bootstrap routes), provisioning |
 | `provisioning.token` | Plan worker, provisioning |
 | `hermes-plan-key` | Hermes runner, provisioning |
 
-`native/nginx/install-mastra-studio.sh` creates `mastra-control.token` and
-`mastra-gateway.token` when they are missing and installs the Nginx part of Studio (see
-`native/nginx/README.md`); `deploy.sh` runs it when it changes. `plan.env` sets
-`MASTRA_CONTROL_URL=http://127.0.0.1:4111/internal/mastra/control` for the API and the
-worker.
+The workflow engine needs no credential and no setting. It keeps its state in the schema
+`helena_engine` of Plan's database, which the API creates and migrates when it starts. The
+`HELENA_ENGINE_*` variables in `.env.example` are optional; `HELENA_ENGINE=off` runs an API
+process without it. A second API replica needs its own `HELENA_ENGINE_EXECUTOR_ID`.
 
 After creating the vault, verify its shared boundary without displaying document content:
 
@@ -92,15 +89,6 @@ cd /srv/volition/source/plan
 /usr/local/bin/bun run build
 ```
 
-Build the separate Mastra application before starting it:
-
-```sh
-cd /srv/volition/source/plan/deployment/volition-stack/optional/mastra-studio
-/usr/local/bin/bun install
-/usr/local/bin/bun run test
-/usr/local/bin/bun run build
-```
-
 Install reviewed units from `deployment/volition-stack/native/systemd/` into
 `/etc/systemd/system/`. Install the project terminal wrapper below `/usr/local/libexec`,
 its router under the repository path, and Nginx snippets from
@@ -113,14 +101,13 @@ dependency order:
 1. PostgreSQL and Redis.
 2. Plan migration, API, web, and worker.
 3. Hermes runner and provisioning.
-4. Hermes team bridge and Mastra.
-5. code-server, project terminal, and project browser router.
-6. Nginx.
+4. code-server, project terminal, and project browser router.
+5. Nginx.
 
 The units encode this order with `After=` and `Wants=`. No Volition service `Requires=`
 another one apart from the migration: systemd restarts a unit together with every unit it
-requires, and a restart of the API would otherwise restart the runner, the bridge, Mastra
-and the provisioning service and cut the work in flight. Each of them waits for the
+requires, and a restart of the API would otherwise restart the runner and the provisioning
+service and cut the work in flight. Each of them waits for the
 service it uses while that is down. Every long-running unit has `Restart=always`,
 `StartLimitIntervalSec=0` and `RestartSteps=5` up to `RestartMaxDelaySec=60`, so a crash
 loop is slowed down but never ends in a failed unit that stays down.
@@ -131,9 +118,10 @@ After a reboot, work in flight continues in this way:
   their runs back to the queue, and claims them again when it starts.
 - A run whose runner was killed without a stop is claimed again when its five-minute lease
   runs out.
-- Mastra continues its active workflow runs. Each continued stage asks for its Plan run
-  with the same idempotency key and waits for it.
-- The api asks Mastra again for agent-team starts it recorded but Mastra did not answer.
+- The engine in the API continues its workflows at the step they were in: every step is
+  checkpointed in `helena_engine`, and a step that already ran does not run again. A
+  schedule time missed while the API was down runs once or is recorded as missed, as the
+  schedule's catch-up setting says.
 
 The live instance runs no development servers:
 - `volition-plan-api` and `volition-plan-worker` run the checkout's sources without a file
@@ -158,8 +146,6 @@ systemctl is-active \
   volition-plan-worker.service \
   volition-provisioning.service \
   volition-hermes-runner.service \
-  volition-hermes-team-bridge.service \
-  volition-mastra.service \
   volition-code.service \
   volition-terminal.service \
   volition-project-browser-router.service \
@@ -170,17 +156,17 @@ sudo nginx -t
 ```
 
 Expected internal listeners include Plan on `127.0.0.1:3000` and `:3001`, provisioning
-on `:18800`, the Mastra proxy on `:4111` and Mastra on `:4112`, code-server on `:8443`, project terminals on
-`:8444`, and the browser router on `:6082`. PostgreSQL and Redis remain loopback-only.
+on `:18800`, code-server on `:8443`, project terminals on `:8444`, and the browser router
+on `:6082`. PostgreSQL and Redis remain loopback-only.
 
 After a change, verify the public route through Nginx, anonymous denial, HTTP assets, and
 the applicable WebSocket path. A running unit or open port alone is insufficient.
 
-Home shows the instance owner when the Hermes runner, Mastra, the Hermes team bridge, the
-provisioning service and the worker were last seen working (`GET /god/system-health`),
-and lists agent runs that wait for a runner, runs still leased past their time limit,
-agent-team starts waiting for Mastra, agent-team runs without progress for 15 minutes,
-runs failed in the last day and provisioning jobs that gave up. The worker and the bridge
-report every 30 seconds, the worker checks the provisioning service's `/healthz`, a runner
-counts as seen when it polls, and the API checks Mastra's `/healthz` when the overview is
-read.
+Home shows the instance owner when the Hermes runner, the engine, the provisioning service
+and the worker were last seen working (`GET /god/system-health`), when the janitors
+`run-janitor`, `resume-janitor` and `engine-maintenance` last ran, and lists agent runs that
+wait for a runner, runs still leased past their time limit, workflow runs without progress,
+schedules that did not fire on time, runs failed in the last day and provisioning jobs that
+gave up. The worker reports every 30 seconds and checks the provisioning service's
+`/healthz`, the engine reports every few seconds, and a runner counts as seen when it
+polls.

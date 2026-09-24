@@ -4,9 +4,70 @@ Each release that removes or moves an API path is listed here, newest first. A s
 or an MCP client that calls the API by path needs the replacement. The web app is
 released with the API and needs no change.
 
+## Mastra removed: workflows run in the api
+
+Builder workflows, the agent team, routines and workflow schedules run in the api now, on
+the Helena engine: DBOS Transact, with its state in the schema `helena_engine` of the api's
+database, which the api creates and migrates when it starts. Mastra, Mastra Studio, the
+Hermes team bridge and their tokens are gone. The migration `0168_helena_engine` drops the
+`mastra_*` tables and the `mastra-*` project settings; every run keeps its history in
+`pipeline_run`, and routines and workflow schedules are rows of `helena_schedule`.
+
+| Removed | Replacement |
+| --- | --- |
+| `POST /internal/orchestration/agent-run`, `.../agent-run/status`, `.../agent-run/cancel`, `.../task-sync`, `.../routine`, `.../heartbeat`, `.../pipeline` (called by the team bridge) | none: the engine runs in the api process |
+| `GET` and `POST /projects/:projectKey/control-plane/workflows/:workflowId/schedules`, `PATCH` and `DELETE .../schedules/:scheduleId`, `POST .../schedules/:scheduleId/:action`, `GET .../schedules/:scheduleId/triggers` | the `schedule` trigger of a builder workflow; routines keep `/projects/:projectKey/routines` |
+| `POST /projects/:projectKey/control-plane/workflows/:workflowId/runs` | `POST /issues/:issueId/agent-team` starts the agent team on a task (it also starts when a task is delegated to a coordinator); a builder workflow starts from its trigger or `POST /issues/:issueId/pipeline-runs` |
+| `POST /projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/approval` | `POST /pipeline-runs/:runId/approval` for the approval step of a workflow run |
+| Studio below `/mastra/` | the workflow pages and Home → Systemzustand |
+
+The other `/projects/:projectKey/control-plane/workflows` routes (list, settings, runs, retry,
+cancel) stay and now answer from the engine. New are the public webhook trigger
+`POST /hooks/workflows/:hookId` (Standard Webhooks signature), its management at
+`/projects/:projectKey/pipelines/:pipelineId/hook`, the signing secret of webhook steps at
+`/projects/:projectKey/workflow-signing-secret`, `GET /workflow-engine/types`,
+`GET /workflow-engine/settings`, `GET` and `PUT /god/engine` (the instance time zone), and
+`GET /projects/:projectKey/routines/:routineId/runs` (MCP `list_routine_runs`).
+
+The health overview (`GET /god/system-health`) reports the services `runner`, `engine`,
+`provisioning` and `worker` and the janitors `run-janitor`, `resume-janitor` and
+`engine-maintenance`; `mastra`, `bridge`, `stage-janitor` and `workflow-schedules` are gone.
+
+Removed from the deployment: the units `volition-mastra`, `volition-hermes-team-bridge` and
+their `-dev` variants, `deployment/volition-stack/optional/mastra-studio/`, the nginx
+snippet `volition-mastra-studio.conf` with `conf.d/volition-mastra-gateway.conf`, and the
+integration service's `/internal/mastra/events` and `/internal/mastra/inbox/classify` routes
+with the classifier socket. The integration service's inbox triage has no classifier until
+one on Hermes exists; its runs fail with "No inbox classifier is configured." Its
+connections report no longer probes Nextcloud.
+
+Removed environment variables: `MASTRA_CONTROL_URL` and `MASTRA_CONTROL_TOKEN_FILE` (api and
+worker), `PIPELINE_START_POLL_INTERVAL_MS`, `AGENT_TEAM_START_POLL_INTERVAL_MS`,
+`STAGE_JANITOR_INTERVAL_MS` and `WORKFLOW_SCHEDULE_SYNC_INTERVAL_MS` (api); `MASTRA_INBOX_URL`,
+`MASTRA_INBOX_TOKEN_FILE`, `MASTRA_INBOX_ORGANIZATION_REF`, `MASTRA_INBOX_PROJECT_REF`,
+`MASTRA_INBOX_CAPABILITY_REF`, `MASTRA_INBOX_CLASSIFIER_SOCKET`, `MASTRA_EVENT_INGRESS_ENABLED`,
+`MASTRA_EVENT_URL`, `MASTRA_EVENT_TOKEN_FILE`, `MASTRA_CONTROL_ENABLED`,
+`MASTRA_CONTROL_TOKEN_FILE`, `INBOX_TRIAGE_CONTROL_PLANE` and `NEXTCLOUD_INTERNAL_URL`
+(integration service); `HERMES_TEAM_TOKEN_FILE` and `HERMES_TEAM_SOCKET` (team bridge); and
+the Mastra service's own `MASTRA_*` and `STUDIO_*` settings. An unknown variable is ignored,
+so a stale line does no harm. The engine's settings are optional: `HELENA_ENGINE=off`,
+`HELENA_ENGINE_DATABASE_URL`, `HELENA_ENGINE_SCHEMA`, `HELENA_ENGINE_POOL_SIZE`,
+`HELENA_ENGINE_VERSION` (keep it fixed across deploys), `HELENA_ENGINE_EXECUTOR_ID` (one per
+api replica; the compose files fix it to `api`), `HELENA_ENGINE_LOG_LEVEL`,
+`HELENA_ENGINE_POLL_MS`, `HELENA_ENGINE_WAIT_SECONDS`, `HELENA_ENGINE_TICK_MS`,
+`HELENA_ENGINE_MAINTENANCE_MS` and `HELENA_TIMEZONE` (see `.env.example`).
+
+Upgrading a native host: `deployment/volition-stack/native/deploy.sh` stops and removes the
+Mastra and bridge units before it migrates, and takes the Studio route out of the nginx site.
+Remove by hand afterwards: `/etc/volition/mastra-control.token`,
+`/etc/volition/mastra-gateway.token`, `/etc/volition/hermes-team.token`,
+`/var/lib/volition/mastra` (Studio's SQLite database), the `volition-mastra` user, and any
+`MASTRA_*` line in `/etc/volition/plan.env`. The legacy Docker stack's control token file
+is now `.secrets/plan_control_token` (it was `plan_mastra_control_token`).
+
 ## Agent schedules become routines
 
-Plan runs no schedules of its own. A schedule is a routine: a Mastra schedule that
+Plan runs no schedules of its own. A schedule is a routine: an engine schedule that
 creates a task delegated to an agent, or reopens one, on its cron.
 
 | Removed | Replacement |

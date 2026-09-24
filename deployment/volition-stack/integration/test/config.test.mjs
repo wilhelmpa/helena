@@ -17,11 +17,7 @@ describe("loadConfig", () => {
     assert.equal(config.projectTrashRoot, "/srv/volition/trash/projects");
     assert.equal(config.projectTrashRetentionDays, 30);
     assert.equal(config.projectBrowserSystemctlUser, false);
-    assert.equal(config.inboxTriageControlPlane, "mastra");
     assert.deepEqual(config.inboxAccounts, []);
-  });
-  it("rejects a non-Mastra inbox control plane", () => {
-    assert.throws(() => loadConfig({ INBOX_TRIAGE_CONTROL_PLANE: "direct" }), /must be mastra/);
   });
   it("reads the triage accounts as trimmed, lowercased mail addresses", () => {
     const config = loadConfig({ INBOX_TRIAGE_ACCOUNTS: " Owner@Example.com, ,archive@example.com," });
@@ -30,26 +26,21 @@ describe("loadConfig", () => {
 });
 
 describe("loadServerSecrets", () => {
-  it("loads the triage tokens only when triage accounts are set", async () => {
+  it("loads the triage token only when triage accounts are set", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "volition-config-"));
     try {
       const inboxTokenFile = path.join(root, "inbox-token");
-      const mastraTokenFile = path.join(root, "mastra-token");
       await fs.writeFile(inboxTokenFile, "i".repeat(32), { mode: 0o600 });
-      await fs.writeFile(mastraTokenFile, "m".repeat(32), { mode: 0o600 });
       const env = {
         PROVISIONING_TOKEN: "p".repeat(32),
         INBOX_INTEGRATION_TOKEN_FILE: inboxTokenFile,
-        MASTRA_INBOX_TOKEN_FILE: mastraTokenFile,
       };
       const off = await loadServerSecrets(loadConfig(env));
       assert.equal(off.inboxIntegrationToken, undefined);
-      assert.equal(off.mastraInboxToken, undefined);
       const on = await loadServerSecrets(
         loadConfig({ ...env, INBOX_TRIAGE_ACCOUNTS: "owner@example.com" }),
       );
       assert.equal(on.inboxIntegrationToken, "i".repeat(32));
-      assert.equal(on.mastraInboxToken, "m".repeat(32));
     } finally {
       await fs.rm(root, { recursive: true, force: true });
     }

@@ -140,9 +140,8 @@ function targetInventory() {
       ['agent_run', 0],
       ['agent_skill', 0],
       ['integration_credential', 0],
-      ['mastra_agents', 0],
-      ['mastra_schedules', 0],
-      ['mastra_workflow_snapshot', 0],
+      ['helena_schedule', 0],
+      ['pipeline_run', 0],
     ]),
     facts: {
       ownerId: 'owner-id',
@@ -258,6 +257,7 @@ test('reset SQL is transactional, clears future domain tables and contains only 
   assert.match(sql, /^BEGIN;/);
   assert.match(sql, /pg_advisory_xact_lock/);
   assert.match(sql, /TRUNCATE TABLE/);
+  assert.match(sql, /DROP SCHEMA IF EXISTS helena_engine CASCADE;/);
   assert.match(sql, /ACCESS EXCLUSIVE MODE/);
   assert.match(sql, /COMMIT;\n$/);
   assert.match(sql, new RegExp(hash));

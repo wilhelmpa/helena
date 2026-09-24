@@ -1,5 +1,5 @@
-<!-- Draft (package G). Describes the target architecture after Mastra is replaced by the
-     Helena worker (hub/native-engine). Moves to the repository root at the public cut. -->
+<!-- Draft (package G). Describes the architecture after Mastra was replaced by the Helena
+     engine in the API (hub/native-engine). Moves to the repository root at the public cut. -->
 
 # Helena architecture
 
@@ -17,9 +17,10 @@ is wrong.
    └──────┬──────┘
           │ /backend proxy
    ┌──────┴──────┐        ┌──────────┐
-   │ Helena API  │◄──────►│ Postgres │  projects, tasks, agents, runs, approvals, settings
-   │ (Elysia)    │        └──────────┘
+   │ Helena API  │◄──────►│ Postgres │  projects, tasks, agents, runs, approvals, settings;
+   │ (Elysia)    │        └──────────┘  the engine's state in the schema helena_engine
    │  REST · MCP · auth · webhooks · run queue
+   │  engine: workflows, agent teams, routines, schedules (DBOS)
    └──┬───────┬──┘
       │       │ claim / heartbeat / events / MCP
       │  ┌────┴─────────┐     ┌──────────────────────────────────────┐
@@ -27,8 +28,8 @@ is wrong.
       │  │ (per machine)│     │ one profile per agent, from Helena   │
       │  └──────────────┘     └──────────────────────────────────────┘
       │
-   ┌──┴──────────┐   queue, schedules, workflows, agent teams, janitors, resume,
-   │ Helena      │   mail import, webhooks and notifications
+   ┌──┴──────────┐   mail import, webhook and notification deliveries, project
+   │ Helena      │   provisioning; hands task and mail events to the engine
    │ worker      │
    └─────────────┘
    Browser router + gateway: one Chromium per project, live view, takeover, agent browsing
@@ -39,8 +40,8 @@ is wrong.
 | Component | Does | Does not |
 |---|---|---|
 | **Web** | Every screen, the one header row, live views, the tool panel | Talk to the database; hold secrets |
-| **API** | Data and rules. REST and OpenAPI for people and scripts, MCP for agents, auth (passwords, passkeys, TOTP, API keys), approvals, the run queue, webhooks | Call a model; run agents |
-| **Worker** | Everything that happens later or on time: workflow runs and agent teams (a state machine over `pipeline_run` and its steps, with leases and resume), routines and schedules, janitors, mail import, deliveries | Hold user interface state |
+| **API** | Data and rules. REST and OpenAPI for people and scripts, MCP for agents, auth (passwords, passkeys, TOTP, API keys), approvals, the run queue, webhooks. The **engine** runs in the API process: builder workflows, agent teams, routines and their schedules, as durable DBOS workflows whose every step is checkpointed, so a restart continues where it stopped; the janitors run beside it | Call a model; run agents |
+| **Worker** | Background work outside the engine: mail import, webhook and notification deliveries, project provisioning. It hands task and mail events to the engine through the engine's outbox (a DBOS queue) | Hold user interface state; run workflows |
 | **Runner** | Claims queued runs and chat messages for the agents it serves. Writes each agent's complete runtime profile from Helena (instructions, SOUL, skills, tools, MCP grants, model, reasoning, approval guard), starts the runtime, streams AG-UI events back, reports tokens and results | Decide what runs. It only executes what Helena queued |
 | **Hermes Agent** | The AI work: the tool loop, memory, skills, sessions, sub-agents | Schedule business work; hold its own configuration |
 | **Browser router + gateway** | A persistent browser profile per project, the live view (CDP screencast) with takeover, and agent browsing through the gateway. Logins are filled from Helena's access centre, so the model never sees a password | Store passwords itself |
@@ -63,8 +64,9 @@ is wrong.
 - **Interactive:** chat, @-mentions, decisions on approvals. You are present. Helena queues
   the message, a runner answers it, and you watch it stream.
 - **Automated:** assignment, the "ready for agents" column, triggers, schedules, inbound mail,
-  webhooks. The worker starts the matching workflow or agent team. Each agent step is a
-  queued run that a runner claims, and each result is written back to the task.
+  webhooks. The engine starts the matching workflow or agent team. Each agent step is a
+  queued run that a runner claims, and each result is written back to the task. The engine
+  waits for it by a signal, not by polling.
 
 ## Agents and their organisation
 
@@ -85,7 +87,7 @@ is wrong.
 | Runtimes (runner) | Profile writing, start and resume, chat stream, sessions, memory, usage, capabilities |
 | Connectors (access centre) | Sign-in flow, credential schema, services, grants, agent tools, health |
 | Agent tools (MCP) | Tools with a description, input schema and action category |
-| Workflow steps and triggers | Step types (agent task, approval, wait, condition, webhook, notification) and triggers (schedule, task event, webhook, mail) |
+| Workflow steps and triggers | Step types (agent task, approval, condition, task action, wait, notification, webhook) and triggers (manual, task created, task assigned, status changed, label added, schedule, webhook, mail received), in the engine's registries (`apps/api/src/modules/engine/registry.ts`) |
 | Policies | One central decision: may this agent do this category of action here |
 | Events | A domain event bus for webhooks, workflows and plugins |
 | UI slots | Tool panel tools, project settings sections, agent page tabs, dashboard widgets, header actions |
@@ -121,7 +123,7 @@ versioned `@helena/sdk`. See [plugins.md](plugins.md).
 ```text
 apps/api        Elysia API, MCP server, auth
 apps/web        Next.js web app
-apps/worker     background work: workflows, schedules, janitors, mail, deliveries
+apps/worker     background work: mail, deliveries, provisioning (the engine runs in apps/api)
 apps/bot        optional Telegram notifications
 packages/db     Drizzle schema and migrations
 packages/runner the agent runner (Apache-2.0)
