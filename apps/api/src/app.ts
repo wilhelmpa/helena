@@ -84,7 +84,8 @@ export const app = new Elysia()
       origin: trustedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+      // Last-Event-ID: a chat stream's reader resumes with it (the SSE standard's way).
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'Last-Event-ID'],
     }),
   )
   .onAfterHandle({ as: 'global' }, ({ request, response }) =>
