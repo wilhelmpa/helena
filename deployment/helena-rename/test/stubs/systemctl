@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""systemctl for the rename tests: units live in a JSON state file, every call is logged."""
+import fnmatch
+import json
+import os
+import sys
+
+STATE = os.environ["HELENA_RENAME_TEST_SYSTEMD"]
+LOG = STATE + ".calls"
+
+
+def load():
+    with open(STATE, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def save(state):
+    with open(STATE, "w", encoding="utf-8") as handle:
+        json.dump(state, handle, indent=1, sort_keys=True)
+
+
+args = sys.argv[1:]
+with open(LOG, "a", encoding="utf-8") as handle:
+    handle.write(" ".join(args) + "\n")
+flags = [a for a in args if a.startswith("--")]
+words = [a for a in args if not a.startswith("--")]
+command, names = (words[0], words[1:]) if words else ("", [])
+state = load()
+units = state.setdefault("units", {})
+
+if command == "list-unit-files":
+    pattern = names[0] if names else "*"
+    for name in sorted(units):
+        entry = units[name]
+        if fnmatch.fnmatch(name, pattern) and entry.get("file") not in (None, "transient"):
+            print("%s %s enabled" % (name, entry["file"]))
+elif command == "list-units":
+    pattern = names[0] if names else "*"
+    for name in sorted(units):
+        entry = units[name]
+        if fnmatch.fnmatch(name, pattern) and (entry.get("active") != "inactive" or entry.get("file") == "transient"):
+            print("%s loaded %s running stub" % (name, entry.get("active", "inactive")))
+elif command in ("stop", "start", "restart"):
+    for name in names:
+        entry = units.setdefault(name, {"file": "static", "active": "inactive"})
+        entry["active"] = "inactive" if command == "stop" else "active"
+    save(state)
+elif command in ("enable", "disable"):
+    for name in names:
+        entry = units.setdefault(name, {"file": "disabled", "active": "inactive"})
+        entry["file"] = "enabled" if command == "enable" else "disabled"
+    save(state)
+elif command == "is-active":
+    entry = units.get(names[0], {})
+    status = entry.get("active", "inactive")
+    print(status)
+    sys.exit(0 if status == "active" else 3)
+elif command == "daemon-reload":
+    pass
+else:
+    sys.exit(0)

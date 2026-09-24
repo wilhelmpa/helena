@@ -375,6 +375,10 @@
     "janitorCleaned": "{count, plural, one {limpou # item} other {limpou # itens}}",
     "janitorNeverRan": "ainda não foi executado",
     "resuming": "{count, plural, one {# execução está sendo retomada} other {# execuções estão sendo retomadas}} após uma queda",
-    "needsResumeReview": "{count, plural, one {# execução atingiu} other {# execuções atingiram}} o limite de retomadas e precisam de atenção"
+    "needsResumeReview": "{count, plural, one {# execução atingiu} other {# execuções atingiram}} o limite de retomadas e precisam de atenção",
+    "agentSync": {
+      "title": "Perfis dos agentes",
+      "synced": "{synced} de {total} sincronizados"
+    }
   }
 }

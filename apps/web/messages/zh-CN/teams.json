@@ -361,7 +361,18 @@
     "secretHint": "密钥的值只会发送给启用了该服务器的代理的运行器，绝不会发送到此页面。",
     "missingSecret": "已删除的密钥",
     "addValue": "添加",
-    "removeValue": "移除"
+    "removeValue": "移除",
+    "builtinBadge": "内置",
+    "builtin": {
+      "projekt-browser": {
+        "title": "项目浏览器",
+        "description": "Hermes、Claude Code 和 Codex 通过共享网关控制项目浏览器:登录信息来自“凭据”,密码绝不会出现在历史记录中。"
+      },
+      "hermes-browser-legacy": {
+        "title": "Hermes 自带浏览器(旧)",
+        "description": "回退到 Hermes 自带的 CDP 浏览器工具,而不是共享网关。"
+      }
+    }
   },
   "agents": {
     "newAgent": "新建 AI 代理",
@@ -432,7 +443,15 @@
       "filePathPlaceholder": "SOUL.md 或 instructions/主题.md",
       "filePathLabel": "受管理文件 {index} 的路径",
       "fileContentLabel": "受管理文件 {index} 的内容",
-      "removeFile": "移除受管理文件 {index}"
+      "removeFile": "移除受管理文件 {index}",
+      "runtime": "运行时",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "Hermes 由服务器自行提供，并保持其配置同步。",
+      "runtimeCliHint": "在使用此预设的 runner 上运行（helena-runner --agent {kind}）；指令、技能、MCP 服务器、模型和推理均来自 Helena。"
     },
     "runtimeConflicts": {
       "title": "在 Helena 之外被更改",
@@ -594,8 +613,8 @@
       "toolsetsReadOnly": "只有可以编辑代理的成员才能关闭工具集。",
       "noToolsets": "运行器没有报告任何工具集。",
       "mcpServers": "MCP 服务器",
-      "mcpServersHint": "来自 Hermes 配置。关闭某个服务器并保存后，代理将不再使用它。",
-      "mcpServersReadOnly": "来自 Hermes 配置。只有可以编辑代理的成员才能关闭服务器。",
+      "mcpServersHint": "Helena 为每个代理提供这些：它自己的服务器和项目的浏览器。关闭一个并保存，代理就不会使用它。",
+      "mcpServersReadOnly": "Helena 为每个代理提供这些。只有可以编辑代理的成员才能关闭。",
       "noMcpServers": "无",
       "libraryMcpServers": "团队的 MCP 服务器",
       "libraryMcpServersHint": "保存后，已启用的服务器会随代理的聊天和运行一起启动。",
@@ -610,7 +629,7 @@
       "origin": {
         "agent": "已学会",
         "hub": "来自 Skills Hub",
-        "plan": "来自 Plan"
+        "plan": "来自 Helena"
       },
       "memory": "记忆",
       "memoryHint": "这份记忆由 Hermes 自行写入，这里显示的是运行器最近一次报告的内容。修改会在运行器下次同步时生效。",
@@ -714,6 +733,51 @@
         "instructions": "指示",
         "model": "模型/推理",
         "budgets": "预算"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "配置已同步",
+        "drift": "配置有偏差",
+        "pending": "正在应用设置 …",
+        "degraded": "无法应用设置",
+        "offline": "Runner 离线",
+        "unknown": "Runner 不报告其配置"
+      },
+      "checked": "{time}前检查",
+      "rewrite": "重新写入",
+      "rewriting": "正在重新写入 …",
+      "rewriteQueued": "Runner 将在下次同步时重新写入配置。",
+      "drift": {
+        "not-linked": "config.yaml 不是指向共享 Hermes 配置的链接。",
+        "managed-config": "Hermes 未应用 Helena 写入的配置。",
+        "mcp-unmanaged": "MCP 服务器 {server} 已开启，但 Helena 并未提供它。",
+        "mcp-missing": "MCP 服务器 {server} 缺失或已关闭。",
+        "mcp-differs": "MCP 服务器 {server} 的运行设置与 Helena 中不同。",
+        "mcp-unsupported": "此运行时无法启动 MCP 服务器 {server}。",
+        "setting-differs": "设置 {key} 有偏差。",
+        "approval-guard": "危险命令在没有 Helena 审批守卫的情况下运行。",
+        "probe-failed": "无法读取配置。"
+      },
+      "defaults": "运行时默认：{model}（{provider}），推理 {reasoning}",
+      "servers": "MCP 服务器：{servers}",
+      "serversOff": "已关闭：{servers}"
+    },
+    "runModel": {
+      "title": "模型",
+      "configured": "设置：{value}",
+      "used": "实际运行：{value}",
+      "notReported": "实际运行：未报告",
+      "mismatch": "有偏差：{what}",
+      "badge": "模型有偏差",
+      "source": {
+        "run": "来自工作流步骤",
+        "agent": "来自代理",
+        "default": "代理默认"
+      },
+      "part": {
+        "model": "模型",
+        "reasoning": "推理"
       }
     }
   },

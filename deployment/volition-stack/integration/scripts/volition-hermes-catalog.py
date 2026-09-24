@@ -265,6 +265,14 @@ def private_directory(directory: Path) -> None:
 
 
 
+BROWSER_GATEWAY_SOCKET_ROOT = Path('/run/volition-browser/gateway')
+
+
+def browser_gateway_socket(slug: str) -> str:
+    # The browser router's per-project socket (browser-gateway-server.mjs socketDirectory).
+    return str(BROWSER_GATEWAY_SOCKET_ROOT / slug / 'gateway.sock')
+
+
 def project_browser_env(
     browser_root: Path | None,
     slug: str,
@@ -364,85 +372,106 @@ def descriptor_entries(
     global_home: Path,
     browser_root: Path | None = None,
     isolated: bool = False,
+    problems: list[str] | None = None,
 ) -> list[dict[str, Any]]:
+    """One runner entry per descriptor. With `problems`, a descriptor that cannot be served is
+    left out and named there, so one broken agent does not keep every other one from starting;
+    without it the first problem is raised."""
     private_directory(root)
     entries: list[dict[str, Any]] = []
     global_home = global_home.resolve(strict=True)
     profiles_root = (global_home / 'profiles').resolve(strict=False)
     for descriptor_path in sorted(root.glob('*.json')):
-        private_file(descriptor_path, 'Hermes runner descriptor')
         try:
-            item = json.loads(descriptor_path.read_text(encoding='utf-8'))
-        except (OSError, json.JSONDecodeError) as exc:
-            raise RuntimeError('Hermes runner descriptor is invalid') from exc
-        if not isinstance(item, dict):
-            raise RuntimeError('Hermes runner descriptor is invalid')
-        identity = descriptor_identity(descriptor_path.stem, item)
-        if identity is None:
-            raise RuntimeError('Hermes runner descriptor conflicts with its project')
-        slug, username = identity
-        home = profiles_root / descriptor_path.stem
-        expected = {
-            'schemaVersion': 1,
-            'username': username,
-            'hermesHome': str(home),
-            'globalHermesHome': str(global_home),
-        }
-        if (
-            item.get('schemaVersion') != expected['schemaVersion']
-            or item.get('username') != expected['username']
-            or item.get('hermesHome') != expected['hermesHome']
-            or item.get('globalHermesHome') != expected['globalHermesHome']
-            or not isinstance(item.get('apiKey'), str)
-            or len(item['apiKey']) < 16
-            or len(item['apiKey']) > 2048
-            or '\n' in item['apiKey']
-            or not isinstance(item.get('cwd'), str)
-            or not Path(item['cwd']).is_absolute()
-            or not isinstance(item.get('projectId'), int)
-            or item['projectId'] < 1
-            or not isinstance(item.get('teamId'), int)
-            or item['teamId'] < 1
-            or not isinstance(item.get('planAgentId'), int)
-            or item['planAgentId'] < 1
-        ):
-            raise RuntimeError('Hermes runner descriptor conflicts with its project')
-        if isolated:
-            # The profile belongs to the project's user; the sandbox links what Hermes needs
-            # into it, and the project browser is reached through the gateway, not over CDP.
-            entries.append(
-                {
-                    'name': username,
-                    'apiKey': item['apiKey'],
-                    'cwd': item['cwd'],
-                    'env': {'HERMES_HOME': str(home)},
-                    'isolation': {
-                        'slug': slug,
-                        'profile': descriptor_path.stem,
-                        'agentId': item['planAgentId'],
-                    },
-                }
-            )
+            entry = descriptor_entry(descriptor_path, global_home, profiles_root, browser_root, isolated)
+        except RuntimeError as exc:
+            if problems is None:
+                raise
+            problems.append(f'{descriptor_path.stem}: {exc}')
             continue
-        materialize_agent_home(home, global_home)
-        entries.append(
-            {
-                'name': username,
-                'apiKey': item['apiKey'],
-                'cwd': item['cwd'],
-                'env': {
-                    'HERMES_HOME': str(home),
-                    'HERMES_SHARED_AUTH_DIR': str(global_home / 'shared'),
-                    **project_browser_env(
-                        browser_root,
-                        slug,
-                        item['projectId'],
-                        item.get('browserCdpUrl'),
-                    ),
-                },
-            }
-        )
+        entries.append(entry)
     return entries
+
+
+def descriptor_entry(
+    descriptor_path: Path,
+    global_home: Path,
+    profiles_root: Path,
+    browser_root: Path | None,
+    isolated: bool,
+) -> dict[str, Any]:
+    private_file(descriptor_path, 'Hermes runner descriptor')
+    try:
+        item = json.loads(descriptor_path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError('Hermes runner descriptor is invalid') from exc
+    if not isinstance(item, dict):
+        raise RuntimeError('Hermes runner descriptor is invalid')
+    identity = descriptor_identity(descriptor_path.stem, item)
+    if identity is None:
+        raise RuntimeError('Hermes runner descriptor conflicts with its project')
+    slug, username = identity
+    home = profiles_root / descriptor_path.stem
+    expected = {
+        'schemaVersion': 1,
+        'username': username,
+        'hermesHome': str(home),
+        'globalHermesHome': str(global_home),
+    }
+    if (
+        item.get('schemaVersion') != expected['schemaVersion']
+        or item.get('username') != expected['username']
+        or item.get('hermesHome') != expected['hermesHome']
+        or item.get('globalHermesHome') != expected['globalHermesHome']
+        or not isinstance(item.get('apiKey'), str)
+        or len(item['apiKey']) < 16
+        or len(item['apiKey']) > 2048
+        or '\n' in item['apiKey']
+        or not isinstance(item.get('cwd'), str)
+        or not Path(item['cwd']).is_absolute()
+        or not isinstance(item.get('projectId'), int)
+        or item['projectId'] < 1
+        or not isinstance(item.get('teamId'), int)
+        or item['teamId'] < 1
+        or not isinstance(item.get('planAgentId'), int)
+        or item['planAgentId'] < 1
+    ):
+        raise RuntimeError('Hermes runner descriptor conflicts with its project')
+    if isolated:
+        # The profile belongs to the project's user; the sandbox links what Hermes needs
+        # into it, and the project browser is reached through the gateway, not over CDP.
+        return {
+            'name': username,
+            'apiKey': item['apiKey'],
+            'cwd': item['cwd'],
+            'env': {'HERMES_HOME': str(home)},
+            'isolation': {
+                'slug': slug,
+                'profile': descriptor_path.stem,
+                'agentId': item['planAgentId'],
+            },
+        }
+    materialize_agent_home(home, global_home)
+    return {
+        'name': username,
+        'apiKey': item['apiKey'],
+        'cwd': item['cwd'],
+        'env': {
+            'HERMES_HOME': str(home),
+            'HERMES_SHARED_AUTH_DIR': str(global_home / 'shared'),
+            # Without isolation the browser gateway's shim finds the project's socket
+            # here; an isolated unit has it bound at the shim's default path.
+            'BROWSER_GATEWAY_SOCKET': browser_gateway_socket(slug),
+            **project_browser_env(
+                browser_root,
+                slug,
+                item['projectId'],
+                item.get('browserCdpUrl'),
+            ),
+        },
+        # The runner keeps the home's config.yaml the link to this one (policy.ts).
+        'sharedConfig': str(global_home / 'config.yaml'),
+    }
 
 
 def materialize_agent_home(home: Path, global_home: Path) -> None:
@@ -461,9 +490,29 @@ def materialize_agent_home(home: Path, global_home: Path) -> None:
             raise RuntimeError('The global Hermes credential source is invalid')
         if target.exists() or target.is_symlink():
             if not target.is_symlink() or target.readlink() != source:
-                raise RuntimeError('The isolated Hermes home conflicts with its global provider reference')
+                # A file or another link took the place of the shared one, as a hand edit of
+                # 2026-09-24 did. The runner puts the link back and keeps the file aside
+                # (policy.ts ensureConfigLink), and Helena shows it on the agent; stopping
+                # here would keep every agent from starting.
+                print(
+                    f'Hermes catalog: {home.name}/{name} is not the link to the shared one; '
+                    'the runner restores it',
+                    file=sys.stderr,
+                )
             continue
         target.symlink_to(source)
+
+
+def browser_harness_command() -> str | None:
+    """The browser-harness MCP server's command in the shared configuration. The runner
+    writes the server itself, pointed at each agent's own project browser."""
+    from hermes_cli.config import load_config_readonly
+
+    config = load_config_readonly()
+    servers = config.get('mcp_servers') if isinstance(config, dict) else None
+    entry = servers.get('browser-harness') if isinstance(servers, dict) else None
+    command = entry.get('command') if isinstance(entry, dict) else None
+    return command if isinstance(command, str) and command.startswith('/') else None
 
 
 def write_runtime(
@@ -471,10 +520,12 @@ def write_runtime(
     output_path: Path,
     descriptor_root: Path,
     global_home: Path,
-    profile: dict[str, list[str]],
+    profile: dict[str, Any],
     browser_root: Path | None = None,
     plugin_root: Path = PLAN_PLUGIN_ROOT,
+    problems: list[str] | None = None,
 ) -> tuple[str, int, int]:
+    problems = [] if problems is None else problems
     payload = json.loads(template_path.read_text(encoding='utf-8'))
     payload['hermes'] = {**profile, 'plugins': plan_plugins(plugin_root)}
     provider, _default_model = configured_route()
@@ -499,19 +550,39 @@ def write_runtime(
             'isolation': {'slug': 'home', 'profile': 'home', 'agentId': None},
         }
     else:
+        # Home's own browser, the one Home's live view shows (project id 0).
+        try:
+            home_browser = project_browser_env(browser_root, 'home', 0)
+        except RuntimeError as exc:
+            problems.append(f'home: {exc}')
+            home_browser = {}
         home = {
             'name': 'hermes-home-master',
             'apiKey': home_key,
-            'env': {'HERMES_HOME': str(global_home)},
+            'env': {
+                'HERMES_HOME': str(global_home),
+                'BROWSER_GATEWAY_SOCKET': browser_gateway_socket('home'),
+                **home_browser,
+            },
         }
     agents = [home]
-    for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated):
-        agents.append({**payload, **entry, 'env': {**payload.get('env', {}), **entry['env']}})
+    for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated, problems):
+        shared = entry.pop('sharedConfig', None)
+        agents.append(
+            {
+                **payload,
+                **entry,
+                'env': {**payload.get('env', {}), **entry['env']},
+                **({'hermes': {**payload['hermes'], 'sharedConfig': shared}} if shared else {}),
+            }
+        )
     if not isolated:
         for agent in agents:
             link_plan_plugins(Path(agent['env']['HERMES_HOME']), plugin_root)
     payload.pop('apiKey', None)
     payload['agents'] = agents
+    # What kept an agent from its runner; the runner reports it to Helena's health overview.
+    payload['helenaProblems'] = problems
 
     private_directory(output_path.parent)
     fd, temporary = tempfile.mkstemp(prefix='.runner.', suffix='.json', dir=output_path.parent)
@@ -542,12 +613,19 @@ def main(argv: list[str]) -> int:
         '/var/lib/volition/project-browser/projects',
     ).strip()
     browser_root = Path(browser_root_value) if browser_root_value else None
-    profile = hermes_profile()
+    profile: dict[str, Any] = hermes_profile()
     require_browser_toolset(profile)
     require_approval_guard(hermes_approvals())
+    harness = browser_harness_command()
+    if harness:
+        profile['browserHarness'] = harness
+    problems: list[str] = []
     provider, count, agents = write_runtime(
-        Path(argv[1]), Path(argv[2]), descriptor_root, global_home, profile, browser_root
+        Path(argv[1]), Path(argv[2]), descriptor_root, global_home, profile, browser_root,
+        problems=problems,
     )
+    for problem in problems:
+        print(f'Hermes catalog: left out {problem}', file=sys.stderr)
     print(f'Hermes catalog: provider={provider or "unconfigured"}, models={count}, agents={agents}')
     return 0
 

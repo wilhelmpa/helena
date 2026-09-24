@@ -2,6 +2,7 @@ import { t } from 'elysia';
 
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 import { contextUsageBody } from '../model';
+import { runModelReport } from '../runtime-sync/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -275,6 +276,7 @@ export const chatResultBody = t.Object({
   model: t.Optional(
     t.String({ maxLength: 200, description: 'The model the answer was produced with.' }),
   ),
+  runtime: t.Optional(runModelReport),
 });
 
 // The answer of every runner call that reports progress. `canceled` is how the stop

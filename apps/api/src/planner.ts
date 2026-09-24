@@ -49,6 +49,7 @@ import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
 import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
+import { agentRuntimeSyncRoutes, runnerHealthRoutes } from './modules/agents/runtime-sync';
 import { agentRuntimeFileRoutes } from './modules/agents/runtime-files';
 import { notificationRoutes } from './modules/notifications';
 import { notificationSettingsRoutes } from './modules/notification-settings';
@@ -60,6 +61,7 @@ import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
+import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { approvalRoutes } from './modules/approvals';
 import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
@@ -141,6 +143,8 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentChatRoutes)
   .use(chatPromptRoutes)
   .use(agentRuntimePolicyRoutes)
+  .use(agentRuntimeSyncRoutes)
+  .use(runnerHealthRoutes)
   .use(agentRuntimeFileRoutes)
   .use(dashboardRoutes)
   .use(noteBoardRoutes)
@@ -158,6 +162,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(hubInboxRoutes)
   .use(agentActivityRoutes)
   .use(agentNetworkRoutes)
+  .use(agentBrowserGatewayRoutes)
   .use(approvalRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)

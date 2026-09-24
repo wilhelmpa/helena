@@ -1,0 +1,33 @@
+# Draft (package G): the public secret-scan rules. Moves to .gitleaks.toml at the public cut.
+# gitleaks' default rules plus Helena's own key formats. The owner's private-data rules live in
+# the private overlay (helena-ops/scan/private.gitleaks.toml) and never in this repository.
+title = "Helena"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "helena-api-key"
+description = "Helena API key (personal or agent key)"
+regex = '''\b(?:itp|hel)_[A-Za-z0-9_-]{32,}\b'''
+keywords = ["itp_", "hel_"]
+
+[[rules]]
+id = "helena-env-secret"
+description = "A Helena secret assigned in an env file"
+regex = '''(?m)^\s*(?:export\s+)?(?:BETTER_AUTH_SECRET|APP_ENCRYPTION_KEY|LOCAL_SINGLE_USER_TOKEN|POSTGRES_PASSWORD)\s*=\s*['"]?([A-Za-z0-9+/=_-]{16,})'''
+secretGroup = 1
+keywords = ["BETTER_AUTH_SECRET", "APP_ENCRYPTION_KEY", "LOCAL_SINGLE_USER_TOKEN", "POSTGRES_PASSWORD"]
+
+[allowlist]
+description = "Test and example values that are secrets only in shape"
+regexes = [
+  '''test-secret-not-for-production-use-only''',
+  '''ci-secret-not-for-production-use-only''',
+]
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)\.env\.test\.example$''',
+  '''^docs/oss/THIRD-PARTY-LICENSES\.md$''',
+  '''^bun\.lock$''',
+]

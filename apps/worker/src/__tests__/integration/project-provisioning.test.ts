@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  aiAgent,
   db,
   project,
   projectDeprovisioningJob,
@@ -100,6 +101,12 @@ describe('project provisioning', () => {
     await insertAgent(owner.id, 'master', [created.id]);
     await insertAgent(owner.id, `hermes-agt${owner.id}-coordinator`, [created.id]);
     await insertAgent(owner.id, 'elsewhere', [other.id]);
+    // Runs on a Claude Code runner, not in Hermes.
+    const claude = await insertAgent(owner.id, 'claude-coder', [created.id]);
+    await db
+      .update(aiAgent)
+      .set({ runtimePolicy: { runtime: 'claude' } })
+      .where(eq(aiAgent.id, claude));
     await db
       .insert(projectProvisioningJob)
       .values({ projectId: created.id, requestedResources: ['workspace'] });

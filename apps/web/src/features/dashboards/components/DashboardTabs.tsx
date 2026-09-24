@@ -17,6 +17,7 @@ import {
   PAGE_CONTROL_ACTIVE_CLASS,
   PAGE_CONTROL_CLASS,
   PageTabs,
+  PAGE_PRIMARY_CLASS,
   usePageToolbarRoom,
 } from '@/components/layout/PageToolbar';
 import DashboardTab from './DashboardTab';
@@ -131,7 +132,7 @@ export default function DashboardTabs({
 function NewDashboardButton({ onClick }: { onClick: () => void }) {
   const t = useTranslations('dashboards');
   return (
-    <button type="button" onClick={onClick} className={cn(PAGE_CONTROL_CLASS, 'h-7')}>
+    <button type="button" onClick={onClick} className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
       <Plus aria-hidden="true" />
       {t('newDashboard')}
     </button>

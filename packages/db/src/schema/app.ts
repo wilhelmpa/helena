@@ -690,6 +690,10 @@ export const agentRun = pgTable(
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
+    // The model and reasoning the run was configured to use next to what its session
+    // really ran on, as the runner read them back, with any mismatch named. Null for a run
+    // whose runner reports neither.
+    modelCheck: jsonb('model_check'),
     // The follow-up turn in which the agent kept what the run taught it, when Plan asked
     // its runner for one: why, how it went, what it saved and what it cost. Its tokens are
     // also added to the run's own.
@@ -762,6 +766,35 @@ export const agentEgressEvent = pgTable(
     index('agent_egress_event_project_idx').on(t.projectId, t.id),
     index('agent_egress_event_last_idx').on(t.lastAt),
     index('agent_egress_event_run_idx').on(t.runId),
+  ],
+);
+
+// The browser gateway's own audit trail (design: docs/volition-design-browser-gateway.md §5,
+// §9): every tool call the gateway ran for a project browser, without any value it saw —
+// login fill/2FA are logged through integration_credential_use instead (label and origin,
+// never the secret), because they already had that audit and it is agent-scoped there too.
+// `target` is a short, non-secret label the tool itself chose: a tab title, an origin, a
+// file name, never a URL's query string or a page's content.
+export const browserGatewayEvent = pgTable(
+  'browser_gateway_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    agentName: text('agent_name').notNull(),
+    // 'agent' while the calling agent held the control lock, 'owner' for an action the
+    // live view's Übernehmen banner attributes to the person instead.
+    actor: text('actor').notNull(),
+    tool: text('tool').notNull(),
+    // The call's action category (read, write, send, publish, delete, pay, execute), which
+    // Helena's policy decided on; null for an event from before categories.
+    category: text('category'),
+    target: text('target'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('browser_gateway_event_actor_check', sql`${t.actor} IN ('agent', 'owner')`),
+    index('browser_gateway_event_project_idx').on(t.projectId, t.id),
   ],
 );
 
@@ -930,6 +963,9 @@ export const agentChatMessage = pgTable(
     // The model the runner reported for the answer, and the tokens its last call read
     // and wrote.
     model: text('model'),
+    // The configured model and reasoning next to what the answer's session ran on (as on
+    // agent_run). Null for an answer whose runner reports neither.
+    modelCheck: jsonb('model_check'),
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
     status: text('status').notNull().default('pending'),
@@ -1368,7 +1404,7 @@ export const agentRuntimeAction = pgTable(
   (t) => [
     check(
       'agent_runtime_action_kind_check',
-      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory')`,
+      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory', 'rewrite-profile')`,
     ),
     index('agent_runtime_action_agent_idx').on(t.agentId, t.id),
   ],
@@ -1458,6 +1494,10 @@ export const agentMcpServer = pgTable(
     url: text('url'),
     env: jsonb('env').notNull().default([]),
     headers: jsonb('headers').notNull().default([]),
+    // A server the instance itself seeded (today: "Projekt-Browser", the browser gateway,
+    // and "Hermes-eigener Browser (alt)", the pre-gateway fallback). A team cannot edit or
+    // delete these rows; only whether they are on for an agent (agent_mcp_server_link).
+    builtin: boolean('builtin').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

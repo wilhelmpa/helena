@@ -112,6 +112,10 @@
     "ai-agents": {
       "label": "Agentes de IA",
       "description": "Agentes de IA trabalhando neste projeto."
+    },
+    "browser": {
+      "label": "Navegador",
+      "description": "Os domínios que o navegador do projeto pode abrir, o ritmo de entrada humanizado e o tempo limite do bloqueio."
     }
   }
 }

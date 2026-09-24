@@ -317,7 +317,7 @@ function withCoordinator(resources: readonly string[]): string[] {
 }
 
 // The external agents of each project that run in a Hermes runtime of their own, by
-// project id. The Home agent and the coordinators have theirs already, and an agent that
+// project id (not the ones set to run on Claude Code or Codex). The Home agent and the coordinators have theirs already, and an agent that
 // works in several projects has none: the runner claims an agent's runs from all of its
 // projects with one working directory. The api checks the same rule before it issues
 // an agent's key.
@@ -332,6 +332,8 @@ export async function projectAgentIds(projectIds?: number[]): Promise<Map<number
         eq(aiAgent.kind, 'external'),
         ne(aiAgent.username, 'master'),
         sql`${aiAgent.username} !~ '^hermes-[a-z0-9_-]+-coordinator$'`,
+        // A Claude Code or Codex agent runs on a runner of that preset, not in Hermes.
+        sql`coalesce(${aiAgent.runtimePolicy}->>'runtime', 'hermes') = 'hermes'`,
         sql`(select count(*) from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId}) = 1`,
         projectIds ? inArray(projectMember.projectId, projectIds) : undefined,
       ),

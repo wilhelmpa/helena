@@ -19,5 +19,32 @@ export HOME=/var/lib/volition/hermes
 export PYTHONPATH=/srv/volition/source/hermes
 export PATH=/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin
 
-/var/lib/volition/hermes/venv/bin/python "$catalog_script" "$template_file" "$runtime_file"
+# A runner that cannot start says why in Helena's health overview (Administrator), not only
+# in the journal, before systemd tries again. Best effort: Helena may be down as well.
+report_failure() {
+  HELENA_RUNNER_ERROR="$1" /var/lib/volition/hermes/venv/bin/python - "$template_file" <<'PY' || true
+import json, os, sys, urllib.request
+url = json.load(open(sys.argv[1], encoding="utf-8")).get("url", "http://127.0.0.1:3000").rstrip("/")
+lines = [line.strip() for line in os.environ["HELENA_RUNNER_ERROR"].splitlines() if line.strip()]
+error = (lines[-1] if lines else "The runner could not start")[:480]
+request = urllib.request.Request(
+    url + "/agent-runtime/runner-health",
+    data=json.dumps({"error": "Runner start failed: " + error}).encode(),
+    headers={"content-type": "application/json", "x-api-key": os.environ["ITSAPLAN_API_KEY"]},
+    method="POST",
+)
+urllib.request.urlopen(request, timeout=10).read()
+PY
+}
+
+catalog_errors=$(mktemp /var/lib/volition/hermes/run/.catalog-errors.XXXXXX)
+trap 'rm -f "$catalog_errors"' EXIT
+if ! /var/lib/volition/hermes/venv/bin/python "$catalog_script" "$template_file" "$runtime_file" 2>"$catalog_errors"; then
+  cat "$catalog_errors" >&2
+  report_failure "$(cat "$catalog_errors")"
+  exit 1
+fi
+cat "$catalog_errors" >&2
+rm -f "$catalog_errors"
+trap - EXIT
 exec /usr/bin/node /srv/volition/source/plan/packages/runner/dist/cli.js "$runtime_file"

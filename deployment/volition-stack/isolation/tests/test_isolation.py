@@ -73,6 +73,8 @@ class ConfigTest(unittest.TestCase):
         self.assertIn('/var/lib/volition', config.hide)
         self.assertIn('/etc/volition', config.inaccessible)
         self.assertFalse(config.runtimes['profile-helper'].caller_args)
+        self.assertEqual(config.browser_gateway,
+                         ('/run/volition-browser/gateway', '/run/volition-agents/browser'))
 
     def test_refuses_a_file_others_can_write_when_root_reads_it(self):
         path = config_file(self.dir)
@@ -82,7 +84,9 @@ class ConfigTest(unittest.TestCase):
 
     def test_refuses_invalid_values(self):
         for overrides in ({'userPrefix': 'root'}, {'uidRange': [0, 10]}, {'forwards': {'egress': 80}},
-                          {'forwards': {'nope': 4000}}, {'workspaceRoot': 'relative'}, {'callers': []}):
+                          {'forwards': {'nope': 4000}}, {'workspaceRoot': 'relative'}, {'callers': []},
+                          {'browserGateway': {'root': 'relative', 'target': '/run/volition-agents/browser'}},
+                          {'browserGateway': {'root': '/run/volition-browser/gateway'}}):
             with self.subTest(overrides=overrides), self.assertRaises(common.IsolationError):
                 common.load_config(str(config_file(self.dir, **overrides)), require_root=False)
 
@@ -321,7 +325,8 @@ class LauncherRequestTest(unittest.TestCase):
 
     def test_the_properties_are_the_launchers(self):
         checked = self.worker.check_run(self.base)
-        props = self.worker.sandbox_properties(checked['account'], [checked['workspace']], [], checked['limits'])
+        props = self.worker.sandbox_properties(
+            'alpha', checked['account'], [checked['workspace']], [], checked['limits'])
         for required in ('PrivateNetwork=yes', 'ProtectSystem=strict', 'ProtectHome=yes', 'PrivateTmp=yes',
                          'NoNewPrivileges=yes', 'CapabilityBoundingSet=', 'RestrictSUIDSGID=yes',
                          'TemporaryFileSystem=/run:ro', 'TemporaryFileSystem=/var/lib/volition:ro',
@@ -329,6 +334,43 @@ class LauncherRequestTest(unittest.TestCase):
                          'User=vp-alpha', 'KillSignal=SIGINT'):
             self.assertIn(required, props)
         self.assertTrue(all('\n' not in p for p in props))
+
+    def test_binds_this_projects_own_browser_gateway_directory(self):
+        # Per project, not shared (see isolation_common.Config.browser_gateway): the router
+        # knows the caller's project from the socket that accepted the connection, so each
+        # project's unit gets only its own directory, at the path the MCP shim looks in, and
+        # optional, so a project without a browser still starts its agents.
+        checked = self.worker.check_run(self.base)
+        props = self.worker.sandbox_properties(
+            'alpha', checked['account'], [checked['workspace']], [], checked['limits'])
+        self.assertIn(
+            'BindReadOnlyPaths=-/run/volition-browser/gateway/alpha:/run/volition-agents/browser',
+            props)
+        self.assertFalse(any('gateway/beta' in p for p in props))
+        other = self.worker.sandbox_properties(
+            'beta', checked['account'], [checked['workspace']], [], checked['limits'])
+        self.assertIn(
+            'BindReadOnlyPaths=-/run/volition-browser/gateway/beta:/run/volition-agents/browser',
+            other)
+        home = self.worker.sandbox_properties(
+            'home', checked['account'], [checked['workspace']], [], checked['limits'])
+        self.assertIn(
+            'BindReadOnlyPaths=-/run/volition-browser/gateway/home:/run/volition-agents/browser',
+            home)
+
+    def test_no_browser_gateway_bind_without_the_config(self):
+        path = config_file(self.dir, registryRoot=str(self.dir / 'registry'),
+                           workspaceRoot=str(self.dir / 'workspaces'), profilesRoot=str(self.dir / 'profiles'),
+                           vaultRoot=str(self.dir / 'vault'), homeWorkspace=str(self.dir / 'home'),
+                           browserGateway=None)
+        config = common.load_config(str(path), require_root=False)
+        self.assertIsNone(config.browser_gateway)
+        worker = self.launcher_module.Launcher.__new__(self.launcher_module.Launcher)
+        worker.config = config
+        checked = self.worker.check_run(self.base)
+        props = worker.sandbox_properties('alpha', checked['account'], [checked['workspace']], [],
+                                          checked['limits'])
+        self.assertFalse(any('gateway' in p for p in props))
 
     def test_request_fields(self):
         keys = self.launcher_module.REQUEST_KEYS['run']
@@ -354,6 +396,16 @@ class MigrateTest(unittest.TestCase):
             self.assertEqual(os.stat(directory / 'tree/file').st_uid, os.getuid())
         finally:
             shutil.rmtree(directory)
+
+
+    def test_dry_run_names_model_auth_before_the_group_exists(self):
+        import migrate  # noqa: PLC0415
+
+        changes = migrate.Changes(True)
+        migrate.grant_model_auth(['/nonexistent/auth.json'], 'no-such-group-vpt', changes)
+        self.assertEqual(changes.count, 1)
+        with self.assertRaises(KeyError):
+            migrate.grant_model_auth(['/nonexistent/auth.json'], 'no-such-group-vpt', migrate.Changes(False))
 
 
 @unittest.skipUnless(sys.platform.startswith('linux') and shutil.which('bash'), 'isolation.sh runs on Linux')

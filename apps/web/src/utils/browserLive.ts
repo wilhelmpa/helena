@@ -74,6 +74,44 @@ export interface LiveDialog {
   defaultPrompt: string;
 }
 
+// An agent's request to the owner to take over (its `browser_handover` tool call, design
+// §4, §7: a CAPTCHA, a question only the owner can answer), as the router's `handover` text
+// message carries it; since is epoch milliseconds.
+export interface LiveHandover {
+  reason: string;
+  agentName: string;
+  since: number;
+}
+
+// Who controls the project browser (design §5), as the router's `control` text message
+// reports it. `locked` is true once the browser gateway runs: then `by` is the control
+// lock's holder ('free' when nobody holds it), with the agent's name and since when (epoch
+// ms). Without the gateway `by` is only who last acted on the page ('agent' or 'free').
+export interface LiveControlState {
+  by: 'agent' | 'owner' | 'free';
+  agentName: string | null;
+  since: number | null;
+  locked: boolean;
+}
+
+export const FREE_CONTROL: LiveControlState = {
+  by: 'free',
+  agentName: null,
+  since: null,
+  locked: false,
+};
+
+// Messages that act on the page: a viewer's input, which the live view holds back while an
+// agent controls the browser until the owner took over.
+export function isPageInput(message: LiveMessage): boolean {
+  return (
+    message.type === 'mouse' ||
+    message.type === 'wheel' ||
+    message.type === 'key' ||
+    message.type === 'text'
+  );
+}
+
 // The DevTools modifier bits.
 const ALT = 1;
 const CONTROL = 2;

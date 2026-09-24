@@ -403,6 +403,7 @@ export class AnswerStream {
 
   private readClaudeLine(message: StreamJsonLine): void {
     if (message.session_id) this.sessionId ??= message.session_id;
+    if (message.type === 'system' && message.model) this.reportedModel ??= message.model;
     switch (message.type) {
       case 'stream_event':
         this.readPartial(message.event);
@@ -479,9 +480,72 @@ export class AnswerStream {
 // where they become one pair: the tokens read, cache included, and the tokens written,
 // reasoning and thinking among them. Each call replaces the one before it — the size of
 // the context is what the last call read, not what the answer cost in total.
+// The final answer and the session of a run whose command prints an event stream (Claude
+// Code, Codex), so the run's result is the answer and not the tail of the raw stream, and a
+// run cut off mid way can resume its session. Hermes' own result line is read in execute.ts.
+export class FinalAnswerReader {
+  private buffered = '';
+  private answer: string | null = null;
+  private session: string | null = null;
+
+  constructor(
+    private readonly format: OutputFormat,
+    // Told once, as soon as the stream names its session.
+    private readonly onSession?: (sessionId: string) => void,
+  ) {}
+
+  write(chunk: string): void {
+    if (this.format !== 'claude-stream-json' && this.format !== 'codex-jsonl') return;
+    this.buffered += chunk;
+    const lines = this.buffered.split('\n');
+    this.buffered = lines.pop() ?? '';
+    for (const line of lines) this.read(line);
+  }
+
+  end(): void {
+    if (this.buffered) this.read(this.buffered);
+    this.buffered = '';
+  }
+
+  text(): string | null {
+    return this.answer;
+  }
+
+  sessionId(): string | null {
+    return this.session;
+  }
+
+  private named(sessionId: unknown): void {
+    if (typeof sessionId !== 'string' || !sessionId || this.session) return;
+    this.session = sessionId;
+    this.onSession?.(sessionId);
+  }
+
+  private read(line: string): void {
+    let value: Record<string, unknown>;
+    try {
+      value = JSON.parse(line.trim()) as Record<string, unknown>;
+    } catch {
+      return;
+    }
+    if (!value || typeof value !== 'object') return;
+    if (this.format === 'claude-stream-json') {
+      this.named(value.session_id);
+      if (value.type === 'result' && typeof value.result === 'string') this.answer = value.result;
+      return;
+    }
+    if (value.type === 'thread.started') this.named(value.thread_id);
+    const item = value.item as { type?: unknown; text?: unknown } | undefined;
+    if (value.type === 'item.completed' && item?.type === 'agent_message') {
+      if (typeof item.text === 'string') this.answer = item.text;
+    }
+  }
+}
+
 export class UsageReader {
   private last: ContextUsage | null = null;
   private buffered = '';
+  private reportedModel: string | null = null;
 
   constructor(private readonly format: OutputFormat) {}
 
@@ -521,7 +585,16 @@ export class UsageReader {
     }
   }
 
+  // The model the command named on its opening line (Claude Code, Hermes), or null.
+  model(): string | null {
+    return this.reportedModel;
+  }
+
   readLine(parsed: object): void {
+    const opening = parsed as { type?: unknown; model?: unknown };
+    if (opening.type === 'system' && typeof opening.model === 'string' && opening.model) {
+      this.reportedModel ??= opening.model;
+    }
     switch (this.format) {
       case 'claude-stream-json':
         this.readClaude(parsed as StreamJsonLine);
@@ -626,6 +699,8 @@ function textOfResult(content: unknown): string {
 interface StreamJsonLine {
   type?: string;
   session_id?: string;
+  // On the opening `system` line: the model the session runs on.
+  model?: string;
   event?: StreamEvent;
   message?: { content?: ContentBlock[] };
   result?: unknown;

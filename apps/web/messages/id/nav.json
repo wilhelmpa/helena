@@ -106,7 +106,21 @@
       "reconnecting": "Koneksi ke browser terputus. Menghubungkan ulang…",
       "dialogTitle": "Halaman bertanya",
       "dialogOk": "OK",
-      "dialogCancel": "Batal"
+      "dialogCancel": "Batal",
+      "controlPrefix": "Dikendalikan oleh:",
+      "controlledByAgentGeneric": "seorang agen",
+      "takeOver": "Ambil alih",
+      "handBack": "Kembalikan",
+      "takeOverError": "Gagal mengambil alih browser.",
+      "handBackError": "Gagal mengembalikan kendali browser.",
+      "handoverTitle": "{agentName} meminta Anda mengambil alih",
+      "youControl": "Anda yang mengendalikan",
+      "handoverDone": "Selesai – kembalikan",
+      "takeOverTitle": "{agentName} sedang mengendalikan. Ambil alih?",
+      "takeOverHint": "Selama Anda mengendalikan, agen menunggu. Agen melanjutkan setelah Anda mengembalikannya.",
+      "idleTitle": "Sudah selesai?",
+      "idleHint": "Tidak ada input selama 10 menit. Tanpa jawaban, kendali kembali ke agen dalam satu menit.",
+      "idleKeep": "Tetap kendalikan"
     }
   },
   "groups": {
@@ -149,5 +163,6 @@
     "projectOptions": "Opsi proyek",
     "groupOptions": "Opsi grup",
     "dropUngrouped": "Lepaskan di sini untuk mengeluarkan proyek dari grupnya"
-  }
+  },
+  "browser": "Browser"
 }

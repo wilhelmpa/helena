@@ -293,15 +293,34 @@ class Launcher:
             'RuntimeMaxSec': str(runtime),
         }
 
+    def browser_gateway_bind(self, slug: str) -> str | None:
+        """Read-only bind of this project's own browser-gateway directory into the unit, at the
+        fixed in-unit path the MCP shim looks in (`<target>/gateway.sock`, see
+        packages/browser-gateway/src/shim-protocol.ts). The router listens on
+        `{root}/<slug>/gateway.sock` (Home: `home`) and knows the caller's project from the
+        socket that accepted it, so only the project's own directory is bound. Optional (`-`):
+        an agent of a project without a browser, or while the router is down, still starts;
+        its browser tools then answer that the gateway cannot be reached."""
+        if not self.config.browser_gateway:
+            return None
+        root, target = self.config.browser_gateway
+        source = os.path.join(root, slug)
+        return (
+            f'BindReadOnlyPaths=-{_safe_path(source, "browser gateway directory")}'
+            f':{_safe_path(target, "browser gateway target")}'
+        )
+
     def sandbox_properties(
         self,
+        slug: str,
         account: pwd.struct_passwd,
         rw: list[str],
         ro: list[str],
         limits: dict[str, str],
     ) -> list[str]:
-        """Every property of an agent unit. Nothing here comes from a request but the user,
-        which the slug names, and paths the launcher derived and checked itself."""
+        """Every property of an agent unit. Nothing here comes from a request but the user
+        and the browser-gateway socket, which the slug names, and paths the launcher derived
+        and checked itself."""
         config = self.config
         props = [
             f'User={account.pw_name}',
@@ -343,6 +362,9 @@ class Launcher:
         props += [f'TemporaryFileSystem={path}:ro' for path in config.hide]
         props += [f'InaccessiblePaths=-{path}' for path in config.inaccessible]
         props += [f'BindReadOnlyPaths={path}' for path in config.sockets.values()]
+        gateway_bind = self.browser_gateway_bind(slug)
+        if gateway_bind:
+            props.append(gateway_bind)
         for path in rw:
             props.append(f'BindPaths={_safe_path(path, "bind")}')
         for path in ro:
@@ -512,7 +534,7 @@ class Launcher:
                          checked['work_id'], secrets.token_hex(6))
         runtime_ro, credential_props = self.runtime_binds(runtime, checked['home'])
         rw = [checked['workspace'], *checked['vault_rw']] + ([checked['home']] if checked['home'] else [])
-        props = self.sandbox_properties(account, rw, [*checked['vault_ro'], *runtime_ro], checked['limits'])
+        props = self.sandbox_properties(slug, account, rw, [*checked['vault_ro'], *runtime_ro], checked['limits'])
         props += credential_props
         home = checked['home'] or checked['workspace']
         command = [
@@ -662,7 +684,7 @@ class Launcher:
         ro = [*[p for p in vault_ro if os.path.isdir(p)], os.path.dirname(self.config.sandbox), self.config.tmux_conf]
         limits = self.limits(None)
         limits['RuntimeMaxSec'] = 'infinity'
-        props = self.sandbox_properties(account, rw, ro, limits)
+        props = self.sandbox_properties(slug, account, rw, ro, limits)
         command = [
             self.config.systemd_run, f'--unit={unit}', '--quiet', '--collect', '--service-type=exec',
             f'--description=Volition project terminal {slug}', f'--working-directory={workspace}',
@@ -697,7 +719,7 @@ class Launcher:
         unit = unit_name(self.config.unit_prefix, slug, None, 't', None, secrets.token_hex(6))
         limits = self.limits(None)
         limits['RuntimeMaxSec'] = 'infinity'
-        props = self.sandbox_properties(account, [directory], [os.path.dirname(self.config.sandbox)], limits)
+        props = self.sandbox_properties(slug, account, [directory], [os.path.dirname(self.config.sandbox)], limits)
         command = [
             self.config.systemd_run, f'--unit={unit}', '--quiet', '--collect', '--wait', '--pty',
             '--service-type=exec', f'--description=Volition project terminal {slug} (view)',

@@ -112,6 +112,10 @@
     "ai-agents": {
       "label": "Agents",
       "description": "Des comptes bots auxquels vous pouvez déléguer des tickets."
+    },
+    "browser": {
+      "label": "Navigateur",
+      "description": "Les domaines que le navigateur du projet peut ouvrir, le rythme de saisie de type humain et le délai du verrou."
     }
   }
 }

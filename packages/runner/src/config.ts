@@ -177,10 +177,22 @@ function hermesFrom(value: unknown): HermesProfile | undefined {
   ) {
     throw new Error('hermes.plugins must map plugin names to directories');
   }
+  const path = (field: 'sharedConfig' | 'browserHarness') => {
+    const value = profile[field];
+    if (value === undefined) return undefined;
+    if (typeof value !== 'string' || !value.startsWith('/')) {
+      throw new Error(`hermes.${field} must be an absolute path`);
+    }
+    return value;
+  };
+  const sharedConfig = path('sharedConfig');
+  const browserHarness = path('browserHarness');
   return {
     toolsets: list('toolsets'),
     mcpServers: list('mcpServers'),
     ...(plugins !== undefined && { plugins: plugins as Record<string, string> }),
+    ...(sharedConfig && { sharedConfig }),
+    ...(browserHarness && { browserHarness }),
   };
 }
 
