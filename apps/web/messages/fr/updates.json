@@ -72,7 +72,8 @@
   "hints": {
     "manual": "Pas d’installateur dans Helena : mis à jour à la main.",
     "notInstalled": "Non installé.",
-    "deploy": "Mis à jour avec le déploiement."
+    "deploy": "Mis à jour avec le déploiement.",
+    "hermesOffline": "Aucun runner Hermes joignable : état de la dernière vérification."
   },
   "settings": {
     "title": "Paramètres",
@@ -101,5 +102,6 @@
   "home": {
     "more": "Toutes les mises à jour",
     "empty": "Tout est à jour"
-  }
+  },
+  "checkedJustNow": "Vérifié à l’instant"
 }

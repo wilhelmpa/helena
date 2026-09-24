@@ -93,3 +93,9 @@ export function dailyTime(cron: string): string | null {
   if (minute > 59 || hour > 23) return null;
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
+
+// Whether a check was made less than a minute ago ("Gerade geprüft" rather than "vor 0 Min.").
+export function justNow(iso: string, now: number = Date.now()): boolean {
+  const at = Date.parse(iso);
+  return Number.isFinite(at) && now - at < 60_000;
+}

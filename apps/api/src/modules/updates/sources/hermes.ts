@@ -1,4 +1,5 @@
 import type { UpdateCandidate, UpdateProgress, UpdateSource } from '@helena/sdk';
+import { HttpError } from '#shared/lib';
 import { decideProposal } from '#modules/agents/proposals/service';
 import {
   checkHermesUpdate,
@@ -72,7 +73,11 @@ export const hermesSource: UpdateSource = {
     try {
       return [toCandidate(await checkHermesUpdate(null), null)];
     } catch (failure) {
-      // No Hermes runner online: the last check still says what is installed.
+      // No Hermes runner online: the last check still says what is installed, and the list
+      // says why it is not newer.
+      if (failure instanceof HttpError && failure.status === 503) {
+        return [{ ...toCandidate(stored, null), hint: { i18n: 'updates.hints.hermesOffline' } }];
+      }
       const message = failure instanceof Error ? failure.message : String(failure);
       return [toCandidate(stored, message)];
     }

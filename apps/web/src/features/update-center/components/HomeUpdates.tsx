@@ -15,7 +15,7 @@ import { useSession } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 import { formatDurationShort } from '@/utils/dates';
 import { useCheckForUpdates, useUpdateCenter } from '../services/updateCenter.service';
-import { headlineUpdate, versionStep } from '../utils/updateFormat';
+import { headlineUpdate, justNow, versionStep } from '../utils/updateFormat';
 import { UpdateBadges, UpdateSummary } from './UpdateCard';
 
 export const UPDATES_ADMIN_HREF = '/god/updates';
@@ -66,7 +66,9 @@ export default function HomeUpdates() {
             {center.counts.security > 0
               ? t('securityCount', { count: center.counts.security })
               : center.checkedAt
-                ? t('checkedAt', { time: formatDurationShort(center.checkedAt) })
+                ? justNow(center.checkedAt)
+                  ? t('checkedJustNow')
+                  : t('checkedAt', { time: formatDurationShort(center.checkedAt) })
                 : t('neverChecked')}
           </span>
           {center.counts.updates > 0 && (

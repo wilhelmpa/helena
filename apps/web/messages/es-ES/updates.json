@@ -72,7 +72,8 @@
   "hints": {
     "manual": "Sin instalador en Helena: se actualiza a mano.",
     "notInstalled": "No instalado.",
-    "deploy": "Se actualiza con el despliegue."
+    "deploy": "Se actualiza con el despliegue.",
+    "hermesOffline": "Ningún runner de Hermes disponible: estado de la última comprobación."
   },
   "settings": {
     "title": "Ajustes",
@@ -101,5 +102,6 @@
   "home": {
     "more": "Todas las actualizaciones",
     "empty": "Todo está al día"
-  }
+  },
+  "checkedJustNow": "Comprobado ahora mismo"
 }

@@ -72,7 +72,8 @@
   "hints": {
     "manual": "Tanpa pemasang di Helena: diperbarui secara manual.",
     "notInstalled": "Tidak terpasang.",
-    "deploy": "Diperbarui bersama deploy."
+    "deploy": "Diperbarui bersama deploy.",
+    "hermesOffline": "Tidak ada runner Hermes yang terjangkau: keadaan pemeriksaan terakhir."
   },
   "settings": {
     "title": "Pengaturan",
@@ -101,5 +102,6 @@
   "home": {
     "more": "Semua pembaruan",
     "empty": "Semua sudah terbaru"
-  }
+  },
+  "checkedJustNow": "Baru saja diperiksa"
 }

@@ -4,6 +4,7 @@ import type { UpdateAction, UpdateCenter, UpdateItem } from '@/lib/api/endpoints
 import {
   dailyTime,
   groupItems,
+  justNow,
   headlineUpdate,
   isBusy,
   runningAction,
@@ -165,5 +166,8 @@ describe('updateFormat', () => {
     assert.equal(dailyTime('30 7 * * *'), '07:30');
     assert.equal(dailyTime('0 6 * * 1'), null);
     assert.equal(dailyTime('0 25 * * *'), null);
+    assert.equal(justNow('2026-09-24T06:00:00Z', Date.parse('2026-09-24T06:00:30Z')), true);
+    assert.equal(justNow('2026-09-24T06:00:00Z', Date.parse('2026-09-24T06:02:00Z')), false);
+    assert.equal(justNow('nonsense'), false);
   });
 });

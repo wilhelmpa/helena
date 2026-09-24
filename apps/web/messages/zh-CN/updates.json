@@ -72,7 +72,8 @@
   "hints": {
     "manual": "Helena 中没有安装程序：需手动更新。",
     "notInstalled": "未安装。",
-    "deploy": "随部署一起更新。"
+    "deploy": "随部署一起更新。",
+    "hermesOffline": "无法连接 Hermes runner：显示上次检查的状态。"
   },
   "settings": {
     "title": "设置",
@@ -101,5 +102,6 @@
   "home": {
     "more": "全部更新",
     "empty": "全部为最新"
-  }
+  },
+  "checkedJustNow": "刚刚检查"
 }

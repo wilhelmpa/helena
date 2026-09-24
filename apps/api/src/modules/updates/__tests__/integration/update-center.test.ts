@@ -294,7 +294,10 @@ describe('update center: checking', () => {
     });
     // No Hermes runner online: the source says so and keeps nothing it does not know.
     expect(byKey.get('hermes/hermes')).toMatchObject({ installed: null, updateAvailable: false });
-    expect(byKey.get('hermes/hermes')!.error).toContain('No Hermes runner');
+    expect(byKey.get('hermes/hermes')).toMatchObject({
+      error: null,
+      hint: { i18n: 'updates.hints.hermesOffline' },
+    });
     // Without UPDATE_FEED_URL Helena itself is not listed.
     expect(byKey.has('helena/helena')).toBe(false);
 

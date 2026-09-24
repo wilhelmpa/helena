@@ -23,6 +23,7 @@ import {
 } from '@/features/update-center/services/updateCenter.service';
 import {
   groupItems,
+  justNow,
   runningAction,
   splitItems,
   versionStep,
@@ -106,7 +107,9 @@ export default function GodUpdatesPage() {
           </span>
           <span>
             {center.checkedAt
-              ? t('checkedAt', { time: formatDurationShort(center.checkedAt) })
+              ? justNow(center.checkedAt)
+                ? t('checkedJustNow')
+                : t('checkedAt', { time: formatDurationShort(center.checkedAt) })
               : t('neverChecked')}
           </span>
           {center.job.nextRunAt && (
