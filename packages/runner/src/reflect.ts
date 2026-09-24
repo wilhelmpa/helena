@@ -106,6 +106,7 @@ export async function reflect(
         runBudgetSeconds: request.runBudgetSeconds,
         toolsets,
         env: { ...runEnv(run), ...hermes.env },
+        hooks: hermes.hooks,
       },
       { onData: (chunk) => reader.write(chunk), work: { kind: 'run', id: run.id } },
     );

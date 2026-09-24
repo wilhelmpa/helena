@@ -141,12 +141,12 @@ describe('model and reasoning for Claude Code and Codex', () => {
       'resume',
       'thread-1',
       '--json',
-      '-c',
-      'sandbox_mode="workspace-write"',
       '-m',
       'gpt-6-sol',
       '-c',
       'model_reasoning_effort="low"',
+      '-c',
+      'sandbox_mode="workspace-write"',
       '-',
     ]);
     // "Agent default": nothing is passed, the CLI uses its own.
@@ -226,7 +226,14 @@ describe('the Claude Code and Codex adapter', () => {
       outputFormat: runtime === 'claude' ? 'claude-stream-json' : 'codex-jsonl',
       models: [],
     } satisfies RunnerConfig;
-    return { root, statuses, config, runtime: new CliRuntimeAdapter(runtime, config, client) };
+    // The runtime's program, as the adapter asks it for its version and its login.
+    const program = async () => ({ code: 0, stdout: '1.2.3', missing: false });
+    return {
+      root,
+      statuses,
+      config,
+      runtime: new CliRuntimeAdapter(runtime, config, client, Date.now, program),
+    };
   }
 
   it('gives Claude Code the SOUL, a plugin with the skills and the MCP servers', async () => {

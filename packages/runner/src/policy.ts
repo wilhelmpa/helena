@@ -29,6 +29,7 @@ import {
   type RuntimeActionResult,
   type RuntimeLearning,
 } from './learning';
+import type { CliLogin, CliLoginState } from './cli-login';
 import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 import {
@@ -37,6 +38,7 @@ import {
   type RunSettings,
   type RuntimeAdapter,
   type RuntimeDefaults,
+  type RuntimeIssue,
   type SessionFacts,
 } from './runtime';
 
@@ -129,6 +131,10 @@ export interface RuntimeStatus {
   actions?: RuntimeActionResult[];
   // What the runtime will load, read back and compared with what Helena wrote.
   profile?: ProfileReport;
+  // The version of the runtime's program, as it names it ("2.1.281").
+  version?: string | null;
+  // What keeps the runtime from its work, or from part of it.
+  issues?: RuntimeIssue[];
 }
 
 export interface RuntimePolicyClient {
@@ -136,6 +142,8 @@ export interface RuntimePolicyClient {
   reportRuntimeStatus(status: RuntimeStatus): Promise<void>;
   mcpSecrets(work?: WorkRef): Promise<Record<string, string>>;
   webLogins(work: WorkRef): Promise<WebLogin[]>;
+  // Claude Code and Codex only (cli-login.ts).
+  runtimeLogin?(work?: WorkRef): Promise<CliLogin | CliLoginState | null>;
 }
 
 // What a run or a chat answer hands Hermes besides the task. `logins` names the Plan

@@ -1,0 +1,475 @@
+import { afterEach, describe, expect, it } from 'bun:test';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { LoginRefusalReader, loginEnv, type CliLogin, type CliLoginState } from '../cli-login';
+import {
+  CliRuntimeAdapter,
+  codexSandbox,
+  LoginStartGate,
+  localLoginFrom,
+  parseVersion,
+  type ShortCommand,
+} from '../cli-runtime';
+import { CLAUDE_TOOLS, CODEX_TOOLS, claudeToolArgs, codexToolArgs } from '../cli-tools';
+import type { RunnerConfig } from '../config';
+import { assertCodexSandbox, codexWithoutSandbox, execute } from '../execute';
+import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from '../policy';
+import { PRESETS } from '../presets';
+
+const roots: string[] = [];
+const savedIsolation = process.env.AGENT_ISOLATION;
+
+afterEach(async () => {
+  for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
+  if (savedIsolation === undefined) delete process.env.AGENT_ISOLATION;
+  else process.env.AGENT_ISOLATION = savedIsolation;
+});
+
+const SOUL = '# You are Coder VOL';
+const TOKEN = 'sk-ant-oat01-the-owners-setup-token';
+
+function snapshot(toolDeny: string[] = []): RuntimePolicySnapshot {
+  return {
+    revision: `sha256:${toolDeny.join(',') || 'none'}`,
+    runtimePolicy: {
+      files: [{ kind: 'instructions', path: 'SOUL.md', content: SOUL }],
+      toolDeny,
+    },
+    skills: [
+      {
+        id: 7,
+        slug: 'plan-7',
+        name: 'Release notes',
+        description: 'Writes release notes',
+        markdown: '---\nname: release-notes\n---\nBody',
+        files: [],
+      },
+    ],
+  };
+}
+
+// An agent the deployment provisioned: a home of its own, as the catalog script writes it.
+async function managed(
+  runtime: 'claude' | 'codex',
+  options: {
+    grant?: CliLogin | null;
+    localLogin?: boolean;
+    missing?: boolean;
+    toolDeny?: string[];
+  } = {},
+) {
+  const home = await mkdtemp(join(tmpdir(), 'helena-agent-home-'));
+  roots.push(home);
+  const statuses: RuntimeStatus[] = [];
+  const asked: { work: unknown }[] = [];
+  const grant = options.grant ?? null;
+  const client: RuntimePolicyClient = {
+    runtimePolicy: async () => snapshot(options.toolDeny),
+    reportRuntimeStatus: async (status) => {
+      statuses.push(structuredClone(status));
+    },
+    mcpSecrets: async () => ({}),
+    webLogins: async () => [],
+    runtimeLogin: async (work) => {
+      asked.push({ work });
+      if (!grant) return null;
+      if (work) return grant;
+      const { value: _value, ...state } = grant;
+      return state satisfies CliLoginState;
+    },
+  };
+  const probes: string[][] = [];
+  const program: ShortCommand = async (bin, args) => {
+    probes.push([bin, ...args]);
+    if (options.missing) return { code: null, stdout: '', missing: true };
+    if (args[0] === '--version') {
+      return {
+        code: 0,
+        stdout: runtime === 'claude' ? '2.1.281 (Claude Code)' : 'codex-cli 0.156.1',
+        missing: false,
+      };
+    }
+    const loggedIn = options.localLogin === true;
+    return runtime === 'claude'
+      ? { code: loggedIn ? 0 : 1, stdout: JSON.stringify({ loggedIn }), missing: false }
+      : {
+          code: loggedIn ? 0 : 1,
+          stdout: loggedIn ? 'Logged in' : 'Not logged in',
+          missing: false,
+        };
+  };
+  const config: RunnerConfig = {
+    name: 'coder-vol',
+    url: 'http://127.0.0.1:3000',
+    apiKey: 'itp_test_key_for_the_managed_adapter',
+    agent: runtime,
+    args: [],
+    cwd: home,
+    env: {
+      HELENA_AGENT_HOME: home,
+      ...(runtime === 'claude'
+        ? { CLAUDE_CONFIG_DIR: join(home, '.claude') }
+        : { CODEX_HOME: join(home, '.codex') }),
+    },
+    concurrency: 1,
+    pollIntervalMs: 1000,
+    timeoutMs: 60_000,
+    outputFormat: runtime === 'claude' ? 'claude-stream-json' : 'codex-jsonl',
+    models: [],
+  };
+  const adapter = new CliRuntimeAdapter(runtime, config, client, Date.now, program);
+  return { home, statuses, asked, probes, config, adapter };
+}
+
+describe('a Claude Code agent Helena provisioned', () => {
+  it('keeps its skills and its runtime state in its own home', async () => {
+    const { adapter, home } = await managed('claude', { localLogin: true });
+    const settings = await adapter.runSettings({ runId: 4 });
+    const plugin = settings.args![settings.args!.indexOf('--plugin-dir') + 1]!;
+    expect(plugin).toBe(join(home, '.helena'));
+    expect(await readFile(join(plugin, 'skills/plan-7/SKILL.md'), 'utf8')).toContain('Body');
+    expect(settings.env.CLAUDE_CONFIG_DIR).toBe(join(home, '.claude'));
+    expect(settings.env.DISABLE_AUTOUPDATER).toBe('1');
+    expect((await stat(join(home, '.claude'))).isDirectory()).toBe(true);
+  });
+
+  it('hands a granted login to the one command, in its environment only', async () => {
+    const grant: CliLogin = {
+      credentialId: 9,
+      runtime: 'claude',
+      method: 'oauth_token',
+      value: TOKEN,
+    };
+    const { adapter, asked, statuses } = await managed('claude', { grant });
+    const settings = await adapter.runSettings({ runId: 4 });
+    expect(settings.env.CLAUDE_CODE_OAUTH_TOKEN).toBe(TOKEN);
+    // Every other login variable is emptied, so none of the runner's own reaches the agent.
+    expect(settings.env.ANTHROPIC_API_KEY).toBe('');
+    expect(settings.env.CODEX_API_KEY).toBe('');
+    expect(settings.args!.join(' ')).not.toContain(TOKEN);
+    expect(asked.at(-1)).toEqual({ work: { runId: 4 } });
+    // The status says a login is granted, never what it is.
+    expect(JSON.stringify(statuses)).not.toContain(TOKEN);
+    expect(statuses.at(-1)?.issues).toEqual([]);
+    expect(statuses.at(-1)?.status).toBe('online');
+  });
+
+  it('takes an API key as ANTHROPIC_API_KEY', () => {
+    const env = loginEnv(
+      'claude',
+      { credentialId: 1, runtime: 'claude', method: 'api_key', value: 'sk-ant-api' },
+      true,
+    );
+    expect(env.ANTHROPIC_API_KEY).toBe('sk-ant-api');
+    expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('');
+    // An operator's own runner keeps its shell's variables.
+    expect(loginEnv('claude', null, false)).toEqual({});
+  });
+
+  it('says "not signed in" without a granted login or one of its own', async () => {
+    const { adapter, statuses } = await managed('claude', { localLogin: false });
+    await adapter.ensure();
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'degraded',
+      version: '2.1.281',
+      issues: [{ code: 'not-signed-in', detail: 'missing' }],
+    });
+  });
+
+  it('counts a login of its own in its home', async () => {
+    const { adapter, statuses } = await managed('claude', { localLogin: true });
+    await adapter.ensure();
+    expect(statuses.at(-1)).toMatchObject({ status: 'online', issues: [] });
+  });
+
+  it('says the runtime is missing when its program is not installed', async () => {
+    const { adapter, statuses } = await managed('claude', { missing: true });
+    await adapter.ensure();
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'degraded',
+      version: null,
+      issues: [{ code: 'runtime-missing', detail: 'claude' }],
+    });
+  });
+
+  it("reports a login the runtime's service refused until a command gets through", async () => {
+    const grant: CliLogin = {
+      credentialId: 9,
+      runtime: 'claude',
+      method: 'oauth_token',
+      value: TOKEN,
+    };
+    const { adapter, statuses } = await managed('claude', { grant });
+    const failed = await adapter.runSettings({ runId: 5 });
+    failed.hooks!.output!(
+      '{"type":"assistant","message":{"content":[{"type":"text","text":"Not logged in"}]},"error":"authentication_failed","is_api_error_message":true}\n',
+    );
+    failed.hooks!.finished!({ status: 'failed', error: 'x' });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(statuses.at(-1)?.issues).toEqual([{ code: 'not-signed-in', detail: 'rejected' }]);
+
+    const ok = await adapter.runSettings({ runId: 6 });
+    ok.hooks!.output!('{"type":"assistant","message":{"content":[{"type":"text","text":"Hi"}]}}\n');
+    ok.hooks!.finished!({ status: 'success' });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(statuses.at(-1)?.issues).toEqual([]);
+  });
+
+  it('withholds its scheduler and turns off the tools the owner turned off', async () => {
+    const { adapter, statuses } = await managed('claude', {
+      localLogin: true,
+      toolDeny: ['Bash', 'unknown'],
+    });
+    const settings = await adapter.runSettings();
+    const off = settings.args!.filter((_, index, all) => all[index - 1] === '--disallowedTools');
+    expect(off).toEqual(
+      expect.arrayContaining(['CronCreate', 'CronList', 'ScheduleWakeup', 'Bash']),
+    );
+    expect(off).not.toContain('unknown');
+    expect(off).not.toContain('Read');
+    expect(statuses.at(-1)?.inventory?.toolsets).toEqual([...CLAUDE_TOOLS]);
+  });
+});
+
+describe('a Codex agent Helena provisioned', () => {
+  it('runs read-only without agent isolation and says why', async () => {
+    delete process.env.AGENT_ISOLATION;
+    const { adapter, statuses, home } = await managed('codex', { localLogin: true });
+    const settings = await adapter.runSettings({ messageId: 3 });
+    expect(settings.hooks?.sandbox).toBe('read-only');
+    expect(settings.args).toContain('--ignore-user-config');
+    expect(settings.args).toContain('--skip-git-repo-check');
+    expect(settings.env.CODEX_HOME).toBe(join(home, '.codex'));
+    // Codex does not start without its home.
+    expect((await stat(join(home, '.codex'))).isDirectory()).toBe(true);
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'degraded',
+      version: '0.156.1',
+      issues: [{ code: 'sandbox-unavailable', detail: 'read-only' }],
+    });
+  });
+
+  it('runs without its sandbox only inside agent isolation', () => {
+    const agent = { env: { HELENA_AGENT_HOME: '/var/lib/volition/hermes/profiles/vol_12' } };
+    const isolation = { slug: 'vol', profile: 'vol_12', agentId: 12 };
+    delete process.env.AGENT_ISOLATION;
+    expect(codexSandbox(agent)).toBe('read-only');
+    expect(codexSandbox({ ...agent, isolation })).toBe('read-only');
+    // An operator's own runner, on a machine where Codex' sandbox works.
+    expect(codexSandbox({ env: {} })).toBe('workspace-write');
+    process.env.AGENT_ISOLATION = 'on';
+    expect(codexSandbox({ ...agent, isolation })).toBe('danger-full-access');
+  });
+
+  it('takes an API key as CODEX_API_KEY and needs no start gate for it', async () => {
+    const grant: CliLogin = {
+      credentialId: 2,
+      runtime: 'codex',
+      method: 'api_key',
+      value: 'sk-proj-x',
+    };
+    const { adapter } = await managed('codex', { grant });
+    const settings = await adapter.runSettings({ runId: 1 });
+    expect(settings.env.CODEX_API_KEY).toBe('sk-proj-x');
+    expect(settings.env.OPENAI_API_KEY).toBe('');
+    expect(settings.hooks?.startGate).toBeUndefined();
+    // An OAuth token is no Codex login: its ChatGPT login lives in the agent's home.
+    expect(
+      loginEnv(
+        'codex',
+        { credentialId: 3, runtime: 'codex', method: 'oauth_token', value: 'x' },
+        true,
+      ).CODEX_API_KEY,
+    ).toBe('');
+  });
+
+  it('serializes the starts of commands that share its login file', async () => {
+    const { adapter } = await managed('codex', { localLogin: true });
+    const settings = await adapter.runSettings({ runId: 1 });
+    expect(settings.hooks?.startGate).toBeInstanceOf(LoginStartGate);
+  });
+
+  it('turns off the features no agent gets, and the ones the owner turned off', async () => {
+    const { adapter, statuses } = await managed('codex', {
+      localLogin: true,
+      toolDeny: ['web_search', 'shell_tool'],
+    });
+    const settings = await adapter.runSettings();
+    const overrides = settings.args!.filter((_, index, all) => all[index - 1] === '-c');
+    expect(overrides).toEqual(
+      expect.arrayContaining([
+        'features.apps=false',
+        'features.plugins=false',
+        'features.browser_use=false',
+        'features.computer_use=false',
+        'features.shell_tool=false',
+        'web_search="disabled"',
+      ]),
+    );
+    expect(overrides).not.toContain('features.view_image=false');
+    expect(statuses.at(-1)?.inventory?.toolsets).toEqual([...CODEX_TOOLS]);
+  });
+});
+
+describe("Codex' sandbox", () => {
+  const codex = PRESETS.codex;
+
+  it('recognizes every way to run Codex without its sandbox', () => {
+    expect(codexWithoutSandbox(['exec', '-c', 'sandbox_mode="danger-full-access"'])).toBe(true);
+    expect(codexWithoutSandbox(['exec', '-c', 'sandbox_mode=danger-full-access'])).toBe(true);
+    expect(codexWithoutSandbox(['exec', '--dangerously-bypass-approvals-and-sandbox'])).toBe(true);
+    expect(codexWithoutSandbox(['exec', '--sandbox', 'danger-full-access'])).toBe(true);
+    expect(codexWithoutSandbox(['exec', '-s', 'danger-full-access'])).toBe(true);
+    expect(codexWithoutSandbox(['exec', '--config=sandbox_mode="danger-full-access"'])).toBe(true);
+    expect(codexWithoutSandbox(['exec', '-c', 'sandbox_mode="read-only"'])).toBe(false);
+    expect(codexWithoutSandbox(['exec', '-c', 'model="danger-full-access"'])).toBe(false);
+  });
+
+  it('refuses such a command outside agent isolation, whoever asked for it', () => {
+    delete process.env.AGENT_ISOLATION;
+    const argv = ['exec', '--json', '-c', 'sandbox_mode="danger-full-access"', '-'];
+    expect(() => assertCodexSandbox({}, codex, argv)).toThrow(/agent isolation/);
+    expect(() =>
+      assertCodexSandbox({ isolation: { slug: 'vol', profile: 'vol_1', agentId: 1 } }, codex, argv),
+    ).toThrow(/agent isolation/);
+    process.env.AGENT_ISOLATION = 'on';
+    expect(() => assertCodexSandbox({}, codex, argv)).toThrow(/agent isolation/);
+    expect(() =>
+      assertCodexSandbox({ isolation: { slug: 'vol', profile: 'vol_1', agentId: 1 } }, codex, argv),
+    ).not.toThrow();
+    // Only Codex: Hermes' own terminal runs in the unit either way.
+    expect(() => assertCodexSandbox({}, PRESETS.hermes, argv)).not.toThrow();
+  });
+
+  it('stops a Codex run the operator configured without a sandbox before it starts', async () => {
+    delete process.env.AGENT_ISOLATION;
+    const dir = await mkdtemp(join(tmpdir(), 'helena-codex-refuse-'));
+    roots.push(dir);
+    const config: RunnerConfig = {
+      name: '',
+      url: 'http://127.0.0.1:1',
+      apiKey: 'k',
+      agent: 'codex',
+      args: ['--dangerously-bypass-approvals-and-sandbox'],
+      cwd: dir,
+      env: {},
+      concurrency: 1,
+      pollIntervalMs: 1000,
+      timeoutMs: 5000,
+      outputFormat: 'codex-jsonl',
+      models: [],
+    };
+    await expect(
+      execute(config, { prompt: 'hi', systemPrompt: '', env: {}, hooks: { sandbox: 'read-only' } }),
+    ).rejects.toThrow(/agent isolation/);
+  });
+
+  it("puts Helena's sandbox after the operator's arguments", () => {
+    const argv = [
+      ...codex.head(null),
+      '-c',
+      'sandbox_mode="workspace-write"',
+      ...(codex.taskArgs?.({ sandbox: 'read-only' }) ?? []),
+    ];
+    expect(argv.lastIndexOf('sandbox_mode="read-only"')).toBeGreaterThan(
+      argv.indexOf('sandbox_mode="workspace-write"'),
+    );
+  });
+});
+
+describe('logins', () => {
+  it("reads Claude Code's refusal of a login", () => {
+    const reader = new LoginRefusalReader('claude');
+    reader.write('{"type":"system","subtype":"init","apiKeySource":"none"}\n');
+    reader.write(
+      '{"type":"assistant","message":{"content":[{"type":"text","text":"Not logged in · Please run /login"}]},"error":"authentication_failed","is_api_error_message":true}\n',
+    );
+    reader.end();
+    expect(reader.refused()).toBe(true);
+  });
+
+  it("reads Codex' 401 and forgets one it recovered from", () => {
+    const refused = new LoginRefusalReader('codex');
+    refused.write(
+      '{"type":"error","message":"Reconnecting... 1/5 (unexpected status 401 Unauthorized: Missing bearer)"}\n',
+    );
+    refused.end();
+    expect(refused.refused()).toBe(true);
+
+    const recovered = new LoginRefusalReader('codex');
+    recovered.write('{"type":"error","message":"unexpected status 401 Unauthorized"}\n');
+    recovered.write('{"type":"item.completed","item":{"type":"agent_message","text":"done"}}');
+    recovered.end();
+    expect(recovered.refused()).toBe(false);
+  });
+
+  it("tells the login state from each runtime's own status command", () => {
+    expect(
+      localLoginFrom('claude', { code: 1, stdout: '{"loggedIn":false}', missing: false }),
+    ).toBe(false);
+    expect(localLoginFrom('claude', { code: 0, stdout: '{"loggedIn":true}', missing: false })).toBe(
+      true,
+    );
+    expect(localLoginFrom('codex', { code: 1, stdout: 'Not logged in', missing: false })).toBe(
+      false,
+    );
+    expect(
+      localLoginFrom('codex', { code: 0, stdout: 'Logged in using ChatGPT', missing: false }),
+    ).toBe(true);
+    expect(localLoginFrom('codex', { code: null, stdout: '', missing: true })).toBeNull();
+    expect(parseVersion('2.1.281 (Claude Code)')).toBe('2.1.281');
+    expect(parseVersion('codex-cli 0.156.1')).toBe('0.156.1');
+  });
+});
+
+describe('the start gate of a login file', () => {
+  it('lets the next command start once the first one got its first answer', async () => {
+    const gate = new LoginStartGate();
+    const dir = await mkdtemp(join(tmpdir(), 'helena-gate-'));
+    roots.push(dir);
+    const config = (command: string): RunnerConfig => ({
+      name: '',
+      url: 'http://127.0.0.1:1',
+      apiKey: 'k',
+      command,
+      args: [],
+      cwd: dir,
+      env: {},
+      concurrency: 2,
+      pollIntervalMs: 1000,
+      timeoutMs: 10_000,
+      outputFormat: 'text',
+      models: [],
+    });
+    const order: string[] = [];
+    const first = execute(
+      config(
+        `echo start-a >> ${dir}/log; sleep 0.3; echo '{"type":"item.started"}'; sleep 0.5; echo end-a >> ${dir}/log`,
+      ),
+      { prompt: '', systemPrompt: '', env: {}, hooks: { startGate: gate } },
+    ).then(() => order.push('a'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const second = execute(config(`echo start-b >> ${dir}/log`), {
+      prompt: '',
+      systemPrompt: '',
+      env: {},
+      hooks: { startGate: gate },
+    }).then(() => order.push('b'));
+    await Promise.all([first, second]);
+    // b started after a's first answer, and before a ended.
+    expect((await readFile(join(dir, 'log'), 'utf8')).trim().split('\n')).toEqual([
+      'start-a',
+      'start-b',
+      'end-a',
+    ]);
+    expect(order).toEqual(['b', 'a']);
+  });
+});
+
+describe('tool arguments', () => {
+  it("withholds Claude Code's scheduler from every agent", () => {
+    expect(claudeToolArgs([])).toContain('CronCreate');
+    expect(codexToolArgs([])).toContain('features.apps=false');
+  });
+});

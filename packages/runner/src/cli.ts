@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
 import { runtimeAdapter } from './adapters';
+import { ensureRuntimeDir, syncCliFiles, type CliFile } from './cli-runtime';
 import { readHermesInventory, type HermesProfile } from './inventory';
 import { readLearnedSkills } from './learning';
 import { pythonVaultStore, WebLoginVault } from './logins';
@@ -347,6 +349,8 @@ async function profileHelper(): Promise<void> {
       actions?: unknown;
       keys?: unknown;
       sessionId?: unknown;
+      runtime?: unknown;
+      files?: unknown;
     };
     const profile = request.profile ?? undefined;
     const materializer = new HermesPolicyMaterializer({
@@ -371,6 +375,21 @@ async function profileHelper(): Promise<void> {
     } else if (request.op === 'inventory') {
       const inventory = await readHermesInventory(home, profile, await materializer.planSkills());
       result = { inventory, learned: await readLearnedSkills(home, inventory.skills) };
+    } else if (request.op === 'cli-files') {
+      // The skills of a Claude Code or Codex agent (cli-runtime.ts), and the runtime's own
+      // directory, which Codex does not start without.
+      if (request.runtime !== 'claude' && request.runtime !== 'codex') {
+        throw new Error('runtime must be claude or codex');
+      }
+      if (!Array.isArray(request.files)) throw new Error('files must be a list');
+      const files = (request.files as unknown[]).filter(
+        (file): file is CliFile =>
+          !!file &&
+          typeof (file as CliFile).path === 'string' &&
+          typeof (file as CliFile).content === 'string',
+      );
+      await ensureRuntimeDir(join(home, request.runtime === 'claude' ? '.claude' : '.codex'));
+      result = { written: await syncCliFiles(join(home, '.helena'), files) };
     } else if (request.op === 'vault-sync') {
       if (!Array.isArray(request.logins)) throw new Error('logins must be a list');
       const vault = new WebLoginVault(home, pythonVaultStore(home, 'python3', {}));

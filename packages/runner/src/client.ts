@@ -1,4 +1,5 @@
 import type { AgUiEvent, ContextUsage } from './agui';
+import type { CliLogin, CliLoginState } from './cli-login';
 import type { RunnerConfig } from './config';
 import type { LoginUse, WebLogin, WorkRef } from './logins';
 import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
@@ -141,6 +142,23 @@ export class Client {
       secrets?: Record<string, string>;
     };
     return body.secrets ?? {};
+  }
+
+  // The login of the agent's Claude Code or Codex runtime that Helena grants it
+  // ("Laufzeit-Anmeldung" in Zugänge). Named with the run or chat answer it is for, the
+  // answer carries the value and the read is recorded in the audit log; without one, only
+  // whether a login is granted. A server that predates runtime logins answers 404: none.
+  async runtimeLogin(work?: WorkRef): Promise<CliLogin | CliLoginState | null> {
+    const query = work ? `?${new URLSearchParams(workParams(work))}` : '';
+    try {
+      const body = (await (await this.get(`/agent-runtime/runtime-login${query}`)).json()) as {
+        login?: CliLogin | CliLoginState | null;
+      };
+      return body.login ?? null;
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 404) return null;
+      throw err;
+    }
   }
 
   // The website logins granted to the agent, for the run or chat answer it holds.

@@ -20,6 +20,28 @@ import type { WorkRef } from './logins';
 
 export type RuntimeId = 'hermes' | 'claude' | 'codex';
 
+// Codex' sandbox for the shell commands the model runs. Helena decides it per agent
+// (cli-runtime.ts codexSandbox): no sandbox only inside Helena's agent isolation.
+export type CodexSandbox = 'read-only' | 'workspace-write' | 'danger-full-access';
+
+// Held while a command starts, so that two commands sharing one login file never refresh
+// it at the same moment (cli-runtime.ts). Released by the first model output, the end of
+// the command, or a deadline.
+export interface StartGate {
+  acquire(): Promise<() => void>;
+}
+
+// What an adapter asks of the one command a run or chat answer starts (execute.ts).
+export interface CommandHooks {
+  // Codex only: the sandbox of its shell commands.
+  sandbox?: CodexSandbox;
+  startGate?: StartGate;
+  // Sees the command's output as it arrives.
+  output?(chunk: string): void;
+  // Told how the command ended.
+  finished?(outcome: { status: 'success' | 'failed'; error?: string }): void;
+}
+
 // What a run or chat answer hands the runtime besides the task.
 export interface RunSettings {
   // Hermes toolsets the run is limited to; null leaves the runtime's own selection.
@@ -32,6 +54,24 @@ export interface RunSettings {
   // The agent's standing instructions, for a runtime that has no file of its own for them:
   // the adapter puts them in front of the run's own context.
   instructions?: string;
+  hooks?: CommandHooks;
+}
+
+// Why an agent's runtime cannot do its work, or only part of it, as Helena shows it on the
+// agent and in the health overview ("Laufzeit nicht angemeldet").
+export type RuntimeIssueCode =
+  // The runtime's program is not installed where the runner looks for it.
+  | 'runtime-missing'
+  // No login reaches the runtime, or the one it has was refused (detail 'rejected').
+  | 'not-signed-in'
+  // Codex without Helena's agent isolation: its own sandbox cannot start in this
+  // container, so it runs read-only and reaches only Helena's tools.
+  | 'sandbox-unavailable';
+
+export interface RuntimeIssue {
+  code: RuntimeIssueCode;
+  // A short word or a name, never a value that could be a secret.
+  detail?: string;
 }
 
 // The model and reasoning a session actually ran with, as the runtime recorded them.

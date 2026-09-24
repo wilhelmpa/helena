@@ -4,6 +4,7 @@ import type { ContextUsage } from './agui';
 import { presetOf, type RunnerConfig } from './config';
 import { isolatedEnv, isolationEnabled, launch, LaunchError, type WorkKind } from './isolation';
 import { presetArgv, presetPrompt, type Preset } from './presets';
+import type { CommandHooks } from './runtime';
 
 // Runs one task: the command the preset builds, or the operator's own in a shell, with the
 // task on stdin and its context in the environment. Everything the agent needs beyond the
@@ -28,6 +29,8 @@ export interface Task {
   toolsets?: string[] | null;
   // An image the model reads with the prompt.
   image?: string | null;
+  // What the agent's runtime adapter asks of this command (runtime.ts).
+  hooks?: CommandHooks;
 }
 
 export interface Outcome {
@@ -174,8 +177,78 @@ function spawnArgs(
       runBudgetSeconds: task.runBudgetSeconds,
       toolsets: task.toolsets,
       image: task.image,
+      sandbox: task.hooks?.sandbox,
     }),
   ];
+}
+
+// Codex runs the model's shell commands in a sandbox of its own (bubblewrap), which cannot
+// start inside the container Helena runs in. A Codex command without that sandbox
+// (danger-full-access, or the bypass flag) has no boundary but Helena's agent isolation,
+// where the agent runs as its project's user in a unit of its own. So such a command is
+// started only there, whoever asked for it (owner decision 2026-09-24).
+const CODEX_BYPASS = new Set([
+  '--dangerously-bypass-approvals-and-sandbox',
+  '--yolo',
+  '--sandbox=danger-full-access',
+  '-s=danger-full-access',
+]);
+
+export function codexWithoutSandbox(argv: string[]): boolean {
+  return argv.some((arg, index) => {
+    if (CODEX_BYPASS.has(arg)) return true;
+    const next = argv[index + 1];
+    if ((arg === '-s' || arg === '--sandbox') && next === 'danger-full-access') return true;
+    if ((arg === '-c' || arg === '--config') && next !== undefined) {
+      return /^\s*sandbox_mode\s*=\s*"?danger-full-access"?\s*$/.test(next);
+    }
+    return /^--config=\s*sandbox_mode\s*=\s*"?danger-full-access"?\s*$/.test(arg);
+  });
+}
+
+export function assertCodexSandbox(
+  config: Pick<RunnerConfig, 'isolation'>,
+  preset: Preset | undefined,
+  argv: string[],
+): void {
+  if (preset?.bin !== 'codex') return;
+  const isolated = isolationEnabled() && config.isolation !== undefined;
+  if (!isolated && codexWithoutSandbox(argv)) {
+    throw new Error(
+      "Codex runs without its sandbox only inside Helena's agent isolation; this agent is not isolated",
+    );
+  }
+}
+
+// How long one command may hold the start gate of a login file before the next one starts
+// anyway (runtime.ts StartGate).
+const START_GATE_MS = 60_000;
+// The first line that shows the model answered: the login was used, refreshed or refused.
+const MODEL_ANSWERED =
+  /"type":"(?:item\.(?:started|completed)|turn\.(?:completed|failed)|assistant)"/;
+
+// Holds the gate until the command's first model answer, its end, or the deadline.
+async function openGate(hooks: CommandHooks | undefined): Promise<{
+  seen: (chunk: string) => void;
+  release: () => void;
+}> {
+  const release = hooks?.startGate ? await hooks.startGate.acquire() : null;
+  let open = release === null;
+  const done = () => {
+    if (open) return;
+    open = true;
+    clearTimeout(timer);
+    release?.();
+  };
+  const timer = setTimeout(done, START_GATE_MS);
+  timer.unref?.();
+  if (open) clearTimeout(timer);
+  return {
+    seen: (chunk) => {
+      if (!open && MODEL_ANSWERED.test(chunk)) done();
+    },
+    release: done,
+  };
 }
 
 // A CLI that took the task as an argument would read it twice if it also arrived here.
@@ -208,7 +281,28 @@ export async function execute(
 ): Promise<Outcome> {
   const preset = presetOf(config);
   const [bin, args] = spawnArgs(config, preset, task);
-  if (isolationEnabled()) return executeIsolated(config, task, preset, args, opts);
+  assertCodexSandbox(config, preset, args);
+  const gate = await openGate(task.hooks);
+  try {
+    const outcome = isolationEnabled()
+      ? await executeIsolated(config, task, preset, args, opts, gate.seen)
+      : await executeLocal(config, task, preset, bin, args, opts, gate.seen);
+    task.hooks?.finished?.({ status: outcome.status, error: outcome.error });
+    return outcome;
+  } finally {
+    gate.release();
+  }
+}
+
+async function executeLocal(
+  config: RunnerConfig,
+  task: Task,
+  preset: Preset | undefined,
+  bin: string,
+  args: string[],
+  opts: ExecuteOptions,
+  seen: (chunk: string) => void,
+): Promise<Outcome> {
   const child = spawn(bin, args, {
     cwd: config.cwd,
     env: childEnv(config, task),
@@ -236,6 +330,8 @@ export async function execute(
   child.stdout.on('data', (chunk: string) => {
     stdout = tail(stdout + chunk, OUTPUT_LIMIT);
     hermesResult?.write(chunk);
+    seen(chunk);
+    task.hooks?.output?.(chunk);
     opts.onData?.(chunk);
   });
   child.stderr.on('data', (chunk: string) => {
@@ -288,6 +384,7 @@ async function executeIsolated(
   preset: Preset | undefined,
   args: string[],
   opts: ExecuteOptions,
+  seen: (chunk: string) => void,
 ): Promise<Outcome> {
   const isolation = config.isolation;
   if (!isolation) {
@@ -320,6 +417,8 @@ async function executeIsolated(
     if (!text) return;
     stdout = tail(stdout + text, OUTPUT_LIMIT);
     hermesResult?.write(text);
+    seen(text);
+    task.hooks?.output?.(text);
     opts.onData?.(text);
   };
   let code: number | null = null;
