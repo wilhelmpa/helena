@@ -23,8 +23,12 @@ export async function ensureProjectGit(workspace) {
     cwd: root, timeout: 15000, maxBuffer: 65536,
     env: {PATH: '/usr/bin:/bin', HOME: root, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null'},
   };
-  await execute('/usr/bin/git', ['-c', 'init.templateDir=', '-c', 'core.hooksPath=/dev/null', 'init', '--initial-branch=main', '.'], options);
-  await execute('/usr/bin/git', ['config', '--local', 'user.name', LOCAL_GIT_IDENTITY.name], options);
-  await execute('/usr/bin/git', ['config', '--local', 'user.email', LOCAL_GIT_IDENTITY.email], options);
+  // With agent isolation the workspace already belongs to the project's user, and git
+  // refuses a repository in someone else's folder unless told this one is safe. The launcher
+  // hands the new .git to the project's user afterwards (adopt_new_git).
+  const git = (...args) => execute('/usr/bin/git', ['-c', `safe.directory=${root}`, ...args], options);
+  await git('-c', 'init.templateDir=', '-c', 'core.hooksPath=/dev/null', 'init', '--initial-branch=main', '.');
+  await git('config', '--local', 'user.name', LOCAL_GIT_IDENTITY.name);
+  await git('config', '--local', 'user.email', LOCAL_GIT_IDENTITY.email);
   return {created: true};
 }

@@ -394,6 +394,51 @@ def open_path_nofollow(path: str) -> int:
         raise
 
 
+def adopt_tree(fd: int, uid: int, gid: int, *, only_uid: int, limit: int = 100_000) -> int:
+    """Gives the directory at fd and everything below it that belongs to `only_uid` to
+    uid:gid, walking by file descriptor. Links are never followed or changed, and a regular
+    file with more than one name is left alone, so nothing outside the tree can be reached
+    through it. Returns how many entries changed owner; stops after `limit` entries."""
+    seen = 0
+    changed = 0
+
+    def own(entry_fd: int, info: os.stat_result) -> None:
+        nonlocal changed
+        if info.st_uid == only_uid and (info.st_uid, info.st_gid) != (uid, gid):
+            os.fchown(entry_fd, uid, gid)
+            changed += 1
+
+    def visit(dir_fd: int, depth: int) -> None:
+        nonlocal seen
+        if depth > 64:
+            return
+        for name in os.listdir(dir_fd):
+            seen += 1
+            if seen > limit:
+                return
+            info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISDIR(info.st_mode):
+                child = os.open(name, O_DIR, dir_fd=dir_fd)
+            elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
+                child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC,
+                                dir_fd=dir_fd)
+            else:
+                continue
+            try:
+                opened = os.fstat(child)
+                if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
+                    continue
+                own(child, opened)
+                if stat.S_ISDIR(opened.st_mode):
+                    visit(child, depth + 1)
+            finally:
+                os.close(child)
+
+    own(fd, os.fstat(fd))
+    visit(fd, 0)
+    return changed
+
+
 def is_real_directory(path: str) -> bool:
     try:
         fd = open_path_nofollow(path)

@@ -114,6 +114,34 @@ class AclTest(unittest.TestCase):
             common.acl_decode(b'\x02\x00\x00\x00\x01')
 
 
+class AdoptTreeTest(unittest.TestCase):
+    def test_takes_over_the_tree_but_no_link_and_no_hard_link(self):
+        # Without root the owner stays; a group of the caller's shows what changed hands.
+        group = next((g for g in os.getgroups() if g != os.getgid()), None)
+        if group is None:
+            self.skipTest('the caller has no second group')
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            outside = root / 'outside'
+            outside.write_text('x')
+            git = root / '.git'
+            (git / 'objects' / 'aa').mkdir(parents=True)
+            (git / 'HEAD').write_text('ref: refs/heads/main\n')
+            (git / 'objects' / 'aa' / 'object').write_text('o')
+            (git / 'link').symlink_to(outside)
+            os.link(outside, git / 'hard')
+            fd = os.open(git, common.O_DIR)
+            try:
+                self.assertEqual(common.adopt_tree(fd, os.getuid(), group, only_uid=os.getuid() + 1), 0)
+                changed = common.adopt_tree(fd, os.getuid(), group, only_uid=os.getuid())
+            finally:
+                os.close(fd)
+            self.assertEqual(changed, 5)  # .git, HEAD, objects, objects/aa, objects/aa/object
+            for path in (git, git / 'HEAD', git / 'objects' / 'aa' / 'object'):
+                self.assertEqual(path.stat().st_gid, group)
+            self.assertEqual(outside.stat().st_gid, os.getgid())
+
+
 class HttpHeadTest(unittest.TestCase):
     def test_reads_a_strict_head(self):
         head = common.parse_request_head(b'GET /me HTTP/1.1\r\nHost: x\r\nX-Api-Key: k\r\n\r\n')

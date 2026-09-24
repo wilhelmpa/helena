@@ -45,9 +45,11 @@ from isolation_common import (  # noqa: E402
     ACL_USER,
     Config,
     IsolationError,
+    O_DIR,
     PROFILE_RE,
     PROJECT_KEY_RE,
     ENV_NAME_RE,
+    adopt_tree,
     load_config,
     open_path_nofollow,
     peer_credentials,
@@ -934,6 +936,31 @@ class Launcher:
         finally:
             os.close(fd)
 
+    def adopt_new_git(self, workspace: str, account: pwd.struct_passwd, runner: int) -> int:
+        """The .git provisioning made in a new project's workspace. Git refuses a repository
+        whose folder belongs to someone else, so the project's agents could not use it: the
+        project user gets it, as migrate gave it the older projects'. Only a .git that still
+        belongs to the runner is taken over; once it is the project's, it is left alone."""
+        try:
+            top = open_path_nofollow(workspace)
+        except (FileNotFoundError, IsolationError):
+            return 0
+        try:
+            try:
+                fd = os.open('.git', O_DIR, dir_fd=top)
+            except OSError as error:
+                if error.errno in (errno.ENOENT, errno.ELOOP, errno.ENOTDIR):
+                    return 0
+                raise
+            try:
+                if os.fstat(fd).st_uid != runner:
+                    return 0
+                return adopt_tree(fd, account.pw_uid, account.pw_gid, only_uid=runner)
+            finally:
+                os.close(fd)
+        finally:
+            os.close(top)
+
     async def ensure_project_user(self, request: dict, writer, caller: str) -> None:
         async with self.user_lock:
             result = await self._ensure_project_user(request, caller)
@@ -995,6 +1022,7 @@ class Launcher:
         done = {
             'workspace': self.grant_directory(workspace, account, own=True, owners={runner, *earlier}, named={
                 (ACL_USER, account.pw_uid): rwx, (ACL_USER, runner): rwx, (ACL_GROUP, readers): rx}),
+            'git': self.adopt_new_git(workspace, account, runner),
         }
         # Profiles are the agents' alone: the runner reaches them only through helper runs.
         profile_root = open_path_nofollow(config.profiles_root)
