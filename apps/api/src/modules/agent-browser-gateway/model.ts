@@ -45,13 +45,17 @@ export const BrowserGatewaySettingsResponse = t.Object({
   lockTimeoutSec: t.Number(),
 });
 
-// Home's "Browser" overview (design §5, §8: "Home → Browser: Übersicht"). Every project
-// that could have a project browser, name and key only — the router that will serve the
-// live current URL, who controls it, and a thumbnail is still being built (see
-// docs/volition-design-browser-gateway.md §3, §5), so this carries no live fields yet.
+// Home's "Browser" overview (design §5, §8: "Home → Browser: Übersicht"): the projects the
+// caller works in, each with the slug of its project browser. The live state of each
+// browser comes from the browser router (/browser/api/overview), not from here.
 export const BrowserGatewayOverviewResponse = t.Object({
   projects: t.Array(
-    t.Object({ projectId: t.Number(), projectKey: t.String(), projectName: t.String() }),
+    t.Object({
+      projectId: t.Number(),
+      projectKey: t.String(),
+      projectName: t.String(),
+      slug: t.String(),
+    }),
   ),
 });
 
@@ -62,69 +66,4 @@ export const updateBrowserGatewaySettingsBody = t.Object({
   lockTimeoutSec: t.Optional(
     t.Number({ minimum: MIN_LOCK_TIMEOUT_SEC, maximum: MAX_LOCK_TIMEOUT_SEC }),
   ),
-});
-
-// --- internal (gateway <-> Plan) wire shapes -------------------------------------------
-
-export const internalResolveBody = t.Object({
-  agentKey: t.String({ minLength: 1, maxLength: 200 }),
-  projectKey: t.String({ minLength: 1, maxLength: 32 }),
-});
-
-export const InternalResolveResponse = t.Object({
-  agentId: t.Number(),
-  agentName: t.String(),
-  teamId: t.Number(),
-  projectId: t.Number(),
-  browserGatewayEnabled: t.Boolean(),
-  settings: BrowserGatewaySettingsResponse,
-});
-
-export const internalLoginBody = t.Object({
-  agentKey: t.String({ minLength: 1, maxLength: 200 }),
-  projectKey: t.String({ minLength: 1, maxLength: 32 }),
-  frameOrigin: t.String({ minLength: 1, maxLength: 500 }),
-  credentialId: t.Optional(t.Number()),
-  runId: t.Optional(t.Number()),
-  messageId: t.Optional(t.Number()),
-});
-
-// Never totpSecret — only whether one exists (browser_login_code fetches the code itself,
-// on a separate call, once the field it belongs to is focused).
-export const InternalLoginResult = t.Object({
-  id: t.Number(),
-  label: t.String(),
-  username: t.String(),
-  password: t.String(),
-  has2fa: t.Boolean(),
-});
-
-export const InternalLoginResponse = t.Union([
-  t.Object({ status: t.Literal('filled'), login: InternalLoginResult }),
-  t.Object({
-    status: t.Literal('choose'),
-    // No password, no username-adjacent secret — just enough to ask the agent to call
-    // browser_login again with an id (design §6: "Liste mit Label und Benutzername zur
-    // Auswahl, ohne Passwort").
-    candidates: t.Array(t.Object({ id: t.Number(), label: t.String(), username: t.String() })),
-  }),
-  t.Object({ status: t.Literal('none') }),
-]);
-
-export const internalLoginCodeBody = t.Object({
-  agentKey: t.String({ minLength: 1, maxLength: 200 }),
-  credentialId: t.Number(),
-});
-
-export const InternalLoginCodeResponse = t.Object({
-  code: t.String(),
-  secondsRemaining: t.Number(),
-});
-
-export const internalAuditBody = t.Object({
-  agentKey: t.String({ minLength: 1, maxLength: 200 }),
-  projectKey: t.String({ minLength: 1, maxLength: 32 }),
-  actor: t.Union([t.Literal('agent'), t.Literal('owner')]),
-  tool: t.String({ minLength: 1, maxLength: 64 }),
-  target: t.Optional(t.String({ maxLength: 300 })),
 });

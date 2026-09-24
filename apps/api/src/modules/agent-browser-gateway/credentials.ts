@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { decryptSecret, totpCode, totpSecondsRemaining } from '@repo/crypto';
 import { HttpError } from '#shared/lib';
 import type { RunnerAgent } from '../agents/runner/service';
+import { loginOrigins } from '../agents/credentials/kinds';
 import {
   claimedWork,
   deliverWebLogins,
@@ -67,7 +68,7 @@ function withoutSecret(login: DeliveredLogin) {
 export async function loginForOrigin(
   agent: RunnerAgent,
   work: GatewayWork,
-  projectId: number,
+  projectId: number | null,
   frameOrigin: string,
   credentialId: number | undefined,
 ): Promise<LoginForOrigin> {
@@ -100,16 +101,20 @@ export async function loginForOrigin(
   return { status: 'filled', login: withoutSecret(only) };
 }
 
-// browser_login_code: the current TOTP code only, computed here. The secret is decrypted
-// for this one call and discarded; it never appears in the response or an audit row.
+// browser_login_code: the current TOTP code only, computed here, and only for a field on a
+// page of the login's own site (a code typed into another site's form would hand that site
+// a valid second factor). The secret is decrypted for this one call and discarded; it never
+// appears in the response or an audit row.
 export async function loginCode(
   agent: RunnerAgent,
   work: GatewayWork,
   credentialId: number,
+  frameOrigin: string,
 ): Promise<{ code: string; secondsRemaining: number }> {
   const [row] = await db
     .select({
       id: integrationCredential.id,
+      redacted: integrationCredential.redacted,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
@@ -130,11 +135,15 @@ export async function loginCode(
       ),
     );
   if (!row) throw new HttpError(404, 'Login not found or not granted to this agent');
+  const readable = row.redacted as { loginUrl: string; allowedDomains?: string[] };
+  if (!loginOrigins(readable.loginUrl, readable.allowedDomains ?? []).includes(frameOrigin)) {
+    throw new HttpError(403, `This login is not for ${frameOrigin.slice(0, 200)}`);
+  }
   const secrets = JSON.parse(decryptSecret(row)) as { totpSecret?: string };
   if (!secrets.totpSecret) throw new HttpError(400, 'This login has no authenticator key');
   const claimed = await resolveWork(agent, work, null);
   await recordWebLoginUses(agent, claimed, [
-    { credentialId: row.id, tool: 'browser_login_code', origin: '' },
+    { credentialId: row.id, tool: 'browser_login_code', origin: frameOrigin },
   ]);
   return {
     code: totpCode(secrets.totpSecret),

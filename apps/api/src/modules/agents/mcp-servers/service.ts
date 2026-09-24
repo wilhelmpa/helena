@@ -190,15 +190,25 @@ async function columns(teamId: number, input: McpServerInput) {
   return { values, labels };
 }
 
+// A team's library, the built-in entries included: a team that does not have them yet (one
+// created before them, or since) gets them here, once, so every team can switch
+// "Projekt-Browser" on for an agent without a setup step.
 export async function listMcpServers(teamId: number): Promise<McpServerRow[]> {
-  const [rows, labels] = await Promise.all([
-    db
-      .select()
-      .from(agentMcpServer)
-      .where(eq(agentMcpServer.teamId, teamId))
-      .orderBy(agentMcpServer.name),
-    secretLabels(teamId),
-  ]);
+  const load = () =>
+    Promise.all([
+      db
+        .select()
+        .from(agentMcpServer)
+        .where(eq(agentMcpServer.teamId, teamId))
+        .orderBy(agentMcpServer.name),
+      secretLabels(teamId),
+    ]);
+  let [rows, labels] = await load();
+  const present = new Set(rows.filter((row) => row.builtin).map((row) => row.name));
+  if (BUILTIN_MCP_SERVER_NAMES.some((name) => !present.has(name))) {
+    await ensureBuiltinMcpServers(teamId);
+    [rows, labels] = await load();
+  }
   return rows.map((row) => mapRow(row, labels));
 }
 

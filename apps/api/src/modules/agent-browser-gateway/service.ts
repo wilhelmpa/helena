@@ -165,16 +165,18 @@ export async function browserGatewayEnabledForAgent(
   return server !== undefined && enabledIds.includes(server.id);
 }
 
-// Home's "Browser" overview (design §5, §8): every project the caller is a member of, as
-// a project could always get a browser gateway. Reuses the projects module's own listing
-// rather than a second query, so the set of "eligible" projects is one definition — a
-// project template is a separate `project_template` row, never a `project` row, so it is
-// never in this list to begin with. No live state (current URL, who controls it, a
-// thumbnail): the router that will serve that is still being built (see model.ts,
-// BrowserGatewayOverviewResponse).
+// Home's "Browser" overview (design §5, §8): every project the caller is a member of, with
+// the slug its project browser goes by (the live state — address, who controls it, a
+// picture — comes from the browser router itself, /browser/api/overview). Reuses the
+// projects module's own listing, so "eligible" has one definition.
 export async function listBrowserGatewayOverview(
   userId: string,
-): Promise<{ projectId: number; projectKey: string; projectName: string }[]> {
+): Promise<{ projectId: number; projectKey: string; projectName: string; slug: string }[]> {
   const rows = await listProjects(userId);
-  return rows.map((row) => ({ projectId: row.id, projectKey: row.key, projectName: row.name }));
+  return rows.map((row) => ({
+    projectId: row.id,
+    projectKey: row.key,
+    projectName: row.name,
+    slug: projectSlug(row.key),
+  }));
 }

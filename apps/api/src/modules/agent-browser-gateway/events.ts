@@ -10,8 +10,9 @@ import { iso } from '#shared/lib';
 // page content).
 
 export interface BrowserGatewayEventInput {
-  projectId: number;
-  agentId: number;
+  // Null for Home's own browser.
+  projectId: number | null;
+  agentId: number | null;
   agentName: string;
   actor: 'agent' | 'owner';
   tool: string;

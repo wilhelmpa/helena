@@ -34,9 +34,9 @@ export const agentBrowserGatewayRoutes = new Elysia({
       detail: {
         summary: 'List the projects with a project browser',
         description:
-          'Every project you are a member of, for the Home "Browser" overview (design §5). No ' +
-          'live state yet — the router that will serve the current URL, who controls it, and a ' +
-          'thumbnail is still being built.',
+          'Every project you are a member of, with the slug of its project browser, for the ' +
+          'Home "Browser" overview (design §5). The live state of each browser comes from the ' +
+          'browser router.',
       },
     },
   )

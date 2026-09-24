@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'bun:test';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { app, authedApi, type Api } from '#tests/helpers/app';
@@ -7,6 +7,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { ensureBuiltinMcpServers } from '../../../agents/mcp-servers/service';
+import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 
 // The browser gateway's Plan-side surface (design: docs/volition-design-browser-gateway.md):
 // the "Projekt-Browser" builtin MCP server entry, its per-project settings, and the internal
@@ -61,13 +62,10 @@ async function agentWithGateway(
     kind: 'external',
   });
   const agent = created.data!.agent;
-  const server = (
-    await servers(asOwner, teamId).post({
-      name: 'projekt-browser',
-      transport: 'stdio',
-      command: '/usr/local/libexec/volition-browser-gateway-mcp',
-    })
-  ).data!;
+  // The library lists the built-in "Projekt-Browser" entry for every team.
+  const server = (await servers(asOwner, teamId).get()).data!.find(
+    (row) => row.name === 'projekt-browser',
+  )!;
   await agentServers(asOwner, teamId, agent.id).put({ mcpServerIds: [server.id] });
   return { agent, apiKey: created.data!.apiKey! as string, server };
 }
@@ -80,7 +78,7 @@ describe('browser gateway', () => {
     // token: an empty/absent Authorization header is what "no token" means here.
     const res = await internal(
       '/internal/browser-gateway/resolve',
-      { agentKey: 'x', projectSlug: 'mkt' },
+      { agentKey: 'x', projectSlug: 'mkt', via: 'mkt' },
       '',
     );
     expect(res.status).toBe(401);
@@ -89,7 +87,7 @@ describe('browser gateway', () => {
   it('refuses a request with the wrong service token', async () => {
     const res = await internal(
       '/internal/browser-gateway/resolve',
-      { agentKey: 'x', projectSlug: 'mkt' },
+      { agentKey: 'x', projectSlug: 'mkt', via: 'mkt' },
       'wrong-token-0123456789abcdef0123456789',
     );
     expect(res.status).toBe(401);
@@ -101,6 +99,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/resolve', {
       agentKey: apiKey,
       projectSlug: 'mkt',
+      via: 'mkt',
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
@@ -123,6 +122,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/resolve', {
       agentKey: created.data!.apiKey!,
       projectSlug: 'mkt',
+      via: 'mkt',
     });
     const body = (await res.json()) as { browserGatewayEnabled: boolean };
     expect(body.browserGatewayEnabled).toBe(false);
@@ -135,6 +135,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/resolve', {
       agentKey: apiKey,
       projectSlug: 'ops',
+      via: 'ops',
     });
     expect(res.status).toBe(403);
   });
@@ -158,6 +159,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/login', {
       agentKey: apiKey,
       projectSlug: 'mkt',
+      via: 'mkt',
       frameOrigin: 'https://github.com',
     });
     expect(res.status).toBe(200);
@@ -193,6 +195,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/login', {
       agentKey: apiKey,
       projectSlug: 'mkt',
+      via: 'mkt',
       frameOrigin: 'https://example.com',
     });
     const body = (await res.json()) as { status: string; candidates: { label: string }[] };
@@ -218,6 +221,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/login', {
       agentKey: apiKey,
       projectSlug: 'mkt',
+      via: 'mkt',
       frameOrigin: 'https://not-github.example',
     });
     const body = (await res.json()) as { status: string };
@@ -242,6 +246,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/login-code', {
       agentKey: apiKey,
       credentialId: cred.id,
+      frameOrigin: 'https://github.com',
     });
     expect(res.status).toBe(200);
     const text = await res.text();
@@ -269,6 +274,7 @@ describe('browser gateway', () => {
     const res = await internal('/internal/browser-gateway/login-code', {
       agentKey: apiKey,
       credentialId: cred.id,
+      frameOrigin: 'https://github.com',
     });
     expect(res.status).toBe(404);
   });
@@ -279,9 +285,10 @@ describe('browser gateway', () => {
     const audit = await internal('/internal/browser-gateway/audit', {
       agentKey: apiKey,
       projectSlug: 'mkt',
+      via: 'mkt',
       actor: 'agent',
       tool: 'browser_navigate',
-      target: 'https://example.com/secret-path?token=abc',
+      target: 'https://example.com/secret-path',
     });
     expect(audit.status).toBe(200);
     const events = await asOwner.projects({ projectKey: 'MKT' })['browser-gateway'].events.get();
@@ -301,6 +308,7 @@ describe('browser gateway', () => {
       projectId: mkt.id,
       projectKey: 'MKT',
       projectName: 'Marketing',
+      slug: 'mkt',
     });
   });
 
@@ -348,7 +356,6 @@ describe('browser gateway', () => {
 
   it('seeds the builtin servers as builtin, and a team cannot edit or delete them', async () => {
     const { asOwner, mkt } = await setup();
-    await ensureBuiltinMcpServers(mkt.teamId);
     const list = (await servers(asOwner, mkt.teamId).get()).data!;
     const gateway = list.find((row) => row.name === 'projekt-browser')!;
     const legacy = list.find((row) => row.name === 'hermes-browser-legacy')!;
@@ -369,5 +376,202 @@ describe('browser gateway', () => {
     await ensureBuiltinMcpServers(mkt.teamId);
     const again = (await servers(asOwner, mkt.teamId).get()).data!;
     expect(again.filter((row) => row.name === 'projekt-browser')).toHaveLength(1);
+  });
+
+  it('refuses a TOTP code for a page of another site', async () => {
+    const { asOwner, mkt } = await setup();
+    const { agent, apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const cred = (
+      await credentials(asOwner, mkt.teamId).post({
+        kind: 'web_login',
+        label: 'GitHub',
+        loginUrl: 'https://github.com/login',
+        allowedDomains: [],
+        username: 'bot@example.com',
+        password: 'fake-password',
+        totpSecret: TOTP,
+      })
+    ).data!;
+    await credential(asOwner, mkt.teamId, cred.id).grants.put({ agentIds: [agent.id] });
+    const res = await internal('/internal/browser-gateway/login-code', {
+      agentKey: apiKey,
+      credentialId: cred.id,
+      frameOrigin: 'https://evil.example',
+    });
+    expect(res.status).toBe(403);
+    expect(await res.text()).not.toMatch(/\d{6}/);
+  });
+
+  it('refuses a call that names another project through a project socket', async () => {
+    const { asOwner, mkt } = await setup();
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const res = await internal('/internal/browser-gateway/resolve', {
+      agentKey: apiKey,
+      projectSlug: 'mkt',
+      via: 'ops',
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("keeps Home's socket for the Home-Master, which may act on Home and on its projects", async () => {
+    const owner = await signUpTestUser({ name: 'Owner' });
+    const asOwner = authedApi(owner.cookie);
+    // The Home-Master joins every project created after it.
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('no Home agent');
+    const mkt = (await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).data!;
+    const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const server = (await servers(asOwner, mkt.teamId).get()).data!.find(
+      (row) => row.name === 'projekt-browser',
+    )!;
+    await agentServers(asOwner, mkt.teamId, home.agentId).put({ mcpServerIds: [server.id] });
+
+    // A project agent may not use Home's socket.
+    const intruder = await internal('/internal/browser-gateway/resolve', {
+      agentKey: apiKey,
+      projectSlug: 'home',
+      via: 'home',
+    });
+    expect(intruder.status).toBe(403);
+    // The Home-Master may not use a project's socket.
+    const wrongSocket = await internal('/internal/browser-gateway/resolve', {
+      agentKey: home.apiKey,
+      projectSlug: 'mkt',
+      via: 'mkt',
+    });
+    expect(wrongSocket.status).toBe(403);
+    // Home's own browser: no project, default settings.
+    const own = await internal('/internal/browser-gateway/resolve', {
+      agentKey: home.apiKey,
+      projectSlug: 'home',
+      via: 'home',
+    });
+    expect(own.status).toBe(200);
+    expect(await own.json()).toMatchObject({
+      projectId: null,
+      projectKey: null,
+      browserGatewayEnabled: true,
+      settings: { lockTimeoutSec: 120 },
+    });
+    // A project it works in, through Home's socket.
+    const project = await internal('/internal/browser-gateway/resolve', {
+      agentKey: home.apiKey,
+      projectSlug: 'mkt',
+      via: 'home',
+    });
+    expect(project.status).toBe(200);
+    expect(await project.json()).toMatchObject({ projectId: mkt.id, projectKey: 'MKT' });
+    // Its actions on Home's own browser are recorded without a project.
+    const audit = await internal('/internal/browser-gateway/audit', {
+      agentKey: home.apiKey,
+      projectSlug: 'home',
+      via: 'home',
+      actor: 'agent',
+      tool: 'browser_navigate',
+      target: 'https://example.com/',
+    });
+    expect(audit.status).toBe(200);
+  });
+
+  it('files a handover card in Freigaben and closes it once the owner gave control back', async () => {
+    const { asOwner, mkt } = await setup();
+    const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const filed = await internal('/internal/browser-gateway/handover', {
+      agentKey: apiKey,
+      projectSlug: 'mkt',
+      via: 'mkt',
+      reason: 'Bitte das CAPTCHA lösen',
+    });
+    expect(filed.status).toBe(200);
+    const { approvalId } = (await filed.json()) as { approvalId: number };
+    const pending = await asOwner.approvals.get({ query: { status: 'pending' } });
+    const card = pending.data!.items.find((item) => item.id === approvalId)!;
+    expect(card.action).toBe('Projekt-Browser: Bitte das CAPTCHA lösen');
+    expect(card.details).toContain('/project/MKT?tool=browser');
+
+    const done = await internal('/internal/browser-gateway/handover-done', {
+      approvalId,
+      finished: true,
+    });
+    expect(done.status).toBe(200);
+    const after = await asOwner.approvals.get({ query: { status: 'decided' } });
+    const closed = after.data!.items.find((item) => item.id === approvalId)!;
+    expect(closed.followUpRunId).toBeNull();
+  });
+
+  it('never closes an ordinary approval through the handover route', async () => {
+    const { asOwner, mkt } = await setup();
+    const { agent } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const { createApprovalRequest } = await import('#modules/approvals/service');
+    const { approval } = await createApprovalRequest({
+      projectId: mkt.id,
+      agent: { id: agent.id, userId: agent.userId },
+      kind: 'other',
+      action: 'Send the newsletter',
+    });
+    await internal('/internal/browser-gateway/handover-done', {
+      approvalId: approval.id,
+      finished: true,
+    });
+    const pending = await asOwner.approvals.get({ query: { status: 'pending' } });
+    expect(pending.data!.items.some((item) => item.id === approval.id)).toBe(true);
+  });
+
+  it("files a download into the project's Inbox and records it", async () => {
+    const vault = mkdtempSync(join(tmpdir(), 'browser-gateway-vault-'));
+    const previous = process.env.PROJECT_VAULT_ROOT;
+    process.env.PROJECT_VAULT_ROOT = vault;
+    try {
+      const { asOwner, mkt } = await setup();
+      const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+      const first = await internal('/internal/browser-gateway/download', {
+        projectSlug: 'mkt',
+        agentKey: apiKey,
+        fileName: '../../etc/invoice.pdf',
+        data: Buffer.from('%PDF').toString('base64'),
+      });
+      expect(first.status).toBe(200);
+      expect(await first.json()).toEqual({ path: 'Projects/MKT/Inbox/invoice.pdf' });
+      expect(readFileSync(join(vault, 'Projects/MKT/Inbox/invoice.pdf'), 'utf8')).toBe('%PDF');
+      const second = await internal('/internal/browser-gateway/download', {
+        projectSlug: 'mkt',
+        agentKey: null,
+        fileName: 'invoice.pdf',
+        data: Buffer.from('%PDF-2').toString('base64'),
+      });
+      expect(((await second.json()) as { path: string }).path).not.toBe(
+        'Projects/MKT/Inbox/invoice.pdf',
+      );
+      const events = await asOwner.projects({ projectKey: 'MKT' })['browser-gateway'].events.get();
+      expect(events.data!.items.map((item) => [item.tool, item.actor])).toEqual([
+        ['browser_download', 'owner'],
+        ['browser_download', 'agent'],
+      ]);
+    } finally {
+      process.env.PROJECT_VAULT_ROOT = previous;
+    }
+  });
+
+  it('turns the gateway on for the Home-Master and the coordinators, and only once', async () => {
+    const { asOwner, mkt } = await setup();
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('no Home agent');
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    const { setupBrowserGateway } = await import('../../../../scripts/setup-browser-gateway');
+    const dry = await setupBrowserGateway(true);
+    const first = await setupBrowserGateway(false);
+    expect(first.enabled.map((entry) => entry.why).sort()).toEqual(dry.enabled.map((entry) => entry.why).sort());
+    expect(first.enabled.some((entry) => entry.why === 'home')).toBe(true);
+    expect(first.enabled.some((entry) => entry.username === 'hermes-ops-coordinator')).toBe(true);
+    const again = await setupBrowserGateway(false);
+    expect(again.enabled).toEqual([]);
+    const resolved = await internal('/internal/browser-gateway/resolve', {
+      agentKey: home.apiKey,
+      projectSlug: 'home',
+      via: 'home',
+    });
+    expect(((await resolved.json()) as { browserGatewayEnabled: boolean }).browserGatewayEnabled).toBe(true);
+    expect(mkt.teamId).toBeGreaterThan(0);
   });
 });

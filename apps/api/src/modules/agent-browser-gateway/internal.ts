@@ -3,6 +3,8 @@ import { lstat, readFile } from 'node:fs/promises';
 import { Elysia } from 'elysia';
 import { getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from '#shared/lib';
+import { HOME_SLUG } from '#shared/agent-socket';
+import { isHomeAgent } from '#modules/agents/core/home-agent';
 import { getRunnerAgent, type RunnerAgent } from '../agents/runner/service';
 import { loginCode, loginForOrigin } from './credentials';
 import {
@@ -11,28 +13,36 @@ import {
   getBrowserGatewaySettings,
   projectBySlug,
 } from './service';
+import { DEFAULT_BROWSER_GATEWAY_SETTINGS } from './model';
 import { recordBrowserGatewayEvent } from './events';
+import { fileHandoverCard, resolveHandoverCard } from './handover';
+import { MAX_DOWNLOAD_BYTES, saveDownload } from './downloads';
 
 // The gateway's own routes (design §3: "prüft bei Plan: Agent, Projekt, Browser-Recht,
 // Login-Freigaben (internes API, Service-Token)"). Two factors, like the agent-egress proxy
 // and the agent-isolation launcher before it: a service token of the gateway's own
-// (BROWSER_GATEWAY_TOKEN_FILE — the gateway holds no other control credential, same shape
-// as AGENT_EGRESS_TOKEN_FILE) proves the caller is the gateway process itself, and the
-// agentKey it forwards proves which agent it is acting for — the same key that agent
-// presents everywhere else (x-api-key), resolved through the normal session/agent lookup so
-// there is exactly one place that decides whether a key is valid.
+// (BROWSER_GATEWAY_TOKEN_FILE — the gateway holds no other control credential) proves the
+// caller is the gateway process itself, and the agentKey it forwards proves which agent it
+// acts for — the same key that agent presents everywhere else, resolved through the normal
+// session/agent lookup, so there is one place that decides whether a key is valid.
 //
-// The gateway itself only ever knows a project by its SLUG (deployment/volition-stack/
-// browser/README.md: one project-browser directory per slug, never a key) — every route
-// below takes `projectSlug`, resolved to a project via projectBySlug (service.ts), which
-// also hands back the project's key so agent membership (RunnerAgent.projects[].key) can
-// still be checked the way every other internal caller checks it.
+// Every call also names `via`: the project browser socket it came through, which the kernel
+// decided (the isolation launcher binds one socket per project into an agent's unit). Only
+// the Home-Master calls through Home's socket, and only through it may another project be
+// named — checked here again, not trusted from the gateway alone.
+
+const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
 let tokenPromise: Promise<string> | null = null;
+let tokenPath: string | null = null;
 
 async function gatewayToken(): Promise<string> {
   const tokenFile = process.env.BROWSER_GATEWAY_TOKEN_FILE?.trim();
   if (!tokenFile) throw new Error('no browser gateway token configured');
+  if (tokenPath !== tokenFile) {
+    tokenPath = tokenFile;
+    tokenPromise = null;
+  }
   tokenPromise ??= lstat(tokenFile)
     .then(async (stat) => {
       if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
@@ -70,10 +80,10 @@ function privateJson(value: unknown, status = 200): Response {
   });
 }
 
-// Resolves the same way any other x-api-key caller does (getSessionFromHeaders, the same
-// function the normal HTTP path and the agent socket use) and then the same agent lookup
-// the runner itself uses (getRunnerAgent) — no separate credential store for the gateway.
+// Resolves the same way any other x-api-key caller does (getSessionFromHeaders) and then the
+// same agent lookup the runner itself uses (getRunnerAgent).
 async function agentByKey(agentKey: string): Promise<RunnerAgent | null> {
+  if (!agentKey) return null;
   const headers = new Headers({ 'x-api-key': agentKey });
   const session = await getSessionFromHeaders(headers);
   if (!session || session.user.active === false) return null;
@@ -82,17 +92,78 @@ async function agentByKey(agentKey: string): Promise<RunnerAgent | null> {
   return agent;
 }
 
-function agentHasProject(agent: RunnerAgent, projectKey: string): boolean {
-  return agent.projects.some((row) => row.key === projectKey);
+interface Target {
+  // Null for Home's own browser, which belongs to no project.
+  project: { id: number; key: string } | null;
+}
+
+// Who may act on which browser, through which socket:
+// - through Home's socket only the Home-Master, on Home's browser or any project it works in;
+// - through a project's socket only an agent of that project, on that project's browser.
+export async function authorizeTarget(
+  agent: RunnerAgent,
+  targetSlug: unknown,
+  via: unknown,
+): Promise<Target> {
+  if (typeof targetSlug !== 'string' || !SLUG.test(targetSlug)) {
+    throw new HttpError(400, 'Invalid project');
+  }
+  if (typeof via !== 'string' || !SLUG.test(via)) throw new HttpError(400, 'Invalid socket');
+  const homeAgent = isHomeAgent(agent.username);
+  if (via === HOME_SLUG) {
+    if (!homeAgent) throw new HttpError(403, "Only the Home-Master uses Home's browser");
+  } else {
+    if (homeAgent) throw new HttpError(403, "The Home-Master uses Home's browser gateway");
+    if (targetSlug !== via) throw new HttpError(403, 'Only the Home-Master may act on another project');
+  }
+  if (targetSlug === HOME_SLUG) return { project: null };
+  const project = await projectBySlug(targetSlug);
+  if (!project) throw new HttpError(404, 'Project not found');
+  if (!agent.projects.some((row) => row.key === project.key)) {
+    throw new HttpError(403, 'Agent does not work in this project');
+  }
+  return { project };
 }
 
 async function readJson(request: Request): Promise<Record<string, unknown> | null> {
   try {
     const body = await request.json();
-    return body && typeof body === 'object' ? (body as Record<string, unknown>) : null;
+    return body && typeof body === 'object' && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : null;
   } catch {
     return null;
   }
+}
+
+function optionalId(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+// One place for the shape every route shares: the token, a JSON body, and an HttpError
+// thrown anywhere below answered as JSON.
+function route(
+  handler: (body: Record<string, unknown>) => Promise<unknown>,
+): (context: { request: Request }) => Promise<Response> {
+  return async ({ request }) => {
+    const refused = await denied(request);
+    if (refused) return refused;
+    const body = await readJson(request);
+    if (!body) return privateJson({ error: 'Invalid request' }, 400);
+    try {
+      return privateJson(await handler(body));
+    } catch (error) {
+      if (error instanceof HttpError) return privateJson({ error: error.message }, error.status);
+      throw error;
+    }
+  };
+}
+
+async function requireAgent(body: Record<string, unknown>): Promise<RunnerAgent> {
+  if (typeof body.agentKey !== 'string') throw new HttpError(400, 'Invalid request');
+  const agent = await agentByKey(body.agentKey);
+  if (!agent) throw new HttpError(403, 'Unknown agent key');
+  return agent;
 }
 
 export const agentBrowserGatewayInternalRoutes = new Elysia({
@@ -109,132 +180,130 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
   )
   .post(
     '/internal/browser-gateway/resolve',
-    async ({ request }) => {
-      const refused = await denied(request);
-      if (refused) return refused;
-      const body = await readJson(request);
-      if (!body || typeof body.agentKey !== 'string' || typeof body.projectSlug !== 'string') {
-        return privateJson({ error: 'Invalid request' }, 400);
-      }
-      const agent = await agentByKey(body.agentKey);
-      if (!agent) return privateJson({ error: 'Unknown agent key' }, 403);
-      const proj = await projectBySlug(body.projectSlug);
-      if (!proj) return privateJson({ error: 'Project not found' }, 404);
-      if (!agentHasProject(agent, proj.key)) {
-        return privateJson({ error: 'Agent does not work in this project' }, 403);
-      }
+    route(async (body) => {
+      const agent = await requireAgent(body);
+      const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
       const [enabled, settings] = await Promise.all([
         browserGatewayEnabledForAgent(agent.id, agent.teamId),
-        getBrowserGatewaySettings(proj.id),
+        project ? getBrowserGatewaySettings(project.id) : { ...DEFAULT_BROWSER_GATEWAY_SETTINGS },
       ]);
-      return privateJson({
+      return {
         agentId: agent.id,
         agentName: agent.username,
         teamId: agent.teamId,
-        projectId: proj.id,
+        projectId: project?.id ?? null,
+        projectKey: project?.key ?? null,
         browserGatewayEnabled: enabled,
         settings,
-      });
-    },
+      };
+    }),
     { detail: { hide: true } },
   )
   .post(
     '/internal/browser-gateway/login',
-    async ({ request }) => {
-      const refused = await denied(request);
-      if (refused) return refused;
-      const body = await readJson(request);
-      if (
-        !body ||
-        typeof body.agentKey !== 'string' ||
-        typeof body.projectSlug !== 'string' ||
-        typeof body.frameOrigin !== 'string'
-      ) {
-        return privateJson({ error: 'Invalid request' }, 400);
-      }
-      const agent = await agentByKey(body.agentKey);
-      if (!agent) return privateJson({ error: 'Unknown agent key' }, 403);
-      const proj = await projectBySlug(body.projectSlug);
-      if (!proj || !agentHasProject(agent, proj.key)) {
-        return privateJson({ error: 'Agent does not work in this project' }, 403);
-      }
-      try {
-        const result = await loginForOrigin(
-          agent,
-          {
-            runId: body.runId as number | undefined,
-            messageId: body.messageId as number | undefined,
-          },
-          proj.id,
-          body.frameOrigin,
-          body.credentialId as number | undefined,
-        );
-        return privateJson(result);
-      } catch (error) {
-        if (error instanceof HttpError) return privateJson({ error: error.message }, error.status);
-        throw error;
-      }
-    },
+    route(async (body) => {
+      const agent = await requireAgent(body);
+      if (typeof body.frameOrigin !== 'string') throw new HttpError(400, 'Invalid request');
+      const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
+      return loginForOrigin(
+        agent,
+        { runId: optionalId(body.runId), messageId: optionalId(body.messageId) },
+        project?.id ?? null,
+        body.frameOrigin,
+        optionalId(body.credentialId),
+      );
+    }),
     { detail: { hide: true } },
   )
   .post(
     '/internal/browser-gateway/login-code',
-    async ({ request }) => {
-      const refused = await denied(request);
-      if (refused) return refused;
-      const body = await readJson(request);
-      if (!body || typeof body.agentKey !== 'string' || typeof body.credentialId !== 'number') {
-        return privateJson({ error: 'Invalid request' }, 400);
+    route(async (body) => {
+      const agent = await requireAgent(body);
+      const credentialId = optionalId(body.credentialId);
+      if (credentialId === undefined || typeof body.frameOrigin !== 'string') {
+        throw new HttpError(400, 'Invalid request');
       }
-      const agent = await agentByKey(body.agentKey);
-      if (!agent) return privateJson({ error: 'Unknown agent key' }, 403);
-      try {
-        const result = await loginCode(
-          agent,
-          {
-            runId: body.runId as number | undefined,
-            messageId: body.messageId as number | undefined,
-          },
-          body.credentialId,
-        );
-        return privateJson(result);
-      } catch (error) {
-        if (error instanceof HttpError) return privateJson({ error: error.message }, error.status);
-        throw error;
-      }
-    },
+      return loginCode(
+        agent,
+        { runId: optionalId(body.runId), messageId: optionalId(body.messageId) },
+        credentialId,
+        body.frameOrigin,
+      );
+    }),
     { detail: { hide: true } },
   )
   .post(
     '/internal/browser-gateway/audit',
-    async ({ request }) => {
-      const refused = await denied(request);
-      if (refused) return refused;
-      const body = await readJson(request);
-      if (
-        !body ||
-        typeof body.agentKey !== 'string' ||
-        typeof body.projectSlug !== 'string' ||
-        typeof body.tool !== 'string' ||
-        (body.actor !== 'agent' && body.actor !== 'owner')
-      ) {
-        return privateJson({ error: 'Invalid request' }, 400);
+    route(async (body) => {
+      const agent = await requireAgent(body);
+      if (typeof body.tool !== 'string' || !/^browser_[a-z_]{1,40}$/.test(body.tool)) {
+        throw new HttpError(400, 'Invalid request');
       }
-      const agent = await agentByKey(body.agentKey);
-      if (!agent) return privateJson({ error: 'Unknown agent key' }, 403);
-      const proj = await projectBySlug(body.projectSlug);
-      if (!proj || !agentHasProject(agent, proj.key)) {
-        return privateJson({ error: 'Agent does not work in this project' }, 403);
-      }
+      const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
       await recordBrowserGatewayEvent({
-        projectId: proj.id,
+        projectId: project?.id ?? null,
         agentId: agent.id,
         agentName: agent.username,
-        actor: body.actor,
+        actor: 'agent',
         tool: body.tool,
         target: typeof body.target === 'string' ? body.target.slice(0, 300) : null,
       });
-      return privateJson({ stored: true });
-    },
+      return { stored: true };
+    }),
+    { detail: { hide: true } },
+  )
+  .post(
+    '/internal/browser-gateway/handover',
+    route(async (body) => {
+      const agent = await requireAgent(body);
+      const reason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 500) : '';
+      if (!reason) throw new HttpError(400, 'Invalid request');
+      const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
+      // Home's own browser has no project to file a card under; its live view shows the
+      // request all the same.
+      if (!project) return { approvalId: null };
+      return { approvalId: await fileHandoverCard(agent, project, reason) };
+    }),
+    { detail: { hide: true } },
+  )
+  .post(
+    '/internal/browser-gateway/handover-done',
+    route(async (body) => {
+      const approvalId = optionalId(body.approvalId);
+      if (approvalId === undefined || typeof body.finished !== 'boolean') {
+        throw new HttpError(400, 'Invalid request');
+      }
+      await resolveHandoverCard(approvalId, body.finished);
+      return { stored: true };
+    }),
+    { detail: { hide: true } },
+  )
+  .post(
+    '/internal/browser-gateway/download',
+    route(async (body) => {
+      if (typeof body.projectSlug !== 'string' || !SLUG.test(body.projectSlug)) {
+        throw new HttpError(400, 'Invalid project');
+      }
+      if (typeof body.fileName !== 'string' || typeof body.data !== 'string') {
+        throw new HttpError(400, 'Invalid request');
+      }
+      // The browser's own download, whoever caused it (an agent, or the owner in the live
+      // view): the gateway's token is what authorizes it; the agent only names who acted.
+      const agent = typeof body.agentKey === 'string' ? await agentByKey(body.agentKey) : null;
+      const bytes = Buffer.from(body.data, 'base64');
+      if (bytes.length > MAX_DOWNLOAD_BYTES) throw new HttpError(413, 'The download is too large');
+      const project = body.projectSlug === HOME_SLUG ? null : await projectBySlug(body.projectSlug);
+      if (body.projectSlug !== HOME_SLUG && !project) throw new HttpError(404, 'Project not found');
+      const path = await saveDownload(project, body.fileName, bytes);
+      await recordBrowserGatewayEvent({
+        projectId: project?.id ?? null,
+        agentId: agent?.id ?? null,
+        agentName: agent?.username ?? '',
+        actor: agent ? 'agent' : 'owner',
+        tool: 'browser_download',
+        target: path.slice(0, 300),
+      });
+      return { path };
+    }),
     { detail: { hide: true } },
   );
