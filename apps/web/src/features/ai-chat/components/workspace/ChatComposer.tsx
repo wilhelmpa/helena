@@ -86,7 +86,7 @@ export interface ChatComposerProps {
 // its presence), the model and dictation sit at its bottom left, the context size at
 // its right. Choices the agent offered for its question appear as chips. Files dropped
 // or pasted in land in the vault; `/` opens Hermes' commands and the prompt library.
-// Enter sends, Shift+Enter or ⌘/Ctrl+Enter breaks the line.
+// Enter sends, Shift+Enter or ⌘/Ctrl+Enter breaks the line, Escape stops the answer.
 export default function ChatComposer({
   scopeKey,
   agent,
@@ -270,6 +270,12 @@ export default function ChatComposer({
         setValue('');
         return;
       }
+    }
+    // Escape stops an answer that is being written, as in claude.ai.
+    if (event.key === 'Escape' && busy) {
+      event.preventDefault();
+      onStop();
+      return;
     }
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();

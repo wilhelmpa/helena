@@ -76,17 +76,19 @@ export function usePageToolbarRoom(): Room {
 }
 
 export function PageToolbar({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
+  // A callback ref: the row is first rendered in place and then moved into the header's
+  // slot once that exists (a new element), so the observer follows whichever element
+  // is the row now — observing only the first one missed every later resize.
+  const [node, setNode] = useState<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
   const [level, setLevel] = useState(0);
   useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    setWidth(element.getBoundingClientRect().width);
+    if (!node) return;
+    setWidth(node.getBoundingClientRect().width);
     const observer = new ResizeObserver(([entry]) => setWidth(entry!.contentRect.width));
-    observer.observe(element);
+    observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [node]);
   // More room: start over from the full toolbar (the step below folds it again as far
   // as it has to). Layout effects run before paint, so no step is ever seen.
   const lastWidth = useRef(0);
@@ -98,13 +100,12 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   // overflowing, fold one more piece. Bounded by LEVELS, so it settles after at most
   // four steps.
   useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element || level >= LEVELS) return;
-    if (element.scrollWidth > element.clientWidth + 1) setLevel(level + 1);
-  }, [level, width, children]);
+    if (!node || level >= LEVELS) return;
+    if (node.scrollWidth > node.clientWidth + 1) setLevel(level + 1);
+  }, [node, level, width, children]);
   return (
     <ShellHeaderRow className="gap-1 bg-background px-3">
-      <div ref={ref} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+      <div ref={setNode} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
         <RoomCtx.Provider value={roomFor(level, width)}>{children}</RoomCtx.Provider>
       </div>
     </ShellHeaderRow>
