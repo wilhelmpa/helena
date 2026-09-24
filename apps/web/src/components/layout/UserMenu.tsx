@@ -41,6 +41,8 @@ import {
 // width (the name hides when the sidebar collapses to icons).
 export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 'row' }) {
   const t = useTranslations('nav');
+  // The instance role in words ('god' is the Administrator), never the raw value.
+  const tUsers = useTranslations('god.users');
   const tCommon = useTranslations('common');
   const sectionLabel = useAccountSectionLabel();
   const router = useRouter();
@@ -127,7 +129,9 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
         >
           <DropdownMenuLabel className="flex flex-col gap-1">
             <span className="truncate text-sm font-medium">{user.email}</span>
-            <span className="text-xs text-muted-foreground capitalize">{t('role', { role })}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('role', { role: tUsers(role === 'god' ? 'roleGod' : 'roleUser') })}
+            </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {ACCOUNT_SECTIONS.map(({ slug, icon: Icon }) => (

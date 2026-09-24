@@ -262,9 +262,13 @@ ADDITIONAL_PROVIDERS = ('anthropic',)
 
 
 def logged_in(provider: str) -> bool:
-    from agent.credential_pool import load_pool
+    """Whether Hermes holds a login for `provider` an agent can use: a pool row that is not dead.
+    A login whose refresh token the provider rejected is dead (the token keeper marks it in the
+    root store, docs/helena-decisions/token-keeper.md); its models stay out of the catalog until
+    the owner signs Hermes in again."""
+    from agent.credential_pool import STATUS_DEAD, load_pool
 
-    return load_pool(provider).has_credentials()
+    return any(entry.last_status != STATUS_DEAD for entry in load_pool(provider).entries())
 
 
 def catalog_models(provider: str) -> list[dict[str, Any]]:

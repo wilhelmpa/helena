@@ -143,8 +143,9 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       description:
         'The last time the Hermes runner, the Helena engine, the provisioning service and the ' +
         'worker were seen working, the agent runs that wait or overran, the runs of the ' +
-        'engine (queued, active, stalled, the newest failures), and when the janitor loops ' +
-        'last ran and what they cleaned up.',
+        'engine (queued, active, stalled, the newest failures), when the janitor loops ' +
+        'last ran and what they cleaned up, and whether the model logins agents share are ' +
+        'usable (with the command that signs one in again).',
     },
   })
 

@@ -1,0 +1,41 @@
+# Installed by deployment/volition-stack/native/token-keeper/install.sh
+# (docs/helena-decisions/token-keeper.md). Renews the model logins Helena's agents share
+# (Hermes' root auth.json, and the Codex CLI's login next to it when it is the same chain)
+# before they expire, through Hermes' own credential pool, and writes the agents' views of
+# them without refresh tokens. Run by helena-token-keeper.timer and before the runner starts.
+[Unit]
+Description=Helena token keeper: renews the logins agents share and writes their views
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/var/lib/volition/hermes/venv/bin/python
+ConditionPathExists=/usr/local/lib/helena-token-keeper/helena_token_keeper.py
+
+[Service]
+Type=oneshot
+# The runner's user and groups: it owns the Hermes home and its locks.
+User=volition-hermes
+Group=volition-hermes-secrets
+SupplementaryGroups=volition
+Environment=HOME=/var/lib/volition/hermes
+Environment=HERMES_HOME=/var/lib/volition/hermes
+Environment=PYTHONPATH=/srv/volition/source/hermes
+ExecStart=/var/lib/volition/hermes/venv/bin/python /usr/local/lib/helena-token-keeper/helena_token_keeper.py tick
+# A run may wait up to four minutes for a moment without agent units, then refresh.
+TimeoutStartSec=10min
+Nice=5
+UMask=0027
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ReadWritePaths=/var/lib/volition/hermes /var/lib/helena-token-keeper
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native

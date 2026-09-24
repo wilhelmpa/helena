@@ -20,6 +20,7 @@ import { engineExecutorId, engineRunning } from '#modules/engine/dbos';
 import { nextFireTime } from '#modules/engine/schedules';
 import { modelAvailabilityHealth } from '#modules/model-availability/service';
 import { runFailures } from '#modules/pipelines/runs';
+import { runtimeLogins } from '#modules/runtime-logins/service';
 
 // The state of the services Helena works with, for the owner's overview on Home. The
 // worker and the engine report themselves, the worker checks the provisioning service,
@@ -260,7 +261,7 @@ function runnerHealth(
 }
 
 export async function systemHealth() {
-  const [reported, [runner], runs, engine, janitors, agents, models] = await Promise.all([
+  const [reported, [runner], runs, engine, janitors, agents, logins, models] = await Promise.all([
     db.select().from(serviceHeartbeat),
     db
       .select({ lastSeenAt: sql`max(${aiAgent.lastSeenAt})`.mapWith(aiAgent.lastSeenAt) })
@@ -270,12 +271,14 @@ export async function systemHealth() {
     engineHealth(),
     listJanitorRuns(),
     runtimeSyncSummary(),
+    runtimeLogins(),
     modelAvailabilityHealth(),
   ]);
   const byService = new Map(reported.map((row) => [row.service, row]));
   const byJanitor = new Map(janitors.map((row) => [row.job, row]));
   return {
     agents,
+    logins,
     services: SERVICES.map((service) =>
       health(
         service,

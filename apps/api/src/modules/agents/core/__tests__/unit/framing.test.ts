@@ -69,3 +69,37 @@ describe('an approval run', () => {
     expect(runModePreamble('approval')).toContain('decided on your approval request');
   });
 });
+
+describe('a mention run', () => {
+  const run: RunForPrompt = {
+    id: 9,
+    trigger: 'mention',
+    prompt: '@lead please hand this to @qa and ask @qa to write the test plan',
+    issueId: 12,
+    issueIdentifier: 'MKT-4',
+    issueTitle: 'Offer',
+    issueArea: null,
+    issueAreaFolder: null,
+    assigneeName: null,
+    assigneeUsername: null,
+    requesterName: 'Pat',
+    requesterUsername: 'pat',
+    agentUserId: 'agent-user',
+    agentUsername: 'lead',
+    threadContext: null,
+    sourceActivityId: 40,
+  };
+
+  // Each agent a comment tags does only its own part (E2E test: the specialist tagged
+  // next to its coordinator did the handing over itself as well).
+  it('names the other agents the comment tags and leaves their part to them', () => {
+    const text = framePrompt(run);
+    expect(text).toContain('The comment also tags @qa. Do only what it asks');
+    expect(text).toContain('work handed to you reaches you as a task of its own');
+  });
+
+  it('adds nothing when the comment tags only this agent', () => {
+    const text = framePrompt({ ...run, prompt: '@lead please look at this' });
+    expect(text).not.toContain('The comment also tags');
+  });
+});

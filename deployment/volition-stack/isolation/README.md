@@ -56,9 +56,13 @@ launcher's and egress's state), `InaccessiblePaths=` for `/etc/volition`, `/var/
   owns its workspace and its profiles; its workspace has ACLs for the runner (`rwx`) and the
   readers group `volition` (`r-x`, the Files page), with defaults. Profiles are the project's
   alone. Vault folders keep their owner and group; the project user and `vp-home` get ACL entries.
-- The global Hermes `config.yaml`, `auth.json`, `.env` and `.codex` get a read entry for
-  `volition-agents` and are bound read-only (design §3, phase 1: an agent can read these model
-  credentials; phase 2 moves them into the egress proxy).
+- The global Hermes `config.yaml` and `.env` get a read entry for `volition-agents` and are
+  bound read-only. The model logins are not: the token keeper (`../native/token-keeper`,
+  `docs/helena-decisions/token-keeper.md`) renews them outside the sandbox and writes views
+  without refresh tokens, which the launcher binds where Hermes and the Codex CLI look
+  (`/var/lib/volition/hermes/auth.json`, `{home}/.codex`); a Hermes run without them is refused.
+  An agent can still read the access tokens it uses (design §3, phase 1; phase 2 moves them
+  into the egress proxy), never spend a refresh token.
 - Home gets `profiles/home` (a copy of the Home agent's state in the global home, databases
   through SQLite's backup) and `/srv/volition/workspaces/home`.
 - Browser state (`/var/lib/volition/project-browser`) belongs to `volition-browser`; Chromium and
