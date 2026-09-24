@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
+import Papa from 'papaparse';
 import { HttpError } from '#shared/lib';
 
 // Turns an uploaded file into a flat table: the first non-empty row is the header,
@@ -63,52 +64,30 @@ async function parseXlsx(bytes: Buffer): Promise<ParsedSheet> {
   return fromTable(table, 'The sheet is empty');
 }
 
-// Reads CSV with comma or semicolon delimiters, quoted fields, and escaped quotes.
-// Small enough to own here: the alternatives either bring the whole SheetJS package
-// (whose npm build has known advisories) or mis-handle quoting.
-export function parseCsv(text: string): string[][] {
-  const delimiter = sniffDelimiter(text);
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (quoted) {
-      if (ch === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else quoted = false;
-      } else field += ch;
-      continue;
-    }
-    if (ch === '"' && field === '') {
-      quoted = true;
-    } else if (ch === delimiter) {
-      row.push(field);
-      field = '';
-    } else if (ch === '\n') {
-      row.push(field);
-      field = '';
-      rows.push(row);
-      row = [];
-    } else if (ch !== '\r') {
-      field += ch;
-    }
+// Turns the bytes of a CSV file into text. A byte-order mark names the encoding; without
+// one the file is UTF-8 when it decodes as UTF-8, and otherwise Windows-1252, which is
+// what Excel on a German (or any Western) Windows writes for "CSV (Trennzeichen-getrennt)".
+export function decodeCsv(bytes: Uint8Array): string {
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le').decode(bytes);
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder('utf-16be').decode(bytes);
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes);
   }
-  if (field !== '' || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ''));
 }
 
-function sniffDelimiter(text: string): ',' | ';' {
-  const head = text.slice(0, text.indexOf('\n') === -1 ? text.length : text.indexOf('\n'));
-  const commas = (head.match(/,/g) ?? []).length;
-  const semicolons = (head.match(/;/g) ?? []).length;
-  return semicolons > commas ? ';' : ',';
+// Reads CSV with PapaParse (RFC 4180 quoting and escaped quotes). The delimiter is
+// guessed from the first rows: comma, semicolon (German Excel), tab or pipe. Line ends
+// are made uniform first, so a file mixing CRLF and LF (an edited export) still splits
+// into rows. Rows that hold only whitespace are dropped.
+export function parseCsv(text: string): string[][] {
+  const { data } = Papa.parse<string[]>(text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n'), {
+    delimitersToGuess: [',', ';', '\t', '|'],
+    newline: '\n',
+    skipEmptyLines: 'greedy',
+  });
+  return data.filter((row) => row.some((cell) => cell.trim() !== ''));
 }
 
 // Reads the first table out of mammoth's HTML through the built-in HTMLRewriter:
@@ -230,8 +209,7 @@ function fromTable(table: string[][], emptyMessage: string): ParsedSheet {
 export async function parseImportFile(bytes: Buffer, filename: string): Promise<ParsedSheet> {
   const lower = filename.toLowerCase();
   if (lower.endsWith('.xlsx')) return parseXlsx(bytes);
-  if (lower.endsWith('.csv'))
-    return fromTable(parseCsv(bytes.toString('utf8')), 'The CSV file is empty');
+  if (lower.endsWith('.csv')) return fromTable(parseCsv(decodeCsv(bytes)), 'The CSV file is empty');
   if (lower.endsWith('.docx')) return parseDocx(bytes);
   throw new HttpError(
     400,

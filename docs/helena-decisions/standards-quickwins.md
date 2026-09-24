@@ -7,6 +7,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | F21 | done | see git log | `ipaddr.js` 2.5.0 (MIT) |
 | F07 | done | see git log | no library; SDK 1.30 transport kept for POST |
 | F15 | done | see git log | Bun `S3Client` (built in); `@aws-sdk/client-s3` removed |
+| F17 | done | see git log | `papaparse` 5.7.0 (MIT) |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -46,3 +47,9 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - `apps/api/src/shared/s3.ts` stays as a re-export so the ~10 API modules and the running branches that import `#shared/s3` need no change.
 - Tests: the store against an in-memory path-style S3 served by `Bun.serve` (PUT/GET/HEAD/DELETE/ListObjectsV2), incl. missing objects and folder deletes. MinIO itself was not installed (a binary).
 - Live runs with `STORAGE_ROOT`, so nothing changes there.
+
+## F17: CSV attachments with PapaParse
+
+- `chat-attachments/parse.ts` `parseCsv()` is `Papa.parse` with `delimitersToGuess` comma, semicolon, tab and pipe: PapaParse picks the delimiter the first rows agree on, not the one the header line counts most of.
+- `decodeCsv()` decodes the bytes first: a UTF-16 byte-order mark names UTF-16, otherwise UTF-8 when the bytes are valid UTF-8 (a UTF-8 BOM is dropped), else Windows-1252 (German Excel's "CSV (Trennzeichen-getrennt)"). `TextDecoder` does it; no `iconv-lite` needed.
+- Line ends are made uniform before parsing (the old parser ignored `\r`), so a file mixing CRLF and LF still splits into rows; PapaParse on its own would guess CRLF from the first line and keep a trailing LF inside the last field.
