@@ -366,7 +366,9 @@ export default function WorkspacePanel({
             <div
               key={`${id}:${contextProjectKey ?? 'global'}`}
               className={cn(
-                'min-h-0 flex-1 overflow-hidden',
+                // A flex column, so a tool's own frame (a terminal, code) can grow to the
+                // panel's height instead of an iframe's default 150px.
+                'flex min-h-0 flex-1 flex-col overflow-hidden',
                 placement(side),
                 (!open || side === undefined) && 'hidden',
               )}

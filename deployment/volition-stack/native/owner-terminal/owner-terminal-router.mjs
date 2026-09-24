@@ -305,6 +305,7 @@ const server = http.createServer(async (request, response) => {
       },
       (upstreamResponse) => {
         response.writeHead(upstreamResponse.statusCode ?? 502, downstreamHeaders(upstreamResponse.headers));
+        upstreamResponse.on('error', () => response.destroy());
         upstreamResponse.pipe(response);
       },
     );
@@ -312,6 +313,11 @@ const server = http.createServer(async (request, response) => {
       if (!response.headersSent) response.writeHead(502);
       response.end();
     });
+    // A browser that leaves the page mid-request (a navigation) closes its side; that must
+    // end this one request, never the whole terminal service (EPIPE crashed it, 2026-09-24).
+    request.on('error', () => upstream.destroy());
+    response.on('error', () => upstream.destroy());
+    response.on('close', () => upstream.destroy());
     request.pipe(upstream);
   } catch {
     response.writeHead(500, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -336,7 +342,12 @@ server.on('upgrade', async (request, client, head) => {
       if (head.length) upstream.write(head);
       client.pipe(upstream).pipe(client);
     });
+    // Either side going away (a page navigation closes the WebSocket abruptly) ends the
+    // pair quietly; an unhandled EPIPE here took the whole service down (2026-09-24).
     upstream.on('error', () => client.destroy());
+    client.on('error', () => upstream.destroy());
+    upstream.on('close', () => client.destroy());
+    client.on('close', () => upstream.destroy());
   } catch {
     client.destroy();
   }
