@@ -112,3 +112,42 @@ tier when models.dev has one).
 
 Rejected: the LiteLLM list (per-token floats, lags on new models, not what Hermes uses); a
 hand-kept table (goes stale; the owner asked for a standard source).
+
+## As built (hub/autopilot)
+
+**Categories** (D-C1, in rising risk): read < report < write < send < publish < execute <
+delete < pay < credentials, with a scope (inside the agent's workspace or outside) for
+delete and execute. `packages/policy/src/categories.ts` mirrors `@helena/sdk` until
+hub/framework lands; it also maps categories to MCP annotations and back (an unannotated
+tool is `send`) and names the `_meta` key `helena/action`.
+
+**Levels** (the Cedar policies in `packages/policy/src/policies.ts` decide; A allow,
+N needs approval):
+
+| | read, report | write | delete / execute in workspace | send, publish, execute outside | delete outside, pay, credentials |
+|---|---|---|---|---|---|
+| 0 Vorschlagen | A | N | N | N | N |
+| 1 Mit Freigabe | A | A | N | N | N |
+| 2 Handeln & berichten | A | A | A (listed in the run's report) | N | N |
+| 3 Autonom im Budget | A | A | A | A | N |
+
+A used-up budget denies everything but read and report, approved or not. A person's
+approval of exactly a command lets that command run in the follow-up run.
+
+**Who asks the engine:**
+
+| Caller | How |
+|---|---|
+| Hermes | the approval guard plugin asks `POST /agent-policy/decide` before every tool call that is not a plain read, in runs and chats |
+| Claude Code | a PreToolUse hook (`itsaplan-runner policy-hook`) asks the same route; level 0 also runs in plan mode |
+| Codex | no hook exists; level 0 runs in a read-only sandbox |
+| Helena's MCP tools | checked in the MCP server before the route (`modules/autopilot/mcp.ts`); tools declare categories with `mcpTool(name, annotations, { category })` and publish them in `_meta` |
+| Approval requests | the card stores the engine's category, level and reason |
+| Workflow engine (hub/native-engine) | `autopilotPolicyDecider` in `modules/autopilot/adapters.ts` fits its `PolicyDecider` seam: `setPolicyDecider(autopilotPolicyDecider)` |
+| Browser gateway (hub/agent-browser-mcp) | `decideBrowserTool()` in the same file, or the HTTP route with the agent key and `runtime: "gateway"`; a click that submits or pays declares `intent` |
+
+**Budgets** read the one usage ledger `agent_usage` (hub/hermes-in-helena) and count a
+finished run that has no ledger row from `agent_run`; costs are computed at read time from
+the price table. **Prices** are read through `price(modelId, provider?)` and `costOf()` in
+`apps/api/src/modules/model-prices/service.ts`; the one models.dev loader is
+`apps/api/src/shared/models-dev.ts`.
