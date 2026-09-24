@@ -31,6 +31,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
 
 from isolation_common import (  # noqa: E402
+    unix_server_options,
     HttpError,
     normalize_host,
     parse_request_head,

@@ -40,6 +40,7 @@ _trusted_directory(HERE)
 sys.path.insert(0, HERE)
 
 from isolation_common import (  # noqa: E402
+    unix_server_options,
     ACL_GROUP,
     ACL_USER,
     Config,
