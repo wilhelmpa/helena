@@ -1,0 +1,382 @@
+{
+  "$comment": "Single source of truth for the one-step rename to Helena. migrate_live.py reads it to move a running install; the repository codemod (a later step) reads the same tokens. Lists are applied longest match first. A null target retires the name: the unit is stopped, disabled and moved to the backup.",
+  "version": 1,
+  "roots": [
+    {
+      "from": "/srv/volition",
+      "to": "/srv/helena"
+    },
+    {
+      "from": "/var/lib/volition-google",
+      "to": "/var/lib/helena-google"
+    },
+    {
+      "from": "/var/lib/volition",
+      "to": "/var/lib/helena"
+    },
+    {
+      "from": "/etc/volition",
+      "to": "/etc/helena"
+    },
+    {
+      "from": "/var/log/volition",
+      "to": "/var/log/helena"
+    },
+    {
+      "from": "/usr/local/lib/volition-isolation",
+      "to": "/usr/local/lib/helena-isolation"
+    }
+  ],
+  "inner": [
+    {
+      "from": "/srv/helena/source/plan-orchestration",
+      "to": "/srv/helena/source/helena-orchestration"
+    },
+    {
+      "from": "/srv/helena/source/plan-dev",
+      "to": "/srv/helena/source/helena-dev"
+    },
+    {
+      "from": "/srv/helena/source/plan",
+      "to": "/srv/helena/source/helena"
+    },
+    {
+      "from": "/var/lib/helena/plan-dev",
+      "to": "/var/lib/helena/app-dev"
+    },
+    {
+      "from": "/var/lib/helena/plan",
+      "to": "/var/lib/helena/app"
+    },
+    {
+      "from": "/etc/helena/plan.env",
+      "to": "/etc/helena/helena.env"
+    },
+    {
+      "from": "/etc/helena/plan-dev.env",
+      "to": "/etc/helena/helena-dev.env"
+    },
+    {
+      "from": "/etc/helena/plan-control.token",
+      "to": "/etc/helena/control.token"
+    },
+    {
+      "from": "/etc/helena/dev/plan-control.token",
+      "to": "/etc/helena/dev/control.token"
+    },
+    {
+      "from": "/etc/helena/hermes-plan-key",
+      "to": "/etc/helena/runner-api.key"
+    },
+    {
+      "from": "/etc/helena/runner/itsaplan-runner.json",
+      "to": "/etc/helena/runner/helena-runner.json"
+    },
+    {
+      "from": "/var/lib/helena/hermes/run/itsaplan-runner.json",
+      "to": "/var/lib/helena/hermes/run/helena-runner.json"
+    }
+  ],
+  "liveCheckout": "/srv/helena/source/helena",
+  "targetMarker": "deployment/helena/native/deploy.sh",
+  "profileEntries": {
+    "$comment": "Renamed in the shared Hermes home and in every profile below <hermesHome>/profiles/.",
+    "hermesHome": "/var/lib/helena/hermes",
+    "entries": {
+      "run/itsaplan-managed": "run/helena-managed",
+      "run/itsaplan-policy-manifest.json": "run/helena-policy-manifest.json",
+      "run/itsaplan-vault-manifest.json": "run/helena-vault-manifest.json",
+      "plugins/plan-approval-guard": "plugins/helena-approval-guard"
+    }
+  },
+  "database": {
+    "databases": {
+      "itsaplan": "helena",
+      "itsaplan_dev": "helena_dev",
+      "itsaplan_test": "helena_test",
+      "itsaplan_test_orch": "helena_test_orch"
+    },
+    "roles": {
+      "itsaplan": "helena"
+    },
+    "$rollbackSql": "Undoes the data migration of the rename commit after a deploy ran. The migration rows the deploy added are removed separately.",
+    "rollbackSql": [
+      "DO $$ BEGIN IF to_regclass('public.ai_agent') IS NOT NULL THEN UPDATE ai_agent SET runtime_policy = jsonb_set(runtime_policy, '{mcpGrants}', (SELECT coalesce(jsonb_agg(CASE WHEN g = 'helena' THEN 'itsaplan' ELSE g END), '[]'::jsonb) FROM jsonb_array_elements_text(runtime_policy->'mcpGrants') AS g)) WHERE runtime_policy ? 'mcpGrants' AND runtime_policy->'mcpGrants' ? 'helena'; END IF; END $$"
+    ]
+  },
+  "groups": {
+    "volition": "helena",
+    "volition-plan-secrets": "helena-secrets",
+    "volition-hermes-secrets": "helena-hermes-secrets",
+    "volition-private": "helena-private",
+    "volition-sync": "helena-sync",
+    "volition-google": "helena-google",
+    "volition-plan": "helena-app",
+    "volition-mastra": "helena-mastra",
+    "volition-hermes": "helena-hermes",
+    "volition-browser": "helena-browser",
+    "volition-launcher": "helena-launcher",
+    "volition-egress": "helena-egress"
+  },
+  "users": {
+    "volition-plan": {
+      "name": "helena",
+      "home": "/var/lib/helena/app"
+    },
+    "volition-mastra": {
+      "name": "helena-mastra",
+      "home": "/var/lib/helena/mastra"
+    },
+    "volition-hermes": {
+      "name": "helena-hermes",
+      "home": "/var/lib/helena/hermes"
+    },
+    "volition-browser": {
+      "name": "helena-browser",
+      "home": "/var/lib/helena/browser"
+    },
+    "volition-vaultwarden": {
+      "name": "helena-vaultwarden",
+      "home": "/var/lib/helena/vaultwarden"
+    },
+    "volition-storage": {
+      "name": "helena-storage",
+      "home": "/var/lib/helena/storage"
+    },
+    "volition-sync": {
+      "name": "helena-sync",
+      "home": "/var/lib/helena/syncthing"
+    },
+    "volition-google": {
+      "name": "helena-google",
+      "home": "/var/lib/helena-google"
+    },
+    "volition-launcher": {
+      "name": "helena-launcher",
+      "home": null
+    },
+    "volition-egress": {
+      "name": "helena-egress",
+      "home": null
+    }
+  },
+  "userPrefixes": {
+    "vp-": "hp-"
+  },
+  "unitDirectory": "/etc/systemd/system",
+  "unitPattern": "volition-*",
+  "units": {
+    "volition-plan-api.service": "helena-api.service",
+    "volition-plan-web.service": "helena-web.service",
+    "volition-plan-worker.service": "helena-worker.service",
+    "volition-plan-migrate.service": "helena-migrate.service",
+    "volition-plan-attachments-to-vault.service": "helena-attachments-to-vault.service",
+    "volition-plan-api-dev.service": null,
+    "volition-plan-web-dev.service": "helena-web-dev.service",
+    "volition-plan-worker-dev.service": "helena-worker-dev.service",
+    "volition-hermes-runner.service": "helena-runner.service",
+    "volition-hermes-bootstrap.service": "helena-hermes-bootstrap.service",
+    "volition-hermes-bootstrap.timer": "helena-hermes-bootstrap.timer",
+    "volition-hermes-serve.service": "helena-hermes-dashboard.service",
+    "volition-hermes-gateway.service": null,
+    "volition-hermes-team-bridge.service": "helena-team-bridge.service",
+    "volition-hermes-team-bridge-dev.service": "helena-team-bridge-dev.service",
+    "volition-mastra.service": "helena-mastra.service",
+    "volition-mastra-dev.service": "helena-mastra-dev.service",
+    "volition-provisioning.service": "helena-provisioning.service",
+    "volition-terminal.service": "helena-terminal.service",
+    "volition-owner-terminal.service": "helena-owner-terminal.service",
+    "volition-code.service": "helena-code.service",
+    "volition-syncthing.service": "helena-syncthing.service",
+    "volition-trash-purge.service": "helena-trash-purge.service",
+    "volition-trash-purge.timer": "helena-trash-purge.timer",
+    "volition-cloudflared.service": "helena-cloudflared.service",
+    "volition-project-browser-router.service": "helena-browser-router.service",
+    "volition-project-browser-restore.service": "helena-browser-restore.service",
+    "volition-project-browser@.target": "helena-browser@.target",
+    "volition-project-browser-chromium@.service": "helena-browser-chromium@.service",
+    "volition-project-browser-kasm@.service": "helena-browser-kasm@.service",
+    "volition-project-browser-novnc@.service": null,
+    "volition-project-browser-vnc@.service": null,
+    "volition-project-browser-xvfb@.service": null,
+    "volition-agent-launcher.socket": "helena-agent-launcher.socket",
+    "volition-agent-launcher.service": "helena-agent-launcher.service",
+    "volition-agent-plan.socket": "helena-agent-api.socket",
+    "volition-agent-plan.service": "helena-agent-api.service",
+    "volition-egress.socket": "helena-egress.socket",
+    "volition-egress.service": "helena-egress.service",
+    "volition-backup.service": "helena-backup.service",
+    "volition-backup.timer": "helena-backup.timer"
+  },
+  "configRoots": {
+    "$comment": "Config outside the moved roots. Below each root, a file or directory whose name carries an old token is renamed; a text file whose content does is rewritten with the config rules; a symlink into an old root is re-pointed. Units in unitDirectory follow the units map first.",
+    "roots": [
+      "/etc/systemd/system",
+      "/etc/nginx",
+      "/etc/sudoers.d",
+      "/etc/polkit-1/rules.d",
+      "/etc/udev/rules.d",
+      "/etc/chromium/policies/managed",
+      "/etc/tmpfiles.d",
+      "/etc/logrotate.d",
+      "/etc/cron.d",
+      "/usr/local/libexec",
+      "/usr/local/bin"
+    ],
+    "maxDepth": 3
+  },
+  "skipNames": [".bak", ".orig", ".dpkg-old", ".before-"],
+  "rewriteFiles": {
+    "$comment": "Text files inside the moved roots, rewritten after the move. Secret files are edited in place and never printed. Each group names the rule set it gets.",
+    "env": [
+      "/etc/helena/*.env",
+      "/srv/helena/source/*/.env",
+      "/srv/helena/source/*/.env.test",
+      "/var/lib/helena/project-browser/projects/*/runtime.env"
+    ],
+    "hermes": [
+      "/etc/helena/runner/*.json",
+      "/var/lib/helena/hermes/config.yaml",
+      "/var/lib/helena/hermes/profiles/*/config.yaml",
+      "/var/lib/helena/hermes/run/*.json",
+      "/var/lib/helena/hermes/run/agents/*.json"
+    ],
+    "data": [
+      "/var/lib/helena/syncthing/config.xml",
+      "/var/lib/helena/hermes/venv/bin/*",
+      "/var/lib/helena/hermes/venv/pyvenv.cfg",
+      "/home/*/.local/bin/gog",
+      "/home/*/.gitconfig",
+      "/etc/gitconfig"
+    ],
+    "maxBytes": 1048576
+  },
+  "symlinkScan": {
+    "$comment": "Symlinks below the new roots that point into an old root are re-pointed. These directories are not walked.",
+    "prune": [
+      "node_modules",
+      ".git",
+      ".next",
+      ".turbo",
+      "sessions",
+      "cache",
+      "image_cache",
+      "audio_cache"
+    ]
+  },
+  "envKeys": {
+    "PLAN_CONTROL_TOKEN_FILE": "HELENA_CONTROL_TOKEN_FILE",
+    "PLAN_INTERNAL_URL": "HELENA_INTERNAL_URL",
+    "PLAN_PUBLIC_URL": "HELENA_PUBLIC_URL",
+    "PLAN_DEFAULT_DEPARTMENT_NAME": "HELENA_DEFAULT_DEPARTMENT_NAME",
+    "PLAN_SECRET_ALLOW_HOST": null,
+    "ITSAPLAN_MCP_BEARER": "HELENA_MCP_BEARER",
+    "ITSAPLAN_MCP_BEARER_FILE": "HELENA_MCP_BEARER_FILE",
+    "ITSAPLAN_RUNNER_CONFIG": "HELENA_RUNNER_CONFIG",
+    "VOLITION_VAULT_ROOT": "HELENA_VAULT_ROOT",
+    "VOLITION_VAULT_ACCESS": "HELENA_VAULT_ACCESS",
+    "VOLITION_LAUNCHER_SOCKET": "HELENA_LAUNCHER_SOCKET",
+    "VERVE_PROJECT_PATH": null
+  },
+  "envPrefixes": {
+    "ITSAPLAN_": "HELENA_",
+    "VOLITION_AGENT_": "HELENA_AGENT_"
+  },
+  "tokens": {
+    "$comment": "Content substitutions, applied as whole names: letters, digits, '_' or '-' next to a match stop it; '.' and '/' do not. Paths and names apply to every rewritten file; hermesWords only to Hermes files; words only to unit and installed config files, never to data.",
+    "paths": {
+      "/srv/volition/source/plan-orchestration": "/srv/helena/source/helena-orchestration",
+      "/srv/volition/source/plan-dev": "/srv/helena/source/helena-dev",
+      "/srv/volition/source/plan": "/srv/helena/source/helena",
+      "/srv/volition": "/srv/helena",
+      "/var/lib/volition-google": "/var/lib/helena-google",
+      "/var/lib/volition/plan-dev": "/var/lib/helena/app-dev",
+      "/var/lib/volition/plan": "/var/lib/helena/app",
+      "/var/lib/volition": "/var/lib/helena",
+      "/etc/volition/plan.env": "/etc/helena/helena.env",
+      "/etc/volition/plan-dev.env": "/etc/helena/helena-dev.env",
+      "/etc/volition/plan-control.token": "/etc/helena/control.token",
+      "/etc/volition/dev/plan-control.token": "/etc/helena/dev/control.token",
+      "/etc/volition/hermes-plan-key": "/etc/helena/runner-api.key",
+      "/etc/volition/runner/itsaplan-runner.json": "/etc/helena/runner/helena-runner.json",
+      "/etc/volition": "/etc/helena",
+      "/var/log/volition": "/var/log/helena",
+      "/run/volition-agent-launcher": "/run/helena-agent-launcher",
+      "/run/volition-owner-terminal": "/run/helena-owner-terminal",
+      "/run/volition-terminal": "/run/helena-terminal",
+      "/run/volition-ipc": "/run/helena-ipc",
+      "/run/credentials/volition-provisioning.service": "/run/credentials/helena-provisioning.service",
+      "/usr/local/lib/volition-isolation": "/usr/local/lib/helena-isolation",
+      "run/itsaplan-managed": "run/helena-managed",
+      "itsaplan-runner.json": "helena-runner.json",
+      "itsaplan-policy-manifest.json": "helena-policy-manifest.json",
+      "itsaplan-vault-manifest.json": "helena-vault-manifest.json"
+    },
+    "names": {
+      "volition-plan-secrets": "helena-secrets",
+      "volition-hermes-secrets": "helena-hermes-secrets",
+      "volition-plan-kiosk-hotplug": "helena-kiosk-hotplug",
+      "volition-plan-kiosk-session": "helena-kiosk-session",
+      "volition-plan-kiosk": "helena-kiosk",
+      "volition-project-browser": "helena-browser",
+      "volition-hermes-runner": "helena-runner",
+      "volition-hermes-serve": "helena-hermes-dashboard",
+      "volition-hermes-team-bridge": "helena-team-bridge",
+      "volition_local_owner_source": "helena_local_owner_source",
+      "volition_local_owner_token": "helena_local_owner_token",
+      "X-Volition-Local-Access": "X-Helena-Local-Access",
+      "x-volition-local-access": "x-helena-local-access",
+      "volition-agent-plan": "helena-agent-api",
+      "volition-plan-api": "helena-api",
+      "volition-plan-web": "helena-web",
+      "volition-plan-worker": "helena-worker",
+      "volition-plan-migrate": "helena-migrate",
+      "volition-plan-attachments-to-vault": "helena-attachments-to-vault",
+      "volition-plan": "helena",
+      "plan-approval-guard": "helena-approval-guard"
+    },
+    "prefixes": {
+      "$comment": "After the whole names: any other volition-<x> becomes helena-<x>.",
+      "volition-": "helena-"
+    },
+    "hermesWords": {
+      "itsaplan": "helena"
+    },
+    "words": {
+      "volition": "helena",
+      "Volition Plan": "Helena",
+      "Volition": "Helena"
+    }
+  },
+  "residue": {
+    "$comment": "What verify reports as left over. Only the file name, the line number and the matched token are printed, never the line.",
+    "pattern": "volition|itsaplan|plan-approval-guard",
+    "roots": [
+      "/etc/systemd/system",
+      "/etc/nginx",
+      "/etc/sudoers.d",
+      "/etc/polkit-1/rules.d",
+      "/etc/udev/rules.d",
+      "/etc/chromium/policies/managed",
+      "/etc/helena",
+      "/usr/local/libexec",
+      "/usr/local/bin",
+      "/var/lib/helena/hermes/profiles",
+      "/var/lib/helena/hermes/run"
+    ],
+    "ignore": [
+      "volition.one",
+      "volition/hub",
+      "volition/native-chat",
+      "volition/main",
+      "folder id=\"volition\""
+    ]
+  },
+  "health": ["http://127.0.0.1:3000/", "http://127.0.0.1:3001/login"],
+  "preserve": {
+    "$comment": "Names deliberately kept, and why.",
+    "syncthingFolderId": "volition: paired devices know the vault by this folder ID; changing it makes every device offer the folder anew. Only its path changes here, its label in the Helena UI.",
+    "gitBranches": "volition/hub and volition/native-chat-20260921 stay until the public cut, where the repository starts with main; agent scripts refer to them.",
+    "apiKeyPrefix": "itp_ keys keep working. The prefix of new keys changes in the rename commit, covered by its tests."
+  }
+}

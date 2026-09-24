@@ -64,6 +64,11 @@ const ALLOWLIST = new Set([
   'packages/runner/README.md',
   'deployment/volition-stack/fresh-reset/README.md',
   'docs/volition/architecture.md',
+  // The drafts of the public README (EN/DE) carry the attribution line; the packaging plan
+  // quotes the NOTICE draft.
+  'docs/oss/README.md',
+  'docs/oss/README.de.md',
+  'docs/helena-oss-packaging.md',
   // This file: it names the forbidden phrase in its own comments and error message.
   'scripts/no-itsaplan-strings.test.ts',
 ]);
