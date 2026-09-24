@@ -839,8 +839,12 @@ export async function localAiStatus() {
       wired: entry.wired,
     })),
     usage,
+    // The answer time of the servers that answer.
     latencyMsP50: median(
-      servers.map((server) => server.status?.latencyMs ?? NaN).filter(Number.isFinite),
+      servers
+        .filter((server) => server.status?.reachable)
+        .map((server) => server.status?.latencyMs ?? NaN)
+        .filter(Number.isFinite),
     ),
   };
 }

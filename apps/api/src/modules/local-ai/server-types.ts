@@ -118,17 +118,18 @@ export const openAiCompatibleServer: ModelServerType = {
           })),
       };
     } catch (error) {
-      return unreachable(error, started);
+      return unreachable(error);
     }
   },
 };
 
-function unreachable(error: unknown, started: number): ModelServerStatus {
+function unreachable(error: unknown): ModelServerStatus {
   const message = error instanceof Error ? error.message : String(error);
   return {
     reachable: false,
     version: null,
-    latencyMs: Date.now() - started,
+    // How long it took to fail is no answer time.
+    latencyMs: null,
     // The fetch's own words, short; never a URL with credentials (the key is a header).
     error: message.slice(0, 200),
     loaded: [],
@@ -234,7 +235,7 @@ export const lemonadeServer: ModelServerType = {
         load: lemonadeLoad(stats),
       };
     } catch (error) {
-      return unreachable(error, started);
+      return unreachable(error);
     }
   },
 };
