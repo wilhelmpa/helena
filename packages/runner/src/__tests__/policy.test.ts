@@ -20,26 +20,39 @@ import {
   allowedToolsets,
   HermesPolicyMaterializer,
   HermesPolicySynchronizer,
+  type MaterializerContext,
   type RuntimeMcpServer,
   type RuntimePolicyClient,
   type RuntimePolicySnapshot,
   type RuntimeStatus,
 } from '../policy';
+import { fakeHermes, type FakeHermes } from './hermes-fake';
 
 const roots: string[] = [];
+// Where Helena answers, for a materializer that writes Helena's own MCP server.
+const HELENA = { url: 'http://127.0.0.1:3000' };
 
 afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 
-async function fixture(profile?: HermesProfile) {
+async function fixture(
+  profile?: HermesProfile,
+  context: MaterializerContext = {},
+  hermes: FakeHermes = fakeHermes(),
+) {
   const root = await mkdtemp(join(tmpdir(), 'itsaplan-policy-'));
   roots.push(root);
   const hermesHome = join(root, 'hermes');
   return {
     root,
     hermesHome,
-    materializer: new HermesPolicyMaterializer({ hermesHome, profile }),
+    hermes,
+    materializer: new HermesPolicyMaterializer({
+      hermesHome,
+      profile,
+      context: { reader: hermes, ...context },
+    }),
   };
 }
 
@@ -121,6 +134,11 @@ describe('Hermes runtime policy materializer', () => {
       conflicts: [],
       restored: [],
       mcpSecrets: null,
+      managedConfig: alwaysOff,
+      mcpToolsets: [],
+      runtimeServers: [],
+      deniedToolsets: [],
+      managedChanged: true,
     });
     expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Soul');
     expect(await readFile(join(hermesHome, 'skills/plan-managed/plan-7/SKILL.md'), 'utf8')).toBe(
@@ -280,12 +298,16 @@ describe('Hermes managed MCP servers', () => {
           command: 'npx',
           args: ['-y', '@jkudish/jev-browser'],
           env: { TYPESAFE_API_KEY: '${ITSAPLAN_MCP_SECRET_7}', JEV_BROWSER_MODEL: 'jev-latest' },
+          enabled: true,
         },
         docs: {
           url: 'https://mcp.example.com/sse',
           transport: 'sse',
           headers: { Authorization: '${ITSAPLAN_MCP_SECRET_8}' },
+          enabled: true,
         },
+        // Servers of the shared configuration Helena does not give the agent are off.
+        itsaplan: { enabled: false },
         'browser-harness': { enabled: false },
       },
     });
@@ -294,7 +316,7 @@ describe('Hermes managed MCP servers', () => {
   });
 
   it('drops the servers from the managed configuration once the agent has none', async () => {
-    const { hermesHome, materializer } = await fixture({ toolsets: [], mcpServers: ['itsaplan'] });
+    const { hermesHome, materializer } = await fixture({ toolsets: [], mcpServers: [] });
     await materializer.apply(withServers('sha256:one', [jevBrowser]));
     const result = await materializer.apply(withServers('sha256:two', [], ['web']));
 
@@ -385,6 +407,9 @@ describe('Hermes runtime policy synchronizer', () => {
       'managed-skills',
       'managed-mcp-servers',
       'learning',
+      'profile-drift',
+      'rewrite-profile',
+      'session-facts',
     ]);
     expect(JSON.stringify(statuses)).not.toContain('provider-secret-value');
     expect(statuses.at(-1)?.detail).toBe(
@@ -434,7 +459,7 @@ describe('Hermes runtime policy synchronizer', () => {
   });
 
   it('reports the inventory with the status, and again only once it changed', async () => {
-    const { hermesHome, materializer } = await fixture();
+    const { hermesHome, materializer } = await fixture(undefined, HELENA);
     await mkdir(hermesHome, { recursive: true });
     await writeFile(join(hermesHome, 'SOUL.md'), '# Hermes default');
     const statuses: RuntimeStatus[] = [];
@@ -483,7 +508,7 @@ describe('Hermes runtime policy synchronizer', () => {
   });
 
   it('restricts the toolsets as the latest policy says, even one that failed to apply', async () => {
-    const { materializer } = await fixture();
+    const { materializer } = await fixture(undefined, HELENA);
     const profile = { toolsets: ['file', 'terminal', 'web'], mcpServers: ['itsaplan'] };
     const withDeny = (revision: string, toolDeny: string[], path = 'SOUL.md') => ({
       revision,
@@ -496,7 +521,8 @@ describe('Hermes runtime policy synchronizer', () => {
       { profile },
     );
 
-    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
+    // Before the first revision no MCP server is Helena's yet.
+    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web']);
     await sync.ensure();
     expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
     await sync.ensure();
@@ -505,7 +531,7 @@ describe('Hermes runtime policy synchronizer', () => {
 
   it('hands each run the managed configuration and the current values of its secrets', async () => {
     const profile = { toolsets: ['file', 'web'], mcpServers: ['itsaplan'] };
-    const { materializer } = await fixture(profile);
+    const { materializer } = await fixture(profile, HELENA);
     const sync = new HermesPolicySynchronizer(
       client(
         [withServers('sha256:one', [jevBrowser], ['web']), withServers('sha256:two', [])],
@@ -517,10 +543,7 @@ describe('Hermes runtime policy synchronizer', () => {
     );
 
     const managed = { HERMES_MANAGED_DIR: materializer.managedDir };
-    expect(await sync.runSettings()).toEqual({
-      toolsets: ['file', 'web', 'itsaplan'],
-      env: managed,
-    });
+    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web'], env: managed });
     await sync.ensure();
     const settings = {
       toolsets: ['file', 'itsaplan', 'jev-browser'],
