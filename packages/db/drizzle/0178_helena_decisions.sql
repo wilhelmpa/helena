@@ -72,9 +72,11 @@ CREATE TABLE "helena_decision_eval" (
 	"input_tokens" bigint DEFAULT 0 NOT NULL,
 	"cost_eur" double precision,
 	"failures" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"details" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"error" text,
 	"created_by_user_id" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"finished_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "helena_mail_classification" (
@@ -151,9 +153,10 @@ CREATE TABLE "helena_bank_import" (
 	"duplicates" integer DEFAULT 0 NOT NULL,
 	"from_date" date,
 	"to_date" date,
+	"warnings" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_by_user_id" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "helena_bank_import_format_check" CHECK ("helena_bank_import"."format" IN ('camt053', 'csv'))
+	CONSTRAINT "helena_bank_import_format_check" CHECK ("helena_bank_import"."format" IN ('camt052', 'camt053', 'camt054', 'csv', 'zip'))
 );
 --> statement-breakpoint
 CREATE TABLE "helena_bank_transaction" (
@@ -204,6 +207,7 @@ CREATE TABLE "helena_receipt" (
 	"extraction" text DEFAULT 'none' NOT NULL,
 	"extraction_error" text,
 	"text_excerpt" text,
+	"details" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"status" text DEFAULT 'open' NOT NULL,
 	"created_by_user_id" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

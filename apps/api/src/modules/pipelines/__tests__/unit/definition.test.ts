@@ -93,6 +93,59 @@ describe('workflow definition', () => {
     expect(read?.steps).toEqual(steps);
   });
 
+  it('reads a decision step with its lanes, and one that reuses an earlier answer', () => {
+    const ask: PipelineStep = {
+      id: 'kind',
+      name: 'Art der Anfrage',
+      type: 'decision',
+      question: 'Welche Art von Anfrage ist das? {{task.title}}',
+      context: '',
+      options: ['Rechnung', 'Support', 'Vertrieb'],
+      thenOptions: ['Rechnung'],
+      unsure: 'else',
+      from: null,
+      then: [comment('bill')],
+      else: [],
+      thenEnd: false,
+      elseEnd: false,
+    };
+    const reuse: PipelineStep = {
+      id: 'support',
+      name: 'Support?',
+      type: 'decision',
+      question: '',
+      context: '',
+      options: ['Rechnung', 'Support', 'Vertrieb'],
+      thenOptions: ['Support'],
+      unsure: 'fail',
+      from: 'kind',
+      then: [comment('help')],
+      else: [],
+      thenEnd: true,
+      elseEnd: false,
+    };
+    const { definition: read, issues } = validateDefinition(definition([ask, reuse]), {
+      template: true,
+    });
+    expect(issues).toEqual([]);
+    expect(read?.steps).toEqual([ask, reuse]);
+    // Reusing a step that is not an earlier decision, too few options, no option for the lane.
+    expect(
+      codes(
+        definition([
+          { ...reuse, from: 'nope' },
+          { ...ask, id: 'two', options: ['Nur eine'], thenOptions: [] },
+        ]),
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        'decision_source:support:from',
+        'too_few:two:options',
+        'required:two:thenOptions',
+      ]),
+    );
+  });
+
   it('accepts the built-in templates', () => {
     for (const template of BUILTIN_TEMPLATES)
       expect(validateDefinition(template.definition, { template: true }).issues).toEqual([]);

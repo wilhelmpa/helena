@@ -174,8 +174,13 @@ async function withinFailsafe(
       askSystemOne(connection, request, controller.signal),
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
-          controller.abort();
+          // The failsafe answers first; stopping the request may throw inside a client.
           reject(new DecisionTimeout(`no answer within ${timeoutMs} ms`));
+          try {
+            controller.abort();
+          } catch {
+            // The request is abandoned either way.
+          }
         }, timeoutMs);
       }),
     ]);

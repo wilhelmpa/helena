@@ -13,6 +13,7 @@ export {
   type GitAuthor,
 } from './git';
 export { extractText, isExtractable, type Extraction } from './extract';
+export { hasProgram, runProgram, type ProgramResult } from './process';
 export { extractPending, requeueInstalledExtractions } from './extraction-queue';
 export {
   EXTERNAL_PROVENANCE,

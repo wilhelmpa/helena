@@ -1,5 +1,5 @@
 {
-  "id": "0885be78-b546-4cf6-b8a7-bcbaf63dfca7",
+  "id": "98a5f7e8-0bd7-41e9-8b1d-f106d8271bb9",
   "prevId": "d3f9a8d9-1863-49cf-b48f-39b51ef0b326",
   "version": "7",
   "dialect": "postgresql",
@@ -22105,6 +22105,13 @@
           "notNull": true,
           "default": "'[]'::jsonb"
         },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
         "error": {
           "name": "error",
           "type": "text",
@@ -22123,6 +22130,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -23036,6 +23049,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "warnings": {
+          "name": "warnings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
         "created_by_user_id": {
           "name": "created_by_user_id",
           "type": "text",
@@ -23133,7 +23153,7 @@
       "checkConstraints": {
         "helena_bank_import_format_check": {
           "name": "helena_bank_import_format_check",
-          "value": "\"helena_bank_import\".\"format\" IN ('camt053', 'csv')"
+          "value": "\"helena_bank_import\".\"format\" IN ('camt052', 'camt053', 'camt054', 'csv', 'zip')"
         }
       },
       "isRLSEnabled": false
@@ -23523,6 +23543,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
         },
         "status": {
           "name": "status",

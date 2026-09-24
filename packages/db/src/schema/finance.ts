@@ -12,6 +12,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   numeric,
   pgTable,
   serial,
@@ -63,7 +64,7 @@ export const helenaBankImport = pgTable(
       .notNull()
       .references(() => helenaBankAccount.id, { onDelete: 'cascade' }),
     filename: text('filename').notNull(),
-    // 'camt053' | 'csv'
+    // 'camt052' | 'camt053' | 'camt054' | 'csv', or 'zip' for an archive of statements.
     format: text('format').notNull(),
     sha256: text('sha256').notNull(),
     entries: integer('entries').notNull().default(0),
@@ -71,13 +72,19 @@ export const helenaBankImport = pgTable(
     duplicates: integer('duplicates').notNull().default(0),
     fromDate: date('from_date'),
     toDate: date('to_date'),
+    // What the parser noticed: balances that do not add up, files it skipped, statements of
+    // another account.
+    warnings: jsonb('warnings').$type<string[]>().notNull().default([]),
     createdByUserId: text('created_by_user_id').references(() => user.id, {
       onDelete: 'set null',
     }),
     createdAt: createdAt(),
   },
   (t) => [
-    check('helena_bank_import_format_check', sql`${t.format} IN ('camt053', 'csv')`),
+    check(
+      'helena_bank_import_format_check',
+      sql`${t.format} IN ('camt052', 'camt053', 'camt054', 'csv', 'zip')`,
+    ),
     index('helena_bank_import_account_idx').on(t.bankAccountId, t.createdAt.desc()),
   ],
 );
@@ -167,6 +174,10 @@ export const helenaReceipt = pgTable(
     extractionError: text('extraction_error'),
     // The first characters of the text, for the matching question and the review list.
     textExcerpt: text('text_excerpt'),
+    // The rest of what the e-invoice or the text said that matching uses (payment reference,
+    // creditor id and mandate of a direct debit, Skonto, amount due, buyer, credit note) and
+    // where its XML is: embedded in the PDF or the file itself (@helena/finance InvoiceFacts).
+    details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
     // open | matched | ignored
     status: text('status').notNull().default('open'),
     createdByUserId: text('created_by_user_id').references(() => user.id, {
