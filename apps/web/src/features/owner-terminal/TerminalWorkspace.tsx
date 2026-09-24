@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import WorkspaceFrame from '@/components/layout/WorkspaceFrame';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { workspaceTools } from '@/utils/workspaceTools';
 import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import OwnerTerminalPanel from './OwnerTerminalPanel';
+import { attachTerminalClipboard } from './utils/terminalClipboard';
 
 // The "terminal" tool in the Werkzeug-Panel: the owner terminal in Home, the
 // existing project terminal (a plain iframe, unchanged) everywhere else. See
@@ -15,13 +17,20 @@ import OwnerTerminalPanel from './OwnerTerminalPanel';
 // Owner-Terminal"). Registered as a panel tool in extensions/panelTools.tsx.
 export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps) {
   const t = useTranslations('nav.workspace');
+  const tTerminal = useTranslations('ownerTerminal');
   const workspaceConfig = runtimeEnv().workspace;
   const provisioning = useProjectProvisioningQuery(projectKey);
   const area = useRef<HTMLDivElement | null>(null);
+  const resources = useMemo(
+    () =>
+      provisioning.data?.status === 'succeeded' ? (provisioning.data.result?.resources ?? []) : [],
+    [provisioning.data],
+  );
+  const url = projectKey ? workspaceTools(workspaceConfig, projectKey, resources).terminal.url : '';
   // The terminal (xterm in the frame) fits itself on its window's resize event; the panel
   // resizing or the frame coming back from hidden does not always fire it, so the frame is
   // told to fit whenever the area changes (owner, 2026-09-24: "das Terminal überall groß
-  // und responsive").
+  // und responsive"). Copy and paste are wired up here as well (utils/terminalClipboard.ts).
   useEffect(() => {
     const node = area.current;
     if (!node) return;
@@ -34,17 +43,19 @@ export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps)
     };
     const observer = new ResizeObserver(fit);
     observer.observe(node);
-    return () => observer.disconnect();
-  }, [projectKey]);
-  const resources = useMemo(
-    () =>
-      provisioning.data?.status === 'succeeded' ? (provisioning.data.result?.resources ?? []) : [],
-    [provisioning.data],
-  );
+    const frame = node.querySelector('iframe');
+    const detach = frame
+      ? attachTerminalClipboard(frame, () =>
+          toast.success(tTerminal('clipboard.copied'), { id: 'terminal-copied', duration: 1500 }),
+        )
+      : undefined;
+    return () => {
+      observer.disconnect();
+      detach?.();
+    };
+  }, [projectKey, url, tTerminal]);
 
   if (!projectKey) return <OwnerTerminalPanel />;
-
-  const url = workspaceTools(workspaceConfig, projectKey, resources).terminal.url;
   if (!url) return null;
   return (
     <div ref={area} className="flex h-full min-h-0 flex-1 flex-col">

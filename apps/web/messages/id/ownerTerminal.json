@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "Tempel"
+  },
+  "clipboard": {
+    "copied": "Disalin ke papan klip"
   }
 }

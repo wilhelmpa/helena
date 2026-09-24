@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "Colar"
+  },
+  "clipboard": {
+    "copied": "Copiado para a área de transferência"
   }
 }

@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "Coller"
+  },
+  "clipboard": {
+    "copied": "Copié dans le presse-papiers"
   }
 }
