@@ -116,7 +116,7 @@ describe('default names of new projects and teams', () => {
       name: 'Marketing',
       locale: 'xx' as 'de',
     });
-    expect(created.status).toBe(422);
+    expect(created.status).toBe(400);
   });
 
   it('uses the browser language before the account chose one', async () => {
