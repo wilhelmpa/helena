@@ -56,7 +56,8 @@ lives, inside the process that already holds it, and hands Helena numbers only.
   read by the **owner reporter**: `node packages/runner/dist/cli.js limits-report` run by a
   systemd timer **as the owner** (`deployment/volition-stack/native/limits/`), which runs the
   `claude-code` and `codex` probes with the owner's own CLIs and writes the snapshots to the
-  spool (`/var/lib/helena-limits/reports/owner.json`, 0644, numbers only). The API has no
+  spool (`/var/lib/helena-limits/reports/<owner>.json`, 0644, numbers only) every five
+  minutes. The API has no
   channel into the owner's home, and nothing of the login leaves it. This is the private
   part of this install; Docker installs leave the spool unset.
 - **Which providers Hermes is asked for.** Only those the served agents use (their profile
@@ -72,19 +73,20 @@ lives, inside the process that already holds it, and hands Helena numbers only.
 - **Cadence.** The API's `provider-limits` loop asks every online agent's runner for
   `limits.read` (a runtime request, the channel hermes-in-helena built) once per interval
   (Administrator → Agenten-Laufzeit → Limits, default 10 min, 5–60). The runner caches a
-  probe per login for the interval, so nine agents on one ChatGPT login make **one** request
-  to OpenAI. "Aktualisieren" forces a probe (at most one per login per 60 s). Passive Claude
+  probe per login for four minutes (shorter than the shortest interval, so each interval gets
+  fresh numbers), so nine agents on one ChatGPT login make **one** request to OpenAI. "Aktualisieren" forces a probe (at most one per login per 60 s). Passive Claude
   snapshots are posted to `POST /agent-runtime/limits` when a window moves, at most once a
   minute per login, and once at the end of the run.
 - **State.** Per window: `limited` at ≥ 100 % or when the provider says so (Codex
-  `rate_limit_reached_type`, Claude `status: rejected`, severity `critical`); `near` at ≥ the
-  owner's threshold (default 80 %) or severity `warning`; `ok` below; a window whose reset
+  `rate_limit_reached_type`, Claude `status: rejected`); `near` at ≥ the owner's threshold
+  (default 80 %) or a provider severity `warning`/`critical`; `ok` below; a window whose reset
   time passed counts as 0 % until the next probe. An account's state is its worst window's.
   A snapshot older than three intervals shows "veraltet".
 - **Storage.** `helena_provider_limit` (one row per provider + account: plan, windows, credits,
   source, login, via, observed_at) and `helena_provider_limit_agent` (which agents use it,
   when last). Migration `helena_provider_limits`. Tokens, e-mails and raw provider bodies
-  never reach the DB, a log, a prompt or the browser.
+  never reach the DB, a log, a prompt or the browser. A runner's report is trusted as far as
+  its agent's key is: an agent can report numbers, not read or change anything else.
 - **API.** `GET /provider-limits` (OpenAPI; Administrator or an agent; also the read-only MCP
   tool `get_provider_limits`, category `read`, so agents and the Autopilot can plan around
   limits), `POST /provider-limits/refresh`, `GET|PATCH /provider-limits/settings`
