@@ -88,6 +88,7 @@
   "noLimit": "بلا حد",
   "usedOf": "{used} من {limit}",
   "usedNoLimit": "استُخدم {used}",
+  "remaining": "المتبقي {remaining}",
   "reached": "نفدت",
   "warned": "أكثر من 80 %",
   "graceRuns": "{count, plural, zero {لا تشغيل} one {تشغيل واحد} two {تشغيلان} few {# تشغيلات} many {# تشغيلًا} other {# تشغيل}} بعد الحد",

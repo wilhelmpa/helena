@@ -88,6 +88,7 @@
   "noLimit": "sem limite",
   "usedOf": "{used} de {limit}",
   "usedNoLimit": "{used} usados",
+  "remaining": "restam {remaining}",
   "reached": "esgotado",
   "warned": "acima de 80 %",
   "graceRuns": "{count, plural, one {# execução} other {# execuções}} além",

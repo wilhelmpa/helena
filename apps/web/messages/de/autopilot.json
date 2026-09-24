@@ -88,6 +88,7 @@
   "noLimit": "kein Limit",
   "usedOf": "{used} von {limit}",
   "usedNoLimit": "{used} verbraucht",
+  "remaining": "noch {remaining}",
   "reached": "aufgebraucht",
   "warned": "über 80 %",
   "graceRuns": "{count, plural, one {# Lauf} other {# Läufe}} darüber hinaus",

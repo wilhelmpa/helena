@@ -88,6 +88,7 @@
   "noLimit": "tanpa batas",
   "usedOf": "{used} dari {limit}",
   "usedNoLimit": "{used} terpakai",
+  "remaining": "sisa {remaining}",
   "reached": "habis",
   "warned": "lebih dari 80 %",
   "graceRuns": "{count, plural, other {# eksekusi}} melewatinya",

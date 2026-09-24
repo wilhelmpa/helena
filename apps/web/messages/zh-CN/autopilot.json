@@ -88,6 +88,7 @@
   "noLimit": "无限制",
   "usedOf": "{used} / {limit}",
   "usedNoLimit": "已用 {used}",
+  "remaining": "剩余 {remaining}",
   "reached": "已用完",
   "warned": "超过 80 %",
   "graceRuns": "超出后还可运行 {count} 次",

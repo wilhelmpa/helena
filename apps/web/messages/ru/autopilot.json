@@ -88,6 +88,7 @@
   "noLimit": "без лимита",
   "usedOf": "{used} из {limit}",
   "usedNoLimit": "израсходовано {used}",
+  "remaining": "осталось {remaining}",
   "reached": "исчерпан",
   "warned": "больше 80 %",
   "graceRuns": "{count, plural, one {# запуск} few {# запуска} many {# запусков} other {# запуска}} сверх лимита",

@@ -100,6 +100,13 @@ export function BudgetUsage({ status }: { status: BudgetStatus | undefined }) {
       </div>
       <p className="flex flex-wrap gap-x-2 text-xs text-muted-foreground tabular-nums">
         <span>{t('usedOf', { used, limit })}</span>
+        {!status.reached && (
+          <span>
+            {t('remaining', {
+              remaining: formatBudgetAmount(status.metric, status.remaining, locale),
+            })}
+          </span>
+        )}
         {status.reached && <span className="text-status-danger">{t('reached')}</span>}
         {!status.reached && status.ratio >= 0.8 && (
           <span className="text-status-waiting">{t('warned')}</span>
