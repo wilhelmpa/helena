@@ -114,6 +114,7 @@ describe('system health', () => {
       { job: 'stage-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
       { job: 'workflow-schedules', state: 'unknown', ranAt: null, cleaned: null, error: null },
       { job: 'resume-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
+      { job: 'runtime-janitor', state: 'unknown', ranAt: null, cleaned: null, error: null },
     ]);
 
     await recordJanitorRun('run-janitor', 3, null);
