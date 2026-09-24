@@ -44,6 +44,7 @@ import providerLimits from '../../messages/en/providerLimits.json';
 import modelAvailability from '../../messages/en/modelAvailability.json';
 import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
+import server from '../../messages/en/server.json';
 import settings from '../../messages/en/settings.json';
 import shell from '../../messages/en/shell.json';
 import teams from '../../messages/en/teams.json';
@@ -107,6 +108,7 @@ const defaultMessages = {
   providerLimits,
   modelAvailability,
   knowledge,
+  server,
 };
 
 export type Messages = typeof defaultMessages;

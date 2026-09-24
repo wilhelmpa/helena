@@ -1,0 +1,37 @@
+[Unit]
+Description=Helena power guard (restores the fan and power choice, raises the fans when the CPU runs hot)
+Documentation=file:/usr/local/lib/helena/hostd/README.md
+After=systemd-modules-load.service power-profiles-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I /usr/local/lib/helena/hostd/helena-hostd guard
+Environment=HELENA_HOSTD_CONFIG=/etc/helena/hostd.json
+StateDirectory=helena/hostd
+StateDirectoryMode=0700
+# A safety net: it keeps running, and it gets the CPU before ordinary work.
+Restart=always
+RestartSec=5
+Nice=-5
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/helena/hostd
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+InaccessiblePaths=-/etc/volition
+
+[Install]
+WantedBy=multi-user.target

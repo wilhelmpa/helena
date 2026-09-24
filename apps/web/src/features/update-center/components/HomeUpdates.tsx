@@ -18,7 +18,7 @@ import { useCheckForUpdates, useUpdateCenter } from '../services/updateCenter.se
 import { headlineUpdate, justNow, versionStep } from '../utils/updateFormat';
 import { UpdateBadges, UpdateSummary } from './UpdateCard';
 
-export const UPDATES_ADMIN_HREF = '/god/updates';
+export const UPDATES_ADMIN_HREF = '/god/server/updates';
 
 // Start → "Updates" (owner, 2026-09-24: "den Status auch im Dashboard anzeigen"): how many
 // updates there are and how many fix a vulnerability, and the most important one (security

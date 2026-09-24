@@ -1,0 +1,10 @@
+[Unit]
+Description=Helena restore test, monthly (first Sunday)
+
+[Timer]
+OnCalendar=Sun *-*-1..7 04:30:00
+Persistent=true
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target

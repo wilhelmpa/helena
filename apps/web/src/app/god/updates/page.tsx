@@ -1,5 +1,7 @@
-import GodUpdatesPage from '@/features/god/GodUpdatesPage';
+import { redirect } from 'next/navigation';
+import { serverPath } from '@/utils/paths';
 
+// The update center is the Updates tab of Administrator → Server.
 export default function Page() {
-  return <GodUpdatesPage />;
+  redirect(serverPath('updates'));
 }

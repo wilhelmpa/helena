@@ -27,6 +27,10 @@
       "label": "Général",
       "description": "Les valeurs par défaut des nouveaux projets."
     },
+    "server": {
+      "label": "Serveur",
+      "description": "La machine sur laquelle Helena tourne : disques et RAID, sauvegardes, puissance et ventilateurs."
+    },
     "authentication": {
       "label": "Authentification",
       "description": "Qui peut s'inscrire sur cette instance, comment les comptes sont confirmés, et les fournisseurs par lesquels les utilisateurs se connectent."

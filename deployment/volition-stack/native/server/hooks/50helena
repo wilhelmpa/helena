@@ -1,0 +1,5 @@
+#!/bin/sh
+# smartd → Helena: smartd's runner (/usr/share/smartmontools/smartd-runner) calls every script
+# in /etc/smartmontools/run.d with SMARTD_DEVICE, SMARTD_FAILTYPE, SMARTD_MESSAGE, … set.
+# The event lands in Helena's health overview (Administrator → Server → Platten & RAID).
+exec /usr/bin/python3 -I /usr/local/lib/helena/hostd/helena-hostd event smartd

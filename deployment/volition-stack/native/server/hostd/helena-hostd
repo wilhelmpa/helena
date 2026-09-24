@@ -1,0 +1,168 @@
+#!/usr/bin/python3 -I
+"""helena-hostd: Helena's root helper for the machine it runs on (disks and RAID, backups,
+power and fans). See ../README.md and docs/helena-decisions/server-admin.md.
+
+  helena-hostd serve                 the Varlink service (helena-hostd.socket/.service)
+  helena-hostd guard                 thermal guard + boot restore (helena-power-guard.service)
+  helena-hostd backup run|maintenance|restore-test|init|restore <id>
+  helena-hostd event mdadm <event> <md> [component]   (mdadm.conf PROGRAM)
+  helena-hostd event smartd          (smartd's run.d, reads SMARTD_* from the environment)
+  helena-hostd fans-initial [level]  installer: the first fan choice (default 5 = maximum)
+  helena-hostd call <Method> [json]  a client, for root on the console
+"""
+
+from __future__ import annotations
+
+import grp
+import json
+import os
+import signal
+import socket
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+
+
+def _trusted_directory(path: str) -> None:
+    """The helper imports code next to it, so that directory has to be root's alone."""
+    info = os.stat(path)
+    if os.geteuid() == 0 and (info.st_uid != 0 or info.st_mode & 0o022):
+        raise SystemExit(f'{path} must be owned by root and not writable by others')
+
+
+_trusted_directory(HERE)
+_trusted_directory(os.path.join(HERE, 'helena_host'))
+sys.path.insert(0, HERE)
+
+from helena_host import backup, events, guard  # noqa: E402
+from helena_host.common import VERSION, Host, HostError  # noqa: E402
+from helena_host.config import DEFAULT_CONFIG_PATH, load_config, load_settings  # noqa: E402
+from helena_host.service import DESCRIPTION, INTERFACE, Dispatcher  # noqa: E402
+from helena_host.varlink import Server, call  # noqa: E402
+
+SOCKET = '/run/helena-hostd/hostd.sock'
+
+
+def log(message: str) -> None:
+    print(f'helena-hostd: {message}', file=sys.stderr, flush=True)
+
+
+def config():
+    return load_config(os.environ.get('HELENA_HOSTD_CONFIG', DEFAULT_CONFIG_PATH),
+                       require_root=os.geteuid() == 0)
+
+
+def listener() -> socket.socket:
+    if os.environ.get('LISTEN_PID') == str(os.getpid()) and int(os.environ.get('LISTEN_FDS', '0') or 0) >= 1:
+        return socket.socket(fileno=3)
+    # Without socket activation (a test run): bind the path given, group from the env.
+    path = os.environ.get('HELENA_HOSTD_SOCKET', SOCKET)
+    try:
+        os.unlink(path)
+    except FileNotFoundError:
+        pass
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.bind(path)
+    group = os.environ.get('HELENA_HOSTD_GROUP')
+    if group and os.geteuid() == 0:
+        os.chown(path, 0, grp.getgrnam(group).gr_gid)
+    os.chmod(path, 0o660)
+    sock.listen(32)
+    return sock
+
+
+def serve() -> int:
+    cfg = config()
+    host = Host(extra={'entry': os.path.realpath(__file__)})
+    dispatcher = Dispatcher(host, cfg, log)
+    server = Server(interface=INTERFACE, description=DESCRIPTION,
+                    info={'vendor': 'Helena', 'product': 'helena-hostd', 'version': VERSION,
+                          'url': 'https://github.com/helena'},
+                    dispatch=dispatcher, authorize=dispatcher.authorize, log=log)
+    signal.signal(signal.SIGTERM, lambda *_: server.stopping.set())
+    signal.signal(signal.SIGINT, lambda *_: server.stopping.set())
+    sock = listener()
+    log(f'serving {INTERFACE} {VERSION}')
+    server.serve(sock)
+    return 0
+
+
+def run_guard() -> int:
+    return guard.Guard(Host(), config(), log).run()
+
+
+def run_backup(args: list[str]) -> int:
+    cfg = config()
+    host = Host(extra={'entry': os.path.realpath(__file__)})
+    kind = args[0] if args else ''
+    try:
+        if kind == 'init':
+            print(json.dumps(backup.ensure_initialized(host, cfg)))
+            backup.apply_schedule(host, cfg, load_settings(cfg)['backup'])
+            return 0
+        if kind == 'run':
+            result = backup.job_backup(host, cfg)
+        elif kind == 'maintenance':
+            result = backup.job_maintenance(host, cfg)
+        elif kind == 'restore-test':
+            result = backup.job_restore_test(host, cfg)
+        elif kind == 'restore' and len(args) == 2:
+            result = backup.perform_restore(host, cfg, args[1])
+            print(json.dumps({key: result.get(key) for key in ('id', 'state', 'location', 'error')}))
+            return 0 if result.get('state') == 'done' else 1
+        else:
+            print(__doc__, file=sys.stderr)
+            return 2
+    except HostError as error:
+        log(f'backup {kind}: {error.message}')
+        return 1
+    print(json.dumps({key: result.get(key) for key in ('ok', 'snapshot', 'error', 'warning', 'durationSeconds')}))
+    return 0 if result.get('ok') else 1
+
+
+def run_event(args: list[str]) -> int:
+    cfg = config()
+    host = Host()
+    if args[:1] == ['mdadm']:
+        event = events.from_mdadm(args[1:])
+    elif args[:1] == ['smartd']:
+        event = events.from_smartd(dict(os.environ))
+    else:
+        print(__doc__, file=sys.stderr)
+        return 2
+    recorded = events.record(cfg.state_dir, at=host.now(), **event)
+    log(f'event {recorded["source"]} {recorded["code"]} {recorded["device"] or ""}')
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    command = argv[0] if argv else 'serve'
+    try:
+        if command == 'serve':
+            return serve()
+        if command == 'guard':
+            return run_guard()
+        if command == 'backup':
+            return run_backup(argv[1:])
+        if command == 'event':
+            return run_event(argv[1:])
+        if command == 'fans-initial':
+            level = int(argv[1]) if len(argv) > 1 else 5
+            if level not in range(1, 6):
+                raise HostError('InvalidParameter', 'level must be 1–5')
+            guard.initial_fans(config(), level)
+            return 0
+        if command == 'call' and len(argv) >= 2:
+            parameters = json.loads(argv[2]) if len(argv) > 2 else {}
+            reply = call(os.environ.get('HELENA_HOSTD_SOCKET', SOCKET), f'{INTERFACE}.{argv[1]}', parameters)
+            print(json.dumps(reply, indent=2, ensure_ascii=False))
+            return 0 if 'error' not in reply else 1
+    except HostError as error:
+        log(error.message)
+        return 1
+    print(__doc__, file=sys.stderr)
+    return 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv[1:]))

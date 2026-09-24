@@ -1,0 +1,207 @@
+import { describe, expect, it } from 'bun:test';
+import { backupHealth, powerHealth, storageHealth, systemHealth } from '../../health';
+import { backup, power, storage } from '../fixtures';
+
+// The machine's health lines: red for what needs the owner now, amber for what runs or
+// needs a look.
+
+const byId = (items: { id: string }[], id: string) => items.find((item) => item.id === id);
+
+describe('storage health', () => {
+  it('a rebuild in progress is amber with its progress, the disks green', () => {
+    const items = storageHealth(storage());
+    expect(byId(items, 'raid:helena-root')).toMatchObject({
+      state: 'attention',
+      code: 'raidRebuilding',
+      values: { name: 'helena-root', percent: 26.5, remaining: 8840 },
+    });
+    expect(byId(items, 'disk:A')).toMatchObject({ state: 'ok', code: 'diskOk' });
+    expect(byId(items, 'esp')).toMatchObject({ state: 'ok', code: 'espInSync' });
+  });
+
+  it('a degraded array without a rebuild is red', () => {
+    const base = storage();
+    const items = storageHealth({
+      ...base,
+      arrays: [{ ...base.arrays[0]!, syncAction: 'idle', syncPercent: null }],
+    });
+    expect(byId(items, 'raid:helena-root')).toMatchObject({
+      state: 'critical',
+      code: 'raidDegraded',
+    });
+  });
+
+  it('a check is amber, mismatches afterwards too, a clean array green', () => {
+    const base = storage();
+    const array = { ...base.arrays[0]!, degraded: 0 };
+    expect(
+      byId(
+        storageHealth({ ...base, arrays: [{ ...array, syncAction: 'check' }] }),
+        'raid:helena-root',
+      ),
+    ).toMatchObject({ state: 'attention', code: 'raidChecking' });
+    expect(
+      byId(
+        storageHealth({ ...base, arrays: [{ ...array, syncAction: 'idle', mismatchCount: 128 }] }),
+        'raid:helena-root',
+      ),
+    ).toMatchObject({ state: 'attention', code: 'raidMismatches', values: { count: 128 } });
+    expect(
+      byId(
+        storageHealth({ ...base, arrays: [{ ...array, syncAction: 'idle' }] }),
+        'raid:helena-root',
+      ),
+    ).toMatchObject({ state: 'ok', code: 'raidOk', values: { disks: 2 } });
+  });
+
+  it('a failing disk is red, a worn or hot one amber', () => {
+    const base = storage();
+    const disk = base.disks[1]!;
+    const withSmart = (smart: Partial<NonNullable<typeof disk.smart>>) =>
+      byId(
+        storageHealth({ ...base, disks: [{ ...disk, smart: { ...disk.smart!, ...smart } }] }),
+        'disk:B',
+      );
+    expect(withSmart({ failing: true })).toMatchObject({ state: 'critical', code: 'diskFailing' });
+    expect(withSmart({ availableSpare: 5 })).toMatchObject({
+      state: 'critical',
+      code: 'diskSpareLow',
+    });
+    expect(withSmart({ mediaErrors: 2 })).toMatchObject({ state: 'attention', code: 'diskErrors' });
+    expect(withSmart({ wearPercent: 93 })).toMatchObject({ state: 'attention', code: 'diskWorn' });
+    expect(withSmart({ temperatureC: 72 })).toMatchObject({ state: 'attention', code: 'diskHot' });
+  });
+
+  it('ESPs out of step are amber, and unseen critical events red', () => {
+    const base = storage();
+    const items = storageHealth(
+      { ...base, esp: { ...base.esp, inSync: false, differenceCount: 3 } },
+      { events: [], seenUpTo: 0, unseen: 2, unseenCritical: 1 },
+    );
+    expect(byId(items, 'esp')).toMatchObject({ state: 'attention', code: 'espOutOfSync' });
+    expect(byId(items, 'events')).toMatchObject({ state: 'critical', values: { count: 1 } });
+  });
+});
+
+describe('backup health', () => {
+  it('a recent backup is green, a late one amber, a failed one red', () => {
+    expect(byId(backupHealth(backup()), 'backup:last')).toMatchObject({
+      state: 'ok',
+      code: 'backupOk',
+    });
+    const old = new Date(Date.now() - 5 * 3_600_000).toISOString();
+    expect(
+      byId(
+        backupHealth(
+          backup({
+            last: {
+              backup: { ok: true, finishedAt: old },
+              maintenance: null,
+              'restore-test': null,
+            },
+          }),
+        ),
+        'backup:last',
+      ),
+    ).toMatchObject({ state: 'attention', code: 'backupLate' });
+    expect(
+      byId(
+        backupHealth(
+          backup({
+            last: {
+              backup: { ok: false, finishedAt: old, error: 'x' },
+              maintenance: null,
+              'restore-test': null,
+            },
+          }),
+        ),
+        'backup:last',
+      ),
+    ).toMatchObject({ state: 'critical', code: 'backupFailed' });
+  });
+
+  it('a daily schedule is not late after five hours', () => {
+    const old = new Date(Date.now() - 5 * 3_600_000).toISOString();
+    const status = backup({
+      schedule: { frequency: 'daily', time: '03:00' },
+      last: { backup: { ok: true, finishedAt: old }, maintenance: null, 'restore-test': null },
+    });
+    expect(byId(backupHealth(status), 'backup:last')).toMatchObject({ state: 'ok' });
+  });
+
+  it('asks for the password to be written down, and reports failed checks', () => {
+    const items = backupHealth(
+      backup({
+        passwordState: 'unrevealed',
+        last: {
+          backup: { ok: true, finishedAt: new Date().toISOString() },
+          maintenance: { ok: false, finishedAt: '2026-09-20T03:40:00Z' },
+          'restore-test': { ok: false, finishedAt: '2026-09-06T04:30:00Z' },
+        },
+      }),
+    );
+    expect(byId(items, 'backup:password')).toMatchObject({ state: 'attention' });
+    expect(byId(items, 'backup:check')).toMatchObject({ state: 'critical' });
+    expect(byId(items, 'backup:restore-test')).toMatchObject({ state: 'critical' });
+  });
+
+  it('says nothing while backups are not installed', () => {
+    expect(backupHealth(backup({ installed: false }))).toEqual([]);
+  });
+});
+
+describe('power and system health', () => {
+  it('reports the CPU, the fans and a raise by the guard', () => {
+    const items = powerHealth(power());
+    expect(byId(items, 'cpu:temperature')).toMatchObject({
+      state: 'ok',
+      values: { temperature: 58 },
+    });
+    expect(byId(items, 'fans')).toMatchObject({ code: 'fansFixed', values: { level: 5 } });
+    const hot = powerHealth(
+      power({
+        cpuTemperatureC: 96,
+        guard: { limit: 90, state: { active: true, peakC: 97, engagedAt: '2026-09-24T20:00:00Z' } },
+      }),
+    );
+    expect(byId(hot, 'cpu:temperature')).toMatchObject({ state: 'critical', code: 'cpuHot' });
+    expect(byId(hot, 'fans:guard')).toMatchObject({
+      state: 'attention',
+      values: { temperature: 97 },
+    });
+  });
+
+  it('the GPU share of the memory is never pressure, low memory is', () => {
+    const base = {
+      hostname: 'kingston-server',
+      kernel: null,
+      boardVendor: null,
+      boardName: null,
+      productName: null,
+      cpuModel: null,
+      cpuCount: null,
+      uptimeSeconds: 1,
+      load: [],
+      gpuMemory: {
+        vramTotalBytes: 103_079_215_104,
+        vramUsedBytes: 0,
+        gttTotalBytes: 0,
+        gttUsedBytes: 0,
+      },
+      efi: true,
+    };
+    const memory = {
+      totalBytes: 33_277_624_320,
+      availableBytes: 22_139_301_888,
+      swapTotalBytes: 0,
+      swapFreeBytes: 0,
+      pressure: null,
+      underPressure: false,
+    };
+    expect(systemHealth({ ...base, memory })[0]).toMatchObject({ state: 'ok', code: 'memoryOk' });
+    expect(systemHealth({ ...base, memory: { ...memory, underPressure: true } })[0]).toMatchObject({
+      state: 'attention',
+      code: 'memoryPressure',
+    });
+  });
+});

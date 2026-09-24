@@ -36,6 +36,8 @@ export interface PluginProvides {
   captureTargets?: string[];
   // Template bundles offered for import (agent templates, skills, MCP servers).
   bundles?: string[];
+  // Host capabilities (Administrator → Server: disks, backups, power, a plugin's own).
+  hostCapabilities?: string[];
   // Contributions to every agent's runtime profile (runner).
   profileContributions?: string[];
   // Usage-limit sources (how much of a subscription's limits is used).
