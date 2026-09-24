@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@helena/brand": "workspace:*",
     "nodemailer": "^9.1.1"
   },
   "devDependencies": {
