@@ -441,7 +441,8 @@
       "limits": "Limits",
       "autopilot": "Autopilot",
       "logins": "Logins",
-      "server": "Server"
+      "server": "Server",
+      "updates": "Updates"
     },
     "problems": {
       "external-off": "Loads once external plugins are switched on.",

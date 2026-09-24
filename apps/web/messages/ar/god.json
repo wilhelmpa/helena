@@ -441,7 +441,8 @@
       "limits": "الحدود",
       "autopilot": "Autopilot",
       "logins": "تسجيلات الدخول",
-      "server": "الخادم"
+      "server": "الخادم",
+      "updates": "التحديثات"
     },
     "problems": {
       "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",

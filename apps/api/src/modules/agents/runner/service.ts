@@ -25,6 +25,7 @@ import { learnFromOutcome, routeOf, runtimeOfPolicy } from '#modules/model-avail
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
+import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
 import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
@@ -170,6 +171,8 @@ export interface RunnerRun {
 // the prompts and are not handed to the runner.
 type ClaimedRow = Omit<RunnerRun, 'systemPrompt' | 'autopilotLevel'> & {
   projectId: number;
+  // The run's own reasoning effort, where it overrides the agent's (a digest run).
+  reasoning: string | null;
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
   // the run back, or lost its lease.
   interrupted: boolean;
@@ -340,6 +343,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.max_turns AS "maxTurns",
       r.run_budget_seconds AS "runBudgetSeconds",
       r.model,
+      r.reasoning,
       r.session_id AS "sessionId",
       r.resumes,
       (r.continued_from_run_id IS NOT NULL AND r.resumes = 1) AS "continuation",
@@ -384,32 +388,36 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     threadContext,
   };
   await recordAgentRunStarted({ ...forPrompt, agentId: agent.id, autopilotLevel: autopilot.level });
+  // A digest run is text only: its prompt is the whole task and its system prompt says the
+  // input is data (updates/digest.ts); nothing about projects, people or the Autopilot.
+  const digest = row.trigger === 'digest';
   return {
     id: row.id,
     trigger: row.trigger,
     // A workspace job (a clone) is for the runner itself: its prompt is the job as it was
     // queued, never framed for a model.
     prompt:
-      row.trigger === 'workspace'
+      row.trigger === 'workspace' || digest
         ? row.prompt
         : row.sessionId && !row.continuation
           ? RESUME_PROMPT
           : framePrompt(forPrompt),
-    systemPrompt:
-      buildSystemPrompt(
-        agent,
-        { key: row.projectKey, name: row.projectName, description: row.projectDescription },
-        forPrompt,
-      ) +
-      autopilotRunSection(row.projectKey, autopilot.level) +
-      (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),
+    systemPrompt: digest
+      ? DIGEST_SYSTEM_PROMPT
+      : buildSystemPrompt(
+          agent,
+          { key: row.projectKey, name: row.projectName, description: row.projectDescription },
+          forPrompt,
+        ) +
+        autopilotRunSection(row.projectKey, autopilot.level) +
+        (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,
     claim: row.claim,
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
     sourceActivityId: row.sourceActivityId,
     model: row.model ?? agent.model,
-    thinkingLevel: agent.thinkingLevel,
+    thinkingLevel: row.reasoning ?? agent.thinkingLevel,
     maxTurns: row.maxTurns ?? agent.maxTurns,
     runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
     workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,
@@ -579,10 +587,11 @@ async function isRework(agentId: number, runId: number, issueId: number | null) 
 async function requestReflection(
   agentId: number,
   runId: number,
-  run: { status: 'success' | 'failed'; issueId: number | null; paused: boolean },
+  run: { status: 'success' | 'failed'; issueId: number | null; paused: boolean; digest?: boolean },
   report: { sessionId?: string; toolCalls?: number },
 ): Promise<ReflectionRequest | null> {
-  if (run.paused || !report.sessionId) return null;
+  // A digest run is a summary, with nothing to learn from (and no memory tools).
+  if (run.paused || run.digest || !report.sessionId) return null;
   const [agent] = await db
     .select({ runtimePolicy: aiAgent.runtimePolicy })
     .from(aiAgent)
@@ -712,7 +721,7 @@ export async function finishRun(
     reflection: await requestReflection(
       agent.id,
       runId,
-      { status, issueId: row.issueId, paused: paused !== null },
+      { status, issueId: row.issueId, paused: paused !== null, digest: row.trigger === 'digest' },
       result,
     ),
   };

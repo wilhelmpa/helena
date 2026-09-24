@@ -174,7 +174,9 @@
       "field": "executou por um campo de",
       "manual": "executou manualmente",
       "schedule": "executou por agendamento",
-      "approval": "executou após uma decisão de aprovação"
+      "approval": "executou após uma decisão de aprovação",
+      "workspace": "executou uma tarefa do espaço de trabalho",
+      "digest": "escreveu um resumo"
     }
   },
   "agentHealth": {

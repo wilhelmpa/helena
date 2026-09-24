@@ -10,3 +10,4 @@ export * from './provider-limits';
 export * from './autopilot';
 export * from './knowledge';
 export * from './model-availability';
+export * from './updates';

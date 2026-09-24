@@ -36,6 +36,7 @@ import { emergencyStopRoutes } from './modules/emergency-stop';
 import { runtimeAdminRoutes } from './modules/runtime-admin';
 import { providerLimitRoutes } from './modules/provider-limits';
 import { serverRoutes } from './modules/server';
+import { updateCenterRoutes } from './modules/updates';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
 import { issueRoutes } from './modules/issues';
@@ -96,6 +97,12 @@ import { mailThreadRoutes } from './modules/mail/threads';
 // Errors are normalized to a { error } JSON body: HttpError carries its own
 // status; a Postgres unique_violation becomes 409; request-body validation
 // failures become 400; anything else is a 500 with the error logged.
+// Administrator → Server and its Updates tab, as one plugin: one more link in the chain below
+// would pass TypeScript's instantiation depth for the app's type (TS2589).
+const instanceHostRoutes = new Elysia({ name: 'instance-host' })
+  .use(serverRoutes)
+  .use(updateCenterRoutes);
+
 export const planner = new Elysia({ name: 'planner' })
   .use(authContext)
   .onError({ as: 'global' }, ({ code, error, set }) => {
@@ -155,7 +162,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(emergencyStopRoutes)
   .use(runtimeAdminRoutes)
   .use(providerLimitRoutes)
-  .use(serverRoutes)
+  .use(instanceHostRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)

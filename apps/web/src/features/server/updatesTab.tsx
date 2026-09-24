@@ -1,15 +1,19 @@
 import type { ComponentType } from 'react';
+import UpdateCenterView, {
+  UpdateCheckAction,
+} from '@/features/update-center/components/UpdateCenterView';
 
-// Integration point of the update center (hub/update-center): Administrator → Server →
-// Updates mounts its view, and its "check now" action goes into the Server toolbar. Until
-// that branch is in this build, the tab is not offered and /god/updates stays where it is.
-// After the merge: import `UpdateCenterView` and `UpdateCheckAction` from
-// '@/features/update-center/…', set them here, and let /god/updates redirect to
-// /god/server/updates (see docs/helena-decisions/server-admin.md §7).
+// Administrator → Server → Updates is the update center (hub/update-center): its view is the
+// tab's body and its "check now" action sits in the Server toolbar. It works without the host
+// helper, so a container still has this tab. /god/updates redirects here.
 export interface UpdatesTabParts {
   built: boolean;
   Body?: ComponentType;
   Action?: ComponentType;
 }
 
-export const UPDATES_TAB: UpdatesTabParts = { built: false };
+export const UPDATES_TAB: UpdatesTabParts = {
+  built: true,
+  Body: UpdateCenterView,
+  Action: UpdateCheckAction,
+};

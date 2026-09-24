@@ -407,6 +407,13 @@ preset gives it to its CLI in the way that CLI accepts it: on stdin for `claude`
 The agent reads all other data through the MCP server at `$ITSAPLAN_URL/mcp`. The agent
 sends `$ITSAPLAN_API_KEY` as a bearer token, and acts as its own user with its role.
 
+A **digest run** (`trigger: 'digest'`, the update center's summary of release notes,
+`docs/helena-decisions/update-center.md`) is text only: the prompt goes to the model as it
+is, Hermes starts with `--ignore-rules` (no SOUL, AGENTS, memory or preloaded skills) and
+`--toolsets todo`, without the agent's instructions, skills arguments, vault logins, SSH keys
+or MCP secrets, on the model and reasoning the run names (`src/digest.ts`). Only a Hermes
+agent takes one; any other runtime reports it as failed.
+
 ### The environment
 
 Every run holds these variables:

@@ -14,6 +14,7 @@ import { scheduleCuratorRuns } from '#modules/agents/runtime-requests/curator-sc
 import { pruneRunEvents } from '#modules/agents/run-timeline/service';
 import { scheduleLimitProbes } from '#modules/provider-limits/service';
 import { prunePolicyDecisions } from '#modules/autopilot/engine';
+import { followActions } from '#modules/updates/service';
 
 const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANITOR_JOBS;
 
@@ -45,6 +46,13 @@ export function startBackgroundJobs(): void {
     'provider-limits',
     async () => void (await scheduleLimitProbes()),
     () => intEnv('PROVIDER_LIMITS_TICK_MS', 60_000),
+  );
+  // Updates the owner started (the update center): followed to their end even while
+  // nobody has the page open.
+  startLoop(
+    'update-actions',
+    async () => void (await followActions()),
+    () => intEnv('HELENA_UPDATE_FOLLOW_MS', 10_000),
   );
   // The Autopilot's decision log keeps HELENA_POLICY_LOG_DAYS (90) days.
   startLoop(

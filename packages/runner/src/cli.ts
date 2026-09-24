@@ -29,6 +29,7 @@ import { runPolicyHook } from './policy-hook';
 import type { RunSettings, RuntimeAdapter } from './runtime';
 import { applySshKeys, sshDir, type SshKey } from './ssh';
 import { parseWorkspaceJob, runWorkspaceJob } from './workspace-job';
+import { digestRuntimeError, digestSettings, isDigestRun } from './digest';
 import type { Outcome } from './execute';
 import type { WorkRef } from './logins';
 import { limitProber } from './limits';
@@ -175,12 +176,18 @@ async function handle(
   else log(run.sessionId ? `${label}: resuming its session` : `${label}: started (${run.trigger})`);
   state.stops.add(stop);
   try {
+    const digest = isDigestRun(run);
+    const refused = digest ? digestRuntimeError(config) : null;
+    if (refused) throw new Error(refused);
+    // A digest run is text only (digest.ts): no SSH keys, no tools, no rules.
     const hermes = stop.signal.aborted
       ? null
-      : withEnv(
-          (await policy?.runSettings({ runId: run.id })) ?? null,
-          await sshEnv(config, client, log, { runId: run.id }),
-        );
+      : digest
+        ? digestSettings((await policy?.runSettings({ runId: run.id })) ?? null)
+        : withEnv(
+            (await policy?.runSettings({ runId: run.id })) ?? null,
+            await sshEnv(config, client, log, { runId: run.id }),
+          );
     const work =
       run.trigger === 'workspace'
         ? performWorkspaceJob(config, client, run, stop, hermes?.env ?? {}, lost.signal)

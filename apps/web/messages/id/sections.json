@@ -78,6 +78,10 @@
     "model-prices": {
       "label": "Harga model",
       "description": "Euro per juta token per model, dasar setiap perkiraan biaya."
+    },
+    "updates": {
+      "label": "Pembaruan",
+      "description": "Apa yang digunakan Helena, versi baru yang ada, apa yang berubah, dan memperbarui."
     }
   },
   "settings": {

@@ -78,6 +78,10 @@
     "model-prices": {
       "label": "Modellpreise",
       "description": "Euro pro Million Tokens je Modell, die Grundlage jeder Kostenschätzung."
+    },
+    "updates": {
+      "label": "Updates",
+      "description": "Was Helena nutzt, welche neuen Versionen es gibt, was sie ändern, und das Aktualisieren."
     }
   },
   "settings": {

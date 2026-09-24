@@ -441,7 +441,8 @@
       "limits": "限额",
       "autopilot": "Autopilot",
       "logins": "登录",
-      "server": "服务器"
+      "server": "服务器",
+      "updates": "更新"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

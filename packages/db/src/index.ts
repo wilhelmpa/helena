@@ -58,3 +58,5 @@ export {
   setPluginSettings,
   type PluginSettings,
 } from './domains/plugins';
+// A database dump on demand (the update center takes one before an update).
+export { writeBackup, type BackupResult } from './backup';

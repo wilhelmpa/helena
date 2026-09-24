@@ -26,11 +26,21 @@
 #   sudo install-cli-runtimes.sh status [--json]
 #   sudo install-cli-runtimes.sh rollback <runtime>
 #   sudo install-cli-runtimes.sh verify               the installed files against the pins
+#   sudo install-cli-runtimes.sh upgrade <runtime> <version>
+#                                                     a newer version than the pin (the update
+#                                                     center): Claude Code's signed manifest of
+#                                                     that version gives the new pin, an npm
+#                                                     runtime gets a fresh lockfile; the pin is
+#                                                     kept in $HELENA_RUNTIME_STATE/pins.json
+#                                                     (/var/lib/helena/runtimes) once it installed
 set -euo pipefail
 umask 022
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 pins=${HELENA_RUNTIME_PINS:-$here/runtimes.json}
+# Pins newer than the repository's, written by `upgrade`; each wins only while it is newer.
+state=${HELENA_RUNTIME_STATE:-/var/lib/helena/runtimes}
+override=$state/pins.json
 python=${PYTHON:-/usr/bin/python3}
 npm=${NPM:-/usr/local/bin/npm}
 node=${NODE:-/usr/local/bin/node}
@@ -48,10 +58,25 @@ trap 'for path in "${cleanup[@]}"; do rm -rf -- "$path"; done' EXIT
 need_root() { [[ -n "$testing" || $EUID -eq 0 ]] || die "$1 needs root (it writes $prefix and $bindir)"; }
 
 pin() {
-  # pin <runtime|-> <dotted.key> — a value of runtimes.json, empty when absent.
-  "$python" -I - "$pins" "$1" "$2" <<'PY'
-import json, sys
+  # pin <runtime|-> <dotted.key> — a value of runtimes.json, empty when absent. A runtime's
+  # entry in the override (upgrade) replaces the repository's while its version is newer.
+  "$python" -I - "$pins" "$1" "$2" "$override" <<'PY'
+import json, re, sys
 pins = json.load(open(sys.argv[1]))
+def key(version):
+    m = re.fullmatch(r'(\d+(?:\.\d+)*)(?:-([0-9A-Za-z.-]+))?', version or '')
+    if not m:
+        return None
+    return tuple(int(p) for p in m.group(1).split('.')), m.group(2) is None, m.group(2) or ''
+try:
+    over = json.load(open(sys.argv[4])).get('runtimes', {})
+except (OSError, ValueError):
+    over = {}
+for name, entry in over.items():
+    base = pins['runtimes'].get(name)
+    new, old = key(entry.get('version')), key((base or {}).get('version'))
+    if base and new and old and new > old:
+        pins['runtimes'][name] = {**base, **entry}
 node = pins if sys.argv[2] == '-' else pins['runtimes'].get(sys.argv[2])
 for part in sys.argv[3].split('.'):
     node = node.get(part) if isinstance(node, dict) else None
@@ -63,6 +88,9 @@ PY
 }
 
 runtimes() { "$python" -I -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1]))["runtimes"]))' "$pins"; }
+
+# The lockfile folder of an npm runtime: next to the pins, or absolute (an upgraded one).
+lockdir() { local lock; lock=$(pin "$1" lock); [[ "$lock" == /* ]] && echo "$lock" || echo "$here/$lock"; }
 
 prefix=${HELENA_RUNTIME_PREFIX:-$(pin - prefix)}
 bindir=${HELENA_RUNTIME_BIN:-$(pin - bin)}
@@ -122,6 +150,21 @@ finish_install() { # finish_install <runtime> <version> <staging>: moves it into
 
 # ── Claude Code ───────────────────────────────────────────────────────────────────────
 
+# fetch_signed_manifest <version> <dir>: Claude Code's release manifest of that version and
+# its signature into <dir>, the signature checked against the pinned release key.
+fetch_signed_manifest() {
+  local version=$1 dir=$2 url key fpr gnupg status
+  url=$(pin claude url); key="$here/$(pin claude signingKey)"; fpr=$(pin claude signingKeyFingerprint)
+  say "downloading the manifest of claude $version" >&2
+  curl "${curl_opts[@]}" -o "$dir/manifest.json" "$url/$version/manifest.json"
+  curl "${curl_opts[@]}" -o "$dir/manifest.json.sig" "$url/$version/manifest.json.sig"
+  gnupg=$(mktemp -d "$dir/gnupg.XXXXXX")
+  GNUPGHOME=$gnupg gpg --batch --quiet --import "$key" 2>/dev/null
+  status=$(GNUPGHOME=$gnupg gpg --batch --status-fd 1 --verify "$dir/manifest.json.sig" "$dir/manifest.json" 2>/dev/null || true)
+  grep -q "^\[GNUPG:\] VALIDSIG $fpr " <<<"$status" || die "the manifest of claude $version is not signed with the pinned release key"
+  rm -rf -- "$gnupg"
+}
+
 claude_intact() { # claude_intact <dir> <sha256>
   [[ -f "$1/.helena-installed" && -x "$1/claude" ]] &&
     [[ "$(sha256sum "$1/claude" | cut -d' ' -f1)" == "$2" ]]
@@ -141,14 +184,7 @@ install_claude() {
     return
   else
     new_staging claude
-    say "downloading the manifest of claude $version"
-    curl "${curl_opts[@]}" -o "$staging/manifest.json" "$url/$version/manifest.json"
-    curl "${curl_opts[@]}" -o "$staging/manifest.json.sig" "$url/$version/manifest.json.sig"
-    gnupg=$(mktemp -d "$staging/gnupg.XXXXXX")
-    GNUPGHOME=$gnupg gpg --batch --quiet --import "$key" 2>/dev/null
-    status=$(GNUPGHOME=$gnupg gpg --batch --status-fd 1 --verify "$staging/manifest.json.sig" "$staging/manifest.json" 2>/dev/null || true)
-    grep -q "^\[GNUPG:\] VALIDSIG $fpr " <<<"$status" || die "the manifest of claude $version is not signed with the pinned release key"
-    rm -rf -- "$gnupg"
+    fetch_signed_manifest "$version" "$staging"
     manifest_sha=$("$python" -I -c 'import json,sys; m=json.load(open(sys.argv[1])); assert m["version"]==sys.argv[3]; print(m["platforms"][sys.argv[2]]["checksum"])' "$staging/manifest.json" "$plat" "$version") ||
       die "the manifest names another version or no $plat"
     [[ "$manifest_sha" == "$sha" ]] || die "the signed manifest and the pin disagree about claude $version"
@@ -171,7 +207,7 @@ install_claude() {
 
 # ── npm packages (Codex, the ACP adapters) ────────────────────────────────────────────
 
-lock_hash() { sha256sum "$here/$(pin "$1" lock)/package-lock.json" | cut -d' ' -f1; }
+lock_hash() { sha256sum "$(lockdir "$1")/package-lock.json" | cut -d' ' -f1; }
 
 npm_intact() { # npm_intact <runtime> <dir>
   [[ -f "$2/.helena-installed" ]] &&
@@ -181,7 +217,7 @@ npm_intact() { # npm_intact <runtime> <dir>
 
 install_npm() {
   local name=$1 version lock dir staging omit
-  version=$(pin "$name" version); lock="$here/$(pin "$name" lock)"
+  version=$(pin "$name" version); lock=$(lockdir "$name")
   [[ -f "$lock/package.json" && -f "$lock/package-lock.json" ]] || die "$name has no lockfile in $lock"
   dir="$prefix/$name/$version"
   if npm_intact "$name" "$dir"; then
@@ -264,7 +300,7 @@ cmd_plan() {
       claude-release)
         say "claude $(pin claude version): $(pin claude url)/$(pin claude version)/$(platform)/claude, $(pin claude "platforms.$(platform).size") bytes, SHA-256 $(pin claude "platforms.$(platform).sha256"), manifest signed by $(pin claude signingKeyFingerprint)" ;;
       npm)
-        say "$name $(pin "$name" version): npm registry, $(grep -c '"resolved"' "$here/$(pin "$name" lock)/package-lock.json") packages pinned by sha512$([[ "$(pin "$name" omitOptional)" == true ]] && echo ', optional platform binaries left out')" ;;
+        say "$name $(pin "$name" version): npm registry, $(grep -c '"resolved"' "$(lockdir "$name")/package-lock.json") packages pinned by sha512$([[ "$(pin "$name" omitOptional)" == true ]] && echo ', optional platform binaries left out')" ;;
     esac
   done
 }
@@ -326,6 +362,96 @@ cmd_verify() {
   return $bad
 }
 
+# ── Upgrading past the pin (the update center) ────────────────────────────────────────
+
+# write_pin <runtime> <json entry> <file>: the file (a copy of the override) with the entry.
+write_pin() {
+  "$python" -I - "$1" "$2" "$3" "$override" <<'PY'
+import json, sys
+name, entry, target, current = sys.argv[1], json.loads(sys.argv[2]), sys.argv[3], sys.argv[4]
+try:
+    pins = json.load(open(current))
+except (OSError, ValueError):
+    pins = {'schemaVersion': 1, 'runtimes': {}}
+pins.setdefault('runtimes', {})[name] = entry
+with open(target, 'w') as handle:
+    json.dump(pins, handle, indent=2)
+    handle.write('\n')
+PY
+}
+
+# The new pin of Claude Code: the checksums and sizes its signed manifest names.
+upgrade_pin_claude() {
+  local version=$1 dir=$2
+  fetch_signed_manifest "$version" "$dir"
+  "$python" -I - "$dir/manifest.json" "$version" <<'PY'
+import json, sys
+manifest = json.load(open(sys.argv[1]))
+if manifest.get('version') != sys.argv[2]:
+    sys.exit('the manifest names another version')
+platforms = {}
+for platform in ('linux-x64', 'linux-arm64'):
+    entry = manifest.get('platforms', {}).get(platform)
+    if entry and isinstance(entry.get('checksum'), str) and isinstance(entry.get('size'), int):
+        platforms[platform] = {'sha256': entry['checksum'], 'size': entry['size']}
+if not platforms:
+    sys.exit('the manifest names no linux platform')
+print(json.dumps({'version': sys.argv[2], 'platforms': platforms}))
+PY
+}
+
+# The new pin of an npm runtime: a lockfile npm resolves for exactly that version (the
+# registry's sha512 of every package, no install scripts), kept under $state/npm.
+upgrade_pin_npm() {
+  local name=$1 version=$2 dir=$3 package dest omit
+  package=$("$python" -I -c 'import json,sys; deps=json.load(open(sys.argv[1]))["dependencies"]; assert len(deps)==1; print(next(iter(deps)))' "$(lockdir "$name")/package.json") ||
+    die "$name has no single dependency in its package.json"
+  "$python" -I -c 'import json,sys; json.dump({"name":"helena-runtime-"+sys.argv[1],"private":True,"dependencies":{sys.argv[2]:sys.argv[3]}}, open(sys.argv[4],"w"), indent=2)' \
+    "$name" "$package" "$version" "$dir/package.json"
+  omit=(--omit=dev)
+  [[ "$(pin "$name" omitOptional)" == true ]] && omit+=(--omit=optional)
+  say "resolving $package@$version from npm" >&2
+  (cd "$dir" && env HOME="$dir" npm_config_cache="$dir/.npm" npm_config_update_notifier=false \
+    npm_config_fund=false npm_config_audit=false PATH="$(dirname "$node"):/usr/bin:/bin" \
+    "$npm" install --package-lock-only --ignore-scripts --no-audit --no-fund "${omit[@]}" --loglevel=error >&2)
+  "$python" -I -c 'import json,sys; lock=json.load(open(sys.argv[1])); got=lock["packages"]["node_modules/"+sys.argv[2]]["version"]; sys.exit(0 if got==sys.argv[3] else "npm resolved "+got)' \
+    "$dir/package-lock.json" "$package" "$version" || die "npm did not resolve $package@$version"
+  dest="$state/npm/$name/$version"
+  install -d -m 0755 "$dest"
+  install -m 0644 "$dir/package.json" "$dir/package-lock.json" "$dest/"
+  "$python" -I -c 'import json,sys; print(json.dumps({"version": sys.argv[1], "lock": sys.argv[2]}))' "$version" "$dest"
+}
+
+cmd_upgrade() {
+  local name=${1:?usage: upgrade <runtime> <version>} version=${2:?usage: upgrade <runtime> <version>}
+  local current entry work kept
+  need_root upgrade
+  [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || die "$version is not a version"
+  runtimes | grep -qxF -- "$name" || die "unknown runtime $name"
+  current=$(installed_version "$name")
+  [[ "$current" != "$version" ]] || { say "$name $version is installed"; return 0; }
+  command -v gpg >/dev/null || die "gpg is missing"
+  [[ -x "$npm" && -x "$node" ]] || die "node and npm are missing ($node, $npm)"
+  install -d -m 0755 "$state"
+  new_staging "$name-upgrade"
+  work=$staging
+  case "$(pin "$name" source)" in
+    claude-release) entry=$(upgrade_pin_claude "$version" "$work") || die "no pin for claude $version" ;;
+    npm) entry=$(upgrade_pin_npm "$name" "$version" "$work") || die "no pin for $name $version" ;;
+    *) die "unknown runtime $name" ;;
+  esac
+  # The install reads the new pin from a copy; the override keeps it only once it installed.
+  write_pin "$name" "$entry" "$work/pins.json"
+  kept=$override
+  override="$work/pins.json"
+  [[ "$(pin "$name" version)" == "$version" ]] || die "$version is not newer than the pinned $(pin "$name" version)"
+  install_one "$name"
+  install -m 0644 "$work/pins.json" "$kept.new" && mv -f "$kept.new" "$kept"
+  override=$kept
+  rmdir "$prefix/.staging" 2>/dev/null || true
+  say "$name upgraded from ${current:-nothing} to $version (rollback: $(basename "$0") rollback $name)"
+}
+
 command=${1:-}
 shift || true
 case "$command" in
@@ -334,5 +460,6 @@ case "$command" in
   status) cmd_status "$@" ;;
   rollback) cmd_rollback "$@" ;;
   verify) cmd_verify ;;
-  *) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 64 ;;
+  upgrade) cmd_upgrade "$@" ;;
+  *) sed -n '2,39p' "$0" | sed 's/^# \{0,1\}//'; exit 64 ;;
 esac

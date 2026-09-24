@@ -441,7 +441,8 @@
       "limits": "Límites",
       "autopilot": "Autopilot",
       "logins": "Inicios de sesión",
-      "server": "Servidor"
+      "server": "Servidor",
+      "updates": "Actualizaciones"
     },
     "problems": {
       "external-off": "Se carga cuando se activen los plugins externos.",

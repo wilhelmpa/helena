@@ -441,7 +441,8 @@
       "limits": "Лимиты",
       "autopilot": "Autopilot",
       "logins": "Входы",
-      "server": "Сервер"
+      "server": "Сервер",
+      "updates": "Обновления"
     },
     "problems": {
       "external-off": "Загрузится, как только внешние плагины будут включены.",

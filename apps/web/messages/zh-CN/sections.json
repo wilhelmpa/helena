@@ -78,6 +78,10 @@
     "model-prices": {
       "label": "模型价格",
       "description": "每个模型每百万令牌的欧元价格，是所有费用估算的基础。"
+    },
+    "updates": {
+      "label": "更新",
+      "description": "Helena 所用的组件、可用的新版本、变更内容以及更新。"
     }
   },
   "settings": {
