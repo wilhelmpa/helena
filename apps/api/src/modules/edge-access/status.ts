@@ -33,7 +33,7 @@ export interface AuditReport {
 }
 
 export function auditFile(): string {
-  return process.env.HELENA_SECURITY_AUDIT_FILE || '/var/lib/helena/security/audit.json';
+  return process.env.HELENA_SECURITY_AUDIT_FILE || '/var/lib/helena-security/audit.json';
 }
 // The timer runs the audit hourly; a report older than a day says the timer stopped.
 const STALE_MS = 26 * 3600_000;

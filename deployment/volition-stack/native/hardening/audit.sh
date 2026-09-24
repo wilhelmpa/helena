@@ -7,7 +7,7 @@
 #   sudo audit.sh --json              # the report as JSON on stdout
 #   sudo audit.sh --json-file PATH    # write the report atomically (0644, no secrets in it)
 #   sudo audit.sh --install-timer     # install + start the hourly timer that writes
-#                                     # /var/lib/helena/security/audit.json for Helena
+#                                     # /var/lib/helena-security/audit.json for Helena
 #
 # Without root most checks report "skip". Exit status: 0 when nothing failed, 1 when a
 # check failed, 2 on a usage error. Decision and the meaning of every check:
@@ -27,7 +27,7 @@ case "${1:-}" in
 esac
 
 here=$(cd "$(dirname "$0")" && pwd)
-state_dir=/var/lib/helena/security
+state_dir=/var/lib/helena-security
 
 if [[ $mode == install ]]; then
   [[ $EUID -eq 0 ]] || { echo "audit.sh: --install-timer needs root" >&2; exit 2; }
