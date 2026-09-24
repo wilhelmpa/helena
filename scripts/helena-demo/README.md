@@ -30,7 +30,7 @@ It creates:
   comment), enabled with its roles resolved by capability.
 
 It is **idempotent**: every step reads first and creates only what is missing. Tested
-2026-09-24 against a real API on a throwaway database: the first run made 42 writes, the
+2026-09-24 against a real API on a throwaway database: the first run made 22 writes, the
 second 0. Two expected warnings came up:
 - that environment has no Home agent (it is bootstrapped by the runner service);
 - no scheduler for routines, until hub/native-engine replaces Mastra.

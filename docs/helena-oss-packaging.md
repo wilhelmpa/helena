@@ -707,10 +707,6 @@ prebuilt multi-arch images on GHCR.
 - **Hard-coded time zone.** Routines default to `Europe/Berlin`, and the workflow wait
   `until` uses Europe/Berlin. For other installs this becomes an instance setting (default
   UTC) → hub/native-engine.
-- **Naming test fails on volition/hub** because three agent-pool skill files mention the
-  upstream name (`doku-schreiben/SKILL.md`, `helena-ui-standard/SKILL.md`,
-  `helena-ui-standard/refs/review-checkliste.md`). They are rules ("never write …"), so an
-  allowlist entry or a rewording fixes it → pool agent.
 - **Private data in a migration:** `0139_project_mail_accounts.sql` (§2.4, §4.3).
 - **Installer gap:** hand-installed units and libexec scripts (§3.3 item 4).
 
