@@ -35,28 +35,23 @@ import {
   ProjectBrowserLocks,
   SlugQueue,
 } from "../../../packages/browser-gateway/src/index.ts";
-import * as browserControl from "./project-browser-control.mjs";
 import * as screencast from "./project-browser-screencast.mjs";
 
 const { setControlState, setHandover } = screencast;
 const DEFAULT_AGENT_VIEWPORT = { width: 1440, height: 900 };
 
 // Who owns the page size (docs/volition-design-browser-perfekt.md §3.2): while an agent
-// controls the browser the page keeps a fixed working size (the project's setting) and the
-// live view only scales it; the owner or nobody in control, the page follows the live view's
-// panel. The viewport controller itself is the live view's (hub/browser-live-4,
-// setViewportAuthority(slug, 'follow' | 'fixed', size?)); until it is there this is a no-op.
-export function viewportAuthority(
-  slug,
-  holder,
-  viewport,
-  set = screencast.setViewportAuthority ?? browserControl.setViewportAuthority,
-) {
-  if (typeof set !== "function") return;
+// controls the browser the page keeps a fixed working size (the project's setting, named
+// after the agent) and the live view only scales it; with the owner or nobody in control the
+// page follows the live view (setViewportAuthority, project-browser-screencast.mjs).
+export function viewportAuthority(cdpPort, holder, viewport, set = screencast.setViewportAuthority) {
+  if (!cdpPort || typeof set !== "function") return;
   try {
-    const result =
-      holder?.kind === "agent" ? set(slug, "fixed", viewport ?? DEFAULT_AGENT_VIEWPORT) : set(slug, "follow");
-    if (result && typeof result.catch === "function") result.catch(() => {});
+    if (holder?.kind === "agent") {
+      set(cdpPort, "fixed", viewport ?? DEFAULT_AGENT_VIEWPORT, String(holder.agentName ?? "").slice(0, 64) || undefined);
+    } else {
+      set(cdpPort, "follow");
+    }
   } catch {
     // The live view's controller failing never touches the lock.
   }
@@ -237,7 +232,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
   locks.onChange((slug, state) => {
     const cdpPort = cdpPorts.get(slug);
     if (cdpPort) setControlState(cdpPort, { holder: state.holder, since: state.since });
-    viewportAuthority(slug, state.holder, viewports.get(slug));
+    viewportAuthority(cdpPort, state.holder, viewports.get(slug));
   });
 
   function onHandover(slug, notice) {

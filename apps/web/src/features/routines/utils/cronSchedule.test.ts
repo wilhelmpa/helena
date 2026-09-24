@@ -110,3 +110,34 @@ describe('invalid schedules', () => {
     });
   }
 });
+
+describe('German schedules in words', () => {
+  const cases: Array<[string, string]> = [
+    ['jeden Werktag um 9 Uhr', '0 9 * * 1-5'],
+    ['werktags um 8:30', '30 8 * * 1-5'],
+    ['täglich um 9.30 Uhr', '30 9 * * *'],
+    ['stündlich', '0 * * * *'],
+    ['alle 15 Minuten', '*/15 * * * *'],
+    ['alle 2 Stunden', '0 */2 * * *'],
+    ['montags und freitags um 17 Uhr', '0 17 * * 1,5'],
+    ['am Wochenende um 12 Uhr', '0 12 * * 0,6'],
+    ['monatlich am 1. um Mitternacht', '0 0 1 * *'],
+    ['am 1. und 15. um 9 Uhr', '0 9 1,15 * *'],
+    ['alle 15 Minuten zwischen 9 und 17 Uhr', '*/15 9-17 * * *'],
+    ['vierteljährlich um Mitternacht', '0 0 1 1,4,7,10 *'],
+    ['jährlich im März am 10. um 12 Uhr', '0 12 10 3 *'],
+    ['Montag bis Freitag um 7 Uhr', '0 7 * * 1-5'],
+  ];
+
+  for (const [input, cron] of cases) {
+    test(`converts ${input} to cron`, () => {
+      const result = parseScheduleInput(input);
+      assert.equal(result.ok, true, result.ok ? '' : result.error);
+      if (result.ok) assert.equal(result.cron, cron);
+    });
+  }
+
+  test('refuses a one-time date in German too', () => {
+    assert.equal(parseScheduleInput('morgen um 9 Uhr').ok, false);
+  });
+});

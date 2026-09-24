@@ -115,7 +115,7 @@ test('keeps the owner settings and ignore patterns', async () => {
   assert.ok(lines.includes('/.trash'));
 });
 
-test('adds the folder Volition with the API key and turns reports off', async () => {
+test('adds the folder Helena with the API key and turns reports off', async () => {
   const { root, vault } = await scratch();
   const keyFile = join(root, 'key');
   await writeFile(keyFile, `${KEY}\n`, { mode: 0o600 });
@@ -133,7 +133,7 @@ test('adds the folder Volition with the API key and turns reports off', async ()
       key: KEY,
       body: {
         id: 'volition',
-        label: 'Volition',
+        label: 'Helena',
         path: vault,
         type: 'sendreceive',
         ignorePerms: true,
@@ -163,6 +163,6 @@ test('updates an existing folder and leaves its devices alone', async () => {
     method: 'PATCH',
     path: '/rest/config/folders/volition',
     key: KEY,
-    body: { label: 'Volition', path: vault, type: 'sendreceive', ignorePerms: true },
+    body: { label: 'Helena', path: vault, type: 'sendreceive', ignorePerms: true },
   });
 });

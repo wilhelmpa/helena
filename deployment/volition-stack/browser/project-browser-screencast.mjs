@@ -3,42 +3,59 @@
 // keyboard input sent to that tab.
 //
 // The stream is H.264 video grabbed from the project's X display (project-browser-video.mjs)
-// when every viewer can play it, and the DevTools screencast as JPEG frames otherwise or when
-// every encoder fails. The page is shown at the CSS size of the most recent viewer's view, and
-// on a high-density screen at pixel ratio 2: the window keeper sizes the real window to the
-// view in window pixels and draws its tabs at that ratio. The agent works on that same page.
-// While the agent acts, the page keeps its CSS size, so the layout does not move between the
-// agent's look at the page and its next action; a JPEG stream then also drops to ratio 1 and
-// 20 frames a second, because a sharp JPEG stream at full rate fills the browser's DevTools
-// connection, which the agent's commands then wait for.
+// for viewers that play it, and the DevTools screencast as JPEG frames for the others or when
+// every encoder fails. The page is shown at the CSS size of the most recent viewer's view: the
+// window keeper sizes the real window to it. Chromium draws at device scale factor 2 (see
+// project-browser-control.mjs), and a viewer on a high-density screen gets frames at ratio 2,
+// one to one, the others at ratio 1. The agent works on that same page. While the agent acts,
+// the page keeps its CSS size, so the layout does not move between the agent's look at the
+// page and its next action; a JPEG stream then also drops to ratio 1 and 20 frames a second,
+// because a sharp JPEG stream at full rate fills the browser's DevTools connection, which the
+// agent's commands then wait for.
 //
 // Video is adaptive: each viewer is put on the quality tier (project-browser-video.mjs) its
 // last reported round trip and downlink, and its socket's backlog, afford, and viewers on the
 // same tier share its encoder — at most one running encoder per tier, never one per viewer. A
 // covered view (the browser tab behind another, a minimised window) reports itself hidden and
 // gets no frames until shown again, at which point it gets a fresh one at once; a tier with no
-// shown viewer left stops its encoder.
+// shown viewer left stops its encoder. Viewers that cannot or do not want to play video get the
+// JPEG screencast at the same time, so one of them does not take video from the others.
 //
 // Server to viewer, binary: a kind byte, then for kind 0 a JPEG frame after the page's
-// viewport in CSS pixels as two big-endian 16-bit integers; for kind 1 the video's MP4
+// viewport in CSS pixels as two big-endian 16-bit integers (kind 3: the frame's, then the
+// page's in its left part, see frameMessage); for kind 1 the video's MP4
 // initialization segment; for kind 2 a keyframe flag byte and one frame's MP4 fragment. Text:
-// {"type":"video","codec":..,"width":..,"height":..} before an initialization segment, with
-// the viewport in CSS pixels; {"type":"tab"} when the streamed tab, its address or its title
+// {"type":"video","codec":..,"width":..,"height":..,"pageWidth":..,"pageHeight":..} before an
+// initialization segment, with the viewport in CSS pixels at the page's zoom (which input is
+// given in) and at 100 % (the size a view draws the frames at to show them one to one);
+// {"type":"page","width":..,"height":..,"zoom":..,"fixed":..,"holder":..} with the page's size
+// in CSS pixels at 100 % and its zoom, whenever either changes, by which a view draws a JPEG
+// frame one to one, and whether a controller holds the size (see setViewportAuthority);
+// {"type":"tab"} when the streamed tab, its address or its title
 // changes; {"type":"dialog", ...} while a JavaScript dialog is open;
 // {"type":"dialog","open":false} when it closes; {"type":"pong","t":..} answering a viewer's
 // {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"|"free","agentName","since",
 // "locked"} when who controls the page changes: the browser gateway's control lock once it
 // runs (locked true, the agent by name, since as epoch ms), otherwise who last acted on it
-// (locked false); {"type":"handover","open":true,"reason","agentName","since"} while an agent
-// waits for the owner to take over (browser_handover), {"type":"handover","open":false} after.
-// Viewer to server: JSON text, see viewerMessage.
-import { activateTab, listTabs, openBrowser, setLiveViewport, windowChrome } from "./project-browser-control.mjs";
+// (locked false, see ScreencastStream's controlBy); {"type":"handover","open":true,"reason",
+// "agentName","since"} while an agent waits for the owner to take over (browser_handover),
+// {"type":"handover","open":false} after. Viewer to server: JSON text, see viewerMessage.
+import {
+  activateTab,
+  isAgentTitle,
+  listTabs,
+  MIN_WINDOW_WIDTH,
+  openBrowser,
+  setLiveViewport,
+  windowChrome,
+} from "./project-browser-control.mjs";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
 import { AreaEncoder, chooseTier, sameArea, TIERS } from "./project-browser-video.mjs";
 
 const JPEG_FRAME = 0;
 const VIDEO_INIT = 1;
 const VIDEO_FRAGMENT = 2;
+const JPEG_FRAME_CROPPED = 3;
 
 // JPEG stream settings while only viewers act, and while the agent acts. Chromium sends the
 // next frame once the last one is acknowledged, so a delayed acknowledgement limits the rate.
@@ -49,10 +66,23 @@ const MAX_FRAME_SIDE = 4096;
 // it misses the frames after them. A video viewer with more waiting skips to the next keyframe.
 const FRAMES_IN_FLIGHT = 2;
 const MAX_BUFFERED = 16 * 1024 * 1024;
-// A fraction of a second of the busiest tier's own output, not the many megabytes a perfectly
-// healthy stream can briefly hold: a viewer this far behind is asked to wait for the next
-// keyframe rather than pile on frames it cannot show in time anyway.
-const MAX_VIDEO_BUFFERED = 512 * 1024;
+// How far behind a video viewer may be (its socket's backlog, or what it has not yet
+// acknowledged, see Viewer.unackedBytes) before it waits for the next keyframe instead of
+// piling on frames it cannot show in time anyway: two of its tier's recent keyframes, since
+// one can still be arriving when the next is sent, plus what the tier sends while a stats
+// report makes its way back (videoAllowance). A fixed 512 KiB was less than one keyframe of a
+// page at pixel ratio 2 (up to 1.5 MB on the bench): every frame after a keyframe was dropped
+// and a viewer on the best tier saw one frame every two seconds.
+const MIN_VIDEO_BACKLOG = 512 * 1024;
+// How often a viewer reports what it received (STATS_INTERVAL_MS in useBrowserScreencast.ts),
+// with room for a report that is a little late.
+const STATS_REPORT_MS = 300;
+// Keyframes of a tier remembered for its allowance.
+const KEYFRAMES_KEPT = 3;
+// How long a fresh video's own catch-up burst is given before its viewer's acknowledged
+// receipt is trusted: long enough for one real stats report (sent every 200ms on the client,
+// see useBrowserScreencast.ts) to have had time to arrive even over a slow connection.
+const ACK_GRACE_MS = 1_000;
 const FOLLOW_INTERVAL_MS = 1_000;
 // How often a connected viewer's tier is reassessed from its last reported RTT and downlink
 // and the socket's backlog, besides whenever a fresh measurement or a shown/hidden change
@@ -61,14 +91,44 @@ const FOLLOW_INTERVAL_MS = 1_000;
 const TIER_INTERVAL_MS = 2_000;
 // The window a tier's own recent encoder output is measured over, for chooseTier.
 const ENCODE_WINDOW_MS = 3_000;
-// Chromium keeps a window at least 500 pixels wide.
-const MIN_WINDOW_WIDTH = 500;
-// The agent halves a screenshot until its long edge is at most 1568 pixels and clicks at CSS
-// pixels read from it; a 2x screenshot matches CSS pixels only from this long edge on.
+// The window a viewer measures its downlink over (THROUGHPUT_WINDOW_MS in
+// useBrowserScreencast.ts). Its downlink is held against its tier's output only once both
+// windows cover that tier alone: right after a tier starts, its first keyframe (over a
+// megabyte at pixel ratio 2) makes its short output window read several times its real rate,
+// while the viewer's window still holds the tier before, and the difference read as a
+// shortfall dropped a viewer on a perfect connection to the worst tier every few seconds.
+const DOWNLINK_WINDOW_MS = 4_000;
+// The minimum span a tier's own kbps measurement must cover before it is trusted. Right after
+// an encoder (re)starts, the window can hold just its opening keyframe plus the next frame a
+// few milliseconds later: dividing that keyframe's size by a near-zero elapsed time produces an
+// absurd kbps spike, which chooseTier's "strained" check then misreads as a real connection
+// shortfall — dropping the tier, restarting its encoder, and reproducing the same spike again.
+// Below this span, kbps() reports 0 (no meaningful data yet) rather than a number.
+const MIN_KBPS_WINDOW_MS = 500;
+// After an encoder fails, the stream tries video again after this long, doubling up to the
+// maximum; an encoder that ran this long without failing clears the count.
+const VIDEO_RETRY_MS = 5_000;
+const VIDEO_RETRY_MAX_MS = 60_000;
+const VIDEO_HEALTHY_MS = 30_000;
+// How long a restart forced by one viewer's requestKeyframe protects a tier's encoder from
+// another: restarting it is disruptive to every viewer on the tier, so a request is answered
+// with the fresh keyframe the tier's encoder already just started with when one is recent
+// enough, rather than restarting again.
+const KEYFRAME_REQUEST_MIN_MS = 2_000;
+// browser-harness takes its screenshots in window pixels and clicks at CSS pixels
+// (capture_screenshot and click_at_xy in its helpers.py), and Hermes halves a screenshot until
+// its long edge is at most 1568 pixels: a 2x screenshot matches CSS pixels only from this long
+// edge on. So while an agent is in the browser a smaller page is drawn at ratio 1.
 const SHARP_MIN_EDGE = 785;
 // Input on the page within this long after a viewer's own is the viewer's; a navigation
 // within the longer time after a viewer's action is the viewer's.
 const OWN_INPUT_MS = 1_000;
+const OWN_INPUTS_KEPT = 32;
+// How long a view someone started working in waits for their input to pause before it takes
+// the page's size.
+const FOCUS_QUIET_MS = 800;
+// The page can record a viewer's input a moment before the router notes it as sent.
+const OWN_INPUT_SLACK_MS = 50;
 const OWN_NAVIGATION_MS = 10_000;
 // How long after its last action the agent counts as acting: longer than it usually thinks
 // between a screenshot and the click it reads from it.
@@ -85,50 +145,88 @@ for (const type of ["pointerdown", "keydown", "input", "wheel"]) {
   addEventListener(type, (event) => { if (event.isTrusted) lastInput = Date.now(); }, { capture: true, passive: true });
 }`;
 
-// The page size for a view: its CSS size, and the window pixels per CSS pixel, which is 2 on
-// a high-density screen where the agent's screenshots allow it and 1 otherwise. A page too
-// narrow for a window is drawn wider and shown scaled down.
-export function pageSize({ width, height, dpr }) {
-  const ratio = dpr >= 1.5 && Math.max(width, height) >= SHARP_MIN_EDGE ? 2 : 1;
-  return { width: Math.max(width, Math.ceil(MIN_WINDOW_WIDTH / ratio)), height, ratio };
+// Whether a page at ratio 2 gives an agent screenshots it can click from (see SHARP_MIN_EDGE).
+function agentSafeAt2({ width, height }) {
+  return Math.max(width, height) >= SHARP_MIN_EDGE;
 }
 
-// The page size for the most recent view: while the agent acts, the current CSS size, at
-// ratio 1 for a JPEG stream, or nothing to change before one was set; otherwise the view's
-// pageSize. Ratio 1 and 2 give the agent screenshots of the same size.
-export function targetSize(viewport, current, agentActive, video) {
-  if (!agentActive) return pageSize(viewport);
+// The page size for a view: its CSS size, the pixels per CSS pixel of the frames (ratio 2 for
+// a high-density screen when the browser draws at factor 2, 1 otherwise), and whether the page
+// itself is drawn at ratio 1 (pin1): while an agent is in the browser (agentPresent), a page
+// smaller than SHARP_MIN_EDGE, whose screenshots at ratio 2 would put the agent's clicks off
+// by 2. A page narrower than a window can be is pinned at its width inside the window (see
+// the window keeper). At ratio 1 an odd size is made even, one pixel larger, which the video
+// needs: the frame then is the page to the pixel, and a view shows it one to one with that
+// pixel cut off rather than stretched.
+export function pageSize({ width, height, dpr }, agentPresent = false, scale = 2) {
+  const pin1 = scale >= 2 && agentPresent && !agentSafeAt2({ width, height });
+  const ratio = dpr >= 1.5 && scale >= 2 && !pin1 ? 2 : 1;
+  const even = (value) => (ratio === 1 ? Math.ceil(value / 2) * 2 : value);
+  return { width: even(width), height: even(height), ratio, pin1 };
+}
+
+// The page size for the most recent view: while the agent acts, the current CSS size — with
+// JPEG frames at ratio 1, and a page too small for the agent's screenshots drawn at ratio 1
+// — or nothing to change before one was set; otherwise the view's pageSize, with
+// agentPresent saying whether an agent is in the browser without acting right now.
+export function targetSize(viewport, current, agentActive, video, agentPresent = false, scale = 2) {
+  if (!agentActive) return pageSize(viewport, agentPresent, scale);
   if (!current) return null;
-  return video ? current : { ...current, ratio: 1 };
+  const pin1 = scale >= 2 && !agentSafeAt2(current);
+  return { ...current, ratio: video && !pin1 ? current.ratio : 1, pin1 };
 }
 
-// The area of the display the video grabs: the page below the window's tab strip and toolbar,
-// in window pixels, with an even width and height as the encoder needs.
+// The area of the display the video grabs, in display pixels: the page below the window's tab
+// strip and toolbar, with an even width and height as the encoder needs; and the size it is
+// encoded at, the page at the frames' ratio.
 export function captureArea(size, chrome) {
   const even = (value) => Math.max(2, Math.floor(value / 2) * 2);
+  const scale = chrome.scale ?? 1;
+  const ratio = Math.min(size.ratio, scale);
   return {
     x: 0,
-    y: chrome.height,
-    width: even(size.width * size.ratio),
-    height: even(size.height * size.ratio),
+    y: chrome.height * scale,
+    width: even(size.width * scale),
+    height: even(size.height * scale),
+    outWidth: even(size.width * ratio),
+    outHeight: even(size.height * ratio),
   };
 }
 
-// The binary message of one JPEG frame. The frame's metadata gives the viewport in window
-// pixels, which the pixel ratio and the page zoom make larger than CSS pixels.
-export function frameMessage(jpeg, metadata, scale) {
-  const cssPixels = (value) => Math.min(0xffff, Math.max(0, Math.round((value || 0) / scale)));
-  const header = Buffer.alloc(5);
-  header[0] = JPEG_FRAME;
+// The binary message of one JPEG frame. The frame's metadata gives the viewport in DIP, which
+// the page zoom makes larger than CSS pixels. A page pinned narrower than its window (a phone's
+// view, see the window keeper) fills only the frame's left part: its frame is sent as kind 3,
+// with the page's own size after the frame's, and a view shows that part.
+export function frameMessage(jpeg, metadata, zoom, page) {
+  const cssPixels = (value) => Math.min(0xffff, Math.max(0, Math.round((value || 0) / zoom)));
+  const cropped = page && page.width < (metadata.deviceWidth || 0) - 2;
+  const header = Buffer.alloc(cropped ? 9 : 5);
+  header[0] = cropped ? JPEG_FRAME_CROPPED : JPEG_FRAME;
   header.writeUInt16BE(cssPixels(metadata.deviceWidth), 1);
   header.writeUInt16BE(cssPixels(metadata.deviceHeight), 3);
+  if (cropped) {
+    header.writeUInt16BE(cssPixels(page.width), 5);
+    header.writeUInt16BE(cssPixels(Math.min(page.height, metadata.deviceHeight || page.height)), 7);
+  }
   return Buffer.concat([header, jpeg]);
+}
+
+// How many bytes a video viewer may be behind before it waits for the next keyframe: see
+// MIN_VIDEO_BACKLOG. keyframeBytes is the largest recent keyframe of its tier, encodedKbps the
+// tier's recent output and rttMs the viewer's round trip.
+export function videoAllowance({ keyframeBytes = 0, encodedKbps = 0, rttMs = 0 }) {
+  const windowSeconds = (STATS_REPORT_MS + Math.min(rttMs, 1_000)) / 1000;
+  return Math.max(MIN_VIDEO_BACKLOG, Math.round(2 * keyframeBytes + encodedKbps * 125 * windowSeconds));
 }
 
 class Viewer {
   constructor(socket, send) {
     this.socket = socket;
     this.input = new InputSender(send);
+    // When someone last worked in the view (see drivingViewport), and the pending handover
+    // of the page's size to it (takeSizeWhenQuiet).
+    this.drivenAt = 0;
+    this.focusTimer = null;
     this.inFlight = 0;
     this.missed = false;
     this.viewport = null;
@@ -144,6 +242,26 @@ class Viewer {
     // When its last stats report arrived; stays fresh for a while after joining, so it is not
     // read as stale before the first one has had a chance to.
     this.lastStatsAt = Date.now();
+    // Video bytes sent to this viewer, and the most recent count it has itself reported
+    // receiving (a videoAck, see receive()): both running totals since its video last
+    // (re)started, so what it is sent but has not answered for is exact, not a rate estimate,
+    // and not thrown off by Node's own write buffer, which the kernel and the network both
+    // hide far more from than it. Reset whenever a fresh video starts for it, so a slow
+    // catch-up right after a tier or area change is not read as an already-stale answer.
+    this.sentBytes = 0;
+    this.receivedBytes = 0;
+    // When this reset last happened: a burst as large as the tier's own keyframe interval can
+    // be sent in the same tick a fresh video starts (the catch-up burst since the last
+    // keyframe, in startVideo below), before its viewer has had any chance to acknowledge
+    // even the first byte of it. Read as unacked that soon, it looks exactly like the stall it
+    // is meant to detect; chooseTier ignores the acknowledgement past this until one real
+    // report has had time to arrive.
+    this.videoStartedAt = 0;
+    this.lastKeyframeRequestAt = 0;
+    // When chooseTier last dropped this viewer straight to the worst tier (a real backlog,
+    // stale feedback, or a shortfall — see chooseTier's droppedAgoMs): 0 (long before any real
+    // timestamp) until the first one, so the cooldown it starts never applies before then.
+    this.lastDroppedAt = 0;
   }
 
   ready() {
@@ -168,21 +286,44 @@ class Viewer {
     if (this.missed) this.offer(latest);
   }
 
-  // Frames depend on the ones before them back to a keyframe, so a viewer that cannot keep
-  // up misses frames up to the next keyframe.
-  offerVideo(message, keyframe) {
-    if (this.socket.bufferedAmount > MAX_VIDEO_BUFFERED) this.waitingForKeyframe = true;
+  // How much this viewer has been sent but has not yet answered for (see receive()'s
+  // "stats" handling): the true measure of how far behind it is, immune to Node's own write
+  // buffer, which the kernel and the network both hide far more behind than it ever shows.
+  unackedBytes() {
+    return Math.max(0, this.sentBytes - this.receivedBytes);
+  }
+
+  // How far behind this viewer is: what it has been sent but not acknowledged, or its
+  // socket's own backlog if that is larger. Neither counts during the burst a fresh video
+  // starts with (see startVideo), before the viewer has had a chance to acknowledge it.
+  backlogBytes() {
+    if (Date.now() - this.videoStartedAt <= ACK_GRACE_MS) return 0;
+    return Math.max(this.socket.bufferedAmount, this.unackedBytes());
+  }
+
+  // Frames depend on the ones before them back to a keyframe, so a viewer more than its
+  // allowance behind (videoAllowance) misses frames up to the next keyframe.
+  offerVideo(message, keyframe, allowance) {
+    // The catch-up burst a fresh video starts with (see startVideo) can itself be as large as
+    // the tier's own keyframe interval, sent before this viewer has had any chance to
+    // acknowledge even its first byte; read that soon, it looks exactly like the stall this
+    // is meant to catch, and would cut its own burst short.
+    if (this.socket.bufferedAmount > allowance || this.backlogBytes() > allowance) this.waitingForKeyframe = true;
     if (this.waitingForKeyframe && !keyframe) return;
     this.waitingForKeyframe = false;
+    this.sentBytes += message.length;
     this.socket.send(message);
   }
 
   // The video from its initialization segment and the frames since the last keyframe.
-  startVideo(video) {
+  startVideo(video, allowance) {
     this.waitingForKeyframe = true;
+    this.sentBytes = 0;
+    this.receivedBytes = 0;
+    this.videoStartedAt = Date.now();
     this.socket.send(JSON.stringify(video.announcement));
     this.socket.send(video.init);
-    for (const { message, keyframe } of video.sinceKeyframe) this.offerVideo(message, keyframe);
+    for (const { message, keyframe } of video.sinceKeyframe) this.offerVideo(message, keyframe, allowance);
   }
 }
 
@@ -235,7 +376,19 @@ export class ScreencastStream {
     // that tier: never one per viewer. { encoder, video: { announcement, init, sinceKeyframe } }
     this.tiers = new Map();
     this.videoArea = null;
-    this.videoFailed = false;
+    // Whether the stream is in video mode: video viewers get video, not JPEG. Stays set while
+    // the encoders are stopped for a resize, so they do not get JPEG in between.
+    this.videoLive = false;
+    // Encoder failures in a row, and when the last one was: video is tried again after a
+    // growing pause (videoPossible), and at once when the page size changes.
+    this.videoFailures = 0;
+    this.videoFailedAt = 0;
+    // Resizes in progress: the window and page are changing, no encoder starts meanwhile.
+    this.resizing = 0;
+    this.modeRun = null;
+    this.modeWanted = false;
+    // The page size last told to the viewers ({type:"page"}).
+    this.pageMessage = null;
     this.zoom = 1;
     // The page size in effect.
     this.size = null;
@@ -245,13 +398,27 @@ export class ScreencastStream {
     this.activityContext = null;
     this.activityRead = null;
     this.lastInput = 0;
+    // Whether the next read of the page's last input only sets where later ones count from:
+    // the first read in a fresh activity world, which may hold input from before this stream
+    // (a router restart) that is nobody's action now.
+    this.activityBaseline = true;
+    // When viewers' input other than pointer moves was last sent to the page, and the times of
+    // the recent ones: the page's trusted input within OWN_INPUT_MS after one of them is the
+    // viewer's (see isOwnInput).
     this.ownInputAt = 0;
+    this.ownInputs = [];
     this.viewerActionAt = 0;
     this.pageNavigationAt = 0;
     this.agentActiveAt = 0;
     // Who last acted on the page, the live view's guess while the browser gateway has not
     // reported a control lock for this browser (see controlMessageFor).
     this.controlBy = "owner";
+    // Whether an agent's browser-harness session holds a tab: it marks the tab's title while
+    // attached (see listTabs), before it takes a screenshot to click from.
+    this.agentInBrowser = false;
+    // The display pixels per CSS pixel the browser draws at, as the window keeper measured it;
+    // 2 until it has (see project-browser-control.mjs).
+    this.scale = 2;
     this.resizeTimer = null;
     this.timer = null;
     this.tierTimer = null;
@@ -278,6 +445,7 @@ export class ScreencastStream {
     const viewer = new Viewer(socket, (method, params) => this.sendInput(method, params));
     this.viewers.add(viewer);
     if (this.dialog) socket.send(JSON.stringify(this.dialog));
+    if (this.pageMessage) socket.send(this.pageMessage);
     socket.send(JSON.stringify(this.controlMessage()));
     if (handovers.has(this.port)) socket.send(JSON.stringify(handoverMessageFor(this.port)));
     socket.on("message", (data, binary) => {
@@ -287,6 +455,7 @@ export class ScreencastStream {
   }
 
   remove(viewer) {
+    clearTimeout(viewer.focusTimer);
     this.viewers.delete(viewer);
     if (this.viewers.size === 0) return this.end();
     this.resize();
@@ -301,16 +470,23 @@ export class ScreencastStream {
       return;
     }
     if (message.ack) {
-      viewer.acknowledge(this.frame);
+      viewer.acknowledge(this.getsJpeg(viewer) ? this.frame : null);
       return this.acknowledgeWhenWanted();
     }
     if (message.viewport) {
-      const first = !viewer.viewport;
+      const previous = viewer.viewport;
       viewer.viewport = message.viewport;
-      // The set keeps insertion order, so its last viewer with a view is the most recent.
-      this.viewers.delete(viewer);
-      this.viewers.add(viewer);
-      if (first) this.welcome(viewer);
+      // A view that changes size takes the page's size (see drivingViewport), and so does one
+      // that joins while no other shown view drives it; one that joins beside one that does
+      // (the kiosk reconnecting while the owner works on the Mac), or only switches between
+      // video and JPEG, does not take it from the other.
+      const resized = previous && ["width", "height", "dpr", "hold"].some((key) => previous[key] !== message.viewport[key]);
+      if (resized || (!previous && !this.drivingViewport())) viewer.drivenAt = Date.now();
+      if (previous && previous.video !== message.viewport.video) {
+        viewer.tierIndex = null;
+        viewer.waitingForKeyframe = true;
+      }
+      if (!previous || previous.video !== message.viewport.video) this.welcome(viewer);
       return void this.resizeAfterReadingActivity();
     }
     if (message.followAgent !== undefined) {
@@ -327,32 +503,76 @@ export class ScreencastStream {
     if (message.stats) {
       viewer.rttMs = message.stats.rttMs;
       viewer.downlinkKbps = message.stats.downlinkKbps;
+      viewer.receivedBytes = Math.max(viewer.receivedBytes, message.stats.receivedBytes);
       viewer.lastStatsAt = Date.now();
       return this.reassignTiers();
+    }
+    if (message.requestKeyframe) return this.requestKeyframe(viewer);
+    // The view someone works in takes the page's size, whoever steers owns it — once their
+    // input has paused, so no press or drag of theirs lands on a page laid out anew under it.
+    if (message.focus) {
+      if (this.drivingViewport() === viewer.viewport) return;
+      return this.takeSizeWhenQuiet(viewer);
     }
     if (message.ping !== undefined) {
       viewer.socket.send(JSON.stringify({ type: "pong", t: message.ping }));
       return;
     }
     for (const command of message.commands) viewer.input.dispatch(command);
+    if (viewer.focusTimer) this.takeSizeWhenQuiet(viewer);
+  }
+
+  takeSizeWhenQuiet(viewer) {
+    clearTimeout(viewer.focusTimer);
+    viewer.focusTimer = setTimeout(() => {
+      viewer.focusTimer = null;
+      if (!this.viewers.has(viewer)) return;
+      viewer.drivenAt = Date.now();
+      this.resize();
+    }, FOCUS_QUIET_MS);
+  }
+
+  // A viewer whose own decoder fell far enough behind to give up on what it has queued asks
+  // for a fresh keyframe rather than wait out its tier's keyframe interval. ffmpeg cannot be
+  // told to produce one out of turn (see AreaEncoder), so its tier's encoder is restarted,
+  // which starts with one as its very first frame — at the cost of every other viewer on that
+  // tier getting a fresh keyframe too, which is why this is rate-limited per tier rather than
+  // run for every request.
+  requestKeyframe(viewer) {
+    if (viewer.tierIndex === null) return;
+    const tier = TIERS[viewer.tierIndex];
+    const entry = this.tiers.get(tier.name);
+    if (!entry) return;
+    const now = Date.now();
+    if (now - viewer.lastKeyframeRequestAt < KEYFRAME_REQUEST_MIN_MS) return;
+    viewer.lastKeyframeRequestAt = now;
+    if (now - (entry.startedAt ?? 0) < KEYFRAME_REQUEST_MIN_MS) return;
+    entry.encoder.stop();
+    this.tiers.delete(tier.name);
+    this.startTierEncoder(tier);
   }
 
   // A covered view gets no frames; a view shown again gets a fresh one right away, whether or
-  // not its tier's encoder kept running for another viewer meanwhile.
+  // not its tier's encoder kept running for another viewer meanwhile. The page takes the size
+  // of the most recent view that is shown (see drivingViewport).
   setViewerHidden(viewer, hidden) {
     const was = viewer.hidden;
     viewer.hidden = hidden;
     if (was === hidden) return;
-    if (hidden) return void this.syncTierEncoders();
-    viewer.waitingForKeyframe = true;
+    if (!hidden) viewer.waitingForKeyframe = true;
+    this.resize();
+    if (hidden) return;
     this.reassignTiers();
-    this.resumeVideo(viewer);
+    this.welcome(viewer);
   }
 
-  // A viewer's first view: it gets what the stream shows now.
+  // What a viewer that joined, was shown again or switched between video and JPEG gets: the
+  // video of its tier from the last keyframe, or the newest JPEG frame.
   welcome(viewer) {
-    if (this.videoArea && viewer.viewport.video) {
-      viewer.tierIndex = chooseTier(this.connectionOf(viewer), null);
+    if (viewer.hidden || !viewer.viewport) return;
+    if (!this.getsJpeg(viewer)) {
+      if (!this.videoArea) return;
+      if (viewer.tierIndex === null) viewer.tierIndex = chooseTier(this.connectionOf(viewer), null);
       this.syncTierEncoders();
       this.resumeVideo(viewer);
     } else {
@@ -361,16 +581,80 @@ export class ScreencastStream {
     }
   }
 
-  // A viewer's last reported round trip and downlink, its socket's current backlog, how long
-  // since its last stats report, and its tier's own recent encoder output — the last two give
-  // chooseTier a read on the connection even when Node's own backlog figure cannot.
+  // The viewers that are shown and have told their view's size.
+  shownViewers() {
+    return [...this.viewers].filter((viewer) => viewer.viewport && !viewer.hidden);
+  }
+
+  // Whether a viewer gets the JPEG screencast: one that does not play video, or every viewer
+  // while the stream has no video.
+  getsJpeg(viewer) {
+    return Boolean(viewer.viewport) && !viewer.hidden && !(viewer.viewport.video && this.videoLive);
+  }
+
+  // The view whose size the page takes: of the shown views that do not hold the page's size,
+  // the one someone most recently worked in (see receive: changed its size, was pressed or
+  // typed in, or joined alone); else the page keeps its size. Every other view shows the page
+  // scaled.
+  drivingViewport() {
+    let driver = null;
+    for (const viewer of this.viewers) {
+      if (!viewer.viewport || viewer.hidden || viewer.viewport.hold) continue;
+      if (!driver || viewer.drivenAt > driver.drivenAt) driver = viewer;
+    }
+    return driver?.viewport ?? null;
+  }
+
+  // The view the page's size is taken from: the fixed size while the gateway holds one (an
+  // agent steers), the driving view, or the page's own size — the first view's before it has
+  // one — each with the highest pixel ratio of the shown views, so every one of them gets
+  // frames as sharp as its screen.
+  sizingViewport() {
+    const shown = this.shownViewers();
+    const dpr = Math.max(1, ...shown.map((viewer) => viewer.viewport.dpr));
+    const authority = viewportAuthorities.get(this.port);
+    if (authority?.mode === "fixed") return { ...authority.size, dpr };
+    const driver = this.drivingViewport();
+    if (driver) return { ...driver, dpr };
+    if (this.size) return { width: this.size.width, height: this.size.height, dpr };
+    const first = [...this.viewers].find((viewer) => viewer.viewport)?.viewport;
+    return first ? { ...first, dpr } : null;
+  }
+
+  // How far behind a viewer may be on its tier before it waits for a keyframe.
+  allowanceOf(viewer) {
+    const entry = viewer.tierIndex === null ? null : this.tiers.get(TIERS[viewer.tierIndex].name);
+    if (!entry) return videoAllowance({});
+    return videoAllowance({ keyframeBytes: entry.keyframeBytes(), encodedKbps: entry.kbps(), rttMs: viewer.rttMs });
+  }
+
+  // A viewer's last reported round trip and downlink, how far behind its own acknowledged
+  // receipt says it is (or, failing that, Node's own backlog figure) and how far it may be,
+  // how long since its last stats report, and its tier's own recent encoder output once it can
+  // be compared (see DOWNLINK_WINDOW_MS) — the last two give chooseTier a read on the
+  // connection even when a backlog figure cannot.
   connectionOf(viewer) {
+    const entry = viewer.tierIndex === null ? null : this.tiers.get(TIERS[viewer.tierIndex].name);
+    const now = Date.now();
+    const settled =
+      entry &&
+      viewer.videoStartedAt > 0 &&
+      now - entry.startedAt >= ENCODE_WINDOW_MS &&
+      now - viewer.videoStartedAt >= DOWNLINK_WINDOW_MS;
     return {
       downlinkKbps: viewer.downlinkKbps,
       rttMs: viewer.rttMs,
-      bufferedBytes: viewer.socket.bufferedAmount,
-      feedbackAgeMs: Date.now() - viewer.lastStatsAt,
-      encodedKbps: viewer.tierIndex === null ? 0 : (this.tiers.get(TIERS[viewer.tierIndex].name)?.kbps() ?? 0),
+      // Both figures are given a grace period after a video starts (see Viewer.backlogBytes):
+      // startVideo can itself send a burst as large as the tier's own keyframe interval in one
+      // tick, on a perfectly healthy connection, before the OS has even had a chance to drain
+      // it — measured with two viewers on the same tier, a fast one's own burst briefly read as
+      // its own congestion, and a real drop's tier stays off the table for a while (see
+      // chooseTier's RETRY_COOLDOWN_MS).
+      bufferedBytes: viewer.backlogBytes(),
+      congestedBytes: this.allowanceOf(viewer),
+      feedbackAgeMs: now - viewer.lastStatsAt,
+      encodedKbps: settled ? entry.kbps() : 0,
+      droppedAgoMs: now - viewer.lastDroppedAt,
     };
   }
 
@@ -381,13 +665,17 @@ export class ScreencastStream {
   resumeVideo(viewer) {
     if (!viewer.viewport?.video || viewer.hidden || viewer.tierIndex === null) return;
     const entry = this.tiers.get(TIERS[viewer.tierIndex].name);
-    if (entry?.video) viewer.startVideo(entry.video);
+    if (entry?.video) viewer.startVideo(entry.video, this.allowanceOf(viewer));
   }
 
   sendInput(method, params) {
     if (!this.session) return Promise.resolve();
     // A pointer move raises none of the events the activity script records.
-    if (params.type !== "mouseMoved") this.ownInputAt = Date.now();
+    if (params.type !== "mouseMoved") {
+      this.ownInputAt = Date.now();
+      this.ownInputs.push(this.ownInputAt);
+      if (this.ownInputs.length > OWN_INPUTS_KEPT) this.ownInputs.shift();
+    }
     return this.connection.send(method, params, this.session).catch(() => {});
   }
 
@@ -403,6 +691,14 @@ export class ScreencastStream {
 
   controlMessage() {
     return controlMessageFor(this.port, this.controlBy);
+  }
+
+  // An agent that takes hold of a tab is noticed at once from the title it gives the tab (see
+  // handleTargetEvent), and one that lets go on the next pass over the tabs.
+  noteAgentInBrowser(present) {
+    if (present === this.agentInBrowser) return;
+    this.agentInBrowser = present;
+    this.resize();
   }
 
   // Tells a changed activity guess to every viewer; a viewer that joins gets the state in
@@ -421,9 +717,21 @@ export class ScreencastStream {
     this.resize();
   }
 
-  wantsVideo() {
-    const viewports = [...this.viewers].map((viewer) => viewer.viewport).filter(Boolean);
-    return Boolean(this.display) && !this.videoFailed && viewports.length > 0 && viewports.every((view) => view.video);
+  // Whether video may run: the stream knows the display, and no encoder failed just now. A
+  // failed encoder is tried again after VIDEO_RETRY_MS, doubling up to VIDEO_RETRY_MAX_MS, and
+  // at once for a new page size.
+  videoPossible() {
+    if (!this.display) return false;
+    if (this.videoFailures === 0) return true;
+    const pause = Math.min(VIDEO_RETRY_MAX_MS, VIDEO_RETRY_MS * 2 ** (this.videoFailures - 1));
+    return Date.now() - this.videoFailedAt >= pause;
+  }
+
+  // Whether every shown viewer plays video, which lets the page keep its pixel ratio while
+  // the agent acts (see targetSize).
+  allVideo() {
+    const shown = this.shownViewers();
+    return this.videoPossible() && shown.length > 0 && shown.every((viewer) => viewer.viewport.video);
   }
 
   // Applies the page size and stream settings for the most recent view and the agent's
@@ -436,46 +744,97 @@ export class ScreencastStream {
     const stream = quietIn > 0 ? AGENT_STREAM : VIEWER_STREAM;
     if (stream !== this.stream) {
       this.stream = stream;
-      if (this.screencasting) this.startScreencast(this.session).catch(() => {});
+      if (this.screencasting) this.restartScreencast();
     }
-    const viewport = [...this.viewers].reverse().find((viewer) => viewer.viewport)?.viewport;
-    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.wantsVideo());
+    const viewport = this.sizingViewport();
+    this.scale = windowChrome(this.port)?.scale ?? this.scale;
+    // A fixed working size (the gateway's, while an agent steers) applies at once, agent or
+    // not; any other size waits while the agent acts (see targetSize).
+    const fixed = viewportAuthorities.get(this.port)?.mode === "fixed";
+    const size =
+      viewport &&
+      (fixed
+        ? { ...pageSize(viewport, this.agentInBrowser || quietIn > 0, this.scale), ...(quietIn > 0 && !this.allVideo() && { ratio: 1 }) }
+        : targetSize(viewport, this.size, quietIn > 0, this.allVideo(), this.agentInBrowser, this.scale));
     const current = this.size;
-    if (size && !(current?.width === size.width && current.height === size.height && current.ratio === size.ratio)) {
+    const same = current && ["width", "height", "ratio", "pin1"].every((key) => current[key] === size?.[key]);
+    if (size && !same) {
       this.size = size;
-      this.videoFailed = false;
+      this.videoFailures = 0;
+      // The window changes size now. An encoder grabbing it meanwhile would send the page
+      // while it is laid out again (and, pinned at ratio 2, drawn at half size in a corner of
+      // its window), so the encoders stop first: every viewer keeps showing its last frame
+      // until the page has its new size, has drawn it, and new encoders start on it.
+      this.stopAllTiers();
+      this.resizing++;
       return void setLiveViewport(this.port, size)
         .catch(() => {})
-        .then(() => this.updateMode());
+        .finally(() => {
+          this.resizing--;
+          this.announcePage();
+          // The JPEG frames' size follows the page's size and ratio.
+          if (this.screencasting) this.restartScreencast();
+          void this.updateMode();
+        });
     }
+    this.announcePage();
     void this.updateMode();
   }
 
-  // Runs one encoder per quality tier a viewer is on when every viewer plays video, and the
-  // JPEG screencast otherwise.
-  async updateMode() {
-    if (this.ended || !this.session || !this.size) return;
+  // Tells the viewers the page's size once it has it, for them to show frames one to one.
+  announcePage() {
+    if (!this.size || this.resizing) return;
+    const authority = viewportAuthorities.get(this.port);
+    const fixed = authority?.mode === "fixed";
+    const message = JSON.stringify({
+      type: "page",
+      width: this.size.width,
+      height: this.size.height,
+      zoom: this.zoom,
+      fixed,
+      ...(fixed && authority.holder && { holder: authority.holder }),
+    });
+    if (message === this.pageMessage) return;
+    this.pageMessage = message;
+    for (const viewer of this.viewers) viewer.socket.send(message);
+  }
+
+  // Runs one encoder per quality tier a shown video viewer is on, and the JPEG screencast
+  // while a shown viewer gets JPEG. Runs once at a time, and once more when it was asked
+  // again meanwhile.
+  updateMode() {
+    this.modeWanted = true;
+    this.modeRun ??= (async () => {
+      try {
+        while (this.modeWanted) {
+          this.modeWanted = false;
+          await this.applyMode();
+        }
+      } finally {
+        this.modeRun = null;
+      }
+    })();
+    return this.modeRun;
+  }
+
+  async applyMode() {
+    if (this.ended || !this.session || !this.size || this.resizing) return;
     const chrome = windowChrome(this.port);
-    const area = this.wantsVideo() && chrome && captureArea(this.size, chrome);
-    if (!area) {
-      this.stopAllTiers();
-      if (!this.screencasting) await this.startScreencast(this.session).catch(() => {});
-      return;
-    }
-    if (sameArea(this.videoArea, area)) {
+    const wanted = this.videoPossible() && this.shownViewers().some((viewer) => viewer.viewport.video);
+    const area = wanted && chrome ? captureArea(this.size, chrome) : null;
+    this.videoLive = Boolean(area);
+    if (!area) this.stopAllTiers();
+    else {
+      if (!sameArea(this.videoArea, area)) {
+        this.stopAllTiers();
+        this.videoArea = area;
+      }
       this.assignMissingTiers();
       this.syncTierEncoders();
-      return;
     }
-    this.stopAllTiers();
-    if (this.screencasting) {
-      this.screencasting = false;
-      this.pendingAck = null;
-      await this.connection.send("Page.stopScreencast", {}, this.session).catch(() => {});
-    }
-    this.videoArea = area;
-    this.assignMissingTiers();
-    this.syncTierEncoders();
+    const jpeg = this.shownViewers().some((viewer) => this.getsJpeg(viewer));
+    if (jpeg && !this.screencasting) await this.startScreencast(this.session).catch(() => {});
+    else if (!jpeg && this.screencasting) await this.stopScreencast();
   }
 
   // Gives a video viewer without a tier yet — a fresh join, or one that was waiting out an
@@ -492,11 +851,28 @@ export class ScreencastStream {
   // schedule and whenever a fresh one arrives, and starts or stops encoders to match.
   reassignTiers() {
     if (!this.videoArea) return;
+    const moved = [];
     for (const viewer of this.viewers) {
       if (!viewer.viewport?.video || viewer.hidden) continue;
-      viewer.tierIndex = chooseTier(this.connectionOf(viewer), viewer.tierIndex);
+      const before = viewer.tierIndex;
+      viewer.tierIndex = chooseTier(this.connectionOf(viewer), before);
+      // A straight drop to the worst tier is chooseTier's hard-drop path (a real backlog,
+      // stale feedback, or a shortfall), never the ordinary one-step kind: recorded here, not
+      // inside chooseTier, so it stays a pure function of one measurement and an index.
+      if (viewer.tierIndex === TIERS.length - 1 && before !== TIERS.length - 1) {
+        viewer.lastDroppedAt = Date.now();
+      }
+      if (viewer.tierIndex !== before) moved.push(viewer);
     }
     this.syncTierEncoders();
+    // A viewer that moved to a tier whose encoder already runs for another viewer gets that
+    // tier's video from its last keyframe now; a tier's new encoder sends it once it starts.
+    // Without this, a second viewer that moved onto the first one's tier got frames of a video
+    // it had no initialization segment for, and its view stood still.
+    for (const viewer of moved) {
+      viewer.waitingForKeyframe = true;
+      this.resumeVideo(viewer);
+    }
   }
 
   // Starts the encoder of every tier a shown video viewer is now on, and stops one that has
@@ -527,15 +903,19 @@ export class ScreencastStream {
     // bytesWindow tracks what this tier's own encoder has produced over the last
     // ENCODE_WINDOW_MS, so chooseTier can tell a slow connection from a quiet page: the
     // former's viewers report a downlink well under what the encoder is actually producing.
-    const entry = { encoder, video: null, bytesWindow: [] };
+    // keyframes holds the sizes of its last few keyframes, for its viewers' allowance.
+    const entry = { encoder, video: null, bytesWindow: [], windowBytes: 0, keyframes: [], startedAt: Date.now() };
     entry.kbps = () => {
       const cutoff = Date.now() - ENCODE_WINDOW_MS;
-      while (entry.bytesWindow.length && entry.bytesWindow[0].at < cutoff) entry.bytesWindow.shift();
+      while (entry.bytesWindow.length && entry.bytesWindow[0].at < cutoff) {
+        entry.windowBytes -= entry.bytesWindow.shift().bytes;
+      }
       if (entry.bytesWindow.length < 2) return 0;
-      const bytes = entry.bytesWindow.reduce((sum, sample) => sum + sample.bytes, 0);
-      const seconds = (Date.now() - entry.bytesWindow[0].at) / 1000;
-      return seconds > 0 ? Math.round((bytes * 8) / 1000 / seconds) : 0;
+      const spanMs = Date.now() - entry.bytesWindow[0].at;
+      if (spanMs < MIN_KBPS_WINDOW_MS) return 0;
+      return Math.round((entry.windowBytes * 8) / 1000 / (spanMs / 1000));
     };
+    entry.keyframeBytes = () => Math.max(0, ...entry.keyframes);
     this.tiers.set(tier.name, entry);
     const size = this.size;
     const onTier = (viewer) => viewer.viewport?.video && !viewer.hidden && TIERS[viewer.tierIndex ?? -1]?.name === tier.name;
@@ -544,35 +924,44 @@ export class ScreencastStream {
         announcement: {
           type: "video",
           codec,
+          tier: tier.name,
           width: Math.round(size.width / this.zoom),
           height: Math.round(size.height / this.zoom),
+          pageWidth: size.width,
+          pageHeight: size.height,
         },
         init: Buffer.concat([Buffer.from([VIDEO_INIT]), init]),
         sinceKeyframe: [],
       };
-      for (const viewer of this.viewers) if (onTier(viewer)) viewer.startVideo(entry.video);
+      for (const viewer of this.viewers) if (onTier(viewer)) viewer.startVideo(entry.video, this.allowanceOf(viewer));
     });
     encoder.on("fragment", (fragment, keyframe) => {
       if (!entry.video) return;
       const message = Buffer.concat([Buffer.from([VIDEO_FRAGMENT, keyframe ? 1 : 0]), fragment]);
       entry.bytesWindow.push({ at: Date.now(), bytes: message.length });
-      if (keyframe) entry.video.sinceKeyframe = [];
+      entry.windowBytes += message.length;
+      if (keyframe) {
+        entry.video.sinceKeyframe = [];
+        entry.keyframes.push(message.length);
+        if (entry.keyframes.length > KEYFRAMES_KEPT) entry.keyframes.shift();
+      }
       entry.video.sinceKeyframe.push({ message, keyframe });
-      for (const viewer of this.viewers) if (onTier(viewer)) viewer.offerVideo(message, keyframe);
+      if (this.videoFailures && Date.now() - entry.startedAt > VIDEO_HEALTHY_MS) this.videoFailures = 0;
+      for (const viewer of this.viewers) if (onTier(viewer)) viewer.offerVideo(message, keyframe, this.allowanceOf(viewer));
     });
-    encoder.on("exit", (code) => {
-      if (code === null || this.tiers.get(tier.name)?.encoder !== encoder) return;
-      // The JPEG screencast shows the page until the page size changes again.
-      this.videoFailed = true;
-      this.stopAllTiers();
-      void this.updateMode();
-    });
-    encoder.start().catch(() => {
+    const failed = () => {
       if (this.tiers.get(tier.name)?.encoder !== encoder) return;
-      this.videoFailed = true;
+      // The JPEG screencast shows the page meanwhile; video is tried again after a pause
+      // (videoPossible), or at once when the page size changes.
+      this.videoFailures++;
+      this.videoFailedAt = Date.now();
       this.stopAllTiers();
       void this.updateMode();
+    };
+    encoder.on("exit", (code) => {
+      if (code !== null) failed();
     });
+    encoder.start().catch(failed);
   }
 
   stopAllTiers() {
@@ -581,11 +970,44 @@ export class ScreencastStream {
     this.videoArea = null;
   }
 
+  async stopScreencast() {
+    this.screencasting = false;
+    this.pendingAck = null;
+    this.frame = null;
+    this.screencastFrame = null;
+    if (this.session) await this.connection.send("Page.stopScreencast", {}, this.session).catch(() => {});
+  }
+
+  // Chromium keeps a running screencast's settings when it is started again: new ones take a
+  // stop first (measured on the bench: frames kept the old size after a resize). The frame
+  // being acknowledged belongs to the stopped one.
+  restartScreencast() {
+    const session = this.session;
+    if (!session) return;
+    this.pendingAck = null;
+    this.connection
+      .send("Page.stopScreencast", {}, session)
+      .catch(() => {})
+      .then(() => (this.session === session && this.screencasting ? this.startScreencast(session) : undefined))
+      .catch(() => {});
+  }
+
   startScreencast(session) {
     this.screencasting = true;
     return this.connection.send(
       "Page.startScreencast",
-      { format: "jpeg", quality: this.stream.quality, maxWidth: MAX_FRAME_SIDE, maxHeight: MAX_FRAME_SIDE },
+      {
+        format: "jpeg",
+        quality: this.stream.quality,
+        // Frames at the page's ratio for the viewers: a browser drawing at factor 2 sends
+        // ratio 1 frames scaled down. The frame is the window's width, which is wider than a
+        // page pinned narrower than a window can be (frameMessage).
+        maxWidth: Math.min(
+          MAX_FRAME_SIDE,
+          Math.round(Math.max(this.size?.width ?? MAX_FRAME_SIDE, MIN_WINDOW_WIDTH) * (this.size?.ratio ?? 1)),
+        ),
+        maxHeight: Math.min(MAX_FRAME_SIDE, Math.round((this.size?.height ?? MAX_FRAME_SIDE) * (this.size?.ratio ?? 1))),
+      },
       session,
     );
   }
@@ -603,6 +1025,7 @@ export class ScreencastStream {
     this.following = true;
     try {
       const tabs = await listTabs(this.port);
+      this.noteAgentInBrowser(tabs.some((tab) => tab.agent));
       const agentTab = this.followAgent ? tabs.find((tab) => tab.agent) : null;
       const shown = agentTab ?? tabs.find((tab) => tab.active);
       if (agentTab && !agentTab.active) await activateTab(this.port, agentTab.id);
@@ -610,6 +1033,11 @@ export class ScreencastStream {
       else if (this.session) {
         await this.readZoom(this.session);
         await this.readActivity(this.session);
+        // Picks up what changed without a resize: a video retry that is due, the window
+        // keeper's first measurement of the toolbar after a restart, or of the factor the
+        // browser draws at.
+        if ((windowChrome(this.port)?.scale ?? this.scale) !== this.scale) this.resize();
+        else void this.updateMode();
       }
     } catch {
       // The next pass tries again.
@@ -651,6 +1079,7 @@ export class ScreencastStream {
     const zoom = metrics.cssVisualViewport?.zoom || 1;
     if (zoom === this.zoom) return;
     this.zoom = zoom;
+    this.announcePage();
     if (this.screencastFrame && session === this.session) this.showFrame(this.screencastFrame);
     if (this.tiers.size === 0) return;
     const size = this.size;
@@ -687,6 +1116,7 @@ export class ScreencastStream {
       });
       await send("Runtime.evaluate", { expression: ACTIVITY_SCRIPT, contextId: world.executionContextId });
       this.activityContext = world.executionContextId;
+      this.activityBaseline = true;
     }
     let lastInput;
     try {
@@ -700,10 +1130,21 @@ export class ScreencastStream {
       this.activityContext = null;
       throw error;
     }
+    if (this.activityBaseline) {
+      this.activityBaseline = false;
+      this.lastInput = Math.max(this.lastInput, lastInput || 0);
+      return;
+    }
     if (!(lastInput > this.lastInput)) return;
     this.lastInput = lastInput;
-    const sinceOwnInput = lastInput - this.ownInputAt;
-    if (sinceOwnInput < 0 || sinceOwnInput > OWN_INPUT_MS) this.noteAgentActivity();
+    if (!this.isOwnInput(lastInput)) this.noteAgentActivity();
+  }
+
+  // Whether the page's trusted input at a time came from a viewer: within OWN_INPUT_MS after
+  // input a viewer sent. Only the latest time would not do: a click's release is sent after
+  // the page recorded its press, and every viewer's click read as the agent's.
+  isOwnInput(time) {
+    return this.ownInputs.some((sent) => time - sent >= -OWN_INPUT_SLACK_MS && time - sent <= OWN_INPUT_MS);
   }
 
   // The navigation replaces the world readActivity reads, so the press that started it is
@@ -769,6 +1210,9 @@ export class ScreencastStream {
       this.setDialog(null);
       void this.follow();
     }
+    if (method === "Target.targetInfoChanged" && params.targetInfo?.type === "page" && isAgentTitle(params.targetInfo.title)) {
+      this.noteAgentInBrowser(true);
+    }
     if (method === "Target.targetInfoChanged" && params.targetInfo?.targetId === this.targetId) {
       this.broadcast({ type: "tab" });
     }
@@ -776,8 +1220,8 @@ export class ScreencastStream {
 
   showFrame(screencastFrame) {
     this.screencastFrame = screencastFrame;
-    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, (this.size?.ratio ?? 1) * this.zoom);
-    for (const viewer of this.viewers) viewer.offer(this.frame);
+    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, this.zoom, this.size);
+    for (const viewer of this.viewers) if (this.getsJpeg(viewer)) viewer.offer(this.frame);
   }
 
   receiveFrame({ data, metadata, sessionId: frameId }, session) {
@@ -791,7 +1235,7 @@ export class ScreencastStream {
   // that every viewer would miss.
   acknowledgeWhenWanted() {
     const pending = this.pendingAck;
-    if (!pending || ![...this.viewers].some((viewer) => viewer.ready())) return;
+    if (!pending || ![...this.viewers].some((viewer) => this.getsJpeg(viewer) && viewer.ready())) return;
     this.pendingAck = null;
     const delay = Math.max(0, this.nextAck - Date.now());
     this.nextAck = Date.now() + delay + this.stream.frameIntervalMs;
@@ -819,7 +1263,10 @@ export class ScreencastStream {
     for (const viewer of this.viewers) viewer.socket.close(1011, "Browser unavailable");
     this.connection?.close();
     if (!this.size) return;
-    const size = desktopViewers.get(this.port) ? null : { ...this.size, ratio: 1 };
+    // Nobody watches to see an agent come: a page too small for its screenshots at ratio 2 is
+    // drawn at ratio 1 from now on.
+    const pin1 = this.scale >= 2 && Math.max(this.size.width, this.size.height) < SHARP_MIN_EDGE;
+    const size = desktopViewers.get(this.port) ? null : { ...this.size, ratio: 1, pin1 };
     setLiveViewport(this.port, size).catch(() => {});
   }
 }
@@ -827,6 +1274,40 @@ export class ScreencastStream {
 const streams = new Map();
 // Open desktop (VNC) connections, by DevTools port.
 const desktopViewers = new Map();
+// Who decides a browser's page size, by DevTools port: absent for "follow" (the driving view,
+// see drivingViewport), or { mode: "fixed", size, holder } while a controller holds a working
+// size — the browser gateway for an agent that steers, or any other.
+const viewportAuthorities = new Map();
+export const FIXED_VIEWPORT = { width: 1440, height: 900 };
+
+// Hands a browser's page size to the viewers ("follow") or holds it at a size ("fixed":
+// FIXED_VIEWPORT unless the controller gives one), so an agent's layout, snapshots and
+// references do not change when a person resizes a panel; the views then show the page scaled.
+// Any controller may hold it — the browser gateway while an agent steers, or another; holder
+// names it for the viewers (at most 64 characters). Applies at once, whether or not anyone
+// watches.
+export function setViewportAuthority(port, mode, size, holder) {
+  if (mode !== "follow" && mode !== "fixed") throw new Error("Unknown viewport mode");
+  if (holder !== undefined && (typeof holder !== "string" || holder.length > 64)) throw new Error("Invalid holder");
+  if (mode === "follow") viewportAuthorities.delete(port);
+  else {
+    const valid = (value, max) => Number.isInteger(value) && value >= 250 && value <= max;
+    const fixed = size ?? FIXED_VIEWPORT;
+    if (!valid(fixed.width, 8192) || !valid(fixed.height, 8192)) throw new Error("Invalid viewport size");
+    viewportAuthorities.set(port, { mode, size: { width: fixed.width, height: fixed.height }, holder: holder || null });
+  }
+  const stream = streams.get(port);
+  if (stream) return stream.resize();
+  if (mode === "fixed") {
+    const { width, height } = viewportAuthorities.get(port).size;
+    setLiveViewport(port, { width, height, ratio: 1, pin1: false }).catch(() => {});
+  }
+}
+
+export function viewportAuthority(port) {
+  const authority = viewportAuthorities.get(port);
+  return authority ? { mode: authority.mode, ...authority.size, holder: authority.holder } : { mode: "follow" };
+}
 
 // Adds a WebSocket as a viewer of the browser on the given DevTools port, whose display the
 // video grabs. The first viewer starts the stream and the last one to leave ends it.

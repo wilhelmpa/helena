@@ -126,8 +126,11 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
     throw new UrlNotAllowedError('url must be a valid URL');
   }
 
-  const devRelaxed =
-    !policy.publicOnly && process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
+  // Private, loopback and plain-http targets are allowed only when the operator opts in
+  // with SSRF_ALLOW_PRIVATE=1 (local development). It used to follow NODE_ENV, and a
+  // server that ran with NODE_ENV=development for its LAN cookies lost the guard, so any
+  // agent could make the API fetch 127.0.0.1. SSRF_ALLOWED_HOSTS admits single hosts.
+  const devRelaxed = !policy.publicOnly && process.env.SSRF_ALLOW_PRIVATE === '1';
   if (
     url.protocol !== 'https:' &&
     !((devRelaxed || policy.publicOnly) && url.protocol === 'http:')

@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { APP_BYLINE, APP_NAME } from '@/utils/app';
+import { APP_NAME } from '@/utils/app';
 import HelenaMark, { MARK_SPARK } from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
 
@@ -25,10 +25,7 @@ export default function BrandPanel({ subtitle }: { subtitle?: string }) {
         <path d={MARK_SPARK} fill="currentColor" />
       </svg>
       <HelenaMark className="relative size-20 drop-shadow-[0_10px_24px_rgb(40_30_15/0.18)]" />
-      <div className="relative flex flex-col items-center gap-2">
-        <HelenaWordmark label={APP_NAME} className="h-7 w-auto text-foreground" />
-        <span className="text-xs tracking-wide text-muted-foreground">{APP_BYLINE}</span>
-      </div>
+      <HelenaWordmark label={APP_NAME} className="relative h-7 w-auto text-foreground" />
       <p className="relative max-w-[18rem] text-center text-xs text-balance text-muted-foreground">
         {subtitle ?? t('brandSubtitle')}
       </p>

@@ -24,24 +24,34 @@ describe("browser gateway glue", () => {
   it("gives an agent in control the project's fixed working size, everyone else the panel", () => {
     const calls = [];
     const set = (...args) => calls.push(args);
-    viewportAuthority("vol", { kind: "agent", agentId: 1, agentName: "Coder" }, { width: 1280, height: 800 }, set);
-    viewportAuthority("vol", { kind: "agent", agentId: 1, agentName: "Coder" }, undefined, set);
-    viewportAuthority("vol", { kind: "owner" }, { width: 1280, height: 800 }, set);
-    viewportAuthority("vol", null, undefined, set);
+    viewportAuthority(9301, { kind: "agent", agentId: 1, agentName: "Coder" }, { width: 1280, height: 800 }, set);
+    viewportAuthority(9301, { kind: "agent", agentId: 1, agentName: "Coder" }, undefined, set);
+    viewportAuthority(9301, { kind: "owner" }, { width: 1280, height: 800 }, set);
+    viewportAuthority(9301, null, undefined, set);
+    viewportAuthority(undefined, null, undefined, set);
     assert.deepEqual(calls, [
-      ["vol", "fixed", { width: 1280, height: 800 }],
-      ["vol", "fixed", { width: 1440, height: 900 }],
-      ["vol", "follow"],
-      ["vol", "follow"],
+      [9301, "fixed", { width: 1280, height: 800 }, "Coder"],
+      [9301, "fixed", { width: 1440, height: 900 }, "Coder"],
+      [9301, "follow"],
+      [9301, "follow"],
     ]);
   });
 
-  it("is a no-op without the live view's controller, and never throws from it", () => {
-    viewportAuthority("vol", null, undefined, undefined);
-    viewportAuthority("vol", null, undefined, () => {
+  it("never throws from the live view's controller", () => {
+    viewportAuthority(9301, null, undefined, () => {
       throw new Error("boom");
     });
-    viewportAuthority("vol", null, undefined, () => Promise.reject(new Error("later")));
+    viewportAuthority(9301, { kind: "agent", agentId: 1, agentName: "x".repeat(99) }, { width: 1, height: 1 }, () => {
+      throw new Error("Invalid viewport size");
+    });
+  });
+
+  it("drives the live view's real viewport authority for the browser's port", async () => {
+    const { viewportAuthority: current } = await import("./project-browser-screencast.mjs");
+    viewportAuthority(9302, { kind: "agent", agentId: 2, agentName: "Writer" }, { width: 1280, height: 800 });
+    assert.deepEqual(current(9302), { mode: "fixed", width: 1280, height: 800, holder: "Writer" });
+    viewportAuthority(9302, { kind: "owner" }, undefined);
+    assert.deepEqual(current(9302), { mode: "follow" });
   });
 
   it("connects a project browser once for concurrent callers and again once it went away", async () => {

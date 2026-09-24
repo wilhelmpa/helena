@@ -9,7 +9,13 @@ import {
   readJsonBody,
   startWindowKeeper,
 } from "./project-browser-control.mjs";
-import { joinScreencast, noteViewerAction, watchDesktop } from "./project-browser-screencast.mjs";
+import {
+  joinScreencast,
+  noteViewerAction,
+  setViewportAuthority,
+  viewportAuthority,
+  watchDesktop,
+} from "./project-browser-screencast.mjs";
 import { browserOverview, browserThumbnail } from "./project-browser-overview.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
@@ -106,11 +112,23 @@ export function setGatewayLocks(locks) {
   gatewayLocks = locks;
 }
 
+// Who decides a project browser's page size, for any controller that holds a working size
+// (the browser gateway while an agent steers): { mode: "follow" } or { mode: "fixed", width,
+// height, holder } (see setViewportAuthority in project-browser-screencast.mjs). size and
+// holder are optional.
+export async function setProjectViewportAuthority(root, slug, mode, size, holder) {
+  const target = await resolveProjectBrowser(root, `/projects/${slug}/`);
+  setViewportAuthority(target.cdpPort, mode, size, holder);
+  return viewportAuthority(target.cdpPort);
+}
+
 // The toolbar's routes: GET api/tabs lists the tabs, GET api/thumbnail is a small picture of
-// the tab in front (Home's overview), POST api/<action> acts on one. Only a JSON body is
-// accepted, which a form on another site cannot send. lock-takeover/lock-release are the two
-// the browser gateway adds (design §5); every other action is controlBrowser's own CDP
-// toolbar action.
+// the tab in front (Home's overview), POST api/<action> acts on one; GET and POST
+// api/viewport read and set who decides the page's size ({"mode":"fixed","width":1440,
+// "height":900,"holder":"Coder VOL"} or {"mode":"follow"}). Only a JSON body is accepted,
+// which a form on another site cannot send. lock-takeover/lock-release are the two the
+// browser gateway adds (design §5); every other action is controlBrowser's own CDP toolbar
+// action.
 async function handleControl(request, response, target) {
   try {
     if (target.api === "tabs" && request.method === "GET") {
@@ -125,6 +143,18 @@ async function handleControl(request, response, target) {
         "x-content-type-options": "nosniff",
       });
       return response.end(jpeg);
+    }
+    if (target.api === "viewport") {
+      if (request.method === "POST") {
+        const body = await readJsonBody(request);
+        const size = body.width === undefined ? undefined : { width: body.width, height: body.height };
+        try {
+          setViewportAuthority(target.cdpPort, body.mode, size, body.holder);
+        } catch (error) {
+          throw new BrowserControlError(400, error.message);
+        }
+      } else if (request.method !== "GET") throw new BrowserControlError(405, "Method not allowed");
+      return sendJson(response, 200, viewportAuthority(target.cdpPort));
     }
     if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
     const body = await readJsonBody(request);

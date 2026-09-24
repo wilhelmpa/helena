@@ -1,892 +1,116 @@
 #!/usr/bin/env bun
 /**
- * setup-agent-pool.ts — configuration as code for Helena's agent pool.
+ * setup-agent-pool.ts — brings Helena's agent pool into a team, and reads it back out.
  *
- * Sets up, through Helena's own HTTP API (never the database directly): the curated
- * skills of docs/volition-agent-pool-research.md Section A, the 10 agent templates of
- * Section B plus an 11th (Markt-Analyst, added after Section A/B were written — see
- * its own comment below), the project copies that close the gaps of Section C, the
- * "Familie & Privat" department, the Shopify Dev MCP server (read-only, no mutations)
- * on coder-verve, and goals for volition-hub-plan.md's roadmap phases.
+ * The pool is a Helena template bundle: bundles/agent-pool (agents/*.md, skills/,
+ * .mcp.json, helena.bundle.json; format in scripts/helena-bundle.ts, decision in
+ * docs/helena-decisions/template-bundles.md). Import and export go through Helena's own
+ * HTTP API (scripts/helena-bundle-sync.ts), never the database. The steps that only fit
+ * this installation live in setup-agent-pool.ops.ts.
  *
- * Idempotent: every step reads the current state first and only writes what is
- * missing or different. Running it twice in a row produces "already …" on the second
- * run, nothing more. `--dry-run` performs no write at all — it only prints what it
- * would do.
+ *   bun deployment/volition-stack/scripts/setup-agent-pool.ts [options]
  *
- * Auth: a *personal* API key (Settings → your account → API keys in Helena), passed as
- * HELENA_API_KEY. This is the mechanism better-auth's apiKey plugin already exposes
- * (enableSessionForAPIKeys): the key resolves to the owner's own session, so every
- * call runs with the owner's permissions — no separate service-account concept is
- * needed and none is invented here. The key is read once, sent as the x-api-key
- * header, and never printed.
+ *   --bundle=<dir|file.json>   the bundle to import (default: bundles/agent-pool)
+ *   --sections=a,b             bundle (default), report (default), and on request:
+ *                              agents  approved skill/MCP additions to running agents
+ *                              copies  project copies of templates
+ *                              org     coordinator skills and the family department
+ *                              goals   roadmap goals
+ *   --dry-run                  write nothing, print what would happen
+ *   --update                   write the bundle over templates/skills that differ
+ *   --check                    validate the bundle only (no API, no key)
+ *   --pack=<file.json>         write the bundle as one JSON document (no API, no key)
+ *   --export=<dir|file.json>   read the team's templates into a bundle; --agents=a,b
+ *                              limits it (the pool bundle fills in what the team
+ *                              does not store: descriptions, licenses)
+ *   --base-url=<url>           default http://localhost:3000
+ *   --team-id=<id>             default: the caller's first team
  *
- * Usage:
- *   HELENA_API_KEY=itp_... bun deployment/volition-stack/scripts/setup-agent-pool.ts [--dry-run] [--base-url=http://localhost:3000] [--team-key=PRIV]
+ * The API needs a personal API key (Helena → Konto → API-Schlüssel) in HELENA_API_KEY;
+ * it is sent as the x-api-key header and never printed. Without a key, run the browser
+ * build from a signed-in Helena tab instead (setup-agent-pool.browser.ts):
  *
- * The script works on the first team the caller belongs to unless --team-key selects
- * a project whose team to use instead (handy when an account has more than one team,
- * not the case on the live single-team instance today).
+ *   bun build deployment/volition-stack/scripts/setup-agent-pool.browser.ts \
+ *     --target=browser --format=iife --outfile=<file>
+ *   then, in the tab:  await helenaAgentPool.run({ bundle, dryRun: true })
+ *   where `bundle` is the --pack output.
+ *
+ * Every agent Helena creates gets its own API key in the answer; it is dropped unread (a
+ * template never runs, so its key reaches no project).
  */
 
-const args = process.argv.slice(2);
-const DRY_RUN = args.includes('--dry-run');
-const baseUrlArg = args.find((a) => a.startsWith('--base-url='));
-const BASE_URL = (baseUrlArg ? baseUrlArg.slice('--base-url='.length) : 'http://localhost:3000').replace(
-  /\/+$/,
-  '',
-);
-const teamKeyArg = args.find((a) => a.startsWith('--team-key='));
-const TEAM_PROJECT_KEY = teamKeyArg ? teamKeyArg.slice('--team-key='.length) : null;
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { validateBundle, type TemplateBundle } from '../../../scripts/helena-bundle.ts';
+import { readBundle, writeBundleDir } from '../../../scripts/helena-bundle-files.ts';
+import { exportBundle, keyTransport, SyncLog, resolveTeam } from '../../../scripts/helena-bundle-sync.ts';
+import { runAgentPool, type Section } from './setup-agent-pool.ops.ts';
 
-const API_KEY = process.env.HELENA_API_KEY;
-if (!API_KEY) {
-  console.error(
-    'HELENA_API_KEY is not set. Create a personal API key in Helena (Settings → your ' +
-      'account → API keys) and pass it as HELENA_API_KEY. Refusing to run without it.',
-  );
-  process.exit(1);
+const DEFAULT_BUNDLE = join(import.meta.dir, '..', '..', '..', 'bundles', 'agent-pool');
+
+function checked(bundle: TemplateBundle): TemplateBundle {
+  const problems = validateBundle(bundle);
+  if (problems.length > 0) throw new Error(`Invalid bundle:\n- ${problems.join('\n- ')}`);
+  return bundle;
 }
-
-// ---------------------------------------------------------------------------
-// Small HTTP client and console reporting
-// ---------------------------------------------------------------------------
-
-let created = 0;
-let skipped = 0;
-
-function log(line: string): void {
-  console.log(line);
-}
-
-function plan(line: string): void {
-  console.log(`${DRY_RUN ? '[DRY-RUN] would' : '[DOING]'} ${line}`);
-}
-
-function already(line: string): void {
-  skipped += 1;
-  console.log(`[OK] already ${line}`);
-}
-
-async function api<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-  path: string,
-  body?: unknown,
-): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: {
-      'x-api-key': API_KEY!,
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`${method} ${path} -> ${res.status}: ${text.slice(0, 500)}`);
-  }
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
-}
-
-// A write the caller only performs when not in --dry-run. Always returns the id it
-// would act on (or did act on), so the rest of the script can keep going in dry-run
-// mode as if the write had happened — every "ensure" below reads that id back from a
-// GET afterwards only when it is not in dry-run, and otherwise assumes -1 (unused,
-// since nothing downstream needs the real id of a thing dry-run only pretended to
-// create).
-async function write<T>(description: string, fn: () => Promise<T>): Promise<T | null> {
-  plan(description);
-  if (DRY_RUN) return null;
-  const result = await fn();
-  created += 1;
-  return result;
-}
-
-// ---------------------------------------------------------------------------
-// Team and project discovery
-// ---------------------------------------------------------------------------
-
-interface ProjectSummary {
-  id: number;
-  key: string;
-  name: string;
-  teamId: number;
-}
-
-async function resolveTeamAndProjects(): Promise<{ teamId: number; projects: ProjectSummary[] }> {
-  const projects = await api<ProjectSummary[]>('GET', '/projects');
-  if (projects.length === 0) {
-    throw new Error(
-      'No projects visible to this API key. Create PRIV/FAM/VOL/VERVE first, or check the key.',
-    );
-  }
-  const teamId = TEAM_PROJECT_KEY
-    ? projects.find((p) => p.key === TEAM_PROJECT_KEY)?.teamId
-    : projects[0]!.teamId;
-  if (teamId == null) throw new Error(`--team-key=${TEAM_PROJECT_KEY} matches no project`);
-  return { teamId, projects: projects.filter((p) => p.teamId === teamId) };
-}
-
-function projectId(projects: ProjectSummary[], key: string): number {
-  const project = projects.find((p) => p.key === key);
-  if (!project) throw new Error(`Project ${key} not found in this team — create it first`);
-  return project.id;
-}
-
-// ---------------------------------------------------------------------------
-// Section A: curated skills
-// ---------------------------------------------------------------------------
-
-// One row per skill this script wants present. `key` is a short handle used only in
-// this script's own template tables below; `name`/`sourceUrl` are what Helena's skill
-// library actually stores (matched by sourceUrl, since GitHub source is unambiguous
-// and survives a SKILL.md rename). Every entry here has a clear license and needs no
-// script to be useful, matching the research doc's Section A recommendations and the
-// "Ja" verdicts: the existing 15 obra/superpowers skills (already live, listed so the
-// template tables below can reference them) plus 7 new ones. Only skill folders, never
-// whole-repo installs — Helena's importer only reads SKILL.md and the markdown it
-// references; scripts a folder ships are skipped automatically.
-interface SkillSeed {
-  key: string;
-  sourceUrl: string;
-  license: string;
-}
-
-const SUPERPOWERS_COMMIT = '5bf4e78011075bcfc0dc295f0724994cd123ee71';
-const superpowers = (skill: string): string =>
-  `https://github.com/obra/superpowers/tree/${SUPERPOWERS_COMMIT}/skills/${skill}`;
-
-const EXISTING_SKILLS: SkillSeed[] = [
-  'brainstorming',
-  'diagnosing-superpowers',
-  'dispatching-parallel-agents',
-  'finishing-a-development-branch',
-  'receiving-code-review',
-  'requesting-code-review',
-  'systematic-debugging',
-  'using-superpowers',
-  'writing-skills',
-  'executing-plans',
-  'test-driven-development',
-  'using-git-worktrees',
-  'verification-before-completion',
-  'writing-plans',
-  'subagent-driven-development',
-].map((skill) => ({ key: skill, sourceUrl: superpowers(skill), license: 'MIT' }));
-
-// Pinned to the commit read while researching this (34040c9, 23.09.2026): both folders
-// carry their own LICENSE.txt (Apache-2.0), confirmed by fetching it directly — the
-// repo's docx/pdf/pptx/xlsx skills are proprietary/source-available and are
-// deliberately left out.
-const ANTHROPIC_SKILLS_COMMIT = '34040c9c568585f6929bedeaad110ad08f079624';
-const NEW_SKILLS: SkillSeed[] = [
-  {
-    key: 'skill-creator',
-    sourceUrl: `https://github.com/anthropics/skills/tree/${ANTHROPIC_SKILLS_COMMIT}/skills/skill-creator`,
-    license: 'Apache-2.0',
-  },
-  {
-    key: 'webapp-testing',
-    sourceUrl: `https://github.com/anthropics/skills/tree/${ANTHROPIC_SKILLS_COMMIT}/skills/webapp-testing`,
-    license: 'Apache-2.0',
-  },
-  // petrkindlmann/qa-skills, MIT (confirmed via GitHub license API). Not pinned to a
-  // commit — the owner can pin it once GitHub's rate limit allows resolving a SHA;
-  // functionally identical, since Helena's importer follows the ref in the URL as-is.
-  {
-    key: 'playwright-automation',
-    sourceUrl: 'https://github.com/petrkindlmann/qa-skills/tree/main/skills/playwright-automation',
-    license: 'MIT',
-  },
-  {
-    key: 'test-strategy',
-    sourceUrl: 'https://github.com/petrkindlmann/qa-skills/tree/main/skills/test-strategy',
-    license: 'MIT',
-  },
-  // AgriciDaniel/claude-seo, MIT. Core package only — the crawling extensions
-  // (seo-dataforseo, seo-backlinks, …) are left out on purpose (Section A: "Ja als
-  // Kernpaket ohne Crawling-Extensions").
-  {
-    key: 'seo-technical',
-    sourceUrl: 'https://github.com/AgriciDaniel/claude-seo/tree/main/skills/seo-technical',
-    license: 'MIT',
-  },
-  {
-    key: 'seo-content',
-    sourceUrl: 'https://github.com/AgriciDaniel/claude-seo/tree/main/skills/seo-content',
-    license: 'MIT',
-  },
-  // nimrodfisher/data-analytics-skills, MIT — the "Datenanalyse" gap the research
-  // doc's Section A did not yet cover; verified during this task's own research.
-  {
-    key: 'ab-test-analysis',
-    sourceUrl:
-      'https://github.com/nimrodfisher/data-analytics-skills/tree/main/03-data-analysis-investigation/ab-test-analysis',
-    license: 'MIT',
-  },
-  // agiprolabs/claude-trading-skills, MIT, pinned to 981e1d7 (23.09.2026) — the owner
-  // asked for "the trader skill set with ~100k GitHub stars". That description best
-  // matches TauricResearch/TradingAgents (~102k-108k stars, Apache-2.0) or
-  // virattt/ai-hedge-fund (~63.6k, MIT), both checked directly: neither has a SKILL.md
-  // anywhere in the tree (main.py / pyproject.toml Python applications you run
-  // stand-alone, not portable skills). HKUDS/Vibe-Trading (~33.9k, MIT), also named by
-  // the owner, is the same kind of stand-alone app. Of the four repos named,
-  // agiprolabs/claude-trading-skills (373 stars) is the only genuine SKILL.md
-  // collection and is what is actually imported below; questflowai/investorskills
-  // (1.9k stars, MIT) and marian2js/trading-skills (13 stars, MIT) were also checked
-  // and are smaller/thinner collections on the same topic. Only 6 of that repo's ~66
-  // skills are imported, chosen by reading each one's SKILL.md: analysis, metrics and
-  // reporting only. Explicitly left out: everything about executing an order or
-  // talking to a broker/exchange/DEX or a wallet (dex-execution, copy-trading,
-  // jito-bundles, solana-tx-building, rl-execution, raptor-dex, mev-analysis,
-  // shredstream), on-chain surveillance (wallet-profiling, sybil-detection), and every
-  // *-api skill (birdeye/coingecko/defillama/helius/solana-rpc/…), which exist to wire
-  // up live market-data or broker connections this template must not have.
-  {
-    key: 'portfolio-analytics',
-    sourceUrl:
-      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/portfolio-analytics',
-    license: 'MIT',
-  },
-  {
-    key: 'risk-management',
-    sourceUrl:
-      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/risk-management',
-    license: 'MIT',
-  },
-  {
-    key: 'correlation-analysis',
-    sourceUrl:
-      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/correlation-analysis',
-    license: 'MIT',
-  },
-  {
-    key: 'regime-detection',
-    sourceUrl:
-      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/regime-detection',
-    license: 'MIT',
-  },
-  {
-    key: 'volatility-modeling',
-    sourceUrl:
-      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/volatility-modeling',
-    license: 'MIT',
-  },
-  {
-    key: 'trade-journal',
-    sourceUrl:
-      'https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/trade-journal',
-    license: 'MIT',
-  },
-];
-
-const ALL_SKILLS = [...EXISTING_SKILLS, ...NEW_SKILLS];
-
-interface SkillRow {
-  id: number;
-  name: string;
-  sourceUrl: string | null;
-}
-
-async function ensureSkills(teamId: number): Promise<Map<string, number>> {
-  log('\n== Skills ==');
-  const existing = await api<SkillRow[]>('GET', `/teams/${teamId}/agent-skills/options`);
-  const byUrl = new Map(existing.filter((s) => s.sourceUrl).map((s) => [s.sourceUrl as string, s]));
-  const ids = new Map<string, number>();
-  for (const skill of ALL_SKILLS) {
-    const found = byUrl.get(skill.sourceUrl);
-    if (found) {
-      already(`skill "${found.name}" (${skill.key}, ${skill.license})`);
-      ids.set(skill.key, found.id);
-      continue;
-    }
-    const result = await write(
-      `import skill "${skill.key}" from ${skill.sourceUrl} (${skill.license})`,
-      () =>
-        api<{ id: number }>('POST', `/teams/${teamId}/agent-skills`, {
-          source: 'github',
-          sourceUrl: skill.sourceUrl,
-        }),
-    );
-    if (result) ids.set(skill.key, result.id);
-  }
-  return ids;
-}
-
-// Adds skills to an agent's enabled set without ever removing one the owner already
-// turned on by hand — the PUT route replaces the whole set, so this always reads
-// first and only writes when the union differs from what is already there.
-async function ensureAgentSkills(
-  teamId: number,
-  agentId: number,
-  agentLabel: string,
-  wantKeys: string[],
-  skillIds: Map<string, number>,
-): Promise<void> {
-  const current = await api<{ id: number; name: string }[]>(
-    'GET',
-    `/teams/${teamId}/ai-agents/${agentId}/skills`,
-  );
-  const currentIds = new Set(current.map((s) => s.id));
-  const wanted = wantKeys.map((key) => {
-    const id = skillIds.get(key);
-    if (id == null) throw new Error(`Skill "${key}" was not imported`);
-    return id;
-  });
-  const missing = wanted.filter((id) => !currentIds.has(id));
-  if (missing.length === 0) {
-    already(`has every wanted skill: ${agentLabel}`);
-    return;
-  }
-  const union = [...new Set([...currentIds, ...missing])];
-  await write(`add ${missing.length} skill(s) to ${agentLabel}`, () =>
-    api('PUT', `/teams/${teamId}/ai-agents/${agentId}/skills`, { skillIds: union }),
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Agents: lookup, templates, copies
-// ---------------------------------------------------------------------------
-
-interface AgentRow {
-  id: number;
-  username: string;
-  template: boolean;
-  sourceTemplateId: number | null;
-  dailyTokenCeiling: number | null;
-  monthlyTokenCeiling: number | null;
-}
-
-async function listAgents(teamId: number): Promise<AgentRow[]> {
-  return api<AgentRow[]>('GET', `/teams/${teamId}/ai-agents`);
-}
-
-function byUsername(agents: AgentRow[], username: string): AgentRow | undefined {
-  return agents.find((a) => a.username.toLowerCase() === username.toLowerCase());
-}
-
-interface TemplateSeed {
-  key: string;
-  username: string;
-  name: string;
-  roleTitle: string;
-  capabilities: string[];
-  skills: string[];
-  instructions?: string;
-  dailyTokenCeiling?: number;
-}
-
-// The five templates the research doc's Section B/E lists as missing from the pool
-// today (coder and content already exist live and are left alone — the script only
-// creates what is missing, never overwrites a template the owner may have already
-// hand-tuned). Model/reasoning are deliberately left unset: every agent in the live
-// team has model = NULL today (checked read-only against a copy of the live metadata),
-// relying on "Agent default"; this script follows that existing practice rather than
-// inventing a model choice the owner has not made anywhere else.
-const NEW_TEMPLATES: TemplateSeed[] = [
-  {
-    key: 'qa-tester',
-    username: 'qa-tester',
-    name: 'QA/Tester',
-    roleTitle: 'QA/Tester',
-    capabilities: ['qa', 'testing'],
-    skills: [
-      'test-driven-development',
-      'systematic-debugging',
-      'verification-before-completion',
-      'webapp-testing',
-      'playwright-automation',
-      'test-strategy',
-    ],
-  },
-  {
-    key: 'research',
-    username: 'research',
-    name: 'Research',
-    roleTitle: 'Research',
-    capabilities: ['research'],
-    skills: [
-      'brainstorming',
-      'dispatching-parallel-agents',
-      'writing-plans',
-      'verification-before-completion',
-      'skill-creator',
-      'ab-test-analysis',
-    ],
-  },
-  {
-    key: 'finance',
-    username: 'finance',
-    name: 'Finanzen/Belege',
-    roleTitle: 'Finanzen/Belege',
-    capabilities: ['finance', 'bookkeeping'],
-    skills: [],
-    instructions:
-      'Liest Belege/Rechnungen aus den Projektdateien und legt Buchungsvorschläge als Notiz ' +
-      'oder Ticket ab. Bucht und übermittelt nie selbst — jede Übermittlung oder Zahlung ' +
-      'braucht eine Freigabe des Owners (kind "pay"). Kein Zugriff auf ELSTER-Zertifikat oder ' +
-      'Bank-Zugangsdaten.',
-    dailyTokenCeiling: 50_000,
-  },
-  {
-    key: 'assistant',
-    username: 'assistant',
-    // Kept short on purpose: createAgent's issueKey names the agent's API key
-    // "agent:<name> <PROJECT_KEY>", and better-auth's apiKey plugin rejects a name
-    // over 32 characters (found live: "Persönlicher Assistent PRIV" is exactly at the
-    // limit, "... VERVE" already over it) with a generic 500. roleTitle keeps the
-    // full title — only the API-key-bound display name needs to stay short.
-    name: 'Assistent',
-    roleTitle: 'Persönlicher Assistent',
-    capabilities: ['assistant', 'personal'],
-    skills: [],
-    instructions:
-      'Kalender, Mail-Entwürfe und private/familiäre Organisation. Mails werden nur als ' +
-      'Entwurf vorbereitet, nie gesendet — Versand braucht immer eine Freigabe des Owners ' +
-      '(kind "send").',
-    dailyTokenCeiling: 50_000,
-  },
-  {
-    key: 'browser-operator',
-    username: 'browser-operator',
-    name: 'Browser-Operator',
-    roleTitle: 'Browser-Operator',
-    capabilities: ['browser-operator'],
-    skills: [],
-    instructions:
-      'Browser-lastige Aufgaben außerhalb von Coding-Sessions: Partner-Dashboards prüfen, ' +
-      'Konkurrenzseiten ansehen, Formulare ausfüllen, Social-Entwürfe vorbereiten. Läuft erst ' +
-      'produktiv, sobald der Projekt-Browser-Gateway (hub/agent-browser-mcp) live ist — bis ' +
-      'dahin bewusst nur als Vorlage ohne aktive Kopie.',
-  },
-  {
-    key: 'market-analyst',
-    username: 'market-analyst',
-    name: 'Markt-Analyst',
-    roleTitle: 'Markt-Analyst',
-    capabilities: ['market-analysis', 'research'],
-    skills: [
-      'portfolio-analytics',
-      'risk-management',
-      'correlation-analysis',
-      'regime-detection',
-      'volatility-modeling',
-      'trade-journal',
-    ],
-    // The owner's rule, verbatim as the template's standing instruction so every run
-    // and every copy carries it, not just this script's comments: analysis only, never
-    // a trade, never a login. No MCP server or configured tool is wired to this
-    // template for the same reason (no broker/exchange API, no wallet key, no order
-    // tool) — only the six analysis/reporting skills above.
-    instructions:
-      'Markt- und Wertpapier-Recherche: Kennzahlen berechnen, Backtests interpretieren, ' +
-      'Korrelationen und Marktregime einordnen, Berichte ins Vault ablegen. Ergebnisse sind ' +
-      'Informationen, keine Anlageberatung. Jede Handlung mit Geld ist tabu: keine Order, kein ' +
-      'Trade, kein Broker- oder Börsenzugang, kein Wallet-Key. Dieser Agent hat und bekommt ' +
-      'keine Zugangsdaten zu einem Broker, einer Börse oder einer Wallet.',
-  },
-];
-
-// id: -1 is a --dry-run placeholder for a template this run would create but has not
-// (nothing calls the API with it) — it lets ensureCopies still report the copies that
-// depend on it instead of silently skipping them because the id does not exist yet.
-interface TemplateRef {
-  id: number;
-  username: string;
-}
-
-async function ensureTemplates(
-  teamId: number,
-  skillIds: Map<string, number>,
-): Promise<Map<string, TemplateRef>> {
-  log('\n== Templates ==');
-  const refs = new Map<string, TemplateRef>();
-  for (const key of ['coder', 'content']) {
-    const agents = await listAgents(teamId);
-    const found = byUsername(agents, key);
-    if (found?.template) {
-      already(`template "${key}" (existing, left untouched)`);
-      refs.set(key, { id: found.id, username: found.username });
-    } else {
-      log(`[WARN] template "${key}" not found — expected it to exist already, skipping`);
-    }
-  }
-  for (const seed of NEW_TEMPLATES) {
-    const agents = await listAgents(teamId);
-    const found = byUsername(agents, seed.username);
-    if (found) {
-      already(`template "${seed.username}"`);
-      refs.set(seed.key, { id: found.id, username: found.username });
-      if (!DRY_RUN) {
-        await ensureAgentSkills(teamId, found.id, seed.username, seed.skills, skillIds);
-      }
-      continue;
-    }
-    const result = await write(
-      `create template "${seed.username}" (${seed.name}): capabilities ${JSON.stringify(seed.capabilities)}, ${seed.skills.length} skill(s)`,
-      async () => {
-        const createdAgent = await api<{ agent: { id: number } }>(
-          'POST',
-          `/teams/${teamId}/ai-agents`,
-          {
-            name: seed.name,
-            username: seed.username,
-            kind: 'external',
-            template: true,
-            instructions: seed.instructions,
-          },
-        );
-        const agentId = createdAgent.agent.id;
-        // A template joins no project, so its organization role/capabilities are set
-        // directly (setAgentAssignment), the same way copyTemplateIntoProject reads
-        // them back off the template to seed a copy.
-        await api('PUT', `/teams/${teamId}/organization/agents/${agentId}`, {
-          role: 'specialist',
-          roleTitle: seed.roleTitle,
-          capabilities: seed.capabilities,
-        });
-        if (seed.skills.length > 0) {
-          const skillIdList = seed.skills.map((k) => {
-            const id = skillIds.get(k);
-            if (id == null) throw new Error(`Skill "${k}" was not imported`);
-            return id;
-          });
-          await api('PUT', `/teams/${teamId}/ai-agents/${agentId}/skills`, {
-            skillIds: skillIdList,
-          });
-        }
-        if (seed.dailyTokenCeiling != null) {
-          await api('PUT', `/teams/${teamId}/organization/agents/${agentId}/token-ceilings`, {
-            daily: seed.dailyTokenCeiling,
-            monthly: null,
-          });
-        }
-        return agentId;
-      },
-    );
-    refs.set(seed.key, { id: result ?? -1, username: seed.username });
-  }
-  return refs;
-}
-
-// ---------------------------------------------------------------------------
-// Section C: copies that close the gaps
-// ---------------------------------------------------------------------------
-
-interface CopySeed {
-  templateKey: string;
-  projectKey: string;
-  // Why this project houses the copy, for the --dry-run output and the report —
-  // named explicitly where the research doc left the choice to the owner.
-  note?: string;
-}
-
-// VOL stands in for "Volition"/"team-weit" below: the data model has no project row
-// for the company as a whole or for Home, only PRIV/FAM/VOL/VERVE, so a copy that the
-// research doc scoped to "Volition" or "team-weit" needs a concrete project to attach
-// to. This is an explicit choice the owner should confirm (see the report) — moving
-// either copy to VERVE later is a one-click "reassign project" in the agent editor,
-// nothing here depends on the choice being final.
-const COPIES: CopySeed[] = [
-  { templateKey: 'content', projectKey: 'VERVE' },
-  { templateKey: 'qa-tester', projectKey: 'VOL' },
-  { templateKey: 'qa-tester', projectKey: 'VERVE' },
-  { templateKey: 'assistant', projectKey: 'FAM' },
-  { templateKey: 'assistant', projectKey: 'PRIV' },
-  { templateKey: 'finance', projectKey: 'PRIV' },
-  {
-    templateKey: 'finance',
-    projectKey: 'VOL',
-    note: "stands in for \"Volition\" company-wide — confirm or move to VERVE",
-  },
-  {
-    templateKey: 'research',
-    projectKey: 'VOL',
-    note: 'stands in for "team-weit" — confirm or move, or copy into more projects later',
-  },
-  // browser-operator: template only, no copy — the Gateway (hub/agent-browser-mcp)
-  // is not live yet, exactly as instructed.
-];
-
-async function ensureCopies(
-  teamId: number,
-  projects: ProjectSummary[],
-  templates: Map<string, TemplateRef>,
-): Promise<void> {
-  log('\n== Project copies (closing the Section C gaps) ==');
-  for (const copy of COPIES) {
-    const template = templates.get(copy.templateKey);
-    if (!template) {
-      log(`[WARN] template "${copy.templateKey}" not available, skipping its ${copy.projectKey} copy`);
-      continue;
-    }
-    const pid = projectId(projects, copy.projectKey);
-    // The exact copy for *this* project: copyTemplateIntoProject's deterministic
-    // username (template username + "-" + project key) tells copies of the same
-    // template in different projects apart. sourceTemplateId (template-sync.ts) would
-    // also identify "a copy of this template", but not which project it is in, so the
-    // username is the check that actually answers "is VOL covered".
-    const suffix = `-${copy.projectKey.toLowerCase()}`;
-    const copyUsername = `${template.username.slice(0, 64 - suffix.length)}${suffix}`;
-    const noteSuffix = copy.note ? ` — ${copy.note}` : '';
-    if (template.id === -1) {
-      // The template itself is only a --dry-run promise (id -1, not created yet), so
-      // there is nothing to list or copy against; still report the copy that would
-      // follow once it exists, which is the whole point of a dry run.
-      plan(`copy "${copy.templateKey}" into ${copy.projectKey}${noteSuffix} (${copyUsername})`);
-      continue;
-    }
-    const agents = await listAgents(teamId);
-    const existingCopy = byUsername(agents, copyUsername);
-    if (existingCopy) {
-      already(`copy of "${copy.templateKey}" in ${copy.projectKey} (${copyUsername})`);
-      continue;
-    }
-    await write(`copy "${copy.templateKey}" into ${copy.projectKey}${noteSuffix}`, () =>
-      api('POST', `/teams/${teamId}/ai-agents/${template.id}/copy`, { projectId: pid }),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Coordinators: additive skills, and the "Familie & Privat" department
-// ---------------------------------------------------------------------------
-
-async function ensureCoordinatorSkills(teamId: number, skillIds: Map<string, number>): Promise<void> {
-  log('\n== Coordinator skills (additive, per Section B #2) ==');
-  const wanted = [
-    'brainstorming',
-    'dispatching-parallel-agents',
-    'writing-plans',
-    'receiving-code-review',
-    'requesting-code-review',
-    'verification-before-completion',
-  ];
-  const agents = await listAgents(teamId);
-  const coordinators = agents.filter((a) => /^hermes-.+-coordinator$/i.test(a.username));
-  for (const coordinator of coordinators) {
-    if (DRY_RUN) {
-      plan(`add missing Section-B-#2 skills to ${coordinator.username} (checked in a real run)`);
-      continue;
-    }
-    await ensureAgentSkills(teamId, coordinator.id, coordinator.username, wanted, skillIds);
-  }
-}
-
-interface OrgAgentAssignment {
-  departmentId: number | null;
-  reportsToAgentId: number | null;
-  roleTitle: string;
-  role: string | null;
-  capabilities: string[];
-  runtimeAgentId: string | null;
-}
-
-async function ensureDepartment(teamId: number): Promise<void> {
-  log('\n== "Familie & Privat" department ==');
-  interface Department {
-    id: number;
-    name: string;
-  }
-  interface Organization {
-    departments: Department[];
-    agents: (AgentRow & OrgAgentAssignment)[];
-  }
-  const org = await api<Organization>('GET', `/teams/${teamId}/organization`);
-  let department = org.departments.find((d) => d.name === 'Familie & Privat');
-  if (department) {
-    already('department "Familie & Privat"');
-  } else {
-    const result = await write('create department "Familie & Privat"', () =>
-      api<Department>('POST', `/teams/${teamId}/organization/departments`, {
-        name: 'Familie & Privat',
-        description: 'FAM und PRIV: Familie und private Organisation, ohne Kundenbezug.',
-      }),
-    );
-    if (!result) return; // dry-run: nothing to assign coordinators to yet
-    department = result;
-  }
-  if (!department) return;
-  for (const username of ['hermes-fam-coordinator', 'hermes-priv-coordinator']) {
-    const current = org.agents.find((a) => a.username === username);
-    if (!current) {
-      log(`[WARN] ${username} not found, skipping department assignment`);
-      continue;
-    }
-    if (current.departmentId === department.id) {
-      already(`${username} already in "Familie & Privat"`);
-      continue;
-    }
-    // setAgentAssignment overwrites departmentId/reportsToAgentId/roleTitle/
-    // runtimeAgentId unconditionally (only role/capabilities are kept when omitted),
-    // so every field is sent back to avoid silently clearing the others.
-    await write(`assign ${username} to "Familie & Privat"`, () =>
-      api('PUT', `/teams/${teamId}/organization/agents/${current.id}`, {
-        departmentId: department!.id,
-        reportsToAgentId: current.reportsToAgentId,
-        roleTitle: current.roleTitle,
-        role: current.role,
-        capabilities: current.capabilities,
-        runtimeAgentId: current.runtimeAgentId,
-      }),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Shopify Dev MCP -> coder-verve
-// ---------------------------------------------------------------------------
-
-async function ensureShopifyMcp(teamId: number): Promise<void> {
-  log('\n== Shopify Dev MCP (read-only, no mutations) on coder-verve ==');
-  interface McpServer {
-    id: number;
-    name: string;
-  }
-  const servers = await api<McpServer[]>('GET', `/teams/${teamId}/mcp-servers`);
-  let server = servers.find((s) => s.name === 'shopify-dev-mcp');
-  if (server) {
-    already('MCP server "shopify-dev-mcp"');
-  } else {
-    const result = await write(
-      'create team MCP server "shopify-dev-mcp" (npx @shopify/dev-mcp@latest, no --allow-mutations)',
-      () =>
-        api<McpServer>('POST', `/teams/${teamId}/mcp-servers`, {
-          name: 'shopify-dev-mcp',
-          description:
-            'Durchsucht Shopify-Doku/API-Schemas, prüft GraphQL/Liquid/Extension-Code. Kein ' +
-            'Schreibzugriff auf einen Store (kein --allow-mutations).',
-          transport: 'stdio',
-          command: 'npx',
-          args: ['-y', '@shopify/dev-mcp@latest'],
-        }),
-    );
-    if (!result) return;
-    server = result;
-  }
-  if (!server) return;
-  const agents = await listAgents(teamId);
-  const coderVerve = byUsername(agents, 'coder-verve');
-  if (!coderVerve) {
-    log('[WARN] coder-verve not found, skipping MCP assignment');
-    return;
-  }
-  const current = await api<{ id: number }[]>(
-    'GET',
-    `/teams/${teamId}/ai-agents/${coderVerve.id}/mcp-servers`,
-  );
-  if (current.some((s) => s.id === server!.id)) {
-    already('shopify-dev-mcp enabled on coder-verve');
-    return;
-  }
-  const union = [...new Set([...current.map((s) => s.id), server.id])];
-  await write('enable shopify-dev-mcp on coder-verve', () =>
-    api('PUT', `/teams/${teamId}/ai-agents/${coderVerve.id}/mcp-servers`, { mcpServerIds: union }),
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Goals from the volition-hub-plan.md roadmap phases
-// ---------------------------------------------------------------------------
-
-interface GoalSeed {
-  title: string;
-  description: string;
-}
-
-const ROADMAP_GOALS: GoalSeed[] = [
-  {
-    title: 'Phase 0 — Fundament: Sicherheit, natives Hosting, Backup',
-    description:
-      'kingston ist sicher, lokal vollständig nativ erreichbar, gesichert und reproduzierbar; ' +
-      'der Internetzugang ist vorbereitet.',
-  },
-  {
-    title: 'Phase 1 — Projekt-Lebenszyklus und Secrets',
-    description:
-      'Ein neues Projekt richtet alles ein, ein gelöschtes entfernt alles; ein Speicher für ' +
-      'Maschinen-Secrets statt acht.',
-  },
-  {
-    title: 'Phase 2 — Arbeitsplatz: Navigation, Panel, Terminal, Browser',
-    description: 'Eine Navigation, ein geteiltes Werkzeug-Panel, echte Terminal-Tabs, ein reparierter Browser.',
-  },
-  {
-    title: 'Phase 3 — Hermes vollständig integrieren',
-    description: 'Chat mit Kontext, Freigaben und Rückfragen; eine Agent-Seite statt vier; Hermes als einzige Laufzeit.',
-  },
-  {
-    title: 'Phase 4 — Orga, Orchestrierung, wiederkehrende Aufgaben',
-    description:
-      'Org-Chart als echte Grafik, agent-team sichtbar und steuerbar, Mastra als einziger ' +
-      'Scheduler für fachliche Aufgaben.',
-  },
-  {
-    title: 'Phase 5 — Mail',
-    description: 'IMAP/SMTP, ein schneller Posteingang, Compose im geteilten Panel, Agenten schreiben nur Entwürfe.',
-  },
-  {
-    title: 'Phase 6 — Planung: Bereiche, Projekt-Einstellungen, Home',
-    description: 'Bereiche mit eigenen Boards, Einstellungen strikt pro Projekt, Home als konsolidierte Übersicht.',
-  },
-];
-
-async function ensureGoals(teamId: number): Promise<void> {
-  log('\n== Goals (volition-hub-plan.md roadmap phases) ==');
-  interface Department {
-    id: number;
-    name: string;
-  }
-  interface Goal {
-    id: number;
-    title: string;
-  }
-  const org = await api<{ departments: Department[]; goals: Goal[] }>(
-    'GET',
-    `/teams/${teamId}/organization`,
-  );
-  const department = org.departments.find((d) => d.name === 'Volition');
-  for (const goal of ROADMAP_GOALS) {
-    if (org.goals.some((g) => g.title === goal.title)) {
-      already(`goal "${goal.title}"`);
-      continue;
-    }
-    await write(`create goal "${goal.title}"`, () =>
-      api('POST', `/teams/${teamId}/organization/goals`, {
-        title: goal.title,
-        description: goal.description,
-        departmentId: department?.id ?? null,
-        status: 'active',
-      }),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  log(`Helena agent pool setup — ${DRY_RUN ? 'DRY RUN (no writes)' : 'LIVE (will write)'}`);
-  log(`Base URL: ${BASE_URL}`);
+  const args = process.argv.slice(2);
+  const value = (name: string) =>
+    args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const bundle = checked(readBundle(value('bundle') ?? DEFAULT_BUNDLE));
 
-  const { teamId, projects } = await resolveTeamAndProjects();
-  log(`Team ${teamId}, projects: ${projects.map((p) => p.key).join(', ')}`);
-
-  const skillIds = await ensureSkills(teamId);
-  const templateIds = await ensureTemplates(teamId, skillIds);
-  await ensureCopies(teamId, projects, templateIds);
-  await ensureCoordinatorSkills(teamId, skillIds);
-  await ensureDepartment(teamId);
-  await ensureShopifyMcp(teamId);
-  await ensureGoals(teamId);
-
-  log('\n== Summary ==');
-  log(`${created} step(s) ${DRY_RUN ? 'would run' : 'ran'}, ${skipped} already in place.`);
-  if (DRY_RUN) {
-    log('Nothing was written. Re-run without --dry-run to apply.');
+  if (args.includes('--check')) {
+    console.log(
+      `${bundle.name} ${bundle.version}: ${bundle.agents.length} agents, ${bundle.skills.length} skills, ` +
+        `${Object.keys(bundle.mcpServers).length} MCP servers — valid.`,
+    );
+    return;
   }
+  const pack = value('pack');
+  if (pack) {
+    writeFileSync(pack, `${JSON.stringify(bundle, null, 2)}\n`);
+    console.log(`Wrote ${pack}`);
+    return;
+  }
+
+  const apiKey = process.env.HELENA_API_KEY;
+  if (!apiKey) {
+    console.error(
+      'HELENA_API_KEY is not set. Create a personal API key in Helena (Konto → API-Schlüssel), ' +
+        'or run the browser build from a signed-in Helena tab (see the header of this file).',
+    );
+    process.exit(1);
+  }
+  const send = keyTransport(value('base-url') ?? 'http://localhost:3000', apiKey);
+  const teamId = value('team-id') ? Number(value('team-id')) : undefined;
+
+  const target = value('export');
+  if (target) {
+    const log = new SyncLog(send, { dryRun: true, update: false }, (line) => console.log(line));
+    const exported = await exportBundle(log, await resolveTeam(log, teamId), {
+      agents: value('agents')?.split(','),
+      known: bundle,
+    });
+    if (target.endsWith('.json')) writeFileSync(target, `${JSON.stringify(exported, null, 2)}\n`);
+    else writeBundleDir(exported, target);
+    const problems = validateBundle(exported);
+    console.log(`Wrote ${target}${problems.length ? `; to fix before sharing:\n- ${problems.join('\n- ')}` : ''}`);
+    return;
+  }
+
+  const result = await runAgentPool(
+    {
+      bundle,
+      dryRun: args.includes('--dry-run'),
+      update: args.includes('--update'),
+      sections: value('sections')?.split(',').map((s) => s.trim()) as Section[] | undefined,
+      teamId,
+    },
+    send,
+    (line) => console.log(line),
+  );
+  if (result.warnings > 0) process.exitCode = 2;
 }
 
 main().catch((err) => {

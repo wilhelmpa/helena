@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "Status da sincronização",
-    "notSetUp": "A pasta Volition não existe no Syncthing. Execute novamente a configuração do Syncthing neste servidor.",
+    "notSetUp": "A pasta Helena não existe no Syncthing. Execute novamente a configuração do Syncthing neste servidor.",
     "state": {
       "idle": "Atualizado",
       "scanning": "Verificando",
@@ -44,7 +44,7 @@
     "paused": "Pausado",
     "lastSeen": "Visto {time}",
     "neverSeen": "Ainda não visto",
-    "notShared": "A pasta Volition não está compartilhada com este dispositivo.",
+    "notShared": "A pasta Helena não está compartilhada com este dispositivo.",
     "remove": "Remover",
     "removeTitle": "Remover {name}?",
     "removeBody": "O dispositivo deixa de sincronizar com este servidor. Os arquivos no dispositivo continuam lá."
@@ -54,7 +54,7 @@
     "hint": "Aceite apenas seus próprios dispositivos: um dispositivo aceito recebe todas as notas e arquivos, inclusive Private/.",
     "requested": "Pedido {time} de {address}",
     "accept": "Aceitar",
-    "accepted": "{name} aceito. Agora aceite a pasta Volition no dispositivo."
+    "accepted": "{name} aceito. Agora aceite a pasta Helena no dispositivo."
   },
   "conflicts": {
     "title": "Conflitos",
@@ -70,11 +70,11 @@
     "step2": "No Syncthing, adicione um dispositivo e informe o ID de dispositivo deste servidor, ou escaneie o código QR.",
     "step2Lan": "Para sincronizar diretamente em casa, informe <code>{address}, dynamic</code> como endereços do dispositivo.",
     "step3": "O dispositivo aparece então acima em “Dispositivos pedindo conexão”. Escolha Aceitar.",
-    "step4": "No dispositivo, aceite a pasta Volition em uma pasta chamada Volition: <code>~/Volition</code> no Mac, <code>Volition</code> no armazenamento interno no Android, o cofre do Obsidian Volition no iPhone.",
-    "step5": "Espere até a pasta mostrar “Atualizado” no dispositivo e então abra a pasta Volition como cofre no Obsidian. Links da Helena abrem o cofre Volition.",
+    "step4": "No dispositivo, aceite a pasta Helena em uma pasta chamada Helena: <code>~/Helena</code> no Mac, <code>Helena</code> no armazenamento interno no Android, o cofre do Obsidian Helena no iPhone.",
+    "step5": "Espere até a pasta mostrar “Atualizado” no dispositivo e então abra a pasta Helena como cofre no Obsidian. Links da Helena abrem o cofre Helena.",
     "iphoneTitle": "iPhone",
-    "iphone": "No iPhone, o Obsidian só abre as próprias pastas. Primeiro crie o cofre Volition no Obsidian (no iPhone, não no iCloud) e feche o Obsidian. Depois, no Möbius Sync, coloque a pasta Volition em No Meu iPhone › Obsidian › Volition. O Obsidian grava suas próprias configurações ao criar um cofre, por isso podem aparecer conflitos em <code>.obsidian</code> após a primeira sincronização; as cópias de conflito contêm os padrões deste servidor. O Möbius Sync sincroniza enquanto o app está aberto ou o iOS o deixa rodar em segundo plano.",
+    "iphone": "No iPhone, o Obsidian só abre as próprias pastas. Primeiro crie o cofre Helena no Obsidian (no iPhone, não no iCloud) e feche o Obsidian. Depois, no Möbius Sync, coloque a pasta Helena em No Meu iPhone › Obsidian › Helena. O Obsidian grava suas próprias configurações ao criar um cofre, por isso podem aparecer conflitos em <code>.obsidian</code> após a primeira sincronização; as cópias de conflito contêm os padrões deste servidor. O Möbius Sync sincroniza enquanto o app está aberto ou o iOS o deixa rodar em segundo plano.",
     "spaceTitle": "Economizar espaço no celular (opcional)",
-    "space": "Os padrões de exclusão valem apenas no dispositivo em que são informados. Para não baixar os arquivos de e-mail no celular, abra a pasta Volition no Möbius Sync ou no Syncthing-Fork, adicione a linha <code>Files/Mail</code> em padrões de exclusão e salve, de preferência logo após aceitar a pasta. Os arquivos continuam neste servidor e nos outros dispositivos."
+    "space": "Os padrões de exclusão valem apenas no dispositivo em que são informados. Para não baixar os arquivos de e-mail no celular, abra a pasta Helena no Möbius Sync ou no Syncthing-Fork, adicione a linha <code>Files/Mail</code> em padrões de exclusão e salve, de preferência logo após aceitar a pasta. Os arquivos continuam neste servidor e nos outros dispositivos."
   }
 }

@@ -12,17 +12,31 @@ export interface Point {
   y: number;
 }
 
+export interface Rect extends Size {
+  left: number;
+  top: number;
+}
+
 export type LiveMessage =
-  | { type: 'viewport'; width: number; height: number; dpr: number; video: boolean }
+  // The view's size in CSS pixels, its pixel ratio, whether it plays video, and whether it
+  // holds the page's size ("Größe festhalten": the page keeps its size, the view scales it).
+  | { type: 'viewport'; width: number; height: number; dpr: number; video: boolean; hold: boolean }
   | { type: 'follow'; agent: boolean }
   | { type: 'ack' }
   | { type: 'dialog'; accept: boolean; text?: string }
   // Sent when the view is covered (another panel or browser tab in front) or shown again, so
   // the router stops sending it frames and its tier's encoder can stop once no one is left.
   | { type: 'hidden'; hidden: boolean }
-  // The video connection's last measured round trip and downlink, so the router can put this
-  // view on the quality tier they afford.
-  | { type: 'stats'; rttMs: number; downlinkKbps: number }
+  // The video connection's last measured round trip and downlink, and the running total of
+  // video bytes this view has received, so the router can put it on the quality tier they
+  // afford and knows how much of what it has sent is still unacknowledged.
+  | { type: 'stats'; rttMs: number; downlinkKbps: number; receivedBytes: number }
+  // This view's decoder fell far enough behind to give up on the gap; answered with a fresh
+  // keyframe once the router's rate limit on restarting the tier's encoder allows one.
+  | { type: 'requestKeyframe' }
+  // Someone works in this view: it takes the page's size from another viewer once their
+  // input pauses (whoever steers owns the size; the others scale).
+  | { type: 'focus' }
   // Answered with {"type":"pong","t":..} at once, to measure the round trip.
   | { type: 'ping'; t: number }
   | {
@@ -113,32 +127,58 @@ export function screencastUrl(controlBase: string): string {
 export const JPEG_FRAME = 0;
 export const VIDEO_INIT = 1;
 export const VIDEO_FRAGMENT = 2;
+export const JPEG_FRAME_CROPPED = 3;
 
-// A JPEG frame message: the page's viewport in CSS pixels, then the JPEG.
-export function readFrame(data: ArrayBuffer): { size: Size; jpeg: Blob } {
-  const header = new DataView(data, 1, 4);
+// A JPEG frame message: the page's viewport in CSS pixels, then the JPEG. A cropped one (a
+// page pinned narrower than its window, a phone's view) gives the frame's size and then the
+// page's, which fills the frame's left part (crop, the part of the frame to show).
+export function readFrame(data: ArrayBuffer): { size: Size; crop: Size | null; jpeg: Blob } {
+  const cropped = new Uint8Array(data, 0, 1)[0] === JPEG_FRAME_CROPPED;
+  const header = new DataView(data, 1, cropped ? 8 : 4);
+  const frame = { width: header.getUint16(0), height: header.getUint16(2) };
+  const page = cropped ? { width: header.getUint16(4), height: header.getUint16(6) } : null;
   return {
-    size: { width: header.getUint16(0), height: header.getUint16(2) },
-    jpeg: new Blob([new Uint8Array(data, 5)], { type: 'image/jpeg' }),
+    size: page ?? frame,
+    crop: page ? { width: page.width / frame.width, height: page.height / frame.height } : null,
+    jpeg: new Blob([new Uint8Array(data, cropped ? 9 : 5)], { type: 'image/jpeg' }),
   };
 }
 
-// Where a frame is drawn in a box: scaled to fit and centred, as object-fit: contain does.
-export function containedRect(box: Size, frame: Size) {
-  const scale = Math.min(box.width / frame.width, box.height / frame.height);
-  const width = frame.width * scale;
-  const height = frame.height * scale;
-  return { left: (box.width - width) / 2, top: (box.height - height) / 2, width, height };
+// A page this many CSS pixels larger or smaller than the view is shown one to one, cut off or
+// with a thin band at the edge, rather than scaled by a fraction of a percent, which would blur
+// it: the video needs even sizes, so a page at ratio 1 is a pixel larger than an odd view.
+const EXACT_SLACK = 2;
+
+// Where a frame is drawn in the view, in CSS pixels from the view's top left corner. natural
+// is the page's size in CSS pixels at 100 % zoom, which the frame shows. A page the view's size
+// (give or take EXACT_SLACK) is drawn one to one from the corner; any other — while the panel
+// is dragged and until the page has the new size, or while another view or a fixed size sets
+// it — is scaled to fit and centred, as object-fit: contain does. Whole pixels, so a frame
+// drawn one to one stays sharp.
+export function frameRect(box: Size, natural: Size): Rect {
+  const near =
+    Math.abs(box.width - natural.width) <= EXACT_SLACK &&
+    Math.abs(box.height - natural.height) <= EXACT_SLACK;
+  if (near) return { left: 0, top: 0, width: natural.width, height: natural.height };
+  const scale = Math.min(box.width / natural.width, box.height / natural.height);
+  const width = Math.round(natural.width * scale);
+  const height = Math.round(natural.height * scale);
+  return {
+    left: Math.round((box.width - width) / 2),
+    top: Math.round((box.height - height) / 2),
+    width,
+    height,
+  };
 }
 
-// The page point, in the page's CSS pixels, under a point of the view given relative to the
-// view's top left corner. A point beside the drawn frame is moved onto its edge.
-export function pagePoint(point: Point, box: Size, frame: Size): Point {
-  const drawn = containedRect(box, frame);
+// The page point, in the CSS pixels input is given in (page: the shown frame's size at the
+// page's zoom), under a point of the view given relative to its top left corner, for a frame
+// drawn at rect. A point beside the drawn frame, on a band, is moved onto its edge.
+export function pagePoint(point: Point, rect: Rect, page: Size): Point {
   const clamp = (value: number, max: number) => Math.min(max, Math.max(0, value));
   return {
-    x: clamp(((point.x - drawn.left) / drawn.width) * frame.width, frame.width),
-    y: clamp(((point.y - drawn.top) / drawn.height) * frame.height, frame.height),
+    x: clamp(((point.x - rect.left) / rect.width) * page.width, page.width),
+    y: clamp(((point.y - rect.top) / rect.height) * page.height, page.height),
   };
 }
 

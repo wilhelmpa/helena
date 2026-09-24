@@ -5,6 +5,7 @@ import {
   type CronFields,
   type ParseResult,
 } from './cronFields';
+import { germanToEnglish, looksGerman } from './cronTextGerman';
 
 interface TimeValue {
   hour: number;
@@ -20,6 +21,14 @@ const WEEKDAY_VALUES = nameValues(WEEKDAY_NAMES, 0);
 const MONTH_VALUES = nameValues(MONTH_NAMES, 1);
 
 export function parseCronText(input: string): ParseResult<string> {
+  const english = parseEnglishCronText(input);
+  if (english.ok || !looksGerman(input)) return english;
+  // A schedule typed in German is read through the same grammar once rewritten.
+  const german = parseEnglishCronText(germanToEnglish(input));
+  return german.ok ? german : english;
+}
+
+function parseEnglishCronText(input: string): ParseResult<string> {
   const text = normalizeText(input);
   const unsupported = unsupportedReason(text);
   if (unsupported) return { ok: false, error: unsupported };

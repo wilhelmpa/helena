@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { AgentInventorySkill } from '@/lib/api/endpoints/agents';
-import { isHermesToolset, skillGroups, toggleToolset } from './agentAbilities';
+import { isHermesToolset, skillGroups, templateToolsets, toggleToolset } from './agentAbilities';
 
 describe('agent toolsets', () => {
   it('denies a toolset switched off and allows it again when switched on', () => {
@@ -19,6 +19,34 @@ describe('agent toolsets', () => {
   it('describes only the toolsets it knows', () => {
     assert.equal(isHermesToolset('terminal'), true);
     assert.equal(isHermesToolset('itsaplan'), false);
+  });
+});
+
+describe('template toolsets', () => {
+  const agent = (template: boolean, toolsets: string[] | null) => ({
+    template,
+    runtimeState: { inventory: toolsets ? { toolsets } : null },
+  });
+
+  it("offers what the team's runners report, not a template's own", () => {
+    const agents = [
+      agent(false, ['web', 'terminal']),
+      agent(false, ['file', 'web']),
+      agent(true, ['tts']),
+    ];
+    assert.deepEqual(templateToolsets(agents, []), ['file', 'terminal', 'web']);
+  });
+
+  it('keeps a denied toolset listed so it can be switched back on', () => {
+    assert.deepEqual(templateToolsets([agent(false, ['web'])], ['computer_use', 'itsaplan']), [
+      'computer_use',
+      'web',
+    ]);
+  });
+
+  it('falls back to the toolsets Hermes knows before any runner reported', () => {
+    const toolsets = templateToolsets([agent(false, null)], []);
+    assert.ok(toolsets.includes('terminal') && toolsets.includes('computer_use'));
   });
 });
 

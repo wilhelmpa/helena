@@ -398,6 +398,16 @@ class MigrateTest(unittest.TestCase):
             shutil.rmtree(directory)
 
 
+    def test_dry_run_names_model_auth_before_the_group_exists(self):
+        import migrate  # noqa: PLC0415
+
+        changes = migrate.Changes(True)
+        migrate.grant_model_auth(['/nonexistent/auth.json'], 'no-such-group-vpt', changes)
+        self.assertEqual(changes.count, 1)
+        with self.assertRaises(KeyError):
+            migrate.grant_model_auth(['/nonexistent/auth.json'], 'no-such-group-vpt', migrate.Changes(False))
+
+
 @unittest.skipUnless(sys.platform.startswith('linux') and shutil.which('bash'), 'isolation.sh runs on Linux')
 class IsolationScriptTest(unittest.TestCase):
     """isolation.sh against a temporary tree, with systemctl and the account tools stubbed."""
