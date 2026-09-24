@@ -73,7 +73,7 @@ Then start them. The engine creates its schema `helena_engine` on the first star
 sudo systemctl start volition-plan-api.service volition-plan-worker.service
 ```
 
-Release mode: run `deploy.sh`. It migrates, builds and restarts. After the deployment tree cleanup it no longer builds or starts Mastra.
+Release mode: run `deploy.sh`. Before the migration it stops, disables and removes the Mastra and team-bridge units (and their `-dev` units), takes the Studio include out of `/etc/nginx/sites-available/volition.conf` (restoring it if `nginx -t` refuses), then migrates, builds and restarts; it no longer builds or starts Mastra. Steps 2, the unit removal below and step 5's nginx part are then already done.
 
 Then:
 
@@ -131,6 +131,8 @@ sudo rm -f /etc/volition/mastra-control.token /etc/volition/mastra-gateway.token
 ```
 
 When `nginx -t` fails, restore `/etc/nginx/sites-available/volition.conf.bak-cutover` and reload.
+
+Left for later, harmless meanwhile (also in `docs/breaking-changes.md`): `/etc/volition/hermes-team.token`, the directory `/var/lib/volition/mastra` (after the backup of step 1), the system user `volition-mastra`, and `MASTRA_*` lines in `/etc/volition/plan.env`. The inbox triage of the integration service has no classifier after the switch (Mastra's was its only one); runs of it fail with "No inbox classifier is configured" until one on Hermes exists.
 
 ## 6. Acceptance (headless browser from the Mac, `~/volition/tools/hl.mjs`, console free of errors)
 
