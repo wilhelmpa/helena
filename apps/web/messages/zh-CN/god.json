@@ -376,5 +376,26 @@
     "janitorNeverRan": "尚未运行",
     "resuming": "{count, plural, other {# 个运行}}正在崩溃后恢复",
     "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看"
+  },
+  "plugins": {
+    "externalTitle": "外部插件",
+    "externalDescription": "外部插件在 Helena 内部以 Helena 的权限运行。只为你信任的插件开启。",
+    "folder": "插件文件夹：{path}",
+    "noFolder": "未设置插件文件夹（HELENA_PLUGINS_DIR），因此只运行 Helena 自带的插件。",
+    "restartHint": "更改在 API 和 worker 重启后生效。",
+    "foundTitle": "插件文件夹中",
+    "none": "未找到插件。",
+    "approve": "批准",
+    "revoke": "撤销批准",
+    "builtinTitle": "内置",
+    "statusLoaded": "已加载",
+    "statusFailed": "错误",
+    "statusNotLoaded": "未加载",
+    "restartRequired": "需要重启",
+    "provides": "提供",
+    "actions": "操作",
+    "events": "事件",
+    "network": "网络",
+    "credentials": "其工具使用其连接器的凭据。"
   }
 }

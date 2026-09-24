@@ -740,5 +740,20 @@
   "settingState": {
     "on": "Activado",
     "off": "Apagado"
+  },
+  "templateBundles": {
+    "importAction": "Importar plantillas",
+    "exportAction": "Exportar plantillas",
+    "importTitle": "Importar plantillas",
+    "counts": "{agents} plantillas de agentes · {skills} habilidades · {servers} servidores MCP",
+    "chooseFile": "Elegir archivo de paquete",
+    "fileChosen": "Archivo: {name}",
+    "dryRun": "Solo comprobar (no cambiar nada)",
+    "update": "Sobrescribir diferencias",
+    "check": "Comprobar",
+    "import": "Importar",
+    "close": "Cerrar",
+    "failed": "No ha funcionado.",
+    "notJson": "El archivo no es un paquete JSON."
   }
 }

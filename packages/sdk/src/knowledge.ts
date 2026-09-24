@@ -126,20 +126,19 @@ export interface CaptureResult {
   href: string;
 }
 
+// Who captures, and where: the actor (`user:<id>`, `agent:<id>`), the run an agent
+// captured from, and the person's time zone and locale for dates and titles.
+export interface CaptureContext {
+  actor: string;
+  runId?: number | null;
+  timeZone?: string | null;
+  locale?: string | null;
+}
+
 export interface CaptureTarget {
   id: string;
   label: LocalizedText;
   icon?: string;
   accepts: CaptureKind[];
   capture(input: CaptureInput, ctx: CaptureContext): Promise<CaptureResult>;
-}
-
-export interface CaptureContext {
-  // `user:<id>` or `agent:<id>`.
-  actor: string;
-  // The agent run the capture happens in, for provenance.
-  runId?: number | null;
-  // The actor's time zone and locale, for dates in names and daily notes.
-  timeZone?: string;
-  locale?: string;
 }

@@ -4,8 +4,8 @@
 // (lowercase, alphanumeric): `helenateam`, `helenaproject`, `helenaactor`.
 //
 // The payload (`data`) carries ids and the few fields a consumer needs to decide
-// whether it cares, never a full record: a consumer that needs more reads it through
-// the API, so an event stays small and never goes stale in a queue.
+// whether it cares. A consumer that needs more reads it through the API. The one
+// exception is `snapshot` on issue and comment events (see CoreEventData).
 
 export interface HelenaEvent<Type extends string = string, Data = unknown> {
   specversion: '1.0';
@@ -22,7 +22,8 @@ export interface HelenaEvent<Type extends string = string, Data = unknown> {
   data: Data;
   helenateam?: number;
   helenaproject?: number;
-  // `user:<id>`, `agent:<id>`, `system` or `plugin:<id>`.
+  // `user:<member id>` for a person, `agent:<agent id>` for an agent, `system`, or
+  // `plugin:<plugin id>`.
   helenaactor?: string;
 }
 
@@ -35,17 +36,29 @@ export interface IssueRef {
 
 // The core events Helena emits. Plugins emit their own under their plugin id
 // (`<pluginId>.<name>`); the core names are reserved.
+//
+// `snapshot` is the resource as the API returns it, carried by the issue and comment
+// events for consumers that forward it as it is (outgoing webhooks). Decide on the ids
+// and fields, and read anything else through the API.
 export interface CoreEventData {
-  'helena.issue.created': IssueRef & { title: string; parentId: number | null };
-  // The fields that changed, by name (status, priority, labels, …).
-  'helena.issue.updated': IssueRef & { changes: string[] };
+  'helena.issue.created': IssueRef & { title: string; parentId: number | null; snapshot?: unknown };
+  // The fields that changed, by name (status, priority, labels, …), where known.
+  'helena.issue.updated': IssueRef & { changes?: string[]; snapshot?: unknown };
   // Member ids: agents are members too. A delegate is the agent an issue is handed to
   // while a person stays the assignee.
   'helena.issue.assigned': IssueRef & {
     field: 'assignee' | 'delegate';
     assigneeId: string | null;
     previousAssigneeId: string | null;
+    snapshot?: unknown;
   };
+  'helena.issue.state_changed': IssueRef & { snapshot?: unknown };
+  'helena.issue.label_changed': IssueRef & { snapshot?: unknown };
+  'helena.issue.link_changed': IssueRef & { snapshot?: unknown };
+  'helena.issue.deleted': IssueRef & { snapshot?: unknown };
+  'helena.comment.created': CommentRef & { snapshot?: unknown };
+  'helena.comment.updated': CommentRef & { snapshot?: unknown };
+  'helena.comment.deleted': CommentRef & { snapshot?: unknown };
   'helena.run.started': RunEventData;
   'helena.run.finished': RunEventData;
   'helena.run.failed': RunEventData & { error: string | null };
@@ -54,21 +67,36 @@ export interface CoreEventData {
     decision: 'approved' | 'rejected';
     decidedBy: string | null;
   };
+  // A person's message, and an agent's answer once it is complete (status success or
+  // failed).
   'helena.chat.message': {
-    threadId: number;
+    threadId: string;
     messageId: number;
     role: 'user' | 'assistant';
-    agentId: number | null;
+    status: 'success' | 'failed';
+    agentId: number;
+    userId: string | null;
     projectId: number | null;
   };
+  // A routine (a schedule that hands an agent a task) created or reopened its task.
   'helena.routine.fired': {
-    routineId: string;
+    // Null where the scheduler does not name the routine.
+    routineId: string | null;
+    // Unique per firing: the scheduler's idempotency key.
+    fireId: string;
     agentId: number | null;
-    projectId: number | null;
-    issueId: number | null;
+    projectId: number;
+    // The task, `task:<KEY>-<n>`.
+    taskRef: string;
     // A new task, or an existing one reopened.
     mode: 'new' | 'reopen';
   };
+}
+
+export interface CommentRef {
+  commentId: number;
+  issueId: number;
+  projectId: number;
 }
 
 export interface RunEventData {
@@ -94,6 +122,13 @@ export const CORE_EVENT_TYPES = [
   'helena.issue.created',
   'helena.issue.updated',
   'helena.issue.assigned',
+  'helena.issue.state_changed',
+  'helena.issue.label_changed',
+  'helena.issue.link_changed',
+  'helena.issue.deleted',
+  'helena.comment.created',
+  'helena.comment.updated',
+  'helena.comment.deleted',
   'helena.run.started',
   'helena.run.finished',
   'helena.run.failed',
@@ -155,14 +190,16 @@ export function matchesEventPattern(pattern: string, type: string): boolean {
   return pattern === type;
 }
 
-export type EventHandler<E extends HelenaEvent = HelenaEvent> = (event: E) => void | Promise<void>;
+export type EventHandler<E extends HelenaEvent = HelenaEvent> = (event: E) => unknown;
 
-// A consumer that must not miss an event (a webhook, a workflow trigger) subscribes
-// durably: it runs in the worker off the outbox, with retries, after the change that
-// raised the event committed. An in-process subscriber runs right away in the process
-// that published, best effort, for things like refreshing a cache.
+// A consumer that must not miss an event (a webhook, a workflow trigger, the knowledge
+// indexer) subscribes durably. Where the process has an event transport (the workflow
+// engine's queue, orchestrator decision D-C2), a durable subscriber is served by the
+// transport: the event is stored with the change and delivered at least once, with
+// retries, in the worker. Without a transport every subscriber runs in process right
+// after publish, best effort, which is how Helena's side effects ran before the bus.
 export interface EventSubscription {
-  // Stable across restarts: the outbox tracks delivery per consumer id.
+  // Stable across restarts: a transport tracks delivery per subscriber id.
   id: string;
   patterns: string[];
   handler: EventHandler;
@@ -170,33 +207,47 @@ export interface EventSubscription {
   pluginId: string;
 }
 
+// The durable side of the bus, provided by the workflow engine (hub/native-engine), not
+// by the SDK: the SDK owns no queue and no table.
+export interface EventTransport {
+  // Stores events durably; inside the change's transaction when one is passed, so an
+  // event exists exactly when its change does.
+  append(events: HelenaEvent[], tx?: unknown): Promise<void>;
+  // Delivers stored events to the durable subscribers (read on every delivery, so a
+  // plugin loaded later is included), each at least once and with retries of its own.
+  start(subscriptions: () => EventSubscription[]): Promise<{ stop(): Promise<void> }>;
+}
+
 export interface EventBus {
-  publish(event: HelenaEvent): Promise<void>;
+  publish(event: HelenaEvent, options?: { tx?: unknown }): Promise<void>;
   subscribe(
     patterns: string | string[],
     handler: EventHandler,
     options?: { id?: string; durable?: boolean; pluginId?: string },
   ): () => void;
   subscriptions(): EventSubscription[];
+  // Hands durable delivery to a transport (null hands it back to in-process delivery).
+  useTransport(transport: EventTransport | null): void;
+  transport(): EventTransport | null;
 }
 
 export interface EventBusOptions {
-  // Where published events are stored for durable consumers: the outbox. Without one,
-  // durable subscribers are called in process like the others.
-  sink?: (events: HelenaEvent[]) => Promise<void>;
+  transport?: EventTransport | null;
   onError?: (error: unknown, subscription: EventSubscription, event: HelenaEvent) => void;
 }
 
-// The process-local bus. publish() hands the event to the sink (the outbox) first, then
-// to the in-process subscribers. It never throws for a failing subscriber.
+// The process-local bus. publish() hands the event to the transport first, then to the
+// in-process subscribers (all of them when there is no transport). It never throws for
+// a failing subscriber.
 export function createEventBus(options: EventBusOptions = {}): EventBus {
   const subs = new Map<string, EventSubscription>();
+  let transport = options.transport ?? null;
   let counter = 0;
   return {
-    async publish(event) {
-      if (options.sink) await options.sink([event]);
+    async publish(event, publishOptions = {}) {
+      if (transport) await transport.append([event], publishOptions.tx);
       for (const sub of subs.values()) {
-        if (options.sink && sub.durable) continue;
+        if (transport && sub.durable) continue;
         if (!sub.patterns.some((pattern) => matchesEventPattern(pattern, event.type))) continue;
         try {
           await sub.handler(event);
@@ -223,6 +274,12 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     },
     subscriptions() {
       return [...subs.values()];
+    },
+    useTransport(next) {
+      transport = next;
+    },
+    transport() {
+      return transport;
     },
   };
 }

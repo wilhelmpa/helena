@@ -14,6 +14,7 @@ export {
   approvalProblem,
   discoverPlugins,
   loadExternalPlugins,
+  loadPluginDir,
   pluginDigest,
   type DiscoveredPlugin,
   type ExternalPluginPolicy,
@@ -29,9 +30,11 @@ export {
 } from './manifest';
 export {
   createOutboxDispatcher,
+  createOutboxTransport,
   defaultBackoffMs,
   type DispatchReport,
   type OutboxDelivery,
   type OutboxDispatcherOptions,
   type OutboxStore,
 } from './outbox';
+export { bundleJsonSchema, checkBundle, templateBundleSchema } from './bundle-schema';

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
 import { PageSelect } from '@/components/layout/PageToolbar';
 import { useProjectsQuery } from '@/services/projects.service';
-import type { WorkspaceContentProps } from '@/context/workspaceContents';
+import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import { useTeamsQuery } from '@/services/teams.service';
 import MailInbox from './components/MailInbox';
 import { resolveInboxTeamId } from './inboxTeamScope';

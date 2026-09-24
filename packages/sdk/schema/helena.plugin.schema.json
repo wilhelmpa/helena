@@ -185,7 +185,7 @@
             "maxLength": 160
           }
         },
-        "templateKinds": {
+        "bundles": {
           "maxItems": 500,
           "type": "array",
           "items": {
@@ -307,7 +307,17 @@
                 },
                 "additionalProperties": {
                   "type": "string",
-                  "enum": ["read", "write", "execute", "send", "delete", "publish", "pay"]
+                  "enum": [
+                    "read",
+                    "report",
+                    "write",
+                    "send",
+                    "publish",
+                    "execute",
+                    "delete",
+                    "pay",
+                    "credentials"
+                  ]
                 }
               }
             },
@@ -325,7 +335,17 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["read", "write", "execute", "send", "delete", "publish", "pay"]
+            "enum": [
+              "read",
+              "report",
+              "write",
+              "send",
+              "publish",
+              "execute",
+              "delete",
+              "pay",
+              "credentials"
+            ]
           }
         },
         "events": {

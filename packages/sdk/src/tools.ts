@@ -22,9 +22,15 @@ export interface ToolCallContext {
   // its credentialSchema. Absent for a tool without a connector.
   credential?: Record<string, string | number | boolean>;
   runId?: number | null;
+  // The caller's own credential for Helena's API, for a tool that acts on Helena as the
+  // caller (the built-in route tools do): what it may do is exactly what the caller may.
+  caller?: { userId: string; auth: CallerAuth };
   signal?: AbortSignal;
   log: Logger;
 }
+
+export type CallerAuth =
+  { kind: 'api-key'; apiKey: string } | { kind: 'oauth'; accessToken: string };
 
 export interface AgentTool<Input = Record<string, unknown>, Output = unknown> {
   // The MCP tool name, unique across Helena: `[A-Za-z0-9_-]{1,64}`.
@@ -36,7 +42,7 @@ export interface AgentTool<Input = Record<string, unknown>, Output = unknown> {
   outputSchema?: SchemaLike<Output>;
   annotations?: ToolAnnotations;
   // What calling the tool does. Tools without it get the category their annotations
-  // imply (read-only is `read`, destructive `delete`, open-world `send`).
+  // imply (read-only is `read`, destructive `delete`, anything else `write`).
   category?: ActionCategory;
   // For a tool whose effect depends on its arguments (a browser click may send, pay or
   // publish): the category of one call. `category` is then the widest it can be.

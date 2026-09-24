@@ -12,6 +12,7 @@ export {
   createRegistry,
   type RegistryEntry,
 } from './registry';
+export { createRegistries, type HelenaRegistries } from './registries';
 export {
   ACTION_CATEGORIES,
   ACTION_META_KEY,
@@ -43,6 +44,7 @@ export {
   toolError,
   type AgentTool,
   type AnyAgentTool,
+  type CallerAuth,
   type ToolCallContext,
   type ToolDescriptor,
 } from './tools';
@@ -88,6 +90,7 @@ export {
   eventSource,
   matchesEventPattern,
   type ApprovalEventData,
+  type CommentRef,
   type CoreEvent,
   type CoreEventData,
   type CoreEventType,
@@ -96,14 +99,15 @@ export {
   type EventHandler,
   type EventInit,
   type EventSubscription,
+  type EventTransport,
   type HelenaEvent,
   type IssueRef,
   type RunEventData,
 } from './events';
 export type {
+  CaptureContext,
   CaptureInput,
   CaptureKind,
-  CaptureContext,
   CaptureResult,
   CaptureTarget,
   KnowledgeItem,
@@ -127,14 +131,31 @@ export {
   type RuntimeProfile,
   type RuntimeProfileContext,
   type RuntimeProfileResult,
-  type RuntimeReaders,
-  type RuntimeSessionSummary,
   type RuntimeStreamEvent,
   type RuntimeStreamParser,
   type RuntimeTaskSettings,
 } from './runtime';
 export {
+  REQUEST_CAPABILITY,
+  type CuratorStatus,
+  type GenAiUsage,
+  type LogLines,
+  type ReaderContext,
+  type RuntimeHealth,
+  type RuntimeReaders,
+  type RuntimeRequest,
+  type RuntimeRequestOp,
+  type RuntimeVersion,
+  type SessionPage,
+  type SessionSearchHit,
+  type SessionSummary,
+  type Transcript,
+  type TranscriptMessage,
+  type TranscriptPart,
+} from './runtime-readers';
+export {
   sortSlots,
+  uiSlotDescriptor,
   uiSlotKey,
   type AdminSectionSlot,
   type AgentSectionProps,
@@ -158,15 +179,19 @@ export {
   type UiSlotName,
 } from './ui';
 export {
+  ACCEPTED_LICENSES,
   BUNDLE_FORMAT,
-  BundleError,
-  createBundle,
-  parseBundle,
-  type ImportContext,
-  type ImportReport,
+  BUNDLE_FORMAT_VERSION,
+  BUNDLE_MANIFEST,
+  parseBundleJson,
+  skillMarkdownName,
+  validateBundle,
+  type BundleAgent,
+  type BundleMcpServer,
+  type BundleOffer,
+  type BundleSkill,
+  type SkillSource,
   type TemplateBundle,
-  type TemplateKind,
-  type TemplateKindId,
 } from './templates';
 export {
   definePlugin,

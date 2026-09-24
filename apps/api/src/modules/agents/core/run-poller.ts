@@ -67,7 +67,7 @@ async function processRun(run: ClaimedRun): Promise<void> {
       );
       return;
     }
-    await recordAgentRunFinished(run, 'failed');
+    await recordAgentRunFinished(run, 'failed', message);
     await markRunFailed(run.id, message);
   }
 }

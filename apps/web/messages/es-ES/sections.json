@@ -62,6 +62,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Permite que un proveedor de identidades cree, actualize y desactive cuentas en esta instancia, y conceda acceso a proyectos a través de sus grupos."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Los plugins propios de Helena y los externos de la carpeta de plugins: qué aportan, qué permisos piden y cuáles pueden ejecutarse."
     }
   },
   "settings": {

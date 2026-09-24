@@ -34,7 +34,8 @@ export interface PluginProvides {
   uiSlots?: string[];
   knowledgeSources?: string[];
   captureTargets?: string[];
-  templateKinds?: string[];
+  // Template bundles offered for import (agent templates, skills, MCP servers).
+  bundles?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

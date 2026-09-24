@@ -151,6 +151,37 @@ export function sortSlots<T extends { order?: number }>(slots: T[]): T[] {
   return [...slots].sort((a, b) => (a.order ?? 1000) - (b.order ?? 1000));
 }
 
-// The serializable form of a slot, which the API hands the web app for a plugin's frame
-// slots.
-export type UiSlotDescriptor = Omit<UiSlot, 'render'> & { render?: FrameRender; pluginId: string };
+// The serializable form of a plugin's slot, which the API hands the web app: everything
+// but a component, which only a built-in (bundled) slot can have.
+export interface UiSlotDescriptor {
+  // `<slot>:<id>`.
+  key: string;
+  pluginId: string;
+  slot: UiSlotName;
+  id: string;
+  label: LocalizedText;
+  icon?: string;
+  order?: number;
+  render?: FrameRender;
+  // The slot's own fields (inHeader, group, href, kinds …).
+  options: Record<string, unknown>;
+}
+
+export function uiSlotDescriptor(slot: UiSlot, pluginId: string): UiSlotDescriptor | null {
+  const { slot: name, id, label, icon, order, ...rest } = slot;
+  const render = 'render' in rest ? (rest as { render?: SlotRender<unknown> }).render : undefined;
+  if (render && render.kind !== 'frame') return null;
+  const options = { ...rest } as Record<string, unknown>;
+  delete options.render;
+  return {
+    key: uiSlotKey(slot),
+    pluginId,
+    slot: name,
+    id,
+    label,
+    ...(icon ? { icon } : {}),
+    ...(order !== undefined ? { order } : {}),
+    ...(render ? { render } : {}),
+    options,
+  };
+}

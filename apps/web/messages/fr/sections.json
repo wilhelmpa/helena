@@ -62,6 +62,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Permettez à un fournisseur d'identité de créer, mettre à jour et désactiver des comptes sur cette instance, et d'accorder l'accès aux projets via ses groupes."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Les plugins intégrés de Helena et les plugins externes du dossier des plugins : ce qu'ils fournissent, les droits qu'ils demandent et ceux qui peuvent s'exécuter."
     }
   },
   "settings": {

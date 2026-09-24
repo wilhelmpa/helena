@@ -1,12 +1,16 @@
 import { asc, eq } from 'drizzle-orm';
 import { db, user, userPreference } from '@repo/db';
+import type { PluginHost } from '@helena/sdk/server';
 import {
   embedPending,
   ensureVectorIndex,
+  KNOWLEDGE_PLUGIN_MANIFEST,
+  knowledgePlugin,
   knowledgeSources,
   runSources,
   seedTemplates,
   syncEmbedder,
+  useKnowledgeRegistries,
   type Embedder,
 } from '@helena/knowledge';
 import { startPollLoop, type WorkerHandle } from './poll-loop';
@@ -30,7 +34,18 @@ async function instanceLanguage(): Promise<'de' | 'en'> {
   return owner?.locale?.startsWith('de') ? 'de' : 'en';
 }
 
-export function startKnowledgeIndexer(options: { vault: boolean }): WorkerHandle {
+export async function startKnowledgeIndexer(options: {
+  vault: boolean;
+  host: PluginHost;
+}): Promise<WorkerHandle> {
+  // Helena's own sources are the internal plugin `helena.knowledge`, in the host's
+  // registries beside those of plugins.
+  useKnowledgeRegistries({
+    sources: options.host.knowledgeSources,
+    captureTargets: options.host.captureTargets,
+  });
+  const loaded = await options.host.load(knowledgePlugin, KNOWLEDGE_PLUGIN_MANIFEST);
+  if (loaded.status !== 'loaded') console.error(`[knowledge] plugin failed: ${loaded.error}`);
   if (options.vault) {
     void (async () => {
       try {

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useWorkspaceContents } from '@/context/workspaceContents';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PanelHeaderSlotCtx } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
 import { Direction } from 'radix-ui';
@@ -12,8 +11,10 @@ import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { browserControlBase } from '@/utils/browserControl';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
-import type { WorkspaceToolId } from '@/utils/workspaceTools';
-import { HEADER_WORKSPACE_TOOLS, workspaceTools } from '@/utils/workspaceTools';
+import type { WorkspaceTool, WorkspaceToolId } from '@/utils/workspaceTools';
+import { workspaceTools } from '@/utils/workspaceTools';
+import { panelTool, usePanelTools } from '@/extensions/panelTools';
+import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
 import { cn } from '@/lib/utils';
 import ResizeGrip from '@/components/common/ResizeGrip';
 import WorkspaceBrowserBar from './WorkspaceBrowserBar';
@@ -93,27 +94,45 @@ export default function WorkspacePanel({
     () => workspaceTools(workspaceConfig, contextProjectKey, provisionedResources),
     [contextProjectKey, provisionedResources, workspaceConfig],
   );
-  const tool = tools[activeTool];
-  const contents = useWorkspaceContents();
+  // Every panel tool (extensions/panelTools.tsx): the built-ins and plugins' tools.
+  const registered = usePanelTools();
+  const labelOf = usePanelToolLabel();
   const labels = useMemo<Record<WorkspaceToolId, string>>(
-    () => ({
-      chat: t('chat'),
-      terminal: t('terminal'),
-      code: t('code'),
-      browser: t('browser'),
-      inbox: t('inbox'),
-      mail: t('mail'),
-      connections: t('connections'),
-    }),
-    [t],
+    () => Object.fromEntries(registered.map((entry) => [entry.id, labelOf(entry)])),
+    [labelOf, registered],
   );
+  // Where a tool's frame is: the deployment's address for a built-in, the plugin's page
+  // for a plugin's tool, none for a view of the app itself.
+  const entryOf = useCallback(
+    (id: WorkspaceToolId): WorkspaceTool => {
+      const view = registered.find((entry) => entry.id === id)?.view;
+      if (view?.kind === 'frame') return { id: 'connections', url: view.url, advancedUrl: '' };
+      return (
+        (tools as Record<string, WorkspaceTool | undefined>)[id] ?? {
+          id: 'connections',
+          url: '',
+          advancedUrl: '',
+        }
+      );
+    },
+    [registered, tools],
+  );
+  const tool = entryOf(activeTool);
   const [advanced, setAdvanced] = useState(false);
   const browserPreferences = useBrowserPreferences();
   const browserBase = tools.browser.url ? browserControlBase(tools.browser.url) : null;
   // The live view needs the browser router's control routes next to the VNC stream.
   const browserLive = browserPreferences.view === 'live' && browserBase !== null;
   const [frames, setFrames] = useState<
-    { key: string; url: string; title: string; tool: WorkspaceToolId; live: boolean }[]
+    {
+      key: string;
+      url: string;
+      title: string;
+      tool: WorkspaceToolId;
+      live: boolean;
+      // A plugin's page, which runs sandboxed.
+      sandboxed: boolean;
+    }[]
   >([]);
   const [frameReloads, setFrameReloads] = useState<Record<string, number>>({});
   const [visitedContents, setVisitedContents] = useState<WorkspaceToolId[]>([]);
@@ -124,8 +143,10 @@ export default function WorkspacePanel({
   const visible = useMemo(() => {
     const describe = (id: WorkspaceToolId, side: Side) => {
       const withAdvanced = side === 'primary' && id === 'chat' && advanced;
-      const content = withAdvanced ? undefined : contents[id];
-      const entry = tools[id];
+      const view = registered.find((entry) => entry.id === id)?.view;
+      const content = withAdvanced || view?.kind !== 'component' ? undefined : view.component;
+      const entry = entryOf(id);
+      const sandboxed = view?.kind === 'frame';
       const live = id === 'browser' && browserLive;
       let url: string | null = withAdvanced ? entry.advancedUrl : entry.url;
       if (id === 'browser' && url) {
@@ -133,7 +154,16 @@ export default function WorkspacePanel({
         else if (!live) url = browserStreamUrl(url, browserPreferences.lossless);
       }
       const key = `${id}:${id === 'browser' ? `${entry.url}:${toolSession}:${live}` : url}`;
-      return { id, side, content, url: content ? null : url, key, label: labels[id], live };
+      return {
+        id,
+        side,
+        content,
+        url: content ? null : url,
+        key,
+        label: labels[id] ?? id,
+        live,
+        sandboxed,
+      };
     };
     return [
       describe(activeTool, 'primary'),
@@ -145,11 +175,11 @@ export default function WorkspacePanel({
     browserLive,
     browserPreferences.lossless,
     browserPreferences.ready,
-    contents,
+    entryOf,
     labels,
+    registered,
     secondaryTool,
     toolSession,
-    tools,
   ]);
   const primary = visible[0]!;
   const sideOfFrame = new Map(visible.map((entry) => [entry.key, entry.side]));
@@ -180,7 +210,14 @@ export default function WorkspacePanel({
             (frame) =>
               frame.key !== entry.key && (entry.id !== 'browser' || frame.tool !== 'browser'),
           ),
-          { key: entry.key, url: entry.url, title: entry.label, tool: entry.id, live: entry.live },
+          {
+            key: entry.key,
+            url: entry.url,
+            title: entry.label,
+            tool: entry.id,
+            live: entry.live,
+            sandboxed: entry.sandboxed,
+          },
         ];
       }
       if (next === current) return current;
@@ -257,7 +294,9 @@ export default function WorkspacePanel({
         splitControl={
           isMobile ? null : (
             <WorkspaceSplitMenu
-              tools={HEADER_WORKSPACE_TOOLS.filter((id) => id !== activeTool)}
+              tools={registered
+                .filter((entry) => entry.inHeader && entry.id !== activeTool)
+                .map((entry) => entry.id)}
               splitTool={secondaryTool}
               labels={labels}
               onSplitToolChange={onSplitToolChange}
@@ -308,11 +347,18 @@ export default function WorkspacePanel({
               {...props}
             />
           ) : (
-            <WorkspaceFrame key={frame.key} url={frame.url} title={frame.title} {...props} />
+            <WorkspaceFrame
+              key={frame.key}
+              url={frame.url}
+              title={frame.title}
+              sandbox={frame.sandboxed ? 'allow-scripts allow-forms' : undefined}
+              {...props}
+            />
           );
         })}
         {visitedContents.map((id) => {
-          const ToolContent = contents[id];
+          const view = panelTool(id)?.view;
+          const ToolContent = view?.kind === 'component' ? view.component : undefined;
           const side = sideOfContent.get(id);
           return ToolContent ? (
             <div

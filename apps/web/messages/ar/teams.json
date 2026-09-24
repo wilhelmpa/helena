@@ -740,5 +740,20 @@
   "settingState": {
     "on": "مُفعّل",
     "off": "مُعطّل"
+  },
+  "templateBundles": {
+    "importAction": "استيراد القوالب",
+    "exportAction": "تصدير القوالب",
+    "importTitle": "استيراد القوالب",
+    "counts": "{agents} قوالب وكلاء · {skills} مهارات · {servers} خوادم MCP",
+    "chooseFile": "اختر ملف الحزمة",
+    "fileChosen": "الملف: {name}",
+    "dryRun": "فحص فقط (دون أي تغيير)",
+    "update": "استبدال الاختلافات",
+    "check": "فحص",
+    "import": "استيراد",
+    "close": "إغلاق",
+    "failed": "لم ينجح ذلك.",
+    "notJson": "الملف ليس حزمة JSON."
   }
 }

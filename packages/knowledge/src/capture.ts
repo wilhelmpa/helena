@@ -274,8 +274,8 @@ function target(
       run(input, {
         ref: ctx.actor,
         runId: ctx.runId ?? null,
-        timeZone: ctx.timeZone,
-        locale: ctx.locale,
+        timeZone: ctx.timeZone ?? undefined,
+        locale: ctx.locale ?? undefined,
       }),
   };
 }

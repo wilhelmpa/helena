@@ -35,6 +35,7 @@ import {
   siblingsOf,
   type MessageTree,
 } from './branches';
+import { publishDomainEvent } from '#shared/helena';
 
 export type ChatCatalogModel = {
   id: string;
@@ -603,6 +604,24 @@ export async function sendMessage(input: {
       .update(agentChatThread)
       .set({ activeMessageId: answer.id, archivedAt: null, updatedAt: new Date(), ...settings })
       .where(eq(agentChatThread.id, threadId));
+    await publishDomainEvent(
+      {
+        type: 'helena.chat.message',
+        projectId: input.projectId,
+        subject: `chats/${threadId}/messages/${question.id}`,
+        actor: `user:${userId}`,
+        data: {
+          threadId,
+          messageId: question.id,
+          role: 'user',
+          status: 'success',
+          agentId,
+          userId,
+          projectId: input.projectId,
+        },
+      },
+      tx,
+    );
     return { threadId, messageId: answer.id, userMessageId: question.id };
   });
 }
@@ -1077,6 +1096,25 @@ export async function finishMessage(
       threadId: agentChatMessage.threadId,
     });
   if (rows.length > 0) {
+    const [thread] = await db
+      .select({ userId: agentChatThread.userId, projectId: agentChatThread.projectId })
+      .from(agentChatThread)
+      .where(eq(agentChatThread.id, rows[0].threadId));
+    await publishDomainEvent({
+      type: 'helena.chat.message',
+      projectId: thread?.projectId ?? null,
+      subject: `chats/${rows[0].threadId}/messages/${messageId}`,
+      actor: `agent:${agentId}`,
+      data: {
+        threadId: rows[0].threadId,
+        messageId,
+        role: 'assistant',
+        status: result.status,
+        agentId,
+        userId: thread?.userId ?? null,
+        projectId: thread?.projectId ?? null,
+      },
+    });
     // Undefined is a runner that said nothing about the context — an older one, or a
     // command that reports no counts at all — and the thread keeps the number it has.
     if (result.usage !== undefined) {
