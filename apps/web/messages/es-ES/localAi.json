@@ -62,6 +62,7 @@
     "add": "Añadir servidor",
     "none": "Aún no hay servidor. Instala la IA local con native/local-ai/install.sh y añádelo aquí.",
     "reachable": "Accesible · {version}",
+    "reachableBare": "Accesible",
     "unreachable": "No accesible",
     "keys": {
       "file": "Clave desde archivo",

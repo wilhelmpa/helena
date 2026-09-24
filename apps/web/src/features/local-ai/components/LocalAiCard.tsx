@@ -57,7 +57,10 @@ export default function LocalAiCard({ className }: { className?: string }) {
 
   return (
     <section
-      className={cn('flex flex-col gap-3 rounded-lg border bg-card p-4 text-sm', className)}
+      className={cn(
+        '@container flex flex-col gap-3 rounded-lg border bg-card p-4 text-sm',
+        className,
+      )}
       aria-labelledby="local-ai-card-title"
     >
       <header className="flex items-center gap-2">
@@ -99,17 +102,17 @@ export default function LocalAiCard({ className }: { className?: string }) {
             const toggle = classToggle(entry);
             return (
               <li key={entry.id} className="flex items-center gap-2 px-3 py-2">
-                <span className="min-w-0 flex-1 truncate">
-                  {resolveLabel(entry.label, locale, (key) => t(key as never))}
-                </span>
-                <span className="text-xs text-muted-foreground uppercase">
-                  {t(`units.${entry.unit}`)}
-                </span>
-                {toggle.reason && (
-                  <span className="text-xs text-muted-foreground">
-                    {t(`blockers.${toggle.reason}`)}
+                {/* A narrow card (a phone, a small dashboard tile) puts the state under the
+                    name instead of cutting the name off. */}
+                <div className="flex min-w-0 flex-1 flex-col @md:flex-row @md:items-center @md:gap-2">
+                  <span className="min-w-0 truncate @md:flex-1">
+                    {resolveLabel(entry.label, locale, (key) => t(key as never))}
                   </span>
-                )}
+                  <span className="flex gap-2 text-xs text-muted-foreground">
+                    <span className="uppercase">{t(`units.${entry.unit}`)}</span>
+                    {toggle.reason && <span>{t(`blockers.${toggle.reason}`)}</span>}
+                  </span>
+                </div>
                 <Switch
                   aria-label={resolveLabel(entry.label, locale, (key) => t(key as never))}
                   checked={toggle.checked}

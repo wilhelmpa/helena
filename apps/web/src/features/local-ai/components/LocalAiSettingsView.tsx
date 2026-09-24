@@ -121,9 +121,11 @@ function ServerCard({ server }: { server: ModelServer }) {
           <div className="flex items-center gap-2 font-medium">
             {server.name}
             <StatusBadge status={reachable ? 'success' : 'danger'} className="text-xs">
-              {reachable
-                ? t('reachable', { version: server.status?.version ?? '?' })
-                : t('unreachable')}
+              {!reachable
+                ? t('unreachable')
+                : server.status?.version
+                  ? t('reachable', { version: server.status.version })
+                  : t('reachableBare')}
             </StatusBadge>
           </div>
           <p className="truncate text-xs text-muted-foreground" dir="ltr">
@@ -172,7 +174,9 @@ function ServerCard({ server }: { server: ModelServer }) {
                 {model.name}
               </span>
               <span className="text-xs text-muted-foreground">
-                {model.unit ? tUnits(model.unit) : '–'} · {model.capabilities.join(', ')}
+                {[model.unit ? tUnits(model.unit) : null, model.capabilities.join(', ')]
+                  .filter(Boolean)
+                  .join(' · ')}
                 {model.sizeBytes ? ` · ${gib(model.sizeBytes)}` : ''}
               </span>
               {model.loaded ? (

@@ -4,6 +4,7 @@ import { agentUsage, db, helenaLocalAiEval, helenaModelServer, writeSecret } fro
 import {
   LOCAL_AI_KEY_DIR,
   allowedKeyFile,
+  failedEvalModels,
   listModelServers,
   localAiServerSecretKey,
   pickModel,
@@ -543,6 +544,8 @@ function chatModels(server: ModelServerRow): LocalModel[] {
 export function runtimeLocalAi(
   policy: LocalAiPolicy,
   servers: ModelServerRow[],
+  // The models whose newest eval of the helper class failed (`failedEvalModels`).
+  failedHelpers?: ReadonlySet<string>,
 ): RuntimeLocalAi | null {
   if (!policy.enabled) return null;
   const enabled = servers.filter((server) => server.enabled && chatModels(server).length > 0);
@@ -558,6 +561,7 @@ export function runtimeLocalAi(
       servers: enabled,
       // Hermes falls back to the main model itself when the server does not answer.
       requireUp: false,
+      failed: failedHelpers,
     });
     if ('route' in result) {
       const provider = localProviderName(result.route.server.slug);
@@ -585,8 +589,12 @@ export function runtimeLocalAi(
 }
 
 export async function runtimeLocalAiNow(): Promise<RuntimeLocalAi | null> {
-  const [policy, servers] = await Promise.all([readLocalAiPolicy(), listModelServers()]);
-  return runtimeLocalAi(policy, servers);
+  const [policy, servers, failed] = await Promise.all([
+    readLocalAiPolicy(),
+    listModelServers(),
+    failedEvalModels('hermes-helpers'),
+  ]);
+  return runtimeLocalAi(policy, servers, failed);
 }
 
 // The keys an agent's runner puts into the environment for the servers its profile names.

@@ -31,11 +31,13 @@ const MODELS = [
   { id: 'Not-On-Disk-GGUF', recipe: 'llamacpp', labels: [], downloaded: false },
 ];
 
-// Answers the Hermes-helper eval right: each compression keeps every fact of its case.
+// Answers the Hermes-helper eval right: each compression keeps every fact of its case. With
+// `answerWrong` (a model after a bad update) it forgets them.
+let answerWrong = false;
 function chatAnswer(body: { messages: { role: string; content: string }[] }) {
   const prompt = body.messages.find((m) => m.role === 'user')?.content ?? '';
   const item = COMPRESSION_CASES.find((entry) => entry.conversation === prompt);
-  const content = item ? item.facts.map((any) => any[0]).join('; ') : 'ok';
+  const content = item && !answerWrong ? item.facts.map((any) => any[0]).join('; ') : 'ok';
   return {
     choices: [{ message: { role: 'assistant', content } }],
     usage: { prompt_tokens: 50, completion_tokens: 12 },
@@ -199,6 +201,29 @@ describe('local AI', () => {
     expect(local).toMatchObject({ local: true, provider: 'helena-local' });
     // A model the server has not downloaded is not offered.
     expect(catalogOn.models.some((m) => m.id.endsWith('Not-On-Disk-GGUF'))).toBe(false);
+
+    // The model changes (an update) and fails its eval again: the class stays switched on, but
+    // Hermes' helpers go back to the agent's own model until a new eval passes.
+    answerWrong = true;
+    const failed = await asOwner.god['local-ai'].evals.post({
+      classId: 'hermes-helpers',
+      modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+    });
+    answerWrong = false;
+    expect(failed.data).toMatchObject({ passed: false });
+    const gated = (await asOwner.god['local-ai'].get()).data!;
+    expect(gated.classes.find((c) => c.id === 'hermes-helpers')).toMatchObject({
+      mode: 'prefer',
+      blocker: 'eval-failed',
+    });
+    expect((await asRunner['agent-runtime'].policy.get()).data!.localAi?.helpers).toEqual([]);
+    await asOwner.god['local-ai'].evals.post({
+      classId: 'hermes-helpers',
+      modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+    });
+    expect(
+      (await asRunner['agent-runtime'].policy.get()).data!.localAi?.helpers.map((h) => h.task),
+    ).toEqual(['compression', 'vision']);
 
     // Off again: the next snapshot has none of it (the runner rewrites every profile).
     await asOwner.god['local-ai'].policy.patch({ enabled: false });

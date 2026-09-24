@@ -966,7 +966,17 @@ export async function readChatCatalog(agentId: number): Promise<ChatCatalog> {
     .innerJoin(aiAgent, eq(aiAgent.id, agentChatCatalog.agentId))
     .where(eq(agentChatCatalog.agentId, agentId))
     .limit(1);
-  if (!row) return { models: [], unavailable: [], updatedAt: null };
+  if (!row) {
+    // No runner has published a catalog yet (a new agent): the local models are known
+    // without one.
+    const [agent] = await db
+      .select({ runtimePolicy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agentId))
+      .limit(1);
+    const local = agent ? await localModelsFor(runtimeOfPolicy(agent.runtimePolicy)) : [];
+    return { models: local, unavailable: [], updatedAt: null };
+  }
   const runtime = runtimeOfPolicy(row.runtimePolicy);
   const annotated = annotateCatalog(
     (row.models as ChatCatalogModel[] | null) ?? [],

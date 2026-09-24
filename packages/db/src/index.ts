@@ -64,6 +64,7 @@ export {
   STATUS_FRESH_MS,
   allowedKeyFile,
   defaultLocalAiPolicy,
+  failedEvalModels,
   listModelServers,
   localAiServerSecretKey,
   modelServerBySlug,

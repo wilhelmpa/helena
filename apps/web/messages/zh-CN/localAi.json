@@ -62,6 +62,7 @@
     "add": "添加服务器",
     "none": "还没有服务器。先用 native/local-ai/install.sh 安装本地 AI，再在这里添加。",
     "reachable": "可访问 · {version}",
+    "reachableBare": "可访问",
     "unreachable": "无法访问",
     "keys": {
       "file": "从文件读取密钥",

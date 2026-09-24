@@ -62,6 +62,7 @@
     "add": "Add server",
     "none": "No server yet. Install local AI with native/local-ai/install.sh, then add it here.",
     "reachable": "Reachable · {version}",
+    "reachableBare": "Reachable",
     "unreachable": "Not reachable",
     "keys": {
       "file": "Key from file",

@@ -62,6 +62,7 @@
     "add": "Tambah server",
     "none": "Belum ada server. Pasang AI lokal dengan native/local-ai/install.sh, lalu tambahkan di sini.",
     "reachable": "Terjangkau · {version}",
+    "reachableBare": "Terjangkau",
     "unreachable": "Tidak terjangkau",
     "keys": {
       "file": "Kunci dari berkas",

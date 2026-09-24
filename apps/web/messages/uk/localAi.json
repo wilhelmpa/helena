@@ -62,6 +62,7 @@
     "add": "Додати сервер",
     "none": "Серверів ще немає. Встановіть локальний ШІ за допомогою native/local-ai/install.sh і додайте його тут.",
     "reachable": "Доступний · {version}",
+    "reachableBare": "Доступний",
     "unreachable": "Недоступний",
     "keys": {
       "file": "Ключ із файлу",

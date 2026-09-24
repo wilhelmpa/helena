@@ -205,6 +205,10 @@ describe('the policy and its routes', () => {
     expect(refusal(on, [server({ models: [model('e', { capabilities: ['embeddings'] })] })])).toBe(
       'no-model',
     );
+    // A model whose newest eval failed (after an update) is not used, even with the class on.
+    const failed = new Set(['helena-local/Qwen3.6-35B-A3B-GGUF']);
+    const gated = routeFor({ ...input, policy: on, servers: [server()], failed });
+    expect('refusal' in gated && gated.refusal).toBe('eval-failed');
   });
 
   it('reads a key file only below /etc/helena', () => {

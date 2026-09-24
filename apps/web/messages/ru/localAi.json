@@ -62,6 +62,7 @@
     "add": "Добавить сервер",
     "none": "Серверов пока нет. Установите локальный ИИ с помощью native/local-ai/install.sh и добавьте его здесь.",
     "reachable": "Доступен · {version}",
+    "reachableBare": "Доступен",
     "unreachable": "Недоступен",
     "keys": {
       "file": "Ключ из файла",

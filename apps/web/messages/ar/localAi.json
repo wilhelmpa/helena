@@ -62,6 +62,7 @@
     "add": "إضافة خادم",
     "none": "لا يوجد خادم بعد. ثبّت الذكاء الاصطناعي المحلي عبر native/local-ai/install.sh ثم أضفه هنا.",
     "reachable": "متاح · {version}",
+    "reachableBare": "متاح",
     "unreachable": "يتعذّر الوصول",
     "keys": {
       "file": "المفتاح من ملف",

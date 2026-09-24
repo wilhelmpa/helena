@@ -483,6 +483,7 @@ import { resolveLocalRoute, readModelServerKey } from '@repo/db';
 const result = await resolveLocalRoute({ classId: 'mail-classify', unit: 'npu', capability: 'chat' });
 // { route: { server, model, modelId, unit, mode } }  or  { refusal, mode }
 // refusal: 'master-off' | 'class-off' | 'unit-off' | 'no-server' | 'server-down' | 'no-model'
+//        | 'eval-failed' (the model's newest eval for the class failed, e.g. after an update)
 ```
 
 - The **tier** is the class's `unit` by default; the model the owner picked for the class (or the
@@ -494,6 +495,10 @@ const result = await resolveLocalRoute({ classId: 'mail-classify', unit: 'npu', 
   in `prefer` also goes to the configured path; in `only` it retries later.
 - The master switch off answers `master-off` for every class at once: nothing local runs, and
   nothing local is left behind (the consumer keeps no copy of the route).
+- **The eval gate holds after switching on:** when a model's newest eval for a class fails (a
+  model updated and evaluated again), that class stops routing to it (`eval-failed`; Hermes'
+  helpers leave the profile) while its switch stays on, and the card says why. A passing eval
+  brings it back. Start lists it as a red problem ("Braucht dich").
 - The **Jev / Laya (experimentell)** switch on the card is separate from the classes: it sets
   hub/browser-task's instance "Browser-Steuerung" (`PUT /god/browser-control`). A decisions backend
   that wants the same switch reads that setting; it does not add a second one.

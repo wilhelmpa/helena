@@ -62,6 +62,7 @@
     "add": "Ajouter un serveur",
     "none": "Aucun serveur. Installez l'IA locale avec native/local-ai/install.sh, puis ajoutez-le ici.",
     "reachable": "Joignable · {version}",
+    "reachableBare": "Joignable",
     "unreachable": "Injoignable",
     "keys": {
       "file": "Clé depuis un fichier",

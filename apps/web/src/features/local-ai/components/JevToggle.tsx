@@ -38,15 +38,19 @@ export default function JevToggle() {
 
   return (
     <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-      <span className="min-w-0 flex-1 truncate">{t('label')}</span>
-      <Badge variant="outline" className="text-xs">
-        {t('experimental')}
-      </Badge>
-      {!on && connection === null && !connections.isLoading && (
-        <Link href={credentialsPath()} className="text-xs underline underline-offset-2">
-          {t('connect')}
-        </Link>
-      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-1 @md:flex-row @md:items-center @md:gap-2">
+        <span className="min-w-0 truncate @md:flex-1">{t('label')}</span>
+        <span className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            {t('experimental')}
+          </Badge>
+          {!on && connection === null && !connections.isLoading && (
+            <Link href={credentialsPath()} className="text-xs underline underline-offset-2">
+              {t('connect')}
+            </Link>
+          )}
+        </span>
+      </div>
       <Switch
         aria-label={t('label')}
         checked={on}

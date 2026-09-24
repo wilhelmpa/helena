@@ -71,7 +71,13 @@ export function classToggle(entry: Pick<LocalAiClass, 'mode' | 'blocker' | 'expe
 } {
   const checked = entry.mode !== 'off';
   const reason = entry.blocker;
-  return { checked, disabled: !checked && reason !== null, reason: checked ? null : reason };
+  // A class that is on but whose model failed its newest eval (after an update) runs on its
+  // configured model: it stays switched on, and says why it is not local.
+  return {
+    checked,
+    disabled: !checked && reason !== null,
+    reason: checked && reason !== 'eval-failed' ? null : reason,
+  };
 }
 
 export function percent(value: number | null | undefined): string {

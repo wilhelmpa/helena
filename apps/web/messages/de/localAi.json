@@ -62,6 +62,7 @@
     "add": "Server hinzufügen",
     "none": "Noch kein Server. Lokale KI mit native/local-ai/install.sh einrichten, dann hier hinzufügen.",
     "reachable": "Erreichbar · {version}",
+    "reachableBare": "Erreichbar",
     "unreachable": "Nicht erreichbar",
     "keys": {
       "file": "Schlüssel aus Datei",

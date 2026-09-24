@@ -1,6 +1,6 @@
 import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { asc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 import {
   LOCAL_AI_MODES,
   LOCAL_AI_UNITS,
@@ -14,7 +14,7 @@ import {
 import { db } from '../client';
 import { readSecret } from '../secrets';
 import { getSetting, setSetting } from '../settings';
-import { helenaModelServer } from '../schema/local-ai';
+import { helenaLocalAiEval, helenaModelServer } from '../schema/local-ai';
 
 // The local AI policy and how a kind of work finds its local model
 // (docs/helena-decisions/local-ai-platform.md §6). The API (settings, evals, the runners'
@@ -169,7 +169,13 @@ export interface LocalRoute {
 }
 
 export type RouteRefusal =
-  'master-off' | 'class-off' | 'unit-off' | 'no-server' | 'server-down' | 'no-model';
+  | 'master-off'
+  | 'class-off'
+  | 'unit-off'
+  | 'no-server'
+  | 'server-down'
+  | 'no-model'
+  | 'eval-failed';
 
 export type RouteResult = { route: LocalRoute } | { refusal: RouteRefusal; mode: LocalAiMode };
 
@@ -204,6 +210,9 @@ export function routeFor(
     // Embeddings keep their model while the server is down (the vectors of another model
     // are a different space); everything else falls back at once.
     requireUp?: boolean;
+    // The models (`helena-<slug>/<id>`) whose newest eval for this class failed: the gate
+    // holds after the class was switched on too (a model updated, then evaluated again).
+    failed?: ReadonlySet<string>;
   },
   now = Date.now(),
 ): RouteResult {
@@ -225,6 +234,10 @@ export function routeFor(
       refusal = 'unit-off';
       continue;
     }
+    if (input.failed?.has(localModelId(server.slug, model.id))) {
+      refusal = 'eval-failed';
+      continue;
+    }
     if (input.requireUp !== false && !serverUp(server, now)) {
       refusal = 'server-down';
       continue;
@@ -242,6 +255,31 @@ export function routeFor(
   return { refusal, mode: setting.mode };
 }
 
+// The models whose newest eval for a class failed, as Helena names them. A class in `prefer`
+// or `only` does not route to them: its configured model answers until a new eval passes.
+export async function failedEvalModels(classId: string): Promise<Set<string>> {
+  const rows = await db
+    .select({
+      model: helenaLocalAiEval.model,
+      slug: helenaModelServer.slug,
+      passed: helenaLocalAiEval.passed,
+    })
+    .from(helenaLocalAiEval)
+    .innerJoin(helenaModelServer, eq(helenaModelServer.id, helenaLocalAiEval.serverId))
+    .where(eq(helenaLocalAiEval.classId, classId))
+    .orderBy(desc(helenaLocalAiEval.ranAt))
+    .limit(200);
+  const seen = new Set<string>();
+  const failed = new Set<string>();
+  for (const row of rows) {
+    const id = localModelId(row.slug, row.model);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    if (!row.passed) failed.add(id);
+  }
+  return failed;
+}
+
 // The same, read from the database.
 export async function resolveLocalRoute(input: {
   classId: string;
@@ -249,6 +287,10 @@ export async function resolveLocalRoute(input: {
   capability: LocalModelCapability;
   requireUp?: boolean;
 }): Promise<RouteResult> {
-  const [policy, servers] = await Promise.all([readLocalAiPolicy(), listModelServers()]);
-  return routeFor({ ...input, policy, servers });
+  const [policy, servers, failed] = await Promise.all([
+    readLocalAiPolicy(),
+    listModelServers(),
+    failedEvalModels(input.classId),
+  ]);
+  return routeFor({ ...input, policy, servers, failed });
 }

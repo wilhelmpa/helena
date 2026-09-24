@@ -67,12 +67,21 @@ describe('local AI card helpers', () => {
       disabled: false,
       reason: null,
     });
-    // Once on, switching off is always possible, whatever the eval says now.
+    // Once on, switching off is always possible, whatever the eval says now; a failed newest
+    // eval (after an update) is shown, since the class runs on its configured model meanwhile.
     assert.deepEqual(classToggle({ mode: 'prefer', blocker: 'eval-failed', experimental: false }), {
       checked: true,
       disabled: false,
-      reason: null,
+      reason: 'eval-failed',
     });
+    assert.deepEqual(
+      classToggle({ mode: 'prefer', blocker: 'eval-missing', experimental: false }),
+      {
+        checked: true,
+        disabled: false,
+        reason: null,
+      },
+    );
   });
 
   it('names local models without their provider', () => {
