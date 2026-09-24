@@ -1,4 +1,4 @@
-import type { ActionCategory } from './actions';
+import type { ActionCategory, ActionScope } from './actions';
 import type { AgentRef, ProjectRef } from './common';
 
 // One question for every tool call, connector service, workflow step and runtime
@@ -24,6 +24,8 @@ export interface PolicyContext {
   runId?: number | null;
   issueId?: number | null;
   input?: unknown;
+  // Where a delete or an execute lands. Absent, an evaluator assumes outside.
+  scope?: ActionScope;
 }
 
 export interface PolicyRequest {

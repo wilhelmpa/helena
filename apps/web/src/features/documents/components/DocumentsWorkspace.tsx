@@ -3,10 +3,22 @@
 import { useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, FilePlus2, FolderPlus, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  FilePlus2,
+  FolderPlus,
+  LayoutTemplate,
+  Trash2,
+} from 'lucide-react';
 import type { PageAction } from '@/components/layout/PageToolbar';
 import { cn } from '@/lib/utils';
+import { useOpenDailyNoteMutation } from '@/services/everything.service';
 import { vaultNotePath } from '@/utils/paths';
+import DocumentTemplateDialog from './DocumentTemplateDialog';
+
+// The Docs root of Home, where the journal (daily notes) lives.
+const HOME_DOCS_ROOT = 'Home/Docs';
 import { useCreateUntitledNote } from '../services/knowledge.service';
 import { isNotePath } from '../utils/vaultPaths';
 import DocumentEmptyState from './DocumentEmptyState';
@@ -30,7 +42,10 @@ export default function DocumentsWorkspace({ root, canEdit }: { root: string; ca
   const [createdPath, setCreatedPath] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [treeAction, setTreeAction] = useState<DocumentTreeAction | null>(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
   const createNote = useCreateUntitledNote(root);
+  const tKnowledge = useTranslations('knowledge');
+  const dailyNote = useOpenDailyNoteMutation();
 
   const newNote = (folder: string) =>
     createNote.mutate(
@@ -44,13 +59,34 @@ export default function DocumentsWorkspace({ root, canEdit }: { root: string; ca
     );
 
   const actions: PageAction[] = [];
-  if (canEdit && !showTrash)
+  // Home's Docs keep the daily notes (the journal); "Heute" opens today's, made from the
+  // daily note template when the day has none yet.
+  if (canEdit && !showTrash && root === HOME_DOCS_ROOT)
     actions.push({
-      id: 'new-folder',
-      label: t('newFolder'),
-      icon: FolderPlus,
-      onClick: () => setTreeAction({ kind: 'newFolder', path: root }),
+      id: 'today',
+      label: tKnowledge('journal.today'),
+      icon: CalendarDays,
+      disabled: dailyNote.isPending,
+      onClick: () =>
+        dailyNote.mutate(undefined, {
+          onSuccess: (note) => router.push(vaultNotePath(note.path)),
+        }),
     });
+  if (canEdit && !showTrash)
+    actions.push(
+      {
+        id: 'from-template',
+        label: tKnowledge('templates.action'),
+        icon: LayoutTemplate,
+        onClick: () => setTemplateOpen(true),
+      },
+      {
+        id: 'new-folder',
+        label: t('newFolder'),
+        icon: FolderPlus,
+        onClick: () => setTreeAction({ kind: 'newFolder', path: root }),
+      },
+    );
   actions.push(
     showTrash
       ? {
@@ -110,6 +146,13 @@ export default function DocumentsWorkspace({ root, canEdit }: { root: string; ca
           <DocumentEmptyState />
         )}
       </main>
+      {templateOpen && (
+        <DocumentTemplateDialog
+          folder={root}
+          onCreated={(created) => router.push(vaultNotePath(created))}
+          onClose={() => setTemplateOpen(false)}
+        />
+      )}
     </div>
   );
 }

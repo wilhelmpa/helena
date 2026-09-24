@@ -66,6 +66,7 @@ export async function answer(
       thinkingLevel: message.thinkingLevel,
       toolsets: hermes?.toolsets ?? null,
       image: message.images?.[0] ?? null,
+      autopilotLevel: message.autopilotLevel ?? null,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
         // No run: the header Helena's MCP server gets it in stays empty.

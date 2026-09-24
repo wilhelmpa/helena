@@ -11,5 +11,15 @@
   "toggleChat": "Mostrar ou ocultar o chat do coordenador",
   "board": "Quadro",
   "commands": "Comandos",
-  "switchProject": "Trocar projeto"
+  "switchProject": "Trocar projeto",
+  "filterAll": "Tudo",
+  "filterKinds": "Filtrar por tipo",
+  "capture": "Salvar",
+  "captureInbox": "Salvar na Caixa de entrada: “{text}”",
+  "captureJournal": "Adicionar à nota de hoje: “{text}”",
+  "capturedInbox": "Salvo na Caixa de entrada",
+  "capturedJournal": "Adicionado à nota de hoje",
+  "openCaptured": "Abrir",
+  "captureFailed": "Não foi possível salvar",
+  "untitled": "Sem título"
 }

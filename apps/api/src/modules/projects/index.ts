@@ -372,7 +372,7 @@ export const projectRoutes = new Elysia({ name: 'projects', detail: { tags: ['Pr
       detail: {
         summary: 'Delete a project',
         description: 'Permanently delete a project and everything in it. Irreversible.',
-        ...mcpTool('delete_project'),
+        ...mcpTool('delete_project', undefined, 'delete', 'external'),
       },
     },
   );

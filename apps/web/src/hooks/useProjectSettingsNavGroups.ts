@@ -26,8 +26,10 @@ export function useProjectSettingsNavGroups(projectKey: string): SettingsNavGrou
   const generalItems = groups.find((g) => g.key === 'general')?.items ?? [];
   const workItems = groups.find((g) => g.key === 'workflow')?.items ?? [];
   const automationItems = groups.find((g) => g.key === 'automation')?.items ?? [];
-  const agentItems = automationItems.filter((item) => item.key === 'actions');
-  const integrationItems = automationItems.filter((item) => item.key !== 'actions');
+  // The Autopilot is about the agents, next to their actions.
+  const agentKeys = ['actions', 'autopilot'];
+  const agentItems = automationItems.filter((item) => agentKeys.includes(item.key));
+  const integrationItems = automationItems.filter((item) => !agentKeys.includes(item.key));
 
   const result: SettingsNavGroup[] = [
     {

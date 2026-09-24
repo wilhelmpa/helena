@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { compactTokens } from '@/utils/agentUsage';
+import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelBadge';
 import RunView from './RunView';
 
 // The agent's runs, newest first; one opens as its timeline ("Gläserner Lauf").
@@ -108,6 +109,7 @@ function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
         )}
       </Badge>
       <span className="min-w-0 flex-1 truncate">{subject}</span>
+      <AutopilotLevelBadge level={run.autopilotLevel} />
       {run.blockedQuestion && (
         <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
           {t('blocked')}

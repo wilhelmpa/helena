@@ -11,5 +11,15 @@
   "toggleChat": "Coordinator-Chat ein- oder ausblenden",
   "board": "Board",
   "commands": "Befehle",
-  "switchProject": "Projekt wechseln"
+  "switchProject": "Projekt wechseln",
+  "filterAll": "Alle",
+  "filterKinds": "Nach Art filtern",
+  "capture": "Erfassen",
+  "captureInbox": "Im Eingang speichern: „{text}“",
+  "captureJournal": "In die heutige Notiz: „{text}“",
+  "capturedInbox": "Im Eingang gespeichert",
+  "capturedJournal": "In der heutigen Notiz",
+  "openCaptured": "Öffnen",
+  "captureFailed": "Speichern hat nicht geklappt",
+  "untitled": "Ohne Titel"
 }

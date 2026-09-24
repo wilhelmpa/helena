@@ -12,6 +12,7 @@
   "unconfigured": {
     "title": "未设置连接服务",
     "hint": "此服务器没有运行检查连接的服务。邮箱账户、凭据和设备都有各自的页面。",
+    "hintAccess": "此服务器没有运行检查连接的服务。Google、邮件和凭据在旁边的标签页中，设备有单独的页面。",
     "mail": "邮箱账户",
     "credentials": "凭据",
     "devices": "设备与 Obsidian"

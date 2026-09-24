@@ -33,6 +33,8 @@ export interface Task {
   image?: string | null;
   // What the agent's runtime adapter asks of this command (runtime.ts).
   hooks?: CommandHooks;
+  // Helena's Autopilot level; absent on an older server.
+  autopilotLevel?: number | null;
 }
 
 export interface Outcome {
@@ -180,8 +182,22 @@ function spawnArgs(
       toolsets: task.toolsets,
       image: task.image,
       sandbox: task.hooks?.sandbox,
+      autopilotLevel: task.autopilotLevel,
+      policyHook: task.autopilotLevel == null ? null : policyHookCommand(),
     }),
   ];
+}
+
+// The command Claude Code runs before each tool call: this runner's `policy-hook`, which
+// asks Helena's policy engine. It blocks the call (exit 2) when it cannot even start, so a
+// missing runner never lets a call through unchecked.
+export function policyHookCommand(
+  node: string = process.execPath,
+  script: string | null | undefined = process.argv[1],
+): string | null {
+  if (!script) return null;
+  const quote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`;
+  return `${quote(node)} ${quote(script)} policy-hook || exit 2`;
 }
 
 // Codex runs the model's shell commands in a sandbox of its own (bubblewrap), which cannot

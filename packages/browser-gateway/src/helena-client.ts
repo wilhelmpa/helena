@@ -117,17 +117,21 @@ export class HelenaClient {
     });
   }
 
+  // `target` names the project the code is for, so Helena applies the same project grants
+  // and scope as for the password.
   loginCode(
     agentKey: string,
     credentialId: number,
     frameOrigin: string,
     work?: WorkRef,
+    target?: { projectSlug: string; via: string },
   ): Promise<LoginCodeResult> {
     return this.#post('/internal/browser-gateway/login-code', {
       agentKey,
       credentialId,
       frameOrigin,
       ...work,
+      ...target,
     });
   }
 

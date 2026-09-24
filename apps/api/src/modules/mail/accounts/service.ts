@@ -1,4 +1,3 @@
-import { decryptSecret } from '@repo/crypto';
 import {
   db,
   integrationCredential,
@@ -7,6 +6,7 @@ import {
   mailRule,
   mailMessage,
   mailThread,
+  openCredential,
   project,
 } from '@repo/db';
 import { testImapConnection, testSmtpConnection, type MailServerSettings } from '@repo/mail';
@@ -20,6 +20,8 @@ import {
 } from '#modules/agents/credentials/service';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
 import { moveThread } from '../threads/move';
+import { getAccount as getAccount_ } from '#modules/connectors/store';
+import { googleAccountAccessToken } from '#modules/connectors/google/engine';
 
 type AccountRow = typeof mailAccount.$inferSelect;
 
@@ -41,6 +43,7 @@ export interface NewAccountInput {
   enabled?: boolean;
   syncTrash?: boolean;
   syncSpam?: boolean;
+  fetchDays?: number | null;
 }
 
 export type AccountInput = Partial<NewAccountInput>;
@@ -96,6 +99,10 @@ async function toDto(rows: AccountRow[]) {
       smtpTls: row.smtpTls,
       username: row.username,
       hasPassword: row.credentialId != null,
+      auth: row.auth === 'xoauth2' ? ('xoauth2' as const) : ('password' as const),
+      googleAccountId: row.auth === 'xoauth2' ? row.credentialId : null,
+      fetchDays: row.fetchDays,
+      resetPending: row.resetRequestedAt != null,
       credentialId: row.credentialId,
       credentialLabel: credential?.label ?? null,
       enabled: row.enabled,
@@ -211,8 +218,30 @@ export async function createAccount(teamId: number, input: NewAccountInput) {
   }
 }
 
+// The fields of a Google account's mailbox that stay the owner's to change; its servers and
+// login belong to the account.
+const OAUTH_EDITABLE = new Set([
+  'name',
+  'projectId',
+  'enabled',
+  'syncTrash',
+  'syncSpam',
+  'fetchDays',
+]);
+
 export async function updateAccount(teamId: number, accountId: number, input: AccountInput) {
   const current = await accountRow(teamId, accountId);
+  if (current.auth === 'xoauth2') {
+    const locked = Object.keys(input).filter(
+      (key) => input[key as keyof AccountInput] !== undefined && !OAUTH_EDITABLE.has(key),
+    );
+    if (locked.length > 0) {
+      throw new HttpError(
+        400,
+        `This mailbox signs in with its Google account; ${locked.join(', ')} cannot be changed here.`,
+      );
+    }
+  }
   await assertTeamProject(teamId, input.projectId);
   if (input.imapHost && input.imapHost !== current.imapHost) await assertMailHost(input.imapHost);
   if (input.smtpHost && input.smtpHost !== current.smtpHost) await assertMailHost(input.smtpHost);
@@ -247,6 +276,10 @@ export async function updateAccount(teamId: number, accountId: number, input: Ac
         ...(password || chosen || fields.imapHost || fields.imapPort || fields.username
           ? { syncStatus: 'idle', syncError: null }
           : {}),
+        // A new fetch window is pruned to at once.
+        ...(fields.fetchDays !== undefined && fields.fetchDays !== current.fetchDays
+          ? { prunedAt: null }
+          : {}),
         updatedAt: new Date(),
       })
       .where(eq(mailAccount.id, current.id))
@@ -266,10 +299,29 @@ export async function deleteAccount(teamId: number, accountId: number): Promise<
   });
 }
 
+// "Zurücksetzen": the worker wipes every imported copy of the account (messages, threads,
+// attachments, the stored .eml files) and imports again within its fetch window. The mail
+// on the server is not touched.
+export async function resetAccount(teamId: number, accountId: number) {
+  const current = await accountRow(teamId, accountId);
+  const [row] = await db
+    .update(mailAccount)
+    .set({
+      resetRequestedAt: new Date(),
+      syncStatus: 'idle',
+      syncError: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(mailAccount.id, current.id))
+    .returning();
+  return (await toDto([row!]))[0]!;
+}
+
 // The password a secret of the credential store holds.
 async function secretValue(credentialId: number): Promise<string | null> {
   const [credential] = await db
     .select({
+      id: integrationCredential.id,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
@@ -277,7 +329,7 @@ async function secretValue(credentialId: number): Promise<string | null> {
     .from(integrationCredential)
     .where(eq(integrationCredential.id, credentialId));
   if (!credential) return null;
-  return (JSON.parse(decryptSecret(credential)) as { value?: string }).value ?? null;
+  return (JSON.parse(openCredential(credential)) as { value?: string }).value ?? null;
 }
 
 export async function testConnection(
@@ -289,6 +341,10 @@ export async function testConnection(
   },
 ): Promise<{ imap: string | null; smtp: string | null }> {
   const { credentialId: chosen, accountId, ...servers } = input;
+  if (accountId && !input.password && chosen == null) {
+    const current = await accountRow(teamId, accountId);
+    if (current.auth === 'xoauth2') return testOAuthAccount(teamId, current);
+  }
   let password = input.password;
   let credentialId = chosen;
   if (!password && credentialId == null && accountId) {
@@ -303,6 +359,38 @@ export async function testConnection(
   await assertMailHost(input.imapHost);
   await assertMailHost(input.smtpHost);
   const settings = { ...servers, password };
+  const [imap, smtp] = await Promise.all([
+    testImapConnection(settings),
+    testSmtpConnection(settings),
+  ]);
+  return { imap, smtp };
+}
+
+// A Google account's mailbox logs in to Gmail's IMAP and SMTP with the account's token.
+async function testOAuthAccount(
+  teamId: number,
+  row: AccountRow,
+): Promise<{ imap: string | null; smtp: string | null }> {
+  const account =
+    row.credentialId == null ? null : await getAccount_(row.credentialId, teamId, ['google']);
+  if (!account) return { imap: 'The Google account is gone.', smtp: 'The Google account is gone.' };
+  let accessToken: string;
+  try {
+    accessToken = await googleAccountAccessToken(account);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Google sign-in failed.';
+    return { imap: message, smtp: message };
+  }
+  const settings = {
+    imapHost: row.imapHost,
+    imapPort: row.imapPort,
+    imapTls: row.imapTls,
+    smtpHost: row.smtpHost,
+    smtpPort: row.smtpPort,
+    smtpTls: row.smtpTls,
+    username: row.username,
+    accessToken,
+  };
   const [imap, smtp] = await Promise.all([
     testImapConnection(settings),
     testSmtpConnection(settings),

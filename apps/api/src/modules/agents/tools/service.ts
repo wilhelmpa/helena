@@ -1,10 +1,9 @@
-import { db, agentTool, agentToolLink, integrationCredential } from '@repo/db';
+import { db, agentTool, agentToolLink, integrationCredential, openCredential } from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { resolveText } from '@helena/sdk';
 import type { ToolConfig } from '@repo/agent-tools';
 import { registries } from '#shared/helena';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
-import { decryptSecret } from '@repo/crypto';
 import { getCredentialById } from '../integrations/service';
 import { onTemplateRelevantChange } from '../core/template-sync';
 
@@ -137,6 +136,7 @@ export async function listAgentToolsForRun(
     .select({
       id: agentTool.id,
       toolKey: agentTool.toolKey,
+      credentialId: integrationCredential.id,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
@@ -149,7 +149,12 @@ export async function listAgentToolsForRun(
     id: r.id,
     toolKey: r.toolKey,
     credential: JSON.parse(
-      decryptSecret({ ciphertext: r.ciphertext, iv: r.iv, authTag: r.authTag }),
+      openCredential({
+        id: r.credentialId,
+        ciphertext: r.ciphertext,
+        iv: r.iv,
+        authTag: r.authTag,
+      }),
     ) as ToolConfig,
   }));
 }

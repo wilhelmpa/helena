@@ -14,7 +14,14 @@ export {
 } from './git';
 export { extractText, isExtractable, type Extraction } from './extract';
 export { extractPending, requeueInstalledExtractions } from './extraction-queue';
-export { indexVaultPaths, rescanVault, sha256Of, walkVault } from './indexer';
+export {
+  EXTERNAL_PROVENANCE,
+  indexVaultPaths,
+  rescanVault,
+  sha256Of,
+  walkVault,
+  type VaultWriteProvenance,
+} from './indexer';
 export {
   belowPattern,
   findEntry,
@@ -39,3 +46,14 @@ export {
   type TrashedItem,
 } from './files';
 export { startVaultWatcher, DEFAULT_WATCHER_OPTIONS, type VaultWatcher } from './watcher';
+export {
+  canvasText,
+  CanvasFormatError,
+  EMPTY_CANVAS,
+  parseCanvas,
+  serializeCanvas,
+  type CanvasEdge,
+  type CanvasNode,
+  type CanvasTextNode,
+  type JsonCanvas,
+} from './canvas';

@@ -1,6 +1,8 @@
 import {
   Bot,
+  Brain,
   Building2,
+  Coins,
   FolderKanban,
   HardDrive,
   Keyboard,
@@ -80,9 +82,19 @@ export const GOD_SECTIONS: GodSection[] = [
     icon: HardDrive,
   },
   {
+    slug: 'knowledge',
+    group: 'instance',
+    icon: Brain,
+  },
+  {
     slug: 'plugins',
     group: 'instance',
     icon: Puzzle,
+  },
+  {
+    slug: 'model-prices',
+    group: 'instance',
+    icon: Coins,
   },
   {
     slug: 'telegram',

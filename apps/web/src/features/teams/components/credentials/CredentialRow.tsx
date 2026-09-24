@@ -1,4 +1,12 @@
-import { History, MoreHorizontal, Pencil, Trash2, UsersRound } from 'lucide-react';
+import {
+  FolderGit2,
+  History,
+  LogIn,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  UsersRound,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialEntry } from '@/lib/api/endpoints/credentials';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +27,7 @@ function detailOf(entry: CredentialEntry): string | null {
     return `${entry.username} · ${new URL(entry.loginUrl).host}`;
   }
   if (entry.kind === 'ssh_key') return entry.publicKey;
+  if (entry.kind === 'mcp_oauth') return entry.serverUrl;
   return null;
 }
 
@@ -29,14 +38,16 @@ export function CredentialRow({
 }: {
   entry: CredentialEntry;
   canManage: boolean;
-  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete') => void;
+  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete' | 'clone' | 'signIn') => void;
 }) {
   const t = useTranslations('credentials');
   const tCommon = useTranslations('common');
+  const tAccess = useTranslations('access');
   const detail =
     entry.kind === 'runtime_login' && entry.runtime && entry.method
       ? `${t(`runtimeLogin.runtimes.${entry.runtime}`)} · ${t(`runtimeLogin.methods.${entry.method}`)}`
       : detailOf(entry);
+  const canClone = canManage && entry.kind === 'ssh_key';
 
   return (
     <li className="flex items-start gap-3 px-4 py-3">
@@ -47,8 +58,16 @@ export function CredentialRow({
         <div className="flex flex-wrap items-center gap-2">
           <span className="truncate text-sm font-medium">{entry.label}</span>
           <Badge variant="secondary" className="text-xs font-normal">
-            {t(`kinds.${entry.kind}`)}
+            {entry.kind === 'mcp_oauth' ? tAccess('mcp.kind') : t(`kinds.${entry.kind}`)}
           </Badge>
+          {entry.kind === 'mcp_oauth' && (
+            <Badge
+              variant={entry.status === 'ok' ? 'outline' : 'destructive'}
+              className="text-xs font-normal"
+            >
+              {tAccess(`mcp.status.${entry.status ?? 'unknown'}`)}
+            </Badge>
+          )}
           <Badge variant="outline" className="text-xs font-normal">
             {entry.projectKey ?? t('scopeTeam')}
           </Badge>
@@ -59,18 +78,28 @@ export function CredentialRow({
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          {t('agentCount', { count: entry.agentIds.length })}
+          {tAccess('grants.count', { count: entry.grants.length })}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1 max-sm:hidden">
-        {canManage && (
+        {canManage && entry.kind === 'mcp_oauth' && (
+          <CredentialRowAction label={tAccess('mcp.signIn')} onClick={() => onOpen('signIn')}>
+            <LogIn className="size-4" />
+          </CredentialRowAction>
+        )}
+        {canManage && entry.kind !== 'mcp_oauth' && (
           <CredentialRowAction label={t('edit')} onClick={() => onOpen('edit')}>
             <Pencil className="size-4" />
           </CredentialRowAction>
         )}
         {canManage && (
-          <CredentialRowAction label={t('grants')} onClick={() => onOpen('grants')}>
+          <CredentialRowAction label={tAccess('grants.action')} onClick={() => onOpen('grants')}>
             <UsersRound className="size-4" />
+          </CredentialRowAction>
+        )}
+        {canClone && (
+          <CredentialRowAction label={tAccess('clone.action')} onClick={() => onOpen('clone')}>
+            <FolderGit2 className="size-4" />
           </CredentialRowAction>
         )}
         <CredentialRowAction label={t('audit')} onClick={() => onOpen('audit')}>
@@ -95,7 +124,13 @@ export function CredentialRow({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-44">
-          {canManage && (
+          {canManage && entry.kind === 'mcp_oauth' && (
+            <DropdownMenuItem onSelect={() => onOpen('signIn')}>
+              <LogIn />
+              {tAccess('mcp.signIn')}
+            </DropdownMenuItem>
+          )}
+          {canManage && entry.kind !== 'mcp_oauth' && (
             <DropdownMenuItem onSelect={() => onOpen('edit')}>
               <Pencil />
               {t('edit')}
@@ -104,7 +139,13 @@ export function CredentialRow({
           {canManage && (
             <DropdownMenuItem onSelect={() => onOpen('grants')}>
               <UsersRound />
-              {t('grants')}
+              {tAccess('grants.action')}
+            </DropdownMenuItem>
+          )}
+          {canClone && (
+            <DropdownMenuItem onSelect={() => onOpen('clone')}>
+              <FolderGit2 />
+              {tAccess('clone.action')}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => onOpen('audit')}>

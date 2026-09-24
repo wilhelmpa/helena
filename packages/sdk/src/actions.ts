@@ -29,6 +29,12 @@ export const ACTION_CATEGORIES = [
 
 export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
 
+// Where an action lands: inside the agent's own workspace (its project's folder and its
+// project's data in Helena) or outside it (the system, other projects, the internet).
+// Decides delete and execute: inside, a trusted agent may act and report; outside, a person
+// approves.
+export type ActionScope = 'workspace' | 'external';
+
 export function isActionCategory(value: unknown): value is ActionCategory {
   return typeof value === 'string' && (ACTION_CATEGORIES as readonly string[]).includes(value);
 }

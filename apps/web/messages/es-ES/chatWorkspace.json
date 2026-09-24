@@ -150,7 +150,11 @@
       "publish": "Publicar",
       "pay": "Pagar",
       "delete": "Eliminar",
-      "other": "Otro"
+      "other": "Otro",
+      "write": "Cambiar",
+      "execute": "Ejecutar",
+      "credentials": "Accesos",
+      "budget": "Presupuesto"
     },
     "notePlaceholder": "Nota con tu decisión (opcional)",
     "approve": "Aprobar",

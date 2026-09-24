@@ -3,25 +3,20 @@ import {
   aiAgent,
   integrationCredential,
   integrationCredentialGrant,
-  integrationCredentialUse,
-  projectMember,
-  user,
+  openCredential,
 } from '@repo/db';
-import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
-import { decryptSecret } from '@repo/crypto';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { RunnerAgent } from '../runner/service';
-import { claimedWork, type WorkRef } from './delivery';
+import { claimedWork, recordAgentUses, subjectOf, type WorkRef } from './delivery';
+import { credentialInScope, grantReaches } from './grants';
 import type { LoginMethod, LoginRuntime } from './kinds';
 
 // The runtime login ("Laufzeit-Anmeldung") of an agent that runs on Claude Code or Codex:
-// the newest runtime_login of the agent's runtime granted to it, within its project. The
+// the newest runtime_login of the agent's runtime that reaches it through the access
+// center's grants (to the agent, or to the project it works in), within its project. The
 // runner asks for it before each run and chat answer and hands the value to that one
 // command in its environment (packages/runner/src/cli-login.ts); asked without work, it
 // only learns whether one is granted, for the agent's health ("Laufzeit nicht angemeldet").
-//
-// Grants are the Credentials page's agent grants today. hub/access-center widens them to
-// project grants and one audit helper; on its merge this reads through its grantReaches()
-// and recordAgentUses() instead of the two queries below.
 
 export interface RuntimeLogin {
   credentialId: number;
@@ -42,10 +37,12 @@ export async function runtimeLoginOf(
   agent: RunnerAgent,
   ref: WorkRef | null,
 ): Promise<RuntimeLogin | null> {
-  const work = ref ? await claimedWork(agent.id, ref) : null;
+  const work = ref
+    ? await claimedWork(agent.id, ref)
+    : { runId: null, chatMessageId: null, projectId: null };
   const runtime = await agentRuntime(agent.id);
   if (!runtime) return null;
-  const projectId = integrationCredential.projectId;
+  const subject = subjectOf(agent, work);
   const [row] = await db
     .select({
       id: integrationCredential.id,
@@ -56,25 +53,13 @@ export async function runtimeLoginOf(
       authTag: integrationCredential.authTag,
     })
     .from(integrationCredential)
-    .innerJoin(
-      integrationCredentialGrant,
-      and(
-        eq(integrationCredentialGrant.credentialId, integrationCredential.id),
-        eq(integrationCredentialGrant.agentId, agent.id),
-      ),
-    )
     .where(
       and(
         eq(integrationCredential.integrationKey, 'runtime_login'),
         eq(integrationCredential.teamId, agent.teamId),
         sql`${integrationCredential.redacted}->>'runtime' = ${runtime}`,
-        // One of a project reaches only the agents that work there.
-        or(
-          isNull(projectId),
-          work?.projectId != null
-            ? eq(projectId, work.projectId)
-            : sql`exists (select 1 from ${projectMember} where ${projectMember.projectId} = ${projectId} and ${projectMember.userId} = ${agent.userId})`,
-        ),
+        credentialInScope(subject),
+        sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subject)})`,
       ),
     )
     .orderBy(desc(integrationCredential.updatedAt), desc(integrationCredential.id))
@@ -83,19 +68,10 @@ export async function runtimeLoginOf(
   const readable = (row.redacted ?? {}) as { method?: string };
   const method: LoginMethod = readable.method === 'api_key' ? 'api_key' : 'oauth_token';
   const login: RuntimeLogin = { credentialId: row.id, runtime, method };
-  if (!work) return login;
-  const secrets = JSON.parse(decryptSecret(row)) as { value?: string };
-  const [person] = await db.select({ name: user.name }).from(user).where(eq(user.id, agent.userId));
-  await db.insert(integrationCredentialUse).values({
-    teamId: agent.teamId,
-    credentialId: row.id,
-    credentialLabel: row.label ?? '',
-    agentId: agent.id,
-    agentName: person?.name ?? agent.username,
-    runId: work.runId,
-    chatMessageId: work.chatMessageId,
-    action: 'delivered',
-    purpose: `runtime:${runtime}`,
-  });
+  if (!ref) return login;
+  const secrets = JSON.parse(openCredential(row)) as { value?: string };
+  await recordAgentUses(agent, work, 'delivered', [
+    { credentialId: row.id, label: row.label ?? '', purpose: `runtime:${runtime}` },
+  ]);
   return { ...login, value: secrets.value ?? '' };
 }

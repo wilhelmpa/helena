@@ -45,9 +45,19 @@ export const homeChatPath = (location: ChatLocation = {}) => `/chat${chatQuery(l
 // project the reader may decide in).
 export const projectApprovalsPath = (key: string) => `${projectPath(key)}/approvals`;
 
-export const connectionsPath = () => '/connections';
+// The access center, one area with a tab each for Google accounts, mailboxes,
+// credentials, the host's connections and the audit log. The old pages redirect here.
+export const ACCESS_TABS = ['google', 'mail', 'credentials', 'connections', 'log'] as const;
+export type AccessTab = (typeof ACCESS_TABS)[number];
+export const isAccessTab = (value: string): value is AccessTab =>
+  (ACCESS_TABS as readonly string[]).includes(value);
+export const accessPath = (tab: AccessTab = 'google') => `/access/${tab}`;
+// The area itself, which opens its first tab; the sidebar entry is active on every tab.
+export const accessRootPath = () => '/access';
 
-export const mailAccountsPath = () => '/mail/accounts';
+export const connectionsPath = () => accessPath('connections');
+
+export const mailAccountsPath = () => accessPath('mail');
 
 export const agentsPath = () => '/agents';
 export const teamOrganizationPath = () => '/organization';
@@ -58,7 +68,7 @@ export const toolsPath = () => '/tools';
 
 export const skillsPath = () => '/skills';
 
-export const credentialsPath = () => '/credentials';
+export const credentialsPath = () => accessPath('credentials');
 
 export const devicesPath = () => '/devices';
 

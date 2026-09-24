@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { Cpu, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ export default function AgentRuntimePolicySection({
 }) {
   const t = useTranslations('teams.agents.runtimePolicy');
   const tFallback = useTranslations('agentRuntime.fallback');
+  const fallbackId = useId();
   const policy = value.runtimePolicy;
   const selectedModel = models.find((entry) => entry.id === value.model);
   const unavailableModel = value.model.length > 0 && !selectedModel;
@@ -197,8 +199,9 @@ export default function AgentRuntimePolicySection({
 
       {(policy.runtime ?? 'hermes') === 'hermes' && (
         <div className="space-y-2">
-          <label className="flex items-start gap-2">
+          <label htmlFor={fallbackId} className="flex items-start gap-2">
             <Checkbox
+              id={fallbackId}
               className="mt-0.5"
               checked={policy.fallbackModels != null}
               onCheckedChange={(checked) =>

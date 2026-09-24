@@ -1,0 +1,3 @@
+# Helena's API and worker reach gog only through the broker, with no arguments: the request
+# comes on stdin and the broker checks it against its allowlist.
+volition-plan ALL=(volition-google) NOPASSWD: /usr/local/libexec/helena-google-broker ""

@@ -26,6 +26,10 @@ export interface EntryValues {
   text: string | null;
   extractionStatus: VaultExtractionStatus;
   extractionError: string | null;
+  // Who made this version, when the caller knows (see vault_entry.last_author). Left
+  // out, the row keeps what it had.
+  lastAuthor?: string | null;
+  lastRunId?: number | null;
 }
 
 export function entryValues(row: VaultEntryRow): EntryValues {
@@ -89,10 +93,20 @@ export async function saveEntry(values: EntryValues, links: NoteLink[] | null): 
   });
 }
 
-export async function touchEntry(id: number, mtime: Date, sizeBytes: number): Promise<void> {
+export async function touchEntry(
+  id: number,
+  mtime: Date,
+  sizeBytes: number,
+  provenance?: { author: string; runId?: number | null },
+): Promise<void> {
   await db
     .update(vaultEntry)
-    .set({ mtime, sizeBytes, indexedAt: new Date() })
+    .set({
+      mtime,
+      sizeBytes,
+      indexedAt: new Date(),
+      ...(provenance ? { lastAuthor: provenance.author, lastRunId: provenance.runId ?? null } : {}),
+    })
     .where(eq(vaultEntry.id, id));
 }
 
@@ -199,9 +213,15 @@ export async function saveExtraction(
   sha256: string | null,
   values: { text: string | null; status: VaultExtractionStatus; error: string | null },
 ): Promise<void> {
+  // indexed_at moves too, so the knowledge index picks the new text up.
   await db
     .update(vaultEntry)
-    .set({ text: values.text, extractionStatus: values.status, extractionError: values.error })
+    .set({
+      text: values.text,
+      extractionStatus: values.status,
+      extractionError: values.error,
+      indexedAt: new Date(),
+    })
     .where(
       and(
         eq(vaultEntry.id, id),

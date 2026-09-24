@@ -15,6 +15,16 @@ install -m 0644 "$here/90-volition-kiosk.rules" /etc/udev/rules.d/90-volition-ki
 install -d -m 0755 /etc/systemd/system/getty@tty1.service.d
 install -m 0644 "$here/getty-autologin.conf" /etc/systemd/system/getty@tty1.service.d/plan-kiosk.conf
 install -m 0644 -o plan-kiosk -g plan-kiosk "$here/bash_profile" /var/lib/plan-kiosk/.bash_profile
+# The kiosk reaches Helena as the owner through nginx on 127.0.0.1:8088 (local-owner/
+# configure.py); nftables sends the kiosk user's port 80 there and keeps everyone else out.
+install -d -m 0755 /etc/nftables.d
+install -m 0644 "$here/helena-kiosk.nft" /etc/nftables.d/helena-kiosk.nft
+if ! grep -q '^include "/etc/nftables.d/\*.nft"' /etc/nftables.conf; then
+  cp -p /etc/nftables.conf "/etc/nftables.conf.bak-$(date +%Y%m%d%H%M%S)"
+  printf '\ninclude "/etc/nftables.d/*.nft"\n' >>/etc/nftables.conf
+fi
+systemctl enable --now nftables.service >/dev/null
+nft -f /etc/nftables.d/helena-kiosk.nft
 systemctl daemon-reload
 udevadm control --reload 2>/dev/null || true
 echo "install.sh: kiosk installed"

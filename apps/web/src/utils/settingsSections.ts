@@ -1,6 +1,7 @@
 import {
   AppWindow,
   Bot,
+  Gauge,
   Clock3,
   Columns3,
   FileText,
@@ -114,6 +115,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     slug: 'browser',
     icon: AppWindow,
+    resource: 'ai_agents',
+    group: 'automation',
+  },
+  {
+    slug: 'autopilot',
+    icon: Gauge,
     resource: 'ai_agents',
     group: 'automation',
   },

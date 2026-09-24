@@ -1,6 +1,7 @@
 import {
   auth,
   getSessionFromHeaders,
+  RateLimitedError,
   oAuthDiscoveryMetadata,
   oAuthProtectedResourceMetadata,
   trustedOrigins,
@@ -14,6 +15,7 @@ import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { Elysia } from 'elysia';
 import { planner } from './planner';
+import { tooManyRequests } from './shared/rate-limit';
 import { mountMcp } from './mcp/mount';
 import { setMcpApp } from './mcp/app-ref';
 import { gitWebhookRoutes } from './modules/git/webhook';
@@ -78,6 +80,7 @@ export const app = new Elysia()
         if (session) await checkAgentSocket(request.headers, session.user.id);
       }
     } catch (error) {
+      if (error instanceof RateLimitedError) return tooManyRequests(error);
       const status = error instanceof HttpError ? error.status : 403;
       return Response.json({ error: 'Not available to this agent' }, { status });
     }
@@ -258,6 +261,16 @@ export const app = new Elysia()
             description: 'Agent requests to act outside Helena and the decisions on them',
           },
           { name: 'Sync', description: 'Change markers a client polls for live refresh' },
+          {
+            name: 'Autopilot',
+            description:
+              'How independently agents act (levels per project and agent), their budgets and ' +
+              'the policy engine every tool and runtime asks',
+          },
+          {
+            name: 'Model prices',
+            description: 'Euros per million tokens per model, the base of every cost estimate',
+          },
           {
             name: 'Telegram',
             description: "The session user's linked Telegram account",

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { KeyRound, Laptop, Mail, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -15,7 +16,15 @@ import { useConnectionAction, useConnectionsQuery } from './services/connections
 // The host's connections (MCP servers, channels, services) and their live health. On a
 // server without the connections service the page says so and points to the pages
 // that hold the accounts instead; it never shows an empty page.
-export default function ConnectionsContent({ embedded = false }: { embedded?: boolean }) {
+// In the access center the area's tabs lead the header row (`leading`), and the accounts
+// sit in those tabs, so only the devices page gets a link.
+export default function ConnectionsContent({
+  embedded = false,
+  leading,
+}: {
+  embedded?: boolean;
+  leading?: ReactNode;
+}) {
   const t = useTranslations('connections');
   const connections = useConnectionsQuery();
   const action = useConnectionAction();
@@ -32,20 +41,27 @@ export default function ConnectionsContent({ embedded = false }: { embedded?: bo
       </Button>
     </EmptyState>
   ) : !connections.data?.configured ? (
-    <EmptyState title={t('unconfigured.title')} description={t('unconfigured.hint')}>
+    <EmptyState
+      title={t('unconfigured.title')}
+      description={t(leading ? 'unconfigured.hintAccess' : 'unconfigured.hint')}
+    >
       <div className="flex flex-wrap justify-center gap-2">
-        <Button size="sm" variant="outline" asChild>
-          <Link href={mailAccountsPath()}>
-            <Mail />
-            {t('unconfigured.mail')}
-          </Link>
-        </Button>
-        <Button size="sm" variant="outline" asChild>
-          <Link href={credentialsPath()}>
-            <KeyRound />
-            {t('unconfigured.credentials')}
-          </Link>
-        </Button>
+        {!leading && (
+          <>
+            <Button size="sm" variant="outline" asChild>
+              <Link href={mailAccountsPath()}>
+                <Mail />
+                {t('unconfigured.mail')}
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link href={credentialsPath()}>
+                <KeyRound />
+                {t('unconfigured.credentials')}
+              </Link>
+            </Button>
+          </>
+        )}
         <Button size="sm" variant="outline" asChild>
           <Link href={devicesPath()}>
             <Laptop />
@@ -91,20 +107,23 @@ export default function ConnectionsContent({ embedded = false }: { embedded?: bo
 
   return (
     <SectionPageView title={t('title')} description={t('description')} wide>
-      {canCheck ? (
+      {canCheck || leading ? (
         <PageToolbar>
+          {leading}
           <PageToolbarSpacer />
-          <PageActions
-            actions={[
-              {
-                id: 'check-all',
-                label: t('actions.checkAll'),
-                icon: RefreshCw,
-                disabled: action.isPending,
-                onClick: checkAll,
-              },
-            ]}
-          />
+          {canCheck && (
+            <PageActions
+              actions={[
+                {
+                  id: 'check-all',
+                  label: t('actions.checkAll'),
+                  icon: RefreshCw,
+                  disabled: action.isPending,
+                  onClick: checkAll,
+                },
+              ]}
+            />
+          )}
         </PageToolbar>
       ) : null}
       {body}

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { decryptSecret } from '@repo/crypto';
+import { decryptSecret, secretContext } from '@repo/crypto';
 import type { ResendConfig, SmtpConfig } from '@repo/mailer';
 import { db } from '../client';
 import { teamNotificationSetting } from '../schema/app';
@@ -59,6 +59,11 @@ export function emailSource(config: {
   return config.system.enabled ? 'system' : 'none';
 }
 
+// The team's notification config is bound to its row.
+export function notificationContext(teamId: number): string {
+  return secretContext('team_notification_setting', teamId, 'config');
+}
+
 // The stored config, or null when the team has none yet.
 export async function readNotificationConfig(teamId: number): Promise<NotificationConfig | null> {
   const rows = await db
@@ -74,7 +79,7 @@ export async function readNotificationConfig(teamId: number): Promise<Notificati
   // Merge over the default so a config written before a field was added stays valid.
   return {
     ...defaultNotificationConfig(),
-    ...(JSON.parse(decryptSecret(row)) as NotificationConfig),
+    ...(JSON.parse(decryptSecret(row, notificationContext(teamId))) as NotificationConfig),
   };
 }
 

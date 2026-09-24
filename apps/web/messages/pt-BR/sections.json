@@ -43,6 +43,10 @@
       "label": "Armazenamento",
       "description": "Quanto as pessoas podem enviar: o tamanho de um único arquivo, os tipos de anexo aceitos e o armazenamento que cada projeto recebe."
     },
+    "knowledge": {
+      "label": "Conhecimento e busca",
+      "description": "As fontes da busca unificada, até onde o índice chegou e a busca semântica."
+    },
     "telegram": {
       "label": "Telegram",
       "description": "O bot ao qual as pessoas conectam sua conta do Telegram, e o que entrega notificações do Telegram para projetos que não definem seu próprio bot."
@@ -66,6 +70,10 @@
     "plugins": {
       "label": "Plugins",
       "description": "Os plugins próprios do Helena e os externos da pasta de plugins: o que fornecem, as permissões que pedem e quais podem rodar."
+    },
+    "model-prices": {
+      "label": "Preços de modelos",
+      "description": "Euros por milhão de tokens por modelo, a base de toda estimativa de custo."
     }
   },
   "settings": {
@@ -120,6 +128,10 @@
     "ai-agents": {
       "label": "Agentes de IA",
       "description": "Agentes de IA trabalhando neste projeto."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Com quanta independência os agentes deste projeto agem, e seus orçamentos."
     },
     "browser": {
       "label": "Navegador",

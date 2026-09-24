@@ -18,7 +18,11 @@
     "publish": "Publier",
     "pay": "Payer",
     "delete": "Supprimer",
-    "other": "Autre"
+    "other": "Autre",
+    "write": "Modifier",
+    "execute": "Exécuter",
+    "credentials": "Accès",
+    "budget": "Budget"
   },
   "requestedBy": "{agent} (@{username}) dans {project}",
   "notePlaceholder": "Note jointe à votre décision (facultatif)",

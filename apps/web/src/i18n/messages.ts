@@ -1,5 +1,6 @@
 import connections from '../../messages/en/connections.json';
 import credentials from '../../messages/en/credentials.json';
+import access from '../../messages/en/access.json';
 import organization from '../../messages/en/organization.json';
 import account from '../../messages/en/account.json';
 import agentActivity from '../../messages/en/agentActivity.json';
@@ -7,6 +8,7 @@ import agentRuntime from '../../messages/en/agentRuntime.json';
 import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
 import approvals from '../../messages/en/approvals.json';
+import autopilot from '../../messages/en/autopilot.json';
 import auth from '../../messages/en/auth.json';
 import browserGateway from '../../messages/en/browserGateway.json';
 import chatWorkspace from '../../messages/en/chatWorkspace.json';
@@ -14,6 +16,7 @@ import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
 import devices from '../../messages/en/devices.json';
+import knowledge from '../../messages/en/knowledge.json';
 import display from '../../messages/en/display.json';
 import documents from '../../messages/en/documents.json';
 import files from '../../messages/en/files.json';
@@ -73,6 +76,7 @@ const defaultMessages = {
   chatWorkspace,
   inbox,
   approvals,
+  autopilot,
   permissions,
   members,
   cycles,
@@ -89,12 +93,14 @@ const defaultMessages = {
   organization,
   connections,
   credentials,
+  access,
   agentActivity,
   agentRuntime,
   browserGateway,
   routines,
   pipelines,
   devices,
+  knowledge,
 };
 
 export type Messages = typeof defaultMessages;
