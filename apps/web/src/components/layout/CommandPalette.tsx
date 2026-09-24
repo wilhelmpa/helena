@@ -115,7 +115,7 @@ export default function CommandPalette({
     if (selected && !selected.startsWith(CAPTURE_PREFIX)) return;
     const id = requestAnimationFrame(() => {
       const first = document.querySelector<HTMLElement>(
-        '[data-slot="command-list"] [cmdk-item]:not([data-disabled="true"])',
+        '[role="dialog"] [data-slot="command-list"] [cmdk-item]:not([data-disabled="true"])',
       );
       const value = first?.getAttribute('data-value');
       if (value && !value.startsWith(CAPTURE_PREFIX) && value !== selected) setSelected(value);
