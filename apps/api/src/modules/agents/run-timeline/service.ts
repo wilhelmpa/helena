@@ -3,6 +3,7 @@ import { and, asc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { HttpError, intEnv, iso } from '#shared/lib';
 import { heldBy, touchRunner, type RunAck } from '../runner/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
+import { priceRows } from '../usage/service';
 
 // A run's timeline: the AG-UI events its runner read from the command's output, redacted on
 // the runner, stored while the run runs. The run view reads them live and replays them later;
@@ -123,6 +124,7 @@ export interface RunDetail {
     cacheWriteTokens: number;
     reasoningTokens: number;
     durationMs: number | null;
+    costEur: number | null;
   }[];
 }
 
@@ -194,7 +196,7 @@ export async function getRunDetail(
     startedAt: run.startedAt ? iso(run.startedAt) : null,
     finishedAt: run.finishedAt ? iso(run.finishedAt) : null,
     createdAt: iso(run.createdAt),
-    usage,
+    usage: await priceRows(usage),
   };
 }
 

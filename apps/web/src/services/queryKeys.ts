@@ -255,6 +255,19 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
   learnedSkill: (teamId: number, agentId: number, path: string) =>
     ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
+  // What an agent's runtime keeps, read through its runner, and a run's timeline.
+  agentRuntime: (teamId: number, agentId: number, what: string, params?: unknown) =>
+    ['aiAgents', teamId, agentId, 'runtime', what, params ?? null] as const,
+  agentRun: (teamId: number, agentId: number, runId: number) =>
+    ['aiAgents', teamId, agentId, 'run', runId] as const,
+  memoryRevisions: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'memory-revisions'] as const,
+  agentUsage: (teamId: number, params: unknown) => ['agentUsage', teamId, params] as const,
+  proposals: (status: string) => ['agentProposals', status] as const,
+  proposalCount: ['agentProposals', 'count'] as const,
+  emergencyStop: ['emergencyStop'] as const,
+  runtimeDefaults: ['runtimeDefaults'] as const,
+  hermesUpdate: ['hermesUpdate'] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,

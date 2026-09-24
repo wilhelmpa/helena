@@ -47,6 +47,17 @@ export interface AgentRuntimePolicy {
   // session: 'failure' after a failed run and after rework on an issue, 'complex' also
   // after a run of many tool calls. Unset, 'complex'.
   reflection?: ReflectionMode;
+  // Unset, the agent's own memory writes wait for the owner's approval.
+  memoryApproval?: boolean;
+  // Skills of the runtime turned off by name.
+  skillsDisabled?: string[];
+  // The models the runtime falls back to, in order. Unset or null: the instance's list.
+  fallbackModels?: FallbackModel[] | null;
+}
+
+export interface FallbackModel {
+  provider: string;
+  model: string;
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';

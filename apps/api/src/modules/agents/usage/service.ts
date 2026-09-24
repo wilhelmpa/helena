@@ -97,6 +97,23 @@ export interface UsageTotals {
   entries: number;
 }
 
+// Euro for each row's tokens by the price of its model, null where the model has no price.
+export async function priceRows<
+  T extends Omit<UsageTotals, 'durationMs' | 'entries'> & {
+    model: string | null;
+    provider: string | null;
+  },
+>(rows: T[]): Promise<(T & { costEur: number | null })[]> {
+  const module = await priceModule();
+  return Promise.all(
+    rows.map(async (row) => {
+      const price =
+        module && row.model ? await module.price(row.model, row.provider).catch(() => null) : null;
+      return { ...row, costEur: costOf({ ...row, durationMs: 0, entries: 0 }, price) };
+    }),
+  );
+}
+
 // Euro for the tokens of one model, or null when the model has no price. Cached input is
 // billed at its own rate where the price names one.
 export function costOf(totals: UsageTotals, price: ModelPrice | null): number | null {

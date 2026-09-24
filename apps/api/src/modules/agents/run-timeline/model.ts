@@ -49,6 +49,9 @@ const usageRow = t.Object({
   cacheWriteTokens: t.Number(),
   reasoningTokens: t.Number(),
   durationMs: t.Nullable(t.Number()),
+  costEur: t.Nullable(
+    t.Number({ description: 'Euro by the price of the model, null without one.' }),
+  ),
 });
 
 export const RunDetailResponse = t.Object({

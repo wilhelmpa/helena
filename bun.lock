@@ -124,6 +124,7 @@
         "cn": "^0.2.5",
         "croner": "^10.0.1",
         "date-fns": "^4.4.0",
+        "diff": "^8.0.4",
         "highlight.js": "~11.11.0",
         "inter-ui": "^4.1.1",
         "isomorphic-dompurify": "^3.22.0",
