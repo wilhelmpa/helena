@@ -27,7 +27,9 @@ export function sseResponse(frames: AsyncIterable<string>): Response {
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      // no-transform: a proxy on the way (Cloudflare's edge on the tunnel entry) must not
+      // compress the stream, which would hold frames back until a block fills.
+      'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
       // A proxy that buffers the response would hold it back until it ends, which is
       // the one thing an event stream exists to avoid.

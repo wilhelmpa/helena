@@ -7,7 +7,7 @@
 //
 // A dump that fails stops the startup: applying this release's migrations without
 // one leaves no way back.
-import { mkdir, readdir, stat, unlink } from 'node:fs/promises';
+import { chmod, mkdir, readdir, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Sql } from 'postgres';
 
@@ -66,8 +66,12 @@ export async function writeBackup(
 ): Promise<BackupResult> {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set — cannot take a backup.');
+  // A dump holds every row, sessions and key hashes included: the file is the api user's
+  // alone, whatever the process umask says, and so is the folder this module owns (an older
+  // one that is wider is narrowed). A folder a caller names keeps the mode its owner gave it.
   const dir = options.dir ?? BACKUP_DIR;
-  await mkdir(dir, { recursive: true });
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  if (dir === BACKUP_DIR) await chmod(dir, 0o700);
   const createdAt = new Date();
   const label = options.label && /^[a-z0-9-]{1,40}$/.test(options.label) ? `-${options.label}` : '';
   const path = join(dir, `itsaplan-${stamp(createdAt)}${label}.dump`);
@@ -106,6 +110,7 @@ export async function writeBackup(
     );
   }
 
+  await chmod(path, 0o600);
   const expiresAt = new Date(createdAt.getTime() + RETENTION_DAYS * 86_400_000);
   return {
     path,

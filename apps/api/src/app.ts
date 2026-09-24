@@ -32,6 +32,7 @@ import {
   hasApiKey,
 } from './shared/agent-socket';
 import { HttpError } from './shared/lib';
+import { edgeGuard, edgeVerifyRoutes, mountSecurityRoutes } from './modules/edge-access';
 import { engineHookRoutes } from './modules/engine';
 import { issueProxyToken } from './modules/owner-terminal/service';
 import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
@@ -70,6 +71,11 @@ export const app = new Elysia()
   // shared/agent-socket.ts) never reaches the host's control plane or the sign-in flows,
   // whatever the route would say about its credential.
   .onRequest(async ({ request }) => {
+    // A request that came in through the internet tunnel (nginx marks it) passes only with
+    // the edge sign-in's proof (Cloudflare Access), whatever else it carries. See
+    // modules/edge-access and docs/helena-decisions/security-hardening.md.
+    const edgeRefusal = await edgeGuard(request);
+    if (edgeRefusal) return edgeRefusal;
     try {
       if (!agentSocketRequestAllowed(request, new URL(request.url).pathname)) {
         return Response.json({ error: 'Not available to agents' }, { status: 403 });
@@ -410,22 +416,32 @@ export const app = new Elysia()
   // Reverse-proxy authentication endpoint. It returns no user data: Nginx only
   // needs the status code before it exposes local tools such as Hermes, VS Code,
   // the terminal, and the persistent browser under the Plan origin.
+  // The tools behind it (code-server, the project terminal, the project browsers' live
+  // view and input) run without a login of their own and reach every project, so they are
+  // the owner's alone, and only from his signed-in browser: an API key (a personal one, or
+  // an agent's) resolves to a session like a cookie does, and must not open a shell.
   .get(
     '/auth/verify',
     async ({ request, status }) => {
+      if (request.headers.has('x-api-key') || request.headers.has('authorization')) {
+        return status(403);
+      }
       const session = await getSessionFromHeaders(request.headers);
       if (!session || session.user.active === false) return status(401);
+      if (session.user.role !== 'god') return status(403);
       return status(204);
     },
     {
       detail: {
         summary: 'Check a session for the reverse proxy',
         description:
-          'Answers 204 for a signed-in, active user and 401 otherwise, with no user data: ' +
+          "Answers 204 for the instance owner's signed-in session, 401 without a session and " +
+          '403 for anyone else or for a request that carries an API key, with no user data: ' +
           "nginx's auth_request asks it before it exposes the local tools under the Helena origin.",
       },
     },
   )
+  .use(edgeVerifyRoutes)
   // The owner-terminal proxy's auth_request target (see
   // deployment/volition-stack/native/owner-terminal/nginx-owner-terminal.conf).
   // Session, owner role and a live 12h grant are all checked here, on every request
@@ -531,6 +547,9 @@ export const app = new Elysia()
 // type) stays the REST surface; the MCP endpoint is JSON-RPC, not called via Eden.
 // Its tools are generated from the planner routes tagged with mcpTool().
 mountMcp(app);
+
+// Administrator → Sicherheit (host audit, edge sign-in), after the chain for the same reason.
+mountSecurityRoutes(app as unknown as Parameters<typeof mountSecurityRoutes>[0]);
 
 // Hands the assembled app to the modules that dispatch requests against its routes in
 // process and cannot import it without a cycle (see mcp/app-ref.ts).

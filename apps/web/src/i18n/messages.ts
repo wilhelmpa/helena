@@ -36,6 +36,7 @@ import nav from '../../messages/en/nav.json';
 import newProject from '../../messages/en/newProject.json';
 import notes from '../../messages/en/notes.json';
 import ownerTerminal from '../../messages/en/ownerTerminal.json';
+import serverSecurity from '../../messages/en/serverSecurity.json';
 import palette from '../../messages/en/palette.json';
 import permissions from '../../messages/en/permissions.json';
 import pipelines from '../../messages/en/pipelines.json';
@@ -88,6 +89,7 @@ const defaultMessages = {
   initiatives,
   notes,
   ownerTerminal,
+  serverSecurity,
   account,
   settings,
   god,
