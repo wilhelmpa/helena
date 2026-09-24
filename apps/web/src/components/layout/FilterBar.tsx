@@ -160,7 +160,11 @@ export function FilterControl(props: FilterBarProps) {
           <TooltipContent>{t('filter')}</TooltipContent>
         </Tooltip>
       )}
-      <PopoverContent align="end" className="w-[min(34rem,calc(100vw-1rem))] p-1.5">
+      {/* Just the field list while nothing is set; room for the condition rows after. */}
+      <PopoverContent
+        align="end"
+        className={cn('p-1.5', count > 0 ? 'w-[min(34rem,calc(100vw-1rem))]' : 'w-56')}
+      >
         <FilterBar {...props} stacked />
       </PopoverContent>
     </Popover>
