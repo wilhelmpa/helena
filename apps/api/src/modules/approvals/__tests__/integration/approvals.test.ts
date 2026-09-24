@@ -351,6 +351,28 @@ describe('approval requests', () => {
     expect(decidedList.data!.items.map((item) => item.id)).toEqual([created.id]);
   });
 
+  // The follow-up resumes the session of the run that asked, so the agent still has the
+  // plan it made there and finishes the rest of the task.
+  it('continues the session of the run that asked', async () => {
+    const { asOwner, asAgent, columnId } = await setup();
+    const { run } = await startRun(asOwner, asAgent, columnId);
+    await asAgent['agent-runs']({ runId: run.id }).session.post(
+      { sessionId: '20260924_120000_abcdef' },
+      { query: { claim: run.claim } },
+    );
+    const created = (await requestApproval(asAgent)).data!;
+    await asAgent['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      output: 'Asked for approval.',
+    });
+
+    await asOwner.approvals({ approvalId: created.id }).decision.post({ approved: true });
+    const next = (await asAgent['agent-runs'].claim.post()).data!.run!;
+    expect(next).toMatchObject({ trigger: 'approval', sessionId: '20260924_120000_abcdef' });
+    expect(next.prompt).toContain('A person decided on an approval request you made earlier.');
+    expect(next.prompt).toContain('go on with the rest of the work');
+  });
+
   it('queues the run of a rejected request made outside an issue', async () => {
     const { asOwner, asAgent } = await setup();
     const created = (await requestApproval(asAgent, { kind: 'delete' })).data!;

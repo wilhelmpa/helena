@@ -38,6 +38,9 @@ export async function enqueueAgentRun(
     // Seconds the run stays unclaimable after it is queued, so the issue can still be
     // edited before the agent reads it.
     delaySeconds?: number;
+    // The session of an earlier run this one continues (an approval decision resumes the
+    // run that asked), so the agent still has its plan.
+    continueSession?: { runId: number; sessionId: string };
   },
   executor: typeof db | Transaction = db,
 ): Promise<number> {
@@ -70,6 +73,10 @@ export async function enqueueAgentRun(
         prompt: input.prompt,
         trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
         nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
+        ...(input.continueSession && {
+          sessionId: input.continueSession.sessionId,
+          continuedFromRunId: input.continueSession.runId,
+        }),
       })
       .returning({ id: agentRun.id });
     return row!.id;

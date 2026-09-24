@@ -349,6 +349,16 @@ export async function decideApprovalRequest(
       .select({ name: user.name })
       .from(user)
       .where(eq(user.id, deciderUserId));
+    // The follow-up resumes the session of the run that asked, so the agent goes on with
+    // the plan it made there (owner, 2026-09-24: after an approval the rest of the task
+    // was left undone).
+    const [origin] =
+      decided.runId == null
+        ? []
+        : await tx
+            .select({ id: agentRun.id, agentId: agentRun.agentId, sessionId: agentRun.sessionId })
+            .from(agentRun)
+            .where(eq(agentRun.id, decided.runId));
     const runId = await enqueueAgentRun(
       {
         agentId: decided.agentId,
@@ -361,6 +371,10 @@ export async function decideApprovalRequest(
           deciderName: person?.name ?? 'a person',
           note,
         }),
+        ...(origin?.sessionId &&
+          origin.agentId === decided.agentId && {
+            continueSession: { runId: origin.id, sessionId: origin.sessionId },
+          }),
       },
       tx,
     );

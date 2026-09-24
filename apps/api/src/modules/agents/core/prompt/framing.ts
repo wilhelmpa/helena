@@ -117,15 +117,18 @@ function frameApproval(run: RunForPrompt, titled: string): string {
     '',
     run.prompt,
     '',
-    'If it was approved, carry out exactly the approved action, following the note when',
-    'there is one, and nothing beyond it. If it was rejected, do not carry the action out:',
-    'finish the rest of the work without it, or stop.',
+    'If it was approved, carry out exactly the approved action as approved, following the',
+    'note when there is one. If it was rejected, do not carry the action out. Either way,',
+    'then go on with the rest of the work you were doing: finish every step it still needs',
+    '(an action that needs approval asks for it again), or stop when nothing can be done',
+    'without the rejected action.',
   );
   if (run.issueId != null) {
     lines.push(
       '',
       'Then report what you did in one comment on the issue with the add_comment tool',
-      `(issueId ${run.issueId}). Do not mention yourself.`,
+      `(issueId ${run.issueId}), and set the issue's status with the update_issue tool.`,
+      'Do not mention yourself.',
     );
   }
   return lines.join('\n');
