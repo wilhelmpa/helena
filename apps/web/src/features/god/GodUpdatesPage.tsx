@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CircleCheck, Info, LoaderCircle, RefreshCw } from 'lucide-react';
+import { CircleCheck, CircleHelp, Info, LoaderCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
@@ -9,6 +9,7 @@ import { RowList, SectionLabel } from '@/components/common/page/RowList';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
 import type { UpdateItem, UpdateScope } from '@/lib/api/endpoints/updateCenter';
+import { cn } from '@/lib/utils';
 import { formatDateTime, formatDurationShort } from '@/utils/dates';
 import ApplyUpdateDialog from '@/features/update-center/components/ApplyUpdateDialog';
 import UpdateCard, { useSourceText } from '@/features/update-center/components/UpdateCard';
@@ -160,7 +161,17 @@ export default function GodUpdatesPage() {
                 key={item.id}
                 className="flex h-8 min-w-0 items-center gap-2 rounded-md px-2 text-sm"
               >
-                <CircleCheck className="size-4 shrink-0 text-status-success" aria-hidden="true" />
+                {item.error || !item.installed ? (
+                  <CircleHelp
+                    className={cn(
+                      'size-4 shrink-0',
+                      item.error ? 'text-status-waiting' : 'text-muted-foreground',
+                    )}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <CircleCheck className="size-4 shrink-0 text-status-success" aria-hidden="true" />
+                )}
                 <span className="min-w-0 shrink truncate" dir="auto">
                   {item.name}
                 </span>
