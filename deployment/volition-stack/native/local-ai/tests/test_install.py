@@ -23,19 +23,46 @@ def dry(*args: str) -> str:
 
 class InstallScriptTest(unittest.TestCase):
     def test_install_pins_every_download_and_package(self):
-        out = dry('--rocm-backend', 'install')
+        out = dry('install')
         for url in (
             'lemonade-sdk/lemonade/releases/download/v2026.39.1/lemonade-server_2026.39.1-debian13_amd64.deb',
-            'ggml-org/llama.cpp/releases/download/b10825/llama-b10825-bin-ubuntu-vulkan-x64.tar.gz',
+            'ggml-org/llama.cpp/releases/download/b11166/llama-b11166-bin-ubuntu-vulkan-x64.tar.gz',
+            'ggml-org/llama.cpp/archive/refs/tags/b11166.tar.gz',
             'ROCm/FastFlowLM/releases/download/v1.0.6/fastflowlm_1.0.6_debian13_amd64.deb',
-            'lemonade-sdk/llamacpp-rocm/releases/download/b1324/llama-b1324-ubuntu-rocm-gfx1151-x64.zip',
         ):
             self.assertIn(url, out)
+        self.assertNotIn('llamacpp-rocm', out)
         self.assertIn('libxrt-npu2=1:2.25.0-4~bpo13+1', out)
         self.assertIn('libcpp-httplib0.41=0.41.0+ds-3~bpo13+1', out)
         self.assertIn('Pin-Priority: 1001', out)
         # The service is set up before the package can start it.
         self.assertLess(out.index('lemond.service.d/helena.conf'), out.index('apt-get install -y'))
+
+    def test_rocm_is_one_hash_pinned_tree_and_llama_cpp_is_built_for_gfx1151(self):
+        out = dry('install')
+        self.assertIn('uv venv -q -p /usr/bin/python3.13 /opt/helena-ai/rocm-10.0.0', out)
+        self.assertIn('--require-hashes --index-url https://stable.repo.amd.com/rocm/whl-next/', out)
+        for flag in ('-DGGML_HIP=ON', '-DAMDGPU_TARGETS=gfx1151', '-DGGML_HIP_ROCWMMA_FATTN=ON',
+                     '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_RPATH=$ORIGIN;'):
+            self.assertIn(flag, out)
+        self.assertIn('/opt/helena-ai/llamacpp/rocm-b11166', out)
+        # gfx1151 is native in ROCm 10: no override of the GPU's identity anywhere.
+        self.assertIsNone(re.search(r'HSA_OVERRIDE\w*=', SCRIPT.read_text()))
+        requirements = (SCRIPT.parent / 'rocm-requirements.txt').read_text()
+        for pin in ('rocm-sdk-device-gfx1151==10.0.0', 'torch==2.13.0+rocm10.0.0', 'rocm-sdk-devel==10.0.0'):
+            self.assertIn(pin, requirements)
+        # Every requirement carries at least one hash (pip refuses --require-hashes otherwise).
+        blocks = re.split(r'\n(?=[a-z])', requirements)
+        pinned = [b for b in blocks if re.match(r'^[a-z][\w.-]*==', b)]
+        self.assertGreaterEqual(len(pinned), 20)
+        for block in pinned:
+            self.assertIn('--hash=sha256:', block, block.split()[0])
+
+    def test_no_rocm_is_vulkan_only(self):
+        out = dry('--no-rocm', 'install')
+        self.assertNotIn('rocm-10.0.0', out)
+        self.assertNotIn('GGML_HIP', out)
+        self.assertIn('"backend": "vulkan"', out)
 
     def test_lemonade_defaults_keep_it_local_and_offline(self):
         out = dry('install')
@@ -47,8 +74,10 @@ class InstallScriptTest(unittest.TestCase):
         self.assertTrue(config['no_fetch_executables'])
         self.assertFalse(config['broadcast'])
         self.assertFalse(config['telemetry']['enabled'])
-        self.assertEqual(config['llamacpp']['vulkan_bin'], '/opt/helena-ai/llamacpp/vulkan-b10825')
-        self.assertIn('--no-mmap', config['llamacpp']['args'])
+        self.assertEqual(config['llamacpp']['backend'], 'rocm')
+        self.assertEqual(config['llamacpp']['rocm_bin'], '/opt/helena-ai/llamacpp/rocm-b11166')
+        self.assertEqual(config['llamacpp']['vulkan_bin'], '/opt/helena-ai/llamacpp/vulkan-b11166')
+        self.assertIn('--load-mode none', config['llamacpp']['args'])
         self.assertTrue(config['flm']['prefer_system'])
 
     def test_no_npu_leaves_fastflowlm_and_xrt_out(self):

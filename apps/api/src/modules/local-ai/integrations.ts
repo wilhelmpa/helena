@@ -1,38 +1,13 @@
 import { listModelServers, readModelServerKey, type ModelServerRow } from '@repo/db';
-import type { Logger, LocalizedText } from '@helena/sdk';
+import type { LocalizedText, UpdateCandidate, UpdateCheckContext, UpdateSource } from '@helena/sdk';
 import { serverContext } from './service';
 
-// Local AI in two extension points of other branches (docs/helena-decisions/local-ai-platform.md
-// §9): an update source for Administrator → Updates (hub/update-center, `updateSources`) and a
-// host capability for Administrator → Server (hub/server-admin, `hostCapabilities`). Until both
-// are merged, their contracts are mirrored here (same field names, same meaning); after the
-// merge the objects are registered in modules/local-ai/plugin.ts and the mirrors go.
-
-// ── mirror of @helena/sdk UpdateSource (hub/update-center, packages/sdk/src/updates.ts) ──
-
-export interface LocalAiUpdateCandidate {
-  component: string;
-  name: string;
-  installed: string | null;
-  available: string | null;
-  updateAvailable: boolean;
-  security: boolean;
-  sourceUrl?: string | null;
-  notesUrl?: string | null;
-  group?: string | null;
-  applicable: boolean;
-  hint?: LocalizedText | null;
-  detail?: string | null;
-  error?: string | null;
-}
-
-export interface LocalAiUpdateCheckContext {
-  now: Date;
-  log: Logger;
-  manual: boolean;
-  fetchText(url: string, options?: { maxBytes?: number }): Promise<string>;
-  fetchJson<T = unknown>(url: string, options?: { maxBytes?: number }): Promise<T>;
-}
+// Local AI in the extension points of other features (docs/helena-decisions/local-ai-platform.md
+// §9): an update source for Administrator → Updates (`updateSources`, registered by the
+// `helena.local-ai` plugin) and a host capability for Administrator → Server (hub/server-admin,
+// `hostCapabilities`). hub/server-admin is not merged yet, so its contract is mirrored here
+// (same field names, same meaning); after its merge the capability is registered too and the
+// mirror goes.
 
 // ── mirror of @helena/sdk HostCapability (hub/server-admin, packages/sdk/src/host.ts) ────
 
@@ -108,6 +83,55 @@ interface HfModel {
   id?: string;
   sha?: string;
   lastModified?: string;
+  createdAt?: string;
+}
+
+// Model families that do not fit the machine yet but may soon (a smaller or distilled release):
+// a repository newer than `since` whose name matches shows up as "neues Modell verfügbar",
+// to be measured before anything changes. (docs/helena-decisions/local-ai-platform.md §5.1)
+export const MODEL_WATCH: {
+  id: string;
+  name: string;
+  author: string;
+  search: string;
+  match: RegExp;
+  since: string;
+  why: string;
+}[] = [
+  {
+    id: 'qwen-flash-next',
+    name: 'Qwen Flash-Next',
+    author: 'Qwen',
+    search: 'Flash-Next',
+    match: /Flash-Next/i,
+    since: '2026-08-27T00:00:00Z',
+    why: 'Qwen3.8-Flash-Next (125B-A6B + n-gram table, ~180B, Qwen Community License) does not fit 96 GiB; a smaller or distilled release might',
+  },
+  {
+    id: 'qwen4-moe',
+    name: 'Qwen4 MoE',
+    author: 'Qwen',
+    search: 'Qwen4',
+    match: /^Qwen\/Qwen4[.-].*A\d+B/i,
+    since: '2026-09-01T00:00:00Z',
+    why: 'a Qwen4 MoE with few active parameters (A3B–A10B) may replace the workhorse',
+  },
+];
+
+// The newest repository of a watched family created after its baseline, or null.
+export function newestWatched(
+  entry: Pick<(typeof MODEL_WATCH)[number], 'match' | 'since'>,
+  models: HfModel[],
+): HfModel | null {
+  const since = Date.parse(entry.since);
+  return (
+    models
+      .filter((model) => model.id && entry.match.test(model.id))
+      .filter((model) => Date.parse(model.createdAt ?? model.lastModified ?? '') > since)
+      .sort((a, b) =>
+        (b.createdAt ?? b.lastModified ?? '').localeCompare(a.createdAt ?? a.lastModified ?? ''),
+      )[0] ?? null
+  );
 }
 
 async function serverFacts(server: ModelServerRow) {
@@ -150,16 +174,18 @@ async function installedRevision(server: ModelServerRow, model: string): Promise
 
 const HINT: LocalizedText = { i18n: 'localAi.updates.hint' };
 
-export const localAiUpdateSource = {
+// Check only: Lemonade, FastFlowLM and the models are updated through native/local-ai/install.sh
+// with new pins, and a model is evaluated again before the owner switches to it.
+export const localAiUpdateSource: UpdateSource = {
   id: 'local-ai',
-  label: { i18n: 'localAi.updates.label' } as LocalizedText,
-  kind: 'tool' as const,
+  label: { i18n: 'localAi.updates.label' },
+  kind: 'tool',
   order: 60,
   hosts: ['github.com', 'huggingface.co'],
-  async check(context: LocalAiUpdateCheckContext): Promise<LocalAiUpdateCandidate[]> {
+  async check(context: UpdateCheckContext): Promise<UpdateCandidate[]> {
     const servers = (await listModelServers()).filter((server) => server.enabled);
     if (servers.length === 0) return [];
-    const candidates: LocalAiUpdateCandidate[] = [];
+    const candidates: UpdateCandidate[] = [];
     const release = async (repository: string) => {
       try {
         return plain(
@@ -250,6 +276,29 @@ export const localAiUpdateSource = {
             error: String(error).slice(0, 200),
           });
         }
+      }
+    }
+    for (const entry of MODEL_WATCH) {
+      try {
+        const models = await context.fetchJson<HfModel[]>(
+          `https://huggingface.co/api/models?author=${encodeURIComponent(entry.author)}&search=${encodeURIComponent(entry.search)}&sort=createdAt&direction=-1&limit=20`,
+        );
+        const found = newestWatched(entry, Array.isArray(models) ? models : []);
+        candidates.push({
+          component: `watch:${entry.id}`,
+          name: entry.name,
+          installed: null,
+          available: found?.id ?? null,
+          updateAvailable: found !== null,
+          security: false,
+          sourceUrl: found?.id ? `https://huggingface.co/${found.id}` : null,
+          group: 'local-ai-models',
+          applicable: false,
+          hint: HINT,
+          detail: entry.why,
+        });
+      } catch (error) {
+        context.log.warn(`watch ${entry.id}: ${String(error)}`);
       }
     }
     return candidates;

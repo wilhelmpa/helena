@@ -1,22 +1,23 @@
 #!/bin/sh
 # Helena local AI, step 2: one local endpoint for the GPU, the NPU and (through Laya) the CPU.
 # Lemonade Server (AMD, Apache-2.0) serves an OpenAI-compatible API on 127.0.0.1:13305 with
-# llama.cpp on the Radeon 8060S (Vulkan; ROCm optional) and FastFlowLM on the XDNA2 NPU.
-# Everything is pinned and checked against its SHA-256; nothing here is part of Helena's own
-# image: it is an optional host service (FastFlowLM's NPU kernels are proprietary binaries).
-# Decision: docs/helena-decisions/local-ai-platform.md; runbook: README.md.
+# llama.cpp on the Radeon 8060S — ROCm first (our own HIP build for gfx1151 on AMD's ROCm
+# 10.0.0), Vulkan (RADV) as the measured comparison and fallback — and FastFlowLM on the XDNA2
+# NPU. Everything is pinned and checked (SHA-256, git commit, pip --require-hashes); nothing here
+# is part of Helena's own image: it is an optional host service (FastFlowLM's NPU kernels are
+# proprietary binaries). Decision: docs/helena-decisions/local-ai-platform.md; runbook: README.md.
 #
-#   sudo ./install.sh status
-#   sudo ./install.sh [--dry-run] [--rocm-backend] [--no-npu] install
+#   sudo ./install.sh status                 (with the ROCm checks: rocminfo, KFD memory, HIP)
+#   sudo ./install.sh [--dry-run] [--no-rocm] [--no-npu] install
 #   sudo ./install.sh [--dry-run] models list | pull <name> | load <name> | verify
 #   sudo ./install.sh [--dry-run] [--purge] uninstall
 #
-# --rocm-backend  also the llama.cpp ROCm backend for gfx1151 (self-contained, 397 MB), next to
-#                 Vulkan; per model, `models load` picks the one the benchmark favoured.
-# --no-npu        leave FastFlowLM and XRT out (a machine without the NPU driver: kernel < 7.0).
-# --purge         uninstall also removes the key, the models and the downloads.
+# --no-rocm   Vulkan only (no ROCm SDK, no HIP build): a GPU-only setup on an older kernel.
+# --no-npu    leave FastFlowLM and XRT out (a machine without the NPU driver: kernel < 7.0).
+# --purge     uninstall also removes the key, the models, the ROCm tree and the downloads.
 #
-# Runs after kernel.sh (backports source and pin, kernel 7.1.8 for the NPU). Downloads only
+# Runs after kernel.sh (backports source and pin, kernel 7.1.8: amdxdna for the NPU, and KFD
+# giving ROCm the 96 GiB carve-out — on 6.12 KFD offers only the ~15.5 GiB GTT). Downloads only
 # what the owner approved (README.md "Downloads"); a model over 1 GB needs its own OK.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
@@ -30,16 +31,23 @@ FLM_VERSION=1.0.6
 FLM_DEB=fastflowlm_${FLM_VERSION}_debian13_amd64.deb
 FLM_URL=https://github.com/ROCm/FastFlowLM/releases/download/v${FLM_VERSION}/${FLM_DEB}
 FLM_SHA256=318e00f4089e50c93f807b5684f676705446d06110442b9e0774a478e3377142
-# llama.cpp for Vulkan, the build Lemonade 2026.39.1 pins.
-VULKAN_TAG=b10825
-VULKAN_TAR=llama-${VULKAN_TAG}-bin-ubuntu-vulkan-x64.tar.gz
-VULKAN_URL=https://github.com/ggml-org/llama.cpp/releases/download/${VULKAN_TAG}/${VULKAN_TAR}
-VULKAN_SHA256=4d0f4e351f1ed53a8d5076fb9aacc6effae15ff4d09d37453404ce8a5e447de5
-# llama.cpp for ROCm on gfx1151, with its ROCm runtime inside (lemonade-sdk/llamacpp-rocm, MIT).
-ROCM_TAG=b1324
-ROCM_ZIP=llama-${ROCM_TAG}-ubuntu-rocm-gfx1151-x64.zip
-ROCM_URL=https://github.com/lemonade-sdk/llamacpp-rocm/releases/download/${ROCM_TAG}/${ROCM_ZIP}
-ROCM_SHA256=eced287d50537343703128c3579c6787cbf5edb0a56bbb808816eab7b6848eb0
+# llama.cpp: one release for both backends, so the comparison is fair. ROCm is built here from the
+# tagged source (the commit is checked), Vulkan is the project's own Ubuntu build of the same tag.
+LLAMA_TAG=b11166
+LLAMA_COMMIT=a72e04abe0fe9b36e203033ac71bd5f379c35bc5
+LLAMA_SRC=llama.cpp-${LLAMA_TAG}.tar.gz
+LLAMA_SRC_URL=https://github.com/ggml-org/llama.cpp/archive/refs/tags/${LLAMA_TAG}.tar.gz
+# GitHub may re-pack an archive; the commit inside (git get-tar-commit-id) is what must match.
+LLAMA_SRC_SHA256=1f8d18ea155f37d7f55814ee7fa9066e9d53424d153728fb03921d73eb754267
+VULKAN_TAR=llama-${LLAMA_TAG}-bin-ubuntu-vulkan-x64.tar.gz
+VULKAN_URL=https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_TAG}/${VULKAN_TAR}
+VULKAN_SHA256=69e26c5e577e1c17dec0b59d3146f008424297a2c64a92fa445365e264585667
+# ROCm 10.0.0 (AMD's TheRock release, stable channel; gfx1151 native) and PyTorch 2.13 for it, one
+# tree for the HIP build and Laya, every wheel hash-pinned in rocm-requirements.txt.
+ROCM_VERSION=10.0.0
+ROCM_INDEX=https://stable.repo.amd.com/rocm/whl-next/
+ROCM_VENV=/opt/helena-ai/rocm-${ROCM_VERSION}
+ROCM_PYTHON=/usr/bin/python3.13
 # From trixie-backports, at exactly these versions (preferences.d/helena-ai).
 BPO_PINS="libcpp-httplib0.41=0.41.0+ds-3~bpo13+1"
 XRT_VERSION=1:2.25.0-4~bpo13+1
@@ -59,7 +67,7 @@ PROXY_SERVICE=/etc/systemd/system/helena-ai-proxy.service
 CATALOG=$here/models.tsv
 
 DRY_RUN=0
-ROCM_BACKEND=0
+ROCM=1
 NPU=1
 PURGE=0
 command=
@@ -67,7 +75,7 @@ args=
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
-    --rocm-backend) ROCM_BACKEND=1 ;;
+    --no-rocm) ROCM=0 ;;
     --no-npu) NPU=0 ;;
     --purge) PURGE=1 ;;
     status|install|uninstall|models) [ -z "$command" ] && command=$1 || args="$args $1" ;;
@@ -114,10 +122,15 @@ api() {
 }
 
 lemonade_config() {
-  rocm_channel=stable rocm_bin=builtin
-  if [ "$ROCM_BACKEND" = 1 ] || [ -d "$OPT/llamacpp/rocm-$ROCM_TAG" ]; then
-    rocm_channel=nightly rocm_bin=$OPT/llamacpp/rocm-$ROCM_TAG
-  fi
+  # ROCm is the default engine; Vulkan stays configured, so a model whose bench favours it is
+  # loaded with `llamacpp_backend: vulkan` (models.tsv, `models load`). "rocm" is Lemonade's
+  # rocm-stable channel; rocm_bin (a path) replaces its own download (lemonade-sdk/llama.cpp
+  # b10820 on TheRock 7.14, a second ROCm next to ours), and without Lemonade's TheRock runtime
+  # it only adds the binary's folder to LD_LIBRARY_PATH. `--load-mode none`: the weights are
+  # read into VRAM, not memory-mapped (llama.cpp's former --no-mmap; with mmap the page cache
+  # of a 60 GB model competes with the 31 GB the OS has).
+  backend=rocm rocm_bin=$OPT/llamacpp/rocm-$LLAMA_TAG
+  if [ "$ROCM" = 0 ]; then backend=vulkan rocm_bin=builtin; fi
   cat <<EOF
 {
   "host": "127.0.0.1",
@@ -133,16 +146,120 @@ lemonade_config() {
   "log_level": "info",
   "telemetry": { "enabled": false },
   "llamacpp": {
-    "backend": "vulkan",
+    "backend": "$backend",
     "prefer_system": false,
-    "vulkan_bin": "$OPT/llamacpp/vulkan-$VULKAN_TAG",
+    "vulkan_bin": "$OPT/llamacpp/vulkan-$LLAMA_TAG",
     "rocm_bin": "$rocm_bin",
-    "args": "--no-mmap"
+    "args": "--load-mode none"
   },
-  "rocm_channel": "$rocm_channel",
   "flm": { "prefer_system": true, "args": "" }
 }
 EOF
+}
+
+# ── ROCm ─────────────────────────────────────────────────────────────────────────────────
+
+rocm_root() { "$ROCM_VENV/bin/rocm-sdk" path --root; }
+
+# ROCm 10.0.0 as AMD publishes it for every distribution: the TheRock SDK wheels (core,
+# libraries with hipBLASLt and rocWMMA, devel with hipcc/clang, the gfx1151 device code) and
+# PyTorch built against them, in one venv owned by root. No /opt/rocm, no apt repository, no
+# second ROCm tree: llama.cpp is compiled against this one, Laya imports torch from it.
+install_rocm() {
+  if [ -x "$ROCM_VENV/bin/rocm-sdk" ] && [ "$("$ROCM_VENV/bin/rocm-sdk" version 2>/dev/null)" = "$ROCM_VERSION" ]; then
+    say "have ROCm $ROCM_VERSION in $ROCM_VENV"
+    return
+  fi
+  if [ "$DRY_RUN" = 0 ]; then
+    command -v uv >/dev/null || die "uv is missing (/usr/local/bin/uv, as for Hermes)"
+    [ -x "$ROCM_PYTHON" ] || die "$ROCM_PYTHON is missing"
+  fi
+  run install -d -m 0755 /var/cache/helena-ai/uv
+  run env UV_CACHE_DIR=/var/cache/helena-ai/uv uv venv -q -p "$ROCM_PYTHON" "$ROCM_VENV"
+  # --require-hashes: every wheel must match the hash recorded in rocm-requirements.txt (AMD's
+  # index publishes none of its own). Installed ≈ 8 GB: SDK devel 4.3 GB (hipcc, headers, and
+  # the libraries llama.cpp links), core 1.4 GB, PyTorch 0.9 GB, Triton 1.4 GB.
+  run env UV_CACHE_DIR=/var/cache/helena-ai/uv uv pip install -q --python "$ROCM_VENV/bin/python" \
+    --require-hashes --index-url "$ROCM_INDEX" --extra-index-url https://pypi.org/simple \
+    --index-strategy unsafe-best-match -r "$here/rocm-requirements.txt"
+  run chmod -R go-w "$ROCM_VENV"
+  # The unpacked wheels in uv's cache are as large as the venv (8 GB); a reinstall downloads
+  # the same hash-pinned files again.
+  run rm -rf /var/cache/helena-ai/uv
+}
+
+# llama.cpp's HIP backend for gfx1151, built from the pinned commit against the ROCm above.
+build_llama_hip() {
+  dest=$OPT/llamacpp/rocm-$LLAMA_TAG
+  if [ -x "$dest/llama-server" ]; then say "have $dest"; return; fi
+  src=/var/cache/helena-ai/build/llama.cpp-$LLAMA_TAG
+  run rm -rf "$src"
+  run install -d -m 0755 "$src"
+  run tar -xzf "$DOWNLOADS/$LLAMA_SRC" -C "$src" --strip-components=1
+  root=$( [ "$DRY_RUN" = 1 ] && echo "$ROCM_VENV/lib/python3.13/site-packages/_rocm_sdk_devel" || rocm_root )
+  command -v g++ >/dev/null || [ "$DRY_RUN" = 1 ] || die "g++ is missing (build-essential: ROCm's clang uses its C++ library)"
+  # cmake and ninja come from the ROCm venv (hash-pinned); the compilers are ROCm's own clang,
+  # the LLVM that also builds the device code (Debian's libstdc++ headers from g++).
+  # HIP_PATH/ROCM_PATH: llama.cpp's CMake finds hip, hipBLAS, rocBLAS and rocWMMA in the venv's
+  #   SDK tree (rocm-sdk path --root), not in a /opt/rocm that does not exist here.
+  # GGML_HIP=ON: the HIP backend (ggml-cuda compiled for AMD).
+  # AMDGPU_TARGETS=gfx1151: code for this GPU only (ROCm 10 knows it natively: no
+  #   HSA_OVERRIDE_GFX_VERSION anywhere).
+  # GGML_HIP_ROCWMMA_FATTN=ON: flash attention through rocWMMA on RDNA3.5's WMMA units, the
+  #   prefill gain on Strix Halo at long context (§4 of the decision, measured).
+  # LLAMA_CURL=OFF: the binaries never download anything (Lemonade places the models).
+  # LLAMA_BUILD_NUMBER/COMMIT: a tarball has no .git; `llama-server --version` still names the
+  #   release (b11166 = build 11166) and the checked commit.
+  # CMAKE_BUILD_RPATH=$ORIGIN;<SDK>/lib: the copied binaries find their own libllama/libggml
+  #   next to them and ROCm in the venv, with no LD_LIBRARY_PATH (ldd shows every library
+  #   resolved there, TheRock's own libdrm/libnuma/zstd included). hipBLASLt is chosen at run
+  #   time (ROCBLAS_USE_HIPBLASLT in the drop-in).
+  run env PATH="$ROCM_VENV/bin:$PATH" HIP_PATH="$root" ROCM_PATH="$root" \
+    cmake -S "$src" -B "$src/build" -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1151 -DGGML_HIP_ROCWMMA_FATTN=ON \
+      -DCMAKE_C_COMPILER="$root/lib/llvm/bin/clang" -DCMAKE_CXX_COMPILER="$root/lib/llvm/bin/clang++" \
+      -DCMAKE_HIP_COMPILER="$root/lib/llvm/bin/clang++" -DCMAKE_PREFIX_PATH="$root" \
+      -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
+      -DLLAMA_BUILD_NUMBER="${LLAMA_TAG#b}" -DLLAMA_BUILD_COMMIT="$(echo "$LLAMA_COMMIT" | cut -c1-9)" \
+      "-DCMAKE_BUILD_RPATH=\$ORIGIN;$root/lib"
+  # Four jobs: each HIP translation unit takes 2–3 GB, and Helena keeps running meanwhile.
+  run env PATH="$ROCM_VENV/bin:$PATH" cmake --build "$src/build" -j 4 \
+    --target llama-server llama-bench llama-cli
+  run install -d -m 0755 "$dest"
+  run sh -c "cp -a '$src/build/bin/.' '$dest/'"
+  run rm -rf "$src"
+}
+
+# What ROCm needs, checked: the GPU as gfx1151, KFD offering the carve-out (kernel 7.x), a
+# HIP kernel through PyTorch, and llama.cpp seeing the ROCm device. As Lemonade's user.
+# A matrix product on the GPU through PyTorch (the Laya path), compared with the CPU's.
+HIP_SMOKE='import torch
+a = torch.randn(1024, 1024)
+g = (a.cuda() @ a.cuda()).cpu()
+print(torch.version.hip, torch.cuda.get_device_name(0), "ok" if torch.allclose(g, a @ a, rtol=1e-3, atol=1e-2) else "MISMATCH")'
+
+rocm_check() {
+  [ -x "$ROCM_VENV/bin/rocm-sdk" ] || { say "ROCm:          not installed"; return; }
+  root=$(rocm_root)
+  # As Lemonade's user (render, video) when root; otherwise as the caller, who needs the
+  # render group for /dev/kfd.
+  as_ai() {
+    if [ "$(id -u)" = 0 ] && getent passwd lemonade >/dev/null; then
+      systemd-run --wait --pipe --collect --quiet --uid=lemonade --gid=lemonade \
+        -p SupplementaryGroups="render video" "$@"
+    else "$@"; fi
+  }
+  say "ROCm:          $("$ROCM_VENV/bin/rocm-sdk" version) in $ROCM_VENV"
+  say "rocminfo:      $(as_ai "$root/bin/rocminfo" 2>/dev/null | grep -m1 -o 'gfx1151' || echo 'no gfx1151 agent')"
+  kfd=0
+  for f in /sys/class/kfd/kfd/topology/nodes/*/mem_banks/*/properties; do
+    size=$(sed -n 's/^size_in_bytes //p' "$f" 2>/dev/null); [ "${size:-0}" -gt "$kfd" ] && kfd=$size
+  done
+  say "KFD memory:    $((kfd / 1073741824)) GiB $( [ "$kfd" -ge 68719476736 ] && echo '(the carve-out: ok)' || echo '(only GTT: boot kernel 7.x)')"
+  say "HIP smoke:     $(as_ai "$ROCM_VENV/bin/python" -c "$HIP_SMOKE" 2>&1 | tail -n 1)"
+  say "llama.cpp:     $(as_ai "$OPT/llamacpp/rocm-$LLAMA_TAG/llama-cli" --list-devices 2>&1 | grep -m1 ROCm || echo 'no ROCm device')"
+  say "amd-smi:       $(as_ai "$root/bin/amd-smi" static --asic --json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); d=d[0] if isinstance(d,list) else d; a=d.get("asic") or {}; print(a.get("market_name","?"), a.get("target_graphics_version","?"))' 2>/dev/null || echo 'not available')"
 }
 
 install_all() {
@@ -168,7 +285,13 @@ install_all() {
   fetch "$LEMONADE_URL" "$LEMONADE_DEB" "$LEMONADE_SHA256"
   fetch "$VULKAN_URL" "$VULKAN_TAR" "$VULKAN_SHA256"
   [ "$NPU" = 0 ] || fetch "$FLM_URL" "$FLM_DEB" "$FLM_SHA256"
-  [ "$ROCM_BACKEND" = 0 ] || fetch "$ROCM_URL" "$ROCM_ZIP" "$ROCM_SHA256"
+  if [ "$ROCM" = 1 ]; then
+    fetch "$LLAMA_SRC_URL" "$LLAMA_SRC" "$LLAMA_SRC_SHA256"
+    if [ "$DRY_RUN" = 0 ]; then
+      commit=$(gzip -dc "$DOWNLOADS/$LLAMA_SRC" | git get-tar-commit-id)
+      [ "$commit" = "$LLAMA_COMMIT" ] || die "llama.cpp source is commit $commit, not $LLAMA_COMMIT"
+    fi
+  fi
 
   say "== the key (root:volition-plan 0640; never printed)"
   # Helena's key directory (native/laya keeps its key here too); the key file itself is 0640.
@@ -182,14 +305,13 @@ install_all() {
 
   say "== llama.cpp backends in $OPT"
   run install -d -m 0755 "$OPT/llamacpp"
-  if [ ! -x "$OPT/llamacpp/vulkan-$VULKAN_TAG/llama-server" ]; then
-    run install -d -m 0755 "$OPT/llamacpp/vulkan-$VULKAN_TAG"
-    run tar -xzf "$DOWNLOADS/$VULKAN_TAR" -C "$OPT/llamacpp/vulkan-$VULKAN_TAG" --strip-components=1
+  if [ ! -x "$OPT/llamacpp/vulkan-$LLAMA_TAG/llama-server" ]; then
+    run install -d -m 0755 "$OPT/llamacpp/vulkan-$LLAMA_TAG"
+    run tar -xzf "$DOWNLOADS/$VULKAN_TAR" -C "$OPT/llamacpp/vulkan-$LLAMA_TAG" --strip-components=1
   fi
-  if [ "$ROCM_BACKEND" = 1 ] && [ ! -x "$OPT/llamacpp/rocm-$ROCM_TAG/llama-server" ]; then
-    command -v unzip >/dev/null || run apt-get install -y unzip
-    run install -d -m 0755 "$OPT/llamacpp/rocm-$ROCM_TAG"
-    run unzip -q -o "$DOWNLOADS/$ROCM_ZIP" -d "$OPT/llamacpp/rocm-$ROCM_TAG"
+  if [ "$ROCM" = 1 ]; then
+    install_rocm
+    build_llama_hip
   fi
 
   say "== Lemonade's service, before the package starts it: localhost, the key, limits"
@@ -346,6 +468,7 @@ status() {
   say "forwarder:     $(systemctl is-active helena-ai-proxy.socket 2>/dev/null || true)"
   say "key file:      $([ -e "$KEY" ] && stat -c '%U:%G %a' "$KEY" || echo missing)"
   say "backends:      $(ls "$OPT/llamacpp" 2>/dev/null | tr '\n' ' ')"
+  rocm_check
   if [ -r "$KEY" ]; then
     health=$(api /health 2>/dev/null || true)
     if [ -n "$health" ]; then
@@ -367,11 +490,14 @@ uninstall() {
   run rm -f "$DROPIN" "$PROXY_SOCKET" "$PROXY_SERVICE" "$PREFERENCES"
   run systemctl daemon-reload
   run apt-get purge -y lemonade-server fastflowlm || true
-  run rm -rf "$LIB" "$OPT"
+  run rm -rf "$LIB" "$OPT/llamacpp"
   if [ "$PURGE" = 1 ]; then
-    run rm -rf "$ETC" "$MODELS" "$DOWNLOADS"
+    # Only this installer's key: /etc/helena also holds other keys (native/laya).
+    run rm -rf "$KEY" "$MODELS" "$DOWNLOADS" /var/cache/helena-ai "$ROCM_VENV"
+    run rmdir --ignore-fail-on-non-empty "$OPT"
   else
-    say "kept: $KEY, $MODELS, $DOWNLOADS (--purge removes them)"
+    # The ROCm tree stays: Laya (--rocm) may use its PyTorch.
+    say "kept: $KEY, $MODELS, $DOWNLOADS, $ROCM_VENV (--purge removes them)"
   fi
   say "Local AI removed. Helena falls back to the configured models by itself."
 }

@@ -2,8 +2,9 @@
 # Helena local AI, the measurements behind the model choice (docs/helena-decisions/local-ai-platform.md
 # §5, §7). Run in the maintenance window, after install.sh and `install.sh models pull`.
 #
-#   sudo ./bench.sh speed <name> [--rocm]     llama-bench of a models.tsv model at 0, 32k and 64k
-#                                             context (Vulkan; --rocm: the ROCm backend as well)
+#   sudo ./bench.sh speed <name>              llama-bench of a models.tsv model on every installed
+#                                             backend: ROCm (hipBLASLt off and on) and Vulkan;
+#                                             pp512/pp8192/pp32768, tg128 empty and at 32k depth
 #   sudo ./bench.sh evals <chat> [<embed>]    the task-class evals through Lemonade (as the API
 #                                             runs them), JSON next to the CSVs
 #   sudo ./bench.sh parallel <gpu> <npu>      GPU and NPU generating at once: what each loses to
@@ -39,22 +40,45 @@ model_file() {
 
 bounded() {
   systemd-run --wait --pipe --collect --quiet --uid=lemonade --gid=lemonade \
-    -p SupplementaryGroups="render video" -p MemoryMax=8G -p Nice=10 -p LimitMEMLOCK=infinity "$@"
+    -p SupplementaryGroups="render video" -p MemoryMax=12G -p Nice=10 -p LimitMEMLOCK=infinity "$@"
+}
+
+# One llama-bench run, JSON out; $1 = label, $2 = binary folder, the rest = environment.
+bench_run() {
+  label=$1 bin=$2; shift 2
+  json="$OUT/$name-$label-$stamp.json"
+  say "== $name on $label → $json"
+  # -fa on: flash attention (rocWMMA on ROCm, coopmat on Vulkan). -lm none: weights read into
+  # VRAM without mmap, as Lemonade loads them (install.sh). -r 3: three repetitions, mean ± sd.
+  # pp512/pp8192/pp32768 = prompt processing (what an agent's long context costs), tg128 =
+  # generation empty and at 32k depth (a long session).
+  bounded env "$@" "$bin/llama-bench" -m "$file" -ngl 99 -fa on -lm none -r 3 -o json \
+    -p 512,8192,32768 -n 128 > "$json.0"
+  bounded env "$@" "$bin/llama-bench" -m "$file" -ngl 99 -fa on -lm none -r 3 -o json \
+    -p 0 -n 128 -d 32768 > "$json.1"
+  python3 - "$json.0" "$json.1" > "$json" <<'PY'
+import json, sys
+rows = [r for f in sys.argv[1:] for r in json.load(open(f))]
+for r in rows:
+    test = f"pp{r['n_prompt']}" if r["n_prompt"] else f"tg{r['n_gen']}"
+    if r.get("n_depth"): test += f"@d{r['n_depth']}"
+    print(f"  {test:<12} {r['avg_ts']:9.1f} ± {r['stddev_ts']:.1f} tok/s", file=sys.stderr)
+json.dump(rows, sys.stdout, indent=1)
+PY
+  rm -f "$json.0" "$json.1"
 }
 
 speed() {
-  name=$1 rocm=${2:-}
+  name=$1
   file=$(model_file "$name")
-  for backend in vulkan $( [ "$rocm" = --rocm ] && echo rocm ); do
-    bin=$(ls -d "$OPT/llamacpp/$backend-"* 2>/dev/null | head -n 1)
-    [ -n "$bin" ] || { say "no $backend backend in $OPT/llamacpp"; continue; }
-    csv="$OUT/$name-$backend-$stamp.csv"
-    say "== $name on $backend (0 / 32k / 64k context) → $csv"
-    # --mmap 0: the weights go to VRAM without passing through the page cache for long.
-    bounded env LD_LIBRARY_PATH="$bin" "$bin/llama-bench" -m "$file" -ngl 99 -fa 1 --mmap 0 \
-      -d 0,32768,65536 -p 512 -n 128 -r 2 -o csv > "$csv"
-    awk -F, 'NR == 1 { for (i = 1; i <= NF; i++) h[$i] = i } NR > 1 { printf "  depth %-6s %-6s %8.1f tok/s\n", $h["\"n_depth\""], ($h["\"n_prompt\""] == "\"0\"" ? "tg" : "pp"), $h["\"avg_ts\""] }' "$csv" | tr -d '"'
-  done
+  rocm=$(ls -d "$OPT/llamacpp/rocm-"* 2>/dev/null | head -n 1)
+  vulkan=$(ls -d "$OPT/llamacpp/vulkan-"* 2>/dev/null | head -n 1)
+  # ROCBLAS_USE_HIPBLASLT: rocBLAS hands its GEMMs to hipBLASLt (0 = rocBLAS' own kernels).
+  # llama.cpp uses them for the unquantized/large-batch products; the drop-in keeps the faster.
+  [ -z "$rocm" ] || bench_run rocm "$rocm" ROCBLAS_USE_HIPBLASLT=0
+  [ -z "$rocm" ] || bench_run rocm-hipblaslt "$rocm" ROCBLAS_USE_HIPBLASLT=1
+  # Vulkan's prebuilt binaries find their libraries next to them.
+  [ -z "$vulkan" ] || bench_run vulkan "$vulkan" LD_LIBRARY_PATH="$vulkan"
 }
 
 evals() {
@@ -90,7 +114,7 @@ parallel() {
 }
 
 case "${1:-}" in
-  speed) [ -n "${2:-}" ] || die "speed <name>"; speed "$2" "${3:-}" ;;
+  speed) [ -n "${2:-}" ] || die "speed <name>"; speed "$2" ;;
   evals) [ -n "${2:-}" ] || die "evals <chat> [<embed>]"; evals "$2" "${3:-}" ;;
   parallel) [ -n "${3:-}" ] || die "parallel <gpu model> <npu model>"; parallel "$2" "$3" ;;
   *) sed -n '2,15p' "$0"; exit 2 ;;

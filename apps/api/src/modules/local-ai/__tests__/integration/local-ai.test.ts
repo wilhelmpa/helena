@@ -64,7 +64,9 @@ beforeAll(async () => {
         case '/api/v1/models':
           return Response.json({ object: 'list', data: MODELS });
         case '/api/v1/chat/completions':
-          return Response.json(chatAnswer(await request.json()));
+          return Response.json(
+            chatAnswer((await request.json()) as Parameters<typeof chatAnswer>[0]),
+          );
         default:
           return new Response('not found', { status: 404 });
       }

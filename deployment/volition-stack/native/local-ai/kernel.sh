@@ -267,7 +267,15 @@ verify() {
     check "no amdxdna firmware errors" sh -c "! dmesg 2>/dev/null | grep -iE 'amdxdna.*(fail|error|incompatible)' | grep -q ."
     check "no amdgpu ring timeouts" sh -c "! dmesg 2>/dev/null | grep -iE 'amdgpu.*(ring .* timeout|GPU reset)' | grep -q ."
     check "VRAM carve-out seen (>= 64 GiB)" sh -c "[ \$(cat /sys/class/drm/card0/device/mem_info_vram_total) -ge 68719476736 ]"
-    check "KFD exposes cwsr_size (ROCm on gfx1151)" sh -c "grep -qs cwsr_size /sys/class/kfd/kfd/topology/nodes/*/properties"
+    # ROCm's view of the GPU (KFD): gfx1151 (gfx_target_version 110501) with the CWSR sizes
+    # (Lemonade refuses ROCm on gfx1151 without them: "Linux kernel missing support").
+    check "ROCm: /dev/kfd present" test -c /dev/kfd
+    check "ROCm: KFD lists gfx1151" sh -c "grep -qs '^gfx_target_version 110501' /sys/class/kfd/kfd/topology/nodes/*/properties"
+    check "ROCm: KFD exposes cwsr_size and ctl_stack_size" sh -c "grep -qs '^cwsr_size [1-9]' /sys/class/kfd/kfd/topology/nodes/*/properties && grep -qs '^ctl_stack_size [1-9]' /sys/class/kfd/kfd/topology/nodes/*/properties"
+    # 6.12 hands ROCm only the GTT (~15.5 GiB, half the OS memory); 7.x should offer the 96 GiB
+    # carve-out. A warning, not a failure: the NPU is why the kernel changes, and Vulkan uses the
+    # carve-out either way (decision §4.3: then big models run on Vulkan, ROCm keeps the small).
+    warn "ROCm: KFD offers the carve-out (GPU memory bank >= 64 GiB)" sh -c "for f in /sys/class/kfd/kfd/topology/nodes/*/mem_banks/*/properties; do s=\$(sed -n 's/^size_in_bytes //p' \"\$f\"); [ \"\${s:-0}\" -ge 68719476736 ] && exit 0; done; exit 1"
     check "no failed units" sh -c "[ -z \"\$(systemctl --failed --no-legend --plain)\" ]"
     for unit in nginx nftables postgresql volition-plan-api volition-plan-web volition-plan-worker volition-hermes-runner; do
       warn "$unit active" systemctl is-active --quiet "$unit"

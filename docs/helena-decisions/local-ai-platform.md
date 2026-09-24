@@ -15,9 +15,18 @@ hub/browser-task.
   Auf dem RAID kann GRUB sich selbst nichts merken, `grub-reboot` hätte dort eine Bootschleife
   riskiert. Fällt 7.1.8 aus, startet der Rechner beim nächsten Reset von selbst wieder mit 6.12.
 - **Ein Endpunkt:** Lemonade Server (AMD, Apache-2.0) auf `127.0.0.1:13305`, mit Schlüssel und ohne
-  eigene Downloads. Darunter llama.cpp auf der GPU (Vulkan, ROCm optional) und FastFlowLM auf der
-  NPU. **ROCm** kommt ohne Systeminstallation aus: Lemonades eigenes ROCm-llama.cpp bringt es mit,
-  PyTorch-ROCm für Laya ebenfalls. AMDs ROCm 10.0 für Debian 13 bleibt eine Option für später.
+  eigene Downloads. Darunter llama.cpp auf der GPU und FastFlowLM auf der NPU.
+- **ROCm ist der Standard auf der GPU** („eher ROCm richtig“): AMDs **ROCm 10.0.0** (TheRock,
+  gfx1151 wird nativ unterstützt, kein Trick mit `HSA_OVERRIDE`) als **ein** Baum für llama.cpp
+  und PyTorch (Laya), jede Datei per Hash festgelegt (≈ 2,1 GB Download, 8 GB auf der Platte).
+  llama.cpp bauen wir dafür selbst (b11166, HIP für gfx1151, Flash-Attention über rocWMMA);
+  Lemonades eigenes ROCm-llama.cpp hätte ein zweites, älteres ROCm mitgebracht. **Vulkan** bleibt
+  als gemessener Vergleich und Rückfall. Gemessen (kleines Modell, 6.12): ROCm liest lange
+  Prompts bis 2,4× schneller (32k Token: 2.491 statt 1.052 t/s), Vulkan erzeugt Text ~25 %
+  schneller. Pro Modell entscheidet der Bench im Wartungsfenster.
+- **Auf dem jetzigen Kernel 6.12 sieht ROCm nur 15,5 GiB** statt der 96 GiB VRAM. Der Kernel 7.1.8
+  soll das beheben; `kernel.sh verify` und `install.sh status` prüfen es. Zeigt auch 7.1.8 nur
+  15,5 GiB, laufen die großen Modelle auf Vulkan (das sieht die 96 GiB schon heute).
 - **Modelle:** Arbeitspferd **Qwen3.6-35B-A3B** (MoE, schnell, beste Werkzeug- und Deutsch-Werte
   seiner Klasse), schweres Modell **Qwen3.8-27B** (bestes Deutsch, nachts), dazu im Vergleich
   **gpt-oss-120b** und **Mistral Small 4**. Embeddings mit **Qwen3-Embedding-0.6B**, auf der NPU
@@ -58,6 +67,15 @@ llama-server with `--jinja` answered an OpenAI tool call correctly (`get_weather
 248 t/s, 0.44 s) and refused a request without the key (401). The evals of §7 ran end to end
 against Qwen3-0.6B (chat) and Qwen3-Embedding-0.6B (embeddings) through the same code Helena runs;
 results in §7.3. GPU inference therefore works today; the kernel upgrade is for the NPU and ROCm.
+
+**ROCm on 6.12 (2026-09-25, ROCm 10.0.0 from AMD's pip index in `~/agent-work`, no install):**
+`rocminfo` lists gfx1151, the KFD node has `cwsr_size 19185664` and `ctl_stack_size 16384` (Debian
+backported the CWSR fix, so Lemonade's "Linux kernel missing support" check passes), PyTorch
+2.13.0+rocm10.0.0 runs a matrix product on the GPU (HIP 7.15; fp16 GEMM 16.8 TFLOPS under load).
+**But KFD offers only 16,638,812,160 B (15.5 GiB) of GPU memory**: half the OS memory (GTT), not
+the carve-out (`torch.cuda.mem_get_info` agrees). Vulkan sees 114 GiB (VRAM + GTT). On 6.12 ROCm
+could hold the workhorse (23.8 GB) only in part; the 7.1.8 trial must show the carve-out in KFD
+(§4.3.3).
 
 ## 2. Kernel and firmware
 
@@ -124,34 +142,123 @@ kernel today (`dkms install` without `-k`) — reported to the orchestrator, not
 | Why | One OpenAI-compatible API (`/api/v1/chat/completions`, `/embeddings`, `/audio/*`, `/responses`) over llama.cpp (GPU), FastFlowLM (NPU) and whisper.cpp; model LRU; `/health` names every loaded model with its device; `/system-stats` gives GPU/NPU/CPU load; Debian 13 package |
 | Rejected | Ollama (no NPU), bare llama-server per model (no LRU, one port per model), vLLM (experimental on gfx1151, only worth it at high concurrency) |
 | Service | the package's `lemond.service` (user `lemonade`) with Helena's drop-in: `127.0.0.1:13305` only (`--host/--port` flags win over any config), `LEMONADE_API_KEY` from a systemd credential (`/etc/helena/local-ai.key`, root:volition-plan 0640), `IPAddressDeny=any` + `IPAddressAllow=localhost`, `ProtectSystem=strict`, `MemoryMax=12G`, `LimitMEMLOCK=infinity`, render/video groups |
-| Config | `LEMONADE_DEFAULTS_PATH` file: `offline`, `no_fetch_executables`, no broadcast, no update checks, telemetry off, `max_loaded_models: 4`, pinned backend paths, `llamacpp.args: --no-mmap` (weights go to VRAM instead of sitting in the 31 GB page cache) |
+| Config | `LEMONADE_DEFAULTS_PATH` file: `offline`, `no_fetch_executables`, no broadcast, no update checks, telemetry off, `max_loaded_models: 4`, `llamacpp.backend: rocm` with `rocm_bin`/`vulkan_bin` pointing at our builds, `llamacpp.args: --load-mode none` (llama.cpp b11166 replaced `--no-mmap` with `--load-mode`; the weights are read into VRAM instead of sitting in the 31 GB page cache) |
 | Depends | `libcpp-httplib0.41` 0.41.0+ds-3~bpo13+1 (backports) |
 
-### 4.2 llama.cpp backends
+How Lemonade 2026.39.1 runs llama.cpp (read in its source, `llamacpp_server.cpp`,
+`backend_utils.cpp`, `system_info.cpp`): `backend: rocm` means its `rocm-stable` channel; a path in
+`llamacpp.rocm_bin` replaces the download (its own would be `lemonade-sdk/llama.cpp` b10820 built on
+**TheRock 7.14.0**, plus a TheRock runtime it installs itself). Without that runtime it only puts
+the binary's folder on `LD_LIBRARY_PATH`; our binaries carry their RUNPATH, so nothing else is
+needed. It passes `-m`, `--ctx-size`, `--port`, `--jinja`, `--metrics`, `--parallel 1` and, per
+model, `--mmproj`/`--spec-type draft-mtp`; and it refuses ROCm on gfx1151 when KFD lacks
+`cwsr_size`/`ctl_stack_size` (present on 6.12.107 already).
 
-- **Vulkan (default):** `llama-b10825-bin-ubuntu-vulkan-x64.tar.gz` (the build Lemonade pins),
-  33,804,455 B, sha256 `4d0f4e35…5e447de5`, MIT. Best decode speed on Strix Halo.
-- **ROCm (optional, `--rocm-backend`):** `lemonade-sdk/llamacpp-rocm` b1324 gfx1151 build with its
-  own ROCm runtime inside, 397,076,324 B, sha256 `eced287d…6848eb0`, MIT. Faster prefill on some
-  models; per model the bench decides (`models load` saves the backend with the model).
-- Lemonade verifies no backend download itself; `install.sh` does (SHA-256) and points Lemonade at
-  the extracted paths.
+### 4.2 llama.cpp: one release, two backends
 
-### 4.3 ROCm (the owner: "ROCm brauchen wir ohnehin")
+| | ROCm (default) | Vulkan (comparison, fallback) |
+|---|---|---|
+| Release | **b11166** (commit `a72e04ab`, 2026-09-24), the same tag for both, so a comparison is fair | same |
+| Binary | **built by `install.sh`** from the tag's source (`llama.cpp-b11166.tar.gz`, sha256 `1f8d18ea…`, and the commit inside checked with `git get-tar-commit-id`) against ROCm 10.0.0 below; 5 min with `-j 4` on Kingston | the project's `llama-b11166-bin-ubuntu-vulkan-x64.tar.gz`, sha256 `69e26c5e…`, RUNPATH `$ORIGIN` |
+| Where | `/opt/helena-ai/llamacpp/rocm-b11166` | `/opt/helena-ai/llamacpp/vulkan-b11166` |
+| License | MIT | MIT |
+
+Per model, `bench.sh speed` measures both (ROCm with hipBLASLt off and on) and `models.tsv`'s last
+column saves the winner, which `install.sh models load` hands Lemonade (`llamacpp_backend`).
+`install.sh --no-rocm` is the Vulkan-only install (no ROCm tree, no build).
+
+Rejected: Lemonade's `rocm-stable` download (TheRock 7.14 and b10820: a second, older ROCm beside
+the one PyTorch needs); `lemonade-sdk/llamacpp-rocm` b1324 (its own ROCm inside, 397 MB, nightly
+channel, no source pin); ggml-org's prebuilt HIP builds (Ubuntu, several ROCm versions, not gfx1151
+only, no rocWMMA flash attention).
+
+### 4.3 ROCm (the owner: "ROCm und Kernel gut machen, Vulkan auch anschauen, aber eher ROCm richtig")
+
+#### 4.3.1 Which ROCm
 
 | Option | Verdict |
 |---|---|
-| **No system ROCm; ROCm inside the consumers** (the llama.cpp ROCm build above, PyTorch's gfx1151 wheels for Laya) | **Chosen for now.** Nothing in `/opt/rocm` to keep in step; each consumer pins its runtime; needs only kernel 7.1.8 + render/video. |
-| AMD ROCm 10.0.0 for Debian 13 (`stable.repo.amd.com/rocm/core/packages/debian13/`, `amdrocm10.0-gfx1151`: ~675 MB download, 5.6 GB installed, inbox driver) | Ready as the next step when a workload needs a shared runtime (vLLM, ComfyUI, own builds). Not validated by AMD for gfx1151 on Debian (the matrix lists Ubuntu 26.04/24.04.4 for Ryzen APUs). An `install.sh --system-rocm` is not built yet. |
+| **AMD ROCm 10.0.0 "TheRock" wheels** from `stable.repo.amd.com/rocm/whl-next/` into one venv `/opt/helena-ai/rocm-10.0.0` (Python 3.13 from Debian): `rocm-sdk-core` (414.7 MB), `-libraries` (143.3 MB, rocBLAS, hipBLAS, **hipBLASLt**), `-devel` (598.0 MB, clang/hipcc, CMake configs, rocWMMA headers), `-device-gfx1151` (173.7 MB), `torch 2.13.0+rocm10.0.0` (202.6 MB), `amd-torch-device-gfx1151` (50.1 MB), `triton` (427.4 MB), cmake 4.1.2, ninja 1.13.0 | **Chosen.** One tree for the llama.cpp build **and** PyTorch (Laya): the same HIP runtime, the same device libraries. AMD's own stable channel, gfx1151 native. Every file hash-pinned (`rocm-requirements.txt`, 20 packages, installed with `--require-hashes`; AMD's index publishes no hashes of its own). ≈ 2.1 GB download, 8.0 GB installed (measured). No `/opt/rocm`, no apt source, nothing in the system's library path; `uninstall` keeps it for Laya, `--purge` removes it. |
+| AMD ROCm 10.0.0 for Debian 13 (apt, `amdrocm10.0-gfx1151`, ~675 MB download, 5.6 GB installed) | Rejected for now: PyTorch for ROCm 10 exists only as wheels bundling the SDK wheels, so Laya would bring the same ROCm a second time; an apt source and packages outside Helena's pins. |
+| Lemonade's TheRock 7.14.0 runtime + its llama.cpp b10820 | Rejected: an older ROCm, and again not the one PyTorch uses. |
 | repo.radeon.com apt (7.0–7.2) | Rejected: jammy/noble only. |
 | Debian's own ROCm (HIP 5.7) | Rejected: too old for gfx1151. |
+| PyTorch.org's `rocm7.2` wheel (6.2 GB, every architecture) | Rejected: size, and a third ROCm. |
+
+#### 4.3.2 Measured (Kingston, 6.12.107, 2026-09-25; Qwen3-0.6B Q8_0, b11166 both, `-fa on -lm none`, 3–5 repetitions; other agents' tests ran meanwhile, load 9–16)
+
+| Test | ROCm, hipBLASLt off | ROCm, hipBLASLt on | Vulkan (RADV, mesa 25.0.7) |
+|---|---|---|---|
+| pp512 | 11,823 ± 3,006 | 12,415 ± 1,539 | **13,331** ± 70 |
+| pp2048 | 10,569 ± 1,482 | 9,725 ± 2,413 | **10,753** ± 64 |
+| pp8192 | 6,785 ± 54 | 6,776 ± 46 | 5,090 ± 94 |
+| pp32768 | 2,491 ± 4 | **2,499** ± 13 | 1,052 ± 4 |
+| tg128 | 207 ± 15 | 204 ± 13 | **265** ± 2 |
+| pp8192 without flash attention | – | 1,509 ± 29 | – |
+
+- **Long prompts belong to ROCm:** 1.33× at 8k, 2.4× at 32k — what Hermes' ≥ 64k contexts and
+  agent sessions spend their time on. rocWMMA flash attention is why: without it ROCm drops to
+  1,509 t/s at 8k (4.5× slower).
+- **Generation is faster on Vulkan** (~25 % on this model); short prompts are even. For a
+  background class with long inputs and short outputs (summaries, triage, compression) ROCm wins;
+  for long answers Vulkan may. The bench on the real candidates (`bench.sh speed`, maintenance
+  window) decides per model, with ROCm as the default.
+- hipBLASLt makes no difference on a quantized model (llama.cpp's own MMQ kernels do those
+  products); it is on (`ROCBLAS_USE_HIPBLASLT=1`) for the F16/BF16 products (vision projector,
+  embedding models), and `bench.sh` keeps measuring both.
+- A tiny model under shared load overstates noise and understates bandwidth effects; the
+  35B/120B numbers will differ. Not a verdict yet, the method.
+
+#### 4.3.3 The driver work, step by step
+
+What ROCm on gfx1151 needs, what Kingston has, and what changes. Nothing here is done by an agent:
+the orchestrator runs the scripts in the maintenance window.
+
+1. **Kernel 7.1.8 from trixie-backports** (`kernel.sh`, §2–3). The inbox `amdgpu` with KFD (no
+   `amdgpu-dkms`: AMD ships it for Ubuntu/RHEL only, and ROCm 10 works with the inbox driver),
+   the CWSR fix (on 6.12.107 too), and the APU memory handling that should give KFD the
+   carve-out instead of the GTT.
+2. **Firmware 20260810** (`firmware-amd-graphics` from backports): the GC 11.5.1 MES/PSP blobs of
+   2026-02/05/08 (hangs under compute load were fixed there) and `amdnpu/17f0_11/npu_7.sbin`.
+3. **IOMMU stays on** (Translated, the default). No `amd_iommu=off` (it switches off the NPU) and
+   no `iommu=pt` (nothing measured to gain on an APU).
+4. **Memory: nothing to change.** The fixed 96 GiB carve-out is the owner's choice and stays. The
+   usual Strix Halo recipe (`amdgpu.gttsize`, `ttm.pages_limit`, `ttm.page_pool_size`, a 512 MB
+   carve-out) is for machines that feed the GPU from system memory; here it would take memory the
+   OS (31 GB) needs. So: **no kernel parameters, no modprobe options.**
+5. **Verify the kernel** (`kernel.sh verify`): `/dev/kfd`, KFD lists gfx1151 (`gfx_target_version
+   110501`), `cwsr_size` and `ctl_stack_size` set, no amdgpu ring timeouts, and — as a warning —
+   a KFD memory bank ≥ 64 GiB (the carve-out). If only the warning remains: promote anyway (the
+   NPU needs 7.1.8), ROCm keeps the small models and the big ones load with `llamacpp_backend:
+   vulkan` (`models.tsv`), until a later kernel changes it.
+6. **ROCm user space** (`install.sh`): the venv above, as root, `go-w`; then **llama.cpp's HIP
+   build** with: `GGML_HIP=ON`; `AMDGPU_TARGETS=gfx1151` (this GPU only); `GGML_HIP_ROCWMMA_FATTN=ON`
+   (§4.3.2); ROCm's clang as the C/C++/HIP compiler and `HIP_PATH`/`ROCM_PATH`/`CMAKE_PREFIX_PATH`
+   = the SDK tree (`rocm-sdk path --root`); `LLAMA_CURL=OFF`; build number and commit stamped;
+   `CMAKE_BUILD_RPATH=$ORIGIN;<SDK>/lib` so the binaries resolve every ROCm library (TheRock's own
+   libdrm/libnuma/zstd included, checked with `ldd`) without `LD_LIBRARY_PATH`. Each flag is
+   commented in `install.sh`.
+7. **Run-time environment** (Lemonade's drop-in): `ROCBLAS_USE_HIPBLASLT=1` and nothing else.
+   Deliberately absent: `HSA_OVERRIDE_GFX_VERSION` (gfx1151 is native; an override would hide a
+   wrong runtime), `HSA_ENABLE_SDMA=0` (copies work), `GGML_CUDA_ENABLE_UNIFIED_MEMORY` (the
+   weights live in the carve-out), `HIP_VISIBLE_DEVICES` (one GPU). The service has `render` and
+   `video`; agents never get `/dev/kfd` (they reach Lemonade through the socket).
+8. **Verify ROCm** (`install.sh status`, as Lemonade's user): ROCm version, `rocminfo` shows
+   gfx1151, KFD memory in GiB with "the carve-out: ok" or "only GTT", a HIP smoke test (a matrix
+   product through PyTorch compared with the CPU's), `llama-cli --list-devices` shows the ROCm
+   device, `amd-smi` names the ASIC.
+9. **Measure** (`bench.sh speed <model>`): ROCm (hipBLASLt off/on) and Vulkan, pp512/pp8192/pp32768,
+   tg128 empty and at 32k depth; the winner per model goes into `models.tsv`.
+10. **Back out:** `install.sh --no-rocm install` (Vulkan only, Lemonade reconfigured), or
+    `uninstall [--purge]`; the kernel through `kernel.sh rollback` before promote.
 
 ### 4.4 Vulkan driver
 
-mesa 25.0.7 (trixie) runs gfx1151 (measured, §1). trixie-backports has **mesa 26.1.6-1~bpo13+1**
-with much better RADV performance on Strix Halo; it touches the whole graphics stack (libllvm19,
-libdrm), so it is a separate, measured step after the kernel: run `bench.sh speed` before and
-after. Not part of `install.sh` yet.
+mesa 25.0.7 (trixie) runs gfx1151 (measured, §1, §4.3.2). trixie-backports has **mesa
+26.1.6-1~bpo13+1** with much better RADV performance on Strix Halo; it touches the whole graphics
+stack (libllvm19, libdrm), so it is a separate, measured step after the kernel: run `bench.sh speed`
+before and after. Not part of `install.sh`. Vulkan needs no environment either (RADV is picked by
+itself; `AMD_VULKAN_ICD` stays unset).
 
 ### 4.5 NPU: FastFlowLM + XRT
 
@@ -169,21 +276,36 @@ after. Not part of `install.sh` yet.
 
 ### 4.6 PyTorch-ROCm for Laya (hub/browser-task's installer)
 
-`native/laya/install.sh` lives on hub/browser-task (not merged at writing). The `--rocm` option to
-add there, instead of a second installer:
+`native/laya/install.sh` lives on hub/browser-task (read at `0046e9f0`, not merged): a venv
+`/opt/helena/laya/venv` with PyTorch 2.14.0 **CPU** and `laya==0.3.20` (Apache-2.0, needs
+`torch>=2.0`). The `--rocm` option to add there uses **the same ROCm tree** as llama.cpp instead of
+a second one: a `.pth` line puts `/opt/helena-ai/rocm-10.0.0`'s site-packages behind Laya's own,
+and a uv override drops `torch` from Laya's resolution, so no second PyTorch/ROCm is downloaded.
+Verified on Kingston in `~/agent-work` (2026-09-25): Laya's venv 159 MB with no torch of its own,
+`import torch` → `2.13.0+rocm10.0.0` from the shared tree, `torch.cuda.is_available()` true,
+`laya 0.3.20` imports.
 
 ```diff
 +ROCM=0; [ "${2:-}" = --rocm ] && ROCM=1
--TORCH_INDEX=https://download.pytorch.org/whl/cpu
-+TORCH_INDEX=https://download.pytorch.org/whl/cpu
-+TORCH_SPEC="torch==$TORCH_VERSION"
-+if [ "$ROCM" = 1 ]; then
-+  [ -e /dev/kfd ] || die "no /dev/kfd: boot kernel 7.1.8 first (native/local-ai/kernel.sh)"
-+  TORCH_INDEX=https://stable.repo.amd.com/rocm/whl-next/
-+  TORCH_SPEC="torch[device-gfx1151]==2.13.0+rocm10.0.0"
-+fi
++# native/local-ai/install.sh's tree: ROCm 10.0.0 and torch 2.13.0+rocm10.0.0, hash-pinned.
++ROCM_VENV=/opt/helena-ai/rocm-10.0.0
+ …
+   [ -x "$PREFIX/venv/bin/python" ] || uv venv -q -p python3.13 "$PREFIX/venv"
 -  uv pip install -q --python "$PREFIX/venv/bin/python" --index-url "$TORCH_INDEX" "torch==$TORCH_VERSION"
-+  uv pip install -q --python "$PREFIX/venv/bin/python" --index-url "$TORCH_INDEX" "$TORCH_SPEC"
+-  uv pip install -q --python "$PREFIX/venv/bin/python" "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
++  if [ "$ROCM" = 1 ]; then
++    [ -x "$ROCM_VENV/bin/python" ] || die "no ROCm tree: run native/local-ai/install.sh install first"
++    [ -c /dev/kfd ] || die "no /dev/kfd: boot kernel 7.1.8 first (native/local-ai/kernel.sh)"
++    # PyTorch and ROCm from the shared tree (behind Laya's own packages), never a second copy.
++    sp=$("$PREFIX/venv/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
++    echo "$ROCM_VENV/lib/python3.13/site-packages" > "$sp/helena-rocm.pth"
++    printf 'torch; sys_platform == "never"\n' > /var/cache/helena-laya/no-torch.txt
++    uv pip install -q --python "$PREFIX/venv/bin/python" --override /var/cache/helena-laya/no-torch.txt \
++      "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
++  else
++    uv pip install -q --python "$PREFIX/venv/bin/python" --index-url "$TORCH_INDEX" "torch==$TORCH_VERSION"
++    uv pip install -q --python "$PREFIX/venv/bin/python" "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
++  fi
 +  if [ "$ROCM" = 1 ]; then
 +    install -d /etc/systemd/system/helena-laya.service.d
 +    cat > /etc/systemd/system/helena-laya.service.d/rocm.conf <<EOF
@@ -194,18 +316,16 @@ add there, instead of a second installer:
 +DeviceAllow=/dev/kfd rw
 +DeviceAllow=/dev/dri/renderD128 rw
 +SupplementaryGroups=render video
-+MemoryHigh=6G
-+MemoryMax=8G
 +EOF
 +  fi
 ```
 
-and in `helena_laya_serve.py`: `device = os.environ.get("HELENA_LAYA_DEVICE", "cpu")`, falling
-back to `"cpu"` when `torch.cuda.is_available()` is false (ROCm's PyTorch uses the `cuda` device
-name). Download ≈ 1 GB (torch 202.6 MB, `amd_torch_device_gfx1151` 50.1 MB, rocm-sdk core 414.7 MB,
-libraries 143.3 MB, device-gfx1151 173.7 MB; Python 3.13 wheels exist). PyTorch.org's own
-`rocm7.2` wheel (6.2 GB, all architectures) is rejected for size. Laya on the GPU is untested
-upstream; the CPU path stays the default until `bench` shows the GPU is faster per decision.
+and in `helena_laya_serve.py`: `device = os.environ.get("HELENA_LAYA_DEVICE", "cpu")`, falling back to
+`"cpu"` when `torch.cuda.is_available()` is false (ROCm's PyTorch calls the GPU `cuda`). `status`
+then prints `torch.version.hip`. `uninstall` of local AI keeps the ROCm tree for exactly this reason
+(only `--purge` removes it). Laya on the GPU is untested upstream; the CPU path stays the default
+until a bench shows the GPU is faster per decision (a 7B-class decision model is bandwidth-bound,
+and the CPU and the GPU share the same memory bus).
 
 ## 5. Models
 
@@ -223,8 +343,13 @@ of this branch):
 | Mistral Small 4 119B-A6B | Apache-2.0 | UD-Q4_K_XL 75.0 GB (3 files) + mmproj | pp 363, tg 40.3 | combined 184 (weak) | – |
 | Gemma-4-26B-A4B | Apache-2.0 | 17.0 GB | pp 1325 → 470, tg 54.7 → 37.5 | tau2 68.2, strict JSON best, prompt-injection prone | #8 |
 
-Ruled out: GLM-5.3-Flash (≥ 86.7 GiB), DeepSeek-V4-Flash (IQ2 only, exclusive), Qwen3.8-Flash-Next
-(qwen-community licence, not OSI), Nemotron 3 Super (NVIDIA licence, 14 t/s).
+Ruled out: GLM-5.3-Flash (≥ 86.7 GiB), DeepSeek-V4-Flash (IQ2 only, exclusive), Nemotron 3 Super
+(NVIDIA licence, 14 t/s), Qwen3.8-Flash-Next (125B-A6B plus a 51B n-gram table and an MTP module,
+~180B effective; Qwen Community License 1.0, not OSI; the only GGUF is a 1-bit build of ~123 GB).
+The update source watches that family and a Qwen4 MoE (`MODEL_WATCH`), so a smaller or distilled
+release shows up as "neues Modell verfügbar" (§9). A review of this very machine (Bosgame M5,
+"The Stack", 2026-09-21) confirms the class: MoE models reach conversational speed, dense 70B
+models crawl at 4–5 t/s, and prompt processing is the bottleneck for long contexts.
 
 ### 5.2 Plan (to be confirmed by §7's evals on Kingston)
 
@@ -278,7 +403,8 @@ All pinned in `native/local-ai/models.tsv` (commit + SHA-256 of every file):
 | Qwen3-0.6B-GGUF (smoke test) | unsloth/Qwen3-0.6B-GGUF @ 50968a44 | 0.4 GB |
 
 Plus the software: kernel 188 MB, firmware 16 MB, XRT 5 MB, Lemonade 3.9 MB, FastFlowLM 44 MB,
-llama.cpp Vulkan 34 MB, ROCm build 397 MB, PyTorch-ROCm for Laya ≈ 1 GB. Losers are deleted after
+llama.cpp Vulkan 31 MB + source 38 MB, ROCm 10.0.0 with PyTorch ≈ 2.1 GB (8.0 GB installed; Laya
+shares it). Losers are deleted after
 the evals. Timing: only in the maintenance window (a 60–75 GB read now would thrash the page cache
 of the live system).
 
@@ -355,6 +481,82 @@ Not wired yet (the pickers offer local models to Hermes agents only). Codex: a
 through the runner's Codex arguments; Claude Code: `ANTHROPIC_BASE_URL` to Lemonade's
 `/v1/messages` (first version, simple tools) — experimental only. Both after the evals show a local
 model worth it.
+
+### 6.6 The interface other branches build on (stable)
+
+For hub/decisions (`decide()` over `decisionBackends`, with a local "logit readout" backend) and any
+later consumer. These names stay; additions will be optional fields only.
+
+**(a) A task class: its tier and its fallback.** A consumer registers its kinds of work; it never
+edits the policy or builds its own switch.
+
+```ts
+// in a plugin's setup (the internal helena.local-ai plugin does the same for its classes)
+ctx.localAiTaskClasses.register({
+  id: 'mail-classify',              // /^[a-z][a-z0-9-]{0,47}$/, the policy's key
+  label: { de: 'Mails einordnen', en: 'Classify mail' },
+  unit: 'npu',                      // the default tier: 'gpu' | 'npu' | 'cpu'
+  capability: 'chat',               // what the model must do (LocalModelCapability)
+  priority: 'background',           // 'interactive' | 'browser' | 'background' | 'batch'
+  experimental: false,              // true: labelled "Experimentell", never in the master's set
+  inMasterDefault: false,           // switched on by the master switch's first "on"
+  wired: true,                      // false: listed as planned, cannot leave "Aus"
+  evaluate: async (ctx) => …,       // LocalAiEvalContext → LocalAiEvalResult (fixed cases, 0–1)
+  threshold: 0.85,                  // the score a model needs before the class may leave "Aus"
+});
+```
+
+At call time, one question — where does this run now, or why not:
+
+```ts
+import { resolveLocalRoute, readModelServerKey } from '@repo/db';
+const result = await resolveLocalRoute({ classId: 'mail-classify', unit: 'npu', capability: 'chat' });
+// { route: { server, model, modelId, unit, mode } }  or  { refusal, mode }
+// refusal: 'master-off' | 'class-off' | 'unit-off' | 'no-server' | 'server-down' | 'no-model'
+```
+
+- The **tier** is the class's `unit` by default; the model the owner picked for the class (or the
+  server's first loaded model with the capability) decides the real unit, and a unit the owner
+  switched off refuses (`unit-off`).
+- **Fallback is the caller's** and follows `mode`: a refusal with `off`/`prefer` means "use your
+  configured path now" (cloud model, Jev Cloud, Laya — whatever the consumer had); with `only` it
+  means "wait, never leave the machine". After a route, an error, a timeout or an unusable answer
+  in `prefer` also goes to the configured path; in `only` it retries later.
+- The master switch off answers `master-off` for every class at once: nothing local runs, and
+  nothing local is left behind (the consumer keeps no copy of the route).
+- The **Jev / Laya (experimentell)** switch on the card is separate from the classes: it sets
+  hub/browser-task's instance "Browser-Steuerung" (`PUT /god/browser-control`). A decisions backend
+  that wants the same switch reads that setting; it does not add a second one.
+- Admin routes (owner only): `GET /god/local-ai` (policy, classes, servers, evals),
+  `GET /god/local-ai/status`, `PATCH /god/local-ai/policy`, `POST /god/local-ai/evals`.
+
+**(b) The local endpoint.**
+
+| | |
+|---|---|
+| Base | `http://127.0.0.1:13305/api/v1` (Lemonade; OpenAI-compatible). The same address inside an isolated agent unit (§6.4). Other servers: the base URL of their `helena_model_server` row |
+| Key | `Authorization: Bearer <key>`; in the API `readModelServerKey(route.server)` (never logged, never in a response); in an agent's run `HELENA_MODEL_SERVER_KEY_<SLUG>` |
+| Model | the server's own id (`route.model`, e.g. `Qwen3.6-35B-A3B-GGUF`); Helena's id is `helena-<slug>/<model>` (`parseLocalModelId`) |
+| Routes | `/chat/completions`, `/completions`, `/embeddings`, `/audio/transcriptions` (NPU Whisper), `/responses`, `/models`, `/health` |
+| Body | forwarded to llama-server unchanged (Lemonade 2026.39.1 only adds the `max_tokens` alias and trims oversized JSON-schema bounds of tools), so llama.cpp's own fields pass: `chat_template_kwargs`, `n_probs`, `grammar`, `json_schema` |
+
+**Logprobs: available on the GPU models.** Verified 2026-09-25 on llama-server b11166 — our ROCm
+build and the Vulkan build alike — with Qwen3-0.6B, asking "A = ja, B = nein":
+
+- `/v1/chat/completions` with `"logprobs": true, "top_logprobs": 5, "max_tokens": 1,
+  "temperature": 0` → `choices[0].logprobs.content[0].top_logprobs = [{token, logprob, bytes}, …]`
+  (OpenAI's shape): `A` 0.972, `B` 0.027 on ROCm; `A` 0.978, `B` 0.021 on Vulkan.
+- `/v1/completions` with `"logprobs": 5` answers in the **same `content` shape**, not OpenAI's
+  legacy `tokens`/`token_logprobs` arrays; and the first token carries the leading space (`" A"`).
+- The probabilities are the model's distribution before sampling (llama.cpp's default,
+  `post_sampling_probs: false`), so temperature does not change them.
+- For an option readout: options as single tokens, `max_tokens: 1`, thinking off
+  (`"chat_template_kwargs": {"enable_thinking": false}` for Qwen3), read the first position's
+  `top_logprobs`. The numbers differ between backends in the second decimal; compare options
+  within one answer, never across backends.
+- Through Lemonade: passes by its source (`chat_completion` → `forward_request`, body intact);
+  checked live in the maintenance window with the real models. **NPU models (FastFlowLM) are not
+  verified to return logprobs**: route logit readouts to GPU models (`unit: 'gpu'`).
 
 ## 7. The policy ("Lokale KI")
 
@@ -449,10 +651,11 @@ only; nothing runs with `trust_remote_code`.
 
 | Branch | What connects | Done here | To do at merge |
 |---|---|---|---|
-| hub/update-center | `UpdateSource` "Lokale KI": Lemonade and FastFlowLM versions (GitHub Atom feeds), each model's installed revision vs the pinned repo's newest, and a newer model of the same family (Qwen3.6 → Qwen3.7) as "neues Modell verfügbar" | `modules/local-ai/integrations.ts` (`localAiUpdateSource`, contract mirrored) | register it in `helena.local-ai` (`provides.updateSources`), drop the mirror |
+| hub/update-center (merged) | `UpdateSource` `local-ai`, check only: Lemonade and FastFlowLM versions (GitHub Atom feeds), each model's installed revision vs its repository's newest, a newer model of the same family (Qwen3.6 → Qwen3.7), and the watch list (`MODEL_WATCH`: Qwen Flash-Next, Qwen4 MoE) as "neues Modell verfügbar"; switching stays an owner click after a new eval | registered by `helena.local-ai` (`provides.updateSources`) | – |
 | hub/server-admin | `HostCapability` `local-ai` (area `local-ai`, health lines per server) and the `admin-section` slot with `LocalAiSettingsView` | `localAiHostCapability` (mirrored), the view is mountable | register both; messages `server.health.local-ai.server-{up,down}`; `dkms install -k` for every kernel |
 | hub/dashboard | the card as a `DashboardWidget` | `LocalAiCard` self-contained | register it once the contract is published |
 | hub/browser-task | the Jev toggle uses its instance setting; Laya `--rocm` (§4.6) | toggle against its routes | hand the diff over |
+| hub/decisions | `decide()` with a local "logit readout" backend on this endpoint | the interface of §6.6 (class registration, `resolveLocalRoute`, the endpoint, logprobs verified) | it registers its own classes (router, mail, receipts); no decision classes here |
 | hub/second-brain (merged) | the local embedding route | `useEmbeddingRoute(localAiEmbeddingRoute)` in API and worker | the owner's pgvector/embedding decision (§5.4) |
 
 ## 10. Honest limits
@@ -462,7 +665,11 @@ only; nothing runs with `trust_remote_code`.
 - GPU, NPU and CPU share ~256 GB/s: measured elsewhere, NPU decode loses ~6 % and GPU decode ~14 %
   when both run (1.42× overall throughput); a second GPU model costs far more than an NPU sidecar.
 - The NPU is 3–4× slower than the GPU but frugal; it takes system RAM, not VRAM.
-- ROCm on gfx1151 is unofficial on Debian; the Vulkan path is the default for that reason.
+- ROCm on gfx1151 is not validated by AMD on Debian (its matrix lists Ubuntu); we run AMD's own
+  distribution-neutral wheels, pinned, and keep Vulkan measured beside it. On 6.12 KFD gives
+  ROCm only the GTT (15.5 GiB); whether 7.1.8 gives it the carve-out is checked, not assumed.
+- ROCm generates ~25 % slower than Vulkan on the tiny model; the default is ROCm for its prefill,
+  and a model whose bench says otherwise loads on Vulkan.
 - The MTP workhorse may not combine `--mmproj` with several slots yet; the fallback is pinned.
 - Lemonade pins model downloads to `main` only; Helena's installer pins by commit and runs
   Lemonade offline, so a repository change upstream never changes a running model.
@@ -471,7 +678,8 @@ only; nothing runs with `trust_remote_code`.
 
 1. Maintenance window for kernel → verify → promote (a reboot; RAID resync must be done).
 2. mesa 26.1.6 from backports (after the kernel; measured).
-3. System ROCm 10.0 (§4.3) — only when a workload needs it.
+3. None for ROCm: it is part of `install.sh` (owner ~00:25, "eher ROCm richtig"; ≈ 2.1 GB download,
+   8 GB on disk). If 7.1.8's KFD still offers only the GTT, the big models run on Vulkan (§4.3.3).
 4. The embedding model for the knowledge index with local AI (§5.4: Qwen3-Embedding-0.6B) and
    pgvector (hub/second-brain).
 5. After the evals: which classes to switch on, and the preset.
@@ -485,7 +693,13 @@ compatibility matrix, install, RDNA3.5, PyTorch install); ROCm/ROCm #5590, #5724
 github.com/ROCm/FastFlowLM (README, TERMS.md, docs, releases v1.0.5–v1.0.6, Dockerfile,
 debian/rules, model_list.json); github.com/lemonade-sdk/lemonade v2026.39.1 (defaults.json,
 backend_versions.json, server_models.json, lemond.service.in, docs/api, fastflowlm backend);
-github.com/lemonade-sdk/llamacpp-rocm; ggml-org/llama.cpp releases b10825/b11166;
+Lemonade's source at v2026.39.1 (`src/cpp/server/backends/llamacpp/llamacpp_server.cpp`,
+`backends/backend_utils.cpp`, `system_info.cpp`, `runtime_config.cpp`: rocm channel, `rocm_bin`,
+TheRock runtime paths, the gfx1151 CWSR check, request forwarding);
+github.com/lemonade-sdk/llamacpp-rocm; ggml-org/llama.cpp releases b10825/b11166 and b11166's
+`CMakeLists.txt`/`cmake/build-info.cmake`; AMD's wheel index `stable.repo.amd.com/rocm/whl-next/`
+(file sizes by HEAD); PyPI `laya` 0.3.20 metadata; hub/browser-task `native/laya/install.sh` at
+`0046e9f0`;
 local-llm-benchmarks.dev; kyuz0.github.io/amd-strix-halo-toolboxes; slb350.github.io/strix-benchmarks;
 kyuz0 terminal-bench-mini; euroeval.com (German, 2026-09-20); sleepingrobots.com Lemonade NPU on
 Strix Halo; hogeheer499-commits/strix-halo-guide; Hugging Face API for every pinned repository;

@@ -86,6 +86,10 @@ import { mailAccountRoutes } from './modules/mail/accounts';
 import { mailDraftRoutes } from './modules/mail/drafts';
 import { mailThreadRoutes } from './modules/mail/threads';
 
+// The models the agents run on: which the providers serve (model availability) and the local
+// ones (local AI). One group, so the planner's chain stays within TypeScript's depth.
+const modelRoutes = new Elysia({ name: 'models' }).use(modelAvailabilityRoutes).use(localAiRoutes);
+
 // The planner API: projects and their columns, issue types, labels, AI agents,
 // custom fields, issues, attachments, saved views, and actions. Mounted on the
 // main app in ./index.ts.
@@ -215,5 +219,4 @@ export const planner = new Elysia({ name: 'planner' })
   .use(pluginAdminRoutes)
   .use(pluginSlotRoutes)
   .use(templateBundleRoutes)
-  .use(modelAvailabilityRoutes)
-  .use(localAiRoutes);
+  .use(modelRoutes);

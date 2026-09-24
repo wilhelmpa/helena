@@ -312,6 +312,7 @@ export {
   type RuntimeLocalAi,
   type RuntimeModelServer,
 } from './local-ai';
+export {
   UPDATE_KINDS,
   UPDATE_RISKS,
   compareVersions,
