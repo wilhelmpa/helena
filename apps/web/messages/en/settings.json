@@ -416,7 +416,27 @@
       },
       "configurationSaved": "{name}: configuration saved",
       "runsUnavailable": "The runs could not be loaded.",
-      "triggerDelegation": "Delegation to the coordinator"
+      "triggerDelegation": "Delegation to the coordinator",
+      "agentTeamName": "Project agent team",
+      "agentTeamDescription": "The coordinator plans a delegated task, specialists do the work in dependency order, the coordinator reviews it, and the result goes to the task.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Plan the work",
+          "description": "Route the task to the one specialist whose capabilities fit, or ask the coordinator for assignments with dependencies."
+        },
+        "specialize": {
+          "title": "Specialists work",
+          "description": "Run the assignments in dependency order, independent ones in parallel, each as an agent run with its limits."
+        },
+        "review": {
+          "title": "Review the evidence",
+          "description": "The coordinator checks the evidence against every acceptance criterion when the project asks for a review."
+        },
+        "synchronize": {
+          "title": "Update the task",
+          "description": "Write the summary and the evidence to the task and move it to Review, or to Done when the project allows it."
+        }
+      }
     }
   },
   "webhooks": {

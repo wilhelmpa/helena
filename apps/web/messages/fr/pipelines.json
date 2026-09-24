@@ -455,6 +455,12 @@
     "skipReasons": {
       "missed": "Manquée : le serveur était arrêté à ce moment",
       "taskOpen": "Ignorée : la tâche précédente est encore ouverte"
+    },
+    "teamStages": {
+      "coordinate": "Le coordinateur planifie",
+      "specialize": "Le spécialiste travaille : {assignment}",
+      "review": "Le coordinateur vérifie",
+      "sync": "Résultat vers la tâche"
     }
   },
   "versions": {

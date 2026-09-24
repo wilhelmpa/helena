@@ -416,7 +416,27 @@
       },
       "configurationSaved": "{name}: konfigurasi disimpan",
       "runsUnavailable": "Proses tidak dapat dimuat.",
-      "triggerDelegation": "Delegasi ke koordinator"
+      "triggerDelegation": "Delegasi ke koordinator",
+      "agentTeamName": "Tim agen proyek",
+      "agentTeamDescription": "Koordinator merencanakan tugas yang didelegasikan, spesialis mengerjakannya sesuai urutan ketergantungan, koordinator meninjaunya, dan hasilnya masuk ke tugas.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Merencanakan pekerjaan",
+          "description": "Arahkan tugas ke satu spesialis yang kemampuannya cocok, atau minta koordinator membuat penugasan beserta ketergantungannya."
+        },
+        "specialize": {
+          "title": "Spesialis bekerja",
+          "description": "Jalankan penugasan sesuai urutan ketergantungan, yang independen secara paralel, masing-masing sebagai proses agen dengan batasnya."
+        },
+        "review": {
+          "title": "Meninjau bukti",
+          "description": "Koordinator memeriksa bukti terhadap setiap kriteria penerimaan saat proyek meminta tinjauan."
+        },
+        "synchronize": {
+          "title": "Perbarui tugas",
+          "description": "Tulis ringkasan dan bukti ke tugas lalu pindahkan ke Tinjauan, atau ke Selesai bila proyek mengizinkan."
+        }
+      }
     }
   },
   "webhooks": {

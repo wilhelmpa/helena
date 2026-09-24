@@ -381,7 +381,7 @@
     "overdueSchedules": "{count, plural, one {# schedule has} other {# schedules have}} not fired on time",
     "failedWorkflowRuns": "{count, plural, one {# workflow run} other {# workflow runs}} failed in the last 24 hours",
     "engine": {
-      "summary": "Engine: {active} working · {waiting} waiting · {queued} queued · {schedules} schedules",
+      "summary": "Engine: {active} working · {waiting} waiting · {queued} queued · schedules: {schedules}",
       "failure": "{name} failed {time} ago:"
     },
     "agentSync": {

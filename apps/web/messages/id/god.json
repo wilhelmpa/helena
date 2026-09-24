@@ -381,7 +381,7 @@
     "overdueSchedules": "{count} jadwal tidak berjalan tepat waktu",
     "failedWorkflowRuns": "{count} proses alur kerja gagal dalam 24 jam terakhir",
     "engine": {
-      "summary": "Mesin: {active} aktif · {waiting} menunggu · {queued} antre · {schedules} jadwal",
+      "summary": "Mesin: {active} aktif · {waiting} menunggu · {queued} antre · jadwal: {schedules}",
       "failure": "{name} gagal {time} lalu:"
     },
     "agentSync": {

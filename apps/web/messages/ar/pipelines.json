@@ -455,6 +455,12 @@
     "skipReasons": {
       "missed": "فائت: كان الخادم متوقفًا في ذلك الوقت",
       "taskOpen": "تم التخطي: المهمة السابقة ما زالت مفتوحة"
+    },
+    "teamStages": {
+      "coordinate": "المنسق يخطط",
+      "specialize": "المختص يعمل: {assignment}",
+      "review": "المنسق يراجع",
+      "sync": "النتيجة إلى المهمة"
     }
   },
   "versions": {

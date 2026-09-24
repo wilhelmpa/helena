@@ -67,7 +67,9 @@ export function ControlPlaneWorkflowPanel({
                   onClick={() => setExpanded(expanded === workflow.id ? null : workflow.id)}
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-medium">{workflow.name}</h3>
+                    <h3 className="text-sm font-medium">
+                      {workflow.id === 'agent-team' ? t('agentTeamName') : workflow.name}
+                    </h3>
                     {workflow.externalEffects && (
                       <Badge variant="secondary">{t('approvalRequired')}</Badge>
                     )}
@@ -77,7 +79,11 @@ export function ControlPlaneWorkflowPanel({
                       </Badge>
                     ))}
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{workflow.description}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {workflow.id === 'agent-team'
+                      ? t('agentTeamDescription')
+                      : workflow.description}
+                  </p>
                 </button>
                 {editable ? (
                   <div className="flex items-center gap-2">

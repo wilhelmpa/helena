@@ -381,7 +381,7 @@
     "overdueSchedules": "{count, plural, one {# planification ne s’est pas déclenchée} other {# planifications ne se sont pas déclenchées}} à l’heure",
     "failedWorkflowRuns": "{count, plural, one {# exécution a échoué} other {# exécutions ont échoué}} ces dernières 24 heures",
     "engine": {
-      "summary": "Moteur : {active} actives · {waiting} en attente · {queued} en file · {schedules} planifications",
+      "summary": "Moteur : {active} actives · {waiting} en attente · {queued} en file · planifications : {schedules}",
       "failure": "{name} a échoué il y a {time} :"
     },
     "agentSync": {

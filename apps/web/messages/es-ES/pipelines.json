@@ -455,6 +455,12 @@
     "skipReasons": {
       "missed": "Perdida: el servidor no estaba en marcha a esa hora",
       "taskOpen": "Omitida: la tarea anterior sigue abierta"
+    },
+    "teamStages": {
+      "coordinate": "El coordinador planifica",
+      "specialize": "El especialista trabaja: {assignment}",
+      "review": "El coordinador revisa",
+      "sync": "Resultado a la tarea"
     }
   },
   "versions": {

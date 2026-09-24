@@ -455,6 +455,12 @@
     "skipReasons": {
       "missed": "Terlewat: server mati saat itu",
       "taskOpen": "Dilewati: tugas sebelumnya masih terbuka"
+    },
+    "teamStages": {
+      "coordinate": "Koordinator merencanakan",
+      "specialize": "Spesialis bekerja: {assignment}",
+      "review": "Koordinator meninjau",
+      "sync": "Hasil ke tugas"
     }
   },
   "versions": {

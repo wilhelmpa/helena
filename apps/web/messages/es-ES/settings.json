@@ -416,7 +416,27 @@
       },
       "configurationSaved": "{name}: configuración guardada",
       "runsUnavailable": "No se pudieron cargar las ejecuciones.",
-      "triggerDelegation": "Delegación al coordinador"
+      "triggerDelegation": "Delegación al coordinador",
+      "agentTeamName": "Equipo de agentes del proyecto",
+      "agentTeamDescription": "El coordinador planifica una tarea delegada, los especialistas hacen el trabajo en orden de dependencias, el coordinador lo revisa y el resultado va a la tarea.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Planificar el trabajo",
+          "description": "Enviar la tarea al único especialista cuyas capacidades encajan, o pedir al coordinador encargos con dependencias."
+        },
+        "specialize": {
+          "title": "Los especialistas trabajan",
+          "description": "Ejecutar los encargos en orden de dependencias, los independientes en paralelo, cada uno como ejecución de agente con sus límites."
+        },
+        "review": {
+          "title": "Revisar las pruebas",
+          "description": "El coordinador comprueba las pruebas frente a cada criterio de aceptación cuando el proyecto pide una revisión."
+        },
+        "synchronize": {
+          "title": "Actualizar la tarea",
+          "description": "Escribir el resumen y las pruebas en la tarea y moverla a Revisión, o a Hecho si el proyecto lo permite."
+        }
+      }
     }
   },
   "webhooks": {

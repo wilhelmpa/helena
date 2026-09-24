@@ -416,7 +416,27 @@
       },
       "configurationSaved": "{name} : configuration enregistrée",
       "runsUnavailable": "Impossible de charger les exécutions.",
-      "triggerDelegation": "Délégation au coordinateur"
+      "triggerDelegation": "Délégation au coordinateur",
+      "agentTeamName": "Équipe d’agents du projet",
+      "agentTeamDescription": "Le coordinateur planifie une tâche déléguée, les spécialistes font le travail dans l’ordre des dépendances, le coordinateur le vérifie et le résultat va à la tâche.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Planifier le travail",
+          "description": "Confier la tâche au seul spécialiste dont les capacités conviennent, ou demander au coordinateur des missions avec leurs dépendances."
+        },
+        "specialize": {
+          "title": "Les spécialistes travaillent",
+          "description": "Exécuter les missions dans l’ordre des dépendances, les indépendantes en parallèle, chacune comme exécution d’agent avec ses limites."
+        },
+        "review": {
+          "title": "Vérifier les preuves",
+          "description": "Le coordinateur confronte les preuves à chaque critère d’acceptation quand le projet demande une vérification."
+        },
+        "synchronize": {
+          "title": "Mettre à jour la tâche",
+          "description": "Écrire le résumé et les preuves sur la tâche et la passer en Revue, ou en Terminé si le projet le permet."
+        }
+      }
     }
   },
   "webhooks": {

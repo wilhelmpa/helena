@@ -455,6 +455,12 @@
     "skipReasons": {
       "missed": "已错过：当时服务器未运行",
       "taskOpen": "已跳过：上一个任务仍未关闭"
+    },
+    "teamStages": {
+      "coordinate": "协调者规划",
+      "specialize": "专家执行：{assignment}",
+      "review": "协调者审查",
+      "sync": "结果写入任务"
     }
   },
   "versions": {

@@ -455,6 +455,12 @@
     "skipReasons": {
       "missed": "Missed: the server was down at that time",
       "taskOpen": "Skipped: the previous task is still open"
+    },
+    "teamStages": {
+      "coordinate": "Coordinator plans",
+      "specialize": "Specialist works: {assignment}",
+      "review": "Coordinator reviews",
+      "sync": "Result to the task"
     }
   },
   "versions": {

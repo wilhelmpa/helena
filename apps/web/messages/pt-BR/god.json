@@ -381,7 +381,7 @@
     "overdueSchedules": "{count, plural, one {# agendamento não disparou} other {# agendamentos não dispararam}} a tempo",
     "failedWorkflowRuns": "{count, plural, one {# execução falhou} other {# execuções falharam}} nas últimas 24 horas",
     "engine": {
-      "summary": "Motor: {active} ativas · {waiting} aguardando · {queued} na fila · {schedules} agendamentos",
+      "summary": "Motor: {active} ativas · {waiting} aguardando · {queued} na fila · agendamentos: {schedules}",
       "failure": "{name} falhou há {time}:"
     },
     "agentSync": {

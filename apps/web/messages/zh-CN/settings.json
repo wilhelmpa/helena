@@ -416,7 +416,27 @@
       },
       "configurationSaved": "{name}：配置已保存",
       "runsUnavailable": "无法加载运行记录。",
-      "triggerDelegation": "委派给协调者"
+      "triggerDelegation": "委派给协调者",
+      "agentTeamName": "项目智能体团队",
+      "agentTeamDescription": "协调者规划委派的任务，专家按依赖顺序完成工作，协调者进行审查，结果写入任务。",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "规划工作",
+          "description": "将任务交给能力匹配的唯一专家，或请协调者给出带依赖关系的分派。"
+        },
+        "specialize": {
+          "title": "专家执行",
+          "description": "按依赖顺序执行分派，独立的并行执行，每项作为带限额的智能体运行。"
+        },
+        "review": {
+          "title": "审查证据",
+          "description": "当项目要求审查时，协调者对照每条验收标准检查证据。"
+        },
+        "synchronize": {
+          "title": "更新任务",
+          "description": "将摘要和证据写入任务并移至审查，若项目允许则移至完成。"
+        }
+      }
     }
   },
   "webhooks": {

@@ -455,6 +455,12 @@
     "skipReasons": {
       "missed": "Verpasst: der Server lief zu der Zeit nicht",
       "taskOpen": "Übersprungen: die vorige Aufgabe ist noch offen"
+    },
+    "teamStages": {
+      "coordinate": "Koordinator plant",
+      "specialize": "Spezialist arbeitet: {assignment}",
+      "review": "Koordinator prüft",
+      "sync": "Ergebnis an die Aufgabe"
     }
   },
   "versions": {

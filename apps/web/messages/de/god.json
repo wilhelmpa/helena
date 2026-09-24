@@ -381,7 +381,7 @@
     "overdueSchedules": "{count, plural, one {# Zeitplan hat} other {# Zeitpläne haben}} nicht rechtzeitig ausgelöst",
     "failedWorkflowRuns": "{count, plural, one {# Workflow-Lauf} other {# Workflow-Läufe}} in den letzten 24 Stunden fehlgeschlagen",
     "engine": {
-      "summary": "Motor: {active} aktiv · {waiting} wartend · {queued} in der Warteschlange · {schedules} Zeitpläne",
+      "summary": "Motor: {active} aktiv · {waiting} wartend · {queued} in der Warteschlange · Zeitpläne: {schedules}",
       "failure": "{name} fehlgeschlagen vor {time}:"
     },
     "agentSync": {

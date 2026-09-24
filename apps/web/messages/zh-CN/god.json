@@ -381,7 +381,7 @@
     "overdueSchedules": "{count} 个计划未按时触发",
     "failedWorkflowRuns": "过去 24 小时内有 {count} 个工作流运行失败",
     "engine": {
-      "summary": "引擎：{active} 运行中 · {waiting} 等待中 · {queued} 排队中 · {schedules} 个计划",
+      "summary": "引擎：{active} 运行中 · {waiting} 等待中 · {queued} 排队中 · 计划：{schedules}",
       "failure": "{name} 于 {time} 前失败："
     },
     "agentSync": {

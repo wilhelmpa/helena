@@ -381,7 +381,7 @@
     "overdueSchedules": "{count, plural, zero {لم ينطلق أي جدول} one {لم ينطلق جدول واحد} two {لم ينطلق جدولان} few {لم تنطلق # جداول} many {لم ينطلق # جدولًا} other {لم ينطلق # جدول}} في موعده",
     "failedWorkflowRuns": "{count, plural, zero {لم يفشل أي تشغيل} one {فشل تشغيل واحد} two {فشل تشغيلان} few {فشلت # عمليات تشغيل} many {فشلت # عملية تشغيل} other {فشلت # عملية تشغيل}} خلال آخر 24 ساعة",
     "engine": {
-      "summary": "المحرك: {active} يعمل · {waiting} ينتظر · {queued} في الطابور · {schedules} جداول",
+      "summary": "المحرك: {active} يعمل · {waiting} ينتظر · {queued} في الطابور · الجداول: {schedules}",
       "failure": "فشل {name} قبل {time}:"
     },
     "agentSync": {

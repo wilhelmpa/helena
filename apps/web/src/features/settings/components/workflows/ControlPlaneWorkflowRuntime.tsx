@@ -34,6 +34,12 @@ export default function ControlPlaneWorkflowRuntime({
   markedRunId?: string | null;
 }) {
   const t = useTranslations('settings.actions.controlPlane');
+  const steps = useTranslations('settings.actions.controlPlane.agentTeamSteps');
+  // The built-in steps in the reader's language; a plugin's in the API's words.
+  const text = (key: string, fallback: string) =>
+    workflow.id === 'agent-team' && steps.has(key as Parameters<typeof steps.has>[0])
+      ? steps(key as Parameters<typeof steps>[0])
+      : fallback;
   const paging = usePaging(10);
   const runs = useWorkflowRuns(projectKey, workflow.id, paging.params);
   useLiveRefresh({
@@ -52,12 +58,14 @@ export default function ControlPlaneWorkflowRuntime({
                 <span className="grid size-5 place-items-center rounded-full bg-accent text-xs">
                   {index + 1}
                 </span>
-                {step.title}
+                {text(`${step.id}.title`, step.title)}
                 {index < workflow.steps.length - 1 && (
                   <ChevronRight className="ms-auto size-4 text-muted-foreground rtl:rotate-180" />
                 )}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">{step.description}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {text(`${step.id}.description`, step.description)}
+              </p>
             </li>
           ))}
         </ol>

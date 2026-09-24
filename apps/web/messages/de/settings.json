@@ -416,7 +416,27 @@
       },
       "configurationSaved": "{name}: Konfiguration gespeichert",
       "runsUnavailable": "Die Läufe konnten nicht geladen werden.",
-      "triggerDelegation": "Delegation an den Koordinator"
+      "triggerDelegation": "Delegation an den Koordinator",
+      "agentTeamName": "Agent-Team des Projekts",
+      "agentTeamDescription": "Der Koordinator plant eine delegierte Aufgabe, Spezialisten erledigen die Arbeit in der Reihenfolge ihrer Abhängigkeiten, der Koordinator prüft sie, und das Ergebnis geht an die Aufgabe.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Arbeit planen",
+          "description": "Die Aufgabe dem einen Spezialisten geben, dessen Fähigkeiten passen, oder den Koordinator um Teilaufträge mit Abhängigkeiten bitten."
+        },
+        "specialize": {
+          "title": "Spezialisten arbeiten",
+          "description": "Die Teilaufträge in der Reihenfolge ihrer Abhängigkeiten ausführen, unabhängige gleichzeitig, jeden als Agentenlauf mit seinen Limits."
+        },
+        "review": {
+          "title": "Nachweise prüfen",
+          "description": "Der Koordinator prüft die Nachweise gegen jedes Abnahmekriterium, wenn das Projekt eine Prüfung verlangt."
+        },
+        "synchronize": {
+          "title": "Aufgabe aktualisieren",
+          "description": "Zusammenfassung und Nachweise an die Aufgabe schreiben und sie nach Review verschieben, oder nach Erledigt, wenn das Projekt es erlaubt."
+        }
+      }
     }
   },
   "webhooks": {
