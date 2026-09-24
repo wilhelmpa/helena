@@ -3,7 +3,10 @@
 
 <div align="center">
 
-<img src="apps/web/public/brand/helena-logo.svg" alt="Helena" height="64" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand/fackel/lockup-dark.svg" />
+  <img src="apps/web/public/brand/fackel/lockup-light.svg" alt="Helena" height="64" />
+</picture>
 
 # Helena
 

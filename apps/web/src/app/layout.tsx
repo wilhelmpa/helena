@@ -6,12 +6,26 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Providers } from '@/components/providers';
 import RuntimeEnvScript from '@/components/runtime-env-script';
 import { localeDirection, type Locale } from '@/i18n/locales';
+import { BRAND_UI_FONT } from '@helena/brand';
+import { BRAND_ASSETS } from '@/components/brand/assets';
 import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from '@/utils/app';
 import './globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
-  return { title: t('title'), description: t('description') };
+  return {
+    title: t('title'),
+    description: t('description'),
+    // The brand variant's icons (packages/brand): the SVG for browsers that take one,
+    // the .ico (16/32/48) for the rest, and the home-screen icon.
+    icons: {
+      icon: [
+        { url: BRAND_ASSETS.favicon, type: 'image/svg+xml' },
+        { url: BRAND_ASSETS.faviconIco, sizes: '16x16 32x32 48x48' },
+      ],
+      apple: { url: BRAND_ASSETS.appleTouchIcon, sizes: '180x180' },
+    },
+  };
 }
 
 // The page reaches under the notch and the home indicator (viewport-fit=cover); the
@@ -37,7 +51,12 @@ export default async function RootLayout({
   const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
-    <html lang={locale} dir={localeDirection(locale as Locale)} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={localeDirection(locale as Locale)}
+      data-ui-font={BRAND_UI_FONT}
+      suppressHydrationWarning
+    >
       <body className="antialiased">
         <RuntimeEnvScript />
         <ThemeProvider

@@ -1,3 +1,4 @@
+import { BRAND_VARIANT, hasLockupMark } from '@helena/brand';
 import HelenaMark from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
 import { APP_NAME } from '@/utils/app';
@@ -30,8 +31,8 @@ export default function PublicShareHeader({
         )}
       </div>
       <div className="ms-auto flex shrink-0 items-center gap-2 text-muted-foreground">
-        <HelenaMark className="size-5" />
-        <HelenaWordmark label={APP_NAME} className="h-3 w-auto" />
+        {hasLockupMark(BRAND_VARIANT) && <HelenaMark className="size-6" />}
+        <HelenaWordmark label={APP_NAME} />
       </div>
     </header>
   );

@@ -6,6 +6,11 @@
    wider-spaced optical master. The sidebar's typeface — and so the whole app's
    (owner, 2026-09-24: "Schriftart so wie in der Sidebar"). */
 @import 'inter-ui/inter-variable.css';
+/* The code face (IDs, keys, code, terminal output) and the brand's second face, both
+   OFL and bundled like Inter, never fetched from a CDN (packages/brand, config.ts). A
+   face is only downloaded once something on the page uses it. */
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource-variable/dm-sans';
 /* Streamdown renders an agent's Markdown (components/agent-message): its word fade-in,
    and the Tailwind classes its components carry, which live in its package. */
 @import 'streamdown/styles.css';
@@ -34,7 +39,13 @@
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'InterVariable', sans-serif;
+  /* The UI face follows BRAND_UI_FONT (packages/brand) through data-ui-font on <html>. */
+  --font-sans: var(--helena-font-ui);
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-brand-type: 'DM Sans Variable', 'InterVariable', sans-serif;
+  --color-helena-ink: var(--helena-ink);
+  --color-helena-ink-foreground: var(--helena-ink-foreground);
+  --color-helena-ink-muted: var(--helena-ink-muted);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -151,6 +162,17 @@
    blue. The page never sits on pure white or pure black. Text pairs meet WCAG AA in
    both themes; see DESIGN.md for the measured ratios. */
 :root {
+  /* The brand (packages/brand/src/palette.ts, the same values): the wordmark's bands
+     darkened for the light surfaces, and Hermes' ink with its text for brand surfaces
+     that stay dark in both themes (the mark's tile, the sign-in panel). */
+  --helena-font-ui: 'InterVariable', sans-serif;
+  --helena-gold: #9a7000;
+  --helena-amber: #a85a00;
+  --helena-bronze: #8a4516;
+  --helena-amber-on-ink: #ffbf00;
+  --helena-ink: #141414;
+  --helena-ink-foreground: #eee6d8;
+  --helena-ink-muted: #a39a8a;
   --background: oklch(0.985 0.004 85);
   --foreground: oklch(0.23 0.008 65);
   /* Boxes carry the sidebar's own surface, and everything that hovers or is selected
@@ -233,6 +255,18 @@
      rounded surface the transcript scrolls up to, so it casts all round. */
   --chat-tabs-shadow: 0 8px 14px -8px rgb(45 35 25 / 0.14);
   --chat-composer-shadow: 0 2px 16px -2px rgb(45 35 25 / 0.12);
+}
+
+/* On a dark surface the wordmark takes Hermes' own gold, amber and bronze. */
+.dark,
+.helena-on-ink {
+  --helena-gold: #ffd700;
+  --helena-amber: #ffbf00;
+  --helena-bronze: #cd7f32;
+}
+
+:root[data-ui-font='dm-sans'] {
+  --helena-font-ui: 'DM Sans Variable', 'InterVariable', sans-serif;
 }
 
 .dark {

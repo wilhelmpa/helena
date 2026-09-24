@@ -1,32 +1,31 @@
 import { useTranslations } from 'next-intl';
+import { BRAND_VARIANT, hasLockupMark } from '@helena/brand';
 import { APP_NAME } from '@/utils/app';
-import HelenaMark, { MARK_SPARK } from '@/components/brand/HelenaMark';
+import HelenaMark from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
 
 // Branded panel shown beside the form on wide screens, in place of an external
 // image — self-contained, no asset. Shared by the auth screens and the invite
-// accept screen; the subtitle differs per context. The sidebar's surface with a warm
-// glow behind the mark and the mark's spark drawn large and faint in the corner, so
-// the first screen already looks like the app. On a phone the panel is hidden and
+// accept screen; the subtitle differs per context. It is Hermes' ink in both themes,
+// the surface Hermes Agent draws its banner on, so the first screen shows the brand in
+// its true gold: the mark with its shadow lines over a faint glow, and the full
+// wordmark at one art unit per pixel. On a phone the panel is hidden and
 // AuthFormHeader shows the mark above the form instead.
 export default function BrandPanel({ subtitle }: { subtitle?: string }) {
   const t = useTranslations('common');
   return (
-    <div className="relative hidden min-h-[28rem] flex-col items-center justify-center gap-5 overflow-hidden border-s border-sidebar-border bg-sidebar p-10 text-sidebar-foreground md:flex">
+    <div className="relative hidden min-h-[28rem] flex-col items-center justify-center gap-6 overflow-hidden bg-helena-ink p-10 text-helena-ink-foreground md:flex">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,color-mix(in_oklab,var(--warning)_16%,transparent),transparent_62%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,color-mix(in_oklab,var(--helena-amber-on-ink)_14%,transparent),transparent_60%)]"
       />
-      <svg
-        viewBox="0 0 32 32"
-        aria-hidden="true"
-        className="pointer-events-none absolute -end-20 -bottom-24 size-96 text-foreground opacity-[0.035]"
-      >
-        <path d={MARK_SPARK} fill="currentColor" />
-      </svg>
-      <HelenaMark className="relative size-20 drop-shadow-[0_10px_24px_rgb(40_30_15/0.18)]" />
-      <HelenaWordmark label={APP_NAME} className="relative h-7 w-auto text-foreground" />
-      <p className="relative max-w-[18rem] text-center text-xs text-balance text-muted-foreground">
+      {hasLockupMark(BRAND_VARIANT) && <HelenaMark detail="large" className="relative size-20" />}
+      <HelenaWordmark
+        size="full"
+        label={APP_NAME}
+        className="helena-on-ink relative max-w-full text-helena-ink-foreground"
+      />
+      <p className="relative max-w-[18rem] text-center text-xs text-balance text-helena-ink-muted">
         {subtitle ?? t('brandSubtitle')}
       </p>
     </div>

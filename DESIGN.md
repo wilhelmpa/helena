@@ -15,19 +15,25 @@ clarity over cleverness; no decoration that does not aid comprehension.
 
 ## Brand
 
-- **Name:** Helena – by Volition. Helena is the app; Volition is the company and the whole
-  system. `APP_NAME` (and `APP_BYLINE`) in `apps/web/src/utils/app.ts` are the one place the
-  web app reads them from.
-- **Mark:** a lowercase h with a warm point of light over its arch, on a petrol tile
-  (`components/brand/HelenaMark.tsx`, `app/icon.svg`, `public/brand/helena-mark.svg`).
-  Helena means "the bright one"; the pair also reads as a friendly "hi". Fixed colours,
-  the same in light and dark: tile `#15808f → #0e6f81`, glyph `#fbfaf7`, light `#f4c56a`.
-  App icons (`app/apple-icon.png`, `public/brand/icon-192/512.png`, a maskable 512) are
-  rendered from the same drawing. Two alternative concepts are kept in
-  `public/brand/variants/` (knoten, bruecke).
-- **Wordmark:** "Helena" in Inter SemiBold as outlines, tracking −0.02em
-  (`components/brand/HelenaWordmark.tsx`, `public/brand/helena-wordmark.svg`); lockups in
-  `public/brand/helena-logo(-dark).svg`.
+- **Name:** Helena, nothing else. `APP_NAME` in `apps/web/src/utils/app.ts` is the one
+  place the web app reads it from.
+- **Source:** `packages/brand` (`@helena/brand`) holds everything: the variant switch
+  (`src/config.ts`: `BRAND_VARIANT` = `fackel` | `monogramm` | `funke`, and
+  `BRAND_UI_FONT`), the palette, the art, and the renderers for the web components
+  (`components/brand/HelenaMark.tsx`, `HelenaWordmark.tsx`), the files in
+  `public/brand/<variant>/` (`bun run --cwd packages/brand build:assets`: favicon SVG/ICO,
+  app icons, maskable icon, wordmarks, lockups) and the mail header.
+- **Style:** a sibling of Hermes Agent's brand. The wordmark is HELENA in ANSI Shadow,
+  the font of Hermes' HERMES-AGENT banner, in Hermes' bands top to bottom — gold
+  `#FFD700`, amber `#FFBF00`, bronze `#CD7F32` — with the double-line shadow down and to
+  the right. On light surfaces the bands darken to `#9A7000` / `#A85A00` / `#8A4516`
+  (≥ 3:1 on paper and on the sidebar). The compact wordmark (sidebar, share header) is
+  75 × 21 px with a single shadow line; the full one (sign-in panel) 300 × 84 px.
+- **Mark:** pixel art on a 16 × 16 grid on Hermes' ink tile (`#141414`, the same in both
+  themes): the torch (`fackel`), a pixel H (`monogramm`) or two pillars joined by a
+  spark (`funke`). Crisp at 16/24/32/48 px; from 64 px up it carries the shadow
+  hairlines. Brand surfaces that stay dark in both themes (the tile, the sign-in panel)
+  use `--helena-ink`; the wordmark's bands are `--helena-gold/-amber/-bronze`.
 - **Accent (`brand`):** petrol blue, `#0e6f81` in light and `#62becd` in dark. It is
   clearly apart from the red, amber and green of the status colours, so it never reads
   as a state, and a cool accent on warm neutrals stays quiet. It marks focus, links,
@@ -73,7 +79,9 @@ dark are both first-class (`.dark` class toggles; the app ships a theme switch).
 ## Scale & shape
 
 - **Type:** Inter Variable (`--font-sans`, also `--font-heading`), the sidebar's font, at
-  the sidebar's size. One scale, each step one job (`globals.css`): 12 `text-xs` labels,
+  the sidebar's size (`BRAND_UI_FONT` can switch the UI to DM Sans; the sizes stay).
+  Code, IDs, keys and terminal output are JetBrains Mono Variable (`--font-mono`), the
+  same face on every device. All faces are OFL npm packages bundled with the app. One scale, each step one job (`globals.css`): 12 `text-xs` labels,
   meta, descriptions, badges, IDs · **13 `text-sm` the standard** (every row, cell,
   control, menu, paragraph — the sidebar's row text) · 14 `text-md` section/panel/dialog
   titles · 16 `text-base` the one title a page may carry, text fields on touch · 20/24/30
