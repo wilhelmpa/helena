@@ -83,7 +83,7 @@ describe('needs-you sources', () => {
   it('registers the built-ins: red problems of the system first, failures last', () => {
     assert.deepEqual(
       sortedNeedsYouSources().map((source) => source.id),
-      ['system', 'approvals', 'workflow-steps', 'proposals', 'failures'],
+      ['system', 'server', 'approvals', 'workflow-steps', 'proposals', 'failures'],
     );
     assert.equal(needsYouSources.pluginOf('system'), 'helena.home');
   });
