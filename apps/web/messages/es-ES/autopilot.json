@@ -126,12 +126,13 @@
     "month": "Este mes",
     "pausedBecause": "En pausa: {reason}",
     "budgetsHint": "Cubre todo lo que hace el agente: ejecuciones y chats.",
-    "projectBudgets": "Presupuestos de {project}"
+    "projectBudgets": "Presupuestos de {project}",
+    "pausedBudget": "En pausa: {budget} ({metric}) agotado, {usage}."
   },
   "card": {
     "title": "Presupuesto agotado",
-    "agentBudget": "{metric} {period} de {agent}",
-    "projectBudget": "{metric} {period} del proyecto {project}",
+    "agentBudget": "{budget} ({metric}) de {agent}",
+    "projectBudget": "{budget} ({metric}) del proyecto {project}",
     "raise": "Aumentar el presupuesto",
     "once": "Continuar una vez",
     "keep": "Mantener detenido",
@@ -142,7 +143,11 @@
     "raised": "Presupuesto aumentado por {name}",
     "continuedOnce": "Continuado una vez por {name}",
     "kept": "Mantenido detenido por {name}",
-    "limitTooLow": "El nuevo límite debe estar por encima del consumo."
+    "limitTooLow": "El nuevo límite debe estar por encima del consumo.",
+    "periodBudget": {
+      "day": "Presupuesto diario",
+      "month": "Presupuesto mensual"
+    }
   },
   "request": {
     "level": "Nivel {level}",

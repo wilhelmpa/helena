@@ -31,15 +31,15 @@ export default function BudgetApprovalCard({ request }: { request: ApprovalReque
   const used = payload.used ?? 0;
   const [text, setText] = useState(() => limitToInput(metric, Math.max(limit * 2, used * 1.5)));
 
-  const period = payload.period ? t(`period.${payload.period}`) : '';
+  const budget = t(`card.periodBudget.${payload.period ?? 'month'}`);
   const what =
     payload.scope === 'project'
       ? t('card.projectBudget', {
-          period,
+          budget,
           metric: t(`metric.${metric}`),
           project: request.projectName,
         })
-      : t('card.agentBudget', { period, metric: t(`metric.${metric}`), agent: request.agentName });
+      : t('card.agentBudget', { budget, metric: t(`metric.${metric}`), agent: request.agentName });
 
   async function answer(action: BudgetCardAction) {
     let next: number | undefined;

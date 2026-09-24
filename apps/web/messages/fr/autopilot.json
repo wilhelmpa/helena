@@ -126,12 +126,13 @@
     "month": "Ce mois-ci",
     "pausedBecause": "En pause : {reason}",
     "budgetsHint": "Couvre tout ce que fait l’agent : exécutions et chats.",
-    "projectBudgets": "Budgets de {project}"
+    "projectBudgets": "Budgets de {project}",
+    "pausedBudget": "En pause : {budget} ({metric}) épuisé, {usage}."
   },
   "card": {
     "title": "Budget épuisé",
-    "agentBudget": "{metric} {period} de {agent}",
-    "projectBudget": "{metric} {period} du projet {project}",
+    "agentBudget": "{budget} ({metric}) de {agent}",
+    "projectBudget": "{budget} ({metric}) du projet {project}",
     "raise": "Augmenter le budget",
     "once": "Continuer une fois",
     "keep": "Laisser arrêté",
@@ -142,7 +143,11 @@
     "raised": "Budget augmenté par {name}",
     "continuedOnce": "Poursuivi une fois par {name}",
     "kept": "Laissé arrêté par {name}",
-    "limitTooLow": "La nouvelle limite doit dépasser la consommation."
+    "limitTooLow": "La nouvelle limite doit dépasser la consommation.",
+    "periodBudget": {
+      "day": "Budget journalier",
+      "month": "Budget mensuel"
+    }
   },
   "request": {
     "level": "Niveau {level}",

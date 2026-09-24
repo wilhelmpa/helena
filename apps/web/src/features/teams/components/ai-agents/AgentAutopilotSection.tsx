@@ -88,6 +88,9 @@ export default function AgentAutopilotSection({
   }
 
   const first = data?.projects[0]?.effective.level;
+  // A pause a used-up budget of the agent's caused reads from that budget, in the reader's
+  // language, instead of the server's reason.
+  const reachedBudget = data?.budgets.find((budget) => budget.reached && budget.graceRuns === 0);
 
   return (
     <AgentFormSection
@@ -101,9 +104,18 @@ export default function AgentAutopilotSection({
         <p className="text-xs text-muted-foreground">{tCommon('loading')}</p>
       ) : (
         <div className="space-y-5">
-          {data.paused && data.pauseReason && (
+          {data.paused && (reachedBudget || data.pauseReason) && (
             <p className="rounded-md bg-status-waiting/10 px-3 py-2 text-xs text-status-waiting">
-              {t('agent.pausedBecause', { reason: data.pauseReason })}
+              {reachedBudget
+                ? t('agent.pausedBudget', {
+                    budget: t(`card.periodBudget.${reachedBudget.period}`),
+                    metric: t(`metric.${reachedBudget.metric}`),
+                    usage: t('usedOf', {
+                      used: formatBudgetAmount(reachedBudget.metric, reachedBudget.used, locale),
+                      limit: formatBudgetAmount(reachedBudget.metric, reachedBudget.limit, locale),
+                    }),
+                  })
+                : t('agent.pausedBecause', { reason: data.pauseReason ?? '' })}
             </p>
           )}
 

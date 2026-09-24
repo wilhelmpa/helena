@@ -126,12 +126,13 @@
     "month": "В этом месяце",
     "pausedBecause": "На паузе: {reason}",
     "budgetsHint": "Касается всего, что делает агент: запусков и чатов.",
-    "projectBudgets": "Бюджеты {project}"
+    "projectBudgets": "Бюджеты {project}",
+    "pausedBudget": "На паузе: {budget} ({metric}) исчерпан, {usage}."
   },
   "card": {
     "title": "Бюджет исчерпан",
-    "agentBudget": "{metric} {period}: {agent}",
-    "projectBudget": "{metric} {period}: проект {project}",
+    "agentBudget": "{budget} ({metric}): {agent}",
+    "projectBudget": "{budget} ({metric}): проект {project}",
     "raise": "Увеличить бюджет",
     "once": "Продолжить один раз",
     "keep": "Оставить остановленным",
@@ -142,7 +143,11 @@
     "raised": "Бюджет увеличил(а) {name}",
     "continuedOnce": "Один раз продолжил(а) {name}",
     "kept": "Оставил(а) остановленным {name}",
-    "limitTooLow": "Новый лимит должен быть больше расхода."
+    "limitTooLow": "Новый лимит должен быть больше расхода.",
+    "periodBudget": {
+      "day": "Дневной бюджет",
+      "month": "Месячный бюджет"
+    }
   },
   "request": {
     "level": "Уровень {level}",

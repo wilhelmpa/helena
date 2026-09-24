@@ -126,12 +126,13 @@
     "month": "本月",
     "pausedBecause": "已暂停：{reason}",
     "budgetsHint": "涵盖智能体的所有工作：运行和聊天。",
-    "projectBudgets": "{project} 的预算"
+    "projectBudgets": "{project} 的预算",
+    "pausedBudget": "已暂停：{budget}（{metric}）已用完，{usage}。"
   },
   "card": {
     "title": "预算已用完",
-    "agentBudget": "{agent} 的{period}{metric}",
-    "projectBudget": "项目 {project} 的{period}{metric}",
+    "agentBudget": "{agent} 的{budget}（{metric}）",
+    "projectBudget": "项目 {project} 的{budget}（{metric}）",
     "raise": "提高预算",
     "once": "继续一次",
     "keep": "保持停止",
@@ -142,7 +143,11 @@
     "raised": "{name} 提高了预算",
     "continuedOnce": "{name} 允许继续一次",
     "kept": "{name} 保持停止",
-    "limitTooLow": "新限额必须高于已用量。"
+    "limitTooLow": "新限额必须高于已用量。",
+    "periodBudget": {
+      "day": "每日预算",
+      "month": "每月预算"
+    }
   },
   "request": {
     "level": "级别 {level}",

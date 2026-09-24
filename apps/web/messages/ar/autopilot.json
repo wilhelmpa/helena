@@ -126,12 +126,13 @@
     "month": "هذا الشهر",
     "pausedBecause": "متوقف مؤقتًا: {reason}",
     "budgetsHint": "يشمل كل ما يفعله الوكيل: التشغيلات والمحادثات.",
-    "projectBudgets": "ميزانيات {project}"
+    "projectBudgets": "ميزانيات {project}",
+    "pausedBudget": "متوقف مؤقتًا: نفدت {budget} ({metric})، {usage}."
   },
   "card": {
     "title": "نفدت الميزانية",
-    "agentBudget": "{metric} {period} لـ {agent}",
-    "projectBudget": "{metric} {period} للمشروع {project}",
+    "agentBudget": "{budget} ({metric}) لـ {agent}",
+    "projectBudget": "{budget} ({metric}) للمشروع {project}",
     "raise": "رفع الميزانية",
     "once": "المتابعة مرة واحدة",
     "keep": "إبقاء التوقف",
@@ -142,7 +143,11 @@
     "raised": "رفع {name} الميزانية",
     "continuedOnce": "سمح {name} بالمتابعة مرة واحدة",
     "kept": "أبقى {name} العمل متوقفًا",
-    "limitTooLow": "يجب أن يكون الحد الجديد أعلى من الاستهلاك."
+    "limitTooLow": "يجب أن يكون الحد الجديد أعلى من الاستهلاك.",
+    "periodBudget": {
+      "day": "الميزانية اليومية",
+      "month": "الميزانية الشهرية"
+    }
   },
   "request": {
     "level": "المستوى {level}",

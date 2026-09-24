@@ -126,12 +126,13 @@
     "month": "Bulan ini",
     "pausedBecause": "Dijeda: {reason}",
     "budgetsHint": "Mencakup semua yang dilakukan agen: eksekusi dan chat.",
-    "projectBudgets": "Anggaran {project}"
+    "projectBudgets": "Anggaran {project}",
+    "pausedBudget": "Dijeda: {budget} ({metric}) habis, {usage}."
   },
   "card": {
     "title": "Anggaran habis",
-    "agentBudget": "{metric} {period} milik {agent}",
-    "projectBudget": "{metric} {period} proyek {project}",
+    "agentBudget": "{budget} ({metric}) milik {agent}",
+    "projectBudget": "{budget} ({metric}) proyek {project}",
     "raise": "Naikkan anggaran",
     "once": "Lanjutkan sekali",
     "keep": "Biarkan berhenti",
@@ -142,7 +143,11 @@
     "raised": "Anggaran dinaikkan oleh {name}",
     "continuedOnce": "Dilanjutkan sekali oleh {name}",
     "kept": "Dibiarkan berhenti oleh {name}",
-    "limitTooLow": "Batas baru harus di atas pemakaian."
+    "limitTooLow": "Batas baru harus di atas pemakaian.",
+    "periodBudget": {
+      "day": "Anggaran harian",
+      "month": "Anggaran bulanan"
+    }
   },
   "request": {
     "level": "Tingkat {level}",

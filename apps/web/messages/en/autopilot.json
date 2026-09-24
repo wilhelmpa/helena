@@ -126,12 +126,13 @@
     "month": "This month",
     "pausedBecause": "Paused: {reason}",
     "budgetsHint": "Covers everything the agent does: runs and chats.",
-    "projectBudgets": "Budgets of {project}"
+    "projectBudgets": "Budgets of {project}",
+    "pausedBudget": "Paused: {budget} ({metric}) used up, {usage}."
   },
   "card": {
     "title": "Budget used up",
-    "agentBudget": "{period} {metric} of {agent}",
-    "projectBudget": "{period} {metric} of project {project}",
+    "agentBudget": "{budget} ({metric}) of {agent}",
+    "projectBudget": "{budget} ({metric}) of project {project}",
     "raise": "Raise the budget",
     "once": "Continue once",
     "keep": "Keep stopped",
@@ -142,7 +143,11 @@
     "raised": "Budget raised by {name}",
     "continuedOnce": "Continued once by {name}",
     "kept": "Kept stopped by {name}",
-    "limitTooLow": "The new limit has to be above what is used."
+    "limitTooLow": "The new limit has to be above what is used.",
+    "periodBudget": {
+      "day": "Daily budget",
+      "month": "Monthly budget"
+    }
   },
   "request": {
     "level": "Level {level}",
