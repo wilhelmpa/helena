@@ -1,9 +1,10 @@
-import { createContext, useContext } from 'react';
+import { useContext } from 'react';
 import type { WorkspaceLayout } from '@/extensions/workspaceLayouts';
+import { ShellCtx } from './shellContext';
 
 // The workspace layout choice for the controls that change it from outside the layout
-// host: the header's layout menu and the command palette. Provided by Shell; null
-// outside it.
+// host: the header's layout menu and the command palette. Shell hands it over in its
+// context; null outside the Shell.
 export interface WorkspaceLayoutChoice {
   layouts: WorkspaceLayout[];
   current: string;
@@ -13,8 +14,6 @@ export interface WorkspaceLayoutChoice {
   cycle: () => void;
 }
 
-export const WorkspaceLayoutCtx = createContext<WorkspaceLayoutChoice | null>(null);
-
 export function useWorkspaceLayoutChoice(): WorkspaceLayoutChoice | null {
-  return useContext(WorkspaceLayoutCtx);
+  return useContext(ShellCtx)?.workspaceLayout ?? null;
 }

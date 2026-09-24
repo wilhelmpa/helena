@@ -7,6 +7,7 @@ import type { HeaderExtraStore } from '@/utils/headerExtraStore';
 import type { View } from '@/lib/api/endpoints/views';
 import type { NewIssueDefaults } from '@/utils/project';
 import type { useViewEditor } from '@/hooks/useViewEditor';
+import type { WorkspaceLayoutChoice } from './workspaceLayout';
 
 // What the Shell layout provides to its child pages (the work items view and the
 // settings pages) through React context. The Shell owns the project data, the
@@ -36,6 +37,9 @@ export type ShellContext = {
   // one it renders itself when the layout is 'classic'). See useShellHeaderExtra.
   headerLayout: HeaderLayout;
   headerExtra: HeaderExtraStore;
+  // The workspace layouts and the chosen one, for the header's layout menu and the
+  // command palette (context/workspaceLayout).
+  workspaceLayout?: WorkspaceLayoutChoice;
 };
 
 export type ChatThreadRequest = { agentId: number; threadId: string };
