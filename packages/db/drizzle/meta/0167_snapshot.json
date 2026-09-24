@@ -1,5 +1,5 @@
 {
-  "id": "96d6c932-cd22-4a60-b614-67154c849904",
+  "id": "38d07ca7-edd1-46c9-86c6-a1bdd0325cf3",
   "prevId": "a27d41c2-b63f-4f1c-a8bc-3f017383927a",
   "version": "7",
   "dialect": "postgresql",
@@ -3228,7 +3228,7 @@
       "checkConstraints": {
         "agent_runtime_action_kind_check": {
           "name": "agent_runtime_action_kind_check",
-          "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory', 'resolve-memory')"
+          "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory')"
         }
       },
       "isRLSEnabled": false

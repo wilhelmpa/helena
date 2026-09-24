@@ -8,6 +8,7 @@ import {
   type HermesInventory,
   type HermesProfile,
   type InventorySkill,
+  type MemoryFile,
 } from './inventory';
 import {
   learningConfig,
@@ -82,6 +83,11 @@ export interface RuntimePolicySnapshot {
   vaultAccess?: VaultAccess;
   // Whether the agent learns. An older server sends none, and Hermes' own settings apply.
   learning?: RuntimeLearning;
+  // Whether the agent's own memory writes wait for the owner, and the approved content of
+  // each memory file. An older server sends none, and memory writes take effect at once.
+  memoryWrites?: RuntimeMemoryPolicy;
+  // Helena's settings for Hermes' own configuration. An older server sends none.
+  hermes?: RuntimeHermesSettings;
   // The owner's decisions on what the agent learned, not carried out yet.
   actions?: RuntimeAction[];
 }
@@ -104,9 +110,47 @@ export interface RuntimeStatus {
   // and plugin links, by their path in the Hermes home.
   restored?: string[];
   inventory?: HermesInventory;
+  // Memory writes of the agent held back for the owner's approval (see holdMemoryWrites).
+  memoryProposals?: MemoryProposal[];
   learnedSkills?: LearnedSkill[];
   // The results of the actions of the applied revision.
   actions?: RuntimeActionResult[];
+}
+
+// Settings Helena keeps for the agent that Hermes reads from its configuration: the skills
+// turned off for it and the models Hermes falls back to when the primary one fails.
+export interface RuntimeHermesSettings {
+  skillsDisabled?: string[];
+  fallbackModels?: { provider: string; model: string }[];
+}
+
+// The managed configuration Hermes layers over config.yaml, without the MCP servers.
+export function managedHermesConfig(snapshot: RuntimePolicySnapshot): Record<string, unknown> {
+  const learned = learningConfig(snapshot.learning);
+  const settings = snapshot.hermes;
+  const skills = {
+    ...((learned.skills as Record<string, unknown> | undefined) ?? {}),
+    ...(settings?.skillsDisabled && { disabled: settings.skillsDisabled }),
+  };
+  return {
+    ...learned,
+    ...(Object.keys(skills).length > 0 && { skills }),
+    ...(settings?.fallbackModels && { fallback_providers: settings.fallbackModels }),
+  };
+}
+
+export interface RuntimeMemoryPolicy {
+  approval: boolean;
+  baseline: { file: MemoryFile; sha256: string; content: string }[];
+}
+
+// A memory file the agent changed while its writes wait for the owner: what it wrote, and
+// the approved version it was put back to.
+export interface MemoryProposal {
+  file: MemoryFile;
+  content: string;
+  sha256: string;
+  baseSha256: string;
 }
 
 export interface RuntimePolicyClient {
@@ -444,7 +488,10 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
       this.managedDir,
       join(this.managedDir, 'config.yaml'),
       `${JSON.stringify(
-        { ...learningConfig(snapshot.learning), ...(mcpServers && { mcp_servers: mcpServers }) },
+        {
+          ...managedHermesConfig(snapshot),
+          ...(mcpServers && { mcp_servers: mcpServers }),
+        },
         null,
         2,
       )}\n`,
@@ -677,6 +724,9 @@ export class HermesPolicySynchronizer {
   private unreported = false;
   private deniedToolsets: string[] = [];
   private learning: RuntimeLearning | undefined;
+  private memoryPolicy: RuntimeMemoryPolicy | null = null;
+  // Held-back memory writes not reported yet.
+  private memoryProposals: MemoryProposal[] = [];
   private webLogins = false;
   // The agent's own MCP servers and the secrets they name, as the last applied revision
   // wrote them. mcpSecrets is null while the managed configuration names no secret.
@@ -775,6 +825,7 @@ export class HermesPolicySynchronizer {
     // The restrictions write no file, so they hold even while a revision fails to apply.
     this.deniedToolsets = snapshot.runtimePolicy?.toolDeny ?? [];
     this.learning = snapshot.learning;
+    this.memoryPolicy = snapshot.memoryWrites ?? null;
     this.webLogins = snapshot.webLogins === true;
     this.vaultAccess = snapshot.vaultAccess ?? null;
     const applied = await this.apply(snapshot);
@@ -870,17 +921,49 @@ export class HermesPolicySynchronizer {
     this.unreported = true;
   }
 
+  // While the agent's memory writes wait for the owner, a memory file that differs from its
+  // approved version is reported as a proposal and put back, through the same write the
+  // owner's edits use. True when a file was put back. A file too large to report whole is
+  // left as it is: a proposal without its content could not be approved.
+  private async holdMemoryWrites(inventory: HermesInventory): Promise<boolean> {
+    if (!this.memoryPolicy?.approval) return false;
+    const restore: RuntimeAction[] = [];
+    for (const base of this.memoryPolicy.baseline) {
+      const now = inventory.memory.find((entry) => entry.file === base.file);
+      if (!now || now.sha256 === base.sha256 || now.truncated) continue;
+      this.memoryProposals = [
+        ...this.memoryProposals.filter((proposal) => proposal.file !== base.file),
+        { file: base.file, content: now.content, sha256: now.sha256, baseSha256: base.sha256 },
+      ];
+      restore.push({
+        id: 0,
+        kind: 'write-memory',
+        file: base.file,
+        content: base.content,
+        baseSha256: now.sha256,
+      });
+    }
+    if (restore.length === 0) return false;
+    await this.materializer.runActions(restore);
+    return true;
+  }
+
   // True when the inventory was read and differs from the one reported last.
   private async readInventory(): Promise<boolean> {
     if (!this.options.inventory) return false;
     try {
       this.inventory = await this.options.inventory();
+      if (await this.holdMemoryWrites(this.inventory)) {
+        this.inventory = await this.options.inventory();
+      }
       this.learnedSkills = await this.options.learned?.(this.inventory.skills);
     } catch {
       // Plan keeps showing the inventory it received last.
       return false;
     }
-    const inventoryDigest = digest(JSON.stringify([this.inventory, this.learnedSkills ?? null]));
+    const inventoryDigest = digest(
+      JSON.stringify([this.inventory, this.learnedSkills ?? null, this.memoryProposals]),
+    );
     if (inventoryDigest === this.inventoryDigest) return false;
     this.inventoryDigest = inventoryDigest;
     return true;
@@ -895,8 +978,10 @@ export class HermesPolicySynchronizer {
         capabilities: CAPABILITIES,
         ...(this.inventory && { inventory: this.inventory }),
         ...(this.learnedSkills && { learnedSkills: this.learnedSkills }),
+        ...(this.memoryProposals.length > 0 && { memoryProposals: this.memoryProposals }),
       });
       this.unreported = false;
+      this.memoryProposals = [];
     } catch (error) {
       // Plan refuses the same report again, so only one that did not arrive is sent again.
       this.unreported = !(error instanceof RequestError && error.status < 500);

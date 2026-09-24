@@ -78,6 +78,11 @@ export interface AgentRuntimePolicy {
   learning?: boolean;
   curator?: boolean;
   reflection?: ReflectionMode;
+  // Unset: memory writes wait for approval.
+  memoryApproval?: boolean;
+  skillsDisabled?: string[];
+  // Unset or null: the instance's default list. Empty: no fallback.
+  fallbackModels?: { provider: string; model: string }[] | null;
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
@@ -231,6 +236,21 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     ...(typeof policy.curator === 'boolean' && { curator: policy.curator }),
     ...(REFLECTION_MODES.includes(policy.reflection as ReflectionMode) && {
       reflection: policy.reflection,
+    }),
+    ...(typeof policy.memoryApproval === 'boolean' && { memoryApproval: policy.memoryApproval }),
+    ...(Array.isArray(policy.skillsDisabled) && { skillsDisabled: strings(policy.skillsDisabled) }),
+    ...(Array.isArray(policy.fallbackModels) && {
+      fallbackModels: policy.fallbackModels
+        .filter(
+          (entry): entry is { provider: string; model: string } =>
+            !!entry &&
+            typeof entry.provider === 'string' &&
+            typeof entry.model === 'string' &&
+            !!entry.provider.trim() &&
+            !!entry.model.trim(),
+        )
+        .map((entry) => ({ provider: entry.provider.trim(), model: entry.model.trim() }))
+        .slice(0, 8),
     }),
   };
 }

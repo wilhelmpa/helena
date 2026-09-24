@@ -905,3 +905,83 @@ describe('Hermes learning and protected state', () => {
     expect(sent).toHaveLength(3);
   });
 });
+
+describe('memory writes held for the owner and Hermes settings from Helena', () => {
+  const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+
+  it('reports a memory change as a proposal and puts the approved version back', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await mkdir(join(hermesHome, 'memories'), { recursive: true });
+    await writeFile(
+      join(hermesHome, 'memories/MEMORY.md'),
+      'Uses bun.\n§\nOwner likes short answers.',
+    );
+    const statuses: RuntimeStatus[] = [];
+    const policy: RuntimePolicySnapshot = {
+      ...snapshot('sha256:mem'),
+      memoryWrites: {
+        approval: true,
+        baseline: [
+          { file: 'MEMORY.md', sha256: sha('Uses bun.'), content: 'Uses bun.' },
+          { file: 'USER.md', sha256: sha(''), content: '' },
+        ],
+      },
+    };
+    let current = policy;
+    const sync = new HermesPolicySynchronizer(
+      {
+        runtimePolicy: async () => current,
+        reportRuntimeStatus: async (status) => {
+          statuses.push(status);
+        },
+        mcpSecrets: async () => ({}),
+        webLogins: async () => [],
+      },
+      materializer,
+      { inventory: () => readHermesInventory(hermesHome, undefined, new Set()) },
+    );
+
+    await sync.ensure();
+
+    expect(await readFile(join(hermesHome, 'memories/MEMORY.md'), 'utf8')).toBe('Uses bun.');
+    expect(statuses.at(-1)!.memoryProposals).toEqual([
+      {
+        file: 'MEMORY.md',
+        content: 'Uses bun.\n§\nOwner likes short answers.',
+        sha256: sha('Uses bun.\n§\nOwner likes short answers.'),
+        baseSha256: sha('Uses bun.'),
+      },
+    ]);
+    expect(statuses.at(-1)!.inventory!.memory[0]!.content).toBe('Uses bun.');
+
+    // Without approval the agent's write stays.
+    current = {
+      ...policy,
+      revision: 'sha256:free',
+      memoryWrites: { ...policy.memoryWrites!, approval: false },
+    };
+    await writeFile(join(hermesHome, 'memories/MEMORY.md'), 'Uses bun.\n§\nNew fact.');
+    sync.inventoryChanged();
+    await sync.ensure();
+    expect(await readFile(join(hermesHome, 'memories/MEMORY.md'), 'utf8')).toBe(
+      'Uses bun.\n§\nNew fact.',
+    );
+    expect(statuses.at(-1)!.memoryProposals).toBeUndefined();
+  });
+
+  it('writes the disabled skills and the fallback models into the managed configuration', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await materializer.apply({
+      ...snapshot('sha256:hermes'),
+      learning: { enabled: true, curator: false },
+      hermes: {
+        skillsDisabled: ['airtable'],
+        fallbackModels: [{ provider: 'openrouter', model: 'google/gemini-3.6-flash' }],
+      },
+    });
+    expect(await managedConfig(hermesHome)).toMatchObject({
+      skills: { write_approval: false, disabled: ['airtable'] },
+      fallback_providers: [{ provider: 'openrouter', model: 'google/gemini-3.6-flash' }],
+    });
+  });
+});

@@ -82,6 +82,35 @@ export const runtimePolicy = t.Object({
         "after a run of many tool calls. Unset, 'complex'.",
     }),
   ),
+  memoryApproval: t.Optional(
+    t.Boolean({
+      description:
+        "Whether the agent's own memory writes wait for the owner's approval as a proposal " +
+        'with a diff. Unset, they do.',
+    }),
+  ),
+  skillsDisabled: t.Optional(
+    t.Array(t.String({ minLength: 1, maxLength: 128 }), {
+      maxItems: 300,
+      description: "Skills of the agent's runtime turned off by name (Hermes skills.disabled).",
+    }),
+  ),
+  fallbackModels: t.Optional(
+    t.Nullable(
+      t.Array(
+        t.Object({
+          provider: t.String({ minLength: 1, maxLength: 100 }),
+          model: t.String({ minLength: 1, maxLength: 200 }),
+        }),
+        {
+          maxItems: 8,
+          description:
+            "Models the runtime falls back to, in order, when the agent's model fails. " +
+            "Unset, the instance's default list.",
+        },
+      ),
+    ),
+  ),
 });
 
 // A managed file the runtime found changed outside Plan. The runtime kept a copy and

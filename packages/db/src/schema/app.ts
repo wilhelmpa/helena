@@ -1376,7 +1376,7 @@ export const agentRuntimeAction = pgTable(
   (t) => [
     check(
       'agent_runtime_action_kind_check',
-      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory', 'resolve-memory')`,
+      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory')`,
     ),
     index('agent_runtime_action_agent_idx').on(t.agentId, t.id),
   ],
