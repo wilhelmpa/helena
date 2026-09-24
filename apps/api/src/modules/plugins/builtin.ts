@@ -17,6 +17,7 @@ import { routeTools, type McpRouteTool } from '#mcp/generate';
 import type { McpApp } from '#mcp/types';
 import { loadRepositoryBundles } from '#modules/template-bundles/service';
 import { SPOOL_SOURCE_ID, spoolLimitSource } from '#modules/provider-limits/spool';
+import { LOGIN_STATUS_SOURCE_ID, loginStatusSource } from '#modules/runtime-logins/spool';
 import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 // Helena's own features as internal plugins: they register through the same host and
@@ -94,6 +95,16 @@ const limits: HelenaPlugin = {
   },
 };
 
+// Whether the model logins agents share are usable (docs/helena-decisions/token-keeper.md):
+// the status the token keeper writes next to the agents' views of them.
+export const LOGINS_PLUGIN_ID = 'helena.logins';
+
+const logins: HelenaPlugin = {
+  register(ctx) {
+    ctx.runtimeLoginSources.register(loginStatusSource());
+  },
+};
+
 // Helena's Autopilot (docs/helena-decisions/policy-engine.md) as the policy evaluator every
 // tool call, connector service and workflow step the framework routes is asked through.
 export const AUTOPILOT_PLUGIN_ID = 'helena.autopilot';
@@ -137,6 +148,12 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     limits,
     builtinManifest(LIMITS_PLUGIN_ID, 'limits', {
       provides: { usageLimitSources: [SPOOL_SOURCE_ID] },
+    }),
+  );
+  await host.load(
+    logins,
+    builtinManifest(LOGINS_PLUGIN_ID, 'logins', {
+      provides: { runtimeLoginSources: [LOGIN_STATUS_SOURCE_ID] },
     }),
   );
   // The second brain: Helena's knowledge sources and capture targets live in the host's

@@ -4,6 +4,7 @@ import type { McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
 import { Registry, createRegistry } from './registry';
 import type { RuntimeType } from './runtime';
+import type { RuntimeLoginSource } from './runtime-logins';
 import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
@@ -28,6 +29,7 @@ export interface HelenaRegistries {
   mcpServers: Registry<McpServerContribution>;
   profileContributions: Registry<ProfileContribution>;
   usageLimitSources: Registry<UsageLimitSource>;
+  runtimeLoginSources: Registry<RuntimeLoginSource>;
 }
 
 export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaRegistries {
@@ -49,5 +51,7 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
       given.profileContributions ?? createRegistry<ProfileContribution>('profile contribution'),
     usageLimitSources:
       given.usageLimitSources ?? createRegistry<UsageLimitSource>('usage-limit source'),
+    runtimeLoginSources:
+      given.runtimeLoginSources ?? createRegistry<RuntimeLoginSource>('runtime login source'),
   };
 }

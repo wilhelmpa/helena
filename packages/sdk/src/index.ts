@@ -263,6 +263,15 @@ export {
   type UsageLimitWindow,
   type UsageLimitWindowKind,
 } from './usage-limits';
+export {
+  normalizeRuntimeLoginReport,
+  runtimeLoginNeedsOwner,
+  type RuntimeLogin,
+  type RuntimeLoginPollContext,
+  type RuntimeLoginReport,
+  type RuntimeLoginSource,
+  type RuntimeLoginState,
+} from './runtime-logins';
 export type {
   McpServerContribution,
   PluginEntries,
