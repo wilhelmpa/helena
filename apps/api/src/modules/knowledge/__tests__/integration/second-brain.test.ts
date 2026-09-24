@@ -140,7 +140,9 @@ describe('second brain', () => {
     await asMember.invites({ token: invite.data!.token }).accept.post();
     await runSources(knowledgeSources());
 
-    const theirs = await asMember.knowledge.find.get({ query: { q: 'Kühlregale' } });
+    const theirs = await asMember.knowledge.find.get({
+      query: { q: 'Kühlregale', sources: 'vault' },
+    });
     expect(theirs.data!.items.map((item) => item.ref)).toEqual([
       'vault:Projects/MKT/Docs/Projekt.md',
     ]);
