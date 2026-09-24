@@ -440,7 +440,8 @@
       "bundles": "حزم القوالب",
       "limits": "الحدود",
       "autopilot": "Autopilot",
-      "logins": "تسجيلات الدخول"
+      "logins": "تسجيلات الدخول",
+      "browserTask": "مهام المتصفح"
     },
     "problems": {
       "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",

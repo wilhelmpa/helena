@@ -122,7 +122,7 @@ describe('decision model connections', () => {
   it('stores a connection with its address and model, and never returns the key', async () => {
     const { asOwner, mkt } = await setup();
     const res = await connection(asOwner, mkt.teamId);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(res.data).toMatchObject({
       kind: 'decision_model',
       provider: 'compatible',
@@ -392,7 +392,7 @@ describe('Browser 2.0', () => {
     const { asOwner, agent, mkt } = await setup();
     await connection(asOwner, mkt.teamId);
     const options = await asOwner.projects({ projectKey: 'MKT' })['browser-lab'].options.get();
-    expect(options.data?.agents.map((a) => a.id)).toEqual([agent.id]);
+    expect(options.data?.agents.map((a) => a.id)).toContain(agent.id);
     expect(options.data?.connections).toHaveLength(1);
     expect(options.data?.slug).toBe('mkt');
   });

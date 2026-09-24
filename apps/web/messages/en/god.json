@@ -440,7 +440,8 @@
       "bundles": "Template bundles",
       "limits": "Limits",
       "autopilot": "Autopilot",
-      "logins": "Logins"
+      "logins": "Logins",
+      "browserTask": "Browser tasks"
     },
     "problems": {
       "external-off": "Loads once external plugins are switched on.",

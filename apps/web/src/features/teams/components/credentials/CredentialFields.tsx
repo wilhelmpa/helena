@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { CredentialFormValue } from '../../utils/credentialForm';
+import { CredentialDecisionModelFields } from './CredentialDecisionModelFields';
 import { CredentialLoginFields } from './CredentialLoginFields';
 import { CredentialRuntimeLoginFields } from './CredentialRuntimeLoginFields';
 import { CredentialScopeSelect } from './CredentialScopeSelect';
@@ -57,6 +58,14 @@ export function CredentialFields({
       )}
       {value.kind === 'runtime_login' && (
         <CredentialRuntimeLoginFields value={value} entry={entry} onChange={onChange} />
+      )}
+      {value.kind === 'decision_model' && (
+        <CredentialDecisionModelFields
+          teamId={teamId}
+          value={value}
+          entry={entry}
+          onChange={onChange}
+        />
       )}
       {value.kind === 'ssh_key' &&
         (entry ? (

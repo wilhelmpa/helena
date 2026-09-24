@@ -3,6 +3,7 @@ import type {
   CredentialEntry,
   CredentialInput,
   CredentialKind,
+  DecisionKeySource,
   LoginMethod,
   LoginRuntime,
   NewCredentialInput,
@@ -25,6 +26,13 @@ export interface CredentialFormValue {
   notes: string;
   runtime: LoginRuntime;
   method: LoginMethod;
+  // decision_model: the kind of service, its address and model, the local address allowance,
+  // and where the key comes from.
+  provider: string;
+  baseUrl: string;
+  model: string;
+  allowPrivateAddress: boolean;
+  keySource: DecisionKeySource;
 }
 
 export const CREDENTIAL_KINDS: CredentialKind[] = [
@@ -33,6 +41,7 @@ export const CREDENTIAL_KINDS: CredentialKind[] = [
   'ssh_key',
   'secret',
   'runtime_login',
+  'decision_model',
 ];
 
 // How each runtime can be signed in here: Claude Code with a token from `claude
@@ -58,6 +67,11 @@ export function emptyCredentialValue(kind: CredentialKind): CredentialFormValue 
     notes: '',
     runtime: 'claude',
     method: 'oauth_token',
+    provider: 'typesafe',
+    baseUrl: '',
+    model: '',
+    allowPrivateAddress: false,
+    keySource: 'stored',
   };
 }
 
@@ -74,6 +88,11 @@ export function credentialValue(entry: CredentialEntry): CredentialFormValue {
     notes: entry.notes,
     runtime: entry.runtime ?? 'claude',
     method: entry.method ?? 'oauth_token',
+    provider: entry.provider ?? 'typesafe',
+    baseUrl: entry.baseUrl ?? '',
+    model: entry.model ?? '',
+    allowPrivateAddress: entry.allowPrivateAddress,
+    keySource: entry.keySource ?? 'stored',
   };
 }
 
@@ -104,6 +123,15 @@ export function isCredentialFormValid(
       return LOGIN_METHODS[value.runtime].includes(value.method) && filled(value.value, 'value');
     case 'ssh_key':
       return true;
+    case 'decision_model':
+      // A cloud service needs a key; a server of the owner's own may run without one.
+      return (
+        value.provider !== '' &&
+        (value.provider === 'compatible' ? value.baseUrl.trim() !== '' : true) &&
+        (value.keySource === 'local-laya' ||
+          value.provider === 'compatible' ||
+          filled(value.value, 'value'))
+      );
   }
 }
 
@@ -134,6 +162,17 @@ function fieldsOf(value: CredentialFormValue): CredentialInput {
       };
     case 'ssh_key':
       return { notes };
+    case 'decision_model':
+      return {
+        provider: value.provider,
+        ...(value.baseUrl.trim() !== '' && { baseUrl: value.baseUrl.trim() }),
+        ...(value.model.trim() !== '' && { model: value.model.trim() }),
+        allowPrivateAddress: value.provider === 'compatible' && value.allowPrivateAddress,
+        keySource: value.keySource,
+        notes,
+        ...(value.keySource === 'stored' &&
+          value.value.trim() !== '' && { value: value.value.trim() }),
+      };
   }
 }
 

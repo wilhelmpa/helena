@@ -440,7 +440,8 @@
       "bundles": "Paquets de modèles",
       "limits": "Limites",
       "autopilot": "Autopilot",
-      "logins": "Connexions"
+      "logins": "Connexions",
+      "browserTask": "Tâches du navigateur"
     },
     "problems": {
       "external-off": "Se charge une fois les plugins externes activés.",
