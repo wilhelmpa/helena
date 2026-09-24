@@ -384,6 +384,8 @@ export type PageAction = {
   href?: string;
   // `href` leaves the app (a code-server folder, a download): a plain link in a new tab.
   external?: boolean;
+  // A toggle that is on (a details pane shown): drawn selected, announced as pressed.
+  active?: boolean;
   disabled?: boolean;
   // Shown after a separator in the "…" menu, and never as a row icon (rare, e.g. a
   // destructive or seldom-used action).
@@ -409,7 +411,11 @@ export function PageActions({
       {inRow.map((action) => (
         <Tooltip key={action.id}>
           <TooltipTrigger asChild>
-            <ActionControl action={action} className="w-8 justify-center px-0">
+            <ActionControl
+              action={action}
+              aria-pressed={action.active}
+              className={cn('w-8 justify-center px-0', action.active && PAGE_CONTROL_ACTIVE_CLASS)}
+            >
               <action.icon aria-hidden="true" />
             </ActionControl>
           </TooltipTrigger>
@@ -550,6 +556,7 @@ function ActionMenuItem({ action, className }: { action: PageAction; className?:
     >
       <action.icon />
       {action.label}
+      {action.active ? <Check className="ms-auto text-muted-foreground" /> : null}
     </DropdownMenuItem>
   );
 }
