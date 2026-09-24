@@ -30,7 +30,6 @@ export default function SubtaskDisposalChoice({
   const [picking, setPicking] = useState(false);
   const [newParent, setNewParent] = useState<string | null>(null);
 
-  const them = count === 1 ? 'it' : 'them';
   const options: { mode: SubtaskMode; label: string }[] = [
     {
       mode: 'cascade',
@@ -43,8 +42,7 @@ export default function SubtaskDisposalChoice({
   return (
     <div className="space-y-2 rounded-md border p-3">
       <p className="text-sm text-foreground">
-        {t('intro', { issues: removedIssueIds.length, count })}
-        {count === 1 ? '' : 's'}. Choose what happens to {them}.
+        {t('intro', { issues: removedIssueIds.length, count })} {t('choose', { count })}
       </p>
       <div className="flex flex-col gap-1">
         {options.map((option) => (
@@ -67,7 +65,7 @@ export default function SubtaskDisposalChoice({
 
       {value?.subtasks === 'reassign' && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          New parent: <span className="font-mono text-foreground">{newParent}</span>
+          {t('newParent')} <span className="font-mono text-foreground">{newParent}</span>
           <Button variant="ghost" size="sm" className="h-6" onClick={() => setPicking(true)}>
             {t('change')}
           </Button>

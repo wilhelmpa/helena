@@ -19,6 +19,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-03 | done | see git log | `radix-ui` meta package only |
 | WEB-04 | done | see git log | Popover + Command (cmdk); `@base-ui/react` removed |
 | WEB-15 | done | see git log | Next.js nonce pattern, no library |
+| WEB-07 | done | see git log | next-intl `timeZone`, `@date-fns/tz` 1.5.0 (MIT), date-fns, `Intl.DurationFormat` |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -135,3 +136,12 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - Every page already renders per request (`connection()` in RuntimeEnvScript), which a nonce needs.
 - Checked on a production build of this branch: all 41 script tags of `/login` carry the nonce; start page, project board and dashboard, notes, the Scalar API reference and the preferences render, the theme bootstrap and runtime env run, and the console shows no CSP refusal.
 - Live note: the live web runs `next dev` today; the policy then includes `'unsafe-eval'` as before.
+
+## WEB-07: one zone, localized durations and plurals
+
+- **next-intl `timeZone`:** `i18n/request.ts` now gives next-intl a zone, from the cookie `helena-timezone` (fallback `UTC`, the API's default). Before, next-intl formatted a server render in the server's zone and its hydration in the browser's, and ignored the account setting. PreferencesSync writes the cookie from the account's zone (signed out: the browser's) and refreshes when it differs from the rendered one, the same way the language cookie works; and it hands the rendered zone to `utils/dates.ts` while rendering, so the plain formatters and next-intl always agree (before, `setDisplayTimezone` ran in an effect, so the first paint used the browser zone).
+- Deviation from the audit: the ~60 call sites of `utils/dates.ts` stay plain functions rather than moving to next-intl's `createFormatter`; the bug was the two disagreeing zones, which the shared source fixes. A move to `useFormatter` can follow screen by screen.
+- **Zone math:** the hand-written offset math (`zoneOffsetMs`, ~40 lines) is `TZDate` from `@date-fns/tz` 1.5.0 (MIT); `addDays`/`daysBetween` are date-fns (already a dependency). Tests cover both DST switches of Europe/Berlin and a round trip over a DST day.
+- **Durations:** `formatDuration` (9 call sites) is `Intl.DurationFormat` narrow in the display language: "5m/3h/11d" in English as before, "0 Min." on the German board where it used to say "0m"; the timeline's "<1m" too.
+- **Plurals and English text:** the subtask disposal dialog printed "…2 Unteraufgaben.s. Choose what happens to them." and "New parent:" in every language; the integration picker "3 tools". New ICU messages `issue.subtaskDisposal.choose`, `.newParent`, `teams.integrations.toolCount` in all 10 locales. The Administrator security page and its audit list used `toLocaleString()` in the browser's language and zone; they use `formatDateTime` now, and chart tooltips format numbers in the display language.
+- Checked in the browser: the cookie follows the browser zone signed out and the account zone signed in; the German board shows "0 Min.".

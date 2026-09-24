@@ -229,6 +229,7 @@
     "labelPlaceholder": "cth. Akun tim",
     "labelHint": "Membantu membedakan kredensial dari integrasi yang sama. Rahasia disimpan secara terenkripsi.",
     "noFields": "Tidak ada bidang",
+    "toolCount": "{count, plural, other {# alat}}",
     "search": "Cari integrasi",
     "noMatches": "Tidak ada integrasi yang cocok dengan “{query}”.",
     "empty": "Belum ada kredensial",

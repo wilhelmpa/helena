@@ -229,6 +229,7 @@
     "labelPlaceholder": "ex. Conta do time",
     "labelHint": "Ajuda a distinguir credenciais da mesma integração. Os segredos são armazenados criptografados.",
     "noFields": "Sem campos",
+    "toolCount": "{count, plural, one {# ferramenta} other {# ferramentas}}",
     "search": "Buscar integrações",
     "noMatches": "Nenhuma integração corresponde a “{query}”.",
     "empty": "Nenhuma credencial ainda",

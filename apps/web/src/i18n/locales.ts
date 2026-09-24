@@ -10,6 +10,12 @@ export { DEFAULT_LOCALE, LOCALES, type Locale } from '@helena/locales';
 // (login, invite, shared issue) keeps the last choice too.
 export const LOCALE_COOKIE = 'NEXT_LOCALE';
 
+// The zone next-intl renders dates in (see request.ts), written by PreferencesSync.
+export const TIMEZONE_COOKIE = 'helena-timezone';
+
+// The zone of a render before the cookie exists (a first visit): the API's own default.
+export const FALLBACK_TIMEZONE = 'UTC';
+
 // Each language named in itself, which is what a person scanning the list looks for.
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',

@@ -1,18 +1,10 @@
 import { Cron } from 'croner';
-import { getDisplayLocale } from '@/utils/dates';
+import { getDisplayLocale, isTimeZone } from '@/utils/dates';
 
 // The time zone of a schedule that names none. The API falls back to the same one.
 export const DEFAULT_TIMEZONE = 'Europe/Berlin';
 
-export function isTimeZone(value: string): boolean {
-  if (!value.trim()) return false;
-  try {
-    new Intl.DateTimeFormat('en', { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
+export { isTimeZone };
 
 // The next times the cron fires in the time zone; none for a cron or zone that does
 // not parse.

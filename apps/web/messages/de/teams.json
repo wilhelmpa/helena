@@ -229,6 +229,7 @@
     "labelPlaceholder": "z. B. Team-Konto",
     "labelHint": "Hilft, Zugangsdaten derselben Integration zu unterscheiden. Secrets werden verschlüsselt gespeichert.",
     "noFields": "Keine Felder",
+    "toolCount": "{count, plural, one {# Werkzeug} other {# Werkzeuge}}",
     "search": "Integrationen suchen",
     "noMatches": "Keine Integration passt zu „{query}“.",
     "empty": "Noch keine Zugangsdaten",
