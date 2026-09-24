@@ -28,6 +28,7 @@ import { commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import {
   CaptureResponse,
+  CaptureTargetsResponse,
   captureBody,
   captureWebBody,
   fromTemplateBody,
@@ -166,6 +167,29 @@ export const captureRoutes = new Elysia({
   detail: { tags: ['Knowledge'] },
 })
   .use(authContext)
+  .get(
+    '/knowledge/capture-targets',
+    ({ user }) => {
+      requireUser(user as Parameters<typeof requireUser>[0]);
+      return knowledgeRegistries()
+        .captureTargets.entriesList()
+        .map((entry) => ({
+          id: entry.id,
+          label: entry.value.label,
+          icon: entry.value.icon ?? null,
+          accepts: entry.value.accepts,
+          pluginId: entry.pluginId,
+        }));
+    },
+    {
+      response: { 200: CaptureTargetsResponse, ...commonErrors },
+      detail: {
+        summary: 'List where things can be saved',
+        description:
+          'The registered capture targets (Helena\'s Inbox and daily note, and those of plugins), for the surfaces that offer "save to knowledge".',
+      },
+    },
+  )
   .post(
     '/knowledge/capture',
     async ({ user, request, body, set }) => {

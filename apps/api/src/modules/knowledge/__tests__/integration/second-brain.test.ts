@@ -219,6 +219,8 @@ describe('second brain', () => {
 
   it('captures web pages, keeps a daily note and makes notes from templates', async () => {
     const { asOwner } = await setup();
+    const targets = await asOwner.knowledge['capture-targets'].get();
+    expect(targets.data!.map((target) => target.id)).toEqual(['inbox', 'journal']);
     const html =
       '<html><head><title>Regal-Test</title><meta name="description" content="Drei Regale im Vergleich."></head><body><article><h1>Regal-Test</h1><p>Das erste Regal ist leise und passt in jede Küche, das zweite ist günstiger.</p></article></body></html>';
     const page = await asOwner.knowledge.capture.web.post({

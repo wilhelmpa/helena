@@ -206,3 +206,13 @@ export const fromTemplateBody = t.Object({
 });
 
 export const NoteCreatedResponse = t.Object({ path: t.String() });
+
+export const CaptureTargetsResponse = t.Array(
+  t.Object({
+    id: t.String(),
+    label: t.Any(),
+    icon: t.Nullable(t.String()),
+    accepts: t.Array(t.String()),
+    pluginId: t.String(),
+  }),
+);
