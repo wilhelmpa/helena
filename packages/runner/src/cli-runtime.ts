@@ -529,6 +529,9 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
   // Set when the runtime's service refused the login a command used; cleared when a
   // command gets an answer again.
   private refused = false;
+  // The skills last written into an isolated agent's home, by digest: each write there starts
+  // a unit, so it happens only when they changed (and once after the runner starts).
+  private writtenFiles: string | null = null;
   private readonly gate = new LoginStartGate();
   private readonly home: string | null;
   private readonly root: string;
@@ -692,11 +695,15 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
     const skills = skillsOf(snapshot, this.root);
     const isolation = this.config.isolation;
     if (isolated(this.config) && isolation && this.config.cwd) {
-      await profileHelper(isolation, this.config.cwd, {
-        op: 'cli-files',
-        runtime: this.runtime,
-        files: skills.files,
-      });
+      const files = digest(JSON.stringify(skills.files));
+      if (files !== this.writtenFiles) {
+        await profileHelper(isolation, this.config.cwd, {
+          op: 'cli-files',
+          runtime: this.runtime,
+          files: skills.files,
+        });
+        this.writtenFiles = files;
+      }
     } else {
       await syncCliFiles(this.root, skills.files);
       const dir = this.runtimeDir();

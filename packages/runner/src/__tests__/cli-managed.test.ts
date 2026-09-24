@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LoginRefusalReader, loginEnv, type CliLogin, type CliLoginState } from '../cli-login';
@@ -19,13 +20,66 @@ import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from '
 import { PRESETS } from '../presets';
 
 const roots: string[] = [];
+const servers: Server[] = [];
 const savedIsolation = process.env.AGENT_ISOLATION;
+const savedSocket = process.env.VOLITION_LAUNCHER_SOCKET;
 
 afterEach(async () => {
+  for (const server of servers.splice(0)) server.close();
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
   if (savedIsolation === undefined) delete process.env.AGENT_ISOLATION;
   else process.env.AGENT_ISOLATION = savedIsolation;
+  if (savedSocket === undefined) delete process.env.VOLITION_LAUNCHER_SOCKET;
+  else process.env.VOLITION_LAUNCHER_SOCKET = savedSocket;
 });
+
+function frame(kind: number, payload: string): Buffer {
+  const body = Buffer.from(payload);
+  const head = Buffer.alloc(5);
+  head.writeUInt8(kind, 0);
+  head.writeUInt32BE(body.length, 1);
+  return Buffer.concat([head, body]);
+}
+
+// A stand-in for the agent launcher: records each request with its stdin and answers it with
+// what `answer` prints for that runtime.
+async function fakeLauncher(answer: (request: Record<string, unknown>, stdin: string) => string) {
+  const dir = await mkdtemp(join(tmpdir(), 'helena-launcher-'));
+  roots.push(dir);
+  const path = join(dir, 'launch.sock');
+  const requests: { request: Record<string, unknown>; stdin: string }[] = [];
+  const server = createServer((socket) => {
+    let buffered = Buffer.alloc(0);
+    let request: Record<string, unknown> | null = null;
+    let stdin = '';
+    socket.on('data', (chunk: Buffer) => {
+      buffered = Buffer.concat([buffered, chunk]);
+      if (!request) {
+        const end = buffered.indexOf(10);
+        if (end < 0) return;
+        request = JSON.parse(buffered.subarray(0, end).toString()) as Record<string, unknown>;
+        buffered = buffered.subarray(end + 1);
+        socket.write(frame(0x10, JSON.stringify({ unit: 'volition-agent-test.service' })));
+      }
+      while (buffered.length >= 5) {
+        const kind = buffered.readUInt8(0);
+        const length = buffered.readUInt32BE(1);
+        if (buffered.length < 5 + length) break;
+        const payload = buffered.subarray(5, 5 + length).toString();
+        buffered = buffered.subarray(5 + length);
+        if (kind === 0x01) stdin += payload;
+        if (kind === 0x02) {
+          requests.push({ request, stdin });
+          socket.write(frame(0x11, answer(request, stdin)));
+          socket.end(frame(0x13, JSON.stringify({ code: 0 })));
+        }
+      }
+    });
+  });
+  servers.push(server);
+  await new Promise<void>((resolve) => server.listen(path, resolve));
+  return { path, requests };
+}
 
 const SOUL = '# You are Coder VOL';
 const TOKEN = 'sk-ant-oat01-the-owners-setup-token';
@@ -235,6 +289,71 @@ describe('a Claude Code agent Helena provisioned', () => {
   });
 });
 
+describe('an isolated Claude Code agent', () => {
+  it("writes its skills and asks for its login through the agent's own unit", async () => {
+    const { path, requests } = await fakeLauncher((request) =>
+      request.runtime === 'profile-helper'
+        ? `${JSON.stringify({ ok: true, result: { written: 2 } })}\n`
+        : JSON.stringify({ loggedIn: false }),
+    );
+    process.env.AGENT_ISOLATION = 'on';
+    process.env.VOLITION_LAUNCHER_SOCKET = path;
+    // The home is the project user's: the runner never opens it, so it need not exist here.
+    const home = '/var/lib/volition/hermes/profiles/alpha_21';
+    const statuses: RuntimeStatus[] = [];
+    const client: RuntimePolicyClient = {
+      runtimePolicy: async () => snapshot(),
+      reportRuntimeStatus: async (status) => {
+        statuses.push(structuredClone(status));
+      },
+      mcpSecrets: async () => ({}),
+      webLogins: async () => [],
+      runtimeLogin: async () => null,
+    };
+    const config: RunnerConfig = {
+      name: '',
+      url: 'http://127.0.0.1:3000',
+      apiKey: 'itp_isolated_key',
+      agent: 'claude',
+      args: [],
+      cwd: '/srv/volition/workspaces/projects/alpha',
+      env: { HELENA_AGENT_HOME: home, CLAUDE_CONFIG_DIR: `${home}/.claude` },
+      concurrency: 1,
+      pollIntervalMs: 1000,
+      timeoutMs: 60_000,
+      outputFormat: 'claude-stream-json',
+      models: [],
+      isolation: { slug: 'alpha', profile: 'alpha_21', agentId: 21 },
+    };
+    const program: ShortCommand = async () => ({
+      code: 0,
+      stdout: '2.1.281 (Claude Code)',
+      missing: false,
+    });
+    const adapter = new CliRuntimeAdapter('claude', config, client, Date.now, program);
+
+    const settings = await adapter.runSettings();
+    const helper = requests.find((entry) => entry.request.runtime === 'profile-helper')!;
+    expect(helper.request).toMatchObject({ slug: 'alpha', profile: 'alpha_21', agentId: 21 });
+    expect(JSON.parse(helper.stdin)).toMatchObject({ op: 'cli-files', runtime: 'claude' });
+    const login = requests.find((entry) => entry.request.runtime === 'claude')!;
+    expect(login.request).toMatchObject({
+      args: ['auth', 'status'],
+      env: { CLAUDE_CONFIG_DIR: `${home}/.claude` },
+      work: { kind: 'helper', id: null },
+    });
+    expect(statuses.at(-1)?.issues).toEqual([
+      { code: 'not-signed-in', detail: 'missing', command: 'claude setup-token' },
+    ]);
+    expect(settings.args![settings.args!.indexOf('--plugin-dir') + 1]).toBe(`${home}/.helena`);
+
+    // Unchanged skills are not written again: each write starts a unit.
+    adapter.inventoryChanged();
+    await adapter.ensure();
+    expect(requests.filter((entry) => entry.request.runtime === 'profile-helper')).toHaveLength(1);
+  });
+});
+
 describe('a Codex agent Helena provisioned', () => {
   it('runs read-only without agent isolation and says why', async () => {
     delete process.env.AGENT_ISOLATION;
@@ -438,7 +557,10 @@ describe("the owner's sign-in command", () => {
     );
     process.env.AGENT_ISOLATION = 'on';
     expect(
-      signInCommand('codex', { ...agent, isolation: { slug: 'vol', profile: 'vol_12', agentId: 12 } }),
+      signInCommand('codex', {
+        ...agent,
+        isolation: { slug: 'vol', profile: 'vol_12', agentId: 12 },
+      }),
     ).toBe(
       'sudo -u volition-hermes /usr/bin/python3 -I /usr/local/lib/volition-isolation/launch_client.py ' +
         `run --slug vol --profile vol_12 --runtime codex --kind helper --cwd ${cwd} ` +
