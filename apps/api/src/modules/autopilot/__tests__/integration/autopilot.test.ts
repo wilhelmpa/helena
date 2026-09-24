@@ -301,7 +301,7 @@ describe('Autopilot on Helena’s own MCP tools', () => {
     expect(blocked.isError).toBe(true);
     // The framework's MCP server asks its policy host, where the Autopilot is registered.
     expect(blocked.content[0].text).toContain(
-      'This needs approval: Autopilot level 0 (Suggest) asks a person before write',
+      'This needs approval: Autopilot level 0 (Propose) asks a person before write',
     );
     const reported = await rpc(s.agentKey, 'tools/call', {
       name: 'add_comment',
