@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { authedApi, type Api } from '#tests/helpers/app';
+import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
@@ -177,6 +177,35 @@ describe('agent run history', () => {
     // The default delay is two minutes; the assertion leaves room for the round trip.
     expect(dueInMs(byTrigger.get('delegation')!.nextAttemptAt)).toBeGreaterThan(110_000);
     expect(dueInMs(byTrigger.get('mention')!.nextAttemptAt)).toBeLessThanOrEqual(0);
+  });
+
+  // The owner's Home agent hands the owner's work to the owner's coordinators, which take
+  // work only from their owner (Home → coordinators → specialists).
+  it("queues a delegation run of an owner-scoped agent when the owner's own agent delegates", async () => {
+    const { asOwner, columnId, teamId } = await setup();
+    const home = (
+      await createAgent(asOwner, 'MKT', {
+        name: 'Home Bot',
+        username: 'home-bot',
+        kind: 'external',
+      })
+    ).data!;
+    const coordinator = await createRunAgent(asOwner, 'Coordinator', 'coordinator');
+    await agents(
+      asOwner,
+      teamId,
+    )({ agentId: coordinator.id }).patch({
+      triggerOnAssign: true,
+      runnerScope: 'owner',
+    });
+    const issue = (await createIssue(asOwner, columnId)).data!;
+
+    const asHome = apiKeyApi(home.apiKey!);
+    await asHome.issues({ issueId: issue.id }).patch({ delegateUserId: coordinator.userId });
+
+    const res = await agents(asOwner, teamId)({ agentId: coordinator.id }).runs.get();
+    expect(res.data!.items.length).toBe(1);
+    expect(res.data!.items[0]).toMatchObject({ trigger: 'delegation', issueId: issue.id });
   });
 
   it('starts a delegation run at once when the delay is zero', async () => {

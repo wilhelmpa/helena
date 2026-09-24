@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "待办池",
+    "todo": "待办",
+    "inProgress": "进行中",
+    "review": "审核中",
+    "done": "已完成",
+    "canceled": "已取消"
+  },
+  "issueTypes": {
+    "task": "任务",
+    "feature": "功能",
+    "bug": "缺陷",
+    "techDebt": "技术债务",
+    "research": "调研",
+    "epic": "史诗",
+    "feedback": "反馈",
+    "article": "文章",
+    "video": "视频",
+    "socialPost": "社交媒体帖子",
+    "idea": "想法",
+    "review": "审阅",
+    "campaign": "营销活动",
+    "landing": "落地页",
+    "asset": "素材",
+    "email": "邮件",
+    "screen": "界面",
+    "component": "组件",
+    "lead": "线索",
+    "deal": "交易",
+    "followUp": "跟进",
+    "account": "客户",
+    "request": "请求",
+    "process": "流程",
+    "purchase": "采购",
+    "maintenance": "维护",
+    "incident": "事件",
+    "question": "问题",
+    "change": "变更",
+    "candidate": "候选人",
+    "onboarding": "入职",
+    "policy": "制度"
+  },
+  "views": {
+    "kanban": "看板",
+    "list": "列表",
+    "allTasks": "全部任务"
+  },
+  "coordinator": "Hermes {key} 协调员",
+  "teamRole": "成员",
+  "blocked": {
+    "label": "受阻",
+    "comment": "受阻，需要答复："
+  }
+}

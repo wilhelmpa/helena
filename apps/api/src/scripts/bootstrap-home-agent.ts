@@ -23,6 +23,7 @@ import {
   isHermesProjectCoordinatorUsername,
 } from '#modules/projects/service';
 import { getDefaultRoleId } from '#modules/roles/service';
+import { projectLocale } from '#modules/user-preferences/service';
 import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
 
 export type HomeAgentBootstrapResult =
@@ -102,7 +103,10 @@ export async function bootstrapProjectCoordinator(
     .where(and(eq(aiAgent.teamId, target.teamId), eq(aiAgent.username, username)))
     .limit(1);
   if (!agent) {
-    const roleId = await getDefaultRoleId(target.teamId);
+    const [roleId, locale] = await Promise.all([
+      getDefaultRoleId(target.teamId),
+      projectLocale(target.id),
+    ]);
     await db.transaction((tx) =>
       createHermesProjectCoordinator(tx, {
         projectId: target.id,
@@ -111,6 +115,7 @@ export async function bootstrapProjectCoordinator(
         projectName: target.name,
         ownerUserId: target.ownerUserId,
         roleId,
+        locale,
       }),
     );
     [agent] = await db

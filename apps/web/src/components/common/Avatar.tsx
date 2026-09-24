@@ -27,12 +27,15 @@ const Avatar = forwardRef<
   return (
     <span
       ref={ref}
-      data-slot="avatar"
       className={cn(
         'relative inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold text-white',
         className,
       )}
       {...props}
+      // After the spread: a Tooltip or Popover trigger (asChild) passes a data-slot of its
+      // own, and without this one the initials lose their size container and grow to 40%
+      // of the viewport (blank circles in avatar stacks).
+      data-slot="avatar"
       style={{
         backgroundColor: showImage ? undefined : avatarColor(initials(name)),
         ...props.style,

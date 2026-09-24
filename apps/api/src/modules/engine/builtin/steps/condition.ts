@@ -10,6 +10,7 @@ import {
 } from '#modules/pipelines/definition';
 import { loadRun, projectContext, same, stepRow, writeStep, type StepRow } from '../../run-context';
 import type { FieldReader, StepContext, StepExecution, WorkflowStepType } from '../../sdk';
+import { findState } from '@helena/locales/defaults';
 
 // A condition: the outcome of the previous agent, approval or action step, a keyword in
 // its summary, or a field of the task decides which of the two lanes the run takes.
@@ -70,7 +71,13 @@ async function evaluate(runId: string, step: ConditionStep, at: StepExecution): 
               : task.priority
                 ? [task.priority]
                 : [];
-    const overlaps = test.values.some((value) => current.some((item) => same(item, value)));
+    // A status is found as a workflow step finds it (findState), so "Review" also means
+    // a project's "In Prüfung".
+    const overlaps =
+      test.field === 'status'
+        ? !!task &&
+          test.values.some((value) => findState(projectData.statuses, value)?.id === task.columnId)
+        : test.values.some((value) => current.some((item) => same(item, value)));
     matched = test.op === 'is' ? overlaps : !overlaps;
   } else {
     const [previous] = await db

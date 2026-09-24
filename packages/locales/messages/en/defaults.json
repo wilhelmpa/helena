@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "Backlog",
+    "todo": "Todo",
+    "inProgress": "In Progress",
+    "review": "Review",
+    "done": "Done",
+    "canceled": "Canceled"
+  },
+  "issueTypes": {
+    "task": "Task",
+    "feature": "Feature",
+    "bug": "Bug",
+    "techDebt": "Tech debt",
+    "research": "Research",
+    "epic": "Epic",
+    "feedback": "Feedback",
+    "article": "Article",
+    "video": "Video",
+    "socialPost": "Social post",
+    "idea": "Idea",
+    "review": "Review",
+    "campaign": "Campaign",
+    "landing": "Landing",
+    "asset": "Asset",
+    "email": "Email",
+    "screen": "Screen",
+    "component": "Component",
+    "lead": "Lead",
+    "deal": "Deal",
+    "followUp": "Follow-up",
+    "account": "Account",
+    "request": "Request",
+    "process": "Process",
+    "purchase": "Purchase",
+    "maintenance": "Maintenance",
+    "incident": "Incident",
+    "question": "Question",
+    "change": "Change",
+    "candidate": "Candidate",
+    "onboarding": "Onboarding",
+    "policy": "Policy"
+  },
+  "views": {
+    "kanban": "Kanban",
+    "list": "List",
+    "allTasks": "All tasks"
+  },
+  "coordinator": "Hermes {key} Coordinator",
+  "teamRole": "Member",
+  "blocked": {
+    "label": "Blocked",
+    "comment": "Blocked, needs input:"
+  }
+}

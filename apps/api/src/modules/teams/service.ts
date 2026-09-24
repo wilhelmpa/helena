@@ -18,6 +18,9 @@ import {
 } from '@repo/db';
 import { and, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
+import { defaultRoleName } from '@helena/locales/defaults';
+import { DEFAULT_LOCALE, type Locale } from '#modules/user-preferences/locale';
+import { preferredLocale } from '#modules/user-preferences/service';
 import { getLimits } from '#shared/limits';
 import { CREDENTIAL_KINDS } from '#modules/agents/credentials/kinds';
 import { defaultMemberPermissions, fullPermissions, type Permissions } from '#shared/permissions';
@@ -684,10 +687,15 @@ export async function listTeamProjectMembers(
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-// Writes a team owned by one account, with the default role its projects assign. Every
-// account owns one; the sign-up hook in @repo/auth writes the same rows inline, since
-// it runs inside better-auth rather than through this module.
-export async function insertOwnedTeam(tx: Transaction, name: string, ownerId: string) {
+// Writes a team owned by one account, with the default role its projects assign, named
+// in `locale`. Every account owns one; the sign-up hook in @repo/auth writes the same rows
+// inline, since it runs inside better-auth rather than through this module.
+export async function insertOwnedTeam(
+  tx: Transaction,
+  name: string,
+  ownerId: string,
+  locale: Locale = DEFAULT_LOCALE,
+) {
   const [row] = await tx.insert(team).values({ name }).returning();
   const [membership] = await tx
     .insert(teamMember)
@@ -695,7 +703,7 @@ export async function insertOwnedTeam(tx: Transaction, name: string, ownerId: st
     .returning();
   await tx.insert(teamRole).values({
     teamId: row.id,
-    name: 'Member',
+    name: defaultRoleName(locale),
     isDefault: true,
     permissions: defaultMemberPermissions(),
   });
@@ -733,13 +741,19 @@ export async function assertTeamSeatFree(teamId: number): Promise<void> {
 
 // The team an account gets at sign-up is written by the hook in @repo/auth, which does
 // not come through here — the ceiling applies to the teams created on top of that one.
-export async function createTeam(name: string, ownerId: string): Promise<TeamRow> {
+// The default role is named in the owner's language (`browserLocale` until they chose one).
+export async function createTeam(
+  name: string,
+  ownerId: string,
+  browserLocale?: Locale,
+): Promise<TeamRow> {
   const { maxTeams } = await getLimits({ ownerUserId: ownerId });
   if (maxTeams > 0 && (await countOwnedTeams(ownerId)) >= maxTeams) {
     throw new HttpError(409, `You already own ${maxTeams} teams`);
   }
+  const locale = await preferredLocale(ownerId, browserLocale);
   return db.transaction(async (tx) => {
-    const { team: row, membership } = await insertOwnedTeam(tx, name, ownerId);
+    const { team: row, membership } = await insertOwnedTeam(tx, name, ownerId, locale);
     return {
       id: row.id,
       name: row.name,

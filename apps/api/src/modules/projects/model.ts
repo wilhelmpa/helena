@@ -6,7 +6,8 @@ import { IssueTemplateResponse } from '#modules/issue-templates/model';
 import { IssueTypeResponse } from '#modules/issue-types/model';
 import { LabelGroupResponse, LabelResponse } from '#modules/labels/model';
 import { PermissionMatrixSchema } from '#shared/permissions';
-import { ISSUE_TYPE_PRESET_KEYS } from './service';
+import { LocaleSchema } from '#modules/user-preferences/model';
+import { PROJECT_PRESET_KEYS } from './service';
 import { COPY_INCLUDE_KEYS } from './copy';
 
 // The description goes into the system prompt of every agent run, where it costs
@@ -17,6 +18,16 @@ const projectBody = t.Object({
   key: t.String({ minLength: 1, maxLength: 32 }),
   name: t.String({ minLength: 1, maxLength: 200 }),
   description: t.Optional(t.String({ maxLength: PROJECT_DESCRIPTION_LIMIT })),
+  // What Helena creates for the project itself (default states, issue types, views, its
+  // coordinator's display name) is named in this language. Omitted → the owner's
+  // interface language.
+  locale: t.Optional(
+    t.Union(LocaleSchema.anyOf, {
+      description:
+        "Language the project's default states, issue types and views are named in. " +
+        "Defaults to the owner's interface language.",
+    }),
+  ),
 });
 
 // Create adds the issue-type preset: which set of types the new project starts with.
@@ -27,10 +38,9 @@ export const createProjectBody = t.Composite([
   t.Object({
     templateId: t.Optional(t.Integer({ minimum: 1 })),
     preset: t.Optional(
-      t.Union(
-        ISSUE_TYPE_PRESET_KEYS.map((k) => t.Literal(k)),
-        { description: `Issue-type preset: ${ISSUE_TYPE_PRESET_KEYS.join(', ')}.` },
-      ),
+      t.UnionEnum(PROJECT_PRESET_KEYS, {
+        description: `Issue-type preset: ${PROJECT_PRESET_KEYS.join(', ')}.`,
+      }),
     ),
     provisionResources: t.Optional(
       t.Array(

@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "قائمة الانتظار",
+    "todo": "للتنفيذ",
+    "inProgress": "قيد التنفيذ",
+    "review": "قيد المراجعة",
+    "done": "منجزة",
+    "canceled": "ملغاة"
+  },
+  "issueTypes": {
+    "task": "مهمة",
+    "feature": "ميزة",
+    "bug": "خطأ",
+    "techDebt": "دين تقني",
+    "research": "بحث",
+    "epic": "ملحمة",
+    "feedback": "ملاحظة",
+    "article": "مقال",
+    "video": "فيديو",
+    "socialPost": "منشور اجتماعي",
+    "idea": "فكرة",
+    "review": "مراجعة",
+    "campaign": "حملة",
+    "landing": "صفحة هبوط",
+    "asset": "مادة",
+    "email": "بريد إلكتروني",
+    "screen": "شاشة",
+    "component": "مكوّن",
+    "lead": "عميل محتمل",
+    "deal": "صفقة",
+    "followUp": "متابعة",
+    "account": "حساب",
+    "request": "طلب",
+    "process": "عملية",
+    "purchase": "شراء",
+    "maintenance": "صيانة",
+    "incident": "حادثة",
+    "question": "سؤال",
+    "change": "تغيير",
+    "candidate": "مرشح",
+    "onboarding": "تهيئة",
+    "policy": "سياسة"
+  },
+  "views": {
+    "kanban": "كانبان",
+    "list": "قائمة",
+    "allTasks": "كل المهام"
+  },
+  "coordinator": "منسق Hermes {key}",
+  "teamRole": "عضو",
+  "blocked": {
+    "label": "محظور",
+    "comment": "محظور، بحاجة إلى رد:"
+  }
+}

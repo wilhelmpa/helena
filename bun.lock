@@ -238,6 +238,7 @@
       "dependencies": {
         "@better-auth/api-key": "1.6.27",
         "@better-auth/passkey": "1.6.27",
+        "@helena/locales": "workspace:*",
         "@repo/crypto": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/mailer": "workspace:*",

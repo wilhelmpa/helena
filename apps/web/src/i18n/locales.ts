@@ -1,9 +1,9 @@
-import { LOCALES, type Locale } from '@helena/locales';
+import type { Locale } from '@helena/locales';
 
 // The languages the interface ships with, shared with the API (@helena/locales). `en` is
 // the source language: every key exists in `messages/en.json`, and a missing translation
 // falls back to it.
-export { DEFAULT_LOCALE, LOCALES, type Locale } from '@helena/locales';
+export { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from '@helena/locales';
 
 // Read on the server to render the first paint in the right language. Written by
 // the language switcher next to the account preference, so a signed-out screen
@@ -42,10 +42,6 @@ export const LOCALE_FLAGS: Record<Locale, string> = {
   'es-ES': '🇪🇸',
   de: '🇩🇪',
 };
-
-export function isLocale(value: string | undefined | null): value is Locale {
-  return value != null && (LOCALES as readonly string[]).includes(value);
-}
 
 // The languages written right to left. Listed rather than derived from
 // `Intl.Locale`, so adding a language is a deliberate choice of direction.
