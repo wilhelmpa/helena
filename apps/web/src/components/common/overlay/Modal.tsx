@@ -102,7 +102,7 @@ export default function Modal({
           <DialogTitle className="flex items-center gap-2">
             {scope && (
               <>
-                <span className="flex items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5 text-sm font-medium text-secondary-foreground">
+                <span className="flex items-center gap-1.5 rounded-md bg-accent px-1.5 py-0.5 text-xs font-medium text-accent-foreground">
                   {scope}
                 </span>
                 <span className="font-normal text-muted-foreground">›</span>

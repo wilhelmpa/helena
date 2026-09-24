@@ -1,7 +1,7 @@
 import { Globe, KeyRound, Lock, TerminalSquare } from 'lucide-react';
 import type { CredentialKind } from '@/lib/api/endpoints/credentials';
 
-const ICONS = {
+export const CREDENTIAL_KIND_ICONS = {
   web_login: Globe,
   api_key: KeyRound,
   ssh_key: TerminalSquare,
@@ -15,6 +15,6 @@ export function CredentialKindIcon({
   kind: CredentialKind;
   className?: string;
 }) {
-  const Icon = ICONS[kind];
+  const Icon = CREDENTIAL_KIND_ICONS[kind];
   return <Icon className={className} />;
 }

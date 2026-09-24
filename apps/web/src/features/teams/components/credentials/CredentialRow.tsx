@@ -1,7 +1,14 @@
-import { History, Pencil, Trash2, UsersRound } from 'lucide-react';
+import { History, MoreHorizontal, Pencil, Trash2, UsersRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialEntry } from '@/lib/api/endpoints/credentials';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { CredentialKindIcon } from './CredentialKindIcon';
 import { CredentialRowAction } from './CredentialRowAction';
 
@@ -25,11 +32,12 @@ export function CredentialRow({
   onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete') => void;
 }) {
   const t = useTranslations('credentials');
+  const tCommon = useTranslations('common');
   const detail = detailOf(entry);
 
   return (
-    <li className="flex items-start gap-3 py-3">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+    <li className="flex items-start gap-3 px-4 py-3">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
         <CredentialKindIcon kind={entry.kind} className="size-4" />
       </div>
       <div className="min-w-0 flex-1 space-y-1">
@@ -51,7 +59,7 @@ export function CredentialRow({
           {t('agentCount', { count: entry.agentIds.length })}
         </p>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1 max-sm:hidden">
         {canManage && (
           <CredentialRowAction label={t('edit')} onClick={() => onOpen('edit')}>
             <Pencil className="size-4" />
@@ -71,6 +79,43 @@ export function CredentialRow({
           </CredentialRowAction>
         )}
       </div>
+      {/* On a phone the four icons would squeeze the name: one "…" menu instead. */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0 text-muted-foreground sm:hidden"
+            aria-label={tCommon('more')}
+          >
+            <MoreHorizontal className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-44">
+          {canManage && (
+            <DropdownMenuItem onSelect={() => onOpen('edit')}>
+              <Pencil />
+              {t('edit')}
+            </DropdownMenuItem>
+          )}
+          {canManage && (
+            <DropdownMenuItem onSelect={() => onOpen('grants')}>
+              <UsersRound />
+              {t('grants')}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem onSelect={() => onOpen('audit')}>
+            <History />
+            {t('audit')}
+          </DropdownMenuItem>
+          {canManage && (
+            <DropdownMenuItem variant="destructive" onSelect={() => onOpen('delete')}>
+              <Trash2 />
+              {t('delete')}
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </li>
   );
 }
