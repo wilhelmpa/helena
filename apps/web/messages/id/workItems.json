@@ -144,9 +144,6 @@
     },
     "empty": "Tidak ada item pekerjaan",
     "emptyHint": "Tidak ada item pekerjaan yang cocok dengan filter ini.",
-    "myOpenTasks": "Item pekerjaan terbuka saya",
-    "viewAll": "Semua item pekerjaan",
-    "noOpenTasks": "Tidak ada item pekerjaan terbuka yang ditugaskan kepada Anda.",
     "filter": {
       "project": "Proyek",
       "state": "Status",

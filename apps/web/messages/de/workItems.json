@@ -144,9 +144,6 @@
     },
     "empty": "Keine Aufgaben",
     "emptyHint": "Keine Aufgabe entspricht diesen Filtern.",
-    "myOpenTasks": "Meine offenen Aufgaben",
-    "viewAll": "Alle Aufgaben",
-    "noOpenTasks": "Dir ist keine offene Aufgabe zugewiesen.",
     "filter": {
       "project": "Projekt",
       "state": "Status",
