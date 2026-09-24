@@ -150,13 +150,27 @@
     },
     "owner": "所有者",
     "run": "运行 {id}",
-    "chat": "聊天"
+    "chat": "聊天",
+    "changes": {
+      "created": "已创建",
+      "edited": "已编辑",
+      "deleted": "已删除",
+      "new-key": "新密钥对",
+      "grants": "授权已更改",
+      "signed-in": "已登录",
+      "settings": "设置已更改",
+      "removed": "已移除",
+      "listed-from-gog": "从 gog 显示",
+      "clone": "已克隆仓库"
+    }
   },
   "clone": {
     "action": "克隆仓库",
     "title": "使用 {name} 克隆",
     "hint": "项目中某个智能体的 runner 会用此密钥将仓库克隆到工作区的区域文件夹中。之后工作区仓库会忽略它。",
     "project": "项目",
+    "projectPlaceholder": "选择项目",
+    "noProject": "还没有项目：请先创建一个。",
     "area": "区域文件夹",
     "workspaceRoot": "工作区本身",
     "url": "仓库",

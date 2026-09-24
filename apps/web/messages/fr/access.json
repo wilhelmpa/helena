@@ -150,13 +150,27 @@
     },
     "owner": "Propriétaire",
     "run": "Exécution {id}",
-    "chat": "Chat"
+    "chat": "Chat",
+    "changes": {
+      "created": "Créé",
+      "edited": "Modifié",
+      "deleted": "Supprimé",
+      "new-key": "Nouvelle paire de clés",
+      "grants": "Autorisations modifiées",
+      "signed-in": "Connecté",
+      "settings": "Réglages modifiés",
+      "removed": "Retiré",
+      "listed-from-gog": "Affiché depuis gog",
+      "clone": "Dépôt cloné"
+    }
   },
   "clone": {
     "action": "Cloner le dépôt",
     "title": "Cloner avec {name}",
     "hint": "Le runner d’un agent du projet clone le dépôt avec cette clé dans le dossier de la zone de l’espace de travail. Le dépôt de l’espace de travail l’ignore ensuite.",
     "project": "Projet",
+    "projectPlaceholder": "Choisir un projet",
+    "noProject": "Aucun projet pour l’instant : crée-en un d’abord.",
     "area": "Dossier de zone",
     "workspaceRoot": "Espace de travail lui-même",
     "url": "Dépôt",

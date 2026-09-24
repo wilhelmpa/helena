@@ -152,13 +152,15 @@ export const connectorRoutes = new Elysia({
 
   .post(
     '/teams/:teamId/connectors/google/clients',
-    async ({ membership, body }) => ({
-      client: await importGoogleClient(membership.teamId, {
+    async ({ membership, body, user }) => {
+      const client = await importGoogleClient(membership.teamId, {
         json: body.json,
         label: body.label,
         engine: body.engine ?? 'helena',
-      }),
-    }),
+      });
+      if (client) await recordOwnerChange(membership.teamId, client.id, user, 'created');
+      return { client };
+    },
     {
       params: teamParams,
       body: importClientBody,
@@ -175,7 +177,8 @@ export const connectorRoutes = new Elysia({
 
   .delete(
     '/teams/:teamId/connectors/google/clients/:clientId',
-    async ({ membership, params }) => {
+    async ({ membership, params, user }) => {
+      await recordOwnerChange(membership.teamId, params.clientId, user, 'deleted');
       if (!(await deleteGoogleClient(membership.teamId, params.clientId))) {
         throw new HttpError(404, 'OAuth client not found');
       }
@@ -211,7 +214,7 @@ export const connectorRoutes = new Elysia({
     '/teams/:teamId/connectors/google/sign-in/finish',
     async ({ membership, body, user }) => {
       const account = await finishGoogleSignIn(membership.teamId, requireUser(user).id, body);
-      await recordOwnerChange(membership.teamId, account.id, user, 'signed in');
+      await recordOwnerChange(membership.teamId, account.id, user, 'signed-in');
       return account;
     },
     {
@@ -235,7 +238,7 @@ export const connectorRoutes = new Elysia({
           request.url,
           current.id,
         );
-        await recordOwnerChange(teamId, accountId, current, 'signed in');
+        await recordOwnerChange(teamId, accountId, current, 'signed-in');
         return redirect(`${app}/access/google?connected=${accountId}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'The sign-in failed.';
@@ -260,7 +263,7 @@ export const connectorRoutes = new Elysia({
     '/teams/:teamId/connectors/google/accounts/:accountId',
     async ({ membership, params, body, user }) => {
       const account = await updateGoogleAccount(membership.teamId, params.accountId, body);
-      await recordOwnerChange(membership.teamId, account.id, user, 'settings changed');
+      await recordOwnerChange(membership.teamId, account.id, user, 'settings');
       return account;
     },
     {
@@ -339,7 +342,7 @@ export const connectorRoutes = new Elysia({
     '/teams/:teamId/connectors/google/gog/adopt',
     async ({ membership, body, user }) => {
       const account = await adoptGogAccount(membership.teamId, body);
-      await recordOwnerChange(membership.teamId, account.id, user, 'listed from gog');
+      await recordOwnerChange(membership.teamId, account.id, user, 'listed-from-gog');
       return account;
     },
     {
@@ -362,7 +365,8 @@ export const connectorRoutes = new Elysia({
         membership.teamId,
         params.credentialId,
         user,
-        `clone ${body.url} into ${[started.folder, started.name].filter(Boolean).join('/')}`,
+        'clone',
+        `${body.url} → ${[started.folder, started.name].filter(Boolean).join('/') || '.'}`,
       );
       return started;
     },
@@ -418,7 +422,7 @@ export const connectorRoutes = new Elysia({
     '/teams/:teamId/connectors/mcp-oauth/:connectionId/finish',
     async ({ membership, params, body, user }) => {
       const row = await finishMcpSignIn(membership.teamId, params.connectionId, body.redirectUrl);
-      await recordOwnerChange(membership.teamId, row.id, user, 'signed in');
+      await recordOwnerChange(membership.teamId, row.id, user, 'signed-in');
       return {
         id: row.id,
         label: row.label,

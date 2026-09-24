@@ -150,13 +150,27 @@
     },
     "owner": "Owner",
     "run": "Run {id}",
-    "chat": "Chat"
+    "chat": "Chat",
+    "changes": {
+      "created": "Created",
+      "edited": "Edited",
+      "deleted": "Deleted",
+      "new-key": "New key pair",
+      "grants": "Access changed",
+      "signed-in": "Signed in",
+      "settings": "Settings changed",
+      "removed": "Removed",
+      "listed-from-gog": "Listed from gog",
+      "clone": "Repo cloned"
+    }
   },
   "clone": {
     "action": "Clone repository",
     "title": "Clone with {name}",
     "hint": "The runner of an agent of the project clones the repository with this key into the area's folder of the workspace. The workspace repository then ignores it.",
     "project": "Project",
+    "projectPlaceholder": "Choose a project",
+    "noProject": "No project yet: create one first.",
     "area": "Area folder",
     "workspaceRoot": "Workspace itself",
     "url": "Repository",

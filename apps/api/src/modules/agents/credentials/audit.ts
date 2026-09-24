@@ -11,14 +11,32 @@ import { iso } from '#shared/lib';
 import type { UseAction } from './delivery';
 
 // The audit log of the access center, read per credential or for the whole team, and the
-// entries a person's own changes write ('changed': connected, granted, reset …).
+// entries a person's own changes write ('changed'). Such an entry's purpose is the change's
+// key, then a space and a detail where there is one ("clone <url> <folder>"); the page
+// names the key in the viewer's language.
+
+export const OWNER_CHANGES = [
+  'created',
+  'edited',
+  'deleted',
+  'new-key',
+  'grants',
+  'signed-in',
+  'settings',
+  'removed',
+  'listed-from-gog',
+  'clone',
+] as const;
+export type OwnerChange = (typeof OWNER_CHANGES)[number];
 
 export async function recordOwnerChange(
   teamId: number,
   credentialId: number,
   person: { name?: string | null; email?: string | null } | null | undefined,
-  purpose: string,
+  change: OwnerChange,
+  detail?: string,
 ): Promise<void> {
+  const purpose = detail ? `${change} ${detail}` : change;
   const [row] = await db
     .select({ label: integrationCredential.label })
     .from(integrationCredential)

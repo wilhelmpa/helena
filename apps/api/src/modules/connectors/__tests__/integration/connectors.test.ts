@@ -236,7 +236,7 @@ describe('Google sign-in', () => {
       expect(text).not.toContain(CLIENT_SECRET);
       expect(text).not.toContain('ya29.');
     }
-    expect(audit.data!.items[0]).toMatchObject({ action: 'changed', purpose: 'signed in' });
+    expect(audit.data!.items[0]).toMatchObject({ action: 'changed', purpose: 'signed-in' });
   });
 
   it('refuses an address from another sign-in and an expired session', async () => {

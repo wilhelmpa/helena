@@ -33,13 +33,14 @@ export function CloneDialog({
 }) {
   const t = useTranslations('access.clone');
   const tCommon = useTranslations('common');
-  const projects = (useProjectsQuery().data ?? []).filter(
+  const projectsQuery = useProjectsQuery();
+  const projects = (projectsQuery.data ?? []).filter(
     (project) =>
       project.teamId === teamId && (entry.projectId === null || project.id === entry.projectId),
   );
-  const [projectId, setProjectId] = useState<number | null>(
-    entry.projectId ?? projects[0]?.id ?? null,
-  );
+  // The first project once the list has loaded, until one is picked.
+  const [picked, setProjectId] = useState<number | null>(entry.projectId);
+  const projectId = picked ?? projects[0]?.id ?? null;
   const project = projects.find((item) => item.id === projectId) ?? null;
   const areas = useViewFoldersQuery(project?.key ?? null).data ?? [];
   const agents = (useAiAgentsQuery(teamId).data ?? []).filter(
@@ -104,8 +105,8 @@ export function CloneDialog({
                 setAgentId('any');
               }}
             >
-              <SelectTrigger aria-label={t('project')}>
-                <SelectValue />
+              <SelectTrigger aria-label={t('project')} disabled={projects.length === 0}>
+                <SelectValue placeholder={t('projectPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {projects.map((item) => (
@@ -149,6 +150,9 @@ export function CloneDialog({
             </SelectContent>
           </Select>
         </div>
+        {projectsQuery.isSuccess && projects.length === 0 && (
+          <p className="text-xs text-muted-foreground">{t('noProject')}</p>
+        )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
             {tCommon('cancel')}

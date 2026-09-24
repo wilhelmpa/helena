@@ -2,6 +2,21 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import type { AuditEntry } from '@/lib/api/endpoints/access';
 
+// The keys of the owner's changes (apps/api …/credentials/audit.ts OWNER_CHANGES).
+const CHANGES = [
+  'created',
+  'edited',
+  'deleted',
+  'new-key',
+  'grants',
+  'signed-in',
+  'settings',
+  'removed',
+  'listed-from-gog',
+  'clone',
+] as const;
+type Change = (typeof CHANGES)[number];
+
 // One audit entry: what happened (handed over, used, called, refused, asked for
 // approval, changed by the owner), with which credential, by whom, in which run or chat,
 // the action category and what for. Never a secret.
@@ -21,6 +36,15 @@ export function AuditRow({
         ? t('chat')
         : null;
   const who = entry.agentId === null ? `${entry.agentName || t('owner')}` : entry.agentName;
+  // An owner's change is stored as its key and a detail ("clone <url> → <folder>").
+  const match = entry.action === 'changed' ? /^([a-z-]+)(?: (.*))?$/.exec(entry.purpose) : null;
+  const change =
+    match && (CHANGES as readonly string[]).includes(match[1]!)
+      ? { key: match[1] as Change, detail: match[2] }
+      : null;
+  const purpose = change
+    ? [t(`changes.${change.key}`), change.detail].filter(Boolean).join(' · ')
+    : entry.purpose;
 
   return (
     <li className="flex items-start gap-3 px-4 py-2.5">
@@ -48,8 +72,15 @@ export function AuditRow({
             </Badge>
           )}
         </div>
-        <p dir="ltr" className="truncate font-mono text-xs text-muted-foreground">
-          {entry.purpose}
+        <p
+          dir={change ? undefined : 'ltr'}
+          className={
+            change
+              ? 'truncate text-xs text-muted-foreground'
+              : 'truncate font-mono text-xs text-muted-foreground'
+          }
+        >
+          {purpose}
         </p>
       </div>
       <time className="shrink-0 text-xs text-muted-foreground" dateTime={entry.createdAt}>

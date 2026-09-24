@@ -150,13 +150,27 @@
     },
     "owner": "Pemilik",
     "run": "Proses {id}",
-    "chat": "Chat"
+    "chat": "Chat",
+    "changes": {
+      "created": "Dibuat",
+      "edited": "Diubah",
+      "deleted": "Dihapus",
+      "new-key": "Pasangan kunci baru",
+      "grants": "Izin diubah",
+      "signed-in": "Masuk",
+      "settings": "Pengaturan diubah",
+      "removed": "Dilepas",
+      "listed-from-gog": "Ditampilkan dari gog",
+      "clone": "Repo dikloning"
+    }
   },
   "clone": {
     "action": "Kloning repositori",
     "title": "Kloning dengan {name}",
     "hint": "Runner milik agen proyek mengkloning repositori dengan kunci ini ke folder area di workspace. Repositori workspace lalu mengabaikannya.",
     "project": "Proyek",
+    "projectPlaceholder": "Pilih proyek",
+    "noProject": "Belum ada proyek: buat satu dulu.",
     "area": "Folder area",
     "workspaceRoot": "Workspace itu sendiri",
     "url": "Repositori",

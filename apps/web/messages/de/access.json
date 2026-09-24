@@ -150,13 +150,27 @@
     },
     "owner": "Owner",
     "run": "Lauf {id}",
-    "chat": "Chat"
+    "chat": "Chat",
+    "changes": {
+      "created": "Angelegt",
+      "edited": "Bearbeitet",
+      "deleted": "Gelöscht",
+      "new-key": "Neues Schlüsselpaar",
+      "grants": "Freigaben geändert",
+      "signed-in": "Angemeldet",
+      "settings": "Einstellungen geändert",
+      "removed": "Entfernt",
+      "listed-from-gog": "Aus gog angezeigt",
+      "clone": "Repo geklont"
+    }
   },
   "clone": {
     "action": "Repo klonen",
     "title": "Mit {name} klonen",
     "hint": "Der Runner eines Agenten des Projekts klont das Repository mit diesem Schlüssel in den Bereichsordner des Workspaces. Das Workspace-Repository ignoriert es danach.",
     "project": "Projekt",
+    "projectPlaceholder": "Projekt wählen",
+    "noProject": "Noch kein Projekt: lege zuerst eines an.",
     "area": "Bereichsordner",
     "workspaceRoot": "Workspace selbst",
     "url": "Repository",

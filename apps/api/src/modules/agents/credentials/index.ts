@@ -86,9 +86,11 @@ export const credentialRoutes = new Elysia({
 
   .post(
     '/teams/:teamId/credentials',
-    async ({ membership, body, set }) => {
+    async ({ membership, body, set, user }) => {
       set.status = 201;
-      return createCredentialEntry(membership.teamId, body);
+      const entry = await createCredentialEntry(membership.teamId, body);
+      await recordOwnerChange(membership.teamId, entry.id, user, 'created');
+      return entry;
     },
     {
       params: teamParams,
@@ -106,8 +108,13 @@ export const credentialRoutes = new Elysia({
 
   .patch(
     '/teams/:teamId/credentials/:credentialId',
-    async ({ params, membership, body }) =>
-      found(await updateCredentialEntry(params.credentialId, membership.teamId, body)),
+    async ({ params, membership, body, user }) => {
+      const entry = found(
+        await updateCredentialEntry(params.credentialId, membership.teamId, body),
+      );
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'edited');
+      return entry;
+    },
     {
       params: credentialEntryParams,
       body: updateCredentialEntryBody,
@@ -125,7 +132,9 @@ export const credentialRoutes = new Elysia({
 
   .delete(
     '/teams/:teamId/credentials/:credentialId',
-    async ({ params, membership }) => {
+    async ({ params, membership, user }) => {
+      // Written first: the entry keeps the label after the credential is gone.
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'deleted');
       if (!(await deleteCredentialEntry(params.credentialId, membership.teamId))) {
         throw new HttpError(404, 'Credential not found');
       }
@@ -152,7 +161,7 @@ export const credentialRoutes = new Elysia({
       const result = found(
         await setCredentialGrants(params.credentialId, membership.teamId, grants),
       );
-      await recordOwnerChange(membership.teamId, params.credentialId, user, 'grants changed');
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'grants');
       return { grants: result };
     },
     {
@@ -172,8 +181,11 @@ export const credentialRoutes = new Elysia({
 
   .post(
     '/teams/:teamId/credentials/:credentialId/ssh-key',
-    async ({ params, membership }) =>
-      found(await regenerateSshKey(params.credentialId, membership.teamId)),
+    async ({ params, membership, user }) => {
+      const entry = found(await regenerateSshKey(params.credentialId, membership.teamId));
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'new-key');
+      return entry;
+    },
     {
       params: credentialEntryParams,
       teamManager: true,
