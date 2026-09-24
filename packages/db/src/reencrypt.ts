@@ -8,12 +8,11 @@
 // It needs APP_ENCRYPTION_KEY and prints only counts, never a value.
 import { decryptSecret, encryptSecret, isCurrentSecret, secretContext } from '@repo/crypto';
 import type { EncryptedSecret } from '@repo/crypto';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from './client';
 import { credentialContext } from './credential-crypto';
 import { notificationContext } from './domains/notification-settings';
 import {
-  aiAgent,
   appSecret,
   connectorAuthSession,
   gitProviderConnection,
@@ -58,30 +57,6 @@ export async function reencryptAll(): Promise<Record<string, number>> {
         .update(teamNotificationSetting)
         .set(next)
         .where(eq(teamNotificationSetting.teamId, row.teamId));
-    }
-  }
-
-  const agents = await db
-    .select({
-      id: aiAgent.id,
-      ciphertext: aiAgent.apiKeyCiphertext,
-      iv: aiAgent.apiKeyIv,
-      authTag: aiAgent.apiKeyAuthTag,
-    })
-    .from(aiAgent)
-    .where(and(isNotNull(aiAgent.apiKeyCiphertext), isNotNull(aiAgent.apiKeyIv)));
-  for (const row of agents) {
-    const next = rewrap(
-      { ciphertext: row.ciphertext!, iv: row.iv!, authTag: row.authTag! },
-      secretContext('ai_agent', row.id, 'api_key'),
-    );
-    if (!next) continue;
-    count('ai_agent');
-    if (!dryRun) {
-      await db
-        .update(aiAgent)
-        .set({ apiKeyCiphertext: next.ciphertext, apiKeyIv: next.iv, apiKeyAuthTag: next.authTag })
-        .where(eq(aiAgent.id, row.id));
     }
   }
 
