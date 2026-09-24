@@ -17,6 +17,7 @@ import {
   agentFieldTrigger,
   customField,
   integrationCredential,
+  helenaBudget,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
 import { API_KEY_MAX_NAME_LENGTH, auth } from '@repo/auth';
@@ -33,6 +34,7 @@ import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
 import { isHomeAgent, notHomeAgent } from './home-agent';
+import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 import {
   onTemplateRelevantChange,
   runtimePolicyGroupsChanged,
@@ -306,12 +308,14 @@ export interface AiAgentRow {
   // Last time this copy was synced from its template; null for a template or a plain
   // agent.
   templateSyncedAt: string | null;
-  // The tokens the agent's runs may use per day and per calendar month (UTC); null is
-  // no ceiling. The 'budgets' template-sync group's other half of runtimePolicy's
-  // maxTurns/runBudgetSeconds. Written by governance.setAgentTokenCeilings and by
-  // copyTemplateIntoProject (from the template) — never here.
+  // The agent's token budgets per day and per calendar month (UTC), from helena_budget;
+  // null is none. Its other budgets (euros, time) are on the Autopilot routes.
   dailyTokenCeiling: number | null;
   monthlyTokenCeiling: number | null;
+  // The agent's own Autopilot level (null follows the project) and whether the owner let
+  // it exceed the project's level.
+  autopilotLevel: number | null;
+  autopilotRaise: boolean;
   // When a runner last polled for this agent, which is what presence is derived
   // from. Null until a runner connects.
   lastSeenAt: string | null;
@@ -364,6 +368,8 @@ function mapAgent(row: {
   templateSyncedAt: Date | null;
   dailyTokenCeiling: number | null;
   monthlyTokenCeiling: number | null;
+  autopilotLevel: number | null;
+  autopilotRaise: boolean;
   lastSeenAt: Date | null;
   pausedAt: Date | null;
   pauseReason: string | null;
@@ -407,6 +413,8 @@ function mapAgent(row: {
     templateSyncedAt: row.templateSyncedAt ? iso(row.templateSyncedAt) : null,
     dailyTokenCeiling: row.dailyTokenCeiling,
     monthlyTokenCeiling: row.monthlyTokenCeiling,
+    autopilotLevel: row.autopilotLevel,
+    autopilotRaise: row.autopilotRaise,
     lastSeenAt: row.lastSeenAt ? iso(row.lastSeenAt) : null,
     pausedAt: row.pausedAt ? iso(row.pausedAt) : null,
     pauseReason: row.pauseReason,
@@ -454,8 +462,14 @@ const agentColumns = {
   sourceTemplateId: aiAgent.sourceTemplateId,
   templateOverrides: aiAgent.templateOverrides,
   templateSyncedAt: aiAgent.templateSyncedAt,
-  dailyTokenCeiling: aiAgent.dailyTokenCeiling,
-  monthlyTokenCeiling: aiAgent.monthlyTokenCeiling,
+  dailyTokenCeiling: sql<
+    number | null
+  >`(select b.limit_value::float8 from ${helenaBudget} b where b.agent_id = ${aiAgent.id} and b.metric = 'tokens' and b.period = 'day')`,
+  monthlyTokenCeiling: sql<
+    number | null
+  >`(select b.limit_value::float8 from ${helenaBudget} b where b.agent_id = ${aiAgent.id} and b.metric = 'tokens' and b.period = 'month')`,
+  autopilotLevel: aiAgent.autopilotLevel,
+  autopilotRaise: aiAgent.autopilotRaise,
   lastSeenAt: aiAgent.lastSeenAt,
   pausedAt: aiAgent.pausedAt,
   pauseReason: aiAgent.pauseReason,
@@ -828,12 +842,6 @@ export interface NewAgentInput {
   // Set by copyTemplateIntoProject only: links this new row to the template it came
   // from, so a later change to the template can be synced into it (template-sync.ts).
   sourceTemplateId?: number;
-  // The 'budgets' template-sync group's other half (runtimePolicy.maxTurns/
-  // runBudgetSeconds are inside runtimePolicy, already copied above). Set by
-  // copyTemplateIntoProject from the template; governance.setAgentTokenCeilings is
-  // the only other writer, for an existing agent.
-  dailyTokenCeiling?: number | null;
-  monthlyTokenCeiling?: number | null;
 }
 
 // The coordinator that leads the project's agent team, or null when it has none.
@@ -974,8 +982,6 @@ export async function createAgent(
           template: input.template ?? false,
           sourceTemplateId: input.sourceTemplateId ?? null,
           templateSyncedAt: input.sourceTemplateId != null ? new Date() : null,
-          dailyTokenCeiling: input.dailyTokenCeiling ?? null,
-          monthlyTokenCeiling: input.monthlyTokenCeiling ?? null,
         })
         .returning({ id: aiAgent.id });
       // The agent belongs to the team's member list like a person does, on a standing
@@ -1359,7 +1365,7 @@ export async function copyTemplateIntoProject(
       .from(agentToolLink)
       .where(eq(agentToolLink.agentId, template.id)),
   ]);
-  return createAgent(template.teamId, {
+  const created = await createAgent(template.teamId, {
     name: `${template.name} ${target.key}`,
     username: template.username.slice(0, 64 - suffix.length) + suffix,
     kind: template.kind,
@@ -1385,9 +1391,12 @@ export async function copyTemplateIntoProject(
     mcpServerIds: mcpServers.map(({ mcpServerId }) => mcpServerId),
     agentToolIds: agentTools.map(({ agentToolId }) => agentToolId),
     sourceTemplateId: template.id,
-    dailyTokenCeiling: template.dailyTokenCeiling,
-    monthlyTokenCeiling: template.monthlyTokenCeiling,
   });
+  // The Autopilot level ('approvals' group) and the budgets ('budgets' group) follow the
+  // template like the rest of its configuration.
+  await copyAgentLevel(template.id, created.agent.id);
+  await copyAgentBudgets(template.id, created.agent.id);
+  return { ...created, agent: (await getAgentById(created.agent.id, template.teamId))! };
 }
 
 // Replaces the agent's API key: deletes the current key row(s) for the bot user

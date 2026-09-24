@@ -6,6 +6,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  smallint,
   check,
   type AnyPgColumn,
   date,
@@ -130,9 +131,15 @@ export const project = pgTable('project', {
   // the same place. Independent of the time estimate: a team can log time without
   // estimating first. Turning it off hides the entries and keeps them.
   timeLoggingEnabled: boolean('time_logging_enabled').notNull().default(false),
-  // The tokens the agent runs of this project may use per calendar month (UTC); null
-  // is no ceiling. Reaching it pauses the agent whose run would start next.
+  // Deprecated: the project's budgets live in helena_budget since the Autopilot
+  // migration, which copied this value there. Nothing reads or writes it any more; the
+  // column goes with the rename step.
   monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
+  // How independently the agents of this project act (Helena's Autopilot): 0 they only
+  // propose, 1 consequential actions need approval, 2 they act and report and only
+  // outward or risky actions need approval, 3 autonomous within the budget. An agent may
+  // carry a stricter level of its own (ai_agent.autopilot_level).
+  autopilotLevel: smallint('autopilot_level').notNull().default(1),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -610,16 +617,26 @@ export const aiAgent = pgTable(
     // pause_reason says why, whether a member paused it or a token ceiling did.
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     pauseReason: text('pause_reason'),
-    // The tokens the agent's runs may use per day and per calendar month (UTC); null is
-    // no ceiling. Reaching one pauses the agent.
+    // Deprecated: the agent's budgets live in helena_budget since the Autopilot
+    // migration, which copied these values there. Nothing reads or writes them any more;
+    // the columns go with the rename step.
     dailyTokenCeiling: bigint('daily_token_ceiling', { mode: 'number' }),
     monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
+    // The agent's own Autopilot level; null follows the project's. The stricter of the two
+    // applies, unless the owner set autopilot_raise, which lets this level exceed the
+    // project's.
+    autopilotLevel: smallint('autopilot_level'),
+    autopilotRaise: boolean('autopilot_raise').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex('ai_agent_team_username_uq').on(t.teamId, sql`lower(${t.username})`),
     unique().on(t.userId),
     check('ai_agent_kind_check', sql`${t.kind} IN ('external', 'internal')`),
+    check(
+      'ai_agent_autopilot_level_check',
+      sql`${t.autopilotLevel} IS NULL OR ${t.autopilotLevel} BETWEEN 0 AND 3`,
+    ),
     check('ai_agent_runner_scope_check', sql`${t.runnerScope} IN ('owner', 'team')`),
     check(
       'ai_agent_delegation_delay_check',
@@ -690,6 +707,8 @@ export const agentRun = pgTable(
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
+    // The Autopilot level that applied when the run was claimed.
+    autopilotLevel: smallint('autopilot_level'),
     // The follow-up turn in which the agent kept what the run taught it, when Plan asked
     // its runner for one: why, how it went, what it saved and what it cost. Its tokens are
     // also added to the run's own.
@@ -808,6 +827,13 @@ export const approvalRequest = pgTable(
     // The exact command a blocked tool call asked to run. Hermes' approval guard lets the
     // follow-up run execute exactly this command once the request is approved.
     command: text('command'),
+    // The policy engine's view of the request: the action category, the Autopilot level
+    // that applied and why the action needs a person, as the card shows it.
+    category: text('category'),
+    autopilotLevel: smallint('autopilot_level'),
+    policyReason: text('policy_reason'),
+    // What a 'budget' card is about: the budget, its use and its limit.
+    payload: jsonb('payload'),
     status: text('status').notNull().default('pending'),
     decidedByUserId: text('decided_by_user_id').references(() => user.id, {
       onDelete: 'set null',
@@ -822,7 +848,7 @@ export const approvalRequest = pgTable(
   (t) => [
     check(
       'approval_request_kind_check',
-      sql`${t.kind} IN ('send', 'publish', 'pay', 'delete', 'other')`,
+      sql`${t.kind} IN ('send', 'publish', 'pay', 'delete', 'write', 'execute', 'credentials', 'budget', 'other')`,
     ),
     check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
     index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),

@@ -1,0 +1,73 @@
+import type { ActionCategory, AutopilotLevel } from '@helena/policy';
+import { levelName, levelRules, type LevelRule } from './engine';
+
+// What an agent is told about its Autopilot level, built from the engine's own rules so the
+// words and the enforcement cannot drift apart.
+
+const WHAT: Record<ActionCategory, string> = {
+  read: 'read',
+  report: 'comment, ask and report on your task',
+  write: 'change Helena and files in your workspace',
+  send: 'send or submit anything outside Helena',
+  delete: 'delete',
+  pay: 'pay',
+  publish: 'publish, push or deploy',
+  execute: 'run risky commands or code',
+  credentials: 'create or change credentials, keys or grants',
+};
+
+function phrase(rule: LevelRule): string {
+  const base = WHAT[rule.category];
+  if (rule.scope === 'workspace') return `${base} inside your workspace`;
+  if (rule.scope === 'external') return `${base} outside your workspace`;
+  return base;
+}
+
+export function levelInWords(level: AutopilotLevel): { free: string; approval: string } {
+  const rules = levelRules(level);
+  const join = (items: string[]) => (items.length > 0 ? items.join(', ') : 'nothing');
+  return {
+    free: join(rules.filter((r) => r.outcome === 'allow').map(phrase)),
+    approval: join(rules.filter((r) => r.outcome !== 'allow').map(phrase)),
+  };
+}
+
+// The Autopilot section of a run's system prompt.
+export function autopilotRunSection(projectKey: string, level: AutopilotLevel): string {
+  const { free, approval } = levelInWords(level);
+  return [
+    '## Autopilot',
+    `Your Autopilot level in project ${projectKey} is ${levelName(level)}.`,
+    `Without asking you may: ${free}.`,
+    `A person approves first: ${approval}. For those, call request_approval with the action, ` +
+      'its kind and every detail a person needs, then end the run without taking the action.',
+    ...(level >= 2
+      ? ['Helena posts a report of what you did without approval on the task after the run.']
+      : []),
+    'Helena checks every tool call against this; a blocked call tells you what to do.',
+    '',
+  ].join('\n');
+}
+
+// The Autopilot section of an agent's SOUL.md: its level in each of its projects, for chats,
+// which carry no run frame.
+export function autopilotSoulSection(projects: { key: string; level: AutopilotLevel }[]): string {
+  const lines = [
+    '## Approvals and Autopilot',
+    'Helena decides on every tool call how independently you may act, by the Autopilot level',
+    'of the project you work in. A blocked call says why; when it needs a person, call',
+    'request_approval with the action, its kind and every detail the person needs to decide,',
+    'then end the run (in a chat: tell the person) without taking the action. Helena starts a',
+    'new run of yours with the decision: act only on an approved request, exactly as approved.',
+    'get_approval reads a request.',
+  ];
+  for (const project of projects) {
+    const { free, approval } = levelInWords(project.level);
+    lines.push(
+      '',
+      `In project ${project.key}: level ${levelName(project.level)}. Free: ${free}. ` +
+        `Approval first: ${approval}.`,
+    );
+  }
+  return lines.join('\n');
+}

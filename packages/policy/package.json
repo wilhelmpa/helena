@@ -1,0 +1,25 @@
+{
+  "name": "@helena/policy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Helena's Autopilot: action categories, levels, the Cedar policy engine and the model price table logic",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cedar": "./src/cedar.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@cedar-policy/cedar-wasm": "4.13.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

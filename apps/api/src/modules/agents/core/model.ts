@@ -303,6 +303,10 @@ export const AiAgentResponse = t.Object({
   templateSyncedAt: t.Nullable(t.String()),
   dailyTokenCeiling: t.Nullable(t.Number()),
   monthlyTokenCeiling: t.Nullable(t.Number()),
+  autopilotLevel: t.Nullable(
+    t.Number({ description: "The agent's own Autopilot level; null follows the project." }),
+  ),
+  autopilotRaise: t.Boolean({ description: "Whether the agent's level may exceed its project's." }),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({

@@ -7,6 +7,7 @@ import {
   db,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
+import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 
 // Helena is the source of truth for a template and every copy of it
 // (copyTemplateIntoProject). A copy's own edits stick (they land in
@@ -131,8 +132,6 @@ interface TemplateRow {
   model: string | null;
   modelCredentialId: number | null;
   runtimePolicy: unknown;
-  dailyTokenCeiling: number | null;
-  monthlyTokenCeiling: number | null;
 }
 
 async function loadTemplateRow(id: number): Promise<TemplateRow | null> {
@@ -145,8 +144,6 @@ async function loadTemplateRow(id: number): Promise<TemplateRow | null> {
       model: aiAgent.model,
       modelCredentialId: aiAgent.modelCredentialId,
       runtimePolicy: aiAgent.runtimePolicy,
-      dailyTokenCeiling: aiAgent.dailyTokenCeiling,
-      monthlyTokenCeiling: aiAgent.monthlyTokenCeiling,
     })
     .from(aiAgent)
     .where(eq(aiAgent.id, id))
@@ -225,10 +222,6 @@ async function applyGroupsToCopy(
     set.model = template.model;
     set.modelCredentialId = template.modelCredentialId;
   }
-  if (groups.includes('budgets')) {
-    set.dailyTokenCeiling = template.dailyTokenCeiling;
-    set.monthlyTokenCeiling = template.monthlyTokenCeiling;
-  }
   const policyGroups = groups.filter(
     (g): g is 'instructions' | 'model' | 'approvals' | 'budgets' =>
       g === 'instructions' || g === 'model' || g === 'approvals' || g === 'budgets',
@@ -243,6 +236,9 @@ async function applyGroupsToCopy(
   if (Object.keys(set).length > 0) {
     await db.update(aiAgent).set(set).where(eq(aiAgent.id, copy.id));
   }
+  // The Autopilot level is an approval rule; the agent's budgets are its budgets.
+  if (groups.includes('approvals')) await copyAgentLevel(template.id, copy.id);
+  if (groups.includes('budgets')) await copyAgentBudgets(template.id, copy.id);
   if (groups.includes('skills')) await syncSkillLinks(copy.id, template.id);
   if (groups.includes('mcpServers')) await syncMcpServerLinks(copy.id, template.id);
   if (groups.includes('tools')) await syncToolLinks(copy.id, template.id);
