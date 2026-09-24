@@ -368,6 +368,9 @@ export const SystemHealthResponse = t.Object({
         'for is pending.',
     }),
     schedules: t.Number({ description: 'Enabled routines and workflow schedules.' }),
+    overdueSchedules: t.Number({
+      description: 'Enabled schedules whose time passed over five minutes ago without a fire.',
+    }),
     lastErrors: t.Array(
       t.Object({
         runId: t.String(),

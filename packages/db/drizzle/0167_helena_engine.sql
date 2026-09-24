@@ -13,6 +13,7 @@ CREATE TABLE "helena_schedule" (
 	"timezone" text DEFAULT 'Europe/Berlin' NOT NULL,
 	"catch_up" text DEFAULT 'skip' NOT NULL,
 	"enabled" boolean DEFAULT true NOT NULL,
+	"fired_through" timestamp with time zone DEFAULT now() NOT NULL,
 	"actor_user_id" text,
 	"schedule_key" text,
 	"created_by" text,

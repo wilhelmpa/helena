@@ -25,7 +25,7 @@ Helena runs workflows of the builder, agent teams, recurring tasks (routines) an
 | External signal into a waiting run (approval, agent run done) | `DBOS.send` / `DBOS.recv` | hooks / webhooks | would be ours | would be ours |
 | Cancel, resume, retry from a step | `cancelWorkflow`, `resumeWorkflow`, `forkWorkflow(id, step)` | cancel; no fork | cancel job; no step history | remove job |
 | Idempotent start | workflow ID + `duplicationPolicy` | run ID | `singletonKey` | `job_key` |
-| Cron | dynamic, database-backed schedules: create/update/pause/resume/delete/trigger at runtime, IANA time zone, exactly-once per scheduled time (`sched-<name>-<time>` IDs), automatic backfill | via Vercel Cron / framework | `schedule(name, cron, data, {tz})`, one polling clock | static `crontab` (with backfill), not per user at runtime |
+| Cron | dynamic, database-backed schedules: create/update/pause/resume/delete/trigger at runtime, IANA time zone, exactly-once per scheduled time (`sched-<name>-<time>` IDs), automatic backfill — but wall-clock matching across summer time (see "Schedules") | via Vercel Cron / framework | `schedule(name, cron, data, {tz})`, one polling clock | static `crontab` (with backfill), not per user at runtime |
 | Queues / concurrency | database-backed queues, per-worker/global concurrency, partitions | per world | yes | yes |
 | Runs in-process in Bun, no build step | yes — verified (see below) | no: needs the Nitro/rollup compiler plugin, steps run as separate requests | yes | yes |
 | Extra service | none (a `helena_engine` schema in the same database) | none with the Postgres world, but a framework build | none | none |
@@ -34,13 +34,13 @@ Temporal, Inngest, Hatchet and Trigger.dev were not evaluated further: each need
 
 ## Choice: DBOS Transact
 
-DBOS is the only in-process library that covers the whole block: durable, checkpointed workflows, long waits, signals into waiting workflows, cancel/fork for "Erneut versuchen", and dynamic time-zoned cron schedules with exactly-once firing. pg-boss and graphile-worker are good queues, but with either one Helena would have to hand-roll exactly the part that is hard (a durable state machine with checkpoints, recovery and replay), which §3b forbids. The Workflow DevKit needs a compiler step and a supported framework; Helena's API is plain Bun + Elysia.
+DBOS is the only in-process library that covers the whole block: durable, checkpointed workflows, long waits, signals into waiting workflows, cancel/fork for "Erneut versuchen", idempotent starts by workflow ID, and durable queues. pg-boss and graphile-worker are good queues, but with either one Helena would have to hand-roll exactly the part that is hard (a durable state machine with checkpoints, recovery and replay), which §3b forbids. The Workflow DevKit needs a compiler step and a supported framework; Helena's API is plain Bun + Elysia.
 
 Verified on Kingston with Bun 1.4.2 and Postgres 17 (`~/agent-work/dbos-spike`): steps, `recv`/`send`, durable `sleep`, idempotent start by workflow ID, `forkWorkflow` from the failed step (earlier outputs reused, the failed step re-run), `cancelWorkflow`, database-backed queues, dynamic schedules in Europe/Berlin, and recovery after `kill -9` in the middle of a sleep (the restarted process finished the workflow; the completed steps did not run again).
 
 Supporting standards:
 
-- **croner** (MIT, already a dependency) to validate cron expressions and show the next run in the UI; DBOS fires the schedules itself.
+- **croner** (MIT, already a dependency) computes the scheduled times: the next run the UI shows and the times the engine fires (see "Schedules" below).
 - **CloudEvents 1.0** as the shape of Helena's domain events (`specversion`, `id`, `source`, `type`, `subject`, `time`, `data`). Only the format is adopted; the `cloudevents` npm SDK is not needed for an in-process bus (its engines field stops at Node 24).
 - **Standard Webhooks** (`standardwebhooks`, MIT) to sign what the webhook step sends and to verify what the webhook trigger receives (`webhook-id`, `webhook-timestamp`, `webhook-signature`).
 
@@ -51,7 +51,21 @@ Supporting standards:
 - **Helena's tables stay the source of truth for people**: `pipeline_run` and `pipeline_run_step` hold the history the UI shows, `helena_schedule` holds routines and workflow schedules. DBOS's tables (`helena_engine` schema) hold only execution state.
 - **Waiting is signalled, not polled**: an agent run that finishes, an approval that is decided and a cancel reach the waiting workflow through `DBOS.send`; a long `recv` timeout is only the safety net.
 - **Approvals ask the policy engine** (`decide(agent, project, actionCategory)` from hub/autopilot) through one seam, `engine/policy.ts`, with the canonical action categories of D-C1 (`read` < `report` < `write` < `send` < `publish` < `execute` < `delete` < `pay` < `credentials`, mirrored until `@helena/sdk` lands). An approval step names the category it lets through (`publish` by default); starting an agent run is `execute`. Until the autopilot registers its decider, a step approval always waits for a person, as before.
-- **Catch-up policy** on top of DBOS's backfill: every missed time is fired once by DBOS; Helena runs only the newest one ("run once") or records it as missed ("skip missed", the default, with a ten-minute grace like before).
+- **Schedules** (see below) fire through a DBOS workflow per scheduled time; the catch-up policy decides what the newest missed time does: it runs ("run once") or is recorded as missed ("skip missed", the default, with a ten-minute grace like before). Older missed times never run.
+
+## Schedules: croner times, DBOS exactly-once
+
+DBOS's dynamic schedules were the first choice and were built, then replaced after a test across the changes of summer time in Europe/Berlin. DBOS's cron matcher compares wall-clock fields, so a daily `30 2 * * *` fires **twice** on the day summer time ends (02:30 summer time and 02:30 winter time) and **not at all** on the day it begins (02:30 does not exist). The UI's "next run", computed with croner, disagreed with it on both days. A routine that creates a task at 02:30 would create two once a year and none once a year.
+
+Helena therefore computes the times with croner, the same library the UI uses, and lets DBOS do what it is good at: running each fire exactly once. `helena_schedule.fired_through` holds the time up to which a schedule is handled. The engine's quick tick (every 3 s, `engine/janitor.ts`) takes, for every enabled schedule, the newest croner time after `fired_through` and at or before now, starts the DBOS workflow `helena.fire` with the ID `fire:<schedule>:<time>`, and then moves `fired_through` forward (only forward). So:
+
+- replicas that tick at the same moment start the same workflow ID, and DBOS runs it once; the run itself has the ID `fire-<hash of schedule and time>` and a unique index on (schedule, time) on top;
+- a crash between the start and the move of `fired_through` starts the same ID again on the next tick, which DBOS answers with the existing workflow;
+- a clock set back finds `fired_through` in the future and fires nothing until the clock passes it;
+- downtime, or a clock set forward, finds several missed times: only the newest counts, under the catch-up policy;
+- creating a schedule, switching it on again and giving it another time or time zone set `fired_through` to that moment, so it starts afresh; a new title does not.
+
+Croner fires every local time once: a time that does not exist when summer time begins fires an hour later (02:30 → 03:30 summer time), a time that happens twice when it ends fires the first time. The price is that an hourly schedule skips the repeated hour once a year (it fires at 02:00 summer time and next at 03:00 winter time); that is documented in the tests (`engine/__tests__/unit/schedules.test.ts`). The Administrator health overview counts schedules whose time passed more than five minutes ago without a fire ("overdue"), which catches a tick that stopped.
 
 ## The outbox (orchestrator decision D-C2)
 
@@ -76,7 +90,7 @@ Helena has these queues and loops of its own besides the engine. Each keeps work
 | Chat claims | api `agents/chat/service.ts` | chat turns claimed by runners | stays (same pull model as the runner) |
 | Run janitor, resume janitor, auto-archive | api `background.ts` | expired runs, resume limits, stale issues | DBOS scheduled workflows |
 
-The loops share one helper now, `@helena/loop` (`startLoop`, `intEnv`), used by the api and the worker. Removed with Mastra: the pipeline-start retry loop, the agent-team start queue (`agent_team_start`), the stage janitor and the schedule sync loop.
+The loops share one helper now, `@helena/loop` (`startLoop`, `intEnv`), used by the api and the worker. Removed with Mastra: the pipeline-start retry loop, the agent-team start queue (`agent_team_start`), the stage janitor and the schedule sync loop. The engine's own passes run on the same helper: the quick tick (schedules, finished agent runs, lost starts, heartbeat) and the maintenance pass (runs of executors that are gone, pruning).
 
 ## Operational notes and risks
 

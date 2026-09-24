@@ -4,7 +4,7 @@ import { minCronIntervalSeconds } from '#modules/routines/cron';
 import type { DomainEvent, TriggerDefinition, WorkflowTriggerType } from '../sdk';
 
 // The built-in trigger types. Task events and mail arrive as domain events; a schedule
-// fires through the engine's scheduler; a webhook through its hook route; `manual`
+// fires through the engine's tick (schedules.ts); a webhook through its hook route; `manual`
 // starts a run only by hand. `delegation` (an agent team) and `routine` are the
 // triggers of the built-in workflows the engine builds itself.
 

@@ -1,5 +1,6 @@
 import { DBOS, Error as DBOSErrors } from '@dbos-inc/dbos-sdk';
 import { registerBuiltins } from './builtin/index';
+import { RUNS_QUEUE } from './dbos';
 import { beginRun, enterStep, failRun, finishRun, leaveStep, runCanceled } from './lifecycle';
 import { branchStart, handlesOutcome, locate, stepAfter } from './navigation';
 import { domainEventSubscribers, stepType } from './registry';
@@ -146,13 +147,13 @@ async function interpret(runId: string): Promise<string> {
 
 export const runWorkflow = DBOS.registerWorkflow(interpret, { name: 'helena.run' });
 
-async function fire(scheduledAt: Date, context: unknown): Promise<void> {
-  const scheduleId = (context as { scheduleId?: unknown } | null)?.scheduleId;
-  if (typeof scheduleId !== 'string') return;
-  const planned = await DBOS.runStep(() => planFire(scheduleId, scheduledAt.toISOString()), {
+// One fire of a schedule (schedules.ts): the run it plans, started once.
+async function fire(scheduleId: string, scheduledAtIso: string): Promise<void> {
+  const planned = await DBOS.runStep(() => planFire(scheduleId, scheduledAtIso), {
     name: 'helena:fire',
   });
-  if (planned) await DBOS.startWorkflow(runWorkflow, { workflowID: planned })(planned);
+  if (planned)
+    await DBOS.startWorkflow(runWorkflow, { workflowID: planned, queueName: RUNS_QUEUE })(planned);
 }
 
 export const fireWorkflow = DBOS.registerWorkflow(fire, { name: 'helena.fire' });

@@ -1,5 +1,4 @@
 import {
-  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -8,7 +7,6 @@ import {
   it,
   setDefaultTimeout,
 } from 'bun:test';
-import { DBOS } from '@dbos-inc/dbos-sdk';
 import {
   agentRun,
   db,
@@ -26,13 +24,18 @@ import { startEngine, stopEngineRuns, waitForStatus } from '#tests/helpers/engin
 import { clearLimits, setLimits } from '#tests/helpers/limits';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
-import { planFire } from '#modules/engine/schedules';
+import {
+  fireDueSchedules,
+  latestFireTime,
+  MISSED_GRACE_MS,
+  planFire,
+} from '#modules/engine/schedules';
 
 // A run takes a few hops through the engine's queues (see helpers/engine.ts).
 setDefaultTimeout(30_000);
 
-// Routines on the Helena engine: Helena keeps them (helena_schedule) and the engine fires
-// them (a DBOS schedule of the same id). Every fire creates a task delegated to the agent
+// Routines on the Helena engine: Helena keeps them (helena_schedule) and the engine's
+// tick fires them. Every fire creates a task delegated to the agent
 // or reopens the routine's task, and is skipped while the routine's task is open. Ported
 // from the agent-routine workflow tests of the Mastra control plane and the routine
 // dispatch tests of its bridge.
@@ -87,7 +90,18 @@ async function runsOf(scheduleId: string) {
     .orderBy(asc(pipelineRun.scheduledFor));
 }
 
-// Fires the routine at a time, the way the engine's schedule does, and waits for the run.
+// Waits until the routine has `count` runs.
+async function waitForRuns(scheduleId: string, count: number) {
+  const deadline = Date.now() + 20_000;
+  for (;;) {
+    const runs = await runsOf(scheduleId);
+    if (runs.length >= count) return runs;
+    if (Date.now() > deadline) throw new Error(`Routine ${scheduleId} has ${runs.length} runs`);
+    await Bun.sleep(100);
+  }
+}
+
+// Fires the routine at a time, the way the engine's tick does, and waits for the run.
 async function fire(scheduleId: string, at: Date, now = at.getTime()) {
   const runId = await planFire(scheduleId, at.toISOString(), now);
   if (runId) {
@@ -111,13 +125,8 @@ afterEach(async () => {
   await stopEngineRuns();
 });
 
-afterAll(async () => {
-  for (const schedule of await DBOS.listSchedules())
-    await DBOS.deleteSchedule(schedule.scheduleName);
-});
-
 describe('routines', () => {
-  it('creates a routine in Europe/Berlin with an engine schedule and replays its key', async () => {
+  it('creates a routine in Europe/Berlin that fires from now on and replays its key', async () => {
     const { owner, asOwner, agent } = await setup();
     const body = routineBody(agent.id);
     const res = await routines(asOwner).post(body);
@@ -152,12 +161,9 @@ describe('routines', () => {
       actorUserId: owner.userId,
       enabled: true,
     });
-    expect(await DBOS.getSchedule(res.data!.id)).toMatchObject({
-      schedule: '0 9 * * 1',
-      cronTimezone: 'Europe/Berlin',
-      status: 'ACTIVE',
-      automaticBackfill: true,
-    });
+    expect((await scheduleRow(res.data!.id)).firedThrough.getTime()).toBeGreaterThan(
+      Date.now() - 60_000,
+    );
     const again = await routines(asOwner).post(body);
     expect(again.data?.id).toBe(res.data!.id);
     expect(await db.select().from(helenaSchedule)).toHaveLength(1);
@@ -236,15 +242,26 @@ describe('routines', () => {
     const { asOwner, agent } = await setup();
     const created = (await routines(asOwner).post(routineBody(agent.id))).data!;
     const routine = routines(asOwner)({ routineId: created.id });
-    const changed = await routine.patch({ title: 'Monthly report', cron: '0 9 1 * *' });
+    const past = new Date('2026-01-01T00:00:00Z');
+    const rewind = () =>
+      db
+        .update(helenaSchedule)
+        .set({ firedThrough: past })
+        .where(eq(helenaSchedule.id, created.id));
+    // A new title leaves the schedule where it was; another time starts it afresh.
+    await rewind();
+    await routine.patch({ title: 'Monthly report' });
+    expect((await scheduleRow(created.id)).firedThrough).toEqual(past);
+    const changed = await routine.patch({ cron: '0 9 1 * *' });
     expect(changed.data).toMatchObject({ title: 'Monthly report', cron: '0 9 1 * *' });
-    expect((await DBOS.getSchedule(created.id))?.schedule).toBe('0 9 1 * *');
+    expect((await scheduleRow(created.id)).firedThrough.getTime()).toBeGreaterThan(past.getTime());
     const off = await routine.patch({ enabled: false });
     expect(off.data).toMatchObject({ enabled: false, nextRunAt: null });
-    expect(await DBOS.getSchedule(created.id)).toBeNull();
+    // Switched on again, it starts afresh as well: the times it was off do not fire.
+    await rewind();
     const on = await routine.patch({ enabled: true, catchUp: 'once' });
     expect(on.data).toMatchObject({ enabled: true, catchUp: 'once' });
-    expect((await DBOS.getSchedule(created.id))?.status).toBe('ACTIVE');
+    expect((await scheduleRow(created.id)).firedThrough.getTime()).toBeGreaterThan(past.getTime());
   });
 
   it('lists the routines of a project and of every project the member reads', async () => {
@@ -381,6 +398,55 @@ describe('routines', () => {
     expect((await runsOf(created.id)).map((run) => run.scheduledFor!.toISOString())).toEqual([
       wednesday.toISOString(),
     ]);
+  });
+
+  it('fires the time that has come from the engine tick once, across replicas and a clock set back', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (
+      await routines(asOwner).post(routineBody(agent.id, { cron: '0 9 * * *', catchUp: 'once' }))
+    ).data!;
+    // The routine was last fired two days ago.
+    const now = new Date();
+    const since = new Date(now.getTime() - 2 * 86_400_000);
+    await db
+      .update(helenaSchedule)
+      .set({ firedThrough: since })
+      .where(eq(helenaSchedule.id, created.id));
+    const due = latestFireTime('0 9 * * *', 'Europe/Berlin', since, now)!;
+    // Two replicas tick at the same moment, and one ticks again.
+    await Promise.all([fireDueSchedules(now), fireDueSchedules(now)]);
+    expect(await fireDueSchedules(now)).toBe(0);
+    expect((await scheduleRow(created.id)).firedThrough).toEqual(due);
+    const [run] = await waitForRuns(created.id, 1);
+    await waitForStatus(run!.id, 'succeeded');
+    // A clock set back an hour fires nothing again.
+    expect(await fireDueSchedules(new Date(now.getTime() - 3_600_000))).toBe(0);
+    const runs = await runsOf(created.id);
+    expect(runs.map((item) => [item.scheduledFor!.toISOString(), item.trigger])).toEqual([
+      [due.toISOString(), 'schedule'],
+    ]);
+  });
+
+  it('records only the newest time missed during downtime, as missed under "skip"', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id, { cron: '0 * * * *' })))
+      .data!;
+    const now = new Date();
+    const since = new Date(now.getTime() - 3 * 86_400_000);
+    await db
+      .update(helenaSchedule)
+      .set({ firedThrough: since })
+      .where(eq(helenaSchedule.id, created.id));
+    expect(await fireDueSchedules(now)).toBe(1);
+    const [run] = await waitForRuns(created.id, 1);
+    const done = await waitForStatus(run!.id, 'succeeded', 'skipped');
+    const due = latestFireTime('0 * * * *', 'Europe/Berlin', since, now)!;
+    expect(done.scheduledFor).toEqual(due);
+    // Less than ten minutes after the hour the time is still on time and runs.
+    const late = now.getTime() - due.getTime() > MISSED_GRACE_MS;
+    expect(done.status).toBe(late ? 'skipped' : 'succeeded');
+    if (late) expect(done.result).toEqual({ outcome: 'skipped', skipReason: 'missed' });
+    expect(await runsOf(created.id)).toHaveLength(1);
   });
 
   it('fires no run for a routine that is off, deleted or gone with its project', async () => {

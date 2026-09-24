@@ -79,9 +79,8 @@ export const projectPipeline = pgTable(
 
 // A recurring trigger the Helena engine fires: a routine of the Schedules page, which
 // creates or reopens a task for an agent on every fire, or the schedule of a builder
-// workflow with a schedule trigger while it is enabled in the project. Helena keeps what a
-// person sees and edits here; the engine keeps a DBOS schedule of the same id in step
-// with it (engine/schedules.ts), which fires every scheduled time exactly once.
+// workflow with a schedule trigger while it is enabled in the project. The engine fires
+// every scheduled time after `fired_through` once (engine/schedules.ts).
 export const helenaSchedule = pgTable(
   'helena_schedule',
   {
@@ -109,6 +108,10 @@ export const helenaSchedule = pgTable(
     // 'once' runs the newest missed time once. Older missed times never run.
     catchUp: text('catch_up').notNull().default('skip'),
     enabled: boolean('enabled').notNull().default(true),
+    // The scheduled times up to here are handled: the engine fires the times after it.
+    // Set to the moment a schedule is created, switched on or given another time, so it
+    // starts afresh then.
+    firedThrough: timestamp('fired_through', { withTimezone: true }).notNull().defaultNow(),
     // The member the fires act for: whoever saved what the schedule does last.
     actorUserId: text('actor_user_id').references(() => user.id, { onDelete: 'set null' }),
     // Makes a create idempotent within the project.

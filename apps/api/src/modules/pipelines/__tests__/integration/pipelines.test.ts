@@ -7,7 +7,6 @@ import {
   it,
   setDefaultTimeout,
 } from 'bun:test';
-import { DBOS } from '@dbos-inc/dbos-sdk';
 import { db, helenaSchedule, issue as issueTable } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
@@ -233,7 +232,7 @@ describe('workflows of a project', () => {
     });
   });
 
-  it('keeps an engine schedule while a workflow with a schedule trigger is enabled', async () => {
+  it('keeps a schedule while a workflow with a schedule trigger is enabled', async () => {
     const ctx = await setupProject();
     const trigger = {
       type: 'schedule',
@@ -255,16 +254,20 @@ describe('workflows of a project', () => {
       title: 'Weekly release',
       enabled: true,
     });
-    expect((await DBOS.getSchedule(schedule!.id))?.schedule).toBe('0 9 * * 1');
-
+    // Another time starts the schedule afresh: the times before the change do not fire.
+    await db
+      .update(helenaSchedule)
+      .set({ firedThrough: new Date('2026-01-01T00:00:00Z') })
+      .where(eq(helenaSchedule.id, schedule!.id));
     await ctx.asOwner
       .pipelines({ pipelineId: created.id })
       .patch({ definition: { ...simple(), trigger: { ...trigger, cron: '0 10 * * 1' } } });
-    expect((await DBOS.getSchedule(schedule!.id))?.schedule).toBe('0 10 * * 1');
+    const [moved] = await db.select().from(helenaSchedule);
+    expect(moved).toMatchObject({ id: schedule!.id, cron: '0 10 * * 1' });
+    expect(moved!.firedThrough.getTime()).toBeGreaterThan(Date.now() - 60_000);
 
     expect((await enable(ctx, created.id, { coder: ctx.coder.id }, false)).status).toBe(200);
     expect(await db.select().from(helenaSchedule)).toEqual([]);
-    expect(await DBOS.getSchedule(schedule!.id)).toBeNull();
   });
 
   it('creates the task and the run of a schedule fire once', async () => {

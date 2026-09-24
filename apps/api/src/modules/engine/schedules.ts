@@ -9,7 +9,7 @@ import {
   pipelineVersion,
   projectPipeline,
 } from '@repo/db';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, lt } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { getMembership } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
@@ -17,11 +17,10 @@ import type { PipelineDefinition } from '#modules/pipelines/definition';
 import { engineRunning } from './dbos';
 import { fireWorkflow } from './workflows';
 
-// Schedules: Helena keeps what a person sees and edits (helena_schedule, the source of
-// truth) and the engine keeps a DBOS schedule of the same name in step with it, which
-// fires every scheduled time exactly once, also across replicas, and fires the times it
-// missed while it was down when it starts again. `planFire` turns one fire into a run
-// under the schedule's catch-up policy.
+// Schedules: helena_schedule holds what a person sees and edits, and when the engine
+// last fired each one. The engine's tick fires the times that have come
+// (fireDueSchedules), and `planFire` turns one fire into a run under the schedule's
+// catch-up policy.
 
 // The fallback of a schedule that names no time zone; the instance's default time zone
 // (engine/settings.ts) is used where one is asked for.
@@ -39,8 +38,8 @@ function parseCron(expression: string, timezone: string): Cron {
   } catch {
     throw new HttpError(400, 'Invalid time zone');
   }
-  // The engine's scheduler reads classic five-field cron: numbers, names, ranges, lists
-  // and steps. The extensions some parsers take (L, W, #, ?) are refused.
+  // Classic five-field cron: numbers, names, ranges, lists and steps. The extensions some
+  // parsers take (L, W, #, ?) are refused, so every cron reads the same everywhere.
   if (!/^[0-9A-Za-z*/,\- ]+$/.test(expression) || /\b[LW]\b|#|\?/.test(expression))
     throw new HttpError(400, 'Invalid cron expression');
   if (expression.trim().split(/\s+/).length !== 5)
@@ -69,65 +68,72 @@ export function nextFireTime(
   }
 }
 
-// ---- keeping the engine's schedules in step ----------------------------------------
+// ---- firing -------------------------------------------------------------------------
 
-function engineSchedule(row: ScheduleRow) {
-  return {
-    scheduleName: row.id,
-    workflowFn: fireWorkflow,
-    schedule: row.cron,
-    context: { scheduleId: row.id },
-    options: { automaticBackfill: true, cronTimezone: row.timezone },
-  };
-}
-
-// Brings the engine's schedule of one row in line: one while the row is enabled, none
-// otherwise. A schedule switched on again starts afresh, so the times it was off are not
-// fired afterwards. Does nothing while the engine does not run here; the reconciliation
-// of the next start does it then.
-export async function syncEngineSchedule(id: string): Promise<void> {
-  if (!engineRunning()) return;
-  const [row] = await db.select().from(helenaSchedule).where(eq(helenaSchedule.id, id));
-  const existing = await DBOS.getSchedule(id);
-  if (!row || !row.enabled) {
-    if (existing) await DBOS.deleteSchedule(id);
-    return;
-  }
-  if (!existing) {
-    await DBOS.createSchedule(engineSchedule(row));
-    return;
-  }
-  if (existing.schedule !== row.cron || existing.cronTimezone !== row.timezone)
-    await DBOS.updateSchedule(id, { schedule: row.cron, cronTimezone: row.timezone });
-  if (existing.status !== 'ACTIVE') await DBOS.resumeSchedule(id);
-}
-
-// The periodic pass: every enabled row has its engine schedule, and no engine schedule
-// is left without one. Returns how many it changed.
-export async function reconcileEngineSchedules(): Promise<number> {
+// Fires the schedules whose time has come: for every enabled schedule the newest
+// scheduled time after `fired_through` and at or before `now`, once. The fire is a
+// workflow whose id holds the schedule and the time, so replicas that tick at the same
+// moment, a tick repeated after a crash and a clock set back fire each time once. Times
+// the engine missed while it was down are older than the newest one and never run; the
+// newest runs or is recorded as missed under the schedule's catch-up policy (planFire).
+// Croner computes the times, as it does for the next run the UI shows: every local time
+// fires once, the one that does not exist when summer time begins an hour later, the one
+// that happens twice when it ends the first time.
+export async function fireDueSchedules(now = new Date()): Promise<number> {
   if (!engineRunning()) return 0;
-  const rows = await db.select().from(helenaSchedule);
-  const engine = new Map((await DBOS.listSchedules()).map((item) => [item.scheduleName, item]));
-  let changed = 0;
+  const rows = await db
+    .select({
+      id: helenaSchedule.id,
+      cron: helenaSchedule.cron,
+      timezone: helenaSchedule.timezone,
+      firedThrough: helenaSchedule.firedThrough,
+    })
+    .from(helenaSchedule)
+    .where(and(eq(helenaSchedule.enabled, true), lt(helenaSchedule.firedThrough, now)));
+  let fired = 0;
   for (const row of rows) {
-    const existing = engine.get(row.id);
-    engine.delete(row.id);
-    const wanted = row.enabled;
-    const differs =
-      existing &&
-      (existing.schedule !== row.cron ||
-        existing.cronTimezone !== row.timezone ||
-        existing.status !== 'ACTIVE');
-    if ((wanted && (!existing || differs)) || (!wanted && existing)) {
-      await syncEngineSchedule(row.id);
-      changed += 1;
+    const due = latestFireTime(row.cron, row.timezone, row.firedThrough, now);
+    if (!due) continue;
+    const iso = due.toISOString();
+    await DBOS.startWorkflow(fireWorkflow, { workflowID: `fire:${row.id}:${iso}` })(row.id, iso);
+    // Only forward: a tick that comes late does not take back a newer one.
+    await db
+      .update(helenaSchedule)
+      .set({ firedThrough: due })
+      .where(and(eq(helenaSchedule.id, row.id), lt(helenaSchedule.firedThrough, due)));
+    fired += 1;
+  }
+  return fired;
+}
+
+// Counted in scheduled times: a schedule that missed more than this many is looked at
+// over its last day only.
+const MAX_MISSED_TIMES = 5_000;
+
+// The newest time the cron fires after `after` and at or before `now`, or null.
+export function latestFireTime(
+  expression: string,
+  timezone: string,
+  after: Date,
+  now: Date,
+): Date | null {
+  let cron: Cron;
+  try {
+    cron = parseCron(expression, timezone);
+  } catch {
+    return null;
+  }
+  const windows = [after, new Date(Math.max(after.getTime(), now.getTime() - 86_400_000))];
+  for (const from of windows) {
+    let latest: Date | null = null;
+    let next = cron.nextRun(from);
+    for (let count = 0; next && next <= now && count < MAX_MISSED_TIMES; count += 1) {
+      latest = next;
+      next = cron.nextRun(next);
     }
+    if (!next || next > now) return latest;
   }
-  for (const orphan of engine.keys()) {
-    await DBOS.deleteSchedule(orphan);
-    changed += 1;
-  }
-  return changed;
+  return null;
 }
 
 // ---- runs of a schedule ------------------------------------------------------------

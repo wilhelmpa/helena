@@ -11,7 +11,6 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
-import { syncEngineSchedule } from '#modules/engine/schedules';
 import { defaultTimezone } from '#modules/engine/settings';
 import { minCronIntervalSeconds } from '#modules/routines/cron';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
@@ -193,12 +192,8 @@ export async function updatePipeline(
 export async function deletePipeline(pipelineId: number): Promise<void> {
   const row = await getPipelineRow(pipelineId);
   if (!row) throw new HttpError(404, 'Workflow not found');
-  const schedules = await db
-    .select({ id: helenaSchedule.id })
-    .from(helenaSchedule)
-    .where(eq(helenaSchedule.pipelineId, pipelineId));
+  // Its schedules go with it (on delete cascade).
   await db.delete(pipeline).where(eq(pipeline.id, pipelineId));
-  for (const schedule of schedules) await syncEngineSchedule(schedule.id);
 }
 
 export async function listVersions(pipelineId: number) {
@@ -382,14 +377,11 @@ async function syncSchedule(
 ): Promise<void> {
   const { trigger } = definition;
   const [existing] = await db
-    .select({ id: helenaSchedule.id })
+    .select({ id: helenaSchedule.id, cron: helenaSchedule.cron, timezone: helenaSchedule.timezone })
     .from(helenaSchedule)
     .where(and(eq(helenaSchedule.projectId, project.id), eq(helenaSchedule.pipelineId, row.id)));
   if (!usage.enabled || trigger.type !== 'schedule') {
-    if (existing) {
-      await db.delete(helenaSchedule).where(eq(helenaSchedule.id, existing.id));
-      await syncEngineSchedule(existing.id);
-    }
+    if (existing) await db.delete(helenaSchedule).where(eq(helenaSchedule.id, existing.id));
     return;
   }
   const values = {
@@ -400,8 +392,15 @@ async function syncSchedule(
     actorUserId: usage.updatedBy ?? row.createdBy,
     updatedAt: new Date(),
   };
+  // A new schedule, or one given another time, starts afresh.
+  const restart =
+    !existing || existing.cron !== values.cron || existing.timezone !== values.timezone;
   const id = existing?.id ?? randomUUID();
-  if (existing) await db.update(helenaSchedule).set(values).where(eq(helenaSchedule.id, id));
+  if (existing)
+    await db
+      .update(helenaSchedule)
+      .set({ ...values, ...(restart ? { firedThrough: new Date() } : {}) })
+      .where(eq(helenaSchedule.id, id));
   else
     await db.insert(helenaSchedule).values({
       id,
@@ -409,9 +408,9 @@ async function syncSchedule(
       kind: 'workflow',
       pipelineId: row.id,
       createdBy: usage.updatedBy,
+      firedThrough: new Date(),
       ...values,
     });
-  await syncEngineSchedule(id);
 }
 
 async function syncPipelineSchedules(row: PipelineRow, definition: PipelineDefinition) {

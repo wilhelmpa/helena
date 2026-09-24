@@ -3,13 +3,13 @@ import { db, pipelineRun, recordServiceCheck, serviceHeartbeat } from '@repo/db'
 import { and, eq, like, lt, ne, sql } from 'drizzle-orm';
 import { engineExecutorId, engineRunning } from './dbos';
 import { signalFinishedAgentRuns, startLostRuns } from './runs';
-import { reconcileEngineSchedules } from './schedules';
+import { fireDueSchedules } from './schedules';
 
 // The engine's own background passes, run by the api's background jobs. The quick pass
-// wakes runs whose agent runs finished, starts runs whose start was lost and reports
-// the engine alive. The maintenance pass
-// keeps the engine's schedules in step with Helena's, hands the pending runs of an
-// executor that is gone to the others, and prunes skipped routine fires.
+// fires the schedules whose time has come, wakes runs whose agent runs finished, starts
+// runs whose start was lost and reports the engine alive. The maintenance pass hands the
+// pending runs of an executor that is gone to the others and prunes skipped routine
+// fires.
 
 // An executor unseen this long is gone: its pending runs are resumed by the others.
 const EXECUTOR_GONE_MS = 5 * 60_000;
@@ -21,6 +21,7 @@ export async function engineTick(): Promise<void> {
   if (!engineRunning()) return;
   await recordServiceCheck('engine', null);
   await recordServiceCheck(`engine:${engineExecutorId()}`, null);
+  await fireDueSchedules();
   await signalFinishedAgentRuns();
   await startLostRuns();
 }
@@ -67,7 +68,5 @@ async function pruneSkippedRuns(): Promise<number> {
 // Answers how much it changed, for the health overview.
 export async function engineMaintenance(): Promise<number> {
   if (!engineRunning()) return 0;
-  return (
-    (await reconcileEngineSchedules()) + (await recoverGoneExecutors()) + (await pruneSkippedRuns())
-  );
+  return (await recoverGoneExecutors()) + (await pruneSkippedRuns());
 }

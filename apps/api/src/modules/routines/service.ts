@@ -23,7 +23,6 @@ import {
   assertCron,
   nextFireTime,
   recordScheduleRun,
-  syncEngineSchedule,
   type ScheduleRow,
 } from '#modules/engine/schedules';
 import { runDtos } from '#modules/pipelines/runs';
@@ -340,6 +339,7 @@ export async function createRoutine(
       timezone,
       catchUp: input.catchUp ?? 'skip',
       enabled: true,
+      firedThrough: new Date(),
       actorUserId: userId,
       scheduleKey,
       createdBy: userId,
@@ -347,7 +347,6 @@ export async function createRoutine(
     .onConflictDoNothing()
     .returning({ id: helenaSchedule.id });
   if (!created) return createRoutine(owner, userId, input);
-  await syncEngineSchedule(id);
   await bumpControlPlaneRevision(owner.id);
   return getRoutine(owner, id);
 }
@@ -380,12 +379,19 @@ export async function updateRoutine(
   }
   if (catchUp !== undefined) values.catchUp = catchUp;
   if (enabled !== undefined) values.enabled = enabled;
+  // Switched on again or given another time, the routine starts afresh: the times that
+  // passed meanwhile do not fire.
+  if (
+    (enabled === true && !row.enabled) ||
+    (values.cron !== undefined && values.cron !== row.cron) ||
+    (values.timezone !== undefined && values.timezone !== row.timezone)
+  )
+    values.firedThrough = new Date();
   if (Object.keys(values).length > 0) {
     await db
       .update(helenaSchedule)
       .set({ ...values, updatedAt: new Date() })
       .where(eq(helenaSchedule.id, routineId));
-    await syncEngineSchedule(routineId);
     await bumpControlPlaneRevision(owner.id);
   }
   return getRoutine(owner, routineId);
@@ -394,7 +400,6 @@ export async function updateRoutine(
 export async function deleteRoutine(owner: RoutineProject, routineId: string): Promise<void> {
   await routineSchedule(owner, routineId);
   await db.delete(helenaSchedule).where(eq(helenaSchedule.id, routineId));
-  await syncEngineSchedule(routineId);
   await bumpControlPlaneRevision(owner.id);
 }
 
@@ -430,15 +435,10 @@ export async function listRoutineRuns(
   return { items, total: total?.value ?? 0 };
 }
 
-// The schedules of a project that is going away: their engine schedules stop firing.
+// The schedules of a project that is going away stop firing.
 export async function stopProjectSchedules(projectId: number): Promise<void> {
-  const rows = await db
-    .select({ id: helenaSchedule.id })
-    .from(helenaSchedule)
-    .where(eq(helenaSchedule.projectId, projectId));
   await db
     .update(helenaSchedule)
     .set({ enabled: false, updatedAt: sql`now()` })
     .where(eq(helenaSchedule.projectId, projectId));
-  for (const row of rows) await syncEngineSchedule(row.id);
 }

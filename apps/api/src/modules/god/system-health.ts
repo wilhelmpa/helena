@@ -16,6 +16,7 @@ import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
 import { RESUME_LIMIT_ERROR } from '#modules/agents/runner/service';
 import { engineExecutorId, engineRunning } from '#modules/engine/dbos';
+import { nextFireTime } from '#modules/engine/schedules';
 
 // The state of the services Helena works with, for the owner's overview on Home. The
 // worker and the engine report themselves, the worker checks the provisioning service,
@@ -46,6 +47,9 @@ const RUNNER_STOP_SECONDS = 1_800;
 // An active run the engine has not moved on for this long, while no agent run it waits
 // for is pending, makes no progress.
 const STALL_MS = 30 * 60_000;
+
+// A schedule that should have fired this long ago and did not is overdue.
+const SCHEDULE_OVERDUE_MS = 5 * 60_000;
 
 // How long a janitor may go without running before it counts as stopped, rather than
 // merely between runs: three times its own interval, so one slow tick is not a false
@@ -184,10 +188,21 @@ async function engineHealth() {
         )`,
       ),
     );
-  const [schedules] = await db
-    .select({ count: sql<number>`count(*)::int` })
+  const schedules = await db
+    .select({
+      cron: helenaSchedule.cron,
+      timezone: helenaSchedule.timezone,
+      firedThrough: helenaSchedule.firedThrough,
+    })
     .from(helenaSchedule)
     .where(eq(helenaSchedule.enabled, true));
+  // A schedule whose time passed a while ago without the engine firing it.
+  const overdueBefore = Date.now() - SCHEDULE_OVERDUE_MS;
+  const overdue = schedules.filter(
+    (row) =>
+      (nextFireTime(row.cron, row.timezone, row.firedThrough)?.getTime() ?? Infinity) <
+      overdueBefore,
+  ).length;
   const failures = await db
     .select({
       runId: pipelineRun.id,
@@ -210,7 +225,8 @@ async function engineHealth() {
     waiting: counts?.waiting ?? 0,
     failedLastDay: counts?.failedLastDay ?? 0,
     stalled: stalled.length,
-    schedules: schedules?.count ?? 0,
+    schedules: schedules.length,
+    overdueSchedules: overdue,
     lastErrors: failures.map((row) => ({
       runId: row.runId,
       projectKey: row.projectKey,
