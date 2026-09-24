@@ -30,6 +30,7 @@ describe('user preferences', () => {
       autoWatch: true,
       lastProjectId: null,
       hotkeys: {},
+      homeDashboard: { order: [], hidden: [], shown: [], dismissed: [] },
     });
   });
 
@@ -91,7 +92,47 @@ describe('user preferences', () => {
       autoWatch: false,
       lastProjectId: null,
       hotkeys: { 'issue.new': 'i' },
+      homeDashboard: { order: [], hidden: [], shown: [], dismissed: [] },
     });
+  });
+
+  // Start as the user arranged it (docs/helena-decisions/dashboard.md).
+  it('keeps how Start is arranged: order, hidden, shown and hidden failures', async () => {
+    const u = await signUpTestUser();
+    const client = authedApi(u.cookie);
+    const homeDashboard = {
+      order: ['tasks', 'needs-you', 'plugin:acme:weather'],
+      hidden: ['projects'],
+      shown: ['plugin:acme:weather'],
+      dismissed: ['run:12', 'chat:40'],
+    };
+
+    const res = await client.account.preferences.patch({ homeDashboard });
+    expect(res.status).toBe(200);
+    expect(res.data?.homeDashboard).toEqual(homeDashboard);
+
+    await client.account.preferences.patch({ theme: 'dark' });
+    const stored = await client.account.preferences.get();
+    expect(stored.data?.homeDashboard).toEqual(homeDashboard);
+  });
+
+  it('drops repeated ids and rejects oversized lists on Start', async () => {
+    const u = await signUpTestUser();
+    const client = authedApi(u.cookie);
+    const res = await client.account.preferences.patch({
+      homeDashboard: { order: ['tasks', 'tasks'], hidden: [], shown: [], dismissed: [] },
+    });
+    expect(res.data?.homeDashboard.order).toEqual(['tasks']);
+
+    const tooMany = await client.account.preferences.patch({
+      homeDashboard: {
+        order: [],
+        hidden: [],
+        shown: [],
+        dismissed: Array.from({ length: 201 }, (_, i) => `run:${i}`),
+      },
+    });
+    expect(tooMany.status).toBe(400);
   });
 
   it('keeps the fields left out of a patch', async () => {

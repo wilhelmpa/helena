@@ -29,6 +29,7 @@ export const PREFERENCE_DEFAULTS: AccountPreferences = {
   autoWatch: true,
   lastProjectId: null,
   hotkeys: {},
+  homeDashboard: { order: [], hidden: [], shown: [], dismissed: [] },
 };
 
 export function useAccountPreferencesQuery() {

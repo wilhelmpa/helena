@@ -275,6 +275,15 @@ export const userPreference = pgTable(
     lastProjectId: integer('last_project_id').references(() => project.id, {
       onDelete: 'set null',
     }),
+    // Start as this user arranged it (docs/helena-decisions/dashboard.md): the order of its
+    // widgets, the ones hidden, the ones shown although off by default, and the failures of
+    // "Braucht dich" they hid. Null until they change anything; widget ids only.
+    homeDashboard: jsonb('home_dashboard').$type<{
+      order: string[];
+      hidden: string[];
+      shown: string[];
+      dismissed: string[];
+    }>(),
     // The release whose "what's new" screen this user has closed. Null until they
     // close one, which is what an account created before the screen existed reads as.
     seenVersion: text('seen_version'),
