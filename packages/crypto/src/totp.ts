@@ -1,58 +1,55 @@
 import { Secret, TOTP, URI } from 'otpauth';
 
-// Authenticator (TOTP, RFC 6238) keys of website logins: one parser and one code generator
-// for all of Helena, on the `otpauth` library. A key is a base32 seed or an otpauth://totp
-// link that may set digits, period and algorithm. The browser gateway asks Helena for the
-// current code, so the seed itself never leaves Helena. The limits are the ones Hermes'
-// vault accepts, so a key it would refuse is refused on save.
+// TOTP codes (RFC 6238) for the authenticator keys the Credentials page accepts: a base32
+// key, or an otpauth://totp link that can set digits, period and algorithm. Helena computes
+// the code itself so the key never leaves it (docs/volition-design-browser-gateway.md §6).
+// One implementation and one otpauth:// parser for all of Helena (orchestrator decision
+// D-C5): the `otpauth` library (MIT); this file only adds the rules Hermes' vault applies,
+// so a key it would refuse is refused on save.
 
-const ALGORITHMS = ['SHA1', 'SHA256', 'SHA512'];
 const DIGITS = [6, 7, 8];
+const ALGORITHMS = ['SHA1', 'SHA256', 'SHA512'];
 
-export class TotpError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'TotpError';
-  }
-}
+// An authenticator key Helena does not accept; the message is for the person who typed it.
+export class TotpSecretError extends Error {}
 
 export function parseTotpSecret(value: string): TOTP {
   const trimmed = value.trim();
-  if (trimmed.toLowerCase().startsWith('otpauth://')) {
-    let parsed: TOTP | unknown;
+  if (/^otpauth:\/\//i.test(trimmed)) {
+    let parsed: ReturnType<typeof URI.parse>;
     try {
       parsed = URI.parse(trimmed);
     } catch {
-      throw new TotpError('The otpauth link cannot be read.');
+      throw new TotpSecretError(
+        'The authenticator key must be a base32 key or an otpauth:// link.',
+      );
     }
-    if (!(parsed instanceof TOTP)) throw new TotpError('Only otpauth://totp links are supported.');
+    if (!(parsed instanceof TOTP)) {
+      throw new TotpSecretError('Only otpauth://totp links are supported.');
+    }
     if (
       !DIGITS.includes(parsed.digits) ||
       !(parsed.period > 0) ||
-      !ALGORITHMS.includes(parsed.algorithm.toUpperCase().replace('-', ''))
+      !ALGORITHMS.includes(parsed.algorithm)
     ) {
-      throw new TotpError('The otpauth link has settings Hermes does not support.');
+      throw new TotpSecretError('The otpauth link has settings Hermes does not support.');
     }
     return parsed;
   }
-  const seed = trimmed.replace(/[\s-]/g, '').toUpperCase().replace(/=+$/, '');
-  if (!seed || !/^[A-Z2-7]+$/.test(seed)) {
-    throw new TotpError('The authenticator key must be a base32 key or an otpauth:// link.');
+  const normalized = trimmed.replace(/[\s-]/g, '').toUpperCase().replace(/=+$/, '');
+  if (!normalized || !/^[A-Z2-7]+$/.test(normalized)) {
+    throw new TotpSecretError('The authenticator key must be a base32 key or an otpauth:// link.');
   }
-  return new TOTP({ secret: Secret.fromBase32(seed), digits: 6, period: 30, algorithm: 'SHA1' });
+  return new TOTP({ secret: Secret.fromBase32(normalized) });
 }
 
-export function assertTotpSecret(value: string): void {
-  parseTotpSecret(value);
-}
-
-// The code valid at `atMs`.
+// The current code for a saved authenticator key. Never returns or logs the key.
 export function totpCode(secret: string, atMs: number = Date.now()): string {
   return parseTotpSecret(secret).generate({ timestamp: atMs });
 }
 
-// Seconds until the code valid at `atMs` changes.
+// Seconds until the current code changes.
 export function totpSecondsRemaining(secret: string, atMs: number = Date.now()): number {
-  const period = parseTotpSecret(secret).period;
+  const { period } = parseTotpSecret(secret);
   return period - (Math.floor(atMs / 1000) % period);
 }

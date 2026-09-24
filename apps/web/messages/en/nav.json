@@ -109,7 +109,21 @@
       "reconnecting": "The connection to the browser was lost. Reconnecting…",
       "dialogTitle": "The page asks",
       "dialogOk": "OK",
-      "dialogCancel": "Cancel"
+      "dialogCancel": "Cancel",
+      "controlPrefix": "In control:",
+      "controlledByAgentGeneric": "an agent",
+      "takeOver": "Take over",
+      "handBack": "Hand back",
+      "takeOverError": "Could not take over the browser.",
+      "handBackError": "Could not hand the browser back.",
+      "handoverTitle": "{agentName} asks you to take over",
+      "youControl": "You are in control",
+      "handoverDone": "Done – hand back",
+      "takeOverTitle": "{agentName} is in control. Take over?",
+      "takeOverHint": "While you are in control, the agent waits. It carries on once you hand back.",
+      "idleTitle": "Are you done?",
+      "idleHint": "No input for 10 minutes. Without an answer, control goes back to the agents in a minute.",
+      "idleKeep": "Keep control"
     }
   },
   "groups": {
@@ -150,5 +164,6 @@
     "groupOptions": "Group options",
     "dropUngrouped": "Drop here to take the project out of its group"
   },
-  "access": "Access & connections"
+  "access": "Access & connections",
+  "browser": "Browser"
 }

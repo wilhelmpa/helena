@@ -13,6 +13,7 @@ import { canActOnLearning } from '../../utils/agentLearning';
 import { AgentFormSection } from './AgentFormSection';
 import AgentLearningSettings from './AgentLearningSettings';
 import AgentMemoryFiles from './AgentMemoryFiles';
+import AgentProfileSync from './AgentProfileSync';
 import AgentRuntimeNotices from './AgentRuntimeNotices';
 import AgentSkillInventory from './AgentSkillInventory';
 import AgentToolsetList from './AgentToolsetList';
@@ -66,6 +67,9 @@ export default function AgentAbilitiesSection({
         canEdit={canEdit}
         onChange={(runtimePolicy) => onChange({ runtimePolicy })}
       />
+      {agent && agent.kind === 'external' && !isTemplate && (
+        <AgentProfileSync teamId={teamId} agentId={agent.id} canEdit={canEdit} />
+      )}
       {agent && !isTemplate && <AgentRuntimeNotices state={agent.runtimeState} />}
       {isTemplate ? (
         <>

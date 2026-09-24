@@ -1,4 +1,4 @@
-import { parseTotpSecret, TotpError } from '@repo/crypto';
+import { parseTotpSecret, TotpSecretError } from '@repo/crypto';
 import { HttpError } from '#shared/lib';
 
 // The kinds of the Credentials page. Each is stored as an integration_credential row
@@ -91,12 +91,12 @@ export function loginOrigins(loginUrl: string, allowedDomains: string[]): string
 
 // The rules Hermes' vault applies to an authenticator key, checked here so that a key it
 // would refuse is refused on save rather than when the runner delivers it. The one parser
-// is @repo/crypto's (the otpauth library), shared with the browser gateway's codes.
+// is @repo/crypto's (otpauth), which also computes the codes.
 export function assertTotpSecret(value: string): void {
   try {
     parseTotpSecret(value);
   } catch (error) {
-    if (error instanceof TotpError) throw new HttpError(400, error.message);
+    if (error instanceof TotpSecretError) throw new HttpError(400, error.message);
     throw error;
   }
 }

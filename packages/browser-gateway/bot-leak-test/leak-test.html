@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Browser Gateway Leak Test</title>
+  </head>
+  <body>
+    <h1>Browser Gateway Leak Test</h1>
+    <div id="status">not run</div>
+    <form id="loginForm">
+      <input id="user" name="user" type="text" autocomplete="username" />
+      <input id="pass" name="pass" type="password" autocomplete="current-password" />
+      <button type="submit" id="submitBtn">Login</button>
+    </form>
+    <script>
+      // Browser Gateway bot-signal leak test page (spike, design doc §7 / §10.2).
+      // Every check below is written to be TRUE ("leak detected") only when a CDP client
+      // has Runtime.enable'd the page (classic Puppeteer/Playwright pattern) or has planted
+      // bindings/init-scripts. A clean, human-driven Chromium session, and patchright-core's
+      // isolated-world evaluation, must leave every one of these false.
+
+      window.__leakTestResults = null;
+
+      function checkWebdriver() {
+        return {
+          name: 'webdriver',
+          leak: navigator.webdriver === true,
+          detail: String(navigator.webdriver),
+        };
+      }
+
+      // Known trick (rebrowser-patches / open bot-detection research): a console.log call on an
+      // object with a getter only has that getter invoked synchronously, in the SAME turn, if a
+      // CDP client with Runtime enabled is building a remote-object preview of the console argument.
+      // A page nobody is inspecting never touches the getter for its own console.log call.
+      function checkConsoleGetterTrick() {
+        let hits = 0;
+        const obj = {};
+        Object.defineProperty(obj, 'probe', {
+          get() {
+            hits++;
+            return 1;
+          },
+          enumerable: true,
+        });
+        console.log(obj);
+        return {
+          name: 'console-getter-trick',
+          leak: hits > 0,
+          detail: 'getter invocations: ' + hits,
+        };
+      }
+
+      // Same idea against Error#stack: DevTools' exception/console preview logic reads `.stack`
+      // while building a preview of a logged Error, which a real page's own console.log does not.
+      function checkErrorStackTrick() {
+        let accessed = false;
+        const e = new Error('probe');
+        Object.defineProperty(e, 'stack', {
+          get() {
+            accessed = true;
+            return 'redacted';
+          },
+          configurable: true,
+        });
+        console.log(e);
+        return {
+          name: 'error-stack-getter-trick',
+          leak: accessed,
+          detail: 'stack getter invoked: ' + accessed,
+        };
+      }
+
+      // Puppeteer/Playwright classic evaluate() calls Runtime.evaluate with a synthetic
+      // `//# sourceURL=` so their own internal errors are debuggable; that name then leaks into any
+      // stack trace captured while such an evaluation runs. We captured our own stack and scan it,
+      // and also scan every <script> tag and the document for injected evaluation markers.
+      function checkSourceURLTrace() {
+        // Only the STACK TRACE is a meaningful signal here: a CDP init script
+        // (Page.addScriptToEvaluateOnNewDocument) never materializes as a document.scripts entry, so
+        // scanning script tag text/src is not a real signal and — worse — self-matches this very
+        // function's own source, which literally contains these pattern strings. Stack only.
+        const stack = new Error('probe').stack || '';
+        const patterns = [
+          '__playwright_evaluation_script__',
+          '__puppeteer_evaluation_script__',
+          'pptr:internal',
+          'playwright-core',
+          'puppeteer-core',
+          '__pw_',
+        ];
+        const stackHits = patterns.filter((p) => stack.includes(p));
+        // externalScriptSrcHits: informational only, does not affect the verdict — a real signal
+        // would be an *external* script src (a CDP client can inject a <script src>), not inline text.
+        const externalScriptSrcHits = [];
+        for (const s of document.scripts) {
+          const src = s.src || '';
+          if (!src) continue;
+          for (const p of patterns) {
+            if (src.includes(p)) externalScriptSrcHits.push(p);
+          }
+        }
+        return {
+          name: 'sourceURL-trace',
+          leak: stackHits.length > 0,
+          detail: JSON.stringify({ stack, stackHits, externalScriptSrcHits }),
+        };
+      }
+
+      // Bindings / init-script traces: exposeBinding / addInitScript style helpers from
+      // Puppeteer/Playwright leave global functions or properties with recognizable names.
+      function checkBindings() {
+        const names = Object.getOwnPropertyNames(window);
+        const patterns = [
+          /^__playwright/i,
+          /^__pw_?/i,
+          /^__puppeteer/i,
+          /^__pptr/i,
+          /^cdc_/i,
+          /exposeBinding/i,
+        ];
+        const hits = names.filter((n) => patterns.some((p) => p.test(n)));
+        return { name: 'bindings', leak: hits.length > 0, detail: JSON.stringify(hits) };
+      }
+
+      function collectUaConsistency() {
+        let uaPlatform = null;
+        try {
+          uaPlatform = navigator.userAgentData ? navigator.userAgentData.platform : null;
+        } catch (e) {
+          uaPlatform = 'error:' + e.message;
+        }
+        return {
+          name: 'ua-consistency',
+          leak: false, // informational only, no pass/fail — recorded for the report
+          detail: JSON.stringify({
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            uaDataPlatform: uaPlatform,
+            languages: navigator.languages,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            hardwareConcurrency: navigator.hardwareConcurrency,
+            pluginsLength: navigator.plugins ? navigator.plugins.length : null,
+            screen: { w: screen.width, h: screen.height },
+            inner: { w: window.innerWidth, h: window.innerHeight },
+            hasChrome: typeof window.chrome !== 'undefined',
+          }),
+        };
+      }
+
+      function runAllChecks() {
+        const results = [
+          checkWebdriver(),
+          checkConsoleGetterTrick(),
+          checkErrorStackTrick(),
+          checkSourceURLTrace(),
+          checkBindings(),
+          collectUaConsistency(),
+        ];
+        window.__leakTestResults = results;
+        document.getElementById('status').textContent =
+          'done: ' + results.filter((r) => r.leak).length + ' leak(s)';
+        return results;
+      }
+
+      window.runLeakChecks = runAllChecks;
+
+      // A password-manager-style form used later to prove typed input looks human and that a
+      // filled password field never gets read back through evaluate/snapshot (separate, larger test;
+      // this page only needs to exist for that scenario, not implement the redaction itself).
+      document.getElementById('loginForm').addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        document.getElementById('status').textContent = 'submitted';
+      });
+    </script>
+  </body>
+</html>

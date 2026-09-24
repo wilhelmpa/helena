@@ -8,6 +8,7 @@ import { formatDurationShort } from '@/utils/dates';
 import { SectionLabel } from '@/components/common/page/RowList';
 import { useSystemHealthQuery } from '../../services/systemHealth.service';
 import { healthProblems } from '../../utils/systemHealth';
+import HomeAgentSync from './HomeAgentSync';
 import HomeJanitorState from './HomeJanitorState';
 import HomeServiceState from './HomeServiceState';
 
@@ -51,6 +52,11 @@ export default function HomeSystemHealth() {
               <li key={problem}>{problem}</li>
             ))}
           </ul>
+        )}
+        {data.agents && (
+          <div className="mt-2">
+            <HomeAgentSync summary={data.agents} />
+          </div>
         )}
       </div>
       <div className="min-w-0">

@@ -1,8 +1,9 @@
-import { KeyRound, Pencil, Server, Trash2 } from 'lucide-react';
+import { KeyRound, Lock, Pencil, Server, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { McpServer } from '@/lib/api/endpoints/agentMcpServers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { builtinMcpServerSlug } from '../../utils/builtinMcpServers';
 
 // One server of the library: its name and transport, what Hermes starts or connects to,
 // and the secrets its values come from.
@@ -18,9 +19,15 @@ export function McpServerRow({
   onDelete: () => void;
 }) {
   const t = useTranslations('teams.mcpServers');
+  const builtinSlug = builtinMcpServerSlug(server);
+  const name = builtinSlug ? t(`builtin.${builtinSlug}.title`) : server.name;
+  const description = builtinSlug ? t(`builtin.${builtinSlug}.description`) : server.description;
   const target =
     server.transport === 'stdio' ? [server.command, ...server.args].join(' ') : server.url;
   const secrets = [...server.env, ...server.headers].filter((value) => value.credentialId !== null);
+  // A builtin row cannot be edited or deleted (the API answers 403); the affordances are
+  // hidden rather than shown disabled, same as any other action the viewer cannot take.
+  const canManageRow = canManage && !server.builtin;
 
   return (
     <li className="flex items-start gap-3 py-3">
@@ -29,14 +36,26 @@ export function McpServerRow({
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-center gap-2">
-          <span className="truncate font-mono text-sm font-medium">{server.name}</span>
+          <span
+            className={
+              builtinSlug
+                ? 'truncate text-sm font-medium'
+                : 'truncate font-mono text-sm font-medium'
+            }
+          >
+            {name}
+          </span>
           <Badge variant="secondary" className="text-xs font-normal">
             {t(`transports.${server.transport}`)}
           </Badge>
+          {server.builtin && (
+            <Badge variant="outline" className="gap-1 text-xs font-normal">
+              <Lock className="size-3" />
+              {t('builtinBadge')}
+            </Badge>
+          )}
         </div>
-        {server.description && (
-          <p className="text-xs text-muted-foreground">{server.description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
         <p dir="ltr" className="truncate font-mono text-xs text-muted-foreground">
           {target}
         </p>
@@ -57,7 +76,7 @@ export function McpServerRow({
           </div>
         )}
       </div>
-      {canManage && (
+      {canManageRow && (
         <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"

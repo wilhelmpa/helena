@@ -27,7 +27,7 @@ function initialState() {
     ],
     folder: {
       id: 'volition',
-      label: 'Volition',
+      label: 'Helena',
       path: '/srv/volition/vault',
       devices: [{ deviceID: SERVER_ID }, { deviceID: MAC_ID }],
     } as { id: string; label: string; path: string; devices: { deviceID: string }[] } | null,

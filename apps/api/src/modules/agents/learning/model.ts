@@ -53,7 +53,12 @@ export const createRuntimeActionBody = t.Union([
 
 export const RuntimeActionResponse = t.Object({
   id: t.Number(),
-  kind: t.Union([t.Literal('discard-skill'), t.Literal('pin-skill'), t.Literal('write-memory')]),
+  kind: t.Union([
+    t.Literal('discard-skill'),
+    t.Literal('pin-skill'),
+    t.Literal('write-memory'),
+    t.Literal('rewrite-profile'),
+  ]),
   target: t.String({ description: 'The skill path, or the memory file.' }),
   pinned: t.Nullable(t.Boolean()),
   error: t.Nullable(
@@ -70,8 +75,10 @@ export const runtimeActionResult = t.Object({
   error: t.Nullable(t.String({ maxLength: 500 })),
 });
 
-// The pending actions as the runner receives them with the policy.
+// The pending actions as the runner receives them with the policy. 'rewrite-profile' is
+// "Neu schreiben": the runner writes the agent's whole profile again and reads it back.
 export const runtimeActionSnapshot = t.Union([
+  t.Object({ id: t.Number(), kind: t.Literal('rewrite-profile') }),
   t.Object({ id: t.Number(), kind: t.Literal('discard-skill'), path: t.String() }),
   t.Object({
     id: t.Number(),

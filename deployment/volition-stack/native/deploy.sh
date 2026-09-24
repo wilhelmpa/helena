@@ -121,10 +121,15 @@ for unit in volition-hermes-runner.service volition-hermes-team-bridge.service \
 done
 
 # The runner's start script runs an installed copy of the catalog script, which writes the
-# runner config from the Hermes profile.
+# runner config from the Hermes profile. The start script itself is installed the same way.
 if changed deployment/volition-stack/integration/scripts/volition-hermes-catalog.py; then
   install -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-catalog.py" \
     /usr/local/libexec/volition-hermes-catalog.py
+  restart+=(volition-hermes-runner.service)
+fi
+if changed deployment/volition-stack/integration/scripts/volition-hermes-runner; then
+  install -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-runner" \
+    /usr/local/libexec/volition-hermes-runner
   restart+=(volition-hermes-runner.service)
 fi
 
@@ -163,8 +168,16 @@ if changed "$chromium_policy"; then
   install -D -m 0644 "$live/$chromium_policy" /etc/chromium/policies/managed/volition-project-browser.json
 fi
 
+# The browser gateway's MCP shim is a build of packages/browser-gateway, installed outside the
+# checkout (an isolated agent's unit hides it); only rebuilt once install-browser-gateway.sh
+# installed it. The gateway itself runs inside the router, from the checkout.
+if changed packages/browser-gateway deployment/volition-stack/native/install-browser-gateway.sh; then
+  "$live/deployment/volition-stack/native/install-browser-gateway.sh" sync
+fi
+
 # The router runs from this checkout; its unit is installed from here as well.
-if changed deployment/volition-stack/browser deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
+if changed deployment/volition-stack/browser packages/browser-gateway \
+  deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
   install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
   systemctl daemon-reload
   restart+=(volition-project-browser-router.service)

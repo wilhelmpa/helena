@@ -140,6 +140,37 @@ class IsolatedRuntimeTest(unittest.TestCase):
         # Nothing was created in the profile: it is the project user's.
         self.assertFalse((self.home / 'profiles' / 'alpha_7').exists())
 
+    def test_a_home_whose_config_is_a_file_does_not_stop_the_runner(self):
+        # 2026-09-24: a hand edit replaced the link with a file in every profile; the next
+        # start stopped the whole runner. Now the runner puts the link back (policy.ts).
+        self.os.environ.pop('AGENT_ISOLATION', None)
+        plugin = self.dir / 'plugins' / 'plan-approval-guard'
+        plugin.mkdir(parents=True)
+        (plugin / '__init__.py').write_text('')
+        profile = self.home / 'profiles' / 'alpha_7'
+        profile.mkdir(parents=True, mode=0o700)
+        (profile / 'config.yaml').write_text('mcp_servers: {}\n')
+        runtime = self.runtime()
+        home, writer = runtime['agents']
+        self.assertEqual(writer['name'], 'writer')
+        self.assertFalse((profile / 'config.yaml').is_symlink())
+        self.assertEqual(writer['hermes']['sharedConfig'], str(self.home / 'config.yaml'))
+        self.assertNotIn('sharedConfig', home.get('hermes', {}))
+        self.assertEqual(runtime['helenaProblems'], [])
+
+    def test_leaves_out_an_agent_it_cannot_serve_and_names_it(self):
+        self.os.environ.pop('AGENT_ISOLATION', None)
+        plugin = self.dir / 'plugins' / 'plan-approval-guard'
+        plugin.mkdir(parents=True)
+        (plugin / '__init__.py').write_text('')
+        broken = self.descriptors / 'alpha_8.json'
+        broken.write_text(self.json.dumps({'schemaVersion': 1, 'planAgentId': 9}))
+        self.os.chmod(broken, 0o600)
+        runtime = self.runtime()
+        self.assertEqual([agent['name'] for agent in runtime['agents']], ['hermes-home-master', 'writer'])
+        self.assertEqual(runtime['helenaProblems'],
+                         ['alpha_8: Hermes runner descriptor conflicts with its project'])
+
     def test_without_isolation_nothing_changes(self):
         self.os.environ.pop('AGENT_ISOLATION', None)
         plugin = self.dir / 'plugins' / 'plan-approval-guard'

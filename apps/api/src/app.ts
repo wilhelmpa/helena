@@ -25,6 +25,7 @@ import { normalizeOpenApiResponse } from './openapi';
 import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
 import { hermesTeamControlRoutes } from './hermes-team-control';
 import { agentEgressInternalRoutes } from './modules/agent-egress/internal';
+import { agentBrowserGatewayInternalRoutes } from './modules/agent-browser-gateway/internal';
 import {
   agentSocketProject,
   agentSocketRequestAllowed,
@@ -96,6 +97,7 @@ export const app = new Elysia()
   .use(homeAgentBootstrapRoutes)
   .use(hermesTeamControlRoutes)
   .use(agentEgressInternalRoutes)
+  .use(agentBrowserGatewayInternalRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
   // so the UI at /docs and the spec at /docs/json are reachable without a
   // session. The spec is generated from the `t` schemas on every route.

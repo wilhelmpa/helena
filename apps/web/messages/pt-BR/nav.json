@@ -106,7 +106,21 @@
       "reconnecting": "A conexão com o navegador foi perdida. Reconectando…",
       "dialogTitle": "A página pergunta",
       "dialogOk": "OK",
-      "dialogCancel": "Cancelar"
+      "dialogCancel": "Cancelar",
+      "controlPrefix": "No controle:",
+      "controlledByAgentGeneric": "um agente",
+      "takeOver": "Assumir o controle",
+      "handBack": "Devolver o controle",
+      "takeOverError": "Não foi possível assumir o controle do navegador.",
+      "handBackError": "Não foi possível devolver o controle do navegador.",
+      "handoverTitle": "{agentName} pede que você assuma",
+      "youControl": "Você está no controle",
+      "handoverDone": "Pronto – devolver",
+      "takeOverTitle": "{agentName} está no controle. Assumir?",
+      "takeOverHint": "Enquanto você estiver no controle, o agente espera. Ele continua quando você devolver.",
+      "idleTitle": "Terminou?",
+      "idleHint": "Nenhuma ação há 10 minutos. Sem resposta, o controle volta aos agentes em um minuto.",
+      "idleKeep": "Manter o controle"
     }
   },
   "groups": {
@@ -150,5 +164,6 @@
     "groupOptions": "Opções do grupo",
     "dropUngrouped": "Solte aqui para tirar o projeto do grupo"
   },
-  "access": "Acessos e conexões"
+  "access": "Acessos e conexões",
+  "browser": "Navegador"
 }
