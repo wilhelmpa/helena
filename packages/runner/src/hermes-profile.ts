@@ -211,7 +211,22 @@ reasoning = config.get("reasoning_config") if isinstance(config, dict) else None
 effort = None
 if isinstance(reasoning, dict):
     effort = "none" if reasoning.get("enabled") is False else (reasoning.get("effort") or None)
-json.dump({"model": row[0] or None, "reasoning": effort, "provider": row[2] or None}, sys.stdout)
+model, provider = row[0] or None, row[2] or None
+# sessions.model is the model the session started on: a resumed session that runs with
+# another --model keeps it there. The latest model the session was billed for is the one
+# that answered last; its start's reasoning then says nothing about it.
+try:
+    latest = connection.execute(
+        "SELECT model, billing_provider FROM session_model_usage WHERE session_id = ?"
+        " ORDER BY last_seen DESC LIMIT 1", (request["session"],)
+    ).fetchone()
+except sqlite3.Error:
+    latest = None
+if latest and latest[0]:
+    if latest[0] != model:
+        effort = None
+    model, provider = latest[0], latest[1] or provider
+json.dump({"model": model, "reasoning": effort, "provider": provider}, sys.stdout)
 `;
 
 // Hermes can hang on a lock like any process; a check must never hold up the claim loop.
