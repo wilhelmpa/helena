@@ -255,6 +255,9 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
   learnedSkill: (teamId: number, agentId: number, path: string) =>
     ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
+  // Whether the agent's runtime profile matches its settings.
+  agentRuntimeSync: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'runtime-sync'] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,

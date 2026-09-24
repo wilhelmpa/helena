@@ -590,8 +590,8 @@
       "toolsetsReadOnly": "Nur Mitglieder, die Agenten bearbeiten dürfen, können Toolsets deaktivieren.",
       "noToolsets": "Der Runner hat keine Toolsets gemeldet.",
       "mcpServers": "MCP-Server",
-      "mcpServersHint": "Aus der Hermes-Konfiguration. Deaktiviere einen und speichere, damit der Agent ihn nicht nutzt.",
-      "mcpServersReadOnly": "Aus der Hermes-Konfiguration. Nur Mitglieder, die Agenten bearbeiten dürfen, können einen deaktivieren.",
+      "mcpServersHint": "Von Helena für jeden Agenten: der Helena-Server und der Browser seines Projekts. Deaktiviere einen und speichere, damit der Agent ihn nicht nutzt.",
+      "mcpServersReadOnly": "Von Helena für jeden Agenten. Nur Mitglieder, die Agenten bearbeiten dürfen, können einen deaktivieren.",
       "noMcpServers": "Keine",
       "libraryMcpServers": "MCP-Server des Teams",
       "libraryMcpServersHint": "Ein aktivierter Server startet nach dem Speichern mit den Chats und Läufen des Agenten.",
@@ -606,7 +606,7 @@
       "origin": {
         "agent": "Gelernt",
         "hub": "Aus dem Skills Hub",
-        "plan": "Aus Plan"
+        "plan": "Aus Helena"
       },
       "memory": "Gedächtnis",
       "memoryHint": "Hermes schreibt dieses Gedächtnis selbst; angezeigt wird der Stand, den der Runner zuletzt gemeldet hat. Eine Änderung erreicht den Agenten mit dem nächsten Abgleich des Runners.",
@@ -711,6 +711,51 @@
         "instructions": "Anweisungen",
         "model": "Modell/Reasoning",
         "budgets": "Budgets"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Profil synchron",
+        "drift": "Abweichung im Profil",
+        "pending": "Einstellungen werden übernommen …",
+        "degraded": "Einstellungen konnten nicht übernommen werden",
+        "offline": "Runner offline",
+        "unknown": "Runner meldet sein Profil nicht"
+      },
+      "checked": "geprüft vor {time}",
+      "rewrite": "Neu schreiben",
+      "rewriting": "Wird neu geschrieben …",
+      "rewriteQueued": "Der Runner schreibt das Profil beim nächsten Abgleich neu.",
+      "drift": {
+        "not-linked": "config.yaml ist keine Verknüpfung zur gemeinsamen Hermes-Konfiguration.",
+        "managed-config": "Hermes übernimmt die von Helena geschriebene Konfiguration nicht.",
+        "mcp-unmanaged": "MCP-Server {server} ist an, obwohl Helena ihn nicht vorsieht.",
+        "mcp-missing": "MCP-Server {server} fehlt oder ist aus.",
+        "mcp-differs": "MCP-Server {server} läuft mit anderen Einstellungen als in Helena.",
+        "mcp-unsupported": "MCP-Server {server} kann diese Laufzeit nicht starten.",
+        "setting-differs": "Einstellung {key} weicht ab.",
+        "approval-guard": "Gefährliche Befehle laufen ohne Helenas Freigabe-Wächter.",
+        "probe-failed": "Das Profil konnte nicht gelesen werden."
+      },
+      "defaults": "Standard der Laufzeit: {model} ({provider}), Reasoning {reasoning}",
+      "servers": "MCP-Server: {servers}",
+      "serversOff": "abgeschaltet: {servers}"
+    },
+    "runModel": {
+      "title": "Modell",
+      "configured": "Eingestellt: {value}",
+      "used": "Gelaufen: {value}",
+      "notReported": "Gelaufen: nicht gemeldet",
+      "mismatch": "Weicht ab: {what}",
+      "badge": "Modell weicht ab",
+      "source": {
+        "run": "vom Workflow-Schritt",
+        "agent": "vom Agenten",
+        "default": "Agent-Standard"
+      },
+      "part": {
+        "model": "Modell",
+        "reasoning": "Reasoning"
       }
     }
   },

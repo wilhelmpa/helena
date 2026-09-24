@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFile } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
@@ -384,6 +385,18 @@ async function profileHelper(): Promise<void> {
   process.stdout.write(`${JSON.stringify(answer)}\n`);
 }
 
+// The agents the deployment's catalog script left out of the runner config, and why.
+async function startProblems(path: string): Promise<string[]> {
+  try {
+    const file = JSON.parse(await readFile(path, 'utf8')) as { helenaProblems?: unknown };
+    return Array.isArray(file.helenaProblems)
+      ? file.helenaProblems.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 async function main(): Promise<void> {
   if (process.argv[2] === 'profile-helper') return profileHelper();
   const cli = parseArgv(process.argv.slice(2));
@@ -415,8 +428,16 @@ async function main(): Promise<void> {
     });
   }
 
-  // A start the service wrapper reported as failed is over now.
-  if (configs[0]) void new Client(configs[0]).reportRunnerHealth(null).catch(() => {});
+  // A start the service wrapper reported as failed is over now; what the deployment could
+  // not give a runner (a broken descriptor, say) is named instead.
+  const problems = await startProblems(configPath);
+  if (configs[0]) {
+    void new Client(configs[0])
+      .reportRunnerHealth(
+        problems.length > 0 ? `Left out of the runner: ${problems.join('; ')}`.slice(0, 500) : null,
+      )
+      .catch(() => {});
+  }
 
   // One agent's key being refused says nothing about the others, so it does not take them
   // down with it; the runner still exits non-zero once they are all finished.

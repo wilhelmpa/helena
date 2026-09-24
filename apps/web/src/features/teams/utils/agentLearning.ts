@@ -43,6 +43,9 @@ export function pinnedAfter(pinned: boolean, action: RuntimeAction | null): bool
   return action?.kind === 'pin-skill' && action.error === null ? action.pinned === true : pinned;
 }
 
+// "Neu schreiben" waits in the same list, but is the profile sync's, not learning's.
 export function waitingCount(actions: RuntimeAction[] | undefined): number {
-  return (actions ?? []).filter((action) => action.error === null).length;
+  return (actions ?? []).filter(
+    (action) => action.error === null && action.kind !== 'rewrite-profile',
+  ).length;
 }
