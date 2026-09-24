@@ -14,9 +14,6 @@ import { runDtos } from '#modules/pipelines/runs';
 // Their settings live in project_workflow_assignment, their runs in pipeline_run like
 // every run of the engine.
 
-// The time zone of a schedule that names none.
-export const DEFAULT_TIMEZONE = 'Europe/Berlin';
-
 export const AGENT_TEAM = 'agent-team';
 
 interface ProjectContext {

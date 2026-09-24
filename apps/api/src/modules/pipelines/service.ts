@@ -11,7 +11,8 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
-import { DEFAULT_TIMEZONE, syncEngineSchedule } from '#modules/engine/schedules';
+import { syncEngineSchedule } from '#modules/engine/schedules';
+import { defaultTimezone } from '#modules/engine/settings';
 import { minCronIntervalSeconds } from '#modules/routines/cron';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import {
@@ -394,7 +395,7 @@ async function syncSchedule(
   const values = {
     title: trigger.title,
     cron: trigger.cron,
-    timezone: trigger.timezone || DEFAULT_TIMEZONE,
+    timezone: trigger.timezone || (await defaultTimezone()),
     enabled: true,
     actorUserId: usage.updatedBy ?? row.createdBy,
     updatedAt: new Date(),

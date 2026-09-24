@@ -11,7 +11,7 @@ import {
   type PipelineStep,
 } from '../../definition';
 import { renderTemplate } from '../../render';
-import { berlinTime, wakeTime } from '../../wait';
+import { wakeTime, zonedTime } from '../../wait';
 
 const agent = (id: string, instruction = 'Do it.', role = 'coder'): AgentStep => ({
   id,
@@ -268,9 +268,15 @@ describe('workflow variables', () => {
 
 describe('wait steps', () => {
   it('take the wall-clock time in Berlin, summer and winter', () => {
-    expect(berlinTime('2026-07-01', '09:00').toISOString()).toBe('2026-07-01T07:00:00.000Z');
-    expect(berlinTime('2026-12-01', '09:00').toISOString()).toBe('2026-12-01T08:00:00.000Z');
-    expect(berlinTime('2026-12-01', '00:30').toISOString()).toBe('2026-11-30T23:30:00.000Z');
+    expect(zonedTime('2026-07-01', '09:00', 'Europe/Berlin').toISOString()).toBe(
+      '2026-07-01T07:00:00.000Z',
+    );
+    expect(zonedTime('2026-12-01', '09:00', 'Europe/Berlin').toISOString()).toBe(
+      '2026-12-01T08:00:00.000Z',
+    );
+    expect(zonedTime('2026-12-01', '00:30', 'Europe/Berlin').toISOString()).toBe(
+      '2026-11-30T23:30:00.000Z',
+    );
   });
 
   it('wait a delay or until the date of the task', () => {

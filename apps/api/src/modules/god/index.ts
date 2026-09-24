@@ -21,6 +21,7 @@ import { hasConfiguredEmailProvider } from '@repo/db';
 import { emailBody, hasEmailProvider, sendEmail } from '@repo/mailer';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
+import { engineSettings, setDefaultTimezone } from '#modules/engine/settings';
 import { HttpError } from '#shared/lib';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { paginate } from '#shared/pagination';
@@ -60,6 +61,7 @@ import {
   InstanceUserDetailResponse,
   InstanceUserPageResponse,
   SystemHealthResponse,
+  EngineSettingsResponse,
   OidcSettingsBody,
   OidcSettingsResponse,
   ScimGroupMappingsBody,
@@ -143,6 +145,34 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
         'worker were seen working, the agent runs that wait or overran, the runs of the ' +
         'engine (queued, active, stalled, the newest failures), and when the janitor loops ' +
         'last ran and what they cleaned up.',
+    },
+  })
+
+  .get('/god/engine', () => engineSettings(), {
+    response: { 200: EngineSettingsResponse, ...errors(401, 403) },
+    detail: {
+      summary: 'Read the settings of the workflow engine',
+      description:
+        'The time zone routines, workflow schedules and wait steps use when they name none, ' +
+        'and the server time zone it falls back to.',
+    },
+  })
+  .put('/god/engine', ({ body }) => setDefaultTimezone(body.defaultTimezone), {
+    body: t.Object({
+      defaultTimezone: t.Nullable(
+        t.String({
+          minLength: 1,
+          maxLength: 80,
+          description: 'IANA time zone; null for the server’s.',
+        }),
+      ),
+    }),
+    response: { 200: EngineSettingsResponse, ...errors(400, 401, 403) },
+    detail: {
+      summary: 'Change the settings of the workflow engine',
+      description:
+        'Sets the default time zone of routines, workflow schedules and wait steps, or goes back ' +
+        'to the server time zone with null. A routine or schedule that names its own keeps it.',
     },
   })
 

@@ -284,7 +284,8 @@ describe('routines', () => {
       issueId: task!.id,
       result: { outcome: 'skipped', skipReason: 'task-open' },
     });
-    expect((await routine.get()).data!.lastRun).toMatchObject({
+    const listed = (await routines(asOwner).get({ query: {} })).data!.items[0]!;
+    expect(listed.lastRun).toMatchObject({
       status: 'skipped',
       outcome: 'skipped',
       skipReason: 'task-open',

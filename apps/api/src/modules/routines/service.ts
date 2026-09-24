@@ -18,9 +18,9 @@ import { canTriggerAgent } from '#modules/agents/core/service';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { startRunSoon } from '#modules/engine/runs';
+import { defaultTimezone } from '#modules/engine/settings';
 import {
   assertCron,
-  DEFAULT_TIMEZONE,
   nextFireTime,
   recordScheduleRun,
   syncEngineSchedule,
@@ -325,7 +325,7 @@ export async function createRoutine(
     );
   if (existing) return getRoutine(owner, existing.id);
   const cron = input.cron.trim();
-  const timezone = input.timezone ?? DEFAULT_TIMEZONE;
+  const timezone = input.timezone ?? (await defaultTimezone());
   const fields = await routineFields(owner, userId, input);
   await assertCadence(owner.teamId, cron, timezone);
   const id = randomUUID();

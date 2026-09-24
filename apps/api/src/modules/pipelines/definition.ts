@@ -84,7 +84,7 @@ export type TaskAction =
 
 export type WaitSpec =
   | { kind: 'delay'; minutes: number }
-  // The day of the task's date field at `time` (HH:MM, Europe/Berlin).
+  // The day of the task's date field at `time` (HH:MM, in the instance's time zone).
   | { kind: 'until'; field: 'dueDate' | 'startDate'; time: string };
 
 interface StepBase {

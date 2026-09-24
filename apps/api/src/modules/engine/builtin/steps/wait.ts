@@ -7,11 +7,12 @@ import {
   type WaitStep,
 } from '#modules/pipelines/definition';
 import { wakeTime } from '#modules/pipelines/wait';
+import { defaultTimezone } from '../../settings';
 import { loadRun, setRunStatus, stepRow, writeStep } from '../../run-context';
 import type { FieldReader, StepContext, StepExecution, WorkflowStepType } from '../../sdk';
 
-// A wait: the run sleeps for a delay, or until a time of day (Berlin) on the task's due
-// or start date. The wake time is fixed when the step starts, so a run continued after
+// A wait: the run sleeps for a delay, or until a time of day (in the instance's time
+// zone) on the task's due or start date. The wake time is fixed when the step starts, so a run continued after
 // a restart wakes when it would have. A test run does not wait.
 
 type Step = WaitStep & { [field: string]: unknown };
@@ -30,7 +31,8 @@ async function plan(runId: string, step: WaitStep, at: StepExecution): Promise<s
   const existing = await stepRow(runId, at);
   if (existing?.status === 'succeeded' || existing?.status === 'simulated') return null;
   const context = await loadRun(runId);
-  const wakeAt = existing?.wakeAt ?? wakeTime(step.wait, context.task, Date.now());
+  const wakeAt =
+    existing?.wakeAt ?? wakeTime(step.wait, context.task, Date.now(), await defaultTimezone());
   if (context.run.dryRun || !wakeAt || wakeAt.getTime() <= Date.now()) {
     await writeStep(runId, step, at, {
       status: context.run.dryRun ? 'simulated' : 'succeeded',

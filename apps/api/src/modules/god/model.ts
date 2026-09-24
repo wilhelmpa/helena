@@ -316,6 +316,12 @@ export const InstanceTeamMemberPageResponse = pageResponse(
   }),
 );
 
+export const EngineSettingsResponse = t.Object({
+  defaultTimezone: t.String({ description: 'The time zone used where none is named.' }),
+  serverTimezone: t.String(),
+  timezoneSet: t.Boolean({ description: 'Whether the default is set here, not the server’s.' }),
+});
+
 export const SystemHealthResponse = t.Object({
   services: t.Array(
     t.Object({

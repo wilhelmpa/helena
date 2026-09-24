@@ -407,7 +407,15 @@ describe('agent runner queue', () => {
       .teams({ teamId })
       ['ai-agents']({ agentId: agent.id })
       .patch({ runtimePolicy: { ...policy, maxTurns: 1, runBudgetSeconds: 60 } });
-    expect((await stage('c', { maxTurns: 20 })).status).toBe(200);
+    // A stage's limit is lowered to the agent's own by the step that queues it; the run
+    // carries what it was queued with.
+    await queueStepRun({
+      agentId: agent.id,
+      projectId: issue.projectId,
+      issueId: issue.id,
+      prompt: 'Complete the assignment.',
+      maxTurns: 20,
+    });
     expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
       maxTurns: 20,
       runBudgetSeconds: 60,

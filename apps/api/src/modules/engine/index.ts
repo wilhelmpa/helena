@@ -9,6 +9,7 @@ import { registerBuiltins } from './builtin/index';
 import { createHook, deleteHook, getHook, receiveHook } from './hooks';
 import { listStepTypes, listTriggerTypes } from './registry';
 import { projectSigningSecret, rotateProjectSigningSecret } from './secrets';
+import { defaultTimezone } from './settings';
 
 // The routes of the Helena engine: the inbound webhooks of workflows (public, signed),
 // and what the builder needs to know about the engine (the registered step and trigger
@@ -98,6 +99,14 @@ export const engineRoutes = new Elysia({
       },
     },
   )
+  .get('/workflow-engine/settings', async () => ({ defaultTimezone: await defaultTimezone() }), {
+    response: { 200: t.Object({ defaultTimezone: t.String() }), ...errors(401) },
+    detail: {
+      summary: 'Read the default time zone of schedules',
+      description:
+        'The time zone a routine, a workflow schedule or a wait step uses when it names none.',
+    },
+  })
   .get(
     '/projects/:projectKey/pipelines/:pipelineId/hook',
     async ({ project, params }) => {

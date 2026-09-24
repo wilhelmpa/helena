@@ -40,7 +40,8 @@ const routineFields = {
     t.String({
       minLength: 1,
       maxLength: 80,
-      description: 'IANA time zone the cron runs in. Default Europe/Berlin.',
+      description:
+        "IANA time zone the cron runs in. Default: the instance's time zone (Administrator).",
     }),
   ),
   catchUp: t.Optional(

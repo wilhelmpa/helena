@@ -2,6 +2,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test
 import { DBOS } from '@dbos-inc/dbos-sdk';
 import { db, helenaSchedule, issue as issueTable } from '@repo/db';
 import { eq } from 'drizzle-orm';
+import { authedApi } from '#tests/helpers/app';
+import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { startEngine, stopEngineRuns, waitForStatus } from '#tests/helpers/engine';
 import { addProjectMember } from '#tests/helpers/members';

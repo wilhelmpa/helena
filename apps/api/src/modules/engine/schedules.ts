@@ -23,6 +23,8 @@ import { fireWorkflow } from './workflows';
 // missed while it was down when it starts again. `planFire` turns one fire into a run
 // under the schedule's catch-up policy.
 
+// The fallback of a schedule that names no time zone; the instance's default time zone
+// (engine/settings.ts) is used where one is asked for.
 export const DEFAULT_TIMEZONE = 'Europe/Berlin';
 
 // A fire that starts this much after its time is late: the work of a routine belongs to
