@@ -7,6 +7,7 @@ import { renderTemplate } from '#modules/pipelines/render';
 import { policyDecider } from '../../registry';
 import { clip, loadRun, renderContext, setRunStatus, stepRow, writeStep } from '../../run-context';
 import type { StepContext, StepExecution, WorkflowStepType } from '../../sdk';
+import { engineWaitSeconds } from '../../dbos';
 
 // An approval gate: the run waits until a person with the actions edit permission
 // approves or rejects the step on the Approvals page, unless the policy engine
@@ -156,7 +157,7 @@ export const approvalStep: WorkflowStepType<Step> = {
     const opened = await context.op('open', () => open(context.run.id, step, execution));
     let decided = opened.decided;
     while (!decided) {
-      await context.waitForSignal('decision', 6 * 3600);
+      await context.waitForSignal('decision', engineWaitSeconds(6 * 3600));
       decided = await context.op('check', async () =>
         decisionOf(await stepRow(context.run.id, execution)),
       );

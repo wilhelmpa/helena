@@ -1,0 +1,123 @@
+import { DBOS } from '@dbos-inc/dbos-sdk';
+import { agentRun, db, pipelineRun, pipelineRunStep } from '@repo/db';
+import { and, asc, eq } from 'drizzle-orm';
+import { launchEngine } from '#modules/engine/dbos';
+import { signalFinishedAgentRuns } from '#modules/engine/runs';
+
+// The Helena engine in the api tests: it runs in the test process against the test
+// database (its own schema `helena_engine`), and the test plays the Hermes runner by
+// finishing the agent runs the engine queues.
+
+// Waiting steps look again every second instead of every minute.
+process.env.HELENA_ENGINE_WAIT_SECONDS ??= '1';
+process.env.HELENA_ENGINE_EXECUTOR_ID ??= 'api-tests';
+
+export async function startEngine(): Promise<void> {
+  await launchEngine();
+}
+
+// Stops what the previous test left running, so its workflows do not act on the rows
+// the next test's resetDb removes.
+export async function stopEngineRuns(): Promise<void> {
+  const pending = await DBOS.listWorkflows({ status: ['PENDING', 'ENQUEUED'], limit: 1_000 });
+  if (pending.length > 0) await DBOS.cancelWorkflows(pending.map((item) => item.workflowID));
+}
+
+export async function runRow(runId: string) {
+  const [row] = await db.select().from(pipelineRun).where(eq(pipelineRun.id, runId));
+  return row ?? null;
+}
+
+export async function runSteps(runId: string) {
+  return db
+    .select()
+    .from(pipelineRunStep)
+    .where(eq(pipelineRunStep.runId, runId))
+    .orderBy(asc(pipelineRunStep.seq), asc(pipelineRunStep.startedAt));
+}
+
+// Waits until the run satisfies the check, or fails the test after `timeoutMs`.
+export async function waitForRun(
+  runId: string,
+  check: (run: NonNullable<Awaited<ReturnType<typeof runRow>>>) => boolean,
+  timeoutMs = 20_000,
+) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const run = await runRow(runId);
+    if (run && check(run)) return run;
+    if (Date.now() > deadline)
+      throw new Error(`Run ${runId} did not get there: ${JSON.stringify(run)}`);
+    await Bun.sleep(100);
+  }
+}
+
+export function waitForStatus(runId: string, ...statuses: string[]) {
+  return waitForRun(runId, (run) => statuses.includes(run.status));
+}
+
+// Waits until the run has a pending agent run on the step (or part), and answers it.
+export async function waitForAgentRun(runId: string, stepId: string, timeoutMs = 20_000) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const [row] = await db
+      .select({ agentRunId: pipelineRunStep.agentRunId, status: agentRun.status })
+      .from(pipelineRunStep)
+      .innerJoin(agentRun, eq(agentRun.id, pipelineRunStep.agentRunId))
+      .where(
+        and(
+          eq(pipelineRunStep.runId, runId),
+          eq(pipelineRunStep.stepId, stepId),
+          eq(agentRun.status, 'pending'),
+        ),
+      )
+      .limit(1);
+    if (row?.agentRunId) {
+      const [run] = await db.select().from(agentRun).where(eq(agentRun.id, row.agentRunId));
+      return run!;
+    }
+    if (Date.now() > deadline)
+      throw new Error(
+        `No pending agent run on ${stepId} of run ${runId}: ${JSON.stringify(await runSteps(runId))}`,
+      );
+    await Bun.sleep(100);
+  }
+}
+
+// Plays the runner: the agent run ends with the outcome, and the engine is told.
+export async function finishAgentRun(
+  agentRunId: number,
+  outcome: {
+    status?: 'success' | 'failed';
+    output?: string;
+    error?: string;
+    blockedQuestion?: string;
+  },
+): Promise<void> {
+  const now = new Date();
+  await db
+    .update(agentRun)
+    .set({
+      status: outcome.status ?? 'success',
+      output: outcome.output ?? null,
+      lastError: outcome.error ?? null,
+      blockedQuestion: outcome.blockedQuestion ?? null,
+      claimedAt: now,
+      startedAt: now,
+      finishedAt: now,
+      attempts: 1,
+    })
+    .where(eq(agentRun.id, agentRunId));
+  await signalFinishedAgentRuns();
+}
+
+// Answers the pending agent run of a step with the output.
+export async function answerStep(
+  runId: string,
+  stepId: string,
+  outcome: Parameters<typeof finishAgentRun>[1],
+) {
+  const run = await waitForAgentRun(runId, stepId);
+  await finishAgentRun(run.id, outcome);
+  return run;
+}

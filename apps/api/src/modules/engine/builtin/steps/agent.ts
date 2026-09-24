@@ -26,6 +26,7 @@ import {
   type StepExecution,
   type WorkflowStepType,
 } from '../../sdk';
+import { engineWaitSeconds } from '../../dbos';
 
 // An agent task: the agent of the step's role (or the agent a project workflow names)
 // gets the rendered instruction as a run of its own, and the step waits for it. Its
@@ -220,7 +221,7 @@ export const agentStep: WorkflowStepType<Step> = {
       );
       if (checked.done)
         return { kind: 'continue', outcome: checked.outcome, summary: checked.summary };
-      await context.waitForSignal('agent-run', 60);
+      await context.waitForSignal('agent-run', engineWaitSeconds(60));
     }
   },
   async cancel(runId, execution) {

@@ -12,6 +12,7 @@ import {
   type StepExecution,
   type WorkflowStepType,
 } from '../../sdk';
+import { engineWaitSeconds } from '../../dbos';
 
 // The agent team of a task. The coordinator plans the work as assignments for the
 // project's specialists (or the task goes straight to the one specialist that fits),
@@ -591,7 +592,7 @@ async function awaitStages(
     if (progress.done) return progress.results;
     const seconds =
       progress.wakeInMs === null ? 60 : Math.max(1, Math.ceil(progress.wakeInMs / 1_000));
-    await context.waitForSignal('agent-run', Math.min(60, seconds));
+    await context.waitForSignal('agent-run', engineWaitSeconds(Math.min(60, seconds)));
   }
 }
 

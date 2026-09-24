@@ -63,3 +63,9 @@ export async function stopEngine(): Promise<void> {
 export function engineExecutorId(): string {
   return DBOS.executorID;
 }
+
+// How long a waiting step sleeps before it looks again without a signal (an agent run
+// that finished wakes it at once). HELENA_ENGINE_WAIT_SECONDS lowers it, e.g. in tests.
+export function engineWaitSeconds(fallback: number): number {
+  return Math.min(fallback, intEnv('HELENA_ENGINE_WAIT_SECONDS', fallback));
+}
