@@ -139,7 +139,7 @@ export async function decide(input: DecideInput): Promise<EngineDecision> {
   const [exhausted, approved] = await Promise.all([
     input.category === 'read' || input.category === 'report'
       ? Promise.resolve(null)
-      : budgetExhausted(input.agentId, input.projectId),
+      : budgetExhausted(input.agentId, input.projectId, input.runId),
     input.agentId == null
       ? Promise.resolve(false)
       : commandApproved(input.agentId, input.runId, input.command),

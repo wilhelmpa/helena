@@ -10,6 +10,7 @@ CREATE TABLE "helena_budget" (
 	"reached_for" timestamp with time zone,
 	"grace_for" timestamp with time zone,
 	"grace_runs" integer DEFAULT 0 NOT NULL,
+	"grace_run_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "helena_budget_target_check" CHECK (("helena_budget"."agent_id" IS NULL) <> ("helena_budget"."project_id" IS NULL)),

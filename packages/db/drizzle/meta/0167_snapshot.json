@@ -1,5 +1,5 @@
 {
-  "id": "b0f66a7d-82d2-492e-9f96-5eb408dac9ff",
+  "id": "53a98d06-fafe-4ad9-9729-da5e78761fcc",
   "prevId": "a27d41c2-b63f-4f1c-a8bc-3f017383927a",
   "version": "7",
   "dialect": "postgresql",
@@ -17534,6 +17534,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "grace_run_ids": {
+          "name": "grace_run_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "created_at": {
           "name": "created_at",

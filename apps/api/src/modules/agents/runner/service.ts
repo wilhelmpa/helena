@@ -10,7 +10,7 @@ import { and, asc, eq, inArray, lt, lte, notInArray, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { type ContextUsage } from '../chat-usage';
 import { enforceAgentLimits } from '../governance';
-import { heldProjects } from '#modules/autopilot/budgets';
+import { heldProjects, useGrace } from '#modules/autopilot/budgets';
 import { noteRunLevel } from '#modules/autopilot/engine';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { autopilotRunSection } from '#modules/autopilot/prompt';
@@ -293,11 +293,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     )
     .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id))
     .limit(1);
-  if (
-    !next ||
-    (await enforceAgentLimits(agentId, next.projectId, next.issueId, { consumeGrace: true }))
-  )
-    return null;
+  if (!next || (await enforceAgentLimits(agentId, next.projectId, next.issueId))) return null;
   const rows = await db.execute(sql`
     UPDATE agent_run r
     SET attempts = r.attempts + 1,
@@ -356,6 +352,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
+  await useGrace(agent.id, next.projectId, row.id);
   const autopilot = await resolveLevel(agent.id, next.projectId);
   await noteRunLevel(row.id, autopilot.level);
   const threadContext = await loadThreadContext(row.sourceActivityId);

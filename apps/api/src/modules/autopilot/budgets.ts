@@ -37,8 +37,10 @@ export interface BudgetStatus {
   periodStart: string;
   warned: boolean;
   reached: boolean;
-  // Runs that may still start past the limit in this period ("Einmalig fortsetzen").
+  // Runs that may still start past the limit in this period ("Einmalig fortsetzen"), and
+  // the runs that started on it, which finish unhindered.
   graceRuns: number;
+  graceRunIds: number[];
   // For a cost budget: tokens of models the price table has no price for, which count
   // nothing here.
   unpricedTokens: number;
@@ -69,6 +71,7 @@ function toStatus(row: BudgetRow, usage: UsageTotals | undefined): BudgetStatus 
     warned: sameStart(row.warnedFor, start),
     reached: used >= limit,
     graceRuns: sameStart(row.graceFor, start) ? row.graceRuns : 0,
+    graceRunIds: sameStart(row.graceFor, start) ? (row.graceRunIds ?? []) : [],
     unpricedTokens: metric === 'cost' ? (usage?.unpricedTokens ?? 0) : 0,
   };
 }
@@ -271,7 +274,7 @@ async function fileBudgetCard(
 }
 
 export interface EnforceOptions {
-  // A claim starts a run: it may use one of the runs "continue once" allowed.
+  // Unused; a claim uses a grace run through useGrace once it holds the run.
   consumeGrace?: boolean;
 }
 
@@ -313,18 +316,9 @@ export async function enforceBudgets(
 
   const reached = statuses.filter((status) => status.reached);
   if (reached.length === 0) return null;
+  void options;
   const blocking = reached.filter((status) => status.graceRuns === 0);
-  if (blocking.length === 0) {
-    if (options.consumeGrace) {
-      for (const status of reached) {
-        await db
-          .update(helenaBudget)
-          .set({ graceRuns: sql`greatest(${helenaBudget.graceRuns} - 1, 0)` })
-          .where(eq(helenaBudget.id, status.id));
-      }
-    }
-    return null;
-  }
+  if (blocking.length === 0) return null;
 
   const first = blocking.find((status) => status.scope === 'agent') ?? blocking[0]!;
   const reason = budgetReason(first, key);
@@ -351,6 +345,22 @@ export async function enforceBudgets(
   return reason;
 }
 
+// A claimed run that started past a used-up budget on "continue once": the grace is spent
+// on it, and it finishes unhindered.
+export async function useGrace(agentId: number, projectId: number, runId: number): Promise<void> {
+  const statuses = await budgetStatuses({ agentIds: [agentId], projectIds: [projectId] });
+  for (const status of statuses) {
+    if (!status.reached || status.graceRuns === 0) continue;
+    await db
+      .update(helenaBudget)
+      .set({
+        graceRuns: sql`greatest(${helenaBudget.graceRuns} - 1, 0)`,
+        graceRunIds: sql`${helenaBudget.graceRunIds} || ${JSON.stringify([runId])}::jsonb`,
+      })
+      .where(eq(helenaBudget.id, status.id));
+  }
+}
+
 // The projects whose budgets are used up without a run left to continue on, among the
 // given ones. A claim skips their runs, so the agent still works in its other projects.
 export async function heldProjects(projectIds: number[]): Promise<number[]> {
@@ -370,12 +380,20 @@ export async function heldProjects(projectIds: number[]): Promise<number[]> {
 export async function budgetExhausted(
   agentId: number | null,
   projectId: number | null,
+  runId?: number | null,
 ): Promise<BudgetStatus | null> {
   const statuses = await budgetStatuses({
     agentIds: agentId == null ? [] : [agentId],
     projectIds: projectId == null ? [] : [projectId],
   });
-  return statuses.find((status) => status.reached && status.graceRuns === 0) ?? null;
+  return (
+    statuses.find(
+      (status) =>
+        status.reached &&
+        status.graceRuns === 0 &&
+        !(runId != null && status.graceRunIds.includes(runId)),
+    ) ?? null
+  );
 }
 
 export interface BudgetInput {
@@ -482,6 +500,7 @@ export async function continueOnce(budgetId: number): Promise<BudgetRow> {
     .set({
       graceFor: start,
       graceRuns: sameStart(row.graceFor, start) ? sql`${helenaBudget.graceRuns} + 1` : 1,
+      graceRunIds: sameStart(row.graceFor, start) ? row.graceRunIds : [],
       // Reached again after that run, the budget files a new card.
       reachedFor: null,
       updatedAt: new Date(),

@@ -87,6 +87,8 @@ export const helenaBudget = pgTable(
     // that starts at grace_for.
     graceFor: timestamp('grace_for', { withTimezone: true }),
     graceRuns: integer('grace_runs').notNull().default(0),
+    // The runs that started on such a grace in that period; they finish unhindered.
+    graceRunIds: jsonb('grace_run_ids').$type<number[]>().notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
