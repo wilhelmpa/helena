@@ -11,6 +11,8 @@ interface StoredMessage {
   raw: Buffer;
   internalDate: Date;
   modseq: bigint;
+  // What Gmail reports as X-GM-THRID.
+  threadId?: string;
 }
 
 class FakeMailbox {
@@ -60,6 +62,7 @@ export class FakeImapServer {
     raw: Buffer | string,
     flags: string[] = [],
     internalDate = new Date('2026-03-01T12:00:00Z'),
+    threadId?: string,
   ): number {
     const box = this.mailboxes.get(path)!;
     const uid = box.uidNext++;
@@ -70,6 +73,7 @@ export class FakeImapServer {
       raw: Buffer.isBuffer(raw) ? raw : Buffer.from(raw),
       internalDate,
       modseq: box.modseq,
+      threadId,
     });
     for (const client of this.clients) {
       if (client.selected === path) client.emit('exists', { path, count: box.messages.length });
@@ -201,7 +205,7 @@ export class FakeImapClient extends EventEmitter {
 
   async fetchAll(
     range: string,
-    query: { source?: boolean; envelope?: boolean },
+    query: { source?: boolean; envelope?: boolean; threadId?: boolean },
     options: { changedSince?: bigint } = {},
   ) {
     const box = this.current();
@@ -225,6 +229,7 @@ export class FakeImapClient extends EventEmitter {
         flags: new Set(message.flags),
         size: message.raw.length,
         internalDate: message.internalDate,
+        threadId: query.threadId ? message.threadId : undefined,
         envelope: query.envelope ? { messageId: messageIdOf(message.raw) } : undefined,
         source: query.source ? message.raw : undefined,
       };

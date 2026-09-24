@@ -165,7 +165,7 @@ async function importUids(
 ): Promise<void> {
   const headers = await client.fetchAll(
     uids.join(','),
-    { uid: true, flags: true, envelope: true, size: true, internalDate: true },
+    { uid: true, flags: true, envelope: true, size: true, internalDate: true, threadId: true },
     { uid: true },
   );
   const ids = headers.flatMap((header) => {
@@ -198,6 +198,7 @@ async function importUids(
             flags: flagsOf(header.flags),
             internalDate: header.internalDate ? new Date(header.internalDate) : undefined,
             newInboxMail: message.uid >= newFrom,
+            serverThreadId: header.threadId ?? null,
           });
         } catch (error) {
           console.error(

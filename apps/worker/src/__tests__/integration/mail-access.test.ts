@@ -347,3 +347,55 @@ describe('reset', () => {
     }
   });
 });
+
+describe('threading', () => {
+  async function threadOf(messageId: string): Promise<number> {
+    const [row] = await db
+      .select({ threadId: mailMessage.threadId })
+      .from(mailMessage)
+      .where(eq(mailMessage.messageId, messageId));
+    return row!.threadId;
+  }
+
+  it('follows the thread id the server reports (Gmail X-GM-THRID)', async () => {
+    await googleMailbox({ fetchDays: null });
+    const day = daysAgo(1);
+    server.add('INBOX', eml({ id: '<g1@x>', subject: 'Offer' }), [], day, 'T1');
+    // Gmail threads it with the first although no header says so.
+    server.add('INBOX', eml({ id: '<g2@x>', subject: 'Re: Offer (forwarded)' }), [], day, 'T1');
+    server.add('INBOX', eml({ id: '<g3@x>', subject: 'Offer' }), [], day, 'T2');
+    await sync();
+    expect(await threadOf('<g1@x>')).toBe(await threadOf('<g2@x>'));
+    expect(await threadOf('<g3@x>')).not.toBe(await threadOf('<g1@x>'));
+  });
+
+  it('without server ids joins the nearest stored ancestor of References', async () => {
+    await googleMailbox({ fetchDays: null });
+    server.add('INBOX', eml({ id: '<a@x>', subject: 'Plan' }), [], daysAgo(3));
+    server.add(
+      'INBOX',
+      eml({ id: '<b@x>', subject: 'Re: Plan', inReplyTo: '<a@x>' }),
+      [],
+      daysAgo(2),
+    );
+    // C names an ancestor Helena never saw first, then B, and has no In-Reply-To.
+    const c = [
+      'From: Anna <anna@verve.example>',
+      'To: me@home.example',
+      'Subject: Re: Plan',
+      `Date: ${rfcDate(daysAgo(1))}`,
+      'Message-ID: <c@x>',
+      'References: <unknown@elsewhere> <b@x>',
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=utf-8',
+      '',
+      'Body',
+      '',
+    ].join('\r\n');
+    server.add('INBOX', c, [], daysAgo(1));
+    await sync();
+    const thread = await threadOf('<a@x>');
+    expect(await threadOf('<b@x>')).toBe(thread);
+    expect(await threadOf('<c@x>')).toBe(thread);
+  });
+});
