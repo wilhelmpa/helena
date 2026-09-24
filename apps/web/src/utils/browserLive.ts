@@ -12,8 +12,15 @@ export interface Point {
   y: number;
 }
 
+export interface Rect extends Size {
+  left: number;
+  top: number;
+}
+
 export type LiveMessage =
-  | { type: 'viewport'; width: number; height: number; dpr: number; video: boolean }
+  // The view's size in CSS pixels, its pixel ratio, whether it plays video, and whether it
+  // holds the page's size ("Größe festhalten": the page keeps its size, the view scales it).
+  | { type: 'viewport'; width: number; height: number; dpr: number; video: boolean; hold: boolean }
   | { type: 'follow'; agent: boolean }
   | { type: 'ack' }
   | { type: 'dialog'; accept: boolean; text?: string }
@@ -89,22 +96,41 @@ export function readFrame(data: ArrayBuffer): { size: Size; jpeg: Blob } {
   };
 }
 
-// Where a frame is drawn in a box: scaled to fit and centred, as object-fit: contain does.
-export function containedRect(box: Size, frame: Size) {
-  const scale = Math.min(box.width / frame.width, box.height / frame.height);
-  const width = frame.width * scale;
-  const height = frame.height * scale;
-  return { left: (box.width - width) / 2, top: (box.height - height) / 2, width, height };
+// A page this many CSS pixels larger or smaller than the view is shown one to one, cut off or
+// with a thin band at the edge, rather than scaled by a fraction of a percent, which would blur
+// it: the video needs even sizes, so a page at ratio 1 is a pixel larger than an odd view.
+const EXACT_SLACK = 2;
+
+// Where a frame is drawn in the view, in CSS pixels from the view's top left corner. natural
+// is the page's size in CSS pixels at 100 % zoom, which the frame shows. A page the view's size
+// (give or take EXACT_SLACK) is drawn one to one from the corner; any other — while the panel
+// is dragged and until the page has the new size, or while another view or a fixed size sets
+// it — is scaled to fit and centred, as object-fit: contain does. Whole pixels, so a frame
+// drawn one to one stays sharp.
+export function frameRect(box: Size, natural: Size): Rect {
+  const near =
+    Math.abs(box.width - natural.width) <= EXACT_SLACK &&
+    Math.abs(box.height - natural.height) <= EXACT_SLACK;
+  if (near) return { left: 0, top: 0, width: natural.width, height: natural.height };
+  const scale = Math.min(box.width / natural.width, box.height / natural.height);
+  const width = Math.round(natural.width * scale);
+  const height = Math.round(natural.height * scale);
+  return {
+    left: Math.round((box.width - width) / 2),
+    top: Math.round((box.height - height) / 2),
+    width,
+    height,
+  };
 }
 
-// The page point, in the page's CSS pixels, under a point of the view given relative to the
-// view's top left corner. A point beside the drawn frame is moved onto its edge.
-export function pagePoint(point: Point, box: Size, frame: Size): Point {
-  const drawn = containedRect(box, frame);
+// The page point, in the CSS pixels input is given in (page: the shown frame's size at the
+// page's zoom), under a point of the view given relative to its top left corner, for a frame
+// drawn at rect. A point beside the drawn frame, on a band, is moved onto its edge.
+export function pagePoint(point: Point, rect: Rect, page: Size): Point {
   const clamp = (value: number, max: number) => Math.min(max, Math.max(0, value));
   return {
-    x: clamp(((point.x - drawn.left) / drawn.width) * frame.width, frame.width),
-    y: clamp(((point.y - drawn.top) / drawn.height) * frame.height, frame.height),
+    x: clamp(((point.x - rect.left) / rect.width) * page.width, page.width),
+    y: clamp(((point.y - rect.top) / rect.height) * page.height, page.height),
   };
 }
 

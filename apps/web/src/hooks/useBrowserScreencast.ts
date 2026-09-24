@@ -20,11 +20,33 @@ export interface LiveViewport extends Size {
 
 export type ScreencastStatus = 'connecting' | 'live' | 'reconnecting';
 
-// The router streams video when every viewer can play it, and JPEG frames otherwise.
+// The router streams video to a view that plays it, and JPEG frames otherwise.
 export type ScreencastMode = 'jpeg' | 'video';
+
+// The frame on screen: the page's size in CSS pixels at 100 % zoom, which it is drawn at to
+// be one to one (natural), and in the CSS pixels input is given in, at the page's zoom (page).
+export interface ShownFrame {
+  natural: Size;
+  page: Size;
+}
+
+// The page as the router last announced it: its size in CSS pixels at 100 % zoom, its zoom,
+// and whether the browser gateway holds it at a fixed working size while an agent steers.
+export interface LivePage extends Size {
+  zoom: number;
+  fixed: boolean;
+}
 
 const RETRY_FIRST_MS = 500;
 const RETRY_MAX_MS = 10_000;
+// A view's new size is sent once it has not changed for this long: while the panel is dragged
+// the view only scales the last frame, and the page is laid out once, at the size it ends at.
+const VIEWPORT_SETTLE_MS = 300;
+// A size sent that the page has not taken this long after is sent again, once.
+const VIEWPORT_CONFIRM_MS = 3_000;
+// A JPEG frame that arrives this soon after a video started was on its way before the router
+// switched this view to video; it must not replace the newer video.
+const LATE_JPEG_MS = 500;
 // How often the round trip is measured, and the connection's stats — including the running
 // count of video bytes received, this view's side of the ack the router uses as its main
 // backlog signal — are reported to the router, which puts this view on the quality tier they
@@ -48,7 +70,16 @@ const AUTO_VIDEO_RTT_MS = 180;
 
 type ServerText =
   | ({ type: 'dialog'; open: boolean } & LiveDialog)
-  | { type: 'video'; codec: string; tier?: string; width: number; height: number }
+  | {
+      type: 'video';
+      codec: string;
+      tier?: string;
+      width: number;
+      height: number;
+      pageWidth?: number;
+      pageHeight?: number;
+    }
+  | { type: 'page'; width: number; height: number; zoom?: number; fixed?: boolean }
   | { type: 'tab' }
   | { type: 'pong'; t: number }
   | { type: 'control'; by: 'agent' | 'owner' };
@@ -61,6 +92,9 @@ export type LiveControl = 'agent' | 'owner';
 // extra latency would make it the worse choice (see AUTO_JPEG_RTT_MS).
 export type VideoPreference = 'auto' | 'video' | 'jpeg';
 
+const sameSize = (a: Size | null | undefined, b: Size | null | undefined) =>
+  !!a && !!b && a.width === b.width && a.height === b.height;
+
 // The live view's connection to the browser router. Video is played as it arrives: on the
 // canvas with WebCodecs, or in the video element with Media Source Extensions where WebCodecs
 // is missing. JPEG frames are drawn on the canvas, the newest one first, and acknowledged
@@ -69,6 +103,14 @@ export type VideoPreference = 'auto' | 'video' | 'jpeg';
 // keyframe when it is shown again. A dropped connection is opened again, waiting longer after
 // each attempt that ends before a frame arrives: the router accepts the connection before it
 // reaches the browser.
+//
+// The view never goes blank: a frame is drawn only once it is decoded, the last one stays
+// through a reconnect and a switch between video and JPEG (the video element's last frame is
+// copied onto the canvas first), and a JPEG frame late from before a switch to video is
+// dropped. The view's size is the one viewport controller: setViewport takes every size the
+// view has, and the size is sent once it settles (VIEWPORT_SETTLE_MS), never while the view is
+// hidden or empty, not again when unchanged, again when the page has not taken it, and always
+// on every new connection.
 export function useBrowserScreencast(
   controlBase: string,
   active: boolean,
@@ -76,34 +118,52 @@ export function useBrowserScreencast(
   canvas: RefObject<HTMLCanvasElement | null>,
   videoElement: RefObject<HTMLVideoElement | null>,
   followAgent: boolean,
+  videoPreference: VideoPreference,
+  hold: boolean,
+  // Called in the same task a frame is drawn in, before the browser paints it, so the view
+  // can place a frame of a new size without showing it stretched for a paint.
+  onShown: (frame: ShownFrame) => void,
 ) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<ScreencastStatus>('connecting');
   const [mode, setMode] = useState<ScreencastMode>('jpeg');
   const [hasFrame, setHasFrame] = useState(false);
+  // Whether the video element shows a frame of the current MSE video; until it does, the
+  // canvas keeps showing the frame before it.
+  const [videoElementShown, setVideoElementShown] = useState(false);
   const [dialog, setDialog] = useState<LiveDialog | null>(null);
   const [controlBy, setControlBy] = useState<LiveControl>('owner');
-  // video and jpeg force that stream; auto (the default) follows the measured round trip (see
-  // AUTO_JPEG_RTT_MS below). Read from a ref inside the stats timer so changing it does not
-  // itself reconnect the socket; autoWantsVideo tracks what "auto" currently prefers, so a
-  // caller can tell an automatic fallback (videoPreference is "auto" but mode is "jpeg", with
-  // playback not null: the browser can play video, the connection is why it is not) from
-  // asking for JPEG outright, or from a browser that cannot play video at all.
-  const [videoPreference, setVideoPreferenceState] = useState<VideoPreference>('auto');
-  const videoPreferenceRef = useRef<VideoPreference>('auto');
+  const [page, setPage] = useState<LivePage | null>(null);
+  const onShownRef = useRef(onShown);
+  useEffect(() => {
+    onShownRef.current = onShown;
+  }, [onShown]);
+  const videoPreferenceRef = useRef<VideoPreference>(videoPreference);
+  const holdRef = useRef(hold);
+  // What "auto" currently prefers, so a caller can tell an automatic fallback (preference
+  // "auto" but mode "jpeg", with playback not null) from asking for JPEG outright, or from a
+  // browser that cannot play video at all.
   const autoWantsVideo = useRef(true);
   const socket = useRef<WebSocket | null>(null);
-  // The page size of the frame shown, which pointer positions are mapped to.
-  const frameSize = useRef<Size | null>(null);
-  const viewport = useRef<LiveViewport | null>(null);
+  const pageRef = useRef<LivePage | null>(null);
   const pending = useRef<ArrayBuffer | null>(null);
   const unacknowledged = useRef(0);
   const drawing = useRef(false);
-  const shown = useRef(active);
+  const shownRef = useRef(active);
   const video = useRef<LiveVideo | null>(null);
-  const announced = useRef<{ codec: string; tier?: string; size: Size } | null>(null);
+  const videoKind = useRef<'webcodecs' | 'mse' | null>(null);
+  const videoStartedAt = useRef(0);
+  const announced = useRef<{ codec: string; tier?: string; frame: ShownFrame } | null>(null);
   const waitingForKeyframe = useRef(true);
   const playback = useRef(videoPlayback());
+  // The viewport controller: the view's latest size, the message last sent on this
+  // connection, when it was sent and whether the page has taken it, and the settle timer.
+  const view = useRef<LiveViewport | null>(null);
+  const lastSent = useRef<string | null>(null);
+  const sentAt = useRef(0);
+  const confirmed = useRef(true);
+  const resent = useRef(false);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // The connection's last measured round trip and the bytes received in the trailing window,
   // which the router is periodically told so it can put this view on the tier they afford.
   const rttMs = useRef(0);
@@ -134,25 +194,64 @@ export function useBrowserScreencast(
     return autoWantsVideo.current;
   }, []);
 
-  const sendViewport = useCallback(() => {
-    if (viewport.current && shown.current) {
-      send({ type: 'viewport', ...viewport.current, video: wantsVideo() });
-    }
-  }, [send, wantsVideo]);
+  // Sends the view's size unless it is hidden, empty, or the same message was already sent on
+  // this connection; force sends it again all the same (a size the page did not take).
+  const sendViewport = useCallback(
+    (force = false) => {
+      const current = view.current;
+      const open = socket.current?.readyState === WebSocket.OPEN;
+      if (!current || !shownRef.current || !current.width || !current.height || !open) return;
+      const message: LiveMessage = {
+        type: 'viewport',
+        width: Math.round(current.width),
+        height: Math.round(current.height),
+        dpr: current.dpr,
+        video: wantsVideo(),
+        hold: holdRef.current,
+      };
+      const text = JSON.stringify(message);
+      if (!force && text === lastSent.current) return;
+      const previous = lastSent.current ? (JSON.parse(lastSent.current) as Size) : null;
+      lastSent.current = text;
+      sentAt.current = performance.now();
+      // A new size is confirmed by the page taking it (checkConfirmed); a view that holds the
+      // size expects none.
+      if (!sameSize(previous, message)) {
+        confirmed.current = message.hold;
+        resent.current = force;
+      }
+      send(message);
+    },
+    [send, wantsVideo],
+  );
 
-  // Exposed so a caller can offer a manual video/JPEG toggle; changing it re-sends the
-  // viewport at once rather than waiting for the next resize or stats report.
-  const setVideoPreference = useCallback(
-    (next: VideoPreference) => {
-      videoPreferenceRef.current = next;
-      setVideoPreferenceState(next);
-      sendViewport();
+  // Every size the view takes, as it changes; sent once it settles.
+  const setViewport = useCallback(
+    (size: LiveViewport | null) => {
+      view.current = size;
+      clearTimeout(settleTimer.current);
+      settleTimer.current = setTimeout(() => sendViewport(), VIEWPORT_SETTLE_MS);
     },
     [sendViewport],
   );
 
+  // The page took the size this view asked for, or holds another on purpose (a fixed working
+  // size, or this view holds the size): nothing to send again.
+  const checkConfirmed = useCallback((next: LivePage) => {
+    const asked = lastSent.current ? (JSON.parse(lastSent.current) as LiveViewport) : null;
+    if (!asked) return;
+    const near =
+      Math.abs(asked.width - next.width) <= 2 && Math.abs(asked.height - next.height) <= 2;
+    if (near || next.fixed || holdRef.current) confirmed.current = true;
+  }, []);
+
+  const showFrame = useCallback((frame: ShownFrame) => {
+    onShownRef.current(frame);
+    setHasFrame(true);
+  }, []);
+
   const draw = useCallback(async () => {
-    if (drawing.current || !shown.current) return;
+    if (drawing.current || !shownRef.current) return;
     const data = pending.current;
     if (data) {
       pending.current = null;
@@ -161,12 +260,16 @@ export function useBrowserScreencast(
         const { size, jpeg } = readFrame(data);
         const bitmap = await createImageBitmap(jpeg);
         const target = canvas.current;
-        if (target) {
+        // A video that started meanwhile is newer than this frame.
+        if (target && !video.current) {
           if (target.width !== bitmap.width) target.width = bitmap.width;
           if (target.height !== bitmap.height) target.height = bitmap.height;
           target.getContext('2d')?.drawImage(bitmap, 0, 0);
-          frameSize.current = size;
-          setHasFrame(true);
+          const zoom = pageRef.current?.zoom ?? 1;
+          showFrame({
+            natural: { width: Math.round(size.width * zoom), height: Math.round(size.height * zoom) },
+            page: size,
+          });
         }
         bitmap.close();
       } catch {
@@ -177,31 +280,47 @@ export function useBrowserScreencast(
     }
     for (; unacknowledged.current > 0; unacknowledged.current--) send({ type: 'ack' });
     if (pending.current) void draw();
-  }, [canvas, send]);
+  }, [canvas, send, showFrame]);
 
+  // Ends the current video. An MSE video's last frame is copied onto the canvas first, which
+  // shows it until the next frame is drawn, so the view never goes blank.
   const closeVideo = useCallback(() => {
+    const element = videoElement.current;
+    const target = canvas.current;
+    if (videoKind.current === 'mse' && element && target && element.videoWidth > 0) {
+      if (target.width !== element.videoWidth) target.width = element.videoWidth;
+      if (target.height !== element.videoHeight) target.height = element.videoHeight;
+      target.getContext('2d')?.drawImage(element, 0, 0);
+    }
     video.current?.close();
     video.current = null;
-  }, []);
+    videoKind.current = null;
+    setVideoElementShown(false);
+  }, [canvas, videoElement]);
 
   const startVideo = useCallback(
     (init: Uint8Array) => {
       closeVideo();
       const current = announced.current;
       if (!current) return;
-      const shownFrame = () => {
-        frameSize.current = current.size;
-        setHasFrame(true);
-      };
+      const frame = current.frame;
       try {
         if (playback.current === 'webcodecs' && canvas.current) {
-          video.current = webCodecsVideo(canvas.current, current.codec, init, shownFrame);
+          video.current = webCodecsVideo(canvas.current, current.codec, init, () =>
+            showFrame(frame),
+          );
+          videoKind.current = 'webcodecs';
         } else if (playback.current === 'mse' && videoElement.current) {
-          video.current = mseVideo(videoElement.current, current.codec, init, shownFrame);
+          video.current = mseVideo(videoElement.current, current.codec, init, () => {
+            showFrame(frame);
+            setVideoElementShown(true);
+          });
+          videoKind.current = 'mse';
         }
       } catch {
         // The router keeps sending JPEG frames to a view that shows no video.
       }
+      videoStartedAt.current = performance.now();
       waitingForKeyframe.current = true;
       // Starts the stall clock from the moment a fresh video is expected, not only once a
       // (still-gated) fragment actually arrives: on a badly congested connection, nothing may
@@ -215,7 +334,7 @@ export function useBrowserScreencast(
       receivedBytesTotal.current = 0;
       setMode('video');
     },
-    [canvas, closeVideo, videoElement],
+    [canvas, closeVideo, showFrame, videoElement],
   );
 
   const receive = useCallback(
@@ -228,7 +347,12 @@ export function useBrowserScreencast(
         while (received.current.length && received.current[0].at < cutoff) received.current.shift();
       }
       if (bytes[0] === JPEG_FRAME) {
-        closeVideo();
+        // A frame that was on its way before the router switched this view to video.
+        if (video.current && performance.now() - videoStartedAt.current < LATE_JPEG_MS) {
+          send({ type: 'ack' });
+          return;
+        }
+        if (video.current) closeVideo();
         setMode('jpeg');
         unacknowledged.current++;
         pending.current = data;
@@ -241,17 +365,17 @@ export function useBrowserScreencast(
         // this feeds is about what the connection has carried, not what got drawn.
         receivedBytesTotal.current += data.byteLength;
         const keyframe = bytes[1] === 1;
-        if (!shown.current) waitingForKeyframe.current = true;
+        if (!shownRef.current) waitingForKeyframe.current = true;
         if (waitingForKeyframe.current && waitingSinceMs.current === null) {
           waitingSinceMs.current = performance.now();
         }
-        if (!shown.current || (waitingForKeyframe.current && !keyframe)) return;
+        if (!shownRef.current || (waitingForKeyframe.current && !keyframe)) return;
         waitingForKeyframe.current = false;
         waitingSinceMs.current = null;
         video.current?.push(bytes.subarray(2), keyframe);
       }
     },
-    [closeVideo, draw, startVideo],
+    [closeVideo, draw, send, startVideo],
   );
 
   // The bytes received for video over the trailing window, as a bitrate: what the router is
@@ -265,9 +389,19 @@ export function useBrowserScreencast(
   }, []);
 
   useEffect(() => {
-    shown.current = active;
-    if (active) void draw();
-  }, [active, draw]);
+    shownRef.current = active;
+    if (active) {
+      void draw();
+      sendViewport();
+    }
+  }, [active, draw, sendViewport]);
+
+  // A new choice of stream or of holding the size is sent at once.
+  useEffect(() => {
+    videoPreferenceRef.current = videoPreference;
+    holdRef.current = hold;
+    sendViewport();
+  }, [hold, sendViewport, videoPreference]);
 
   // A covered view (another panel, or the browser tab itself put in the background) is told
   // to the router, which stops sending it frames; document.hidden is read again on each check
@@ -301,25 +435,26 @@ export function useBrowserScreencast(
       current.binaryType = 'arraybuffer';
       socket.current = current;
       current.onopen = () => {
-        // A hidden view leaves the page size to the views that are shown; a fresh connection
-        // (the first one, or a reconnect) tells its hidden state again, since the router's
-        // side of a new one starts out shown.
-        sendViewport();
-        const hidden = !shown.current || document.hidden;
+        // A new connection — the first one, or one after a reconnect or a restart of the
+        // router — always gets the view's size, whatever was sent before; a hidden view
+        // leaves the page size to the views that are shown, and tells its hidden state again,
+        // since the router's side of a new one starts out shown.
+        lastSent.current = null;
+        sendViewport(true);
+        const hidden = !shownRef.current || document.hidden;
         reportedHidden.current = hidden;
         send({ type: 'hidden', hidden });
         send({ type: 'follow', agent: followAgentRef.current });
         rttMs.current = 0;
         pingSentAt.current = null;
         received.current = [];
-        // A fresh connection (the first one, or a reconnect) starts "auto" preferring video
-        // again, the same as rttMs above starting over as if the round trip were excellent:
-        // both are corrected within one stats report if that turns out to be wrong.
+        // A fresh connection starts "auto" preferring video again, the same as rttMs above
+        // starting over as if the round trip were excellent: both are corrected within one
+        // stats report if that turns out to be wrong.
         autoWantsVideo.current = true;
         // A fresh connection's first real round trip is measured right away rather than
-        // waiting out the first interval: until it arrives, rttMs stays 0, which chooseTier
-        // reads as an excellent connection, so a slow one would otherwise be let onto a tier
-        // it cannot afford for up to PING_INTERVAL_MS.
+        // waiting out the first interval: until it arrives, rttMs stays 0, which the router
+        // reads as an excellent connection.
         const ping = () => {
           pingSentAt.current = performance.now();
           send({ type: 'ping', t: pingSentAt.current });
@@ -342,11 +477,18 @@ export function useBrowserScreencast(
             waitingSinceMs.current = 0;
             send({ type: 'requestKeyframe' });
           }
+          // A size the page has not taken is sent once more.
+          if (
+            !confirmed.current &&
+            !resent.current &&
+            performance.now() - sentAt.current > VIEWPORT_CONFIRM_MS
+          ) {
+            sendViewport(true);
+          }
           // "auto" follows the round trip either way: it is measured by ping/pong, which
           // keeps running regardless of which stream is playing, so a connection that has
-          // recovered is noticed even while showing JPEG. The two thresholds (see
-          // AUTO_JPEG_RTT_MS/AUTO_VIDEO_RTT_MS) keep a round trip that hovers near one number
-          // from flipping the mode back and forth on every report.
+          // recovered is noticed even while showing JPEG. The two thresholds keep a round
+          // trip that hovers near one number from flipping the mode on every report.
           if (videoPreferenceRef.current === 'auto') {
             const rtt = rttMs.current;
             const nextWantsVideo = autoWantsVideo.current
@@ -368,12 +510,28 @@ export function useBrowserScreencast(
         const message = JSON.parse(event.data) as ServerText;
         if (message.type === 'dialog') setDialog(message.open ? message : null);
         else if (message.type === 'video') {
+          const pageSize = { width: message.width, height: message.height };
           announced.current = {
             codec: message.codec,
             tier: message.tier,
-            size: { width: message.width, height: message.height },
+            frame: {
+              natural: {
+                width: message.pageWidth ?? message.width,
+                height: message.pageHeight ?? message.height,
+              },
+              page: pageSize,
+            },
           };
-          if (video.current) frameSize.current = announced.current.size;
+        } else if (message.type === 'page') {
+          const next: LivePage = {
+            width: message.width,
+            height: message.height,
+            zoom: message.zoom ?? 1,
+            fixed: message.fixed === true,
+          };
+          pageRef.current = next;
+          setPage(next);
+          checkConfirmed(next);
         } else if (message.type === 'pong') {
           if (pingSentAt.current === message.t)
             rttMs.current = Math.round(performance.now() - message.t);
@@ -387,7 +545,9 @@ export function useBrowserScreencast(
         if (stopped) return;
         setDialog(null);
         setControlBy('owner');
+        // The last frame stays: an MSE video's is copied onto the canvas.
         closeVideo();
+        setMode('jpeg');
         socket.current = null;
         pending.current = null;
         unacknowledged.current = 0;
@@ -400,6 +560,7 @@ export function useBrowserScreencast(
     return () => {
       stopped = true;
       clearTimeout(retry);
+      clearTimeout(settleTimer.current);
       clearInterval(pingTimer);
       clearInterval(statsTimer);
       closeVideo();
@@ -409,6 +570,7 @@ export function useBrowserScreencast(
   }, [
     controlBase,
     reloadToken,
+    checkConfirmed,
     closeVideo,
     downlinkKbps,
     queryClient,
@@ -417,26 +579,16 @@ export function useBrowserScreencast(
     sendViewport,
   ]);
 
-  // Sent again after a reconnect while the view is shown.
-  const setViewport = useCallback(
-    (size: LiveViewport) => {
-      viewport.current = size;
-      sendViewport();
-    },
-    [sendViewport],
-  );
-
   return {
     status,
     mode,
     playback: playback.current,
     hasFrame,
-    frameSize,
+    videoElementShown,
+    page,
     dialog,
     controlBy,
     send,
     setViewport,
-    videoPreference,
-    setVideoPreference,
   };
 }

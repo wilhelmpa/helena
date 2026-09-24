@@ -98,8 +98,8 @@ export default function WorkspacePanelHeader({
           size="icon"
           className="size-7"
           onClick={onToggleBrowserLossless}
-          title={`${t('browser')} PNG`}
-          aria-label={`${t('browser')} PNG`}
+          title={t('browserLossless')}
+          aria-label={t('browserLossless')}
           aria-pressed={browserLossless}
         >
           <ImageIcon />

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   clickCount,
-  containedRect,
+  frameRect,
   heldButton,
   keyMessage,
   modifiers,
@@ -54,9 +54,22 @@ describe('live view frames', () => {
 });
 
 describe('live view coordinates', () => {
-  it('maps a view point to the same page point when the page has the view size', () => {
+  it('draws a page of the view size one to one and maps a point to the same page point', () => {
     const size = { width: 800, height: 600 };
-    assert.deepEqual(pagePoint({ x: 120.5, y: 40 }, size, size), { x: 120.5, y: 40 });
+    const rect = frameRect(size, size);
+    assert.deepEqual(rect, { left: 0, top: 0, width: 800, height: 600 });
+    assert.deepEqual(pagePoint({ x: 120.5, y: 40 }, rect, size), { x: 120.5, y: 40 });
+  });
+
+  it('draws a page a pixel or two off the view size one to one, not stretched', () => {
+    // A page at ratio 1 is made even: a 619 pixel wide view shows a 620 pixel wide page with
+    // its last column cut off.
+    const rect = frameRect({ width: 619, height: 612 }, { width: 620, height: 612 });
+    assert.deepEqual(rect, { left: 0, top: 0, width: 620, height: 612 });
+    assert.deepEqual(pagePoint({ x: 618.5, y: 611.5 }, rect, { width: 620, height: 612 }), {
+      x: 618.5,
+      y: 611.5,
+    });
   });
 
   it('maps through the scale and the bands of a frame drawn smaller than the view', () => {
@@ -64,21 +77,38 @@ describe('live view coordinates', () => {
     // scaled down.
     const box = { width: 250, height: 600 };
     const frame = { width: 500, height: 400 };
-    assert.deepEqual(containedRect(box, frame), { left: 0, top: 200, width: 250, height: 200 });
-    assert.deepEqual(pagePoint({ x: 125, y: 300 }, box, frame), { x: 250, y: 200 });
-    assert.deepEqual(pagePoint({ x: 25, y: 220 }, box, frame), { x: 50, y: 40 });
+    const rect = frameRect(box, frame);
+    assert.deepEqual(rect, { left: 0, top: 200, width: 250, height: 200 });
+    assert.deepEqual(pagePoint({ x: 125, y: 300 }, rect, frame), { x: 250, y: 200 });
+    assert.deepEqual(pagePoint({ x: 25, y: 220 }, rect, frame), { x: 50, y: 40 });
     // A point in a band above or below the frame lands on its edge.
-    assert.deepEqual(pagePoint({ x: -10, y: 10 }, box, frame), { x: 0, y: 0 });
-    assert.deepEqual(pagePoint({ x: 300, y: 590 }, box, frame), { x: 500, y: 400 });
+    assert.deepEqual(pagePoint({ x: -10, y: 10 }, rect, frame), { x: 0, y: 0 });
+    assert.deepEqual(pagePoint({ x: 300, y: 590 }, rect, frame), { x: 500, y: 400 });
   });
 
-  it('centres a frame that is wider than the view is tall', () => {
-    const drawn = containedRect({ width: 1000, height: 500 }, { width: 800, height: 800 });
-    assert.deepEqual(drawn, { left: 250, top: 0, width: 500, height: 500 });
-    assert.deepEqual(
-      pagePoint({ x: 500, y: 250 }, { width: 1000, height: 500 }, { width: 800, height: 800 }),
-      { x: 400, y: 400 },
-    );
+  it('centres a frame that is wider than the view is tall, in whole pixels', () => {
+    const rect = frameRect({ width: 1000, height: 500 }, { width: 800, height: 800 });
+    assert.deepEqual(rect, { left: 250, top: 0, width: 500, height: 500 });
+    assert.deepEqual(pagePoint({ x: 500, y: 250 }, rect, { width: 800, height: 800 }), {
+      x: 400,
+      y: 400,
+    });
+    // A fixed working size (1440x900) in a 619x612 panel.
+    assert.deepEqual(frameRect({ width: 619, height: 612 }, { width: 1440, height: 900 }), {
+      left: 0,
+      top: 113,
+      width: 619,
+      height: 387,
+    });
+  });
+
+  it('maps into the page zoom, which makes the CSS size smaller than the drawn page', () => {
+    // A 1280x800 page at 125 % zoom is 1024x640 CSS pixels.
+    const rect = frameRect({ width: 1280, height: 800 }, { width: 1280, height: 800 });
+    assert.deepEqual(pagePoint({ x: 640, y: 400 }, rect, { width: 1024, height: 640 }), {
+      x: 512,
+      y: 320,
+    });
   });
 });
 

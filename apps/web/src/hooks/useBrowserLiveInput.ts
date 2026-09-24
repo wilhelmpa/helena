@@ -23,8 +23,16 @@ import {
   type LiveMessage,
   type Point,
   type Press,
+  type Rect,
   type Size,
 } from '@/utils/browserLive';
+
+// Where the frame on screen is drawn in the view (rect, CSS pixels from the view's top left
+// corner) and its size in the CSS pixels input is given in (page).
+export interface LiveGeometry {
+  rect: Rect;
+  page: Size;
+}
 
 // A touch that moves less than this is a tap.
 const TAP_DISTANCE = 8;
@@ -46,10 +54,13 @@ interface Touch {
 // scrolls the page, or clicks when it does not move. The keyboard, pastes and IME text come
 // from the hidden text field that a press into the view focuses, so they reach the page
 // only while the view has the focus.
+//
+// A point is mapped against the frame actually drawn (its rect, bands beside it ignored) and
+// the size of that very frame, not the size the view asked for.
 export function useBrowserLiveInput(
   view: RefObject<HTMLDivElement | null>,
   keyboard: RefObject<HTMLTextAreaElement | null>,
-  frameSize: RefObject<Size | null>,
+  geometry: RefObject<LiveGeometry | null>,
   send: (message: LiveMessage) => void,
 ) {
   const mac = useIsMac();
@@ -58,12 +69,16 @@ export function useBrowserLiveInput(
 
   const pointAt = useCallback(
     (event: { clientX: number; clientY: number }): Point | null => {
-      const frame = frameSize.current;
+      const drawn = geometry.current;
       const box = view.current?.getBoundingClientRect();
-      if (!frame?.width || !frame.height || !box) return null;
-      return pagePoint({ x: event.clientX - box.left, y: event.clientY - box.top }, box, frame);
+      if (!drawn?.page.width || !drawn.page.height || !drawn.rect.width || !box) return null;
+      return pagePoint(
+        { x: event.clientX - box.left, y: event.clientY - box.top },
+        drawn.rect,
+        drawn.page,
+      );
     },
-    [frameSize, view],
+    [geometry, view],
   );
 
   useEffect(() => {
@@ -75,12 +90,12 @@ export function useBrowserLiveInput(
       event.preventDefault();
       const at = pointAt(event);
       if (!at) return;
-      const delta = wheelDelta(event, frameSize.current?.height ?? 0);
+      const delta = wheelDelta(event, geometry.current?.page.height ?? 0);
       send({ type: 'wheel', ...at, ...delta, modifiers: modifiers(event, mac) });
     };
     element.addEventListener('wheel', onWheel, { passive: false });
     return () => element.removeEventListener('wheel', onWheel);
-  }, [frameSize, mac, pointAt, send, view]);
+  }, [geometry, mac, pointAt, send, view]);
 
   const pointer = {
     onPointerDown(event: PointerEvent<HTMLDivElement>) {
