@@ -5,6 +5,7 @@ import { apiKeyApi, app, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { autopilotPolicyDecider, decideBrowserTool } from '#modules/autopilot/adapters';
 
 // Helena's Autopilot: one level per project (with an optional per-agent level), one policy
 // engine every runtime asks, budgets that stop the work cleanly, and a log entry for each
@@ -468,5 +469,55 @@ describe('Autopilot report', () => {
     expect(report).toContain('level 2 (Act & report)');
     expect(report).toContain('- delete: `rm -rf build`');
     expect(report).not.toContain('a.md');
+  });
+});
+
+describe('adapters for the workflow engine and the browser gateway', () => {
+  beforeEach(resetDb);
+
+  it('answers the workflow engine’s policy seam', async () => {
+    const s = await setup();
+    const ask = (actionCategory: string) =>
+      autopilotPolicyDecider.decide({
+        agentId: s.agent.id,
+        projectId: s.projectId,
+        actionCategory,
+        subject: 'step',
+      });
+    expect((await ask('approve')).decision).toBe('ask');
+    expect((await ask('run')).decision).toBe('allow');
+    expect((await ask('write')).decision).toBe('allow');
+    expect((await ask('send')).decision).toBe('ask');
+    expect((await ask('webhook')).decision).toBe('ask');
+    await setLevel(s.asOwner, 3);
+    expect((await ask('send')).decision).toBe('allow');
+    expect((await ask('pay')).decision).toBe('ask');
+    await s.asOwner
+      .teams({ teamId: s.teamId })
+      .organization.agents({ agentId: s.agent.id })
+      .pause.post({ reason: 'Budget review' });
+    expect(await ask('run')).toEqual({ decision: 'deny', reason: 'Budget review' });
+  });
+
+  it('decides the browser gateway’s tools, with a declared intent', async () => {
+    const s = await setup();
+    const tool = (name: string, intent?: 'pay' | 'send') =>
+      decideBrowserTool({
+        agent: { id: s.agent.id, teamId: s.teamId },
+        projectId: s.projectId,
+        tool: name,
+        intent,
+        target: 'https://shop.example.com',
+      });
+    await setLevel(s.asOwner, 0);
+    expect((await tool('browser_snapshot')).outcome).toBe('allow');
+    expect((await tool('browser_click')).outcome).toBe('needs-approval');
+    await setLevel(s.asOwner, 3);
+    expect((await tool('browser_click')).outcome).toBe('allow');
+    expect(await tool('browser_click', 'pay')).toMatchObject({
+      outcome: 'needs-approval',
+      category: 'pay',
+      reason: 'hard-block',
+    });
   });
 });
