@@ -20,7 +20,8 @@ export type RuntimeRequest =
   | { op: 'version.read' }
   | { op: 'curator.status' }
   | { op: 'curator.run' }
-  | { op: 'estop.set'; engaged: boolean; reason?: string | null };
+  | { op: 'estop.set'; engaged: boolean; reason?: string | null }
+  | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null };
 
 export const runtimeRequestConfig = {
   // How long a runner's claim waits for a request, and how often it looks.

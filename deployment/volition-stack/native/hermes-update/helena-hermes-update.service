@@ -1,0 +1,20 @@
+[Unit]
+Description=Helena: check or apply a Hermes update (with rollback)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Root only to act as the owner of each part: git as the owner of the Hermes checkout, the
+# install as the owner of the virtual environment (the helper drops to them per step).
+User=root
+ExecStart=/usr/local/libexec/helena-hermes-update --config /etc/helena/hermes-update.json serve-request
+TimeoutStartSec=45min
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/volition/source/hermes /var/lib/volition/hermes /var/lib/helena/hermes-update
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes

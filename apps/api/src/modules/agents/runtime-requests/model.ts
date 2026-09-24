@@ -10,6 +10,7 @@ const op = t.Union([
   t.Literal('curator.status'),
   t.Literal('curator.run'),
   t.Literal('estop.set'),
+  t.Literal('runtime.update'),
 ]);
 
 export const RuntimeRequestClaimResponse = t.Object({

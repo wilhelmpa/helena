@@ -113,7 +113,8 @@ export type RuntimeRequest =
   | { op: 'version.read' }
   | { op: 'curator.status' }
   | { op: 'curator.run' }
-  | { op: 'estop.set'; engaged: boolean; reason?: string | null };
+  | { op: 'estop.set'; engaged: boolean; reason?: string | null }
+  | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null };
 
 export type RuntimeRequestOp = RuntimeRequest['op'];
 
@@ -129,6 +130,7 @@ export const REQUEST_CAPABILITY: Record<RuntimeRequestOp, string> = {
   'curator.status': 'curator',
   'curator.run': 'curator',
   'estop.set': 'estop',
+  'runtime.update': 'update',
 };
 
 // Where an adapter reads: the agent's runtime home and working directory. For an isolated

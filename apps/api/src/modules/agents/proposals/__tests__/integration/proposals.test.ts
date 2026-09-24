@@ -205,3 +205,62 @@ describe('Hermes settings from Helena', () => {
     });
   });
 });
+
+describe('Hermes update', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
+  async function answerNext(asRunner: Api, answer: (request: Record<string, unknown>) => unknown) {
+    for (let i = 0; i < 50; i++) {
+      const claimed = (await asRunner['agent-runtime'].requests.claim.post()).data!.request;
+      if (!claimed) continue;
+      await asRunner['agent-runtime']
+        .requests({ requestId: claimed.id })
+        .answer.post({ ok: true, result: answer(claimed.request as Record<string, unknown>) });
+      return claimed.request as Record<string, unknown>;
+    }
+    throw new Error('no request arrived');
+  }
+
+  const ref = (version: string, commit: string) => ({ commit, describe: `v${version}`, version });
+
+  it('checks, raises a proposal for the owner and starts the update once approved', async () => {
+    const { asOwner, asRunner } = await setup();
+    await report(asRunner, { inventory: inventory('') });
+
+    const checking = asOwner.god['hermes-update'].check.post();
+    const request = await answerNext(asRunner, () => ({
+      current: ref('0.21.4', 'a'.repeat(40)),
+      latest: ref('0.22.0', 'b'.repeat(40)),
+      commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
+      localPatches: [{ commit: 'c'.repeat(40), date: '2026-09-24', subject: 'local patch' }],
+    }));
+    expect(request).toEqual({ op: 'runtime.update', action: 'check' });
+    const checked = await checking;
+    expect(checked.data!.check!.latest.version).toBe('0.22.0');
+
+    const requested = await asOwner.god['hermes-update'].request.post();
+    expect(requested.status).toBe(201);
+    const pending = (await asOwner['agent-proposals'].get({ query: {} })).data!;
+    expect(pending[0]).toMatchObject({ kind: 'hermes-update', title: 'Hermes 0.21.4 → 0.22.0' });
+
+    const deciding = asOwner['agent-proposals']({ proposalId: pending[0]!.id }).decision.post({
+      approved: true,
+    });
+    const apply = await answerNext(asRunner, () => ({ id: 'helper-1', state: 'started' }));
+    expect(apply).toEqual({ op: 'runtime.update', action: 'apply', target: 'b'.repeat(40) });
+    expect((await deciding).data!.status).toBe('approved');
+
+    const following = asOwner.god['hermes-update'].get();
+    await answerNext(asRunner, () => ({
+      id: 'helper-1',
+      state: 'done',
+      ok: true,
+      result: { to: ref('0.22.0', 'd'.repeat(40)) },
+      log: '$ git fetch',
+    }));
+    const state = (await following).data!;
+    expect(state.proposal).toMatchObject({ status: 'applied', log: '$ git fetch' });
+  });
+});

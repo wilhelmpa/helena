@@ -22,6 +22,7 @@ import {
 } from './policy';
 import { Redactor } from './redact';
 import { reflect } from './reflect';
+import { runtimeUpdate } from './update';
 import { perform } from './run';
 
 // The runner holds no state — the queue is the server's. A runner stopped by its service
@@ -188,16 +189,23 @@ async function handleRuntimeRequest(
 ): Promise<void> {
   try {
     if (!isRuntimeRequest(claim.request)) throw new Error('This runner does not know the request');
+    // The Hermes installation is the runner's own, isolated agents or not.
     const result =
-      isolationEnabled() && config.isolation && config.cwd
-        ? await runProfileHelper(config.isolation, config.cwd, {
-            op: 'runtime-request',
-            request: claim.request,
-            runtime: config.agent ?? null,
-            cwd: config.cwd,
-            known: runnerRedactor(config).secrets(),
-          })
-        : await answerRuntimeRequest(claim.request, readerContext(config), runnerRedactor(config));
+      claim.request.op === 'runtime.update'
+        ? await runtimeUpdate(claim.request)
+        : isolationEnabled() && config.isolation && config.cwd
+          ? await runProfileHelper(config.isolation, config.cwd, {
+              op: 'runtime-request',
+              request: claim.request,
+              runtime: config.agent ?? null,
+              cwd: config.cwd,
+              known: runnerRedactor(config).secrets(),
+            })
+          : await answerRuntimeRequest(
+              claim.request,
+              readerContext(config),
+              runnerRedactor(config),
+            );
     await client.answerRuntimeRequest(claim.id, { ok: true, result });
   } catch (err) {
     const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
