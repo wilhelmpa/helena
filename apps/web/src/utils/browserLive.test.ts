@@ -55,7 +55,8 @@ describe('live view frames', () => {
 
   it('reads a cropped frame: the page fills the left part of a wider frame', async () => {
     // A 390x700 page in a frame of the 500 DIP wide window.
-    const data = new Uint8Array([3, 0x01, 0xf4, 0x02, 0xbc, 0x01, 0x86, 0x02, 0xbc, 0xff, 0xd8]).buffer;
+    const data = new Uint8Array([3, 0x01, 0xf4, 0x02, 0xbc, 0x01, 0x86, 0x02, 0xbc, 0xff, 0xd8])
+      .buffer;
     const { size, crop, jpeg } = readFrame(data);
     assert.deepEqual(size, { width: 390, height: 700 });
     assert.deepEqual(crop, { width: 0.78, height: 1 });

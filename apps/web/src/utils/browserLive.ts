@@ -101,9 +101,7 @@ export function readFrame(data: ArrayBuffer): { size: Size; crop: Size | null; j
   const page = cropped ? { width: header.getUint16(4), height: header.getUint16(6) } : null;
   return {
     size: page ?? frame,
-    crop: page
-      ? { width: page.width / frame.width, height: page.height / frame.height }
-      : null,
+    crop: page ? { width: page.width / frame.width, height: page.height / frame.height } : null,
     jpeg: new Blob([new Uint8Array(data, cropped ? 9 : 5)], { type: 'image/jpeg' }),
   };
 }
