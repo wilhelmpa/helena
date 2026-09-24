@@ -165,7 +165,8 @@ describe('second brain', () => {
       name: 'search_knowledge',
       arguments: { q: 'Lieferant' },
     });
-    const result = found.structuredContent as { items: { ref: string; cite: string }[] };
+    const result = (found.structuredContent as { data: { items: { ref: string; cite: string }[] } })
+      .data;
     expect(result.items[0]?.ref).toBe('vault:Projects/MKT/Docs/Befund.md');
     expect(result.items[0]?.cite).toStartWith('[Befund](');
 
@@ -179,7 +180,7 @@ describe('second brain', () => {
       },
     });
     expect(captured.isError).not.toBe(true);
-    const capturedPath = (captured.structuredContent as { path: string }).path;
+    const capturedPath = (captured.structuredContent as { data: { path: string } }).data.path;
     expect(capturedPath).toMatch(/^Projects\/MKT\/Inbox\/\d{4}-\d\d-\d\d Preisliste\.md$/);
     expect(await readFile(path.join(root(), capturedPath), 'utf8')).toContain(
       'source: https://example.com/preise',

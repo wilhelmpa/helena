@@ -112,6 +112,8 @@ function identifierBoost(q: string): SQL {
 interface Candidate {
   rowId: number;
   group: string;
+  // The item its group is named after.
+  leader: boolean;
   score: number;
   matched: Set<'text' | 'meaning'>;
   passage?: string;
@@ -129,17 +131,13 @@ export async function searchKnowledgeIndex(
   const query = tsQuery(q);
   const rank = sql<number>`ts_rank_cd(${knowledgeItem.search}, ${query}, 32) + ${identifierBoost(q)}`;
   const groupKey = sql<string>`coalesce(${knowledgeItem.groupKey}, ${knowledgeItem.source} || ':' || ${knowledgeItem.itemId})`;
+  const leader = sql<boolean>`(${groupKey} = ${knowledgeItem.source} || ':' || ${knowledgeItem.itemId})`;
 
   const textHits = await db
-    .select({ rowId: knowledgeItem.id, group: groupKey, rank })
+    .select({ rowId: knowledgeItem.id, group: groupKey, leader, rank })
     .from(knowledgeItem)
     .where(and(readable, filters, sql`${knowledgeItem.search} @@ ${query}`))
-    // On a tie the item a group is named after (the task, not its comment) comes first.
-    .orderBy(
-      desc(rank),
-      sql`${groupKey} = ${knowledgeItem.source} || ':' || ${knowledgeItem.itemId} desc`,
-      desc(knowledgeItem.updatedAt),
-    )
+    .orderBy(desc(rank), desc(leader), desc(knowledgeItem.updatedAt))
     .limit(CANDIDATES);
 
   const candidates = new Map<number, Candidate>();
@@ -147,6 +145,7 @@ export async function searchKnowledgeIndex(
     candidates.set(hit.rowId, {
       rowId: hit.rowId,
       group: hit.group,
+      leader: hit.leader,
       score: 1 / (RRF_K + index + 1),
       matched: new Set(['text']),
     });
@@ -154,13 +153,13 @@ export async function searchKnowledgeIndex(
   if (semantic) {
     const meaningHits = await semantic({ q, readable, filters, limit: CANDIDATES });
     const missing = meaningHits.map((hit) => hit.rowId).filter((id) => !candidates.has(id));
-    const groups = new Map<number, string>();
+    const groups = new Map<number, { group: string; leader: boolean }>();
     if (missing.length > 0) {
       const rows = await db
-        .select({ rowId: knowledgeItem.id, group: groupKey })
+        .select({ rowId: knowledgeItem.id, group: groupKey, leader })
         .from(knowledgeItem)
         .where(inArray(knowledgeItem.id, missing));
-      for (const row of rows) groups.set(row.rowId, row.group);
+      for (const row of rows) groups.set(row.rowId, { group: row.group, leader: row.leader });
     }
     meaningHits.forEach((hit, index) => {
       const existing = candidates.get(hit.rowId);
@@ -172,7 +171,7 @@ export async function searchKnowledgeIndex(
       } else if (groups.has(hit.rowId)) {
         candidates.set(hit.rowId, {
           rowId: hit.rowId,
-          group: groups.get(hit.rowId)!,
+          ...groups.get(hit.rowId)!,
           score,
           matched: new Set(['meaning']),
           passage: hit.passage,
@@ -182,15 +181,21 @@ export async function searchKnowledgeIndex(
   }
 
   const ordered = [...candidates.values()].sort((a, b) => b.score - a.score);
-  const picked: Candidate[] = [];
-  const seenGroups = new Set<string>();
-  for (const candidate of ordered) {
-    if (input.collapse !== false) {
-      if (seenGroups.has(candidate.group)) continue;
-      seenGroups.add(candidate.group);
+  let picked: Candidate[];
+  if (input.collapse === false) {
+    picked = ordered.slice(0, input.limit);
+  } else {
+    // One result per group, at the place of its best match. The item the group is named
+    // after (the task, not its comment) stands for the group when it matched at all.
+    const groups = new Map<string, { best: Candidate; leader?: Candidate }>();
+    for (const candidate of ordered) {
+      const group = groups.get(candidate.group) ?? { best: candidate };
+      if (candidate.leader && !group.leader) group.leader = candidate;
+      groups.set(candidate.group, group);
     }
-    picked.push(candidate);
-    if (picked.length >= input.limit) break;
+    picked = [...groups.values()]
+      .slice(0, input.limit)
+      .map(({ best, leader }) => (leader ? { ...leader, score: best.score } : best));
   }
 
   const [items, counts] = await Promise.all([
@@ -383,7 +388,13 @@ export async function recentItems(
     .orderBy(desc(knowledgeItem.updatedAt))
     .limit(input.limit);
   return hydrate(
-    rows.map((row) => ({ rowId: row.rowId, group: '', score: 0, matched: new Set() })),
+    rows.map((row) => ({
+      rowId: row.rowId,
+      group: '',
+      leader: true,
+      score: 0,
+      matched: new Set(),
+    })),
     sql`''::tsquery`,
   );
 }
