@@ -667,7 +667,7 @@
         "enabled": "Belajar mandiri",
         "enabledHint": "Agen menyimpan memori dan membuat skill selama chat dan run; token yang dipakai untuk itu dihitung dalam pemakaiannya. Jika nonaktif, agen tidak menyimpan hal baru dan memorinya tidak dimuat.",
         "curator": "Kurator",
-        "curatorHint": "Kurator Hermes mengarsipkan skill hasil belajar yang tidak dipakai selama 30 hari. Kurator berjalan dalam pemeliharaan Hermes sendiri, seperti dasbor Hermes, bukan dalam chat dan run dari Plan.",
+        "curatorHint": "Kurator Hermes mengarsipkan skill hasil belajar yang tidak dipakai selama 30 hari. Helena memintanya meninjau setiap minggu; di tab Runtime agen, Anda bisa menjalankan tinjauan sekarang dan menyematkan skill yang tidak boleh disentuhnya.",
         "reflectionTitle": "Refleksi",
         "reflectionHint": "Giliran lanjutan singkat dalam sesi run yang sama, tepat setelah run berakhir, saat agen hanya menyimpan apa yang diajarkan run tersebut. Token yang dipakai dihitung dalam pemakaian run.",
         "reflectionOff": "Nonaktif",
@@ -696,8 +696,12 @@
         "memoryEditTitle": "Edit {file}",
         "memoryEditHint": "Hermes menyimpan satu entri per paragraf, dengan § di baris tersendiri di antara entri. Runner menulis versi Anda kecuali agen sudah mengubah file itu.",
         "memoryClearTitle": "Kosongkan {file}?",
-        "memoryClearBody": "Agen kehilangan catatan ini pada sinkronisasi runner berikutnya."
-      }
+        "memoryClearBody": "Agen kehilangan catatan ini pada sinkronisasi runner berikutnya.",
+        "memoryApproval": "Setujui perubahan memori",
+        "memoryApprovalHint": "Apa yang ditulis agen ke memorinya menunggu sebagai diff di halaman persetujuan; sampai disetujui, agen tetap memakai versi yang disetujui."
+      },
+      "skillEnabled": "{name} aktif",
+      "skillsDisabled": "{count} nonaktif"
     },
     "paused": "Dijeda",
     "pausedNoReason": "Dijeda. Tidak ada alasan yang diberikan.",

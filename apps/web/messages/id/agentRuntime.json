@@ -1,0 +1,239 @@
+{
+  "tabs": {
+    "label": "Tampilan agen",
+    "settings": "Pengaturan",
+    "runs": "Run",
+    "sessions": "Sesi",
+    "memory": "Memori",
+    "usage": "Pemakaian",
+    "runtime": "Runtime"
+  },
+  "runs": {
+    "empty": "Belum ada run.",
+    "loadMore": "Muat lebih banyak",
+    "running": "Berjalan",
+    "blocked": "Terblokir",
+    "modelMismatch": "Model lain",
+    "back": "Kembali ke daftar run",
+    "views": "Tampilan run",
+    "timeline": "Linimasa",
+    "transcript": "Transkrip",
+    "logs": "Log",
+    "noTimeline": "Tidak ada linimasa yang direkam untuk run ini. Transkrip sesinya menunjukkan apa yang terjadi.",
+    "noSession": "Run ini tidak memiliki sesi runtime untuk ditampilkan.",
+    "noLogs": "Tidak ada baris log untuk sesi ini.",
+    "truncated": "Bagian yang panjang dipersingkat.",
+    "copySession": "Salin ID sesi",
+    "resumed": "{count, plural, other {dilanjutkan # kali}}",
+    "continuesRun": "Melanjutkan run #{id}",
+    "continue": "Lanjutkan dari sini",
+    "continueTitle": "Lanjutkan dari sini",
+    "continueHint": "Run baru agen melanjutkan sesi run ini, dengan semua yang sudah diketahuinya, dan mengerjakan apa yang Anda tulis di sini.",
+    "continuePlaceholder": "Apa yang harus dilakukan agen selanjutnya?",
+    "continueStart": "Mulai run",
+    "continued": "Run sudah masuk antrean.",
+    "status": {
+      "pending": "Menunggu",
+      "success": "Selesai",
+      "failed": "Gagal",
+      "canceled": "Dibatalkan"
+    },
+    "trigger": {
+      "mention": "Sebutan",
+      "delegation": "Tugas delegasi",
+      "field": "Perubahan bidang",
+      "schedule": "Tugas terjadwal",
+      "manual": "Tugas manual",
+      "approval": "Keputusan persetujuan"
+    }
+  },
+  "sessions": {
+    "search": "Cari di semua sesi",
+    "clear": "Bersihkan",
+    "noHits": "Tidak ada sesi yang menyebut “{query}”.",
+    "empty": "Runtime belum memiliki sesi.",
+    "range": "{from}–{to} dari {total}",
+    "newer": "Lebih baru",
+    "older": "Lebih lama",
+    "messages": "{count, plural, other {# pesan}}",
+    "tools": "{count, plural, other {# pemanggilan alat}}",
+    "back": "Kembali ke daftar sesi",
+    "copyId": "Salin ID sesi",
+    "truncated": "Bagian yang panjang dipersingkat.",
+    "source": {
+      "tool": "Run atau chat",
+      "cli": "Terminal",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "other": "Lainnya"
+    }
+  },
+  "memory": {
+    "approvalOn": "Perubahan yang dibuat agen pada memorinya menunggu persetujuan Anda; sampai saat itu agen tetap bekerja dengan versi yang disetujui.",
+    "approvalOff": "Agen mengubah memorinya sendiri. Setiap versi disimpan di bawah.",
+    "pending": "{count, plural, other {# perubahan menunggu persetujuan}}",
+    "notReported": "Runtime belum melaporkan memorinya.",
+    "history": "Riwayat",
+    "noHistory": "Belum ada versi.",
+    "source": {
+      "agent": "Agen (disetujui)",
+      "owner": "Diedit di sini",
+      "observed": "Ditemukan di runtime"
+    }
+  },
+  "proposals": {
+    "section": "Agen dan runtime",
+    "raisedBy": "{agent} (@{username})",
+    "memoryTitle": "Perubahan pada {file}",
+    "updateHint": "Hermes diperbarui untuk semua agen. Skrip pembaruan membuat cadangan dan memulihkan versi sebelumnya sendiri jika pembaruan atau pemeriksaan sesudahnya gagal.",
+    "changes": "{count, plural, other {# perubahan}}",
+    "localPatches": "{count, plural, other {# perubahan lokal dipertahankan: {list}}}",
+    "kind": {
+      "memory-write": "Memori",
+      "hermes-update": "Pembaruan Hermes"
+    },
+    "status": {
+      "pending": "Menunggu",
+      "approved": "Disetujui, sedang dijalankan",
+      "rejected": "Ditolak",
+      "applied": "Diterapkan",
+      "failed": "Gagal"
+    }
+  },
+  "usage": {
+    "period": "Periode",
+    "days": "{count} hari",
+    "groupBy": "Kelompokkan menurut",
+    "grouping": {
+      "agent": "Agen",
+      "model": "Model",
+      "project": "Proyek",
+      "day": "Hari"
+    },
+    "dimension": {
+      "agent": "Agen",
+      "model": "Model",
+      "project": "Proyek",
+      "day": "Hari",
+      "kind": "Jenis"
+    },
+    "kind": {
+      "run": "Run",
+      "chat": "Chat",
+      "reflection": "Refleksi"
+    },
+    "empty": "Tidak ada pemakaian dalam periode ini.",
+    "input": "Input",
+    "cached": "Dari cache",
+    "output": "Output",
+    "time": "Waktu",
+    "cost": "Biaya",
+    "entries": "Entri",
+    "unpriced": "Beberapa model tidak punya harga di tabel harga; biayanya tidak masuk ke jumlah total.",
+    "unknownModel": "Model tidak dikenal",
+    "noProject": "Tanpa proyek"
+  },
+  "spend": {
+    "none": "Belum ada pemakaian yang tercatat",
+    "tokens": "{input} masuk · {output} keluar",
+    "tokensDetail": "Input {input} (termasuk dari cache {cached}) · output {output} (termasuk penalaran {reasoning})",
+    "noPrice": "tanpa harga",
+    "costHint": "Biaya menurut tabel harga model",
+    "costPartial": "Tidak semua model punya harga; biayanya tidak lengkap"
+  },
+  "runtime": {
+    "version": "Versi",
+    "health": "Kesehatan",
+    "check": "Periksa",
+    "healthHint": "Menjalankan pemeriksaan bawaan runtime (Hermes doctor). Bisa memakan waktu hingga satu menit.",
+    "healthy": "Tidak ada masalah ditemukan",
+    "problems": "Ada masalah ditemukan",
+    "curator": "Kurator",
+    "curatorRun": "Jalankan sekarang",
+    "curatorDone": "Kurator selesai meninjau.",
+    "curatorFailed": "Run kurator gagal.",
+    "curatorPaused": "Kurator dijeda: kurator dinonaktifkan di pengaturan belajar mandiri agen.",
+    "pinSkill": "Nama skill",
+    "pin": "Sematkan",
+    "unpin": "Lepas sematan",
+    "pinHint": "Kurator tidak pernah mengarsipkan atau mengubah skill yang disematkan.",
+    "log": "Log",
+    "reload": "Muat ulang",
+    "logEmpty": "Tidak ada baris log.",
+    "noLogs": "Runtime ini tidak menyimpan log yang bisa dibaca Helena.",
+    "level": {
+      "all": "Semua",
+      "WARNING": "Peringatan",
+      "ERROR": "Kesalahan"
+    }
+  },
+  "errors": {
+    "offline": "Runner agen sedang offline, jadi runtime-nya tidak bisa dibaca saat ini.",
+    "timeout": "Runtime tidak menjawab tepat waktu. Coba lagi.",
+    "noRuntime": "Runtime agen ini tidak bisa menampilkan ini.",
+    "notFound": "Tidak ditemukan di runtime.",
+    "failed": "Gagal membaca runtime."
+  },
+  "emergencyStop": {
+    "stop": "Stop darurat",
+    "resume": "Lanjutkan agen",
+    "bannerTitle": "Stop darurat: semua agen dihentikan",
+    "bannerSince": "sejak {since}",
+    "activeSince": "Aktif sejak {since}. Tidak ada agen yang memulai atau melanjutkan pekerjaan; run yang dihentikan melanjutkan sesinya begitu Anda melanjutkan.",
+    "inactive": "Nonaktif. Agen bekerja seperti biasa.",
+    "confirmTitle": "Hentikan semua agen?",
+    "confirmText": "Tidak ada agen yang memulai run atau menjawab chat lagi, pekerjaan yang sedang berjalan berhenti pada heartbeat berikutnya, dan Hermes dijeda. Saat dilanjutkan, run yang dihentikan berlanjut di sesinya masing-masing.",
+    "reason": "Alasan",
+    "reasonPlaceholder": "Alasan (opsional, terlihat oleh semua orang)",
+    "engaged": "Semua agen dihentikan.",
+    "lifted": "Agen bekerja kembali."
+  },
+  "fallback": {
+    "own": "Model cadangan sendiri",
+    "ownHint": "Jika model agen gagal atau terkena batas laju, Hermes beralih ke model-model ini secara berurutan.",
+    "defaultHint": "Nonaktif: model cadangan instance yang berlaku (Administrator → Runtime agen).",
+    "none": "Tanpa model cadangan: model yang gagal mengakhiri run.",
+    "provider": "Penyedia",
+    "model": "Model",
+    "up": "Naikkan",
+    "down": "Turunkan",
+    "remove": "Hapus",
+    "add": "Tambah model"
+  },
+  "admin": {
+    "stopTitle": "Stop darurat",
+    "stopDescription": "Menghentikan semua agen di instance ini sekaligus. Juga ada di menu akun.",
+    "hermesTitle": "Hermes",
+    "hermesDescription": "Instalasi Hermes tempat semua agen berjalan. Pembaruan memerlukan persetujuan Anda; skrip pembaruan membuat cadangan dan memulihkan versi sebelumnya jika gagal.",
+    "installed": "Terpasang: {version}",
+    "notChecked": "Belum diperiksa.",
+    "upToDate": "Terbaru",
+    "behind": "{count, plural, other {# perubahan hingga {version}}}",
+    "checkedAt": "diperiksa {at}",
+    "check": "Periksa pembaruan",
+    "checking": "Memeriksa…",
+    "request": "Minta pembaruan",
+    "requested": "Pembaruan menunggu persetujuan di halaman persetujuan.",
+    "changelog": "{count, plural, other {Apa yang berubah (# commit)}}",
+    "localPatches": "{count, plural, other {# perubahan lokal dipertahankan: {list}}}",
+    "toApprovals": "Buka persetujuan",
+    "log": "Log pembaruan",
+    "proposalStatus": {
+      "pending": "menunggu persetujuan",
+      "approved": "sedang dipasang",
+      "rejected": "ditolak",
+      "applied": "terpasang",
+      "failed": "gagal, dipulihkan"
+    },
+    "fallbackTitle": "Model cadangan",
+    "fallbackDescription": "Model yang dipakai secara berurutan oleh setiap agen tanpa daftar sendiri saat modelnya gagal.",
+    "sessionsTitle": "Sesi",
+    "retention": "Simpan sesi",
+    "retentionHint": "Jumlah hari Hermes menyimpan transkrip run dan chat yang sudah selesai. Kosong: bawaan Hermes, 90 hari.",
+    "saved": "Tersimpan. Runner menerapkannya pada sinkronisasi berikutnya.",
+    "usageTitle": "Pemakaian",
+    "usageDescription": "Pemakaian agen dalam sebuah tim, dari buku token Helena, dengan biaya menurut tabel harga model.",
+    "team": "Tim",
+    "noTeam": "Belum ada tim."
+  }
+}

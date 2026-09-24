@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Permettez à un fournisseur d'identité de créer, mettre à jour et désactiver des comptes sur cette instance, et d'accorder l'accès aux projets via ses groupes."
+    },
+    "agent-runtime": {
+      "label": "Runtime des agents",
+      "description": "L'arrêt d'urgence, l'installation Hermes et ses mises à jour, les modèles de secours et la conservation des sessions pour tous les agents, et ce que les agents ont consommé."
     }
   },
   "settings": {

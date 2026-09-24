@@ -1,0 +1,239 @@
+{
+  "tabs": {
+    "label": "Visualizações do agente",
+    "settings": "Configurações",
+    "runs": "Execuções",
+    "sessions": "Sessões",
+    "memory": "Memória",
+    "usage": "Consumo",
+    "runtime": "Runtime"
+  },
+  "runs": {
+    "empty": "Nenhuma execução ainda.",
+    "loadMore": "Carregar mais",
+    "running": "Em execução",
+    "blocked": "Bloqueada",
+    "modelMismatch": "Outro modelo",
+    "back": "Voltar para as execuções",
+    "views": "Visualizações da execução",
+    "timeline": "Linha do tempo",
+    "transcript": "Transcrição",
+    "logs": "Registro",
+    "noTimeline": "Nenhuma linha do tempo foi registrada para esta execução. A transcrição da sessão dela mostra o que aconteceu.",
+    "noSession": "Esta execução não tem sessão do runtime para mostrar.",
+    "noLogs": "Nenhuma linha de registro para esta sessão.",
+    "truncated": "Trechos longos foram encurtados.",
+    "copySession": "Copiar o ID da sessão",
+    "resumed": "{count, plural, one {retomada uma vez} other {retomada # vezes}}",
+    "continuesRun": "Continua a execução #{id}",
+    "continue": "Continuar daqui",
+    "continueTitle": "Continuar daqui",
+    "continueHint": "Uma nova execução do agente retoma a sessão desta execução, com tudo o que ele já sabe, e faz o que você escrever aqui.",
+    "continuePlaceholder": "O que o agente deve fazer em seguida?",
+    "continueStart": "Iniciar execução",
+    "continued": "A execução está na fila.",
+    "status": {
+      "pending": "Aguardando",
+      "success": "Concluída",
+      "failed": "Falhou",
+      "canceled": "Cancelada"
+    },
+    "trigger": {
+      "mention": "Menção",
+      "delegation": "Tarefa delegada",
+      "field": "Alteração de campo",
+      "schedule": "Tarefa agendada",
+      "manual": "Tarefa manual",
+      "approval": "Decisão de aprovação"
+    }
+  },
+  "sessions": {
+    "search": "Pesquisar em todas as sessões",
+    "clear": "Limpar",
+    "noHits": "Nenhuma sessão menciona “{query}”.",
+    "empty": "O runtime ainda não tem sessões.",
+    "range": "{from}–{to} de {total}",
+    "newer": "Mais recentes",
+    "older": "Mais antigas",
+    "messages": "{count, plural, one {# mensagem} other {# mensagens}}",
+    "tools": "{count, plural, one {# chamada de ferramenta} other {# chamadas de ferramenta}}",
+    "back": "Voltar para as sessões",
+    "copyId": "Copiar o ID da sessão",
+    "truncated": "Trechos longos foram encurtados.",
+    "source": {
+      "tool": "Execução ou chat",
+      "cli": "Terminal",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "other": "Outra"
+    }
+  },
+  "memory": {
+    "approvalOn": "As alterações que o agente faz na memória dele aguardam sua aprovação; até lá, ele continua trabalhando com a versão aprovada.",
+    "approvalOff": "O agente altera a própria memória. Cada versão fica guardada abaixo.",
+    "pending": "{count, plural, one {# alteração aguarda aprovação} other {# alterações aguardam aprovação}}",
+    "notReported": "O runtime ainda não informou a memória dele.",
+    "history": "Histórico",
+    "noHistory": "Nenhuma versão ainda.",
+    "source": {
+      "agent": "Agente (aprovada)",
+      "owner": "Editada aqui",
+      "observed": "Encontrada no runtime"
+    }
+  },
+  "proposals": {
+    "section": "Agentes e runtime",
+    "raisedBy": "{agent} (@{username})",
+    "memoryTitle": "Alteração em {file}",
+    "updateHint": "O Hermes é atualizado para todos os agentes. O script de atualização faz um backup e reverte sozinho se a atualização ou a verificação seguinte falhar.",
+    "changes": "{count, plural, one {# alteração} other {# alterações}}",
+    "localPatches": "{count, plural, one {# alteração local é mantida: {list}} other {# alterações locais são mantidas: {list}}}",
+    "kind": {
+      "memory-write": "Memória",
+      "hermes-update": "Atualização do Hermes"
+    },
+    "status": {
+      "pending": "Aguardando",
+      "approved": "Aprovada, sendo aplicada",
+      "rejected": "Rejeitada",
+      "applied": "Aplicada",
+      "failed": "Falhou"
+    }
+  },
+  "usage": {
+    "period": "Período",
+    "days": "{count} dias",
+    "groupBy": "Agrupar por",
+    "grouping": {
+      "agent": "Agentes",
+      "model": "Modelos",
+      "project": "Projetos",
+      "day": "Dias"
+    },
+    "dimension": {
+      "agent": "Agente",
+      "model": "Modelo",
+      "project": "Projeto",
+      "day": "Dia",
+      "kind": "Tipo"
+    },
+    "kind": {
+      "run": "Execução",
+      "chat": "Chat",
+      "reflection": "Reflexão"
+    },
+    "empty": "Nenhum consumo neste período.",
+    "input": "Entrada",
+    "cached": "Em cache",
+    "output": "Saída",
+    "time": "Tempo",
+    "cost": "Custo",
+    "entries": "Registros",
+    "unpriced": "Alguns modelos não têm preço na tabela de preços; o custo deles fica fora das somas.",
+    "unknownModel": "Modelo desconhecido",
+    "noProject": "Sem projeto"
+  },
+  "spend": {
+    "none": "Nenhum consumo registrado",
+    "tokens": "{input} de entrada · {output} de saída",
+    "tokensDetail": "Entrada {input} (em cache: {cached}) · saída {output} (raciocínio: {reasoning})",
+    "noPrice": "sem preço",
+    "costHint": "Custo pela tabela de preços dos modelos",
+    "costPartial": "Nem todo modelo tem preço; o custo está incompleto"
+  },
+  "runtime": {
+    "version": "Versão",
+    "health": "Estado",
+    "check": "Verificar",
+    "healthHint": "Executa a verificação própria do runtime (Hermes doctor). Leva até um minuto.",
+    "healthy": "Nenhum problema encontrado",
+    "problems": "Problemas encontrados",
+    "curator": "Curador",
+    "curatorRun": "Executar agora",
+    "curatorDone": "O curador terminou a revisão.",
+    "curatorFailed": "A execução do curador falhou.",
+    "curatorPaused": "O curador está pausado: ele está desligado nas configurações de autoaprendizado do agente.",
+    "pinSkill": "Nome da skill",
+    "pin": "Fixar",
+    "unpin": "Desafixar",
+    "pinHint": "O curador nunca arquiva nem altera uma skill fixada.",
+    "log": "Registro",
+    "reload": "Recarregar",
+    "logEmpty": "Nenhuma linha de registro.",
+    "noLogs": "Este runtime não mantém nenhum registro que a Helena possa ler.",
+    "level": {
+      "all": "Todos",
+      "WARNING": "Avisos",
+      "ERROR": "Erros"
+    }
+  },
+  "errors": {
+    "offline": "O runner do agente está offline, então o runtime dele não pode ser lido agora.",
+    "timeout": "O runtime não respondeu a tempo. Tente novamente.",
+    "noRuntime": "O runtime deste agente não consegue mostrar isso.",
+    "notFound": "Não encontrado no runtime.",
+    "failed": "Falha ao ler o runtime."
+  },
+  "emergencyStop": {
+    "stop": "Parada de emergência",
+    "resume": "Retomar agentes",
+    "bannerTitle": "Parada de emergência: todos os agentes estão parados",
+    "bannerSince": "desde {since}",
+    "activeSince": "Ativa desde {since}. Nenhum agente inicia nem continua trabalho; as execuções paradas continuam a sessão delas assim que você retomar.",
+    "inactive": "Desligada. Os agentes trabalham normalmente.",
+    "confirmTitle": "Parar todos os agentes?",
+    "confirmText": "Nenhum agente inicia mais uma execução nem responde a um chat, o trabalho em andamento para no próximo heartbeat e o Hermes pausa. Ao retomar, as execuções paradas continuam nas sessões delas.",
+    "reason": "Motivo",
+    "reasonPlaceholder": "Motivo (opcional, visível para todos)",
+    "engaged": "Todos os agentes estão parados.",
+    "lifted": "Os agentes estão trabalhando de novo."
+  },
+  "fallback": {
+    "own": "Modelos de reserva próprios",
+    "ownHint": "Quando o modelo do agente falha ou atinge o limite de taxa, o Hermes muda para estes, na ordem.",
+    "defaultHint": "Desligado: valem os modelos de reserva da instância (Administrador → Runtime dos agentes).",
+    "none": "Sem modelos de reserva: se o modelo falhar, a execução termina.",
+    "provider": "Provedor",
+    "model": "Modelo",
+    "up": "Mover para cima",
+    "down": "Mover para baixo",
+    "remove": "Remover",
+    "add": "Adicionar modelo"
+  },
+  "admin": {
+    "stopTitle": "Parada de emergência",
+    "stopDescription": "Para de uma vez todos os agentes da instância. Também no menu da conta.",
+    "hermesTitle": "Hermes",
+    "hermesDescription": "A instalação do Hermes em que todos os agentes rodam. Uma atualização precisa da sua aprovação; o script de atualização faz um backup e reverte se falhar.",
+    "installed": "Versão instalada: {version}",
+    "notChecked": "Ainda não verificado.",
+    "upToDate": "Atualizado",
+    "behind": "{count, plural, one {# alteração até {version}} other {# alterações até {version}}}",
+    "checkedAt": "verificado {at}",
+    "check": "Procurar atualizações",
+    "checking": "Verificando…",
+    "request": "Solicitar atualização",
+    "requested": "A atualização aguarda aprovação na página de aprovações.",
+    "changelog": "{count, plural, one {O que muda (# commit)} other {O que muda (# commits)}}",
+    "localPatches": "{count, plural, one {# alteração local é mantida: {list}} other {# alterações locais são mantidas: {list}}}",
+    "toApprovals": "Abrir aprovações",
+    "log": "Registro da atualização",
+    "proposalStatus": {
+      "pending": "aguarda aprovação",
+      "approved": "sendo instalada",
+      "rejected": "rejeitada",
+      "applied": "instalada",
+      "failed": "falhou, revertida"
+    },
+    "fallbackTitle": "Modelos de reserva",
+    "fallbackDescription": "Para onde cada agente sem lista própria muda, na ordem, quando o modelo dele falha.",
+    "sessionsTitle": "Sessões",
+    "retention": "Manter sessões",
+    "retentionHint": "Dias em que o Hermes guarda as transcrições de execuções e chats encerrados. Vazio: o padrão do Hermes, 90 dias.",
+    "saved": "Salvo. Os runners aplicam na próxima sincronização.",
+    "usageTitle": "Consumo",
+    "usageDescription": "O que os agentes de um time consumiram, segundo o registro de tokens da Helena, com o custo pela tabela de preços dos modelos.",
+    "team": "Time",
+    "noTeam": "Nenhum time ainda."
+  }
+}
