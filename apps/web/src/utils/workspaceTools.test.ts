@@ -89,6 +89,20 @@ describe('workspaceTools', () => {
     assert.equal(tools.browser.url, 'https://browser.example.com/focus/dashboard/demo-coordinator');
   });
 
+  it('opens the project folder when the provisioner reports the bare code-server address', () => {
+    const tools = workspaceTools({ ...config, codeUrl: 'https://plan.example.com/code/' }, 'VOL', [
+      {
+        kind: 'workspace',
+        id: '/srv/volition/workspaces/projects/vol',
+        url: 'https://plan.example.com/code/',
+      },
+    ]);
+    assert.equal(
+      tools.code.url,
+      'https://plan.example.com/code/?folder=%2Fsrv%2Fvolition%2Fworkspaces%2Fprojects%2Fvol',
+    );
+  });
+
   it('uses the current code route when a stored workspace URL is stale', () => {
     const tools = workspaceTools({ ...config, codeUrl: 'https://plan.example.com/code/' }, 'DEMO', [
       {
