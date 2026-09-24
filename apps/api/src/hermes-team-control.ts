@@ -169,7 +169,7 @@ export async function enqueueHermesStage(body: unknown) {
     (requestedModel && agent.model !== requestedModel) ||
     (requestedReasoning && configuredReasoning !== requestedReasoning)
   )
-    return { status: 409, body: { error: 'Hermes agent execution settings do not match Plan' } };
+    return { status: 409, body: { error: 'Hermes agent execution settings do not match Helena' } };
   // Refused rather than queued, so the workflow run fails with the reason instead of
   // waiting on a run no runner claims.
   if (modelOverride && !(await teamRunsModel(resolved.project.teamId, modelOverride)))
@@ -455,7 +455,7 @@ export async function synchronizeHermesStage(body: unknown) {
     !state ||
     !summary
   )
-    return { status: 400, body: { error: 'Invalid Plan synchronization request' } };
+    return { status: 400, body: { error: 'Invalid Helena synchronization request' } };
   const resolved = await resolveTask(projectRef, taskRef);
   if (!resolved) return { status: 404, body: { error: 'Project task not found' } };
   const columns = await listColumns(resolved.project.id);

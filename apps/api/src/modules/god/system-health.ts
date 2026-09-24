@@ -180,7 +180,7 @@ async function runCounts() {
 }
 
 // The active agent-team runs Mastra has not moved on for a while and that wait on no
-// stage run in Plan. Null while Mastra cannot be asked.
+// stage run in Helena. Null while Mastra cannot be asked.
 async function stalledWorkflowRuns(): Promise<number | null> {
   const active = await controlPlaneRequest<{ runs?: { runId?: unknown; updatedAt?: unknown }[] }>(
     { operation: 'active-runs', workflowId: 'agent-team' },
