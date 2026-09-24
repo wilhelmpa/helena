@@ -222,8 +222,9 @@ sees about 31 GiB. The overview shows it neutrally ("RAM fürs System 31 GB · G
 hub/update-center owns updates (its `UpdateSource` registry, its root helper `helena-update`,
 approvals). The Server area only mounts its view as the "Updates" tab
 (`apps/web/src/features/server/updatesTab.tsx`: `Body = UpdateCenterView`,
-`Action = UpdateCheckAction`), `/god/updates` redirects to `/god/server/updates`, and the
-Administrator sidebar keeps one entry ("Server"). hostd never applies updates.
+`Action = UpdateCheckAction` in the toolbar row); `/god/updates` redirects to
+`/god/server/updates`, and the Administrator sidebar has one entry ("Server"). The tab needs no
+host helper, so a container still shows Server with only Updates. hostd never applies updates.
 
 ## 8. Extension points
 
