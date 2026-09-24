@@ -8,6 +8,7 @@ import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
+import type { UpdateSource } from './updates';
 import type { UsageLimitSource } from './usage-limits';
 import type { TriggerType, WorkflowStepType } from './workflows';
 
@@ -28,6 +29,7 @@ export interface HelenaRegistries {
   mcpServers: Registry<McpServerContribution>;
   profileContributions: Registry<ProfileContribution>;
   usageLimitSources: Registry<UsageLimitSource>;
+  updateSources: Registry<UpdateSource>;
 }
 
 export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaRegistries {
@@ -49,5 +51,6 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
       given.profileContributions ?? createRegistry<ProfileContribution>('profile contribution'),
     usageLimitSources:
       given.usageLimitSources ?? createRegistry<UsageLimitSource>('usage-limit source'),
+    updateSources: given.updateSources ?? createRegistry<UpdateSource>('update source'),
   };
 }

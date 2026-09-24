@@ -263,6 +263,26 @@ export {
   type UsageLimitWindow,
   type UsageLimitWindowKind,
 } from './usage-limits';
+export {
+  UPDATE_KINDS,
+  UPDATE_RISKS,
+  compareVersions,
+  isNewerVersion,
+  isPrerelease,
+  isUpdateRisk,
+  normalizeUpdateCandidate,
+  updatePriority,
+  type UpdateApplyContext,
+  type UpdateApplyRequest,
+  type UpdateApplyStarted,
+  type UpdateCandidate,
+  type UpdateCheckContext,
+  type UpdateFetchOptions,
+  type UpdateKind,
+  type UpdateProgress,
+  type UpdateRisk,
+  type UpdateSource,
+} from './updates';
 export type {
   McpServerContribution,
   PluginEntries,

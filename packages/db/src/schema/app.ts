@@ -684,6 +684,9 @@ export const agentRun = pgTable(
     // The model of this run when a workflow step overrides the agent's own. Null runs
     // the agent's model.
     model: text('model'),
+    // The reasoning effort of this run when it overrides the agent's own (a digest run of
+    // the update center). Null runs the agent's.
+    reasoning: text('reasoning'),
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
@@ -731,7 +734,7 @@ export const agentRun = pgTable(
     ),
     check(
       'agent_run_trigger_check',
-      sql`${t.trigger} IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval', 'workspace')`,
+      sql`${t.trigger} IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest')`,
     ),
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
     index('agent_run_project_idx').on(t.projectId),
