@@ -53,7 +53,11 @@ export const templateBundleRoutes = new Elysia({
     params: teamParams,
     teamPermission: ['ai_agents', 'read'],
     response: { 200: t.Array(BundleOfferView), ...accessErrors },
-    detail: { summary: 'List the template bundles on offer (Helena and plugins)' },
+    detail: {
+      summary: 'List the template bundles on offer (Helena and plugins)',
+      description:
+        "The repository's bundles (the agent pool) and those plugins register, with how many agent templates, skills and MCP servers each holds.",
+    },
   })
   .post(
     '/teams/:teamId/template-bundles/import',
@@ -97,6 +101,10 @@ export const templateBundleRoutes = new Elysia({
         version: t.Optional(t.String({ maxLength: 50 })),
       }),
       response: { 200: t.Unknown(), ...accessErrors, ...errors(400) },
-      detail: { summary: "Export the team's agent templates as a template bundle" },
+      detail: {
+        summary: "Export the team's agent templates as a template bundle",
+        description:
+          'Reads the templates, their skills and MCP servers into one TemplateBundle document (no secrets, ids or people).',
+      },
     },
   );
