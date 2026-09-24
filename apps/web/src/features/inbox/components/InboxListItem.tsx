@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useActorName } from '@/hooks/useActorName';
 import type { Notification, NotificationType } from '@/lib/api/endpoints/notifications';
 import { formatDurationShort } from '@/utils/dates';
 import { cn } from '@/lib/utils';
@@ -84,11 +85,12 @@ export default function InboxListItem({
   onDelete: () => void;
 }) {
   const tCommon = useTranslations('common');
+  const actorName = useActorName();
   const te = useTranslations('inbox.event');
   const [pickOpen, setPickOpen] = useState(false);
   const Icon = TYPE_ICON[n.type];
   // No person behind the event: a workflow, a routine or Helena itself changed it.
-  const who = n.actorName ?? te('automation');
+  const who = actorName(n.actorName, te('automation'));
   // The verb phrase for a notification, addressed to the reader ("you").
   const eventText =
     n.type === 'state_changed'

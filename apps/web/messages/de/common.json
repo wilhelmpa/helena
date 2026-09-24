@@ -272,5 +272,10 @@
     "title": "Seite nicht gefunden",
     "description": "Diese Adresse führt nirgendwohin – vielleicht ein alter oder vertippter Link.",
     "home": "Zur Startseite"
+  },
+  "systemActors": {
+    "workflow": "Workflow",
+    "agentTeam": "Agententeam",
+    "autoArchive": "Automatische Archivierung"
   }
 }

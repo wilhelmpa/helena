@@ -142,7 +142,8 @@
     "linked": "vinculou a {name}",
     "unlinked": "desvinculou da iniciativa",
     "linkedIssue": "vinculou <issue>a tarefa</issue> a {name}",
-    "unlinkedIssue": "desvinculou <issue>a tarefa</issue> da iniciativa"
+    "unlinkedIssue": "desvinculou <issue>a tarefa</issue> da iniciativa",
+    "createdIssueNamed": "criou <issue>a tarefa</issue>"
   },
   "attachments": {
     "title": "Anexos",

@@ -142,7 +142,8 @@
     "linked": "привязал(а) к {name}",
     "unlinked": "отвязал(а) от инициативы",
     "linkedIssue": "привязал(а) <issue>задачу</issue> к {name}",
-    "unlinkedIssue": "отвязал(а) <issue>задачу</issue> от инициативы"
+    "unlinkedIssue": "отвязал(а) <issue>задачу</issue> от инициативы",
+    "createdIssueNamed": "создал(а) <issue>задачу</issue>"
   },
   "attachments": {
     "title": "Вложения",

@@ -142,7 +142,8 @@
     "linked": "ditautkan ke {name}",
     "unlinked": "dilepas tautannya dari inisiatif",
     "linkedIssue": "menautkan <issue>tugas</issue> ke {name}",
-    "unlinkedIssue": "melepas tautan <issue>tugas</issue> dari inisiatif"
+    "unlinkedIssue": "melepas tautan <issue>tugas</issue> dari inisiatif",
+    "createdIssueNamed": "membuat <issue>tugas</issue>"
   },
   "attachments": {
     "title": "Lampiran",

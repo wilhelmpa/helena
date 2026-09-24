@@ -272,5 +272,10 @@
     "title": "找不到页面",
     "description": "此地址无法打开，可能是旧链接或输入有误。",
     "home": "返回首页"
+  },
+  "systemActors": {
+    "workflow": "工作流",
+    "agentTeam": "智能体团队",
+    "autoArchive": "自动归档"
   }
 }

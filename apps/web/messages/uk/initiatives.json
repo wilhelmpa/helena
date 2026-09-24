@@ -142,7 +142,8 @@
     "linked": "прив'язав(-ла) до {name}",
     "unlinked": "відв'язав(-ла) від ініціативи",
     "linkedIssue": "прив'язав(-ла) <issue>завдання</issue> до {name}",
-    "unlinkedIssue": "відв'язав(-ла) <issue>завдання</issue> від ініціативи"
+    "unlinkedIssue": "відв'язав(-ла) <issue>завдання</issue> від ініціативи",
+    "createdIssueNamed": "створив(-ла) <issue>завдання</issue>"
   },
   "attachments": {
     "title": "Вкладення",

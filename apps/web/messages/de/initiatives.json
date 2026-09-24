@@ -142,7 +142,8 @@
     "linked": "hat mit {name} verknüpft",
     "unlinked": "hat die Verknüpfung zur Initiative entfernt",
     "linkedIssue": "hat <issue>die Aufgabe</issue> mit {name} verknüpft",
-    "unlinkedIssue": "hat <issue>die Aufgabe</issue> von der Initiative gelöst"
+    "unlinkedIssue": "hat <issue>die Aufgabe</issue> von der Initiative gelöst",
+    "createdIssueNamed": "hat <issue>die Aufgabe</issue> erstellt"
   },
   "attachments": {
     "title": "Anhänge",

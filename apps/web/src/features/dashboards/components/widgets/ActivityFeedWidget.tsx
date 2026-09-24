@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useActorName } from '@/hooks/useActorName';
 import { formatDateTime } from '@/utils/dates';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { issuePath } from '@/utils/paths';
@@ -54,6 +55,7 @@ export default function ActivityFeedWidget({
   config: WidgetConfig;
 }) {
   const t = useTranslations('dashboards.activityFeed');
+  const actorName = useActorName();
   const filters: FilterSet = config.filters ?? EMPTY_FILTER_SET;
   const action = config.action ?? null;
   const limit = config.limit ?? 20;
@@ -107,7 +109,7 @@ export default function ActivityFeedWidget({
           <li key={a.id} className="flex items-start gap-2 text-sm">
             <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
             <div className="min-w-0 flex-1">
-              <span className="text-foreground/80">{a.actorName ?? t('automation')}</span>{' '}
+              <span className="text-foreground/80">{actorName(a.actorName, t('automation'))}</span>{' '}
               <span className="text-muted-foreground">{verb(a.kind, a.action)}</span>{' '}
               <Link href={issuePath(projectKey, a.issueSequence)} className="hover:underline">
                 {projectKey}-{a.issueSequence}

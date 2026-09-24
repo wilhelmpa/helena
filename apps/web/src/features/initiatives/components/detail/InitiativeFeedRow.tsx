@@ -1,7 +1,9 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useActorName } from '@/hooks/useActorName';
 import {
   CircleDot,
   CirclePlus,
@@ -48,6 +50,7 @@ export default function InitiativeFeedRow({
   projectKey: string;
 }) {
   const t = useTranslations('initiatives.feed');
+  const actorName = useActorName();
   const tStatus = useTranslations('initiatives.status');
   const priorityLabel = usePriorityLabel();
   const relativeTime = useRelativeTime();
@@ -103,7 +106,7 @@ export default function InitiativeFeedRow({
   };
 
   const Icon = (item.action && ICON[item.action]) || CircleDot;
-  const actor = item.actorName ?? t('system');
+  const actor = actorName(item.actorName, t('system'));
   const issueLink =
     item.source === 'issue' && item.issueIdentifier != null ? (
       <Link
@@ -113,14 +116,16 @@ export default function InitiativeFeedRow({
         {item.issueIdentifier}
       </Link>
     ) : null;
-  // Linking a task names it inside the sentence, where the language puts the object
-  // ("hat E2E-4 mit … verknüpft"), not after the verb.
-  const linkSentence =
-    issueLink && item.action === 'initiative'
-      ? item.payload.to?.value
-        ? t.rich('linkedIssue', { name: item.payload.to.value, issue: () => issueLink })
-        : t.rich('unlinkedIssue', { issue: () => issueLink })
-      : null;
+  // Creating and linking a task name it inside the sentence, where the language puts
+  // the object ("hat E2E-4 mit … verknüpft", "hat E2E-4 erstellt"), not after the verb.
+  let linkSentence: ReactNode = null;
+  if (issueLink && item.action === 'initiative') {
+    linkSentence = item.payload.to?.value
+      ? t.rich('linkedIssue', { name: item.payload.to.value, issue: () => issueLink })
+      : t.rich('unlinkedIssue', { issue: () => issueLink });
+  } else if (issueLink && item.action === 'created') {
+    linkSentence = t.rich('createdIssueNamed', { issue: () => issueLink });
+  }
   return (
     <li className="flex items-center gap-2.5 text-xs">
       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">

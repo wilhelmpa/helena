@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useActorName } from '@/hooks/useActorName';
 import { CircleDot } from 'lucide-react';
 import type { FeedItem } from '@/lib/api/endpoints/activity';
 import { useRelativeTime } from '@/context/relativeTimeContext';
@@ -14,11 +15,12 @@ import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 
 export default function ActivityLine({ item }: { item: FeedItem }) {
   const t = useTranslations('issue');
+  const actorName = useActorName();
   const relativeTime = useRelativeTime();
   const describeActivity = useActivityText();
   const Icon = (item.action && ACTION_ICON[item.action]) || CircleDot;
   const { line, popover } = describeActivity(item);
-  const actor = item.actorName ?? t('system');
+  const actor = actorName(item.actorName, t('system'));
   return (
     <li className="flex items-center gap-2.5 text-xs">
       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">

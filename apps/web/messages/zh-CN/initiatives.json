@@ -142,7 +142,8 @@
     "linked": "关联至 {name}",
     "unlinked": "取消了与此计划的关联",
     "linkedIssue": "将 <issue>任务</issue> 关联至 {name}",
-    "unlinkedIssue": "取消了 <issue>任务</issue> 与此计划的关联"
+    "unlinkedIssue": "取消了 <issue>任务</issue> 与此计划的关联",
+    "createdIssueNamed": "创建了 <issue>任务</issue>"
   },
   "attachments": {
     "title": "附件",

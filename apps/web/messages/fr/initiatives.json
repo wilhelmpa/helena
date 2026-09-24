@@ -142,7 +142,8 @@
     "linked": "a lié à {name}",
     "unlinked": "a délié de l'initiative",
     "linkedIssue": "a lié <issue>la tâche</issue> à {name}",
-    "unlinkedIssue": "a délié <issue>la tâche</issue> de l’initiative"
+    "unlinkedIssue": "a délié <issue>la tâche</issue> de l’initiative",
+    "createdIssueNamed": "a créé <issue>la tâche</issue>"
   },
   "attachments": {
     "title": "Pièces jointes",

@@ -272,5 +272,10 @@
     "title": "Página no encontrada",
     "description": "Esta dirección no lleva a ninguna parte; quizá sea un enlace antiguo o mal escrito.",
     "home": "Ir al inicio"
+  },
+  "systemActors": {
+    "workflow": "Flujo de trabajo",
+    "agentTeam": "Equipo de agentes",
+    "autoArchive": "Archivado automático"
   }
 }

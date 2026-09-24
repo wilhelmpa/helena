@@ -142,7 +142,8 @@
     "linked": "ربط بـ {name}",
     "unlinked": "ألغى الربط بالمبادرة",
     "linkedIssue": "ربط <issue>المهمة</issue> بـ {name}",
-    "unlinkedIssue": "ألغى ربط <issue>المهمة</issue> بالمبادرة"
+    "unlinkedIssue": "ألغى ربط <issue>المهمة</issue> بالمبادرة",
+    "createdIssueNamed": "أنشأ <issue>المهمة</issue>"
   },
   "attachments": {
     "title": "المرفقات",

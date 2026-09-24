@@ -272,5 +272,10 @@
     "title": "Halaman tidak ditemukan",
     "description": "Alamat ini tidak mengarah ke mana pun, mungkin tautan lama atau salah ketik.",
     "home": "Ke Beranda"
+  },
+  "systemActors": {
+    "workflow": "Alur kerja",
+    "agentTeam": "Tim agen",
+    "autoArchive": "Arsip otomatis"
   }
 }

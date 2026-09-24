@@ -272,5 +272,10 @@
     "title": "Page not found",
     "description": "This address does not lead anywhere, perhaps an old or mistyped link.",
     "home": "Go to Start"
+  },
+  "systemActors": {
+    "workflow": "Workflow",
+    "agentTeam": "Agent team",
+    "autoArchive": "Auto-archive"
   }
 }

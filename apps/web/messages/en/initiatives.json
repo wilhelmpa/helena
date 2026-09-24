@@ -142,7 +142,8 @@
     "linked": "linked to {name}",
     "unlinked": "unlinked from the initiative",
     "linkedIssue": "linked <issue>the task</issue> to {name}",
-    "unlinkedIssue": "unlinked <issue>the task</issue> from the initiative"
+    "unlinkedIssue": "unlinked <issue>the task</issue> from the initiative",
+    "createdIssueNamed": "created <issue>the task</issue>"
   },
   "attachments": {
     "title": "Attachments",

@@ -272,5 +272,10 @@
     "title": "Page introuvable",
     "description": "Cette adresse ne mène nulle part : un lien ancien ou mal saisi, peut-être.",
     "home": "Aller à l’accueil"
+  },
+  "systemActors": {
+    "workflow": "Workflow",
+    "agentTeam": "Équipe d’agents",
+    "autoArchive": "Archivage automatique"
   }
 }
