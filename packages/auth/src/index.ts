@@ -683,7 +683,7 @@ export const auth = betterAuth({
     // shouldRequirePassword then only asks for the password on an account that
     // has one to check it against, rather than making TOTP enrollment
     // unreachable for an account with none.
-    twoFactor({ issuer: 'Volition', totpOptions: { allowPasswordless: true } }),
+    twoFactor({ issuer: 'Helena', totpOptions: { allowPasswordless: true } }),
     // OpenAPI reference for the better-auth handler. Serves a Scalar UI at
     // /api/auth/reference and the raw schema at /api/auth/open-api/generate-schema.
     // The schema is built from every active plugin, so the passkey and apiKey
