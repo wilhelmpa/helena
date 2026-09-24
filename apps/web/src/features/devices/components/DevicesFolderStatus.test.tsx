@@ -21,7 +21,7 @@ let root: Root;
 let originalGlobalDescriptors: Map<string, PropertyDescriptor | undefined>;
 
 const folder: SyncFolder = {
-  label: 'Volition',
+  label: 'Helena',
   path: '/srv/volition/vault',
   state: 'sync-preparing',
   stateChangedAt: null,
@@ -83,6 +83,6 @@ describe('DevicesFolderStatus', () => {
   });
 
   it('says when the folder is missing', () => {
-    assert.match(render(<DevicesFolderStatus folder={null} />), /Der Ordner Volition fehlt/);
+    assert.match(render(<DevicesFolderStatus folder={null} />), /Der Ordner Helena fehlt/);
   });
 });

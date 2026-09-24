@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "État de la synchronisation",
-    "notSetUp": "Le dossier Volition manque dans Syncthing. Relancez la configuration de Syncthing sur ce serveur.",
+    "notSetUp": "Le dossier Helena manque dans Syncthing. Relancez la configuration de Syncthing sur ce serveur.",
     "state": {
       "idle": "À jour",
       "scanning": "Analyse",
@@ -44,7 +44,7 @@
     "paused": "En pause",
     "lastSeen": "Vu {time}",
     "neverSeen": "Pas encore vu",
-    "notShared": "Le dossier Volition n'est pas partagé avec cet appareil.",
+    "notShared": "Le dossier Helena n'est pas partagé avec cet appareil.",
     "remove": "Retirer",
     "removeTitle": "Retirer {name} ?",
     "removeBody": "L'appareil ne se synchronise plus avec ce serveur. Les fichiers restent sur l'appareil."
@@ -54,7 +54,7 @@
     "hint": "N'acceptez que vos propres appareils : un appareil accepté reçoit toutes les notes et tous les fichiers, Private/ compris.",
     "requested": "Demande {time} depuis {address}",
     "accept": "Accepter",
-    "accepted": "{name} accepté. Acceptez maintenant le dossier Volition sur l'appareil."
+    "accepted": "{name} accepté. Acceptez maintenant le dossier Helena sur l'appareil."
   },
   "conflicts": {
     "title": "Conflits",
@@ -70,11 +70,11 @@
     "step2": "Dans Syncthing, ajoutez un appareil et saisissez l'identifiant d'appareil de ce serveur, ou scannez le code QR.",
     "step2Lan": "Pour synchroniser directement à la maison, saisissez <code>{address}, dynamic</code> comme adresses de l'appareil.",
     "step3": "L'appareil apparaît ensuite plus haut sous « Appareils demandant à se connecter ». Choisissez Accepter.",
-    "step4": "Sur l'appareil, acceptez le dossier Volition dans un dossier nommé Volition : <code>~/Volition</code> sur le Mac, <code>Volition</code> dans le stockage interne sur Android, le coffre Obsidian Volition sur l'iPhone.",
-    "step5": "Attendez que le dossier affiche « À jour » sur l'appareil, puis ouvrez le dossier Volition comme coffre dans Obsidian. Les liens de Helena ouvrent le coffre Volition.",
+    "step4": "Sur l'appareil, acceptez le dossier Helena dans un dossier nommé Helena : <code>~/Helena</code> sur le Mac, <code>Helena</code> dans le stockage interne sur Android, le coffre Obsidian Helena sur l'iPhone.",
+    "step5": "Attendez que le dossier affiche « À jour » sur l'appareil, puis ouvrez le dossier Helena comme coffre dans Obsidian. Les liens de Helena ouvrent le coffre Helena.",
     "iphoneTitle": "iPhone",
-    "iphone": "Sur l'iPhone, Obsidian n'ouvre que ses propres dossiers. Créez d'abord le coffre Volition dans Obsidian (sur l'iPhone, pas dans iCloud) et fermez Obsidian. Puis, dans Möbius Sync, placez le dossier Volition dans Sur mon iPhone › Obsidian › Volition. Obsidian écrit ses propres réglages en créant un coffre : des conflits dans <code>.obsidian</code> peuvent donc apparaître après la première synchronisation ; leurs copies de conflit contiennent les réglages par défaut de ce serveur. Möbius Sync synchronise tant que l'application est ouverte ou qu'iOS la laisse tourner en arrière-plan.",
+    "iphone": "Sur l'iPhone, Obsidian n'ouvre que ses propres dossiers. Créez d'abord le coffre Helena dans Obsidian (sur l'iPhone, pas dans iCloud) et fermez Obsidian. Puis, dans Möbius Sync, placez le dossier Helena dans Sur mon iPhone › Obsidian › Helena. Obsidian écrit ses propres réglages en créant un coffre : des conflits dans <code>.obsidian</code> peuvent donc apparaître après la première synchronisation ; leurs copies de conflit contiennent les réglages par défaut de ce serveur. Möbius Sync synchronise tant que l'application est ouverte ou qu'iOS la laisse tourner en arrière-plan.",
     "spaceTitle": "Économiser de l'espace sur le téléphone (facultatif)",
-    "space": "Les motifs d'exclusion ne s'appliquent que sur l'appareil où ils sont saisis. Pour ne pas charger les fichiers de mail sur le téléphone, ouvrez le dossier Volition dans Möbius Sync ou Syncthing-Fork, ajoutez la ligne <code>Files/Mail</code> sous les motifs d'exclusion et enregistrez, de préférence juste après avoir accepté le dossier. Les fichiers restent sur ce serveur et sur les autres appareils."
+    "space": "Les motifs d'exclusion ne s'appliquent que sur l'appareil où ils sont saisis. Pour ne pas charger les fichiers de mail sur le téléphone, ouvrez le dossier Helena dans Möbius Sync ou Syncthing-Fork, ajoutez la ligne <code>Files/Mail</code> sous les motifs d'exclusion et enregistrez, de préférence juste après avoir accepté le dossier. Les fichiers restent sur ce serveur et sur les autres appareils."
   }
 }

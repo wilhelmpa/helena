@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "Sync status",
-    "notSetUp": "The folder Volition is missing in Syncthing. Run the Syncthing setup on this server again.",
+    "notSetUp": "The folder Helena is missing in Syncthing. Run the Syncthing setup on this server again.",
     "state": {
       "idle": "Up to date",
       "scanning": "Scanning",
@@ -44,7 +44,7 @@
     "paused": "Paused",
     "lastSeen": "Last seen {time}",
     "neverSeen": "Not seen yet",
-    "notShared": "The folder Volition is not shared with this device.",
+    "notShared": "The folder Helena is not shared with this device.",
     "remove": "Remove",
     "removeTitle": "Remove {name}?",
     "removeBody": "The device stops syncing with this server. The files on the device stay there."
@@ -54,7 +54,7 @@
     "hint": "Accept only your own devices: an accepted device receives every note and file, Private/ included.",
     "requested": "Asked {time} from {address}",
     "accept": "Accept",
-    "accepted": "{name} accepted. Now accept the folder Volition on the device."
+    "accepted": "{name} accepted. Now accept the folder Helena on the device."
   },
   "conflicts": {
     "title": "Conflicts",
@@ -70,11 +70,11 @@
     "step2": "In Syncthing, add a device and enter this server's device ID, or scan the QR code.",
     "step2Lan": "For direct syncing at home, enter <code>{address}, dynamic</code> as the device's addresses.",
     "step3": "The device then appears above under “Devices asking to connect”. Choose Accept.",
-    "step4": "On the device, accept the folder Volition into a folder named Volition: <code>~/Volition</code> on the Mac, <code>Volition</code> in the internal storage on Android, the Obsidian vault Volition on the iPhone.",
-    "step5": "Wait until the folder shows “Up to date” on the device, then open the folder Volition in Obsidian as a vault. Links from Helena open the vault Volition.",
+    "step4": "On the device, accept the folder Helena into a folder named Helena: <code>~/Helena</code> on the Mac, <code>Helena</code> in the internal storage on Android, the Obsidian vault Helena on the iPhone.",
+    "step5": "Wait until the folder shows “Up to date” on the device, then open the folder Helena in Obsidian as a vault. Links from Helena open the vault Helena.",
     "iphoneTitle": "iPhone",
-    "iphone": "Obsidian on the iPhone only opens its own folders. First create the vault Volition in Obsidian (on the iPhone, not in iCloud) and close Obsidian. Then, in Möbius Sync, put the folder Volition into On My iPhone › Obsidian › Volition. Obsidian writes its own settings when it creates a vault, so conflicts in <code>.obsidian</code> can appear after the first sync; their conflict copies hold this server's defaults. Möbius Sync syncs while the app is open or iOS lets it run in the background.",
+    "iphone": "Obsidian on the iPhone only opens its own folders. First create the vault Helena in Obsidian (on the iPhone, not in iCloud) and close Obsidian. Then, in Möbius Sync, put the folder Helena into On My iPhone › Obsidian › Helena. Obsidian writes its own settings when it creates a vault, so conflicts in <code>.obsidian</code> can appear after the first sync; their conflict copies hold this server's defaults. Möbius Sync syncs while the app is open or iOS lets it run in the background.",
     "spaceTitle": "Save space on the phone (optional)",
-    "space": "Ignore patterns apply only on the device where they are entered. To keep the mail files off the phone, open the folder Volition in Möbius Sync or Syncthing-Fork, add the line <code>Files/Mail</code> under Ignore Patterns and save, best right after accepting the folder. The files stay on this server and the other devices."
+    "space": "Ignore patterns apply only on the device where they are entered. To keep the mail files off the phone, open the folder Helena in Möbius Sync or Syncthing-Fork, add the line <code>Files/Mail</code> under Ignore Patterns and save, best right after accepting the folder. The files stay on this server and the other devices."
   }
 }

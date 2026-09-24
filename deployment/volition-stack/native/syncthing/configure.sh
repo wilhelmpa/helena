@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Configures the running Syncthing through its REST API: the folder "Volition" at the
+# Configures the running Syncthing through its REST API: the folder "Helena" at the
 # vault, and no crash or usage reports. Safe to run again; setup.sh runs it.
 #
 #   configure.sh URL KEY_FILE VAULT
@@ -30,7 +30,7 @@ curl -sf -o /dev/null --retry 30 --retry-delay 1 --retry-all-errors "$url/rest/n
 # ignorePerms Syncthing does not apply them and creates files with 0666 and
 # directories with 0777, reduced by the unit's UMask, so Plan can write what a
 # device synced.
-folder='"label":"Volition","path":"'"$vault"'","type":"sendreceive","ignorePerms":true'
+folder='"label":"Helena","path":"'"$vault"'","type":"sendreceive","ignorePerms":true'
 if [[ $(api GET /rest/config/folders/volition -o /dev/null -w '%{http_code}') == 404 ]]; then
   api POST /rest/config/folders --fail -d "{\"id\":\"volition\",$folder}"
 else

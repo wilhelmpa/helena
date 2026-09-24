@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "Status sinkronisasi",
-    "notSetUp": "Folder Volition tidak ada di Syncthing. Jalankan lagi penyiapan Syncthing di server ini.",
+    "notSetUp": "Folder Helena tidak ada di Syncthing. Jalankan lagi penyiapan Syncthing di server ini.",
     "state": {
       "idle": "Terbaru",
       "scanning": "Memindai",
@@ -44,7 +44,7 @@
     "paused": "Dijeda",
     "lastSeen": "Terakhir terlihat {time}",
     "neverSeen": "Belum pernah terlihat",
-    "notShared": "Folder Volition tidak dibagikan ke perangkat ini.",
+    "notShared": "Folder Helena tidak dibagikan ke perangkat ini.",
     "remove": "Hapus",
     "removeTitle": "Hapus {name}?",
     "removeBody": "Perangkat berhenti tersinkron dengan server ini. Berkas di perangkat tetap ada."
@@ -54,7 +54,7 @@
     "hint": "Terima hanya perangkat milik Anda: perangkat yang diterima mendapat semua catatan dan berkas, termasuk Private/.",
     "requested": "Diminta {time} dari {address}",
     "accept": "Terima",
-    "accepted": "{name} diterima. Sekarang terima folder Volition di perangkat."
+    "accepted": "{name} diterima. Sekarang terima folder Helena di perangkat."
   },
   "conflicts": {
     "title": "Konflik",
@@ -70,11 +70,11 @@
     "step2": "Di Syncthing, tambahkan perangkat dan masukkan ID perangkat server ini, atau pindai kode QR-nya.",
     "step2Lan": "Untuk sinkronisasi langsung di rumah, masukkan <code>{address}, dynamic</code> sebagai alamat perangkat.",
     "step3": "Perangkat lalu muncul di atas pada “Perangkat yang meminta terhubung”. Pilih Terima.",
-    "step4": "Di perangkat, terima folder Volition ke folder bernama Volition: <code>~/Volition</code> di Mac, <code>Volition</code> di penyimpanan internal Android, vault Obsidian Volition di iPhone.",
-    "step5": "Tunggu sampai folder di perangkat menampilkan “Terbaru”, lalu buka folder Volition sebagai vault di Obsidian. Tautan dari Helena membuka vault Volition.",
+    "step4": "Di perangkat, terima folder Helena ke folder bernama Helena: <code>~/Helena</code> di Mac, <code>Helena</code> di penyimpanan internal Android, vault Obsidian Helena di iPhone.",
+    "step5": "Tunggu sampai folder di perangkat menampilkan “Terbaru”, lalu buka folder Helena sebagai vault di Obsidian. Tautan dari Helena membuka vault Helena.",
     "iphoneTitle": "iPhone",
-    "iphone": "Di iPhone, Obsidian hanya membuka foldernya sendiri. Buat dulu vault Volition di Obsidian (di iPhone, bukan di iCloud) lalu tutup Obsidian. Kemudian di Möbius Sync, taruh folder Volition di Di iPhone Saya › Obsidian › Volition. Obsidian menulis pengaturannya sendiri saat membuat vault, jadi konflik di <code>.obsidian</code> bisa muncul setelah sinkronisasi pertama; salinan konfliknya berisi pengaturan bawaan server ini. Möbius Sync menyinkronkan selama aplikasi terbuka atau iOS membiarkannya berjalan di latar belakang.",
+    "iphone": "Di iPhone, Obsidian hanya membuka foldernya sendiri. Buat dulu vault Helena di Obsidian (di iPhone, bukan di iCloud) lalu tutup Obsidian. Kemudian di Möbius Sync, taruh folder Helena di Di iPhone Saya › Obsidian › Helena. Obsidian menulis pengaturannya sendiri saat membuat vault, jadi konflik di <code>.obsidian</code> bisa muncul setelah sinkronisasi pertama; salinan konfliknya berisi pengaturan bawaan server ini. Möbius Sync menyinkronkan selama aplikasi terbuka atau iOS membiarkannya berjalan di latar belakang.",
     "spaceTitle": "Hemat ruang di ponsel (opsional)",
-    "space": "Pola abaikan hanya berlaku di perangkat tempat pola itu dimasukkan. Agar berkas surel tidak dimuat ke ponsel, buka folder Volition di Möbius Sync atau Syncthing-Fork, tambahkan baris <code>Files/Mail</code> di pola abaikan lalu simpan, sebaiknya tepat setelah menerima folder. Berkasnya tetap ada di server ini dan di perangkat lain."
+    "space": "Pola abaikan hanya berlaku di perangkat tempat pola itu dimasukkan. Agar berkas surel tidak dimuat ke ponsel, buka folder Helena di Möbius Sync atau Syncthing-Fork, tambahkan baris <code>Files/Mail</code> di pola abaikan lalu simpan, sebaiknya tepat setelah menerima folder. Berkasnya tetap ada di server ini dan di perangkat lain."
   }
 }

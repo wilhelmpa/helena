@@ -2,15 +2,7 @@ import { runtimeEnv } from './runtimeEnv';
 
 // The product name shown to users: the login panel, the passkey label in the OS
 // picker, and the account page. It is defined once, so a rebrand is one edit.
-//
-// Helena is the app; Volition is the company and the whole system (Helena, Mastra,
-// Hermes) that Helena is the UI for — see the brand lockup in BrandPanel/SidebarBrandFooter
-// ("Helena – by Volition"). Do not conflate the two here.
 export const APP_NAME = 'Helena';
-
-// The company line under the wordmark ("Helena – by Volition"). A brand phrase, the same
-// in every language, so it is not a translation key.
-export const APP_BYLINE = 'by Volition';
 
 // The page background of each theme (globals.css --background, as hex), for the places
 // that need a literal colour before the stylesheet applies: the browser's theme-color

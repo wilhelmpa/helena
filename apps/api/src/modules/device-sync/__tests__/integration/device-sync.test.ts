@@ -48,7 +48,7 @@ describe('device sync', () => {
         relays: true,
       },
       folder: {
-        label: 'Volition',
+        label: 'Helena',
         path: '/srv/volition/vault',
         state: 'idle',
         lastFileAt: null,

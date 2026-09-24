@@ -62,7 +62,7 @@ describe('DevicesGuide', () => {
     render(<DevicesGuide lanAddress="tcp://192.168.2.220:22000" />);
     const codes = [...document.querySelectorAll('code')].map((code) => code.textContent);
     assert.ok(codes.includes('tcp://192.168.2.220:22000, dynamic'));
-    assert.ok(codes.includes('~/Volition'));
+    assert.ok(codes.includes('~/Helena'));
     assert.ok(codes.includes('Files/Mail'));
     assert.doesNotMatch(render(<DevicesGuide lanAddress={null} />), /dynamic/);
   });

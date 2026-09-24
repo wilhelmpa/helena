@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "Synchronisation",
-    "notSetUp": "Der Ordner Volition fehlt in Syncthing. Das Syncthing-Setup auf diesem Server erneut ausführen.",
+    "notSetUp": "Der Ordner Helena fehlt in Syncthing. Das Syncthing-Setup auf diesem Server erneut ausführen.",
     "state": {
       "idle": "Aktuell",
       "scanning": "Wird geprüft",
@@ -44,7 +44,7 @@
     "paused": "Pausiert",
     "lastSeen": "Zuletzt gesehen {time}",
     "neverSeen": "Noch nicht gesehen",
-    "notShared": "Der Ordner Volition ist für dieses Gerät nicht freigegeben.",
+    "notShared": "Der Ordner Helena ist für dieses Gerät nicht freigegeben.",
     "remove": "Entfernen",
     "removeTitle": "{name} entfernen?",
     "removeBody": "Das Gerät synchronisiert nicht mehr mit diesem Server. Die Dateien auf dem Gerät bleiben dort."
@@ -54,7 +54,7 @@
     "hint": "Nur eigene Geräte annehmen: Ein angenommenes Gerät erhält alle Notizen und Dateien, auch Private/.",
     "requested": "Angefragt {time} von {address}",
     "accept": "Annehmen",
-    "accepted": "{name} angenommen. Jetzt auf dem Gerät den Ordner Volition annehmen."
+    "accepted": "{name} angenommen. Jetzt auf dem Gerät den Ordner Helena annehmen."
   },
   "conflicts": {
     "title": "Konflikte",
@@ -70,11 +70,11 @@
     "step2": "In Syncthing ein Gerät hinzufügen und die Geräte-ID dieses Servers eintragen oder den QR-Code scannen.",
     "step2Lan": "Für direkte Synchronisation zu Hause als Adressen des Geräts <code>{address}, dynamic</code> eintragen.",
     "step3": "Das Gerät erscheint dann oben unter „Geräte mit Verbindungsanfrage“. „Annehmen“ wählen.",
-    "step4": "Auf dem Gerät den Ordner Volition in einen Ordner namens Volition annehmen: auf dem Mac <code>~/Volition</code>, auf Android <code>Volition</code> im internen Speicher, auf dem iPhone der Obsidian-Tresor Volition.",
-    "step5": "Warten, bis der Ordner auf dem Gerät „Aktuell“ zeigt, dann in Obsidian den Ordner Volition als Tresor öffnen. Links aus Helena öffnen den Tresor Volition.",
+    "step4": "Auf dem Gerät den Ordner Helena in einen Ordner namens Helena annehmen: auf dem Mac <code>~/Helena</code>, auf Android <code>Helena</code> im internen Speicher, auf dem iPhone der Obsidian-Tresor Helena.",
+    "step5": "Warten, bis der Ordner auf dem Gerät „Aktuell“ zeigt, dann in Obsidian den Ordner Helena als Tresor öffnen. Links aus Helena öffnen den Tresor Helena.",
     "iphoneTitle": "iPhone",
-    "iphone": "Obsidian auf dem iPhone öffnet nur eigene Ordner. Zuerst in Obsidian den Tresor Volition anlegen (auf dem iPhone, nicht in iCloud) und Obsidian schließen. Dann in Möbius Sync den Ordner Volition nach Auf meinem iPhone › Obsidian › Volition legen. Obsidian schreibt beim Anlegen eines Tresors eigene Einstellungen, deshalb können nach der ersten Synchronisation Konflikte in <code>.obsidian</code> erscheinen; ihre Konfliktkopien enthalten die Vorgaben dieses Servers. Möbius Sync synchronisiert, solange die App offen ist oder iOS sie im Hintergrund laufen lässt.",
+    "iphone": "Obsidian auf dem iPhone öffnet nur eigene Ordner. Zuerst in Obsidian den Tresor Helena anlegen (auf dem iPhone, nicht in iCloud) und Obsidian schließen. Dann in Möbius Sync den Ordner Helena nach Auf meinem iPhone › Obsidian › Helena legen. Obsidian schreibt beim Anlegen eines Tresors eigene Einstellungen, deshalb können nach der ersten Synchronisation Konflikte in <code>.obsidian</code> erscheinen; ihre Konfliktkopien enthalten die Vorgaben dieses Servers. Möbius Sync synchronisiert, solange die App offen ist oder iOS sie im Hintergrund laufen lässt.",
     "spaceTitle": "Platz sparen auf dem Telefon (optional)",
-    "space": "Ignoriermuster gelten nur auf dem Gerät, auf dem sie eingetragen sind. Um die Mail-Dateien nicht aufs Telefon zu laden, in Möbius Sync oder Syncthing-Fork den Ordner Volition öffnen, unter Ignoriermuster die Zeile <code>Files/Mail</code> eintragen und speichern, am besten direkt nach dem Annehmen des Ordners. Die Dateien bleiben auf diesem Server und den anderen Geräten."
+    "space": "Ignoriermuster gelten nur auf dem Gerät, auf dem sie eingetragen sind. Um die Mail-Dateien nicht aufs Telefon zu laden, in Möbius Sync oder Syncthing-Fork den Ordner Helena öffnen, unter Ignoriermuster die Zeile <code>Files/Mail</code> eintragen und speichern, am besten direkt nach dem Annehmen des Ordners. Die Dateien bleiben auf diesem Server und den anderen Geräten."
   }
 }
