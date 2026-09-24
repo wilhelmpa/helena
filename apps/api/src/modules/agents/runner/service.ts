@@ -18,6 +18,8 @@ import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
+import { recordUsage, type Spend } from '../usage/service';
+import { emergencyStopActive } from '#modules/emergency-stop/service';
 import {
   REFLECTION_LIMITS,
   reflectionPrompt,
@@ -160,6 +162,8 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
   // the run back, or lost its lease.
   interrupted: boolean;
+  // The first claim of a run that continues another run's session with a new instruction.
+  continuation: boolean;
   // The project the run works in, which is what its system prompt names.
   projectKey: string;
   projectName: string;
@@ -260,6 +264,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   const agentId = agent.id;
   await expireExhaustedRuns(agentId);
   await touchRunner(agentId);
+  if (await emergencyStopActive()) return null;
   const { maxResumes } = await getRunResumeSettings();
   // A run whose session has already resumed as often as the instance allows is left
   // pending rather than claimed again: the resume-limit janitor fails it and tells the
@@ -309,6 +314,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.model,
       r.session_id AS "sessionId",
       r.resumes,
+      (r.continued_from_run_id IS NOT NULL AND r.resumes = 1) AS "continuation",
       (SELECT p.key FROM project p WHERE p.id = r.project_id) AS "projectKey",
       (SELECT p.name FROM project p WHERE p.id = r.project_id) AS "projectName",
       (SELECT p.description FROM project p WHERE p.id = r.project_id) AS "projectDescription",
@@ -355,7 +361,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     prompt:
       row.trigger === 'workspace'
         ? row.prompt
-        : row.sessionId
+        : row.sessionId && !row.continuation
           ? RESUME_PROMPT
           : framePrompt(forPrompt),
     systemPrompt:
@@ -425,11 +431,12 @@ function buildSystemPrompt(
 
 export interface RunAck {
   canceled: boolean;
+  hold?: boolean;
 }
 
 // The claim a runner holds: the run, still pending, not claimed since. A runner that
 // names no claim is not checked.
-function heldBy(agentId: number, runId: number, claim: number | undefined) {
+export function heldBy(agentId: number, runId: number, claim: number | undefined) {
   return and(
     eq(agentRun.id, runId),
     eq(agentRun.agentId, agentId),
@@ -455,7 +462,8 @@ export async function heartbeatRun(
     .set({ nextAttemptAt: sql`now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})` })
     .where(heldBy(agentId, runId, claim))
     .returning({ id: agentRun.id });
-  if (rows.length > 0) return { canceled: false };
+  if (rows.length > 0)
+    return (await emergencyStopActive()) ? { canceled: false, hold: true } : { canceled: false };
   const [row] = await db
     .select({ status: agentRun.status })
     .from(agentRun)
@@ -582,6 +590,7 @@ export async function finishRun(
     usage?: ContextUsage | null;
     sessionId?: string;
     toolCalls?: number;
+    spend?: Spend | null;
     runtime?: RunModelReport;
   },
   claim?: number,
@@ -605,6 +614,9 @@ export async function finishRun(
       lastError: sql`CASE WHEN ${blocked} THEN NULL ELSE ${error}::text END`,
       inputTokens: result.usage?.inputTokens ?? null,
       outputTokens: result.usage?.outputTokens ?? null,
+      // The session the run ended in (a compression moves it to a new id), which "continue
+      // from here" resumes.
+      ...(result.sessionId && { sessionId: result.sessionId }),
       ...(check && { modelCheck: check }),
       finishedAt: new Date(),
     })
@@ -619,6 +631,14 @@ export async function finishRun(
   const row = rows[0];
   if (!row) return null;
   const status = row.status as 'success' | 'failed';
+  await recordUsage({
+    agentId: agent.id,
+    projectId: row.projectId,
+    runId,
+    kind: 'run',
+    sessionId: result.sessionId,
+    spend: result.spend,
+  });
   await recordAgentRunFinished(
     {
       id: runId,
@@ -681,6 +701,13 @@ export async function recordReflection(
     .returning({ projectId: agentRun.projectId, issueId: agentRun.issueId });
   const row = rows[0];
   if (!row) return false;
+  await recordUsage({
+    agentId: agent.id,
+    projectId: row.projectId,
+    runId,
+    kind: 'reflection',
+    spend: report.spend,
+  });
   await enforceAgentLimits(agent.id, row.projectId, row.issueId);
   return true;
 }

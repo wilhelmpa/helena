@@ -120,7 +120,11 @@
       "takeOverHint": "Selama Anda mengendalikan, agen menunggu. Agen melanjutkan setelah Anda mengembalikannya.",
       "idleTitle": "Sudah selesai?",
       "idleHint": "Tidak ada input selama 10 menit. Tanpa jawaban, kendali kembali ke agen dalam satu menit.",
-      "idleKeep": "Tetap kendalikan"
+      "idleKeep": "Tetap kendalikan",
+      "bookmarks": "Bookmark",
+      "bookmarkPage": "Bookmark halaman ini",
+      "removeBookmark": "Hapus bookmark",
+      "noBookmarks": "Belum ada bookmark"
     }
   },
   "groups": {

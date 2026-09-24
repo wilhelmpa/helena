@@ -33,6 +33,7 @@ export const JANITOR_JOBS = [
   'stage-janitor',
   'workflow-schedules',
   'resume-janitor',
+  'runtime-janitor',
 ] as const;
 
 // How long a service may go unseen before it counts as down. The worker and the bridge
@@ -63,6 +64,7 @@ const JANITOR_INTERVAL_MS: Record<(typeof JANITOR_JOBS)[number], number> = {
   'stage-janitor': 300_000,
   'workflow-schedules': 600_000,
   'resume-janitor': 60_000,
+  'runtime-janitor': 300_000,
 };
 const JANITOR_STALE_FACTOR = 3;
 

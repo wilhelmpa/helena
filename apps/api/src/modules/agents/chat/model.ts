@@ -1,7 +1,7 @@
 import { t } from 'elysia';
 
 import { pageQueryFields, pageResponse } from '#shared/pagination';
-import { contextUsageBody } from '../model';
+import { contextUsageBody, spendBody } from '../model';
 import { runModelReport } from '../runtime-sync/model';
 
 export { agentParams, projectAgentParams } from '../model';
@@ -315,6 +315,7 @@ export const chatResultBody = t.Object({
   model: t.Optional(
     t.String({ maxLength: 200, description: 'The model the answer was produced with.' }),
   ),
+  spend: spendBody,
   runtime: t.Optional(runModelReport),
 });
 

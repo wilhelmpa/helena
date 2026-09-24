@@ -120,7 +120,11 @@
       "takeOverHint": "在您控制期间，代理会等待。您交还后它会继续。",
       "idleTitle": "您完成了吗？",
       "idleHint": "已 10 分钟没有输入。若不回答，控制权将在一分钟后交还给代理。",
-      "idleKeep": "继续控制"
+      "idleKeep": "继续控制",
+      "bookmarks": "书签",
+      "bookmarkPage": "将此页加入书签",
+      "removeBookmark": "移除书签",
+      "noBookmarks": "还没有书签"
     }
   },
   "groups": {

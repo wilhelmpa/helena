@@ -6,7 +6,9 @@
     "confirm": "Confirmar",
     "verifying": "Verificando…",
     "wrongCode": "O código não foi aceito.",
-    "rateLimited": "Muitas tentativas. Aguarde 15 minutos e tente novamente."
+    "rateLimited": "Muitas tentativas. Aguarde 15 minutos e tente novamente.",
+    "locked": "O terminal fica bloqueado até você confirmar que é você.",
+    "enterCode": "Inserir código"
   },
   "grant": {
     "active": "Terminal concedido até {time}",

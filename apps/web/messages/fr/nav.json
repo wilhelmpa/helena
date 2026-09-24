@@ -120,7 +120,11 @@
       "takeOverHint": "Tant que vous avez le contrôle, l'agent attend. Il reprend dès que vous le rendez.",
       "idleTitle": "Avez-vous terminé ?",
       "idleHint": "Aucune saisie depuis 10 minutes. Sans réponse, le contrôle revient aux agents dans une minute.",
-      "idleKeep": "Garder le contrôle"
+      "idleKeep": "Garder le contrôle",
+      "bookmarks": "Favoris",
+      "bookmarkPage": "Ajouter cette page aux favoris",
+      "removeBookmark": "Retirer le favori",
+      "noBookmarks": "Aucun favori pour l’instant"
     }
   },
   "groups": {

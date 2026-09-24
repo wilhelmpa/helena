@@ -28,6 +28,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/AppSidebar';
 import AppHeader from '@/components/layout/AppHeader';
 import CommandLayer from '@/components/layout/CommandLayer';
+import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
@@ -91,6 +92,12 @@ export default function Shell({
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kioskDual = useKioskDisplay() === 'dual';
+  // Marks the document for the dual kiosk's CSS: dialogs centre on the left screen.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (kioskDual) root.dataset.kioskDisplay = 'dual';
+    else delete root.dataset.kioskDisplay;
+  }, [kioskDual]);
   // Plugins' panel tools join the built-ins once the API lists them.
   usePluginPanelTools();
   const workspacePanel = useWorkspacePanel({
@@ -266,6 +273,8 @@ export default function Shell({
                 <ShellHeaderExtra store={headerExtra} bare />
               </div>
             )}
+
+            <EmergencyStopBanner />
 
             {errorMsg && !forbidden && (
               <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">

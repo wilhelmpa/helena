@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, MessageSquare, X } from 'lucide-react';
+import { Bot, MessageSquare, Settings2, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
+import { agentTabsFor } from '@/features/agent-runtime/agentTabs';
 import { AGENT_KIND_ICON } from '../../utils/agentKindIcon';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
@@ -14,8 +17,10 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import AgentTestChat from '@/features/ai-chat/components/panel/AgentTestChat';
-import { useAgentSection } from '../../context/agentSection';
+import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { AgentSheetForm } from './AgentSheetForm';
+
+const SETTINGS_TAB = 'settings';
 import { useTranslations } from 'next-intl';
 
 // Full-width sheet for one agent. Opened for create (agent null) or to edit an
@@ -28,6 +33,8 @@ export function TeamAiAgentSheet({
   projectId,
   onClose,
   initialOpenSection,
+  initialTab,
+  initialRunId,
 }: {
   open: boolean;
   agent: AiAgent | null;
@@ -37,6 +44,9 @@ export function TeamAiAgentSheet({
   // A section id to open besides the defaults, e.g. from a `/skills` or `/memory` chat
   // command.
   initialOpenSection?: string;
+  // The tab to open on (agent-runtime/agentTabs), and a run to show in the runs tab.
+  initialTab?: string;
+  initialRunId?: number | null;
 }) {
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -57,6 +67,8 @@ export function TeamAiAgentSheet({
             initialAgent={agent}
             projectId={projectId}
             initialOpenSection={initialOpenSection}
+            initialTab={initialTab}
+            initialRunId={initialRunId ?? null}
           />
         )}
       </SheetContent>
@@ -68,14 +80,22 @@ function SheetBody({
   initialAgent,
   projectId,
   initialOpenSection,
+  initialTab,
+  initialRunId,
 }: {
   initialAgent: AiAgent | null;
   projectId?: number;
   initialOpenSection?: string;
+  initialTab?: string;
+  initialRunId: number | null;
 }) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
+  const tTabs = useTranslations('agentRuntime.tabs');
   const { teamId } = useAgentSection();
+  const canEdit = useAgentCan()('edit');
+  const [tab, setTab] = useState(initialTab ?? SETTINGS_TAB);
+  const [runId, setRunId] = useState<number | null>(initialRunId);
   // The agent just created in this sheet, if any. Once set, the form switches from
   // create to edit for it without remounting.
   const [createdAgent, setCreatedAgent] = useState<AiAgent | null>(null);
@@ -95,6 +115,9 @@ function SheetBody({
   // A pool template runs nowhere, so it has no chat.
   const chatReady = !!agent && chatProject != null && !agent.template;
   const KindIcon = agent ? AGENT_KIND_ICON[agent.kind] : Bot;
+  // The settings stay mounted behind another tab, so what is typed there is kept.
+  const tabs = agentTabsFor(agent);
+  const activeTab = tabs.find((entry) => entry.id === tab) ?? null;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -130,7 +153,47 @@ function SheetBody({
         </SheetClose>
       </div>
 
-      <div className="flex min-h-0 flex-1">
+      {agent && tabs.length > 0 && (
+        <nav
+          aria-label={tTabs('label')}
+          className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border/60 px-3 py-1.5"
+        >
+          {[{ id: SETTINGS_TAB, label: 'settings' as const, icon: Settings2 }, ...tabs].map(
+            (entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                aria-pressed={tab === entry.id}
+                onClick={() => setTab(entry.id)}
+                className={cn(
+                  PAGE_CONTROL_CLASS,
+                  'h-7',
+                  tab === entry.id && PAGE_CONTROL_ACTIVE_CLASS,
+                )}
+              >
+                <entry.icon aria-hidden="true" />
+                {tTabs(entry.label)}
+              </button>
+            ),
+          )}
+        </nav>
+      )}
+
+      {agent && activeTab && (
+        <activeTab.component
+          teamId={teamId}
+          agent={agent}
+          canEdit={canEdit}
+          runId={runId}
+          onRunChange={setRunId}
+          onOpenRun={(id) => {
+            setRunId(id);
+            setTab('runs');
+          }}
+        />
+      )}
+
+      <div className={cn('flex min-h-0 flex-1', activeTab && 'hidden')}>
         <div className="flex min-h-0 flex-1 basis-0 flex-col border-e border-border/60">
           <AgentSheetForm
             agent={agent}

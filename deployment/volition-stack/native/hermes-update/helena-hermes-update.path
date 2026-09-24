@@ -1,0 +1,11 @@
+[Unit]
+Description=Helena: Hermes update requests from the runner
+
+[Path]
+# The runner writes request.json after the owner approved an update in Helena, or for a
+# check; the helper removes it when it takes it.
+PathExists=/var/lib/volition/hermes/run/helena-update/request.json
+Unit=helena-hermes-update.service
+
+[Install]
+WantedBy=multi-user.target

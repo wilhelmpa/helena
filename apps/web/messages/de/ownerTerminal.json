@@ -6,7 +6,9 @@
     "confirm": "Bestätigen",
     "verifying": "Wird geprüft…",
     "wrongCode": "Der Code wurde nicht akzeptiert.",
-    "rateLimited": "Zu viele Versuche. Warte 15 Minuten und versuche es erneut."
+    "rateLimited": "Zu viele Versuche. Warte 15 Minuten und versuche es erneut.",
+    "locked": "Das Terminal ist gesperrt, bis du bestätigst, dass du es bist.",
+    "enterCode": "Code eingeben"
   },
   "grant": {
     "active": "Terminal freigegeben bis {time}",

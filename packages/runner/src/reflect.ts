@@ -1,8 +1,9 @@
 import type { Client, ReflectionReport, ReflectionRequest, ReflectionSaved, Run } from './client';
 import type { RunnerConfig } from './config';
-import { execute } from './execute';
+import { execute, modelProvider } from './execute';
 import type { HermesRunSettings } from './policy';
 import { runEnv } from './run';
+import { SpendReader } from './spend';
 import { runCwd } from './workdir';
 
 // A reflection continues the session of a finished run with the prompt Plan sent. The
@@ -90,6 +91,10 @@ export async function reflect(
     report = { status: 'failed', saved: [], error: 'The agent has no memory or skill tools' };
   } else {
     const reader = new ReflectionReader();
+    const spend = new SpendReader(
+      config.outputFormat,
+      config.command ? null : (config.agent ?? null),
+    );
     const outcome = await execute(
       {
         ...config,
@@ -107,12 +112,19 @@ export async function reflect(
         toolsets,
         env: { ...runEnv(run), ...hermes.env },
       },
-      { onData: (chunk) => reader.write(chunk), work: { kind: 'run', id: run.id } },
+      {
+        onData: (chunk) => {
+          reader.write(chunk);
+          spend.write(chunk);
+        },
+        work: { kind: 'run', id: run.id },
+      },
     );
     reader.end();
     report = {
       status: outcome.status,
       usage: outcome.usage ?? null,
+      spend: spend.value({ model: run.model, provider: modelProvider(config, run.model) ?? null }),
       saved: reader.saved,
       summary: outcome.output.trim().slice(0, MAX_SUMMARY) || null,
       ...(outcome.error && { error: outcome.error.slice(0, 500) }),

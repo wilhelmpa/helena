@@ -77,6 +77,7 @@ export async function resolveProjectBrowser(root, requestUrl) {
     port: state.noVncPort,
     cdpPort: state.cdpPort,
     display: await displayOf(state),
+    projectRoot: state.projectRoot,
     url: `${pathname}${parsed.search}`,
     api: pathname.startsWith("/api/") ? pathname.slice("/api/".length) : null,
   };
@@ -129,8 +130,51 @@ export async function setProjectViewportAuthority(root, slug, mode, size, holder
 // which a form on another site cannot send. lock-takeover/lock-release are the two the
 // browser gateway adds (design §5); every other action is controlBrowser's own CDP toolbar
 // action.
+// The project's bookmarks for the browser bar (owner, 2026-09-24): at most 100, http(s)
+// only, kept next to the browser's state as bookmarks.json (0600).
+const MAX_BOOKMARKS = 100;
+function cleanBookmarks(value) {
+  if (!Array.isArray(value)) throw new BrowserControlError(400, "bookmarks must be a list");
+  const seen = new Set();
+  const out = [];
+  for (const item of value.slice(0, MAX_BOOKMARKS)) {
+    const raw = typeof item?.url === "string" ? item.url.trim() : "";
+    let url;
+    try {
+      url = new URL(raw);
+    } catch {
+      continue;
+    }
+    if ((url.protocol !== "http:" && url.protocol !== "https:") || url.href.length > 2048) continue;
+    if (seen.has(url.href)) continue;
+    seen.add(url.href);
+    const title = typeof item.title === "string" ? item.title.trim().slice(0, 200) : "";
+    out.push({ url: url.href, title: title || url.hostname });
+  }
+  return out;
+}
+async function readBookmarks(file) {
+  try {
+    return cleanBookmarks(JSON.parse(await fs.readFile(file, "utf8")).bookmarks ?? []);
+  } catch {
+    return [];
+  }
+}
+
 async function handleControl(request, response, target) {
   try {
+    if (target.api === "bookmarks") {
+      const file = path.join(target.projectRoot, "bookmarks.json");
+      if (request.method === "POST") {
+        const bookmarks = cleanBookmarks((await readJsonBody(request)).bookmarks);
+        const temporary = `${file}.tmp`;
+        await fs.writeFile(temporary, JSON.stringify({ bookmarks }), { mode: 0o600 });
+        await fs.rename(temporary, file);
+        return sendJson(response, 200, { bookmarks });
+      }
+      if (request.method !== "GET") throw new BrowserControlError(405, "Method not allowed");
+      return sendJson(response, 200, { bookmarks: await readBookmarks(file) });
+    }
     if (target.api === "tabs" && request.method === "GET") {
       return sendJson(response, 200, { tabs: await listTabs(target.cdpPort) });
     }

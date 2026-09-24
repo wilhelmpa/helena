@@ -1151,3 +1151,10 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
     animation: none;
   }
 }
+
+/* The kiosk's two screens are one window with the tool panel on the right screen: a dialog
+   centres on the left screen instead of straddling the seam (owner, 2026-09-24). */
+html[data-kiosk-display='dual'] [data-slot='dialog-content'],
+html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
+  left: 25vw;
+}
