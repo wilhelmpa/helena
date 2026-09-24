@@ -99,6 +99,21 @@ async function importPlugin(dir: string, entry: string): Promise<HelenaPlugin> {
   return plugin;
 }
 
+// Loads the plugin in `dir` without an approval check, for a caller whose plugin list is
+// itself the operator's decision (the runner's config file names its plugin folders).
+export async function loadPluginDir(
+  host: PluginHost,
+  dir: string,
+  entry: PluginEntry,
+): Promise<LoadedPlugin> {
+  const raw = JSON.parse(await readFile(join(dir, MANIFEST_FILE), 'utf8')) as unknown;
+  const manifest = parseManifest(raw);
+  const digest = await pluginDigest(dir, manifest);
+  const file = manifest.main?.[entry];
+  const plugin = file ? await importPlugin(dir, file) : { register() {} };
+  return host.load(plugin, manifest, { source: 'external', dir, digest });
+}
+
 // Why a discovered plugin is not loaded, or null when it may be.
 export function approvalProblem(
   plugin: { manifest: PluginManifest; digest: string },

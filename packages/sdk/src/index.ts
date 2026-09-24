@@ -12,6 +12,7 @@ export {
   createRegistry,
   type RegistryEntry,
 } from './registry';
+export { createRegistries, type HelenaRegistries } from './registries';
 export {
   ACTION_CATEGORIES,
   ACTION_META_KEY,

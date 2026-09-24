@@ -13,7 +13,8 @@ import type { CaptureTarget, KnowledgeSource } from '../knowledge';
 import type { McpServerContribution, PluginManifest } from '../manifest-types';
 import type { HelenaPlugin, HostProcess, PluginContext, Registrar } from '../plugin';
 import { decide, type PolicyDecision, type PolicyEvaluator, type PolicyRequest } from '../policy';
-import { Registry, createRegistry } from '../registry';
+import { Registry } from '../registry';
+import { createRegistries, type HelenaRegistries } from '../registries';
 import type { RuntimeAdapter } from '../runtime';
 import type { TemplateKind } from '../templates';
 import { declaredCategory, type AnyAgentTool } from '../tools';
@@ -48,6 +49,9 @@ export class PluginRegistrationError extends Error {
 export interface PluginHostOptions {
   process: HostProcess;
   events?: EventBus;
+  // Registries the process already holds (built-ins registered at import time); the
+  // missing ones are created.
+  registries?: Partial<HelenaRegistries>;
   logger?: (pluginId: string) => Logger;
   // Settings per plugin id, as the Administrator saved them.
   settings?: (pluginId: string) => Record<string, unknown>;
@@ -63,17 +67,17 @@ function declared(list: string[] | undefined, id: string): boolean {
 export class PluginHost {
   readonly process: HostProcess;
   readonly events: EventBus;
-  readonly runtimes = createRegistry<RuntimeAdapter>('runtime');
-  readonly connectors = createRegistry<Connector>('connector');
-  readonly tools = new Registry<AnyAgentTool>('tool', (tool) => tool.name);
-  readonly stepTypes = createRegistry<WorkflowStepType<unknown>>('workflow step type');
-  readonly triggerTypes = createRegistry<TriggerType<unknown>>('trigger type');
-  readonly policies = createRegistry<PolicyEvaluator>('policy');
-  readonly uiSlots = new Registry<UiSlot>('UI slot', uiSlotKey);
-  readonly knowledgeSources = createRegistry<KnowledgeSource>('knowledge source');
-  readonly captureTargets = createRegistry<CaptureTarget>('capture target');
-  readonly templateKinds = createRegistry<TemplateKind<unknown>>('template kind');
-  readonly mcpServers = new Registry<McpServerContribution>('MCP server', (server) => server.name);
+  readonly runtimes: Registry<RuntimeAdapter>;
+  readonly connectors: Registry<Connector>;
+  readonly tools: Registry<AnyAgentTool>;
+  readonly stepTypes: Registry<WorkflowStepType<unknown>>;
+  readonly triggerTypes: Registry<TriggerType<unknown>>;
+  readonly policies: Registry<PolicyEvaluator>;
+  readonly uiSlots: Registry<UiSlot>;
+  readonly knowledgeSources: Registry<KnowledgeSource>;
+  readonly captureTargets: Registry<CaptureTarget>;
+  readonly templateKinds: Registry<TemplateKind<unknown>>;
+  readonly mcpServers: Registry<McpServerContribution>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -84,6 +88,18 @@ export class PluginHost {
   constructor(options: PluginHostOptions) {
     this.process = options.process;
     this.events = options.events ?? createEventBus();
+    const registries = createRegistries(options.registries);
+    this.runtimes = registries.runtimes;
+    this.connectors = registries.connectors;
+    this.tools = registries.tools;
+    this.stepTypes = registries.stepTypes;
+    this.triggerTypes = registries.triggerTypes;
+    this.policies = registries.policies;
+    this.uiSlots = registries.uiSlots;
+    this.knowledgeSources = registries.knowledgeSources;
+    this.captureTargets = registries.captureTargets;
+    this.templateKinds = registries.templateKinds;
+    this.mcpServers = registries.mcpServers;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }

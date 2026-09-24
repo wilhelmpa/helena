@@ -14,6 +14,7 @@ export {
   approvalProblem,
   discoverPlugins,
   loadExternalPlugins,
+  loadPluginDir,
   pluginDigest,
   type DiscoveredPlugin,
   type ExternalPluginPolicy,

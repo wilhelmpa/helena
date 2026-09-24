@@ -320,6 +320,7 @@
         "itsaplan-runner": "./dist/cli.js",
       },
       "devDependencies": {
+        "@helena/sdk": "workspace:*",
         "@repo/eslint-config": "workspace:*",
         "@types/bun": "latest",
         "@types/node": "^26.2.0",
