@@ -47,7 +47,7 @@ HELENA_DB=${HELENA_DB:-itsaplan}
 PUBLIC_HOST=${HELENA_PUBLIC_HOST:-helena.volition.one}
 TUNNEL_PORT=${HELENA_TUNNEL_PORT:-8090}
 PLAN_BACKUPS=${HELENA_PLAN_BACKUPS:-/var/lib/volition/plan/backups}
-SECRET_DIRS=${HELENA_SECRET_DIRS:-/etc/volition /etc/helena /etc/letsencrypt/cloudflare}
+SECRET_DIRS=${HELENA_SECRET_DIRS:-/etc/volition /etc/helena}
 API_UNITS=${HELENA_API_UNITS:-volition-plan-api volition-plan-web volition-plan-worker}
 TUNNEL_UNIT=${HELENA_TUNNEL_UNIT:-helena-cloudflared}
 NGINX_TUNNEL_SITE=${HELENA_NGINX_TUNNEL_SITE:-/etc/nginx/sites-enabled/helena-tunnel.conf}
@@ -270,7 +270,7 @@ else
 fi
 
 # ── TLS ────────────────────────────────────────────────────────────────────────
-cert=/etc/letsencrypt/live/$PUBLIC_HOST/fullchain.pem
+cert=/etc/helena/tls/lego/certificates/$PUBLIC_HOST.crt
 if [[ $is_root -eq 0 ]]; then
   need_root tls.certificate tls high
 elif [[ -e $cert ]]; then
@@ -279,9 +279,9 @@ elif [[ -e $cert ]]; then
   else
     record tls.certificate tls high fail "$PUBLIC_HOST expires within 14 days"
   fi
-  systemctl is-active --quiet certbot.timer \
-    && record tls.renewal tls medium pass "certbot.timer active" \
-    || record tls.renewal tls medium fail "certbot.timer not active"
+  systemctl is-active --quiet helena-tls-renew.timer \
+    && record tls.renewal tls medium pass "helena-tls-renew.timer active" \
+    || record tls.renewal tls medium fail "helena-tls-renew.timer not active"
 else
   record tls.certificate tls high skip "no certificate for $PUBLIC_HOST yet"
 fi

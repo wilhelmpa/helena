@@ -26,6 +26,8 @@
 #                 by one with a health check; a unit that does not come back is rolled back
 #   terminal-key  the owner-terminal signing key readable by the API and the terminal
 #                 router only (own group), both restarted
+#   kasm-loopback KasmVNC may talk to loopback only (its UDP listener faces every address);
+#                 restarts the project browsers
 #   audit-timer   the hourly audit that feeds Administrator -> Sicherheit
 #
 # Safety: a step never removes the owner's SSH access from the home network; the firewall
@@ -53,7 +55,7 @@ args=()
 for arg in "$@"; do
   case "$arg" in
     --apply) apply=1 ;;
-    -h|--help) sed -n '2,38p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     *) args+=("$arg") ;;
   esac
 done
@@ -423,6 +425,30 @@ rollback_terminal_key() {
   run systemctl restart volition-plan-api volition-owner-terminal
 }
 
+# KasmVNC's UDP listener binds every address and has no "off" (nginx/README.md). The
+# firewall already drops it from the network; this adds the unit-level wall natively
+# (cgroup BPF works outside the old container). Restarting Xvnc takes the project browser's
+# display away, so Chromium restarts too: run it in a quiet moment.
+step_kasm_loopback() {
+  local dropin=/etc/systemd/system/volition-project-browser-kasm@.service.d/60-helena-loopback.conf
+  local body=$'[Service]\nIPAddressAllow=localhost\nIPAddressDeny=any\n'
+  if [[ -e $dropin ]]; then say "kasm-loopback: $dropin present"; else say "kasm-loopback: new $dropin (IPAddressAllow=localhost, IPAddressDeny=any)"; fi
+  [[ $apply -eq 1 ]] || return 0
+  install -d -m 0755 "$(dirname "$dropin")"
+  printf '%s' "$body" >"$dropin"
+  systemctl daemon-reload
+  for unit in $(systemctl list-units --plain --no-legend 'volition-project-browser-kasm@*' | awk '{print $1}'); do
+    say "kasm-loopback: restarting $unit (and its browser)"
+    systemctl restart "$unit" "${unit/kasm/chromium}"
+  done
+  log "kasm loopback drop-in installed"
+}
+rollback_kasm_loopback() {
+  run rm -f /etc/systemd/system/volition-project-browser-kasm@.service.d/60-helena-loopback.conf
+  run systemctl daemon-reload
+  say "kasm-loopback: removed; the running Xvnc keep the wall until their next restart"
+}
+
 step_audit_timer() {
   say "audit-timer: install /usr/local/libexec/helena-security-audit + helena-security-audit.timer (hourly)"
   run "$here/audit.sh" --install-timer
@@ -442,13 +468,20 @@ status() {
 
 # ── Dispatch ───────────────────────────────────────────────────────────────────
 need_root
-install -d -m 0700 "$state"
+if [[ $apply -eq 1 ]]; then
+  install -d -m 0700 "$state"
+else
+  # The dry run writes nothing on the host: its renders and records go to a scratch folder.
+  state=$(mktemp -d "${TMPDIR:-/tmp}/helena-hardening-dry.XXXXXX")
+  backup=$state/backup/$stamp
+  trap 'rm -rf "$state"' EXIT
+fi
 fn=step
 case "${1:-}" in
   confirm) fn=confirm; shift ;;
   rollback) fn=rollback; shift ;;
   status) status; exit 0 ;;
-  "") sed -n '2,38p' "$0"; exit 2 ;;
+  "") sed -n '2,40p' "$0"; exit 2 ;;
 esac
 name=${1:-}
 [[ -n $name ]] || die "which step?"

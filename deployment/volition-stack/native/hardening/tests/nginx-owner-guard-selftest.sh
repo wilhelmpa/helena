@@ -15,6 +15,7 @@ lan=${1:-$(ip -4 route get 1.1.1.1 | awk '{for(i=1;i<NF;i++) if ($i=="src") prin
 dev=$(ip -4 route get 1.1.1.1 | awk '{for(i=1;i<NF;i++) if ($i=="dev") print $(i+1)}')
 ll=$(ip -6 -o addr show dev "$dev" scope link | awk '{print $4}' | cut -d/ -f1 | head -n 1)
 gl=$(ip -6 -o addr show dev "$dev" scope global | awk '{print $4}' | cut -d/ -f1 | head -n 1)
+if ss -H -ltn "sport = :$port" | grep -q .; then echo "port $port is busy (an earlier run still holding?)" >&2; exit 2; fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/helena-nginx-guard.XXXXXX")
 cleanup() { [[ -e $work/nginx.pid ]] && kill "$(cat "$work/nginx.pid")" 2>/dev/null; rm -rf "$work"; }
 trap cleanup EXIT
