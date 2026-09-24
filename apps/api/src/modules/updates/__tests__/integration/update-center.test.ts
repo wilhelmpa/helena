@@ -326,9 +326,11 @@ async function hermesAgent(api: ReturnType<typeof authedApi>) {
     kind: 'external',
   });
   const agent = created.data!.agent;
+  // A Hermes agent whose runner is not polling right now: its runs wait in the queue for the
+  // test to claim, and the Hermes update check does not wait for an answer.
   await db
     .update(aiAgent)
-    .set({ runtimeState: { adapter: 'hermes', capabilities: [] }, lastSeenAt: new Date() })
+    .set({ runtimeState: { adapter: 'hermes', capabilities: [] }, lastSeenAt: null })
     .where(eq(aiAgent.id, agent.id));
   const runner = apiKeyApi(created.data!.apiKey!);
   await runner['agent-chats'].catalog.post({
@@ -625,6 +627,11 @@ describe('update center: settings and the job', () => {
       return row?.lastStatus === 'succeeded' ? row : null;
     });
     expect((await rows()).length).toBeGreaterThan(5);
-    expect((await runSystemJobNow(UPDATES_JOB_ID)).started).toBe(true);
+    // A run that is going is not started a second time.
+    await db
+      .update(helenaSystemJob)
+      .set({ lastStatus: 'running', lastStartedAt: new Date() })
+      .where(eq(helenaSystemJob.id, UPDATES_JOB_ID));
+    expect((await runSystemJobNow(UPDATES_JOB_ID)).started).toBe(false);
   });
 });
