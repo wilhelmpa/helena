@@ -6,7 +6,6 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Providers } from '@/components/providers';
 import RuntimeEnvScript from '@/components/runtime-env-script';
 import { localeDirection, type Locale } from '@/i18n/locales';
-import { BRAND_UI_FONT } from '@helena/brand';
 import { BRAND_ASSETS } from '@/components/brand/assets';
 import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from '@/utils/app';
 import './globals.css';
@@ -16,8 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t('title'),
     description: t('description'),
-    // The brand variant's icons (packages/brand): the SVG for browsers that take one,
-    // the .ico (16/32/48) for the rest, and the home-screen icon.
+    // The brand's icons (packages/brand): the SVG for browsers that take one, the .ico
+    // (16/32/48) for the rest, and the home-screen icon.
     icons: {
       icon: [
         { url: BRAND_ASSETS.favicon, type: 'image/svg+xml' },
@@ -51,12 +50,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
-    <html
-      lang={locale}
-      dir={localeDirection(locale as Locale)}
-      data-ui-font={BRAND_UI_FONT}
-      suppressHydrationWarning
-    >
+    <html lang={locale} dir={localeDirection(locale as Locale)} suppressHydrationWarning>
       <body className="antialiased">
         <RuntimeEnvScript />
         <ThemeProvider

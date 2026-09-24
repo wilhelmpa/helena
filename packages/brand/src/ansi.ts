@@ -25,20 +25,19 @@ export const ROW_BANDS: readonly BandColor[] = [
 
 // How one character cell is drawn. `cell` is its width and height; the shadow is
 // 'double' (two lines `gap` apart around the cell's centre line, as a terminal draws
-// ═ ║ ╗ ╝ ╚ ╔), 'single' (one line on the centre, for small sizes where two would
-// blur into one) or 'none' (blocks only). `line` is the stroke width. With the default
+// ═ ║ ╗ ╝ ╚ ╔) or 'single' (one line on the centre, for small sizes where two would
+// blur into one). `line` is the stroke width. With the default
 // full geometry (6×14, gap 3, line 1) every edge falls on a whole unit, so the drawing
 // is crisp at 1 unit = 1 device pixel and at every whole multiple of it.
 export interface AnsiGeometry {
   cell: readonly [number, number];
-  shadow: 'double' | 'single' | 'none';
+  shadow: 'double' | 'single';
   gap: number;
   line: number;
 }
 
 export const ANSI_FULL: AnsiGeometry = { cell: [6, 14], shadow: 'double', gap: 3, line: 1 };
 export const ANSI_COMPACT: AnsiGeometry = { cell: [3, 7], shadow: 'single', gap: 0, line: 1 };
-export const ANSI_BLOCKS: AnsiGeometry = { cell: [6, 14], shadow: 'none', gap: 0, line: 1 };
 
 export interface AnsiRow {
   band: BandColor;
@@ -59,14 +58,13 @@ const rect = (x: number, y: number, w: number, h: number) =>
 // Draws ANSI art as filled rectangles (no strokes, so a rasteriser has nothing to
 // round). Runs of blocks merge into one rectangle; each box-drawing character becomes
 // the line segments a terminal draws for it, reaching the cell's edges so neighbouring
-// cells join without a seam. With shadow 'none' the empty last row is dropped.
+// cells join without a seam.
 export function renderAnsi(rows: readonly string[], geometry: AnsiGeometry): AnsiArt {
   const [W, H] = geometry.cell;
   const { line: s, shadow } = geometry;
   const d = shadow === 'double' ? geometry.gap / 2 : 0;
   const offsets = shadow === 'double' ? [-d, d] : [0];
-  const drawn = shadow === 'none' ? rows.filter((row) => row.includes('█')) : rows;
-  const out = drawn.map((row, ri): AnsiRow => {
+  const out = rows.map((row, ri): AnsiRow => {
     const y0 = ri * H;
     const cy = y0 + H / 2;
     const parts: string[] = [];
@@ -86,7 +84,6 @@ export function renderAnsi(rows: readonly string[], geometry: AnsiGeometry): Ans
         return;
       }
       flush(ci);
-      if (shadow === 'none') return;
       const x0 = ci * W;
       const x1 = x0 + W;
       const y1 = y0 + H;
@@ -130,5 +127,5 @@ export function renderAnsi(rows: readonly string[], geometry: AnsiGeometry): Ans
     return { band: ROW_BANDS[ri] ?? 'bronze', d: parts.join('') };
   });
   const width = Math.max(...rows.map((row) => [...row].length)) * W;
-  return { width, height: drawn.length * H, rows: out };
+  return { width, height: rows.length * H, rows: out };
 }

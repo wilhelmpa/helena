@@ -3,15 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronsUpDown, LogOut, OctagonX, Play } from 'lucide-react';
+import { ChevronsUpDown, Info, LogOut, OctagonX, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { signOut, useSession } from '@/lib/auth-client';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
 import { useAccountSectionLabel } from '@/hooks/useSectionLabels';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import { UPSTREAM_URL } from '@/utils/app';
 import Avatar from '@/components/common/Avatar';
+import AboutHelenaDialog from '@/components/brand/AboutHelenaDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -31,7 +31,8 @@ import {
 
 // Signed-in user control in the header: shows the account avatar and a menu with
 // the email, the role, links to preferences, connected accounts, account security
-// (passkeys) and API keys, sign out, and the project this one is a fork of.
+// (passkeys) and API keys, sign out, and "Über Helena" (what it is, and the project it
+// is a fork of).
 // Signing out clears the session and the proxy sends the browser back to
 // the login page.
 //
@@ -50,6 +51,7 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
   const emergencyStop = useEmergencyStop().data;
   const setEmergencyStop = useSetEmergencyStop();
   const [stopping, setStopping] = useState(false);
+  const [about, setAbout] = useState(false);
 
   // better-auth reads the session on the client, so the server renders no user and
   // the client may already have a cached session. Render the placeholder until
@@ -165,14 +167,14 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
             {tCommon('signOut')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild className="min-h-7 text-xs text-muted-foreground">
-            <a href={UPSTREAM_URL} target="_blank" rel="noreferrer">
-              {t('basedOn')}
-            </a>
+          <DropdownMenuItem onSelect={() => setAbout(true)}>
+            <Info />
+            {t('about')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       {stopping && <EmergencyStopDialog onClose={() => setStopping(false)} />}
+      {about && <AboutHelenaDialog onClose={() => setAbout(false)} />}
     </>
   );
 }

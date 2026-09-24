@@ -2,10 +2,9 @@ import type { MetadataRoute } from 'next';
 import { BRAND_ASSETS } from '@/components/brand/assets';
 import { APP_NAME, THEME_COLOR_LIGHT } from '@/utils/app';
 
-// The install manifest. The icons are the Helena mark of the brand variant
-// (packages/brand, public/brand/<variant>): the SVG for any size, PNGs for launchers
-// that want a raster, and a maskable one whose art sits inside the 80% safe zone so a
-// round or squircle mask never cuts it.
+// The install manifest. The icons are the Helena mark (packages/brand, public/brand):
+// the SVG for any size, PNGs for launchers that want a raster, and a maskable one whose
+// art sits inside the 80% safe zone so a round or squircle mask never cuts it.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: APP_NAME,

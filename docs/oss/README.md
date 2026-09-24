@@ -4,8 +4,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand/fackel/lockup-dark.svg" />
-  <img src="apps/web/public/brand/fackel/lockup-light.svg" alt="Helena" height="64" />
+  <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/brand/lockup-dark.svg" />
+  <img src="apps/web/public/brand/lockup-light.svg" alt="Helena" height="64" />
 </picture>
 
 # Helena

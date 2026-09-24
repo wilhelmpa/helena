@@ -6,11 +6,10 @@
    wider-spaced optical master. The sidebar's typeface — and so the whole app's
    (owner, 2026-09-24: "Schriftart so wie in der Sidebar"). */
 @import 'inter-ui/inter-variable.css';
-/* The code face (IDs, keys, code, terminal output) and the brand's second face, both
-   OFL and bundled like Inter, never fetched from a CDN (packages/brand, config.ts). A
-   face is only downloaded once something on the page uses it. */
+/* The code face (IDs, keys, code, terminal output): JetBrains Mono, Hermes' code face,
+   OFL and bundled like Inter, never fetched from a CDN (docs/helena-decisions/brand.md).
+   The same face on every device instead of whatever ui-monospace resolves to. */
 @import '@fontsource-variable/jetbrains-mono';
-@import '@fontsource-variable/dm-sans';
 /* Streamdown renders an agent's Markdown (components/agent-message): its word fade-in,
    and the Tailwind classes its components carry, which live in its package. */
 @import 'streamdown/styles.css';
@@ -39,10 +38,8 @@
 
 @theme inline {
   --font-heading: var(--font-sans);
-  /* The UI face follows BRAND_UI_FONT (packages/brand) through data-ui-font on <html>. */
-  --font-sans: var(--helena-font-ui);
+  --font-sans: 'InterVariable', sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --font-brand-type: 'DM Sans Variable', 'InterVariable', sans-serif;
   --color-helena-ink: var(--helena-ink);
   --color-helena-ink-foreground: var(--helena-ink-foreground);
   --color-helena-ink-muted: var(--helena-ink-muted);
@@ -165,7 +162,6 @@
   /* The brand (packages/brand/src/palette.ts, the same values): the wordmark's bands
      darkened for the light surfaces, and Hermes' ink with its text for brand surfaces
      that stay dark in both themes (the mark's tile, the sign-in panel). */
-  --helena-font-ui: 'InterVariable', sans-serif;
   --helena-gold: #9a7000;
   --helena-amber: #a85a00;
   --helena-bronze: #8a4516;
@@ -263,10 +259,6 @@
   --helena-gold: #ffd700;
   --helena-amber: #ffbf00;
   --helena-bronze: #cd7f32;
-}
-
-:root[data-ui-font='dm-sans'] {
-  --helena-font-ui: 'DM Sans Variable', 'InterVariable', sans-serif;
 }
 
 .dark {

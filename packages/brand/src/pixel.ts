@@ -1,14 +1,12 @@
 import type { BandColor } from './palette';
 
-// The marks are pixel art on a 16×16 grid, the favicon's own size, so the 16px and 32px
+// The mark is pixel art on a 16×16 grid, the favicon's own size, so the 16px and 32px
 // icons are crisp without hinting. One character per pixel: g gold, a amber, b bronze,
-// c Hermes' cornsilk (a light accent), '.' empty. Each mark follows Hermes' banding: gold on top, amber in the middle, bronze
-// at the foot.
+// '.' empty. It follows Hermes' banding: gold on top, amber in the middle, bronze at
+// the foot.
 export type PixelMap = readonly string[];
 
-// The colours a mark can use: the three bands and the light accent.
-export type MarkColor = BandColor | 'light';
-const KEYS: Record<string, MarkColor> = { g: 'gold', a: 'amber', b: 'bronze', c: 'light' };
+const KEYS: Record<string, BandColor> = { g: 'gold', a: 'amber', b: 'bronze' };
 
 // Helena's torch: a flame leaning into the light with an ember breaking off, a wide
 // rim, a tapering cup and the grip. Hermes carries the caduceus, Helena the torch.
@@ -31,50 +29,8 @@ export const TORCH: PixelMap = [
   '................',
 ];
 
-// The H of HELENA as a pixel monogram: two stems and the crossbar in the middle row,
-// in Hermes' 2 : 2 : 1 bands.
-export const MONOGRAM: PixelMap = [
-  '................',
-  '................',
-  '................',
-  '...ggg....ggg...',
-  '...ggg....ggg...',
-  '...ggg....ggg...',
-  '...ggg....ggg...',
-  '...aaaaaaaaaa...',
-  '...aaaaaaaaaa...',
-  '...aaa....aaa...',
-  '...aaa....aaa...',
-  '...bbb....bbb...',
-  '...bbb....bbb...',
-  '................',
-  '................',
-  '................',
-];
-
-// The "Funke" of the previous mark in pixels: two pillars, and where the crossbar would
-// be a four-point spark in Hermes' light cornsilk that joins them.
-export const SPARK: PixelMap = [
-  '................',
-  '................',
-  '..gg........gg..',
-  '..gg........gg..',
-  '..gg...cc...gg..',
-  '..gg...cc...gg..',
-  '..gg..cccc..gg..',
-  '..aaccccccccaa..',
-  '..aaccccccccaa..',
-  '..aa..cccc..aa..',
-  '..aa...cc...aa..',
-  '..bb...cc...bb..',
-  '..bb........bb..',
-  '..bb........bb..',
-  '................',
-  '................',
-];
-
 export interface PixelLayer {
-  color: MarkColor;
+  color: BandColor;
   d: string;
 }
 
@@ -84,7 +40,7 @@ const rect = (x: number, y: number, w: number, h: number) =>
 
 // One path per colour; each row's runs of a colour merge into one rectangle.
 export function pixelLayers(map: PixelMap): PixelLayer[] {
-  const byColor = new Map<MarkColor, string[]>();
+  const byColor = new Map<BandColor, string[]>();
   map.forEach((row, y) => {
     let start = -1;
     let key = '';
@@ -118,7 +74,7 @@ export const ECHO_LINE = 0.075;
 
 export function echoLayers(map: PixelMap): PixelLayer[] {
   const on = (x: number, y: number) => KEYS[map[y]?.[x] ?? '.'] !== undefined;
-  const byColor = new Map<MarkColor, string[]>();
+  const byColor = new Map<BandColor, string[]>();
   const s = ECHO_LINE;
   for (const [dx, dy] of ECHO_OFFSETS) {
     map.forEach((row, y) =>

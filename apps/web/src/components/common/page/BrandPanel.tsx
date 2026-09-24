@@ -1,5 +1,4 @@
 import { useTranslations } from 'next-intl';
-import { BRAND_VARIANT, hasLockupMark } from '@helena/brand';
 import { APP_NAME } from '@/utils/app';
 import HelenaMark from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
@@ -19,7 +18,7 @@ export default function BrandPanel({ subtitle }: { subtitle?: string }) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,color-mix(in_oklab,var(--helena-amber-on-ink)_14%,transparent),transparent_60%)]"
       />
-      {hasLockupMark(BRAND_VARIANT) && <HelenaMark detail="large" className="relative size-20" />}
+      <HelenaMark detail="large" className="relative size-20" />
       <HelenaWordmark
         size="full"
         label={APP_NAME}
