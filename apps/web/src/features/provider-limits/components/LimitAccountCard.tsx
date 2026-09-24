@@ -22,7 +22,16 @@ export const LIMITS_ADMIN_HREF = '/god/agent-runtime#limits';
 // One subscription account in the sidebar's surface: a 32px header row (provider, plan,
 // login, state) that opens the details in the Administrator, one line per window, and a
 // footer with when the numbers were read and when a limit ends.
-export default function LimitAccountCard({ account, now }: { account: LimitAccount; now: number }) {
+// `framed` false leaves out the frame, for an account inside a card of its own (Start).
+export default function LimitAccountCard({
+  account,
+  now,
+  framed = true,
+}: {
+  account: LimitAccount;
+  now: number;
+  framed?: boolean;
+}) {
   const t = useTranslations('providerLimits');
   const name = useAccountName();
   const plan = name.plan(account);
@@ -30,7 +39,12 @@ export default function LimitAccountCard({ account, now }: { account: LimitAccou
   const windows = orderedWindows(account.windows);
   const resetAt = account.nextResetAt ? Date.parse(account.nextResetAt) : null;
   return (
-    <div className="flex min-w-0 flex-col gap-px rounded-lg border border-sidebar-border bg-card p-1">
+    <div
+      className={cn(
+        'flex min-w-0 flex-col gap-px',
+        framed && 'rounded-lg border border-sidebar-border bg-card p-1',
+      )}
+    >
       <Link href={LIMITS_ADMIN_HREF} className={cn(ROW_CLASS, ROW_INTERACTIVE_CLASS)}>
         <Gauge />
         <span className="min-w-0 shrink truncate font-medium">{name.provider(account)}</span>
