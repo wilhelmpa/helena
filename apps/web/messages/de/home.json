@@ -1,91 +1,78 @@
 {
-  "customize": "Anpassen",
-  "all": "Alle",
-  "showAll": "Alle anzeigen",
-  "since": "seit {time}",
-  "ago": "vor {time}",
   "in": "in {time}",
-  "figures": {
-    "title": "Überblick",
-    "decisions": "Warten auf dich",
-    "failures": "Fehlgeschlagen",
-    "running": "Agenten arbeiten",
-    "tasks": "Meine offenen Aufgaben",
+  "widgetFailed": "Gerade nicht verfügbar",
+  "customize": {
+    "title": "Anpassen",
+    "description": "Was Start zeigt und in welcher Reihenfolge. Gespeichert in deinem Konto.",
+    "figures": "Kennzahlen",
+    "sections": "Bereiche",
+    "drag": "{name} verschieben",
+    "up": "{name} nach oben",
+    "down": "{name} nach unten",
+    "show": "{name} anzeigen",
+    "reset": "Standard wiederherstellen",
+    "done": "Fertig"
+  },
+  "widgets": {
+    "waiting": "Warten auf dich",
+    "agents": "Agenten arbeiten",
+    "tasks": "Meine Aufgaben",
     "limits": "Plan-Limits",
-    "system": "System"
+    "system": "System",
+    "updates": "Updates",
+    "needs-you": "Braucht dich",
+    "my-tasks": "Meine Aufgaben",
+    "running": "Läuft gerade",
+    "schedules": "Als Nächstes",
+    "projects": "Projekte"
+  },
+  "figures": {
+    "problems": "{count, plural, one {# Problem} other {# Probleme}}",
+    "failed": "{count} fehlgeschlagen",
+    "nothingWaits": "Nichts wartet",
+    "lastFinished": "zuletzt fertig vor {time}",
+    "nobodyWorks": "Gerade arbeitet niemand",
+    "overdue": "{count} überfällig",
+    "nextDue": "nächste fällig {date}"
+  },
+  "links": {
+    "all": "Alle",
+    "activity": "Aktivität",
+    "schedules": "Zeitpläne"
   },
   "needsYou": {
-    "title": "Braucht dich",
     "empty": "Gerade braucht dich nichts.",
     "proposals": "{count, plural, one {# Vorschlag wartet} other {# Vorschläge warten}}",
     "chatFailed": "Chat-Antwort fehlgeschlagen",
-    "failed": "Fehlgeschlagen",
-    "approval": "Freigabe",
-    "step": "Workflow-Schritt",
     "hide": "Ausblenden",
+    "more": "{count} weitere",
     "aged": "{count, plural, one {# ältere Störung} other {# ältere Störungen}}",
-    "hidden": "{count} ausgeblendet",
-    "waitingSince": "wartet seit {time}",
-    "more": "{count} weitere"
+    "hidden": "{count} ausgeblendet"
+  },
+  "problems": {
+    "serviceDown": "{service} nicht erreichbar",
+    "loginRejected": "Anmeldung {provider} abgelehnt",
+    "loginExpired": "Anmeldung {provider} abgelaufen",
+    "loginHint": "Im Owner-Terminal neu anmelden"
   },
   "agents": {
-    "title": "Agenten gerade",
     "empty": "Gerade arbeitet kein Agent.",
     "waiting": "wartet",
     "finished": "Zuletzt fertig"
   },
   "tasks": {
-    "title": "Meine offenen Aufgaben",
-    "empty": "Dir ist keine offene Aufgabe zugewiesen.",
-    "due": "fällig {date}",
-    "overdue": "überfällig"
+    "empty": "Dir ist keine offene Aufgabe zugewiesen."
   },
-  "limits": {
-    "title": "Limits"
+  "schedules": {
+    "empty": "Nichts geplant."
+  },
+  "projects": {
+    "empty": "Noch keine Projekte."
   },
   "system": {
     "title": "System",
     "ok": "Alles läuft",
     "problems": "{count, plural, one {# Problem} other {# Probleme}}",
-    "details": "Details",
-    "hideDetails": "Details ausblenden",
-    "services": "{ok} von {total} Diensten",
-    "logins": "Anmeldungen gültig",
-    "loginsProblem": "Anmeldung braucht dich",
-    "agentsSynced": "{synced} von {total} Agenten synchron",
-    "janitors": "Wartung läuft planmäßig",
-    "serviceDown": "{service} nicht erreichbar",
-    "summary": "{services} Dienste · {agents} Agenten · {logins} Anmeldungen",
-    "janitorDown": "{job} steht",
-    "loginNeedsOwner": "Anmeldung {provider} braucht dich",
-    "loginsStale": "Anmeldungen seit {time} nicht geprüft",
-    "agentsDrift": "{count, plural, one {# Agent} other {# Agenten}} nicht synchron",
-    "modelsRefused": "{count, plural, one {# Modell} other {# Modelle}} abgelehnt",
-    "areas": {
-      "services": "Dienste",
-      "agents": "Agenten synchron",
-      "logins": "Modell-Anmeldungen",
-      "janitors": "Wartung"
-    }
-  },
-  "schedules": {
-    "title": "Als Nächstes geplant",
-    "empty": "Nichts geplant.",
-    "paused": "pausiert"
-  },
-  "projects": {
-    "title": "Projekte",
-    "empty": "Noch keine Projekte."
-  },
-  "today": {
-    "title": "Heute",
-    "running": "Läuft gerade",
-    "due": "Fällig und offen",
-    "next": "Als Nächstes"
-  },
-  "design": {
-    "a": "Raster",
-    "b": "Liste und Leiste",
-    "c": "Kennzahlen und Heute"
+    "summary": "{services} Dienste · {agents} Agenten"
   }
 }

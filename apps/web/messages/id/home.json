@@ -1,91 +1,78 @@
 {
-  "customize": "Customize",
-  "all": "All",
-  "showAll": "Show all",
-  "since": "for {time}",
-  "ago": "{time} ago",
-  "in": "in {time}",
+  "in": "dalam {time}",
+  "widgetFailed": "Sedang tidak tersedia",
+  "customize": {
+    "title": "Sesuaikan",
+    "description": "Apa yang ditampilkan Beranda dan urutannya. Disimpan di akun Anda.",
+    "figures": "Angka",
+    "sections": "Bagian",
+    "drag": "Pindahkan {name}",
+    "up": "Naikkan {name}",
+    "down": "Turunkan {name}",
+    "show": "Tampilkan {name}",
+    "reset": "Kembalikan bawaan",
+    "done": "Selesai"
+  },
+  "widgets": {
+    "waiting": "Menunggu Anda",
+    "agents": "Agen bekerja",
+    "tasks": "Tugas saya",
+    "limits": "Batas paket",
+    "system": "Sistem",
+    "updates": "Pembaruan",
+    "needs-you": "Butuh Anda",
+    "my-tasks": "Tugas saya",
+    "running": "Sedang berjalan",
+    "schedules": "Berikutnya",
+    "projects": "Proyek"
+  },
   "figures": {
-    "title": "At a glance",
-    "decisions": "Waiting for you",
-    "failures": "Failed",
-    "running": "Agents working",
-    "tasks": "My open tasks",
-    "limits": "Plan limits",
-    "system": "System"
+    "problems": "{count} masalah",
+    "failed": "{count} gagal",
+    "nothingWaits": "Tidak ada yang menunggu",
+    "lastFinished": "terakhir selesai {time} lalu",
+    "nobodyWorks": "Tidak ada yang bekerja",
+    "overdue": "{count} terlambat",
+    "nextDue": "jatuh tempo berikutnya {date}"
+  },
+  "links": {
+    "all": "Semua",
+    "activity": "Aktivitas",
+    "schedules": "Jadwal"
   },
   "needsYou": {
-    "title": "Needs you",
-    "empty": "Nothing needs you right now.",
-    "proposals": "{count, plural, one {# proposal waits} other {# proposals wait}}",
-    "chatFailed": "Chat answer failed",
-    "failed": "Failed",
-    "approval": "Approval",
-    "step": "Workflow step",
-    "hide": "Hide",
-    "aged": "{count, plural, one {# older failure} other {# older failures}}",
-    "hidden": "{count} hidden",
-    "waitingSince": "waiting for {time}",
-    "more": "{count} more"
+    "empty": "Saat ini tidak ada yang membutuhkan Anda.",
+    "proposals": "{count} usulan menunggu",
+    "chatFailed": "Jawaban chat gagal",
+    "hide": "Sembunyikan",
+    "more": "{count} lagi",
+    "aged": "{count} kegagalan lebih lama",
+    "hidden": "{count} disembunyikan"
+  },
+  "problems": {
+    "serviceDown": "{service} tidak dapat dijangkau",
+    "loginRejected": "Login {provider} ditolak",
+    "loginExpired": "Login {provider} kedaluwarsa",
+    "loginHint": "Masuk lagi dari terminal pemilik"
   },
   "agents": {
-    "title": "Agents now",
-    "empty": "No agent is working right now.",
-    "waiting": "waiting",
-    "finished": "Finished lately"
+    "empty": "Saat ini tidak ada agen yang bekerja.",
+    "waiting": "menunggu",
+    "finished": "Baru selesai"
   },
   "tasks": {
-    "title": "My open tasks",
-    "empty": "No open task is assigned to you.",
-    "due": "due {date}",
-    "overdue": "overdue"
-  },
-  "limits": {
-    "title": "Limits"
-  },
-  "system": {
-    "title": "System",
-    "ok": "Everything runs",
-    "problems": "{count, plural, one {# problem} other {# problems}}",
-    "details": "Details",
-    "hideDetails": "Hide details",
-    "services": "{ok} of {total} services",
-    "logins": "Logins valid",
-    "loginsProblem": "Login needs you",
-    "agentsSynced": "{synced} of {total} agents in sync",
-    "janitors": "Maintenance runs on schedule",
-    "serviceDown": "{service} not reachable",
-    "summary": "{services} services · {agents} agents · {logins} logins",
-    "janitorDown": "{job} stopped",
-    "loginNeedsOwner": "{provider} login needs you",
-    "loginsStale": "Logins not checked for {time}",
-    "agentsDrift": "{count, plural, one {# agent} other {# agents}} not in sync",
-    "modelsRefused": "{count, plural, one {# model} other {# models}} refused",
-    "areas": {
-      "services": "Services",
-      "agents": "Agents in sync",
-      "logins": "Model logins",
-      "janitors": "Maintenance"
-    }
+    "empty": "Tidak ada tugas terbuka untuk Anda."
   },
   "schedules": {
-    "title": "Next scheduled",
-    "empty": "Nothing scheduled.",
-    "paused": "paused"
+    "empty": "Tidak ada yang dijadwalkan."
   },
   "projects": {
-    "title": "Projects",
-    "empty": "No projects yet."
+    "empty": "Belum ada proyek."
   },
-  "today": {
-    "title": "Today",
-    "running": "Running now",
-    "due": "Due and open",
-    "next": "Coming up"
-  },
-  "design": {
-    "a": "Grid",
-    "b": "List and rail",
-    "c": "Figures and today"
+  "system": {
+    "title": "Sistem",
+    "ok": "Semua berjalan",
+    "problems": "{count} masalah",
+    "summary": "{services} layanan · {agents} agen"
   }
 }

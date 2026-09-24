@@ -1,91 +1,78 @@
 {
-  "customize": "Customize",
-  "all": "All",
-  "showAll": "Show all",
-  "since": "for {time}",
-  "ago": "{time} ago",
-  "in": "in {time}",
+  "in": "خلال {time}",
+  "widgetFailed": "غير متاح حاليًا",
+  "customize": {
+    "title": "تخصيص",
+    "description": "ما تعرضه البداية وبأي ترتيب. يُحفظ في حسابك.",
+    "figures": "المؤشرات",
+    "sections": "الأقسام",
+    "drag": "نقل {name}",
+    "up": "رفع {name}",
+    "down": "خفض {name}",
+    "show": "إظهار {name}",
+    "reset": "استعادة الافتراضي",
+    "done": "تم"
+  },
+  "widgets": {
+    "waiting": "بانتظارك",
+    "agents": "وكلاء يعملون",
+    "tasks": "مهامي",
+    "limits": "حدود الخطط",
+    "system": "النظام",
+    "updates": "التحديثات",
+    "needs-you": "يحتاجك",
+    "my-tasks": "مهامي",
+    "running": "قيد التشغيل الآن",
+    "schedules": "التالي",
+    "projects": "المشاريع"
+  },
   "figures": {
-    "title": "At a glance",
-    "decisions": "Waiting for you",
-    "failures": "Failed",
-    "running": "Agents working",
-    "tasks": "My open tasks",
-    "limits": "Plan limits",
-    "system": "System"
+    "problems": "{count, plural, zero {لا مشكلات} one {مشكلة واحدة} two {مشكلتان} few {# مشكلات} many {# مشكلة} other {# مشكلة}}",
+    "failed": "فشل: {count}",
+    "nothingWaits": "لا شيء بالانتظار",
+    "lastFinished": "آخر إنجاز قبل {time}",
+    "nobodyWorks": "لا أحد يعمل الآن",
+    "overdue": "متأخرة: {count}",
+    "nextDue": "الاستحقاق التالي {date}"
+  },
+  "links": {
+    "all": "الكل",
+    "activity": "النشاط",
+    "schedules": "الجدولات"
   },
   "needsYou": {
-    "title": "Needs you",
-    "empty": "Nothing needs you right now.",
-    "proposals": "{count, plural, one {# proposal waits} other {# proposals wait}}",
-    "chatFailed": "Chat answer failed",
-    "failed": "Failed",
-    "approval": "Approval",
-    "step": "Workflow step",
-    "hide": "Hide",
-    "aged": "{count, plural, one {# older failure} other {# older failures}}",
-    "hidden": "{count} hidden",
-    "waitingSince": "waiting for {time}",
-    "more": "{count} more"
+    "empty": "لا شيء يحتاجك الآن.",
+    "proposals": "مقترحات بالانتظار: {count}",
+    "chatFailed": "فشل رد المحادثة",
+    "hide": "إخفاء",
+    "more": "{count} أخرى",
+    "aged": "إخفاقات أقدم: {count}",
+    "hidden": "مخفية: {count}"
+  },
+  "problems": {
+    "serviceDown": "تعذّر الوصول إلى {service}",
+    "loginRejected": "رُفض تسجيل دخول {provider}",
+    "loginExpired": "انتهى تسجيل دخول {provider}",
+    "loginHint": "سجّل الدخول مجددًا من طرفية المالك"
   },
   "agents": {
-    "title": "Agents now",
-    "empty": "No agent is working right now.",
-    "waiting": "waiting",
-    "finished": "Finished lately"
+    "empty": "لا يعمل أي وكيل الآن.",
+    "waiting": "بانتظار",
+    "finished": "أُنجز مؤخرًا"
   },
   "tasks": {
-    "title": "My open tasks",
-    "empty": "No open task is assigned to you.",
-    "due": "due {date}",
-    "overdue": "overdue"
-  },
-  "limits": {
-    "title": "Limits"
-  },
-  "system": {
-    "title": "System",
-    "ok": "Everything runs",
-    "problems": "{count, plural, one {# problem} other {# problems}}",
-    "details": "Details",
-    "hideDetails": "Hide details",
-    "services": "{ok} of {total} services",
-    "logins": "Logins valid",
-    "loginsProblem": "Login needs you",
-    "agentsSynced": "{synced} of {total} agents in sync",
-    "janitors": "Maintenance runs on schedule",
-    "serviceDown": "{service} not reachable",
-    "summary": "{services} services · {agents} agents · {logins} logins",
-    "janitorDown": "{job} stopped",
-    "loginNeedsOwner": "{provider} login needs you",
-    "loginsStale": "Logins not checked for {time}",
-    "agentsDrift": "{count, plural, one {# agent} other {# agents}} not in sync",
-    "modelsRefused": "{count, plural, one {# model} other {# models}} refused",
-    "areas": {
-      "services": "Services",
-      "agents": "Agents in sync",
-      "logins": "Model logins",
-      "janitors": "Maintenance"
-    }
+    "empty": "لا توجد مهام مفتوحة مُسندة إليك."
   },
   "schedules": {
-    "title": "Next scheduled",
-    "empty": "Nothing scheduled.",
-    "paused": "paused"
+    "empty": "لا شيء مجدول."
   },
   "projects": {
-    "title": "Projects",
-    "empty": "No projects yet."
+    "empty": "لا مشاريع بعد."
   },
-  "today": {
-    "title": "Today",
-    "running": "Running now",
-    "due": "Due and open",
-    "next": "Coming up"
-  },
-  "design": {
-    "a": "Grid",
-    "b": "List and rail",
-    "c": "Figures and today"
+  "system": {
+    "title": "النظام",
+    "ok": "كل شيء يعمل",
+    "problems": "{count, plural, zero {لا مشكلات} one {مشكلة واحدة} two {مشكلتان} few {# مشكلات} many {# مشكلة} other {# مشكلة}}",
+    "summary": "الخدمات {services} · الوكلاء {agents}"
   }
 }

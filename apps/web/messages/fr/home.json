@@ -1,91 +1,78 @@
 {
-  "customize": "Customize",
-  "all": "All",
-  "showAll": "Show all",
-  "since": "for {time}",
-  "ago": "{time} ago",
-  "in": "in {time}",
+  "in": "dans {time}",
+  "widgetFailed": "Indisponible pour le moment",
+  "customize": {
+    "title": "Personnaliser",
+    "description": "Ce que l’accueil affiche et dans quel ordre. Enregistré dans votre compte.",
+    "figures": "Indicateurs",
+    "sections": "Sections",
+    "drag": "Déplacer {name}",
+    "up": "Monter {name}",
+    "down": "Descendre {name}",
+    "show": "Afficher {name}",
+    "reset": "Rétablir par défaut",
+    "done": "Terminé"
+  },
+  "widgets": {
+    "waiting": "En attente de vous",
+    "agents": "Agents au travail",
+    "tasks": "Mes tâches",
+    "limits": "Limites des forfaits",
+    "system": "Système",
+    "updates": "Mises à jour",
+    "needs-you": "A besoin de vous",
+    "my-tasks": "Mes tâches",
+    "running": "En cours",
+    "schedules": "À venir",
+    "projects": "Projets"
+  },
   "figures": {
-    "title": "At a glance",
-    "decisions": "Waiting for you",
-    "failures": "Failed",
-    "running": "Agents working",
-    "tasks": "My open tasks",
-    "limits": "Plan limits",
-    "system": "System"
+    "problems": "{count, plural, one {# problème} other {# problèmes}}",
+    "failed": "{count} en échec",
+    "nothingWaits": "Rien en attente",
+    "lastFinished": "dernier terminé il y a {time}",
+    "nobodyWorks": "Personne ne travaille",
+    "overdue": "{count} en retard",
+    "nextDue": "prochaine échéance {date}"
+  },
+  "links": {
+    "all": "Tout",
+    "activity": "Activité",
+    "schedules": "Planifications"
   },
   "needsYou": {
-    "title": "Needs you",
-    "empty": "Nothing needs you right now.",
-    "proposals": "{count, plural, one {# proposal waits} other {# proposals wait}}",
-    "chatFailed": "Chat answer failed",
-    "failed": "Failed",
-    "approval": "Approval",
-    "step": "Workflow step",
-    "hide": "Hide",
-    "aged": "{count, plural, one {# older failure} other {# older failures}}",
-    "hidden": "{count} hidden",
-    "waitingSince": "waiting for {time}",
-    "more": "{count} more"
+    "empty": "Rien ne requiert votre attention.",
+    "proposals": "{count, plural, one {# proposition en attente} other {# propositions en attente}}",
+    "chatFailed": "Réponse de chat en échec",
+    "hide": "Masquer",
+    "more": "{count} de plus",
+    "aged": "{count, plural, one {# échec plus ancien} other {# échecs plus anciens}}",
+    "hidden": "{count} masqué(s)"
+  },
+  "problems": {
+    "serviceDown": "{service} injoignable",
+    "loginRejected": "Connexion {provider} refusée",
+    "loginExpired": "Connexion {provider} expirée",
+    "loginHint": "Reconnectez-la depuis le terminal propriétaire"
   },
   "agents": {
-    "title": "Agents now",
-    "empty": "No agent is working right now.",
-    "waiting": "waiting",
-    "finished": "Finished lately"
+    "empty": "Aucun agent ne travaille en ce moment.",
+    "waiting": "en attente",
+    "finished": "Terminé récemment"
   },
   "tasks": {
-    "title": "My open tasks",
-    "empty": "No open task is assigned to you.",
-    "due": "due {date}",
-    "overdue": "overdue"
-  },
-  "limits": {
-    "title": "Limits"
-  },
-  "system": {
-    "title": "System",
-    "ok": "Everything runs",
-    "problems": "{count, plural, one {# problem} other {# problems}}",
-    "details": "Details",
-    "hideDetails": "Hide details",
-    "services": "{ok} of {total} services",
-    "logins": "Logins valid",
-    "loginsProblem": "Login needs you",
-    "agentsSynced": "{synced} of {total} agents in sync",
-    "janitors": "Maintenance runs on schedule",
-    "serviceDown": "{service} not reachable",
-    "summary": "{services} services · {agents} agents · {logins} logins",
-    "janitorDown": "{job} stopped",
-    "loginNeedsOwner": "{provider} login needs you",
-    "loginsStale": "Logins not checked for {time}",
-    "agentsDrift": "{count, plural, one {# agent} other {# agents}} not in sync",
-    "modelsRefused": "{count, plural, one {# model} other {# models}} refused",
-    "areas": {
-      "services": "Services",
-      "agents": "Agents in sync",
-      "logins": "Model logins",
-      "janitors": "Maintenance"
-    }
+    "empty": "Aucune tâche ouverte ne vous est assignée."
   },
   "schedules": {
-    "title": "Next scheduled",
-    "empty": "Nothing scheduled.",
-    "paused": "paused"
+    "empty": "Rien de planifié."
   },
   "projects": {
-    "title": "Projects",
-    "empty": "No projects yet."
+    "empty": "Pas encore de projets."
   },
-  "today": {
-    "title": "Today",
-    "running": "Running now",
-    "due": "Due and open",
-    "next": "Coming up"
-  },
-  "design": {
-    "a": "Grid",
-    "b": "List and rail",
-    "c": "Figures and today"
+  "system": {
+    "title": "Système",
+    "ok": "Tout fonctionne",
+    "problems": "{count, plural, one {# problème} other {# problèmes}}",
+    "summary": "{services} services · {agents} agents"
   }
 }

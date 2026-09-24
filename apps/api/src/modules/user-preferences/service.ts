@@ -82,7 +82,12 @@ export function normalizeHomeDashboard(value: unknown): HomeDashboardPreference 
     Array.isArray(raw[key])
       ? [...new Set((raw[key] as unknown[]).filter((v): v is string => typeof v === 'string'))]
       : [];
-  return { order: list('order'), hidden: list('hidden'), shown: list('shown'), dismissed: list('dismissed') };
+  return {
+    order: list('order'),
+    hidden: list('hidden'),
+    shown: list('shown'),
+    dismissed: list('dismissed'),
+  };
 }
 
 export function defaults(locale: Locale = DEFAULT_LOCALE): UserPreferenceDto {

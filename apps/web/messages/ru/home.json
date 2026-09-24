@@ -1,91 +1,78 @@
 {
-  "customize": "Customize",
-  "all": "All",
-  "showAll": "Show all",
-  "since": "for {time}",
-  "ago": "{time} ago",
-  "in": "in {time}",
+  "in": "через {time}",
+  "widgetFailed": "Сейчас недоступно",
+  "customize": {
+    "title": "Настроить",
+    "description": "Что показывает главная и в каком порядке. Сохраняется в вашей учётной записи.",
+    "figures": "Показатели",
+    "sections": "Разделы",
+    "drag": "Переместить {name}",
+    "up": "{name} выше",
+    "down": "{name} ниже",
+    "show": "Показывать {name}",
+    "reset": "Восстановить по умолчанию",
+    "done": "Готово"
+  },
+  "widgets": {
+    "waiting": "Ждут вас",
+    "agents": "Агенты работают",
+    "tasks": "Мои задачи",
+    "limits": "Лимиты тарифов",
+    "system": "Система",
+    "updates": "Обновления",
+    "needs-you": "Нужны вы",
+    "my-tasks": "Мои задачи",
+    "running": "Сейчас выполняется",
+    "schedules": "Далее",
+    "projects": "Проекты"
+  },
   "figures": {
-    "title": "At a glance",
-    "decisions": "Waiting for you",
-    "failures": "Failed",
-    "running": "Agents working",
-    "tasks": "My open tasks",
-    "limits": "Plan limits",
-    "system": "System"
+    "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
+    "failed": "сбоев: {count}",
+    "nothingWaits": "Ничего не ждёт",
+    "lastFinished": "последнее завершено {time} назад",
+    "nobodyWorks": "Никто не работает",
+    "overdue": "просрочено: {count}",
+    "nextDue": "следующий срок {date}"
+  },
+  "links": {
+    "all": "Все",
+    "activity": "Активность",
+    "schedules": "Расписания"
   },
   "needsYou": {
-    "title": "Needs you",
-    "empty": "Nothing needs you right now.",
-    "proposals": "{count, plural, one {# proposal waits} other {# proposals wait}}",
-    "chatFailed": "Chat answer failed",
-    "failed": "Failed",
-    "approval": "Approval",
-    "step": "Workflow step",
-    "hide": "Hide",
-    "aged": "{count, plural, one {# older failure} other {# older failures}}",
-    "hidden": "{count} hidden",
-    "waitingSince": "waiting for {time}",
-    "more": "{count} more"
+    "empty": "Сейчас вы нигде не нужны.",
+    "proposals": "{count, plural, one {# предложение ждёт} few {# предложения ждут} many {# предложений ждут} other {# предложения ждут}}",
+    "chatFailed": "Ответ в чате не удался",
+    "hide": "Скрыть",
+    "more": "ещё {count}",
+    "aged": "{count, plural, one {# более старый сбой} few {# более старых сбоя} many {# более старых сбоев} other {# более старого сбоя}}",
+    "hidden": "скрыто: {count}"
+  },
+  "problems": {
+    "serviceDown": "{service} недоступен",
+    "loginRejected": "Вход {provider} отклонён",
+    "loginExpired": "Вход {provider} истёк",
+    "loginHint": "Войдите снова в терминале владельца"
   },
   "agents": {
-    "title": "Agents now",
-    "empty": "No agent is working right now.",
-    "waiting": "waiting",
-    "finished": "Finished lately"
+    "empty": "Сейчас ни один агент не работает.",
+    "waiting": "ждёт",
+    "finished": "Недавно завершено"
   },
   "tasks": {
-    "title": "My open tasks",
-    "empty": "No open task is assigned to you.",
-    "due": "due {date}",
-    "overdue": "overdue"
-  },
-  "limits": {
-    "title": "Limits"
-  },
-  "system": {
-    "title": "System",
-    "ok": "Everything runs",
-    "problems": "{count, plural, one {# problem} other {# problems}}",
-    "details": "Details",
-    "hideDetails": "Hide details",
-    "services": "{ok} of {total} services",
-    "logins": "Logins valid",
-    "loginsProblem": "Login needs you",
-    "agentsSynced": "{synced} of {total} agents in sync",
-    "janitors": "Maintenance runs on schedule",
-    "serviceDown": "{service} not reachable",
-    "summary": "{services} services · {agents} agents · {logins} logins",
-    "janitorDown": "{job} stopped",
-    "loginNeedsOwner": "{provider} login needs you",
-    "loginsStale": "Logins not checked for {time}",
-    "agentsDrift": "{count, plural, one {# agent} other {# agents}} not in sync",
-    "modelsRefused": "{count, plural, one {# model} other {# models}} refused",
-    "areas": {
-      "services": "Services",
-      "agents": "Agents in sync",
-      "logins": "Model logins",
-      "janitors": "Maintenance"
-    }
+    "empty": "Вам не назначено открытых задач."
   },
   "schedules": {
-    "title": "Next scheduled",
-    "empty": "Nothing scheduled.",
-    "paused": "paused"
+    "empty": "Ничего не запланировано."
   },
   "projects": {
-    "title": "Projects",
-    "empty": "No projects yet."
+    "empty": "Проектов пока нет."
   },
-  "today": {
-    "title": "Today",
-    "running": "Running now",
-    "due": "Due and open",
-    "next": "Coming up"
-  },
-  "design": {
-    "a": "Grid",
-    "b": "List and rail",
-    "c": "Figures and today"
+  "system": {
+    "title": "Система",
+    "ok": "Всё работает",
+    "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
+    "summary": "Службы {services} · агенты {agents}"
   }
 }

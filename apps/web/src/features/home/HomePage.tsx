@@ -1,15 +1,15 @@
 'use client';
 
 import Shell from '@/components/layout/Shell';
-import DesignSwitch from './dashboard/preview/DesignSwitch';
+import HomeDashboard from './dashboard/HomeDashboard';
 
-// Start: the owner's dashboard. Preview of three directions (?design=a|b|c) for the owner
-// to pick from; the chosen one replaces this switch.
+// Start: the reader's dashboard (./dashboard/HomeDashboard). It makes room for a floating
+// tool panel instead of hiding under it (--workspace-overlay-inset, WorkspaceLayoutHost).
 export default function HomePage() {
   return (
     <Shell globalHome>
       <div className="h-full overflow-y-auto pe-(--workspace-overlay-inset)">
-        <DesignSwitch />
+        <HomeDashboard />
       </div>
     </Shell>
   );

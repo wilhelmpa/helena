@@ -3,7 +3,11 @@
 import { useEffect } from 'react';
 import type { DashboardAudience, UiSlotDescriptor } from '@helena/sdk/web';
 import { usePluginUiSlotsQuery } from '@/services/plugins.service';
-import { dashboardWidgets, registerDashboardWidget, type DashboardWidget } from './dashboardWidgets';
+import {
+  dashboardWidgets,
+  registerDashboardWidget,
+  type DashboardWidget,
+} from './dashboardWidgets';
 import { pluginFrameUrl } from './pluginPanelTools';
 
 // Adds the Start widgets of loaded plugins (frame slots `dashboard-widget` with the surface

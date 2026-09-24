@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { AGED_AFTER_MS, pruneDismissed, splitNeedsYou, type NeedsYouSource } from './needsYou';
+import { AGED_AFTER_MS, splitNeedsYou, type NeedsYouItem } from './needsYou';
 
 // "Braucht dich" keeps decisions until they are made, and lets a failure go: hidden by the
 // reader, or counted instead of listed once it is older than a day (owner, 2026-09-24: two
@@ -10,12 +10,12 @@ const NOW = Date.parse('2026-09-24T20:00:00Z');
 const ago = (ms: number) => new Date(NOW - ms).toISOString();
 const HOUR = 3_600_000;
 
-const approval = (id: number, at: string): NeedsYouSource => ({
+const approval = (id: number, at: string): NeedsYouItem => ({
   key: `approval:${id}`,
   kind: 'approval',
   at,
 });
-const failure = (id: string, at: string): NeedsYouSource => ({ key: id, kind: 'failure', at });
+const failure = (id: string, at: string): NeedsYouItem => ({ key: id, kind: 'failure', at });
 
 describe('splitNeedsYou', () => {
   it('lists decisions first, the oldest waiting first, then failures newest first', () => {
@@ -71,18 +71,28 @@ describe('splitNeedsYou', () => {
     assert.equal(split.hidden, 1);
   });
 
+  it('puts a red problem of the system first, and never ages or hides it', () => {
+    const down: NeedsYouItem = {
+      key: 'problem:service:worker',
+      kind: 'problem',
+      at: ago(3 * AGED_AFTER_MS),
+    };
+    const split = splitNeedsYou(
+      [failure('run:1', ago(HOUR)), approval(1, ago(HOUR)), down],
+      new Set(['problem:service:worker']),
+      NOW,
+    );
+    assert.deepEqual(
+      split.items.map((item) => item.key),
+      ['problem:service:worker', 'approval:1', 'run:1'],
+    );
+    assert.equal(split.aged, 0);
+    assert.equal(split.hidden, 0);
+  });
+
   it('ages nothing before the clock is known (the first render matches the server)', () => {
     const split = splitNeedsYou([failure('run:1', ago(3 * AGED_AFTER_MS))], new Set(), null);
     assert.equal(split.items.length, 1);
     assert.equal(split.aged, 0);
-  });
-});
-
-describe('pruneDismissed', () => {
-  it('keeps only the hidden keys of failures still reported', () => {
-    assert.deepEqual(pruneDismissed(['run:1', 'chat:2', 'run:3'], ['run:3', 'run:1']), [
-      'run:1',
-      'run:3',
-    ]);
   });
 });

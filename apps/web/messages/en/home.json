@@ -1,91 +1,78 @@
 {
-  "customize": "Customize",
-  "all": "All",
-  "showAll": "Show all",
-  "since": "for {time}",
-  "ago": "{time} ago",
   "in": "in {time}",
-  "figures": {
-    "title": "At a glance",
-    "decisions": "Waiting for you",
-    "failures": "Failed",
-    "running": "Agents working",
-    "tasks": "My open tasks",
+  "widgetFailed": "Not available right now",
+  "customize": {
+    "title": "Customize",
+    "description": "What Start shows and in which order. Saved with your account.",
+    "figures": "Figures",
+    "sections": "Sections",
+    "drag": "Move {name}",
+    "up": "Move {name} up",
+    "down": "Move {name} down",
+    "show": "Show {name}",
+    "reset": "Restore defaults",
+    "done": "Done"
+  },
+  "widgets": {
+    "waiting": "Waiting for you",
+    "agents": "Agents working",
+    "tasks": "My tasks",
     "limits": "Plan limits",
-    "system": "System"
+    "system": "System",
+    "updates": "Updates",
+    "needs-you": "Needs you",
+    "my-tasks": "My tasks",
+    "running": "Running now",
+    "schedules": "Coming up",
+    "projects": "Projects"
+  },
+  "figures": {
+    "problems": "{count, plural, one {# problem} other {# problems}}",
+    "failed": "{count} failed",
+    "nothingWaits": "Nothing waits",
+    "lastFinished": "last finished {time} ago",
+    "nobodyWorks": "Nobody is working",
+    "overdue": "{count} overdue",
+    "nextDue": "next due {date}"
+  },
+  "links": {
+    "all": "All",
+    "activity": "Activity",
+    "schedules": "Schedules"
   },
   "needsYou": {
-    "title": "Needs you",
     "empty": "Nothing needs you right now.",
     "proposals": "{count, plural, one {# proposal waits} other {# proposals wait}}",
     "chatFailed": "Chat answer failed",
-    "failed": "Failed",
-    "approval": "Approval",
-    "step": "Workflow step",
     "hide": "Hide",
+    "more": "{count} more",
     "aged": "{count, plural, one {# older failure} other {# older failures}}",
-    "hidden": "{count} hidden",
-    "waitingSince": "waiting for {time}",
-    "more": "{count} more"
+    "hidden": "{count} hidden"
+  },
+  "problems": {
+    "serviceDown": "{service} is not reachable",
+    "loginRejected": "{provider} login was rejected",
+    "loginExpired": "{provider} login ran out",
+    "loginHint": "Sign it in again from the owner terminal"
   },
   "agents": {
-    "title": "Agents now",
     "empty": "No agent is working right now.",
     "waiting": "waiting",
     "finished": "Finished lately"
   },
   "tasks": {
-    "title": "My open tasks",
-    "empty": "No open task is assigned to you.",
-    "due": "due {date}",
-    "overdue": "overdue"
+    "empty": "No open task is assigned to you."
   },
-  "limits": {
-    "title": "Limits"
+  "schedules": {
+    "empty": "Nothing scheduled."
+  },
+  "projects": {
+    "empty": "No projects yet."
   },
   "system": {
     "title": "System",
-    "ok": "Everything runs",
+    "ok": "All running",
     "problems": "{count, plural, one {# problem} other {# problems}}",
-    "details": "Details",
-    "hideDetails": "Hide details",
-    "services": "{ok} of {total} services",
-    "logins": "Logins valid",
-    "loginsProblem": "Login needs you",
-    "agentsSynced": "{synced} of {total} agents in sync",
-    "janitors": "Maintenance runs on schedule",
-    "serviceDown": "{service} not reachable",
-    "summary": "{services} services · {agents} agents · {logins} logins",
-    "janitorDown": "{job} stopped",
-    "loginNeedsOwner": "{provider} login needs you",
-    "loginsStale": "Logins not checked for {time}",
-    "agentsDrift": "{count, plural, one {# agent} other {# agents}} not in sync",
-    "modelsRefused": "{count, plural, one {# model} other {# models}} refused",
-    "areas": {
-      "services": "Services",
-      "agents": "Agents in sync",
-      "logins": "Model logins",
-      "janitors": "Maintenance"
-    }
-  },
-  "schedules": {
-    "title": "Next scheduled",
-    "empty": "Nothing scheduled.",
-    "paused": "paused"
-  },
-  "projects": {
-    "title": "Projects",
-    "empty": "No projects yet."
-  },
-  "today": {
-    "title": "Today",
-    "running": "Running now",
-    "due": "Due and open",
-    "next": "Coming up"
-  },
-  "design": {
-    "a": "Grid",
-    "b": "List and rail",
-    "c": "Figures and today"
+    "summary": "{services} services · {agents} agents"
   }
 }

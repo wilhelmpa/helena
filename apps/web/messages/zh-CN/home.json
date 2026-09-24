@@ -1,91 +1,78 @@
 {
-  "customize": "Customize",
-  "all": "All",
-  "showAll": "Show all",
-  "since": "for {time}",
-  "ago": "{time} ago",
-  "in": "in {time}",
+  "in": "{time}后",
+  "widgetFailed": "暂时不可用",
+  "customize": {
+    "title": "自定义",
+    "description": "首页显示哪些内容以及顺序。保存在你的账户中。",
+    "figures": "指标",
+    "sections": "板块",
+    "drag": "移动{name}",
+    "up": "上移{name}",
+    "down": "下移{name}",
+    "show": "显示{name}",
+    "reset": "恢复默认",
+    "done": "完成"
+  },
+  "widgets": {
+    "waiting": "等你处理",
+    "agents": "工作中的代理",
+    "tasks": "我的任务",
+    "limits": "套餐限额",
+    "system": "系统",
+    "updates": "更新",
+    "needs-you": "需要你处理",
+    "my-tasks": "我的任务",
+    "running": "正在运行",
+    "schedules": "即将执行",
+    "projects": "项目"
+  },
   "figures": {
-    "title": "At a glance",
-    "decisions": "Waiting for you",
-    "failures": "Failed",
-    "running": "Agents working",
-    "tasks": "My open tasks",
-    "limits": "Plan limits",
-    "system": "System"
+    "problems": "{count} 个问题",
+    "failed": "{count} 个失败",
+    "nothingWaits": "暂无待办",
+    "lastFinished": "最近一次完成于 {time}前",
+    "nobodyWorks": "当前无人工作",
+    "overdue": "{count} 个已逾期",
+    "nextDue": "下一个截止 {date}"
+  },
+  "links": {
+    "all": "全部",
+    "activity": "活动",
+    "schedules": "定时任务"
   },
   "needsYou": {
-    "title": "Needs you",
-    "empty": "Nothing needs you right now.",
-    "proposals": "{count, plural, one {# proposal waits} other {# proposals wait}}",
-    "chatFailed": "Chat answer failed",
-    "failed": "Failed",
-    "approval": "Approval",
-    "step": "Workflow step",
-    "hide": "Hide",
-    "aged": "{count, plural, one {# older failure} other {# older failures}}",
-    "hidden": "{count} hidden",
-    "waitingSince": "waiting for {time}",
-    "more": "{count} more"
+    "empty": "目前没有需要你处理的事项。",
+    "proposals": "{count} 条建议待处理",
+    "chatFailed": "聊天回复失败",
+    "hide": "隐藏",
+    "more": "还有 {count} 条",
+    "aged": "{count} 个较早的失败",
+    "hidden": "已隐藏 {count} 条"
+  },
+  "problems": {
+    "serviceDown": "{service} 无法访问",
+    "loginRejected": "{provider} 登录被拒绝",
+    "loginExpired": "{provider} 登录已过期",
+    "loginHint": "请在所有者终端中重新登录"
   },
   "agents": {
-    "title": "Agents now",
-    "empty": "No agent is working right now.",
-    "waiting": "waiting",
-    "finished": "Finished lately"
+    "empty": "当前没有代理在工作。",
+    "waiting": "等待中",
+    "finished": "最近完成"
   },
   "tasks": {
-    "title": "My open tasks",
-    "empty": "No open task is assigned to you.",
-    "due": "due {date}",
-    "overdue": "overdue"
-  },
-  "limits": {
-    "title": "Limits"
-  },
-  "system": {
-    "title": "System",
-    "ok": "Everything runs",
-    "problems": "{count, plural, one {# problem} other {# problems}}",
-    "details": "Details",
-    "hideDetails": "Hide details",
-    "services": "{ok} of {total} services",
-    "logins": "Logins valid",
-    "loginsProblem": "Login needs you",
-    "agentsSynced": "{synced} of {total} agents in sync",
-    "janitors": "Maintenance runs on schedule",
-    "serviceDown": "{service} not reachable",
-    "summary": "{services} services · {agents} agents · {logins} logins",
-    "janitorDown": "{job} stopped",
-    "loginNeedsOwner": "{provider} login needs you",
-    "loginsStale": "Logins not checked for {time}",
-    "agentsDrift": "{count, plural, one {# agent} other {# agents}} not in sync",
-    "modelsRefused": "{count, plural, one {# model} other {# models}} refused",
-    "areas": {
-      "services": "Services",
-      "agents": "Agents in sync",
-      "logins": "Model logins",
-      "janitors": "Maintenance"
-    }
+    "empty": "没有分配给你的未完成任务。"
   },
   "schedules": {
-    "title": "Next scheduled",
-    "empty": "Nothing scheduled.",
-    "paused": "paused"
+    "empty": "暂无计划。"
   },
   "projects": {
-    "title": "Projects",
-    "empty": "No projects yet."
+    "empty": "还没有项目。"
   },
-  "today": {
-    "title": "Today",
-    "running": "Running now",
-    "due": "Due and open",
-    "next": "Coming up"
-  },
-  "design": {
-    "a": "Grid",
-    "b": "List and rail",
-    "c": "Figures and today"
+  "system": {
+    "title": "系统",
+    "ok": "一切正常",
+    "problems": "{count} 个问题",
+    "summary": "服务 {services} · 代理 {agents}"
   }
 }
