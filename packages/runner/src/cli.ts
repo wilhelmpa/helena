@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
 import {
@@ -27,7 +27,7 @@ import { runtimeUpdate } from './update';
 import { perform, reportUntilTaken, type Performed } from './run';
 import { runPolicyHook } from './policy-hook';
 import type { RunSettings, RuntimeAdapter } from './runtime';
-import { applySshKeys, sshDir } from './ssh';
+import { applySshKeys, sshDir, type SshKey } from './ssh';
 import { parseWorkspaceJob, runWorkspaceJob } from './workspace-job';
 import type { Outcome } from './execute';
 import type { WorkRef } from './logins';
@@ -86,6 +86,10 @@ async function withHeartbeat<T>(log: Log, beat: () => Promise<void>, work: Promi
 // The SSH keys granted to the agent for this piece of work, written to its key directory,
 // as the environment git needs. A failure leaves git without keys rather than failing the
 // work: a task that needs no repository still runs.
+// Per key directory: whether the last delivery left keys there. An isolated agent's keys go
+// through the profile helper (a unit start), so a directory known to be empty is skipped.
+const sshDelivered = new Map<string, boolean>();
+
 async function sshEnv(
   config: RunnerConfig,
   client: Client,
@@ -93,7 +97,22 @@ async function sshEnv(
   work: WorkRef,
 ): Promise<Record<string, string>> {
   try {
-    return await applySshKeys(sshDir(config), await client.sshKeys(work));
+    const keys = await client.sshKeys(work);
+    const dir = sshDir(config);
+    // An isolated agent's profile belongs to its project user, so the profile helper writes
+    // the keys there as that user, like the rest of the profile (2026-09-24: "EACCES mkdir
+    // …/helena-ssh"). The first delivery after a start always runs, to clear revoked keys.
+    if (isolationEnabled() && config.isolation && config.cwd) {
+      if (keys.length === 0 && sshDelivered.get(dir) === false) return {};
+      const env = await runProfileHelper<Record<string, string>>(config.isolation, config.cwd, {
+        op: 'ssh-keys',
+        keys,
+        dir,
+      });
+      sshDelivered.set(dir, keys.length > 0);
+      return env;
+    }
+    return await applySshKeys(dir, keys);
   } catch (err) {
     log(`ssh keys not delivered — ${err instanceof Error ? err.message : String(err)}`);
     return {};
@@ -521,6 +540,7 @@ async function profileHelper(): Promise<void> {
       cwd?: unknown;
       known?: unknown;
       keys?: unknown;
+      dir?: unknown;
       sessionId?: unknown;
       files?: unknown;
     };
@@ -541,6 +561,12 @@ async function profileHelper(): Promise<void> {
       result = await materializer.sessionFacts(request.sessionId);
     } else if (request.op === 'plugins') {
       result = await materializer.ensurePlugins();
+    } else if (request.op === 'ssh-keys') {
+      // The agent's git keys, written as the project user into its own profile.
+      if (!Array.isArray(request.keys)) throw new Error('keys must be a list');
+      const dir = typeof request.dir === 'string' ? resolve(request.dir) : '';
+      if (!dir.startsWith(`${resolve(home)}/`)) throw new Error('dir must be inside the profile');
+      result = await applySshKeys(dir, request.keys as SshKey[]);
     } else if (request.op === 'actions') {
       if (!Array.isArray(request.actions)) throw new Error('actions must be a list');
       result = await materializer.runActions(request.actions as never);
