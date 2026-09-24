@@ -43,7 +43,7 @@ export default function ReadOnlyIssueDetail({
   // Content on the left (capped), the Properties panel pinned to the right edge,
   // matching the standalone issue page.
   return (
-    <div className="flex flex-col gap-6 px-4 py-4 md:flex-row md:justify-between md:px-6 md:py-6 xl:px-12">
+    <div className="flex flex-col gap-6 p-4 md:flex-row md:justify-between">
       <div className="w-full max-w-3xl min-w-0">
         <div className="flex items-center gap-2">
           {issue.archivedAt && (
