@@ -21,6 +21,7 @@ import {
   createRule,
   deleteAccount,
   deleteRule,
+  resetAccount,
   listAccounts,
   listRules,
   testConnection,
@@ -102,6 +103,22 @@ export const mailAccountRoutes = new Elysia({
       detail: {
         summary: 'Remove a mail account',
         description: 'Removes the imported mail with it; attachments saved in the vault stay.',
+      },
+    },
+  )
+  .post(
+    '/teams/:teamId/mail/accounts/:accountId/reset',
+    ({ params }) => resetAccount(params.teamId, params.accountId),
+    {
+      teamPermission: ['integrations', 'edit'],
+      params: accountParams,
+      response: { 200: MailAccountResponse, ...commonErrors },
+      detail: {
+        summary: 'Reset the imported mail of an account',
+        description:
+          'Deletes every imported copy of the account (messages, threads, attachments, the ' +
+          'stored .eml files) and imports again within the fetch window. The mail on the ' +
+          'server stays.',
       },
     },
   )

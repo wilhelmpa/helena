@@ -2,6 +2,7 @@ import type { AgUiEvent, ContextUsage } from './agui';
 import type { CliLogin, CliLoginState } from './cli-login';
 import type { RunnerConfig } from './config';
 import type { LoginUse, WebLogin, WorkRef } from './logins';
+import type { SshKey } from './ssh';
 import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
 import type { RuntimeRequest } from './readers';
 import type { Spend } from './spend';
@@ -12,7 +13,8 @@ import type { RunModelReport } from './runtime';
 
 export interface Run {
   id: number;
-  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
+  // 'workspace': a job for the runner itself (the prompt is its JSON), not for the model.
+  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval' | 'workspace';
   prompt: string;
   systemPrompt: string;
   attempts: number;
@@ -33,6 +35,8 @@ export interface Run {
   // The coding agent session to resume, when the runner that held this run before died
   // mid run and reported one. Absent on a server that predates run resume.
   sessionId?: string | null;
+  // Helena's Autopilot level for the run. Absent on a server that predates the Autopilot.
+  autopilotLevel?: number | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -48,6 +52,8 @@ export interface ChatMessage {
   thinkingLevel: string | null;
   // Absolute paths of the images attached to the question. Older servers send none.
   images?: string[];
+  // Helena's Autopilot level for the chat's project. Older servers send none.
+  autopilotLevel?: number | null;
 }
 
 // A follow-up turn in the session of a finished run, in which the agent keeps what the run
@@ -184,6 +190,22 @@ export class Client {
         : `/agent-chats/${work.messageId}/web-logins`;
     const body = (await (await this.get(path)).json()) as { logins?: WebLogin[] };
     return body.logins ?? [];
+  }
+
+  // The SSH keys granted to the agent, for the run or chat answer it holds. A server that
+  // predates SSH key delivery answers 404, which is no keys.
+  async sshKeys(work: WorkRef): Promise<SshKey[]> {
+    const path =
+      'runId' in work
+        ? `/agent-runs/${work.runId}/ssh-keys`
+        : `/agent-chats/${work.messageId}/ssh-keys`;
+    try {
+      const body = (await (await this.get(path)).json()) as { keys?: SshKey[] };
+      return body.keys ?? [];
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 404) return [];
+      throw err;
+    }
   }
 
   async reportLoginUses(work: WorkRef, uses: LoginUse[]): Promise<void> {

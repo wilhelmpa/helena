@@ -225,7 +225,7 @@ describe('token ceilings', () => {
     const paused = await orgAgent(asOwner, teamId, agent.id);
     expect(paused.pausedAt).not.toBeNull();
     expect(paused.pauseReason).toBe(
-      'Daily token ceiling reached: 110 of 100 tokens used today (UTC).',
+      'Budget reached: daily token budget, 110 of 100 tokens used today (UTC).',
     );
     expect(await comments(asOwner, issue.id)).toContainEqual(
       expect.stringContaining(`@${owner.username} I am paused and take no new work.`),
@@ -258,7 +258,7 @@ describe('token ceilings', () => {
 
     expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
     expect((await orgAgent(asOwner, teamId, agent.id)).pauseReason).toBe(
-      'Monthly token ceiling reached: 120 of 100 tokens used this month (UTC).',
+      'Budget reached: monthly token budget, 120 of 100 tokens used this month (UTC).',
     );
     expect(await comments(asOwner, issue.id)).toContainEqual(
       expect.stringContaining(`@${owner.username} I am paused`),
@@ -270,7 +270,7 @@ describe('token ceilings', () => {
     });
   });
 
-  it("pauses the agent when the project's monthly ceiling is reached", async () => {
+  it("holds the project's work when the project's monthly budget is reached", async () => {
     const { owner, asOwner, asRunner, agent, teamId, projectId, columnId } = await setup();
     const organization = asOwner.teams({ teamId }).organization;
     await organization.projects({ projectId })['token-ceiling'].put({ monthly: 100 });
@@ -279,14 +279,20 @@ describe('token ceilings', () => {
 
     await runWith(asRunner, 80, 30);
 
-    expect((await orgAgent(asOwner, teamId, agent.id)).pauseReason).toBe(
-      'Monthly token ceiling of project MKT reached: 110 of 100 tokens used this month (UTC).',
-    );
+    // The agent itself is not paused: it may work in the team's other projects.
+    expect((await orgAgent(asOwner, teamId, agent.id)).pausedAt).toBeNull();
     expect(await comments(asOwner, issue.id)).toContainEqual(
-      expect.stringContaining(`@${owner.username} I am paused`),
+      expect.stringContaining(
+        `@${owner.username} The work of project MKT is on hold. Budget reached: monthly token ` +
+          'budget of project MKT, 110 of 100 tokens used this month (UTC).',
+      ),
     );
-    // Only the agent's own ceilings hold a resume back: it may work in other projects.
-    expect((await organization.agents({ agentId: agent.id }).resume.post()).status).toBe(204);
+    // Its next run in the project waits in the queue.
+    await mention(asOwner, (await newIssue(asOwner, columnId, 'Pricing page')).id);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+    // Raising the budget lets it go on.
+    await organization.projects({ projectId })['token-ceiling'].put({ monthly: 1_000 });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).not.toBeNull();
   });
 
   it('refuses a stage once the ceiling is reached', async () => {

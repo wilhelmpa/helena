@@ -20,6 +20,7 @@ import {
 import { sendAuthEmail } from './mail';
 import { oidcProfileLabel } from './oidc-profile';
 import { localOwner } from './local-owner';
+import { consumeKeyRequest, RateLimitedError } from './key-rate-limit';
 
 // Frontend origins allowed to call the auth handler. Mandatory config: cookies, the
 // WebAuthn relying party and the cookie domain are all derived from it, so a deploy
@@ -67,6 +68,13 @@ const passkeyRpID = process.env.PASSKEY_RP_ID ?? new URL(trustedOrigins[0]).host
 // Backend origin where the better-auth handler is mounted (/api/auth/*). Mandatory:
 // every link in an authentication email and the Google redirect URI are built from it.
 const baseURL = process.env.API_URL;
+// A rate limit that counts only requests from the network (see rateLimit below).
+function fromNetwork(window: number, max: number) {
+  return (request: Request) => (request.headers.has('x-real-ip') ? { window, max } : false);
+}
+
+// Cookies carry Secure exactly when the API is served over https.
+const secureCookies = (baseURL ?? '').startsWith('https://');
 if (!baseURL) {
   throw new Error('API_URL is not set: public origin of the backend.');
 }
@@ -603,11 +611,9 @@ export const auth = betterAuth({
         defaultExpiresIn: API_KEY_DEFAULT_EXPIRES_IN_SEC,
         maxExpiresIn: API_KEY_MAX_EXPIRES_IN_DAYS,
       },
-      rateLimit: {
-        enabled: true,
-        timeWindow: 1000,
-        maxRequests: 100,
-      },
+      // Counted by getSessionFromHeaders below (key-rate-limit.ts): the plugin's own
+      // counter only starts a new window after a full quiet second.
+      rateLimit: { enabled: false },
     }),
     // Sign-in by emailed link, offered alongside the password. Whether it is
     // available is an instance setting, so the plugin is always mounted and the
@@ -708,9 +714,39 @@ export const auth = betterAuth({
       : {}),
     // For a single site (localhost / one domain) "lax" is enough. Subdomains of one
     // registrable domain are same-site, so "lax" cookies are still sent between them.
+    // Secure follows the scheme the API is reached over, not NODE_ENV: a LAN install on
+    // plain http needs its cookies, a https one must never send them in clear.
     defaultCookieAttributes: {
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: secureCookies,
+    },
+    // The client's address, for the rate limits: nginx sets X-Real-IP to the address
+    // it saw, and the API listens on loopback only, so the header cannot be forged.
+    ipAddress: { ipAddressHeaders: ['x-real-ip'] },
+  },
+
+  // Limits on the sign-in endpoints, on in every environment (Better Auth turns them on
+  // by itself only in production). In memory: the API runs as one process. Only requests
+  // that came through nginx (it sets X-Real-IP) are counted: the API listens on loopback,
+  // so anything without the header is a local process (the web server, the worker, a
+  // test). The session read that every tab and the kiosk repeat is not counted, nor is
+  // the LAN owner sign-in; a password guess is.
+  rateLimit: {
+    enabled: true,
+    storage: 'memory',
+    window: 60,
+    max: 300,
+    customRules: {
+      '/get-session': false,
+      '/sign-in/local-owner': false,
+      '/sign-in/email': fromNetwork(60, 10),
+      '/sign-in/username': fromNetwork(60, 10),
+      '/sign-up/email': fromNetwork(60, 5),
+      '/sign-in/magic-link': fromNetwork(60, 5),
+      '/request-password-reset': fromNetwork(60, 5),
+      '/forget-password': fromNetwork(60, 5),
+      '/two-factor/*': fromNetwork(60, 10),
+      '/*': (request, current) => (request.headers.has('x-real-ip') ? current : false),
     },
   },
 });
@@ -727,15 +763,25 @@ export type Session = Auth['$Infer']['Session'];
 export async function getSessionFromHeaders(
   headers: Headers,
 ): Promise<Awaited<ReturnType<typeof auth.api.getSession>>> {
+  const apiKey = headers.get('x-api-key');
+  if (apiKey) await consumeKeyRequest(apiKey);
   try {
     return await auth.api.getSession({ headers });
   } catch (error) {
     if (error instanceof APIError && (error.statusCode === 401 || error.statusCode === 403)) {
       return null;
     }
+    // A key whose own quota (remaining uses) is spent is refused as too many requests.
+    if (error instanceof APIError && error.statusCode === 429) {
+      const tryAgainIn = (error.body as { details?: { tryAgainIn?: number } } | undefined)?.details
+        ?.tryAgainIn;
+      throw new RateLimitedError(Math.max(1, Math.ceil((tryAgainIn ?? 1000) / 1000)));
+    }
     throw error;
   }
 }
+
+export { RateLimitedError, resetKeyRateLimitForTests } from './key-rate-limit';
 
 // Instance-wide authentication settings (registration mode, mail provider, invite
 // links). Read here by the sign-up gate and the mail senders; managed over HTTP by

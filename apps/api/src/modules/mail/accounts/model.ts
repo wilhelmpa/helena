@@ -25,6 +25,15 @@ export const createAccountBody = t.Object({
   enabled: t.Optional(t.Boolean()),
   syncTrash: t.Optional(t.Boolean()),
   syncSpam: t.Optional(t.Boolean()),
+  fetchDays: t.Optional(
+    t.Nullable(
+      t.Integer({
+        minimum: 1,
+        maximum: 36500,
+        description: 'Only mail of the last days is imported; null imports everything.',
+      }),
+    ),
+  ),
 });
 
 // A password left out keeps the stored one; a new one replaces the value of its secret.
@@ -60,6 +69,12 @@ export const MailAccountResponse = t.Object({
   smtpTls: t.Boolean(),
   username: t.String(),
   hasPassword: t.Boolean(),
+  // 'xoauth2': the Mail service of a Google account (googleAccountId), signing in with its
+  // token; its servers and login are the account's and cannot be changed here.
+  auth: t.Union([t.Literal('password'), t.Literal('xoauth2')]),
+  googleAccountId: t.Nullable(t.Number()),
+  fetchDays: t.Nullable(t.Number()),
+  resetPending: t.Boolean(),
   credentialId: t.Nullable(t.Number()),
   credentialLabel: t.Nullable(t.String()),
   enabled: t.Boolean(),

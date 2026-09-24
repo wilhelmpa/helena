@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { ReactFlowProvider } from '@xyflow/react';
@@ -63,6 +63,15 @@ export default function NotesPage() {
 
   const routeId = params.boardId ? Number(params.boardId) : null;
   const activeBoardId = routeId ?? tabs[0]?.id ?? null;
+
+  // A board opened by its file (`?canvas=Projects/KEY/Boards/X.canvas`, the link the
+  // search gives a board): the board of that file.
+  const canvasPath = useSearchParams().get('canvas');
+  useEffect(() => {
+    if (!canvasPath) return;
+    const board = seedQuery.data?.find((b) => b.vaultPath === canvasPath);
+    if (board) router.replace(notePath(projectKey, board.id));
+  }, [canvasPath, seedQuery.data, router, projectKey]);
 
   const { data: activeBoard, isError, error } = useNoteBoardQuery(projectKey, activeBoardId);
 

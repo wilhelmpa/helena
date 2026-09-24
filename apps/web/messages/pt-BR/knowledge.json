@@ -1,0 +1,63 @@
+{
+  "source": {
+    "issue": "Tarefas",
+    "comment": "Comentários",
+    "vault": "Notas e arquivos",
+    "mail": "E-mails",
+    "chat": "Chats",
+    "run": "Execuções de agentes"
+  },
+  "capture": {
+    "inbox": "Caixa de entrada",
+    "journal": "Nota diária",
+    "saveMessage": "Salvar como nota",
+    "chatTitle": "Do chat",
+    "saved": "Salvo na Caixa de entrada",
+    "open": "Abrir",
+    "failed": "Não foi possível salvar",
+    "savePage": "Salvar a página em Conhecimento",
+    "pageSaved": "Página salva na Caixa de entrada",
+    "pageFailed": "Não foi possível salvar a página"
+  },
+  "plugin": {
+    "name": "Conhecimento",
+    "description": "As fontes de conhecimento próprias da Helena e a captura rápida na Caixa de entrada e na nota diária."
+  },
+  "journal": {
+    "today": "Nota de hoje"
+  },
+  "templates": {
+    "action": "Nova a partir de modelo",
+    "title": "Nova nota a partir de um modelo",
+    "choose": "Modelo",
+    "none": "Ainda não há modelos. As notas da pasta “Templates” aparecem aqui.",
+    "name": "Nome",
+    "namePlaceholder": "Nome da nota",
+    "cancel": "Cancelar",
+    "create": "Criar"
+  },
+  "mentions": {
+    "title": "Mencionada em"
+  },
+  "admin": {
+    "sources": "Fontes",
+    "sourcesHint": "O que a busca unificada (⌘K e a busca dos agentes) abrange e até onde o índice chegou em cada fonte.",
+    "error": "Erro: {message}",
+    "indexedAt": "Indexado {time}",
+    "notYet": "Ainda não indexado",
+    "items": "{count, plural, one {# item} other {# itens}}",
+    "reindex": "Indexar novamente",
+    "semantic": "Busca semântica",
+    "semanticHint": "Também encontra o que foi escrito de outra forma, pelo significado. Roda neste servidor; nada sai dele.",
+    "semanticSwitch": "Buscar pelo significado",
+    "pgvector": "pgvector",
+    "installed": "instalado",
+    "notInstalled": "não instalado (a busca funciona sem ele, só que mais devagar)",
+    "model": "Modelo",
+    "none": "nenhum",
+    "passages": "Trechos",
+    "embedded": "{embedded} de {passages} vetorizados",
+    "runtimeMissing": "O runtime de embeddings ainda não está instalado. Ele precisa da aprovação do proprietário (docs/helena-decisions/second-brain.md).",
+    "modelMissing": "Não foi possível carregar o modelo de embeddings. Baixá-lo precisa da aprovação do proprietário."
+  }
+}

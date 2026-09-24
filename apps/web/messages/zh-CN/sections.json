@@ -43,6 +43,10 @@
       "label": "存储",
       "description": "设置单个文件大小、允许的附件类型和每个项目的存储配额。"
     },
+    "knowledge": {
+      "label": "知识与搜索",
+      "description": "统一搜索的来源、索引进度和语义搜索。"
+    },
     "telegram": {
       "label": "Telegram",
       "description": "设置用户关联 Telegram 账户所用的机器人，以及项目未单独配置时发送通知的机器人。"
@@ -66,6 +70,10 @@
     "plugins": {
       "label": "插件",
       "description": "Helena 自带的插件和插件文件夹中的外部插件：它们提供什么、需要哪些权限，以及哪些可以运行。"
+    },
+    "model-prices": {
+      "label": "模型价格",
+      "description": "每个模型每百万令牌的欧元价格，是所有费用估算的基础。"
     }
   },
   "settings": {
@@ -120,6 +128,10 @@
     "ai-agents": {
       "label": "AI 代理",
       "description": "在该项目中工作的 AI 代理。"
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "本项目智能体的自主程度及其预算。"
     },
     "browser": {
       "label": "浏览器",

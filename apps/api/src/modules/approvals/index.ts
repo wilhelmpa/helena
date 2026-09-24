@@ -104,16 +104,16 @@ export const approvalRoutes = new Elysia({
       detail: {
         summary: 'Request an approval',
         description:
-          'Ask a person to approve an action outside Plan before you take it: sending a ' +
+          'Ask a person to approve an action outside Helena before you take it: sending a ' +
           'message or email, publishing, paying, or deleting something. Describe the action ' +
           'in one line and give every detail the person needs to decide. Then end your run ' +
-          'without taking the action: Plan starts a new run of yours with the decision and ' +
+          'without taking the action: Helena starts a new run of yours with the decision and ' +
           'its note once the request is approved or rejected. When a terminal command or ' +
           'execute_code call was blocked for approval, pass exactly what it was about to run ' +
           'in command: the run with the approval may run exactly that. Returns the request ' +
           'with its id and status; asking again for the same action in the same run returns ' +
           'the existing request.',
-        ...mcpTool('request_approval'),
+        ...mcpTool('request_approval', undefined, 'report'),
       },
     },
   )

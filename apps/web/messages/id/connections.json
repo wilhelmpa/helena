@@ -12,6 +12,7 @@
   "unconfigured": {
     "title": "Belum ada layanan koneksi",
     "hint": "Server ini tidak menjalankan layanan yang memeriksa koneksi. Akun email, kredensial, dan perangkat punya halaman sendiri.",
+    "hintAccess": "Server ini tidak menjalankan layanan yang memeriksa koneksi. Google, email, dan kredensial ada di tab di sebelahnya; perangkat punya halaman sendiri.",
     "mail": "Akun email",
     "credentials": "Kredensial",
     "devices": "Perangkat & Obsidian"

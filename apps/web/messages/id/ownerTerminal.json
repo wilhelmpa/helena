@@ -22,7 +22,7 @@
     "codex": "Codex",
     "helena-dev-claude": "Kembangkan Helena (Claude Code)",
     "helena-dev-codex": "Kembangkan Helena (Codex)",
-    "close": "Tutup tab"
+    "close": "Akhiri sesi"
   },
   "keys": {
     "esc": "Esc",
@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "Tempel"
+  },
+  "clipboard": {
+    "copied": "Disalin ke papan klip"
   }
 }

@@ -17,11 +17,19 @@ const CredentialKind = t.Union([
   t.Literal('runtime_login'),
 ]);
 
+const ListedKind = t.Union([
+  t.Literal('web_login'),
+  t.Literal('api_key'),
+  t.Literal('ssh_key'),
+  t.Literal('secret'),
+  t.Literal('runtime_login'),
+  t.Literal('mcp_oauth'),
+]);
 const LoginRuntime = t.Union([t.Literal('claude'), t.Literal('codex')]);
 const LoginMethod = t.Union([t.Literal('oauth_token'), t.Literal('api_key')]);
 
 export const credentialListQuery = t.Object({
-  kind: t.Optional(CredentialKind),
+  kind: t.Optional(ListedKind),
   projectId: t.Optional(t.Numeric({ description: 'Only the credentials of this project.' })),
   ...pageQueryFields,
 });
@@ -63,17 +71,53 @@ export const createCredentialEntryBody = t.Object({ kind: CredentialKind, ...cre
 
 export const updateCredentialEntryBody = t.Partial(t.Object(credentialFields));
 
-export const setCredentialGrantsBody = t.Object({
-  agentIds: t.Array(t.Integer(), { maxItems: 200, description: 'The full set of agents.' }),
+export const GrantAccess = t.Union([t.Literal('read'), t.Literal('write')]);
+
+const grantInput = t.Object({
+  agentId: t.Optional(t.Nullable(t.Integer({ description: 'The agent it is granted to.' }))),
+  projectId: t.Optional(
+    t.Nullable(t.Integer({ description: 'The project whose agents it is granted to.' })),
+  ),
+  service: t.Optional(
+    t.Nullable(
+      t.String({
+        maxLength: 64,
+        description: "A service of a connector account ('mail', 'calendar' …); null for all.",
+      }),
+    ),
+  ),
+  access: t.Optional(GrantAccess),
 });
+
+// The full set of grants. `agentIds` is the short form: those agents, every service,
+// write access.
+export const setCredentialGrantsBody = t.Object({
+  agentIds: t.Optional(t.Array(t.Integer(), { maxItems: 200 })),
+  grants: t.Optional(t.Array(grantInput, { maxItems: 400 })),
+});
+
+export const GrantResponse = t.Object({
+  id: t.Number(),
+  agentId: t.Nullable(t.Number()),
+  agentName: t.Nullable(t.String()),
+  projectId: t.Nullable(t.Number()),
+  projectKey: t.Nullable(t.String()),
+  service: t.Nullable(t.String()),
+  access: GrantAccess,
+});
+
+export const CredentialGrantsResponse = t.Object({ grants: t.Array(GrantResponse) });
 
 export const CredentialEntryResponse = t.Object({
   id: t.Number(),
   teamId: t.Number(),
-  kind: CredentialKind,
+  kind: ListedKind,
   label: t.String(),
   projectId: t.Nullable(t.Number()),
   projectKey: t.Nullable(t.String()),
+  serverUrl: t.Nullable(t.String({ description: 'mcp_oauth: the MCP server.' })),
+  status: t.Nullable(t.Union([t.Literal('ok'), t.Literal('needs_auth'), t.Literal('error')])),
+  statusDetail: t.Nullable(t.String()),
   loginUrl: t.Nullable(t.String()),
   allowedDomains: t.Array(t.String()),
   username: t.Nullable(t.String()),
@@ -82,7 +126,8 @@ export const CredentialEntryResponse = t.Object({
   runtime: t.Nullable(LoginRuntime),
   method: t.Nullable(LoginMethod),
   secrets: t.Array(t.String(), { description: 'The secret fields that hold a value.' }),
-  agentIds: t.Array(t.Number(), { description: 'The agents that may use it.' }),
+  agentIds: t.Array(t.Number(), { description: 'The agents granted by name.' }),
+  grants: t.Array(GrantResponse),
   createdAt: t.String(),
   updatedAt: t.String(),
 });
@@ -91,10 +136,20 @@ export const CredentialEntryPageResponse = pageResponse(CredentialEntryResponse)
 
 export const credentialUseListQuery = t.Object(pageQueryFields);
 
+export const UseAction = t.Union([
+  t.Literal('delivered'),
+  t.Literal('used'),
+  t.Literal('called'),
+  t.Literal('denied'),
+  t.Literal('approval'),
+  t.Literal('changed'),
+]);
+
 export const CredentialUsePageResponse = pageResponse(
   t.Object({
     id: t.Number(),
-    action: t.Union([t.Literal('delivered'), t.Literal('used')]),
+    action: UseAction,
+    category: t.Nullable(t.String()),
     purpose: t.String(),
     agentId: t.Nullable(t.Number()),
     agentName: t.String(),
@@ -150,4 +205,15 @@ export const RuntimeLoginResponse = t.Object({
 export const workRefQuery = t.Object({
   runId: t.Optional(t.Numeric()),
   messageId: t.Optional(t.Numeric()),
+});
+
+export const SshKeysResponse = t.Object({
+  keys: t.Array(
+    t.Object({
+      id: t.Number(),
+      label: t.String(),
+      updatedAt: t.String({ description: 'Changes whenever the key pair is regenerated.' }),
+      privateKey: t.String(),
+    }),
+  ),
 });

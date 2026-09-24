@@ -123,7 +123,7 @@ export function questionText(content: string, attachments: ChatAttachment[] | nu
     attachment.kind === 'task' ? [attachment] : [],
   );
   if (tasks.length > 0) {
-    lines.push('', "Tasks the person refers to (read them with Plan's tools):");
+    lines.push('', "Tasks the person refers to (read them with Helena's tools):");
     for (const task of tasks) lines.push(`- ${task.identifier} "${task.title}"`);
   }
   return lines.join('\n');

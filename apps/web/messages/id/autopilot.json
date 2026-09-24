@@ -1,0 +1,193 @@
+{
+  "level": {
+    "0": {
+      "name": "Usulkan",
+      "description": "Agen membaca dan mengusulkan. Setiap perubahan butuh persetujuanmu."
+    },
+    "1": {
+      "name": "Dengan persetujuan",
+      "description": "Agen mengubah tugas dan file di proyek. Semua yang berdampak butuh persetujuanmu."
+    },
+    "2": {
+      "name": "Bertindak & melapor",
+      "description": "Agen menghapus dan menjalankan perintah berisiko di ruang kerjanya sendiri lalu melapor. Semua yang keluar butuh persetujuanmu."
+    },
+    "3": {
+      "name": "Otonom dalam anggaran",
+      "description": "Agen bertindak tanpa persetujuan sampai anggaran habis. Membayar, menghapus di luar, dan kredensial selalu kamu setujui."
+    }
+  },
+  "levelTitle": "Tingkat",
+  "levelSaved": "Autopilot diatur ke tingkat {level}.",
+  "badge": "A{level}",
+  "badgeTitle": "Tingkat Autopilot {level}: {name}",
+  "summaryMay": "Agen di proyek ini boleh",
+  "summaryAsk": "Mereka butuh persetujuanmu untuk",
+  "category": {
+    "read": "membaca",
+    "report": "berkomentar dan melapor",
+    "write": "mengubah tugas dan file",
+    "send": "mengirim",
+    "publish": "menerbitkan, push, deploy",
+    "execute": "menjalankan perintah berisiko",
+    "delete": "menghapus",
+    "pay": "membayar",
+    "credentials": "mengubah akses, kunci, dan izin"
+  },
+  "categoryLabel": {
+    "read": "Baca",
+    "report": "Lapor",
+    "write": "Ubah",
+    "send": "Kirim",
+    "publish": "Terbitkan",
+    "execute": "Jalankan",
+    "delete": "Hapus",
+    "pay": "Bayar",
+    "credentials": "Akses"
+  },
+  "scope": {
+    "workspace": "di ruang kerja",
+    "external": "di luar"
+  },
+  "source": {
+    "project": "dari proyek",
+    "agent": "tingkat sendiri, lebih ketat",
+    "agent-raised": "tingkat sendiri, dinaikkan pemilik",
+    "default": "bawaan"
+  },
+  "reason": {
+    "always-allowed": "Membaca dan melapor selalu diizinkan.",
+    "level-allows": "Tingkat {level} ({name}) mengizinkannya.",
+    "approved": "Disetujui.",
+    "level-requires-approval": "Tingkat {level} ({name}) meminta persetujuan di sini.",
+    "hard-block": "Ini selalu disetujui manusia, bahkan di tingkat 3.",
+    "budget-exhausted": "Sebuah anggaran sudah habis.",
+    "policy": "Sebuah aturan memintanya."
+  },
+  "outcome": {
+    "allow": "diizinkan",
+    "needs-approval": "perlu persetujuan",
+    "deny": "diblokir"
+  },
+  "budgetsTitle": "Anggaran",
+  "budgetsHint": "Hari dan bulan dalam UTC. Peringatan di 80 %, pekerjaan berhenti di 100 %.",
+  "metric": {
+    "tokens": "Token",
+    "cost": "Biaya",
+    "time": "Waktu kerja"
+  },
+  "metricUnit": {
+    "tokens": "token",
+    "cost": "€",
+    "time": "jam"
+  },
+  "period": {
+    "day": "per hari",
+    "month": "per bulan"
+  },
+  "noLimit": "tanpa batas",
+  "usedOf": "{used} dari {limit}",
+  "usedNoLimit": "{used} terpakai",
+  "remaining": "sisa {remaining}",
+  "reached": "habis",
+  "warned": "lebih dari 80 %",
+  "graceRuns": "{count, plural, other {# eksekusi}} melewatinya",
+  "unpriced": "{tokens} token tanpa harga",
+  "estimate": "Biaya adalah perkiraan dari daftar harga.",
+  "budgetsSaved": "Anggaran disimpan.",
+  "invalidLimit": "Batas harus berupa angka di atas 0.",
+  "agentsTitle": "Agen",
+  "agentsEmpty": "Belum ada agen yang bekerja di proyek ini.",
+  "paused": "dijeda",
+  "logTitle": "Keputusan",
+  "logEmpty": "Belum ada keputusan.",
+  "logAll": "Semua",
+  "logMore": "Muat lagi",
+  "adapter": {
+    "hermes": "Hermes",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "mcp": "Alat Helena",
+    "gateway": "Peramban",
+    "workflow": "Alur kerja",
+    "approval": "Permintaan persetujuan",
+    "chat": "Chat"
+  },
+  "agent": {
+    "title": "Autopilot",
+    "hint": "Seberapa mandiri agen bertindak dan berapa yang boleh dibelanjakan",
+    "own": "Tingkat sendiri",
+    "followProject": "Sama dengan proyek",
+    "raise": "Izinkan lebih dari proyek",
+    "raiseHint": "Jika tidak, tingkat yang lebih ketat berlaku. Hanya pemilik tim yang dapat mengizinkan lebih.",
+    "inProject": "Di {project}",
+    "noProjects": "Agen tidak bekerja di proyek mana pun.",
+    "usage": "Pemakaian",
+    "today": "Hari ini",
+    "month": "Bulan ini",
+    "pausedBecause": "Dijeda: {reason}",
+    "budgetsHint": "Mencakup semua yang dilakukan agen: eksekusi dan chat.",
+    "projectBudgets": "Anggaran {project}",
+    "pausedBudget": "Dijeda: {budget} ({metric}) habis, {usage}."
+  },
+  "card": {
+    "title": "Anggaran habis",
+    "agentBudget": "{budget} ({metric}) milik {agent}",
+    "projectBudget": "{budget} ({metric}) proyek {project}",
+    "raise": "Naikkan anggaran",
+    "once": "Lanjutkan sekali",
+    "keep": "Biarkan berhenti",
+    "newLimit": "Batas baru",
+    "raisedToast": "Anggaran dinaikkan. Pekerjaan berlanjut.",
+    "onceToast": "Satu eksekusi lagi boleh dimulai.",
+    "keptToast": "Pekerjaan tetap berhenti.",
+    "raised": "Anggaran dinaikkan oleh {name}",
+    "continuedOnce": "Dilanjutkan sekali oleh {name}",
+    "kept": "Dibiarkan berhenti oleh {name}",
+    "limitTooLow": "Batas baru harus di atas pemakaian.",
+    "periodBudget": {
+      "day": "Anggaran harian",
+      "month": "Anggaran bulanan"
+    }
+  },
+  "request": {
+    "level": "Tingkat {level}",
+    "reason": "Mengapa perlu persetujuan"
+  },
+  "prices": {
+    "estimate": "Semua harga adalah perkiraan: dikonversi ke euro dari models.dev atau dimasukkan manual.",
+    "search": "Cari model",
+    "model": "Model",
+    "provider": "Penyedia",
+    "input": "Masukan",
+    "output": "Keluaran",
+    "cacheRead": "Baca cache",
+    "cacheWrite": "Tulis cache",
+    "perMTok": "€ per 1 jt token",
+    "sourceLabel": "Sumber",
+    "source": {
+      "modelsDev": "models.dev",
+      "manual": "manual"
+    },
+    "import": "Perbarui dari models.dev",
+    "importing": "Memperbarui …",
+    "importedToast": "{count} harga diperbarui, {manual} harga manual dipertahankan.",
+    "rate": "Kurs",
+    "rateHint": "Euro per dolar AS untuk harga models.dev",
+    "rateSaved": "Kurs disimpan, harga dikonversi ulang.",
+    "importedAt": "Terakhir diperbarui: {date} ({from})",
+    "from": {
+      "snapshot": "daftar bawaan Helena",
+      "modelsDev": "models.dev"
+    },
+    "add": "Masukkan harga",
+    "edit": "Ubah",
+    "reset": "Atur ulang",
+    "resetToast": "Harga {model} kembali dari models.dev.",
+    "savedToast": "Harga {model} disimpan.",
+    "dialogTitle": "Harga manual",
+    "dialogHint": "Harga manual tidak pernah ditimpa oleh impor.",
+    "empty": "Tidak ada harga.",
+    "none": "–"
+  }
+}

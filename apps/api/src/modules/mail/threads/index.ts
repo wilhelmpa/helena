@@ -171,7 +171,7 @@ export const mailThreadRoutes = new Elysia({
       response: { 204: t.Void(), ...commonErrors },
       detail: {
         summary: 'Mark, flag, archive or delete a mail thread',
-        description: 'The change shows in Plan at once; the worker makes it on the mail server.',
+        description: 'The change shows in Helena at once; the worker makes it on the mail server.',
       },
     },
   )

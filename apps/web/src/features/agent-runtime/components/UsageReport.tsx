@@ -33,7 +33,8 @@ export default function UsageReport({
   const [days, setDays] = useState<(typeof PERIODS)[number]>(30);
   const [grouping, setGrouping] = useState(groupings[0]!.id);
   const by = groupings.find((entry) => entry.id === grouping)?.by ?? groupings[0]!.by;
-  const today = new Date(Math.floor(Date.now() / DAY_MS) * DAY_MS);
+  // Taken once per mount: Date.now() during render is impure.
+  const [today] = useState(() => new Date(Math.floor(Date.now() / DAY_MS) * DAY_MS));
   const from = new Date(today.getTime() - (days - 1) * DAY_MS).toISOString().slice(0, 10);
   const report = useAgentUsage(teamId, { from, agentId, by });
   const euro = (value: number | null) =>

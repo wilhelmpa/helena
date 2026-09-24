@@ -17,7 +17,7 @@ async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
   const asOwner = authedApi(owner.cookie);
   const mkt = (await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).data!;
-  return { asOwner, teamId: mkt.teamId };
+  return { asOwner, teamId: mkt.teamId, projectId: mkt.id };
 }
 
 const credentials = (api: Api, teamId: number) => api.teams({ teamId }).credentials;
@@ -116,7 +116,8 @@ describe('runtime logins', () => {
     ).data!.id;
     const grants = asOwner.teams({ teamId }).credentials({ credentialId: id }).grants;
     expect((await grants.put({ agentIds: [hermes.id] })).status).toBe(400);
-    expect((await grants.put({ agentIds: [claude.id] })).data!.agentIds).toEqual([claude.id]);
+    const granted = await grants.put({ agentIds: [claude.id] });
+    expect(granted.data!.grants.map((grant) => grant.agentId)).toEqual([claude.id]);
   });
 
   it("hands the runner the agent's login for the run it holds, and only then its value", async () => {
@@ -160,9 +161,36 @@ describe('runtime logins', () => {
     const uses = await asOwner.teams({ teamId }).credentials({ credentialId: id }).uses.get({
       query: {},
     });
+    // Newest first: the delivery, then the owner's grant and creation.
     expect(uses.data!.items).toEqual([
       expect.objectContaining({ action: 'delivered', purpose: 'runtime:claude', runId: run.id }),
+      expect.objectContaining({ action: 'changed', purpose: 'grants' }),
+      expect.objectContaining({ action: 'changed', purpose: 'created' }),
     ]);
+  });
+
+  it('reaches the agents of a project through a project grant, on their runtime only', async () => {
+    const { asOwner, teamId, projectId } = await setup();
+    const coder = await agentOn(asOwner, teamId, 'coder', 'claude');
+    const writer = await agentOn(asOwner, teamId, 'writer', 'hermes');
+    const id = (
+      await credentials(asOwner, teamId).post({
+        kind: 'runtime_login',
+        label: 'Claude Code',
+        runtime: 'claude',
+        method: 'oauth_token',
+        value: TOKEN,
+      })
+    ).data!.id;
+    const put = await asOwner
+      .teams({ teamId })
+      .credentials({ credentialId: id })
+      .grants.put({ grants: [{ projectId }] });
+    expect(put.status).toBe(200);
+    expect((await runtimeLogin(coder)).data).toEqual({
+      login: { credentialId: id, runtime: 'claude', method: 'oauth_token' },
+    });
+    expect((await runtimeLogin(writer)).data).toEqual({ login: null });
   });
 
   it('gives a Hermes agent none, and none of another runtime', async () => {

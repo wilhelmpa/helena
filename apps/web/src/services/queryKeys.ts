@@ -122,6 +122,12 @@ export const qk = {
   knowledgeConflicts: (root: string) => ['knowledge', 'conflicts', root] as const,
   knowledgeHistory: (path: string) => ['knowledge', 'history', path] as const,
   knowledgeSearch: (q: string, folder = '') => ['knowledge', 'search', folder, q] as const,
+  // The one search over every source, what mentions an item, templates and the index.
+  knowledgeFind: (q: string, sources: string, project: string) =>
+    ['knowledge', 'find', q, sources, project] as const,
+  knowledgeMentions: (target: string) => ['knowledge', 'mentions', target] as const,
+  knowledgeTemplates: ['knowledge', 'templates'] as const,
+  knowledgeSources: ['knowledge', 'sources'] as const,
   // Note boards (the notes canvases). `noteBoardsForProject` is the invalidation
   // base for every list/search variant; `noteBoardsSearch` is one paged switcher
   // query (scoped by search text); `noteBoard` is a single board with its canvas.
@@ -248,10 +254,13 @@ export const qk = {
   // The team's credentials. A write invalidates at the team prefix, which also reloads
   // an open audit log.
   credentials: (teamId: number) => ['credentials', teamId] as const,
+  // The access center: Google accounts and the audit log of a team.
+  access: (teamId: number) => ['access', teamId] as const,
+  accessGoogle: (teamId: number) => ['access', teamId, 'google'] as const,
+  accessAudit: (teamId: number, params: unknown, filter: unknown) =>
+    ['access', teamId, 'audit', params, filter] as const,
   credentialPage: (teamId: number, params: unknown, kind?: string) =>
     ['credentials', teamId, 'page', params, kind ?? 'all'] as const,
-  credentialUses: (teamId: number, id: number, params: unknown) =>
-    ['credentials', teamId, 'uses', id, params] as const,
   agentMcpServers: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'mcp-servers'] as const,
   // What an agent learned: the actions waiting for its runner, and one learned skill.
@@ -342,6 +351,15 @@ export const qk = {
   // pending count of the sidebar badges, and the workflow runs waiting at an approval
   // gate. approvalsPendingCountAll is the invalidation target for every pending count,
   // global and per-project alike (a query key prefix match).
+  // Helena's Autopilot: a project's level and budgets, an agent's, the decision log, and
+  // the model price table.
+  projectAutopilot: (projectKey: string) => ['autopilot', 'project', projectKey] as const,
+  agentAutopilot: (teamId: number, agentId: number) =>
+    ['autopilot', 'agent', teamId, agentId] as const,
+  policyDecisions: (projectKey: string, params: unknown, outcome?: string) =>
+    ['autopilot', 'decisions', projectKey, params, outcome ?? null] as const,
+  anyAutopilot: ['autopilot'] as const,
+  modelPrices: ['modelPrices'] as const,
   approvalLists: ['approvals', 'list'] as const,
   approvals: (status: string, params: unknown, projectKey?: string) =>
     ['approvals', 'list', status, params, projectKey ?? null] as const,

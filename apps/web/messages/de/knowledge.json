@@ -1,0 +1,63 @@
+{
+  "source": {
+    "issue": "Aufgaben",
+    "comment": "Kommentare",
+    "vault": "Notizen & Dateien",
+    "mail": "Mails",
+    "chat": "Chats",
+    "run": "Agenten-Läufe"
+  },
+  "capture": {
+    "inbox": "Eingang",
+    "journal": "Tagesnotiz",
+    "saveMessage": "Als Notiz speichern",
+    "chatTitle": "Aus dem Chat",
+    "saved": "Im Eingang gespeichert",
+    "open": "Öffnen",
+    "failed": "Speichern hat nicht geklappt",
+    "savePage": "Seite im Wissen speichern",
+    "pageSaved": "Seite im Eingang gespeichert",
+    "pageFailed": "Die Seite ließ sich nicht speichern"
+  },
+  "plugin": {
+    "name": "Wissen",
+    "description": "Helenas eigene Wissensquellen und das Erfassen in den Eingang und die Tagesnotiz."
+  },
+  "journal": {
+    "today": "Heutige Notiz"
+  },
+  "templates": {
+    "action": "Neu aus Vorlage",
+    "title": "Neue Notiz aus einer Vorlage",
+    "choose": "Vorlage",
+    "none": "Noch keine Vorlagen. Notizen im Ordner „Templates“ erscheinen hier.",
+    "name": "Name",
+    "namePlaceholder": "Name der Notiz",
+    "cancel": "Abbrechen",
+    "create": "Anlegen"
+  },
+  "mentions": {
+    "title": "Erwähnt in"
+  },
+  "admin": {
+    "sources": "Quellen",
+    "sourcesHint": "Was die eine Suche (⌘K und die Suche der Agenten) umfasst und wie weit der Index bei jeder Quelle ist.",
+    "error": "Fehler: {message}",
+    "indexedAt": "Indiziert {time}",
+    "notYet": "Noch nicht indiziert",
+    "items": "{count, plural, one {# Eintrag} other {# Einträge}}",
+    "reindex": "Neu indizieren",
+    "semantic": "Semantische Suche",
+    "semanticHint": "Findet auch, was anders formuliert ist, nach Bedeutung. Läuft auf diesem Server; nichts verlässt ihn.",
+    "semanticSwitch": "Nach Bedeutung suchen",
+    "pgvector": "pgvector",
+    "installed": "installiert",
+    "notInstalled": "nicht installiert (die Suche geht ohne, nur langsamer)",
+    "model": "Modell",
+    "none": "keins",
+    "passages": "Abschnitte",
+    "embedded": "{embedded} von {passages} eingebettet",
+    "runtimeMissing": "Die Laufzeit für Einbettungen ist noch nicht installiert. Dafür braucht es die Freigabe des Owners (docs/helena-decisions/second-brain.md).",
+    "modelMissing": "Das Einbettungsmodell ließ sich nicht laden. Der Download braucht die Freigabe des Owners."
+  }
+}

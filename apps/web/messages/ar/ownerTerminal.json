@@ -22,7 +22,7 @@
     "codex": "Codex",
     "helena-dev-claude": "تطوير Helena (Claude Code)",
     "helena-dev-codex": "تطوير Helena (Codex)",
-    "close": "إغلاق التبويب"
+    "close": "إنهاء الجلسة"
   },
   "keys": {
     "esc": "Esc",
@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "لصق"
+  },
+  "clipboard": {
+    "copied": "تم النسخ إلى الحافظة"
   }
 }

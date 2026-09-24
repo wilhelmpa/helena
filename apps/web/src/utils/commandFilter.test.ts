@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ISSUE_PREFIX, KNOWLEDGE_PREFIX, substringFilter } from './commandFilter';
+import { ISSUE_PREFIX, CAPTURE_PREFIX, KNOWLEDGE_PREFIX, substringFilter } from './commandFilter';
 
 describe('substringFilter', () => {
-  it('keeps server results visible in their order, issues before knowledge', () => {
+  it('keeps server results visible in their order: issues, knowledge, then capture', () => {
     const scores = [
       substringFilter(`${ISSUE_PREFIX}0`, 'x'),
       substringFilter(`${ISSUE_PREFIX}1`, 'x'),
       substringFilter(`${KNOWLEDGE_PREFIX}0`, 'x'),
       substringFilter(`${KNOWLEDGE_PREFIX}1`, 'x'),
+      substringFilter(`${CAPTURE_PREFIX}0`, 'x'),
+      substringFilter(`${CAPTURE_PREFIX}1`, 'x'),
     ];
     assert.ok(scores.every((score) => score > 0));
     assert.deepEqual(

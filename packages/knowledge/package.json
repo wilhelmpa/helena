@@ -1,0 +1,30 @@
+{
+  "name": "@helena/knowledge",
+  "version": "0.0.0",
+  "description": "Helena's second brain: the knowledge source registry, the index over every source and the search",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test --env-file=../../.env.test"
+  },
+  "dependencies": {
+    "@helena/sdk": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/vault": "workspace:*",
+    "defuddle": "0.19.4",
+    "drizzle-orm": "^0.45.2",
+    "linkedom": "0.18.13",
+    "turndown": "7.2.4"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

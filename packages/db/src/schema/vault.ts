@@ -53,6 +53,11 @@ export const vaultEntry = pgTable(
       .notNull()
       .default('none'),
     extractionError: text('extraction_error'),
+    // Who changed the file last, as Helena saw it: `user:<id>` or `agent:<id>` for a
+    // write through the API (with the agent's run), `extern` for a change the watcher
+    // found (Obsidian, an editor, an agent's file tools). The git history has the rest.
+    lastAuthor: text('last_author'),
+    lastRunId: integer('last_run_id'),
     indexedAt: timestamp('indexed_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

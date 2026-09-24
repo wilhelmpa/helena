@@ -6,3 +6,5 @@ export * from './organization';
 export * from './pipelines';
 export * from './mail';
 export * from './vault';
+export * from './autopilot';
+export * from './knowledge';

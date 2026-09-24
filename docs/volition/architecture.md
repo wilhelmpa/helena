@@ -122,6 +122,21 @@ Plan keeps only an index of them in Postgres (`vault_entry`, `vault_link`, `vaul
   carries the same reach as `vaultAccess` (`{ root, read, write, deny }`, absolute paths),
   which the runner hands to Hermes as `VOLITION_VAULT_ACCESS` for the approval plugin to
   enforce.
+- **Second brain (`@helena/knowledge`, docs/helena-decisions/second-brain.md):** one index
+  (`knowledge_item`, full text, optional passages with embeddings) over every registered
+  knowledge source: tasks, comments, vault notes and files (boards too), mail, chats and
+  agent runs, plus a plugin's own (`@helena/sdk` `KnowledgeSource`). The worker keeps it in
+  line (catch-up every few seconds, a sweep for deletions); the API indexes its own writes at
+  once. `GET /knowledge/find` (MCP `search_knowledge`, ⌘K) filters by the reader's reach,
+  the same rules each source's own routes check. Capture targets (`inbox`, `journal`) save
+  from chat, browser, ⌘K and agents (`capture_note`, `capture_web_page`) into
+  `Projects/<KEY>/Inbox/` or today's note; templates and the daily note follow Obsidian's
+  own settings files (`.obsidian/templates.json`, `.obsidian/daily-notes.json`). Every
+  write through Helena records its actor and run (`vault_entry.last_author`,
+  `last_run_id`, git trailers `Helena-Actor`/`Helena-Run`).
+- **Boards:** a public note board is a JSON Canvas 1.0 file,
+  `Projects/<KEY>/Boards/<Name>.canvas`; a canvas that appears there becomes a board. A
+  private or restricted board keeps its canvas in `note_board.canvas`.
 
 ## Rules that keep the boundaries
 

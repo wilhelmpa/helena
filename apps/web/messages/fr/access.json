@@ -1,0 +1,202 @@
+{
+  "title": "Accès et connexions",
+  "tabs": {
+    "google": "Google",
+    "mail": "E-mail",
+    "credentials": "Accès",
+    "connections": "Connexions",
+    "log": "Journal"
+  },
+  "google": {
+    "connect": "Connecter un compte",
+    "importClient": "Importer le client OAuth",
+    "empty": "Aucun compte Google",
+    "emptyHint": "Créez dans Google Cloud un client OAuth de type « Application de bureau », importez ici son fichier JSON, puis connectez chaque compte. Mail, Agenda, Drive et le reste fonctionnent ensuite sans mot de passe d’application.",
+    "emptyHintReady": "Le client OAuth est en place. Connecte maintenant chaque compte Google ; e-mail, agenda, Drive et le reste fonctionnent ensuite sans mot de passe d’application.",
+    "clients": "Clients OAuth",
+    "clientType": {
+      "installed": "Bureau",
+      "web": "Web"
+    },
+    "clientAccounts": "{count, plural, =0 {inutilisé} one {# compte} other {# comptes}}",
+    "deleteClient": "Supprimer le client OAuth",
+    "deleteClientMessage": "Supprimer {name} ? Les comptes ne pourront plus se connecter avec.",
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
+    "engineHint": {
+      "helena": "Helena conserve la connexion chiffrée et appelle Google avec les bibliothèques de Google.",
+      "gog": "La connexion reste dans le trousseau de gog sur ce serveur ; Helena y accède par le broker. Pas de boîte dans la boîte de réception."
+    },
+    "status": {
+      "ok": "Connecté",
+      "needs_auth": "Se reconnecter",
+      "error": "Erreur",
+      "unknown": "Non vérifié"
+    },
+    "services": {
+      "mail": "Mail",
+      "calendar": "Agenda",
+      "drive": "Drive",
+      "docs": "Docs",
+      "sheets": "Sheets",
+      "contacts": "Contacts",
+      "tasks": "Tâches"
+    },
+    "mailbox": "Boîte : {days, plural, one {# dernier jour} other {# derniers jours}}",
+    "mailboxAll": "Boîte : tous les e-mails",
+    "mailboxOff": "Boîte désactivée",
+    "check": "Vérifier",
+    "checked": "{email} vérifié",
+    "editServices": "Services",
+    "signInAgain": "Se reconnecter",
+    "moveToHelena": "Reprendre dans Helena",
+    "remove": "Retirer le compte",
+    "removeMessage": "Retirer {email} ? Les agents perdent l’accès immédiatement ; les e-mails importés restent jusqu’à la suppression de la boîte.",
+    "removeFromGog": "Retirer aussi la connexion de gog",
+    "inGog": "Dans gog, pas encore dans Helena",
+    "inGogHint": "gog détient une connexion pour ces comptes. Les afficher ne déplace aucun jeton.",
+    "adopt": "Afficher",
+    "adopted": "{email} est affiché",
+    "access": "Autorisations"
+  },
+  "clientDialog": {
+    "title": "Importer le client OAuth",
+    "file": "Fichier client (JSON)",
+    "fileHint": "Google Cloud → API et services → Identifiants → ID client OAuth (application de bureau) → Télécharger le JSON.",
+    "paste": "Ou coller son contenu",
+    "label": "Nom",
+    "target": "Conservé par",
+    "import": "Importer",
+    "imported": "Client OAuth importé",
+    "handedToGog": "Le client a été transmis à gog"
+  },
+  "signIn": {
+    "title": "Connecter un compte Google",
+    "againTitle": "Reconnecter {email}",
+    "moveTitle": "Reprendre {email} dans Helena",
+    "engine": "Connexion conservée par",
+    "client": "Client OAuth",
+    "noClient": "Importez d’abord un client OAuth.",
+    "email": "Adresse",
+    "emailHint": "Nécessaire pour gog ; pour Helena, Google présélectionne le compte.",
+    "services": "Services",
+    "scope": "Appartient à",
+    "start": "Continuer",
+    "open": "Se connecter chez Google",
+    "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié",
+    "pasteStep": "Après la connexion, le navigateur arrive sur une page qui ne se charge pas (127.0.0.1). Copiez l’adresse complète de cette page et collez-la ici.",
+    "callbackStep": "Connectez-vous chez Google ; Helena termine seule et revient ici.",
+    "redirect": "Adresse de cette page",
+    "finish": "Terminer",
+    "connected": "{email} connecté",
+    "removeFromGog": "Retirer ensuite la connexion de gog"
+  },
+  "servicesDialog": {
+    "title": "Services de {email}",
+    "hint": "Un service désactivé n’est disponible pour aucun agent.",
+    "needsSignIn": "nouvelle connexion requise",
+    "gogNoMail": "Un compte conservé dans gog n’a pas de boîte dans Helena. Reprenez-le dans Helena pour la boîte de réception.",
+    "saved": "Services enregistrés"
+  },
+  "mailbox": {
+    "fetchDays": "Période de récupération en jours",
+    "fetchDaysHint": "Le premier import ne récupère que cette période ; les copies importées plus anciennes sont supprimées chaque jour. Les e-mails du serveur restent.",
+    "fetchAll": "Récupérer tous les e-mails",
+    "reset": "Réinitialiser",
+    "resetTitle": "Réinitialiser {address} ?",
+    "resetMessage": "Toutes les copies importées (e-mails, pièces jointes, fichiers stockés) sont supprimées et la boîte réimporte dans sa période. Les e-mails du serveur restent.",
+    "resetDone": "{address} réimporte",
+    "resetPending": "Réinitialisation",
+    "google": "Compte Google",
+    "googleHint": "Se connecte avec son compte Google (sans mot de passe d’application). Serveurs et identifiant viennent du compte.",
+    "settingsTitle": "Boîte {address}",
+    "saved": "{address} enregistré",
+    "gmailHint": "Pour Gmail, connectez plutôt le compte Google sous Accès et connexions → Google : aucun mot de passe d’application nécessaire."
+  },
+  "grants": {
+    "title": "Autorisations pour {name}",
+    "action": "Autorisations",
+    "hint": "Accordez l’accès à des agents ou à tous les agents d’un projet, pour tous les services ou un seul, en lecture seule ou aussi en écriture. Envoyer, partager et supprimer attendent toujours votre approbation.",
+    "empty": "Personne ne peut encore l’utiliser.",
+    "add": "Ajouter",
+    "who": "Qui",
+    "projectSubject": "Tous dans {name}",
+    "agents": "Agents",
+    "projects": "Projets",
+    "service": "Service",
+    "allServices": "Tous les services",
+    "access": {
+      "read": "Lecture",
+      "write": "Lecture et écriture"
+    },
+    "saved": "Autorisations pour {name} enregistrées",
+    "count": "{count, plural, =0 {Aucune autorisation} one {# autorisation} other {# autorisations}}",
+    "remove": "Retirer"
+  },
+  "log": {
+    "empty": "Rien n’est encore journalisé.",
+    "filter": "Entrées",
+    "all": "Toutes",
+    "actions": {
+      "delivered": "Transmis",
+      "used": "Utilisé",
+      "called": "Appelé",
+      "denied": "Refusé",
+      "approval": "Approbation demandée",
+      "changed": "Modifié"
+    },
+    "owner": "Propriétaire",
+    "run": "Exécution {id}",
+    "chat": "Chat",
+    "changes": {
+      "created": "Créé",
+      "edited": "Modifié",
+      "deleted": "Supprimé",
+      "new-key": "Nouvelle paire de clés",
+      "grants": "Autorisations modifiées",
+      "signed-in": "Connecté",
+      "settings": "Réglages modifiés",
+      "removed": "Retiré",
+      "listed-from-gog": "Affiché depuis gog",
+      "clone": "Dépôt cloné"
+    }
+  },
+  "clone": {
+    "action": "Cloner le dépôt",
+    "title": "Cloner avec {name}",
+    "hint": "Le runner d’un agent du projet clone le dépôt avec cette clé dans le dossier de la zone de l’espace de travail. Le dépôt de l’espace de travail l’ignore ensuite.",
+    "project": "Projet",
+    "projectPlaceholder": "Choisir un projet",
+    "noProject": "Aucun projet pour l’instant : crée-en un d’abord.",
+    "area": "Dossier de zone",
+    "workspaceRoot": "Espace de travail lui-même",
+    "url": "Dépôt",
+    "agent": "Runner",
+    "anyAgent": "N’importe quel agent du projet",
+    "start": "Cloner",
+    "started": "{agent} clone {name}"
+  },
+  "mcp": {
+    "kind": "Serveur MCP (OAuth)",
+    "kindPlural": "Serveurs MCP (OAuth)",
+    "kindHint": "Un serveur MCP qui se connecte avec OAuth. Helena conserve le jeton ; la bibliothèque de serveurs MCP l’envoie comme en-tête Authorization.",
+    "title": "Connecter un serveur MCP",
+    "againTitle": "Reconnecter {name}",
+    "serverUrl": "Adresse du serveur",
+    "label": "Nom",
+    "scope": "Scopes (facultatif)",
+    "hint": "Helena trouve la connexion du serveur, s’y enregistre et vous demande de vous connecter. Choisissez ensuite cette connexion comme en-tête Authorization du serveur sous Serveurs MCP.",
+    "open": "Se connecter au serveur",
+    "connected": "Serveur MCP connecté",
+    "signIn": "Se reconnecter",
+    "status": {
+      "ok": "Connecté",
+      "needs_auth": "Se reconnecter",
+      "error": "Erreur",
+      "unknown": "Non connecté"
+    }
+  }
+}

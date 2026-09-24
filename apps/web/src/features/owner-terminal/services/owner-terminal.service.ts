@@ -53,6 +53,18 @@ export const startOwnerTerminalAuditSession = (kind: OwnerTerminalKind, name: st
 export const endOwnerTerminalAuditSession = (kind: OwnerTerminalKind, name: string) =>
   endOwnerTerminalSession(kind, name).catch(() => {});
 
+// Ends the session behind a tab for good: its tmux session and the program in it
+// (the router's close path, native/owner-terminal/owner-terminal-router.mjs). Best
+// effort like the audit calls above: the tab closes either way.
+export const closeOwnerTerminalSession = (kind: OwnerTerminalKind, name: string) =>
+  fetch(`/focus/owner-terminal/${kind}/${name}/__helena/close`, {
+    method: 'POST',
+    credentials: 'same-origin',
+  }).then(
+    () => undefined,
+    () => undefined,
+  );
+
 export function useOwnerTerminalAuditQuery() {
   return useQuery({ queryKey: qk.ownerTerminalAudit, queryFn: () => getOwnerTerminalAudit() });
 }

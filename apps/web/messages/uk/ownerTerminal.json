@@ -22,7 +22,7 @@
     "codex": "Codex",
     "helena-dev-claude": "Розвивати Helena (Claude Code)",
     "helena-dev-codex": "Розвивати Helena (Codex)",
-    "close": "Закрити вкладку"
+    "close": "Завершити сеанс"
   },
   "keys": {
     "esc": "Esc",
@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "Вставити"
+  },
+  "clipboard": {
+    "copied": "Скопійовано в буфер обміну"
   }
 }

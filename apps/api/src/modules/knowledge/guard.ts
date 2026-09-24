@@ -32,7 +32,11 @@ export const vaultGuard = new Elysia({ name: 'vault-guard' }).use(authContext).m
         access.action === 'read' ? 'read' : 'edit',
       ]) as DocumentDecoration,
       async resolve({ user, query, body, request }) {
-        const scope = await vaultScope(requireUser(user), isMcpRequest(request.headers));
+        const scope = await vaultScope(
+          requireUser(user),
+          isMcpRequest(request.headers),
+          request.headers,
+        );
         const paths: Record<string, string> = {};
         for (const field of access.fields) {
           const raw = fieldValue(query, field) ?? fieldValue(body, field);

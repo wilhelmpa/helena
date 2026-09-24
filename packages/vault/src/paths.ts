@@ -128,6 +128,14 @@ export function isNotePath(relative: string): boolean {
   return /\.md$/i.test(relative);
 }
 
+// A board: a JSON Canvas file (canvas.ts).
+export function isCanvasPath(relative: string): boolean {
+  return /\.canvas$/i.test(relative);
+}
+
+// Where a project's boards are kept.
+export const BOARDS_DIR = 'Boards';
+
 export function parentPath(relative: string): string {
   const index = relative.lastIndexOf('/');
   return index === -1 ? '' : relative.slice(0, index);

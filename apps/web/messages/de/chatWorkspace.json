@@ -150,7 +150,11 @@
       "publish": "Veröffentlichen",
       "pay": "Bezahlen",
       "delete": "Löschen",
-      "other": "Sonstiges"
+      "other": "Sonstiges",
+      "write": "Ändern",
+      "execute": "Ausführen",
+      "credentials": "Zugänge",
+      "budget": "Budget"
     },
     "notePlaceholder": "Notiz zu deiner Entscheidung (optional)",
     "approve": "Freigeben",

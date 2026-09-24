@@ -1,5 +1,17 @@
 import { Elysia, t } from 'elysia';
+import type { CaptureActor } from '@helena/knowledge';
 import { noContent } from '#shared/http';
+import { knowledgeActor } from '#modules/knowledge/reach';
+import { asStickerCanvas } from './canvas';
+import {
+  adoptBoardFiles,
+  createBoardFile,
+  dropOrphanedBoards,
+  readBoardStickers,
+  renameBoardFile,
+  trashBoardFile,
+  writeBoardStickers,
+} from './files';
 import { guards } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
 import { requireUser } from '#shared/access';
@@ -51,6 +63,41 @@ async function loadAccessibleBoard(
   return board;
 }
 
+async function actorOf(userId: string, headers: Headers): Promise<CaptureActor> {
+  const actor = await knowledgeActor(
+    { id: userId } as Parameters<typeof knowledgeActor>[0],
+    headers,
+  );
+  return { ref: actor.ref, runId: actor.runId };
+}
+
+// A public board with its canvas read from its file. A public board that predates
+// files gets one now, from the canvas it kept in the database. A board whose file is
+// gone is gone.
+async function withCanvas(
+  board: NoteBoardRow,
+  projectKey: string,
+  actor: () => Promise<CaptureActor>,
+): Promise<NoteBoardRow> {
+  if (board.ownerUserId !== null) return board;
+  let current = board;
+  if (!current.vaultPath) {
+    const file = await createBoardFile(
+      projectKey,
+      current.name,
+      asStickerCanvas(current.canvas),
+      await actor(),
+    );
+    current = (await updateNoteBoard(current.id, { ...file, canvas: {} })) ?? current;
+  }
+  const canvas = await readBoardStickers(current);
+  if (!canvas) {
+    await deleteNoteBoard(current.id);
+    throw new HttpError(404, 'Board not found: its file is gone');
+  }
+  return { ...current, canvas };
+}
+
 // The members to grant access to: deduplicated, without the owner (who always has
 // access), and rejected when someone cannot be granted it — they are not in the
 // project, or their role cannot read note boards, which would make the grant do
@@ -78,7 +125,13 @@ export const noteBoardRoutes = new Elysia({
   .use(guards)
   .get(
     '/projects/:projectKey/note-boards',
-    ({ project, user, query }) => listNoteBoards(project.id, requireUser(user).id, { q: query.q }),
+    async ({ project, user, query }) => {
+      // Canvas files that appeared in the project's folder become boards, boards whose
+      // file is gone leave the list.
+      await adoptBoardFiles(project.id, project.key);
+      await dropOrphanedBoards(project.id);
+      return listNoteBoards(project.id, requireUser(user).id, { q: query.q });
+    },
     {
       permission: ['note_boards', 'read'],
       feature: 'notes',
@@ -110,8 +163,10 @@ export const noteBoardRoutes = new Elysia({
 
   .get(
     '/projects/:projectKey/note-boards/:boardId',
-    async ({ project, user, params }) => {
-      return loadAccessibleBoard(params.boardId, project.id, requireUser(user).id);
+    async ({ project, user, params, request }) => {
+      const userId = requireUser(user).id;
+      const board = await loadAccessibleBoard(params.boardId, project.id, userId);
+      return withCanvas(board, project.key, () => actorOf(userId, request.headers));
     },
     {
       permission: ['note_boards', 'read'],
@@ -129,16 +184,33 @@ export const noteBoardRoutes = new Elysia({
 
   .post(
     '/projects/:projectKey/note-boards',
-    async ({ project, user, body, set }) => {
+    async ({ project, user, body, set, request }) => {
       const userId = requireUser(user).id;
       set.status = 201;
-      return createNoteBoard({
+      if (body.visibility === 'private') {
+        return createNoteBoard({
+          projectId: project.id,
+          ownerUserId: userId,
+          createdByUserId: userId,
+          name: body.name,
+          canvas: body.canvas,
+        });
+      }
+      const stickers = asStickerCanvas(body.canvas);
+      const file = await createBoardFile(
+        project.key,
+        body.name,
+        stickers,
+        await actorOf(userId, request.headers),
+      );
+      const board = await createNoteBoard({
         projectId: project.id,
-        ownerUserId: body.visibility === 'private' ? userId : null,
+        ownerUserId: null,
         createdByUserId: userId,
         name: body.name,
-        canvas: body.canvas,
+        ...file,
       });
+      return { ...board, canvas: stickers };
     },
     {
       permission: ['note_boards', 'create'],
@@ -156,17 +228,19 @@ export const noteBoardRoutes = new Elysia({
 
   .patch(
     '/projects/:projectKey/note-boards/:boardId',
-    async ({ project, user, params, body }) => {
+    async ({ project, user, params, body, request }) => {
       const userId = requireUser(user).id;
       const current = await loadAccessibleBoard(params.boardId, project.id, userId);
+      const actor = () => actorOf(userId, request.headers);
       const patch: {
         name?: string;
         canvas?: unknown;
         ownerUserId?: string | null;
         memberIds?: string[];
+        vaultPath?: string | null;
+        vaultSha256?: string | null;
       } = {};
       if (body.name !== undefined) patch.name = body.name;
-      if (body.canvas !== undefined) patch.canvas = body.canvas;
 
       if (body.visibility !== undefined || body.memberIds !== undefined) {
         if (current.createdByUserId !== userId) {
@@ -185,9 +259,40 @@ export const noteBoardRoutes = new Elysia({
         }
       }
 
+      // Where the canvas lives follows who sees the board: a public board is its file in
+      // the project's knowledge, a private or restricted one stays in the database.
+      const wasPublic = current.ownerUserId === null;
+      const isPublic = patch.ownerUserId === undefined ? wasPublic : patch.ownerUserId === null;
+      const stickers = body.canvas !== undefined ? asStickerCanvas(body.canvas) : undefined;
+      if (wasPublic && !isPublic) {
+        const kept = stickers ?? (await readBoardStickers(current)) ?? { nodes: [], edges: [] };
+        await trashBoardFile(current, await actor());
+        Object.assign(patch, { canvas: kept, vaultPath: null, vaultSha256: null });
+      } else if (!wasPublic && isPublic) {
+        const file = await createBoardFile(
+          project.key,
+          patch.name ?? current.name,
+          stickers ?? asStickerCanvas(current.canvas),
+          await actor(),
+        );
+        Object.assign(patch, file, { canvas: {} });
+      } else if (isPublic) {
+        const filed = await withCanvas(current, project.key, actor);
+        if (stickers) await writeBoardStickers(filed, stickers, await actor());
+        if (body.name !== undefined && body.name !== current.name) {
+          await renameBoardFile(
+            { ...filed, vaultPath: (await getNoteBoard(filed.id))?.vaultPath ?? filed.vaultPath },
+            body.name,
+            await actor(),
+          );
+        }
+      } else if (body.canvas !== undefined) {
+        patch.canvas = body.canvas;
+      }
+
       const board = await updateNoteBoard(params.boardId, patch);
       if (!board) throw new HttpError(404, 'Board not found');
-      return board;
+      return isPublic ? withCanvas(board, project.key, actor) : board;
     },
     {
       permission: ['note_boards', 'edit'],
@@ -206,7 +311,7 @@ export const noteBoardRoutes = new Elysia({
 
   .delete(
     '/projects/:projectKey/note-boards/:boardId',
-    async ({ project, user, params }) => {
+    async ({ project, user, params, request }) => {
       const userId = requireUser(user).id;
       const board = await getNoteBoard(params.boardId);
       if (!board || board.projectId !== project.id) throw new HttpError(404, 'Board not found');
@@ -224,6 +329,8 @@ export const noteBoardRoutes = new Elysia({
           );
         }
       }
+      // A public board's file goes to the vault trash, where it can be brought back.
+      if (board.vaultPath) await trashBoardFile(board, await actorOf(userId, request.headers));
       await deleteNoteBoard(params.boardId);
       return noContent();
     },

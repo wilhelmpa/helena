@@ -53,7 +53,7 @@ export function reflectionPrompt(reason: ReflectionReason): string {
       'this order: patch a skill you used in this session, extend an existing skill that ' +
       'covers the class, add a references/ file to one, create a skill named for the class ' +
       'of task, never for this one task. Read a skill with skill_view before you change it.',
-    'Leave the skills in the plan-managed category alone: Plan manages them and puts back any ' +
+    'Leave the skills in the plan-managed category alone: Helena manages them and puts back any ' +
       'change. Do not save details of this one task, secrets, missing tools or other setup ' +
       'problems, or anything you are not sure of.',
     'If nothing is worth keeping, answer "Nothing to save." Otherwise answer with one short ' +

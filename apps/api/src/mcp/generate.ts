@@ -1,4 +1,4 @@
-import { categoryFromAnnotations, type ActionCategory } from '@helena/sdk';
+import { categoryFromAnnotations, type ActionCategory, type ActionScope } from '@helena/sdk';
 import type { Permission } from '#shared/guards';
 import type { McpApp } from './types';
 import { outputSchema, type McpOutputSchema } from './result';
@@ -46,10 +46,17 @@ export interface McpRouteTool {
   // What calling it does (@helena/sdk action category): declared on the route, or what
   // its annotations imply (GET reads, DELETE deletes, the rest writes).
   category: ActionCategory;
+  // Where a delete or execute lands for Helena's Autopilot: inside the agent's workspace
+  // (Helena's own data of the project, the default) or outside it (a whole project, an
+  // agent, the internet).
+  scope?: ActionScope;
   // The cell of the role matrix the route's guard asserts, published by the guard as
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
   permission?: Permission;
+  // The connector whose accounts the tool acts with. The tool is listed only to an
+  // agent that holds a grant on one of them.
+  connector?: string;
 }
 
 // Marks a route as an MCP tool. Spread into a route's `detail`:
@@ -69,12 +76,34 @@ export interface McpRouteTool {
 //
 // The third argument is the action category where the annotations understate it: a POST
 // that starts an agent run executes, one that mails an invite sends.
+//
+// The fourth argument says where the action lands, for Helena's Autopilot, when it reaches
+// outside the agent's workspace: deleting a whole project, mailing someone. The fifth names
+// the connector whose accounts the tool acts with (see McpRouteTool.connector).
 export function mcpTool(
   tool: string,
   annotations?: McpToolAnnotations,
   category?: ActionCategory,
-): { 'x-mcp': { tool: string; annotations?: McpToolAnnotations; category?: ActionCategory } } {
-  return { 'x-mcp': { tool, annotations, ...(category ? { category } : {}) } };
+  scope?: ActionScope,
+  connector?: string,
+): {
+  'x-mcp': {
+    tool: string;
+    annotations?: McpToolAnnotations;
+    category?: ActionCategory;
+    scope?: ActionScope;
+    connector?: string;
+  };
+} {
+  return {
+    'x-mcp': {
+      tool,
+      annotations,
+      ...(category ? { category } : {}),
+      ...(scope && { scope }),
+      ...(connector ? { connector } : {}),
+    },
+  };
 }
 
 // What the HTTP method alone says about a route. A GET only reads; a DELETE
@@ -182,6 +211,8 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
             tool?: string;
             annotations?: McpToolAnnotations;
             category?: ActionCategory;
+            scope?: ActionScope;
+            connector?: string;
           };
           'x-permission'?: Permission;
         }
@@ -208,10 +239,12 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       inputSchema: mergeInputSchema(hooks, pathParams),
       outputSchema: outputSchema(hooks.response),
       permission: detail?.['x-permission'],
+      ...(detail?.['x-mcp']?.connector && { connector: detail['x-mcp'].connector }),
       // Every tool acts on this tracker's own data and reaches nothing outside it,
       // so openWorldHint is false throughout; the route may still override it.
       annotations,
       category: detail?.['x-mcp']?.category ?? categoryFromAnnotations(annotations),
+      scope: detail?.['x-mcp']?.scope,
     });
   }
   return tools;

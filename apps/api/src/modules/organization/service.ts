@@ -241,8 +241,12 @@ export async function getOrganization(teamId: number, projectId?: number) {
         runtimeState: aiAgent.runtimeState,
         pausedAt: aiAgent.pausedAt,
         pauseReason: aiAgent.pauseReason,
-        dailyTokenCeiling: aiAgent.dailyTokenCeiling,
-        monthlyTokenCeiling: aiAgent.monthlyTokenCeiling,
+        dailyTokenCeiling: sql<
+          number | null
+        >`(select b.limit_value::float8 from helena_budget b where b.agent_id = ${aiAgent.id} and b.metric = 'tokens' and b.period = 'day')`,
+        monthlyTokenCeiling: sql<
+          number | null
+        >`(select b.limit_value::float8 from helena_budget b where b.agent_id = ${aiAgent.id} and b.metric = 'tokens' and b.period = 'month')`,
       })
       .from(aiAgent)
       .innerJoin(user, eq(user.id, aiAgent.userId))
@@ -286,7 +290,9 @@ export async function getOrganization(teamId: number, projectId?: number) {
         description: project.description,
         departmentId: organizationProjectAssignment.departmentId,
         instructions: organizationProjectAssignment.instructions,
-        monthlyTokenCeiling: project.monthlyTokenCeiling,
+        monthlyTokenCeiling: sql<
+          number | null
+        >`(select b.limit_value::float8 from helena_budget b where b.project_id = ${project.id} and b.metric = 'tokens' and b.period = 'month')`,
       })
       .from(project)
       .leftJoin(

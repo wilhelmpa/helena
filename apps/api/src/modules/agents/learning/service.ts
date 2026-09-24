@@ -196,7 +196,7 @@ export async function getLearnedSkill(agentId: number, path: string): Promise<Le
 }
 
 // Copies a skill the agent created into the team's library and enables it on the agent,
-// where the runner then writes it as one of Plan's skills. The agent's own copy is
+// where the runner then writes it as one of Helena's skills. The agent's own copy is
 // discarded with the same sync, so the agent does not load the skill twice. A skill with
 // files the library cannot hold, such as scripts, stays with the agent: discarding its
 // copy would take those files from it.

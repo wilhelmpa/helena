@@ -279,6 +279,40 @@ describe('browser gateway', () => {
     expect(res.status).toBe(404);
   });
 
+  it('gives a login code through a project grant, and only in that project', async () => {
+    const { asOwner, mkt } = await setup();
+    const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const cred = (
+      await credentials(asOwner, mkt.teamId).post({
+        kind: 'web_login',
+        label: 'GitHub',
+        loginUrl: 'https://github.com/login',
+        allowedDomains: [],
+        username: 'bot@example.com',
+        password: 'fake-password',
+        totpSecret: TOTP,
+      })
+    ).data!;
+    await credential(asOwner, mkt.teamId, cred.id).grants.put({
+      grants: [{ projectId: mkt.id }],
+    });
+    const code = (projectSlug: string) =>
+      internal('/internal/browser-gateway/login-code', {
+        agentKey: apiKey,
+        credentialId: cred.id,
+        frameOrigin: 'https://github.com',
+        projectSlug,
+        via: projectSlug,
+      });
+    const granted = await code('mkt');
+    expect(granted.status).toBe(200);
+    expect(await granted.text()).not.toContain(TOTP);
+
+    // A second project the agent does not work in is refused before any lookup.
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    expect((await code('ops')).status).toBe(403);
+  });
+
   it('records a non-credential tool call in the audit trail, without any value', async () => {
     const { asOwner, mkt } = await setup();
     const { agent, apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
@@ -316,10 +350,31 @@ describe('browser gateway', () => {
         context: { origin: 'https://shop.example', target: 'f1e5', formAction: null },
         ...body,
       });
-    const allowed = await call({});
-    expect(allowed.status).toBe(200);
-    // No policy is configured yet (hub/autopilot brings it): every category is allowed.
-    expect(await allowed.json()).toEqual({ effect: 'allow', reason: 'No policy applies' });
+    // Helena's Autopilot decides: at the project's default level 1 a click that writes goes
+    // ahead, one that sends needs the owner, who gets a card in Freigaben.
+    const write = await call({ category: 'write' });
+    expect(write.status).toBe(200);
+    expect(await write.json()).toEqual({
+      effect: 'allow',
+      reason: 'Autopilot level 1 (With approval) allows write',
+    });
+    const send = await call({});
+    const asked = (await send.json()) as { effect: string; reason: string; approvalId: number };
+    expect(asked).toMatchObject({
+      effect: 'needs-approval',
+      reason: 'Autopilot level 1 (With approval) asks a person before send',
+    });
+    const card = (await asOwner.approvals.get({ query: {} })).data!.items.find(
+      (item) => item.id === asked.approvalId,
+    )!;
+    expect(card).toMatchObject({ kind: 'send', category: 'send', autopilotLevel: 1 });
+    // At level 3 it sends on its own; paying stays a person's decision.
+    await asOwner.projects({ projectKey: 'MKT' }).autopilot.put({ level: 3 });
+    expect(await (await call({})).json()).toMatchObject({ effect: 'allow' });
+    expect(await (await call({ category: 'pay' })).json()).toMatchObject({
+      effect: 'needs-approval',
+      reason: 'A person always approves pay, even at level 3',
+    });
     expect((await call({ category: 'launch-missiles' })).status).toBe(400);
     expect((await call({ projectSlug: 'ops', via: 'ops' })).status).toBe(403);
     expect((await call({ agentKey: 'not-a-key' })).status).toBe(403);

@@ -23,6 +23,13 @@ export interface MailAccount {
   smtpTls: boolean;
   username: string;
   hasPassword: boolean;
+  // 'xoauth2': the Mail service of a Google account (googleAccountId), which signs in
+  // with the account's token; its servers and login come from the account.
+  auth: 'password' | 'xoauth2';
+  googleAccountId: number | null;
+  // Only mail of the last fetchDays days is imported; null imports everything.
+  fetchDays: number | null;
+  resetPending: boolean;
   // The secret of the Credentials page that holds the password.
   credentialId: number | null;
   credentialLabel: string | null;
@@ -55,6 +62,7 @@ export interface MailAccountInput extends MailServerInput {
   enabled?: boolean;
   syncTrash?: boolean;
   syncSpam?: boolean;
+  fetchDays?: number | null;
 }
 
 export type MailRuleMatch = 'address' | 'domain';
@@ -258,6 +266,10 @@ export const updateMailAccount = (
 
 export const deleteMailAccount = (teamId: number, accountId: number) =>
   request<void>(`/teams/${teamId}/mail/accounts/${accountId}`, { method: 'DELETE' });
+
+// Wipes the imported copies of the account; the worker imports again.
+export const resetMailAccount = (teamId: number, accountId: number) =>
+  request<MailAccount>(`/teams/${teamId}/mail/accounts/${accountId}/reset`, { method: 'POST' });
 
 export const testMailConnection = (
   teamId: number,

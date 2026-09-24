@@ -1,0 +1,202 @@
+{
+  "title": "Zugänge & Verbindungen",
+  "tabs": {
+    "google": "Google",
+    "mail": "E-Mail",
+    "credentials": "Zugänge",
+    "connections": "Verbindungen",
+    "log": "Protokoll"
+  },
+  "google": {
+    "connect": "Konto verbinden",
+    "importClient": "OAuth-Client-JSON importieren",
+    "empty": "Noch kein Google-Konto",
+    "emptyHint": "Lege in Google Cloud einen OAuth-Client vom Typ „Desktop-App“ an, importiere hier seine JSON-Datei und verbinde dann jedes Konto. Mail, Kalender, Drive und der Rest laufen danach ohne App-Passwort.",
+    "emptyHintReady": "Der OAuth-Client ist da. Verbinde jetzt jedes Google-Konto; Mail, Kalender, Drive und der Rest laufen danach ohne App-Passwort.",
+    "clients": "OAuth-Clients",
+    "clientType": {
+      "installed": "Desktop",
+      "web": "Web"
+    },
+    "clientAccounts": "{count, plural, =0 {nicht genutzt} one {# Konto} other {# Konten}}",
+    "deleteClient": "OAuth-Client löschen",
+    "deleteClientMessage": "{name} löschen? Konten können sich damit nicht mehr anmelden.",
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
+    "engineHint": {
+      "helena": "Helena bewahrt die Anmeldung verschlüsselt auf und ruft Google mit Googles eigenen Bibliotheken auf.",
+      "gog": "Die Anmeldung bleibt im Schlüsselbund von gog auf diesem Server; Helena erreicht sie über den Broker. Kein Postfach im Posteingang."
+    },
+    "status": {
+      "ok": "Verbunden",
+      "needs_auth": "Neu anmelden",
+      "error": "Fehler",
+      "unknown": "Nicht geprüft"
+    },
+    "services": {
+      "mail": "Mail",
+      "calendar": "Kalender",
+      "drive": "Drive",
+      "docs": "Docs",
+      "sheets": "Tabellen",
+      "contacts": "Kontakte",
+      "tasks": "Aufgaben"
+    },
+    "mailbox": "Postfach: letzte {days, plural, one {# Tag} other {# Tage}}",
+    "mailboxAll": "Postfach: alle Mails",
+    "mailboxOff": "Postfach aus",
+    "check": "Prüfen",
+    "checked": "{email} geprüft",
+    "editServices": "Dienste",
+    "signInAgain": "Neu anmelden",
+    "moveToHelena": "In Helena übernehmen",
+    "remove": "Konto entfernen",
+    "removeMessage": "{email} entfernen? Agenten verlieren den Zugang sofort; die importierten Mails bleiben, bis du das Postfach löschst.",
+    "removeFromGog": "Anmeldung auch aus gog entfernen",
+    "inGog": "In gog, noch nicht in Helena",
+    "inGogHint": "gog hält für diese Konten eine Anmeldung. Anzeigen verschiebt kein Token.",
+    "adopt": "Anzeigen",
+    "adopted": "{email} wird angezeigt",
+    "access": "Freigaben"
+  },
+  "clientDialog": {
+    "title": "OAuth-Client-JSON importieren",
+    "file": "Client-Datei (JSON)",
+    "fileHint": "Google Cloud → APIs & Dienste → Anmeldedaten → OAuth-Client-ID (Desktop-App) → JSON herunterladen.",
+    "paste": "Oder Inhalt einfügen",
+    "label": "Name",
+    "target": "Aufbewahrt von",
+    "import": "Importieren",
+    "imported": "OAuth-Client importiert",
+    "handedToGog": "Der Client wurde an gog übergeben"
+  },
+  "signIn": {
+    "title": "Google-Konto verbinden",
+    "againTitle": "{email} neu anmelden",
+    "moveTitle": "{email} in Helena übernehmen",
+    "engine": "Anmeldung aufbewahrt von",
+    "client": "OAuth-Client",
+    "noClient": "Importiere zuerst einen OAuth-Client.",
+    "email": "Adresse",
+    "emailHint": "Für gog nötig; bei Helena wählt Google das Konto damit vor.",
+    "services": "Dienste",
+    "scope": "Gehört zu",
+    "start": "Weiter",
+    "open": "Bei Google anmelden",
+    "copyLink": "Link kopieren",
+    "linkCopied": "Link kopiert",
+    "pasteStep": "Nach der Anmeldung landet der Browser auf einer Seite, die nicht lädt (127.0.0.1). Kopiere die vollständige Adresse dieser Seite und füge sie hier ein.",
+    "callbackStep": "Melde dich bei Google an; Helena schließt danach selbst ab und kehrt hierher zurück.",
+    "redirect": "Adresse dieser Seite",
+    "finish": "Abschließen",
+    "connected": "{email} verbunden",
+    "removeFromGog": "Anmeldung danach aus gog entfernen"
+  },
+  "servicesDialog": {
+    "title": "Dienste von {email}",
+    "hint": "Ein ausgeschalteter Dienst steht keinem Agenten zur Verfügung.",
+    "needsSignIn": "braucht neue Anmeldung",
+    "gogNoMail": "Ein Konto in gog hat kein Postfach in Helena. Übernimm es in Helena für den Posteingang.",
+    "saved": "Dienste gespeichert"
+  },
+  "mailbox": {
+    "fetchDays": "Abrufzeitraum in Tagen",
+    "fetchDaysHint": "Der erste Import holt nur diesen Zeitraum; ältere importierte Kopien werden täglich entfernt. Die Mails auf dem Server bleiben.",
+    "fetchAll": "Alle Mails holen",
+    "reset": "Zurücksetzen",
+    "resetTitle": "{address} zurücksetzen?",
+    "resetMessage": "Alle importierten Kopien (Mails, Anhänge, gespeicherte Dateien) werden gelöscht, und das Postfach importiert im Abrufzeitraum neu. Die Mails auf dem Server bleiben.",
+    "resetDone": "{address} importiert neu",
+    "resetPending": "Wird zurückgesetzt",
+    "google": "Google-Konto",
+    "googleHint": "Meldet sich mit seinem Google-Konto an (ohne App-Passwort). Server und Login kommen vom Konto.",
+    "settingsTitle": "Postfach {address}",
+    "saved": "{address} gespeichert",
+    "gmailHint": "Für Gmail verbinde das Google-Konto stattdessen unter Zugänge & Verbindungen → Google: kein App-Passwort nötig."
+  },
+  "grants": {
+    "title": "Freigaben für {name}",
+    "action": "Freigaben",
+    "hint": "Gib den Zugang einzelnen Agenten oder allen Agenten eines Projekts frei, für alle Dienste oder einen, nur zum Lesen oder auch zum Schreiben. Senden, Teilen und Löschen warten weiter auf deine Freigabe.",
+    "empty": "Noch darf ihn niemand nutzen.",
+    "add": "Hinzufügen",
+    "who": "Wer",
+    "projectSubject": "Alle in {name}",
+    "agents": "Agenten",
+    "projects": "Projekte",
+    "service": "Dienst",
+    "allServices": "Alle Dienste",
+    "access": {
+      "read": "Lesen",
+      "write": "Lesen & Schreiben"
+    },
+    "saved": "Freigaben für {name} gespeichert",
+    "count": "{count, plural, =0 {Keine Freigabe} one {# Freigabe} other {# Freigaben}}",
+    "remove": "Entfernen"
+  },
+  "log": {
+    "empty": "Noch nichts protokolliert.",
+    "filter": "Einträge",
+    "all": "Alle",
+    "actions": {
+      "delivered": "Übergeben",
+      "used": "Genutzt",
+      "called": "Aufgerufen",
+      "denied": "Abgelehnt",
+      "approval": "Freigabe angefragt",
+      "changed": "Geändert"
+    },
+    "owner": "Owner",
+    "run": "Lauf {id}",
+    "chat": "Chat",
+    "changes": {
+      "created": "Angelegt",
+      "edited": "Bearbeitet",
+      "deleted": "Gelöscht",
+      "new-key": "Neues Schlüsselpaar",
+      "grants": "Freigaben geändert",
+      "signed-in": "Angemeldet",
+      "settings": "Einstellungen geändert",
+      "removed": "Entfernt",
+      "listed-from-gog": "Aus gog angezeigt",
+      "clone": "Repo geklont"
+    }
+  },
+  "clone": {
+    "action": "Repo klonen",
+    "title": "Mit {name} klonen",
+    "hint": "Der Runner eines Agenten des Projekts klont das Repository mit diesem Schlüssel in den Bereichsordner des Workspaces. Das Workspace-Repository ignoriert es danach.",
+    "project": "Projekt",
+    "projectPlaceholder": "Projekt wählen",
+    "noProject": "Noch kein Projekt: lege zuerst eines an.",
+    "area": "Bereichsordner",
+    "workspaceRoot": "Workspace selbst",
+    "url": "Repository",
+    "agent": "Runner",
+    "anyAgent": "Irgendein Agent des Projekts",
+    "start": "Klonen",
+    "started": "{agent} klont {name}"
+  },
+  "mcp": {
+    "kind": "MCP-Server (OAuth)",
+    "kindPlural": "MCP-Server (OAuth)",
+    "kindHint": "Ein MCP-Server, der sich mit OAuth anmeldet. Helena bewahrt das Token auf; die MCP-Server-Bibliothek sendet es als Authorization-Header.",
+    "title": "MCP-Server verbinden",
+    "againTitle": "{name} neu anmelden",
+    "serverUrl": "Server-Adresse",
+    "label": "Name",
+    "scope": "Scopes (optional)",
+    "hint": "Helena findet die Anmeldung des Servers, registriert sich dort und bittet dich, dich anzumelden. Danach wählst du diese Verbindung unter MCP-Server als Authorization-Header des Servers.",
+    "open": "Beim Server anmelden",
+    "connected": "MCP-Server verbunden",
+    "signIn": "Neu anmelden",
+    "status": {
+      "ok": "Verbunden",
+      "needs_auth": "Neu anmelden",
+      "error": "Fehler",
+      "unknown": "Nicht angemeldet"
+    }
+  }
+}

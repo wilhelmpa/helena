@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { arrayMove } from '@dnd-kit/sortable';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { OwnerTerminalKind } from '@/lib/api/endpoints/owner-terminal';
 import {
+  closeOwnerTerminalSession,
   endOwnerTerminalAuditSession,
   startOwnerTerminalAuditSession,
   useOwnerTerminalGrantQuery,
@@ -14,6 +17,7 @@ import StepUpDialog from './components/StepUpDialog';
 import GrantBanner from './components/GrantBanner';
 import TerminalTabBar from './components/TerminalTabBar';
 import MobileKeyBar from './components/MobileKeyBar';
+import { attachTerminalClipboard } from './utils/terminalClipboard';
 
 export interface OpenTerminalTab {
   kind: OwnerTerminalKind;
@@ -104,6 +108,18 @@ export default function OwnerTerminalPanel() {
     };
   }, [activeKey, grant.data?.active]);
 
+  // Copy and paste in every open terminal (owner, 2026-09-24: "ich muss copy paste
+  // können im Terminal"); see utils/terminalClipboard.ts.
+  useEffect(() => {
+    if (!grant.data?.active) return;
+    const copied = () =>
+      toast.success(t('clipboard.copied'), { id: 'terminal-copied', duration: 1500 });
+    const cleanups = Object.values(frames.current)
+      .filter((frame): frame is HTMLIFrameElement => !!frame)
+      .map((frame) => attachTerminalClipboard(frame, copied));
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [tabs, grant.data?.active, t]);
+
   if (grant.isLoading) return null;
   if (!grant.data?.active) return <StepUpDialog onSuccess={() => grant.refetch()} />;
 
@@ -113,9 +129,20 @@ export default function OwnerTerminalPanel() {
     setActiveKey(`${kind}:${name}`);
   }
 
+  function reorderTabs(fromKey: string, toKey: string) {
+    setTabs((current) => {
+      const keys = current.map((tab) => `${tab.kind}:${tab.name}`);
+      const from = keys.indexOf(fromKey);
+      const to = keys.indexOf(toKey);
+      return from < 0 || to < 0 ? current : arrayMove(current, from, to);
+    });
+  }
+
   function closeTab(key: string) {
     const [kind, name] = key.split(':') as [OwnerTerminalKind, string];
     void endOwnerTerminalAuditSession(kind, name);
+    // X ends the session for good, with the program in it, not only the tab.
+    void closeOwnerTerminalSession(kind, name);
     setTabs((current) => {
       const next = current.filter((tab) => `${tab.kind}:${tab.name}` !== key);
       return next.length > 0 ? next : DEFAULT_TABS;
@@ -135,6 +162,7 @@ export default function OwnerTerminalPanel() {
         activeKey={activeKey}
         onSelect={setActiveKey}
         onClose={closeTab}
+        onReorder={reorderTabs}
         onAdd={addTab}
       />
       <div ref={area} className="relative min-h-0 flex-1">

@@ -78,7 +78,7 @@ export const agentLearningRoutes = new Elysia({
         summary: 'Take a learned skill into the library',
         description:
           "Copies a skill the agent created into the team's skill library and enables it on " +
-          "the agent. The runner then writes it as one of Plan's skills and discards the " +
+          "the agent. The runner then writes it as one of Helena's skills and discards the " +
           "agent's own copy. Needs the rights to create and edit skills and to edit agents. " +
           'A skill with files other than Markdown stays with the agent.',
       },

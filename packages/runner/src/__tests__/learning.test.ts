@@ -75,7 +75,7 @@ describe('actions on what the agent learned', () => {
     ]);
 
     expect(results).toEqual([
-      { id: 1, error: "Plan's own skills are changed in Plan" },
+      { id: 1, error: "Helena's own skills are changed in Helena" },
       { id: 2, error: 'Only a skill the agent created itself can be changed here' },
       { id: 3, error: 'The skill path is invalid' },
       { id: 4, error: 'The skill path is unsafe' },
@@ -100,7 +100,7 @@ describe('actions on what the agent learned', () => {
       ]),
     ).toEqual([
       { id: 1, error: null },
-      { id: 2, error: "Plan's own skills are changed in Plan" },
+      { id: 2, error: "Helena's own skills are changed in Helena" },
     ]);
     expect(await readdir(join(hermesHome, 'skills/.archive'))).toEqual(['notes']);
   });

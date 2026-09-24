@@ -149,7 +149,7 @@ export const runtimeInventory = t.Object({
         {
           description:
             "'bundled' ships with Hermes, 'hub' was installed from the Skills Hub, 'plan' is " +
-            "one of Plan's skills, 'agent' was created by the agent.",
+            "one of Helena's skills, 'agent' was created by the agent.",
         },
       ),
       path: t.Optional(
@@ -192,7 +192,7 @@ export const runtimeState = t.Object({
   conflicts: t.Array(runtimeConflict),
   restored: t.Array(t.String(), {
     description:
-      'What the runtime put back after it was changed or removed outside Plan: managed ' +
+      'What the runtime put back after it was changed or removed outside Helena: managed ' +
       'files and plugin links, by their path in the runtime.',
   }),
   inventory: t.Nullable(runtimeInventory),
@@ -347,6 +347,10 @@ export const AiAgentResponse = t.Object({
   templateSyncedAt: t.Nullable(t.String()),
   dailyTokenCeiling: t.Nullable(t.Number()),
   monthlyTokenCeiling: t.Nullable(t.Number()),
+  autopilotLevel: t.Nullable(
+    t.Number({ description: "The agent's own Autopilot level; null follows the project." }),
+  ),
+  autopilotRaise: t.Boolean({ description: "Whether the agent's level may exceed its project's." }),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({
@@ -398,6 +402,13 @@ export const AgentRunResponse = t.Object({
       description:
         'The question the agent asked when it reported itself blocked during the run, which ' +
         'then ended as a success. Null for a run that was not blocked.',
+    }),
+  ),
+  autopilotLevel: t.Nullable(
+    t.Number({
+      description:
+        'The Autopilot level the run worked at (0 propose … 3 autonomous); null for a run ' +
+        'from before the Autopilot.',
     }),
   ),
   reflection: t.Nullable(

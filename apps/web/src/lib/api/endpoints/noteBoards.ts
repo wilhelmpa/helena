@@ -50,13 +50,17 @@ export interface NoteBoard {
   memberIds: string[];
   name: string;
   canvas: NoteCanvas;
+  // A public board is a JSON Canvas file in the project knowledge (Obsidian opens it);
+  // null for a private board, which is kept in the database.
+  vaultPath: string | null;
+  vaultSha256?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 // A board without its canvas or member list — what the switcher and MRU tabs list.
 // The canvas is loaded one board at a time via getNoteBoard when the board is opened.
-export type NoteBoardSummary = Omit<NoteBoard, 'canvas' | 'memberIds'>;
+export type NoteBoardSummary = Omit<NoteBoard, 'canvas' | 'memberIds' | 'vaultSha256'>;
 
 export interface NewNoteBoardInput {
   name: string;

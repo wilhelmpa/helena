@@ -43,6 +43,10 @@
       "label": "Storage",
       "description": "How much people may upload: the size of a single file, the attachment types accepted, and the storage each project gets."
     },
+    "knowledge": {
+      "label": "Knowledge & search",
+      "description": "The sources of the one search, how far the index is, and semantic search."
+    },
     "telegram": {
       "label": "Telegram",
       "description": "The bot people connect their Telegram account to, and the one that delivers Telegram notifications for projects that set no bot of their own."
@@ -66,6 +70,10 @@
     "plugins": {
       "label": "Plugins",
       "description": "Helena's own plugins and the external ones in the plugin folder: what they provide, the rights they ask for, and which may run."
+    },
+    "model-prices": {
+      "label": "Model prices",
+      "description": "Euros per million tokens per model, the base of every cost estimate."
     }
   },
   "settings": {
@@ -120,6 +128,10 @@
     "ai-agents": {
       "label": "AI Agents",
       "description": "AI agents working in this project."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "How independently the agents of this project act, and their budgets."
     },
     "browser": {
       "label": "Browser",

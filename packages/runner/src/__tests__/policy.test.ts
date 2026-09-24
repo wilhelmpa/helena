@@ -804,7 +804,7 @@ describe('Hermes learning and protected state', () => {
     );
     expect(moved).toHaveLength(1);
     expect(statuses.at(-1)).toMatchObject({
-      detail: expect.stringContaining('plugin links changed outside Plan were restored'),
+      detail: expect.stringContaining('plugin links changed outside Helena were restored'),
       restored: ['plugins/plan-approval-guard'],
     });
   });

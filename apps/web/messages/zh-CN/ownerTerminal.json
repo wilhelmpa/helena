@@ -22,7 +22,7 @@
     "codex": "Codex",
     "helena-dev-claude": "开发 Helena(Claude Code)",
     "helena-dev-codex": "开发 Helena(Codex)",
-    "close": "关闭标签页"
+    "close": "结束会话"
   },
   "keys": {
     "esc": "Esc",
@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "粘贴"
+  },
+  "clipboard": {
+    "copied": "已复制到剪贴板"
   }
 }

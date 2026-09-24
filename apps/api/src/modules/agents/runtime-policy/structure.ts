@@ -25,7 +25,7 @@ export function homeAgentSection(
         ]
       : []),
     '',
-    'To get work done in a project, create a task there with the Plan MCP tools, delegate',
+    'To get work done in a project, create a task there with the Helena MCP tools, delegate',
     "it to the project's coordinator and follow the task until it is done. Answer questions",
     'that span several projects yourself.',
   ].join('\n');
@@ -36,11 +36,11 @@ export function homeAgentSection(
 const SUB_AGENTS: Record<AgentRuntimeKind, string[]> = {
   hermes: [
     'For parallel parts of one run you may start Hermes sub-agents with the delegation',
-    'toolset. They are not Plan agents, and Plan does not show them.',
+    'toolset. They are not Helena agents, and Helena does not show them.',
   ],
   claude: [
     'For parallel parts of one run you may start Claude Code subagents with the Task tool.',
-    'They are not Plan agents, and Plan does not show them.',
+    'They are not Helena agents, and Helena does not show them.',
   ],
   codex: [],
 };

@@ -8,6 +8,7 @@ import { atomicWrite, digest, ensureRoot, ensureSafeParent } from './files';
 import {
   enabledMcpServers,
   ensureConfigLink,
+  ensureEnvFile,
   hermesDrift,
   hermesManagedMcp,
   hermesSessionFacts,
@@ -90,7 +91,7 @@ export interface RuntimeStatus {
   capabilities: string[];
   detail: string | null;
   conflicts?: RuntimeConflict[];
-  // What the runner put back after it was changed or removed outside Plan: managed files
+  // What the runner put back after it was changed or removed outside Helena: managed files
   // and plugin links, by their path in the Hermes home.
   restored?: string[];
   inventory?: HermesInventory;
@@ -485,6 +486,8 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
     const restored: string[] = [];
     const shared = this.profile?.sharedConfig;
     if (shared && (await ensureConfigLink(this.hermesHome, shared))) restored.push('config.yaml');
+    // Not a change made outside Helena: a new or older home simply has none yet.
+    await ensureEnvFile(this.hermesHome);
     const plugins = join(this.hermesHome, 'plugins');
     for (const [name, source] of Object.entries(this.profile?.plugins ?? {})) {
       if (!PLUGIN_NAME.test(name) || !isAbsolute(source)) {
@@ -745,7 +748,7 @@ function latest(paths: string[]): string[] {
 }
 
 const RESTORED_DETAIL =
-  'Files or plugin links changed outside Plan were restored; a changed file is kept next to it.';
+  'Files or plugin links changed outside Helena were restored; a changed file is kept next to it.';
 
 // How often the runner reads back what Hermes loads when nothing it knows of changed: the
 // shared configuration can change under it. A new revision, a run or chat answer, a restored
