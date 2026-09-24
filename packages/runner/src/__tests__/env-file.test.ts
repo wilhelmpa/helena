@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, readlink, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ensureEnvFile } from '../hermes-profile';
+import { ensureEnvFile, ensureSharedLink } from '../hermes-profile';
 
 const homes: string[] = [];
 afterEach(async () => {
