@@ -58,6 +58,10 @@ class Runtime:
     needs_profile: bool
     # Links the sandbox keeps in the profile before the runtime starts, name → target.
     profile_links: dict[str, str]
+    # Credential sources the unit must not start without (`"required": true`): the agents' login
+    # views of the token keeper. A missing one refuses the run instead of starting an agent
+    # with no login.
+    required_credentials: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -128,10 +132,14 @@ def _runtime(name: str, value: Any) -> Runtime:
     ):
         raise IsolationError('config', f'runtime {name} env is invalid')
     binds = []
+    required = []
     for entry in value.get('credentialBinds') or []:
-        if not isinstance(entry, dict):
+        if not isinstance(entry, dict) or not isinstance(entry.get('required', False), bool):
             raise IsolationError('config', f'runtime {name} credentialBinds is invalid')
-        binds.append((_absolute(entry.get('source'), 'credential source'), str(entry.get('target', ''))))
+        source = _absolute(entry.get('source'), 'credential source')
+        binds.append((source, str(entry.get('target', ''))))
+        if entry.get('required'):
+            required.append(source)
     links = value.get('profileLinks') or {}
     if not isinstance(links, dict) or not all(
         isinstance(k, str) and re.fullmatch(r'[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?', k) and isinstance(v, str)
@@ -151,6 +159,7 @@ def _runtime(name: str, value: Any) -> Runtime:
         credential_binds=tuple(binds),
         needs_profile=value.get('profile', True) is True,
         profile_links={k: _absolute(v, 'profile link') for k, v in links.items()},
+        required_credentials=tuple(required),
     )
 
 

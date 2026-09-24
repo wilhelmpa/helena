@@ -198,8 +198,11 @@ restore_after_failure() {
   start_agents "${browsers[@]}" || true
 }
 
+# What every agent reads of the Hermes home directly. The model logins are not among them: the
+# agents get the token keeper's views of auth.json and .codex, without refresh tokens
+# (token-keeper/, docs/helena-decisions/token-keeper.md).
 model_auth() {
-  for path in "$hermes_home/config.yaml" "$hermes_home/auth.json" "$hermes_home/.env" "$hermes_home/.codex"; do
+  for path in "$hermes_home/config.yaml" "$hermes_home/.env"; do
     [[ -e $path ]] && printf -- '--model-auth\n%s\n' "$path"
   done
   return 0

@@ -76,6 +76,28 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(config.browser_gateway,
                          ('/run/volition-browser/gateway', '/run/volition-agents/browser'))
 
+    def test_agents_get_the_keepers_login_views_not_the_stores(self):
+        # docs/helena-decisions/token-keeper.md: an agent must never hold a refresh token.
+        config = common.load_config(str(config_file(self.dir)), require_root=False)
+        hermes = config.runtimes['hermes']
+        self.assertNotIn('/var/lib/volition/hermes/auth.json', hermes.read_only + hermes.optional_read_only)
+        self.assertEqual(dict(hermes.credential_binds), {
+            '/var/lib/helena-token-keeper/view/hermes/auth.json': '/var/lib/volition/hermes/auth.json',
+            '/var/lib/helena-token-keeper/view/codex': '{home}/.codex',
+        })
+        self.assertEqual(set(hermes.required_credentials), set(dict(hermes.credential_binds)))
+        self.assertIn('/var/lib/helena-token-keeper', config.hide)
+        for runtime in config.runtimes.values():
+            for source, _target in runtime.credential_binds:
+                self.assertTrue(source.startswith('/var/lib/helena-token-keeper/view/'), source)
+
+    def test_refuses_a_required_flag_that_is_not_a_boolean(self):
+        with open(ISOLATION / 'launcher.json', encoding='utf-8') as handle:
+            runtimes = json.load(handle)['runtimes']
+        runtimes['hermes']['credentialBinds'][0]['required'] = 'yes'
+        with self.assertRaises(common.IsolationError):
+            common.load_config(str(config_file(self.dir, runtimes=runtimes)), require_root=False)
+
     def test_refuses_a_file_others_can_write_when_root_reads_it(self):
         path = config_file(self.dir)
         os.chmod(path, 0o666)
@@ -415,6 +437,26 @@ class LauncherRequestTest(unittest.TestCase):
         props = worker.sandbox_properties('alpha', checked['account'], [checked['workspace']], [],
                                           checked['limits'])
         self.assertFalse(any('gateway' in p for p in props))
+
+    def test_a_run_without_the_login_view_is_refused(self):
+        view = self.dir / 'keeper/view'
+        (view / 'codex').mkdir(parents=True)
+        runtime = common.Runtime(
+            name='hermes', exec='/bin/true', fixed_args=(), caller_args=True, read_only=(), optional_read_only=(),
+            env={}, credential_binds=((str(view / 'hermes/auth.json'), '/var/lib/volition/hermes/auth.json'),
+                                      (str(view / 'codex'), '{home}/.codex')),
+            needs_profile=True, profile_links={},
+            required_credentials=(str(view / 'hermes/auth.json'), str(view / 'codex')))
+        with self.assertRaises(common.IsolationError) as caught:
+            self.worker.runtime_binds(runtime, str(self.dir / 'profiles/alpha'))
+        self.assertEqual(caught.exception.code, 'credentials')
+        (view / 'hermes').mkdir()
+        (view / 'hermes/auth.json').write_text('{}')
+        _ro, props = self.worker.runtime_binds(runtime, str(self.dir / 'profiles/alpha'))
+        self.assertEqual(props, [
+            f'BindReadOnlyPaths={view}/hermes/auth.json:/var/lib/volition/hermes/auth.json',
+            f'BindReadOnlyPaths={view}/codex:{self.dir}/profiles/alpha/.codex',
+        ])
 
     def test_request_fields(self):
         keys = self.launcher_module.REQUEST_KEYS['run']

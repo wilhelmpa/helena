@@ -385,6 +385,11 @@ class Launcher:
         extra = []
         for source, target in runtime.credential_binds:
             if not os.path.exists(source):
+                if source in runtime.required_credentials:
+                    # The token keeper writes the agents' login views; without one the agent
+                    # would start with no login, or (the old binding) with one it could spend.
+                    raise IsolationError('credentials', 'the agents\' login view is missing: install or run '
+                                         'helena-token-keeper (deployment/volition-stack/native/token-keeper)')
                 continue
             destination = target.replace('{home}', home or '/nonexistent')
             extra.append(f'BindReadOnlyPaths={_safe_path(source, "credential")}:{_safe_path(destination, "credential target")}')
