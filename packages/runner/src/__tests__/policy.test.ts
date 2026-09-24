@@ -385,6 +385,15 @@ describe('Hermes runtime policy synchronizer', () => {
       'managed-skills',
       'managed-mcp-servers',
       'learning',
+      // What Helena can ask the runtime through the runner (readers/).
+      'sessions',
+      'session-search',
+      'transcripts',
+      'logs',
+      'health',
+      'version',
+      'curator',
+      'estop',
     ]);
     expect(JSON.stringify(statuses)).not.toContain('provider-secret-value');
     expect(statuses.at(-1)?.detail).toBe(

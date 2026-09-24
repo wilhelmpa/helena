@@ -21,6 +21,7 @@ import {
   type RuntimeLearning,
 } from './learning';
 import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
+import { readerCapabilities } from './readers';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 
 export interface RuntimePolicyFile {
@@ -975,7 +976,7 @@ export class HermesPolicySynchronizer {
         adapter: 'hermes',
         ...state,
         appliedRevision: this.appliedRevision,
-        capabilities: CAPABILITIES,
+        capabilities: [...CAPABILITIES, ...readerCapabilities('hermes')],
         ...(this.inventory && { inventory: this.inventory }),
         ...(this.learnedSkills && { learnedSkills: this.learnedSkills }),
         ...(this.memoryProposals.length > 0 && { memoryProposals: this.memoryProposals }),
