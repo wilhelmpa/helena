@@ -740,5 +740,20 @@
   "settingState": {
     "on": "An",
     "off": "Aus"
+  },
+  "templateBundles": {
+    "importAction": "Vorlagen importieren",
+    "exportAction": "Vorlagen exportieren",
+    "importTitle": "Vorlagen importieren",
+    "counts": "{agents} Agenten-Vorlagen · {skills} Skills · {servers} MCP-Server",
+    "chooseFile": "Paket-Datei wählen",
+    "fileChosen": "Datei: {name}",
+    "dryRun": "Nur prüfen (nichts ändern)",
+    "update": "Abweichungen übernehmen",
+    "check": "Prüfen",
+    "import": "Importieren",
+    "close": "Schließen",
+    "failed": "Das hat nicht geklappt.",
+    "notJson": "Die Datei ist kein JSON-Paket."
   }
 }

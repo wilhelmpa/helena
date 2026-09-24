@@ -41,3 +41,11 @@ export function registerSlots(
     for (const off of offs) off();
   };
 }
+// The template bundle format, for upload and download in the browser (types only).
+export type {
+  BundleAgent,
+  BundleMcpServer,
+  BundleSkill,
+  SkillSource,
+  TemplateBundle,
+} from './templates';

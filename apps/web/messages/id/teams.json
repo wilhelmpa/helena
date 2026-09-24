@@ -740,5 +740,20 @@
   "settingState": {
     "on": "Aktif",
     "off": "Nonaktif"
+  },
+  "templateBundles": {
+    "importAction": "Impor templat",
+    "exportAction": "Ekspor templat",
+    "importTitle": "Impor templat",
+    "counts": "{agents} templat agen · {skills} keterampilan · {servers} server MCP",
+    "chooseFile": "Pilih berkas paket",
+    "fileChosen": "Berkas: {name}",
+    "dryRun": "Periksa saja (tanpa mengubah)",
+    "update": "Timpa perbedaan",
+    "check": "Periksa",
+    "import": "Impor",
+    "close": "Tutup",
+    "failed": "Tidak berhasil.",
+    "notJson": "Berkas bukan paket JSON."
   }
 }

@@ -376,5 +376,26 @@
     "janitorNeverRan": "has not run yet",
     "resuming": "{count, plural, one {# run is} other {# runs are}} resuming after a crash",
     "needsResumeReview": "{count, plural, one {# run} other {# runs}} reached the resume limit and need a look"
+  },
+  "plugins": {
+    "externalTitle": "External plugins",
+    "externalDescription": "An external plugin runs inside Helena with Helena's rights. Switch this on only for plugins you trust.",
+    "folder": "Plugin folder: {path}",
+    "noFolder": "No plugin folder is set (HELENA_PLUGINS_DIR), so only Helena's own plugins run.",
+    "restartHint": "Changes take effect when the API and the worker restart.",
+    "foundTitle": "In the plugin folder",
+    "none": "No plugins found.",
+    "approve": "Approve",
+    "revoke": "Withdraw approval",
+    "builtinTitle": "Built in",
+    "statusLoaded": "Loaded",
+    "statusFailed": "Error",
+    "statusNotLoaded": "Not loaded",
+    "restartRequired": "Restart needed",
+    "provides": "Provides",
+    "actions": "Actions",
+    "events": "Events",
+    "network": "Network",
+    "credentials": "Its tools use the credentials of its connectors."
   }
 }

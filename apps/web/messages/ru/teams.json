@@ -740,5 +740,20 @@
   "settingState": {
     "on": "Включено",
     "off": "Выключено"
+  },
+  "templateBundles": {
+    "importAction": "Импортировать шаблоны",
+    "exportAction": "Экспортировать шаблоны",
+    "importTitle": "Импорт шаблонов",
+    "counts": "{agents} шаблонов агентов · {skills} навыков · {servers} MCP-серверов",
+    "chooseFile": "Выбрать файл пакета",
+    "fileChosen": "Файл: {name}",
+    "dryRun": "Только проверить (ничего не менять)",
+    "update": "Перезаписать отличия",
+    "check": "Проверить",
+    "import": "Импортировать",
+    "close": "Закрыть",
+    "failed": "Не получилось.",
+    "notJson": "Файл не является пакетом JSON."
   }
 }

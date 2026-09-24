@@ -376,5 +376,26 @@
     "janitorNeverRan": "لم يعمل بعد",
     "resuming": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد يُستأنف} two {تشغيلان يُستأنفان} few {# تشغيلات تُستأنف} many {# تشغيلًا يُستأنف} other {# تشغيل يُستأنف}} بعد تعطل",
     "needsResumeReview": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد بلغ} two {تشغيلان بلغا} few {# تشغيلات بلغت} many {# تشغيلًا بلغ} other {# تشغيل بلغ}} حد الاستئناف ويحتاج إلى مراجعة"
+  },
+  "plugins": {
+    "externalTitle": "الإضافات الخارجية",
+    "externalDescription": "تعمل الإضافة الخارجية داخل Helena وبصلاحياتها. فعّل هذا فقط للإضافات التي تثق بها.",
+    "folder": "مجلد الإضافات: {path}",
+    "noFolder": "لم يُحدَّد مجلد للإضافات (HELENA_PLUGINS_DIR)، لذا تعمل إضافات Helena الخاصة فقط.",
+    "restartHint": "تسري التغييرات بعد إعادة تشغيل الواجهة البرمجية والعامل.",
+    "foundTitle": "في مجلد الإضافات",
+    "none": "لم يُعثر على إضافات.",
+    "approve": "اعتماد",
+    "revoke": "سحب الاعتماد",
+    "builtinTitle": "مدمجة",
+    "statusLoaded": "محمّلة",
+    "statusFailed": "خطأ",
+    "statusNotLoaded": "غير محمّلة",
+    "restartRequired": "يلزم إعادة التشغيل",
+    "provides": "يوفّر",
+    "actions": "الإجراءات",
+    "events": "الأحداث",
+    "network": "الشبكة",
+    "credentials": "تستخدم أدواتها بيانات اعتماد موصّلاتها."
   }
 }

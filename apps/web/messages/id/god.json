@@ -376,5 +376,26 @@
     "janitorNeverRan": "belum pernah berjalan",
     "resuming": "{count, plural, other {# run sedang dilanjutkan}} setelah crash",
     "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa"
+  },
+  "plugins": {
+    "externalTitle": "Plugin eksternal",
+    "externalDescription": "Plugin eksternal berjalan di dalam Helena dengan hak Helena. Aktifkan hanya untuk plugin yang Anda percayai.",
+    "folder": "Folder plugin: {path}",
+    "noFolder": "Folder plugin belum diatur (HELENA_PLUGINS_DIR), jadi hanya plugin bawaan Helena yang berjalan.",
+    "restartHint": "Perubahan berlaku setelah API dan worker dimulai ulang.",
+    "foundTitle": "Di folder plugin",
+    "none": "Tidak ada plugin.",
+    "approve": "Setujui",
+    "revoke": "Cabut persetujuan",
+    "builtinTitle": "Bawaan",
+    "statusLoaded": "Dimuat",
+    "statusFailed": "Galat",
+    "statusNotLoaded": "Tidak dimuat",
+    "restartRequired": "Perlu mulai ulang",
+    "provides": "Menyediakan",
+    "actions": "Tindakan",
+    "events": "Peristiwa",
+    "network": "Jaringan",
+    "credentials": "Alatnya memakai kredensial konektornya."
   }
 }

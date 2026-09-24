@@ -376,5 +376,26 @@
     "janitorNeverRan": "aún no se ha ejecutado",
     "resuming": "{count, plural, one {# ejecución se está reanudando} other {# ejecuciones se están reanudando}} tras una caída",
     "needsResumeReview": "{count, plural, one {# ejecución alcanzó} other {# ejecuciones alcanzaron}} el límite de reanudaciones y necesitan revisión"
+  },
+  "plugins": {
+    "externalTitle": "Plugins externos",
+    "externalDescription": "Un plugin externo se ejecuta dentro de Helena con los permisos de Helena. Actívalo solo para plugins de confianza.",
+    "folder": "Carpeta de plugins: {path}",
+    "noFolder": "No hay carpeta de plugins (HELENA_PLUGINS_DIR), así que solo se ejecutan los plugins propios de Helena.",
+    "restartHint": "Los cambios se aplican cuando se reinician la API y el worker.",
+    "foundTitle": "En la carpeta de plugins",
+    "none": "No se encontraron plugins.",
+    "approve": "Aprobar",
+    "revoke": "Retirar aprobación",
+    "builtinTitle": "Integrados",
+    "statusLoaded": "Cargado",
+    "statusFailed": "Error",
+    "statusNotLoaded": "No cargado",
+    "restartRequired": "Hace falta reiniciar",
+    "provides": "Aporta",
+    "actions": "Acciones",
+    "events": "Eventos",
+    "network": "Red",
+    "credentials": "Sus herramientas usan las credenciales de sus conectores."
   }
 }
