@@ -2,7 +2,11 @@ import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialKind } from '@/lib/api/endpoints/credentials';
 import { cn } from '@/lib/utils';
-import { PAGE_CONTROL_CLASS, usePageToolbarRoom } from '@/components/layout/PageToolbar';
+import {
+  PAGE_CONTROL_CLASS,
+  PAGE_PRIMARY_CLASS,
+  usePageToolbarRoom,
+} from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +34,7 @@ export function AddCredentialMenu({
           aria-label={t('add')}
           className={cn(
             PAGE_CONTROL_CLASS,
-            'ms-1 bg-primary font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
+            PAGE_PRIMARY_CLASS,
             room.primaryLabel ? 'px-2.5' : 'w-8 justify-center px-0',
           )}
         >
