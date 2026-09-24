@@ -8,7 +8,7 @@ export default function GlobalInboxPage() {
   const t = useTranslations('nav');
   return (
     <Shell globalHome globalTitle={t('inbox')} autoOpenGlobalChat={false}>
-      <InboxWorkspace projectKey={null} />
+      <InboxWorkspace projectKey={null} page />
     </Shell>
   );
 }

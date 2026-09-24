@@ -1,13 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { Notification } from '@/lib/api/endpoints/notifications';
 import { cn } from '@/lib/utils';
 import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { revScope } from '@/utils/revScopes';
-import { useInboxUnread } from '@/hooks/useInboxUnread';
 import { useIsMobile } from '@/hooks/use-mobile';
 import InboxToolbar from './InboxToolbar';
 import InboxList from './InboxList';
@@ -22,7 +21,15 @@ import {
   useDeleteNotifications,
 } from '../services/notifications.service';
 
-export default function InboxView({ project }: { project: ProjectDetail }) {
+// The project's notifications: the list beside the task a notification is about. Its
+// controls are the page's header row (InboxToolbar), after the page's tabs (`leading`).
+export default function InboxView({
+  project,
+  leading,
+}: {
+  project: ProjectDetail;
+  leading?: ReactNode;
+}) {
   const t = useTranslations('inbox');
   const projectKey = project.project.key;
   const projectId = project.project.id;
@@ -32,7 +39,6 @@ export default function InboxView({ project }: { project: ProjectDetail }) {
   const isMobile = useIsMobile();
 
   const query = useNotificationsQuery(projectKey, projectId, filters);
-  const unreadQuery = useInboxUnread(projectKey, projectId);
   const setRead = useSetNotificationRead(projectKey);
   const snooze = useSnoozeNotification(projectKey);
   const deleteOne = useDeleteNotification(projectKey);
@@ -59,20 +65,20 @@ export default function InboxView({ project }: { project: ProjectDetail }) {
 
   return (
     <div className="flex h-full min-h-0">
+      <InboxToolbar
+        leading={leading}
+        filters={filters}
+        onFiltersChange={changeFilters}
+        onMarkAllRead={() => markAllRead.mutate()}
+        onDeleteRead={() => deleteNotifications.mutate('read')}
+        onDeleteReadCompleted={() => deleteNotifications.mutate('read-completed')}
+      />
       <div
         className={cn(
-          'flex w-full min-w-0 flex-col md:max-w-sm md:border-r',
+          'flex w-full min-w-0 flex-col bg-card md:max-w-sm md:border-e',
           selected && 'hidden md:flex',
         )}
       >
-        <InboxToolbar
-          unread={unreadQuery.data ?? 0}
-          filters={filters}
-          onFiltersChange={changeFilters}
-          onMarkAllRead={() => markAllRead.mutate()}
-          onDeleteRead={() => deleteNotifications.mutate('read')}
-          onDeleteReadCompleted={() => deleteNotifications.mutate('read-completed')}
-        />
         <InboxList
           items={items}
           isLoading={query.isLoading}
