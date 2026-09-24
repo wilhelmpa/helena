@@ -139,6 +139,12 @@ export function sameArea(a, b) {
 // frame written out the moment it is encoded. The tier's keyframe interval bounds how long a
 // viewer who joins mid-stream, or misses frames to a stall, waits for the next one.
 //
+// The grab itself costs next to nothing (shared memory); turning its BGR pixels into YUV 4:2:0
+// is what a large area pays for: on the bench a 3840x2160 page at 60 fps took 132 % of a core
+// in one thread, about 21 ms per frame. The scale filter does it in the tier's threads instead:
+// 87 % of a core in all for 4 threads, and a quarter of the time per frame (measured with
+// ffmpeg 7.1 on the Ryzen AI Max+ 395; the whole 4K encoder went from 180 % to about 130 %).
+//
 // Measured on the bench (README, "Latency"): ffmpeg reads the first frames of an input to learn
 // what it holds, and keeps them. From a live grab those frames never drain: every later frame
 // waits behind them for as long as the encoder runs, which was 2 frames at 1280x800 and up to
@@ -148,7 +154,8 @@ export function sameArea(a, b) {
 // waited for the next frame (see project-browser-mp4.mjs).
 export function encoderArguments({ x, y, width, height, display }, tier) {
   const size = scaledSize(width, height, tier.scaleMax);
-  const scale = size.width === width && size.height === height ? [] : ["-vf", `scale=${size.width}:${size.height}`];
+  const resize = size.width === width && size.height === height ? "" : `${size.width}:${size.height}:`;
+  const scale = ["-vf", `scale=${resize}threads=${tier.threads},format=yuv420p`];
   // A VBV cap (maxrate+bufsize) on top of CRF: quality stays constant-target where content is
   // simple, but a peak that would otherwise burst past what the tier's own connection affords
   // is held to it instead, at the cost of quality only right where the cap actually binds.

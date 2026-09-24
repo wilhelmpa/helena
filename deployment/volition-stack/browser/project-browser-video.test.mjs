@@ -183,8 +183,9 @@ describe("encoderArguments", () => {
     assert.equal(args[args.indexOf("-framerate") + 1], String(high.frameRate));
     assert.equal(args[args.indexOf("-g") + 1], String(high.frameRate * high.keyframeSeconds));
     assert.equal(args[args.indexOf("-threads") + 1], String(high.threads));
-    // The capture size already fits "high" (no cap), so no scale filter is added.
-    assert.ok(!args.includes("-vf"));
+    // The capture size already fits "high" (no cap): the filter only turns the grab into YUV,
+    // in the tier's threads, which a large area needs (see encoderArguments).
+    assert.equal(args[args.indexOf("-vf") + 1], `scale=threads=${high.threads},format=yuv420p`);
     assert.equal(args[args.indexOf("-bf") + 1], "0");
     // More than one thread must not cost latency: sliced, not frame, parallelism.
     assert.equal(args[args.indexOf("-x264-params") + 1], "sliced-threads=1:rc-lookahead=0:sync-lookahead=0");
@@ -199,8 +200,8 @@ describe("encoderArguments", () => {
     const args = encoderArguments({ display: 87, x: 0, y: 0, width: 1920, height: 1080 }, low);
     assert.equal(args[args.indexOf("-video_size") + 1], "1920x1080");
     const scale = args[args.indexOf("-vf") + 1];
-    assert.match(scale, /^scale=\d+:\d+$/);
-    const [, width, height] = /^scale=(\d+):(\d+)$/.exec(scale);
+    assert.match(scale, /^scale=\d+:\d+:threads=1,format=yuv420p$/);
+    const [, width, height] = /^scale=(\d+):(\d+)/.exec(scale);
     assert.ok(Math.max(Number(width), Number(height)) <= low.scaleMax);
   });
 
