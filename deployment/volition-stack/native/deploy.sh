@@ -236,6 +236,11 @@ if changed deployment/volition-stack/isolation deployment/volition-stack/native/
   deployment/volition-stack/integration/project-browser-state.mjs; then
   "$live/deployment/volition-stack/native/isolation.sh" sync
 fi
+# Now that the installed launcher binds the views, the keeper's sync takes the agents' group's
+# read access to the real stores away (idempotent; nothing to do on later deploys).
+if changed deployment/volition-stack/native/token-keeper deployment/volition-stack/isolation/launcher.json; then
+  "$live/deployment/volition-stack/native/token-keeper/install.sh" sync
+fi
 
 if ((${#restart[@]} > 0)); then
   echo "restarting ${restart[*]}"
