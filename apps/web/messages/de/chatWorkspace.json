@@ -52,12 +52,6 @@
     "transcript": "Nachrichten",
     "loadOlder": "Frühere Nachrichten laden",
     "loading": "Lädt …",
-    "reasoning": "Denkprozess",
-    "reasoningLive": "Denkt nach …",
-    "toolCalls": "{count, plural, one {# Werkzeugaufruf} other {# Werkzeugaufrufe}}",
-    "toolInput": "Eingabe",
-    "toolOutput": "Ausgabe",
-    "sources": "Quellen:",
     "scrollToBottom": "Zur neuesten Nachricht scrollen",
     "edit": "Bearbeiten",
     "saveAndBranch": "Als neue Version speichern",
@@ -74,11 +68,12 @@
     "restoreFailed": "Seine Nachrichten konnten nicht gelesen werden. Prüfe die Verbindung und versuche es erneut.",
     "retry": "Erneut versuchen",
     "today": "Heute",
-    "yesterday": "Gestern"
+    "yesterday": "Gestern",
+    "sourcesCount": "{count, plural, one {# Quelle} other {# Quellen}}"
   },
   "composer": {
     "placeholder": "Nachricht an {agent} …",
-    "hint": "Eingabe sendet · Umschalt+Eingabe oder ⌘/Strg+Eingabe für eine neue Zeile · Dateien ablegen oder einfügen · / für Befehle und Prompts",
+    "hint": "Eingabe sendet · Umschalt+Eingabe oder ⌘/Strg+Eingabe für eine neue Zeile · Esc stoppt die Antwort · ↑ bearbeitet deine letzte Nachricht · Dateien ablegen oder einfügen · / für Befehle und Prompts",
     "send": "Senden",
     "stop": "Antwort stoppen",
     "attach": "Anhängen",
@@ -124,7 +119,8 @@
     "dictationInsecureTitle": "Diktieren braucht eine sichere Verbindung",
     "dictationInsecure": "Der Browser gibt das Mikrofon nur über HTTPS frei. Bis Helena über HTTPS läuft: in Chrome chrome://flags öffnen, „Insecure origins treated as secure“ aktivieren und {origin} eintragen. Im Kiosk ist es bereits freigeschaltet.",
     "autoSpeak": "Antworten automatisch vorlesen",
-    "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken"
+    "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken",
+    "queuedList": "Wartet auf das Senden"
   },
   "artifact": {
     "title": "Artefakt",
@@ -132,7 +128,8 @@
     "code": "Code",
     "preview": "Vorschau",
     "save": "Im Vault speichern",
-    "saved": "Gespeichert unter {path}."
+    "saved": "Gespeichert unter {path}.",
+    "writing": "Artefakt entsteht …"
   },
   "issue": {
     "fromChat": "In Aufgabe umwandeln",

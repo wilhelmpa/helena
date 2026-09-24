@@ -2,8 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { dayKey, formatLongDate } from '@/utils/dates';
+import { Marker, MarkerContent } from '@/components/ui/marker';
 
-// The line between two days of a conversation: "Heute", "Gestern", or the date.
+// The line between two days of a conversation — "Heute", "Gestern", or the date — as
+// shadcn's separator Marker.
 export default function ChatDaySeparator({ at }: { at: string }) {
   const t = useTranslations('chatWorkspace.messages');
   const today = dayKey(new Date().toISOString());
@@ -12,10 +14,8 @@ export default function ChatDaySeparator({ at }: { at: string }) {
   const label =
     day === today ? t('today') : day === yesterday ? t('yesterday') : formatLongDate(at);
   return (
-    <div className="flex items-center gap-3 py-2 text-xs text-muted-foreground" role="separator">
-      <span className="h-px flex-1 bg-border" />
-      <span>{label}</span>
-      <span className="h-px flex-1 bg-border" />
-    </div>
+    <Marker variant="separator" role="separator" className="py-2 text-xs">
+      <MarkerContent>{label}</MarkerContent>
+    </Marker>
   );
 }

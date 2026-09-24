@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useCallback, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { dayKey } from '@/utils/dates';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
@@ -14,7 +14,6 @@ import {
   MessageScrollerItem,
   MessageScrollerViewport,
 } from '@/components/ui/message-scroller';
-import InitialScrollToEnd from '@/components/common/agent-chat/InitialScrollToEnd';
 import type { PlanChat } from '../../hooks/usePlanChat';
 import type { Artifact } from '../../utils/artifacts';
 import type { PlanUIMessage } from '../../utils/chatMessages';
@@ -30,36 +29,51 @@ export interface ChatMessageListProps {
   agent: AiAgent;
   projectKey: string | null;
   threadId: string | null;
+  editingId: string | null;
+  onEditingChange: (messageId: string | null) => void;
   onShowArtifact: (artifact: Artifact) => void;
 }
 
-// The transcript, in the shared MessageScroller: it keeps the view pinned to the
-// newest message while the reader stays at the bottom, and stops the moment they
-// scroll up to read back, with a button to jump back down. Centered at a comfortable
-// reading width rather than filling the pane edge to edge, the way claude.ai reads.
-// Only messages: an answer with nothing to show yet is left out, and what the answer is
-// doing is said at the composer (ChatComposerStatus).
+// The transcript, in shadcn's MessageScroller: it opens at the newest message, follows
+// an answer while it streams as long as the reader stays at the bottom, lets go the
+// moment they scroll up to read back (with a button to jump down again), anchors a new
+// question near the top so its answer has room, and keeps the reader's place when older
+// messages load in above. Centered at a comfortable reading width, the way claude.ai
+// reads. Only messages: what the answer is doing is said at the composer.
 export default function ChatMessageList({
   plan,
   agent,
   projectKey,
   threadId,
+  editingId,
+  onEditingChange,
   onShowArtifact,
 }: ChatMessageListProps) {
   const t = useTranslations('chatWorkspace');
   const { messages, status } = plan;
+  // The callbacks each message gets stay the same while the answer streams, so a
+  // finished message does not re-render with every token of the next one.
+  const latest = useRef(plan);
+  latest.current = plan;
+  const edit = useCallback((messageId: string, text: string) => {
+    const index = latest.current.messages.findIndex((message) => message.id === messageId);
+    if (index >= 0) void latest.current.edit(index, text);
+  }, []);
+  const switchVersion = useCallback(
+    (messageId: string) => void latest.current.switchVersion(messageId),
+    [],
+  );
+
   // Older messages load by themselves when the top of the transcript comes into view
   // (old-chat parity); the button stays for keyboards and as the loading indicator.
   const topRef = useRef<HTMLDivElement>(null);
-  const loadOlder = useRef(plan.loadOlder);
-  loadOlder.current = plan.loadOlder;
   const canLoadOlder = plan.hasOlder && !plan.loadingOlder && !plan.restoring;
   useEffect(() => {
     const node = topRef.current;
     if (!node || !canLoadOlder) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting) void loadOlder.current();
+        if (entry?.isIntersecting) void latest.current.loadOlder();
       },
       { rootMargin: '200px 0px 0px 0px' },
     );
@@ -78,10 +92,9 @@ export default function ChatMessageList({
   }
 
   return (
-    <MessageScrollerProvider>
+    <MessageScrollerProvider autoScroll defaultScrollPosition="end">
       <MessageScroller className="flex-1">
-        <InitialScrollToEnd hasMessages={messages.length > 0} />
-        <MessageScrollerViewport aria-label={t('messages.transcript')}>
+        <MessageScrollerViewport aria-label={t('messages.transcript')} preserveScrollOnPrepend>
           <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-2 px-4 pt-6 pb-6">
             <div ref={topRef} aria-hidden="true" />
             {plan.hasOlder && (
@@ -118,9 +131,11 @@ export default function ChatMessageList({
                       agent={agent}
                       projectKey={projectKey}
                       threadId={threadId}
-                      onEdit={(text) => void plan.edit(index, text)}
+                      editing={editingId === message.id}
+                      onEditingChange={onEditingChange}
+                      onEdit={edit}
                       onShowArtifact={onShowArtifact}
-                      onSwitchVersion={(messageId) => void plan.switchVersion(messageId)}
+                      onSwitchVersion={switchVersion}
                     />
                   </MessageScrollerItem>
                 </Fragment>

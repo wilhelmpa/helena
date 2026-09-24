@@ -52,12 +52,6 @@
     "transcript": "Pesan",
     "loadOlder": "Muat pesan sebelumnya",
     "loading": "Memuat…",
-    "reasoning": "Proses berpikir",
-    "reasoningLive": "Sedang berpikir…",
-    "toolCalls": "{count, plural, other {# panggilan alat}}",
-    "toolInput": "Input",
-    "toolOutput": "Output",
-    "sources": "Sumber:",
     "scrollToBottom": "Gulir ke pesan terbaru",
     "edit": "Edit",
     "saveAndBranch": "Simpan sebagai versi baru",
@@ -74,11 +68,12 @@
     "restoreFailed": "Pesannya tidak dapat dibaca. Periksa koneksi lalu coba lagi.",
     "retry": "Coba lagi",
     "today": "Hari ini",
-    "yesterday": "Kemarin"
+    "yesterday": "Kemarin",
+    "sourcesCount": "{count, plural, other {# sumber}}"
   },
   "composer": {
     "placeholder": "Pesan untuk {agent}…",
-    "hint": "Enter mengirim · Shift+Enter atau ⌘/Ctrl+Enter untuk baris baru · lepas atau tempel berkas untuk melampirkan · / untuk perintah dan prompt",
+    "hint": "Enter mengirim · Shift+Enter atau ⌘/Ctrl+Enter untuk baris baru · Esc menghentikan jawaban · ↑ menyunting pesan terakhir Anda · lepas atau tempel berkas untuk melampirkan · / untuk perintah dan prompt",
     "send": "Kirim",
     "stop": "Hentikan jawaban",
     "attach": "Lampirkan",
@@ -124,7 +119,8 @@
     "dictationInsecureTitle": "Dikte memerlukan koneksi aman",
     "dictationInsecure": "Browser hanya meminjamkan mikrofon ke halaman HTTPS. Sampai Helena berjalan di HTTPS: buka chrome://flags di Chrome, aktifkan “Insecure origins treated as secure” dan tambahkan {origin}. Kios sudah mengizinkannya.",
     "autoSpeak": "Bacakan jawaban secara otomatis",
-    "autoSpeakOn": "Jawaban dibacakan – klik untuk mematikan"
+    "autoSpeakOn": "Jawaban dibacakan – klik untuk mematikan",
+    "queuedList": "Menunggu dikirim"
   },
   "artifact": {
     "title": "Artefak",
@@ -132,7 +128,8 @@
     "code": "Kode",
     "preview": "Pratinjau",
     "save": "Simpan ke vault",
-    "saved": "Disimpan ke {path}."
+    "saved": "Disimpan ke {path}.",
+    "writing": "Menulis artefak…"
   },
   "issue": {
     "fromChat": "Jadikan tugas",

@@ -715,7 +715,8 @@
         "model": "Model/reasoning",
         "budgets": "Budgets"
       }
-    }
+    },
+    "chatTemplate": "A template does not run. Add it to a project as an agent to try it here."
   },
   "members": {
     "roleSaved": "{name} is now {role}",

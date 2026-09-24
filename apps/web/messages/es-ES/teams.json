@@ -715,7 +715,8 @@
         "model": "Modelo/razonamiento",
         "budgets": "Presupuestos"
       }
-    }
+    },
+    "chatTemplate": "Una plantilla no se ejecuta. Añádela a un proyecto como agente para probarla aquí."
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",

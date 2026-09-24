@@ -715,7 +715,8 @@
         "model": "模型/推理",
         "budgets": "预算"
       }
-    }
+    },
+    "chatTemplate": "模板本身不会运行。将它作为智能体添加到项目后即可在这里试用。"
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

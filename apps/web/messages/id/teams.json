@@ -715,7 +715,8 @@
         "model": "Model/penalaran",
         "budgets": "Anggaran"
       }
-    }
+    },
+    "chatTemplate": "Templat tidak berjalan sendiri. Tambahkan ke proyek sebagai agen untuk mencobanya di sini."
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

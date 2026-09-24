@@ -715,7 +715,8 @@
         "model": "Modèle/raisonnement",
         "budgets": "Budgets"
       }
-    }
+    },
+    "chatTemplate": "Un modèle ne s’exécute pas. Ajoutez-le à un projet comme agent pour l’essayer ici."
   },
   "members": {
     "roleSaved": "{name} est maintenant {role}",
