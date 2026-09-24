@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Direction } from 'radix-ui';
 import type { WorkspaceLayoutState } from '@/hooks/useWorkspaceLayout';
@@ -70,11 +70,15 @@ export default function WorkspaceLayoutHost({
     dockWidth: docks.widthOf,
     pageMin: PAGE_MIN_WIDTH,
   });
-  const toolAreas: PanelArea[] = resolved.areas.flatMap((area) =>
-    area.kind === 'tool' && area.tool
-      ? [{ id: area.id, tool: area.tool, main: area.main, column: geometry.column[area.id]! }]
-      : [],
+  // The same list while nothing moves, so the panel does not describe its tools anew.
+  const areasJson = JSON.stringify(
+    resolved.areas.flatMap((area) =>
+      area.kind === 'tool' && area.tool
+        ? [{ id: area.id, tool: area.tool, main: area.main, column: geometry.column[area.id] }]
+        : [],
+    ),
   );
+  const toolAreas = useMemo(() => JSON.parse(areasJson) as PanelArea[], [areasJson]);
   // A grip on an area's start edge grows it as the pointer moves towards the start.
   const growth = (deltaX: number) => (direction === 'rtl' ? deltaX : -deltaX);
   const firstPanelArea = panelAreas[0];

@@ -10,7 +10,7 @@ import {
 } from '@/extensions/workspaceLayouts';
 import { usePluginWorkspaceLayouts } from '@/extensions/pluginWorkspaceLayouts';
 import { usePanelTools } from '@/extensions/panelTools';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { readLocal, useLocalValue, writeLocal } from '@/hooks/useLocalValue';
 import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
 import type { KioskDisplay } from '@/utils/kioskDisplay';
@@ -70,7 +70,9 @@ export function useWorkspaceLayout({
   usePluginWorkspaceLayouts();
   const layouts = useWorkspaceLayouts();
   const tools = usePanelTools();
-  const phone = useIsMobile();
+  // Read with the stored layout in the same render, so a phone never shows another
+  // layout for a moment after loading.
+  const phone = useMediaQuery('(max-width: 767px)');
   const dual = kiosk === 'dual';
   const context: LayoutContext = layoutContext(kiosk);
   const storageKey = layoutStorageKey(context);
