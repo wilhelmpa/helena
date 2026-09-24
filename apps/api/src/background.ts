@@ -1,8 +1,6 @@
 import { recordJanitorRun } from '@repo/db';
 import { intEnv } from '#shared/lib';
 import { JANITOR_JOBS } from '#modules/god/system-health';
-import { agentRunConfig } from '#modules/agents/core/run-queue';
-import { processAgentRuns } from '#modules/agents/core/run-poller';
 import { expireExhaustedRuns, expireResumeLimitedRuns } from '#modules/agents/runner/service';
 import { sweepStaleIssues } from '#modules/issues/auto-archive';
 import { processActionRuns } from '#modules/actions/runner';
@@ -23,7 +21,6 @@ const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR] = JANITOR
 // can carry thousands of issues, so sharing one loop would let either hold the other
 // back for that long.
 export function startBackgroundJobs(): void {
-  startLoop('agent-runs', processAgentRuns, agentRunConfig.pollIntervalMs);
   startLoop('action-runs', processActionRuns, () => intEnv('ACTION_RUN_POLL_INTERVAL_MS', 1000));
   startLoop('inbox-tasks', processInboxTasks, () => intEnv('INBOX_TASK_POLL_INTERVAL_MS', 2000));
   startLoop('pipeline-starts', drainPendingStarts, () =>

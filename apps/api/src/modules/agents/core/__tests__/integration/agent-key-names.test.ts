@@ -51,15 +51,12 @@ describe('agent key names', () => {
     ]);
     expect(await keyWorks(external.data!.apiKey!)).toBe(true);
 
-    const internal = await agents(asOwner, teamId).post({
+    const second = await agents(asOwner, teamId).post({
       name: 'Persönlicher Assistent Privat',
       username: 'assistant-priv',
-      kind: 'internal',
     });
-    expect(internal.status).toBe(201);
-    expect(await keyNames(internal.data!.agent.userId)).toEqual([
-      'agent:Persönlicher Assistent Pri',
-    ]);
+    expect(second.status).toBe(201);
+    expect(await keyNames(second.data!.agent.userId)).toEqual(['agent:Persönlicher Assistent Pri']);
   });
 
   it('cuts the key name between characters', async () => {

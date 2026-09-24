@@ -15,19 +15,13 @@ const BASE = 'http://localhost';
 // response body as text. Path params fill the URL; the remaining arguments become
 // the JSON body (POST/PUT/PATCH) or the query string (GET/DELETE). The caller's API
 // credential is forwarded to the route session guard so permission checks run
-// exactly as they do over HTTP.
-//
-// viaMcpEndpoint says whether the call came from POST /mcp. It is explicit at both
-// call sites because it selects a real behaviour: only an MCP call carries the
-// loopback header, and only a request carrying that header is subject to the
-// per-project MCP toggle. An internal agent run dispatches through the same routes
-// but is not MCP, so disabling MCP on a project must not disarm its agents.
+// exactly as they do over HTTP. Every call carries the loopback header, which is what
+// subjects it to the per-project MCP toggle.
 export async function dispatchTool(
   app: McpApp,
   tool: McpRouteTool,
   args: Record<string, unknown>,
   credential: McpCredential,
-  opts: { viaMcpEndpoint: boolean },
 ): Promise<{ text: string; isError: boolean; structuredContent: StructuredResult }> {
   const rest: Record<string, unknown> = { ...args };
 
@@ -57,7 +51,7 @@ export async function dispatchTool(
       'content-type': 'application/json',
       ...(credential.kind === 'api-key' ? { 'x-api-key': credential.apiKey } : {}),
       // Marks this as an MCP call so guards enforce the per-project MCP toggle.
-      ...(opts.viaMcpEndpoint ? { [MCP_LOOPBACK_HEADER]: '1' } : {}),
+      [MCP_LOOPBACK_HEADER]: '1',
     },
     body,
   });

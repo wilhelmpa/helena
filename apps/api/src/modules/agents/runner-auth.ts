@@ -13,7 +13,6 @@ export const runnerAuth = new Elysia({ name: 'runner-auth' }).use(authContext).m
       async resolve({ user }) {
         const agent = await getRunnerAgent(requireUser(user).id);
         if (!agent) throw new HttpError(403, 'Only an agent key can drain an agent feed');
-        if (agent.kind !== 'external') throw new HttpError(403, 'Internal agents run in-process');
         return { agent };
       },
     };

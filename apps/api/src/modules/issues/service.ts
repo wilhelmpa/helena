@@ -35,7 +35,6 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import type { IssueQuery } from '#modules/agents/core/issue-query';
 import { iso, num, numOrNull, HttpError } from '#shared/lib';
 import type { ProjectRow } from '#modules/projects/service';
 import { assertProjectFeature } from '#shared/access';
@@ -294,6 +293,27 @@ export interface IssueSearchHit {
 // '\' as the default escape character).
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+// The filters of an issue search or of the filtered list (list_issues): a text search,
+// exact ids and values, a due window in YYYY-MM-DD, and a result limit (1 to 200). An
+// issue must carry every label in labelIds; a null filter matches the issues where the
+// field is empty.
+export interface IssueQuery {
+  query?: string;
+  columnId?: number;
+  typeId?: number | null;
+  initiativeId?: number | null;
+  cycleId?: number | null;
+  folderId?: number | null;
+  parentId?: number | null;
+  assigneeUserId?: string | null;
+  delegateUserId?: string | null;
+  priority?: string | null;
+  labelIds?: number[];
+  dueFrom?: string;
+  dueTo?: string;
+  limit?: number;
 }
 
 // Server-side issue read backing two routes: text search (search_issues) and the

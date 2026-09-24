@@ -89,9 +89,7 @@ export async function buildMcpServer(
         };
       }
     }
-    const { text, isError, structuredContent } = await dispatchTool(app, tool, args, credential, {
-      viaMcpEndpoint: true,
-    });
+    const { text, isError, structuredContent } = await dispatchTool(app, tool, args, credential);
     return { content: [{ type: 'text', text }], isError, structuredContent };
   });
 

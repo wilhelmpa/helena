@@ -493,14 +493,10 @@ describe('analytics', () => {
     });
   });
 
-  // Creates an agent (external by default) and returns its bot user id, so a test
-  // can delegate an issue to it or assert the workload roster.
-  async function makeAgent(
-    asOwner: Api,
-    username: string,
-    kind: 'external' | 'internal' = 'external',
-  ) {
-    const res = await createAgent(asOwner, 'MKT', { name: username, username, kind });
+  // Creates an agent and returns it, so a test can delegate an issue to it or assert
+  // the workload roster.
+  async function makeAgent(asOwner: Api, username: string) {
+    const res = await createAgent(asOwner, 'MKT', { name: username, username });
     if (!res.data) throw new Error(`createAgent failed with status ${res.status}`);
     return res.data.agent;
   }

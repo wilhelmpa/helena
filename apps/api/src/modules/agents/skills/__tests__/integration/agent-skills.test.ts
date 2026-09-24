@@ -8,7 +8,7 @@ import { createRole } from '#tests/helpers/roles';
 import { createAgent } from '#tests/helpers/agents';
 
 // The team skill library: SKILL.md documents (plus optional reference files) given to
-// the internal agents of every project the team owns. Content lives in the object
+// the agents of every project the team owns. Content lives in the object
 // store; the row holds metadata. Access is the agent_skills permission resource,
 // resolved on the team.
 
@@ -200,14 +200,10 @@ describe('agent skills', () => {
     expect((await skills(asOwner, teamId).get()).data?.items).toHaveLength(0);
   });
 
-  it('enables skills on an internal agent and lists them', async () => {
+  it('enables skills on an agent and lists them', async () => {
     const { asOwner, teamId } = await setup();
     const created = await skills(asOwner, teamId).post({ source: 'inline', markdown: SKILL_MD });
-    const agent = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const agent = await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' });
     const agentId = agent.data!.agent.id;
 
     const set = await agents(
@@ -233,11 +229,7 @@ describe('agent skills', () => {
       source: 'inline',
       markdown: SKILL_MD,
     });
-    const agent = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const agent = await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' });
 
     const set = await agents(
       asOwner,

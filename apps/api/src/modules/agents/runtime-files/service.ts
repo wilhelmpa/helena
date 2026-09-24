@@ -26,8 +26,6 @@ export async function listAgentRuntimeFiles(
 ): Promise<AgentRuntimeFile[] | null> {
   const agent = await getAgentById(agentId, teamId, visibleTo);
   if (!agent) return null;
-  if (agent.kind !== 'external')
-    throw new HttpError(400, 'Runtime files require an external agent');
   return sorted(agent.runtimePolicy.files);
 }
 
@@ -39,7 +37,7 @@ async function mutateAgentRuntimeFiles(
 ): Promise<AgentRuntimeFile[] | null> {
   return db.transaction(async (tx) => {
     const [row] = await tx
-      .select({ kind: aiAgent.kind, runtimePolicy: aiAgent.runtimePolicy })
+      .select({ runtimePolicy: aiAgent.runtimePolicy })
       .from(aiAgent)
       .where(
         and(
@@ -52,9 +50,6 @@ async function mutateAgentRuntimeFiles(
       )
       .for('update');
     if (!row) return null;
-    if (row.kind !== 'external') {
-      throw new HttpError(400, 'Runtime files require an external agent');
-    }
     const policy = normalizeRuntimePolicy(row.runtimePolicy);
     const files = sorted(mutate(policy.files));
     await tx

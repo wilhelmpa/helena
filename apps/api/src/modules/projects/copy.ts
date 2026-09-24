@@ -36,7 +36,6 @@ import {
 } from './service';
 import { GIT_SETTING_KEY } from '#modules/git/service';
 import { getProjectDefaults } from '#modules/settings/service';
-import { listAgents, updateAgent } from '#modules/agents/core/service';
 import { generateSecret } from '#modules/webhooks/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { ensureDefaultProjectViews } from '#modules/views/service';
@@ -46,8 +45,8 @@ import { ensureDefaultProjectViews } from '#modules/views/service';
 // states/types/labels/fields); those dependencies are force-enabled in
 // normalizeInclude so a partial selection can never leave an id pointing at the
 // source project. Agents, their skills and their configured tools are not among them:
-// all three belong to the team, so a copy inside it reuses the same agents, and a copy
-// into another team carries none.
+// an agent keeps to its one project, which is what gives it a Hermes runtime of its own,
+// so a copy starts with its own coordinator and nothing else.
 export interface CopyProjectInclude {
   states: boolean;
   issueTypes: boolean;
@@ -59,7 +58,6 @@ export interface CopyProjectInclude {
   actions: boolean;
   configuration: boolean;
   webhooks: boolean;
-  agents: boolean;
 }
 
 export const COPY_INCLUDE_KEYS: (keyof CopyProjectInclude)[] = [
@@ -73,7 +71,6 @@ export const COPY_INCLUDE_KEYS: (keyof CopyProjectInclude)[] = [
   'actions',
   'configuration',
   'webhooks',
-  'agents',
 ];
 
 const ALL_FALSE = Object.fromEntries(
@@ -245,12 +242,9 @@ export async function copyProject(
   // transaction opens so the settings lookup is not part of it.
   const [defaults, agentUserIds, defaultRoleId] = await Promise.all([
     getProjectDefaults(),
-    newProjectAgentUserIds(ownerTeam.id, true),
+    newProjectAgentUserIds(ownerTeam.id),
     getDefaultRoleId(ownerTeam.id),
   ]);
-  // Agents, integration credentials and roles belong to the team, so what references
-  // them survives the copy only when it stays in the same team.
-  const sameTeam = ownerTeam.id === source.teamId;
   const copyTransaction = db.transaction(async (tx) => {
     // The optional sections the source project shows and the estimate kinds it
     // carries are part of its configuration, so the copy starts with the same ones.
@@ -560,35 +554,6 @@ export async function copyProject(
   if (inc.documents && (await copyVaultFolder(docsRoot(source.key), docs))) {
     await indexVaultPaths([docs]);
     await commitVaultPaths([docs], `Copy the Docs of ${source.key}`, PLAN_AUTHOR);
-  }
-
-  // Agents: the internal ones working in the source project, attached to the new one as
-  // well. The team owns them and one handle is unique in it, so a second copy of the same
-  // agent cannot exist. An external agent keeps to its one project, which is what gives
-  // it a Hermes runtime of its own. A copy into another team carries no agent: creating
-  // one there would mean a new bot user and a new API key for something the operator did
-  // not ask for, and its skills and configured tools would be missing anyway.
-  if (inc.agents && sameTeam) {
-    for (const a of await listAgents(source.teamId, sourceProjectId)) {
-      if (a.kind === 'external') continue;
-      // The member fields the agent reacts to, remapped onto the copies.
-      const fieldTriggers = a.fieldTriggers.flatMap((trigger) => {
-        const fieldId = maps.field.get(trigger.fieldId);
-        return fieldId == null ? [] : [{ fieldId, delaySec: trigger.delaySec }];
-      });
-      await updateAgent(
-        a.id,
-        ownerTeam.id,
-        {
-          projectIds: [...a.projects.map((p) => p.id), newProject.id],
-          fieldTriggers: [
-            ...a.fieldTriggers.map(({ fieldId, delaySec }) => ({ fieldId, delaySec })),
-            ...fieldTriggers,
-          ],
-        },
-        ownerId,
-      );
-    }
   }
 
   return newProject;

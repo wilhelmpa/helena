@@ -921,10 +921,10 @@ SELECT id, ${literal(ownerId)}, 'owner' FROM project WHERE key = ${literal(HOME_
 INSERT INTO "user" (id, name, email, email_verified, role, active)
 VALUES (${literal(agentUserId)}, 'Home Master', ${literal(agentEmail)}, false, 'user', true);
 INSERT INTO ai_agent (
-  team_id, user_id, username, kind, tools, trigger_on_mention, trigger_on_assign,
+  team_id, user_id, username, kind, trigger_on_mention, trigger_on_assign,
   delegation_delay_sec, runtime_policy, runtime_state, owner_user_id, runner_scope
 )
-SELECT id, ${literal(agentUserId)}, ${literal(MASTER_AGENT_USERNAME)}, 'external', '[]'::jsonb,
+SELECT id, ${literal(agentUserId)}, ${literal(MASTER_AGENT_USERNAME)}, 'external',
   false, false, 0,
   '{"reasoningEffort":"medium","toolAllow":[],"toolDeny":[],"mcpGrants":[],"files":[]}'::jsonb,
   '{}'::jsonb, ${literal(ownerId)}, 'owner'

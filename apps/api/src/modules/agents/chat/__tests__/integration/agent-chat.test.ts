@@ -992,17 +992,10 @@ describe('external agent chat', () => {
     ).toBe(404);
   });
 
-  it('takes chat messages only for an external agent, and only from its own key', async () => {
+  it("takes chat messages from a member, and claims only from the agent's own key", async () => {
     const { asOwner, agent } = await setup();
-    const internal = await createAgent(asOwner, 'MKT', {
-      name: 'In Bot',
-      username: 'in',
-      kind: 'internal',
-    });
 
-    // An internal agent is chatted with through /run and /run/stream instead.
-    expect((await send(asOwner, internal.data!.agent.id, 'Hello')).status).toBe(400);
-    // And a member's session is not a runner.
+    // A member's session is not a runner.
     expect((await asOwner['agent-chats'].claim.post()).status).toBe(403);
     expect((await send(asOwner, agent.id, 'Hello')).status).toBe(200);
   });

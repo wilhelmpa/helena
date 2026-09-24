@@ -37,8 +37,6 @@ describe('Home agent bootstrap', () => {
       kind: 'external',
       ownerUserId: owner.userId,
       runnerScope: 'owner',
-      memoryEnabled: true,
-      memoryLastMessages: 50,
       triggerOnMention: true,
       triggerOnAssign: false,
     });
@@ -164,11 +162,7 @@ describe('Project agent bootstrap', () => {
     const owner = await signUpTestUser();
     const api = authedApi(owner.cookie);
     const created = await api.projects.post({ key: 'CODE', name: 'Code' });
-    const other = await api.projects.post({
-      key: 'OTHER',
-      name: 'Other',
-      autoAssignTeamAgents: false,
-    });
+    const other = await api.projects.post({ key: 'OTHER', name: 'Other' });
     const agent = await createAgent(api, 'CODE', {
       name: 'Coder',
       username: 'coder',

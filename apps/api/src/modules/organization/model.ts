@@ -136,7 +136,7 @@ const OrganizationAgentResponse = t.Object({
   userId: t.String(),
   name: t.String(),
   username: t.String(),
-  kind: t.Union([t.Literal('external'), t.Literal('internal')]),
+  kind: t.Literal('external'),
   // The Home master, root of the reporting chain; never a "pool template" or an
   // "unassigned" agent, even though it carries no organization_agent_assignment row.
   isHome: t.Boolean(),

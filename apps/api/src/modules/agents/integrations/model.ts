@@ -6,14 +6,9 @@ export const credentialParams = t.Object({
   credentialId: t.Numeric(),
 });
 
-export const providerParams = t.Object({
-  teamId: t.Numeric(),
-  provider: t.String({ description: "LLM provider key from list_integrations, e.g. 'anthropic'." }),
-});
-
 export const integrationOptionsQuery = t.Object({
   kind: t.Optional(
-    t.Union([t.Literal('llm'), t.Literal('tool'), t.Literal('secret')], {
+    t.Union([t.Literal('tool'), t.Literal('secret')], {
       description: 'Only the integrations of this kind.',
     }),
   ),
@@ -59,14 +54,12 @@ const IntegrationResponse = t.Object({
 
 export const IntegrationCatalogResponse = t.Array(IntegrationResponse);
 
-export const ProviderModelListResponse = t.Array(t.Object({ id: t.String(), name: t.String() }));
-
 // A connected integration as a picker option: what it is and what it is called.
 // Carries no credential fields, redacted or otherwise.
 const IntegrationOptionResponse = t.Object({
   id: t.Number(),
   integrationKey: t.String(),
-  kind: t.Union([t.Literal('llm'), t.Literal('tool'), t.Literal('secret')]),
+  kind: t.Union([t.Literal('tool'), t.Literal('secret')]),
   label: t.Nullable(t.String()),
 });
 

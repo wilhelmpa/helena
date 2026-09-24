@@ -16,8 +16,8 @@ import { credentialSchemaFor, integrationKind, type IntegrationKind } from './ca
 // project-scoped caller resolves its team id first. The full credential object is
 // encrypted at rest (AES-256-GCM) as one JSON blob; `redacted` holds the same object
 // with secret fields masked, in plaintext, for a masked display. The plaintext
-// credential is only read by the runtime through getCredentialSecret, never returned
-// over HTTP. The rows of the Credentials page share the table and are left out here.
+// credential is never returned over HTTP. The rows of the Credentials page share the
+// table and are left out here.
 
 function integrationsOf(teamId: number) {
   return and(
@@ -232,16 +232,4 @@ export async function deleteCredential(id: number, teamId: number): Promise<bool
     .delete(integrationCredential)
     .where(and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId)));
   return true;
-}
-
-// The decrypted credential for the runtime: its integration key and config. Not
-// exposed over HTTP. Returns null when the credential does not exist in the team.
-export async function getCredentialSecret(
-  id: number,
-  teamId: number,
-): Promise<{ integrationKey: string; config: ToolConfig } | null> {
-  const existing = await getCredentialById(id, teamId);
-  if (!existing) return null;
-  const config = (await decrypt(id, teamId)) ?? {};
-  return { integrationKey: existing.integrationKey, config };
 }

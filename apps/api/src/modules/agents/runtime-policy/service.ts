@@ -49,7 +49,6 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     agent: { id: agent.id, name: agent.name, username: agent.username },
     instructions: agent.instructions,
     model: agent.model,
-    memory: { enabled: agent.memoryEnabled, lastMessages: agent.memoryLastMessages },
     runtimePolicy: {
       ...agent.runtimePolicy,
       files: [

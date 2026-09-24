@@ -6,8 +6,8 @@ import { addProjectMember } from '#tests/helpers/members';
 import { untaggedRoutes } from '#tests/helpers/mcp';
 import { createRole } from '#tests/helpers/roles';
 
-// Integration credentials for a team: one store for LLM provider keys (kind 'llm')
-// and tool credentials (kind 'tool'), shared by every project the team owns. The
+// Integration credentials for a team: the credentials of tool integrations (kind
+// 'tool'), shared by every project the team owns. The
 // secret is stored encrypted and never returned — a response carries only a redacted
 // view. Access is the integrations permission resource, resolved on the team; the
 // catalog and the picker options open to any member of it.
@@ -27,13 +27,15 @@ describe('integrations', () => {
     await resetDb();
   });
 
-  it('lists the catalog with LLM providers and tool integrations', async () => {
+  it('lists the catalog of tool integrations, and no model providers', async () => {
     const { asOwner, teamId } = await setup();
     const res = await integrations(asOwner, teamId).catalog.get();
     expect(res.status).toBe(200);
+    // Helena runs no model, so there is no provider to store a key for.
+    expect(res.data!.every((integration) => integration.kind === 'tool')).toBe(true);
+    expect(res.data!.map((integration) => integration.key)).not.toContain('openai');
     expect(res.data).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ key: 'openai', kind: 'llm' }),
         expect.objectContaining({
           key: 'jina',
           kind: 'tool',
@@ -43,21 +45,30 @@ describe('integrations', () => {
     );
   });
 
-  it('stores an LLM credential, masks the secret, and never returns the raw value', async () => {
+  it('stores a credential, masks the secret, and never returns the raw value', async () => {
     const { asOwner, teamId } = await setup();
     const res = await integrations(asOwner, teamId).post({
-      integrationKey: 'openai',
+      integrationKey: 'jina',
       label: 'Team',
-      credential: { apiKey: 'sk-secret-1234' },
+      credential: { apiKey: 'jina-secret-1234' },
     });
     expect(res.status).toBe(201);
-    expect(res.data).toMatchObject({ teamId, integrationKey: 'openai', label: 'Team' });
+    expect(res.data).toMatchObject({ teamId, integrationKey: 'jina', label: 'Team' });
     expect(res.data!.redacted).toMatchObject({ apiKey: '••••1234' });
-    expect(JSON.stringify(res.data)).not.toContain('sk-secret-1234');
+    expect(JSON.stringify(res.data)).not.toContain('jina-secret-1234');
 
     const list = await integrations(asOwner, teamId).get();
     expect(list.data?.items).toHaveLength(1);
-    expect(JSON.stringify(list.data)).not.toContain('sk-secret');
+    expect(JSON.stringify(list.data)).not.toContain('jina-secret');
+  });
+
+  it('refuses a model provider key, which nothing would use', async () => {
+    const { asOwner, teamId } = await setup();
+    const res = await integrations(asOwner, teamId).post({
+      integrationKey: 'openai',
+      credential: { apiKey: 'sk-secret-1234' },
+    });
+    expect(res.status).toBe(400);
   });
 
   it('stores a tool credential (Jina)', async () => {
@@ -162,16 +173,16 @@ describe('integrations', () => {
   it('deletes a credential', async () => {
     const { asOwner, teamId } = await setup();
     const created = await integrations(asOwner, teamId).post({
-      integrationKey: 'openai',
-      credential: { apiKey: 'sk-9999' },
+      integrationKey: 'jina',
+      credential: { apiKey: 'jina-9999' },
     });
     const del = await integrations(asOwner, teamId)({ credentialId: created.data!.id }).delete();
     expect(del.status).toBe(204);
     expect((await integrations(asOwner, teamId).get()).data?.items).toHaveLength(0);
   });
 
-  // An agent's provider and model are picked over MCP, so the reads are tagged. The
-  // writes are not: a credential body carries the provider's secret in plain text. The
+  // The catalog and the credential list are read over MCP, so the reads are tagged. The
+  // writes are not: a credential body carries the service's secret in plain text. The
   // options route is untagged too: it is what the UI pickers read, and the credential
   // list already covers the same ground for an agent.
   it('exposes the credential reads to MCP, not the writes', () => {
@@ -194,8 +205,8 @@ describe('integrations', () => {
       const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
 
       const created = await integrations(asMember, teamId).post({
-        integrationKey: 'openai',
-        credential: { apiKey: 'sk-1111' },
+        integrationKey: 'jina',
+        credential: { apiKey: 'jina-1111' },
       });
       expect(created.status).toBe(201);
       expect((await integrations(asMember, teamId).get()).status).toBe(200);
@@ -221,8 +232,8 @@ describe('integrations', () => {
         .members.post({ userId: other.userId, role: 'owner' });
 
       const created = await integrations(asProjectOwner, teamId).post({
-        integrationKey: 'openai',
-        credential: { apiKey: 'sk-2222' },
+        integrationKey: 'jina',
+        credential: { apiKey: 'jina-2222' },
       });
       expect(created.status).toBe(201);
       expect((await integrations(asProjectOwner, teamId).get()).status).toBe(200);
@@ -240,8 +251,8 @@ describe('integrations', () => {
       expect(
         (
           await integrations(asMember, teamId).post({
-            integrationKey: 'openai',
-            credential: { apiKey: 'sk-1111' },
+            integrationKey: 'jina',
+            credential: { apiKey: 'jina-1111' },
           })
         ).status,
       ).toBe(403);
@@ -256,7 +267,7 @@ describe('integrations', () => {
       expect(
         (
           await integrations(asOutsider, teamId).post({
-            integrationKey: 'openai',
+            integrationKey: 'jina',
             credential: { apiKey: 'x' },
           })
         ).status,
@@ -268,9 +279,9 @@ describe('integrations', () => {
     it('lists the connected integrations without any credential fields', async () => {
       const { asOwner, teamId } = await setup();
       await integrations(asOwner, teamId).post({
-        integrationKey: 'openai',
+        integrationKey: 'telegram',
         label: 'Team',
-        credential: { apiKey: 'sk-secret-1234' },
+        credential: { botToken: '123:secret-aaaa', defaultChatId: '42' },
       });
       await integrations(asOwner, teamId).post({
         integrationKey: 'jina',
@@ -281,21 +292,23 @@ describe('integrations', () => {
       expect(res.status).toBe(200);
       expect(res.data).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ integrationKey: 'openai', kind: 'llm', label: 'Team' }),
+          expect.objectContaining({ integrationKey: 'telegram', kind: 'tool', label: 'Team' }),
           expect.objectContaining({ integrationKey: 'jina', kind: 'tool', label: null }),
         ]),
       );
       expect(JSON.stringify(res.data)).not.toContain('••••');
 
-      const llm = await options(asOwner, teamId).get({ query: { kind: 'llm' } });
-      expect(llm.data!.map((o) => o.integrationKey)).toEqual(['openai']);
+      const tools = await options(asOwner, teamId).get({ query: { kind: 'tool' } });
+      expect(tools.data!.map((o) => o.integrationKey).sort()).toEqual(['jina', 'telegram']);
+      const secrets = await options(asOwner, teamId).get({ query: { kind: 'secret' } });
+      expect(secrets.data).toEqual([]);
     });
 
     it('opens to a member whose role has no integrations access', async () => {
       const { asOwner, teamId } = await setup();
       await integrations(asOwner, teamId).post({
-        integrationKey: 'openai',
-        credential: { apiKey: 'sk-secret-1234' },
+        integrationKey: 'jina',
+        credential: { apiKey: 'jina-secret-1234' },
       });
       const role = await createRole(asOwner, 'MKT', {
         name: 'Agents only',

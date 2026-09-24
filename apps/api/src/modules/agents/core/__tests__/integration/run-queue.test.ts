@@ -4,20 +4,12 @@ import { eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { createAgent, teamOf } from '#tests/helpers/agents';
-import {
-  countRunsAhead,
-  enqueueAgentRun,
-  claimDueRuns,
-  markRunSuccess,
-  markRunFailed,
-  scheduleRunRetry,
-} from '../../run-queue';
+import { createAgent } from '#tests/helpers/agents';
+import { enqueueAgentRun } from '../../run-queue';
 
-// The agent_run outbox store: the claim/lease/retry state machine the in-process
-// poller drives. The poller itself makes a live LLM call, so it is not exercised
-// here; this covers the deterministic queue transitions. agent_run has no API
-// surface, so a run is enqueued through the store and its state is read from the db.
+// The agent_run outbox store: how a run is queued. The runner claims, leases and closes
+// it over HTTP, which the runner tests cover. A run is enqueued through the store here
+// and its state is read from the db.
 
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -28,11 +20,9 @@ async function setup() {
   return { asOwner, columnId };
 }
 
-// Creates an internal agent and an issue, then enqueues a pending run for the pair.
+// Creates an agent and an issue, then enqueues a pending run for the pair.
 async function enqueueRun(asOwner: Api, columnId: number) {
-  const agent = (
-    await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot', kind: 'internal' })
-  ).data!.agent;
+  const agent = (await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' })).data!.agent;
   const issue = (
     await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Task' })
   ).data!;
@@ -77,88 +67,5 @@ describe('agent_run queue store', () => {
 
     await Promise.all([again(), again()]);
     expect(await db.select().from(agentRun).where(eq(agentRun.issueId, issue.id))).toHaveLength(1);
-  });
-
-  it('claims a due run, bumps attempts, and holds the lease so it is not re-claimed', async () => {
-    const { asOwner, columnId } = await setup();
-    const { runId } = await enqueueRun(asOwner, columnId);
-
-    const first = await claimDueRuns();
-    expect(first.find((r) => r.id === runId)).toBeDefined();
-    // The lease pushed next_attempt_at into the future while keeping status pending.
-    const after = await readRun(runId);
-    expect(after).toMatchObject({ status: 'pending', attempts: 1 });
-    expect(after.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
-
-    // A second immediate claim finds nothing due — the lease is still held.
-    const second = await claimDueRuns();
-    expect(second.find((r) => r.id === runId)).toBeUndefined();
-  });
-
-  it('counts the in-flight runs a run waits behind', async () => {
-    const { asOwner, columnId } = await setup();
-    const { agent, runId } = await enqueueRun(asOwner, columnId);
-    const other = (
-      await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Other' })
-    ).data!;
-    await enqueueAgentRun({
-      agentId: agent.id,
-      projectId: agent.projects[0].id,
-      issueId: other.id,
-      sourceActivityId: null,
-      prompt: 'again',
-    });
-    const teamId = await teamOf(asOwner, 'MKT');
-    const [second] = await db.select().from(agentRun).where(eq(agentRun.issueId, other.id));
-
-    // Queued but unclaimed runs are not under way.
-    expect(await countRunsAhead(teamId, second.id)).toBe(0);
-
-    await claimDueRuns();
-    expect(await countRunsAhead(teamId, runId)).toBe(0);
-    expect(await countRunsAhead(teamId, second.id)).toBe(1);
-
-    // A finished run stops counting, so the next one is no longer held behind it.
-    await markRunSuccess(runId, 'done', null);
-    expect(await countRunsAhead(teamId, second.id)).toBe(0);
-  });
-
-  it('marks a claimed run successful and removes it from the queue', async () => {
-    const { asOwner, columnId } = await setup();
-    const { runId } = await enqueueRun(asOwner, columnId);
-    await claimDueRuns();
-    await markRunSuccess(runId, 'done', { inputTokens: 12, outputTokens: 3 });
-    expect(await readRun(runId)).toMatchObject({
-      status: 'success',
-      output: 'done',
-      lastError: null,
-      inputTokens: 12,
-      outputTokens: 3,
-    });
-  });
-
-  it('marks a run failed and records the error', async () => {
-    const { asOwner, columnId } = await setup();
-    const { runId } = await enqueueRun(asOwner, columnId);
-    await claimDueRuns();
-    await markRunFailed(runId, 'boom');
-    expect(await readRun(runId)).toMatchObject({ status: 'failed', lastError: 'boom' });
-  });
-
-  it('reschedules a retry back to pending with the error and a future attempt time', async () => {
-    const { asOwner, columnId } = await setup();
-    const { runId } = await enqueueRun(asOwner, columnId);
-    await claimDueRuns();
-    await scheduleRunRetry(runId, 60_000, 'transient');
-    const row = await readRun(runId);
-    expect(row).toMatchObject({ status: 'pending', lastError: 'transient' });
-    expect(row.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
-  });
-
-  it('truncates a long error to the column limit', async () => {
-    const { asOwner, columnId } = await setup();
-    const { runId } = await enqueueRun(asOwner, columnId);
-    await markRunFailed(runId, 'x'.repeat(600));
-    expect((await readRun(runId)).lastError).toHaveLength(500);
   });
 });

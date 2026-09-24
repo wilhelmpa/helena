@@ -12,10 +12,6 @@ export interface Limits {
   maxTeams: number;
   // People in a team. An agent's bot user does not take a seat.
   maxTeamMembers: number;
-  // Runs of the team's agents in flight at once.
-  maxConcurrentRuns: number;
-  // Wall time one run gets before it is aborted.
-  maxRunSeconds: number;
   // How close together an agent schedule may fire.
   minScheduleIntervalSeconds: number;
   // Stored attachment bytes across the team's projects.
@@ -34,8 +30,6 @@ export type LimitScope = { teamId: number } | { ownerUserId: string };
 export const NO_LIMITS: Limits = {
   maxTeams: 0,
   maxTeamMembers: 0,
-  maxConcurrentRuns: 0,
-  maxRunSeconds: 0,
   minScheduleIntervalSeconds: 0,
   maxStorageBytes: 0,
   blockedFeatures: [],

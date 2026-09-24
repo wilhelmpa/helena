@@ -117,23 +117,17 @@ async function* limitedStream(
   }
 }
 
-// The agent this route acts on, or a 404. Only an external agent has a chat feed: an
-// internal one is run in-process by /run and /run/stream.
-async function requireExternalAgent(agentId: number, projectId: number) {
+// The agent this route acts on, or a 404: one working in the project, or one of the
+// team the caller may see.
+async function requireProjectAgent(agentId: number, projectId: number) {
   const agent = await getAgentInProject(agentId, projectId);
   if (!agent) throw new HttpError(404, 'Agent not found');
-  if (agent.kind !== 'external') {
-    throw new HttpError(400, 'Only external agents are chatted with through the runner feed');
-  }
   return agent;
 }
 
-async function requireTeamExternalAgent(agentId: number, membership: TeamMembership) {
+async function requireTeamAgent(agentId: number, membership: TeamMembership) {
   const agent = await getAgentById(agentId, membership.teamId, agentScopeOf(membership));
   if (!agent) throw new HttpError(404, 'Agent not found');
-  if (agent.kind !== 'external') {
-    throw new HttpError(400, 'Only external agents are chatted with through the runner feed');
-  }
   return agent;
 }
 
@@ -326,7 +320,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/teams/:teamId/ai-agents/:agentId/chat',
     async ({ params, membership, body, user }) => {
       const caller = requireUser(user);
-      const agent = await requireTeamExternalAgent(params.agentId, membership);
+      const agent = await requireTeamAgent(params.agentId, membership);
       if (agent.template) throw new HttpError(400, 'A template does not run');
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
@@ -359,7 +353,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/teams/:teamId/ai-agents/:agentId/chat/retry',
     async ({ params, membership, body, user }) => {
       const caller = requireUser(user);
-      const agent = await requireTeamExternalAgent(params.agentId, membership);
+      const agent = await requireTeamAgent(params.agentId, membership);
       if (agent.template) throw new HttpError(400, 'A template does not run');
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
@@ -387,7 +381,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .get(
     '/teams/:teamId/ai-agents/:agentId/chat/catalog',
     async ({ params, membership }) => {
-      await requireTeamExternalAgent(params.agentId, membership);
+      await requireTeamAgent(params.agentId, membership);
       return readChatCatalog(params.agentId);
     },
     {
@@ -402,7 +396,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/teams/:teamId/ai-agents/:agentId/chat/:messageId/events',
     async ({ params, membership, query, user }) => {
       const caller = requireUser(user);
-      await requireTeamExternalAgent(params.agentId, membership);
+      await requireTeamAgent(params.agentId, membership);
       const page = await readEvents(params.messageId, params.agentId, caller.id, query.after);
       if (!page) throw new HttpError(404, 'Message not found');
       return page;
@@ -420,7 +414,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/teams/:teamId/ai-agents/:agentId/chat/:messageId/stream',
     async ({ params, membership, query, user }) => {
       const caller = requireUser(user);
-      await requireTeamExternalAgent(params.agentId, membership);
+      await requireTeamAgent(params.agentId, membership);
       const after = query.after ?? 0;
       if (!(await readEvents(params.messageId, params.agentId, caller.id, after))) {
         throw new HttpError(404, 'Message not found');
@@ -447,7 +441,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/teams/:teamId/ai-agents/:agentId/chat/:messageId/cancel',
     async ({ params, membership, user }) => {
       const caller = requireUser(user);
-      const agent = await requireTeamExternalAgent(params.agentId, membership);
+      const agent = await requireTeamAgent(params.agentId, membership);
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
       }
@@ -467,7 +461,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/projects/:projectKey/ai-agents/:agentId/chat',
     async ({ params, project, body, user }) => {
       const caller = requireUser(user);
-      const agent = await requireExternalAgent(params.agentId, project.id);
+      const agent = await requireProjectAgent(params.agentId, project.id);
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
       }
@@ -505,7 +499,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/projects/:projectKey/ai-agents/:agentId/chat/retry',
     async ({ params, project, body, user }) => {
       const caller = requireUser(user);
-      const agent = await requireExternalAgent(params.agentId, project.id);
+      const agent = await requireProjectAgent(params.agentId, project.id);
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
       }
@@ -537,7 +531,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .get(
     '/projects/:projectKey/ai-agents/:agentId/chat/catalog',
     async ({ params, project }) => {
-      await requireExternalAgent(params.agentId, project.id);
+      await requireProjectAgent(params.agentId, project.id);
       return readChatCatalog(params.agentId);
     },
     {
@@ -558,7 +552,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/projects/:projectKey/ai-agents/:agentId/chat/:messageId/events',
     async ({ params, project, query, user }) => {
       const caller = requireUser(user);
-      await requireExternalAgent(params.agentId, project.id);
+      await requireProjectAgent(params.agentId, project.id);
       const page = await readEvents(params.messageId, params.agentId, caller.id, query.after);
       if (!page) throw new HttpError(404, 'Message not found');
       return page;
@@ -580,7 +574,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream',
     async ({ params, project, query, user }) => {
       const caller = requireUser(user);
-      await requireExternalAgent(params.agentId, project.id);
+      await requireProjectAgent(params.agentId, project.id);
       // Checked before the stream starts, so an unknown answer is a 404 rather than a
       // stream that ends immediately.
       const after = query.after ?? 0;
@@ -617,7 +611,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel',
     async ({ params, project, user }) => {
       const caller = requireUser(user);
-      const agent = await requireExternalAgent(params.agentId, project.id);
+      const agent = await requireProjectAgent(params.agentId, project.id);
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
       }

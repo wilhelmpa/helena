@@ -213,7 +213,7 @@ export interface AssigneeCandidate {
   username: string | null;
   image: string | null;
   kind: 'member' | 'agent';
-  agentKind: 'external' | 'internal' | null;
+  agentKind: 'external' | null;
   // For a member: their owner/member flag and their project description, so callers
   // (the agent tool) can pick who to tag. Null for an agent.
   role: MemberRole | null;
@@ -294,7 +294,7 @@ export async function listAssigneeCandidates(projectId: number): Promise<Assigne
     username: r.username,
     image: r.image,
     kind: 'agent',
-    agentKind: r.agentKind as 'external' | 'internal',
+    agentKind: r.agentKind as 'external',
     role: null,
     description: null,
     restrictedToUserId: r.runnerScope === 'owner' ? r.ownerUserId : null,

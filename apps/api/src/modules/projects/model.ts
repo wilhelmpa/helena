@@ -26,7 +26,6 @@ export const createProjectBody = t.Composite([
   projectBody,
   t.Object({
     templateId: t.Optional(t.Integer({ minimum: 1 })),
-    autoAssignTeamAgents: t.Optional(t.Boolean()),
     preset: t.Optional(
       t.Union(
         ISSUE_TYPE_PRESET_KEYS.map((k) => t.Literal(k)),
@@ -151,7 +150,7 @@ const AssigneeCandidateResponse = t.Object({
   username: t.Nullable(t.String()),
   image: t.Nullable(t.String()),
   kind: t.Union([t.Literal('member'), t.Literal('agent')]),
-  agentKind: t.Nullable(t.Union([t.Literal('external'), t.Literal('internal')])),
+  agentKind: t.Nullable(t.Literal('external')),
   restrictedToUserId: t.Nullable(t.String()),
   canReadWorkItems: t.Boolean(),
   paused: t.Boolean({
