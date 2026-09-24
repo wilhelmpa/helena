@@ -59,6 +59,12 @@ lives, inside the process that already holds it, and hands Helena numbers only.
   spool (`/var/lib/helena-limits/reports/owner.json`, 0644, numbers only). The API has no
   channel into the owner's home, and nothing of the login leaves it. This is the private
   part of this install; Docker installs leave the spool unset.
+- **Which providers Hermes is asked for.** Only those the served agents use (their profile
+  default, the runner config, their chat catalog). Hermes' Anthropic fetcher also discovers a
+  Claude Code login in the home of the user it runs as (`~/.claude/.credentials.json`,
+  verified: the bundle's `limits-probe` run as the owner read the owner's Claude windows
+  through it); the runner user has none, and `anthropic` is only asked for when an agent
+  runs on it.
 - **Dedupe.** A snapshot names its account by a hash (sha256, 16 hex) of the provider's
   account id where the provider gives one (ChatGPT: `account_id` from `/wham/usage` and
   `accountId` from the app-server, the same id), else of the login's location. So Hermes'
@@ -86,11 +92,12 @@ lives, inside the process that already holds it, and hands Helena numbers only.
 - **Hooks into what exists.**
   - hermes-in-helena's ledger `agent_usage`: each window shows how many tokens Helena's
     agents on that account spent since the window started (`resetsAt − duration`).
-  - Autopilot (hub/autopilot, proposal, optional, not built here): an evaluator in its
-    budget step reads `agentLimitState(agentId)` (exported by the API module) and defers
-    non-urgent runs while the agent's account is `limited` — or, above an owner threshold
-    (e.g. 90 %), until the window resets. Off by default; the numbers and the helper are
-    ready.
+  - Autopilot (proposal, optional, not built here to stay out of its code): where
+    `modules/autopilot/engine.ts` `decide()` asks `budgetExhausted()`, a switch "Bei
+    erschöpftem Plan-Limit anhalten" (off by default) would also ask
+    `agentLimitState(agentId)` (`#modules/provider-limits/service`) and answer like an
+    exhausted budget while the agent's account is `limited`, until `nextResetAt`; a threshold
+    (e.g. 90 %) could hold only non-urgent runs. The numbers and the helper are ready.
   - Health overview: the Home "Systemstatus" section lists an account that is `limited`, or
     whose numbers are stale, as a problem line.
 - **UI.** Home (Start), for the Administrator: a compact "Limits" card, one row per account
