@@ -23,6 +23,7 @@ import { sendAuthEmail } from './mail';
 import { oidcProfileLabel } from './oidc-profile';
 import { localOwner } from './local-owner';
 import { consumeKeyRequest, RateLimitedError } from './key-rate-limit';
+import { sessionCookieDomain } from './cookie-domain';
 
 // Frontend origins allowed to call the auth handler. Mandatory config: cookies, the
 // WebAuthn relying party and the cookie domain are all derived from it, so a deploy
@@ -35,30 +36,13 @@ if (trustedOrigins.length === 0) {
   throw new Error('APP_URL is not set: public origin(s) of the web app.');
 }
 
-// Parent domain for a cross-subdomain session cookie (".example.com" from
-// "app.example.com"). Returns undefined for localhost, IPs, or apex domains, where
-// no cross-subdomain sharing is needed. Used so the SSR web app on one subdomain can
-// read the session cookie set by the api on a sibling subdomain.
-function parentDomain(origin: string | undefined): string | undefined {
-  if (!origin) return undefined;
-  let host: string;
-  try {
-    host = new URL(origin).hostname;
-  } catch {
-    return undefined;
-  }
-  if (host === 'localhost' || /^[\d.]+$/.test(host)) return undefined;
-  const labels = host.split('.');
-  if (labels.length < 3) return undefined;
-  return '.' + labels.slice(1).join('.');
-}
-
-// Explicit COOKIE_DOMAIN wins (needed for multi-label TLDs or deep subdomains);
-// otherwise derive it from the frontend origin.
-const cookieDomain =
-  process.env.COOKIE_DOMAIN === 'host-only'
-    ? undefined
-    : process.env.COOKIE_DOMAIN || parentDomain(trustedOrigins[0]);
+// The session cookie's domain: host-only unless the app and the api are on different hosts
+// (./cookie-domain.ts; a single-origin install never shares its session with sibling sites).
+const cookieDomain = sessionCookieDomain(
+  trustedOrigins[0],
+  process.env.API_URL,
+  process.env.COOKIE_DOMAIN,
+);
 
 // WebAuthn relying-party id: the frontend domain the passkey is bound to (no port,
 // no scheme). The WebAuthn ceremony runs in the frontend JS, so the expected origin
