@@ -223,9 +223,15 @@ export async function callGateway(
     });
 
     socket.on('error', (error) => {
+      // Without isolation the runner passes the project's socket; an agent without it was
+      // started before its runner config knew the gateway.
+      const hint =
+        envValue(env, 'BROWSER_GATEWAY_SOCKET') === undefined && !options.socketPath
+          ? ' The runner gave this agent no BROWSER_GATEWAY_SOCKET: restart volition-hermes-runner once its catalog script is current.'
+          : '';
       finish(
         textResult(
-          `Cannot reach the project browser (${error.message}). The browser gateway is not running, or this agent has no project browser.`,
+          `Cannot reach the project browser (${error.message}). The browser gateway is not running, or this agent has no project browser.${hint}`,
           true,
         ),
       );

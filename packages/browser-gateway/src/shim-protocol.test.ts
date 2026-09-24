@@ -175,6 +175,20 @@ describe('callGateway', () => {
     );
   });
 
+  it('says what to do when the runner passed no socket', async () => {
+    const result = await callGateway('browser_status', {}, { env: {} });
+    expect(result.isError).toBe(true);
+    expect((result.content[0] as { text: string }).text).toContain(
+      'restart volition-hermes-runner',
+    );
+    const given = await callGateway(
+      'browser_status',
+      {},
+      { env: { BROWSER_GATEWAY_SOCKET: path.join(await tempDir(), 'none.sock') } },
+    );
+    expect((given.content[0] as { text: string }).text).not.toContain('restart');
+  });
+
   it('reports an unreadable answer as a tool error', async () => {
     const target = path.join(await tempDir(), 'gateway.sock');
     await new Promise<void>((resolve) => {

@@ -28,11 +28,22 @@ token=${GATEWAY_TOKEN:-/etc/volition/browser-gateway.token}
 units=${GATEWAY_UNITS:-/etc/systemd/system}
 node_bin=${GATEWAY_NODE:-/usr/local/bin/node}
 bun_bin=${GATEWAY_BUN:-/usr/local/bin/bun}
+systemctl_bin=${GATEWAY_SYSTEMCTL:-systemctl}
 owner=$(stat -c %U "$checkout")
 dropin_units=(volition-plan-api.service volition-project-browser-router.service)
 dropin_content=$'[Service]\nLoadCredential=browser_gateway_token:'"$token"$'\nEnvironment=BROWSER_GATEWAY_TOKEN_FILE=%d/browser_gateway_token\n'
 
 say() { if ((dry_run)); then echo "would $*"; else echo "$*"; fi; }
+
+# Creates a directory that is missing, with the given mode; one that exists is left exactly
+# as it is. /etc/volition in particular belongs to the whole instance: the runner and the API
+# traverse it to their own files, so its mode (0751) and owner are never touched here (a
+# `install -d -m 0750` on it once locked them out and sent the runner into a restart loop).
+ensure_dir() {
+  local directory=$1 mode=$2
+  [[ -d $directory ]] && return 0
+  install -d -m "$mode" "$directory"
+}
 run() { if ((dry_run)); then echo "would run: $*"; else "$@"; fi; }
 as_owner() { if [[ ${GATEWAY_TEST:-} == 1 ]]; then "$@"; else runuser -u "$owner" -- "$@"; fi; }
 
@@ -65,7 +76,7 @@ install_token() {
   if [[ -s $token ]]; then return; fi
   say "create the browser gateway's service token $token (not shown)"
   if ((!dry_run)); then
-    install -d -m 0750 "$(dirname "$token")"
+    ensure_dir "$(dirname "$token")" 0751
     (umask 077 && head -c 32 /dev/urandom | base64 | tr -d '\n=' > "$token")
     chmod 0600 "$token"
   fi
@@ -91,10 +102,10 @@ install_dropins() {
     local dropin=$units/$unit.d/browser-gateway.conf
     if [[ -f $dropin ]] && [[ $(cat "$dropin") == "${dropin_content%$'\n'}" ]]; then continue; fi
     say "hand the gateway token to $unit ($dropin)"
-    ((dry_run)) || { install -d -m 0755 "$(dirname "$dropin")"; printf '%s' "$dropin_content" > "$dropin"; }
+    ((dry_run)) || { ensure_dir "$(dirname "$dropin")" 0755; printf '%s' "$dropin_content" > "$dropin"; }
     changed=1
   done
-  if ((changed)); then run systemctl daemon-reload; fi
+  if ((changed)); then run "$systemctl_bin" daemon-reload; fi
   return 0
 }
 
@@ -107,7 +118,7 @@ remove_dropins() {
     run rm -f "$dropin"
     changed=1
   done
-  if ((changed)); then run systemctl daemon-reload; fi
+  if ((changed)); then run "$systemctl_bin" daemon-reload; fi
   return 0
 }
 
