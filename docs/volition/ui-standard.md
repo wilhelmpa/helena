@@ -26,3 +26,9 @@ The owner's rules, in one place. Every page follows them; a page that does not i
 - The main area has a 16px gutter on every side at every width (`PAGE_GUTTER_CLASS`). No centred columns, no `xl:px-12`.
 - Lists, tables, grids and overviews use the whole width (`SectionPageView wide`). Forms keep the left-aligned column (`SECTION_COLUMN_CLASS`), so the left edge is the same everywhere.
 - Gaps between cards and grid cells are 16px, the same as the gutter (dashboard `COL_GAP`/`ROW_GAP`, Home grids).
+
+## Layouts (page and tools side by side)
+- How the page and the tools share the room is the header's layout menu (the current layout's picture, right of the tool buttons; key `L`; palette "Layout wechseln"): Standard, Chat links, Chat + Werkzeug, Zwei Werkzeuge, Werkzeug groß, and plugins' layouts (`docs/helena-decisions/layout.md`).
+- Every tool area has the same 40px header row: its tool picker (icon with a chevron) first, then the tool's own bar or its name. No tool shows twice; picking one that is already visible swaps the two.
+- Nothing in a layout is re-parented: tools only change their grid column, so frames never reload. A new arrangement is a layout in the registry, never a container of its own.
+- Phones: no layout menu, one thing at a time.

@@ -19,7 +19,8 @@ export type UiSlotName =
   | 'header-action'
   | 'home-nav'
   | 'admin-section'
-  | 'capture-action';
+  | 'capture-action'
+  | 'workspace-layout';
 
 // Framework-neutral component type: a React function component is assignable to it, and
 // the SDK stays free of React.
@@ -129,6 +130,37 @@ export interface CaptureActionSlot extends SlotBase {
   contexts: CaptureKind[];
 }
 
+// One place in a workspace layout and what it shows.
+export interface WorkspaceLayoutArea {
+  // Unique within the layout: `page`, `main`, `dock`, `second` …
+  id: string;
+  // `page`: the page the address names. `main`: the panel's own tool, the one the
+  // header's tool buttons pick (every layout has exactly one). `tool`: a tool of its
+  // own; `tool` names the one it starts with, and the area has a picker for any other.
+  shows: 'page' | 'main' | 'tool';
+  // A panel tool's id (`chat`, `browser`, a plugin's `plugin:<pluginId>:<id>`, or the
+  // short id of the plugin's own tool). For `main`, the tool it falls back to when the
+  // active one is already shown elsewhere.
+  tool?: string;
+  // `page`: on the page's side (the first screen of the dual kiosk); `panel`: in the
+  // tool panel (the second screen). Areas of one side sit next to each other in the
+  // order listed.
+  side: 'page' | 'panel';
+  // Left out while the window is narrower than this (px), so a layout can say what
+  // gives way on a small screen (the page, for a chat that takes its place).
+  minRoom?: number;
+}
+
+// An arrangement of the page and the panel tools side by side, offered in the header's
+// layout menu. A layout is data: plugins declare theirs in the manifest like any slot.
+export interface WorkspaceLayoutSlot extends SlotBase {
+  slot: 'workspace-layout';
+  areas: WorkspaceLayoutArea[];
+  // The panel takes the whole window (both screens of the dual kiosk), over the sidebar
+  // and the header, with a way back to the layout before.
+  full?: boolean;
+}
+
 export type UiSlot =
   | PanelToolSlot
   | ProjectSettingsSlot
@@ -137,7 +169,8 @@ export type UiSlot =
   | HeaderActionSlot
   | HomeNavSlot
   | AdminSectionSlot
-  | CaptureActionSlot;
+  | CaptureActionSlot
+  | WorkspaceLayoutSlot;
 
 export type SlotOf<Name extends UiSlotName> = Extract<UiSlot, { slot: Name }>;
 

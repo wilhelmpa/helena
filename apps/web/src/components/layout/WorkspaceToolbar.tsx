@@ -20,12 +20,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 // phone only the pinned tool (chat) stays in the row and the rest open from one overflow
 // menu, so the single-row header never wraps or scrolls sideways.
 export default function WorkspaceToolbar({
-  open,
-  activeTool,
+  shown,
   onSelectTool,
 }: {
-  open: boolean;
-  activeTool: WorkspaceToolId;
+  // The tools the workspace layout shows right now, which the bar marks as active.
+  shown: readonly WorkspaceToolId[];
   onSelectTool: (tool: WorkspaceToolId) => void;
 }) {
   const t = useTranslations('nav.workspace');
@@ -33,13 +32,13 @@ export default function WorkspaceToolbar({
   const label = usePanelToolLabel();
   const tools = usePanelTools().filter((tool) => tool.inHeader);
   const overflow = tools.filter((tool) => !tool.phonePinned);
-  const overflowActive = open && overflow.some((tool) => tool.id === activeTool);
+  const overflowActive = overflow.some((tool) => shown.includes(tool.id));
 
   return (
     <nav className="flex h-full shrink-0 items-center gap-0.5" aria-label={t('tools')}>
       {tools.map((tool) => {
         const Icon = tool.Icon;
-        const active = open && activeTool === tool.id;
+        const active = shown.includes(tool.id);
         const name = label(tool);
         return (
           <Tooltip key={tool.id}>
@@ -78,7 +77,7 @@ export default function WorkspaceToolbar({
         <DropdownMenuContent align="end" className="min-w-44">
           {overflow.map((tool) => {
             const Icon = tool.Icon;
-            const active = open && activeTool === tool.id;
+            const active = shown.includes(tool.id);
             return (
               <DropdownMenuItem
                 key={tool.id}

@@ -9,9 +9,7 @@ export type WorkspacePanelMode = 'overlay' | 'push';
 const OPEN_KEY = 'workspace:panel:open';
 const TOOL_KEY = 'workspace:panel:tool';
 const MODE_KEY = 'workspace:panel:mode';
-const FULLSCREEN_KEY = 'workspace:panel:fullscreen';
 const PROJECT_KEY = 'workspace:panel:project';
-const SPLIT_KEY = 'workspace:panel:split';
 
 // A project's own tool (its terminal, its code) closes when the project changes.
 const projectScoped = (tool: WorkspaceToolId) => panelTool(tool)?.projectScoped === true;
@@ -30,8 +28,10 @@ function isToolId(value: string | null): value is WorkspaceToolId {
   return !!value && (!!panelTool(value) || value.startsWith('plugin:'));
 }
 
-// A pinned panel stays open beside the page, as on the kiosk's second screen: it cannot
-// be closed, float over the page or cover it.
+// A pinned panel stays open beside the page, as on the kiosk's second screen and in every
+// workspace layout but the standard one: it cannot be closed or float over the page. How
+// the panel shares the room with the page (a second tool beside it, the whole window) is
+// the workspace layout's business (hooks/useWorkspaceLayout).
 export function useWorkspacePanel({
   defaultOpen = false,
   projectKey = null,
@@ -40,10 +40,7 @@ export function useWorkspacePanel({
   const [open, setOpenState] = useState(false);
   const [activeTool, setActiveTool] = useState<WorkspaceToolId>('chat');
   const [mode, setMode] = useState<WorkspacePanelMode>('overlay');
-  const [fullscreen, setFullscreen] = useState(false);
   const [toolSession, setToolSession] = useState(0);
-  // A second tool shown beside the active one, or null for a single tool.
-  const [splitTool, setSplitToolState] = useState<WorkspaceToolId | null>(null);
   const previousProjectKey = useRef(projectKey);
   const restored = useRef(false);
 
@@ -66,7 +63,6 @@ export function useWorkspacePanel({
       if (projectScoped(linked)) write(PROJECT_KEY, projectKey ?? '');
       try {
         setMode(localStorage.getItem(MODE_KEY) === 'push' ? 'push' : 'overlay');
-        setFullscreen(localStorage.getItem(FULLSCREEN_KEY) === 'true');
       } catch {
         // Storage off: the defaults stay.
       }
@@ -92,9 +88,6 @@ export function useWorkspacePanel({
       if (staleProjectTool) write(OPEN_KEY, 'closed');
       if (isToolId(storedTool)) setActiveTool(storedTool);
       setMode(localStorage.getItem(MODE_KEY) === 'push' ? 'push' : 'overlay');
-      const storedSplit = localStorage.getItem(SPLIT_KEY);
-      setSplitToolState(isToolId(storedSplit) ? storedSplit : null);
-      setFullscreen(localStorage.getItem(FULLSCREEN_KEY) === 'true');
     } catch {
       return;
     }
@@ -112,11 +105,6 @@ export function useWorkspacePanel({
   const setOpen = useCallback((next: boolean) => {
     setOpenState(next);
     write(OPEN_KEY, next ? 'open' : 'closed');
-  }, []);
-
-  const setSplitTool = useCallback((tool: WorkspaceToolId | null) => {
-    setSplitToolState(tool);
-    write(SPLIT_KEY, tool ?? '');
   }, []);
 
   const openTool = useCallback(
@@ -150,27 +138,15 @@ export function useWorkspacePanel({
     });
   }, []);
 
-  const toggleFullscreen = useCallback(() => {
-    setFullscreen((current) => {
-      const next = !current;
-      write(FULLSCREEN_KEY, String(next));
-      return next;
-    });
-  }, []);
-
   return {
     open: pinned || open,
     activeTool,
     mode: pinned ? ('push' as const) : mode,
-    fullscreen: !pinned && fullscreen,
     pinned,
     toolSession,
-    splitTool,
     setOpen,
-    setSplitTool,
     openTool,
     toggleTool,
     toggleMode,
-    toggleFullscreen,
   };
 }

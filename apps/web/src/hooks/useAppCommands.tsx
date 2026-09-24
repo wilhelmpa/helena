@@ -1,6 +1,17 @@
-import { LayoutGrid, ListChecks, MessagesSquare, Plus, SquarePlus, Target } from 'lucide-react';
+import {
+  LayoutGrid,
+  LayoutTemplate,
+  ListChecks,
+  MessagesSquare,
+  Plus,
+  SquarePlus,
+  Target,
+} from 'lucide-react';
 import type { Project } from '@/lib/api/endpoints/projects';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { resolveText } from '@helena/sdk/web';
+import { useWorkspaceLayoutChoice } from '@/context/workspaceLayout';
+import WorkspaceLayoutPictogram from '@/components/layout/WorkspaceLayoutPictogram';
 import { VIEWS, type WorkItemsView } from '@/utils/viewTypes';
 import { byKey } from '@/utils/messageKey';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -49,6 +60,10 @@ export function useAppCommands({
   const layout = byKey(useTranslations('display.layouts'));
   const { can } = usePermissions();
   const hotkey = useHotkeyFormatter();
+  const tLayout = useTranslations('nav.layout');
+  const translate = byKey(useTranslations());
+  const locale = useLocale();
+  const layoutChoice = useWorkspaceLayoutChoice();
 
   const boardItems: Command[] = [];
   if (hasProject && onBoard) {
@@ -104,6 +119,27 @@ export function useAppCommands({
     shortcut: hotkey('chat.toggle') ?? undefined,
     run: onToggleChat,
   });
+  // The workspace layouts, one level down: page | tool, chat beside the page, … .
+  if (layoutChoice?.available) {
+    generalItems.push({
+      id: 'general.layout',
+      label: tLayout('command'),
+      icon: <LayoutTemplate />,
+      keywords: 'layout workspace panel split screen kiosk',
+      shortcut: hotkey('layout.cycle') ?? undefined,
+      submenu: {
+        heading: tLayout('menu'),
+        placeholder: tLayout('commandPlaceholder'),
+        items: layoutChoice.layouts.map((layout) => ({
+          id: `layout.${layout.id}`,
+          label: resolveText(layout.label, locale, (key) => translate(key)),
+          icon: <WorkspaceLayoutPictogram layout={layout} icon />,
+          checked: layout.id === layoutChoice.current,
+          run: () => layoutChoice.setLayout(layout.id),
+        })),
+      },
+    });
+  }
   generalItems.push({
     id: 'general.new-project',
     label: tPalette('newProject'),
