@@ -78,10 +78,16 @@ fi
 run install -d -m 0750 -o wilhelmpa -g wilhelmpa /var/log/volition/owner-terminal
 run chmod +x "$here/owner-terminal-shell"
 
-log "installing the systemd unit"
+log "installing the systemd units"
+# The sessions' own tmux server first: the router joins it (see helena-owner-tmux.service).
+run install -m 0644 -o root -g root "$here/helena-owner-tmux.service" \
+  /etc/systemd/system/helena-owner-tmux.service
 run install -m 0644 -o root -g root "$here/volition-owner-terminal.service" \
   /etc/systemd/system/volition-owner-terminal.service
 run systemctl daemon-reload
+# Enabled only: the router's Wants= starts it when the router (re)starts, so the sessions
+# move to it at one restart and never split between two servers.
+run systemctl enable helena-owner-tmux.service
 run systemctl enable --now volition-owner-terminal.service
 
 log "installing the nginx snippet"

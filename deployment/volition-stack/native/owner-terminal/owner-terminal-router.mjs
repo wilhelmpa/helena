@@ -26,6 +26,7 @@
 //    Keep the wire format (payload fields, base64url + '.' + HMAC-SHA256) in sync
 //    with that token.ts if either side changes.
 import { execFile, spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { chmod, chown, lstat, mkdir, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
@@ -41,6 +42,9 @@ const runtimeRoot = process.env.OWNER_TERMINAL_RUNTIME_ROOT ?? '/run/volition-ow
 const wetty = process.env.WETTY_BIN ?? '/usr/local/bin/wetty';
 const shell = process.env.OWNER_TERMINAL_SHELL ?? '/usr/local/libexec/owner-terminal-shell';
 const tmux = process.env.TMUX_BIN ?? '/usr/bin/tmux';
+// The tmux server of helena-owner-tmux.service, which the sessions outlive this router in.
+const tmuxSocket = process.env.OWNER_TERMINAL_TMUX_SOCKET ?? '';
+const tmuxArgs = (args) => (tmuxSocket && existsSync(tmuxSocket) ? ['-S', tmuxSocket, ...args] : args);
 const keyPath = process.env.OWNER_TERMINAL_KEY_PATH ?? '/etc/volition/owner-terminal.key';
 const recordLogRoot = process.env.OWNER_TERMINAL_RECORD_ROOT ?? '/var/log/volition/owner-terminal';
 const publicPrefix = '/focus/owner-terminal';
@@ -148,7 +152,7 @@ async function waitForSocket(path_, child) {
 async function startRecording(kind, name) {
   await mkdir(recordLogRoot, { recursive: true, mode: 0o750 }).catch(() => {});
   const logFile = path.join(recordLogRoot, `${kind}-${name}-${Date.now()}.log`);
-  await run(tmux, ['pipe-pane', '-o', '-t', `=owner-${kind}-${name}`, `cat >> '${logFile}'`]).catch(
+  await run(tmux, tmuxArgs(['pipe-pane', '-o', '-t', `=owner-${kind}-${name}`, `cat >> '${logFile}'`])).catch(
     () => {},
   );
 }
@@ -163,7 +167,7 @@ async function session(kind, name, record) {
     await rm(wettySocketPath, { force: true });
     // tmux has-session tells a brand-new session (record should start piping)
     // apart from a reconnect to one that is already running.
-    const { code: existed } = await run(tmux, ['has-session', '-t', `=owner-${kind}-${name}`])
+    const { code: existed } = await run(tmux, tmuxArgs(['has-session', '-t', `=owner-${kind}-${name}`]))
       .then(() => ({ code: 0 }))
       .catch(() => ({ code: 1 }));
     const base = `${publicPrefix}/${kind}/${name}`;
@@ -257,7 +261,7 @@ async function closeSession(kind, name) {
   const key = `${kind}:${name}`;
   const current = sessions.get(key);
   sessions.delete(key);
-  await run(tmux, ['kill-session', '-t', `=owner-${kind}-${name}`]).catch(() => {});
+  await run(tmux, tmuxArgs(['kill-session', '-t', `=owner-${kind}-${name}`])).catch(() => {});
   if (current) {
     await Promise.resolve(current)
       .then((item) => item.child.kill('SIGTERM'))

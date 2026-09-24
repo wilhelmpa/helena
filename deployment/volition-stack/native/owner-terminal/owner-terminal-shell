@@ -58,5 +58,10 @@ if [[ ! -d "$workdir" ]]; then
 fi
 
 export TERM=xterm-256color
-exec /usr/bin/tmux -f "$(dirname -- "$(realpath -- "$0")")/tmux.conf" \
+# The sessions live in helena-owner-tmux.service (its socket), so they outlive this
+# router; without that service tmux falls back to a server of its own, as before.
+socket=${OWNER_TERMINAL_TMUX_SOCKET:-/run/helena-owner-tmux/tmux.sock}
+socket_args=()
+[[ -S "$socket" ]] && socket_args=(-S "$socket")
+exec /usr/bin/tmux "${socket_args[@]}" -f "$(dirname -- "$(realpath -- "$0")")/tmux.conf" \
   new-session -A -s "owner-$kind-$name" -c "$workdir" "${command[@]}"

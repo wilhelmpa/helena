@@ -1,6 +1,8 @@
 [Unit]
 Description=Volition owner terminal (Shell, Claude Code, Codex, Helena dev)
-After=network.target
+After=network.target helena-owner-tmux.service
+# The sessions themselves run in helena-owner-tmux.service and outlive this router.
+Wants=helena-owner-tmux.service
 StartLimitIntervalSec=0
 
 [Service]
@@ -21,6 +23,7 @@ Environment=HOME=/home/wilhelmpa
 Environment=OWNER_TERMINAL_SOCKET_PATH=/run/volition-owner-terminal/term.sock
 Environment=OWNER_TERMINAL_SOCKET_GROUP=www-data
 Environment=OWNER_TERMINAL_RUNTIME_ROOT=/run/volition-owner-terminal/sessions
+Environment=OWNER_TERMINAL_TMUX_SOCKET=/run/helena-owner-tmux/tmux.sock
 Environment=OWNER_TERMINAL_KEY_PATH=/etc/volition/owner-terminal.key
 Environment=OWNER_TERMINAL_RECORD_ROOT=/var/log/volition/owner-terminal
 Environment=OWNER_TERMINAL_ALLOWED_HOSTS=kingston-server.local,kingston-server

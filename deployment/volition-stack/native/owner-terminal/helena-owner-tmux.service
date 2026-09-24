@@ -1,0 +1,26 @@
+[Unit]
+Description=Helena owner terminal sessions (the tmux server behind Shell, Claude Code, Codex)
+Documentation=file:///srv/volition/source/plan/deployment/volition-stack/native/owner-terminal/README.md
+After=network.target
+
+# The owner's sessions live here, not in volition-owner-terminal.service: a restart or deploy
+# of the terminal router ends only the browser connections, and the programs in the sessions
+# (a running Claude Code conversation) go on (owner, 2026-09-24). tmux -D stays in the
+# foreground and does not exit when the last session ends.
+[Service]
+Type=simple
+User=wilhelmpa
+Environment=HOME=/home/wilhelmpa
+RuntimeDirectory=helena-owner-tmux
+RuntimeDirectoryMode=0700
+ExecStart=/usr/bin/tmux -D -S /run/helena-owner-tmux/tmux.sock -f /srv/volition/source/plan/deployment/volition-stack/native/owner-terminal/tmux.conf
+Restart=always
+RestartSec=2
+KillMode=control-group
+UMask=0077
+PrivateTmp=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+
+[Install]
+WantedBy=multi-user.target
