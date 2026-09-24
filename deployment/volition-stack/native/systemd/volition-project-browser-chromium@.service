@@ -19,7 +19,7 @@ User=volition-hermes
 Group=volition
 EnvironmentFile=/var/lib/volition/project-browser/projects/%i/runtime.env
 ExecStartPre=/usr/local/libexec/volition-wait-for-x
-ExecStart=/usr/bin/chromium --ozone-platform=x11 --user-data-dir=${PROJECT_BROWSER_PROFILE} --disk-cache-dir=${PROJECT_BROWSER_CACHE} --remote-debugging-address=127.0.0.1 --remote-debugging-port=${PROJECT_BROWSER_CDP_PORT} --no-first-run --no-default-browser-check --restore-last-session about:blank
+ExecStart=/usr/bin/chromium --ozone-platform=x11 --user-data-dir=${PROJECT_BROWSER_PROFILE} --disk-cache-dir=${PROJECT_BROWSER_CACHE} --remote-debugging-address=127.0.0.1 --remote-debugging-port=${PROJECT_BROWSER_CDP_PORT} --no-first-run --no-default-browser-check --restore-last-session --hide-crash-restore-bubble about:blank
 Restart=on-failure
 RestartSec=2
 TimeoutStopSec=30
