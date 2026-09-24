@@ -50,7 +50,7 @@ export default function LimitAccountCard({ account, now }: { account: LimitAccou
       ) : (
         windows.map((window) => <LimitWindowRow key={window.id} window={window} now={now} />)
       )}
-      <p className="flex min-w-0 flex-wrap items-center gap-x-2 px-2 pt-0.5 pb-1 text-xs text-muted-foreground">
+      <p className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 px-2 pt-0.5 pb-1 text-xs text-muted-foreground">
         <span className={cn(account.stale && 'text-status-waiting')}>
           {t(account.stale ? 'staleSince' : 'readAgo', {
             time: formatDurationShort(account.observedAt),

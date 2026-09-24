@@ -24,7 +24,7 @@ export default function LimitWindowRow({ window, now }: { window: LimitWindow; n
   const name = t(`window.${label.key}`, label.values);
   return (
     <div className="flex h-7 min-w-0 items-center gap-2 px-2 text-xs">
-      <span className="w-20 shrink-0 truncate text-muted-foreground" title={name} dir="auto">
+      <span className="w-24 shrink-0 truncate text-muted-foreground" title={name} dir="auto">
         {name}
       </span>
       <div
@@ -40,12 +40,7 @@ export default function LimitWindowRow({ window, now }: { window: LimitWindow; n
           style={{ width: `${percent}%` }}
         />
       </div>
-      <span
-        className={cn(
-          'w-10 shrink-0 text-end font-mono tabular-nums',
-          STATE_TEXT_CLASS[window.state],
-        )}
-      >
+      <span className={cn('w-10 shrink-0 text-end tabular-nums', STATE_TEXT_CLASS[window.state])}>
         {window.currentPercent === null
           ? '–'
           : format.number(Math.round(window.currentPercent) / 100, { style: 'percent' })}

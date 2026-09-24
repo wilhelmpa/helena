@@ -50,7 +50,7 @@
   "readVia": "Lu via {login}, {time}",
   "readPassive": "D’après une réponse à {login}, {time}",
   "forget": "Oublier le compte",
-  "resetsAt": "Réinitialisé {time}",
+  "resetsAt": "Réinitialisation {time}",
   "agentTokens": "Agents : {tokens} jetons dans cette fenêtre",
   "agents": "Agents sur ce compte : {names}",
   "noAgents": "Aucun agent ne signale ce compte (connexion du propriétaire).",

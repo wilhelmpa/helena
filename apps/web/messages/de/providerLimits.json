@@ -50,7 +50,7 @@
   "readVia": "Gelesen über {login}, {time}",
   "readPassive": "Aus einer Antwort an {login}, {time}",
   "forget": "Konto vergessen",
-  "resetsAt": "Zurückgesetzt {time}",
+  "resetsAt": "Neu ab {time}",
   "agentTokens": "Agenten: {tokens} Tokens in diesem Fenster",
   "agents": "Agenten auf diesem Konto: {names}",
   "noAgents": "Kein Agent meldet dieses Konto (Owner-Anmeldung).",

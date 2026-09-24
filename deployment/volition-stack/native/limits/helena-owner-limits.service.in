@@ -1,0 +1,27 @@
+[Unit]
+Description=Helena: read the plan limits of the owner's own Claude Code and Codex logins
+Documentation=file://@PLAN@/docs/helena-decisions/provider-limits.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# As the owner: the logins stay in the owner's home and are used only by the owner's own CLIs
+# (claude --safe-mode -p /usage, codex app-server account/rateLimits/read). The report holds
+# numbers only; Helena's API reads it from the spool.
+User=@OWNER@
+Group=@OWNER_GROUP@
+WorkingDirectory=@HOME@
+Environment=HOME=@HOME@
+Environment=PATH=@HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=DISABLE_AUTOUPDATER=1
+ExecStart=/usr/local/bin/node @PLAN@/packages/runner/dist/cli.js limits-report --out @SPOOL@/@OWNER@.json
+TimeoutStartSec=3min
+Nice=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ReadWritePaths=@SPOOL@
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes

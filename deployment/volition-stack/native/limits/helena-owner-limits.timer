@@ -1,0 +1,10 @@
+[Unit]
+Description=Helena: the owner's plan limits every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+
+[Install]
+WantedBy=timers.target

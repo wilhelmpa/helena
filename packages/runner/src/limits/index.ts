@@ -130,9 +130,10 @@ export function dedupe(snapshots: UsageLimitSnapshot[]): UsageLimitSnapshot[] {
   return [...byAccount.values()];
 }
 
-// The runner's one prober: the agents it serves share its cache.
+// The runner's one prober: the agents it serves share its cache. It logs to stderr, so the
+// limits-probe command's output stays the JSON alone.
 export const limitProber = new LimitProber(limitSources, Date.now, (line) =>
-  console.log(`[itsaplan-runner] ${line}`),
+  console.error(`[itsaplan-runner] ${line}`),
 );
 
 // ── Reading a run's output ──────────────────────────────────────────────────────────────

@@ -219,7 +219,7 @@ function AccountDetails({ account, now }: { account: LimitAccount; now: number }
             <div key={window.id}>
               <LimitWindowRow window={window} now={now} />
               {details.length > 0 && (
-                <p className="truncate px-2 ps-24 text-xs text-muted-foreground">
+                <p className="px-2 ps-28 text-xs break-words text-muted-foreground">
                   {details.join(' · ')}
                 </p>
               )}

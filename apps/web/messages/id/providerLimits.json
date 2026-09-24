@@ -50,7 +50,7 @@
   "readVia": "Dibaca melalui {login}, {time}",
   "readPassive": "Dari jawaban untuk {login}, {time}",
   "forget": "Lupakan akun",
-  "resetsAt": "Direset {time}",
+  "resetsAt": "Reset {time}",
   "agentTokens": "Agen: {tokens} token di jendela ini",
   "agents": "Agen di akun ini: {names}",
   "noAgents": "Tidak ada agen yang melaporkan akun ini (login pemilik).",
