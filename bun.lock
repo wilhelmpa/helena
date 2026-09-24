@@ -271,7 +271,9 @@
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.30.0",
         "@repo/net": "workspace:*",
+        "jev-browser": "github:Ying-Kai-Liao/jev-browser#e35ab134f65033d29c528132d92bf06e8d6adcb5",
         "patchright-core": "1.63.0",
+        "playwright-core": "1.63.0",
         "pngjs": "^7.0.0",
       },
       "devDependencies": {
@@ -2433,6 +2435,8 @@
 
     "jest-get-type": ["jest-get-type@22.4.3", "", {}, "sha512-/jsz0Y+V29w1chdXVygEKSz2nBoHoYqNShPe+QgxSNjAuP1i8+k4LbQNrfoliKej0P45sivkSCh7yiD6ubHS3w=="],
 
+    "jev-browser": ["jev-browser@github:Ying-Kai-Liao/jev-browser#e35ab13", { "dependencies": { "@modelcontextprotocol/sdk": "^1.30.0", "playwright": "^1.63.0", "zod": "^4.6.5" }, "bin": { "jev-browser": "bin/jev-browser.mjs", "jev-browser-mcp": "bin/jev-browser-mcp.mjs" } }, "Ying-Kai-Liao-jev-browser-e35ab13", "sha512-Yuey3+aZS/X5REQa/RqCQx0YUxRm3/LgcA8059fx+YYYzpsAy5i5fq/waCcSp7Zfpo8lVIl63CaKRSEyTvlwbA=="],
+
     "jiti": ["jiti@2.7.0", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ=="],
 
     "jose": ["jose@6.2.12", "", {}, "sha512-9NiFmJEex0sy2Dk58j2UGBSHgUs2ypF9eZSu4L6vjOX3Dp96Sw1F3uL+H+D1sx02jZZdzUT0HgvCy59CuvXcWw=="],
@@ -2852,6 +2856,10 @@
     "pino-std-serializers": ["pino-std-serializers@7.1.0", "", {}, "sha512-BndPH67/JxGExRgiX1dX0w1FvZck5Wa4aal9198SrRhZjH3GxKQUKIBnYJTdj2HDN3UQAS06HlfcSbQj2OHmaw=="],
 
     "pkce-challenge": ["pkce-challenge@5.0.1", "", {}, "sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ=="],
+
+    "playwright": ["playwright@1.63.0", "", { "dependencies": { "playwright-core": "1.63.0" }, "bin": { "playwright": "cli.js" } }, "sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg=="],
+
+    "playwright-core": ["playwright-core@1.63.0", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg=="],
 
     "plur": ["plur@2.1.2", "", { "dependencies": { "irregular-plurals": "^1.0.0" } }, "sha512-WhcHk576xg9y/iv6RWOuroZgsqvCbJN+XGvAypCJwLAYs2iWDp5LUmvaCdV6JR2O0SMBf8l6p7A94AyLCFVMlQ=="],
 

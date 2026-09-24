@@ -160,7 +160,11 @@ export function handleConnection(socket, dispatcher) {
       let response;
       try {
         const request = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-        if (
+        // The shim's tools/list: which tools this agent is offered here (browser_task only
+        // where the project has a decision model).
+        if (request && request.list === true && typeof request.agentKey === "string") {
+          response = { ok: true, tools: await dispatcher.listTools(request.agentKey) };
+        } else if (
           !request ||
           typeof request !== "object" ||
           typeof request.tool !== "string" ||

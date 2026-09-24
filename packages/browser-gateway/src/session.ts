@@ -13,6 +13,7 @@ import type {
   Download,
   ElementHandle,
   FileChooser,
+  Frame,
   Locator,
   Page,
   Request,
@@ -30,6 +31,17 @@ import {
 import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts';
 import { hostAllowed, type DomainPolicy } from './domain.ts';
 import { maskPng, type Rect } from './png.ts';
+import {
+  GUARD,
+  HIT,
+  NODE,
+  OBSERVE,
+  PAGE_KEY,
+  type RawFrameObservation,
+} from './task/page-script.ts';
+import { repeatedLabels } from './task/policy-common.ts';
+import { TaskActError, type TaskActInput, type TaskPage } from './task/loop.ts';
+import type { PageElement, PageObservation } from './task/types.ts';
 import type {
   BrowserStatus,
   ClickOptions,
@@ -625,7 +637,10 @@ export class PatchrightGatewaySession implements GatewaySession {
     return locator.first();
   }
 
-  async #humanMoveTo(locator: Locator): Promise<void> {
+  // A locator or an element handle (browser_task acts on handles): both scroll and measure alike.
+  async #humanMoveTo(
+    locator: Pick<Locator, 'scrollIntoViewIfNeeded' | 'boundingBox'>,
+  ): Promise<void> {
     if (!this.#humanInput) return;
     await locator.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS }).catch(() => {});
     const box = await locator.boundingBox().catch(() => null);
@@ -1176,5 +1191,266 @@ export class PatchrightGatewaySession implements GatewaySession {
     await this.#remember(await locator.elementHandle({ timeout: ACTION_TIMEOUT_MS }));
     await this.#typeHumanLike(code);
     return 'Code filled.';
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // browser_task (task/loop.ts): the fast path observes with task/page-script.ts in the isolated
+  // world of each frame and acts through element handles of the nodes it listed. Every input goes
+  // through the same human-like pointer and typing as the step tools, waits for what it set off,
+  // and returns as soon as a page dialog opens.
+
+  // The frames of the last observation, in the order their elements were numbered.
+  #taskFrames: Frame[] = [];
+
+  async #withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        work,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error(`${what} took longer than ${ms} ms`)), ms);
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  async #observeTask(): Promise<PageObservation> {
+    const page = this.#page;
+    const dialog = this.#dialogs.get(page);
+    const empty = {
+      scrollY: 0,
+      pageHeight: 0,
+      viewportHeight: 0,
+      textLength: 0,
+      elements: 0,
+    };
+    if (dialog) {
+      // Nothing can be read while a dialog blocks the page's scripts.
+      return {
+        url: redactUrl(page.url()),
+        title: '',
+        text: '',
+        dialogs: [],
+        metrics: empty,
+        elements: [],
+        omitted: 0,
+        keys: [],
+        jsDialog: this.guard.redact(`${dialog.type()}: ${dialog.message().slice(0, 300)}`),
+      };
+    }
+    const frames = page
+      .frames()
+      .filter((frame) => !frame.isDetached())
+      .slice(0, 12);
+    const secrets = await this.#credentialValues();
+    const clean = (value: string | undefined) =>
+      value === undefined ? undefined : this.guard.redact(redactValues(value, secrets));
+    const raws: (RawFrameObservation | null)[] = [];
+    for (const [index, frame] of frames.entries()) {
+      raws.push(
+        await this.#withTimeout(
+          frame.evaluate(OBSERVE, { textLimit: 2500, maxElements: 400, main: index === 0 }),
+          10_000,
+          'Reading the page',
+        ).catch((error: unknown) => {
+          if (index === 0) throw error;
+          return null;
+        }),
+      );
+    }
+    const main = raws[0];
+    if (!main) throw new Error('The page is still loading.');
+    const elements: PageElement[] = [];
+    let omitted = 0;
+    this.#taskFrames = [];
+    for (const [index, raw] of raws.entries()) {
+      if (!raw) continue;
+      const frameIndex = this.#taskFrames.push(frames[index]!) - 1;
+      omitted += raw.omitted;
+      for (const element of raw.elements) {
+        elements.push({
+          ...element,
+          label: clean(element.label),
+          text: clean(element.text),
+          placeholder: clean(element.placeholder),
+          value: clean(element.value),
+          near: clean(element.near),
+          options: element.options?.map((option) => clean(option) ?? option),
+          i: elements.length + 1,
+          frame: frameIndex,
+          id: element.id,
+        });
+      }
+    }
+    return {
+      url: redactUrl(main.url),
+      title: this.guard.redact(main.title.slice(0, 200)),
+      text: clean(main.text) ?? '',
+      dialogs: main.dialogs.map((text) => clean(text) ?? ''),
+      metrics: { ...main.metrics, elements: elements.length },
+      elements,
+      omitted,
+      keys: raws.filter((raw) => raw !== null).map((raw) => raw!.key),
+      repeated: repeatedLabels(elements),
+      jsDialog: null,
+    };
+  }
+
+  async #taskKeys(): Promise<string[] | null> {
+    const keys: string[] = [];
+    for (const frame of this.#taskFrames) {
+      if (frame.isDetached()) return null;
+      const key = await this.#withTimeout(
+        frame.evaluate(PAGE_KEY),
+        5_000,
+        'Checking the page',
+      ).catch(() => null);
+      if (key === null) return null;
+      keys.push(key);
+    }
+    return keys;
+  }
+
+  async #taskFresh(observation: PageObservation, element: PageElement | null): Promise<boolean> {
+    if (this.#dialogs.has(this.#page)) return false;
+    const keys = await this.#taskKeys();
+    if (!keys || keys.join('\u0001') !== observation.keys.join('\u0001')) return false;
+    if (!element) return true;
+    const frame = this.#taskFrames[element.frame];
+    if (!frame) return false;
+    return (await frame.evaluate(GUARD, element.id).catch(() => null)) !== null;
+  }
+
+  async #taskHandle(element: PageElement): Promise<{ frame: Frame; handle: ElementHandle }> {
+    const frame = this.#taskFrames[element.frame];
+    if (!frame || frame.isDetached())
+      throw new TaskActError('gone', 'The frame of the element is gone.');
+    const handle = (await frame.evaluateHandle(NODE, element.id).catch(() => null))?.asElement();
+    if (!handle) throw new TaskActError('gone', 'The element is no longer on the page.');
+    return { frame, handle };
+  }
+
+  // Scrolls the element into view and checks it takes the input at its centre (jev-ultrafast's
+  // occlusion guard): a covered element is not clicked through the cover.
+  async #taskReach(element: PageElement): Promise<ElementHandle> {
+    const { frame, handle } = await this.#taskHandle(element);
+    await handle.scrollIntoViewIfNeeded({ timeout: 3_000 }).catch(() => {});
+    const hit = await frame
+      .evaluate(HIT, element.id)
+      .catch(() => ({ ok: false as const, why: 'gone' }));
+    if (!hit.ok) {
+      const code = (['covered', 'hidden', 'gone', 'disabled', 'offscreen'] as const).find(
+        (candidate) => candidate === hit.why,
+      );
+      throw new TaskActError(code ?? 'failed', `The element is ${hit.why}.`);
+    }
+    await this.#humanMoveTo(handle);
+    return handle;
+  }
+
+  async #taskClick(handle: ElementHandle): Promise<void> {
+    const page = this.#page;
+    const done = await this.#orDialog(
+      this.#waitForCompletion(async () => {
+        await handle.click({ timeout: ACTION_TIMEOUT_MS });
+        return 'clicked';
+      }),
+    );
+    if (done !== 'clicked' && this.#dialogs.has(page)) {
+      throw new TaskActError('dialog', done);
+    }
+  }
+
+  async #taskAct(input: TaskActInput): Promise<void> {
+    this.#assertNoDialog();
+    const { element } = input;
+    switch (input.operation) {
+      case 'SCROLL_DOWN':
+      case 'SCROLL_UP': {
+        const dy = input.operation === 'SCROLL_DOWN' ? 1 : -1;
+        await this.#waitForCompletion(async () => {
+          for (let i = 0; i < 4; i++) {
+            await this.#page.mouse.wheel(0, dy * 140);
+            await sleep(this.#humanInput ? 40 + Math.round(this.#random() * 40) : 0);
+          }
+        });
+        return;
+      }
+      case 'WAIT':
+        await sleep(600);
+        return;
+      case 'CLICK': {
+        if (!element) throw new TaskActError('failed', 'No element to click.');
+        await this.#taskClick(await this.#taskReach(element));
+        return;
+      }
+      case 'TYPE_TEXT': {
+        if (!element || input.text === undefined)
+          throw new TaskActError('failed', 'Nothing to type.');
+        const handle = await this.#taskReach(element);
+        const attributes = await handle.evaluate((node) => {
+          const field = node as Element;
+          return {
+            tag: field.tagName.toLowerCase(),
+            type: field.getAttribute('type'),
+            autocomplete: field.getAttribute('autocomplete'),
+            name: field.getAttribute('name'),
+          };
+        });
+        if (element.credential || isCredentialField(attributes)) {
+          throw new TaskActError(
+            'refused',
+            `${element.label ?? 'This field'} is a password or code field: use browser_login / browser_login_code.`,
+          );
+        }
+        await handle.click({ timeout: ACTION_TIMEOUT_MS });
+        await this.#clearField();
+        await this.#typeHumanLike(input.text);
+        await sleep(this.#humanInput ? 120 : 30);
+        return;
+      }
+      case 'PRESS_ENTER': {
+        if (!element) throw new TaskActError('failed', 'No field to press Enter in.');
+        const handle = await this.#taskReach(element);
+        await handle.focus().catch(() => {});
+        const page = this.#page;
+        const done = await this.#orDialog(
+          this.#waitForCompletion(async () => {
+            await page.keyboard.press('Enter');
+            return 'pressed';
+          }),
+        );
+        if (done !== 'pressed' && this.#dialogs.has(page)) throw new TaskActError('dialog', done);
+        return;
+      }
+      case 'SELECT': {
+        if (!element || !input.option) throw new TaskActError('failed', 'No option to select.');
+        const handle = await this.#taskReach(element);
+        await this.#waitForCompletion(() =>
+          handle
+            .selectOption({ label: input.option! }, { timeout: ACTION_TIMEOUT_MS })
+            .catch(() => handle.selectOption(input.option!, { timeout: ACTION_TIMEOUT_MS })),
+        );
+        return;
+      }
+      default:
+        throw new TaskActError('failed', `Operation ${input.operation} is not an action.`);
+    }
+  }
+
+  taskPage(): TaskPage {
+    return {
+      observe: () => this.#observeTask(),
+      fresh: (observation, element) => this.#taskFresh(observation, element),
+      act: (input) => this.#taskAct(input),
+    };
+  }
+
+  async agentSnapshot(limit: number): Promise<string> {
+    if (this.#dialogs.has(this.#page)) return '';
+    const text = await this.#ariaSnapshot().catch(() => '');
+    return this.guard.redact(truncateSnapshot(text, limit));
   }
 }

@@ -34,6 +34,7 @@ export const BROWSER_INSTRUCTIONS = [
   'Your first action takes control of the browser if it is free; browser_acquire waits while someone else works in it. Call browser_release when you are done.',
   'Never type a password or 2FA code yourself and never ask for one: browser_login fills a login granted to you in Zugänge for the page it is on, browser_login_code the current code.',
   'A CAPTCHA, a question only the owner can answer, or anything you are unsure about: browser_handover and wait.',
+  'Where the project has a decision model (browser_task is listed), hand multi-step navigation and form flows with known values to browser_task in one call, check outcomes with browser_check, and continue with the step tools when it hands back.',
   "Files: browser_file_upload sends files of your workspace or project folder; downloads land in the project's Inbox (browser_downloads lists them).",
 ].join(' ');
 
@@ -493,6 +494,82 @@ const DEFINED_TOOLS: ToolDef[] = [
     inputSchema: schema({}),
   },
   {
+    name: 'browser_task',
+    // Decided action by action inside the gateway, like the step tool each action stands for
+    // (task/policy-common.ts categoryOfStep); `write` is what the call is before it runs.
+    category: 'write',
+    title: 'Do a browser task (fast path)',
+    description:
+      "Hand a multi-step job in this project's browser to its fast decision model: it reads " +
+      'the page, picks each next action and does it itself, all in one call — much cheaper ' +
+      'and faster than many snapshot/click rounds. Best for one observable outcome: navigating ' +
+      '("Open the invoices of September"), filling and sending a form with known values, ' +
+      'setting filters. Put every string it may type or choose into `values` with a meaningful ' +
+      'key ({"email": "…", "postal_code": "…"}); it never invents text, and never put a password ' +
+      'or code there (browser_login fills logins). Returns done or likely_done (then verify with ' +
+      'browser_check), or hands back — needs_agent, needs_login, needs_confirmation, ' +
+      'needs_approval, stuck, blocked, error — with the reason, the candidates and the page ' +
+      'snapshot, so you continue with the step tools. Every action is approved like the step ' +
+      'tool it stands for (a submit is a send). mode "read" only follows links, tabs and scrolls.',
+    inputSchema: schema(
+      {
+        goal: {
+          type: 'string',
+          description:
+            'The outcome, in plain words, as one observable result ("The search results for X are shown").',
+        },
+        values: {
+          type: 'object',
+          additionalProperties: { type: 'string' },
+          description: 'Every text it may type or option it may choose, by a meaningful key.',
+        },
+        startUrl: {
+          type: 'string',
+          description: 'Open this address first (the same rules as browser_navigate).',
+        },
+        maxSteps: { type: 'number', minimum: 1, maximum: 60, default: 20 },
+        mode: {
+          type: 'string',
+          enum: ['act', 'read'],
+          default: 'act',
+          description:
+            '"read" only follows links and tabs and scrolls; "act" also types, selects and sends.',
+        },
+        allowIrreversible: {
+          type: 'boolean',
+          description:
+            'Go on even when the next step looks hard to undo (an order, a payment, a message). Only when the user asked for exactly that.',
+        },
+      },
+      ['goal'],
+    ),
+  },
+  {
+    name: 'browser_check',
+    category: 'read',
+    title: 'Check the page (yes/no)',
+    description:
+      "Ask the project's decision model a yes/no question about the current page and get the " +
+      'probability that the answer is yes (0–1). A cheap way to verify an outcome after ' +
+      'browser_task ("Does the cart show 1 item?").',
+    inputSchema: schema({ question: { type: 'string' } }, ['question']),
+  },
+  {
+    name: 'browser_choose',
+    category: 'read',
+    title: 'Choose from options about the page',
+    description:
+      "Ask the project's decision model which of the given options is true of the current page; " +
+      'returns the chosen option and the probability of each.',
+    inputSchema: schema(
+      {
+        question: { type: 'string' },
+        options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 50 },
+      },
+      ['question', 'options'],
+    ),
+  },
+  {
     name: 'browser_handover',
     category: 'read',
     title: 'Ask the owner to take over',
@@ -544,6 +621,10 @@ export function requiresLock(toolName: string): boolean {
 // see redact.ts's isCredentialField, but this is the tool-name-level version other code
 // checks first, before it even inspects the target field).
 export const CREDENTIAL_TOOLS = new Set(['browser_login', 'browser_login_code']);
+
+// The tools of the fast path (docs/helena-decisions/browser-task.md §3.2): listed and accepted
+// only where the project's "Browser-Steuerung" names a decision model.
+export const TASK_TOOLS = new Set(['browser_task', 'browser_check', 'browser_choose']);
 
 export function toolByName(name: string): ToolDef | undefined {
   return BROWSER_TOOLS.find((tool) => tool.name === name);

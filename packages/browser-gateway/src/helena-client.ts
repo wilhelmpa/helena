@@ -24,6 +24,37 @@ export interface ResolveResult {
   projectKey: string | null;
   browserGatewayEnabled: boolean;
   settings: BrowserGatewaySettingsWire;
+  // The project's "Browser-Steuerung" (docs/helena-decisions/browser-task.md §3.3): whether
+  // browser_task/check/choose are offered. Absent from an older Helena: not offered.
+  browserTask?: BrowserTaskSettingsWire;
+}
+
+export interface BrowserTaskSettingsWire {
+  enabled: boolean;
+  // The policy the loop uses and the confidence below which it hands a target back.
+  policy: 'jev' | 'laya';
+  minConfidence: number | null;
+  // What the live view and the agent may be told: "Jev (TypeSafe)", "Laya (lokal)".
+  label: string;
+}
+
+// A task Helena has opened for the gateway: the token its decisions go through (the key stays
+// in Helena) and the backend's policy.
+export interface TaskStartResult {
+  taskId: number;
+  taskToken: string;
+  policy: 'jev' | 'laya';
+  minConfidence: number | null;
+  label: string;
+  model: string;
+}
+
+export interface SystemOneWireReply {
+  model: string | null;
+  answers: Record<string, unknown>;
+  inputTokens: number;
+  outputTokens: number;
+  latencyMs: number;
 }
 
 export interface WorkRef {
@@ -200,6 +231,47 @@ export class HelenaClient {
     data: string;
   }): Promise<{ path: string }> {
     return this.#post('/internal/browser-gateway/download', input);
+  }
+
+  // browser_task (docs/helena-decisions/browser-task.md §3.4): opens a task row and hands back
+  // the token its decisions travel under. `kind` is the tool (a check or choice is a task of one
+  // decision). Refused when the project has no decision model.
+  taskStart(input: {
+    agentKey: string;
+    projectSlug: string;
+    via: string;
+    kind: 'task' | 'check' | 'choose';
+    goal: string;
+    mode: 'read' | 'act';
+    maxSteps: number;
+    startUrl?: string | null;
+    runId?: number;
+    messageId?: number;
+  }): Promise<TaskStartResult> {
+    return this.#post('/internal/browser-gateway/task/start', input);
+  }
+
+  // One System One request, made by Helena with the project's backend and key.
+  systemOne(input: {
+    taskToken: string;
+    state: unknown;
+    questions: unknown;
+  }): Promise<SystemOneWireReply> {
+    return this.#post('/internal/browser-gateway/systemone', input);
+  }
+
+  // A step as it happened (stored on the task, and in the browser's activity). Helena answers
+  // whether the task was cancelled meanwhile (Browser 2.0's "Abbrechen").
+  taskProgress(input: {
+    taskToken: string;
+    step: unknown;
+    usage: unknown;
+  }): Promise<{ cancelled?: boolean }> {
+    return this.#post('/internal/browser-gateway/task/progress', input);
+  }
+
+  taskFinish(input: { taskToken: string; result: unknown }): Promise<void> {
+    return this.#post('/internal/browser-gateway/task/finish', input);
   }
 
   async policy(): Promise<Record<string, BrowserGatewaySettingsWire & { projectId: number }>> {

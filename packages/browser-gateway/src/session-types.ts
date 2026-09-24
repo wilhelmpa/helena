@@ -1,5 +1,6 @@
 import type { SecretGuard } from './redact.ts';
 import type { DomainPolicy } from './domain.ts';
+import type { TaskPage } from './task/loop.ts';
 
 // What server.ts needs from a browser session, independent of patchright — session.ts is
 // the real, patchright-backed implementation; server.ts's own tests use a small fake
@@ -126,6 +127,12 @@ export interface GatewaySession {
     origin: string,
   ): Promise<string>;
   fillCode(target: string, code: string): Promise<string>;
+  // browser_task (task/loop.ts, docs/helena-decisions/browser-task.md §3.1): observing the tab in
+  // front, checking a decision is still fresh, and acting on an element the observation listed.
+  taskPage(): TaskPage;
+  // The accessibility snapshot (refs) an agent continues from when browser_task hands back,
+  // credential values removed, cut at `limit` characters.
+  agentSnapshot(limit: number): Promise<string>;
 }
 
 export interface SessionProvider {
