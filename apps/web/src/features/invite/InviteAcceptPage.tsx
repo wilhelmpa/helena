@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import BrandPanel from '@/components/common/page/BrandPanel';
+import AuthFrame from '@/components/common/page/AuthFrame';
+import HelenaMark from '@/components/brand/HelenaMark';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useInviteQuery } from './services/invite.service';
 import InviteInfo from './components/InviteInfo';
 import InviteNotice from './components/InviteNotice';
@@ -49,21 +49,15 @@ export default function InviteAcceptPage({ token }: { token: string }) {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-4 md:p-10">
-      <div className="w-full max-w-sm md:max-w-4xl">
-        <Card className="overflow-hidden p-0">
-          <CardContent className="grid p-0 md:grid-cols-2">
-            <div className="p-4 md:p-6">
-              <div className="mb-6 flex flex-col gap-1 text-center">
-                <h1 className="text-2xl font-semibold">{title}</h1>
-                <p className="text-sm text-balance text-muted-foreground">{subtitle}</p>
-              </div>
-              {body}
-            </div>
-            <BrandPanel subtitle={t('brandSubtitle')} />
-          </CardContent>
-        </Card>
+    <AuthFrame brandSubtitle={t('brandSubtitle')}>
+      <div className="p-6 md:p-8">
+        <div className="mb-6 flex flex-col items-center gap-1 text-center">
+          <HelenaMark className="mb-3 size-11 md:hidden" />
+          <h1 className="text-2xl font-semibold">{title}</h1>
+          <p className="text-xs text-balance text-muted-foreground">{subtitle}</p>
+        </div>
+        {body}
       </div>
-    </div>
+    </AuthFrame>
   );
 }

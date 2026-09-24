@@ -33,11 +33,11 @@ export default function TeamAiAgentTable({
 
   return (
     <div className="space-y-4">
-      <Table className="min-w-[1000px] table-fixed">
+      <Table className="table-fixed md:min-w-[1000px]">
         <colgroup>
           <col className="w-[32%]" />
-          <col className="w-[20%]" />
-          <col className="w-[36%]" />
+          <col className="w-[20%] max-md:hidden" />
+          <col className="w-[36%] max-md:hidden" />
           <col className="w-[12%]" />
         </colgroup>
         <TableHeader>
@@ -45,10 +45,10 @@ export default function TeamAiAgentTable({
             <TableHead className="text-xs font-medium text-muted-foreground">
               {t('agent')}
             </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
               {t('columns.triggers')}
             </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
               {t('columns.configuration')}
             </TableHead>
             <TableHead className="text-end text-xs font-medium text-muted-foreground">

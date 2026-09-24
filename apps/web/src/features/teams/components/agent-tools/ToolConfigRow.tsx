@@ -40,7 +40,7 @@ export function ToolConfigRow({
           </div>
         </div>
       </TableCell>
-      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal">
+      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal max-md:hidden">
         {scopes.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {scopes.map((s) => (

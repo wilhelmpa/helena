@@ -94,10 +94,10 @@ export function TeamAiAgentRow({
           )}
         </div>
       </TableCell>
-      <TableCell className="px-2 align-middle whitespace-normal">
+      <TableCell className="px-2 align-middle whitespace-normal max-md:hidden">
         <AgentTriggers agent={agent} />
       </TableCell>
-      <TableCell className="px-2 align-middle whitespace-normal">
+      <TableCell className="px-2 align-middle whitespace-normal max-md:hidden">
         {agent.kind === 'internal' ? (
           <AgentMetaRow agent={agent} providerLabel={providerLabel} />
         ) : (

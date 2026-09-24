@@ -60,7 +60,7 @@ export default function TeamProjectPanel({
             <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
               {project.key}
             </span>
-            <h2 className="truncate text-base font-semibold">{project.name}</h2>
+            <h2 className="truncate text-md font-semibold">{project.name}</h2>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <TeamProjectActions

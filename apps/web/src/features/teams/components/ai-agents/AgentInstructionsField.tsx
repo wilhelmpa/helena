@@ -135,7 +135,7 @@ export function AgentInstructionsField({
               placeholder={t('instructionsPlaceholder')}
               ariaLabel={t('instructionsLabel')}
               slashContainer='[data-slot="dialog-content"]'
-              className="flex min-h-0 flex-1 flex-col overflow-y-auto text-base leading-relaxed"
+              className="flex min-h-0 flex-1 flex-col overflow-y-auto text-sm leading-relaxed"
             />
           )}
         </DialogContent>

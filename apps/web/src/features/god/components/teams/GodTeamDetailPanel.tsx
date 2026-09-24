@@ -62,7 +62,7 @@ export default function GodTeamDetailPanel({
       <div className="ml-auto flex h-full w-full flex-col border-l bg-card sm:w-[680px] sm:max-w-[92vw]">
         <div className="flex shrink-0 items-start justify-between gap-3 bg-muted/30 px-4 pt-4 pb-4">
           <div className="min-w-0 space-y-1.5">
-            <h2 className="truncate text-base font-semibold">
+            <h2 className="truncate text-md font-semibold">
               {team ? team.name : tCommon('loading')}
             </h2>
             {team && (

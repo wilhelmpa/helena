@@ -45,10 +45,10 @@ export default function TeamAgentSkills({
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto">
-            <Table className="min-w-[820px] table-fixed">
+            <Table className="table-fixed md:min-w-[820px]">
               <colgroup>
                 <col className="w-[28%]" />
-                <col className="w-[58%]" />
+                <col className="w-[58%] max-md:hidden" />
                 <col className="w-[14%]" />
               </colgroup>
               <TableHeader>
@@ -56,7 +56,7 @@ export default function TeamAgentSkills({
                   <TableHead className="text-xs font-medium text-muted-foreground">
                     {t('skill')}
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
+                  <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
                     {t('description')}
                   </TableHead>
                   <TableHead className="text-end text-xs font-medium text-muted-foreground">

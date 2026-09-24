@@ -32,12 +32,12 @@ export default function TeamProjectsTable({
 
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-[720px] table-fixed">
+      <Table className="table-fixed md:min-w-[720px]">
         <colgroup>
           <col className="w-[44%]" />
-          <col className="w-[16%]" />
+          <col className="w-[16%] max-md:hidden" />
           <col className="w-[12%]" />
-          <col className="w-[18%]" />
+          <col className="w-[18%] max-md:hidden" />
           <col className="w-[10%]" />
         </colgroup>
         <TableHeader>
@@ -45,13 +45,13 @@ export default function TeamProjectsTable({
             <TableHead className="text-xs font-medium text-muted-foreground">
               {t('columns.project')}
             </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
               {t('columns.owners')}
             </TableHead>
             <TableHead className="text-xs font-medium text-muted-foreground">
               {t('columns.members')}
             </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
               {t('columns.created')}
             </TableHead>
             <TableHead className="text-end text-xs font-medium text-muted-foreground">
@@ -78,7 +78,7 @@ export default function TeamProjectsTable({
                 </div>
               </TableCell>
 
-              <TableCell className="px-3 py-3">
+              <TableCell className="px-3 py-3 max-md:hidden">
                 {project.owners.length > 0 && (
                   <span
                     className="flex items-center -space-x-1.5"
@@ -102,7 +102,7 @@ export default function TeamProjectsTable({
                 {project.memberCount}
               </TableCell>
 
-              <TableCell className="px-3 py-3 text-sm text-muted-foreground">
+              <TableCell className="px-3 py-3 text-sm text-muted-foreground max-md:hidden">
                 {formatDate(project.createdAt)}
               </TableCell>
 

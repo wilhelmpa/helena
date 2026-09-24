@@ -30,14 +30,14 @@ export default function GodProjectsTable({
   const tCommon = useTranslations('common');
 
   return (
-    <Table className="min-w-[900px] table-fixed">
+    <Table className="table-fixed md:min-w-[900px]">
       <colgroup>
         <col className="w-[36%]" />
         <col className="w-[10%]" />
-        <col className="w-[12%]" />
-        <col className="w-[10%]" />
-        <col className="w-[13%]" />
-        <col className="w-[11%]" />
+        <col className="w-[12%] max-md:hidden" />
+        <col className="w-[10%] max-md:hidden" />
+        <col className="w-[13%] max-md:hidden" />
+        <col className="w-[11%] max-md:hidden" />
         <col className="w-[8%]" />
       </colgroup>
       <TableHeader>
@@ -48,16 +48,16 @@ export default function GodProjectsTable({
           <TableHead className="text-xs font-medium text-muted-foreground">
             {t('columns.members')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.issues')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.agents')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.lastActivity')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.mcp')}
           </TableHead>
           <TableHead className="text-right text-xs font-medium text-muted-foreground">
@@ -94,7 +94,7 @@ export default function GodProjectsTable({
               {compactCount(p.memberCount)}
             </TableCell>
 
-            <TableCell className="px-3 py-3 align-top text-sm tabular-nums">
+            <TableCell className="px-3 py-3 align-top text-sm tabular-nums max-md:hidden">
               <div className="flex flex-col gap-0.5">
                 <span title={String(p.issueCount)}>{compactCount(p.issueCount)}</span>
                 {/* Its own line, so a project with five-digit counts does not push the
@@ -111,17 +111,17 @@ export default function GodProjectsTable({
             </TableCell>
 
             <TableCell
-              className="px-3 py-3 align-top text-sm tabular-nums"
+              className="px-3 py-3 align-top text-sm tabular-nums max-md:hidden"
               title={String(p.agentCount)}
             >
               {compactCount(p.agentCount)}
             </TableCell>
 
-            <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground">
+            <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground max-md:hidden">
               {p.lastActivityAt ? formatShortDate(p.lastActivityAt) : t('neverActive')}
             </TableCell>
 
-            <TableCell className="px-3 py-3 align-top">
+            <TableCell className="px-3 py-3 align-top max-md:hidden">
               {p.mcpEnabled ? (
                 <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                   {t('mcpEnabled')}

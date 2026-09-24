@@ -105,7 +105,7 @@ export default function RoleEditorPanel({
     >
       <div className="ml-auto flex h-full w-full flex-col border-l bg-card sm:w-[680px] sm:max-w-[92vw]">
         <div className="flex shrink-0 items-center justify-between gap-3 bg-muted/30 px-4 py-4">
-          <h2 className="min-w-0 truncate text-base font-semibold">
+          <h2 className="min-w-0 truncate text-md font-semibold">
             {role ? t('editorTitleEdit') : t('editorTitleNew')}
           </h2>
           <Button

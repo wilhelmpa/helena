@@ -61,7 +61,7 @@ export default function TeamMemberRow({
           self={self}
         />
       </TableCell>
-      <TableCell className="px-3 py-3 text-sm text-muted-foreground">
+      <TableCell className="px-3 py-3 text-sm text-muted-foreground max-md:hidden">
         {formatDate(member.joinedAt)}
       </TableCell>
       <TableCell className="px-3 py-2">

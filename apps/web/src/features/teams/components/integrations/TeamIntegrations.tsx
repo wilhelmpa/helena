@@ -41,7 +41,7 @@ export default function TeamIntegrations({
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto">
-            <Table className="min-w-[560px] table-fixed">
+            <Table className="table-fixed md:min-w-[560px]">
               <colgroup>
                 <col className="w-[34%]" />
                 <col className="w-[50%]" />

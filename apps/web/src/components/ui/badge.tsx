@@ -11,9 +11,11 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90',
-        secondary:
-          'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
+        // The emphasised badge (an owner among members, a live state): the brand's quiet
+        // tint, not a filled dark block — the page's one filled element is its primary
+        // button (docs/volition/ui-standard.md).
+        default: 'border-transparent bg-brand-subtle text-foreground [a&]:hover:bg-brand-subtle/80',
+        secondary: 'border-transparent bg-accent text-accent-foreground [a&]:hover:bg-accent/80',
         destructive: 'border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90',
         outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
       },

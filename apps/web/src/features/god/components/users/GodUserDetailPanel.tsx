@@ -83,14 +83,14 @@ export default function GodUserDetailPanel({
               className="size-11 shrink-0 text-sm"
             />
             <div className="min-w-0 space-y-1.5">
-              <h2 className="truncate text-base font-semibold">
+              <h2 className="truncate text-md font-semibold">
                 {user ? user.name || user.email : tCommon('loading')}
               </h2>
               <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
               {user && (
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                   {user.role === 'god' ? (
-                    <Badge className="gap-1 px-1.5 py-0 text-xs font-medium">
+                    <Badge className="gap-1">
                       <Shield className="size-3" />
                       {t('instanceOwner')}
                     </Badge>

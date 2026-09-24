@@ -53,10 +53,10 @@ export default function TeamAgentTools({
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto">
-            <Table className="min-w-[760px] table-fixed">
+            <Table className="table-fixed md:min-w-[760px]">
               <colgroup>
                 <col className="w-[34%]" />
-                <col className="w-[52%]" />
+                <col className="w-[52%] max-md:hidden" />
                 <col className="w-[14%]" />
               </colgroup>
               <TableHeader>
@@ -64,7 +64,7 @@ export default function TeamAgentTools({
                   <TableHead className="text-xs font-medium text-muted-foreground">
                     {t('tool')}
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
+                  <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
                     {t('scopes')}
                   </TableHead>
                   <TableHead className="text-end text-xs font-medium text-muted-foreground">

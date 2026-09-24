@@ -53,7 +53,9 @@ export default function AgentTemplateDriftSection({ agent }: { agent: AiAgent })
                 title={isOverridden ? t('overriddenHint') : t('followsHint')}
               >
                 {t(`groups.${group}`)}
-                {isOverridden && <span className="text-[10px] uppercase">{t('overridden')}</span>}
+                {isOverridden && (
+                  <span className="text-xs text-muted-foreground">{t('overridden')}</span>
+                )}
               </Badge>
               {isOverridden && canEdit && (
                 <Button

@@ -28,14 +28,14 @@ export default function GodTeamsTable({
   const tCommon = useTranslations('common');
 
   return (
-    <Table className="min-w-[900px] table-fixed">
+    <Table className="table-fixed md:min-w-[900px]">
       <colgroup>
         <col className="w-[34%]" />
         <col className="w-[11%]" />
-        <col className="w-[11%]" />
-        <col className="w-[11%]" />
-        <col className="w-[11%]" />
-        <col className="w-[14%]" />
+        <col className="w-[11%] max-md:hidden" />
+        <col className="w-[11%] max-md:hidden" />
+        <col className="w-[11%] max-md:hidden" />
+        <col className="w-[14%] max-md:hidden" />
         <col className="w-[8%]" />
       </colgroup>
       <TableHeader>
@@ -46,16 +46,16 @@ export default function GodTeamsTable({
           <TableHead className="text-xs font-medium text-muted-foreground">
             {t('columns.projects')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.members')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.issues')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.agents')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.mcp')}
           </TableHead>
           <TableHead className="text-right text-xs font-medium text-muted-foreground">
@@ -79,19 +79,28 @@ export default function GodTeamsTable({
               {compactCount(team.projectCount)}
             </TableCell>
 
-            <TableCell className="px-3 py-3 text-sm tabular-nums" title={String(team.memberCount)}>
+            <TableCell
+              className="px-3 py-3 text-sm tabular-nums max-md:hidden"
+              title={String(team.memberCount)}
+            >
               {compactCount(team.memberCount)}
             </TableCell>
 
-            <TableCell className="px-3 py-3 text-sm tabular-nums" title={String(team.issueCount)}>
+            <TableCell
+              className="px-3 py-3 text-sm tabular-nums max-md:hidden"
+              title={String(team.issueCount)}
+            >
               {compactCount(team.issueCount)}
             </TableCell>
 
-            <TableCell className="px-3 py-3 text-sm tabular-nums" title={String(team.agentCount)}>
+            <TableCell
+              className="px-3 py-3 text-sm tabular-nums max-md:hidden"
+              title={String(team.agentCount)}
+            >
               {compactCount(team.agentCount)}
             </TableCell>
 
-            <TableCell className="px-3 py-3">
+            <TableCell className="px-3 py-3 max-md:hidden">
               <Badge
                 variant={team.mcpEnabled ? 'secondary' : 'outline'}
                 className="px-1.5 py-0 text-xs font-medium"

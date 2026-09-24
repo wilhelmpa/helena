@@ -126,11 +126,11 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
           <MembersEmptyState kind={kind} searching={term !== undefined} />
         ) : (
           <div className="overflow-x-auto">
-            <Table className="min-w-[720px] table-fixed">
+            <Table className="table-fixed md:min-w-[720px]">
               <colgroup>
                 <col className="w-[46%]" />
                 <col className="w-[16%]" />
-                <col className="w-[20%]" />
+                <col className="w-[20%] max-md:hidden" />
                 <col className="w-[18%]" />
               </colgroup>
               <TableHeader>
@@ -141,7 +141,7 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
                   <TableHead className="text-xs font-medium text-muted-foreground">
                     {t('columns.role')}
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
+                  <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
                     {t('columns.joined')}
                   </TableHead>
                   <TableHead className="text-end text-xs font-medium text-muted-foreground">

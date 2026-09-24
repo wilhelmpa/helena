@@ -31,14 +31,14 @@ export default function GodUsersTable({
   const providerList = useProviderList();
 
   return (
-    <Table className="min-w-[900px] table-fixed">
+    <Table className="table-fixed md:min-w-[900px]">
       <colgroup>
         <col className="w-[30%]" />
         <col className="w-[12%]" />
-        <col className="w-[15%]" />
-        <col className="w-[9%]" />
-        <col className="w-[13%]" />
-        <col className="w-[13%]" />
+        <col className="w-[15%] max-md:hidden" />
+        <col className="w-[9%] max-md:hidden" />
+        <col className="w-[13%] max-md:hidden" />
+        <col className="w-[13%] max-md:hidden" />
         <col className="w-[8%]" />
       </colgroup>
       <TableHeader>
@@ -49,16 +49,16 @@ export default function GodUsersTable({
           <TableHead className="text-xs font-medium text-muted-foreground">
             {t('columns.role')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.signIn')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.projects')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.lastSeen')}
           </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
+          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
             {t('columns.email')}
           </TableHead>
           <TableHead className="text-right text-xs font-medium text-muted-foreground">
@@ -90,7 +90,7 @@ export default function GodUsersTable({
             <TableCell className="px-3 py-3 align-top">
               <div className="flex flex-wrap gap-1">
                 {u.role === 'god' ? (
-                  <Badge className="gap-1 px-1.5 py-0 text-xs font-medium">
+                  <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs font-medium">
                     <Shield className="size-3" />
                     {t('roleGod')}
                   </Badge>
@@ -108,17 +108,19 @@ export default function GodUsersTable({
               </div>
             </TableCell>
 
-            <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground">
+            <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground max-md:hidden">
               {u.providers.length ? providerList(u.providers) : t('noProviders')}
             </TableCell>
 
-            <TableCell className="px-3 py-3 align-top text-sm">{u.projectCount}</TableCell>
+            <TableCell className="px-3 py-3 align-top text-sm max-md:hidden">
+              {u.projectCount}
+            </TableCell>
 
-            <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground">
+            <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground max-md:hidden">
               {u.lastSeenAt ? formatShortDate(u.lastSeenAt) : t('neverSeen')}
             </TableCell>
 
-            <TableCell className="px-3 py-3 align-top">
+            <TableCell className="px-3 py-3 align-top max-md:hidden">
               {u.emailVerified ? (
                 <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                   {t('verified')}

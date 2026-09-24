@@ -57,7 +57,7 @@ export default function TeamRolesList({
 
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-[560px] table-fixed">
+      <Table className="table-fixed md:min-w-[560px]">
         <colgroup>
           <col className="w-[56%]" />
           <col className="w-[26%]" />

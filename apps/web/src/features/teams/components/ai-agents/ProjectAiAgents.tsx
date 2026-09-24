@@ -54,12 +54,12 @@ export default function ProjectAiAgents() {
 
   return (
     <div className="space-y-4">
-      <Table className="min-w-[640px] table-fixed">
+      <Table className="table-fixed md:min-w-[640px]">
         <colgroup>
           <col className="w-[25%]" />
-          <col className="w-[25%]" />
-          <col className="w-[14%]" />
-          <col className="w-[25%]" />
+          <col className="w-[25%] max-md:hidden" />
+          <col className="w-[14%] max-md:hidden" />
+          <col className="w-[25%] max-md:hidden" />
           <col className="w-[11%]" />
         </colgroup>
         <TableHeader>
@@ -67,13 +67,13 @@ export default function ProjectAiAgents() {
             <TableHead className="text-xs font-medium text-muted-foreground">
               {tTeam('agent')}
             </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
               {t('assignment')}
             </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
               {tTeam('columns.triggers')}
             </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
               {tTeam('columns.configuration')}
             </TableHead>
             <TableHead className="text-end text-xs font-medium text-muted-foreground">
@@ -105,7 +105,7 @@ export default function ProjectAiAgents() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="px-3 py-3 align-middle whitespace-normal">
+                <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
                   {assignment && (
                     <div className="flex min-w-0 flex-col gap-1">
                       <span className="text-sm font-medium">
@@ -117,10 +117,10 @@ export default function ProjectAiAgents() {
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="px-3 py-3 align-middle whitespace-normal">
+                <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
                   <AgentTriggers agent={agent} />
                 </TableCell>
-                <TableCell className="px-3 py-3 align-middle whitespace-normal">
+                <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
                   {agent.kind === 'internal' ? (
                     <AgentMetaRow
                       agent={agent}

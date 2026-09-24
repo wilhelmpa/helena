@@ -49,7 +49,7 @@ export function SkillRow({
           </div>
         </div>
       </TableCell>
-      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal">
+      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal max-md:hidden">
         <p className="line-clamp-2 text-sm text-muted-foreground">
           {skill.description || t('noDescription')}
         </p>

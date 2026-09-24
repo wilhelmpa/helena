@@ -69,7 +69,7 @@ export default function GodProjectDetailPanel({
               <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
                 {project?.key ?? '…'}
               </span>
-              <h2 className="truncate text-base font-semibold">
+              <h2 className="truncate text-md font-semibold">
                 {project ? project.name : tCommon('loading')}
               </h2>
             </div>
