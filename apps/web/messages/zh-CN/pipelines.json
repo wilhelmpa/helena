@@ -390,7 +390,12 @@
     "allRuns": "所有运行",
     "onlyTestRuns": "试运行",
     "onlyRealRuns": "正式运行",
-    "allProjects": "所有项目"
+    "allProjects": "所有项目",
+    "filter": "筛选",
+    "filterReset": "重置筛选",
+    "filterProject": "项目",
+    "filterStatus": "状态",
+    "filterKind": "类型"
   },
   "versions": {
     "empty": "没有版本。",

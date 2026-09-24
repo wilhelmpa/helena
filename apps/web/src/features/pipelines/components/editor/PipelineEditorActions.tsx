@@ -17,6 +17,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Pipeline } from '@/lib/api/endpoints/pipelines';
 import { pipelinesPath, workflowsPath } from '@/utils/paths';
+import PipelineRunsFilter from './PipelineRunsFilter';
 import PipelineTestRunDialog from './PipelineTestRunDialog';
 
 export type PipelineEditorTab = 'build' | 'runs' | 'versions';
@@ -87,6 +88,7 @@ export default function PipelineEditorActions({
           ]}
         />
         <PageToolbarSpacer />
+        {tab === 'runs' ? <PipelineRunsFilter pipeline={pipeline} /> : null}
         <EditorState pipeline={pipeline} dirty={dirty} blocked={dirty && blocked} />
         <PageActions
           actions={actions}

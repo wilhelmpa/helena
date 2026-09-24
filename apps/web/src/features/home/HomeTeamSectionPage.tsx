@@ -49,7 +49,7 @@ export default function HomeTeamSectionPage({ section }: { section: HomeTeamSect
         <div className="flex h-full flex-col p-4">
           <EmptyState title={t('teamScopeRequired')} description={t('teamScopeRequiredHint')}>
             <Button asChild size="sm" variant="outline">
-              <Link href={manageTeamsPath()}>{t('projectSettings')}</Link>
+              <Link href={manageTeamsPath()}>{t('manageTeams')}</Link>
             </Button>
           </EmptyState>
         </div>

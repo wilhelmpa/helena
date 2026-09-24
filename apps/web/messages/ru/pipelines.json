@@ -390,7 +390,12 @@
     "allRuns": "Все запуски",
     "onlyTestRuns": "Тестовые запуски",
     "onlyRealRuns": "Настоящие запуски",
-    "allProjects": "Все проекты"
+    "allProjects": "Все проекты",
+    "filter": "Фильтр",
+    "filterReset": "Сбросить фильтры",
+    "filterProject": "Проект",
+    "filterStatus": "Статус",
+    "filterKind": "Тип"
   },
   "versions": {
     "empty": "Версий нет.",

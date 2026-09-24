@@ -390,7 +390,12 @@
     "allRuns": "All runs",
     "onlyTestRuns": "Test runs",
     "onlyRealRuns": "Real runs",
-    "allProjects": "All projects"
+    "allProjects": "All projects",
+    "filter": "Filter",
+    "filterReset": "Reset filters",
+    "filterProject": "Project",
+    "filterStatus": "Status",
+    "filterKind": "Kind"
   },
   "versions": {
     "empty": "No versions.",

@@ -390,7 +390,12 @@
     "allRuns": "Todas as execuções",
     "onlyTestRuns": "Execuções de teste",
     "onlyRealRuns": "Execuções reais",
-    "allProjects": "Todos os projetos"
+    "allProjects": "Todos os projetos",
+    "filter": "Filtro",
+    "filterReset": "Redefinir filtros",
+    "filterProject": "Projeto",
+    "filterStatus": "Status",
+    "filterKind": "Tipo"
   },
   "versions": {
     "empty": "Sem versões.",

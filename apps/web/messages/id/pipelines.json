@@ -390,7 +390,12 @@
     "allRuns": "Semua eksekusi",
     "onlyTestRuns": "Uji coba",
     "onlyRealRuns": "Eksekusi nyata",
-    "allProjects": "Semua proyek"
+    "allProjects": "Semua proyek",
+    "filter": "Filter",
+    "filterReset": "Atur ulang filter",
+    "filterProject": "Proyek",
+    "filterStatus": "Status",
+    "filterKind": "Jenis"
   },
   "versions": {
     "empty": "Tidak ada versi.",

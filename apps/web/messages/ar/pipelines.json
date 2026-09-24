@@ -390,7 +390,12 @@
     "allRuns": "كل التشغيلات",
     "onlyTestRuns": "التشغيلات التجريبية",
     "onlyRealRuns": "التشغيلات الفعلية",
-    "allProjects": "كل المشاريع"
+    "allProjects": "كل المشاريع",
+    "filter": "تصفية",
+    "filterReset": "إعادة ضبط عوامل التصفية",
+    "filterProject": "المشروع",
+    "filterStatus": "الحالة",
+    "filterKind": "النوع"
   },
   "versions": {
     "empty": "لا توجد إصدارات.",

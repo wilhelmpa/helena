@@ -390,7 +390,12 @@
     "allRuns": "Alle Läufe",
     "onlyTestRuns": "Testläufe",
     "onlyRealRuns": "Echte Läufe",
-    "allProjects": "Alle Projekte"
+    "allProjects": "Alle Projekte",
+    "filter": "Filter",
+    "filterReset": "Filter zurücksetzen",
+    "filterProject": "Projekt",
+    "filterStatus": "Status",
+    "filterKind": "Art"
   },
   "versions": {
     "empty": "Keine Versionen.",

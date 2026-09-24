@@ -390,7 +390,12 @@
     "allRuns": "Усі запуски",
     "onlyTestRuns": "Тестові запуски",
     "onlyRealRuns": "Справжні запуски",
-    "allProjects": "Усі проєкти"
+    "allProjects": "Усі проєкти",
+    "filter": "Фільтр",
+    "filterReset": "Скинути фільтри",
+    "filterProject": "Проєкт",
+    "filterStatus": "Статус",
+    "filterKind": "Тип"
   },
   "versions": {
     "empty": "Версій немає.",
