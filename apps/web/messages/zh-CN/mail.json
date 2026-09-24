@@ -179,7 +179,8 @@
     "smtpHost": "SMTP 服务器",
     "port": "端口",
     "tls": "一开始就使用 TLS（关闭则用 STARTTLS）",
-    "username": "用户名"
+    "username": "用户名",
+    "team": "团队"
   },
   "rules": {
     "title": "归档规则",

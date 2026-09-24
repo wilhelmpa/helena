@@ -56,7 +56,7 @@ export default function MailAccountRow({
     );
 
   return (
-    <li className="flex flex-col gap-2 rounded-lg border p-3">
+    <li className="flex flex-col gap-2 rounded-lg border bg-card p-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{account.name}</p>

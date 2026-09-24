@@ -179,7 +179,8 @@
     "smtpHost": "Serveur SMTP",
     "port": "Port",
     "tls": "TLS dès le départ (désactivé : STARTTLS)",
-    "username": "Nom d'utilisateur"
+    "username": "Nom d'utilisateur",
+    "team": "Équipe"
   },
   "rules": {
     "title": "Règles de classement",

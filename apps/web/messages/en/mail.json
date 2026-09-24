@@ -179,7 +179,8 @@
     "smtpHost": "SMTP server",
     "port": "Port",
     "tls": "TLS from the start (off: STARTTLS)",
-    "username": "User name"
+    "username": "User name",
+    "team": "Team"
   },
   "rules": {
     "title": "Filing rules",

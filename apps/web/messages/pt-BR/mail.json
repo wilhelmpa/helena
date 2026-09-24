@@ -179,7 +179,8 @@
     "smtpHost": "Servidor SMTP",
     "port": "Porta",
     "tls": "TLS desde o início (desativado: STARTTLS)",
-    "username": "Nome de usuário"
+    "username": "Nome de usuário",
+    "team": "Equipe"
   },
   "rules": {
     "title": "Regras de arquivamento",

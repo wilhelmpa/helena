@@ -179,7 +179,8 @@
     "smtpHost": "سيرفر SMTP",
     "port": "البورت",
     "tls": "TLS من الأول (لو مقفول: STARTTLS)",
-    "username": "اسم المستخدم"
+    "username": "اسم المستخدم",
+    "team": "الفريق"
   },
   "rules": {
     "title": "قواعد الحفظ",

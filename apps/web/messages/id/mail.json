@@ -179,7 +179,8 @@
     "smtpHost": "Server SMTP",
     "port": "Port",
     "tls": "TLS sejak awal (nonaktif: STARTTLS)",
-    "username": "Nama pengguna"
+    "username": "Nama pengguna",
+    "team": "Tim"
   },
   "rules": {
     "title": "Aturan penyimpanan",

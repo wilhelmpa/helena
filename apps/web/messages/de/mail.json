@@ -179,7 +179,8 @@
     "smtpHost": "SMTP-Server",
     "port": "Port",
     "tls": "TLS von Anfang an (aus: STARTTLS)",
-    "username": "Benutzername"
+    "username": "Benutzername",
+    "team": "Team"
   },
   "rules": {
     "title": "Ablageregeln",
