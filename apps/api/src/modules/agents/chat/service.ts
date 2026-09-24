@@ -12,6 +12,7 @@ import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, notExists, sql } fr
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { assertProjectNotHeld } from '#modules/autopilot/service';
+import { enforceBudgets } from '#modules/autopilot/budgets';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { HttpError, intEnv, iso } from '#shared/lib';
 import { deleteContextUsage, recordContextUsage, type ContextUsage } from '../chat-usage';
@@ -1096,6 +1097,13 @@ export async function finishMessage(
     if (result.usage !== undefined) {
       await recordContextUsage(rows[0].threadId, agentId, result.usage);
     }
+    // What the answer spent counts against the agent's budgets (and the project's): one
+    // used up stops the agent here, as a run's result does.
+    const [thread] = await db
+      .select({ projectId: agentChatThread.projectId })
+      .from(agentChatThread)
+      .where(eq(agentChatThread.id, rows[0].threadId));
+    await enforceBudgets(agentId, thread?.projectId ?? null, null);
     return true;
   }
   // Stopped from the chat while the command was ending: the answer is already closed,

@@ -280,22 +280,27 @@ export interface EnforceOptions {
 
 // The budgets of the agent and the project that hold its work back now: reached, and not
 // lifted for one more run. Warns at 80 % and files the card at 100 %, each once per period.
+// Work outside a project (a Home chat) has only the agent's budgets, and no project to file
+// a card in: the agent is paused, and its card waits for work in a project.
 export async function enforceBudgets(
   agentId: number,
-  projectId: number,
+  projectId: number | null,
   issueId: number | null,
   options: EnforceOptions = {},
 ): Promise<string | null> {
-  const statuses = await budgetStatuses({ agentIds: [agentId], projectIds: [projectId] });
+  const statuses = await budgetStatuses({
+    agentIds: [agentId],
+    projectIds: projectId == null ? [] : [projectId],
+  });
   if (statuses.length === 0) return null;
   const agent = await agentFacts(agentId);
   if (!agent) return null;
-  const key = await projectKeyOf(projectId);
+  const key = projectId == null ? null : await projectKeyOf(projectId);
 
   for (const status of statuses) {
     if (status.reached || status.ratio < WARN_RATIO || status.warned) continue;
     if (!(await claimOnce(status.id, 'warnedFor', new Date(status.periodStart)))) continue;
-    if (issueId == null) continue;
+    if (issueId == null || projectId == null) continue;
     const handles = await noticeRecipients(
       projectId,
       status.scope === 'agent' ? agent.ownerUserId : null,
@@ -323,6 +328,7 @@ export async function enforceBudgets(
   const first = blocking.find((status) => status.scope === 'agent') ?? blocking[0]!;
   const reason = budgetReason(first, key);
   const paused = first.scope === 'agent' ? await pauseForBudget(agentId, reason) : false;
+  if (projectId == null) return reason;
   const filed = await claimOnce(first.id, 'reachedFor', new Date(first.periodStart));
   if (filed) await fileBudgetCard(first, agentId, projectId, issueId, reason);
   if ((paused || filed) && issueId != null) {
