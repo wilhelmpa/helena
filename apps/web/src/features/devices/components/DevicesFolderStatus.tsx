@@ -1,18 +1,18 @@
 import { useTranslations } from 'next-intl';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import type { SyncFolder } from '@/lib/api/endpoints/deviceSync';
-import { cn } from '@/lib/utils';
+import StatusBadge, { type Status } from '@/components/common/page/StatusBadge';
 import { folderStateKind } from '../utils/folderState';
 import DevicesNotice from './DevicesNotice';
 import DevicesSection from './DevicesSection';
 
-const TONES = {
-  idle: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-  scanning: 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
-  syncing: 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
-  error: 'bg-destructive/10 text-destructive',
-  other: 'bg-muted text-muted-foreground',
-} as const;
+const TONES: Record<string, Status> = {
+  idle: 'success',
+  scanning: 'running',
+  syncing: 'running',
+  error: 'danger',
+  other: 'idle',
+};
 
 export default function DevicesFolderStatus({ folder }: { folder: SyncFolder | null }) {
   const t = useTranslations('devices.folder');
@@ -23,9 +23,9 @@ export default function DevicesFolderStatus({ folder }: { folder: SyncFolder | n
   return (
     <DevicesSection title={t('title')}>
       <div className="flex flex-wrap items-center gap-3">
-        <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', TONES[kind])}>
+        <StatusBadge status={TONES[kind] ?? 'idle'}>
           {kind === 'other' ? folder.state : t(`state.${kind}`)}
-        </span>
+        </StatusBadge>
         <code dir="ltr" className="text-xs text-muted-foreground">
           {folder.path}
         </code>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import StatusBadge from '@/components/common/page/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import type { SyncDevice } from '@/lib/api/endpoints/deviceSync';
-import { cn } from '@/lib/utils';
 import { useRemoveDevice } from '../services/deviceSync.service';
 import { deviceName } from '../utils/deviceName';
 
@@ -25,12 +25,7 @@ export default function DevicesRow({ device }: { device: SyncDevice }) {
 
   return (
     <li className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
-      <span
-        className={cn(
-          'size-2 shrink-0 rounded-full',
-          state === 'connected' ? 'bg-emerald-500' : 'bg-muted-foreground/40',
-        )}
-      />
+      <StatusBadge status={state === 'connected' ? 'success' : 'idle'} dotOnly />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">
           {name}{' '}
@@ -42,7 +37,7 @@ export default function DevicesRow({ device }: { device: SyncDevice }) {
           {t(state)} · {seen}
         </p>
         {device.sharesFolder ? null : (
-          <p className="text-xs text-amber-700 dark:text-amber-300">{t('notShared')}</p>
+          <p className="text-xs text-status-waiting">{t('notShared')}</p>
         )}
       </div>
       <Button variant="outline" size="sm" onClick={() => setConfirming(true)}>

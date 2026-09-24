@@ -23,7 +23,7 @@ export default function DevicesPage() {
   return (
     <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
       <SectionPageView title={t('title')} description={t('description')}>
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {status.isError ? (
             <DevicesNotice>{t(forbidden ? 'ownerOnly' : 'loadError')}</DevicesNotice>
           ) : null}
@@ -37,7 +37,12 @@ export default function DevicesPage() {
               {data.folder ? <DevicesConflicts /> : null}
             </>
           ) : null}
-          {forbidden ? null : <DevicesGuide lanAddress={data?.server?.lanAddress ?? null} />}
+          {forbidden ? null : (
+            <DevicesGuide
+              lanAddress={data?.server?.lanAddress ?? null}
+              collapsed={data?.state === 'ready' && data.devices.length > 0}
+            />
+          )}
         </div>
       </SectionPageView>
     </Shell>
