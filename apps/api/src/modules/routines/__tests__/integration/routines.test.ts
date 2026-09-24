@@ -8,6 +8,7 @@ import {
   it,
   setDefaultTimeout,
 } from 'bun:test';
+import { DBOS } from '@dbos-inc/dbos-sdk';
 import {
   agentRun,
   db,
@@ -16,7 +17,7 @@ import {
   issueActivity,
   pipelineRun,
 } from '@repo/db';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { api, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -312,11 +313,12 @@ describe('routines', () => {
     });
     expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task!.id))).toHaveLength(1);
     // The fire is on the event bus for the plugins: stored for the worker's delivery.
-    const fired = (await db.execute(
-      sql`select inputs from helena_engine.workflow_status where workflow_uuid = ${`worker-event:routine-fired:${ran.id}`}`,
-    )) as unknown as { inputs: string }[];
-    expect(fired).toHaveLength(1);
-    expect(JSON.parse(fired[0]!.inputs).positionalArgs[0]).toMatchObject({
+    const [fired] = await DBOS.listWorkflows({
+      workflowIDs: [`worker-event:routine-fired:${ran.id}`],
+      loadInput: true,
+    });
+    expect(fired).toMatchObject({ workflowName: 'helena.worker-event' });
+    expect(fired!.input?.[0]).toMatchObject({
       type: 'helena.routine.fired',
       data: { routineId: created.id, fireId: ran.id, mode: 'new', agentId: agent.id },
     });
