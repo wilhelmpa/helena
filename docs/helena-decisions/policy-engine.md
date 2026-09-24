@@ -47,9 +47,9 @@ Also looked at and dropped:
 **Cedar via `@cedar-policy/cedar-wasm` (nodejs target), as a thin layer.**
 
 - The level matrix, the hard blocks and the budget stop are a Cedar policy set with a Cedar
-  schema, kept as text in `packages/policy` (`@helena/policy`). Each policy has an id and a
-  `@reason` annotation; the engine turns the determining policy ids into the reason shown
-  on approval cards and in the audit log.
+  schema, kept as text in `packages/policy` (`@helena/policy`). Each policy has an id; the
+  engine turns the determining policy ids into a reason code (built-in policies) or the
+  reason a plugin gave with its policy, shown on approval cards and in the audit log.
 - `decide(agent, project, category, context)` evaluates twice: once as the action is
   (`context.approved = false`); if Cedar denies, once more as if a person had approved it.
   Allowed the first time → `allow`; only the second time → `needs-approval`; never →
