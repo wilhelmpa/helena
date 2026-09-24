@@ -58,6 +58,7 @@ export function noteToolbarParts({
         id: 'details',
         label: inspectorOpen ? labels.closeDetails : labels.openDetails,
         icon: PanelRight,
+        active: inspectorOpen,
         onClick: onToggleInspector,
       },
     ],
