@@ -25,6 +25,7 @@ import { Redactor } from './redact';
 import { reflect } from './reflect';
 import { runtimeUpdate } from './update';
 import { perform } from './run';
+import { runPolicyHook } from './policy-hook';
 import type { RuntimeAdapter } from './runtime';
 
 // The runner holds no state — the queue is the server's. A runner stopped by its service
@@ -496,6 +497,12 @@ async function profileHelper(): Promise<void> {
   process.stdout.write(`${JSON.stringify(answer)}\n`);
 }
 
+// `policy-hook`: Claude Code's PreToolUse hook, which asks Helena's policy engine.
+async function policyHook(): Promise<void> {
+  const answer = await runPolicyHook(await readStdin(4 * 1024 * 1024));
+  if (answer) process.stdout.write(`${answer}\n`);
+}
+
 // The agents the deployment's catalog script left out of the runner config, and why.
 async function startProblems(path: string): Promise<string[]> {
   try {
@@ -510,6 +517,7 @@ async function startProblems(path: string): Promise<string[]> {
 
 async function main(): Promise<void> {
   if (process.argv[2] === 'profile-helper') return profileHelper();
+  if (process.argv[2] === 'policy-hook') return policyHook();
   const cli = parseArgv(process.argv.slice(2));
   const configPath =
     cli.configPath ?? process.env.ITSAPLAN_RUNNER_CONFIG ?? './itsaplan-runner.json';

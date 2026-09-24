@@ -12,6 +12,8 @@ import CodeBlock from '@/components/common/CodeBlock';
 import { useDecideApproval } from '../services/approvals.service';
 import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
 import ApprovalDecisionSummary from './ApprovalDecisionSummary';
+import BudgetApprovalCard from './BudgetApprovalCard';
+import ApprovalPolicyReason from '@/features/autopilot/components/ApprovalPolicyReason';
 
 // One agent's request: what it wants to do, who asks and for which task, and either the
 // decision controls or the decision it got.
@@ -20,6 +22,12 @@ import ApprovalDecisionSummary from './ApprovalDecisionSummary';
 const LIVE_VIEW_LINK = /\/project\/[A-Za-z0-9_-]{1,32}\?tool=browser/;
 
 export default function ApprovalRequestCard({ request }: { request: ApprovalRequest }) {
+  // A used-up budget has its own answers (raise, continue once, keep stopped).
+  if (request.kind === 'budget') return <BudgetApprovalCard request={request} />;
+  return <AgentRequestCard request={request} />;
+}
+
+function AgentRequestCard({ request }: { request: ApprovalRequest }) {
   const t = useTranslations('approvals');
   const decide = useDecideApproval();
   const liveView = LIVE_VIEW_LINK.exec(request.details)?.[0] ?? null;
@@ -63,6 +71,7 @@ export default function ApprovalRequestCard({ request }: { request: ApprovalRequ
         </Button>
       )}
       {request.command && <CodeBlock code={request.command} />}
+      <ApprovalPolicyReason request={request} />
       {request.status === 'pending' ? (
         <ApprovalDecisionForm
           pending={decide.isPending}

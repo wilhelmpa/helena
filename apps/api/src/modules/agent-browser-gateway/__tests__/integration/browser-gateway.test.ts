@@ -316,10 +316,31 @@ describe('browser gateway', () => {
         context: { origin: 'https://shop.example', target: 'f1e5', formAction: null },
         ...body,
       });
-    const allowed = await call({});
-    expect(allowed.status).toBe(200);
-    // No policy is configured yet (hub/autopilot brings it): every category is allowed.
-    expect(await allowed.json()).toEqual({ effect: 'allow', reason: 'No policy applies' });
+    // Helena's Autopilot decides: at the project's default level 1 a click that writes goes
+    // ahead, one that sends needs the owner, who gets a card in Freigaben.
+    const write = await call({ category: 'write' });
+    expect(write.status).toBe(200);
+    expect(await write.json()).toEqual({
+      effect: 'allow',
+      reason: 'Autopilot level 1 (With approval) allows write',
+    });
+    const send = await call({});
+    const asked = (await send.json()) as { effect: string; reason: string; approvalId: number };
+    expect(asked).toMatchObject({
+      effect: 'needs-approval',
+      reason: 'Autopilot level 1 (With approval) asks a person before send',
+    });
+    const card = (await asOwner.approvals.get({ query: {} })).data!.items.find(
+      (item) => item.id === asked.approvalId,
+    )!;
+    expect(card).toMatchObject({ kind: 'send', category: 'send', autopilotLevel: 1 });
+    // At level 3 it sends on its own; paying stays a person's decision.
+    await asOwner.projects({ projectKey: 'MKT' }).autopilot.put({ level: 3 });
+    expect(await (await call({})).json()).toMatchObject({ effect: 'allow' });
+    expect(await (await call({ category: 'pay' })).json()).toMatchObject({
+      effect: 'needs-approval',
+      reason: 'A person always approves pay, even at level 3',
+    });
     expect((await call({ category: 'launch-missiles' })).status).toBe(400);
     expect((await call({ projectSlug: 'ops', via: 'ops' })).status).toBe(403);
     expect((await call({ agentKey: 'not-a-key' })).status).toBe(403);

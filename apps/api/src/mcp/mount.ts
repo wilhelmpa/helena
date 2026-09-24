@@ -58,8 +58,12 @@ export function mountMcp(app: any): void {
   app.post(
     '/mcp',
     async ({ request, body }: { request: Request; body: unknown }) => {
+      // The run an agent's runtime names on its requests (x-helena-run), for the policy
+      // engine's log and the run's Autopilot report.
+      const runHeader = Number(request.headers.get('x-helena-run'));
+      const runId = Number.isInteger(runHeader) && runHeader > 0 ? runHeader : null;
       const serve = async (credential: McpCredential, userId: string) => {
-        const server = await buildMcpServer(mcpApp, credential, userId);
+        const server = await buildMcpServer(mcpApp, credential, userId, { runId });
         const transport = new WebStandardStreamableHTTPServerTransport({
           sessionIdGenerator: undefined,
         });

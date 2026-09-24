@@ -66,6 +66,10 @@
     "plugins": {
       "label": "Plugins",
       "description": "Les plugins intégrés de Helena et les plugins externes du dossier des plugins : ce qu'ils fournissent, les droits qu'ils demandent et ceux qui peuvent s'exécuter."
+    },
+    "model-prices": {
+      "label": "Prix des modèles",
+      "description": "Euros par million de tokens par modèle, la base de toute estimation de coût."
     }
   },
   "settings": {
@@ -120,6 +124,10 @@
     "ai-agents": {
       "label": "Agents",
       "description": "Des comptes bots auxquels vous pouvez déléguer des tickets."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Avec quelle autonomie agissent les agents de ce projet, et leurs budgets."
     },
     "browser": {
       "label": "Navigateur",

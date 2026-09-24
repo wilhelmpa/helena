@@ -294,7 +294,10 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         element: text(raw.element, 120),
         formAction: text(raw.formAction),
       };
-      const decided = await decideBrowserAction(agent, project, body.category, context);
+      const decided = await decideBrowserAction(agent, project, body.category, context, {
+        runId: optionalId(body.runId) ?? null,
+        messageId: optionalId(body.messageId) ?? null,
+      });
       if (decided.effect !== 'needs-approval') {
         return { effect: decided.effect, reason: decided.reason };
       }

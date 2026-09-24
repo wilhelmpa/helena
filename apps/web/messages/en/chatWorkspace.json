@@ -150,7 +150,11 @@
       "publish": "Publish",
       "pay": "Pay",
       "delete": "Delete",
-      "other": "Other"
+      "other": "Other",
+      "write": "Change",
+      "execute": "Execute",
+      "credentials": "Credentials",
+      "budget": "Budget"
     },
     "notePlaceholder": "Note with your decision (optional)",
     "approve": "Approve",

@@ -259,6 +259,16 @@ export const app = new Elysia()
           },
           { name: 'Sync', description: 'Change markers a client polls for live refresh' },
           {
+            name: 'Autopilot',
+            description:
+              'How independently agents act (levels per project and agent), their budgets and ' +
+              'the policy engine every tool and runtime asks',
+          },
+          {
+            name: 'Model prices',
+            description: 'Euros per million tokens per model, the base of every cost estimate',
+          },
+          {
             name: 'Telegram',
             description: "The session user's linked Telegram account",
           },

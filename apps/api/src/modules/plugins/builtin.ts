@@ -11,6 +11,7 @@ import { dispatchTool } from '#mcp/dispatch';
 import { routeTools, type McpRouteTool } from '#mcp/generate';
 import type { McpApp } from '#mcp/types';
 import { loadRepositoryBundles } from '#modules/template-bundles/service';
+import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -77,6 +78,16 @@ function routeToolsPlugin(app: McpApp): HelenaPlugin {
   };
 }
 
+// Helena's Autopilot (docs/helena-decisions/policy-engine.md) as the policy evaluator every
+// tool call, connector service and workflow step the framework routes is asked through.
+export const AUTOPILOT_PLUGIN_ID = 'helena.autopilot';
+
+const autopilot: HelenaPlugin = {
+  register(ctx) {
+    ctx.policies.register(autopilotPolicyEvaluator);
+  },
+};
+
 let loaded = false;
 
 export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
@@ -88,6 +99,12 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     builtinManifest(INTEGRATIONS_PLUGIN_ID, 'integrations', {
       provides: { connectors: ['*'], tools: ['*'] },
       permissions: { actions: all, credentials: true },
+    }),
+  );
+  await host.load(
+    autopilot,
+    builtinManifest(AUTOPILOT_PLUGIN_ID, 'autopilot', {
+      provides: { policies: [AUTOPILOT_EVALUATOR_ID] },
     }),
   );
   await host.load(

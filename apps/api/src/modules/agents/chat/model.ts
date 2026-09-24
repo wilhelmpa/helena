@@ -283,6 +283,13 @@ export const ClaimChatResponse = t.Object({
         description:
           'Absolute paths of the images attached to the question, for a model that reads images.',
       }),
+      autopilotLevel: t.Integer({
+        minimum: 0,
+        maximum: 3,
+        description:
+          "The Autopilot level of the chat's project (the agent's own level for a Home chat); " +
+          "a runner maps it onto its runtime's permission mode.",
+      }),
     }),
   ),
 });

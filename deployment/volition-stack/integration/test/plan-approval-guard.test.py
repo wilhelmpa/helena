@@ -1,4 +1,5 @@
-"""The Plan approval guard plugin, against a local stand-in for Plan.
+"""The Helena approval guard plugin (the Autopilot's adapter in Hermes), against a local
+stand-in for Helena's policy engine.
 
 Needs the Hermes source: HERMES_SOURCE, by default /srv/volition/source/hermes. The last test
 class loads the plugin through Hermes itself and runs only with Hermes' dependencies installed,
@@ -27,27 +28,48 @@ GUARD = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GUARD)
 
 
-class FakePlan(BaseHTTPRequestHandler):
+def allow(_body):
+    return {"outcome": "allow", "message": ""}
+
+
+class FakeHelena(BaseHTTPRequestHandler):
     status = 200
+    # What the policy engine answers, from the request body.
+    decide = staticmethod(allow)
+    # Helena without the policy engine answers 404 on /agent-policy/decide.
+    engine = True
     commands: list = []
     requests: list = []
 
-    def do_GET(self):
-        FakePlan.requests.append((self.path, self.headers.get("x-api-key")))
-        body = json.dumps(FakePlan.commands).encode()
-        self.send_response(FakePlan.status)
+    def _answer(self, value, status=None):
+        body = json.dumps(value).encode()
+        self.send_response(status or FakeHelena.status)
         self.send_header("content-type", "application/json")
         self.send_header("content-length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
+    def do_GET(self):
+        FakeHelena.requests.append(("GET", self.path, None, self.headers.get("x-api-key")))
+        self._answer(FakeHelena.commands)
+
+    def do_POST(self):
+        length = int(self.headers.get("content-length") or 0)
+        body = json.loads(self.rfile.read(length) or b"{}")
+        FakeHelena.requests.append(("POST", self.path, body, self.headers.get("x-api-key")))
+        if not FakeHelena.engine:
+            self._answer({"error": "Not found"}, 404)
+            return
+        self._answer(FakeHelena.decide(body))
+
     def log_message(self, *_):
         pass
 
 
-def serve_plan():
-    FakePlan.status, FakePlan.commands, FakePlan.requests = 200, [], []
-    server = HTTPServer(("127.0.0.1", 0), FakePlan)
+def serve_helena():
+    FakeHelena.status, FakeHelena.commands, FakeHelena.requests = 200, [], []
+    FakeHelena.decide, FakeHelena.engine = staticmethod(allow), True
+    server = HTTPServer(("127.0.0.1", 0), FakeHelena)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
 
@@ -58,9 +80,9 @@ def closed_port():
         return probe.getsockname()[1]
 
 
-class PlanApprovalGuardTest(unittest.TestCase):
+class HelenaApprovalGuardTest(unittest.TestCase):
     def setUp(self):
-        server = serve_plan()
+        server = serve_helena()
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
         env = {
@@ -71,68 +93,102 @@ class PlanApprovalGuardTest(unittest.TestCase):
         patcher = mock.patch.dict(os.environ, env)
         patcher.start()
         self.addCleanup(patcher.stop)
+        os.environ.pop("ITSAPLAN_MESSAGE_ID", None)
 
     def check(self, tool_name, **args):
         return GUARD.check_tool_call(tool_name=tool_name, args=args)
 
     def assertBlocked(self, result, text):
+        self.assertIsNotNone(result)
         self.assertEqual(result["action"], "block")
         self.assertIn(text, result["message"])
 
-    def test_lets_a_harmless_command_run_without_asking_plan(self):
-        self.assertIsNone(self.check("terminal", command="ls -la && git status"))
-        self.assertEqual(FakePlan.requests, [])
+    def decisions(self):
+        return [body for method, path, body, _ in FakeHelena.requests if path == "/agent-policy/decide"]
 
-    def test_blocks_a_dangerous_command_that_is_not_approved_for_the_run(self):
-        result = self.check("terminal", command="git push --force origin main")
-        self.assertBlocked(result, "git force push")
-        self.assertIn("request_approval", result["message"])
-        self.assertIn("exactly this command in command", result["message"])
-        self.assertEqual(FakePlan.requests, [("/agent-runs/42/approved-commands", "test-agent-key")])
+    def test_reads_run_without_asking_helena(self):
+        for tool in ["read_file", "search_files", "web_search", "browser_snapshot", "clarify"]:
+            self.assertIsNone(self.check(tool, path="notes.md"))
+        self.assertEqual(FakeHelena.requests, [])
 
-    def test_lets_exactly_the_approved_command_run(self):
-        FakePlan.commands = ["git push --force origin main"]
-        self.assertIsNone(self.check("terminal", command="  git push --force origin main\n"))
-        self.assertBlocked(self.check("terminal", command="git push --force origin dev"), "approval")
+    def test_asks_the_engine_about_a_command_with_what_it_needs(self):
+        self.assertIsNone(self.check("terminal", command="git push --force origin main"))
+        [body] = self.decisions()
+        self.assertEqual(body["runtime"], "hermes")
+        self.assertEqual(body["tool"], "terminal")
+        self.assertEqual(body["runId"], 42)
+        self.assertEqual(body["command"], "git push --force origin main")
+        self.assertTrue(body["dangerous"])
+        self.assertEqual(body["workspace"], os.getcwd())
+        self.assertEqual(FakeHelena.requests[0][3], "test-agent-key")
+
+    def test_blocks_with_the_engines_message(self):
+        FakeHelena.decide = staticmethod(
+            lambda body: {
+                "outcome": "needs-approval",
+                "message": f"BLOCKED by Helena's Autopilot: {body['tool']} needs approval",
+            }
+        )
+        self.assertBlocked(self.check("write_file", path="a.md", content="x"), "write_file needs approval")
+        FakeHelena.decide = staticmethod(lambda _b: {"outcome": "deny", "message": "BLOCKED: budget"})
+        self.assertBlocked(self.check("execute_code", code="print(1)"), "BLOCKED: budget")
+        self.assertEqual(self.decisions()[-1]["command"], "print(1)")
 
     def test_never_approves_a_command_on_the_hard_block_list(self):
-        FakePlan.commands = ["rm -rf /", "shutdown -h now"]
-        for command in FakePlan.commands:
+        for command in ["rm -rf /", "shutdown -h now"]:
             with self.subTest(command=command):
                 self.assertBlocked(self.check("terminal", command=command), "not even with an approval")
-        self.assertEqual(FakePlan.requests, [])
+        self.assertEqual(FakeHelena.requests, [])
 
-    def test_asks_for_every_execute_code_script(self):
-        code = "print(sum(range(10)))"
-        self.assertBlocked(self.check("execute_code", code=code), "execute_code runs arbitrary Python")
-        FakePlan.commands = [code]
-        self.assertIsNone(self.check("execute_code", code=code))
-
-    def test_blocks_when_plan_cannot_be_reached(self):
+    def test_blocks_when_helena_cannot_be_reached(self):
         os.environ["ITSAPLAN_URL"] = f"http://127.0.0.1:{closed_port()}"
-        self.assertBlocked(self.check("terminal", command="git reset --hard"), "Plan could not confirm")
+        self.assertBlocked(self.check("terminal", command="git reset --hard"), "Helena could not decide")
 
-    def test_blocks_when_plan_refuses_the_lookup(self):
-        FakePlan.status = 403
-        self.assertBlocked(self.check("terminal", command="git reset --hard"), "HTTP Error 403")
+    def test_blocks_when_helena_refuses_the_question(self):
+        FakeHelena.status = 403
+        self.assertBlocked(self.check("write_file", path="a.md"), "HTTP Error 403")
 
-    def test_blocks_when_the_run_id_is_not_a_run_id(self):
-        os.environ["ITSAPLAN_RUN_ID"] = "42/../../other"
-        self.assertBlocked(self.check("terminal", command="git reset --hard"), "not a run id")
-        self.assertEqual(FakePlan.requests, [])
+    def test_asks_for_chat_answers_too(self):
+        del os.environ["ITSAPLAN_RUN_ID"]
+        os.environ["ITSAPLAN_MESSAGE_ID"] = "7"
+        self.assertIsNone(self.check("patch", path="src/a.ts"))
+        [body] = self.decisions()
+        self.assertEqual(body["messageId"], 7)
+        self.assertEqual(body["path"], "src/a.ts")
+        self.assertNotIn("runId", body)
+
+    def test_leaves_sessions_outside_helena_to_hermes(self):
+        del os.environ["ITSAPLAN_RUN_ID"]
+        self.assertIsNone(self.check("terminal", command="git push --force origin main"))
+        self.assertEqual(FakeHelena.requests, [])
 
     def test_blocks_hermes_cron_jobs_in_runs_and_chats(self):
         call = {"action": "create", "schedule": "every 1h", "prompt": "Check the inbox"}
-        self.assertBlocked(self.check("cronjob_manage", **call), "routine in Plan")
+        self.assertBlocked(self.check("cronjob_manage", **call), "routine in Helena")
         del os.environ["ITSAPLAN_RUN_ID"]
-        self.assertBlocked(self.check("cronjob_manage", **call), "routine in Plan")
-        self.assertEqual(FakePlan.requests, [])
+        self.assertBlocked(self.check("cronjob_manage", **call), "routine in Helena")
+        self.assertEqual(FakeHelena.requests, [])
 
-    def test_leaves_chats_and_other_tools_to_hermes(self):
-        self.assertIsNone(self.check("write_file", path="notes.md", content="rm -rf /"))
-        del os.environ["ITSAPLAN_RUN_ID"]
-        self.assertIsNone(self.check("terminal", command="git push --force origin main"))
-        self.assertEqual(FakePlan.requests, [])
+    def test_leaves_helenas_own_mcp_tools_to_helena(self):
+        with mock.patch.object(GUARD, "mcp_tool_info", return_value=("itsaplan", False)):
+            self.assertIsNone(self.check("mcp_itsaplan_create_issue", title="x"))
+        with mock.patch.object(GUARD, "mcp_tool_info", return_value=("shop", True)):
+            self.assertIsNone(self.check("mcp_shop_list_orders"))
+        self.assertEqual(FakeHelena.requests, [])
+        with mock.patch.object(GUARD, "mcp_tool_info", return_value=("shop", False)):
+            self.assertIsNone(self.check("mcp_shop_refund", order="1"))
+        [body] = self.decisions()
+        self.assertEqual(body["mcp"], {"server": "shop", "annotations": {"readOnlyHint": False}})
+
+    def test_falls_back_to_approved_commands_on_a_helena_without_the_engine(self):
+        FakeHelena.engine = False
+        result = self.check("terminal", command="git push --force origin main")
+        self.assertBlocked(result, "exactly this command in command")
+        FakeHelena.commands = ["git push --force origin main"]
+        self.assertIsNone(self.check("terminal", command="  git push --force origin main\n"))
+        self.assertIsNone(self.check("terminal", command="ls -la"))
+        self.assertIsNone(self.check("write_file", path="a.md"))
+        self.assertBlocked(self.check("execute_code", code="print(2)"), "execute_code runs arbitrary Python")
 
 
 HERMES_RUNTIME = importlib.util.find_spec("yaml") is not None and importlib.util.find_spec("pydantic") is not None
@@ -156,10 +212,14 @@ print(json.dumps(result))
 @unittest.skipUnless(HERMES_RUNTIME, "Hermes' dependencies are not installed")
 class HermesLoadsTheGuardTest(unittest.TestCase):
     def test_single_query_runs_leave_the_decision_to_the_guard(self):
-        server = serve_plan()
+        server = serve_helena()
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
-        FakePlan.commands = ["git push --force origin main"]
+        FakeHelena.decide = staticmethod(
+            lambda body: {"outcome": "allow", "message": ""}
+            if body.get("command") == "git push --force origin main"
+            else {"outcome": "needs-approval", "message": "BLOCKED: call request_approval first"}
+        )
         with tempfile.TemporaryDirectory() as home:
             (Path(home) / "plugins").mkdir()
             (Path(home) / "plugins" / "plan-approval-guard").symlink_to(PLUGIN_DIR)
@@ -189,7 +249,7 @@ class HermesLoadsTheGuardTest(unittest.TestCase):
         self.assertTrue(result["git reset --hard"]["hermes"])
         self.assertIn("not even with an approval", result["rm -rf /"]["plugin"])
         self.assertFalse(result["rm -rf /"]["hermes"])
-        self.assertIn("routine in Plan", result["cronjob_manage"])
+        self.assertIn("routine in Helena", result["cronjob_manage"])
 
 
 if __name__ == "__main__":

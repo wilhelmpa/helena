@@ -23,6 +23,7 @@ import { AgentInstructionsField } from './AgentInstructionsField';
 import AgentRunnerSection from './AgentRunnerSection';
 import AgentRuntimePolicySection from './AgentRuntimePolicySection';
 import AgentAbilitiesSection from './AgentAbilitiesSection';
+import AgentAutopilotSection from './AgentAutopilotSection';
 import AgentTemplateDriftSection from './AgentTemplateDriftSection';
 import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
@@ -230,6 +231,11 @@ export default function TeamAiAgentFields({
     <AgentRunnerSection key="runner" {...sectionProps('runner')} agent={agent} />
   );
 
+  // An agent that exists has an Autopilot: its level and budgets are saved on their own.
+  const autopilotSection = agent ? (
+    <AgentAutopilotSection key="autopilot" {...sectionProps('autopilot')} agent={agent} />
+  ) : null;
+
   const runtimePolicySection = (
     <AgentRuntimePolicySection
       key="runtime-policy"
@@ -394,6 +400,7 @@ export default function TeamAiAgentFields({
       ? [
           basicsSection,
           projectsSection,
+          autopilotSection,
           runtimePolicySection,
           abilitiesSection,
           skillsSection,

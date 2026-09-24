@@ -406,7 +406,8 @@
       "integrations": "集成",
       "mcp": "Helena MCP 工具",
       "webhooks": "Webhook",
-      "bundles": "模板包"
+      "bundles": "模板包",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

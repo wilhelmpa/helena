@@ -347,6 +347,10 @@ export const AiAgentResponse = t.Object({
   templateSyncedAt: t.Nullable(t.String()),
   dailyTokenCeiling: t.Nullable(t.Number()),
   monthlyTokenCeiling: t.Nullable(t.Number()),
+  autopilotLevel: t.Nullable(
+    t.Number({ description: "The agent's own Autopilot level; null follows the project." }),
+  ),
+  autopilotRaise: t.Boolean({ description: "Whether the agent's level may exceed its project's." }),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({
@@ -398,6 +402,13 @@ export const AgentRunResponse = t.Object({
       description:
         'The question the agent asked when it reported itself blocked during the run, which ' +
         'then ended as a success. Null for a run that was not blocked.',
+    }),
+  ),
+  autopilotLevel: t.Nullable(
+    t.Number({
+      description:
+        'The Autopilot level the run worked at (0 propose … 3 autonomous); null for a run ' +
+        'from before the Autopilot.',
     }),
   ),
   reflection: t.Nullable(

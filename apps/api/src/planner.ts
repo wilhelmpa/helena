@@ -72,6 +72,8 @@ import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
 import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { approvalRoutes } from './modules/approvals';
+import { modelPriceRoutes } from './modules/model-prices';
+import { autopilotRoutes } from './modules/autopilot';
 import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
 import { mailDraftRoutes } from './modules/mail/drafts';
@@ -180,6 +182,8 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentNetworkRoutes)
   .use(agentBrowserGatewayRoutes)
   .use(approvalRoutes)
+  .use(modelPriceRoutes)
+  .use(autopilotRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)
   .use(mailThreadRoutes)

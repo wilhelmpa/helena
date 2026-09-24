@@ -406,7 +406,8 @@
       "integrations": "Integrationen",
       "mcp": "Helena-MCP-Werkzeuge",
       "webhooks": "Webhooks",
-      "bundles": "Vorlagen-Pakete"
+      "bundles": "Vorlagen-Pakete",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",

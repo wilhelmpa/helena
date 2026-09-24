@@ -305,6 +305,8 @@ export interface AgentRunRow {
   contextTokens?: number;
   blockedQuestion: string | null;
   reflection: ReflectionView | null;
+  // The Autopilot level the run worked at; null for a run from before the Autopilot.
+  autopilotLevel: number | null;
   // The configured model and reasoning next to what the run's session really ran on.
   modelCheck: ModelCheck | null;
   nextAttemptAt: string;
@@ -354,6 +356,7 @@ export async function listAgentRuns(
       outputTokens: agentRun.outputTokens,
       blockedQuestion: agentRun.blockedQuestion,
       reflection: agentRun.reflection,
+      autopilotLevel: agentRun.autopilotLevel,
       modelCheck: agentRun.modelCheck,
       finishedAt: agentRun.finishedAt,
       nextAttemptAt: agentRun.nextAttemptAt,
@@ -391,6 +394,7 @@ export async function listAgentRuns(
       ...contextTokensOf(r),
       blockedQuestion: r.blockedQuestion,
       reflection: reflectionView(r.reflection, r.finishedAt),
+      autopilotLevel: r.autopilotLevel,
       modelCheck: (r.modelCheck as ModelCheck | null) ?? null,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),

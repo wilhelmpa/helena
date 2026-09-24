@@ -84,6 +84,8 @@ export async function buildMcpServer(
   app: McpApp,
   credential: McpCredential,
   userId: string,
+  // The run an agent's runtime names on its requests (x-helena-run), for the policy log.
+  context: { runId?: number | null } = {},
 ): Promise<Server> {
   const server = new Server(
     // `name` is the stable programmatic identifier; `title` is the human-readable
@@ -132,7 +134,14 @@ export async function buildMcpServer(
         agent: await callerAgent(userId),
         project: await callProject(args),
         action: toolCategory(tool, args),
-        context: { tool: tool.name, input: args },
+        context: {
+          tool: tool.name,
+          input: args,
+          runId: context.runId ?? null,
+          // Helena's own routes act on the project's data, inside the agent's workspace,
+          // unless the route says it reaches further (mcpTool's scope).
+          scope: routes.has(tool.name) ? (routes.get(tool.name)?.scope ?? 'workspace') : undefined,
+        },
       });
       if (decision.effect === 'deny') return refusal(403, `Not allowed: ${decision.reason}`);
       if (decision.effect === 'needs-approval') {
