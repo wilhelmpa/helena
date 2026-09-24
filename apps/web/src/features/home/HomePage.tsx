@@ -10,10 +10,12 @@ import HomeSystemHealth from './components/home/HomeSystemHealth';
 import HomeKpiRow from './components/home/HomeKpiRow';
 import HomeNeedsYou from './components/home/HomeNeedsYou';
 import HomeAgentsNow from './components/home/HomeAgentsNow';
+import HomeLimits from '@/features/provider-limits/components/HomeLimits';
 import { useToday } from './hooks/useToday';
 
 // Start (docs/volition-design-helena-ui.md "Start"): the greeting with today's date,
-// three figures, "Braucht dich" beside "Agenten gerade", the reader's own open tasks,
+// three figures, "Braucht dich" beside "Agenten gerade", for the owner the plan limits
+// (ChatGPT/Codex, Claude), the reader's own open tasks,
 // the projects, and for the owner the health of the services. The page's one title is
 // the greeting (16px); every group is a sidebar-surface box of 32px rows, and every row
 // that looks clickable opens something. One column on a phone.
@@ -37,6 +39,8 @@ export default function HomePage() {
             <HomeNeedsYou />
             <HomeAgentsNow />
           </div>
+
+          <HomeLimits />
 
           <HomeOpenTasks />
 

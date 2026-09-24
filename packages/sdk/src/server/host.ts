@@ -21,6 +21,7 @@ import type { BundleOffer } from '../templates';
 import { validateBundle } from '../templates';
 import { declaredCategory, type AnyAgentTool } from '../tools';
 import { uiSlotKey, type UiSlot } from '../ui';
+import type { UsageLimitSource } from '../usage-limits';
 import type { TriggerType, WorkflowStepType } from '../workflows';
 
 // The plugin host of one process: every registry, the event bus, and the plugins loaded
@@ -81,6 +82,7 @@ export class PluginHost {
   readonly bundles: Registry<BundleOffer>;
   readonly mcpServers: Registry<McpServerContribution>;
   readonly profileContributions: Registry<ProfileContribution>;
+  readonly usageLimitSources: Registry<UsageLimitSource>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -104,6 +106,7 @@ export class PluginHost {
     this.bundles = registries.bundles;
     this.mcpServers = registries.mcpServers;
     this.profileContributions = registries.profileContributions;
+    this.usageLimitSources = registries.usageLimitSources;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -219,6 +222,7 @@ export class PluginHost {
       this.bundles,
       this.mcpServers,
       this.profileContributions,
+      this.usageLimitSources,
     ] as unknown as Registry<never>[];
   }
 
@@ -349,6 +353,11 @@ export class PluginHost {
         this.profileContributions,
         provides.profileContributions,
         'profileContributions',
+      ),
+      usageLimitSources: registrar(
+        this.usageLimitSources,
+        provides.usageLimitSources,
+        'usageLimitSources',
       ),
       events: {
         publish: async (init: EventInit) => {

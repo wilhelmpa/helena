@@ -5,6 +5,7 @@ import { execute, modelProvider } from './execute';
 import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
 import { SpendReader } from './spend';
+import { observeLimits } from './limits/context';
 import { withInstructions } from './run';
 import { runModelReport, type RuntimeAdapter } from './runtime';
 
@@ -52,6 +53,7 @@ export async function answer(
     void stream.flush().catch(() => {});
   }, FLUSH_MS);
   const logins = new LoginUseReader(hermes?.logins ?? new Map());
+  const limits = observeLimits(config, runtimeAdapter ?? null, client);
   const spend = new SpendReader(
     config.outputFormat,
     config.command ? null : (config.agent ?? null),
@@ -84,11 +86,13 @@ export async function answer(
         stream.write(chunk);
         spend.write(chunk);
         logins.write(chunk);
+        limits?.write(chunk);
       },
       signal: stop.signal,
       work: { kind: 'chat', id: message.id },
     },
   ).finally(() => clearInterval(flushing));
+  await limits?.end();
   if (stop.signal.aborted) return;
   const spent = spend.value({
     model: message.model,

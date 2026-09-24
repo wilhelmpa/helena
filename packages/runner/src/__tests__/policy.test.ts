@@ -428,6 +428,8 @@ describe('Hermes runtime policy synchronizer', () => {
       'version',
       'curator',
       'estop',
+      // Plan limits of the runtime's logins (limits/).
+      'limits',
     ]);
     expect(JSON.stringify(statuses)).not.toContain('provider-secret-value');
     expect(statuses.at(-1)?.detail).toBe(

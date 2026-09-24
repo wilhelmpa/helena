@@ -1,0 +1,75 @@
+{
+  "title": "Limites",
+  "refresh": "Atualizar",
+  "accountsTitle": "Contas",
+  "empty": "Ainda sem números. Eles chegam assim que um runner de agente ou o relatório do proprietário os lê.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "Proprietário"
+  },
+  "sources": {
+    "spool": "Relatório do proprietário"
+  },
+  "state": {
+    "ok": "OK",
+    "near": "Perto",
+    "limited": "Limite atingido",
+    "unknown": "Sem números"
+  },
+  "window": {
+    "session": "{hours} h",
+    "weekly": "Semana",
+    "monthly": "Mês",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} h",
+    "labelled": "{label}",
+    "other": "Janela"
+  },
+  "resetsIn": "em {time}",
+  "resetDone": "reiniciado",
+  "readAgo": "Lido há {time}",
+  "staleSince": "Desatualizado, lido há {time}",
+  "freeIn": "Livre de novo em {time}",
+  "nearUntil": "Recarrega em {time}",
+  "resetCredits": "{count, plural, one {# reinício guardado} other {# reinícios guardados}}",
+  "noWindows": "Nenhuma janela informada.",
+  "unavailable": {
+    "no_login": "Não conectado.",
+    "api_key": "Chave de API: sem limites de plano.",
+    "no_profile_scope": "Este login não pode ler os limites (token de configuração).",
+    "failed": "A leitura falhou.",
+    "unsupported": "Este provedor não informa limites."
+  },
+  "readVia": "Lido via {login}, {time}",
+  "readPassive": "De uma resposta a {login}, {time}",
+  "forget": "Esquecer conta",
+  "resetsAt": "Reinicia {time}",
+  "agentTokens": "Agentes: {tokens} tokens nesta janela",
+  "agents": "Agentes nesta conta: {names}",
+  "noAgents": "Nenhum agente informa esta conta (login do proprietário).",
+  "credits": "Créditos: {balance}",
+  "extraUsage": "Uso extra: {used} de {limit}",
+  "settings": {
+    "auto": "Ler automaticamente",
+    "autoHint": "O Helena consulta os runners neste intervalo; cada login uma vez, não importa quantos agentes o usem.",
+    "autoHintAt": "Última consulta há {time}. Cada login uma vez, não importa quantos agentes o usem.",
+    "interval": "Intervalo",
+    "intervalHint": "Com que frequência o Helena lê os limites.",
+    "minutes": "{count} min",
+    "near": "Perto a partir de",
+    "nearHint": "A partir desta parcela uma janela fica âmbar.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider}: limite atingido",
+    "limitedUntil": "{provider}: limite atingido, livre de novo em {time}",
+    "stale": "{provider}: limites desatualizados (lidos há {time})"
+  }
+}
