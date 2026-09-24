@@ -87,9 +87,26 @@ class ConfigTest(unittest.TestCase):
         })
         self.assertEqual(set(hermes.required_credentials), set(dict(hermes.credential_binds)))
         self.assertIn('/var/lib/helena-token-keeper', config.hide)
+        # The profile helper (hermes doctor, limits) sees the same logins; a helper still runs
+        # without them.
+        helper = config.runtimes['profile-helper']
+        self.assertEqual(dict(helper.credential_binds), dict(hermes.credential_binds))
+        self.assertEqual(helper.required_credentials, ())
         for runtime in config.runtimes.values():
             for source, _target in runtime.credential_binds:
                 self.assertTrue(source.startswith('/var/lib/helena-token-keeper/view/'), source)
+
+    def test_profile_links_up_to_three_levels(self):
+        config = common.load_config(str(config_file(self.dir)), require_root=False)
+        self.assertEqual(config.runtimes['hermes'].profile_links['.local/bin/hermes'],
+                         '/var/lib/volition/hermes/venv/bin/hermes')
+        with open(ISOLATION / 'launcher.json', encoding='utf-8') as handle:
+            shipped = json.load(handle)['runtimes']
+        for name in ('a/b/c/d', '../x', 'a/../b', '/abs', 'a//b'):
+            runtimes = json.loads(json.dumps(shipped))
+            runtimes['hermes']['profileLinks'] = {name: '/bin/true'}
+            with self.subTest(name=name), self.assertRaises(common.IsolationError):
+                common.load_config(str(config_file(self.dir, runtimes=runtimes)), require_root=False)
 
     def test_refuses_a_required_flag_that_is_not_a_boolean(self):
         with open(ISOLATION / 'launcher.json', encoding='utf-8') as handle:

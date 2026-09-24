@@ -142,7 +142,8 @@ def _runtime(name: str, value: Any) -> Runtime:
             required.append(source)
     links = value.get('profileLinks') or {}
     if not isinstance(links, dict) or not all(
-        isinstance(k, str) and re.fullmatch(r'[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?', k) and isinstance(v, str)
+        isinstance(k, str) and re.fullmatch(r'[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+){0,2}', k)
+        and '..' not in k.split('/') and isinstance(v, str)
         for k, v in links.items()
     ):
         raise IsolationError('config', f'runtime {name} profileLinks is invalid')

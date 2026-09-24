@@ -332,6 +332,14 @@ class KeeperWithHermes(unittest.TestCase):
         )
         self.assertEqual(result, {'anthropic': 'sk-ant-oat01-access-0', 'forced': False, 'codex': True, 'posts': 0})
 
+    def test_hermes_doctor_in_the_profile_helper_sees_the_shared_login(self):
+        # Agent → Laufzeit → "Prüfen" runs `hermes doctor` in the profile helper, which gets the
+        # same views: its "OpenAI Codex auth" row must read logged in, as the runs are.
+        self.root.codex(9 * 86400).write()
+        self.tick()
+        result = self.sandboxed('result["codex"] = h.get_codex_auth_status().get("logged_in")\n')
+        self.assertEqual(result, {'codex': True, 'posts': 0})
+
     def test_the_binding_before_the_keeper_let_an_isolated_agent_spend_the_refresh_token(self):
         # The incident of 2026-09-24, as a control: the root auth.json itself (with its refresh
         # token) bound read-only into the unit, the access token expired.

@@ -77,6 +77,7 @@
         "config.yaml": "/var/lib/volition/hermes/config.yaml",
         ".env": "/var/lib/volition/hermes/.env",
         "bin/hermes": "/var/lib/volition/hermes/venv/bin/hermes",
+        ".local/bin/hermes": "/var/lib/volition/hermes/venv/bin/hermes",
         "plugins/plan-approval-guard": "/srv/volition/source/plan/deployment/volition-stack/integration/hermes-plugins/plan-approval-guard"
       }
     },
@@ -101,6 +102,10 @@
       "optionalReadOnly": [
         "/var/lib/volition/hermes/.env"
       ],
+      "credentialBinds": [
+        { "source": "/var/lib/helena-token-keeper/view/hermes/auth.json", "target": "/var/lib/volition/hermes/auth.json" },
+        { "source": "/var/lib/helena-token-keeper/view/codex", "target": "{home}/.codex" }
+      ],
       "env": {
         "PATH": "/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin",
         "PYTHONPATH": "/srv/volition/source/hermes"
@@ -109,6 +114,7 @@
         "config.yaml": "/var/lib/volition/hermes/config.yaml",
         ".env": "/var/lib/volition/hermes/.env",
         "bin/hermes": "/var/lib/volition/hermes/venv/bin/hermes",
+        ".local/bin/hermes": "/var/lib/volition/hermes/venv/bin/hermes",
         "plugins/plan-approval-guard": "/srv/volition/source/plan/deployment/volition-stack/integration/hermes-plugins/plan-approval-guard"
       }
     }

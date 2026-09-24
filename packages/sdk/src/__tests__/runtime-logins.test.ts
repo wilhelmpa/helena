@@ -13,7 +13,7 @@ const login = {
   id: 'abc123',
   label: 'anthropic-oauth-1',
   managed: true,
-  state: 'invalid',
+  state: 'invalid' as const,
   expiresAt: '2026-09-24T17:40:00Z',
   refreshedAt: null,
   error: 'Anthropic token refresh failed: HTTP 400 invalid_grant',
@@ -45,7 +45,7 @@ describe('normalizeRuntimeLoginReport', () => {
         {
           ...login,
           id: 'def456',
-          state: 'ok',
+          state: 'ok' as const,
           expiresAt: '2026-09-24T17:40:00.000Z',
           note: null,
         },
