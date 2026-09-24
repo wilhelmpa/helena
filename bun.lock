@@ -272,6 +272,7 @@
       "name": "@repo/mail",
       "version": "0.0.0",
       "dependencies": {
+        "@repo/storage": "workspace:*",
         "html-to-text": "^10.0.1",
         "imapflow": "^2.0.6",
         "mailparser": "^3.9.28",
@@ -333,9 +334,14 @@
     "packages/storage": {
       "name": "@repo/storage",
       "version": "0.0.0",
+      "dependencies": {
+        "file-type": "^22.1.1",
+        "mime-types": "^3.0.2",
+      },
       "devDependencies": {
         "@repo/eslint-config": "workspace:*",
         "@types/bun": "latest",
+        "@types/mime-types": "^3.0.1",
         "eslint": "^9.39.0",
         "typescript": "^6.0.3",
       },
@@ -345,6 +351,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@repo/db": "workspace:*",
+        "@repo/storage": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "exceljs": "^4.4.0",
         "jszip": "^3.10.1",
@@ -1346,6 +1353,8 @@
     "@types/mdast": ["@types/mdast@4.0.4", "", { "dependencies": { "@types/unist": "*" } }, "sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA=="],
 
     "@types/mdurl": ["@types/mdurl@1.0.5", "", {}, "sha512-6L6VymKTzYSrEf4Nev4Xa1LCHKrlTlYCBMTlQKFuddo1CvQcE52I0mwfOJayueUC7MJuXOeHTcIU683lzd0cUA=="],
+
+    "@types/mime-types": ["@types/mime-types@3.0.1", "", {}, "sha512-xRMsfuQbnRq1Ef+C+RKaENOxXX87Ygl38W1vDfPHRku02TgQr+Qd8iivLtAMcR0KF5/29xlnFihkTlbqFrGOVQ=="],
 
     "@types/ms": ["@types/ms@2.1.0", "", {}, "sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA=="],
 

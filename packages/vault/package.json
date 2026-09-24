@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@repo/db": "workspace:*",
+    "@repo/storage": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "exceljs": "^4.4.0",
     "jszip": "^3.10.1",

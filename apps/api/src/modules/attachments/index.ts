@@ -34,6 +34,7 @@ import {
   assertAttachmentUploadAllowed,
   attachmentObjectResponse,
   safeAttachmentFilename,
+  uploadContentType,
 } from './storage';
 import {
   currentAttachmentPath,
@@ -182,14 +183,11 @@ export const attachmentRoutes = new Elysia({
       if (!(file instanceof File)) throw new HttpError(400, 'No file uploaded (form field "file")');
       if (file.size === 0) throw new HttpError(400, 'Uploaded file is empty');
 
-      const contentType = file.type || 'application/octet-stream';
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const filename = safeAttachmentFilename(file.name);
+      const contentType = await uploadContentType(bytes, filename, file.type);
       await assertAttachmentUploadAllowed(projectId, file.size, contentType);
-      const stored = await storeAttachmentFile(
-        params.issueId,
-        safeAttachmentFilename(file.name),
-        contentType,
-        new Uint8Array(await file.arrayBuffer()),
-      );
+      const stored = await storeAttachmentFile(params.issueId, filename, contentType, bytes);
       set.status = 201;
       return attachmentDto(await attach(projectId, params.issueId, stored));
     },
@@ -216,7 +214,7 @@ export const attachmentRoutes = new Elysia({
       const limits = await getStorageSettings();
 
       let bytes: Buffer;
-      let contentType: string;
+      let declaredType: string | null | undefined;
       if (url != null) {
         let res: Response;
         try {
@@ -234,25 +232,19 @@ export const attachmentRoutes = new Elysia({
           throw new HttpError(413, `File exceeds the ${limits.maxAttachmentMb} MB limit`);
         }
         bytes = Buffer.from(await res.arrayBuffer());
-        contentType =
-          body.contentType ||
-          res.headers.get('content-type')?.split(';')[0]?.trim() ||
-          'application/octet-stream';
+        declaredType = body.contentType || res.headers.get('content-type');
       } else {
         bytes = Buffer.from(contentBase64 as string, 'base64');
         if (bytes.length === 0)
           throw new HttpError(400, 'contentBase64 is empty or not valid base64');
-        contentType = body.contentType || 'application/octet-stream';
+        declaredType = body.contentType;
       }
 
       if (bytes.length === 0) throw new HttpError(400, 'The file is empty');
+      const filename = safeAttachmentFilename(body.filename);
+      const contentType = await uploadContentType(bytes, filename, declaredType);
       await assertAttachmentUploadAllowed(projectId, bytes.length, contentType);
-      const stored = await storeAttachmentFile(
-        params.issueId,
-        safeAttachmentFilename(body.filename),
-        contentType,
-        bytes,
-      );
+      const stored = await storeAttachmentFile(params.issueId, filename, contentType, bytes);
       set.status = 201;
       return attachmentDto(await attach(projectId, params.issueId, stored));
     },
@@ -306,15 +298,12 @@ export const attachmentRoutes = new Elysia({
       if (!(file instanceof File)) throw new HttpError(400, 'No file uploaded (form field "file")');
       if (file.size === 0) throw new HttpError(400, 'Uploaded file is empty');
 
-      const contentType = file.type || 'application/octet-stream';
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const filename = safeAttachmentFilename(file.name, existing.filename);
+      const contentType = await uploadContentType(bytes, filename, file.type);
       const replacedBytes = existing.linked ? 0 : existing.sizeBytes;
       await assertAttachmentUploadAllowed(projectId, file.size, contentType, replacedBytes);
-      const stored = await storeReplacement(
-        existing,
-        safeAttachmentFilename(file.name, existing.filename),
-        contentType,
-        new Uint8Array(await file.arrayBuffer()),
-      );
+      const stored = await storeReplacement(existing, filename, contentType, bytes);
       return attachmentDto(await replaceWith(params.publicId, projectId, existing, stored));
     },
     {
