@@ -83,7 +83,9 @@ export default function AppSidebar({
           currentProjectKey={currentProjectKey}
           onSelectProject={onSelectProject}
         />
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain group-data-[collapsible=icon]:overflow-hidden">
+        {/* A long navigation scrolls; its last visible row fades out instead of being cut
+            off hard at the footer. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,black_calc(100%-1.25rem),transparent)] group-data-[collapsible=icon]:overflow-hidden">
           {currentProjectKey ? (
             <SidebarProjectNav projectKey={currentProjectKey} />
           ) : (

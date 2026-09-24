@@ -41,7 +41,7 @@ export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
         ))}
         {canCreate && (
           <SidebarMenuSubItem>
-            <SidebarMenuSubButton asChild size="sm" className="text-muted-foreground">
+            <SidebarMenuSubButton asChild className="text-muted-foreground">
               <button type="button" onClick={() => setCreating(true)}>
                 <Plus />
                 <span>{t('newFolder')}</span>
