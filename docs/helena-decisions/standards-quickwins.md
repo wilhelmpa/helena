@@ -6,6 +6,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 |---|---|---|---|
 | F21 | done | see git log | `ipaddr.js` 2.5.0 (MIT) |
 | F07 | done | see git log | no library; SDK 1.30 transport kept for POST |
+| F15 | done | see git log | Bun `S3Client` (built in); `@aws-sdk/client-s3` removed |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -36,3 +37,12 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - `serverInfo` is `{name: 'helena', title: 'Helena', version}` with the version from the root `package.json` (the release-please version the OpenAPI document states too), in `apps/api/src/mcp/info.ts`.
 - Every tool has a `title`: the route's OpenAPI `summary`, else the tool name spelled out ("create_issue" → "Create issue").
 - Not changed: the grant/config key `itsaplan` agents use for this server (runner and Hermes configs, `mcpGrants`). It is an identifier in stored agent policies and belongs to the planned rename step.
+
+## F15: one storage switch in `@repo/storage`, Bun's S3 client
+
+- `@repo/storage` now holds the switch (`index.ts`): the local disk (`local.ts`, unchanged) when `STORAGE_ROOT` is set, else an S3-compatible bucket (`s3.ts`) when `S3_ENDPOINT` is set. Every caller goes through it, so mail (API drafts, accounts, threads; worker import and send), which imported `@repo/storage` directly, now follows the configured store without touching the mail files. The worker starts mail when either store is configured (`storageConfigured()`), not only with `STORAGE_ROOT`.
+- `s3.ts` uses Bun's built-in `S3Client` (path-style by default, `S3_FORCE_PATH_STYLE=false` → virtual-hosted), with the same `S3_*` variables as before. A read is a HEAD for type and size plus a streamed GET. `deleteObjectFolder` lists the prefix and deletes page by page, so wiping a mail account works on S3 too.
+- `@aws-sdk/client-s3` is gone from `apps/api` (and ~25 packages from the lockfile). The only other user is `deployment/volition-stack/backup/tests/garage-manifest.mjs`, which runs inside the old Docker image with its own dependencies (Docker-era code, OPS-02).
+- `apps/api/src/shared/s3.ts` stays as a re-export so the ~10 API modules and the running branches that import `#shared/s3` need no change.
+- Tests: the store against an in-memory path-style S3 served by `Bun.serve` (PUT/GET/HEAD/DELETE/ListObjectsV2), incl. missing objects and folder deletes. MinIO itself was not installed (a binary).
+- Live runs with `STORAGE_ROOT`, so nothing changes there.
