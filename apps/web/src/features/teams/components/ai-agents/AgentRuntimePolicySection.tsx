@@ -25,8 +25,10 @@ import AgentModelIssue from '@/features/model-availability/components/AgentModel
 import {
   isUnverified,
   refusalOf,
+  refusedModels,
   templateFallbackModel,
 } from '@/features/model-availability/utils/modelFailure';
+import { useTeamModelAvailability } from '@/features/model-availability/services/modelAvailability.service';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import type { AgentFormValue } from '../../utils/agentForm';
@@ -73,6 +75,14 @@ export default function AgentRuntimePolicySection({
   // The template library is already cached for the editor (AgentTemplateDriftSection).
   const template = useAiAgentsQuery(agent?.sourceTemplateId != null ? teamId : null).data?.find(
     (entry) => entry.id === agent?.sourceTemplateId,
+  );
+  // What the agent's catalog refuses, and what the team knows besides (a copy whose runner
+  // has not published a catalog yet).
+  const runtime = value.runtimePolicy.runtime ?? 'hermes';
+  const refused = refusedModels(
+    unavailable,
+    useTeamModelAvailability(teamId).data?.entries,
+    runtime,
   );
   const tFallback = useTranslations('agentRuntime.fallback');
   const fallbackId = useId();
@@ -183,22 +193,7 @@ export default function AgentRuntimePolicySection({
               ))}
             </SelectContent>
           </Select>
-          <AgentModelIssue
-            teamId={teamId}
-            refusal={refusalOf(value.model, unavailable)}
-            runtime={policy.runtime ?? 'hermes'}
-            templateModel={
-              agent
-                ? templateFallbackModel(
-                    { model: value.model || null, sourceTemplateId: agent.sourceTemplateId },
-                    template,
-                    unavailable,
-                  )
-                : null
-            }
-            canEdit={canEdit}
-            onUseDefault={() => selectModel(AGENT_DEFAULT)}
-          />
+
           <p className="text-xs text-muted-foreground">
             {modelsLoading
               ? t('modelsLoading')
@@ -242,6 +237,23 @@ export default function AgentRuntimePolicySection({
           </Select>
         </div>
       </div>
+
+      <AgentModelIssue
+        teamId={teamId}
+        refusal={refusalOf(value.model, refused)}
+        runtime={runtime}
+        templateModel={
+          agent
+            ? templateFallbackModel(
+                { model: value.model || null, sourceTemplateId: agent.sourceTemplateId },
+                template,
+                refused,
+              )
+            : null
+        }
+        canEdit={canEdit}
+        onUseDefault={() => selectModel(AGENT_DEFAULT)}
+      />
 
       {(policy.runtime ?? 'hermes') === 'hermes' && (
         <div className="space-y-2">

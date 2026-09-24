@@ -1,5 +1,5 @@
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
-import type { RunFailureRef } from '@/lib/api/endpoints/modelAvailability';
+import type { ModelAvailabilityEntry, RunFailureRef } from '@/lib/api/endpoints/modelAvailability';
 
 // Reading what Helena learned about the models (docs/helena-decisions/model-availability.md)
 // for the views that word it: which account a provider or runtime stands for, whether a
@@ -45,6 +45,29 @@ export function refusalOf(
 ): UnavailableChatModel | undefined {
   if (!model) return undefined;
   return unavailable?.find((entry) => entry.id === model);
+}
+
+// The refusals an agent's catalog names, joined with the team's findings under the agent's
+// runtime: an agent whose runner has not published a catalog yet (a fresh template copy) still
+// shows what is known about its model.
+export function refusedModels(
+  catalog: UnavailableChatModel[] | undefined,
+  findings: ModelAvailabilityEntry[] | undefined,
+  runtime: string,
+): UnavailableChatModel[] {
+  const known = new Map((catalog ?? []).map((entry) => [entry.id, entry]));
+  for (const entry of findings ?? []) {
+    if (entry.state !== 'unavailable' || entry.runtime !== runtime || known.has(entry.model))
+      continue;
+    known.set(entry.model, {
+      id: entry.model,
+      ...(entry.provider ? { provider: entry.provider } : {}),
+      detail: entry.detail,
+      since: entry.since,
+      findingId: entry.id,
+    });
+  }
+  return [...known.values()];
 }
 
 // A copy that runs on the runtime's default because its template's model was refused: the

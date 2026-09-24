@@ -6,11 +6,23 @@ import {
   clearModelAvailability,
   clearModelAvailabilityAsAdmin,
   listModelAvailability,
+  listTeamModelAvailability,
   replaceModel,
 } from '@/lib/api/endpoints/modelAvailability';
 import { qk } from '@/services/queryKeys';
 
 export const modelAvailabilityKey = ['modelAvailability'] as const;
+
+// A team's findings, for the agent editor (a copy whose runner has not published a catalog).
+export function useTeamModelAvailability(teamId: number | null) {
+  return useQuery({
+    queryKey: [...modelAvailabilityKey, 'team', teamId ?? 0],
+    queryFn: () => listTeamModelAvailability(teamId!),
+    enabled: teamId != null,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
 
 export function useModelAvailability(enabled = true) {
   return useQuery({

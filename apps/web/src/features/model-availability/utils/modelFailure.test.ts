@@ -5,6 +5,7 @@ import {
   isUnverified,
   knownFailure,
   refusalOf,
+  refusedModels,
   templateFallbackModel,
 } from './modelFailure';
 
@@ -77,6 +78,51 @@ describe('templateFallbackModel', () => {
       templateFallbackModel({ model: null, sourceTemplateId: 15 }, undefined, REFUSED),
       null,
     );
+  });
+});
+
+describe('refusedModels', () => {
+  const finding = (fields: Record<string, unknown>) => ({
+    id: 7,
+    runtime: 'hermes',
+    provider: 'openai-codex',
+    model: 'gpt-6-terra',
+    state: 'unavailable' as const,
+    reason: 'model-unavailable',
+    detail: 'from the team',
+    agentId: 1,
+    runId: 2,
+    chatMessageId: null,
+    since: '2026-09-24T19:00:00Z',
+    observedAt: '2026-09-24T19:10:00Z',
+    agents: [],
+    ...fields,
+  });
+
+  it("joins the catalog's refusals with the team's findings of the agent's runtime", () => {
+    const joined = refusedModels(
+      [],
+      [
+        finding({}),
+        finding({ id: 8, model: 'gpt-6-sol', runtime: 'codex' }),
+        finding({ id: 9, model: 'x', state: 'works' }),
+      ],
+      'hermes',
+    );
+    assert.deepEqual(joined, [
+      {
+        id: 'gpt-6-terra',
+        provider: 'openai-codex',
+        detail: 'from the team',
+        since: '2026-09-24T19:00:00Z',
+        findingId: 7,
+      },
+    ]);
+  });
+
+  it("keeps the catalog's own entry for a model both name", () => {
+    assert.equal(refusedModels(REFUSED, [finding({})], 'hermes')[0]?.findingId, 1);
+    assert.deepEqual(refusedModels(undefined, undefined, 'hermes'), []);
   });
 });
 
