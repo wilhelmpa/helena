@@ -18,7 +18,10 @@ User=volition-hermes
 Group=volition
 EnvironmentFile=/var/lib/volition/project-browser/projects/%i/runtime.env
 ExecStartPre=/usr/bin/test -s ${PROJECT_BROWSER_XAUTHORITY}
-ExecStart=/usr/bin/Xvnc ${PROJECT_BROWSER_DISPLAY} -geometry 1920x1080 -depth 24 -auth ${PROJECT_BROWSER_XAUTHORITY} -interface 127.0.0.1 -websocketPort ${PROJECT_BROWSER_NOVNC_PORT} -rfbport 0 -localhost -nolisten tcp -httpd /usr/share/kasmvnc/www -SecurityTypes None -DisableBasicAuth -AcceptSetDesktopSize -udpFullFrameFrequency 0 -publicIP 127.0.0.1
+# 3840x2160 display pixels: Chromium draws at device scale factor 2 (see the Chromium unit),
+# so a window filling the screen still shows a page 1920x1080 CSS pixels large, as the agent
+# worked at before. The desktop (VNC) view resizes the display to its panel.
+ExecStart=/usr/bin/Xvnc ${PROJECT_BROWSER_DISPLAY} -geometry 3840x2160 -depth 24 -auth ${PROJECT_BROWSER_XAUTHORITY} -interface 127.0.0.1 -websocketPort ${PROJECT_BROWSER_NOVNC_PORT} -rfbport 0 -localhost -nolisten tcp -httpd /usr/share/kasmvnc/www -SecurityTypes None -DisableBasicAuth -AcceptSetDesktopSize -udpFullFrameFrequency 0 -publicIP 127.0.0.1
 Restart=on-failure
 RestartSec=2
 TimeoutStopSec=20

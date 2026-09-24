@@ -432,7 +432,15 @@
       "filePathPlaceholder": "SOUL.md atau instructions/topik.md",
       "filePathLabel": "Jalur file yang dikelola {index}",
       "fileContentLabel": "Konten file yang dikelola {index}",
-      "removeFile": "Hapus file yang dikelola {index}"
+      "removeFile": "Hapus file yang dikelola {index}",
+      "runtime": "Runtime",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "Server menyediakan Hermes sendiri dan menjaga profilnya tetap sinkron.",
+      "runtimeCliHint": "Berjalan di runner dengan preset ini (helena-runner --agent {kind}); instruksi, skill, server MCP, model, dan penalaran berasal dari Helena."
     },
     "runtimeConflicts": {
       "title": "Diubah di luar Helena",
@@ -594,8 +602,8 @@
       "toolsetsReadOnly": "Hanya anggota yang dapat mengedit agen yang dapat mematikan toolset.",
       "noToolsets": "Runner tidak melaporkan toolset apa pun.",
       "mcpServers": "Server MCP",
-      "mcpServersHint": "Dari konfigurasi Hermes. Matikan salah satu lalu simpan agar agen tidak menggunakannya.",
-      "mcpServersReadOnly": "Dari konfigurasi Hermes. Hanya anggota yang boleh mengedit agen yang dapat mematikannya.",
+      "mcpServersHint": "Helena memberikannya ke setiap agen: servernya sendiri dan browser proyek. Nonaktifkan satu dan simpan agar agen tidak memakainya.",
+      "mcpServersReadOnly": "Helena memberikannya ke setiap agen. Hanya anggota yang boleh mengedit agen yang dapat menonaktifkannya.",
       "noMcpServers": "Tidak ada",
       "libraryMcpServers": "Server MCP tim",
       "libraryMcpServersHint": "Server yang diaktifkan berjalan bersama chat dan eksekusi agen setelah Anda menyimpan.",
@@ -610,7 +618,7 @@
       "origin": {
         "agent": "Dipelajari",
         "hub": "Dari Skills Hub",
-        "plan": "Dari Plan"
+        "plan": "Dari Helena"
       },
       "memory": "Memori",
       "memoryHint": "Hermes menulis memori ini sendiri; ditampilkan seperti yang terakhir dilaporkan runner. Perubahan sampai ke agen pada sinkronisasi runner berikutnya.",
@@ -714,6 +722,51 @@
         "instructions": "Instruksi",
         "model": "Model/penalaran",
         "budgets": "Anggaran"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Profil tersinkron",
+        "drift": "Profil berbeda",
+        "pending": "Menerapkan pengaturan …",
+        "degraded": "Pengaturan tidak dapat diterapkan",
+        "offline": "Runner offline",
+        "unknown": "Runner tidak melaporkan profilnya"
+      },
+      "checked": "diperiksa {time} lalu",
+      "rewrite": "Tulis ulang",
+      "rewriting": "Menulis ulang …",
+      "rewriteQueued": "Runner menulis ulang profil pada sinkronisasi berikutnya.",
+      "drift": {
+        "not-linked": "config.yaml bukan tautan ke konfigurasi Hermes bersama.",
+        "managed-config": "Hermes tidak menerapkan konfigurasi yang ditulis Helena.",
+        "mcp-unmanaged": "Server MCP {server} aktif padahal Helena tidak menyediakannya.",
+        "mcp-missing": "Server MCP {server} tidak ada atau nonaktif.",
+        "mcp-differs": "Server MCP {server} berjalan dengan pengaturan lain dari Helena.",
+        "mcp-unsupported": "Runtime ini tidak dapat menjalankan server MCP {server}.",
+        "setting-differs": "Pengaturan {key} berbeda.",
+        "approval-guard": "Perintah berbahaya berjalan tanpa penjaga persetujuan Helena.",
+        "probe-failed": "Profil tidak dapat dibaca."
+      },
+      "defaults": "Bawaan runtime: {model} ({provider}), penalaran {reasoning}",
+      "servers": "Server MCP: {servers}",
+      "serversOff": "dinonaktifkan: {servers}"
+    },
+    "runModel": {
+      "title": "Model",
+      "configured": "Diatur: {value}",
+      "used": "Berjalan dengan: {value}",
+      "notReported": "Berjalan dengan: tidak dilaporkan",
+      "mismatch": "Berbeda: {what}",
+      "badge": "Model berbeda",
+      "source": {
+        "run": "dari langkah alur kerja",
+        "agent": "dari agen",
+        "default": "bawaan agen"
+      },
+      "part": {
+        "model": "model",
+        "reasoning": "penalaran"
       }
     }
   },

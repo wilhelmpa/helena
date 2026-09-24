@@ -12,8 +12,13 @@ export type VideoPlayback = 'webcodecs' | 'mse';
 
 // The frame duration the fragments carry; a decoder only needs the order.
 const FRAME_US = 16_667;
-// A video element that falls this far behind the newest frame jumps to it.
-const MAX_LAG_S = 0.1;
+// A video element within this of the newest buffered frame plays at its ordinary rate.
+const LIVE_EDGE_S = 0.03;
+// Between LIVE_EDGE_S and this, playing a little faster closes the gap without the jump (and
+// the brief re-decode from the last keyframe it costs) a seek would; past it, behind by this
+// much is assumed to be a stall or a reconnect, not routine drift, and worth the jump.
+const CATCH_UP_RATE = 1.15;
+const MAX_LAG_S = 0.25;
 // Played video older than this is removed from the video element's buffer.
 const KEEP_S = 5;
 
@@ -93,7 +98,8 @@ export function webCodecsVideo(
 }
 
 // Appends each fragment in order, ignoring the timestamps, and keeps the element at the newest
-// frame: it jumps there when it falls behind, and drops what it has played.
+// frame: a small lag behind it plays back a little faster to close the gap smoothly, a larger
+// one (a stall, a reconnect) jumps there outright, and it drops what it has already played.
 export function mseVideo(
   element: HTMLVideoElement,
   codec: string,
@@ -106,11 +112,20 @@ export function mseVideo(
   let buffer: SourceBuffer | null = null;
   let closed = false;
 
+  // Checked on every rendered frame, not only when the fragment queue runs dry: fragments can
+  // arrive steadily enough that it rarely does, and the gap this closes is measured in tens of
+  // milliseconds, so it needs watching that often to still do its job.
   const keepLive = () => {
     const ranges = element.buffered;
     if (!buffer || ranges.length === 0) return;
     const end = ranges.end(ranges.length - 1);
-    if (end - element.currentTime > MAX_LAG_S) element.currentTime = end;
+    const lag = end - element.currentTime;
+    if (lag > MAX_LAG_S) {
+      element.currentTime = end;
+      element.playbackRate = 1;
+    } else {
+      element.playbackRate = lag > LIVE_EDGE_S ? CATCH_UP_RATE : 1;
+    }
     const start = ranges.start(0);
     if (queue.length === 0 && element.currentTime - start > 2 * KEEP_S) {
       buffer.remove(start, element.currentTime - KEEP_S);
@@ -120,7 +135,6 @@ export function mseVideo(
     if (closed || !buffer || buffer.updating) return;
     const next = queue.shift();
     if (next) buffer.appendBuffer(next as Uint8Array<ArrayBuffer>);
-    else keepLive();
   };
   source.addEventListener(
     'sourceopen',
@@ -136,6 +150,7 @@ export function mseVideo(
   void element.play().catch(() => {});
   const watch = () => {
     if (closed) return;
+    keepLive();
     onFrame();
     element.requestVideoFrameCallback(watch);
   };

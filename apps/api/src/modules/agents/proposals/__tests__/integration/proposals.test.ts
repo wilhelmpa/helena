@@ -182,10 +182,12 @@ describe('Hermes settings from Helena', () => {
     const { asOwner, asRunner, teamId, agentId } = await setup();
     await asOwner.god['agent-runtime-settings'].put({
       fallbackModels: [{ provider: 'openrouter', model: 'google/gemini-3.6-flash' }],
+      sessionRetentionDays: 365,
     });
     expect((await asRunner['agent-runtime'].policy.get()).data!.hermes).toEqual({
       skillsDisabled: [],
       fallbackModels: [{ provider: 'openrouter', model: 'google/gemini-3.6-flash' }],
+      sessionRetentionDays: 365,
     });
 
     const agent = (await asOwner.teams({ teamId })['ai-agents']({ agentId }).get()).data!;
@@ -202,6 +204,7 @@ describe('Hermes settings from Helena', () => {
     expect((await asRunner['agent-runtime'].policy.get()).data!.hermes).toEqual({
       skillsDisabled: ['airtable'],
       fallbackModels: [],
+      sessionRetentionDays: 365,
     });
   });
 });

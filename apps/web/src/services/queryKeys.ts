@@ -268,6 +268,9 @@ export const qk = {
   emergencyStop: ['emergencyStop'] as const,
   runtimeDefaults: ['runtimeDefaults'] as const,
   hermesUpdate: ['hermesUpdate'] as const,
+  // Whether the agent's runtime profile matches its settings.
+  agentRuntimeSync: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'runtime-sync'] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,

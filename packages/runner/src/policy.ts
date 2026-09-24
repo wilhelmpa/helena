@@ -2,7 +2,18 @@ import { lstat, readFile, readlink, rename, symlink, unlink } from 'node:fs/prom
 import { isAbsolute, join, resolve } from 'node:path';
 import { RequestError } from './client';
 import type { RunnerConfig } from './config';
+import { collectProfile, deepMerge, mcpSecretVariable, type ProfileContext } from './contributions';
 import { atomicWrite, digest, ensureRoot, ensureSafeParent } from './files';
+import {
+  enabledMcpServers,
+  ensureConfigLink,
+  hermesDrift,
+  hermesManagedMcp,
+  hermesSessionFacts,
+  leaves,
+  probeHermesProfile,
+  type HermesProbe,
+} from './hermes-profile';
 import {
   readHermesInventory,
   type HermesInventory,
@@ -11,7 +22,6 @@ import {
   type MemoryFile,
 } from './inventory';
 import {
-  learningConfig,
   readLearnedSkills,
   runActions,
   setCuratorPaused,
@@ -22,7 +32,18 @@ import {
 } from './learning';
 import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
 import { readerCapabilities } from './readers';
+import './hermes-settings';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
+import {
+  profileDigest,
+  type ProfileReport,
+  type RunSettings,
+  type RuntimeAdapter,
+  type RuntimeDefaults,
+  type SessionFacts,
+} from './runtime';
+
+export { mcpSecretVariable } from './contributions';
 
 export interface RuntimePolicyFile {
   kind: 'instructions';
@@ -116,28 +137,17 @@ export interface RuntimeStatus {
   learnedSkills?: LearnedSkill[];
   // The results of the actions of the applied revision.
   actions?: RuntimeActionResult[];
+  // What the runtime will load, read back and compared with what Helena wrote.
+  profile?: ProfileReport;
 }
 
-// Settings Helena keeps for the agent that Hermes reads from its configuration: the skills
-// turned off for it and the models Hermes falls back to when the primary one fails.
+// Settings Helena keeps for the agent that Hermes reads from its configuration, written by
+// the hermes-settings profile contribution: the skills turned off for it, the models Hermes
+// falls back to when the primary one fails, and how long Hermes keeps ended sessions.
 export interface RuntimeHermesSettings {
   skillsDisabled?: string[];
   fallbackModels?: { provider: string; model: string }[];
-}
-
-// The managed configuration Hermes layers over config.yaml, without the MCP servers.
-export function managedHermesConfig(snapshot: RuntimePolicySnapshot): Record<string, unknown> {
-  const learned = learningConfig(snapshot.learning);
-  const settings = snapshot.hermes;
-  const skills = {
-    ...((learned.skills as Record<string, unknown> | undefined) ?? {}),
-    ...(settings?.skillsDisabled && { disabled: settings.skillsDisabled }),
-  };
-  return {
-    ...learned,
-    ...(Object.keys(skills).length > 0 && { skills }),
-    ...(settings?.fallbackModels && { fallback_providers: settings.fallbackModels }),
-  };
+  sessionRetentionDays?: number | null;
 }
 
 export interface RuntimeMemoryPolicy {
@@ -163,11 +173,7 @@ export interface RuntimePolicyClient {
 
 // What a run or a chat answer hands Hermes besides the task. `logins` names the Plan
 // credential of each vault handle the runner wrote, for a run or chat answer.
-export interface HermesRunSettings {
-  toolsets: string[] | null;
-  env: Record<string, string>;
-  logins?: Map<string, number>;
-}
+export type HermesRunSettings = RunSettings;
 
 type ManifestEntry =
   | { source: 'runtime'; path: string; sha256: string }
@@ -196,7 +202,6 @@ const SHA256 = /^[a-f0-9]{64}$/;
 const MAX_RUNTIME_BYTES = 128 * 1024;
 const MAX_SKILL_BYTES = 1024 * 1024;
 const MAX_CONFLICT_BYTES = 64 * 1024;
-const MCP_SERVER_NAME = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const PLUGIN_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const MAX_CONFLICTS = 8;
 const MAX_RESTORED = 20;
@@ -207,6 +212,10 @@ const CAPABILITIES = [
   'managed-skills',
   'managed-mcp-servers',
   'learning',
+  // Owns every MCP server of the profile, reads back what Hermes loads and reports drift.
+  'profile-drift',
+  'rewrite-profile',
+  'session-facts',
 ];
 // A revision that failed to apply is tried again after this long, not on every claim.
 const RETRY_FAILED_MS = 60_000;
@@ -356,54 +365,6 @@ function homePath(entry: ManifestEntry): string {
     : `skills/plan-managed/${entry.slug}/${entry.path}`;
 }
 
-// The variable a secret reaches Hermes in. Hermes expands ${NAME} in its configuration
-// with its own environment.
-export function mcpSecretVariable(id: number): string {
-  return `ITSAPLAN_MCP_SECRET_${id}`;
-}
-
-function hermesValues(values: RuntimeMcpValue[]): Record<string, string> {
-  return Object.fromEntries(
-    values.map((entry) => [
-      entry.name,
-      'secret' in entry ? `\${${mcpSecretVariable(entry.secret)}}` : entry.value,
-    ]),
-  );
-}
-
-// The mcp_servers Hermes layers over its config.yaml for this agent: the agent's own
-// servers, and the servers of config.yaml the policy turns off. Null when there is neither.
-// An own server may not take the name of a toolset or a server of the profile: Hermes names
-// a server's toolset after it.
-export function hermesMcpServers(
-  servers: RuntimeMcpServer[],
-  profile: HermesProfile | undefined,
-  denied: string[],
-): Record<string, unknown> | null {
-  const config: Record<string, unknown> = {};
-  const taken = [...(profile?.toolsets ?? []), ...(profile?.mcpServers ?? [])];
-  for (const server of servers) {
-    if (!MCP_SERVER_NAME.test(server.name) || server.name in config) {
-      throw new Error('runtime policy contains an invalid MCP server name');
-    }
-    if (taken.includes(server.name)) {
-      throw new Error(`MCP server ${server.name} has the name of a Hermes toolset or server`);
-    }
-    config[server.name] =
-      server.transport === 'stdio'
-        ? { command: server.command, args: server.args, env: hermesValues(server.env) }
-        : {
-            url: server.url,
-            ...(server.transport === 'sse' && { transport: 'sse' }),
-            headers: hermesValues(server.headers),
-          };
-  }
-  for (const name of profile?.mcpServers ?? []) {
-    if (denied.includes(name)) config[name] = { enabled: false };
-  }
-  return Object.keys(config).length > 0 ? config : null;
-}
-
 function mcpSecretIds(servers: RuntimeMcpServer[]): number[] {
   const ids = servers
     .flatMap((server) => [...server.env, ...server.headers])
@@ -419,6 +380,37 @@ function describeFailure(error: unknown): string {
   return error instanceof Error ? error.message.slice(0, 200) : 'unknown error';
 }
 
+// What the materializer needs besides the policy to build the agent's profile: where Helena
+// answers (for its own MCP server), the agent's environment from the runner config (the
+// project browser), and Hermes' Python for reading the profile back.
+export interface MaterializerContext {
+  url?: string;
+  env?: Record<string, string>;
+  python?: string;
+  // Reads back what Hermes loads; Hermes' own Python unless replaced (tests).
+  reader?: HermesReader;
+}
+
+export interface HermesReader {
+  probe(home: string, managedDir: string, keys: string[]): Promise<HermesProbe>;
+  session(home: string, sessionId: string): Promise<SessionFacts | null>;
+}
+
+function pythonReader(python: string, env: Record<string, string>): HermesReader {
+  return {
+    probe: (home, managedDir, keys) => probeHermesProfile(home, managedDir, python, env, keys),
+    session: (home, sessionId) => hermesSessionFacts(home, sessionId, python, env),
+  };
+}
+
+export interface ApplyOptions {
+  // Write every managed file again, even one that is unchanged ("Neu schreiben").
+  force?: boolean;
+  // Servers the last check found in the shared configuration or in plugins, which the
+  // managed configuration turns off like the ones the runner config names.
+  sharedMcpServers?: string[];
+}
+
 export class HermesPolicyMaterializer implements PolicyMaterializer {
   readonly hermesHome: string;
   readonly manifestPath: string;
@@ -426,13 +418,19 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
   // profile's own, which the agents share, and cannot be changed from inside Hermes.
   readonly managedDir: string;
   private readonly profile: HermesProfile | undefined;
+  private readonly context: MaterializerContext;
   private pluginCheck: Promise<string[]> | null = null;
 
-  constructor(options: { hermesHome: string; profile?: HermesProfile }) {
+  constructor(options: {
+    hermesHome: string;
+    profile?: HermesProfile;
+    context?: MaterializerContext;
+  }) {
     this.hermesHome = assertRoot(options.hermesHome, 'HERMES_HOME');
     this.manifestPath = join(this.hermesHome, 'run', 'itsaplan-policy-manifest.json');
     this.managedDir = join(this.hermesHome, 'run', 'itsaplan-managed');
     this.profile = options.profile;
+    this.context = options.context ?? {};
   }
 
   // Plan's version always wins. A file found changed outside Plan (an existing SOUL.md on
@@ -440,22 +438,15 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
   // `restored` names every managed file that was changed or removed since Plan wrote it.
   // Applying the same snapshot again is how that is checked. `mcpSecrets` lists the
   // secrets the managed configuration names, and is null when it names none.
-  async apply(snapshot: RuntimePolicySnapshot): Promise<{
-    revision: string;
-    conflicts: RuntimeConflict[];
-    restored: string[];
-    mcpSecrets: number[] | null;
-  }> {
+  async apply(
+    snapshot: RuntimePolicySnapshot,
+    options: ApplyOptions = {},
+  ): Promise<MaterializeResult> {
     await ensureRoot(this.hermesHome);
     await ensureSafeParent(this.hermesHome, this.manifestPath);
     const previous = await loadManifest(this.manifestPath, this.hermesHome);
     const desired = desiredEntries(snapshot, this.hermesHome);
-    const servers = snapshot.mcpServers ?? [];
-    const mcpServers = hermesMcpServers(
-      servers,
-      this.profile,
-      snapshot.runtimePolicy.toolDeny ?? [],
-    );
+    const managed = managedConfigOf(snapshot, this.profileContext(snapshot), options);
     const oldByKey = new Map((previous?.entries ?? []).map((entry) => [entryKey(entry), entry]));
     const desiredByKey = new Map(desired.map((entry) => [entryKey(entry.manifest), entry]));
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -464,9 +455,9 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
 
     for (const entry of desired) {
       const current = await existingHash(entry.target);
-      if (current === entry.manifest.sha256) continue;
+      if (current === entry.manifest.sha256 && !options.force) continue;
       const old = oldByKey.get(entryKey(entry.manifest));
-      if (current !== null && current !== old?.sha256) {
+      if (current !== null && current !== entry.manifest.sha256 && current !== old?.sha256) {
         const content = await readFile(entry.target, 'utf8');
         await atomicWrite(entry.root, `${entry.target}.outside-${stamp}`, content);
         conflicts.push({
@@ -485,17 +476,11 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
     }
 
     // JSON is YAML, which is how Hermes reads it.
-    await this.writeIfChanged(
+    const managedChanged = await this.writeIfChanged(
       this.managedDir,
       join(this.managedDir, 'config.yaml'),
-      `${JSON.stringify(
-        {
-          ...managedHermesConfig(snapshot),
-          ...(mcpServers && { mcp_servers: mcpServers }),
-        },
-        null,
-        2,
-      )}\n`,
+      `${JSON.stringify(managed.config, null, 2)}\n`,
+      options.force,
     );
     if (snapshot.learning) await setCuratorPaused(this.hermesHome, !snapshot.learning.curator);
 
@@ -509,14 +494,30 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
       revision: snapshot.revision,
       conflicts,
       restored,
-      mcpSecrets: mcpServers ? mcpSecretIds(servers) : null,
+      mcpSecrets: managed.mcpSecrets,
+      managedConfig: managed.config,
+      mcpToolsets: managed.mcpToolsets,
+      runtimeServers: managed.runtimeServers,
+      deniedToolsets: managed.deniedToolsets,
+      managedChanged,
     };
   }
 
-  // The plugins Plan requires, such as the approval guard, are links from plugins/ in the
-  // home to Plan's checkout. One the agent removed or replaced is put back, and whatever
-  // took its place is moved to run/. Returns the entries it restored. Runs and chat
-  // answers that start together share one check.
+  private profileContext(snapshot: RuntimePolicySnapshot): ProfileContext {
+    return {
+      runtime: 'hermes',
+      snapshot,
+      url: this.context.url,
+      env: this.context.env ?? {},
+      hermes: this.profile,
+    };
+  }
+
+  // The links Plan requires in the home: the shared config.yaml, where the runner config
+  // names one, and the plugins, such as the approval guard, which link from plugins/ to
+  // Plan's checkout. One the agent removed or replaced is put back, and whatever took its
+  // place is moved to run/. Returns the entries it restored. Runs and chat answers that
+  // start together share one check.
   ensurePlugins(): Promise<string[]> {
     this.pluginCheck ??= this.checkPlugins().finally(() => {
       this.pluginCheck = null;
@@ -526,6 +527,8 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
 
   private async checkPlugins(): Promise<string[]> {
     const restored: string[] = [];
+    const shared = this.profile?.sharedConfig;
+    if (shared && (await ensureConfigLink(this.hermesHome, shared))) restored.push('config.yaml');
     const plugins = join(this.hermesHome, 'plugins');
     for (const [name, source] of Object.entries(this.profile?.plugins ?? {})) {
       if (!PLUGIN_NAME.test(name) || !isAbsolute(source)) {
@@ -553,6 +556,21 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
     return runActions(this.hermesHome, await this.planSkills(), actions);
   }
 
+  private reader(): HermesReader {
+    return (
+      this.context.reader ?? pythonReader(this.context.python ?? 'python3', this.context.env ?? {})
+    );
+  }
+
+  // What Hermes will load for this home, read back in Hermes' own Python.
+  probe(keys: string[]): Promise<HermesProbe> {
+    return this.reader().probe(this.hermesHome, this.managedDir, keys);
+  }
+
+  sessionFacts(sessionId: string): Promise<SessionFacts | null> {
+    return this.reader().session(this.hermesHome, sessionId);
+  }
+
   // The skill directories below skills/plan-managed that the manifest says Plan wrote.
   async planSkills(): Promise<Set<string>> {
     const manifest = await loadManifest(this.manifestPath, this.hermesHome);
@@ -561,9 +579,49 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
     );
   }
 
-  private async writeIfChanged(root: string, target: string, content: string): Promise<void> {
-    if ((await existingHash(target)) !== digest(content)) await atomicWrite(root, target, content);
+  // True when the file had to be written.
+  private async writeIfChanged(
+    root: string,
+    target: string,
+    content: string,
+    force = false,
+  ): Promise<boolean> {
+    if (!force && (await existingHash(target)) === digest(content)) return false;
+    await atomicWrite(root, target, content);
+    return true;
   }
+}
+
+// The managed configuration of a snapshot: every contribution's settings, and the MCP
+// servers Helena gives the agent with every other server Hermes would find turned off.
+export function managedConfigOf(
+  snapshot: RuntimePolicySnapshot,
+  context: ProfileContext,
+  options: Pick<ApplyOptions, 'sharedMcpServers'> = {},
+): {
+  config: Record<string, unknown>;
+  mcpSecrets: number[] | null;
+  mcpToolsets: string[];
+  runtimeServers: string[];
+  deniedToolsets: string[];
+} {
+  const collected = collectProfile(context);
+  const shared = [
+    ...new Set([...(context.hermes?.mcpServers ?? []), ...(options.sharedMcpServers ?? [])]),
+  ];
+  const mcp = hermesManagedMcp(collected, shared, snapshot.runtimePolicy.toolDeny ?? []);
+  const config = mcp
+    ? deepMerge(collected.hermesConfig, { mcp_servers: mcp })
+    : collected.hermesConfig;
+  const secrets = mcpSecretIds(snapshot.mcpServers ?? []);
+  return {
+    config,
+    // Null while the managed configuration names no secret, so no run asks Plan for any.
+    mcpSecrets: mcp && secrets.length > 0 ? secrets : null,
+    mcpToolsets: enabledMcpServers(mcp),
+    runtimeServers: collected.runtimeServers,
+    deniedToolsets: collected.deniedToolsets,
+  };
 }
 
 // Hermes' own scheduler. Plan schedules work through its routines, so a job Hermes ran
@@ -616,16 +674,30 @@ export interface MaterializeResult {
   conflicts: RuntimeConflict[];
   restored: string[];
   mcpSecrets: number[] | null;
+  // The managed configuration as written, which the check compares Hermes' view with.
+  managedConfig: Record<string, unknown>;
+  // Helena's MCP servers that are on, which the toolsets of a run name.
+  mcpToolsets: string[];
+  // The servers the runner itself gives the agent (not the team library's).
+  runtimeServers: string[];
+  // Toolsets a contribution turns off for the agent.
+  deniedToolsets: string[];
+  // Whether the managed configuration had to be written.
+  managedChanged: boolean;
 }
 
 // What writes the policy into the agent's profile: the runner itself, or, for an isolated
 // agent, the runner's profile helper run as the project's user (see IsolatedProfile).
 export interface PolicyMaterializer {
   readonly managedDir: string;
-  apply(snapshot: RuntimePolicySnapshot): Promise<MaterializeResult>;
+  apply(snapshot: RuntimePolicySnapshot, options?: ApplyOptions): Promise<MaterializeResult>;
   ensurePlugins(): Promise<string[]>;
   // The actions a revision carries (learning), run once after it applied.
   runActions(actions: RuntimeAction[]): Promise<RuntimeActionResult[]>;
+  // What Hermes will load, read back; the settings named by `keys` with their values.
+  probe(keys: string[]): Promise<HermesProbe>;
+  // The model and reasoning a session ran with.
+  sessionFacts(sessionId: string): Promise<SessionFacts | null>;
 }
 
 export interface LoginVault {
@@ -656,6 +728,8 @@ export class IsolatedProfile implements PolicyMaterializer {
     hermesHome: string,
     private readonly profile: HermesProfile | undefined,
     private readonly helper: typeof profileHelper = profileHelper,
+    // Only Helena's address: the helper runs with the environment the launcher gives it.
+    private readonly context: Pick<MaterializerContext, 'url'> = {},
   ) {
     this.managedDir = join(assertRoot(hermesHome, 'HERMES_HOME'), 'run', 'itsaplan-managed');
   }
@@ -664,11 +738,20 @@ export class IsolatedProfile implements PolicyMaterializer {
     return this.helper<T>(this.isolation, this.cwd, {
       ...operation,
       profile: this.profile ?? null,
+      context: this.context,
     });
   }
 
-  apply(snapshot: RuntimePolicySnapshot): Promise<MaterializeResult> {
-    return this.run({ op: 'materialize', snapshot });
+  apply(snapshot: RuntimePolicySnapshot, options: ApplyOptions = {}): Promise<MaterializeResult> {
+    return this.run({ op: 'materialize', snapshot, options });
+  }
+
+  probe(keys: string[]): Promise<HermesProbe> {
+    return this.run({ op: 'probe', keys });
+  }
+
+  sessionFacts(sessionId: string): Promise<SessionFacts | null> {
+    return this.run({ op: 'session', sessionId });
   }
 
   ensurePlugins(): Promise<string[]> {
@@ -708,7 +791,18 @@ function latest(paths: string[]): string[] {
 const RESTORED_DETAIL =
   'Files or plugin links changed outside Plan were restored; a changed file is kept next to it.';
 
-export class HermesPolicySynchronizer {
+// How often the runner reads back what Hermes loads when nothing it knows of changed: the
+// shared configuration can change under it. A new revision, a run or chat answer, a restored
+// file and "Neu schreiben" check at once.
+const PROBE_INTERVAL_MS = 5 * 60_000;
+
+const PROFILE_DRIFT_DETAIL = "The agent's profile differs from Helena's settings.";
+
+// Hermes behind the runtime adapter interface (runtime.ts): brings the agent's Hermes home to
+// the policy Helena keeps for it, checks it again every minute, reads back what Hermes will
+// load, and reports the result with the agent's status.
+export class HermesPolicySynchronizer implements RuntimeAdapter {
+  readonly runtime = 'hermes' as const;
   private appliedRevision: string | null = null;
   // The snapshot of the applied revision, which each check applies again.
   private applied: RuntimePolicySnapshot | null = null;
@@ -729,15 +823,24 @@ export class HermesPolicySynchronizer {
   // Held-back memory writes not reported yet.
   private memoryProposals: MemoryProposal[] = [];
   private webLogins = false;
-  // The agent's own MCP servers and the secrets they name, as the last applied revision
-  // wrote them. mcpSecrets is null while the managed configuration names no secret.
-  private mcpServerNames: string[] = [];
+  // Helena's MCP servers that are on and the secrets they name, as the last applied
+  // revision wrote them. mcpSecrets is null while the managed configuration names no secret.
+  private mcpToolsets: string[] = [];
+  private runtimeServers: string[] = [];
+  private contributedDeny: string[] = [];
   private mcpSecrets: number[] | null = null;
+  private managedConfig: Record<string, unknown> | null = null;
   private vaultAccess: VaultAccess | null = null;
   private inventory: HermesInventory | undefined;
   private learnedSkills: LearnedSkill[] | undefined;
   private inventoryDigest: string | null = null;
   private checkedAt = -Infinity;
+  // The last read-back of the profile, and when the next one is due.
+  private probe: HermesProbe | null = null;
+  private probeDue = true;
+  private probedAt = -Infinity;
+  private profile: ProfileReport | null = null;
+  private profileDigest: string | null = null;
   private readonly now: () => number;
 
   constructor(
@@ -762,17 +865,38 @@ export class HermesPolicySynchronizer {
   // the next sync checks them again.
   inventoryChanged(): void {
     this.checkedAt = -Infinity;
+    this.probeDue = true;
   }
 
   toolsets(): string[] | null {
-    return allowedToolsets(this.options.profile, this.denied(), this.mcpServerNames);
+    return allowedToolsets(this.profileWithoutServers(), this.denied(), this.mcpToolsets);
   }
 
-  // An agent that does not learn has no memory tool.
+  // The servers of the shared configuration are Helena's to turn on, not the profile's:
+  // the toolsets name Helena's servers that are on, and nothing else.
+  private profileWithoutServers(): HermesProfile | undefined {
+    return this.options.profile && { ...this.options.profile, mcpServers: [] };
+  }
+
+  // An agent that does not learn has no memory tool; a contribution may turn off more.
   private denied(): string[] {
-    return this.learning?.enabled === false
-      ? [...this.deniedToolsets, 'memory']
-      : this.deniedToolsets;
+    const denied = [...this.deniedToolsets, ...this.contributedDeny];
+    return this.learning?.enabled === false ? [...denied, 'memory'] : denied;
+  }
+
+  defaults(): RuntimeDefaults | null {
+    return this.probe?.defaults ?? null;
+  }
+
+  // Best effort: a session the store no longer has, or a store that cannot be read, is
+  // reported as unknown rather than failing the run.
+  async sessionFacts(sessionId: string | undefined): Promise<SessionFacts | null> {
+    if (!sessionId) return null;
+    try {
+      return await this.materializer.sessionFacts(sessionId);
+    } catch {
+      return null;
+    }
   }
 
   // Read before each run and chat answer, so a secret changed in Plan applies at once.
@@ -781,7 +905,7 @@ export class HermesPolicySynchronizer {
   // run or chat answer the vault is brought to the logins granted now; a login revoked in
   // Plan is removed from it before Hermes starts. A required plugin that cannot be put
   // back throws, which fails the run instead of running it without the plugin.
-  async runSettings(work?: WorkRef): Promise<HermesRunSettings> {
+  async runSettings(work?: WorkRef): Promise<RunSettings> {
     const restored = await this.materializer.ensurePlugins();
     if (restored.length > 0) this.noteRestored(restored, []);
     const settings = {
@@ -792,7 +916,11 @@ export class HermesPolicySynchronizer {
     const granted = this.webLogins ? await this.client.webLogins(work) : [];
     const logins = await this.options.vault.sync(granted);
     if (logins.size === 0) return { ...settings, logins };
-    const toolsets = toolsetsWithBrowser(this.options.profile, this.denied(), this.mcpServerNames);
+    const toolsets = toolsetsWithBrowser(
+      this.profileWithoutServers(),
+      this.denied(),
+      this.mcpToolsets,
+    );
     return { ...settings, toolsets, logins };
   }
 
@@ -836,11 +964,27 @@ export class HermesPolicySynchronizer {
       if (!applied) changed = (await this.verify()) || changed;
       changed = (await this.readInventory()) || changed;
     }
+    changed = (await this.checkProfile()) || changed;
     if ((changed || this.unreported) && this.state) await this.report(this.state);
   }
 
+  private applyOptions(force = false): ApplyOptions {
+    return { force, sharedMcpServers: this.probe?.sharedMcpServers ?? [] };
+  }
+
+  // Takes what a materialization wrote as the agent's current MCP servers and settings.
+  private take(result: MaterializeResult): void {
+    this.mcpToolsets = result.mcpToolsets;
+    this.runtimeServers = result.runtimeServers;
+    this.contributedDeny = result.deniedToolsets ?? [];
+    this.mcpSecrets = result.mcpSecrets;
+    this.managedConfig = result.managedConfig;
+    if (result.managedChanged || result.restored.length > 0) this.probeDue = true;
+  }
+
   // True when the revision was applied or failed to apply, either of which is reported.
-  // The actions it carries run once, after it applied.
+  // The actions it carries run once, after it applied; "Neu schreiben" (rewrite-profile)
+  // is the apply itself, with every file written again and the profile read back at once.
   private async apply(snapshot: RuntimePolicySnapshot): Promise<boolean> {
     if (snapshot.revision === this.appliedRevision) return false;
     if (
@@ -850,22 +994,34 @@ export class HermesPolicySynchronizer {
       return false;
     }
     try {
-      const result = await this.materializer.apply(snapshot);
-      const actions = await this.materializer.runActions(snapshot.actions ?? []);
+      const actions = snapshot.actions ?? [];
+      const rewrites = actions.filter((action) => action.kind === 'rewrite-profile');
+      const result = await this.materializer.apply(
+        snapshot,
+        this.applyOptions(rewrites.length > 0),
+      );
+      const results = [
+        ...rewrites.map((action) => ({ id: action.id, error: null })),
+        ...(await this.materializer.runActions(
+          actions.filter((action) => action.kind !== 'rewrite-profile'),
+        )),
+      ];
+      // The links (shared configuration, plugins) belong to the profile as much as its files.
+      const links = await this.materializer.ensurePlugins();
       this.appliedRevision = result.revision;
       this.applied = snapshot;
-      this.mcpServerNames = (snapshot.mcpServers ?? []).map(({ name }) => name);
-      this.mcpSecrets = result.mcpSecrets;
+      this.take(result);
+      this.probeDue = true;
       this.failed = null;
       this.checkFailed = false;
-      const restored = latest([...this.pendingRestored, ...result.restored]);
+      const restored = latest([...this.pendingRestored, ...result.restored, ...links]);
       this.pendingRestored = [];
       this.state = {
         status: 'online',
         detail: result.conflicts.length > 0 || restored.length > 0 ? RESTORED_DETAIL : null,
         conflicts: result.conflicts,
         restored,
-        actions,
+        actions: results,
       };
     } catch (error) {
       this.failed = { revision: snapshot.revision, at: this.now() };
@@ -885,12 +1041,15 @@ export class HermesPolicySynchronizer {
   private async verify(): Promise<boolean> {
     if (!this.applied || this.failed) return false;
     try {
-      const result = await this.materializer.apply(this.applied);
+      const result = await this.materializer.apply(this.applied, this.applyOptions());
+      this.take(result);
       const restored = [...result.restored, ...(await this.materializer.ensurePlugins())];
       const recovered = this.checkFailed;
       this.checkFailed = false;
-      if (restored.length > 0) this.noteRestored(restored, result.conflicts);
-      else if (recovered && this.state)
+      if (restored.length > 0) {
+        this.probeDue = true;
+        this.noteRestored(restored, result.conflicts);
+      } else if (recovered && this.state)
         this.state = { ...this.state, status: 'online', detail: null };
       return restored.length > 0 || recovered;
     } catch (error) {
@@ -904,6 +1063,69 @@ export class HermesPolicySynchronizer {
       }
       return true;
     }
+  }
+
+  // Reads back what Hermes will load and compares it with what the runner wrote. A server
+  // the shared configuration gained since is turned off at once. True when the report
+  // changed.
+  private async checkProfile(): Promise<boolean> {
+    if (!this.applied || !this.managedConfig) return false;
+    if (!this.probeDue && this.now() - this.probedAt < PROBE_INTERVAL_MS) return false;
+    this.probeDue = false;
+    this.probedAt = this.now();
+    const { mcp_servers: _servers, ...settings } = this.managedConfig;
+    const keys = leaves(settings).map(([path]) => path);
+    let report: ProfileReport;
+    try {
+      let probe = await this.materializer.probe(keys);
+      const known = new Set(this.probe?.sharedMcpServers ?? []);
+      this.probe = probe;
+      if (probe.sharedMcpServers.some((name) => !known.has(name)) && !this.failed) {
+        this.take(await this.materializer.apply(this.applied, this.applyOptions()));
+        probe = await this.materializer.probe(keys);
+        this.probe = probe;
+      }
+      const { drift, mcpServers } = hermesDrift(
+        { managedConfig: this.managedConfig, sharedConfig: this.options.profile?.sharedConfig },
+        probe,
+      );
+      report = {
+        hash: profileDigest({
+          revision: this.appliedRevision,
+          managed: this.managedConfig,
+          link: probe.configLink,
+          servers: probe.mcpServers,
+          values: probe.values,
+          approvals: probe.approvals,
+        }),
+        checkedAt: new Date(this.now()).toISOString(),
+        drift,
+        defaults: probe.defaults,
+        mcpServers,
+      };
+    } catch (error) {
+      report = {
+        hash: this.profile?.hash ?? '',
+        checkedAt: new Date(this.now()).toISOString(),
+        drift: [{ key: 'profile', code: 'probe-failed', detail: describeFailure(error) }],
+        defaults: this.probe?.defaults ?? null,
+        mcpServers: this.profile?.mcpServers ?? [],
+      };
+    }
+    this.profile = report;
+    if (this.state && this.state.status === 'online') {
+      const drifted = report.drift.length > 0;
+      if (drifted && this.state.detail === null) {
+        this.state = { ...this.state, detail: PROFILE_DRIFT_DETAIL };
+      } else if (!drifted && this.state.detail === PROFILE_DRIFT_DETAIL) {
+        this.state = { ...this.state, detail: null };
+      }
+    }
+    // The time of the check alone is no reason to report again.
+    const digestOfReport = digest(JSON.stringify({ ...report, checkedAt: null }));
+    if (digestOfReport === this.profileDigest) return false;
+    this.profileDigest = digestOfReport;
+    return true;
   }
 
   private noteRestored(restored: string[], conflicts: RuntimeConflict[]): void {
@@ -970,15 +1192,24 @@ export class HermesPolicySynchronizer {
     return true;
   }
 
+  // The MCP servers the owner turns off per agent are the runner's own (Helena's server,
+  // the project browser); the team library's are shown with the library.
+  private reportedInventory(): HermesInventory | undefined {
+    if (!this.inventory) return undefined;
+    return this.applied ? { ...this.inventory, mcpServers: this.runtimeServers } : this.inventory;
+  }
+
   private async report(state: ReportedState): Promise<void> {
+    const inventory = this.reportedInventory();
     try {
       await this.client.reportRuntimeStatus({
         adapter: 'hermes',
         ...state,
         appliedRevision: this.appliedRevision,
         capabilities: [...CAPABILITIES, ...readerCapabilities('hermes')],
-        ...(this.inventory && { inventory: this.inventory }),
+        ...(inventory && { inventory }),
         ...(this.learnedSkills && { learnedSkills: this.learnedSkills }),
+        ...(this.profile && { profile: this.profile }),
         ...(this.memoryProposals.length > 0 && { memoryProposals: this.memoryProposals }),
       });
       this.unreported = false;
@@ -988,6 +1219,11 @@ export class HermesPolicySynchronizer {
       this.unreported = !(error instanceof RequestError && error.status < 500);
     }
   }
+}
+
+// Hermes' Python: the one of its venv, which the wrapper puts first on PATH.
+function hermesPython(config: RunnerConfig): string {
+  return config.env.HERMES_PYTHON ?? process.env.HERMES_PYTHON ?? 'python3';
 }
 
 export function hermesPolicySynchronizer(
@@ -1001,7 +1237,14 @@ export function hermesPolicySynchronizer(
     if (!config.isolation || !config.cwd) {
       throw new Error('Agent isolation is on and this agent has no isolated project');
     }
-    const profile = new IsolatedProfile(config.isolation, config.cwd, hermesHome, config.hermes);
+    const profile = new IsolatedProfile(
+      config.isolation,
+      config.cwd,
+      hermesHome,
+      config.hermes,
+      profileHelper,
+      { url: config.url },
+    );
     return new HermesPolicySynchronizer(client, profile, {
       inventory: () => profile.inventory(),
       learned: () => profile.learnedSkills(),
@@ -1009,8 +1252,12 @@ export function hermesPolicySynchronizer(
       vault: profile.vault(),
     });
   }
-  const materializer = new HermesPolicyMaterializer({ hermesHome, profile: config.hermes });
-  const python = config.env.HERMES_PYTHON ?? process.env.HERMES_PYTHON ?? 'python3';
+  const python = hermesPython(config);
+  const materializer = new HermesPolicyMaterializer({
+    hermesHome,
+    profile: config.hermes,
+    context: { url: config.url, env: config.env, python },
+  });
   return new HermesPolicySynchronizer(client, materializer, {
     inventory: async () =>
       readHermesInventory(materializer.hermesHome, config.hermes, await materializer.planSkills()),

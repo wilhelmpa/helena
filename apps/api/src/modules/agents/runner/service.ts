@@ -16,6 +16,7 @@ import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy, type AgentKind } from '../core/service';
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
+import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
 import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
@@ -571,6 +572,7 @@ export async function finishRun(
     sessionId?: string;
     toolCalls?: number;
     spend?: Spend | null;
+    runtime?: RunModelReport;
   },
   claim?: number,
 ): Promise<{ reflection: ReflectionRequest | null } | null> {
@@ -579,6 +581,11 @@ export async function finishRun(
   }
   await touchRunner(agent.id);
   const error = result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Run failed') : null;
+  // A run that names a model of its own (a workflow step's) was configured with that one.
+  const [own] = result.runtime
+    ? await db.select({ model: agentRun.model }).from(agentRun).where(eq(agentRun.id, runId))
+    : [];
+  const check = modelCheckOf(result.runtime, own?.model ?? null);
   const blocked = sql`${agentRun.blockedQuestion} IS NOT NULL`;
   const rows = await db
     .update(agentRun)
@@ -591,6 +598,7 @@ export async function finishRun(
       // The session the run ended in (a compression moves it to a new id), which "continue
       // from here" resumes.
       ...(result.sessionId && { sessionId: result.sessionId }),
+      ...(check && { modelCheck: check }),
       finishedAt: new Date(),
     })
     .where(heldBy(agent.id, runId, claim))

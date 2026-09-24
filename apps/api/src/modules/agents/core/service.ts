@@ -38,6 +38,7 @@ import {
   runtimePolicyGroupsChanged,
   type TemplateFieldGroup,
 } from './template-sync';
+import type { profileReport } from '../runtime-sync/model';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -83,10 +84,15 @@ export interface AgentRuntimePolicy {
   skillsDisabled?: string[];
   // Unset or null: the instance's default list. Empty: no fallback.
   fallbackModels?: { provider: string; model: string }[] | null;
+  // Which runtime runs the agent. Unset is Hermes, which the server provisions itself; a
+  // Claude Code or Codex agent runs on a runner started with that preset.
+  runtime?: AgentRuntimeKind;
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
 const REFLECTION_MODES: ReflectionMode[] = ['off', 'failure', 'complex'];
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex';
+export const AGENT_RUNTIMES: AgentRuntimeKind[] = ['hermes', 'claude', 'codex'];
 
 export interface AgentRuntimeConflict {
   path: string;
@@ -124,8 +130,13 @@ export interface AgentRuntimeState {
   restored: string[];
   // Null until a runner that reads it reports one.
   inventory: AgentRuntimeInventory | null;
+  // What the runner read back from the runtime's profile: its digest, the drift it found
+  // and could not put right, and the runtime's own defaults. Null until one reports it.
+  profile: AgentRuntimeProfile | null;
   reportedAt: string | null;
 }
+
+export type AgentRuntimeProfile = typeof profileReport.static;
 
 const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
   reasoningEffort: null,
@@ -157,6 +168,7 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   conflicts: [],
   restored: [],
   inventory: null,
+  profile: null,
   reportedAt: null,
 };
 
@@ -190,6 +202,10 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
       : [],
     // Validated when the runner reported it, so only its presence is checked.
     inventory: state.inventory && typeof state.inventory === 'object' ? state.inventory : null,
+    profile:
+      state.profile && typeof state.profile === 'object' && Array.isArray(state.profile.drift)
+        ? state.profile
+        : null,
     reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
   };
 }
@@ -252,6 +268,9 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
         .map((entry) => ({ provider: entry.provider.trim(), model: entry.model.trim() }))
         .slice(0, 8),
     }),
+    // Hermes is the default and is left out, so an agent's policy keeps its revision.
+    ...(AGENT_RUNTIMES.includes(policy.runtime as AgentRuntimeKind) &&
+      policy.runtime !== 'hermes' && { runtime: policy.runtime }),
   };
 }
 
@@ -1330,8 +1349,16 @@ export async function updateAgent(
   const projectsChanged =
     projectIds.length !== previousProjectIds.length ||
     projectIds.some((projectId) => !previousProjectIds.includes(projectId));
-  // The runner descriptor names the agent by its username.
-  if (projectsChanged || (patch.username !== undefined && patch.username !== agent.username)) {
+  // The runner descriptor names the agent by its username, and only a Hermes agent has one.
+  const runtimeChanged =
+    patch.runtimePolicy !== undefined &&
+    (normalizeRuntimePolicy(patch.runtimePolicy).runtime ?? 'hermes') !==
+      (agent.runtimePolicy.runtime ?? 'hermes');
+  if (
+    projectsChanged ||
+    runtimeChanged ||
+    (patch.username !== undefined && patch.username !== agent.username)
+  ) {
     await queueAgentRuntime(agent.userId, previousProjectIds);
   }
 

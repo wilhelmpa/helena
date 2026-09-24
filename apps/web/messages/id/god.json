@@ -375,6 +375,10 @@
     "janitorCleaned": "{count, plural, other {membersihkan # item}}",
     "janitorNeverRan": "belum pernah berjalan",
     "resuming": "{count, plural, other {# run sedang dilanjutkan}} setelah crash",
-    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa"
+    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa",
+    "agentSync": {
+      "title": "Profil agen",
+      "synced": "{synced} dari {total} tersinkron"
+    }
   }
 }

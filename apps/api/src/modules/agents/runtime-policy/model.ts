@@ -2,6 +2,7 @@ import { t } from 'elysia';
 
 import { runtimeConflict, runtimeInventory, runtimePolicy, runtimeState } from '../core/model';
 import { learnedSkill, runtimeActionResult, runtimeActionSnapshot } from '../learning/model';
+import { profileReport } from '../runtime-sync/model';
 
 // A literal, or the id of a secret whose value GET /agent-runtime/mcp-secrets returns.
 const runtimeMcpValue = t.Union([
@@ -85,6 +86,12 @@ export const RuntimePolicySnapshotResponse = t.Object({
     fallbackModels: t.Array(t.Object({ provider: t.String(), model: t.String() }), {
       description: 'The fallback chain (Hermes fallback_providers), in order.',
     }),
+    sessionRetentionDays: t.Nullable(
+      t.Number({
+        description:
+          "Days Hermes keeps ended sessions (sessions.retention_days); null keeps Hermes' own.",
+      }),
+    ),
   }),
   actions: t.Array(runtimeActionSnapshot, {
     description: "The owner's decisions on what the agent learned, not carried out yet.",
@@ -119,6 +126,7 @@ export const RuntimeStateBody = t.Object({
       { maxItems: 2 },
     ),
   ),
+  profile: t.Optional(profileReport),
 });
 
 export const RuntimeStateResponse = runtimeState;

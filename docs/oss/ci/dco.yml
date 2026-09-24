@@ -1,0 +1,31 @@
+# Draft (package G): every commit of a pull request carries a Signed-off-by line (Developer
+# Certificate of Origin 1.1). Replaces the upstream CLA bot. Owner decision: DCO or CLA.
+name: DCO
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  signoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Every commit is signed off
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          for commit in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            author=$(git log -1 --format='%an <%ae>' "$commit")
+            if ! git log -1 --format=%B "$commit" | grep -qiF "Signed-off-by: $author"; then
+              echo "::error::$commit has no 'Signed-off-by: $author' (git commit -s)"
+              missing=1
+            fi
+          done
+          exit $missing

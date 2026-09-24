@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+"""groupmod -n NEW OLD against the sandbox's etc/group."""
+import os
+import sys
+
+root = os.environ["HELENA_RENAME_TEST_ROOT"]
+args = sys.argv[1:]
+new = args[args.index("-n") + 1]
+old = args[-1]
+path = os.path.join(root, "etc/group")
+lines = open(path, encoding="utf-8").read().splitlines()
+names = [line.split(":", 1)[0] for line in lines]
+if old not in names:
+    print("groupmod: group '%s' does not exist" % old, file=sys.stderr)
+    sys.exit(6)
+if new in names:
+    print("groupmod: group '%s' already exists" % new, file=sys.stderr)
+    sys.exit(9)
+out = []
+for line in lines:
+    parts = line.split(":")
+    if parts[0] == old:
+        parts[0] = new
+    out.append(":".join(parts))
+open(path, "w", encoding="utf-8").write("\n".join(out) + "\n")
+with open(os.path.join(root, "calls.log"), "a", encoding="utf-8") as log:
+    log.write("groupmod " + " ".join(args) + "\n")

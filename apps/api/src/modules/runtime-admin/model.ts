@@ -7,10 +7,20 @@ const fallbackModel = t.Object({
 
 export const AgentRuntimeDefaultsResponse = t.Object({
   fallbackModels: t.Array(fallbackModel),
+  sessionRetentionDays: t.Nullable(t.Number()),
 });
 
 export const agentRuntimeDefaultsBody = t.Object({
   fallbackModels: t.Optional(t.Array(fallbackModel, { maxItems: 8 })),
+  sessionRetentionDays: t.Optional(
+    t.Nullable(
+      t.Integer({
+        minimum: 7,
+        maximum: 3650,
+        description: 'Days Hermes keeps ended sessions; null keeps its own 90.',
+      }),
+    ),
+  ),
 });
 
 const versionRef = t.Object({

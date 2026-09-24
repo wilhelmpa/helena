@@ -18,7 +18,7 @@ export type RuntimeActionInput = typeof createRuntimeActionBody.static;
 export type LearnedSkill = typeof learnedSkill.static;
 export type RuntimeActionResult = typeof runtimeActionResult.static;
 type RuntimeActionSnapshot = typeof runtimeActionSnapshot.static;
-type ActionKind = RuntimeActionInput['kind'];
+type ActionKind = RuntimeActionInput['kind'] | 'rewrite-profile';
 
 export interface RuntimeActionRow {
   id: number;
@@ -44,6 +44,7 @@ function toRow(row: StoredAction): RuntimeActionRow {
 }
 
 function toSnapshot(row: StoredAction): RuntimeActionSnapshot {
+  if (row.kind === 'rewrite-profile') return { id: row.id, kind: 'rewrite-profile' };
   const payload = row.payload as { pinned?: boolean; content?: string; baseSha256?: string };
   if (row.kind === 'pin-skill') {
     return { id: row.id, kind: 'pin-skill', path: row.target, pinned: payload.pinned === true };

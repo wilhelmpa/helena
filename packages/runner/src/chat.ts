@@ -5,6 +5,8 @@ import { execute, modelProvider } from './execute';
 import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
 import { SpendReader } from './spend';
+import { withInstructions } from './run';
+import { runModelReport, type RuntimeAdapter } from './runtime';
 
 // The command is the same one that handles a queued run; what differs is that its output
 // is reported while it is still being written, so the person waiting in the chat reads the
@@ -31,6 +33,7 @@ export async function answer(
   message: ChatMessage,
   stop: AbortController,
   hermes: HermesRunSettings | null,
+  runtimeAdapter: RuntimeAdapter | null = null,
 ): Promise<void> {
   // Reported once: repeating it on every batch is a field the server has to ignore.
   let reported = message.sessionId !== null;
@@ -54,10 +57,10 @@ export async function answer(
     config.command ? null : (config.agent ?? null),
   );
   const outcome = await execute(
-    config,
+    { ...config, args: [...config.args, ...(hermes?.args ?? [])] },
     {
       prompt: message.prompt,
-      systemPrompt: message.systemPrompt,
+      systemPrompt: withInstructions(hermes?.instructions, message.systemPrompt, message.sessionId),
       sessionId: message.sessionId,
       model: message.model,
       thinkingLevel: message.thinkingLevel,
@@ -65,6 +68,8 @@ export async function answer(
       image: message.images?.[0] ?? null,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
+        // No run: the header Helena's MCP server gets it in stays empty.
+        ITSAPLAN_RUN_ID: '',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
         ITSAPLAN_THREAD_ID: message.threadId,
         ITSAPLAN_MESSAGE_ID: String(message.id),
@@ -91,6 +96,12 @@ export async function answer(
   if (uses.length > 0) {
     await client.reportLoginUses({ messageId: message.id }, uses).catch(() => {});
   }
+  const runtime = await runModelReport(
+    runtimeAdapter,
+    { model: message.model, reasoning: message.thinkingLevel },
+    outcome.sessionId ?? stream.startedSession() ?? message.sessionId ?? undefined,
+    stream.model(),
+  );
   // The context size is read after the stream is closed, which is where the last line of
   // the output is parsed. An answer that failed reports it too: what the command read
   // before it broke is still the size of its session's context.
@@ -101,6 +112,7 @@ export async function answer(
       usage: stream.contextUsage(),
       spend: spent,
       ...(stream.model() && { model: stream.model()! }),
+      ...(runtime && { runtime }),
     });
     return;
   }
@@ -123,5 +135,6 @@ export async function answer(
     usage: stream.contextUsage(),
     spend: spent,
     ...(stream.model() && { model: stream.model()! }),
+    ...(runtime && { runtime }),
   });
 }
