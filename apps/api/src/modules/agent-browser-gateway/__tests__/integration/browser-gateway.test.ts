@@ -279,6 +279,40 @@ describe('browser gateway', () => {
     expect(res.status).toBe(404);
   });
 
+  it('gives a login code through a project grant, and only in that project', async () => {
+    const { asOwner, mkt } = await setup();
+    const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const cred = (
+      await credentials(asOwner, mkt.teamId).post({
+        kind: 'web_login',
+        label: 'GitHub',
+        loginUrl: 'https://github.com/login',
+        allowedDomains: [],
+        username: 'bot@example.com',
+        password: 'fake-password',
+        totpSecret: TOTP,
+      })
+    ).data!;
+    await credential(asOwner, mkt.teamId, cred.id).grants.put({
+      grants: [{ projectId: mkt.id }],
+    });
+    const code = (projectSlug: string) =>
+      internal('/internal/browser-gateway/login-code', {
+        agentKey: apiKey,
+        credentialId: cred.id,
+        frameOrigin: 'https://github.com',
+        projectSlug,
+        via: projectSlug,
+      });
+    const granted = await code('mkt');
+    expect(granted.status).toBe(200);
+    expect(await granted.text()).not.toContain(TOTP);
+
+    // A second project the agent does not work in is refused before any lookup.
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    expect((await code('ops')).status).toBe(403);
+  });
+
   it('records a non-credential tool call in the audit trail, without any value', async () => {
     const { asOwner, mkt } = await setup();
     const { agent, apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');

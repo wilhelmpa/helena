@@ -24,7 +24,7 @@ import { API_KEY_MAX_NAME_LENGTH, auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { getCredentialById } from '../integrations/service';
 import { integrationKind } from '../integrations/catalog';
-import { encryptSecret, decryptSecret } from '@repo/crypto';
+import { encryptSecret, decryptSecret, secretContext } from '@repo/crypto';
 import { normalizeToolKeys, ALWAYS_ON_ACTIONS } from './runtime/tools/catalog';
 import { deleteThreadsWhere } from './runtime/memory';
 import { listAgentMemberFieldIds } from '#modules/custom-fields/service';
@@ -1191,7 +1191,7 @@ async function setAgentProjects(agent: AiAgentRow, projectIds: number[]): Promis
 // Saves an internal agent's key secret, encrypted at rest, so its runtime can replay
 // it on every tool call.
 async function storeAgentKey(agentId: number, apiKey: string): Promise<void> {
-  const enc = encryptSecret(apiKey);
+  const enc = encryptSecret(apiKey, secretContext('ai_agent', agentId, 'api_key'));
   await db
     .update(aiAgent)
     .set({ apiKeyCiphertext: enc.ciphertext, apiKeyIv: enc.iv, apiKeyAuthTag: enc.authTag })
@@ -1214,7 +1214,10 @@ async function readAgentKey(agentId: number): Promise<string | null> {
     .where(eq(aiAgent.id, agentId));
   const row = rows[0];
   if (!row?.ciphertext || !row.iv || !row.authTag) return null;
-  return decryptSecret({ ciphertext: row.ciphertext, iv: row.iv, authTag: row.authTag });
+  return decryptSecret(
+    { ciphertext: row.ciphertext, iv: row.iv, authTag: row.authTag },
+    secretContext('ai_agent', agentId, 'api_key'),
+  );
 }
 
 // The API key an internal agent authenticates its own tool calls with, provisioning

@@ -1,6 +1,6 @@
 import { useRouter } from 'next/navigation';
 import {
-  AtSign,
+  KeyRound,
   Bell,
   Building2,
   Code2,
@@ -20,8 +20,7 @@ import { useSession } from '@/lib/auth-client';
 import {
   aiAgentsPath,
   aiTeamPath,
-  connectionsPath,
-  mailAccountsPath,
+  accessRootPath,
   dashboardsPath,
   filesPath,
   codePath,
@@ -135,8 +134,13 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
     }
     add('nav.mcp', t('mcpServer'), <Server />, mcpServerPath(key), 'model context protocol');
   } else {
-    add('nav.connections', t('connections'), <Server />, connectionsPath(), 'accounts health');
-    add('nav.mail-accounts', t('mailAccounts'), <AtSign />, mailAccountsPath(), 'mail imap smtp');
+    add(
+      'nav.access',
+      t('access'),
+      <KeyRound />,
+      accessRootPath(),
+      'credentials logins google gmail mail imap smtp ssh keys connections accounts health',
+    );
   }
 
   add(

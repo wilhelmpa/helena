@@ -385,7 +385,14 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   return {
     id: row.id,
     trigger: row.trigger,
-    prompt: row.sessionId && !row.continuation ? RESUME_PROMPT : framePrompt(forPrompt),
+    // A workspace job (a clone) is for the runner itself: its prompt is the job as it was
+    // queued, never framed for a model.
+    prompt:
+      row.trigger === 'workspace'
+        ? row.prompt
+        : row.sessionId && !row.continuation
+          ? RESUME_PROMPT
+          : framePrompt(forPrompt),
     systemPrompt:
       buildSystemPrompt(
         agent,

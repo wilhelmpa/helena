@@ -1,5 +1,7 @@
 import { db, gitManagedRepository, gitProviderConnection } from '@repo/db';
-import { decryptSecret, encryptSecret } from '@repo/crypto';
+import { decryptSecret, encryptSecret, secretContext } from '@repo/crypto';
+
+const tokenContext = (id: number) => secretContext('git_provider_connection', id, 'token');
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import {
@@ -87,6 +89,7 @@ async function managedDevelopmentRepository(
 ): Promise<ManagedDevelopmentRepository> {
   const [row] = await db
     .select({
+      connectionId: gitProviderConnection.id,
       provider: gitProviderConnection.provider,
       baseUrl: gitProviderConnection.baseUrl,
       ciphertext: gitProviderConnection.ciphertext,
@@ -113,7 +116,11 @@ async function managedDevelopmentRepository(
   if (row.provider !== 'github' && row.provider !== 'gitlab')
     throw new HttpError(400, 'Creating and linking pull requests supports GitHub and GitLab');
   return {
-    input: { provider: row.provider, baseUrl: row.baseUrl, token: decryptSecret(row) },
+    input: {
+      provider: row.provider,
+      baseUrl: row.baseUrl,
+      token: decryptSecret(row, tokenContext(row.connectionId)),
+    },
     repository: {
       externalId: row.externalId,
       fullName: row.fullName,
@@ -255,7 +262,7 @@ async function connectionSecret(id: number, projectId: number): Promise<Connecti
   return {
     provider: row.provider as GitProvider,
     baseUrl: row.baseUrl,
-    token: decryptSecret(row),
+    token: decryptSecret(row, tokenContext(row.id)),
   };
 }
 
@@ -275,20 +282,29 @@ export async function connectGitProvider(
   if (!token) throw new HttpError(400, 'token is required');
   const baseUrl = await normalizeProviderBaseUrl(input.provider, input.baseUrl);
   const accountLogin = await getProviderAccount({ provider: input.provider, baseUrl, token });
-  const encrypted = encryptSecret(token);
-  const rows = await db
-    .insert(gitProviderConnection)
-    .values({ projectId, provider: input.provider, baseUrl, accountLogin, ...encrypted })
-    .onConflictDoUpdate({
-      target: [
-        gitProviderConnection.projectId,
-        gitProviderConnection.provider,
-        gitProviderConnection.baseUrl,
-        gitProviderConnection.accountLogin,
-      ],
-      set: { accountLogin, ...encrypted, updatedAt: new Date() },
-    })
-    .returning({ id: gitProviderConnection.id });
+  // The token is sealed to its row, whose id the upsert only tells afterwards: the row is
+  // written with a placeholder and sealed right after, in one transaction.
+  const placeholder = encryptSecret('');
+  const rows = await db.transaction(async (tx) => {
+    const stored = await tx
+      .insert(gitProviderConnection)
+      .values({ projectId, provider: input.provider, baseUrl, accountLogin, ...placeholder })
+      .onConflictDoUpdate({
+        target: [
+          gitProviderConnection.projectId,
+          gitProviderConnection.provider,
+          gitProviderConnection.baseUrl,
+          gitProviderConnection.accountLogin,
+        ],
+        set: { accountLogin, ...placeholder, updatedAt: new Date() },
+      })
+      .returning({ id: gitProviderConnection.id });
+    await tx
+      .update(gitProviderConnection)
+      .set(encryptSecret(token, tokenContext(stored[0]!.id)))
+      .where(eq(gitProviderConnection.id, stored[0]!.id));
+    return stored;
+  });
   const connections = await listGitProviderConnections(projectId);
   const connection = connections.find((item) => item.id === rows[0]?.id);
   if (!connection) throw new HttpError(500, 'Provider connection was not stored');
@@ -473,6 +489,7 @@ export async function postPullRequestLinkback(
 ): Promise<boolean> {
   const [row] = await db
     .select({
+      connectionId: gitProviderConnection.id,
       provider: gitProviderConnection.provider,
       baseUrl: gitProviderConnection.baseUrl,
       ciphertext: gitProviderConnection.ciphertext,
@@ -500,7 +517,7 @@ export async function postPullRequestLinkback(
     {
       provider,
       baseUrl: row.baseUrl,
-      token: decryptSecret(row),
+      token: decryptSecret(row, tokenContext(row.connectionId)),
     },
     {
       externalId: row.externalId,

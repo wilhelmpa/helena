@@ -37,6 +37,11 @@ export function assertLoginMethod(runtime: string, method: string): void {
 }
 export type CredentialKind = (typeof CREDENTIAL_KINDS)[number];
 
+// What the page lists: the credentials above, and the MCP servers signed in with OAuth
+// (connectors/mcp-oauth.ts), which are made through their own sign-in.
+export const LISTED_KINDS = [...CREDENTIAL_KINDS, 'mcp_oauth'] as const;
+export type ListedKind = (typeof LISTED_KINDS)[number];
+
 export function isCredentialKind(key: string): key is CredentialKind {
   return (CREDENTIAL_KINDS as readonly string[]).includes(key);
 }
@@ -48,7 +53,8 @@ export const SECRET_FIELDS = {
   ssh_key: ['privateKey'],
   secret: ['value'],
   runtime_login: ['value'],
-} as const satisfies Record<CredentialKind, readonly string[]>;
+  mcp_oauth: ['tokens', 'client'],
+} as const satisfies Record<ListedKind, readonly string[]>;
 
 // The fields a request may set for each kind. An ssh_key's keys are generated.
 const INPUT_FIELDS: Record<CredentialKind, readonly string[]> = {

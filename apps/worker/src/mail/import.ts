@@ -21,7 +21,7 @@ import {
   type ParsedMessage,
 } from '@repo/mail';
 import { putObject } from '@repo/storage';
-import { and, eq, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import {
   addLocation,
   messageIdsOf,
@@ -39,6 +39,9 @@ export interface ImportTarget {
   internalDate?: Date;
   // A message that arrived in the inbox after its first complete import.
   newInboxMail: boolean;
+  // The server's own thread id (Gmail's X-GM-THRID, or THREADID of RFC 8474), when it
+  // reports one.
+  serverThreadId?: string | null;
 }
 
 // Stores one message and returns its row id. A message already stored for the account
@@ -65,7 +68,7 @@ async function storeMessage(
 ): Promise<number> {
   const rawKey = `mail/${account.id}/${sha256(raw)}.eml`;
   await putObject(rawKey, raw, 'message/rfc822');
-  const thread = await resolveThread(account, parsed);
+  const thread = await resolveThread(account, parsed, target.serverThreadId ?? null);
   const files = await writeAttachments(await projectKeyOf(thread.projectId), parsed);
   return db.transaction(async (tx) => {
     const [row] = await tx
@@ -130,25 +133,41 @@ async function storeMessage(
   });
 }
 
-// The thread of the parent when the parent is stored, else the thread named by the
-// root of References. A new thread starts in the project a routing rule names, or in
-// the account's project.
+// The thread of a message. The server's own thread id wins where it reports one (Gmail's
+// X-GM-THRID, RFC 8474 THREADID): Gmail threads by subject too, which headers cannot
+// show. Otherwise the thread of the nearest stored ancestor (In-Reply-To, then References
+// from the last to the first, as JWZ threading reads them), else the thread named by the
+// root of References. A new thread starts in the project a routing rule names, or in the
+// account's project.
 async function resolveThread(
   account: Pick<SyncAccount, 'id' | 'teamId' | 'projectId' | 'address'>,
   parsed: ParsedMessage,
+  serverThreadId: string | null,
 ): Promise<{ id: number; projectId: number | null }> {
   const columns = { id: mailThread.id, projectId: mailThread.projectId };
-  if (parsed.inReplyTo) {
-    const [parent] = await db
-      .select(columns)
-      .from(mailMessage)
-      .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
-      .where(
-        and(eq(mailMessage.accountId, account.id), eq(mailMessage.messageId, parsed.inReplyTo)),
-      );
-    if (parent) return parent;
+  if (!serverThreadId) {
+    const ancestors = [
+      ...new Set(
+        [parsed.inReplyTo, ...[...parsed.references].reverse()].filter(
+          (id): id is string => Boolean(id) && id !== parsed.messageId,
+        ),
+      ),
+    ];
+    if (ancestors.length > 0) {
+      const stored = await db
+        .select({ ...columns, messageId: mailMessage.messageId })
+        .from(mailMessage)
+        .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
+        .where(
+          and(eq(mailMessage.accountId, account.id), inArray(mailMessage.messageId, ancestors)),
+        );
+      for (const ancestor of ancestors) {
+        const found = stored.find((row) => row.messageId === ancestor);
+        if (found) return { id: found.id, projectId: found.projectId };
+      }
+    }
   }
-  const threadKey = threadKeyOf(parsed);
+  const threadKey = serverThreadId ? `thread:${serverThreadId}` : threadKeyOf(parsed);
   const byKey = () =>
     db
       .select(columns)

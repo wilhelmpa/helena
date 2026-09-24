@@ -1,5 +1,6 @@
 import connections from '../../messages/en/connections.json';
 import credentials from '../../messages/en/credentials.json';
+import access from '../../messages/en/access.json';
 import organization from '../../messages/en/organization.json';
 import account from '../../messages/en/account.json';
 import agentActivity from '../../messages/en/agentActivity.json';
@@ -91,6 +92,7 @@ const defaultMessages = {
   organization,
   connections,
   credentials,
+  access,
   agentActivity,
   agentRuntime,
   browserGateway,

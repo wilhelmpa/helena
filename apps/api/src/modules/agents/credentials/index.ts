@@ -10,7 +10,9 @@ import { runnerAuth } from '../runner-auth';
 import {
   CredentialEntryPageResponse,
   CredentialEntryResponse,
+  CredentialGrantsResponse,
   CredentialUsePageResponse,
+  SshKeysResponse,
   WebLoginsResponse,
   chatWorkParams,
   createCredentialEntryBody,
@@ -32,7 +34,14 @@ import {
   setCredentialGrants,
   updateCredentialEntry,
 } from './service';
-import { claimedWork, deliverWebLogins, recordWebLoginUses, workRefOf } from './delivery';
+import {
+  claimedWork,
+  deliverSshKeys,
+  deliverWebLogins,
+  recordWebLoginUses,
+  workRefOf,
+} from './delivery';
+import { recordOwnerChange } from './audit';
 
 function found<T>(entry: T | null): T {
   if (!entry) throw new HttpError(404, 'Credential not found');
@@ -77,9 +86,11 @@ export const credentialRoutes = new Elysia({
 
   .post(
     '/teams/:teamId/credentials',
-    async ({ membership, body, set }) => {
+    async ({ membership, body, set, user }) => {
       set.status = 201;
-      return createCredentialEntry(membership.teamId, body);
+      const entry = await createCredentialEntry(membership.teamId, body);
+      await recordOwnerChange(membership.teamId, entry.id, user, 'created');
+      return entry;
     },
     {
       params: teamParams,
@@ -97,8 +108,13 @@ export const credentialRoutes = new Elysia({
 
   .patch(
     '/teams/:teamId/credentials/:credentialId',
-    async ({ params, membership, body }) =>
-      found(await updateCredentialEntry(params.credentialId, membership.teamId, body)),
+    async ({ params, membership, body, user }) => {
+      const entry = found(
+        await updateCredentialEntry(params.credentialId, membership.teamId, body),
+      );
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'edited');
+      return entry;
+    },
     {
       params: credentialEntryParams,
       body: updateCredentialEntryBody,
@@ -116,7 +132,9 @@ export const credentialRoutes = new Elysia({
 
   .delete(
     '/teams/:teamId/credentials/:credentialId',
-    async ({ params, membership }) => {
+    async ({ params, membership, user }) => {
+      // Written first: the entry keeps the label after the credential is gone.
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'deleted');
       if (!(await deleteCredentialEntry(params.credentialId, membership.teamId))) {
         throw new HttpError(404, 'Credential not found');
       }
@@ -135,26 +153,39 @@ export const credentialRoutes = new Elysia({
 
   .put(
     '/teams/:teamId/credentials/:credentialId/grants',
-    async ({ params, membership, body }) =>
-      found(await setCredentialGrants(params.credentialId, membership.teamId, body.agentIds)),
+    async ({ params, membership, body, user }) => {
+      if ((body.agentIds === undefined) === (body.grants === undefined)) {
+        throw new HttpError(400, 'Send either agentIds or grants.');
+      }
+      const grants = body.grants ?? (body.agentIds ?? []).map((agentId) => ({ agentId }));
+      const result = found(
+        await setCredentialGrants(params.credentialId, membership.teamId, grants),
+      );
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'grants');
+      return { grants: result };
+    },
     {
       params: credentialEntryParams,
       body: setCredentialGrantsBody,
       teamManager: true,
-      response: { 200: CredentialEntryResponse, ...commonErrors },
+      response: { 200: CredentialGrantsResponse, ...commonErrors },
       detail: {
-        summary: 'Grant a credential to agents',
+        summary: 'Grant a credential',
         description:
-          'Replace the agents that may use a credential. Every agent has to run in Hermes ' +
-          'and, for a credential limited to a project, work in that project.',
+          'Replace who may use a credential or connector account: agents, or every agent ' +
+          'of a project, optionally for one service and read-only. Every agent has to run ' +
+          'in a runner and, for a credential limited to a project, work in that project.',
       },
     },
   )
 
   .post(
     '/teams/:teamId/credentials/:credentialId/ssh-key',
-    async ({ params, membership }) =>
-      found(await regenerateSshKey(params.credentialId, membership.teamId)),
+    async ({ params, membership, user }) => {
+      const entry = found(await regenerateSshKey(params.credentialId, membership.teamId));
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'new-key');
+      return entry;
+    },
     {
       params: credentialEntryParams,
       teamManager: true,
@@ -170,7 +201,9 @@ export const credentialRoutes = new Elysia({
     '/teams/:teamId/credentials/:credentialId/uses',
     async ({ params, membership, query }) => {
       found(await getCredentialEntry(params.credentialId, membership.teamId));
-      return paginate(query, (window) => listCredentialUses(params.credentialId, window));
+      return paginate(query, (window) =>
+        listCredentialUses(membership.teamId, params.credentialId, window),
+      );
     },
     {
       params: credentialEntryParams,
@@ -222,6 +255,44 @@ export const credentialRoutes = new Elysia({
         description:
           'The web logins granted to the calling agent, for the chat answer the caller ' +
           'holds under a live lease.',
+      },
+    },
+  )
+
+  .get(
+    '/agent-runs/:runId/ssh-keys',
+    async ({ agent, params, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      const work = await claimedWork(agent.id, { runId: params.runId });
+      return { keys: await deliverSshKeys(agent, work) };
+    },
+    {
+      runnerAgent: true,
+      params: runWorkParams,
+      response: { 200: SshKeysResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the SSH keys of a claimed run',
+        description:
+          'The SSH keys granted to the calling agent (or its project) for git, and the key ' +
+          'of a clone job. Only for a run the caller holds under a live lease.',
+      },
+    },
+  )
+
+  .get(
+    '/agent-chats/:messageId/ssh-keys',
+    async ({ agent, params, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      const work = await claimedWork(agent.id, { messageId: params.messageId });
+      return { keys: await deliverSshKeys(agent, work) };
+    },
+    {
+      runnerAgent: true,
+      params: chatWorkParams,
+      response: { 200: SshKeysResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the SSH keys of a claimed chat answer',
+        description: 'The SSH keys granted to the calling agent, for git.',
       },
     },
   )

@@ -5,22 +5,22 @@ import {
   integrationCredential,
   integrationCredentialGrant,
   integrationCredentialUse,
-  projectMember,
+  openCredential,
   user,
 } from '@repo/db';
-import { and, eq, gt, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
-import { decryptSecret } from '@repo/crypto';
+import { and, eq, gt, inArray, isNotNull, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import type { RunnerAgent } from '../runner/service';
 import { mcpSecretServers } from '../mcp-servers/service';
 import { loginOrigins } from './kinds';
+import { credentialInScope, grantReaches, type GrantSubject } from './grants';
 
 // What an agent's runner receives for the run or chat answer it holds, and the audit log
 // entries that receiving and using a credential writes.
 
 export type WorkRef = { runId: number } | { messageId: number };
 
-interface ClaimedWork {
+export interface ClaimedWork {
   runId: number | null;
   chatMessageId: number | null;
   // The project of a run. A chat answer has none.
@@ -71,11 +71,22 @@ export async function claimedWork(agentId: number, ref: WorkRef): Promise<Claime
   return { runId: null, chatMessageId: message.id, projectId: null };
 }
 
-async function record(
-  agent: RunnerAgent,
-  work: ClaimedWork,
-  action: 'delivered' | 'used',
-  entries: { credentialId: number; label: string; purpose: string }[],
+export type UseAction = 'delivered' | 'used' | 'called' | 'denied' | 'approval' | 'changed';
+
+export interface UseEntry {
+  credentialId: number;
+  label: string;
+  purpose: string;
+  category?: string | null;
+}
+
+// Writes audit log entries for an agent. The agent's name is copied, so an entry outlives
+// the agent.
+export async function recordAgentUses(
+  agent: Pick<RunnerAgent, 'id' | 'teamId' | 'userId' | 'username'>,
+  work: Pick<ClaimedWork, 'runId' | 'chatMessageId'>,
+  action: UseAction,
+  entries: UseEntry[],
 ): Promise<void> {
   if (entries.length === 0) return;
   const [row] = await db.select({ name: user.name }).from(user).where(eq(user.id, agent.userId));
@@ -89,21 +100,19 @@ async function record(
       runId: work.runId,
       chatMessageId: work.chatMessageId,
       action,
-      purpose: entry.purpose,
+      category: entry.category ?? null,
+      purpose: entry.purpose.slice(0, 500),
     })),
   );
 }
 
-// A credential limited to a project reaches a run in that project, and a chat answer of
-// an agent that works there.
-function inScope(agent: RunnerAgent, work: ClaimedWork) {
-  const projectId = integrationCredential.projectId;
-  return or(
-    isNull(projectId),
-    work.projectId !== null
-      ? eq(projectId, work.projectId)
-      : sql`exists (select 1 from ${projectMember} where ${projectMember.projectId} = ${projectId} and ${projectMember.userId} = ${agent.userId})`,
-  );
+const record = recordAgentUses;
+
+export function subjectOf(
+  agent: Pick<RunnerAgent, 'id' | 'userId'>,
+  work: ClaimedWork,
+): GrantSubject {
+  return { agentId: agent.id, userId: agent.userId, projectId: work.projectId };
 }
 
 export interface DeliveredLogin {
@@ -131,18 +140,12 @@ export async function deliverWebLogins(
       authTag: integrationCredential.authTag,
     })
     .from(integrationCredential)
-    .innerJoin(
-      integrationCredentialGrant,
-      and(
-        eq(integrationCredentialGrant.credentialId, integrationCredential.id),
-        eq(integrationCredentialGrant.agentId, agent.id),
-      ),
-    )
     .where(
       and(
         eq(integrationCredential.teamId, agent.teamId),
         eq(integrationCredential.integrationKey, 'web_login'),
-        inScope(agent, work),
+        credentialInScope(subjectOf(agent, work)),
+        sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subjectOf(agent, work))})`,
       ),
     )
     .orderBy(integrationCredential.id);
@@ -152,7 +155,7 @@ export async function deliverWebLogins(
       allowedDomains?: string[];
       username: string;
     };
-    const secrets = JSON.parse(decryptSecret(row)) as { password: string; totpSecret?: string };
+    const secrets = JSON.parse(openCredential(row)) as { password: string; totpSecret?: string };
     return {
       id: row.id,
       label: row.label ?? '',
@@ -188,17 +191,11 @@ export async function recordWebLoginUses(
   const granted = await db
     .select({ id: integrationCredential.id, label: integrationCredential.label })
     .from(integrationCredential)
-    .innerJoin(
-      integrationCredentialGrant,
-      and(
-        eq(integrationCredentialGrant.credentialId, integrationCredential.id),
-        eq(integrationCredentialGrant.agentId, agent.id),
-      ),
-    )
     .where(
       and(
         inArray(integrationCredential.id, ids),
         eq(integrationCredential.integrationKey, 'web_login'),
+        sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subjectOf(agent, work))})`,
       ),
     );
   const labels = new Map(granted.map((row) => [row.id, row.label ?? '']));
@@ -241,4 +238,81 @@ export async function recordMcpSecretDelivery(
       purpose: `MCP server ${(servers.get(row.id) ?? []).join(', ')}`.trim(),
     })),
   );
+}
+
+export interface DeliveredSshKey {
+  id: number;
+  label: string;
+  updatedAt: string;
+  privateKey: string;
+}
+
+// The key a workspace job (a clone) was started with, which its run receives whatever the
+// agent's standing grants are: the owner picked it for this one job.
+async function workspaceJobKey(work: ClaimedWork): Promise<number | null> {
+  if (work.runId === null) return null;
+  const [run] = await db
+    .select({ trigger: agentRun.trigger, prompt: agentRun.prompt })
+    .from(agentRun)
+    .where(eq(agentRun.id, work.runId));
+  if (run?.trigger !== 'workspace') return null;
+  try {
+    const job = JSON.parse(run.prompt) as { credentialId?: unknown };
+    return typeof job.credentialId === 'number' ? job.credentialId : null;
+  } catch {
+    return null;
+  }
+}
+
+// The SSH keys the agent's runner writes for git before the run or chat answer: the ones
+// granted to the agent or its project, and the key of a workspace job.
+export async function deliverSshKeys(
+  agent: RunnerAgent,
+  work: ClaimedWork,
+): Promise<DeliveredSshKey[]> {
+  const subject = subjectOf(agent, work);
+  const jobKey = await workspaceJobKey(work);
+  const granted = sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subject)})`;
+  const rows = await db
+    .select({
+      id: integrationCredential.id,
+      label: integrationCredential.label,
+      updatedAt: integrationCredential.updatedAt,
+      ciphertext: integrationCredential.ciphertext,
+      iv: integrationCredential.iv,
+      authTag: integrationCredential.authTag,
+    })
+    .from(integrationCredential)
+    .where(
+      and(
+        eq(integrationCredential.teamId, agent.teamId),
+        eq(integrationCredential.integrationKey, 'ssh_key'),
+        credentialInScope(subject),
+        jobKey === null ? granted : sql`(${granted} or ${integrationCredential.id} = ${jobKey})`,
+      ),
+    )
+    .orderBy(integrationCredential.id);
+  const keys = rows.flatMap((row): DeliveredSshKey[] => {
+    const secrets = JSON.parse(openCredential(row)) as { privateKey?: string };
+    if (!secrets.privateKey) return [];
+    return [
+      {
+        id: row.id,
+        label: row.label ?? '',
+        updatedAt: row.updatedAt.toISOString(),
+        privateKey: secrets.privateKey,
+      },
+    ];
+  });
+  await record(
+    agent,
+    work,
+    'delivered',
+    keys.map((key) => ({
+      credentialId: key.id,
+      label: key.label,
+      purpose: key.id === jobKey ? 'git (SSH), clone job' : 'git (SSH)',
+    })),
+  );
+  return keys;
 }

@@ -75,10 +75,6 @@ curl --fail --silent http://172.30.254.1:18800/healthz
 
 Set `PROJECT_PROVISIONING_URL=http://172.30.254.1:18800/api/provision`. The worker reaches it over the dedicated internal `volition_control` Docker bridge. The service is not exposed through Cloudflare, the LAN, or a public bind; only the returned code and terminal URLs traverse the existing owner-authenticated Plan gateway.
 
-## Private Google MCP bridge
+## Google
 
-`google-bridge/server.mjs` is a host-local stdio MCP server for the legacy private mail and career triage jobs. legacy runtime starts it directly; it has no listening socket. The bridge invokes the existing owner-managed gog wrappers with `execFile`, never a shell, and exposes only bounded read operations for three fixed Gmail accounts plus the owner's primary calendar. Credentials remain in the host gog profile.
-
-The live MCP surface is exactly `gmail_thread_get`, `gmail_search`, `gmail_attachment_metadata`, and `calendar_list`. It has no Gmail mutation, attachment download, calendar write, attendee, invitation, send, delete, or generic command tool. The unattended career job records a calendar proposal in Helena for later owner review. Its model cannot create its own approval.
-
-Install dependencies with `npm ci --ignore-scripts`, run `npm test`, then register the server through `hermes mcp add` using absolute paths. Probe the saved server and verify an empty diagnostics list before granting exact tool IDs to an agent. The production IDs are prefixed `google-private__`; only the mail tools belong to `itsaplan-inbox`, and only `calendar_list` belongs to `karriere-triage`.
+Agents reach Google accounts through the access center's connector tools in Helena (Zugänge & Verbindungen → Google), with grants, approvals and an audit log. The former stdio bridge over the gog wrappers is gone.

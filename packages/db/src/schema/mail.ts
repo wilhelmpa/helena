@@ -40,11 +40,15 @@ const tsvector = customType<{ data: string }>({ dataType: () => 'tsvector' });
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 
-// A mailbox Plan imports and sends through. project_id NULL makes it a Home account.
-// The password is a 'secret' credential of the credential store (credential_id), so the
-// Credentials page lists it with every other secret; without one the account is idle.
-// sync_status is written by the worker: 'importing' until every folder is imported
-// once, 'synced' after, 'error' with sync_error while it cannot connect.
+// A mailbox Helena imports and sends through. project_id NULL makes it a Home account.
+// With auth 'password' the password is a 'secret' credential of the credential store
+// (credential_id), so the access center lists it with every other secret. With auth
+// 'xoauth2' the mailbox is the Mail service of a connector account (credential_id is the
+// Google account) and signs in with that account's OAuth access token. Without a
+// credential the account is idle. sync_status is written by the worker: 'importing' until
+// every folder is imported once, 'synced' after, 'error' with sync_error while it cannot
+// connect. fetch_days is the fetch window: only mail of the last fetch_days days is
+// imported, and older imported copies are pruned; null imports everything.
 export const mailAccount = pgTable(
   'mail_account',
   {
@@ -65,6 +69,12 @@ export const mailAccount = pgTable(
     credentialId: integer('credential_id').references(() => integrationCredential.id, {
       onDelete: 'set null',
     }),
+    auth: text('auth').notNull().default('password'),
+    fetchDays: integer('fetch_days').default(30),
+    // When the worker last pruned mail older than the fetch window.
+    prunedAt: timestamp('pruned_at', { withTimezone: true }),
+    // Set by "Zurücksetzen": the worker wipes the imported copies and imports again.
+    resetRequestedAt: timestamp('reset_requested_at', { withTimezone: true }),
     enabled: boolean('enabled').notNull().default(true),
     syncTrash: boolean('sync_trash').notNull().default(false),
     syncSpam: boolean('sync_spam').notNull().default(false),
@@ -80,6 +90,11 @@ export const mailAccount = pgTable(
     check(
       'mail_account_sync_status_check',
       sql`${t.syncStatus} IN ('idle', 'importing', 'synced', 'error')`,
+    ),
+    check('mail_account_auth_check', sql`${t.auth} IN ('password', 'xoauth2')`),
+    check(
+      'mail_account_fetch_days_check',
+      sql`${t.fetchDays} IS NULL OR ${t.fetchDays} BETWEEN 1 AND 36500`,
     ),
     unique().on(t.teamId, t.address),
     index('mail_account_project_idx').on(t.projectId),

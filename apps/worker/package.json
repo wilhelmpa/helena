@@ -11,6 +11,7 @@
     "test": "bun test --env-file=../../.env.test"
   },
   "dependencies": {
+    "@helena/connectors": "workspace:*",
     "@helena/sdk": "workspace:*",
     "@repo/crypto": "workspace:*",
     "@repo/db": "workspace:*",

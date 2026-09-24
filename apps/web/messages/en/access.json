@@ -1,0 +1,202 @@
+{
+  "title": "Access & connections",
+  "tabs": {
+    "google": "Google",
+    "mail": "Mail",
+    "credentials": "Credentials",
+    "connections": "Connections",
+    "log": "Log"
+  },
+  "google": {
+    "connect": "Connect account",
+    "importClient": "Import OAuth client",
+    "empty": "No Google account yet",
+    "emptyHint": "Create an OAuth client of type “Desktop app” in Google Cloud, import its JSON file here, then connect each account. Mail, Calendar, Drive and the rest then work without app passwords.",
+    "emptyHintReady": "The OAuth client is in place. Now connect each Google account; mail, calendar, Drive and the rest then work without an app password.",
+    "clients": "OAuth clients",
+    "clientType": {
+      "installed": "Desktop",
+      "web": "Web"
+    },
+    "clientAccounts": "{count, plural, =0 {not used} one {# account} other {# accounts}}",
+    "deleteClient": "Delete OAuth client",
+    "deleteClientMessage": "Delete {name}? Accounts can no longer sign in with it.",
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
+    "engineHint": {
+      "helena": "Helena keeps the sign-in encrypted and calls Google with Google's own libraries.",
+      "gog": "The sign-in stays in gog's keyring on this server; Helena reaches it through the broker. No mailbox in the inbox."
+    },
+    "status": {
+      "ok": "Connected",
+      "needs_auth": "Sign in again",
+      "error": "Error",
+      "unknown": "Not checked"
+    },
+    "services": {
+      "mail": "Mail",
+      "calendar": "Calendar",
+      "drive": "Drive",
+      "docs": "Docs",
+      "sheets": "Sheets",
+      "contacts": "Contacts",
+      "tasks": "Tasks"
+    },
+    "mailbox": "Mailbox: last {days, plural, one {# day} other {# days}}",
+    "mailboxAll": "Mailbox: all mail",
+    "mailboxOff": "Mailbox off",
+    "check": "Check",
+    "checked": "{email} checked",
+    "editServices": "Services",
+    "signInAgain": "Sign in again",
+    "moveToHelena": "Move to Helena",
+    "remove": "Remove account",
+    "removeMessage": "Remove {email}? Agents lose access at once; the imported mail stays until you delete the mailbox.",
+    "removeFromGog": "Also remove the sign-in from gog",
+    "inGog": "In gog, not listed yet",
+    "inGogHint": "gog holds a sign-in for these accounts. Listing one moves no token.",
+    "adopt": "List",
+    "adopted": "{email} is listed",
+    "access": "Access"
+  },
+  "clientDialog": {
+    "title": "Import OAuth client",
+    "file": "Client file (JSON)",
+    "fileHint": "Google Cloud → APIs & Services → Credentials → OAuth client ID (Desktop app) → Download JSON.",
+    "paste": "Or paste its content",
+    "label": "Name",
+    "target": "Kept by",
+    "import": "Import",
+    "imported": "OAuth client imported",
+    "handedToGog": "The client was handed to gog"
+  },
+  "signIn": {
+    "title": "Connect Google account",
+    "againTitle": "Sign in to {email} again",
+    "moveTitle": "Move {email} to Helena",
+    "engine": "Sign-in kept by",
+    "client": "OAuth client",
+    "noClient": "Import an OAuth client first.",
+    "email": "Address",
+    "emailHint": "Needed for gog; for Helena Google preselects the account.",
+    "services": "Services",
+    "scope": "Belongs to",
+    "start": "Continue",
+    "open": "Sign in at Google",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "pasteStep": "After signing in, the browser ends on a page that does not load (127.0.0.1). Copy the full address of that page and paste it here.",
+    "callbackStep": "Sign in at Google; Helena finishes on its own and comes back here.",
+    "redirect": "Address of that page",
+    "finish": "Finish",
+    "connected": "{email} connected",
+    "removeFromGog": "Remove the sign-in from gog afterwards"
+  },
+  "servicesDialog": {
+    "title": "Services of {email}",
+    "hint": "A service switched off is not available to any agent.",
+    "needsSignIn": "needs a new sign-in",
+    "gogNoMail": "An account kept in gog has no mailbox in Helena. Move it to Helena for the inbox.",
+    "saved": "Services saved"
+  },
+  "mailbox": {
+    "fetchDays": "Fetch window in days",
+    "fetchDaysHint": "The first import fetches only this period; older imported copies are removed daily. The mail on the server stays.",
+    "fetchAll": "Fetch all mail",
+    "reset": "Reset",
+    "resetTitle": "Reset {address}?",
+    "resetMessage": "Every imported copy (messages, attachments, stored files) is deleted and the mailbox imports again within its fetch window. The mail on the server stays.",
+    "resetDone": "{address} imports again",
+    "resetPending": "Resetting",
+    "google": "Google account",
+    "googleHint": "Signs in with its Google account (no app password). Servers and login come from the account.",
+    "settingsTitle": "Mailbox {address}",
+    "saved": "{address} saved",
+    "gmailHint": "For Gmail, connect the Google account under Access & connections → Google instead: no app password needed."
+  },
+  "grants": {
+    "title": "Access to {name}",
+    "action": "Access",
+    "hint": "Grant it to single agents or to every agent of a project, for all services or one, to read only or to write as well. Sending, sharing and deleting still wait for your approval.",
+    "empty": "Nobody may use it yet.",
+    "add": "Add",
+    "who": "Who",
+    "projectSubject": "Everyone in {name}",
+    "agents": "Agents",
+    "projects": "Projects",
+    "service": "Service",
+    "allServices": "All services",
+    "access": {
+      "read": "Read",
+      "write": "Read & write"
+    },
+    "saved": "Access to {name} saved",
+    "count": "{count, plural, =0 {No access} one {# grant} other {# grants}}",
+    "remove": "Remove"
+  },
+  "log": {
+    "empty": "Nothing logged yet.",
+    "filter": "Entries",
+    "all": "All",
+    "actions": {
+      "delivered": "Handed over",
+      "used": "Used",
+      "called": "Called",
+      "denied": "Refused",
+      "approval": "Approval asked",
+      "changed": "Changed"
+    },
+    "owner": "Owner",
+    "run": "Run {id}",
+    "chat": "Chat",
+    "changes": {
+      "created": "Created",
+      "edited": "Edited",
+      "deleted": "Deleted",
+      "new-key": "New key pair",
+      "grants": "Access changed",
+      "signed-in": "Signed in",
+      "settings": "Settings changed",
+      "removed": "Removed",
+      "listed-from-gog": "Listed from gog",
+      "clone": "Repo cloned"
+    }
+  },
+  "clone": {
+    "action": "Clone repository",
+    "title": "Clone with {name}",
+    "hint": "The runner of an agent of the project clones the repository with this key into the area's folder of the workspace. The workspace repository then ignores it.",
+    "project": "Project",
+    "projectPlaceholder": "Choose a project",
+    "noProject": "No project yet: create one first.",
+    "area": "Area folder",
+    "workspaceRoot": "Workspace itself",
+    "url": "Repository",
+    "agent": "Runner",
+    "anyAgent": "Any agent of the project",
+    "start": "Clone",
+    "started": "{agent} clones {name}"
+  },
+  "mcp": {
+    "kind": "MCP server (OAuth)",
+    "kindPlural": "MCP servers (OAuth)",
+    "kindHint": "An MCP server that signs in with OAuth. Helena keeps the token; the MCP server library sends it as the Authorization header.",
+    "title": "Connect an MCP server",
+    "againTitle": "Sign in to {name} again",
+    "serverUrl": "Server address",
+    "label": "Name",
+    "scope": "Scopes (optional)",
+    "hint": "Helena finds the server's sign-in, registers itself and asks you to sign in. Then pick this connection as the Authorization header of the server under MCP servers.",
+    "open": "Sign in at the server",
+    "connected": "MCP server connected",
+    "signIn": "Sign in again",
+    "status": {
+      "ok": "Connected",
+      "needs_auth": "Sign in again",
+      "error": "Error",
+      "unknown": "Not signed in"
+    }
+  }
+}

@@ -13,7 +13,23 @@ export interface MailServerSettings {
   smtpPort: number;
   smtpTls: boolean;
   username: string;
-  password: string;
+  // A password, or an OAuth access token for SASL XOAUTH2 (a Google account's Mail
+  // service). One of the two is set.
+  password?: string;
+  accessToken?: string;
+}
+
+// The login for ImapFlow and Nodemailer: XOAUTH2 with the token when there is one.
+function imapAuth(settings: MailServerSettings) {
+  return settings.accessToken
+    ? { user: settings.username, accessToken: settings.accessToken }
+    : { user: settings.username, pass: settings.password ?? '' };
+}
+
+function smtpAuth(settings: MailServerSettings) {
+  return settings.accessToken
+    ? { type: 'OAuth2' as const, user: settings.username, accessToken: settings.accessToken }
+    : { user: settings.username, pass: settings.password ?? '' };
 }
 
 const TIMEOUT_MS = 20_000;
@@ -24,7 +40,7 @@ export function createImapClient(settings: MailServerSettings): ImapFlow {
     port: settings.imapPort,
     secure: settings.imapTls,
     doSTARTTLS: settings.imapTls ? undefined : true,
-    auth: { user: settings.username, pass: settings.password },
+    auth: imapAuth(settings),
     logger: false,
     connectionTimeout: TIMEOUT_MS,
     greetingTimeout: TIMEOUT_MS,
@@ -38,7 +54,7 @@ function smtpTransport(settings: MailServerSettings) {
     port: settings.smtpPort,
     secure: settings.smtpTls,
     requireTLS: !settings.smtpTls,
-    auth: { user: settings.username, pass: settings.password },
+    auth: smtpAuth(settings),
     connectionTimeout: TIMEOUT_MS,
     greetingTimeout: TIMEOUT_MS,
     socketTimeout: 60_000,
@@ -46,7 +62,7 @@ function smtpTransport(settings: MailServerSettings) {
 }
 
 // A connection problem as the owner can act on it; the server's own words when it
-// sent some, never the password or the stack.
+// sent some, never the password, the token or the stack.
 export function connectionError(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Connection failed';
   const value = error as {

@@ -24,9 +24,13 @@ import { HermesPolicyMaterializer, type ApplyOptions, type MaterializerContext }
 import { Redactor } from './redact';
 import { reflect } from './reflect';
 import { runtimeUpdate } from './update';
-import { perform } from './run';
+import { perform, reportUntilTaken, type Performed } from './run';
 import { runPolicyHook } from './policy-hook';
-import type { RuntimeAdapter } from './runtime';
+import type { RunSettings, RuntimeAdapter } from './runtime';
+import { applySshKeys, sshDir } from './ssh';
+import { parseWorkspaceJob, runWorkspaceJob } from './workspace-job';
+import type { Outcome } from './execute';
+import type { WorkRef } from './logins';
 
 // The runner holds no state — the queue is the server's. A runner stopped by its service
 // manager (SIGTERM) kills the commands in flight and hands their runs back, so they are
@@ -76,6 +80,58 @@ async function withHeartbeat<T>(log: Log, beat: () => Promise<void>, work: Promi
   }
 }
 
+// The SSH keys granted to the agent for this piece of work, written to its key directory,
+// as the environment git needs. A failure leaves git without keys rather than failing the
+// work: a task that needs no repository still runs.
+async function sshEnv(
+  config: RunnerConfig,
+  client: Client,
+  log: Log,
+  work: WorkRef,
+): Promise<Record<string, string>> {
+  try {
+    return await applySshKeys(sshDir(config), await client.sshKeys(work));
+  } catch (err) {
+    log(`ssh keys not delivered — ${err instanceof Error ? err.message : String(err)}`);
+    return {};
+  }
+}
+
+function withEnv(settings: RunSettings | null, env: Record<string, string>): RunSettings | null {
+  if (Object.keys(env).length === 0) return settings;
+  return {
+    toolsets: settings?.toolsets ?? null,
+    ...settings,
+    env: { ...settings?.env, ...env },
+  };
+}
+
+// Runs a workspace job (a clone) and reports it like a run's result.
+async function performWorkspaceJob(
+  config: RunnerConfig,
+  client: Client,
+  run: Run,
+  stop: AbortController,
+  env: Record<string, string>,
+  lost: AbortSignal,
+): Promise<Performed | null> {
+  let outcome: Outcome;
+  try {
+    outcome = await runWorkspaceJob(config, parseWorkspaceJob(run.prompt), env, stop.signal);
+  } catch (err) {
+    outcome = {
+      status: 'failed',
+      output: '',
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+  if (stop.signal.aborted) return null;
+  await reportUntilTaken(async () => {
+    await client.report(run.id, run.claim, outcome);
+  }, lost);
+  return { outcome, reflection: null };
+}
+
 // A cancel reaches the runner on the heartbeat, which aborts `stop` and so kills the
 // command. The heartbeat does the same for a run that is no longer this runner's, and
 // marks it `lost`, which also ends the reporting of a result. An answer to a heartbeat
@@ -99,7 +155,14 @@ async function handle(
   try {
     const hermes = stop.signal.aborted
       ? null
-      : ((await policy?.runSettings({ runId: run.id })) ?? null);
+      : withEnv(
+          (await policy?.runSettings({ runId: run.id })) ?? null,
+          await sshEnv(config, client, log, { runId: run.id }),
+        );
+    const work =
+      run.trigger === 'workspace'
+        ? performWorkspaceJob(config, client, run, stop, hermes?.env ?? {}, lost.signal)
+        : perform(config, client, run, stop, hermes, { lost: lost.signal, runtime: policy });
     const performed = stop.signal.aborted
       ? null
       : await withHeartbeat(
@@ -117,7 +180,7 @@ async function handle(
             lost.abort();
             stop.abort();
           },
-          perform(config, client, run, stop, hermes, { lost: lost.signal, runtime: policy }),
+          work,
         );
     if (performed) {
       const { outcome, reflection } = performed;
@@ -161,7 +224,10 @@ async function handleChat(
   log(`chat ${message.id}: answering`);
   const stop = new AbortController();
   try {
-    const hermes = (await policy?.runSettings({ messageId: message.id })) ?? null;
+    const hermes = withEnv(
+      (await policy?.runSettings({ messageId: message.id })) ?? null,
+      await sshEnv(config, client, log, { messageId: message.id }),
+    );
     await withHeartbeat(
       log,
       async () => {

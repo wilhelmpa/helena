@@ -54,6 +54,9 @@ export interface McpRouteTool {
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
   permission?: Permission;
+  // The connector whose accounts the tool acts with. The tool is listed only to an
+  // agent that holds a grant on one of them.
+  connector?: string;
 }
 
 // Marks a route as an MCP tool. Spread into a route's `detail`:
@@ -75,22 +78,31 @@ export interface McpRouteTool {
 // that starts an agent run executes, one that mails an invite sends.
 //
 // The fourth argument says where the action lands, for Helena's Autopilot, when it reaches
-// outside the agent's workspace: deleting a whole project, mailing someone.
+// outside the agent's workspace: deleting a whole project, mailing someone. The fifth names
+// the connector whose accounts the tool acts with (see McpRouteTool.connector).
 export function mcpTool(
   tool: string,
   annotations?: McpToolAnnotations,
   category?: ActionCategory,
   scope?: ActionScope,
+  connector?: string,
 ): {
   'x-mcp': {
     tool: string;
     annotations?: McpToolAnnotations;
     category?: ActionCategory;
     scope?: ActionScope;
+    connector?: string;
   };
 } {
   return {
-    'x-mcp': { tool, annotations, ...(category ? { category } : {}), ...(scope && { scope }) },
+    'x-mcp': {
+      tool,
+      annotations,
+      ...(category ? { category } : {}),
+      ...(scope && { scope }),
+      ...(connector ? { connector } : {}),
+    },
   };
 }
 
@@ -200,6 +212,7 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
             annotations?: McpToolAnnotations;
             category?: ActionCategory;
             scope?: ActionScope;
+            connector?: string;
           };
           'x-permission'?: Permission;
         }
@@ -226,6 +239,7 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       inputSchema: mergeInputSchema(hooks, pathParams),
       outputSchema: outputSchema(hooks.response),
       permission: detail?.['x-permission'],
+      ...(detail?.['x-mcp']?.connector && { connector: detail['x-mcp'].connector }),
       // Every tool acts on this tracker's own data and reaches nothing outside it,
       // so openWorldHint is false throughout; the route may still override it.
       annotations,

@@ -1,0 +1,202 @@
+{
+  "title": "Akses & koneksi",
+  "tabs": {
+    "google": "Google",
+    "mail": "Email",
+    "credentials": "Akses",
+    "connections": "Koneksi",
+    "log": "Log"
+  },
+  "google": {
+    "connect": "Hubungkan akun",
+    "importClient": "Impor klien OAuth",
+    "empty": "Belum ada akun Google",
+    "emptyHint": "Buat klien OAuth berjenis “Aplikasi desktop” di Google Cloud, impor file JSON-nya di sini, lalu hubungkan setiap akun. Mail, Kalender, Drive, dan lainnya lalu berjalan tanpa sandi aplikasi.",
+    "emptyHintReady": "Klien OAuth sudah ada. Sekarang hubungkan setiap akun Google; email, kalender, Drive, dan lainnya lalu berjalan tanpa sandi aplikasi.",
+    "clients": "Klien OAuth",
+    "clientType": {
+      "installed": "Desktop",
+      "web": "Web"
+    },
+    "clientAccounts": "{count, plural, =0 {tidak dipakai} other {# akun}}",
+    "deleteClient": "Hapus klien OAuth",
+    "deleteClientMessage": "Hapus {name}? Akun tidak bisa masuk lagi dengannya.",
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
+    "engineHint": {
+      "helena": "Helena menyimpan login terenkripsi dan memanggil Google dengan pustaka Google sendiri.",
+      "gog": "Login tetap di keyring gog di server ini; Helena menjangkaunya lewat broker. Tanpa kotak surat di kotak masuk."
+    },
+    "status": {
+      "ok": "Terhubung",
+      "needs_auth": "Masuk lagi",
+      "error": "Galat",
+      "unknown": "Belum dicek"
+    },
+    "services": {
+      "mail": "Mail",
+      "calendar": "Kalender",
+      "drive": "Drive",
+      "docs": "Docs",
+      "sheets": "Sheets",
+      "contacts": "Kontak",
+      "tasks": "Tugas"
+    },
+    "mailbox": "Kotak surat: {days} hari terakhir",
+    "mailboxAll": "Kotak surat: semua email",
+    "mailboxOff": "Kotak surat mati",
+    "check": "Cek",
+    "checked": "{email} dicek",
+    "editServices": "Layanan",
+    "signInAgain": "Masuk lagi",
+    "moveToHelena": "Pindahkan ke Helena",
+    "remove": "Hapus akun",
+    "removeMessage": "Hapus {email}? Agen langsung kehilangan akses; email yang diimpor tetap ada sampai kotak suratnya dihapus.",
+    "removeFromGog": "Hapus juga login dari gog",
+    "inGog": "Di gog, belum di Helena",
+    "inGogHint": "gog menyimpan login untuk akun-akun ini. Menampilkannya tidak memindahkan token.",
+    "adopt": "Tampilkan",
+    "adopted": "{email} ditampilkan",
+    "access": "Izin"
+  },
+  "clientDialog": {
+    "title": "Impor klien OAuth",
+    "file": "File klien (JSON)",
+    "fileHint": "Google Cloud → API & Layanan → Kredensial → ID klien OAuth (aplikasi desktop) → Unduh JSON.",
+    "paste": "Atau tempel isinya",
+    "label": "Nama",
+    "target": "Disimpan oleh",
+    "import": "Impor",
+    "imported": "Klien OAuth diimpor",
+    "handedToGog": "Klien diserahkan ke gog"
+  },
+  "signIn": {
+    "title": "Hubungkan akun Google",
+    "againTitle": "Masuk lagi ke {email}",
+    "moveTitle": "Pindahkan {email} ke Helena",
+    "engine": "Login disimpan oleh",
+    "client": "Klien OAuth",
+    "noClient": "Impor klien OAuth terlebih dahulu.",
+    "email": "Alamat",
+    "emailHint": "Wajib untuk gog; untuk Helena, Google memilihkan akunnya.",
+    "services": "Layanan",
+    "scope": "Milik",
+    "start": "Lanjut",
+    "open": "Masuk di Google",
+    "copyLink": "Salin tautan",
+    "linkCopied": "Tautan disalin",
+    "pasteStep": "Setelah masuk, browser berakhir di halaman yang tidak termuat (127.0.0.1). Salin alamat lengkap halaman itu dan tempel di sini.",
+    "callbackStep": "Masuk di Google; Helena menyelesaikannya sendiri dan kembali ke sini.",
+    "redirect": "Alamat halaman itu",
+    "finish": "Selesai",
+    "connected": "{email} terhubung",
+    "removeFromGog": "Hapus login dari gog setelahnya"
+  },
+  "servicesDialog": {
+    "title": "Layanan {email}",
+    "hint": "Layanan yang dimatikan tidak tersedia bagi agen mana pun.",
+    "needsSignIn": "perlu masuk lagi",
+    "gogNoMail": "Akun yang disimpan di gog tidak punya kotak surat di Helena. Pindahkan ke Helena untuk kotak masuk.",
+    "saved": "Layanan disimpan"
+  },
+  "mailbox": {
+    "fetchDays": "Rentang pengambilan dalam hari",
+    "fetchDaysHint": "Impor pertama hanya mengambil rentang ini; salinan impor yang lebih lama dihapus setiap hari. Email di server tetap ada.",
+    "fetchAll": "Ambil semua email",
+    "reset": "Atur ulang",
+    "resetTitle": "Atur ulang {address}?",
+    "resetMessage": "Semua salinan yang diimpor (email, lampiran, file tersimpan) dihapus dan kotak surat mengimpor ulang dalam rentangnya. Email di server tetap ada.",
+    "resetDone": "{address} mengimpor ulang",
+    "resetPending": "Sedang diatur ulang",
+    "google": "Akun Google",
+    "googleHint": "Masuk dengan akun Google-nya (tanpa sandi aplikasi). Server dan login berasal dari akun.",
+    "settingsTitle": "Kotak surat {address}",
+    "saved": "{address} disimpan",
+    "gmailHint": "Untuk Gmail, hubungkan akun Google di Akses & koneksi → Google saja: tidak perlu sandi aplikasi."
+  },
+  "grants": {
+    "title": "Izin untuk {name}",
+    "action": "Izin",
+    "hint": "Berikan ke agen tertentu atau semua agen dalam proyek, untuk semua layanan atau satu, hanya baca atau juga tulis. Mengirim, berbagi, dan menghapus tetap menunggu persetujuanmu.",
+    "empty": "Belum ada yang boleh memakainya.",
+    "add": "Tambah",
+    "who": "Siapa",
+    "projectSubject": "Semua di {name}",
+    "agents": "Agen",
+    "projects": "Proyek",
+    "service": "Layanan",
+    "allServices": "Semua layanan",
+    "access": {
+      "read": "Baca",
+      "write": "Baca & tulis"
+    },
+    "saved": "Izin untuk {name} disimpan",
+    "count": "{count, plural, =0 {Tanpa izin} other {# izin}}",
+    "remove": "Hapus"
+  },
+  "log": {
+    "empty": "Belum ada yang dicatat.",
+    "filter": "Entri",
+    "all": "Semua",
+    "actions": {
+      "delivered": "Diserahkan",
+      "used": "Dipakai",
+      "called": "Dipanggil",
+      "denied": "Ditolak",
+      "approval": "Persetujuan diminta",
+      "changed": "Diubah"
+    },
+    "owner": "Pemilik",
+    "run": "Proses {id}",
+    "chat": "Chat",
+    "changes": {
+      "created": "Dibuat",
+      "edited": "Diubah",
+      "deleted": "Dihapus",
+      "new-key": "Pasangan kunci baru",
+      "grants": "Izin diubah",
+      "signed-in": "Masuk",
+      "settings": "Pengaturan diubah",
+      "removed": "Dilepas",
+      "listed-from-gog": "Ditampilkan dari gog",
+      "clone": "Repo dikloning"
+    }
+  },
+  "clone": {
+    "action": "Kloning repositori",
+    "title": "Kloning dengan {name}",
+    "hint": "Runner milik agen proyek mengkloning repositori dengan kunci ini ke folder area di workspace. Repositori workspace lalu mengabaikannya.",
+    "project": "Proyek",
+    "projectPlaceholder": "Pilih proyek",
+    "noProject": "Belum ada proyek: buat satu dulu.",
+    "area": "Folder area",
+    "workspaceRoot": "Workspace itu sendiri",
+    "url": "Repositori",
+    "agent": "Runner",
+    "anyAgent": "Agen mana pun di proyek",
+    "start": "Kloning",
+    "started": "{agent} mengkloning {name}"
+  },
+  "mcp": {
+    "kind": "Server MCP (OAuth)",
+    "kindPlural": "Server MCP (OAuth)",
+    "kindHint": "Server MCP yang masuk dengan OAuth. Helena menyimpan tokennya; pustaka server MCP mengirimnya sebagai header Authorization.",
+    "title": "Hubungkan server MCP",
+    "againTitle": "Masuk lagi ke {name}",
+    "serverUrl": "Alamat server",
+    "label": "Nama",
+    "scope": "Scope (opsional)",
+    "hint": "Helena menemukan login server, mendaftar di sana, lalu memintamu masuk. Setelah itu pilih koneksi ini sebagai header Authorization server di Server MCP.",
+    "open": "Masuk di server",
+    "connected": "Server MCP terhubung",
+    "signIn": "Masuk lagi",
+    "status": {
+      "ok": "Terhubung",
+      "needs_auth": "Masuk lagi",
+      "error": "Galat",
+      "unknown": "Belum masuk"
+    }
+  }
+}

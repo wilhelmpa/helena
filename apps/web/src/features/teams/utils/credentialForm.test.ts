@@ -29,6 +29,10 @@ const login: CredentialEntry = {
   method: null,
   secrets: ['password', 'totpSecret'],
   agentIds: [],
+  grants: [],
+  serverUrl: null,
+  status: null,
+  statusDetail: null,
   createdAt: '2026-09-23T10:00:00.000Z',
   updatedAt: '2026-09-23T10:00:00.000Z',
 };
