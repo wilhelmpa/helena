@@ -1,13 +1,29 @@
 'use client';
 
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { API_URL } from '@/lib/api/core/client';
+import AuthFrame from '@/components/common/page/AuthFrame';
+import HelenaMark from '@/components/brand/HelenaMark';
+import { Button } from '@/components/ui/button';
 
 type ConsentResponse = { redirectURI?: string; message?: string };
 
+// Where an MCP client (Claude, Codex, an editor) asks to act with the member's Helena
+// account: in the same frame as sign-in (AuthFrame), with the mark, the request and
+// the two ways to answer it.
 export default function OAuthConsentPage() {
+  return (
+    <AuthFrame>
+      <Suspense fallback={null}>
+        <ConsentForm />
+      </Suspense>
+    </AuthFrame>
+  );
+}
+
+function ConsentForm() {
   const t = useTranslations('mcp');
   const searchParams = useSearchParams();
   const consentCode = searchParams.get('consent_code');
@@ -36,34 +52,27 @@ export default function OAuthConsentPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
-      <section className="w-full max-w-md space-y-4 rounded-lg border bg-card p-4 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-base font-semibold">{t('oauth.consent.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('oauth.consent.description')}</p>
+    <div className="flex flex-col gap-6 p-6 md:p-8">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <HelenaMark className="mb-3 size-11 md:hidden" />
+        <h1 className="text-2xl font-semibold">{t('oauth.consent.title')}</h1>
+        <p className="text-xs text-balance text-muted-foreground">
+          {t('oauth.consent.description')}
+        </p>
+      </div>
+      {!consentCode ? (
+        <p className="text-center text-sm text-destructive">{t('oauth.consent.missingCode')}</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" disabled={pending} onClick={() => decide(false)}>
+            {t('oauth.consent.cancel')}
+          </Button>
+          <Button disabled={pending} onClick={() => decide(true)}>
+            {pending ? t('oauth.consent.pending') : t('oauth.consent.authorize')}
+          </Button>
         </div>
-        {!consentCode ? (
-          <p className="text-sm text-destructive">{t('oauth.consent.missingCode')}</p>
-        ) : (
-          <div className="flex justify-end gap-3">
-            <button
-              className="rounded-md border px-4 py-2 text-sm"
-              disabled={pending}
-              onClick={() => decide(false)}
-            >
-              {t('oauth.consent.cancel')}
-            </button>
-            <button
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
-              disabled={pending}
-              onClick={() => decide(true)}
-            >
-              {pending ? t('oauth.consent.pending') : t('oauth.consent.authorize')}
-            </button>
-          </div>
-        )}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      </section>
-    </main>
+      )}
+      {error ? <p className="text-center text-sm text-destructive">{error}</p> : null}
+    </div>
   );
 }
