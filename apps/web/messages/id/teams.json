@@ -588,6 +588,7 @@
       "notReported": "Runner belum melaporkan apa yang dapat dilakukan agen.",
       "toolsets": "Toolset",
       "toolsetsHint": "Matikan toolset lalu simpan agar agen tidak menggunakannya dalam chat dan eksekusi.",
+      "templateToolsetsHint": "Berlaku untuk setiap salinan templat ini. Matikan toolset lalu simpan agar salinan tidak menggunakannya dalam chat dan eksekusi.",
       "toolsetsReadOnly": "Hanya anggota yang dapat mengedit agen yang dapat mematikan toolset.",
       "noToolsets": "Runner tidak melaporkan toolset apa pun.",
       "mcpServers": "Server MCP",

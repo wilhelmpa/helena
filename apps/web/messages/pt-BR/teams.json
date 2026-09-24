@@ -588,6 +588,7 @@
       "notReported": "O runner ainda não informou o que o agente pode fazer.",
       "toolsets": "Conjuntos de ferramentas",
       "toolsetsHint": "Desligue um conjunto e salve para que o agente não o use em chats e execuções.",
+      "templateToolsetsHint": "Vale para cada cópia deste modelo. Desligue um conjunto e salve para que as cópias não o usem em chats e execuções.",
       "toolsetsReadOnly": "Só membros que podem editar agentes podem desligar conjuntos de ferramentas.",
       "noToolsets": "O runner não informou nenhum conjunto de ferramentas.",
       "mcpServers": "Servidores MCP",

@@ -588,6 +588,7 @@
       "notReported": "The runner has not reported what the agent can do yet.",
       "toolsets": "Toolsets",
       "toolsetsHint": "Turn a toolset off and save to keep the agent from using it in chats and runs.",
+      "templateToolsetsHint": "Applies to every copy of this template. Turn a toolset off and save to keep the copies from using it in chats and runs.",
       "toolsetsReadOnly": "Only members who can edit agents can turn toolsets off.",
       "noToolsets": "The runner reported no toolsets.",
       "mcpServers": "MCP servers",

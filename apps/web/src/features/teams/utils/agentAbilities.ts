@@ -33,6 +33,21 @@ export function isHermesToolset(name: string): name is HermesToolset {
   return (HERMES_TOOLSETS as readonly string[]).includes(name);
 }
 
+// The toolsets a template's copies will have. A template runs nowhere and has no runner
+// of its own; its copies run on the team's runners, so it offers what they report. The
+// toolsets it already denies stay listed, to be switched back on. Before any runner has
+// reported, the toolsets Hermes is known to have.
+export function templateToolsets(
+  agents: { template: boolean; runtimeState: { inventory: { toolsets: string[] } | null } }[],
+  denied: string[],
+): string[] {
+  const reported = agents.flatMap((agent) =>
+    agent.template ? [] : (agent.runtimeState.inventory?.toolsets ?? []),
+  );
+  const known = reported.length > 0 ? reported : [...HERMES_TOOLSETS];
+  return [...new Set([...known, ...denied.filter(isHermesToolset)])].sort();
+}
+
 // The runtime policy's toolDeny after a toolset is switched on or off. An entry that names
 // no reported toolset is kept: the runner ignores it, and this screen does not show it.
 export function toggleToolset(denied: string[], name: string, on: boolean): string[] {

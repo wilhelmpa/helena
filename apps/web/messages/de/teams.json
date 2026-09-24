@@ -587,6 +587,7 @@
       "notReported": "Der Runner hat noch nicht gemeldet, was der Agent kann.",
       "toolsets": "Toolsets",
       "toolsetsHint": "Deaktiviere ein Toolset und speichere, damit der Agent es in Chats und Läufen nicht mehr nutzt.",
+      "templateToolsetsHint": "Gilt für jede Kopie dieser Vorlage. Deaktiviere ein Toolset und speichere, damit die Kopien es in Chats und Läufen nicht nutzen.",
       "toolsetsReadOnly": "Nur Mitglieder, die Agenten bearbeiten dürfen, können Toolsets deaktivieren.",
       "noToolsets": "Der Runner hat keine Toolsets gemeldet.",
       "mcpServers": "MCP-Server",

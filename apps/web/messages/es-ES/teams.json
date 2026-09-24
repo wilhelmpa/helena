@@ -588,6 +588,7 @@
       "notReported": "El ejecutor aún no ha informado de lo que puede hacer el agente.",
       "toolsets": "Conjuntos de herramientas",
       "toolsetsHint": "Desactiva un conjunto y guarda para que el agente no lo use en chats ni ejecuciones.",
+      "templateToolsetsHint": "Se aplica a cada copia de esta plantilla. Desactiva un conjunto y guarda para que las copias no lo usen en chats ni ejecuciones.",
       "toolsetsReadOnly": "Solo los miembros que pueden editar agentes pueden desactivar conjuntos de herramientas.",
       "noToolsets": "El ejecutor no ha informado de ningún conjunto de herramientas.",
       "mcpServers": "Servidores MCP",
