@@ -8,6 +8,7 @@ import { dispatchTool } from './dispatch';
 import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
 import { toolError } from './result';
+import { SERVER_INFO } from './info';
 
 // The path param of every team-scoped route.
 const TEAM_PARAM = 'teamId';
@@ -39,7 +40,7 @@ export async function buildMcpServer(
   const server = new Server(
     // `name` is the stable programmatic identifier; `title` is the human-readable
     // display name a client shows to the user (per the MCP Implementation spec).
-    { name: 'itsaplan', title: 'Itsaplan', version: '1.0.0' },
+    SERVER_INFO,
     // `instructions` reaches the client in the initialize response and covers what
     // no single tool description can: which tool resolves ids, how a column is
     // picked, how far a request to "work on an issue" goes.
@@ -54,6 +55,7 @@ export async function buildMcpServer(
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: table.map((t) => ({
       name: t.name,
+      title: t.title,
       description: t.description,
       // A caller whose team is already known does not get to name one.
       inputSchema:

@@ -5,6 +5,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | ID | State | Commit | Notes |
 |---|---|---|---|
 | F21 | done | see git log | `ipaddr.js` 2.5.0 (MIT) |
+| F07 | done | see git log | no library; SDK 1.30 transport kept for POST |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -28,3 +29,10 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
   - Recognised binary bytes are stored as what they are, so the instance allowlist judges the real format.
   - Heuristic text guesses (XML, iCalendar) never overrule a text claim (an SVG stays `image/svg+xml`); a specific format inside a generic container stays (a `.doc` is an OLE file, file-type says `application/x-cfb`).
 - **Deviation from the audit:** not Elysia's `t.File({type})`. Only the avatar route has a fixed type list, and Elysia's `InvalidFileType` reaches our `onError` as an unhandled error (500) until F03 (hub/framework) maps it. The same `file-type` check runs in the handlers instead and answers 400 with a clear message. Project files and knowledge assets store no declared type (the extension decides when serving), so they are not sniffed.
+
+## F07: MCP Streamable HTTP details
+
+- `GET /mcp` and `DELETE /mcp` answer **405 with `Allow: POST`** and the JSON-RPC error body the SDK's transport sends for the same case. Routing them through the SDK transport was the alternative; in stateless mode it would hold a GET stream open that never carries a message, and accept a DELETE for a session that does not exist.
+- `serverInfo` is `{name: 'helena', title: 'Helena', version}` with the version from the root `package.json` (the release-please version the OpenAPI document states too), in `apps/api/src/mcp/info.ts`.
+- Every tool has a `title`: the route's OpenAPI `summary`, else the tool name spelled out ("create_issue" → "Create issue").
+- Not changed: the grant/config key `itsaplan` agents use for this server (runner and Hermes configs, `mcpGrants`). It is an identifier in stored agent policies and belongs to the planned rename step.
