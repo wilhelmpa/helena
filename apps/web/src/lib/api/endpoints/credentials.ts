@@ -2,7 +2,11 @@ import { request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { Grant } from './access';
 
-export type CredentialKind = 'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login';
+export type CredentialKind =
+  'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login' | 'decision_model';
+// decision_model: where its key comes from — stored here, or the local Laya installation's key
+// file (docs/helena-decisions/browser-task.md §3.3).
+export type DecisionKeySource = 'stored' | 'local-laya';
 // What the page lists: the kinds above and MCP servers signed in with OAuth.
 export type ListedKind = CredentialKind | 'mcp_oauth';
 
@@ -34,6 +38,13 @@ export interface CredentialEntry {
   // runtime_login only.
   runtime: LoginRuntime | null;
   method: LoginMethod | null;
+  // decision_model only: the kind of System One service, its address and model, the owner's
+  // allowance of a local or private address, and where the key comes from.
+  provider: string | null;
+  baseUrl: string | null;
+  model: string | null;
+  allowPrivateAddress: boolean;
+  keySource: DecisionKeySource | null;
   secrets: string[];
   // The agents granted by name; `grants` holds every grant, to agents and projects.
   agentIds: number[];
@@ -55,6 +66,11 @@ export interface CredentialInput {
   notes?: string;
   runtime?: LoginRuntime;
   method?: LoginMethod;
+  provider?: string;
+  baseUrl?: string;
+  model?: string;
+  allowPrivateAddress?: boolean;
+  keySource?: DecisionKeySource;
 }
 
 export interface NewCredentialInput extends CredentialInput {

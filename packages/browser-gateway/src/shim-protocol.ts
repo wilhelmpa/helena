@@ -169,6 +169,65 @@ export function toolResult(response: unknown): CallToolResult {
   return textResult('The browser gateway answered something unreadable.', true);
 }
 
+// One JSON line out, one JSON line back, over a fresh connection (the shape of every exchange).
+function exchange(socketPath: string, request: unknown): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let settled = false;
+    const socket = net.createConnection(socketPath);
+    const finish = (error: Error | null, value?: unknown) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      if (error) reject(error);
+      else resolve(value);
+    };
+    socket.on('connect', () => socket.write(`${JSON.stringify(request)}\n`));
+    socket.on('data', (chunk: Buffer) => {
+      const newline = chunk.indexOf(0x0a);
+      const part = newline === -1 ? chunk : chunk.subarray(0, newline);
+      size += part.length;
+      if (size > MAX_RESPONSE_BYTES) return finish(new Error('answer too large'));
+      chunks.push(part);
+      if (newline === -1) return;
+      try {
+        finish(null, JSON.parse(Buffer.concat(chunks).toString('utf8')));
+      } catch {
+        finish(new Error('unreadable answer'));
+      }
+    });
+    socket.on('error', (error) => finish(error));
+    socket.on('close', () => finish(new Error('closed without an answer')));
+  });
+}
+
+// The names of the tools the gateway offers this agent (docs/helena-decisions/browser-task.md
+// §3.2): browser_task, browser_check and browser_choose only where the project has a decision
+// model. Null when the gateway does not answer (an older gateway, none running): the caller then
+// lists the step tools.
+export async function listGatewayTools(
+  options: { env?: ShimEnv; socketPath?: string } = {},
+): Promise<string[] | null> {
+  const env = options.env ?? process.env;
+  try {
+    const answer = (await exchange(options.socketPath ?? socketPathFrom(env), {
+      list: true,
+      agentKey: envValue(env, 'ITSAPLAN_API_KEY') ?? '',
+    })) as { ok?: unknown; tools?: unknown } | null;
+    if (
+      answer?.ok === true &&
+      Array.isArray(answer.tools) &&
+      answer.tools.every((t) => typeof t === 'string')
+    ) {
+      return answer.tools as string[];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // Connects fresh, sends one call, reads one line back. Never throws: a connection error (the
 // gateway is not running, or this agent has none) or an unreadable answer comes back as a
 // normal tool error the model can read.

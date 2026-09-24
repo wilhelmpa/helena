@@ -113,6 +113,36 @@ export function setGatewayLocks(locks) {
   gatewayLocks = locks;
 }
 
+// Browser 2.0's test runs (docs/helena-decisions/browser-task.md §3.5): the API starts a
+// browser_task run on a project browser, or a jev-browser run in a throwaway browser, through
+// the gateway started in this process. Only the API reaches this: over loopback (a request
+// through nginx carries its forwarding headers and is refused), with the gateway's own token.
+let gatewayTasks = null;
+export function setGatewayTasks(tasks) {
+  gatewayTasks = tasks;
+}
+
+async function handleGatewayTask(request, response, pathname) {
+  const forwarded =
+    request.headers["x-forwarded-prefix"] || request.headers["x-real-ip"] || request.headers["x-forwarded-for"];
+  if (request.method !== "POST" || forwarded || !gatewayTasks) {
+    return sendJson(response, 404, { error: "Not found" });
+  }
+  if (!gatewayTasks.authorized(request.headers.authorization)) {
+    return sendJson(response, 401, { error: "Unauthorized" });
+  }
+  try {
+    const body = await readJsonBody(request);
+    if (pathname === "/internal/gateway/lab") await gatewayTasks.startLab(body);
+    else if (pathname === "/internal/gateway/jev-browser") await gatewayTasks.startJevBrowser(body);
+    else return sendJson(response, 404, { error: "Not found" });
+    return sendJson(response, 202, { started: true });
+  } catch (error) {
+    const status = error instanceof BrowserControlError ? error.status : 400;
+    return sendJson(response, status, { error: error instanceof Error ? error.message.slice(0, 300) : "Refused" });
+  }
+}
+
 // Who decides a project browser's page size, for any controller that holds a working size
 // (the browser gateway while an agent steers): { mode: "follow" } or { mode: "fixed", width,
 // height, holder } (see setViewportAuthority in project-browser-screencast.mjs). size and
@@ -297,7 +327,9 @@ export function createProjectBrowserRouter(options = {}) {
   const root = options.root ?? "/var/lib/volition/project-browser/projects";
   const server = http.createServer(async (request, response) => {
     try {
-      if (new URL(request.url || "/", "http://127.0.0.1").pathname === "/api/overview") {
+      const pathname = new URL(request.url || "/", "http://127.0.0.1").pathname;
+      if (pathname.startsWith("/internal/gateway/")) return await handleGatewayTask(request, response, pathname);
+      if (pathname === "/api/overview") {
         if (request.method !== "GET") throw new Error("Method denied");
         return sendJson(response, 200, { browsers: await browserOverview(await listProjectBrowsers(root)) });
       }
@@ -361,6 +393,7 @@ if (import.meta.main) {
       .then((started) => {
         gateway = started;
         setGatewayLocks(started.locks);
+        setGatewayTasks(started.tasks);
         console.log("browser gateway: started");
       })
       .catch((error) => console.error("browser gateway did not start:", error));

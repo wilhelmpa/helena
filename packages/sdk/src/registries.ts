@@ -5,6 +5,7 @@ import type { PolicyEvaluator } from './policy';
 import { Registry, createRegistry } from './registry';
 import type { RuntimeType } from './runtime';
 import type { RuntimeLoginSource } from './runtime-logins';
+import type { DecisionBackendType } from './decision-backends';
 import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
@@ -32,6 +33,7 @@ export interface HelenaRegistries {
   usageLimitSources: Registry<UsageLimitSource>;
   runtimeLoginSources: Registry<RuntimeLoginSource>;
   updateSources: Registry<UpdateSource>;
+  decisionBackends: Registry<DecisionBackendType>;
 }
 
 export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaRegistries {
@@ -56,5 +58,7 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
     runtimeLoginSources:
       given.runtimeLoginSources ?? createRegistry<RuntimeLoginSource>('runtime login source'),
     updateSources: given.updateSources ?? createRegistry<UpdateSource>('update source'),
+    decisionBackends:
+      given.decisionBackends ?? createRegistry<DecisionBackendType>('decision backend'),
   };
 }

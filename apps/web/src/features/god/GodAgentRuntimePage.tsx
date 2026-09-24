@@ -29,6 +29,7 @@ import { cleanFallbackModels } from '@/features/agent-runtime/utils/fallback';
 import UsageReport from '@/features/agent-runtime/components/UsageReport';
 import ProviderLimitsSection from '@/features/provider-limits/components/ProviderLimitsSection';
 import ModelAvailabilitySection from '@/features/model-availability/components/ModelAvailabilitySection';
+import { InstanceBrowserControlSection } from '@/features/browser-lab/components/InstanceBrowserControlSection';
 import {
   useHermesUpdate,
   useRuntimeDefaults,
@@ -65,6 +66,8 @@ export default function GodAgentRuntimePage() {
       ) : (
         <ListSkeleton rows={2} rowClassName="h-12" />
       )}
+
+      <InstanceBrowserControlSection />
 
       <TeamUsageSection />
     </GodSectionPage>

@@ -77,6 +77,7 @@ import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
 import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
+import { browserTaskRoutes } from './modules/browser-task';
 import { approvalRoutes } from './modules/approvals';
 import { modelPriceRoutes } from './modules/model-prices';
 import { autopilotRoutes } from './modules/autopilot';
@@ -198,6 +199,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentActivityRoutes)
   .use(agentNetworkRoutes)
   .use(agentBrowserGatewayRoutes)
+  .use(browserTaskRoutes)
   .use(approvalRoutes)
   .use(modelPriceRoutes)
   .use(autopilotRoutes)

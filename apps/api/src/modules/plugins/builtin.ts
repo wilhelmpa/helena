@@ -24,6 +24,11 @@ import {
   UPDATES_PLUGIN_ID,
   updatesPlugin,
 } from '#modules/updates/sources/index';
+import {
+  BROWSER_TASK_PLUGIN_ID,
+  BUILTIN_DECISION_BACKENDS,
+  browserTaskPlugin,
+} from '#modules/browser-task/backends';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -170,6 +175,13 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
       permissions: {
         network: [...new Set(BUILTIN_UPDATE_SOURCES.flatMap((source) => source.hosts ?? []))],
       },
+    }),
+  );
+  // The decision backends of the browser's fast path (docs/helena-decisions/browser-task.md).
+  await host.load(
+    browserTaskPlugin,
+    builtinManifest(BROWSER_TASK_PLUGIN_ID, 'browserTask', {
+      provides: { decisionBackends: BUILTIN_DECISION_BACKENDS.map((backend) => backend.id) },
     }),
   );
   // The second brain: Helena's knowledge sources and capture targets live in the host's

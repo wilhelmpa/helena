@@ -4,6 +4,7 @@ import {
   LogIn,
   MoreHorizontal,
   Pencil,
+  PlugZap,
   Trash2,
   UsersRound,
 } from 'lucide-react';
@@ -28,6 +29,11 @@ function detailOf(entry: CredentialEntry): string | null {
   }
   if (entry.kind === 'ssh_key') return entry.publicKey;
   if (entry.kind === 'mcp_oauth') return entry.serverUrl;
+  if (entry.kind === 'decision_model') {
+    return [entry.model, entry.baseUrl ? new URL(entry.baseUrl).host : null]
+      .filter(Boolean)
+      .join(' · ');
+  }
   return null;
 }
 
@@ -38,11 +44,12 @@ export function CredentialRow({
 }: {
   entry: CredentialEntry;
   canManage: boolean;
-  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete' | 'clone' | 'signIn') => void;
+  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete' | 'clone' | 'signIn' | 'test') => void;
 }) {
   const t = useTranslations('credentials');
   const tCommon = useTranslations('common');
   const tAccess = useTranslations('access');
+  const tLab = useTranslations('browserLab');
   const detail =
     entry.kind === 'runtime_login' && entry.runtime && entry.method
       ? `${t(`runtimeLogin.runtimes.${entry.runtime}`)} · ${t(`runtimeLogin.methods.${entry.method}`)}`
@@ -68,6 +75,14 @@ export function CredentialRow({
               {tAccess(`mcp.status.${entry.status ?? 'unknown'}`)}
             </Badge>
           )}
+          {entry.kind === 'decision_model' && entry.status && (
+            <Badge
+              variant={entry.status === 'ok' ? 'outline' : 'destructive'}
+              className="text-xs font-normal"
+            >
+              {tLab(entry.status === 'ok' ? 'connection.lastOk' : 'connection.lastError')}
+            </Badge>
+          )}
           <Badge variant="outline" className="text-xs font-normal">
             {entry.projectKey ?? t('scopeTeam')}
           </Badge>
@@ -85,6 +100,11 @@ export function CredentialRow({
         {canManage && entry.kind === 'mcp_oauth' && (
           <CredentialRowAction label={tAccess('mcp.signIn')} onClick={() => onOpen('signIn')}>
             <LogIn className="size-4" />
+          </CredentialRowAction>
+        )}
+        {canManage && entry.kind === 'decision_model' && (
+          <CredentialRowAction label={tLab('connection.test')} onClick={() => onOpen('test')}>
+            <PlugZap className="size-4" />
           </CredentialRowAction>
         )}
         {canManage && entry.kind !== 'mcp_oauth' && (
@@ -128,6 +148,12 @@ export function CredentialRow({
             <DropdownMenuItem onSelect={() => onOpen('signIn')}>
               <LogIn />
               {tAccess('mcp.signIn')}
+            </DropdownMenuItem>
+          )}
+          {canManage && entry.kind === 'decision_model' && (
+            <DropdownMenuItem onSelect={() => onOpen('test')}>
+              <PlugZap />
+              {tLab('connection.test')}
             </DropdownMenuItem>
           )}
           {canManage && entry.kind !== 'mcp_oauth' && (

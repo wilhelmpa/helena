@@ -1240,6 +1240,13 @@
       "when": 1790279265671,
       "tag": "0176_helena_update_center",
       "breakpoints": true
+    },
+    {
+      "idx": 177,
+      "version": "7",
+      "when": 1790285342823,
+      "tag": "0177_helena_browser_task",
+      "breakpoints": true
     }
   ]
 }

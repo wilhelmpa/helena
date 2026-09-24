@@ -71,6 +71,7 @@ export const pluginManifestSchema = z
         usageLimitSources: ids.optional(),
         runtimeLoginSources: ids.optional(),
         updateSources: ids.optional(),
+        decisionBackends: ids.optional(),
         events: ids.optional(),
         mcpServers: z.array(mcpServer).max(50).optional(),
       })
