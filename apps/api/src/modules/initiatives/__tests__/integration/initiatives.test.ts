@@ -153,6 +153,18 @@ describe('initiatives', () => {
       expect(res.data!.items.map((i) => i.title)).toEqual(['Growth loops']);
       expect(res.data!.total).toBe(1);
     });
+
+    it('takes % and _ in the search literally', async () => {
+      const { asOwner } = await setup();
+      await createInitiative(asOwner, { title: '50% more reach' });
+      await createInitiative(asOwner, { title: 'Retention' });
+      await createInitiative(asOwner, { title: 'snake_case naming' });
+
+      const percent = await initiatives(asOwner).get({ query: { search: '%' } });
+      expect(percent.data!.items.map((i) => i.title)).toEqual(['50% more reach']);
+      const underscore = await initiatives(asOwner).get({ query: { search: 'e_c' } });
+      expect(underscore.data!.items.map((i) => i.title)).toEqual(['snake_case naming']);
+    });
   });
 
   describe('list sort and paging', () => {

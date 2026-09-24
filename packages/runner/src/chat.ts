@@ -77,6 +77,7 @@ export async function answer(
         ITSAPLAN_SESSION_ID: message.sessionId ?? '',
         ...hermes?.env,
       },
+      hooks: hermes?.hooks,
     },
     {
       onData: (chunk) => {

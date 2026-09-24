@@ -29,6 +29,8 @@ export interface McpToolAnnotations {
 
 export interface McpRouteTool {
   name: string;
+  // The display name a client shows (MCP tool `title`): the route's OpenAPI summary.
+  title: string;
   description: string;
   method: string;
   // The route path template, e.g. "/projects/:projectKey/issues".
@@ -164,6 +166,12 @@ function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]):
   return { type: 'object', properties, required: [...new Set(required)] };
 }
 
+// "create_issue" → "Create issue", for a tool whose route has no summary.
+export function toolTitle(tool: string): string {
+  const words = tool.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 // The tool table derived from an app's routes, built once per app and cached: routes
 // are fixed after boot, so introspection runs on the first call only. Shared by the
 // MCP endpoint and the internal agent runtime, which build their tools from the same
@@ -206,6 +214,7 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
     };
     tools.push({
       name: tool,
+      title: detail?.summary ?? toolTitle(tool),
       // The MCP tool description is the full text an LLM reads to pick a tool.
       // Prefer the route's `description` (the long explanation); fall back to the
       // short `summary` (the OpenAPI title) and then the tool name.

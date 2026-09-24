@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RadioGroup as RadioGroupPrimitive } from 'radix-ui';
 import { useTranslations } from 'next-intl';
 import type { CustomField, CustomFieldType, MemberScope } from '@/lib/api/endpoints/customFields';
 import { cn } from '@/lib/utils';
@@ -124,8 +125,9 @@ export default function SettingsCustomFieldDialog({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>{t('type')}</Label>
-            <div
-              role="radiogroup"
+            <RadioGroupPrimitive.Root
+              value={fieldType}
+              onValueChange={(next) => changeType(next as CustomFieldType)}
               aria-label={t('type')}
               className="grid grid-cols-2 gap-x-2 gap-y-1 sm:grid-cols-3"
             >
@@ -133,12 +135,9 @@ export default function SettingsCustomFieldDialog({
                 const Icon = FIELD_TYPE_ICONS[option];
                 const active = option === fieldType;
                 return (
-                  <button
+                  <RadioGroupPrimitive.Item
                     key={option}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => changeType(option)}
+                    value={option}
                     className={cn(
                       CHOICE_CLASS,
                       'flex h-9 items-center gap-2 px-2.5',
@@ -147,10 +146,10 @@ export default function SettingsCustomFieldDialog({
                   >
                     <Icon className="size-4 shrink-0" />
                     <span className="truncate">{fieldTypeLabel(option)}</span>
-                  </button>
+                  </RadioGroupPrimitive.Item>
                 );
               })}
-            </div>
+            </RadioGroupPrimitive.Root>
             {typeChanged && <FieldChangeWarning>{t('typeChangeWarning')}</FieldChangeWarning>}
           </div>
 
@@ -171,23 +170,25 @@ export default function SettingsCustomFieldDialog({
           {isMember && (
             <div className="space-y-1.5">
               <Label>{t('memberScope')}</Label>
-              <div role="radiogroup" aria-label={t('memberScope')} className="flex flex-wrap gap-1">
+              <RadioGroupPrimitive.Root
+                value={memberScope}
+                onValueChange={(next) => setMemberScope(next as MemberScope)}
+                aria-label={t('memberScope')}
+                className="flex flex-wrap gap-1"
+              >
                 {MEMBER_SCOPES.map((scope) => {
                   const active = scope === memberScope;
                   return (
-                    <button
+                    <RadioGroupPrimitive.Item
                       key={scope}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => setMemberScope(scope)}
+                      value={scope}
                       className={cn(CHOICE_CLASS, 'h-8 px-2.5', active ? CHOICE_ON : CHOICE_OFF)}
                     >
                       {t(`memberScopes.${scope}`)}
-                    </button>
+                    </RadioGroupPrimitive.Item>
                   );
                 })}
-              </div>
+              </RadioGroupPrimitive.Root>
               {scopeNarrowed && <FieldChangeWarning>{t('memberScopeWarning')}</FieldChangeWarning>}
             </div>
           )}

@@ -2,6 +2,7 @@ import globals from 'globals';
 import pluginNext from '@next/eslint-plugin-next';
 import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
+import pluginJsxA11y from 'eslint-plugin-jsx-a11y';
 import { config as baseConfig } from './base.js';
 
 /**
@@ -24,10 +25,15 @@ export const nextJsConfig = [
     },
     settings: { react: { version: '19' } },
   },
+  // React Hooks 7: besides the rules of hooks, the React Compiler's checks
+  // (set-state-in-effect, refs, purity, immutability, …), which catch the class of the
+  // 2026-09-24 "Maximum update depth" incident before it ships.
   {
     plugins: { 'react-hooks': pluginReactHooks },
     rules: { ...pluginReactHooks.configs.recommended.rules },
   },
+  // WAI-ARIA and HTML accessibility checks on JSX.
+  pluginJsxA11y.flatConfigs.recommended,
   {
     plugins: { '@next/next': pluginNext },
     rules: {

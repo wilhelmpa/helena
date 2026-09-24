@@ -1,19 +1,19 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { canonicalTimezone } from '@/utils/dates';
+import { Check } from 'lucide-react';
+import { ComboboxTrigger } from '@/components/ui/combobox';
 import {
-  Combobox,
-  ComboboxCollection,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxGroup,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxLabel,
-  ComboboxList,
-} from '@/components/ui/combobox';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent } from '@/components/ui/popover';
 
 // The regions IANA zone names start with, in the order they are listed. A zone whose
 // prefix is not one of these (UTC, GMT, legacy aliases) falls into "Other".
@@ -78,8 +78,22 @@ function groupZones(zones: string[]): { value: ZoneRegion; items: string[] }[] {
   );
 }
 
+// A label costs an Intl.DateTimeFormat, so labels are built on first use and kept: the
+// zone list only renders while the picker is open, and building several hundred of them
+// up front would block the page opening.
+const labels = new Map<string, string>();
+function labelOf(zone: string): string {
+  let label = labels.get(zone);
+  if (label === undefined) {
+    label = zoneLabel(zone);
+    labels.set(zone, label);
+  }
+  return label;
+}
+
 // Timezone picker: every zone the runtime knows, grouped by region and searchable by
-// city or offset. The stored value is the IANA zone name.
+// city or offset (the app's combobox: Popover + Command). The stored value is the IANA
+// zone name.
 export default function AccountPreferencesTimezone({
   value,
   onChange,
@@ -90,52 +104,61 @@ export default function AccountPreferencesTimezone({
   disabled: boolean;
 }) {
   const t = useTranslations('account.preferences');
-  const groups = useMemo(() => groupZones(zoneList()), []);
-  // A label costs an Intl.DateTimeFormat and the list asks for one on every render
-  // and every keystroke in the search field, so each is built on first use and kept.
-  // Building all of them up front would block the page opening for several hundred
-  // zones, most of which are never rendered.
-  const labels = useMemo(() => new Map<string, string>(), []);
-  const labelOf = (zone: string) => {
-    const known = labels.get(zone);
-    if (known) return known;
-    const label = zoneLabel(zone);
-    labels.set(zone, label);
-    return label;
-  };
+  const [open, setOpen] = useState(false);
+  const selected = canonicalTimezone(value);
 
   return (
-    <Combobox
-      items={groups}
-      value={canonicalTimezone(value)}
-      onValueChange={(zone: string | null) => zone && onChange(zone)}
-      itemToStringLabel={labelOf}
-      disabled={disabled}
-    >
-      {/* The input shows the selected zone, so select it on focus: typing then
-          replaces it instead of appending to it. */}
-      <ComboboxInput
+    <Popover open={open} onOpenChange={setOpen}>
+      <ComboboxTrigger
+        value={selected ? labelOf(selected) : ''}
         placeholder={t('timezonePlaceholder')}
-        className="w-full sm:w-44"
-        onFocus={(e) => e.currentTarget.select()}
+        open={open}
+        disabled={disabled}
+        className="w-full sm:w-56"
       />
-      <ComboboxContent>
-        <ComboboxEmpty>{t('timezoneEmpty')}</ComboboxEmpty>
-        <ComboboxList>
-          {(group: { value: ZoneRegion; items: string[] }) => (
-            <ComboboxGroup key={group.value} items={group.items}>
-              <ComboboxLabel>{t(`timezoneGroups.${group.value}`)}</ComboboxLabel>
-              <ComboboxCollection>
-                {(zone: string) => (
-                  <ComboboxItem key={zone} value={zone}>
-                    {labelOf(zone)}
-                  </ComboboxItem>
-                )}
-              </ComboboxCollection>
-            </ComboboxGroup>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
+      <PopoverContent className="w-72 p-0" align="start">
+        <TimezoneList
+          selected={selected}
+          onSelect={(zone) => {
+            onChange(zone);
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function TimezoneList({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (zone: string) => void;
+}) {
+  const t = useTranslations('account.preferences');
+  const groups = useMemo(() => groupZones(zoneList()), []);
+  return (
+    <Command>
+      <CommandInput placeholder={t('timezoneSearch')} />
+      <CommandList className="max-h-72">
+        <CommandEmpty>{t('timezoneEmpty')}</CommandEmpty>
+        {groups.map((group) => (
+          <CommandGroup key={group.value} heading={t(`timezoneGroups.${group.value}`)}>
+            {group.items.map((zone) => (
+              <CommandItem
+                key={zone}
+                value={zone}
+                keywords={[labelOf(zone)]}
+                onSelect={() => onSelect(zone)}
+              >
+                <span className="flex-1 truncate">{labelOf(zone)}</span>
+                {zone === selected && <Check className="ms-auto size-4" />}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ))}
+      </CommandList>
+    </Command>
   );
 }

@@ -18,10 +18,13 @@ import {
   SECRET_FIELDS,
   allowedOrigin,
   assertFieldsOfKind,
+  assertLoginMethod,
   assertTotpSecret,
   loginUrlOf,
   type CredentialFields,
   type CredentialKind,
+  type LoginMethod,
+  type LoginRuntime,
 } from './kinds';
 import { generateSshKey, sshKeyComment } from './ssh-key';
 
@@ -42,6 +45,8 @@ export interface CredentialEntry {
   username: string | null;
   notes: string;
   publicKey: string | null;
+  runtime: LoginRuntime | null;
+  method: LoginMethod | null;
   secrets: string[];
   agentIds: number[];
   createdAt: string;
@@ -56,6 +61,8 @@ interface Readable {
   username?: string;
   notes?: string;
   publicKey?: string;
+  runtime?: LoginRuntime;
+  method?: LoginMethod;
   [secretField: string]: unknown;
 }
 
@@ -108,6 +115,8 @@ function toEntry(row: EntryRow, agentIds: number[]): CredentialEntry {
     username: readable.username ?? null,
     notes: readable.notes ?? '',
     publicKey: readable.publicKey ?? null,
+    runtime: kind === 'runtime_login' ? (readable.runtime ?? null) : null,
+    method: kind === 'runtime_login' ? (readable.method ?? null) : null,
     secrets: SECRET_FIELDS[kind].filter((field) => Boolean(readable[field])),
     agentIds,
     createdAt: iso(row.createdAt),
@@ -246,6 +255,16 @@ function compose(
     return {
       readable: { publicKey: current.readable.publicKey, notes },
       secrets: { privateKey: current.secrets.privateKey },
+    };
+  }
+  if (kind === 'runtime_login') {
+    const runtime = required(fields.runtime ?? current.readable.runtime, 'A runtime');
+    const method = required(fields.method ?? current.readable.method, 'A sign-in method');
+    assertLoginMethod(runtime, method);
+    const value = fields.value === undefined ? current.secrets.value : fields.value?.trim();
+    return {
+      readable: { runtime: runtime as LoginRuntime, method: method as LoginMethod, notes },
+      secrets: { value: requiredSecret(value, 'A token or key') },
     };
   }
   const value = fields.value === undefined ? current.secrets.value : fields.value;
@@ -398,6 +417,7 @@ export async function setCredentialGrants(
             name: user.name,
             kind: aiAgent.kind,
             template: aiAgent.template,
+            runtime: sql<string | null>`${aiAgent.runtimePolicy}->>'runtime'`,
           })
           .from(aiAgent)
           .innerJoin(user, eq(user.id, aiAgent.userId))
@@ -406,6 +426,10 @@ export async function setCredentialGrants(
   for (const agent of agents) {
     if (agent.kind !== 'external' || agent.template) {
       throw new HttpError(400, `${agent.name} does not run in Hermes.`);
+    }
+    // A runtime login signs in one runtime: only an agent running on it can use it.
+    if (existing.kind === 'runtime_login' && (agent.runtime ?? 'hermes') !== existing.runtime) {
+      throw new HttpError(400, `${agent.name} does not run on ${existing.runtime}.`);
     }
     if (existing.projectId !== null && !(await agentWorksInProject(agent.id, existing.projectId))) {
       throw new HttpError(400, `${agent.name} does not work in ${existing.projectKey}.`);

@@ -1,5 +1,5 @@
 import type { RuntimePolicySnapshot } from './runtime-policy';
-import type { RuntimeAdapter, RuntimeId } from './runtime-profile';
+import type { CommandSandbox, RuntimeAdapter, RuntimeId } from './runtime-profile';
 import type { RuntimeReaders } from './runtime-readers';
 import type { LocalizedText } from './text';
 
@@ -24,6 +24,9 @@ export interface RuntimeTaskSettings {
   runBudgetSeconds?: number | null;
   toolsets?: string[] | null;
   image?: string | null;
+  // The sandbox of the commands the model runs, for a runtime that has one of its own
+  // (Codex). Unset: the runtime's default for an operator's own runner.
+  sandbox?: CommandSandbox;
   // Helena's Autopilot level for this run or chat answer (absent on an older server), and
   // the command a runtime with pre-tool hooks runs to ask Helena's policy engine.
   autopilotLevel?: number | null;

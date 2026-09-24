@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent } from '@/components/ui/popover';
 import { useTranslations } from 'next-intl';
-import { AgentComboboxTrigger } from './AgentComboboxTrigger';
+import { ComboboxTrigger } from '@/components/ui/combobox';
 
 // Provider-key picker for an agent: the project's AI provider credentials, in the
 // same control as the model picker next to it.
@@ -33,7 +33,7 @@ export default function AgentCredentialField({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <AgentComboboxTrigger
+      <ComboboxTrigger
         value={selected ? label(selected) : ''}
         placeholder={t('chooseCredential')}
         open={open}

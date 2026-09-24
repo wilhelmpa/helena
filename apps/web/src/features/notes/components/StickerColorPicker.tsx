@@ -1,14 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Circle } from '@uiw/react-color';
 import { Palette } from 'lucide-react';
+import { ColorSwatches } from '@/components/ui/color-swatches';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { STICKER_PALETTE, stickerColorValue } from '../utils/stickerColors';
 
 // The background-color control in a sticker's toolbar: a palette button that opens
-// the shared color picker (@uiw/react-color) over the sticky-note palette.
-// Selecting a swatch calls onChange with the hex.
+// the app's swatch picker over the sticky-note palette. Selecting a swatch calls
+// onChange with the hex.
 export default function StickerColorPicker({
   value,
   onChange,
@@ -30,10 +30,10 @@ export default function StickerColorPicker({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-auto">
         <p className="mb-2 text-sm font-medium">{t('backgroundColors')}</p>
-        <Circle
+        <ColorSwatches
           colors={STICKER_PALETTE}
-          color={stickerColorValue(value)}
-          onChange={(color) => onChange(color.hex)}
+          value={stickerColorValue(value)}
+          onChange={onChange}
         />
       </PopoverContent>
     </Popover>

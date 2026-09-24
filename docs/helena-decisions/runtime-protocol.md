@@ -61,13 +61,13 @@ Estimate: S–M. After the patch, the Hermes chat moves first (long-lived proces
 | Skills | `_meta.claudeCode.options.plugins` (= `--plugin-dir`) | skills are refreshed per workspace. The runner's index plus paths works only while Codex can read files (see below) |
 | Unattended permissions | modes `auto` / `default` / … ; everything else arrives as `request_permission` | no mode equals today's `exec` (workspace-write, never ask), so the runner answers `request_permission` |
 
-Both adapters are owner decisions: npm installs of external binaries' wrappers, system-level. Until then, the CLI presets carry everything, and this branch made them complete. They now pass SOUL, skills, MCP servers, model and effort, return the real answer and session, and name the run on Helena's MCP. It was proven live against a private API (Claude Code 7/7 checks).
+Both adapters are owner decisions: npm installs of external binaries' wrappers, system-level. The owner approved them on 2026-09-24; `native/runtimes/install-cli-runtimes.sh` installs them pinned (hub/cli-runtimes). The transport stays the CLI for now, for the reasons in `cli-runtimes.md` §7. The CLI presets carry everything, and hub/hermes-sync made them complete. They now pass SOUL, skills, MCP servers, model and effort, return the real answer and session, and name the run on Helena's MCP. It was proven live against a private API (Claude Code 7/7 checks).
 
 **Found while proving Codex:** its `workspace-write` sandbox cannot start inside Kingston's systemd-nspawn container. bubblewrap fails with `setting up uid map: Permission denied` and, without network access, with `loopback: Failed RTM_NEWADDR`. So a Codex agent can call MCP tools but cannot run a single shell command or read a file. Options, each needing an owner decision:
 - allow unprivileged user namespaces for the container (a host change);
 - or run Codex with `sandbox_mode="danger-full-access"` inside Helena's own agent isolation (the systemd sandbox per project), the way Hermes' terminal already runs.
 
-ACP does not change this.
+ACP does not change this. Decided 2026-09-24 (owner): the second option, enforced by the runner; see `cli-runtimes.md` §6.
 
 ## MCP configuration per runtime (and RUN-04)
 

@@ -130,6 +130,7 @@
     "timezone": "时区",
     "timezoneDescription": "选择你所在的时区。",
     "timezonePlaceholder": "选择时区",
+    "timezoneSearch": "搜索时区",
     "timezoneEmpty": "未找到时区。",
     "timezoneGroups": {
       "America": "美洲",

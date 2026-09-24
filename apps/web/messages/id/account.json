@@ -130,6 +130,7 @@
     "timezone": "Zona waktu",
     "timezoneDescription": "Pilih zona waktu tempat Anda bekerja.",
     "timezonePlaceholder": "Pilih zona waktu",
+    "timezoneSearch": "Cari zona waktu",
     "timezoneEmpty": "Tidak ada zona waktu yang ditemukan.",
     "timezoneGroups": {
       "America": "Amerika",

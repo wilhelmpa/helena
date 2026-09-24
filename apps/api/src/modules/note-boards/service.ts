@@ -1,4 +1,4 @@
-import { db, noteBoard, noteBoardMember } from '@repo/db';
+import { db, noteBoard, noteBoardMember, containsPattern } from '@repo/db';
 import { and, desc, eq, exists, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
 import { hasPermission } from '#shared/permissions';
@@ -83,7 +83,7 @@ export async function listNoteBoards(
       ),
     ),
   );
-  const where = opts.q ? and(visible, ilike(noteBoard.name, `%${opts.q}%`)) : visible;
+  const where = opts.q ? and(visible, ilike(noteBoard.name, containsPattern(opts.q))) : visible;
   const rows = await db
     .select({
       id: noteBoard.id,

@@ -40,7 +40,7 @@ import {
   runtimePolicyGroupsChanged,
   type TemplateFieldGroup,
 } from './template-sync';
-import type { profileReport } from '../runtime-sync/model';
+import type { profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -135,10 +135,18 @@ export interface AgentRuntimeState {
   // What the runner read back from the runtime's profile: its digest, the drift it found
   // and could not put right, and the runtime's own defaults. Null until one reports it.
   profile: AgentRuntimeProfile | null;
+  // The version of the runtime's program ("2.1.281"), where the runner reads one.
+  version: string | null;
+  // What keeps the runtime from its work, or part of it ("Laufzeit nicht angemeldet").
+  issues: AgentRuntimeIssue[];
+  // Where the runtime runs the model's commands, for one with a sandbox of its own (Codex).
+  sandbox: AgentRuntimeSandbox | null;
   reportedAt: string | null;
 }
 
 export type AgentRuntimeProfile = typeof profileReport.static;
+export type AgentRuntimeIssue = typeof runtimeIssue.static;
+export type AgentRuntimeSandbox = typeof runtimeSandbox.static;
 
 const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
   reasoningEffort: null,
@@ -171,6 +179,9 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   restored: [],
   inventory: null,
   profile: null,
+  version: null,
+  issues: [],
+  sandbox: null,
   reportedAt: null,
 };
 
@@ -207,6 +218,15 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
     profile:
       state.profile && typeof state.profile === 'object' && Array.isArray(state.profile.drift)
         ? state.profile
+        : null,
+    version: typeof state.version === 'string' && state.version ? state.version.slice(0, 64) : null,
+    // Validated when the runner reported them.
+    issues: Array.isArray(state.issues) ? state.issues : [],
+    sandbox:
+      state.sandbox === 'workspace-write' ||
+      state.sandbox === 'read-only' ||
+      state.sandbox === 'danger-full-access'
+        ? state.sandbox
         : null,
     reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
   };

@@ -229,6 +229,7 @@
     "labelPlaceholder": "p. ej. Cuenta del equipo",
     "labelHint": "Ayuda a distinguir credenciales de la misma integración. Los secretos se guardan cifrados.",
     "noFields": "Sin campos",
+    "toolCount": "{count, plural, one {# herramienta} other {# herramientas}}",
     "search": "Buscar integraciones",
     "noMatches": "Ninguna integración coincide con «{query}».",
     "empty": "Todavía no hay credenciales",
@@ -434,7 +435,6 @@
       "memoryWindowPlaceholder": "Ventana de mensajes recientes",
       "maxConcurrentChats": "Chats en paralelo",
       "maxConcurrentChatsHint": "Cuántos chats de este agente puede dejar respondiendo un miembro a la vez. Los envíos que superen el límite se rechazan hasta que uno termine.",
-      "toolAllow": "Herramientas permitidas",
       "mcpGrants": "Concesiones MCP",
       "keysPlaceholder": "Una clave por línea",
       "managedFiles": "Archivos Markdown gestionados",
@@ -451,7 +451,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "El servidor aprovisiona Hermes y mantiene su perfil sincronizado.",
-      "runtimeCliHint": "Se ejecuta en un runner con este preset (helena-runner --agent {kind}); instrucciones, skills, servidores MCP, modelo y razonamiento vienen de Helena."
+      "runtimeCliHint": "Se ejecuta como servicio, como un agente de Hermes, en un directorio propio. Instrucciones, skills, servidores MCP, herramientas, modelo y razonamiento vienen de Helena; el inicio de sesión, de Accesos."
     },
     "runtimeConflicts": {
       "title": "Modificado fuera de Helena",
@@ -765,7 +765,34 @@
       },
       "defaults": "Predeterminado del runtime: {model} ({provider}), razonamiento {reasoning}",
       "servers": "Servidores MCP: {servers}",
-      "serversOff": "desactivados: {servers}"
+      "serversOff": "desactivados: {servers}",
+      "version": "Versión {version}",
+      "runtimes": {
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "issues": {
+        "notSignedIn": "Runtime sin sesión iniciada.",
+        "rejected": "Inicio de sesión del runtime rechazado: caducado o no válido.",
+        "runtimeMissing": "{runtime} no está instalado en el servidor.",
+        "sandboxUnavailable": "Sandbox no disponible: el sandbox propio de Codex no arranca en este servidor, así que Codex funciona en solo lectura y solo accede a las herramientas de Helena, sin shell. Con el aislamiento de agentes se ejecuta en su propia unidad.",
+        "notSignedInShort": "Runtime sin sesión",
+        "runtimeMissingShort": "Falta el runtime",
+        "sandboxUnavailableShort": "Sandbox no disponible"
+      },
+      "signIn": {
+        "claude": "Ejecuta el comando en el terminal (Inicio → Terminal), confirma en el navegador y añade el token en Accesos como inicio de sesión del runtime (Claude Code). Después concédelo a este agente.",
+        "codex": "Añade una clave de API en Accesos como inicio de sesión del runtime (Codex) y concédela a este agente. O inicia sesión con ChatGPT: ejecuta el comando en el terminal (Inicio → Terminal) y sigue el enlace con el código que aparece."
+      },
+      "copyCommand": "Copiar comando",
+      "copied": "Copiado",
+      "openAccess": "Abrir Accesos",
+      "sandbox": "Sandbox: {mode}",
+      "sandboxModes": {
+        "workspace-write": "carpeta de trabajo",
+        "read-only": "solo lectura",
+        "danger-full-access": "aislamiento"
+      }
     },
     "runModel": {
       "title": "Modelo",

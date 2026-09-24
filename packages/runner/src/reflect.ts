@@ -111,6 +111,7 @@ export async function reflect(
         runBudgetSeconds: request.runBudgetSeconds,
         toolsets,
         env: { ...runEnv(run), ...hermes.env },
+        hooks: hermes.hooks,
       },
       {
         onData: (chunk) => {

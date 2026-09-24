@@ -8,7 +8,7 @@ Gilt, wenn der Code aus dem Helena-Repo stammt (Monorepo mit `apps/api` Elysia/B
 - UI-Texte über `next-intl`, neue Schlüssel in **allen** Sprachdateien unter `apps/web/messages/<locale>/`.
 
 ## Web
-- UI-Standard einhalten (Skill `helena-ui-standard`): eine Kopfzeile mit `PageToolbar`, 13/12/14/16 px, Tokens statt roher Farben, höchstens ein gefüllter Button. Die Lint-Ratsche (`apps/web/src/design/lintRatchet.test.ts`) darf nicht steigen.
+- UI-Standard einhalten (Skill `helena-ui-standard`): eine Kopfzeile mit `PageToolbar`, 13/12/14/16 px, Tokens statt roher Farben, höchstens ein gefüllter Button. Neue Lint-Fehler sind nicht erlaubt; was es schon gab, steht in `apps/web/eslint-suppressions.json` und darf nur weniger werden (`bunx eslint --prune-suppressions .` in `apps/web`).
 - Zwischenablage und IDs nur über `copyText` aus `@/utils/clipboard` und `uuid` aus `@/utils/uuid` (Helena läuft im LAN über http; Lint erzwingt das).
 - Nie ein Element, das eine Seite baut, per Effekt in den State eines Elternteils legen (Endlosschleife „Maximum update depth exceeded", Vorfall 2026-09-24).
 - Web-Tests laufen mit `node:test`/`node:assert` (nicht `bun:test`).

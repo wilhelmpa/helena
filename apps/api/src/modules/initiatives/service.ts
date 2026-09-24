@@ -1,4 +1,13 @@
-import { db, initiative, initiativeLabel, issue, label, projectColumn, user } from '@repo/db';
+import {
+  db,
+  initiative,
+  initiativeLabel,
+  issue,
+  label,
+  projectColumn,
+  user,
+  containsPattern,
+} from '@repo/db';
 import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { labelNames, rowSide } from '#modules/issues/activity';
 import { getMembership } from '#modules/members/service';
@@ -155,7 +164,7 @@ export async function listInitiatives(
     conds.push(inArray(initiative.status, opts.statuses));
   }
   if (opts.search && opts.search.trim()) {
-    conds.push(ilike(initiative.title, `%${opts.search.trim()}%`));
+    conds.push(ilike(initiative.title, containsPattern(opts.search.trim())));
   }
   const where = and(...conds);
 
@@ -209,7 +218,7 @@ export async function listInitiativeOptions(
   const title = search?.trim();
   const linkable = and(
     inArray(initiative.status, LINKABLE_STATUSES),
-    title ? ilike(initiative.title, `%${title}%`) : undefined,
+    title ? ilike(initiative.title, containsPattern(title)) : undefined,
   );
   // The included one is ordered first so the row cap can never drop it: it is what
   // labels the picker trigger.

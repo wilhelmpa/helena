@@ -1,5 +1,7 @@
-import { useId, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { Command as CommandPrimitive } from 'cmdk';
 import { ChevronDownIcon } from 'lucide-react';
+import { CommandItem, CommandList } from '@/components/ui/command';
 import {
   InputGroup,
   InputGroupAddon,
@@ -7,7 +9,6 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 
 export interface InputSuggestion {
   value: string;
@@ -25,6 +26,10 @@ interface SuggestionsInputProps extends Omit<
   triggerLabel?: string;
 }
 
+// A text field that suggests values as they are typed (a schedule, a time zone), on the
+// app's combobox building blocks: cmdk gives the field its combobox role, the active
+// option and the arrow keys, Radix's Popover holds the list. The typed text is the value;
+// a suggestion only replaces it when it is chosen.
 export function RoutineSuggestionsInput({
   value,
   suggestions,
@@ -32,11 +37,9 @@ export function RoutineSuggestionsInput({
   triggerLabel,
   ...inputProps
 }: SuggestionsInputProps) {
-  const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
   const query = value.trim().toLowerCase();
   const hasExactMatch = suggestions.some((suggestion) => suggestion.value.toLowerCase() === query);
   const matches =
@@ -45,133 +48,101 @@ export function RoutineSuggestionsInput({
       : suggestions.filter((suggestion) => matchesQuery(suggestion, query));
   const isOpen = open && matches.length > 0;
 
-  function choose(suggestion: InputSuggestion) {
-    onValueChange(suggestion.value);
+  function close() {
     setOpen(false);
     setShowAll(false);
   }
 
+  function choose(suggestion: InputSuggestion) {
+    onValueChange(suggestion.value);
+    close();
+  }
+
   return (
-    <Popover
-      open={isOpen}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (!nextOpen) setShowAll(false);
-      }}
-    >
-      <PopoverAnchor asChild>
-        <InputGroup aria-invalid={inputProps['aria-invalid']}>
-          <InputGroupInput
-            {...inputProps}
-            ref={inputRef}
-            value={value}
-            autoComplete="off"
-            role="combobox"
-            aria-autocomplete="list"
-            aria-expanded={isOpen}
-            aria-controls={listId}
-            aria-activedescendant={isOpen ? `${listId}-${activeIndex}` : undefined}
-            onChange={(event) => {
-              onValueChange(event.target.value);
-              setActiveIndex(0);
-              setShowAll(false);
-              setOpen(true);
-            }}
-            onFocus={() => {
-              setActiveIndex(0);
-              setOpen(true);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowDown' && matches.length > 0) {
-                event.preventDefault();
-                setOpen(true);
-                setActiveIndex((index) => (isOpen ? (index + 1) % matches.length : 0));
-              } else if (event.key === 'ArrowUp' && matches.length > 0) {
-                event.preventDefault();
-                setOpen(true);
-                setActiveIndex((index) =>
-                  isOpen ? (index - 1 + matches.length) % matches.length : matches.length - 1,
-                );
-              } else if (event.key === 'Enter' && isOpen) {
-                const suggestion = matches[activeIndex];
-                if (suggestion) {
-                  event.preventDefault();
-                  choose(suggestion);
-                }
-              } else if (event.key === 'Escape') {
-                setOpen(false);
+    <CommandPrimitive shouldFilter={false} loop className="contents">
+      <Popover open={isOpen} onOpenChange={(next) => (next ? setOpen(true) : close())}>
+        <PopoverAnchor asChild>
+          <InputGroup aria-invalid={inputProps['aria-invalid']}>
+            <CommandPrimitive.Input
+              asChild
+              value={value}
+              onValueChange={(next) => {
+                onValueChange(next);
                 setShowAll(false);
-              }
-            }}
-          />
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton
-              type="button"
-              size="icon-xs"
-              aria-label={triggerLabel}
-              aria-expanded={isOpen}
-              aria-controls={listId}
-              aria-haspopup="listbox"
-              onClick={() => {
-                if (isOpen) {
-                  setOpen(false);
-                  setShowAll(false);
-                  return;
-                }
-                setActiveIndex(0);
-                setShowAll(true);
                 setOpen(true);
-                requestAnimationFrame(() => inputRef.current?.focus());
               }}
             >
-              <ChevronDownIcon />
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
-      </PopoverAnchor>
-      <PopoverContent
-        id={listId}
-        role="listbox"
-        align="start"
-        className="max-h-72 w-(--radix-popover-trigger-width) overflow-y-auto p-1"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-        onInteractOutside={(event) => {
-          // The input and its trigger live in the anchor, outside the popup. Keep the
-          // popover open when they are clicked or focused; those elements manage open state.
-          const target = event.detail.originalEvent.target as Element | null;
-          if (
-            target?.closest('[data-slot="input-group"]') ===
-            inputRef.current?.closest('[data-slot="input-group"]')
-          ) {
-            event.preventDefault();
-          }
-        }}
-      >
-        {matches.map((suggestion, index) => (
-          <button
-            key={suggestion.value}
-            id={`${listId}-${index}`}
-            type="button"
-            role="option"
-            aria-selected={index === activeIndex}
-            className={cn(
-              'flex w-full items-center justify-between gap-4 rounded-sm px-2 py-1.5 text-left text-sm outline-none',
-              index === activeIndex && 'bg-accent text-accent-foreground',
-            )}
-            onMouseEnter={() => setActiveIndex(index)}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => choose(suggestion)}
-          >
-            <span>{suggestion.label}</span>
-            {suggestion.description && (
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {suggestion.description}
-              </span>
-            )}
-          </button>
-        ))}
-      </PopoverContent>
-    </Popover>
+              <InputGroupInput
+                {...inputProps}
+                ref={inputRef}
+                // The field's own label names it, not cmdk's hidden one.
+                aria-labelledby={inputProps['aria-labelledby']}
+                aria-expanded={isOpen}
+                onFocus={() => setOpen(true)}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown' && !isOpen) setOpen(true);
+                  // With no list open, Enter submits the form rather than choosing.
+                  if (event.key === 'Enter' && !isOpen) event.stopPropagation();
+                  if (event.key === 'Escape') close();
+                }}
+              />
+            </CommandPrimitive.Input>
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                type="button"
+                size="icon-xs"
+                aria-label={triggerLabel}
+                aria-expanded={isOpen}
+                aria-haspopup="listbox"
+                onClick={() => {
+                  if (isOpen) return close();
+                  setShowAll(true);
+                  setOpen(true);
+                  requestAnimationFrame(() => inputRef.current?.focus());
+                }}
+              >
+                <ChevronDownIcon />
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        </PopoverAnchor>
+        <PopoverContent
+          align="start"
+          className="w-(--radix-popover-trigger-width) p-1"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onInteractOutside={(event) => {
+            // The input and its trigger live in the anchor, outside the popup. Keep the
+            // popover open when they are clicked or focused; they manage open state.
+            const target = event.detail.originalEvent.target as Element | null;
+            if (
+              target?.closest('[data-slot="input-group"]') ===
+              inputRef.current?.closest('[data-slot="input-group"]')
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
+          <CommandList className="max-h-72">
+            {matches.map((suggestion) => (
+              <CommandItem
+                key={suggestion.value}
+                value={suggestion.value}
+                onMouseDown={(event) => event.preventDefault()}
+                onSelect={() => choose(suggestion)}
+                className="justify-between gap-4"
+              >
+                <span>{suggestion.label}</span>
+                {suggestion.description && (
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {suggestion.description}
+                  </span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandList>
+        </PopoverContent>
+      </Popover>
+    </CommandPrimitive>
   );
 }
 

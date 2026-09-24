@@ -1,4 +1,12 @@
-import { db, teamRole, projectMember, aiAgent, teamInvite, scimGroupMapping } from '@repo/db';
+import {
+  db,
+  teamRole,
+  projectMember,
+  aiAgent,
+  teamInvite,
+  scimGroupMapping,
+  containsPattern,
+} from '@repo/db';
 import { and, asc, count, eq, ilike, isNull, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
 import { normalizePermissions, type Permissions } from '#shared/permissions';
@@ -40,7 +48,7 @@ export async function listRolesPage(
   const term = options.search?.trim();
   const where = and(
     eq(teamRole.teamId, teamId),
-    term ? ilike(teamRole.name, `%${term}%`) : undefined,
+    term ? ilike(teamRole.name, containsPattern(term)) : undefined,
   );
   const [rows, counted] = await Promise.all([
     db

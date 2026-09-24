@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
-import { modelCheck, profileReport } from '../runtime-sync/model';
+import { modelCheck, profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -78,10 +78,11 @@ export const runtimePolicy = t.Object({
   runtime: t.Optional(
     t.Union([t.Literal('hermes'), t.Literal('claude'), t.Literal('codex')], {
       description:
-        'Which runtime runs the agent. Unset is Hermes, whose runtime the server provisions ' +
-        'for an agent of one project; a Claude Code or Codex agent runs on a runner started ' +
-        "with that preset (helena-runner --agent claude|codex), which gets the agent's " +
-        'instructions, skills, MCP servers, model and reasoning from Helena.',
+        'Which runtime runs the agent. Unset is Hermes. The server provisions a runtime for ' +
+        'an agent of one project whichever it is, and its runner serves it with that ' +
+        "preset: Claude Code and Codex get the agent's instructions, skills, MCP servers, " +
+        'tools, model and reasoning from Helena, and their login from a runtime login ' +
+        '(credential kind runtime_login) granted to the agent.',
     }),
   ),
   reflection: t.Optional(
@@ -196,6 +197,9 @@ export const runtimeState = t.Object({
   }),
   inventory: t.Nullable(runtimeInventory),
   profile: t.Nullable(profileReport),
+  version: t.Nullable(t.String()),
+  issues: t.Array(runtimeIssue),
+  sandbox: t.Nullable(runtimeSandbox),
   reportedAt: t.Nullable(t.String()),
 });
 

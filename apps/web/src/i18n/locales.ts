@@ -1,26 +1,20 @@
-// The languages the interface ships with. `en` is the source language: every key
-// exists in `messages/en.json`, and a missing translation falls back to it.
-export const LOCALES = [
-  'en',
-  'uk',
-  'ru',
-  'zh-CN',
-  'ar',
-  'fr',
-  'pt-BR',
-  'id',
-  'es-ES',
-  'de',
-] as const;
+import { LOCALES, type Locale } from '@helena/locales';
 
-export type Locale = (typeof LOCALES)[number];
-
-export const DEFAULT_LOCALE: Locale = 'en';
+// The languages the interface ships with, shared with the API (@helena/locales). `en` is
+// the source language: every key exists in `messages/en.json`, and a missing translation
+// falls back to it.
+export { DEFAULT_LOCALE, LOCALES, type Locale } from '@helena/locales';
 
 // Read on the server to render the first paint in the right language. Written by
 // the language switcher next to the account preference, so a signed-out screen
 // (login, invite, shared issue) keeps the last choice too.
 export const LOCALE_COOKIE = 'NEXT_LOCALE';
+
+// The zone next-intl renders dates in (see request.ts), written by PreferencesSync.
+export const TIMEZONE_COOKIE = 'helena-timezone';
+
+// The zone of a render before the cookie exists (a first visit): the API's own default.
+export const FALLBACK_TIMEZONE = 'UTC';
 
 // Each language named in itself, which is what a person scanning the list looks for.
 export const LOCALE_LABELS: Record<Locale, string> = {

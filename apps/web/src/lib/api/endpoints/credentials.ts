@@ -1,7 +1,12 @@
 import { request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 
-export type CredentialKind = 'web_login' | 'api_key' | 'ssh_key' | 'secret';
+export type CredentialKind = 'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login';
+
+// A runtime login signs in the Claude Code or Codex runtime of the agents it is granted
+// to: a token from `claude setup-token`, or an API key.
+export type LoginRuntime = 'claude' | 'codex';
+export type LoginMethod = 'oauth_token' | 'api_key';
 
 // A web login, API key, SSH key or secret of the team. The secret fields are write-only:
 // `secrets` names those that hold a value, the values never arrive here.
@@ -19,6 +24,9 @@ export interface CredentialEntry {
   username: string | null;
   notes: string;
   publicKey: string | null;
+  // runtime_login only.
+  runtime: LoginRuntime | null;
+  method: LoginMethod | null;
   secrets: string[];
   // The agents that may use it.
   agentIds: number[];
@@ -37,6 +45,8 @@ export interface CredentialInput {
   totpSecret?: string | null;
   value?: string;
   notes?: string;
+  runtime?: LoginRuntime;
+  method?: LoginMethod;
 }
 
 export interface NewCredentialInput extends CredentialInput {

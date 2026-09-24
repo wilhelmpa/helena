@@ -3,6 +3,7 @@ import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
+import { png, pngFile, PNG_SIZE } from '#tests/helpers/files';
 import { freshVault } from '#tests/helpers/vault';
 
 // Attachments feature: metadata in Postgres, bytes in the file storage (shared/s3.ts,
@@ -29,7 +30,7 @@ function uploadFile(
   issueId: number,
   name: string,
   type: string,
-  content = 'x',
+  content: string | Uint8Array = type === 'image/png' ? png() : 'x',
 ) {
   return client.issues({ issueId }).attachments.post({
     file: new File([content], name, { type }),
@@ -153,21 +154,48 @@ describe('attachments', () => {
     });
   });
 
+  describe('content type', () => {
+    it('refuses a file whose bytes are not the type it claims', async () => {
+      const { asOwner, issueId } = await setupIssue();
+      const res = await uploadFile(asOwner, issueId, 'shot.png', 'image/png', '<html>');
+      expect(res.status).toBe(400);
+      expect(res.error?.value).toMatchObject({ error: "The file's content is not image/png" });
+    });
+
+    it('stores recognised bytes as what they are, not as what they claim', async () => {
+      const { asOwner, issueId } = await setupIssue();
+      const res = await uploadFile(asOwner, issueId, 'shot.txt', 'text/plain', png());
+      expect(res.status).toBe(201);
+      expect(res.data?.contentType).toBe('image/png');
+    });
+
+    it('takes the type from the name when the browser sends none', async () => {
+      const { asOwner, issueId } = await setupIssue();
+      const res = await uploadFile(asOwner, issueId, 'notes.md', '', '# Notes');
+      expect(res.status).toBe(201);
+      expect(res.data?.contentType).toBe('text/markdown');
+    });
+  });
+
   describe('replace', () => {
     it('serves the new bytes under the same id and url', async () => {
       const { asOwner, issueId } = await setupIssue();
-      const up = await uploadFile(asOwner, issueId, 'shot.png', 'image/png', 'before');
+      const up = await uploadFile(asOwner, issueId, 'shot.png', 'image/png', png('before'));
       const publicId = up.data!.id;
 
       const res = await asOwner.attachments({ publicId }).put({
-        file: new File(['after annotating'], 'shot.png', { type: 'image/png' }),
+        file: pngFile('shot.png', 'after annotating'),
       });
       expect(res.status).toBe(200);
-      expect(res.data).toMatchObject({ id: publicId, filename: 'shot.png', sizeBytes: 16 });
+      expect(res.data).toMatchObject({
+        id: publicId,
+        filename: 'shot.png',
+        sizeBytes: PNG_SIZE + 16,
+      });
       expect(res.data!.url).toBe(up.data!.url);
 
       const raw = await api.attachments({ publicId }).raw.get();
-      expect(String(raw.data)).toBe('after annotating');
+      expect(String(raw.data)).toEndWith('after annotating');
 
       // Still one attachment: the row was updated, not added to.
       const list = await asOwner.issues({ issueId }).attachments.get();
@@ -205,7 +233,7 @@ describe('attachments', () => {
 
     it('serves the replaced bytes to a client holding the old entity tag', async () => {
       const { asOwner, issueId } = await setupIssue();
-      const up = await uploadFile(asOwner, issueId, 'shot.png', 'image/png', 'before');
+      const up = await uploadFile(asOwner, issueId, 'shot.png', 'image/png', png('before'));
       const publicId = up.data!.id;
       const first = await api.attachments({ publicId }).raw.get();
       const etag = first.response.headers.get('etag')!;
@@ -217,15 +245,13 @@ describe('attachments', () => {
         .raw.get({ headers: { 'if-none-match': etag } });
       expect(cached.status).toBe(304);
 
-      await asOwner
-        .attachments({ publicId })
-        .put({ file: new File(['after'], 'shot.png', { type: 'image/png' }) });
+      await asOwner.attachments({ publicId }).put({ file: pngFile('shot.png', 'after') });
 
       const refetched = await api
         .attachments({ publicId })
         .raw.get({ headers: { 'if-none-match': etag } });
       expect(refetched.status).toBe(200);
-      expect(String(refetched.data)).toBe('after');
+      expect(String(refetched.data)).toEndWith('after');
     });
 
     it('rejects an empty file', async () => {
@@ -297,7 +323,7 @@ describe('attachments', () => {
 
     it('serves an allowlisted image inline without a CSP', async () => {
       const { asOwner, issueId } = await setupIssue();
-      const up = await uploadFile(asOwner, issueId, 'p.png', 'image/png', 'pngbytes');
+      const up = await uploadFile(asOwner, issueId, 'p.png', 'image/png');
       const raw = await api.attachments({ publicId: up.data!.id }).raw.get();
       expect(raw.status).toBe(200);
       expect(raw.response.headers.get('content-disposition')).toContain('inline');
@@ -306,7 +332,7 @@ describe('attachments', () => {
 
     it('forces download for an image when ?download is set', async () => {
       const { asOwner, issueId } = await setupIssue();
-      const up = await uploadFile(asOwner, issueId, 'p.png', 'image/png', 'pngbytes');
+      const up = await uploadFile(asOwner, issueId, 'p.png', 'image/png');
       const raw = await api
         .attachments({ publicId: up.data!.id })
         .raw.get({ query: { download: '1' } });

@@ -9,6 +9,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
+import { png, pngFile, PNG_SIZE } from '#tests/helpers/files';
 import { freshVault } from '#tests/helpers/vault';
 import { moveAttachmentsToVault } from '../../vault-migration';
 
@@ -82,13 +83,18 @@ describe('attachments in the vault', () => {
 
   it('replaces a file in place and keeps the previous version in the trash', async () => {
     const { asOwner, issueId, taskFolder } = await setupIssue();
-    const up = await upload(asOwner, issueId, 'shot.png', 'before');
+    const up = await asOwner
+      .issues({ issueId })
+      .attachments.post({ file: pngFile('shot.png', 'before') });
     const replaced = await asOwner
       .attachments({ publicId: up.data!.id })
-      .put({ file: new File(['after'], 'shot.png', { type: 'image/png' }) });
-    expect(replaced.data).toMatchObject({ vaultPath: `${taskFolder}/shot.png`, sizeBytes: 5 });
-    expect(readFileSync(onDisk(`${taskFolder}/shot.png`), 'utf8')).toBe('after');
-    expect(readFileSync(onDisk(`.trash/${taskFolder}/shot.png`), 'utf8')).toBe('before');
+      .put({ file: pngFile('shot.png', 'after') });
+    expect(replaced.data).toMatchObject({
+      vaultPath: `${taskFolder}/shot.png`,
+      sizeBytes: PNG_SIZE + 5,
+    });
+    expect(readFileSync(onDisk(`${taskFolder}/shot.png`)).equals(png('after'))).toBe(true);
+    expect(readFileSync(onDisk(`.trash/${taskFolder}/shot.png`)).equals(png('before'))).toBe(true);
   });
 
   it('links a project file without copying it and leaves it when unlinked', async () => {

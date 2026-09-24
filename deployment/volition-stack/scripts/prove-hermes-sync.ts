@@ -22,8 +22,10 @@
  * SOUL.md holds the new marker), "Neu schreiben" must come back synced, and with --tamper a
  * config.yaml replaced by a plain file must be put back by the runner.
  *
- * Claude Code and Codex agents run on a runner this script starts for the run, as the
- * current user (whose `claude` and `codex` are logged in), and stops afterwards.
+ * Claude Code and Codex agents run on the server's own runner too (hub/cli-runtimes): the
+ * new test agent has to come online by itself, its runtime installed and signed in (a
+ * Laufzeit-Anmeldung in Zugänge, which the proof grants to the test agent, or the agent's
+ * own login), before its run.
  *
  * Run it on the server as the owner:
  *   HELENA_API_KEY=itp_... bun deployment/volition-stack/scripts/prove-hermes-sync.ts \
@@ -32,7 +34,7 @@
  *     [--tamper] [--remove-agents] [--timeout-min=20] [--report=<file.json>]
  * HELENA_API_KEY is a personal API key of the owner; it is sent as x-api-key and never
  * printed. Without a key, use the browser build (prove-hermes-sync.browser.ts), which runs in
- * a signed-in Helena tab and proves Hermes (Claude Code and Codex need this runner).
+ * a signed-in Helena tab and proves every runtime but the host steps (SOUL.md, --tamper).
  *
  * Idempotent: agents, the skill and the label are reused; every run adds tasks labeled
  * E2E-Test. Creating the Hermes test agent the first time restarts the server's runner once
@@ -40,10 +42,8 @@
  * check passed.
  */
 
-import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
 import { keyTransport } from '../../../scripts/helena-bundle-sync.ts';
 import { runProof, type ProofHost, type ProofOptions, type Runtime } from './prove-hermes-sync.ops.ts';
 
@@ -68,7 +68,6 @@ const options: ProofOptions = {
   timeoutMin: Number(value('timeout-min') ?? 20),
 };
 const baseUrl = (value('base-url') ?? 'http://127.0.0.1:3000').replace(/\/+$/, '');
-const runnerBundle = value('runner') ?? '/srv/volition/source/plan/packages/runner/dist/cli.js';
 const reportPath = value('report') ?? null;
 
 const apiKey = process.env.HELENA_API_KEY?.trim();
@@ -99,43 +98,6 @@ const host: ProofHost = {
   },
   isConfigLink(profile) {
     return spawnSync('sudo', ['-n', 'test', '-L', `${profile}/config.yaml`]).status === 0;
-  },
-  startCliRunner(runtime, key) {
-    const state = join(homedir(), '.local', 'state', 'helena-prove', runtime);
-    const workspace = join(state, 'workspace');
-    mkdirSync(workspace, { recursive: true, mode: 0o700 });
-    // Codex works in a git repository only, like a project's workspace.
-    spawnSync('git', ['init', '-q', workspace]);
-    const configPath = join(state, 'runner.json');
-    writeFileSync(
-      configPath,
-      JSON.stringify({
-        url: baseUrl,
-        apiKey: key,
-        agent: runtime,
-        cwd: workspace,
-        concurrency: 1,
-        pollIntervalMs: 2000,
-        timeoutMs: (options.timeoutMin ?? 20) * 60_000,
-        env: { HELENA_RUNTIME_DIR: join(state, 'runtime') },
-      }),
-      { mode: 0o600 },
-    );
-    const runner = spawn('node', [runnerBundle, configPath], {
-      env: { ...process.env, PATH: `${join(homedir(), '.local', 'bin')}:${process.env.PATH ?? ''}` },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    let log = '';
-    runner.stdout.on('data', (chunk) => (log = `${log}${chunk}`.slice(-4000)));
-    runner.stderr.on('data', (chunk) => (log = `${log}${chunk}`.slice(-4000)));
-    return {
-      log: () => log,
-      stop: async () => {
-        runner.kill('SIGTERM');
-        await new Promise((resolve) => setTimeout(resolve, 2_000));
-        rmSync(configPath, { force: true });
-      },
-    };
   },
 };
 

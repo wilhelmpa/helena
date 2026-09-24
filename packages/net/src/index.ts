@@ -2,6 +2,7 @@ import { lookup } from 'node:dns/promises';
 import { request as httpRequest } from 'node:http';
 import { isIP, type LookupFunction } from 'node:net';
 import { request as httpsRequest } from 'node:https';
+import ipaddr from 'ipaddr.js';
 
 // SSRF guards for server-side fetches of a user/agent-supplied URL. A URL that
 // resolves to a loopback, link-local, or private-range address could reach internal
@@ -45,42 +46,80 @@ function isAllowedHost(host: string): boolean {
     .includes(host);
 }
 
-// IPv4-mapped and IPv4-compatible IPv6 addresses (`::ffff:127.0.0.1`, `::ffff:7f00:1`,
-// `::127.0.0.1`) reach the same host as the IPv4 they carry, so they are compared as
-// that IPv4 rather than as an IPv6 the range checks below would not recognise.
-function toIpv4(ip: string): string {
-  const embedded = ip.match(/^::(?:ffff:)?(.+)$/);
-  if (!embedded) return ip;
-  const rest = embedded[1]!;
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(rest)) return rest;
-  const hex = rest.match(/^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
-  if (!hex) return ip;
-  const n = ((parseInt(hex[1]!, 16) << 16) | parseInt(hex[2]!, 16)) >>> 0;
-  return [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+// Address classes come from ipaddr.js (IANA special-purpose registries), not from a
+// list of our own. An IPv4-mapped or IPv4-compatible IPv6 address (`::ffff:127.0.0.1`,
+// `::ffff:7f00:1`, `::127.0.0.1`) reaches the same host as the IPv4 it carries, so it
+// is classified as that IPv4.
+function parseIp(ip: string): ipaddr.IPv4 | ipaddr.IPv6 | null {
+  let addr: ipaddr.IPv4 | ipaddr.IPv6;
+  try {
+    addr = ipaddr.parse(ip);
+  } catch {
+    return null;
+  }
+  if (addr.kind() === 'ipv4') return addr;
+  const v6 = addr as ipaddr.IPv6;
+  if (v6.isIPv4MappedAddress()) return v6.toIPv4Address();
+  const [a, b, c, d, e, f, g, h] = v6.parts as [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
+  if (a === 0 && b === 0 && c === 0 && d === 0 && e === 0 && f === 0 && (g !== 0 || h > 1)) {
+    return new ipaddr.IPv4([g >> 8, g & 255, h >> 8, h & 255]);
+  }
+  return v6;
 }
 
-// An IPv4/IPv6 address in a loopback, link-local, or private range.
+// Refused on every server-side fetch: this machine, its networks, and the IPv6 forms
+// that carry an IPv4 through a gateway (NAT64 64:ff9b::/96 and /48, SIIT, 6to4,
+// Teredo), which would forward to whatever IPv4 is embedded. Names are ipaddr.js's.
+const INTERNAL_V4 = new Set(['unspecified', 'loopback', 'private', 'linkLocal', 'carrierGradeNat']);
+// IETF protocol assignments (RFC 6890) and the benchmarking network (RFC 2544) are
+// never real destinations; ipaddr.js files them under 'reserved' with the documentation
+// ranges, which stay allowed outside the public-only policy.
+const INTERNAL_V4_CIDRS = ['192.0.0.0/24', '198.18.0.0/15'].map((cidr) =>
+  ipaddr.IPv4.parseCIDR(cidr),
+);
+const INTERNAL_V6 = new Set([
+  'unspecified',
+  'loopback',
+  'linkLocal',
+  'uniqueLocal',
+  'deprecatedSiteLocal',
+  'rfc6052',
+  'rfc6145',
+  '6to4',
+  'teredo',
+]);
+
+// An IPv4/IPv6 address in a loopback, link-local, private or gateway range.
 export function isPrivateIp(ip: string): boolean {
-  const normalized = toIpv4(ip.toLowerCase());
-  const v4 = normalized.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (v4) {
-    const [a, b] = [Number(v4[1]), Number(v4[2])];
-    return (
-      a === 0 ||
-      a === 127 || // loopback
-      a === 10 || // private
-      (a === 172 && b >= 16 && b <= 31) || // private
-      (a === 192 && b === 168) || // private
-      (a === 169 && b === 254) || // link-local (incl. cloud metadata)
-      (a === 100 && b >= 64 && b <= 127) // CGNAT
-    );
+  const addr = parseIp(ip);
+  if (!addr) return true;
+  if (addr.kind() === 'ipv4') {
+    const v4 = addr as ipaddr.IPv4;
+    return INTERNAL_V4.has(v4.range()) || INTERNAL_V4_CIDRS.some((cidr) => v4.match(cidr));
   }
-  return (
-    normalized === '::1' || // loopback
-    normalized === '::' ||
-    normalized.startsWith('fe80:') || // link-local
-    /^f[cd][0-9a-f]{2}:/.test(normalized) // unique local
-  );
+  return INTERNAL_V6.has((addr as ipaddr.IPv6).range());
+}
+
+const GLOBAL_UNICAST_V6 = ipaddr.IPv6.parseCIDR('2000::/3');
+
+// Public-only content (link previews) reaches only globally routable unicast
+// addresses: every special-purpose range is refused, including documentation,
+// benchmarking, multicast and IPv6 outside 2000::/3.
+function isNonPublicIp(ip: string): boolean {
+  const addr = parseIp(ip);
+  if (!addr) return true;
+  if (addr.kind() === 'ipv4') return (addr as ipaddr.IPv4).range() !== 'unicast';
+  const v6 = addr as ipaddr.IPv6;
+  return !v6.match(GLOBAL_UNICAST_V6) || v6.range() !== 'unicast';
 }
 
 interface Pin {
@@ -92,27 +131,6 @@ interface UrlPolicy {
   // Public content never uses development or configured private-host exceptions.
   publicOnly?: boolean;
   signal?: AbortSignal;
-}
-
-function isNonPublicIp(ip: string): boolean {
-  const normalized = toIpv4(ip.toLowerCase());
-  if (isPrivateIp(normalized)) return true;
-  if (isIP(normalized) === 4) {
-    const [a, b, c] = normalized.split('.').map(Number);
-    return (
-      a! >= 224 ||
-      (a === 192 && b === 0) ||
-      (a === 198 && (b === 18 || b === 19 || (b === 51 && c === 100))) ||
-      (a === 203 && b === 0 && c === 113)
-    );
-  }
-  return (
-    !/^[23][0-9a-f]{3}:/.test(normalized) ||
-    (normalized.startsWith('2001:') && parseInt(normalized.split(':')[1] || '0', 16) < 0x200) ||
-    normalized.startsWith('2001:db8:') ||
-    normalized.startsWith('3fff:') ||
-    normalized.startsWith('2002:')
-  );
 }
 
 // Validates the URL and resolves its hostname once. `pin` is the address the caller

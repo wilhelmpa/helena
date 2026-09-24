@@ -14,7 +14,7 @@ import {
 import { assertNoSymlinks, plainTextHtml, vaultAbsolute } from '@repo/mail';
 import { deleteObject, putObject } from '@repo/storage';
 import { and, asc, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
-import { safeAttachmentFilename } from '#modules/attachments/storage';
+import { safeAttachmentFilename, uploadContentType } from '#modules/attachments/storage';
 import { getStorageSettings } from '#modules/settings/service';
 import { HttpError, iso } from '#shared/lib';
 import type { MailScope } from '../access';
@@ -327,9 +327,10 @@ export async function uploadAttachment(draftId: number, file: File) {
   if (file.size > maxAttachmentMb * 1024 * 1024)
     throw new HttpError(413, `The file exceeds ${maxAttachmentMb} MB`);
   const filename = safeAttachmentFilename(file.name);
-  const contentType = file.type.split(';')[0] || 'application/octet-stream';
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const contentType = await uploadContentType(bytes, filename, file.type);
   const key = `mail/drafts/${draftId}/${randomUUID()}`;
-  await putObject(key, Buffer.from(await file.arrayBuffer()), contentType);
+  await putObject(key, bytes, contentType);
   try {
     return await addAttachment(row, {
       source: 'storage',

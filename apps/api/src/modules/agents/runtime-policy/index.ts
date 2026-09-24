@@ -2,8 +2,9 @@ import { Elysia } from 'elysia';
 import { errors } from '#shared/responses';
 import { runnerAuth } from '../runner-auth';
 import { agentMcpSecrets } from '../mcp-servers/service';
-import { workRefQuery } from '../credentials/model';
+import { RuntimeLoginResponse, workRefQuery } from '../credentials/model';
 import { claimedWork, recordMcpSecretDelivery, workRefOf } from '../credentials/delivery';
+import { runtimeLoginOf } from '../credentials/runtime-login';
 import {
   McpSecretsResponse,
   RuntimePolicySnapshotResponse,
@@ -46,6 +47,27 @@ export const agentRuntimePolicyRoutes = new Elysia({
         summary: "Read the secrets of the calling agent's MCP servers",
         description:
           "The values of the secrets the calling agent's MCP servers reference, by secret id.",
+      },
+    },
+  )
+  // Read before each run and chat answer of a Claude Code or Codex agent; without a run or
+  // chat answer, only whether a login is granted (for its health), never the value.
+  .get(
+    '/agent-runtime/runtime-login',
+    async ({ agent, query, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      return { login: await runtimeLoginOf(agent, workRefOf(query)) };
+    },
+    {
+      runnerAgent: true,
+      query: workRefQuery,
+      response: { 200: RuntimeLoginResponse, ...errors(400, 401, 403, 404) },
+      detail: {
+        summary: "Read the login of the calling agent's Claude Code or Codex runtime",
+        description:
+          "The newest runtime login (Credentials page, kind runtime_login) of the agent's " +
+          'runtime granted to it. Named with a run or chat answer the agent holds, the ' +
+          'answer carries the value and the delivery is recorded in the audit log.',
       },
     },
   )
