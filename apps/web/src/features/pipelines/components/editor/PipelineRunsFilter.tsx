@@ -5,7 +5,7 @@ import { CircleDot, FlaskConical, FolderKanban } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Pipeline, PipelineRunStatus } from '@/lib/api/endpoints/pipelines';
 import { useTeamProjectOptionsQuery } from '@/services/teams.service';
-import { PageFilterMenu, type PageFilter } from '@/features/home/components/toolbar/PageFilterMenu';
+import { PageFilterMenu, type PageFilter } from '@/components/layout/PageFilterMenu';
 
 export const ALL_RUNS = 'all';
 export const RUN_STATUSES: PipelineRunStatus[] = [

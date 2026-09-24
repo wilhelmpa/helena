@@ -11,7 +11,7 @@ import {
   PageToolbar,
   PageToolbarSpacer,
 } from '@/components/layout/PageToolbar';
-import { PageFilterMenu } from '@/features/home/components/toolbar/PageFilterMenu';
+import { PageFilterMenu } from '@/components/layout/PageFilterMenu';
 
 export type HomeTaskGrouping = 'project' | 'state';
 
