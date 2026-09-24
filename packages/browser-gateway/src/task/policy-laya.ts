@@ -16,6 +16,7 @@ import {
   operationsFor,
   scope,
   targetsFor,
+  wantsOff,
   words,
 } from './policy-common.ts';
 import {
@@ -30,6 +31,8 @@ import { answerOf } from './systemone.ts';
 import type { Operation, PageElement, Question } from './types.ts';
 
 export const LAYA_SCOPE = 25;
+// laya-browser-agent's confidence gate: a local model fired a submit at p = 0.06.
+const MIN_TARGET = 0.15;
 const TEXT_CHARS = 1200;
 
 // jev-ultrafast's target heads: operation.lower() + "_target".
@@ -64,7 +67,22 @@ export function layaRound(input: RoundInput) {
   const { observation, values, mode } = input;
   const goal = layaGoal(input.goal, values);
   const hasValues = Object.keys(values).length > 0;
-  const all = targetsFor(observation, mode, hasValues, input.excluded);
+  // An element under an overlay cannot be used (the loop refuses it); the checkpoint picks it
+  // anyway, again and again, instead of the overlay's own buttons.
+  const found = targetsFor(observation, mode, hasValues, input.excluded);
+  const open = (list: PageElement[]) => list.filter((element) => !element.covered);
+  // A dropdown that already shows what the goal asks for is done (the toggle guard's rule for
+  // dropdowns): offered, the checkpoint picks it again and so has to choose another option.
+  const asked = new Set(words(`${input.goal} ${Object.values(values).join(' ')}`));
+  const settled = (element: PageElement) => {
+    const shown = words(element.value ?? '');
+    return shown.length > 0 && shown.every((word) => asked.has(word));
+  };
+  const all = {
+    CLICK: open(found.CLICK),
+    TYPE_TEXT: open(found.TYPE_TEXT),
+    SELECT: open(found.SELECT).filter((element) => !settled(element)),
+  };
   const union = [...new Set([...all.CLICK, ...all.TYPE_TEXT, ...all.SELECT])];
   const kept = new Set(scope(union, input.goal, values, LAYA_SCOPE));
   const targets = {
@@ -126,42 +144,246 @@ export function layaRound(input: RoundInput) {
 }
 
 // The value whose key names the field best ("postal_code" for "Postal Code"), or null when none
-// or several fit equally.
+// or several fit equally. The field's own label, placeholder and name count first; the text near
+// it (often the previous field's label) only when they name no value.
 export function valueForField(element: PageElement, values: Record<string, string>): string | null {
   const keys = Object.keys(values);
   if (keys.length === 1) return keys[0]!;
-  const field = new Set(
-    words(
-      [element.label, element.placeholder, element.name, element.near].filter(Boolean).join(' '),
-    ),
-  );
-  let best: string | null = null;
-  let bestScore = 0;
-  let tie = false;
-  for (const key of keys) {
-    const score = words(key.replace(/[_-]+/g, ' ')).filter((word) => field.has(word)).length;
-    if (score > bestScore) {
-      best = key;
-      bestScore = score;
-      tie = false;
-    } else if (score === bestScore && score > 0) {
-      tie = true;
+  const best = (texts: (string | undefined)[]) => {
+    const field = new Set(words(texts.filter(Boolean).join(' ')));
+    let found: string | null = null;
+    let top = 0;
+    let tie = false;
+    for (const key of keys) {
+      const score = words(key.replace(/[_-]+/g, ' ')).filter((word) => field.has(word)).length;
+      if (score > top) {
+        found = key;
+        top = score;
+        tie = false;
+      } else if (score === top && score > 0) {
+        tie = true;
+      }
     }
+    return { key: top > 0 && !tie ? found : null, matched: top > 0 };
+  };
+  const own = best([element.label, element.placeholder, element.name]);
+  if (own.matched) return own.key;
+  return best([element.near]).key;
+}
+
+// The texts a goal quotes („Alle Neuigkeiten geladen“, "Order placed").
+export function quotedTexts(goal: string): string[] {
+  const out: string[] = [];
+  for (const match of goal.matchAll(/[„“"«»]([^„“”"«»]{2,80})[“”"«»]/gu)) {
+    const text = match[1]!.trim();
+    if (text) out.push(text);
   }
-  return bestScore > 0 && !tie ? best : null;
+  return out;
+}
+
+const squash = (text: string) => text.toLowerCase().replace(/\s+/g, ' ').trim();
+
+// DONE needs visible evidence: a text the goal quotes that the page shows nowhere (text, element
+// labels or field values) is not reached yet. The checkpoint says DONE after one "load more".
+export function missingEvidence(input: RoundInput): boolean {
+  const quoted = quotedTexts(input.goal);
+  if (quoted.length === 0) return false;
+  const { observation } = input;
+  const seen = squash(
+    [
+      observation.title,
+      observation.text,
+      ...observation.elements.flatMap((element) => [element.label, element.text, element.value]),
+    ]
+      .filter(Boolean)
+      .join(' \n '),
+  );
+  return quoted.some((text) => !seen.includes(squash(text)));
+}
+
+const lastAction = (input: RoundInput) =>
+  [...input.history].reverse().find((entry) => entry.action);
+
+// Typed but not sent: DONE right after typing, while the goal asks to submit, search, send or save
+// and the page has a control that submits, is not done yet.
+const SUBMIT_WORDS =
+  /(submit|send|absend|abschick|sende|speicher|save|bestätig|confirm|search|such)/i;
+
+export function unsubmitted(input: RoundInput, clickable: PageElement[]): boolean {
+  if (!SUBMIT_WORDS.test(input.goal)) return false;
+  if (lastAction(input)?.action !== 'type_text') return false;
+  return clickable.some((element) => element.submits);
+}
+
+// The goal's evidence is all there after an action that changed the page: every quoted text shows
+// outside a field (and not as a link still to open), every value was typed. Then the task is
+// likely done even if the checkpoint wanders on (it toggles the todo it just added).
+export function evidenceComplete(input: RoundInput): boolean {
+  const quoted = quotedTexts(input.goal);
+  if (quoted.length === 0) return false;
+  const last = lastAction(input);
+  if (!last || last.action === 'type_text' || !last.page_changed) return false;
+  const typed = typedKeys(input);
+  if (Object.keys(input.values).some((key) => !typed.has(key))) return false;
+  const { observation } = input;
+  const shown = squash(`${observation.title} \n ${observation.text}`);
+  const links = observation.elements
+    .filter((element) => element.role === 'link')
+    .map((element) => squash(element.label || element.text || ''));
+  return quoted.every((text) => {
+    const wanted = squash(text);
+    return shown.includes(wanted) && !links.some((link) => link.includes(wanted));
+  });
+}
+
+// A sign-in wall: a password field on screen. The fast path never types into one, and a small
+// model calls such a page done.
+export function showsLogin(input: RoundInput): boolean {
+  return input.observation.elements.some(
+    (element) => element.credential && !element.offscreen && !element.covered,
+  );
+}
+
+// Actions that are hard to undo, by word stem, in the languages of the owner's pages. The Jev policy
+// asks the model (jev-browser's `irreversible`); a small local model is not asked, code decides: a
+// click on such a control pauses the task (needs_confirmation) unless the goal itself asks for
+// that kind of action ("sende es ab" allows "Senden").
+const HARD_TO_UNDO: string[][] = [
+  ['kauf', 'buy', 'purchase', 'bestell', 'order'],
+  ['bezahl', 'zahlungspflichtig', 'pay', 'überweis', 'transfer'],
+  ['lösch', 'delete', 'entfern', 'remove'],
+  ['send', 'absend', 'abschick'],
+  ['veröffentlich', 'publish', 'posten'],
+  ['kündig', 'unsubscribe'],
+];
+
+export function hardToUndo(goal: string, element: PageElement | null): boolean {
+  if (!element) return false;
+  const label = (element.label || element.text || '').toLowerCase();
+  const wanted = goal.toLowerCase();
+  return HARD_TO_UNDO.some(
+    (family) =>
+      family.some((stem) => label.includes(stem)) && !family.some((stem) => wanted.includes(stem)),
+  );
+}
+
+// The keys of the values typed so far in this task.
+function typedKeys(input: RoundInput): Set<string> {
+  return new Set(
+    input.history
+      .filter((entry) => entry.action === 'type_text' && entry.value)
+      .map((entry) => entry.value!),
+  );
+}
+
+// laya-browser-agent's "code does what code is good at", for two mistakes the small checkpoint
+// makes on search and contact forms (eval, 2026-09-24): it submits before filling ("Fill required
+// fields before submitting"), and after a search it submits the now empty form again instead of
+// opening a result ("Do not repeat satisfied steps").
+//
+// Fill first: a submit while a field in scope is empty and one of the caller's values names it
+// and was not typed yet becomes typing that value into that field.
+export function fillBeforeSubmit(
+  input: RoundInput,
+  element: PageElement | null,
+  fields: PageElement[],
+): { element: PageElement; valueKey: string } | null {
+  if (!element?.submits) return null;
+  const typed = typedKeys(input);
+  for (const field of fields) {
+    if (field.credential || (field.value ?? '') !== '') continue;
+    const key = valueForField(field, input.values);
+    if (key && !typed.has(key)) return { element: field, valueKey: key };
+  }
+  return null;
+}
+
+// Type, not click: a click into a text field that one of the caller's values names, and that does
+// not hold that value yet, is typing the value there (the checkpoint often clicks a field first).
+export function clickIntoField(
+  input: RoundInput,
+  element: PageElement | null,
+): { element: PageElement; valueKey: string } | null {
+  if (!element?.editable || element.credential || element.selectable) return null;
+  const key = valueForField(element, input.values);
+  if (!key || (element.value ?? '') === input.values[key]) return null;
+  return { element, valueKey: key };
+}
+
+// Tick first: a submit while an unticked checkbox in scope is named by the goal (most of its words)
+// ("Ich akzeptiere die AGB" for "akzeptiere die AGB") is clicking that checkbox ("Set every
+// requested filter/control"). Not when the goal asks to switch something off.
+export function tickBeforeSubmit(
+  input: RoundInput,
+  element: PageElement | null,
+  clickable: PageElement[],
+): PageElement | null {
+  if (!element?.submits || wantsOff(input.goal)) return null;
+  const asked = new Set(words(input.goal));
+  return (
+    clickable.find((box) => {
+      if (box.checked !== false || (box.role !== 'checkbox' && box.role !== 'switch')) return false;
+      const named = words(box.label || box.text || '');
+      const matched = named.filter((word) => asked.has(word)).length;
+      return matched >= 2 && matched / named.length >= 0.6;
+    }) ?? null
+  );
+}
+
+// Enter, not click: a click into the text field the last action typed into, which holds that
+// value, is confirming the entry (a todo list, a search without a button). The checkpoint knows no
+// PRESS_ENTER.
+export function confirmsEntry(input: RoundInput, element: PageElement | null): boolean {
+  if (!element?.editable || element.credential || element.selectable) return false;
+  const last = [...input.history].reverse().find((entry) => entry.action);
+  if (!last || last.action !== 'type_text' || last.element !== brief(element)) return false;
+  return !!last.value && (element.value ?? '') === input.values[last.value];
+}
+
+// No second submit: the same submit as the last action, which changed the page, while a field in
+// scope is empty again and nothing was typed since, submits an empty form.
+export function repeatsSubmit(
+  input: RoundInput,
+  element: PageElement | null,
+  fields: PageElement[],
+): boolean {
+  if (!element?.submits) return false;
+  const last = [...input.history].reverse().find((entry) => entry.action);
+  if (!last || last.action !== 'click' || !last.page_changed) return false;
+  if (last.element !== brief(element)) return false;
+  return fields.some((field) => !field.credential && (field.value ?? '') === '');
 }
 
 export const layaPolicy: DecisionPolicy = {
   kind: 'laya',
-  // laya-browser-agent's confidence gate: a local model fired a submit at p = 0.06.
-  minTarget: 0.15,
+  minTarget: MIN_TARGET,
 
   async round(input: RoundInput, ask: Ask): Promise<RoundAnswer> {
     const { request, targets, selectOptions } = layaRound(input);
     const q = request.questions;
     const reply = await ask(request);
     const operation = answerOf(reply, 'operation', q.operation!, 'choice');
-    const op = operation.choice as Operation;
+    let op = operation.choice as Operation;
+    let operationProbability = operation.probabilities[op] ?? 0;
+    if (op !== 'DONE' && op !== 'BLOCKED' && evidenceComplete(input)) {
+      op = 'DONE';
+      operationProbability = 0.5;
+    }
+    // Typed but not sent: the submit is the next step.
+    const submitNext = op === 'DONE' && unsubmitted(input, targets.CLICK);
+    if (submitNext) {
+      op = 'CLICK';
+      operationProbability = operation.probabilities.CLICK ?? 0;
+    } else if (op === 'DONE' && missingEvidence(input)) {
+      // The next best operation instead, given that DONE is ruled out.
+      const next = Object.entries(operation.probabilities)
+        .filter(([key]) => key !== 'DONE' && key !== 'BLOCKED')
+        .sort((a, b) => b[1] - a[1])[0];
+      if (next) {
+        op = next[0] as Operation;
+        operationProbability = operationProbability < 1 ? next[1] / (1 - operationProbability) : 0;
+      }
+    }
     let element: PageElement | null = null;
     let option: string | undefined;
     let targetProbability = 1;
@@ -173,9 +395,34 @@ export const layaPolicy: DecisionPolicy = {
         input.observation.elements.find((e) => String(e.i) === key);
       if (q[head]) {
         const target = answerOf(reply, head, q[head]!, 'choice');
-        element = byKey(target.choice) ?? null;
-        option = selectOptions.get(target.choice)?.option;
-        targetProbability = target.probabilities[target.choice] ?? 0;
+        let choice = target.choice;
+        element = byKey(choice) ?? null;
+        targetProbability = target.probabilities[choice] ?? 0;
+        if (op === 'CLICK' && repeatsSubmit(input, element, targets.TYPE_TEXT)) {
+          // The next best target instead, if any is left, with its probability given that the
+          // repeated submit is ruled out.
+          const ruledOut = targetProbability;
+          const next = Object.entries(target.probabilities)
+            .filter(([key]) => key !== choice)
+            .sort((a, b) => b[1] - a[1])[0];
+          if (next) {
+            choice = next[0];
+            element = byKey(choice) ?? null;
+            targetProbability = ruledOut < 1 ? next[1] / (1 - ruledOut) : 0;
+          }
+        }
+        if (submitNext && !element?.submits) {
+          // The likeliest control that submits.
+          const best = Object.entries(target.probabilities)
+            .filter(([key]) => byKey(key)?.submits)
+            .sort((a, b) => b[1] - a[1])[0];
+          if (best) {
+            choice = best[0];
+            element = byKey(choice) ?? null;
+            targetProbability = Math.max(best[1], MIN_TARGET);
+          }
+        }
+        option = selectOptions.get(choice)?.option;
         candidates = topCandidates(target.probabilities, byKey, brief);
       } else {
         element = targets[op as keyof typeof HEADS][0] ?? null;
@@ -183,18 +430,58 @@ export const layaPolicy: DecisionPolicy = {
           option = [...selectOptions.values()].find((o) => o.element === element)?.option;
       }
     }
+    if (op === 'CLICK' && confirmsEntry(input, element)) {
+      return {
+        operation: 'PRESS_ENTER',
+        element,
+        operationProbability,
+        operationConfidence: operation.confidence,
+        targetProbability: 1,
+        done: operation.probabilities.DONE ?? null,
+        error: null,
+        login: showsLogin(input) ? 0.9 : null,
+        blocked: operation.probabilities.BLOCKED ?? null,
+        irreversible: hardToUndo(input.goal, element) ? 0.9 : null,
+        candidates,
+      };
+    }
+    const tick = op === 'CLICK' ? tickBeforeSubmit(input, element, targets.CLICK) : null;
+    if (tick) {
+      element = tick;
+      targetProbability = 1;
+    }
+    const fill =
+      op === 'CLICK' && !tick
+        ? (clickIntoField(input, element) ?? fillBeforeSubmit(input, element, targets.TYPE_TEXT))
+        : null;
+    if (fill) {
+      return {
+        operation: 'TYPE_TEXT',
+        element: fill.element,
+        valueKey: fill.valueKey,
+        operationProbability,
+        operationConfidence: operation.confidence,
+        targetProbability: 1,
+        done: operation.probabilities.DONE ?? null,
+        error: null,
+        login: showsLogin(input) ? 0.9 : null,
+        blocked: operation.probabilities.BLOCKED ?? null,
+        irreversible: null,
+        candidates,
+      };
+    }
     return {
       operation: op,
       element,
       option,
-      operationProbability: operation.probabilities[op] ?? 0,
+      operationProbability,
       operationConfidence: operation.confidence,
       targetProbability,
       done: operation.probabilities.DONE ?? null,
       error: null,
-      login: null,
+      login: showsLogin(input) ? 0.9 : null,
       blocked: operation.probabilities.BLOCKED ?? null,
-      irreversible: null,
+      irreversible: hardToUndo(input.goal, element) ? 0.9 : null,
       candidates,
     };
   },

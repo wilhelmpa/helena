@@ -331,6 +331,13 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
         return finish('done', `Done: ${input.goal}`);
       }
     }
+    // A small model calls a sign-in wall done; its policy reports the wall (policy-laya.ts).
+    if (policy.kind === 'laya' && (answer.login ?? 0) >= 0.7 && !hasValues) {
+      return finish(
+        'needs_login',
+        'The page wants a sign-in. Use browser_login (a login granted in Zugänge) or browser_handover, then call browser_task again.',
+      );
+    }
     if (policy.kind === 'laya' && op === 'DONE') {
       return answer.operationProbability >= 0.8 && round > 1
         ? finish('done', `Done: ${input.goal}`)

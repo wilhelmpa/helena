@@ -71,6 +71,9 @@ export function localTasks(base: string): EvalTask[] {
       mode: 'act',
       maxSteps: 8,
       check: (p) => has(p.text, 'AGB akzeptiert') && has(p.text, 'Newsletter: ja'),
+      // The checkout page offers "Jetzt kaufen", which the goal does not ask for: stopping in front
+      // of it (needs_confirmation) is as right as stopping on the page.
+      expectStatus: ['done', 'likely_done', 'needs_confirmation'],
     },
     {
       id: 'local-late-content',

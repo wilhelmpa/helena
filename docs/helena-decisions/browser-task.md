@@ -119,7 +119,19 @@ because it cannot load the browser checkpoint. Installer and unit: §3.8.
   overlaps the goal is never dropped; other-script distractors removed for non-Latin goals), page
   text ≤1,200 characters, elements as the option descriptions, one `operation` question and the
   target heads, a `done` noul, confidence gate 0.15, toggle guard (a click on a control already in
-  the requested state is refused).
+  the requested state is refused). On top, **code rules** for the checkpoint's measured mistakes
+  (eval §5; each one is a pure function with a test in `policy-laya.test.ts`): fill an empty field a
+  value names before a submit; type instead of clicking into such a field; Enter instead of
+  clicking the field just typed into (the checkpoint has no PRESS_ENTER); tick an unticked checkbox
+  the goal names before a submit (not when the goal switches something off); no second submit of
+  the same, now empty form; no covered elements and no dropdown that already shows what the goal
+  asks for; DONE only when every text the goal quotes is on the page and not right after typing
+  when the goal asks to submit; likely done when that evidence shows after a page change; a
+  password field on screen is a sign-in wall (`needs_login`); a click on "kaufen/bestellen/
+  bezahlen/löschen/senden/veröffentlichen/kündigen" (and English) pauses with
+  `needs_confirmation` unless the goal asks for that kind of action (the Jev policy asks the model
+  instead). A value is matched to a field by its own label, placeholder and name first, the text
+  near it only when those name none.
 - **Guards** (both policies): freshness (the page key and the target's guard are compared right
   before input; a stale decision is thrown away and the page observed again), occlusion (the element
   must be what `elementFromPoint` hits at its centre), loop detection (same action on an unchanged
@@ -245,11 +257,15 @@ are `browser_task_run` rows (source `lab`), so the comparison persists.
 ### 3.7 What the numbers say, and what they do not
 
 See §5; the eval harness (`packages/browser-gateway/eval/`) re-runs them. The Standard path cannot
-be measured without an LLM key and is measured through Browser 2.0 after deploy.
+be measured without an agent and its LLM; it is measured through Browser 2.0 after deploy ("Nochmal
+mit anderem Backend" runs the same task as Standard through the agent's chat and puts time, tokens
+and cost next to the other runs). The local set is Helena's own fixture and the Laya rules were
+tuned on it; the public set is the independent measure.
 
 ### 3.8 Laya on this server, later on the Strix Halo
 
-Kingston itself is the Strix Halo box (AMD Ryzen AI MAX+ 395, 32 threads). The installer
+Kingston itself is the Strix Halo box (AMD Ryzen AI MAX+ 395, 32 threads; 30 GB visible to Debian,
+the rest is the GPU's). The installer
 `deployment/volition-stack/native/laya/install.sh` (run by the orchestrator, owner OK 2026-09-24):
 
 - system user `helena-laya`, venv `/opt/helena/laya` (uv, Python 3.13), PyTorch **CPU** wheel,
@@ -281,8 +297,51 @@ address, "Lokale Adresse erlauben" on, and the key of that installation.
 
 ## 5. Measurements
 
-Filled in by the eval harness run on Kingston, see the report of hub/browser-task (and
-`packages/browser-gateway/eval/RESULTS.md`).
+Kingston, 2026-09-24, native Debian during a RAID resync (I/O somewhat slower). Laya 0.3.20 with
+`cklxx/laya-browser` v10s on the CPU, 8 threads (the unit's `CPUQuota=800%`), in the test env on
+port 18791; a throwaway headless Chromium per task; no Jev key (TypeSafe sign-up was down), so no
+Jev Cloud numbers yet. Raw rows: `packages/browser-gateway/eval/results/2026-09-24-*.json`.
+
+**Decision latency of Laya on Kingston's CPU** (per request, over HTTP, as the loop sees it):
+
+| pages | min | median | max |
+|---|---|---|---|
+| fixture (small pages, ≤ 25 elements in scope) | 155 ms | 278 ms | 738 ms |
+| public sites (Wikipedia, HN, toscrape, herokuapp, selenium, todomvc) | 229 ms | 962 ms | 2.2 s |
+
+Model load 5.7 s at start.
+
+**Tasks reached** (correct outcome and expected status, 10 tasks each):
+
+| backend | local fixture | public sites |
+|---|---|---|
+| mock (heuristic, no model) | 4/10 | 0/10 |
+| Laya, Laya policy without the code rules | 4/10 | 2/10 |
+| **Laya, Laya policy with the code rules** | **10/10** (tuned here) | **3/10** |
+| Laya with the Jev policy (one fan-out request) | 1/10 | – |
+| jev-browser on Laya (unchanged jev-browser 0.1.1, own browser) | 3/10 | 1/10 |
+| Standard (agent LLM step by step) | not measured here, see §3.7 | |
+
+Per task on the public set (Laya with rules): reached python-downloads, heroku-checkboxes,
+todomvc-add; missed wiki-search (target below the confidence gate, back to the agent), hn-newest and
+books-travel (step budget), quotes-next (clicked "Login" instead of "Next"), heroku-dropdown and
+heroku-dynamic-loading (set the option / started the loading, then wandered to a footer link),
+selenium-web-form (submitted, then waited).
+
+What this means:
+
+- The small local checkpoint is fast enough (a third of a second per step on simple pages, one to
+  two seconds on real ones) but not reliable enough on unknown pages to replace the agent's own
+  model: on the public set it reaches 3 of 10. It is good at single, well-labelled steps (a form,
+  a filter, a checkbox, a todo) and poor at knowing when it is done.
+- jev-browser's and Jev's fan-out questions do not suit the Laya checkpoint (it answers `done` at
+  once); jev-browser on Laya is also 5–15× slower per decision because its requests are larger.
+- Every miss ends in a status the agent can act on (`needs_agent` with candidates, `stuck`,
+  `max_steps`, `needs_login`, `needs_confirmation`), never in a wrong irreversible action: the
+  pause before "Jetzt kaufen" in the checkout task is the code rule at work.
+- The setting stays opt-in per project; Standard remains the default. The same harness measures
+  Jev Cloud as soon as a key is entered
+  (`--backends '[{"name":"jev","kind":"systemone","url":"https://api.typesafe.ai","keyEnv":"TYPESAFE_API_KEY","model":"jev-latest","policy":"jev"}]'`).
 
 ## 6. Sources
 
