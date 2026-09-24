@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 // run and chat answer the runner makes the vault hold exactly the granted logins, one item
 // per origin a login may be filled on, and leaves items it did not write alone.
 
-export type WorkRef = { runId: number } | { messageId: number };
+export type { WorkRef } from '@helena/sdk';
 
 export interface WebLogin {
   id: number;

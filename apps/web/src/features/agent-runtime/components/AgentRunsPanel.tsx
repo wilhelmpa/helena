@@ -1,0 +1,131 @@
+'use client';
+
+import { LoaderCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import type { AgentRun } from '@/lib/api/endpoints/agents';
+import { useAgentRuns } from '@/services/aiAgents.service';
+import { useRelativeTime } from '@/context/relativeTimeContext';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
+import { compactTokens } from '@/utils/agentUsage';
+import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelBadge';
+import RunView from './RunView';
+
+// The agent's runs, newest first; one opens as its timeline ("Gläserner Lauf").
+export default function AgentRunsPanel({
+  teamId,
+  agentId,
+  runId,
+  onRunChange,
+}: {
+  teamId: number;
+  agentId: number;
+  runId: number | null;
+  onRunChange: (runId: number | null) => void;
+}) {
+  if (runId != null) {
+    return (
+      <RunView
+        teamId={teamId}
+        agentId={agentId}
+        runId={runId}
+        onBack={() => onRunChange(null)}
+        onOpenRun={onRunChange}
+      />
+    );
+  }
+  return <RunList teamId={teamId} agentId={agentId} onOpen={onRunChange} />;
+}
+
+function RunList({
+  teamId,
+  agentId,
+  onOpen,
+}: {
+  teamId: number;
+  agentId: number;
+  onOpen: (runId: number) => void;
+}) {
+  const t = useTranslations('agentRuntime.runs');
+  const tCommon = useTranslations('common');
+  const query = useAgentRuns(teamId, agentId);
+  const runs = query.data?.pages.flatMap((page) => page.items) ?? [];
+  if (query.isPending) return <ListSkeleton rows={5} className="p-4" rowClassName="h-11" />;
+  if (runs.length === 0) return <p className="p-4 text-sm text-muted-foreground">{t('empty')}</p>;
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      <ul className="divide-y divide-border/50 overflow-hidden rounded-md bg-card">
+        {runs.map((run) => (
+          <li key={run.id}>
+            <RunRow run={run} onOpen={() => onOpen(run.id)} />
+          </li>
+        ))}
+      </ul>
+      {query.hasNextPage && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3 w-full"
+          disabled={query.isFetchingNextPage}
+          onClick={() => void query.fetchNextPage()}
+        >
+          {query.isFetchingNextPage ? tCommon('loading') : t('loadMore')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
+  const t = useTranslations('agentRuntime.runs');
+  const relativeTime = useRelativeTime();
+  const subject = run.issueIdentifier
+    ? `${run.issueIdentifier}${run.issueTitle ? ` · ${run.issueTitle}` : ''}`
+    : t(`trigger.${run.trigger}`);
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full items-center gap-2 px-3 py-2.5 text-start text-sm hover:bg-accent"
+    >
+      <Badge
+        variant={
+          run.status === 'failed'
+            ? 'destructive'
+            : run.status === 'pending'
+              ? 'outline'
+              : 'secondary'
+        }
+        className="shrink-0"
+      >
+        {run.status === 'pending' ? (
+          <span className="inline-flex items-center gap-1">
+            <LoaderCircle className="size-3 animate-spin" />
+            {t('running')}
+          </span>
+        ) : (
+          t(`status.${run.status}`)
+        )}
+      </Badge>
+      <span className="min-w-0 flex-1 truncate">{subject}</span>
+      <AutopilotLevelBadge level={run.autopilotLevel} />
+      {run.blockedQuestion && (
+        <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
+          {t('blocked')}
+        </Badge>
+      )}
+      {run.modelCheck && run.modelCheck.mismatch.length > 0 && (
+        <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
+          {t('modelMismatch')}
+        </Badge>
+      )}
+      {run.contextTokens !== undefined && (
+        <span className="shrink-0 text-xs text-muted-foreground" dir="ltr">
+          {compactTokens(run.contextTokens)}
+        </span>
+      )}
+      <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(run.createdAt)}</span>
+    </button>
+  );
+}

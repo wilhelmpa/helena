@@ -52,12 +52,6 @@
     "transcript": "消息",
     "loadOlder": "加载更早的消息",
     "loading": "加载中…",
-    "reasoning": "思考过程",
-    "reasoningLive": "正在思考…",
-    "toolCalls": "{count, plural, other {# 次工具调用}}",
-    "toolInput": "输入",
-    "toolOutput": "输出",
-    "sources": "来源：",
     "scrollToBottom": "滚动到最新消息",
     "edit": "编辑",
     "saveAndBranch": "另存为新版本",
@@ -74,11 +68,13 @@
     "restoreFailed": "无法读取其消息。请检查连接后重试。",
     "retry": "重试",
     "today": "今天",
-    "yesterday": "昨天"
+    "yesterday": "昨天",
+    "sourcesCount": "{count, plural, other {# 个来源}}",
+    "stopped": "已停止"
   },
   "composer": {
     "placeholder": "给 {agent} 发消息…",
-    "hint": "回车发送 · Shift+回车 或 ⌘/Ctrl+回车 换行 · 拖放或粘贴文件以附加 · / 打开命令和提示词",
+    "hint": "回车发送 · Shift+回车 或 ⌘/Ctrl+回车 换行 · Esc 停止回答 · ↑ 编辑上一条消息 · 拖放或粘贴文件以附加 · / 打开命令和提示词",
     "send": "发送",
     "stop": "停止回答",
     "attach": "附加",
@@ -124,7 +120,8 @@
     "dictationInsecureTitle": "语音输入需要安全连接",
     "dictationInsecure": "浏览器只向 HTTPS 页面提供麦克风。在 Helena 使用 HTTPS 之前：在 Chrome 中打开 chrome://flags，启用 “Insecure origins treated as secure” 并添加 {origin}。展台模式已允许。",
     "autoSpeak": "自动朗读回答",
-    "autoSpeakOn": "正在朗读回答——点击关闭"
+    "autoSpeakOn": "正在朗读回答——点击关闭",
+    "queuedList": "等待发送"
   },
   "artifact": {
     "title": "产物",
@@ -132,7 +129,8 @@
     "code": "代码",
     "preview": "预览",
     "save": "保存到保险库",
-    "saved": "已保存到 {path}。"
+    "saved": "已保存到 {path}。",
+    "writing": "正在生成工件…"
   },
   "issue": {
     "fromChat": "转为任务",

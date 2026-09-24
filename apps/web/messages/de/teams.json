@@ -666,7 +666,7 @@
         "enabled": "Selbstlernen",
         "enabledHint": "Der Agent speichert Gedächtnis und legt Skills an, während er chattet und arbeitet; die Tokens dafür zählen zu seinem Verbrauch. Aus: Er speichert nichts Neues, und sein Gedächtnis wird nicht geladen.",
         "curator": "Kurator",
-        "curatorHint": "Der Kurator von Hermes archiviert gelernte Skills, die 30 Tage nicht genutzt wurden. Er läuft in der Wartung von Hermes, etwa im Hermes-Dashboard, nicht in Chats und Läufen aus Plan.",
+        "curatorHint": "Der Kurator von Hermes archiviert gelernte Skills, die 30 Tage nicht genutzt wurden. Helena lässt ihn jede Woche prüfen; im Tab „Laufzeit“ des Agenten läuft er sofort, und dort heftest du Skills an, die er in Ruhe lassen soll.",
         "reflectionTitle": "Reflexion",
         "reflectionHint": "Ein kurzer Folge-Turn in derselben Sitzung des Laufs, direkt nach dessen Ende, in dem der Agent nur festhält, was dieser Lauf ihn gelehrt hat. Seine Tokens zählen zum Verbrauch des Laufs.",
         "reflectionOff": "Aus",
@@ -695,8 +695,12 @@
         "memoryEditTitle": "{file} bearbeiten",
         "memoryEditHint": "Hermes führt einen Eintrag pro Absatz, zwischen den Einträgen steht § in einer eigenen Zeile. Der Runner schreibt deine Fassung, sofern der Agent die Datei nicht inzwischen geändert hat.",
         "memoryClearTitle": "{file} leeren?",
-        "memoryClearBody": "Der Agent verliert diese Notizen mit dem nächsten Abgleich des Runners."
-      }
+        "memoryClearBody": "Der Agent verliert diese Notizen mit dem nächsten Abgleich des Runners.",
+        "memoryApproval": "Gedächtnis-Änderungen freigeben",
+        "memoryApprovalHint": "Was der Agent in sein Gedächtnis schreibt, wartet als Diff unter Freigaben; bis dahin behält er die freigegebene Fassung."
+      },
+      "skillEnabled": "{name} an",
+      "skillsDisabled": "{count} aus"
     },
     "paused": "Pausiert",
     "pausedNoReason": "Pausiert. Es wurde kein Grund angegeben.",
@@ -779,7 +783,8 @@
         "model": "Modell",
         "reasoning": "Reasoning"
       }
-    }
+    },
+    "chatTemplate": "Eine Vorlage läuft nicht selbst. Füge sie einem Projekt als Agent hinzu, um ihn hier auszuprobieren."
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",
@@ -804,5 +809,22 @@
   "settingState": {
     "on": "An",
     "off": "Aus"
+  },
+  "templateBundles": {
+    "importAction": "Vorlagen importieren",
+    "exportAction": "Vorlagen exportieren",
+    "importTitle": "Vorlagen importieren",
+    "counts": "{agents} Agenten-Vorlagen · {skills} Skills · {servers} MCP-Server",
+    "chooseFile": "Paket-Datei wählen",
+    "fileChosen": "Datei: {name}",
+    "dryRun": "Nur prüfen (nichts ändern)",
+    "update": "Abweichungen übernehmen",
+    "check": "Prüfen",
+    "import": "Importieren",
+    "close": "Schließen",
+    "failed": "Das hat nicht geklappt.",
+    "notJson": "Die Datei ist kein JSON-Paket.",
+    "summary": "{written} geschrieben · {unchanged} unverändert · {drift} abweichend · {warnings} Warnungen",
+    "summaryDryRun": "Nur geprüft, nichts geändert · {unchanged} unverändert · {drift} abweichend · {warnings} Warnungen"
   }
 }

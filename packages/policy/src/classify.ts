@@ -1,3 +1,4 @@
+import { categoryFromAnnotations as sdkCategoryFromAnnotations } from '@helena/sdk';
 import { ACTION_CATEGORIES, actionRank, type ActionCategory, type ActionScope } from './categories';
 
 // How a tool call becomes an action category (docs/helena-decisions/policy-engine.md).
@@ -19,18 +20,14 @@ export interface ToolAnnotations {
   openWorldHint?: boolean;
 }
 
-// An explicit category wins; then read only → read, destructive → delete, open world →
-// send, otherwise write. An unannotated tool is therefore an outward action.
+// An explicit category wins; then what the annotations say (@helena/sdk, D-C1): read only
+// → read, destructive → delete, open world → send, otherwise write. An unannotated tool is
+// therefore an outward action.
 export function categoryFromAnnotations(
   annotations: ToolAnnotations | null | undefined,
   explicit?: ActionCategory | null,
 ): ActionCategory {
-  if (explicit) return explicit;
-  const hints = annotations ?? {};
-  if (hints.readOnlyHint === true) return 'read';
-  if (hints.destructiveHint === true) return 'delete';
-  if (hints.openWorldHint !== false) return 'send';
-  return 'write';
+  return explicit ?? sdkCategoryFromAnnotations(annotations ?? undefined);
 }
 
 // ---------------------------------------------------------------------------------------

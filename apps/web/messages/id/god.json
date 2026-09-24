@@ -369,7 +369,8 @@
       "run-janitor": "Pembersih proses",
       "stage-janitor": "Pembersih tahap",
       "workflow-schedules": "Sinkronisasi jadwal",
-      "resume-janitor": "Pembersih pelanjutan"
+      "resume-janitor": "Pembersih pelanjutan",
+      "runtime-janitor": "Pembersihan runtime"
     },
     "janitorRan": "berjalan {time} lalu",
     "janitorCleaned": "{count, plural, other {membersihkan # item}}",
@@ -379,6 +380,40 @@
     "agentSync": {
       "title": "Profil agen",
       "synced": "{synced} dari {total} tersinkron"
+    }
+  },
+  "plugins": {
+    "externalTitle": "Plugin eksternal",
+    "externalDescription": "Plugin eksternal berjalan di dalam Helena dengan hak Helena. Aktifkan hanya untuk plugin yang Anda percayai.",
+    "folder": "Folder plugin: {path}",
+    "noFolder": "Folder plugin belum diatur (HELENA_PLUGINS_DIR), jadi hanya plugin bawaan Helena yang berjalan.",
+    "restartHint": "Perubahan berlaku setelah API dan worker dimulai ulang.",
+    "foundTitle": "Di folder plugin",
+    "none": "Tidak ada plugin.",
+    "approve": "Setujui",
+    "revoke": "Cabut persetujuan",
+    "builtinTitle": "Bawaan",
+    "statusLoaded": "Dimuat",
+    "statusFailed": "Galat",
+    "statusNotLoaded": "Tidak dimuat",
+    "restartRequired": "Perlu mulai ulang",
+    "provides": "Menyediakan",
+    "actions": "Tindakan",
+    "events": "Peristiwa",
+    "network": "Jaringan",
+    "credentials": "Alatnya memakai kredensial konektornya.",
+    "names": {
+      "integrations": "Integrasi",
+      "mcp": "Alat MCP Helena",
+      "webhooks": "Webhook",
+      "bundles": "Paket templat",
+      "autopilot": "Autopilot"
+    },
+    "problems": {
+      "external-off": "Dimuat setelah plugin eksternal diaktifkan.",
+      "not-approved": "Belum disetujui.",
+      "version-changed": "Disetujui untuk versi lain: setujui versi ini.",
+      "files-changed": "Berkasnya berubah sejak disetujui: periksa dan setujui lagi."
     }
   }
 }

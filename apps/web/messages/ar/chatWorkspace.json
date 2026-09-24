@@ -52,12 +52,6 @@
     "transcript": "الرسائل",
     "loadOlder": "تحميل رسائل أقدم",
     "loading": "جارٍ التحميل…",
-    "reasoning": "التفكير",
-    "reasoningLive": "يفكّر الآن…",
-    "toolCalls": "{count, plural, zero {لا استدعاءات أدوات} one {استدعاء أداة واحد} two {استدعاءا أداتين} few {# استدعاءات أدوات} many {# استدعاء أداة} other {# استدعاء أداة}}",
-    "toolInput": "المدخل",
-    "toolOutput": "المخرج",
-    "sources": "المصادر:",
     "scrollToBottom": "الانتقال إلى أحدث رسالة",
     "edit": "تعديل",
     "saveAndBranch": "حفظ كنسخة جديدة",
@@ -74,11 +68,13 @@
     "restoreFailed": "تعذّرت قراءة رسائلها. تحقّق من الاتصال وحاول مرة أخرى.",
     "retry": "حاول مرة أخرى",
     "today": "اليوم",
-    "yesterday": "أمس"
+    "yesterday": "أمس",
+    "sourcesCount": "{count, plural, zero {لا مصادر} one {مصدر واحد} two {مصدران} few {# مصادر} many {# مصدرًا} other {# مصدر}}",
+    "stopped": "أُوقف"
   },
   "composer": {
     "placeholder": "رسالة إلى {agent}…",
-    "hint": "Enter للإرسال · Shift+Enter أو ⌘/Ctrl+Enter لسطر جديد · أفلت الملفات أو الصقها للإرفاق · / للأوامر والقوالب",
+    "hint": "Enter للإرسال · Shift+Enter أو ⌘/Ctrl+Enter لسطر جديد · Esc لإيقاف الرد · ↑ لتعديل رسالتك الأخيرة · أفلت الملفات أو الصقها للإرفاق · / للأوامر والقوالب",
     "send": "إرسال",
     "stop": "إيقاف الإجابة",
     "attach": "إرفاق",
@@ -124,7 +120,8 @@
     "dictationInsecureTitle": "الإملاء يحتاج إلى اتصال آمن",
     "dictationInsecure": "لا تتيح المتصفحات الميكروفون إلا لصفحات HTTPS. إلى أن تعمل Helena عبر HTTPS: افتح chrome://flags في Chrome وفعّل “Insecure origins treated as secure” وأضف {origin}. الكشك يسمح بذلك مسبقًا.",
     "autoSpeak": "قراءة الإجابات بصوت عالٍ تلقائيًا",
-    "autoSpeakOn": "تُقرأ الإجابات بصوت عالٍ – انقر للإيقاف"
+    "autoSpeakOn": "تُقرأ الإجابات بصوت عالٍ – انقر للإيقاف",
+    "queuedList": "بانتظار الإرسال"
   },
   "artifact": {
     "title": "المُصنَّع",
@@ -132,7 +129,8 @@
     "code": "الكود",
     "preview": "المعاينة",
     "save": "حفظ في الخزنة",
-    "saved": "حُفظ في {path}."
+    "saved": "حُفظ في {path}.",
+    "writing": "جارٍ كتابة العنصر…"
   },
   "issue": {
     "fromChat": "تحويل إلى مهمة",

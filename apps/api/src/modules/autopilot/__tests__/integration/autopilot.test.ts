@@ -6,6 +6,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { autopilotPolicyDecider, decideBrowserTool } from '#modules/autopilot/adapters';
+import type { ActionCategory } from '@helena/sdk';
 import { autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 // Helena's Autopilot: one level per project (with an optional per-agent level), one policy
@@ -298,7 +299,10 @@ describe('Autopilot on Helena’s own MCP tools', () => {
       arguments: { projectKey: 'MKT', columnId: s.columnId, title: 'Sneaky' },
     });
     expect(blocked.isError).toBe(true);
-    expect(blocked.content[0].text).toContain("Helena's Autopilot");
+    // The framework's MCP server asks its policy host, where the Autopilot is registered.
+    expect(blocked.content[0].text).toContain(
+      'This needs approval: Autopilot level 0 (Suggest) asks a person before write',
+    );
     const reported = await rpc(s.agentKey, 'tools/call', {
       name: 'add_comment',
       arguments: { issueId: issue.id, body: 'Proposal: add a pricing section.' },
@@ -533,7 +537,7 @@ describe('the Autopilot as an @helena/sdk policy evaluator', () => {
       autopilotPolicyEvaluator.evaluate({
         agent,
         project: { id: s.projectId, key: 'MKT', teamId: s.teamId },
-        action,
+        action: action as ActionCategory,
         context: { connector: 'notion', service: 'pages', target: 'Roadmap page' },
       });
     expect(await ask('send')).toEqual({

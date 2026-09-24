@@ -286,7 +286,7 @@ export const mailDraftRoutes = new Elysia({
           'Ask a person to approve sending a draft of this project. The request shows the ' +
           'whole mail on the Approvals page. End your run afterwards: once the request is ' +
           'approved Plan sends the mail, and a rejected draft goes back to the drafts.',
-        ...mcpTool('request_mail_send', undefined, { category: 'report' }),
+        ...mcpTool('request_mail_send', undefined, 'report'),
       },
     },
   );

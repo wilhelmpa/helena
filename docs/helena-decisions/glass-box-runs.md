@@ -19,8 +19,9 @@ messages, tool calls and tokens.
   `reasoning`, `tool_call` (`id`, `name`, `arguments`), `tool_call_response` (`id`,
   `response`) and `compaction`. Helena adds `timestamp`, `model` and `finish_reason` as
   extra fields, which the convention allows (`extra="allow"`).
-- Token counts use the attribute names `gen_ai.usage.input_tokens` (without cache),
-  `gen_ai.usage.output_tokens`, `gen_ai.usage.cache_read.input_tokens`,
+- Token counts use the attribute names `gen_ai.usage.input_tokens` (all input, cached
+  included, as the convention counts it), `gen_ai.usage.output_tokens` (reasoning included),
+  `gen_ai.usage.cache_read.input_tokens`,
   `gen_ai.usage.cache_write.input_tokens` and `gen_ai.usage.reasoning.output_tokens`. The
   usage ledger (`agent_usage`) has one column per attribute.
 - A run is an `invoke_agent` span (`gen_ai.agent.id`, `gen_ai.agent.name`,

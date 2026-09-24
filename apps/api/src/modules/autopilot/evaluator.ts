@@ -1,48 +1,20 @@
-import { isActionCategory, type ActionScope, type AutopilotLevel } from '@helena/policy';
-import { decide, levelName, type EngineDecision } from './engine';
+import { db, agentRun, issue } from '@repo/db';
+import { and, eq, isNotNull } from 'drizzle-orm';
+import {
+  isActionCategory,
+  type ActionScope,
+  type PolicyDecision,
+  type PolicyEvaluator,
+  type PolicyRequest,
+} from '@helena/sdk';
+import type { AutopilotLevel } from '@helena/policy';
+import { decide, levelName, type EngineDecision, type PolicyAdapter } from './engine';
 
-// The Autopilot as a policy evaluator of @helena/sdk (hub/framework, packages/sdk/src/
-// policy.ts): registered in `registries.policies`, it answers the same question for every
-// caller the framework routes through its policy host (Helena's MCP tools, connector
-// services, plugin tools). Registering it is one line where the API builds its host:
-//   registries.policies.register(autopilotPolicyEvaluator)
-// The types below mirror the SDK's until hub/framework is on the hub; then they are imported.
-
-// mirror of @helena/sdk AgentRef / ProjectRef / PolicyContext / PolicyRequest / PolicyDecision
-interface AgentRef {
-  id: number;
-  userId?: string;
-  name?: string;
-  templateId?: number | null;
-}
-interface ProjectRef {
-  id: number;
-  key?: string;
-  teamId?: number;
-}
-interface PolicyContext {
-  tool?: string;
-  connector?: string;
-  service?: string;
-  stepType?: string;
-  runtime?: string;
-  target?: string;
-  amount?: { value: number; currency: string };
-  runId?: number | null;
-  issueId?: number | null;
-  input?: unknown;
-}
-export interface SdkPolicyRequest {
-  agent: AgentRef | null;
-  project: ProjectRef | null;
-  action: string;
-  context: PolicyContext;
-}
-export interface SdkPolicyDecision {
-  effect: 'allow' | 'needs-approval' | 'deny';
-  reason: string;
-  evaluator?: string;
-}
+// The Autopilot as a policy evaluator of @helena/sdk (packages/sdk/src/policy.ts). It is
+// registered as the built-in plugin helena.autopilot (modules/plugins/builtin.ts), so it
+// answers for every caller the framework routes through its policy host: Helena's own MCP
+// tools, plugin tools, connector services, workflow steps. The runtimes (Hermes, Claude
+// Code), the browser gateway and approval requests ask the engine directly (engine.ts).
 
 export const AUTOPILOT_EVALUATOR_ID = 'helena-autopilot';
 
@@ -67,32 +39,97 @@ export function decisionSentence(decision: EngineDecision): string {
   }
 }
 
-export const autopilotPolicyEvaluator = {
+// The project a call acts in when the caller named none: the task's.
+async function projectOfInput(input: unknown): Promise<number | null> {
+  const issueId = Number((input as { issueId?: unknown } | null | undefined)?.issueId);
+  if (!Number.isInteger(issueId) || issueId <= 0) return null;
+  const [row] = await db
+    .select({ projectId: issue.projectId })
+    .from(issue)
+    .where(eq(issue.id, issueId));
+  return row?.projectId ?? null;
+}
+
+// The run a call comes from: the one the caller names when it is the agent's, otherwise the
+// agent's one claimed, unfinished run in the project.
+async function runOfCall(
+  agentId: number,
+  projectId: number | null,
+  named: number | null | undefined,
+): Promise<number | null> {
+  if (named != null) {
+    const [run] = await db
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(and(eq(agentRun.id, named), eq(agentRun.agentId, agentId)));
+    if (run) return run.id;
+  }
+  if (projectId == null) return null;
+  const rows = await db
+    .select({ id: agentRun.id })
+    .from(agentRun)
+    .where(
+      and(
+        eq(agentRun.agentId, agentId),
+        eq(agentRun.projectId, projectId),
+        eq(agentRun.status, 'pending'),
+        isNotNull(agentRun.startedAt),
+      ),
+    )
+    .limit(2);
+  return rows.length === 1 ? rows[0]!.id : null;
+}
+
+// Where the call lands: what the caller says, else outside the agent's workspace for a
+// delete or an execute (a connector's or a plugin's reaches beyond Helena).
+function scopeOf(request: PolicyRequest): ActionScope {
+  const said =
+    request.context.scope ??
+    (request.context.input as { scope?: unknown } | undefined)?.scope ??
+    null;
+  if (said === 'workspace' || said === 'external') return said;
+  return request.action === 'delete' || request.action === 'execute' ? 'external' : 'workspace';
+}
+
+function adapterOf(request: PolicyRequest): PolicyAdapter {
+  const { connector, runtime, stepType, tool } = request.context;
+  if (connector) return 'connector';
+  if (runtime) return runtime;
+  if (stepType) return 'workflow';
+  return tool ? 'mcp' : 'sdk';
+}
+
+export const autopilotPolicyEvaluator: PolicyEvaluator = {
   id: AUTOPILOT_EVALUATOR_ID,
-  async evaluate(request: SdkPolicyRequest): Promise<SdkPolicyDecision | null> {
+  async evaluate(request): Promise<PolicyDecision | null> {
     // An action outside the Autopilot's categories is not its question.
     if (!isActionCategory(request.action)) return null;
     // A person acting is decided by permissions, not by the Autopilot.
     if (!request.agent) return null;
+    // Reading and reporting are always allowed, at every level and on a used-up budget.
+    if (request.action === 'read' || request.action === 'report') {
+      return {
+        effect: 'allow',
+        reason: 'Reading and reporting are always allowed',
+        evaluator: AUTOPILOT_EVALUATOR_ID,
+      };
+    }
     const context = request.context ?? {};
-    // A connector's or plugin's delete or execute reaches outside the agent's workspace
-    // unless the caller says otherwise.
-    const scope: ActionScope =
-      (context.input as { scope?: ActionScope } | undefined)?.scope === 'workspace'
-        ? 'workspace'
-        : request.action === 'delete' || request.action === 'execute'
-          ? 'external'
-          : 'workspace';
+    const projectId = request.project?.id ?? (await projectOfInput(context.input));
     const decision = await decide({
-      adapter: context.connector ? 'connector' : (context.runtime ?? 'sdk'),
+      adapter: adapterOf(request),
       agentId: request.agent.id,
       teamId: request.project?.teamId ?? null,
-      projectId: request.project?.id ?? null,
-      runId: context.runId ?? null,
+      projectId,
+      runId: await runOfCall(request.agent.id, projectId, context.runId),
       category: request.action,
-      scope,
+      scope: scopeOf(request),
       tool: context.tool ?? context.service ?? context.stepType ?? null,
-      summary: context.target ?? null,
+      summary:
+        context.target ??
+        (context.tool && context.input !== undefined
+          ? `${context.tool} ${JSON.stringify(context.input).slice(0, 300)}`
+          : null),
       command: context.runtime ? (context.target ?? null) : null,
     });
     return {

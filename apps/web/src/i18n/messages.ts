@@ -3,6 +3,7 @@ import credentials from '../../messages/en/credentials.json';
 import organization from '../../messages/en/organization.json';
 import account from '../../messages/en/account.json';
 import agentActivity from '../../messages/en/agentActivity.json';
+import agentRuntime from '../../messages/en/agentRuntime.json';
 import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
 import approvals from '../../messages/en/approvals.json';
@@ -91,6 +92,7 @@ const defaultMessages = {
   connections,
   credentials,
   agentActivity,
+  agentRuntime,
   browserGateway,
   routines,
   pipelines,

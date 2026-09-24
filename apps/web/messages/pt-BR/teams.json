@@ -667,7 +667,7 @@
         "enabled": "Autoaprendizado",
         "enabledHint": "O agente salva memória e cria skills durante chats e execuções; os tokens gastos nisso contam no consumo dele. Desligado, ele não salva nada novo e sua memória não é carregada.",
         "curator": "Curador",
-        "curatorHint": "O curador do Hermes arquiva skills aprendidas que não foram usadas por 30 dias. Ele roda na manutenção do próprio Hermes, como o painel do Hermes, não nos chats e execuções do Plan.",
+        "curatorHint": "O curador do Hermes arquiva skills aprendidas que não foram usadas por 30 dias. A Helena pede uma revisão a ele toda semana; na aba Runtime do agente, você executa uma agora e fixa as skills em que ele não deve mexer.",
         "reflectionTitle": "Reflexão",
         "reflectionHint": "Um breve turno de acompanhamento na mesma sessão da execução, logo após ela terminar, no qual o agente guarda apenas o que essa execução lhe ensinou. Os tokens dele contam no consumo da execução.",
         "reflectionOff": "Desligada",
@@ -696,8 +696,12 @@
         "memoryEditTitle": "Editar {file}",
         "memoryEditHint": "O Hermes guarda uma entrada por parágrafo, com § em uma linha própria entre as entradas. O runner grava sua versão, a menos que o agente tenha mudado o arquivo nesse meio-tempo.",
         "memoryClearTitle": "Limpar {file}?",
-        "memoryClearBody": "O agente perde essas notas na próxima sincronização do runner."
-      }
+        "memoryClearBody": "O agente perde essas notas na próxima sincronização do runner.",
+        "memoryApproval": "Aprovar alterações na memória",
+        "memoryApprovalHint": "O que o agente escreve na memória aguarda como diff na página de aprovações; até a aprovação, ele mantém a versão aprovada."
+      },
+      "skillEnabled": "{name} ativada",
+      "skillsDisabled": "desativadas: {count}"
     },
     "paused": "Pausado",
     "pausedNoReason": "Pausado. Nenhum motivo foi informado.",
@@ -779,7 +783,8 @@
         "model": "modelo",
         "reasoning": "raciocínio"
       }
-    }
+    },
+    "chatTemplate": "Um modelo não é executado. Adicione-o a um projeto como agente para testá-lo aqui."
   },
   "members": {
     "roleSaved": "{name} agora é {role}",
@@ -804,5 +809,22 @@
   "settingState": {
     "on": "Ligado",
     "off": "Desligado"
+  },
+  "templateBundles": {
+    "importAction": "Importar modelos",
+    "exportAction": "Exportar modelos",
+    "importTitle": "Importar modelos",
+    "counts": "{agents} modelos de agentes · {skills} habilidades · {servers} servidores MCP",
+    "chooseFile": "Escolher arquivo de pacote",
+    "fileChosen": "Arquivo: {name}",
+    "dryRun": "Só verificar (não mudar nada)",
+    "update": "Sobrescrever diferenças",
+    "check": "Verificar",
+    "import": "Importar",
+    "close": "Fechar",
+    "failed": "Não deu certo.",
+    "notJson": "O arquivo não é um pacote JSON.",
+    "summary": "{written} gravados · {unchanged} sem mudança · {drift} diferentes · {warnings} avisos",
+    "summaryDryRun": "Só verificação, nada mudou · {unchanged} sem mudança · {drift} diferentes · {warnings} avisos"
   }
 }

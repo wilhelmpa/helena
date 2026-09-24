@@ -3,7 +3,9 @@ import { StringDecoder } from 'node:string_decoder';
 import type { ContextUsage } from './agui';
 import { presetOf, type RunnerConfig } from './config';
 import { isolatedEnv, isolationEnabled, launch, LaunchError, type WorkKind } from './isolation';
-import { presetArgv, presetPrompt, type Preset } from './presets';
+import type { CliCommand } from '@helena/sdk';
+import { presetArgv, presetPrompt } from './presets';
+import { runtimeOf } from './runtimes';
 
 // Runs one task: the command the preset builds, or the operator's own in a shell, with the
 // task on stdin and its context in the environment. Everything the agent needs beyond the
@@ -162,7 +164,7 @@ export function modelProvider(
 // operator's own command goes through a shell, which is what it was written for.
 function spawnArgs(
   config: RunnerConfig,
-  preset: Preset | undefined,
+  preset: CliCommand | undefined,
   task: Task,
 ): [string, string[]] {
   if (!preset) return ['sh', ['-c', config.command ?? '']];
@@ -195,7 +197,7 @@ export function policyHookCommand(
 }
 
 // A CLI that took the task as an argument would read it twice if it also arrived here.
-function stdinText(preset: Preset | undefined, task: Task): string {
+function stdinText(preset: CliCommand | undefined, task: Task): string {
   if (!preset) return task.prompt;
   if (preset.promptVia === 'arg') return '';
   return presetPrompt(preset, task.systemPrompt, task.prompt);
@@ -210,9 +212,6 @@ export interface ExecuteOptions {
   // What the command works on, which the unit of an isolated agent is named after.
   work?: { kind: WorkKind; id: number | null };
 }
-
-// The runtimes the launcher knows as presets of its own (launcher.json).
-const ISOLATED_RUNTIMES = new Set(['hermes', 'claude', 'codex']);
 
 // `onData` sees stdout as it arrives, for a caller that reports the output while the
 // command is still running. `signal` ends the command the way the timeout does, for a
@@ -301,7 +300,7 @@ export async function execute(
 async function executeIsolated(
   config: RunnerConfig,
   task: Task,
-  preset: Preset | undefined,
+  preset: CliCommand | undefined,
   args: string[],
   opts: ExecuteOptions,
 ): Promise<Outcome> {
@@ -311,7 +310,9 @@ async function executeIsolated(
       'Agent isolation is on and this agent has no isolated project, so it is not started',
     );
   }
-  if (!preset || !config.agent || !ISOLATED_RUNTIMES.has(config.agent)) {
+  // The runtimes the launcher knows as presets of its own (launcher.json) say so in their
+  // capabilities.
+  if (!preset || !config.agent || !runtimeOf(config.agent)?.capabilities.isolation) {
     throw new Error(`${config.agent ?? 'A custom command'} cannot run isolated`);
   }
   if (!config.cwd) throw new Error('An isolated agent needs its working directory');

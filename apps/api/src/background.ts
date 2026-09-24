@@ -11,9 +11,13 @@ import { processAgentTeamStarts } from '#modules/control-plane-workflows/agent-t
 import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/service';
 import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { drainPendingStarts } from '#modules/pipelines/runs';
+import { pruneRuntimeRequests } from '#modules/agents/runtime-requests/service';
+import { scheduleCuratorRuns } from '#modules/agents/runtime-requests/curator-schedule';
+import { pruneRunEvents } from '#modules/agents/run-timeline/service';
 import { prunePolicyDecisions } from '#modules/autopilot/engine';
 
-const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR] = JANITOR_JOBS;
+const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR, RUNTIME_JANITOR] =
+  JANITOR_JOBS;
 
 // The api's background jobs, started by index.ts rather than assembled into the app,
 // so importing the app in a test starts nothing. Several api replicas run them without
@@ -42,6 +46,7 @@ export function startBackgroundJobs(): void {
     intEnv('WORKFLOW_SCHEDULE_SYNC_INTERVAL_MS', 600_000),
   );
   startLoop(RESUME_JANITOR, resumeJanitor, () => intEnv('RESUME_JANITOR_INTERVAL_MS', 60_000));
+  startLoop(RUNTIME_JANITOR, runtimeJanitor, () => intEnv('RUNTIME_JANITOR_INTERVAL_MS', 300_000));
   // The Autopilot's decision log keeps HELENA_POLICY_LOG_DAYS (90) days.
   startLoop(
     'policy-log',
@@ -95,6 +100,16 @@ export async function syncSchedules(): Promise<void> {
 export async function resumeJanitor(): Promise<void> {
   const failed = await janitorJob(RESUME_JANITOR, expireResumeLimitedRuns);
   if (failed > 0) console.log(`[background] failed ${failed} runs that reached the resume limit`);
+}
+
+// Removes the answered and stale questions to agents' runtimes and the timelines of runs
+// that finished long ago, and asks the curators that are due for their review.
+export async function runtimeJanitor(): Promise<void> {
+  await janitorJob(
+    RUNTIME_JANITOR,
+    async () =>
+      (await pruneRuntimeRequests()) + (await pruneRunEvents()) + (await scheduleCuratorRuns()),
+  );
 }
 
 async function autoArchive(): Promise<void> {

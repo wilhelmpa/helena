@@ -58,10 +58,10 @@ Also looked at and dropped:
   TypeScript from the database and passed as Cedar context; Cedar decides. Nothing about the
   matrix is written twice: the UI's plain-language summary ("Agenten in diesem Projekt
   dürfen …") asks the engine for each category instead of keeping its own table.
-- The evaluator sits behind a `PolicyEvaluator` interface (`decide(request) → decision`),
-  shaped to move into `@helena/sdk` as the "Richtlinien" extension point once hub/framework
-  publishes it. A plugin contributes policies as Cedar text; they are validated against the
-  schema when loaded.
+- The Autopilot is an `@helena/sdk` `PolicyEvaluator` (the "Richtlinien" extension point),
+  registered in the framework's policy host next to any plugin's evaluators; the strictest
+  answer wins. Inside, a plugin can also contribute Cedar policies, which are validated
+  against the schema when loaded.
 
 Why not CASL: it is simpler to call, but it has no policy language, so rules from plugins or
 from the owner would be JavaScript, and its natural home is UI permission checks. Why not
@@ -75,7 +75,7 @@ annotations first (MCP spec 2025-06-18, `ToolAnnotations`), and only refined whe
 too coarse:
 
 1. an explicit category the tool's owner declared (Helena routes: `mcpTool(name, annotations,
-   { category })`; the browser gateway and plugins: their own tool table) wins;
+   category, scope)`; the browser gateway and plugins: their own tool table) wins;
 2. `readOnlyHint: true` → `read`;
 3. `destructiveHint: true` → `delete`;
 4. `openWorldHint` not `false` (the MCP default is `true`) → `send`: the tool reaches
@@ -117,9 +117,10 @@ hand-kept table (goes stale; the owner asked for a standard source).
 
 **Categories** (D-C1, in rising risk): read < report < write < send < publish < execute <
 delete < pay < credentials, with a scope (inside the agent's workspace or outside) for
-delete and execute. `packages/policy/src/categories.ts` mirrors `@helena/sdk` until
-hub/framework lands; it also maps categories to MCP annotations and back (an unannotated
-tool is `send`) and names the `_meta` key `helena/action`.
+delete and execute. Both come from `@helena/sdk` (`ACTION_CATEGORIES`, `ActionScope`,
+`annotationsForCategory`, `categoryFromAnnotations`: an unannotated tool is `send`; the
+`_meta` key `helena/action`); `@helena/policy` re-exports them and adds the hard blocks and
+the approval kinds.
 
 **Levels** (the Cedar policies in `packages/policy/src/policies.ts` decide; A allow,
 N needs approval):
@@ -141,7 +142,7 @@ approval of exactly a command lets that command run in the follow-up run.
 | Hermes | the approval guard plugin asks `POST /agent-policy/decide` before every tool call that is not a plain read, in runs and chats |
 | Claude Code | a PreToolUse hook (`itsaplan-runner policy-hook`) asks the same route; level 0 also runs in plan mode |
 | Codex | no hook exists; level 0 runs in a read-only sandbox |
-| Helena's MCP tools | checked in the MCP server before the route (`modules/autopilot/mcp.ts`); tools declare categories with `mcpTool(name, annotations, { category })` and publish them in `_meta` |
+| Helena's MCP tools, plugin tools, connectors | the framework's policy host (`host.decide`, @helena/sdk) asks every registered evaluator; the Autopilot is one, loaded as the built-in plugin `helena.autopilot` (`modules/plugins/builtin.ts`, evaluator `helena-autopilot` in `modules/autopilot/evaluator.ts`). Routes declare categories with `mcpTool(name, annotations, category, scope?)` and publish them in `_meta`; a route's delete or execute stays inside the workspace unless it names `'external'`, a plugin's or connector's lands outside |
 | Approval requests | the card stores the engine's category, level and reason |
 | Workflow engine (hub/native-engine) | `autopilotPolicyDecider` in `modules/autopilot/adapters.ts` fits its `PolicyDecider` seam: `setPolicyDecider(autopilotPolicyDecider)` |
 | Browser gateway (hub/agent-browser-mcp) | `decideBrowserTool()` in the same file, or the HTTP route with the agent key and `runtime: "gateway"`; a click that submits or pays declares `intent` |

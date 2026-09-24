@@ -2,14 +2,26 @@
 import { readFile } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
-import { Client, RequestError, type ChatMessage, type Run } from './client';
+import {
+  Client,
+  RequestError,
+  type ChatMessage,
+  type Run,
+  type RuntimeRequestClaim,
+} from './client';
 import { loadConfig, type RunnerConfig } from './config';
+import { loadRunnerPlugins } from './plugins';
 import { runtimeAdapter } from './adapters';
 import { readHermesInventory, type HermesProfile } from './inventory';
+import { isolationEnabled, profileHelper as runProfileHelper } from './isolation';
+import { answerRuntimeRequest, isRuntimeRequest, type RuntimeRequest } from './readers';
+import { readerContext, runnerRedactor } from './readers/context';
 import { readLearnedSkills } from './learning';
 import { pythonVaultStore, WebLoginVault } from './logins';
 import { HermesPolicyMaterializer, type ApplyOptions, type MaterializerContext } from './policy';
+import { Redactor } from './redact';
 import { reflect } from './reflect';
+import { runtimeUpdate } from './update';
 import { perform } from './run';
 import { runPolicyHook } from './policy-hook';
 import type { RuntimeAdapter } from './runtime';
@@ -26,6 +38,9 @@ const HEARTBEAT_MS = 60_000;
 const noSettings = { toolsets: null, env: {} };
 const ERROR_BACKOFF_MS = 5_000;
 const CATALOG_RETRY_MS = 30_000;
+// Runtime requests read files and start short commands; two at once keep a slow doctor run
+// from holding up a transcript.
+const REQUEST_CONCURRENCY = 2;
 
 type Log = (message: string) => void;
 
@@ -74,6 +89,8 @@ async function handle(
   const label = run.issueIdentifier ?? `run ${run.id}`;
   const stop = new AbortController();
   const lost = new AbortController();
+  // Set by a heartbeat during the instance's emergency stop: the run goes back to the queue.
+  let held = false;
   if (state.releasing) stop.abort();
   else log(run.sessionId ? `${label}: resuming its session` : `${label}: started (${run.trigger})`);
   state.stops.add(stop);
@@ -87,7 +104,14 @@ async function handle(
           log,
           async () => {
             const claim = run.claim;
-            if (!(await client.heartbeat(run.id, claim)) || claim !== run.claim) return;
+            const beat = await client.beat(run.id, claim);
+            if (claim !== run.claim) return;
+            if (beat.hold && !beat.canceled) {
+              held = true;
+              stop.abort();
+              return;
+            }
+            if (!beat.canceled) return;
             lost.abort();
             stop.abort();
           },
@@ -102,9 +126,9 @@ async function handle(
           .then((done) => log(`${label}: reflection ${done.status}, ${done.saved.length} saved`))
           .catch((err) => log(`${label}: reflection not reported — ${String(err)}`));
       }
-    } else if (state.releasing && run.claim !== undefined)
+    } else if ((state.releasing || held) && run.claim !== undefined)
       await client.release(run.id, run.claim).then(
-        () => log(`${label}: handed back to the queue`),
+        () => log(`${label}: handed back to the queue${held ? ' (emergency stop)' : ''}`),
         (err: unknown) => log(`${label}: could not be handed back — ${String(err)}`),
       );
     else log(`${label}: canceled`);
@@ -154,6 +178,41 @@ async function handleChat(
     }
   }
   log(`chat ${message.id}: ${stop.signal.aborted ? 'stopped' : 'answered'}`);
+}
+
+// A question of Helena about the agent's runtime, answered by its runtime adapter. An
+// isolated agent's profile is read by the profile helper as the project's user.
+async function handleRuntimeRequest(
+  config: RunnerConfig,
+  client: Client,
+  log: Log,
+  claim: RuntimeRequestClaim,
+): Promise<void> {
+  try {
+    if (!isRuntimeRequest(claim.request)) throw new Error('This runner does not know the request');
+    // The Hermes installation is the runner's own, isolated agents or not.
+    const result =
+      claim.request.op === 'runtime.update'
+        ? await runtimeUpdate(claim.request)
+        : isolationEnabled() && config.isolation && config.cwd
+          ? await runProfileHelper(config.isolation, config.cwd, {
+              op: 'runtime-request',
+              request: claim.request,
+              runtime: config.agent ?? null,
+              cwd: config.cwd,
+              known: runnerRedactor(config).secrets(),
+            })
+          : await answerRuntimeRequest(
+              claim.request,
+              readerContext(config),
+              runnerRedactor(config),
+            );
+    await client.answerRuntimeRequest(claim.id, { ok: true, result });
+  } catch (err) {
+    const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
+    log(`request ${claim.id} (${String(claim.request?.op)}) failed — ${message}`);
+    await client.answerRuntimeRequest(claim.id, { ok: false, error: message }).catch(() => {});
+  }
 }
 
 // Both feeds are drained the same way; they differ in what asking for work means — a poll
@@ -255,6 +314,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
   await policy?.ensure();
   if (config.models.length > 0) void publishCatalog(state, log, client, config);
   let chatSupported = true;
+  let requestsSupported = true;
   const inFlight = new Map<number, Run>();
   await Promise.all([
     drain<Run>(
@@ -315,6 +375,26 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
       },
       () => Promise.resolve(chatSupported),
     ),
+    // Helena's questions about the runtime: sessions, transcripts, logs, health. An instance
+    // too old to ask any answers 404, and that loop ends.
+    drain<RuntimeRequestClaim>(
+      state,
+      log,
+      REQUEST_CONCURRENCY,
+      async () => {
+        try {
+          return await client.claimRuntimeRequest();
+        } catch (err) {
+          if (err instanceof RequestError && err.status === 404) {
+            requestsSupported = false;
+            return null;
+          }
+          throw err;
+        }
+      },
+      (claim) => handleRuntimeRequest(config, client, log, claim),
+      () => Promise.resolve(requestsSupported),
+    ),
   ]);
 }
 
@@ -346,6 +426,10 @@ async function profileHelper(): Promise<void> {
       profile?: HermesProfile | null;
       logins?: unknown;
       actions?: unknown;
+      request?: unknown;
+      runtime?: unknown;
+      cwd?: unknown;
+      known?: unknown;
       keys?: unknown;
       sessionId?: unknown;
     };
@@ -376,6 +460,15 @@ async function profileHelper(): Promise<void> {
       if (!Array.isArray(request.logins)) throw new Error('logins must be a list');
       const vault = new WebLoginVault(home, pythonVaultStore(home, 'python3', {}));
       result = [...(await vault.sync(request.logins as never))];
+    } else if (request.op === 'runtime-request') {
+      if (!isRuntimeRequest(request.request)) throw new Error('unknown runtime request');
+      const runtime = typeof request.runtime === 'string' ? request.runtime : 'hermes';
+      const cwd = typeof request.cwd === 'string' ? request.cwd : null;
+      result = await answerRuntimeRequest(
+        request.request as RuntimeRequest,
+        { runtime, home: runtime === 'hermes' ? home : (process.env.HOME ?? home), cwd, env: {} },
+        new Redactor(Array.isArray(request.known) ? (request.known as string[]) : []),
+      );
     } else {
       throw new Error('unknown operation');
     }
@@ -410,6 +503,7 @@ async function main(): Promise<void> {
   const cli = parseArgv(process.argv.slice(2));
   const configPath =
     cli.configPath ?? process.env.ITSAPLAN_RUNNER_CONFIG ?? './itsaplan-runner.json';
+  await loadRunnerPlugins(configPath, log);
   const configs = await loadConfig(configPath, { agent: cli.agent, args: cli.args });
   const state: State = { stopping: false, releasing: false, stops: new Set() };
 

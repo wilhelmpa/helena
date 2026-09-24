@@ -52,12 +52,6 @@
     "transcript": "Messages",
     "loadOlder": "Charger les messages précédents",
     "loading": "Chargement…",
-    "reasoning": "Raisonnement",
-    "reasoningLive": "Raisonnement…",
-    "toolCalls": "{count, plural, one {# appel d’outil} other {# appels d’outils}}",
-    "toolInput": "Entrée",
-    "toolOutput": "Sortie",
-    "sources": "Sources :",
     "scrollToBottom": "Aller au message le plus récent",
     "edit": "Modifier",
     "saveAndBranch": "Enregistrer comme nouvelle version",
@@ -74,11 +68,13 @@
     "restoreFailed": "Ses messages n’ont pas pu être lus. Vérifiez la connexion et réessayez.",
     "retry": "Réessayer",
     "today": "Aujourd’hui",
-    "yesterday": "Hier"
+    "yesterday": "Hier",
+    "sourcesCount": "{count, plural, one {# source} other {# sources}}",
+    "stopped": "Arrêtée"
   },
   "composer": {
     "placeholder": "Message à {agent}…",
-    "hint": "Entrée envoie · Maj+Entrée ou ⌘/Ctrl+Entrée pour une nouvelle ligne · déposez ou collez des fichiers · / pour les commandes et prompts",
+    "hint": "Entrée envoie · Maj+Entrée ou ⌘/Ctrl+Entrée pour une nouvelle ligne · Échap arrête la réponse · ↑ modifie votre dernier message · déposez ou collez des fichiers · / pour les commandes et prompts",
     "send": "Envoyer",
     "stop": "Arrêter la réponse",
     "attach": "Joindre",
@@ -124,7 +120,8 @@
     "dictationInsecureTitle": "La dictée nécessite une connexion sécurisée",
     "dictationInsecure": "Les navigateurs ne prêtent le microphone qu’aux pages HTTPS. Tant que Helena ne tourne pas en HTTPS : ouvrez chrome://flags dans Chrome, activez « Insecure origins treated as secure » et ajoutez {origin}. Le kiosque l’autorise déjà.",
     "autoSpeak": "Lire les réponses à voix haute automatiquement",
-    "autoSpeakOn": "Les réponses sont lues à voix haute – cliquez pour désactiver"
+    "autoSpeakOn": "Les réponses sont lues à voix haute – cliquez pour désactiver",
+    "queuedList": "En attente d’envoi"
   },
   "artifact": {
     "title": "Artefact",
@@ -132,7 +129,8 @@
     "code": "Code",
     "preview": "Aperçu",
     "save": "Enregistrer dans le vault",
-    "saved": "Enregistré sous {path}."
+    "saved": "Enregistré sous {path}.",
+    "writing": "Rédaction de l’artefact…"
   },
   "issue": {
     "fromChat": "Transformer en tâche",

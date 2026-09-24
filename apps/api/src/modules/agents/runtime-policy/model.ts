@@ -65,6 +65,34 @@ export const RuntimePolicySnapshotResponse = t.Object({
       description: "The runtime's curator may archive learned skills the agent no longer uses.",
     }),
   }),
+  memoryWrites: t.Object({
+    approval: t.Boolean({
+      description:
+        "The agent's own memory writes wait for the owner: a file that differs from its " +
+        'baseline is reported as a proposal and put back.',
+    }),
+    baseline: t.Array(
+      t.Object({
+        file: t.Union([t.Literal('MEMORY.md'), t.Literal('USER.md')]),
+        sha256: t.String(),
+        content: t.String(),
+      }),
+    ),
+  }),
+  hermes: t.Object({
+    skillsDisabled: t.Array(t.String(), {
+      description: 'Skills turned off for the agent (Hermes skills.disabled).',
+    }),
+    fallbackModels: t.Array(t.Object({ provider: t.String(), model: t.String() }), {
+      description: 'The fallback chain (Hermes fallback_providers), in order.',
+    }),
+    sessionRetentionDays: t.Nullable(
+      t.Number({
+        description:
+          "Days Hermes keeps ended sessions (sessions.retention_days); null keeps Hermes' own.",
+      }),
+    ),
+  }),
   actions: t.Array(runtimeActionSnapshot, {
     description: "The owner's decisions on what the agent learned, not carried out yet.",
   }),
@@ -87,6 +115,17 @@ export const RuntimeStateBody = t.Object({
   inventory: t.Optional(runtimeInventory),
   learnedSkills: t.Optional(t.Array(learnedSkill, { maxItems: 50 })),
   actions: t.Optional(t.Array(runtimeActionResult, { maxItems: 100 })),
+  memoryProposals: t.Optional(
+    t.Array(
+      t.Object({
+        file: t.Union([t.Literal('MEMORY.md'), t.Literal('USER.md')]),
+        content: t.String({ maxLength: 16384 }),
+        sha256: t.String({ pattern: '^[a-f0-9]{64}$' }),
+        baseSha256: t.String({ pattern: '^[a-f0-9]{64}$' }),
+      }),
+      { maxItems: 2 },
+    ),
+  ),
   profile: t.Optional(profileReport),
 });
 

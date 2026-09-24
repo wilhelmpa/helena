@@ -200,7 +200,7 @@ describe('prices', () => {
   });
 });
 
-describe('the canonical category list (D-C1, mirror of @helena/sdk)', () => {
+describe('the canonical category list (D-C1, from @helena/sdk)', () => {
   test('is ordered by risk', () => {
     expect([...ACTION_CATEGORIES]).toEqual([
       'read',

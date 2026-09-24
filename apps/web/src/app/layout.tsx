@@ -7,7 +7,6 @@ import RuntimeEnvScript from '@/components/runtime-env-script';
 import { localeDirection, type Locale } from '@/i18n/locales';
 import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from '@/utils/app';
 import './globals.css';
-import WorkspaceToolsProvider from './WorkspaceToolsProvider';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
@@ -49,9 +48,7 @@ export default async function RootLayout({
           storageKey="itsaplan-theme"
         >
           <NextIntlClientProvider>
-            <Providers>
-              <WorkspaceToolsProvider>{children}</WorkspaceToolsProvider>
-            </Providers>
+            <Providers>{children}</Providers>
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

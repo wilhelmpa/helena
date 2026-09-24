@@ -1,23 +1,12 @@
 import { request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
+import type { ActionCategory, ActionScope } from '@helena/sdk/web';
 
 // Helena's Autopilot (mirrors apps/api modules/autopilot/model.ts): how independently the
 // agents of a project act, their budgets, and the log of the policy engine's decisions.
 
-// The action categories in rising risk (mirror of @helena/sdk ACTION_CATEGORIES).
-export const ACTION_CATEGORIES = [
-  'read',
-  'report',
-  'write',
-  'send',
-  'publish',
-  'execute',
-  'delete',
-  'pay',
-  'credentials',
-] as const;
-export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
-export type ActionScope = 'workspace' | 'external';
+// The action categories in rising risk and where an action lands (@helena/sdk, D-C1).
+export { ACTION_CATEGORIES, type ActionCategory, type ActionScope } from '@helena/sdk/web';
 
 export const AUTOPILOT_LEVELS = [0, 1, 2, 3] as const;
 export type AutopilotLevel = (typeof AUTOPILOT_LEVELS)[number];

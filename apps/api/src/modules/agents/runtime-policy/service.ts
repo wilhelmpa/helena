@@ -28,6 +28,14 @@ import {
   type LearnedSkill,
   type RuntimeActionResult,
 } from '../learning/service';
+import {
+  completeMemoryWrites,
+  memoryBaseline,
+  recordMemoryProposals,
+  recordObservedMemory,
+  type MemoryProposalReport,
+} from '../memory/service';
+import { getAgentRuntimeDefaults } from '#modules/runtime-admin/settings';
 import { areasSection } from './areas';
 import { agentVaultAccess, knowledgeSection } from './knowledge';
 import { structureSection } from './structure';
@@ -38,6 +46,10 @@ import { autopilotSoulSection } from '#modules/autopilot/prompt';
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
+  const [runtimeDefaults, baseline] = await Promise.all([
+    getAgentRuntimeDefaults(),
+    memoryBaseline(agent.id),
+  ]);
   const [skills, tools, structure, areas, mcpServers, webLogins, vaultAccess, actions] =
     await Promise.all([
       listAgentRuntimeSkills(agent.id),
@@ -95,6 +107,17 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     learning: {
       enabled: agent.runtimePolicy.learning ?? true,
       curator: agent.runtimePolicy.curator ?? false,
+    },
+    // Memory writes wait for the owner unless turned off; the runner keeps each file at its
+    // latest version meanwhile. Before a version was ever seen there is nothing to keep.
+    memoryWrites: {
+      approval: (agent.runtimePolicy.memoryApproval ?? true) && baseline.length > 0,
+      baseline,
+    },
+    hermes: {
+      skillsDisabled: agent.runtimePolicy.skillsDisabled ?? [],
+      fallbackModels: agent.runtimePolicy.fallbackModels ?? runtimeDefaults.fallbackModels,
+      sessionRetentionDays: runtimeDefaults.sessionRetentionDays,
     },
     actions,
   };
@@ -214,9 +237,10 @@ export async function reportRuntimeState(
     profile?: AgentRuntimeProfile;
     learnedSkills?: LearnedSkill[];
     actions?: RuntimeActionResult[];
+    memoryProposals?: MemoryProposalReport[];
   },
 ): Promise<AgentRuntimeState> {
-  const { learnedSkills = [], actions = [], ...state } = report;
+  const { learnedSkills = [], actions = [], memoryProposals, ...state } = report;
   const learnedChars = learnedSkills.reduce(
     (sum, skill) =>
       sum + skill.markdown.length + skill.files.reduce((n, file) => n + file.content.length, 0),
@@ -241,6 +265,9 @@ export async function reportRuntimeState(
     .update(aiAgent)
     .set({ runtimeState: value, runtimeLearnedSkills: learnedSkills, lastSeenAt: new Date() })
     .where(eq(aiAgent.id, agentId));
-  await completeRuntimeActions(agentId, actions);
+  const done = await completeRuntimeActions(agentId, actions);
+  await completeMemoryWrites(agentId, done, actions);
+  await recordMemoryProposals(agentId, memoryProposals);
+  await recordObservedMemory(agentId, value.inventory);
   return value;
 }

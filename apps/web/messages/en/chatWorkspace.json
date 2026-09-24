@@ -52,12 +52,6 @@
     "transcript": "Messages",
     "loadOlder": "Load earlier messages",
     "loading": "Loading…",
-    "reasoning": "Reasoning",
-    "reasoningLive": "Reasoning…",
-    "toolCalls": "{count, plural, one {# tool call} other {# tool calls}}",
-    "toolInput": "Input",
-    "toolOutput": "Output",
-    "sources": "Sources:",
     "scrollToBottom": "Scroll to the newest message",
     "edit": "Edit",
     "saveAndBranch": "Save as a new version",
@@ -74,11 +68,13 @@
     "restoreFailed": "Its messages could not be read. Check the connection and try again.",
     "retry": "Try again",
     "today": "Today",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "sourcesCount": "{count, plural, one {# source} other {# sources}}",
+    "stopped": "Stopped"
   },
   "composer": {
     "placeholder": "Message {agent}…",
-    "hint": "Enter sends · Shift+Enter or ⌘/Ctrl+Enter for a new line · drop or paste files to attach · / for commands and prompts",
+    "hint": "Enter sends · Shift+Enter or ⌘/Ctrl+Enter for a new line · Esc stops the answer · ↑ edits your last message · drop or paste files to attach · / for commands and prompts",
     "send": "Send",
     "stop": "Stop the answer",
     "attach": "Attach",
@@ -124,7 +120,8 @@
     "dictationInsecureTitle": "Dictation needs a secure connection",
     "dictationInsecure": "Browsers only lend the microphone to HTTPS pages. Until Helena runs on HTTPS: open chrome://flags in Chrome, enable “Insecure origins treated as secure” and add {origin}. The kiosk already allows it.",
     "autoSpeak": "Read answers aloud automatically",
-    "autoSpeakOn": "Answers are read aloud – click to turn off"
+    "autoSpeakOn": "Answers are read aloud – click to turn off",
+    "queuedList": "Waiting to send"
   },
   "artifact": {
     "title": "Artifact",
@@ -132,7 +129,8 @@
     "code": "Code",
     "preview": "Preview",
     "save": "Save to the vault",
-    "saved": "Saved to {path}."
+    "saved": "Saved to {path}.",
+    "writing": "Writing the artifact …"
   },
   "issue": {
     "fromChat": "Turn into a task",

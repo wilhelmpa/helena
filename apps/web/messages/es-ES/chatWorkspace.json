@@ -52,12 +52,6 @@
     "transcript": "Mensajes",
     "loadOlder": "Cargar mensajes anteriores",
     "loading": "Cargando…",
-    "reasoning": "Razonamiento",
-    "reasoningLive": "Razonando…",
-    "toolCalls": "{count, plural, one {# llamada a herramienta} other {# llamadas a herramientas}}",
-    "toolInput": "Entrada",
-    "toolOutput": "Salida",
-    "sources": "Fuentes:",
     "scrollToBottom": "Ir al mensaje más reciente",
     "edit": "Editar",
     "saveAndBranch": "Guardar como nueva versión",
@@ -74,11 +68,13 @@
     "restoreFailed": "No se pudieron leer sus mensajes. Comprueba la conexión y vuelve a intentarlo.",
     "retry": "Reintentar",
     "today": "Hoy",
-    "yesterday": "Ayer"
+    "yesterday": "Ayer",
+    "sourcesCount": "{count, plural, one {# fuente} other {# fuentes}}",
+    "stopped": "Detenida"
   },
   "composer": {
     "placeholder": "Mensaje para {agent}…",
-    "hint": "Intro envía · Mayús+Intro o ⌘/Ctrl+Intro para una línea nueva · suelta o pega archivos para adjuntar · / para comandos y prompts",
+    "hint": "Intro envía · Mayús+Intro o ⌘/Ctrl+Intro para una línea nueva · Esc detiene la respuesta · ↑ edita tu último mensaje · suelta o pega archivos para adjuntar · / para comandos y prompts",
     "send": "Enviar",
     "stop": "Detener la respuesta",
     "attach": "Adjuntar",
@@ -124,7 +120,8 @@
     "dictationInsecureTitle": "El dictado necesita una conexión segura",
     "dictationInsecure": "Los navegadores solo prestan el micrófono a páginas HTTPS. Hasta que Helena funcione con HTTPS: abre chrome://flags en Chrome, activa «Insecure origins treated as secure» y añade {origin}. El quiosco ya lo permite.",
     "autoSpeak": "Leer las respuestas en voz alta automáticamente",
-    "autoSpeakOn": "Las respuestas se leen en voz alta: haz clic para desactivarlo"
+    "autoSpeakOn": "Las respuestas se leen en voz alta: haz clic para desactivarlo",
+    "queuedList": "Esperando para enviarse"
   },
   "artifact": {
     "title": "Artefacto",
@@ -132,7 +129,8 @@
     "code": "Código",
     "preview": "Vista previa",
     "save": "Guardar en el vault",
-    "saved": "Guardado en {path}."
+    "saved": "Guardado en {path}.",
+    "writing": "Escribiendo el artefacto…"
   },
   "issue": {
     "fromChat": "Convertir en tarea",

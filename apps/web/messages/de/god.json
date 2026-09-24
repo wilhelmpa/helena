@@ -369,7 +369,8 @@
       "run-janitor": "Lauf-Aufräumdienst",
       "stage-janitor": "Stufen-Aufräumdienst",
       "workflow-schedules": "Zeitplan-Abgleich",
-      "resume-janitor": "Fortsetzungs-Aufräumdienst"
+      "resume-janitor": "Fortsetzungs-Aufräumdienst",
+      "runtime-janitor": "Laufzeit-Aufräumdienst"
     },
     "janitorRan": "lief vor {time}",
     "janitorCleaned": "{count, plural, one {# Eintrag aufgeräumt} other {# Einträge aufgeräumt}}",
@@ -379,6 +380,40 @@
     "agentSync": {
       "title": "Agenten-Profile",
       "synced": "{synced} von {total} synchron"
+    }
+  },
+  "plugins": {
+    "externalTitle": "Externe Plugins",
+    "externalDescription": "Ein externes Plugin läuft in Helena mit Helenas Rechten. Nur für Plugins einschalten, denen du vertraust.",
+    "folder": "Plugin-Ordner: {path}",
+    "noFolder": "Kein Plugin-Ordner gesetzt (HELENA_PLUGINS_DIR), daher laufen nur Helenas eigene Plugins.",
+    "restartHint": "Änderungen gelten nach einem Neustart von API und Worker.",
+    "foundTitle": "Im Plugin-Ordner",
+    "none": "Keine Plugins gefunden.",
+    "approve": "Freigeben",
+    "revoke": "Freigabe entziehen",
+    "builtinTitle": "Eingebaut",
+    "statusLoaded": "Geladen",
+    "statusFailed": "Fehler",
+    "statusNotLoaded": "Nicht geladen",
+    "restartRequired": "Neustart nötig",
+    "provides": "Stellt bereit",
+    "actions": "Aktionen",
+    "events": "Ereignisse",
+    "network": "Netzwerk",
+    "credentials": "Seine Werkzeuge nutzen die Zugangsdaten seiner Connectoren.",
+    "names": {
+      "integrations": "Integrationen",
+      "mcp": "Helena-MCP-Werkzeuge",
+      "webhooks": "Webhooks",
+      "bundles": "Vorlagen-Pakete",
+      "autopilot": "Autopilot"
+    },
+    "problems": {
+      "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",
+      "not-approved": "Noch nicht freigegeben.",
+      "version-changed": "Für eine andere Version freigegeben: diese freigeben.",
+      "files-changed": "Seine Dateien haben sich seit der Freigabe geändert: prüfen und neu freigeben."
     }
   }
 }

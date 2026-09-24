@@ -53,6 +53,9 @@ const IntegrationResponse = t.Object({
       label: t.String(),
       description: t.String(),
       scopes: t.Optional(t.Array(t.String())),
+      // What calling it does (@helena/sdk action category), for the tool picker and the
+      // policy.
+      category: t.Optional(t.String()),
     }),
   ),
 });

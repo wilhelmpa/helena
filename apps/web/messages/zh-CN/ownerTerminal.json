@@ -6,7 +6,9 @@
     "confirm": "确认",
     "verifying": "正在检查…",
     "wrongCode": "验证码未被接受。",
-    "rateLimited": "尝试次数过多,请等待 15 分钟后再试。"
+    "rateLimited": "尝试次数过多,请等待 15 分钟后再试。",
+    "locked": "在你确认身份之前，终端保持锁定。",
+    "enterCode": "输入验证码"
   },
   "grant": {
     "active": "终端已授权至 {time}",

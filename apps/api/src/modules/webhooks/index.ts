@@ -63,7 +63,7 @@ export const webhookRoutes = new Elysia({ name: 'webhooks', detail: { tags: ['We
       response: { 201: WebhookResponse, ...commonErrors },
       detail: {
         summary: 'Create a webhook',
-        ...mcpTool('create_webhook', undefined, { category: 'send', scope: 'external' }),
+        ...mcpTool('create_webhook', undefined, 'send', 'external'),
       },
     },
   )
@@ -83,7 +83,7 @@ export const webhookRoutes = new Elysia({ name: 'webhooks', detail: { tags: ['We
       response: { 200: WebhookResponse, ...commonErrors },
       detail: {
         summary: 'Update a webhook',
-        ...mcpTool('update_webhook', undefined, { category: 'send', scope: 'external' }),
+        ...mcpTool('update_webhook', undefined, 'send', 'external'),
       },
     },
   )

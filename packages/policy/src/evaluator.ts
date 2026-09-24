@@ -2,10 +2,10 @@ import type { ActionCategory, ActionScope } from './categories';
 import type { AutopilotLevel } from './levels';
 import type { ReasonCode } from './policies';
 
-// The "Richtlinien" extension point of Helena (volition-helena-oss.md §3a): ONE evaluation
-// of "may this agent do this kind of thing here?" that every tool, connector, workflow step
-// and runtime asks. Shaped to move into @helena/sdk once hub/framework publishes it; the
-// Cedar evaluator (cedar.ts) is its first implementation.
+// The Autopilot's inner evaluation of "may this agent do this kind of thing here?", with
+// every fact already worked out; the Cedar evaluator (cedar.ts) implements it. The API
+// wraps it as an @helena/sdk PolicyEvaluator ("Richtlinien", volition-helena-oss.md §3a),
+// which the framework's policy host asks with the other registered evaluators.
 
 // What the evaluator is asked. The facts that need the database (which level applies,
 // whether a budget is used up, whether a person approved exactly this action) are worked

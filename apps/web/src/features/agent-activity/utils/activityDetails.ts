@@ -1,5 +1,5 @@
 import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
-import { issuePath, workflowRunPath } from '@/utils/paths';
+import { agentsPath, issuePath, workflowRunPath } from '@/utils/paths';
 
 export type ActivityTarget =
   { kind: 'page'; href: string } | { kind: 'chat'; agentId: number; threadId: string };
@@ -14,12 +14,17 @@ export function activityTask(entry: AgentActivityEntry): { href: string; label: 
 }
 
 // Where an entry's details are: the conversation of a chat answer, the Workflows page
-// for a workflow run. A run of an agent has its details on its task.
+// for a workflow run, the glass-box view on the agent's page for a run of an agent.
 export function activityDetails(entry: AgentActivityEntry): ActivityTarget | null {
   if (entry.kind === 'chat')
     return entry.agent && entry.threadId
       ? { kind: 'chat', agentId: entry.agent.id, threadId: entry.threadId }
       : null;
+  if (entry.kind === 'agent-run' && entry.agent && entry.id.startsWith('run:'))
+    return {
+      kind: 'page',
+      href: `${agentsPath()}?agent=${entry.agent.id}&tab=runs&run=${entry.id.slice(4)}`,
+    };
   if (entry.project && entry.workflowId && entry.workflowRunId)
     return {
       kind: 'page',

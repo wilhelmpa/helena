@@ -1,0 +1,300 @@
+#!/usr/bin/env python3
+"""Updates the Hermes installation Helena's agents run on, with a way back.
+
+Started as root by helena-hermes-update.path when the runner writes a request into the spool
+(`request.json`, a check or an apply the owner approved in Helena), or by hand:
+
+    helena-hermes-update [--config FILE] check
+    helena-hermes-update [--config FILE] apply <target>
+    helena-hermes-update [--config FILE] serve-request
+
+A check fetches the upstream and reports the installed and the newest version, the upstream
+commits between them (the changelog) and the commits carried on top of upstream locally. An
+apply moves the checkout to <target> (a commit or tag of the upstream branch, or `latest`),
+carries the local commits over, reinstalls the package into the virtual environment, and
+runs a smoke test. Any failure puts the previous checkout and virtual environment back.
+
+Each step runs as the owner of what it changes: git as the owner of the checkout, the
+install as the owner of the virtual environment. The answer is JSON on stdout, and for a
+spool request also `status.json` in the spool.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime
+import fcntl
+import json
+import os
+import pwd
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+DEFAULT_CONFIG = Path("/etc/helena/hermes-update.json")
+TARGET = re.compile(r"^(latest|[0-9a-f]{7,40}|v?\d+(\.\d+){1,3}(-[A-Za-z0-9.]+)?)$")
+LOG_LIMIT = 20_000
+
+
+class UpdateError(Exception):
+    pass
+
+
+def load_config(path: Path) -> dict:
+    with open(path, encoding="utf-8") as handle:
+        config = json.load(handle)
+    for key in ("source", "venv", "spool"):
+        if not isinstance(config.get(key), str) or not os.path.isabs(config[key]):
+            raise UpdateError(f"config: {key} must be an absolute path")
+    config.setdefault("remote", "origin")
+    config.setdefault("branch", "main")
+    config.setdefault("localBranch", None)
+    config.setdefault("rollbackDir", "/var/lib/helena/hermes-update")
+    config.setdefault(
+        "install", ["{venv}/bin/python", "-m", "pip", "install", "--quiet", "-e", "{source}"]
+    )
+    config.setdefault("smoke", ["{venv}/bin/hermes", "--version"])
+    return config
+
+
+class Runner:
+    """Runs commands as the owner of a path when started as root, and keeps a log."""
+
+    def __init__(self) -> None:
+        self.log: list[str] = []
+        self.returncode = 0
+
+    def note(self, line: str) -> None:
+        self.log.append(line)
+
+    def run(self, args: list[str], *, owner_of: str | None = None, cwd: str | None = None,
+            env: dict | None = None, check: bool = True) -> str:
+        preexec = None
+        if owner_of and os.geteuid() == 0:
+            info = os.stat(owner_of)
+            account = pwd.getpwuid(info.st_uid)
+
+            def preexec() -> None:  # noqa: D401 - drops privileges in the child
+                os.setgid(info.st_gid)
+                os.initgroups(account.pw_name, info.st_gid)
+                os.setuid(info.st_uid)
+
+            env = {**(env or {}), "HOME": account.pw_dir, "USER": account.pw_name}
+        self.note("$ " + " ".join(args))
+        result = subprocess.run(
+            args, cwd=cwd, env={**os.environ, **(env or {})}, preexec_fn=preexec,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=1800)
+        output = result.stdout.strip()
+        if output:
+            self.note(output[-4000:])
+        self.returncode = result.returncode
+        if check and result.returncode != 0:
+            raise UpdateError(f"{args[0]} exited with {result.returncode}")
+        return output
+
+
+# The committer of the local commits carried over; their author stays.
+COMMITTER = ["-c", "user.name=Helena update", "-c", "user.email=helena-update@localhost"]
+
+
+def git(runner: Runner, config: dict, *args: str, check: bool = True) -> str:
+    source = config["source"]
+    return runner.run(
+        ["git", "-c", f"safe.directory={source}", *COMMITTER, "-C", source, *args],
+        owner_of=source, check=check)
+
+
+def version_at(runner: Runner, config: dict, ref: str) -> str | None:
+    text = git(runner, config, "show", f"{ref}:pyproject.toml", check=False)
+    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    return match.group(1) if match else None
+
+
+def describe(runner: Runner, config: dict, ref: str) -> dict:
+    described = git(runner, config, "describe", "--tags", "--always", ref, check=False)
+    return {
+        "commit": git(runner, config, "rev-parse", ref).splitlines()[-1],
+        "describe": described.splitlines()[-1] if described else None,
+        "version": version_at(runner, config, ref),
+    }
+
+
+def upstream(config: dict) -> str:
+    return f"{config['remote']}/{config['branch']}"
+
+
+def log_lines(runner: Runner, config: dict, spec: str, limit: int = 200) -> list[dict]:
+    out = git(runner, config, "log", "--no-merges", f"--max-count={limit}",
+              "--format=%H%x09%cs%x09%s", spec, check=False)
+    commits = []
+    for line in out.splitlines():
+        parts = line.split("\t", 2)
+        if len(parts) == 3 and re.fullmatch(r"[0-9a-f]{40}", parts[0]):
+            commits.append({"commit": parts[0], "date": parts[1], "subject": parts[2][:300]})
+    return commits
+
+
+def check(config: dict, runner: Runner) -> dict:
+    git(runner, config, "fetch", "--tags", "--prune", config["remote"])
+    base = git(runner, config, "merge-base", "HEAD", upstream(config)).splitlines()[-1]
+    return {
+        "current": describe(runner, config, "HEAD"),
+        "latest": describe(runner, config, upstream(config)),
+        # What updating to the newest version brings, newest first.
+        "commits": log_lines(runner, config, f"{base}..{upstream(config)}"),
+        # The commits carried on top of upstream, which an update carries over.
+        "localPatches": log_lines(runner, config, f"{upstream(config)}..HEAD", 50),
+    }
+
+
+def resolve_target(runner: Runner, config: dict, target: str) -> str:
+    if not TARGET.fullmatch(target):
+        raise UpdateError("the target is not a commit, a version tag or latest")
+    ref = upstream(config) if target == "latest" else target
+    commit = git(runner, config, "rev-parse", "--verify", f"{ref}^{{commit}}", check=False).splitlines()
+    if not commit or not re.fullmatch(r"[0-9a-f]{40}", commit[-1]):
+        raise UpdateError(f"{target} is not known upstream")
+    commit = commit[-1]
+    ancestor = subprocess.run(
+        ["git", "-c", f"safe.directory={config['source']}", "-C", config["source"],
+         "merge-base", "--is-ancestor", commit, upstream(config)])
+    if ancestor.returncode != 0:
+        raise UpdateError(f"{target} is not on {upstream(config)}")
+    return commit
+
+
+def fill(args: list[str], config: dict) -> list[str]:
+    return [arg.format(venv=config["venv"], source=config["source"]) for arg in args]
+
+
+def apply(config: dict, runner: Runner, target: str) -> dict:
+    git(runner, config, "fetch", "--tags", "--prune", config["remote"])
+    commit = resolve_target(runner, config, target)
+    before = describe(runner, config, "HEAD")
+    old_branch = git(runner, config, "rev-parse", "--abbrev-ref", "HEAD").splitlines()[-1]
+    local_branch = config["localBranch"] or (old_branch if old_branch != "HEAD" else None)
+    base = git(runner, config, "merge-base", "HEAD", upstream(config)).splitlines()[-1]
+    patches = [entry["commit"] for entry in reversed(log_lines(runner, config, f"{base}..HEAD", 50))]
+    if git(runner, config, "status", "--porcelain", "--untracked-files=no"):
+        raise UpdateError("the checkout has uncommitted changes")
+
+    venv = Path(config["venv"])
+    # The copy lives in a folder only root writes, so nobody can put a link where it goes.
+    keep = Path(config["rollbackDir"])
+    keep.mkdir(mode=0o700, parents=True, exist_ok=True)
+    rollback = keep / "venv"
+    if rollback.is_symlink():
+        rollback.unlink()
+    elif rollback.exists():
+        shutil.rmtree(rollback)
+    # cp -a keeps owners and modes, which a copy made as root would otherwise lose.
+    runner.run(["cp", "-a", "--reflink=auto", str(venv), str(rollback)])
+    work = f"helena/update-{datetime.datetime.now(datetime.timezone.utc):%Y%m%d%H%M%S}"
+    try:
+        git(runner, config, "checkout", "-q", "-B", work, commit)
+        for patch in patches:
+            git(runner, config, "cherry-pick", "--allow-empty", patch, check=False)
+            if runner.returncode != 0:
+                raise UpdateError(f"the local commit {patch[:10]} does not apply to {target}")
+        runner.run(fill(config["install"], config), owner_of=str(venv), cwd=config["source"])
+        with tempfile.TemporaryDirectory() as home:
+            os.chmod(home, 0o777)
+            smoke = runner.run(fill(config["smoke"], config), owner_of=str(venv),
+                               env={"HERMES_HOME": home})
+        if local_branch:
+            git(runner, config, "checkout", "-q", "-B", local_branch, work)
+            git(runner, config, "branch", "-q", "-D", work, check=False)
+        after = describe(runner, config, "HEAD")
+        return {"from": before, "to": after, "smoke": smoke[-500:], "carried": len(patches)}
+    except Exception as error:
+        runner.note(f"rolling back: {error}")
+        git(runner, config, "cherry-pick", "--abort", check=False)
+        if old_branch != "HEAD":
+            git(runner, config, "checkout", "-q", "-f", "-B", old_branch, before["commit"], check=False)
+        else:
+            git(runner, config, "checkout", "-q", "-f", before["commit"], check=False)
+        git(runner, config, "branch", "-q", "-D", work, check=False)
+        shutil.rmtree(venv, ignore_errors=True)
+        shutil.move(str(rollback), str(venv))
+        raise
+
+
+# The spool belongs to the runner's user, who could put a link where root writes: every file
+# is created anew under a random name (O_EXCL) or opened without following a link.
+def write_status(spool: Path, status: dict) -> None:
+    fd, temp = tempfile.mkstemp(dir=spool, prefix=".status-")
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(status, ensure_ascii=False, indent=1) + "\n")
+    os.chmod(temp, 0o644)
+    os.replace(temp, spool / "status.json")
+
+
+def read_request(path: Path) -> str | None:
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError:
+        return None
+    with os.fdopen(fd, encoding="utf-8") as handle:
+        return handle.read(4096)
+
+
+def serve_request(config: dict) -> dict:
+    spool = Path(config["spool"])
+    request_path = spool / "request.json"
+    raw = read_request(request_path)
+    if raw is None:
+        return {"ok": False, "error": "no request"}
+    request_path.unlink()
+    try:
+        request = json.loads(raw)
+        request_id = str(request["id"])[:64]
+        action = request["action"]
+        if action not in ("check", "apply"):
+            raise UpdateError("unknown action")
+    except (ValueError, KeyError, TypeError, UpdateError) as error:
+        answer = {"ok": False, "error": f"invalid request: {error}"}
+        write_status(spool, {"id": None, "state": "failed", **answer})
+        return answer
+    write_status(spool, {"id": request_id, "action": action, "state": "running"})
+    answer = run(config, action, request.get("target"))
+    write_status(spool, {"id": request_id, "action": action,
+                         "state": "done" if answer["ok"] else "failed", **answer})
+    return answer
+
+
+def run(config: dict, action: str, target: str | None) -> dict:
+    runner = Runner()
+    lock_path = Path(config["spool"]) / "lock"
+    fd = os.open(lock_path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd) as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            result = check(config, runner) if action == "check" else apply(config, runner, str(target))
+            return {"ok": True, "result": result, "log": "\n".join(runner.log)[-LOG_LIMIT:]}
+        except Exception as error:  # noqa: BLE001 - every failure is the answer
+            return {"ok": False, "error": str(error)[:500], "log": "\n".join(runner.log)[-LOG_LIMIT:]}
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="helena-hermes-update")
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("action", choices=["check", "apply", "serve-request"])
+    parser.add_argument("target", nargs="?")
+    args = parser.parse_args(argv)
+    config = load_config(args.config)
+    Path(config["spool"]).mkdir(parents=True, exist_ok=True)
+    if args.action == "serve-request":
+        answer = serve_request(config)
+    else:
+        if args.action == "apply" and not args.target:
+            parser.error("apply needs a target")
+        answer = run(config, args.action, args.target)
+    print(json.dumps(answer, ensure_ascii=False))
+    return 0 if answer.get("ok") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

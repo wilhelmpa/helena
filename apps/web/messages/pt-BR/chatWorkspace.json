@@ -52,12 +52,6 @@
     "transcript": "Mensagens",
     "loadOlder": "Carregar mensagens anteriores",
     "loading": "Carregando…",
-    "reasoning": "Raciocínio",
-    "reasoningLive": "Raciocinando…",
-    "toolCalls": "{count, plural, one {# chamada de ferramenta} other {# chamadas de ferramenta}}",
-    "toolInput": "Entrada",
-    "toolOutput": "Saída",
-    "sources": "Fontes:",
     "scrollToBottom": "Ir para a mensagem mais recente",
     "edit": "Editar",
     "saveAndBranch": "Salvar como nova versão",
@@ -74,11 +68,13 @@
     "restoreFailed": "Não foi possível ler as mensagens. Verifique a conexão e tente novamente.",
     "retry": "Tentar novamente",
     "today": "Hoje",
-    "yesterday": "Ontem"
+    "yesterday": "Ontem",
+    "sourcesCount": "{count, plural, one {# fonte} other {# fontes}}",
+    "stopped": "Interrompida"
   },
   "composer": {
     "placeholder": "Mensagem para {agent}…",
-    "hint": "Enter envia · Shift+Enter ou ⌘/Ctrl+Enter para nova linha · solte ou cole arquivos para anexar · / para comandos e prompts",
+    "hint": "Enter envia · Shift+Enter ou ⌘/Ctrl+Enter para nova linha · Esc interrompe a resposta · ↑ edita sua última mensagem · solte ou cole arquivos para anexar · / para comandos e prompts",
     "send": "Enviar",
     "stop": "Parar a resposta",
     "attach": "Anexar",
@@ -124,7 +120,8 @@
     "dictationInsecureTitle": "O ditado precisa de uma conexão segura",
     "dictationInsecure": "Os navegadores só liberam o microfone para páginas HTTPS. Até a Helena rodar em HTTPS: abra chrome://flags no Chrome, ative “Insecure origins treated as secure” e adicione {origin}. O quiosque já permite.",
     "autoSpeak": "Ler as respostas em voz alta automaticamente",
-    "autoSpeakOn": "As respostas são lidas em voz alta – clique para desligar"
+    "autoSpeakOn": "As respostas são lidas em voz alta – clique para desligar",
+    "queuedList": "Aguardando envio"
   },
   "artifact": {
     "title": "Artefato",
@@ -132,7 +129,8 @@
     "code": "Código",
     "preview": "Prévia",
     "save": "Salvar no vault",
-    "saved": "Salvo em {path}."
+    "saved": "Salvo em {path}.",
+    "writing": "Escrevendo o artefato…"
   },
   "issue": {
     "fromChat": "Transformar em tarefa",

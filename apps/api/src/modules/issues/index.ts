@@ -1200,7 +1200,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
         summary: 'Add an issue watcher',
         description:
           'Subscribe another real project member to the issue. Requires permission to edit work items.',
-        ...mcpTool('add_issue_watcher', undefined, { category: 'report' }),
+        ...mcpTool('add_issue_watcher', undefined, 'report'),
       },
     },
   )
@@ -1222,7 +1222,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
         summary: 'Remove an issue watcher',
         description:
           'Unsubscribe another real project member from the issue. Requires permission to edit work items.',
-        ...mcpTool('remove_issue_watcher', undefined, { category: 'report' }),
+        ...mcpTool('remove_issue_watcher', undefined, 'report'),
       },
     },
   )
@@ -1370,7 +1370,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
           'existing comment of that issue instead of starting a new thread. Writing ' +
           '@username in the body notifies that member or AI agent; the handles are ' +
           'the usernames in get_project.assignees.',
-        ...mcpTool('add_comment', undefined, { category: 'report' }),
+        ...mcpTool('add_comment', undefined, 'report'),
       },
     },
   )
@@ -1399,7 +1399,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
           'the person the agent reports to (the owner of the agent it reports to in the ' +
           'organization, otherwise the project owners), and ends your run on the issue as ' +
           'blocked. Stop working on the issue after calling it. Only an agent may call it.',
-        ...mcpTool('mark_issue_blocked', undefined, { category: 'report' }),
+        ...mcpTool('mark_issue_blocked', undefined, 'report'),
       },
     },
   )
@@ -1421,7 +1421,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
           'Change the text of a comment, and re-resolve its mentions: the members an ' +
           'edit newly names are notified, the agents run. Your own comment needs ' +
           "work_items edit; another member's comment only a project owner can change.",
-        ...mcpTool('update_comment', undefined, { category: 'report' }),
+        ...mcpTool('update_comment', undefined, 'report'),
       },
     },
   )

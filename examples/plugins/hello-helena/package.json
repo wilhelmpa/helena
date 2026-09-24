@@ -1,0 +1,15 @@
+{
+  "name": "hello-helena",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@helena/sdk": "workspace:*",
+    "@types/bun": "latest",
+    "typescript": "^6.0.3"
+  }
+}

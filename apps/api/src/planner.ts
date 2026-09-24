@@ -24,6 +24,13 @@ import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
 import { credentialRoutes } from './modules/agents/credentials';
 import { agentLearningRoutes } from './modules/agents/learning';
+import { agentRuntimeRequestRoutes } from './modules/agents/runtime-requests';
+import { runTimelineRoutes } from './modules/agents/run-timeline';
+import { runtimeViewRoutes } from './modules/agents/runtime-views';
+import { agentUsageRoutes } from './modules/agents/usage';
+import { agentProposalRoutes } from './modules/agents/proposals';
+import { emergencyStopRoutes } from './modules/emergency-stop';
+import { runtimeAdminRoutes } from './modules/runtime-admin';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
 import { issueRoutes } from './modules/issues';
@@ -45,6 +52,8 @@ import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
 import { godRoutes } from './modules/god';
+import { pluginAdminRoutes, pluginSlotRoutes } from './modules/plugins';
+import { templateBundleRoutes } from './modules/template-bundles';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
@@ -124,6 +133,13 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentMcpServerRoutes)
   .use(credentialRoutes)
   .use(agentLearningRoutes)
+  .use(agentRuntimeRequestRoutes)
+  .use(runTimelineRoutes)
+  .use(runtimeViewRoutes)
+  .use(agentUsageRoutes)
+  .use(agentProposalRoutes)
+  .use(emergencyStopRoutes)
+  .use(runtimeAdminRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)
@@ -177,4 +193,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(deviceSyncRoutes)
   .use(ownerTerminalRoutes)
   .use(settingsRoutes)
-  .use(godRoutes);
+  .use(godRoutes)
+  .use(pluginAdminRoutes)
+  .use(pluginSlotRoutes)
+  .use(templateBundleRoutes);

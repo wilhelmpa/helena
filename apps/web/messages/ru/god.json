@@ -369,7 +369,8 @@
       "run-janitor": "Уборщик запусков",
       "stage-janitor": "Уборщик этапов",
       "workflow-schedules": "Синхронизация расписаний",
-      "resume-janitor": "Уборщик возобновлений"
+      "resume-janitor": "Уборщик возобновлений",
+      "runtime-janitor": "Очистка среды выполнения"
     },
     "janitorRan": "выполнялся {time} назад",
     "janitorCleaned": "{count, plural, one {очищен # элемент} few {очищено # элемента} many {очищено # элементов} other {очищено # элемента}}",
@@ -379,6 +380,40 @@
     "agentSync": {
       "title": "Профили агентов",
       "synced": "{synced} из {total} синхронизированы"
+    }
+  },
+  "plugins": {
+    "externalTitle": "Внешние плагины",
+    "externalDescription": "Внешний плагин работает внутри Helena с её правами. Включайте только для плагинов, которым доверяете.",
+    "folder": "Папка плагинов: {path}",
+    "noFolder": "Папка плагинов не задана (HELENA_PLUGINS_DIR), поэтому работают только собственные плагины Helena.",
+    "restartHint": "Изменения вступят в силу после перезапуска API и воркера.",
+    "foundTitle": "В папке плагинов",
+    "none": "Плагины не найдены.",
+    "approve": "Разрешить",
+    "revoke": "Отозвать разрешение",
+    "builtinTitle": "Встроенные",
+    "statusLoaded": "Загружен",
+    "statusFailed": "Ошибка",
+    "statusNotLoaded": "Не загружен",
+    "restartRequired": "Нужен перезапуск",
+    "provides": "Предоставляет",
+    "actions": "Действия",
+    "events": "События",
+    "network": "Сеть",
+    "credentials": "Его инструменты используют учётные данные его коннекторов.",
+    "names": {
+      "integrations": "Интеграции",
+      "mcp": "Инструменты MCP Helena",
+      "webhooks": "Вебхуки",
+      "bundles": "Пакеты шаблонов",
+      "autopilot": "Autopilot"
+    },
+    "problems": {
+      "external-off": "Загрузится, как только внешние плагины будут включены.",
+      "not-approved": "Ещё не разрешён.",
+      "version-changed": "Разрешён для другой версии: разрешите эту.",
+      "files-changed": "Его файлы изменились после разрешения: проверьте и разрешите снова."
     }
   }
 }

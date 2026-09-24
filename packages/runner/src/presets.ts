@@ -1,3 +1,4 @@
+import { cliArgv, cliPrompt, type CliCommand, type RuntimeTaskSettings } from '@helena/sdk';
 import type { OutputFormat } from './config';
 
 // A preset exists because several facts about a CLI have to agree: how its output is read,
@@ -11,22 +12,12 @@ import type { OutputFormat } from './config';
 
 export type PresetName = 'claude' | 'codex' | 'opencode' | 'antigravity' | 'copilot' | 'hermes';
 
-export interface PresetTaskSettings {
-  model?: string | null;
-  thinkingLevel?: string | null;
-  provider?: string | null;
-  maxTurns?: number | null;
-  runBudgetSeconds?: number | null;
-  toolsets?: string[] | null;
-  image?: string | null;
-  // Helena's Autopilot level for this run or chat answer (absent on an older server), and
-  // the command a runtime with pre-tool hooks runs to ask Helena's policy engine.
-  autopilotLevel?: number | null;
-  policyHook?: string | null;
-}
+// The settings a task passes to a preset's command line.
+export type PresetTaskSettings = RuntimeTaskSettings;
 
 // Claude Code asks Helena's policy engine before each tool call through a PreToolUse hook
-// (the runner's `policy-hook`). At level 0 it plans only: it proposes, it changes nothing.
+// (the runner's `policy-hook`). At Autopilot level 0 it plans only: it proposes, it changes
+// nothing.
 function claudeAutopilotArgs({ autopilotLevel, policyHook }: PresetTaskSettings): string[] {
   return [
     ...(autopilotLevel === 0 ? ['--permission-mode', 'plan'] : []),
@@ -43,23 +34,11 @@ function claudeAutopilotArgs({ autopilotLevel, policyHook }: PresetTaskSettings)
   ];
 }
 
-export interface Preset {
-  bin: string;
+// A preset is the command line of a runtime the runner starts as a one-shot CLI: the
+// @helena/sdk CliCommand of a built-in runtime (see runtimes.ts), with one of the output
+// formats agui.ts reads.
+export interface Preset extends CliCommand {
   outputFormat: OutputFormat;
-  // A CLI that takes the prompt as an argument gets it after everything else, which is why
-  // `tail` exists.
-  promptVia: 'stdin' | 'arg';
-  // Only Claude Code has a flag for the run's context; the rest get it in front of the
-  // task.
-  systemPromptFlag?: string;
-  // The arguments before the operator's own, given null for a fresh session.
-  head: (sessionId: string | null) => string[];
-  taskArgs?: (settings: PresetTaskSettings) => string[];
-  // The arguments after the operator's own: a stdin marker, or the flag the prompt follows.
-  tail: string[];
-  // Whether a failure says the resumed session no longer exists, which a fresh session
-  // given the conversation again can answer.
-  sessionLost?: (error: string) => boolean;
 }
 
 export const PRESETS: Record<PresetName, Preset> = {
@@ -203,28 +182,17 @@ export function isPresetName(value: string): value is PresetName {
 
 // Without a flag for it, the run's context goes in front of the task. It is empty on a
 // resumed session, which already holds it.
-export function presetPrompt(preset: Preset, systemPrompt: string, prompt: string): string {
-  if (preset.systemPromptFlag || !systemPrompt) return prompt;
-  return `${systemPrompt}\n\n${prompt}`;
-}
+export const presetPrompt: (preset: CliCommand, systemPrompt: string, prompt: string) => string =
+  cliPrompt;
 
 // The operator's own arguments sit between what the preset needs in front and what it
 // needs last, so a prompt passed as an argument stays at the end, a stdin marker is not
 // separated from its command, and a repeated flag overrides the preset's.
-export function presetArgv(
-  preset: Preset,
+export const presetArgv: (
+  preset: CliCommand,
   sessionId: string | null,
   systemPrompt: string,
   extraArgs: string[],
   prompt: string,
-  settings: PresetTaskSettings = {},
-): string[] {
-  return [
-    ...preset.head(sessionId),
-    ...(preset.systemPromptFlag && systemPrompt ? [preset.systemPromptFlag, systemPrompt] : []),
-    ...extraArgs,
-    ...(preset.taskArgs?.(settings) ?? []),
-    ...preset.tail,
-    ...(preset.promptVia === 'arg' ? [presetPrompt(preset, systemPrompt, prompt)] : []),
-  ];
-}
+  settings?: PresetTaskSettings,
+) => string[] = cliArgv;

@@ -6,6 +6,7 @@ import type {
   AiAgentPatch,
 } from '@/lib/api/endpoints/agents';
 import { transliterate } from '@/utils/projectKey';
+import { cleanFallbackModels } from '@/features/agent-runtime/utils/fallback';
 
 // The editable shape of an agent form. temperature/maxSteps are kept as strings so
 // the inputs can be left blank; they are parsed to numbers (or null) on submit.
@@ -148,6 +149,10 @@ function configFields(v: AgentFormValue) {
     files: v.runtimePolicy.files
       .map((file) => ({ ...file, path: file.path.trim() }))
       .filter((file) => file.path.length > 0),
+    // Null keeps the instance's default chain; a list is the agent's own.
+    ...(v.runtimePolicy.fallbackModels != null && {
+      fallbackModels: cleanFallbackModels(v.runtimePolicy.fallbackModels),
+    }),
   };
   const common = {
     projectIds: v.template ? [] : v.projectIds,
