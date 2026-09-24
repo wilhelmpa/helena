@@ -1,11 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { PenLine, PenSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { setComposeDraft } from '@/hooks/useMailCompose';
 import { useMailAccounts, useStartDraft } from '@/services/mail.service';
 import { formatDateTime } from '@/utils/dates';
+import { mailAccountsPath } from '@/utils/paths';
 import { useMailDrafts } from '../services/drafts.service';
 
 export default function ComposeDraftList({
@@ -16,6 +18,7 @@ export default function ComposeDraftList({
   projectKey: string | null;
 }) {
   const t = useTranslations('mail.compose');
+  const tNav = useTranslations('nav');
   const drafts = useMailDrafts(teamId);
   const accounts = useMailAccounts(teamId);
   const startDraft = useStartDraft(teamId ?? 0);
@@ -34,10 +37,20 @@ export default function ComposeDraftList({
         {t('new')}
       </Button>
       {!account && accounts.isSuccess && (
-        <p className="text-sm text-muted-foreground">{t('noAccount')}</p>
+        <p className="text-sm text-muted-foreground">
+          {t('noAccount')}{' '}
+          <Link
+            href={mailAccountsPath()}
+            className="text-foreground underline-offset-2 hover:underline"
+          >
+            {tNav('mailAccounts')}
+          </Link>
+        </p>
       )}
       <section className="flex flex-col gap-1">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase">{t('openDrafts')}</h3>
+        <h3 className="flex h-8 items-center px-1 text-xs font-medium text-muted-foreground">
+          {t('openDrafts')}
+        </h3>
         {(drafts.data ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">{t('noDrafts')}</p>
         )}
@@ -46,7 +59,7 @@ export default function ComposeDraftList({
             key={draft.id}
             type="button"
             onClick={() => setComposeDraft(draft.id)}
-            className="flex flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-start text-sm hover:bg-accent"
+            className="flex flex-col items-start gap-0.5 rounded-lg border bg-card px-3 py-2 text-start text-sm transition-colors hover:bg-accent"
           >
             <span className="flex w-full items-center gap-1.5">
               <PenLine className="size-3.5 shrink-0 text-muted-foreground" />
