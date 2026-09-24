@@ -52,7 +52,12 @@ function fakeSession(page: Page) {
     isConnected: () => true,
     setHumanInput: () => {},
     applyDomainPolicy: async () => {},
-    status: async () => ({ url: 'https://example.com/', title: 'Example', tabCount: 1, dialogOpen: false }),
+    status: async () => ({
+      url: 'https://example.com/',
+      title: 'Example',
+      tabCount: 1,
+      dialogOpen: false,
+    }),
     navigate: (url: string) => done(`navigate ${url}`),
     snapshot: () => done('snapshot'),
     click: (ref: string) => done(`click ${ref}`),
@@ -88,7 +93,13 @@ async function startGateway(slugs: string[]) {
   };
   const paths: Record<string, string> = {};
   for (const slug of slugs) {
-    const dispatcher = new gateway.GatewayDispatcher({ ownSlug: slug, planClient, locks, sessions, queue });
+    const dispatcher = new gateway.GatewayDispatcher({
+      ownSlug: slug,
+      planClient,
+      locks,
+      sessions,
+      queue,
+    });
     const path = join(socketRoot, `${slug}.sock`);
     const server = net.createServer((socket) => glue.handleConnection(socket, dispatcher));
     await new Promise<void>((done) => server.listen(path, () => done()));
@@ -106,7 +117,10 @@ async function startGateway(slugs: string[]) {
       socketPath: paths[socket],
       env: { ITSAPLAN_API_KEY: agentKey },
     });
-    return { ok: !result.isError, text: result.content.map((part: { text?: string }) => part.text ?? '').join('') };
+    return {
+      ok: !result.isError,
+      text: result.content.map((part: { text?: string }) => part.text ?? '').join(''),
+    };
   };
   return { call, locks, pages };
 }
@@ -123,9 +137,15 @@ async function world() {
   const mkt = (await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).data!;
   await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
   const teamId = mkt.teamId;
-  const server = (await servers(asOwner, teamId).get()).data!.find((row) => row.name === 'projekt-browser')!;
+  const server = (await servers(asOwner, teamId).get()).data!.find(
+    (row) => row.name === 'projekt-browser',
+  )!;
   const agent = async (projectKey: string, username: string) => {
-    const created = await createAgent(asOwner, projectKey, { name: username, username, kind: 'external' });
+    const created = await createAgent(asOwner, projectKey, {
+      name: username,
+      username,
+      kind: 'external',
+    });
     const id = created.data!.agent.id;
     await agentServers(asOwner, teamId, id).put({ mcpServerIds: [server.id] });
     return created.data!.apiKey! as string;
@@ -159,7 +179,9 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
     // The second waits, and gets it the moment the first gives it back.
     const waiting = call('mkt', coder, 'browser_acquire', { timeoutSec: 10 });
     await new Promise((r) => setTimeout(r, 50));
-    expect((await call('mkt', writer, 'browser_navigate', { url: 'https://example.com/a' })).ok).toBe(true);
+    expect(
+      (await call('mkt', writer, 'browser_navigate', { url: 'https://example.com/a' })).ok,
+    ).toBe(true);
     expect((await call('mkt', writer, 'browser_release')).ok).toBe(true);
     expect((await waiting).ok).toBe(true);
     expect((await call('mkt', coder, 'browser_click', { ref: 'e2' })).ok).toBe(true);
@@ -171,19 +193,34 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
     const across = await call('ops', ops, 'browser_status', { project: 'MKT' });
     expect(across.ok).toBe(false);
     expect(across.text).toContain('Only the Home-Master');
-    expect((await call('mkt', ops, 'browser_status')).text).toContain('does not work in this project');
-    expect((await call('home', writer, 'browser_status')).text).toContain("Only the Home-Master uses Home's browser");
-    expect((await call('mkt', master, 'browser_status')).text).toContain("uses Home's browser gateway");
+    expect((await call('mkt', ops, 'browser_status')).text).toContain(
+      'does not work in this project',
+    );
+    expect((await call('home', writer, 'browser_status')).text).toContain(
+      "Only the Home-Master uses Home's browser",
+    );
+    expect((await call('mkt', master, 'browser_status')).text).toContain(
+      "uses Home's browser gateway",
+    );
 
     // The Home-Master sees who holds a project's browser and waits its turn like anyone.
     expect((await call('home', master, 'browser_status', { project: 'MKT' })).text).toContain(
       'Controlled by: coder.',
     );
-    expect((await call('home', master, 'browser_acquire', { project: 'MKT', timeoutSec: 0 })).ok).toBe(false);
-    expect((await call('ops', ops, 'browser_release')).ok).toBe(true);
-    expect((await call('home', master, 'browser_acquire', { project: 'OPS', timeoutSec: 0 })).ok).toBe(true);
     expect(
-      (await call('home', master, 'browser_navigate', { project: 'OPS', url: 'https://example.com/ops' })).ok,
+      (await call('home', master, 'browser_acquire', { project: 'MKT', timeoutSec: 0 })).ok,
+    ).toBe(false);
+    expect((await call('ops', ops, 'browser_release')).ok).toBe(true);
+    expect(
+      (await call('home', master, 'browser_acquire', { project: 'OPS', timeoutSec: 0 })).ok,
+    ).toBe(true);
+    expect(
+      (
+        await call('home', master, 'browser_navigate', {
+          project: 'OPS',
+          url: 'https://example.com/ops',
+        })
+      ).ok,
     ).toBe(true);
     // Its own browser, too.
     expect((await call('home', master, 'browser_acquire', { timeoutSec: 0 })).ok).toBe(true);
@@ -207,10 +244,9 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
     await new Promise((r) => setTimeout(r, 200));
     const mktEvents = await asOwner.projects({ projectKey: 'MKT' })['browser-gateway'].events.get();
     const opsEvents = await asOwner.projects({ projectKey: 'OPS' })['browser-gateway'].events.get();
-    expect(mktEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`).reverse()).toEqual([
-      'writer browser_navigate',
-      'coder browser_click',
-    ]);
+    expect(mktEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`).reverse()).toEqual(
+      ['writer browser_navigate', 'coder browser_click'],
+    );
     expect(opsEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`)).toEqual([
       'master browser_navigate',
     ]);

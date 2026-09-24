@@ -325,11 +325,13 @@ describe('browser gateway', () => {
       domainAllowlist: [],
       humanInput: true,
       lockTimeoutSec: 120,
+      agentViewport: { width: 1440, height: 900 },
     });
     const updated = await asOwner.projects({ projectKey: 'MKT' }).settings['browser-gateway'].put({
       domainBlocklist: ['bank.example'],
       humanInput: false,
       lockTimeoutSec: 60,
+      agentViewport: { width: 1280, height: 800 },
     });
     expect(updated.status).toBe(200);
     expect(updated.data).toMatchObject({
@@ -337,7 +339,12 @@ describe('browser gateway', () => {
       domainAllowlist: [],
       humanInput: false,
       lockTimeoutSec: 60,
+      agentViewport: { width: 1280, height: 800 },
     });
+    const tooSmall = await asOwner.projects({ projectKey: 'MKT' }).settings['browser-gateway'].put({
+      agentViewport: { width: 320, height: 200 },
+    });
+    expect(tooSmall.status).toBe(400);
   });
 
   it("a project's settings feed the gateway's own policy fetch", async () => {
@@ -487,7 +494,7 @@ describe('browser gateway', () => {
     const { approvalId } = (await filed.json()) as { approvalId: number };
     const pending = await asOwner.approvals.get({ query: { status: 'pending' } });
     const card = pending.data!.items.find((item) => item.id === approvalId)!;
-    expect(card.action).toBe('Projekt-Browser: Bitte das CAPTCHA lösen');
+    expect(card.action).toBe('Bitte übernehmen: Bitte das CAPTCHA lösen');
     expect(card.details).toContain('/project/MKT?tool=browser');
 
     const done = await internal('/internal/browser-gateway/handover-done', {
@@ -561,7 +568,9 @@ describe('browser gateway', () => {
     const { setupBrowserGateway } = await import('../../../../scripts/setup-browser-gateway');
     const dry = await setupBrowserGateway(true);
     const first = await setupBrowserGateway(false);
-    expect(first.enabled.map((entry) => entry.why).sort()).toEqual(dry.enabled.map((entry) => entry.why).sort());
+    expect(first.enabled.map((entry) => entry.why).sort()).toEqual(
+      dry.enabled.map((entry) => entry.why).sort(),
+    );
     expect(first.enabled.some((entry) => entry.why === 'home')).toBe(true);
     expect(first.enabled.some((entry) => entry.username === 'hermes-ops-coordinator')).toBe(true);
     const again = await setupBrowserGateway(false);
@@ -571,7 +580,9 @@ describe('browser gateway', () => {
       projectSlug: 'home',
       via: 'home',
     });
-    expect(((await resolved.json()) as { browserGatewayEnabled: boolean }).browserGatewayEnabled).toBe(true);
+    expect(
+      ((await resolved.json()) as { browserGatewayEnabled: boolean }).browserGatewayEnabled,
+    ).toBe(true);
     expect(mkt.teamId).toBeGreaterThan(0);
   });
 });

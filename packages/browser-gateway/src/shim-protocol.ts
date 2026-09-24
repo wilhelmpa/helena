@@ -24,10 +24,7 @@ export type ShimEnv = Record<string, string | undefined>;
 
 export interface CallToolResult {
   [key: string]: unknown;
-  content: (
-    | { type: 'text'; text: string }
-    | { type: 'image'; data: string; mimeType: string }
-  )[];
+  content: ({ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string })[];
   isError: boolean;
 }
 

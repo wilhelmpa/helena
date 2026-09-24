@@ -52,7 +52,13 @@ describe('gatewayRequest', () => {
         { ref: 'e3' },
         { ITSAPLAN_API_KEY: 'k', ITSAPLAN_RUN_ID: '42', ITSAPLAN_MESSAGE_ID: '7' },
       ),
-    ).toEqual({ tool: 'browser_click', args: { ref: 'e3' }, agentKey: 'k', runId: 42, messageId: 7 });
+    ).toEqual({
+      tool: 'browser_click',
+      args: { ref: 'e3' },
+      agentKey: 'k',
+      runId: 42,
+      messageId: 7,
+    });
   });
 
   it('treats a placeholder Hermes left unexpanded as not set', async () => {
@@ -71,7 +77,7 @@ describe('gatewayRequest', () => {
     );
   });
 
-  it('reads an upload with the caller\'s own rights and sends its bytes, not its path', async () => {
+  it("reads an upload with the caller's own rights and sends its bytes, not its path", async () => {
     const dir = await tempDir();
     await writeFile(path.join(dir, 'report.pdf'), Buffer.from('%PDF-1.4 test'));
     const request = await gatewayRequest(
@@ -93,9 +99,9 @@ describe('gatewayRequest', () => {
     await expect(
       gatewayRequest('browser_upload', { ref: 'e5', path: 'missing.pdf' }, {}, dir),
     ).rejects.toThrow(/does not exist/);
-    await expect(gatewayRequest('browser_upload', { ref: 'e5', path: dir }, {}, dir)).rejects.toThrow(
-      /not a file/,
-    );
+    await expect(
+      gatewayRequest('browser_upload', { ref: 'e5', path: dir }, {}, dir),
+    ).rejects.toThrow(/not a file/);
   });
 });
 
@@ -110,7 +116,11 @@ describe('toolResult', () => {
       isError: true,
     });
     expect(
-      toolResult({ ok: true, content: 'Screenshot', image: { data: 'AAA', mimeType: 'image/png' } }),
+      toolResult({
+        ok: true,
+        content: 'Screenshot',
+        image: { data: 'AAA', mimeType: 'image/png' },
+      }),
     ).toEqual({
       content: [
         { type: 'image', data: 'AAA', mimeType: 'image/png' },
@@ -151,7 +161,9 @@ describe('callGateway', () => {
     const result = await callGateway('browser_status', {}, { socketPath: missing, env: {} });
     expect(result.isError).toBe(true);
     expect(result.content[0]).toMatchObject({ type: 'text' });
-    expect((result.content[0] as { text: string }).text).toMatch(/Cannot reach the project browser/);
+    expect((result.content[0] as { text: string }).text).toMatch(
+      /Cannot reach the project browser/,
+    );
   });
 
   it('reports an unreadable answer as a tool error', async () => {

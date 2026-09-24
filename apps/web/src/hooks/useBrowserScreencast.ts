@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { browserTabsQueryKey } from '@/utils/browserControl';
 import {
+  FREE_CONTROL,
   JPEG_FRAME,
   readFrame,
   screencastUrl,
@@ -37,7 +38,7 @@ const THROUGHPUT_WINDOW_MS = 4_000;
 
 type ServerText =
   | ({ type: 'dialog'; open: boolean } & LiveDialog)
-  | ({ type: 'handover'; open: boolean } & LiveHandover)
+  | ({ type: 'handover'; open: boolean } & Partial<LiveHandover>)
   | { type: 'video'; codec: string; width: number; height: number }
   | { type: 'tab' }
   | { type: 'pong'; t: number }
@@ -71,8 +72,12 @@ export function useBrowserScreencast(
   const [status, setStatus] = useState<ScreencastStatus>('connecting');
   const [mode, setMode] = useState<ScreencastMode>('jpeg');
   const [hasFrame, setHasFrame] = useState(false);
-  const [overlay, setOverlay] = useState<LiveOverlay | null>(null);
-  const [control, setControl] = useState<LiveControlState>({ by: 'owner' });
+  // A dialog of the page and an agent's handover request are kept apart: the dialog is shown
+  // first (it has to be answered before anything else), the request once it is gone.
+  const [dialog, setDialog] = useState<({ type: 'dialog' } & LiveDialog) | null>(null);
+  const [handover, setHandover] = useState<({ type: 'handover' } & LiveHandover) | null>(null);
+  const overlay: LiveOverlay | null = dialog ?? handover;
+  const [control, setControl] = useState<LiveControlState>(FREE_CONTROL);
   const socket = useRef<WebSocket | null>(null);
   // The page size of the frame shown, which pointer positions are mapped to.
   const frameSize = useRef<Size | null>(null);
@@ -263,9 +268,18 @@ export function useBrowserScreencast(
         }
         const message = JSON.parse(event.data) as ServerText;
         if (message.type === 'dialog') {
-          setOverlay(message.open ? { ...message } : null);
+          setDialog(message.open ? { ...message } : null);
         } else if (message.type === 'handover') {
-          setOverlay(message.open ? { ...message } : null);
+          setHandover(
+            message.open
+              ? {
+                  type: 'handover',
+                  reason: message.reason ?? '',
+                  agentName: message.agentName ?? '',
+                  since: message.since ?? Date.now(),
+                }
+              : null,
+          );
         } else if (message.type === 'video') {
           announced.current = {
             codec: message.codec,
@@ -276,15 +290,21 @@ export function useBrowserScreencast(
           if (pingSentAt.current === message.t)
             rttMs.current = Math.round(performance.now() - message.t);
         } else if (message.type === 'control') {
-          setControl({ by: message.by, agentName: message.agentName, since: message.since });
+          setControl({
+            by: message.by,
+            agentName: message.agentName ?? null,
+            since: message.since ?? null,
+            locked: message.locked === true,
+          });
         } else void queryClient.invalidateQueries({ queryKey: browserTabsQueryKey(controlBase) });
       };
       current.onclose = () => {
         clearInterval(pingTimer);
         clearInterval(statsTimer);
         if (stopped) return;
-        setOverlay(null);
-        setControl({ by: 'owner' });
+        setDialog(null);
+        setHandover(null);
+        setControl(FREE_CONTROL);
         closeVideo();
         socket.current = null;
         pending.current = null;

@@ -62,8 +62,9 @@ export interface DispatcherOptions {
   queue?: SlugQueue;
   // Shows or clears the handover card in the project browser's live view.
   onHandover?: (slug: string, notice: HandoverNotice | null) => void;
-  // Remembers which agent acts on a browser, for the downloads that browser makes.
-  onActor?: (slug: string, agentKey: string) => void;
+  // Remembers which agent acts on a browser (for the downloads that browser makes) and the
+  // project's settings (the page size an agent works at).
+  onActor?: (slug: string, agentKey: string, settings: ResolveResult['settings']) => void;
 }
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -151,7 +152,7 @@ export class GatewayDispatcher {
     if (!resolved.browserGatewayEnabled) {
       return { ok: false, error: 'The Projekt-Browser tool is not enabled for this agent.' };
     }
-    this.#onActor(slug, request.agentKey);
+    this.#onActor(slug, request.agentKey, resolved.settings);
 
     const holder: Holder = {
       kind: 'agent',
@@ -188,11 +189,19 @@ export class GatewayDispatcher {
 
     if (requiresLock(request.tool) && !lock.touch(holder)) {
       const current = lock.state().holder;
-      const by = current === null ? '' : current.kind === 'owner' ? ' The owner controls it.' : ` ${current.agentName} controls it.`;
+      const by =
+        current === null
+          ? ''
+          : current.kind === 'owner'
+            ? ' The owner controls it.'
+            : ` ${current.agentName} controls it.`;
       return { ok: false, error: `Control is not held. Call browser_acquire first.${by}` };
     }
 
-    if (request.tool === 'browser_navigate' || (request.tool === 'browser_tabs' && str(request.args, 'action') === 'open')) {
+    if (
+      request.tool === 'browser_navigate' ||
+      (request.tool === 'browser_tabs' && str(request.args, 'action') === 'open')
+    ) {
       const url = str(request.args, 'url');
       const host = url ? hostOf(url) : null;
       if (!host || !hostAllowed(resolved.settings, host)) {

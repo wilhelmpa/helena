@@ -21,9 +21,9 @@ const project = {
   project: {
     type: 'string',
     description:
-      "Home-Master only: the key of the project whose browser to use (e.g. \"VOL\"), or " +
+      'Home-Master only: the key of the project whose browser to use (e.g. "VOL"), or ' +
       '"home" for Home\'s own browser. Leave it out otherwise — every other agent always ' +
-      'works in its own project\'s browser.',
+      "works in its own project's browser.",
   },
 };
 
@@ -34,7 +34,7 @@ export const BROWSER_INSTRUCTIONS = [
   'Work like this: browser_acquire, then browser_snapshot to see the page with refs, act on refs (browser_click, browser_type, …), take a new snapshot after the page changed, and browser_release when done.',
   'Never type a password or 2FA code yourself and never ask for one: browser_login fills a login granted to you in Zugänge for the page it is on, browser_login_code the current code.',
   'A CAPTCHA, a question only the owner can answer, or anything you are unsure about: browser_handover and wait.',
-  'Files: browser_upload sends a file of your workspace or project folder; downloads land in the project\'s Inbox (browser_downloads lists them).',
+  "Files: browser_upload sends a file of your workspace or project folder; downloads land in the project's Inbox (browser_downloads lists them).",
 ].join(' ');
 
 const ref = {
@@ -324,7 +324,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
     title: 'Fill the current 2FA code',
     description:
       'Type the current 2FA code of a login (credentialId, as browser_login named it) into ' +
-      'the code field by ref. Only on a page of that login\'s site.',
+      "the code field by ref. Only on a page of that login's site.",
     inputSchema: {
       type: 'object',
       properties: { ...project, ...ref, credentialId: { type: 'number' } },

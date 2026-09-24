@@ -93,14 +93,20 @@
       "dialogOk": "ОК",
       "dialogCancel": "Скасувати",
       "controlPrefix": "Керує:",
-      "you": "Ви",
       "controlledByAgentGeneric": "агент",
       "takeOver": "Узяти керування",
       "handBack": "Повернути керування",
       "takeOverError": "Не вдалося взяти керування браузером.",
       "handBackError": "Не вдалося повернути керування браузером.",
-      "handoverMessage": "Агенту потрібна ваша допомога: {reason}",
-      "handoverTitle": "Агент просить вас узяти керування"
+      "handoverTitle": "{agentName} просить вас узяти керування",
+      "controlAgent": "Агент зараз діє",
+      "youControl": "Керуєте ви",
+      "handoverDone": "Готово – повернути",
+      "takeOverTitle": "Зараз керує {agentName}. Узяти керування?",
+      "takeOverHint": "Поки керуєте ви, агент чекає. Він продовжить, коли ви повернете керування.",
+      "idleTitle": "Ви закінчили?",
+      "idleHint": "10 хвилин без введення. Без відповіді керування за хвилину повернеться до агентів.",
+      "idleKeep": "Продовжити керування"
     }
   },
   "groups": {

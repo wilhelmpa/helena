@@ -36,5 +36,6 @@
   "gateApprovedToast": "Aprobada. El flujo de trabajo continúa.",
   "gateRejectedToast": "Rechazada. El flujo de trabajo termina sin estos efectos.",
   "loadFailed": "No se pudieron cargar las aprobaciones.",
-  "loadFailedHint": "El servidor no respondió. Vuelve a intentarlo en un momento."
+  "loadFailedHint": "El servidor no respondió. Vuelve a intentarlo en un momento.",
+  "openBrowser": "Abrir el navegador del proyecto"
 }

@@ -93,14 +93,20 @@
       "dialogOk": "确定",
       "dialogCancel": "取消",
       "controlPrefix": "控制者:",
-      "you": "您",
       "controlledByAgentGeneric": "某个代理",
       "takeOver": "接管",
       "handBack": "交还控制权",
       "takeOverError": "接管浏览器失败。",
       "handBackError": "交还浏览器控制权失败。",
-      "handoverMessage": "代理需要您的帮助:{reason}",
-      "handoverTitle": "代理请求您接管"
+      "handoverTitle": "{agentName} 请您接管",
+      "controlAgent": "代理正在操作",
+      "youControl": "由您控制",
+      "handoverDone": "完成 – 交还",
+      "takeOverTitle": "{agentName} 正在控制。要接管吗？",
+      "takeOverHint": "在您控制期间，代理会等待。您交还后它会继续。",
+      "idleTitle": "您完成了吗？",
+      "idleHint": "已 10 分钟没有输入。若不回答，控制权将在一分钟后交还给代理。",
+      "idleKeep": "继续控制"
     }
   },
   "groups": {

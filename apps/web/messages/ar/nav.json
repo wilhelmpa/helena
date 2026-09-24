@@ -93,14 +93,20 @@
       "dialogOk": "موافق",
       "dialogCancel": "إلغاء",
       "controlPrefix": "يتحكم:",
-      "you": "أنت",
       "controlledByAgentGeneric": "أحد الوكلاء",
       "takeOver": "تولّي التحكم",
       "handBack": "إعادة التحكم",
       "takeOverError": "تعذّر تولّي التحكم بالمتصفح.",
       "handBackError": "تعذّرت إعادة التحكم بالمتصفح.",
-      "handoverMessage": "يحتاج الوكيل مساعدتك: {reason}",
-      "handoverTitle": "يطلب منك الوكيل تولّي التحكم"
+      "handoverTitle": "{agentName} يطلب منك تولّي التحكم",
+      "controlAgent": "الوكيل يعمل الآن",
+      "youControl": "أنت تتحكم",
+      "handoverDone": "تم – إعادة التحكم",
+      "takeOverTitle": "{agentName} يتحكم الآن. هل تريد تولّي التحكم؟",
+      "takeOverHint": "طالما أنك تتحكم، ينتظر الوكيل. يتابع عمله بعد أن تعيد التحكم.",
+      "idleTitle": "هل انتهيت؟",
+      "idleHint": "لا يوجد إدخال منذ 10 دقائق. بدون رد يعود التحكم إلى الوكلاء خلال دقيقة.",
+      "idleKeep": "مواصلة التحكم"
     }
   },
   "groups": {

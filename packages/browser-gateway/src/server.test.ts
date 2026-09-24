@@ -40,7 +40,9 @@ function fakePlanClient(overrides: Partial<Record<keyof PlanClient, unknown>> = 
   } as unknown as PlanClient;
 }
 
-function fakeSession(overrides: Partial<Record<keyof GatewaySession, unknown>> = {}): GatewaySession {
+function fakeSession(
+  overrides: Partial<Record<keyof GatewaySession, unknown>> = {},
+): GatewaySession {
   return {
     guard: new SecretGuard(),
     isConnected: () => true,
@@ -322,7 +324,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
     },
   };
 
-  it('chooses the login for the password field\'s frame and never returns the password', async () => {
+  it("chooses the login for the password field's frame and never returns the password", async () => {
     const session = fakeSession();
     const planClient = fakePlanClient({ login: mock(async () => filled) });
     const gateway = dispatcher({ planClient, sessions: fakeSessions(session) });
@@ -390,7 +392,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
     expect(result.ok && result.content).toContain('#1 Primary (a@example.com)');
   });
 
-  it('fills the 2FA code for the code field\'s frame and redacts it later', async () => {
+  it("fills the 2FA code for the code field's frame and redacts it later", async () => {
     const session = fakeSession({ snapshot: mock(async () => 'value="123456"') });
     const planClient = fakePlanClient({
       loginCode: mock(async () => ({ code: '123456', secondsRemaining: 20 })),
@@ -472,7 +474,11 @@ describe('GatewayDispatcher: handover', () => {
     const locks = new ProjectBrowserLocks(120_000);
     const planClient = fakePlanClient();
     const notices: (HandoverNotice | null)[] = [];
-    const gateway = dispatcher({ locks, planClient, onHandover: (_slug, notice) => notices.push(notice) });
+    const gateway = dispatcher({
+      locks,
+      planClient,
+      onHandover: (_slug, notice) => notices.push(notice),
+    });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const waiting = gateway.handle({
       tool: 'browser_handover',
@@ -598,7 +604,11 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
     const gateway = dispatcher();
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     for (const url of ['file:///etc/passwd', 'javascript:alert(1)', 'chrome://settings']) {
-      const result = await gateway.handle({ tool: 'browser_navigate', agentKey: 'k', args: { url } });
+      const result = await gateway.handle({
+        tool: 'browser_navigate',
+        agentKey: 'k',
+        args: { url },
+      });
       expect(result.ok).toBe(false);
     }
   });
@@ -625,7 +635,11 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
     });
     const gateway = dispatcher({ sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
-    const result = await gateway.handle({ tool: 'browser_click', agentKey: 'k', args: { ref: 'e1' } });
+    const result = await gateway.handle({
+      tool: 'browser_click',
+      agentKey: 'k',
+      args: { ref: 'e1' },
+    });
     expect(result.ok).toBe(false);
     expect(session.click).not.toHaveBeenCalled();
   });

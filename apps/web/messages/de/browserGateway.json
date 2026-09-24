@@ -1,11 +1,15 @@
 {
   "homeTitle": "Browser",
-  "homeDescription": "Die Projekt-Browser aller Projekte, in denen Sie arbeiten: die aktuelle Seite, wer steuert, und ein Live-Vorschaubild, sobald der Browser-Router es liefert.",
+  "homeDescription": "Die Projekt-Browser: was gerade offen ist, wer steuert und ob ein Agent auf Sie wartet.",
+  "homeBrowser": "Home",
   "empty": "Noch keine Projekt-Browser",
-  "emptyHint": "Ein Projekt bekommt seinen Projekt-Browser, sobald ein Agent das Werkzeug „Projekt-Browser“ eingeschaltet hat.",
-  "noLiveImage": "kein Livebild",
-  "noUrl": "Noch keine aktuelle Seite",
+  "emptyHint": "Ein Projekt bekommt seinen Browser, wenn es angelegt wird; hier erscheint er, sobald er läuft.",
+  "noLiveImage": "Kein Bild",
+  "noPage": "Keine Seite offen",
   "controlledByAgent": "{agentName} steuert",
   "controlledByOwner": "Sie steuern",
-  "controlledByUnknown": "Steuerung unbekannt"
+  "agentActive": "Ein Agent arbeitet",
+  "free": "Frei",
+  "unreachable": "Nicht erreichbar",
+  "handover": "Bittet um Übernahme"
 }

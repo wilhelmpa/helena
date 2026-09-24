@@ -1,75 +1,99 @@
+import { useState } from 'react';
 import Link from 'next/link';
-import { AppWindow, Bot, UserRound } from 'lucide-react';
+import { AppWindow, Bot, CircleSlash, Hand, UserRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { projectPath } from '@/utils/paths';
+import { useRelativeTime } from '@/context/relativeTimeContext';
+import { browserThumbnailUrl, type RouterBrowserState } from '@/utils/browserOverview';
 
-// Who has control of a project browser right now: an agent, by name, or the owner. Null
-// means the live control state is not known yet (see the component doc below).
-export type ProjectBrowserControlledBy = { kind: 'agent'; agentName: string } | { kind: 'owner' };
-
-// One project's browser on Home's "Browser" overview (design §5: "eine Kachel pro
-// Projekt-Browser (Vorschaubild, URL, wer steuert, Status)"), in the same card style as
-// HomeProjectCard. `url`, `controlledBy` and `thumbnailUrl` are deliberately optional/
-// nullable: the browser router that will serve them is still being built (see
-// docs/volition-design-browser-gateway.md §3, §5), so today's overview API
-// (GET /browser-gateway/overview) only carries the project's identity and every tile
-// renders its neutral placeholders. Wiring in the live values later is then a matter of
-// passing real props here, not a rewrite of the tile.
+// One project browser on Home's "Browser" overview (design §5: "eine Kachel pro
+// Projekt-Browser (Vorschaubild, URL, wer steuert, Status)"), in the sidebar's surface.
+// `state` is null when the browser router did not answer for it.
 export default function ProjectBrowserTile({
-  projectKey,
-  projectName,
-  url,
-  controlledBy,
-  thumbnailUrl,
+  name,
+  href,
+  slug,
+  state,
+  version,
 }: {
-  projectKey: string;
-  projectName: string;
-  url: string | null;
-  controlledBy: ProjectBrowserControlledBy | null;
-  thumbnailUrl: string | null;
+  name: string;
+  href: string;
+  slug: string;
+  state: RouterBrowserState | null;
+  version: number;
 }) {
   const t = useTranslations('browserGateway');
+  const relativeTime = useRelativeTime();
+  const [broken, setBroken] = useState<number | null>(null);
+  const showPicture = !!state?.reachable && !!state.url && broken !== version;
+  const control = state?.control;
+  const since = control?.since ? relativeTime(new Date(control.since).toISOString()) : null;
+
+  const status = !state?.reachable ? (
+    <>
+      <CircleSlash className="size-3.5 shrink-0" />
+      <span className="truncate">{t('unreachable')}</span>
+    </>
+  ) : control?.by === 'agent' ? (
+    <>
+      <Bot className="size-3.5 shrink-0" />
+      <span className="truncate">
+        {control.locked && control.agentName
+          ? t('controlledByAgent', { agentName: control.agentName })
+          : t('agentActive')}
+        {since && ` · ${since}`}
+      </span>
+    </>
+  ) : control?.by === 'owner' ? (
+    <>
+      <UserRound className="size-3.5 shrink-0" />
+      <span className="truncate">
+        {t('controlledByOwner')}
+        {since && ` · ${since}`}
+      </span>
+    </>
+  ) : (
+    <span className="truncate">{t('free')}</span>
+  );
 
   return (
     <Link
-      href={projectPath(projectKey)}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:bg-accent/40"
+      href={href}
+      className="group flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:bg-accent"
     >
-      <div className="flex aspect-video items-center justify-center overflow-hidden bg-muted text-muted-foreground">
-        {thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- a live thumbnail from the browser router, not a file Next could optimize.
-          <img src={thumbnailUrl} alt="" className="size-full object-cover" />
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden border-b bg-muted text-muted-foreground">
+        {showPicture ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a live picture from the browser router, not a file Next could optimize.
+          <img
+            src={browserThumbnailUrl(slug, version)}
+            alt=""
+            className="size-full object-cover object-top"
+            onError={() => setBroken(version)}
+          />
         ) : (
           <div className="flex flex-col items-center gap-1.5 p-4 text-center">
-            <AppWindow className="size-6" />
-            <span className="text-xs">{t('noLiveImage')}</span>
+            <AppWindow className="size-5" />
+            <span className="text-xs">{state?.url ? t('noLiveImage') : t('noPage')}</span>
           </div>
         )}
+        {state?.handover && (
+          <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-md bg-warning px-1.5 py-0.5 text-xs font-medium text-background shadow-sm">
+            <Hand className="size-3.5" />
+            {t('handover')}
+          </span>
+        )}
       </div>
-      <div className="min-w-0 space-y-1.5 p-3">
-        <h2 className="min-w-0 truncate text-sm font-semibold" dir="auto">
-          {projectName}
-        </h2>
-        <p dir="ltr" className="truncate font-mono text-xs text-muted-foreground">
-          {url ?? t('noUrl')}
+      <div className="min-w-0 space-y-1 px-3 py-2.5">
+        <p className="truncate text-sm font-medium" dir="auto">
+          {name}
         </p>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {controlledBy?.kind === 'agent' ? (
-            <>
-              <Bot className="size-3.5 shrink-0" />
-              <span className="truncate">
-                {t('controlledByAgent', { agentName: controlledBy.agentName })}
-              </span>
-            </>
-          ) : controlledBy?.kind === 'owner' ? (
-            <>
-              <UserRound className="size-3.5 shrink-0" />
-              <span className="truncate">{t('controlledByOwner')}</span>
-            </>
-          ) : (
-            <span className="truncate">{t('controlledByUnknown')}</span>
-          )}
-        </div>
+        <p
+          className="truncate text-xs text-muted-foreground"
+          dir="auto"
+          title={state?.url ?? undefined}
+        >
+          {state?.title || state?.url || t('noPage')}
+        </p>
+        <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">{status}</p>
       </div>
     </Link>
   );

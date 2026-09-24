@@ -12,6 +12,8 @@ import {
   listMcpServers,
 } from '../agents/mcp-servers/service';
 import {
+  AGENT_VIEWPORT_LIMITS,
+  DEFAULT_AGENT_VIEWPORT,
   DEFAULT_BROWSER_GATEWAY_SETTINGS,
   MAX_DOMAINS,
   MAX_DOMAIN_LENGTH,
@@ -63,7 +65,19 @@ function sanitize(value: unknown): BrowserGatewaySettings {
       typeof stored.lockTimeoutSec === 'number' && Number.isFinite(stored.lockTimeoutSec)
         ? stored.lockTimeoutSec
         : DEFAULT_BROWSER_GATEWAY_SETTINGS.lockTimeoutSec,
+    agentViewport: viewportOf(stored.agentViewport),
   };
+}
+
+function viewportOf(value: unknown): { width: number; height: number } {
+  const size = value as { width?: unknown; height?: unknown } | null;
+  const within = (n: unknown, min: number, max: number) =>
+    typeof n === 'number' && Number.isInteger(n) && n >= min && n <= max;
+  return size &&
+    within(size.width, AGENT_VIEWPORT_LIMITS.minWidth, AGENT_VIEWPORT_LIMITS.maxWidth) &&
+    within(size.height, AGENT_VIEWPORT_LIMITS.minHeight, AGENT_VIEWPORT_LIMITS.maxHeight)
+    ? { width: size.width as number, height: size.height as number }
+    : { ...DEFAULT_AGENT_VIEWPORT };
 }
 
 export async function getBrowserGatewaySettings(
@@ -77,6 +91,7 @@ export interface BrowserGatewaySettingsPatch {
   domainAllowlist?: string[];
   humanInput?: boolean;
   lockTimeoutSec?: number;
+  agentViewport?: { width: number; height: number };
 }
 
 export async function setBrowserGatewaySettings(
@@ -93,6 +108,7 @@ export async function setBrowserGatewaySettings(
       : current.domainAllowlist,
     humanInput: patch.humanInput ?? current.humanInput,
     lockTimeoutSec: patch.lockTimeoutSec ?? current.lockTimeoutSec,
+    agentViewport: patch.agentViewport ? viewportOf(patch.agentViewport) : current.agentViewport,
   };
   await setProjectSetting(projectId, SETTING_KEY, next);
   return next;

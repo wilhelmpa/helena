@@ -651,6 +651,11 @@
     "humanInputHint": "以拟人化的停顿而非最快速度进行输入和点击。仅在低风险的测试项目中关闭。",
     "lockTimeoutLabel": "锁定超时",
     "lockTimeoutHint": "在这段秒数内没有操作后,代理对浏览器的控制会自动释放。",
-    "seconds": "秒"
+    "seconds": "秒",
+    "viewportLabel": "代理的工作尺寸",
+    "viewportHint": "代理控制期间页面保持此尺寸；您的视图按比例显示。您接管后，页面会再次跟随您的窗口。",
+    "viewportWidth": "宽度",
+    "viewportHeight": "高度",
+    "pixels": "像素"
   }
 }

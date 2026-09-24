@@ -176,6 +176,11 @@ export const BROWSER_GATEWAY_ENV = [
 ] as const;
 // browser_handover waits up to 30 minutes for the owner, browser_acquire up to 10.
 export const BROWSER_GATEWAY_TOOL_TIMEOUT_SEC = 1900;
+// The browsers an agent on the gateway no longer gets (docs/volition-design-browser-perfekt.md
+// §3.4): Hermes' own `browser` toolset (a headless browser nobody sees) and the profile's
+// `browser-harness` MCP server (CDP straight into a project browser, without lock, login
+// flow or audit). The "Hermes-eigener Browser (alt)" switch keeps both.
+export const REPLACED_BROWSERS = ['browser', 'browser-harness'];
 const MAX_CONFLICTS = 8;
 const MAX_RESTORED = 20;
 const CAPABILITIES = [
@@ -391,8 +396,11 @@ export function hermesMcpServers(
             headers: hermesValues(server.headers),
           };
   }
+  const gateway = usesBrowserGateway(servers.map(({ name }) => name));
   for (const name of profile?.mcpServers ?? []) {
-    if (denied.includes(name)) config[name] = { enabled: false };
+    if (denied.includes(name) || (gateway && REPLACED_BROWSERS.includes(name))) {
+      config[name] = { enabled: false };
+    }
   }
   return Object.keys(config).length > 0 ? config : null;
 }
@@ -609,9 +617,7 @@ export function usesBrowserGateway(ownMcpServers: string[]): boolean {
 }
 
 function withoutBrowser(toolsets: string[] | null): string[] | null {
-  return toolsets && toolsets.includes('browser')
-    ? toolsets.filter((name) => name !== 'browser')
-    : toolsets;
+  return toolsets && toolsets.filter((name) => !REPLACED_BROWSERS.includes(name));
 }
 
 // ── Claude Code / Codex (design §3: every runtime reaches the gateway the same way) ─────

@@ -28,12 +28,7 @@ import {
 import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts';
 import { hostAllowed, type DomainPolicy } from './domain.ts';
 import { maskPng, type Rect } from './png.ts';
-import type {
-  BrowserStatus,
-  GatewaySession,
-  ToolOutput,
-  UploadFile,
-} from './session-types.ts';
+import type { BrowserStatus, GatewaySession, ToolOutput, UploadFile } from './session-types.ts';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -127,7 +122,12 @@ export class PatchrightGatewaySession implements GatewaySession {
   #dialogListeners = new Set<(page: Page, dialog: Dialog) => void>();
   #logSessions = new WeakMap<Page, CDPSession>();
 
-  private constructor(browser: Browser, context: BrowserContext, page: Page, options: SessionOptions) {
+  private constructor(
+    browser: Browser,
+    context: BrowserContext,
+    page: Page,
+    options: SessionOptions,
+  ) {
     this.#browser = browser;
     this.#context = context;
     this.#page = page;
@@ -161,7 +161,12 @@ export class PatchrightGatewaySession implements GatewaySession {
         break;
       }
     }
-    return new PatchrightGatewaySession(browser, context, page ?? (await context.newPage()), options);
+    return new PatchrightGatewaySession(
+      browser,
+      context,
+      page ?? (await context.newPage()),
+      options,
+    );
   }
 
   isConnected(): boolean {
@@ -196,15 +201,18 @@ export class PatchrightGatewaySession implements GatewaySession {
       .newCDPSession(page)
       .then(async (cdp) => {
         this.#logSessions.set(page, cdp);
-        cdp.on('Log.entryAdded', (event: { entry: { level: string; source: string; text: string; url?: string } }) => {
-          const entry = event.entry;
-          this.#console.push({
-            tab,
-            type: `${entry.source}/${entry.level}`,
-            text: `${entry.text}${entry.url ? ` (${redactUrl(entry.url)})` : ''}`.slice(0, 2000),
-          });
-          if (this.#console.length > MAX_BUFFER) this.#console.shift();
-        });
+        cdp.on(
+          'Log.entryAdded',
+          (event: { entry: { level: string; source: string; text: string; url?: string } }) => {
+            const entry = event.entry;
+            this.#console.push({
+              tab,
+              type: `${entry.source}/${entry.level}`,
+              text: `${entry.text}${entry.url ? ` (${redactUrl(entry.url)})` : ''}`.slice(0, 2000),
+            });
+            if (this.#console.length > MAX_BUFFER) this.#console.shift();
+          },
+        );
         await cdp.send('Log.enable');
       })
       .catch(() => {});
@@ -256,7 +264,11 @@ export class PatchrightGatewaySession implements GatewaySession {
       }
       if (size < 0) throw new Error('the browser did not save the file');
       if (size > MAX_TRANSFER_BYTES) {
-        this.#downloads.push({ fileName, savedAs: '(larger than 50 MB, not kept)', at: Date.now() });
+        this.#downloads.push({
+          fileName,
+          savedAs: '(larger than 50 MB, not kept)',
+          at: Date.now(),
+        });
         return;
       }
       const savedAs = this.#onDownload
@@ -378,7 +390,8 @@ export class PatchrightGatewaySession implements GatewaySession {
       waitUntil: 'domcontentloaded',
       timeout: LOAD_TIMEOUT_MS,
     });
-    if (response === null && this.#page.url() === 'about:blank') return 'There is no page to go back to.';
+    if (response === null && this.#page.url() === 'about:blank')
+      return 'There is no page to go back to.';
     await this.#settle();
     return `Went back to ${await this.#describe()}`;
   }
@@ -729,7 +742,11 @@ export class PatchrightGatewaySession implements GatewaySession {
   async #remember(handle: ElementHandle | null): Promise<void> {
     if (!handle) return;
     this.#filled.push(handle);
-    if (this.#filled.length > 16) await this.#filled.shift()?.dispose().catch(() => {});
+    if (this.#filled.length > 16)
+      await this.#filled
+        .shift()
+        ?.dispose()
+        .catch(() => {});
   }
 
   async #originOf(locator: Locator): Promise<string> {
@@ -756,7 +773,9 @@ export class PatchrightGatewaySession implements GatewaySession {
       ((passwordField.type ?? '').toLowerCase() === 'password' ||
         (passwordField.autocomplete ?? '').toLowerCase().includes('password'));
     if (!isPasswordInput) {
-      throw new Error(`${passwordRef} is not a password field; the password is typed only into one.`);
+      throw new Error(
+        `${passwordRef} is not a password field; the password is typed only into one.`,
+      );
     }
     if (isCredentialField(await this.#fieldAttributes(usernameLocator))) {
       throw new Error(`${usernameRef} is a password field, not the username field.`);

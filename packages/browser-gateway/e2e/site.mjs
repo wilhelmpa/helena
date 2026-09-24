@@ -37,7 +37,10 @@ const pagesA = {
         document.getElementById('r').textContent = /^\\d{6}$/.test(v) ? 'Code angenommen' : 'Code falsch'; };`,
     ),
   '/frame': () =>
-    page('Frame', `<p>Anmeldung im Rahmen:</p><iframe src="http://127.0.0.1:${portB}/login-frame" width="500" height="260"></iframe>`),
+    page(
+      'Frame',
+      `<p>Anmeldung im Rahmen:</p><iframe src="http://127.0.0.1:${portB}/login-frame" width="500" height="260"></iframe>`,
+    ),
   '/upload': () =>
     page(
       'Upload',
@@ -53,8 +56,10 @@ const pagesA = {
       `document.getElementById('b').onclick = () => { document.getElementById('r').textContent = confirm('Wirklich löschen?') ? 'gelöscht' : 'abgebrochen'; };`,
     ),
   '/popup': () => page('Popup', '<a href="/" target="_blank">Neues Fenster</a>'),
-  '/blocked-link': () => page('Link', `<a href="http://localhost:${portA}/">Zur gesperrten Seite</a>`),
-  '/token': () => page('Token', '<p>Seite mit Token in der Adresse</p>', "console.log('token page ready')"),
+  '/blocked-link': () =>
+    page('Link', `<a href="http://localhost:${portA}/">Zur gesperrten Seite</a>`),
+  '/token': () =>
+    page('Token', '<p>Seite mit Token in der Adresse</p>', "console.log('token page ready')"),
   // Bot signals, read by the page itself in its own world: navigator.webdriver, globals a
   // CDP client leaves (bindings, init scripts), and whether anything but the page changed its
   // DOM (the gateway must never write into a page).
@@ -81,7 +86,12 @@ http
     if (url.pathname === '/welcome' && request.method === 'POST') {
       const form = await body(request);
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      return response.end(page('Willkommen', `<p>Angemeldet als ${form.get('user')} (Passwort ${form.get('pass')?.length ?? 0} Zeichen)</p>`));
+      return response.end(
+        page(
+          'Willkommen',
+          `<p>Angemeldet als ${form.get('user')} (Passwort ${form.get('pass')?.length ?? 0} Zeichen)</p>`,
+        ),
+      );
     }
     if (url.pathname === '/report.txt') {
       response.writeHead(200, {
@@ -102,7 +112,9 @@ http
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     if (url.pathname === '/welcome' && request.method === 'POST') {
       const form = await body(request);
-      return response.end(page('Rahmen angemeldet', `<p>Im Rahmen angemeldet als ${form.get('user')}</p>`));
+      return response.end(
+        page('Rahmen angemeldet', `<p>Im Rahmen angemeldet als ${form.get('user')}</p>`),
+      );
     }
     response.end(page('Rahmen-Login', loginForm('/welcome'), showToggle));
   })

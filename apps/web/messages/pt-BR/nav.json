@@ -93,14 +93,20 @@
       "dialogOk": "OK",
       "dialogCancel": "Cancelar",
       "controlPrefix": "No controle:",
-      "you": "Você",
       "controlledByAgentGeneric": "um agente",
       "takeOver": "Assumir o controle",
       "handBack": "Devolver o controle",
       "takeOverError": "Não foi possível assumir o controle do navegador.",
       "handBackError": "Não foi possível devolver o controle do navegador.",
-      "handoverMessage": "O agente precisa da sua ajuda: {reason}",
-      "handoverTitle": "O agente está pedindo para você assumir o controle"
+      "handoverTitle": "{agentName} pede que você assuma",
+      "controlAgent": "O agente está agindo",
+      "youControl": "Você está no controle",
+      "handoverDone": "Pronto – devolver",
+      "takeOverTitle": "{agentName} está no controle. Assumir?",
+      "takeOverHint": "Enquanto você estiver no controle, o agente espera. Ele continua quando você devolver.",
+      "idleTitle": "Terminou?",
+      "idleHint": "Nenhuma ação há 10 minutos. Sem resposta, o controle volta aos agentes em um minuto.",
+      "idleKeep": "Manter o controle"
     }
   },
   "groups": {

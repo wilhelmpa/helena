@@ -9,7 +9,7 @@ import type { RunnerAgent } from '../agents/runner/service';
 // (resolveHandoverCard) while the agent is still waiting. A card the agent stopped waiting
 // for stays open: approving it later queues the agent's follow-up run, the usual way an
 // approval continues a task.
-export const HANDOVER_ACTION_PREFIX = 'Projekt-Browser: ';
+export const HANDOVER_ACTION_PREFIX = 'Bitte übernehmen: ';
 
 export async function fileHandoverCard(
   agent: RunnerAgent,
@@ -23,8 +23,8 @@ export async function fileHandoverCard(
     action: `${HANDOVER_ACTION_PREFIX}${reason}`.slice(0, 500),
     details: [
       `${agent.username} bittet darum, den Projekt-Browser zu übernehmen.`,
+      'In der Live-Ansicht „Übernehmen“ drücken, erledigen, dann „Zurückgeben“ – der Agent macht danach weiter.',
       `Live-Ansicht: /project/${project.key}?tool=browser`,
-      'Dort „Übernehmen“ drücken, erledigen, dann „Zurückgeben“ – der Agent macht danach weiter.',
     ].join('\n'),
   });
   return approval.id;

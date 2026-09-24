@@ -1,29 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import type { LiveOverlay } from '@/hooks/useBrowserScreencast';
+import type { LiveDialog, LiveHandover } from '@/utils/browserLive';
 import { Button } from '@/components/ui/button';
 
-// What the live view shows centered over the page: a JS dialog the page opened, answered
-// for it, or an agent's handover request (design §4, §7: "Bittet den Owner zu übernehmen
-// (CAPTCHA, unbekannte Rückfrage). Erzeugt eine Freigabe-Karte... und wartet."), whose
-// button does the same Übernehmen action as the live view's own banner
-// (WorkspaceBrowserLive.tsx). The handover branch renders once the router starts sending
-// `{"type":"handover",...}` (see LiveHandover in browserLive.ts) — it does not today.
+// What the live view shows centered over the page, one at a time: a JavaScript dialog of the
+// page, answered for it; an agent's request to take over (browser_handover, design §4, §7);
+// the question whether to take over when the owner starts using a page an agent controls
+// (design §5); and, after 10 minutes without input from an owner in control, whether they are
+// done.
+export type LiveCard =
+  | ({ type: 'dialog' } & LiveDialog)
+  | ({ type: 'handover'; ownerControls: boolean } & LiveHandover)
+  | { type: 'takeOver'; agentName: string | null }
+  | { type: 'idle' };
+
 export default function WorkspaceBrowserDialog({
-  overlay,
+  card,
+  busy,
   onAnswer,
   onTakeOver,
-  takingOver,
+  onHandBack,
+  onDismiss,
 }: {
-  overlay: LiveOverlay;
+  card: LiveCard;
+  busy: boolean;
   onAnswer: (accept: boolean, text?: string) => void;
   onTakeOver: () => void;
-  takingOver: boolean;
+  onHandBack: () => void;
+  onDismiss: () => void;
 }) {
+  const t = useTranslations('nav.workspace.browserBar');
   return (
-    // Presses on the overlay are for the overlay, not for the page under it.
+    // Presses on the card are for the card, not for the page under it.
     <div
       data-live-dialog
       className="absolute inset-0 flex items-center justify-center bg-background/60 p-4 select-text"
@@ -31,11 +41,73 @@ export default function WorkspaceBrowserDialog({
       onPointerMove={(event) => event.stopPropagation()}
       onPointerUp={(event) => event.stopPropagation()}
     >
-      {overlay.type === 'dialog' ? (
-        <JsDialog dialog={overlay} onAnswer={onAnswer} />
+      {card.type === 'dialog' ? (
+        <JsDialog dialog={card} onAnswer={onAnswer} />
+      ) : card.type === 'handover' ? (
+        <Card
+          title={t('handoverTitle', { agentName: card.agentName || t('controlledByAgentGeneric') })}
+          body={card.reason}
+          actions={
+            card.ownerControls ? (
+              <Button size="sm" autoFocus disabled={busy} onClick={onHandBack}>
+                {t('handoverDone')}
+              </Button>
+            ) : (
+              <Button size="sm" autoFocus disabled={busy} onClick={onTakeOver}>
+                {t('takeOver')}
+              </Button>
+            )
+          }
+        />
+      ) : card.type === 'takeOver' ? (
+        <Card
+          title={t('takeOverTitle', { agentName: card.agentName ?? t('controlledByAgentGeneric') })}
+          body={t('takeOverHint')}
+          actions={
+            <>
+              <Button size="sm" variant="ghost" onClick={onDismiss}>
+                {t('dialogCancel')}
+              </Button>
+              <Button size="sm" autoFocus disabled={busy} onClick={onTakeOver}>
+                {t('takeOver')}
+              </Button>
+            </>
+          }
+        />
       ) : (
-        <HandoverCard reason={overlay.reason} onTakeOver={onTakeOver} takingOver={takingOver} />
+        <Card
+          title={t('idleTitle')}
+          body={t('idleHint')}
+          actions={
+            <>
+              <Button size="sm" variant="ghost" onClick={onDismiss}>
+                {t('idleKeep')}
+              </Button>
+              <Button size="sm" autoFocus disabled={busy} onClick={onHandBack}>
+                {t('handBack')}
+              </Button>
+            </>
+          }
+        />
       )}
+    </div>
+  );
+}
+
+function Card({ title, body, actions }: { title: string; body: string; actions: ReactNode }) {
+  return (
+    <div
+      role="alertdialog"
+      aria-label={title}
+      className="flex w-full max-w-sm flex-col gap-3 rounded-lg border bg-background p-4 shadow-lg"
+    >
+      <p className="text-md font-medium">{title}</p>
+      {body && (
+        <p className="text-sm break-words whitespace-pre-wrap text-muted-foreground" dir="auto">
+          {body}
+        </p>
+      )}
+      <div className="flex justify-end gap-2">{actions}</div>
     </div>
   );
 }
@@ -44,7 +116,7 @@ function JsDialog({
   dialog,
   onAnswer,
 }: {
-  dialog: Extract<LiveOverlay, { type: 'dialog' }>;
+  dialog: LiveDialog;
   onAnswer: (accept: boolean, text?: string) => void;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
@@ -84,36 +156,5 @@ function JsDialog({
         </Button>
       </div>
     </form>
-  );
-}
-
-// The CAPTCHA/handover card (design §7: "Freigabe-Karte mit Link zur Live-Ansicht" — this
-// component *is* that card, already shown inside the live view it would link to). Its
-// button calls the same lock-takeover action as the live view's own banner.
-function HandoverCard({
-  reason,
-  onTakeOver,
-  takingOver,
-}: {
-  reason: string;
-  onTakeOver: () => void;
-  takingOver: boolean;
-}) {
-  const t = useTranslations('nav.workspace.browserBar');
-  return (
-    <div
-      role="alertdialog"
-      aria-label={t('handoverTitle')}
-      className="flex w-full max-w-sm flex-col gap-3 rounded-lg border bg-background p-4 shadow-lg"
-    >
-      <p className="text-sm break-words whitespace-pre-wrap" dir="auto">
-        {t('handoverMessage', { reason })}
-      </p>
-      <div className="flex justify-end">
-        <Button size="sm" autoFocus disabled={takingOver} onClick={onTakeOver}>
-          {t('takeOver')}
-        </Button>
-      </div>
-    </div>
   );
 }

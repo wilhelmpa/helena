@@ -114,7 +114,8 @@ export async function authorizeTarget(
     if (!homeAgent) throw new HttpError(403, "Only the Home-Master uses Home's browser");
   } else {
     if (homeAgent) throw new HttpError(403, "The Home-Master uses Home's browser gateway");
-    if (targetSlug !== via) throw new HttpError(403, 'Only the Home-Master may act on another project');
+    if (targetSlug !== via)
+      throw new HttpError(403, 'Only the Home-Master may act on another project');
   }
   if (targetSlug === HOME_SLUG) return { project: null };
   const project = await projectBySlug(targetSlug);

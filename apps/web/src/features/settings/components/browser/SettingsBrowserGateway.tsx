@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import {
+  AGENT_VIEWPORT_LIMITS,
   MAX_BROWSER_GATEWAY_DOMAINS,
   MAX_BROWSER_GATEWAY_LOCK_TIMEOUT_SEC,
   MIN_BROWSER_GATEWAY_LOCK_TIMEOUT_SEC,
@@ -35,8 +36,14 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
   // The lock timeout is typed digit by digit, so it is only committed on blur/Enter,
   // unlike the lists and the switch, which write on every change.
   const [timeoutDraft, setTimeoutDraft] = useState('');
+  const [viewportDraft, setViewportDraft] = useState({ width: '', height: '' });
   useEffect(() => {
-    if (settingsQuery.data) setTimeoutDraft(String(settingsQuery.data.lockTimeoutSec));
+    if (!settingsQuery.data) return;
+    setTimeoutDraft(String(settingsQuery.data.lockTimeoutSec));
+    setViewportDraft({
+      width: String(settingsQuery.data.agentViewport.width),
+      height: String(settingsQuery.data.agentViewport.height),
+    });
   }, [settingsQuery.data]);
 
   if (settingsQuery.isPending || !settingsQuery.data)
@@ -54,8 +61,26 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
     else setTimeoutDraft(String(settings.lockTimeoutSec));
   };
 
+  // Width and height are committed together once one of them is left, and only when both
+  // are within the limits; otherwise the stored size comes back.
+  const commitViewport = () => {
+    const width = Number.parseInt(viewportDraft.width, 10);
+    const height = Number.parseInt(viewportDraft.height, 10);
+    const valid =
+      width >= AGENT_VIEWPORT_LIMITS.minWidth &&
+      width <= AGENT_VIEWPORT_LIMITS.maxWidth &&
+      height >= AGENT_VIEWPORT_LIMITS.minHeight &&
+      height <= AGENT_VIEWPORT_LIMITS.maxHeight;
+    const current = settings.agentViewport;
+    if (valid && (width !== current.width || height !== current.height)) {
+      updateSettings.mutate({ agentViewport: { width, height } });
+    } else if (!valid) {
+      setViewportDraft({ width: String(current.width), height: String(current.height) });
+    }
+  };
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <SettingsSection title={t('accessTitle')} description={t('accessHint')}>
         <SettingsCard className="space-y-5 p-4">
           <DomainListField
@@ -111,6 +136,44 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
                   className="h-8 w-24"
                 />
                 <span className="text-xs text-muted-foreground">{t('seconds')}</span>
+              </div>
+            }
+          />
+          <SettingsRow
+            title={t('viewportLabel')}
+            description={t('viewportHint')}
+            control={
+              <div className="flex shrink-0 items-center gap-1.5">
+                {(['width', 'height'] as const).map((side, index) => (
+                  <span key={side} className="flex items-center gap-1.5">
+                    {index === 1 && <span className="text-xs text-muted-foreground">×</span>}
+                    <Input
+                      type="number"
+                      aria-label={t(side === 'width' ? 'viewportWidth' : 'viewportHeight')}
+                      min={
+                        side === 'width'
+                          ? AGENT_VIEWPORT_LIMITS.minWidth
+                          : AGENT_VIEWPORT_LIMITS.minHeight
+                      }
+                      max={
+                        side === 'width'
+                          ? AGENT_VIEWPORT_LIMITS.maxWidth
+                          : AGENT_VIEWPORT_LIMITS.maxHeight
+                      }
+                      value={viewportDraft[side]}
+                      disabled={!editable}
+                      onChange={(e) =>
+                        setViewportDraft((draft) => ({ ...draft, [side]: e.target.value }))
+                      }
+                      onBlur={commitViewport}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                      }}
+                      className="h-8 w-20"
+                    />
+                  </span>
+                ))}
+                <span className="text-xs text-muted-foreground">{t('pixels')}</span>
               </div>
             }
           />

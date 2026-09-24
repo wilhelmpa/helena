@@ -94,14 +94,20 @@
       "dialogOk": "OK",
       "dialogCancel": "Abbrechen",
       "controlPrefix": "Steuert:",
-      "you": "Sie",
       "controlledByAgentGeneric": "ein Agent",
       "takeOver": "Übernehmen",
       "handBack": "Zurückgeben",
       "takeOverError": "Übernehmen war nicht möglich.",
       "handBackError": "Zurückgeben war nicht möglich.",
-      "handoverMessage": "Der Agent braucht Ihre Hilfe: {reason}",
-      "handoverTitle": "Der Agent bittet Sie zu übernehmen"
+      "handoverTitle": "{agentName} bittet Sie zu übernehmen",
+      "controlAgent": "Der Agent handelt gerade",
+      "youControl": "Sie steuern",
+      "handoverDone": "Fertig – zurückgeben",
+      "takeOverTitle": "{agentName} steuert gerade. Übernehmen?",
+      "takeOverHint": "Solange Sie steuern, wartet der Agent. Mit „Zurückgeben“ macht er weiter.",
+      "idleTitle": "Sind Sie fertig?",
+      "idleHint": "Seit 10 Minuten keine Eingabe. Ohne Antwort geht die Steuerung in einer Minute an die Agenten zurück.",
+      "idleKeep": "Weiter steuern"
     }
   },
   "groups": {

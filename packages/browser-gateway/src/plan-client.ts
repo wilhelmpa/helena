@@ -9,6 +9,8 @@ export interface BrowserGatewaySettingsWire {
   domainAllowlist: string[];
   humanInput: boolean;
   lockTimeoutSec: number;
+  // The page size while an agent controls the browser (older Helena: absent).
+  agentViewport?: { width: number; height: number };
 }
 
 export interface ResolveResult {

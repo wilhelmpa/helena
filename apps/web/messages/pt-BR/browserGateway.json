@@ -1,11 +1,15 @@
 {
   "homeTitle": "Navegador",
-  "homeDescription": "Os navegadores de projeto de todos os projetos em que você trabalha: a página atual, quem está no controle e uma miniatura ao vivo assim que o roteador do navegador a fornecer.",
+  "homeDescription": "Os navegadores dos projetos: o que está aberto, quem está no controle e se um agente espera por você.",
+  "homeBrowser": "Início",
   "empty": "Ainda não há navegadores de projeto",
-  "emptyHint": "Um projeto ganha seu próprio navegador assim que um agente ativa a ferramenta \"Navegador do projeto\".",
-  "noLiveImage": "Ainda sem imagem ao vivo",
-  "noUrl": "Ainda sem página atual",
+  "emptyHint": "Um projeto recebe seu navegador ao ser criado; ele aparece aqui quando estiver em execução.",
+  "noLiveImage": "Sem imagem",
+  "noPage": "Nenhuma página aberta",
   "controlledByAgent": "{agentName} está no controle",
   "controlledByOwner": "Você está no controle",
-  "controlledByUnknown": "Controle desconhecido"
+  "agentActive": "Um agente está trabalhando",
+  "free": "Livre",
+  "unreachable": "Inacessível",
+  "handover": "Pede que você assuma"
 }

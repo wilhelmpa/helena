@@ -8,6 +8,17 @@ import { request } from '@/lib/api/core/client';
 export const MAX_BROWSER_GATEWAY_DOMAINS = 200;
 export const MIN_BROWSER_GATEWAY_LOCK_TIMEOUT_SEC = 15;
 export const MAX_BROWSER_GATEWAY_LOCK_TIMEOUT_SEC = 3600;
+export const AGENT_VIEWPORT_LIMITS = {
+  minWidth: 800,
+  maxWidth: 3840,
+  minHeight: 600,
+  maxHeight: 2400,
+};
+
+export interface AgentViewport {
+  width: number;
+  height: number;
+}
 
 export interface BrowserGatewaySettings {
   // A domain covers its subdomains, same normalization as the agent network's lists. An
@@ -17,6 +28,8 @@ export interface BrowserGatewaySettings {
   domainAllowlist: string[];
   humanInput: boolean;
   lockTimeoutSec: number;
+  // The page size while an agent controls the browser; the live view scales it.
+  agentViewport: AgentViewport;
 }
 
 export interface BrowserGatewaySettingsPatch {
@@ -24,6 +37,7 @@ export interface BrowserGatewaySettingsPatch {
   domainAllowlist?: string[];
   humanInput?: boolean;
   lockTimeoutSec?: number;
+  agentViewport?: AgentViewport;
 }
 
 export const getBrowserGatewaySettings = (projectKey: string) =>
@@ -39,13 +53,13 @@ export const updateBrowserGatewaySettings = (
   });
 
 // Home's "Browser" overview (design §5: "eine Seite 'Browser' mit einer Kachel pro
-// Projekt-Browser"). Every project that could have one, name and key only — the router
-// that will serve the live current URL, who controls it, and a thumbnail is still being
-// built, so this route carries no live fields yet.
+// Projekt-Browser"): the projects the caller works in, each with the slug of its project
+// browser. The live state comes from the browser router (utils/browserOverview.ts).
 export interface BrowserGatewayOverviewProject {
   projectId: number;
   projectKey: string;
   projectName: string;
+  slug: string;
 }
 
 export const getBrowserGatewayOverview = () =>

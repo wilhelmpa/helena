@@ -651,6 +651,11 @@
     "humanInputHint": "Mengetik dan mengklik dengan jeda mirip manusia, bukan secepat mungkin. Matikan hanya untuk proyek uji coba berisiko rendah.",
     "lockTimeoutLabel": "Batas waktu kunci",
     "lockTimeoutHint": "Setelah sekian detik tanpa aktivitas, kendali agen atas browser dilepaskan secara otomatis.",
-    "seconds": "detik"
+    "seconds": "detik",
+    "viewportLabel": "Ukuran kerja untuk agen",
+    "viewportHint": "Halaman berukuran ini selama agen mengendalikan; tampilan Anda menampilkannya dengan skala. Saat Anda mengambil alih, ukurannya kembali mengikuti jendela Anda.",
+    "viewportWidth": "Lebar",
+    "viewportHeight": "Tinggi",
+    "pixels": "piksel"
   }
 }

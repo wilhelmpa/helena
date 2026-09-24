@@ -10,7 +10,14 @@
 // Part of switching the gateway on together with agent isolation (the runbook in the
 // orchestrator's report); everything it does can be changed afterwards in Helena, per agent,
 // under Agent → Tools.
-import { agentMcpServer, agentMcpServerLink, aiAgent, db, organizationAgentAssignment, team } from '@repo/db';
+import {
+  agentMcpServer,
+  agentMcpServerLink,
+  aiAgent,
+  db,
+  organizationAgentAssignment,
+  team,
+} from '@repo/db';
 import { and, eq, inArray } from 'drizzle-orm';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
 import {
@@ -65,14 +72,10 @@ export async function setupBrowserGateway(dryRun: boolean): Promise<SetupResult>
     const links = await db
       .select({ agentId: agentMcpServerLink.agentId, serverId: agentMcpServerLink.mcpServerId })
       .from(agentMcpServerLink)
-      .where(
-        inArray(
-          agentMcpServerLink.agentId,
-          agents.map((agent) => agent.id).concat(-1),
-        ),
-      );
+      .where(inArray(agentMcpServerLink.agentId, agents.map((agent) => agent.id).concat(-1)));
     const has = (agentId: number, serverId: number | undefined) =>
-      serverId !== undefined && links.some((row) => row.agentId === agentId && row.serverId === serverId);
+      serverId !== undefined &&
+      links.some((row) => row.agentId === agentId && row.serverId === serverId);
 
     for (const agent of agents) {
       const why = isHomeAgent(agent.username)
@@ -82,7 +85,12 @@ export async function setupBrowserGateway(dryRun: boolean): Promise<SetupResult>
           : null;
       if (!why) continue;
       if (has(agent.id, gateway?.id)) {
-        result.skipped.push({ teamId, agentId: agent.id, username: agent.username, why: 'already on' });
+        result.skipped.push({
+          teamId,
+          agentId: agent.id,
+          username: agent.username,
+          why: 'already on',
+        });
         continue;
       }
       if (has(agent.id, legacy?.id)) {
@@ -112,7 +120,9 @@ if (import.meta.main) {
   const verb = dryRun ? 'would turn on' : 'turned on';
   console.log(`browser gateway: ${result.teams} team(s)`);
   for (const entry of result.enabled) {
-    console.log(`  ${verb} Projekt-Browser for ${entry.username} (#${entry.agentId}, ${entry.why})`);
+    console.log(
+      `  ${verb} Projekt-Browser for ${entry.username} (#${entry.agentId}, ${entry.why})`,
+    );
   }
   for (const entry of result.skipped) {
     console.log(`  left ${entry.username} (#${entry.agentId}) as it is: ${entry.why}`);

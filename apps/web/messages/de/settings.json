@@ -651,6 +651,11 @@
     "humanInputHint": "Tippt und klickt mit menschenähnlichen Pausen statt in Bestzeit. Nur für unkritische Testprojekte abschalten.",
     "lockTimeoutLabel": "Sperr-Timeout",
     "lockTimeoutHint": "Nach so vielen Sekunden ohne Aktion gibt ein Agent die Steuerung des Browsers automatisch wieder frei.",
-    "seconds": "Sekunden"
+    "seconds": "Sekunden",
+    "viewportLabel": "Arbeitsgröße für Agenten",
+    "viewportHint": "So groß ist die Seite, solange ein Agent steuert; Ihre Ansicht zeigt sie verkleinert. Beim Übernehmen folgt sie wieder Ihrem Fenster.",
+    "viewportWidth": "Breite",
+    "viewportHeight": "Höhe",
+    "pixels": "Pixel"
   }
 }

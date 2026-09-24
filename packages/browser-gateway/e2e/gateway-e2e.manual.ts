@@ -13,7 +13,11 @@ import {
   type PlanClient,
 } from '../src/index.ts';
 
-const [cdpPort, sitePort, framePort] = process.argv.slice(2, 5).map(Number) as [number, number, number];
+const [cdpPort, sitePort, framePort] = process.argv.slice(2, 5).map(Number) as [
+  number,
+  number,
+  number,
+];
 const SITE = `http://127.0.0.1:${sitePort}`;
 const FRAME = `http://127.0.0.1:${framePort}`;
 const PASSWORD = 'e2e-Passwort-4711-geheim';
@@ -29,7 +33,12 @@ function check(name: string, ok: boolean, detail = ''): void {
 
 const planCalls: { route: string; body: unknown }[] = [];
 const downloads: { fileName: string; bytes: Buffer }[] = [];
-let settings = { domainBlocklist: [] as string[], domainAllowlist: [] as string[], humanInput: true, lockTimeoutSec: 120 };
+let settings = {
+  domainBlocklist: [] as string[],
+  domainAllowlist: [] as string[],
+  humanInput: true,
+  lockTimeoutSec: 120,
+};
 
 const planClient = {
   resolve: async () => ({
@@ -46,13 +55,25 @@ const planClient = {
     if (frameOrigin === SITE) {
       return {
         status: 'filled',
-        login: { id: 1, label: 'Testseite', username: 'agent@example.com', password: PASSWORD, has2fa: true },
+        login: {
+          id: 1,
+          label: 'Testseite',
+          username: 'agent@example.com',
+          password: PASSWORD,
+          has2fa: true,
+        },
       };
     }
     if (frameOrigin === FRAME) {
       return {
         status: 'filled',
-        login: { id: 2, label: 'Rahmen', username: 'rahmen@example.com', password: FRAME_PASSWORD, has2fa: false },
+        login: {
+          id: 2,
+          label: 'Rahmen',
+          username: 'rahmen@example.com',
+          password: FRAME_PASSWORD,
+          has2fa: false,
+        },
       };
     }
     return { status: 'none' };
@@ -84,7 +105,11 @@ const gateway = new GatewayDispatcher({
   sessions: { get: async () => session },
 });
 
-async function call(tool: string, args: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) {
+async function call(
+  tool: string,
+  args: Record<string, unknown> = {},
+  extra: Record<string, unknown> = {},
+) {
   const response: GatewayResponse = await gateway.handle({ tool, args, agentKey: 'k', ...extra });
   const text = response.ok ? response.content : response.error;
   outputs.push(JSON.stringify(response));
@@ -111,19 +136,38 @@ try {
   // Login with password and 2FA, the password never shown.
   check('navigate', (await call('browser_navigate', { url: `${SITE}/login` })).ok);
   let page = await snapshot();
-  check('snapshot shows the form with refs', /textbox "Benutzername" \[ref=(f\d+)?e\d+\]/.test(page), page.slice(0, 400));
+  check(
+    'snapshot shows the form with refs',
+    /textbox "Benutzername" \[ref=(f\d+)?e\d+\]/.test(page),
+    page.slice(0, 400),
+  );
   const user = refOf(page, /textbox "Benutzername"/);
   const pass = refOf(page, /textbox "Passwort"/);
   const typed = await call('browser_type', { ref: pass, text: 'nicht erlaubt' });
-  check('typing into a password field is refused', !typed.ok && /browser_login/.test(typed.text), typed.text);
+  check(
+    'typing into a password field is refused',
+    !typed.ok && /browser_login/.test(typed.text),
+    typed.text,
+  );
   const wrongField = await call('browser_login', { usernameRef: pass, passwordRef: user });
   check('the password only goes into a password field', !wrongField.ok, wrongField.text);
   const login = await call('browser_login', { usernameRef: user, passwordRef: pass });
-  check('browser_login fills the login for the page origin', login.ok && login.text.includes('Testseite'), login.text);
-  check('the login was chosen for the page origin', JSON.stringify(planCalls).includes(`"frameOrigin":"${SITE}"`));
+  check(
+    'browser_login fills the login for the page origin',
+    login.ok && login.text.includes('Testseite'),
+    login.text,
+  );
+  check(
+    'the login was chosen for the page origin',
+    JSON.stringify(planCalls).includes(`"frameOrigin":"${SITE}"`),
+  );
   await call('browser_click', { ref: refOf(await snapshot(), /button "Passwort anzeigen"/) });
   page = await snapshot();
-  check('a revealed password stays out of the snapshot', !page.includes(PASSWORD), page.slice(0, 600));
+  check(
+    'a revealed password stays out of the snapshot',
+    !page.includes(PASSWORD),
+    page.slice(0, 600),
+  );
   const shot = await call('browser_screenshot');
   check('a screenshot comes back as an image', shot.ok && 'image' in shot && !!shot.image);
   if (shot.ok && shot.image) {
@@ -136,25 +180,41 @@ try {
       let best = 0;
       for (let x = 0; x < image.width; x++) {
         const at = (y * image.width + x) * image.channels;
-        const covered = image.pixels[at] === 17 && image.pixels[at + 1] === 17 && image.pixels[at + 2] === 17;
+        const covered =
+          image.pixels[at] === 17 && image.pixels[at + 1] === 17 && image.pixels[at + 2] === 17;
         run = covered ? run + 1 : 0;
         best = Math.max(best, run);
       }
       if (best >= 180) rows++;
       widest = Math.max(widest, best);
     }
-    check('the revealed password field is covered in the picture', widest >= 180 && rows >= 18, `widest ${widest}, rows ${rows}`);
+    check(
+      'the revealed password field is covered in the picture',
+      widest >= 180 && rows >= 18,
+      `widest ${widest}, rows ${rows}`,
+    );
   }
   await call('browser_click', { ref: refOf(page, /button "Anmelden"/) });
   page = await snapshot();
   check('the login worked', page.includes('Angemeldet als agent@example.com'), page.slice(0, 300));
-  check(`the page got the whole password (${PASSWORD.length} characters)`, page.includes(`Passwort ${PASSWORD.length} Zeichen`));
+  check(
+    `the page got the whole password (${PASSWORD.length} characters)`,
+    page.includes(`Passwort ${PASSWORD.length} Zeichen`),
+  );
 
   await call('browser_navigate', { url: `${SITE}/otp` });
   page = await snapshot();
-  const code = await call('browser_login_code', { ref: refOf(page, /textbox "Code"/), credentialId: 1 });
+  const code = await call('browser_login_code', {
+    ref: refOf(page, /textbox "Code"/),
+    credentialId: 1,
+  });
   check('browser_login_code fills the code', code.ok, code.text);
-  check('the code was asked for the page origin', JSON.stringify(planCalls).includes('"route":"login-code","body":{"credentialId":1,"frameOrigin":"' + SITE));
+  check(
+    'the code was asked for the page origin',
+    JSON.stringify(planCalls).includes(
+      '"route":"login-code","body":{"credentialId":1,"frameOrigin":"' + SITE,
+    ),
+  );
   await call('browser_click', { ref: refOf(page, /button "Prüfen"/) });
   page = await snapshot();
   check('the code was accepted', page.includes('Code angenommen'), page.slice(0, 300));
@@ -166,12 +226,23 @@ try {
   const frameUser = refOf(page, /textbox "Benutzername"/);
   const framePass = refOf(page, /textbox "Passwort"/);
   check('refs reach into the iframe', /^f\d+e\d+$/.test(framePass), framePass);
-  const frameLogin = await call('browser_login', { usernameRef: frameUser, passwordRef: framePass });
-  check('the iframe login is chosen for the iframe origin', frameLogin.ok && frameLogin.text.includes('Rahmen'), frameLogin.text);
+  const frameLogin = await call('browser_login', {
+    usernameRef: frameUser,
+    passwordRef: framePass,
+  });
+  check(
+    'the iframe login is chosen for the iframe origin',
+    frameLogin.ok && frameLogin.text.includes('Rahmen'),
+    frameLogin.text,
+  );
   await call('browser_click', { ref: refOf(page, /button "Anmelden"/) });
   await new Promise((r) => setTimeout(r, 800));
   page = await snapshot();
-  check('the iframe login worked', page.includes('Im Rahmen angemeldet als rahmen@example.com'), page.slice(0, 500));
+  check(
+    'the iframe login worked',
+    page.includes('Im Rahmen angemeldet als rahmen@example.com'),
+    page.slice(0, 500),
+  );
 
   // Upload: the bytes, not a path.
   await call('browser_navigate', { url: `${SITE}/upload` });
@@ -179,11 +250,21 @@ try {
   const upload = await call(
     'browser_upload',
     { ref: refOf(page, /button "Datei"/) },
-    { upload: { name: 'angebot.pdf', mimeType: 'application/pdf', data: Buffer.from('%PDF-1.4 e2e').toString('base64') } },
+    {
+      upload: {
+        name: 'angebot.pdf',
+        mimeType: 'application/pdf',
+        data: Buffer.from('%PDF-1.4 e2e').toString('base64'),
+      },
+    },
   );
   check('upload', upload.ok, upload.text);
   page = await snapshot();
-  check('the page got the file', page.includes('Gewählt: angebot.pdf (12 Bytes)'), page.slice(0, 300));
+  check(
+    'the page got the file',
+    page.includes('Gewählt: angebot.pdf (12 Bytes)'),
+    page.slice(0, 300),
+  );
 
   // Download: into the project's Inbox (through Helena).
   await call('browser_navigate', { url: `${SITE}/download` });
@@ -193,20 +274,40 @@ try {
     await new Promise((r) => setTimeout(r, 200));
   }
   const listed = await call('browser_downloads');
-  check('download kept', downloads.length === 1 && downloads[0]!.bytes.toString() === 'Bericht: alles in Ordnung\n', listed.text);
-  check('download named safely', downloads[0]?.fileName === 'bericht 2026.txt', downloads[0]?.fileName);
+  check(
+    'download kept',
+    downloads.length === 1 && downloads[0]!.bytes.toString() === 'Bericht: alles in Ordnung\n',
+    listed.text,
+  );
+  check(
+    'download named safely',
+    downloads[0]?.fileName === 'bericht 2026.txt',
+    downloads[0]?.fileName,
+  );
 
   // A JavaScript dialog: the click returns as soon as it opens, the agent answers it.
   await call('browser_navigate', { url: `${SITE}/dialog` });
   page = await snapshot();
   const clicked = await call('browser_click', { ref: refOf(page, /button "Löschen"/) });
-  check('the click says a dialog opened', clicked.ok && clicked.text.includes('Wirklich löschen?'), clicked.text);
+  check(
+    'the click says a dialog opened',
+    clicked.ok && clicked.text.includes('Wirklich löschen?'),
+    clicked.text,
+  );
   const status = await call('browser_status');
   check('the dialog is open', status.text.includes('Dialog open: yes'), status.text);
   const blockedByDialog = await call('browser_snapshot');
-  check('nothing else runs while it is open', !blockedByDialog.ok && blockedByDialog.text.includes('browser_dialog'), blockedByDialog.text);
+  check(
+    'nothing else runs while it is open',
+    !blockedByDialog.ok && blockedByDialog.text.includes('browser_dialog'),
+    blockedByDialog.text,
+  );
   const dialog = await call('browser_dialog', { action: 'accept' });
-  check('the dialog is answered', dialog.ok && dialog.text.includes('Wirklich löschen?'), dialog.text);
+  check(
+    'the dialog is answered',
+    dialog.ok && dialog.text.includes('Wirklich löschen?'),
+    dialog.text,
+  );
   await new Promise((r) => setTimeout(r, 300));
   page = await snapshot();
   check('the page saw the answer', page.includes('gelöscht'), page.slice(0, 300));
@@ -215,17 +316,27 @@ try {
   const opened = await call('browser_tabs', { action: 'open', url: `${SITE}/` });
   check('open a tab', opened.ok, opened.text);
   const tabs = await call('browser_tabs', { action: 'list' });
-  check('the new tab is the agent\'s', /\(active, yours\)/.test(tabs.text), tabs.text);
+  check("the new tab is the agent's", /\(active, yours\)/.test(tabs.text), tabs.text);
   const tabId = tabs.text.match(/\[(t\d+)\][^\n]*\(active, yours\)/)?.[1];
   check('close it', (await call('browser_tabs', { action: 'close', tabId })).ok);
 
   // Console and network, token values hidden.
   await call('browser_navigate', { url: `${SITE}/token?token=sehr-geheim-123&page=2` });
   const network = await call('browser_network', { limit: 5 });
-  check('network lists the request, token hidden', network.text.includes('token=%E2%80%A6') && network.text.includes('page=2') && !network.text.includes('sehr-geheim-123'), network.text);
+  check(
+    'network lists the request, token hidden',
+    network.text.includes('token=%E2%80%A6') &&
+      network.text.includes('page=2') &&
+      !network.text.includes('sehr-geheim-123'),
+    network.text,
+  );
   await call('browser_navigate', { url: `${SITE}/missing-page` });
   const consoleLog = await call('browser_console', { limit: 10 });
-  check('the browser log names the failed request', consoleLog.text.includes('404'), consoleLog.text);
+  check(
+    'the browser log names the failed request',
+    consoleLog.text.includes('404'),
+    consoleLog.text,
+  );
 
   // Domain rules: a blocked host is refused, also through a link.
   settings = { ...settings, domainBlocklist: ['localhost'] };
@@ -236,7 +347,11 @@ try {
   await call('browser_click', { ref: refOf(page, /link "Zur gesperrten Seite"/) });
   await new Promise((r) => setTimeout(r, 800));
   const after = await call('browser_status');
-  check('a link to a blocked host does not load it', !after.text.includes(`localhost:${sitePort}/ `) && !after.text.includes('"Start"'), after.text);
+  check(
+    'a link to a blocked host does not load it',
+    !after.text.includes(`localhost:${sitePort}/ `) && !after.text.includes('"Start"'),
+    after.text,
+  );
   settings = { ...settings, domainBlocklist: [] };
 
   // Bot signals: nothing the page could see.
@@ -253,14 +368,20 @@ try {
 
   check('release', (await call('browser_release')).ok);
 } catch (error) {
-  check('no unexpected error', false, error instanceof Error ? `${error.message}\n${error.stack}` : String(error));
+  check(
+    'no unexpected error',
+    false,
+    error instanceof Error ? `${error.message}\n${error.stack}` : String(error),
+  );
 }
 
 // Design §9.3: the password appears in no answer at all.
 const everything = outputs.join('\n');
-check('no password in any answer', !everything.includes(PASSWORD) && !everything.includes(FRAME_PASSWORD));
+check(
+  'no password in any answer',
+  !everything.includes(PASSWORD) && !everything.includes(FRAME_PASSWORD),
+);
 check('no 2FA code in any answer', !everything.includes(TOTP_CODE));
 
 console.log(failures === 0 ? 'ALL PASSED' : `${failures} FAILED`);
 process.exit(failures === 0 ? 0 : 1);
-

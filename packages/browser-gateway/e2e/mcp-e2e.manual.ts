@@ -46,7 +46,8 @@ const plan = http.createServer((request, response) => {
       response.writeHead(status, { 'content-type': 'application/json' });
       response.end(JSON.stringify(value));
     };
-    if (request.headers.authorization !== `Bearer ${TOKEN}`) return answer(401, { error: 'Unauthorized' });
+    if (request.headers.authorization !== `Bearer ${TOKEN}`)
+      return answer(401, { error: 'Unauthorized' });
     const input = body ? JSON.parse(body) : {};
     if (route === 'resolve') {
       if (input.agentKey !== 'agent-key') return answer(403, { error: 'Unknown agent key' });
@@ -57,7 +58,12 @@ const plan = http.createServer((request, response) => {
         projectId: 1,
         projectKey: 'E2E',
         browserGatewayEnabled: true,
-        settings: { domainBlocklist: [], domainAllowlist: [], humanInput: false, lockTimeoutSec: 120 },
+        settings: {
+          domainBlocklist: [],
+          domainAllowlist: [],
+          humanInput: false,
+          lockTimeoutSec: 120,
+        },
       });
     }
     if (route === 'audit') return answer(200, { stored: true });
@@ -81,7 +87,10 @@ const gateway = await startBrowserGateway({ listBrowsers: () => listProjectBrows
 
 const socketDir = path.join(work, 'sockets', 'e2e');
 const socket = path.join(socketDir, 'gateway.sock');
-check('the project socket is in a directory of its own, 0750', ((await stat(socketDir)).mode & 0o777) === 0o750);
+check(
+  'the project socket is in a directory of its own, 0750',
+  ((await stat(socketDir)).mode & 0o777) === 0o750,
+);
 check('the socket is 0660', ((await stat(socket)).mode & 0o777) === 0o660);
 
 await writeFile(path.join(work, 'angebot.txt'), 'Angebot 2026');
@@ -109,36 +118,67 @@ try {
   const tools = await client.listTools();
   check('the shim lists the 24 tools', tools.tools.length === 24, String(tools.tools.length));
   const instructions = client.getInstructions() ?? '';
-  check('and tells the agent how to work', instructions.includes('browser_acquire'), instructions.slice(0, 80));
+  check(
+    'and tells the agent how to work',
+    instructions.includes('browser_acquire'),
+    instructions.slice(0, 80),
+  );
 
   const stranger = await agent('someone-else');
   const refused = await stranger.callTool({ name: 'browser_status', arguments: {} });
-  check('an unknown key is refused by Helena', refused.isError === true && text(refused).includes('Unknown agent key'), text(refused));
+  check(
+    'an unknown key is refused by Helena',
+    refused.isError === true && text(refused).includes('Unknown agent key'),
+    text(refused),
+  );
   await stranger.close();
 
   check('acquire', !(await client.callTool({ name: 'browser_acquire', arguments: {} })).isError);
-  const navigated = await client.callTool({ name: 'browser_navigate', arguments: { url: `${SITE}/upload` } });
+  const navigated = await client.callTool({
+    name: 'browser_navigate',
+    arguments: { url: `${SITE}/upload` },
+  });
   check('navigate', !navigated.isError, text(navigated));
   const snap = await client.callTool({ name: 'browser_snapshot', arguments: {} });
   const ref = text(snap).match(/button "Datei" \[ref=([a-z0-9]+)\]/)?.[1];
   check('snapshot through MCP', !!ref, text(snap).slice(0, 200));
-  const uploaded = await client.callTool({ name: 'browser_upload', arguments: { ref, path: 'angebot.txt' } });
+  const uploaded = await client.callTool({
+    name: 'browser_upload',
+    arguments: { ref, path: 'angebot.txt' },
+  });
   check('upload of a file the agent can read, by relative path', !uploaded.isError, text(uploaded));
   const after = await client.callTool({ name: 'browser_snapshot', arguments: {} });
-  check('the page got it', text(after).includes('Gewählt: angebot.txt (12 Bytes)'), text(after).slice(0, 300));
-  const missing = await client.callTool({ name: 'browser_upload', arguments: { ref, path: '/etc/shadow' } });
+  check(
+    'the page got it',
+    text(after).includes('Gewählt: angebot.txt (12 Bytes)'),
+    text(after).slice(0, 300),
+  );
+  const missing = await client.callTool({
+    name: 'browser_upload',
+    arguments: { ref, path: '/etc/shadow' },
+  });
   check('a file the agent cannot read is not sent', missing.isError === true, text(missing));
   const shot = await client.callTool({ name: 'browser_screenshot', arguments: {} });
   const parts = shot.content as Content[];
   check(
     'a screenshot is an image block',
-    parts[0]?.type === 'image' && parts[0]?.mimeType === 'image/png' && (parts[0]?.data?.length ?? 0) > 1000,
+    parts[0]?.type === 'image' &&
+      parts[0]?.mimeType === 'image/png' &&
+      (parts[0]?.data?.length ?? 0) > 1000,
   );
   check('release', !(await client.callTool({ name: 'browser_release', arguments: {} })).isError);
   await client.close();
-  check('Helena was asked for every call', seen.includes('resolve') && seen.includes('audit'), seen.join(','));
+  check(
+    'Helena was asked for every call',
+    seen.includes('resolve') && seen.includes('audit'),
+    seen.join(','),
+  );
 } catch (error) {
-  check('no unexpected error', false, error instanceof Error ? `${error.message}\n${error.stack}` : String(error));
+  check(
+    'no unexpected error',
+    false,
+    error instanceof Error ? `${error.message}\n${error.stack}` : String(error),
+  );
 } finally {
   gateway.stop();
   plan.close();

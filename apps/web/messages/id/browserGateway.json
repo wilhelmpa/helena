@@ -1,11 +1,15 @@
 {
   "homeTitle": "Browser",
-  "homeDescription": "Browser proyek dari setiap proyek tempat Anda bekerja: halaman saat ini, siapa yang mengendalikan, dan thumbnail langsung begitu router browser menyediakannya.",
+  "homeDescription": "Browser proyek: apa yang terbuka, siapa yang mengendalikan, dan apakah ada agen yang menunggu Anda.",
+  "homeBrowser": "Beranda",
   "empty": "Belum ada browser proyek",
-  "emptyHint": "Sebuah proyek mendapatkan browser miliknya sendiri begitu alat \"Browser proyek\" seorang agen diaktifkan.",
-  "noLiveImage": "Belum ada gambar langsung",
-  "noUrl": "Belum ada halaman saat ini",
-  "controlledByAgent": "{agentName} sedang mengendalikan",
-  "controlledByOwner": "Anda sedang mengendalikan",
-  "controlledByUnknown": "Kendali tidak diketahui"
+  "emptyHint": "Proyek mendapat browsernya saat dibuat; browser muncul di sini setelah berjalan.",
+  "noLiveImage": "Tidak ada gambar",
+  "noPage": "Tidak ada halaman terbuka",
+  "controlledByAgent": "{agentName} mengendalikan",
+  "controlledByOwner": "Anda yang mengendalikan",
+  "agentActive": "Seorang agen sedang bekerja",
+  "free": "Bebas",
+  "unreachable": "Tidak dapat dijangkau",
+  "handover": "Meminta Anda mengambil alih"
 }

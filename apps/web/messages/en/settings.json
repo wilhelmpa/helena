@@ -651,6 +651,11 @@
     "humanInputHint": "Types and clicks with human-like pauses instead of at top speed. Turn off only for a low-risk test project.",
     "lockTimeoutLabel": "Lock timeout",
     "lockTimeoutHint": "After this many seconds with no action, an agent's control of the browser is released automatically.",
-    "seconds": "seconds"
+    "seconds": "seconds",
+    "viewportLabel": "Working size for agents",
+    "viewportHint": "The page has this size while an agent is in control; your view shows it scaled. When you take over, it follows your window again.",
+    "viewportWidth": "Width",
+    "viewportHeight": "Height",
+    "pixels": "pixels"
   }
 }

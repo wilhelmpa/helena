@@ -975,8 +975,20 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
     expect(toolsetsWithBrowser(profile, ['browser'], [])).toEqual(['file', 'itsaplan', 'browser']);
   });
 
+  it("turns the profile's browser-harness off for an agent on the gateway, and only then", () => {
+    const profile = { toolsets: ['browser', 'file'], mcpServers: ['browser-harness', 'itsaplan'] };
+    expect(hermesMcpServers([gatewayServer], profile, [])).toMatchObject({
+      'browser-harness': { enabled: false },
+    });
+    expect(hermesMcpServers([gatewayServer], profile, [])).not.toHaveProperty('itsaplan');
+    expect(hermesMcpServers([gatewayServer, legacyServer], profile, [])).not.toHaveProperty(
+      'browser-harness',
+    );
+    expect(hermesMcpServers([], profile, [])).toBeNull();
+  });
+
   describe('the four combinations, through the synchronizer', () => {
-    const profile = { toolsets: ['browser', 'file', 'terminal'], mcpServers: [] };
+    const profile = { toolsets: ['browser', 'file', 'terminal'], mcpServers: ['browser-harness'] };
     const login: WebLogin = {
       id: 1,
       label: 'Example',
@@ -1013,8 +1025,8 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
 
     it('neither gateway nor legacy: unchanged (browser forced on, Hermes vault synced)', async () => {
       const { toolsets, settings, vaultCalls } = await run([]);
-      expect(toolsets).toEqual(['browser', 'file', 'terminal']);
-      expect(settings.toolsets).toEqual(['browser', 'file', 'terminal']);
+      expect(toolsets).toEqual(['browser', 'file', 'terminal', 'browser-harness']);
+      expect(settings.toolsets).toEqual(['browser', 'file', 'terminal', 'browser-harness']);
       expect(vaultCalls).toEqual([[login]]);
       expect(settings.logins?.size).toBe(1);
     });
@@ -1034,6 +1046,7 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
         'browser',
         'file',
         'terminal',
+        'browser-harness',
         BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
       ]);
       expect(settings.toolsets).toEqual(toolsets);
@@ -1046,6 +1059,7 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
         'browser',
         'file',
         'terminal',
+        'browser-harness',
         BROWSER_GATEWAY_MCP_SERVER_NAME,
         BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
       ]);

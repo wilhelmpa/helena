@@ -47,7 +47,9 @@ describe('png', () => {
   it('covers a rectangle opaque and leaves the rest', () => {
     const source = image(10, 10, 4, 255);
     const masked = decodePng(maskPng(encodePng(source), [{ x: 3, y: 3, width: 2, height: 2 }]));
-    const at = (x: number, y: number) => [...masked.pixels.subarray((y * 10 + x) * 4, (y * 10 + x) * 4 + 4)];
+    const at = (x: number, y: number) => [
+      ...masked.pixels.subarray((y * 10 + x) * 4, (y * 10 + x) * 4 + 4),
+    ];
     expect(at(4, 4)).toEqual([17, 17, 17, 255]);
     expect(at(2, 2)).toEqual([17, 17, 17, 255]); // grown by a pixel for antialiased edges
     expect(at(0, 0)).toEqual([255, 255, 255, 255]);
@@ -63,6 +65,8 @@ describe('png', () => {
   it('returns the picture unchanged when nothing is covered, and refuses what it cannot read', () => {
     const png = encodePng(image(2, 2, 3, 1));
     expect(maskPng(png, [])).toBe(png);
-    expect(() => maskPng(Buffer.from('not a png'), [{ x: 0, y: 0, width: 1, height: 1 }])).toThrow();
+    expect(() =>
+      maskPng(Buffer.from('not a png'), [{ x: 0, y: 0, width: 1, height: 1 }]),
+    ).toThrow();
   });
 });

@@ -651,6 +651,11 @@
     "humanInputHint": "Escribe y hace clic con pausas similares a las humanas en lugar de a máxima velocidad. Desactívalo solo en un proyecto de prueba de bajo riesgo.",
     "lockTimeoutLabel": "Tiempo de espera del bloqueo",
     "lockTimeoutHint": "Tras este número de segundos sin actividad, el control del navegador por parte de un agente se libera automáticamente.",
-    "seconds": "segundos"
+    "seconds": "segundos",
+    "viewportLabel": "Tamaño de trabajo para agentes",
+    "viewportHint": "La página tiene este tamaño mientras un agente tiene el control; su vista la muestra escalada. Al tomar el control vuelve a seguir su ventana.",
+    "viewportWidth": "Ancho",
+    "viewportHeight": "Alto",
+    "pixels": "píxeles"
   }
 }
