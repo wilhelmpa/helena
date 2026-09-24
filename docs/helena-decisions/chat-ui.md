@@ -25,7 +25,8 @@ Constraints that shaped the choice:
 | Building block | Standard | Helena layer |
 |---|---|---|
 | Chat state, streaming, stop, resume, regenerate | AI SDK UI `useChat` + `ChatTransport` | `PlanChatTransport` (send/retry/cancel on the Helena API), `usePlanChat` (restore, queue, versions) |
-| Wire format | AG-UI 1.0 (`@ag-ui/core` types) | `AgUiChunkMapper`: AG-UI events → AI SDK `UIMessageChunk`s (~120 lines; no library does this direction) |
+| Wire format | AG-UI 1.0 (`@ag-ui/core` types; the runner emits 1.0 events) | `AgUiChunkMapper`: AG-UI events → AI SDK `UIMessageChunk`s (~150 lines; no library does this direction) |
+| Answer stream | Server-sent events (WHATWG HTML): `eventsource-parser`, resume with `Last-Event-ID`; the API wakes a stream with Postgres `LISTEN/NOTIFY` | the reconnect loop (backoff, the server's `retry:`) |
 | Message model | AI SDK `UIMessage` parts: `text`, `reasoning`, `dynamic-tool`, transient `data-turn` | metadata (time, model, tokens, versions, attachments) |
 | Transcript scroll | shadcn `MessageScroller` (stick to bottom, turn anchoring, keep position when older messages load, `content-visibility`) | – |
 | Message layout | shadcn `Message`, `Bubble`, `Marker` (status lines, day separators), `Attachment` | – |
@@ -53,8 +54,8 @@ Used (in `components/ai-elements/`, each file keeps the Apache-2.0 notice):
 | `Task`, `TaskTrigger`, `TaskContent` | the tool calls between two stretches of text, folded into one line ("3 tool calls") |
 | `Queue`, `QueueItem`, … | messages written while an answer is still coming |
 | `Suggestions`, `Suggestion` | the choices of a Hermes `clarify` question, over the input |
-| `Sources`, `SourcesTrigger`, `SourcesContent`, `Source` | tasks, files and links an answer named |
-| `PromptInput` (form, textarea, header, footer, tools, button, submit) | the composer |
+| `Sources`, `SourcesTrigger`, `SourcesContent` | tasks, files and links an answer named, folded into "3 sources" |
+| `PromptInput` (form, textarea, header, footer, tools, button, submit) | the composer; files dropped or pasted go straight to the vault (AI Elements' blob-URL attachments are left out) |
 | `SpeechInput` | dictation |
 
 Not used, with the reason:
@@ -129,14 +130,34 @@ DOMPurify for the chat (re-renders everything per token, no controls).
 | `readUIMessageStream` | used in tests to read what the transport produces |
 | `transcribe`, `generateSpeech`, `experimental_useRealtime` | rejected, see Voice |
 
-## 4. AG-UI
+## 4. AG-UI and the stream
 
 The answers are AG-UI events. There is no library that turns AG-UI events into AI SDK UI
 chunks in the browser (`@ag-ui/vercel-ai-sdk` goes the other way: an AI SDK agent served as
-AG-UI), so the mapper stays Helena's, typed with `@ag-ui/core` 1.0 (MIT, type imports only).
-AG-UI 1.0 renamed the reasoning events (`REASONING_MESSAGE_*`, formerly `THINKING_*`) and
-added `*_CHUNK` events; the mapper reads both names. The API still validates the older
-`THINKING_TEXT_MESSAGE_CONTENT` only (see the report: the runner/API side should accept both).
+AG-UI), so the mapper stays Helena's, typed with `@ag-ui/core` 1.0 (MIT; its `EventType`
+names and `contentToText`).
+
+AG-UI 1.0 conformance (standards audit RUN-02 / WEB-10 / CHAT-1):
+
+- **Runner** (`packages/runner/src/agui.ts`): reasoning is a 1.0 reasoning message
+  (`REASONING_START`, `REASONING_MESSAGE_START/CONTENT/END`, `REASONING_END`) instead of the
+  removed `THINKING_TEXT_MESSAGE_CONTENT`; a failed tool says so in the result's
+  `metadata: { isError: true }` (MCP's name for it; AG-UI has no error field) instead of a
+  non-standard `isError` on the event; `RUN_STARTED` carries `protocolVersion: "1.0"`.
+- **API** accepts both the 1.0 names and the old ones for one release, so a runner that
+  predates this keeps working.
+- **Web** reads both, plus the `*_CHUNK` shorthands and results given as content parts.
+- **SSE**: the browser parses the stream with `eventsource-parser` (multi-line `data:`,
+  CRLF, comments, `retry:`) instead of splitting it by hand, and resumes a dropped stream
+  with the `Last-Event-ID` header, which the server's `id:` lines are for; the API reads it
+  before the old `?after=`. `@microsoft/fetch-event-source` was rejected (last release 2021);
+  the browser's `EventSource` cannot send the session cookie cross-origin with the control
+  the reconnect loop needs.
+- **Wake-up**: a waiting stream no longer polls the database every 100 ms. Reporting events,
+  finishing and stopping an answer send a Postgres `NOTIFY` (inside the write's transaction),
+  one `LISTEN` per API process wakes the streams following that answer, and the table stays
+  the log they read from. The poll remains as a 1 s fallback for what no `NOTIFY` covers
+  (a janitor closing an answer, a LISTEN connection that is down).
 
 ## 5. Voice
 
@@ -167,14 +188,22 @@ origin, and phones a "record with the OS" fallback on plain http. Local STT need
 faster-whisper model download (about 150 MB for `base`, 1.5 GB for `large-v3-turbo`) or a
 cloud key.
 
-## 6. Keyboard and accessibility
+## 6. Keyboard, scrolling and accessibility
 
 - Enter sends; Shift+Enter and ⌘/Ctrl+Enter break the line; Escape stops the answer; ↑ in an
   empty composer edits the last own message (the claude.ai/ChatGPT convention; neither the AI
-  SDK nor AI Elements define it, so it is a small handler, tested as a pure function).
+  SDK nor AI Elements define it, so it is a small handler, tested as a pure function:
+  `features/ai-chat/utils/composerKeys.ts`).
+- The transcript opens at its end, follows a streaming answer only while the reader stays at
+  the bottom, and lets go when they scroll up (`MessageScroller` with `autoScroll`). A
+  question sent from here on is a scroll anchor: it moves to the top so its answer has room.
+  Questions the chat opened with are not anchors — the scroller would otherwise take each of
+  them for an anchor still to show and jump back up to it (the bug the chat had in longer
+  threads).
 - The transcript is shadcn's ARIA `log` (additions announced); a message that is still
   streaming carries `aria-busy`, so a screen reader reads it once it is complete instead of
   word by word; the composer's status line ("Home schreibt …") is a `status` region.
+- New words fade in only when the reader has not asked for reduced motion.
 
 ## 7. Shared building blocks
 
