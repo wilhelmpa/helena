@@ -1,8 +1,8 @@
 // Helena's agent pool ("Agentenpool"): the templates, the skills each one gets and
 // where every skill comes from. setup-agent-pool.ts makes an instance match this file.
 //
-// Templates run nowhere; a project adds a copy (Agentenpool → template → project, or
-// Projekt → Einstellungen → Agenten → "Kopie hinzufügen"). A copy follows its template
+// Templates run nowhere; a project adds a copy (Projekt → KI-Agenten → "Spezialisten aus
+// Vorlage hinzufügen"). A copy follows its template
 // (template-sync.ts) for skills, tools, MCP servers, approval rules, instructions, model
 // and budgets, except where the copy was changed by hand.
 //

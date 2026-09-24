@@ -21,8 +21,8 @@ Mischformen trennen: Eine How-to-Seite verlinkt die Erklärung, statt sie zu ent
 - Leser und Vorwissen benennen (Owner, Entwickler, Endnutzer). Erster Absatz: worum es geht und für wen.
 - Kurze Sätze, aktiv, Imperativ in Schritten („Öffne …", „Run …"). Ein Schritt = eine Handlung + erwartetes Ergebnis.
 - Befehle und Code in Codeblöcken mit Sprache; Platzhalter als `<name>` und darunter erklärt. Nichts, was Secrets enthält – Beispiele mit `itp_…`/`sk-…`-Platzhaltern.
-- UI-Beschriftungen **genau so**, wie sie in der Oberfläche stehen (Deutsch: „Agentenpool", „Kopie hinzufügen").
-- Produktname **Helena** (nie „Plan"/„It's a Plan"); das System/Unternehmen heißt Volition.
+- UI-Beschriftungen **genau so**, wie sie in der Oberfläche stehen (Deutsch: „Agentenpool", „Spezialisten aus Vorlage hinzufügen").
+- Produktname **Helena** – nie „Plan"/„It's a Plan", kein „by Volition". Volition ist nur der Firmenname (volition.one).
 - Screenshots nur, wenn sie etwas zeigen, das Text nicht kann; mit Datum/Version im Dateinamen.
 
 ## 3. Deutsch und Englisch

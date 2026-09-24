@@ -45,7 +45,7 @@ Keine anderen Größen, keine `text-[Npx]`, keine eigenen Schriftarten.
 
 ### Sprache und Namen
 - Alle Texte über i18n (`next-intl`), in **allen** Sprachdateien (`apps/web/messages/<locale>/`), nicht hart im Code.
-- Produktname ist **Helena**, nie „Plan" oder „It's a Plan" (einzige Ausnahme: AGPL-Hinweis auf der About-Seite, in LICENSE/NOTICE/README).
+- Produktname ist **Helena**, nie „Plan" oder „It's a Plan" und ohne „by Volition" (einzige Ausnahme: AGPL-Hinweis auf der About-Seite, in LICENSE/NOTICE/README).
 - Im LAN läuft Helena über http: Zwischenablage und IDs nur über `copyText`/`uuid` aus `@/utils/clipboard` und `@/utils/uuid`.
 
 ## Vorgehen beim Design-Review
