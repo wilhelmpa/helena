@@ -60,7 +60,8 @@ retired=()
 for unit in volition-mastra volition-hermes-team-bridge volition-mastra-dev volition-hermes-team-bridge-dev; do
   if [[ -e /etc/systemd/system/$unit.service ]]; then
     systemctl disable --now "$unit.service" >/dev/null 2>&1 || true
-    rm -rf "/etc/systemd/system/$unit.service" "/etc/systemd/system/$unit.service.d"
+    rm -rf "/etc/systemd/system/$unit.service" "/etc/systemd/system/$unit.service.d" \
+      "/etc/systemd/system/$unit.service.wants"
     retired+=("$unit")
   fi
 done

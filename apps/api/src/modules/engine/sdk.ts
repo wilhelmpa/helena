@@ -253,8 +253,9 @@ export type PolicyDecision =
 // for a person.
 export type EngineActionCategory = ActionCategory | 'run' | 'approve';
 
-// "May this agent do this here?" — answered centrally by the autopilot (hub/autopilot,
-// autopilotPolicyDecider), registered with setPolicyDecider.
+// The engine's own two questions. Action categories of steps go to the framework's policy
+// host instead (policy.ts askStepPolicy). The default (policy.ts defaultPolicy) answers
+// like the Autopilot's engine adapter; setPolicyDecider replaces it.
 export interface PolicyDecider {
   decide(input: {
     agentId: number | null;

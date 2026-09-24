@@ -14,8 +14,9 @@ import { decide, type EngineDecision } from './engine';
 // runtime: POST /agent-policy/decide with the agent's key.
 
 // ---- hub/native-engine ----------------------------------------------------------------
-// engine/sdk.ts on that branch defines this seam; registering the Autopilot is one line at
-// startup: setPolicyDecider(autopilotPolicyDecider).
+// The engine asks the framework's policy host (this plugin's evaluator) for the category of
+// every step it executes; its own questions `run` and `approve` answer the way this adapter
+// does (engine/policy.ts). The adapter stays for a caller that asks in the engine's shape.
 
 type EngineCategory = ActionCategory | 'run' | 'approve' | (string & {});
 
