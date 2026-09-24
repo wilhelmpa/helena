@@ -227,6 +227,12 @@ class SandboxTest(unittest.TestCase):
         self.assertEqual(args.forward, ['3128=/run/x.sock'])
         self.assertEqual(args.command, ['/bin/hermes', 'chat', '--forward', 'x'])
 
+    def test_plan_environment(self):
+        # The API inside the unit is the forwarder to plan.sock, not the runner's address.
+        env = sandbox.plan_environment({3128: '/run/x/egress.sock', 3000: '/run/x/plan.sock'})
+        self.assertEqual(env, {'ITSAPLAN_URL': 'http://127.0.0.1:3000'})
+        self.assertEqual(sandbox.plan_environment({3128: '/run/x/egress.sock'}), {})
+
     def test_proxy_environment(self):
         env = sandbox.proxy_environment({3128: '/e', 3000: '/p'})
         self.assertEqual(env['HTTPS_PROXY'], 'http://127.0.0.1:3128')
