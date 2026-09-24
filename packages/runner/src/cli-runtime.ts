@@ -569,6 +569,7 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
           CLAUDE_CONFIG_DIR: dir,
           // The installation is Helena's (install-cli-runtimes.sh); no command updates it.
           DISABLE_AUTOUPDATER: '1',
+          DISABLE_UPDATES: '1',
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
         }
       : { CODEX_HOME: dir };
