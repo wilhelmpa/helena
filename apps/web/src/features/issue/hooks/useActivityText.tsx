@@ -12,7 +12,6 @@ import { usePriorityLabel } from '@/hooks/usePriorityLabel';
 
 const fmtDate = (v: string | null) => (v ? formatDate(v) : '');
 
-
 // Long values (description, markdown/long custom fields) are shown behind a
 // popover rather than inline, so the feed row stays compact.
 const isLong = (text: string | null): text is string =>

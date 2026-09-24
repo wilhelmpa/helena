@@ -8,7 +8,9 @@ describe('readableText', () => {
       summary: 'Datei angelegt und verifiziert.',
       startedAt: '2026-09-24T17:53:03.303Z',
     });
-    expect(readableText(report)).toBe('Datei angelegt und verifiziert.\ne2e/a.md\ntest\nInhalt geprüft');
+    expect(readableText(report)).toBe(
+      'Datei angelegt und verifiziert.\ne2e/a.md\ntest\nInhalt geprüft',
+    );
   });
 
   it('leaves plain text and broken JSON alone', () => {

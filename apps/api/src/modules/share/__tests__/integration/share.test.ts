@@ -141,9 +141,17 @@ describe('share', () => {
       const project = asOwner.projects({ projectKey: 'MKT' });
       const hidden = await project.issues.post({ columnId, title: 'Private plan' });
       const open = await project.issues.post({ columnId, title: 'Public plan' });
-      const child = await project.issues.post({ columnId, title: 'Private step', parentId: issueId });
-      await asOwner.issues({ issueId }).links.post({ targetIssueId: hidden.data!.id, kind: 'blocks' });
-      await asOwner.issues({ issueId }).links.post({ targetIssueId: open.data!.id, kind: 'blocks' });
+      const child = await project.issues.post({
+        columnId,
+        title: 'Private step',
+        parentId: issueId,
+      });
+      await asOwner
+        .issues({ issueId })
+        .links.post({ targetIssueId: hidden.data!.id, kind: 'blocks' });
+      await asOwner
+        .issues({ issueId })
+        .links.post({ targetIssueId: open.data!.id, kind: 'blocks' });
       await asOwner.issues({ issueId: open.data!.id }).share.post();
       const token = (await asOwner.issues({ issueId }).share.post()).data!.token;
 

@@ -47,7 +47,9 @@ export default function CalendarView({
     builtinField,
     customFieldDef,
     settings.firstDayOfWeek === 'locale'
-      ? ((dateLocale.options?.weekStartsOn ?? 0) === 1 ? 1 : 0)
+      ? (dateLocale.options?.weekStartsOn ?? 0) === 1
+        ? 1
+        : 0
       : settings.firstDayOfWeek,
     cursor,
     WEEKDAY_KEYS.map((key) => t(`weekdays.${key}`)),

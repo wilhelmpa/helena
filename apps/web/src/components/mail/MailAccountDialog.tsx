@@ -208,74 +208,74 @@ export default function MailAccountDialog({
         )}
         {!googlePicked && (
           <>
-        <MailPasswordField
-          teamId={teamId}
-          projectId={form.projectId}
-          label={google ? t('appPassword') : t('password')}
-          password={form.password}
-          credentialId={form.credentialId}
-          storedLabel={account?.credentialLabel ?? null}
-          onChange={set}
-        />
-        <MailboxWindowField
-          value={{ all: form.fetchDays == null, days: form.fetchDays ?? 30 }}
-          onChange={(window) => set({ fetchDays: window.all ? null : window.days })}
-        />
-        <div className="flex flex-col gap-2 text-sm">
-          {(['enabled', 'syncTrash', 'syncSpam'] as const).map((key) => (
-            <label key={key} className="flex items-center gap-2">
-              <Switch
-                checked={!!form[key]}
-                onCheckedChange={(checked) => set({ [key]: checked })}
-              />
-              {t(key)}
-            </label>
-          ))}
-        </div>
-        {result && (
-          <ul className="flex flex-col gap-1 rounded-md border p-2 text-xs">
-            <li className={result.imap ? 'text-destructive' : ''}>
-              IMAP: {result.imap ?? t('ok')}
-            </li>
-            <li className={result.smtp ? 'text-destructive' : ''}>
-              SMTP: {result.smtp ?? t('ok')}
-            </li>
-          </ul>
-        )}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={
-              test.isPending ||
-              !form.imapHost ||
-              !form.smtpHost ||
-              !(form.password || form.credentialId != null || account?.hasPassword)
-            }
-            onClick={() =>
-              test.mutate(
-                {
-                  imapHost: form.imapHost,
-                  imapPort: form.imapPort,
-                  imapTls: form.imapTls,
-                  smtpHost: form.smtpHost,
-                  smtpPort: form.smtpPort,
-                  smtpTls: form.smtpTls,
-                  username: form.username,
-                  password: form.password || undefined,
-                  credentialId: form.password ? undefined : form.credentialId,
-                  accountId: account?.id,
-                },
-                { onSuccess: setResult },
-              )
-            }
-          >
-            {test.isPending ? t('testing') : t('test')}
-          </Button>
-          <Button type="submit" disabled={!ready || save.isPending}>
-            {t('save')}
-          </Button>
-        </div>
+            <MailPasswordField
+              teamId={teamId}
+              projectId={form.projectId}
+              label={google ? t('appPassword') : t('password')}
+              password={form.password}
+              credentialId={form.credentialId}
+              storedLabel={account?.credentialLabel ?? null}
+              onChange={set}
+            />
+            <MailboxWindowField
+              value={{ all: form.fetchDays == null, days: form.fetchDays ?? 30 }}
+              onChange={(window) => set({ fetchDays: window.all ? null : window.days })}
+            />
+            <div className="flex flex-col gap-2 text-sm">
+              {(['enabled', 'syncTrash', 'syncSpam'] as const).map((key) => (
+                <label key={key} className="flex items-center gap-2">
+                  <Switch
+                    checked={!!form[key]}
+                    onCheckedChange={(checked) => set({ [key]: checked })}
+                  />
+                  {t(key)}
+                </label>
+              ))}
+            </div>
+            {result && (
+              <ul className="flex flex-col gap-1 rounded-md border p-2 text-xs">
+                <li className={result.imap ? 'text-destructive' : ''}>
+                  IMAP: {result.imap ?? t('ok')}
+                </li>
+                <li className={result.smtp ? 'text-destructive' : ''}>
+                  SMTP: {result.smtp ?? t('ok')}
+                </li>
+              </ul>
+            )}
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  test.isPending ||
+                  !form.imapHost ||
+                  !form.smtpHost ||
+                  !(form.password || form.credentialId != null || account?.hasPassword)
+                }
+                onClick={() =>
+                  test.mutate(
+                    {
+                      imapHost: form.imapHost,
+                      imapPort: form.imapPort,
+                      imapTls: form.imapTls,
+                      smtpHost: form.smtpHost,
+                      smtpPort: form.smtpPort,
+                      smtpTls: form.smtpTls,
+                      username: form.username,
+                      password: form.password || undefined,
+                      credentialId: form.password ? undefined : form.credentialId,
+                      accountId: account?.id,
+                    },
+                    { onSuccess: setResult },
+                  )
+                }
+              >
+                {test.isPending ? t('testing') : t('test')}
+              </Button>
+              <Button type="submit" disabled={!ready || save.isPending}>
+                {t('save')}
+              </Button>
+            </div>
           </>
         )}
       </form>
