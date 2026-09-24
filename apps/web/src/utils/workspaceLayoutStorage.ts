@@ -24,6 +24,13 @@ export function layoutContext(kiosk: KioskDisplay | null): LayoutContext {
   return kiosk === 'dual' ? 'kiosk-dual' : kiosk === 'single' ? 'kiosk-single' : 'browser';
 }
 
+// Before a choice: the dual kiosk starts with the chat beside the page on the first screen
+// and a tool on the second (owner, 2026-09-24: "im dual mode muss der chat nach links");
+// everything else with the standard layout.
+export function defaultLayout(context: LayoutContext): StoredLayout {
+  return { layout: context === 'kiosk-dual' ? 'chat-left' : 'standard', tools: {} };
+}
+
 export function layoutStorageKey(context: LayoutContext): string {
   return `workspace:layout:${context}`;
 }

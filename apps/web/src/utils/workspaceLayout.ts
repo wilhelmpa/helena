@@ -129,6 +129,8 @@ export interface GeometryInput {
   panelWidth: number;
   // The width of each area docked beside the page, px.
   dockWidth: (areaId: string) => number;
+  // The page keeps at least this much room beside the panel on one screen, px.
+  pageMin: number;
 }
 
 export interface LayoutGeometry {
@@ -145,17 +147,24 @@ export interface LayoutGeometry {
 // The host is a grid: one column per area, the page side first and the panel after it,
 // in the order the layout lists them.
 export function layoutGeometry(input: GeometryInput): LayoutGeometry {
-  const { resolved, overlay, phone, dual, panelWidth, dockWidth } = input;
+  const { resolved, overlay, phone, dual, panelWidth, dockWidth, pageMin } = input;
   const pageSide = resolved.areas.filter((area) => area.side === 'page');
   const panelSide = resolved.areas.filter((area) => area.side === 'panel');
   const panelFills = pageSide.length === 0;
   const tracks: string[] = [];
   const column: Record<string, number> = {};
+  let docked = 0;
   for (const area of pageSide) {
     column[area.id] = tracks.length + 1;
-    tracks.push(area.fill ? 'minmax(0,1fr)' : `${Math.round(dockWidth(area.id))}px`);
+    const width = Math.round(dockWidth(area.id));
+    if (!area.fill) docked += width;
+    tracks.push(area.fill ? 'minmax(0,1fr)' : `${width}px`);
   }
   const count = Math.max(1, panelSide.length);
+  const share = Math.round(panelWidth / count);
+  // Beside the page on one screen, the panel gives way before the page gets narrower than
+  // pageMin (two tools on a laptop).
+  const keepsPage = resolved.pageVisible && !overlay;
   const panelTrack = panelFills
     ? 'minmax(0,1fr)'
     : phone
@@ -164,7 +173,9 @@ export function layoutGeometry(input: GeometryInput): LayoutGeometry {
         ? count === 1
           ? '50vw'
           : `calc(50vw / ${count})`
-        : `${Math.round(panelWidth / count)}px`;
+        : keepsPage
+          ? `min(${share}px, calc((100% - ${pageMin + docked}px) / ${count}))`
+          : `${share}px`;
   for (const area of panelSide) {
     column[area.id] = tracks.length + 1;
     tracks.push(panelTrack);

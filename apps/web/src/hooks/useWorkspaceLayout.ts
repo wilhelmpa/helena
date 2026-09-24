@@ -22,6 +22,7 @@ import {
 } from '@/utils/workspaceLayout';
 import {
   areaToolKey,
+  defaultLayout,
   layoutContext,
   layoutStorageKey,
   migrateLegacyLayout,
@@ -29,8 +30,6 @@ import {
   type LayoutContext,
   type StoredLayout,
 } from '@/utils/workspaceLayoutStorage';
-
-const INITIAL: StoredLayout = { layout: STANDARD_LAYOUT_ID, tools: {} };
 
 // The window's width, rounded down to the largest of `thresholds` it reaches (0 below
 // all): a layout only cares whether it has room for an area, so a resize re-renders the
@@ -75,9 +74,10 @@ export function useWorkspaceLayout({
   const dual = kiosk === 'dual';
   const context: LayoutContext = layoutContext(kiosk);
   const storageKey = layoutStorageKey(context);
-  // Kept per device; the server render and hydration read the standard layout.
+  const initial = useMemo(() => defaultLayout(context), [context]);
+  // Kept per device; the server render and hydration read the layout's default.
   const [raw] = useLocalValue(storageKey);
-  const stored = useMemo(() => parseStoredLayout(raw) ?? INITIAL, [raw]);
+  const stored = useMemo(() => parseStoredLayout(raw) ?? initial, [initial, raw]);
 
   // The panel's split view and fullscreen from before layouts become a layout, once.
   useEffect(() => {
@@ -95,9 +95,9 @@ export function useWorkspaceLayout({
     (change: (current: StoredLayout) => StoredLayout) =>
       writeLocal(
         storageKey,
-        JSON.stringify(change(parseStoredLayout(readLocal(storageKey)) ?? INITIAL)),
+        JSON.stringify(change(parseStoredLayout(readLocal(storageKey)) ?? initial)),
       ),
-    [storageKey],
+    [initial, storageKey],
   );
 
   // A plugin's layout whose plugin is not loaded (yet) shows the standard one meanwhile.
@@ -212,11 +212,14 @@ export function useWorkspaceLayout({
 
   // The header's tool buttons and the chat hotkey: a tool another area already shows
   // stays where it is instead of opening a second time in the panel.
+  // A panel that cannot close keeps the tool it shows (a second click would reload it).
   const selectTool = useCallback(
     (tool: string) => {
-      if (!shownBeside(tool)) toggleTool(tool);
+      if (shownBeside(tool)) return;
+      if (!resolved.closable && resolved.mainTool === tool) return;
+      toggleTool(tool);
     },
-    [shownBeside, toggleTool],
+    [resolved.closable, resolved.mainTool, shownBeside, toggleTool],
   );
   const showTool = useCallback(
     (tool: string) => {

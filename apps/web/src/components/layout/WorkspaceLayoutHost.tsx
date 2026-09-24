@@ -23,6 +23,8 @@ const SPLIT_MAX_WIDTH = 2400;
 const DOCK_DEFAULT_WIDTH = 440;
 const DOCK_MIN_WIDTH = 320;
 const DOCK_MAX_WIDTH = 900;
+// The page keeps this much room beside the panel on one screen.
+const PAGE_MIN_WIDTH = 400;
 
 // The room under the app header, laid out by the workspace layout
 // (hooks/useWorkspaceLayout): one grid with a column per area — the page, a docked chat,
@@ -66,6 +68,7 @@ export default function WorkspaceLayoutHost({
     dual,
     panelWidth: panelWidth.width,
     dockWidth: docks.widthOf,
+    pageMin: PAGE_MIN_WIDTH,
   });
   const toolAreas: PanelArea[] = resolved.areas.flatMap((area) =>
     area.kind === 'tool' && area.tool

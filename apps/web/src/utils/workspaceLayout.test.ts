@@ -132,8 +132,9 @@ describe('layoutGeometry', () => {
       dual: false,
       panelWidth: 620,
       dockWidth: dock,
+      pageMin: 400,
     });
-    assert.equal(geometry.columns, 'minmax(0,1fr) 620px');
+    assert.equal(geometry.columns, 'minmax(0,1fr) min(620px, calc((100% - 400px) / 1))');
     assert.deepEqual(geometry.column, { page: 1, main: 2 });
     assert.equal(geometry.pageColumn, '1');
   });
@@ -146,6 +147,7 @@ describe('layoutGeometry', () => {
       dual: false,
       panelWidth: 620,
       dockWidth: dock,
+      pageMin: 400,
     });
     assert.equal(geometry.pageColumn, '1 / -1');
   });
@@ -158,6 +160,7 @@ describe('layoutGeometry', () => {
       dual: true,
       panelWidth: 620,
       dockWidth: dock,
+      pageMin: 400,
     });
     assert.equal(geometry.columns, 'minmax(0,1fr) 440px 50vw');
     assert.deepEqual(geometry.column, { page: 1, dock: 2, main: 3 });
@@ -171,6 +174,7 @@ describe('layoutGeometry', () => {
       dual: true,
       panelWidth: 1180,
       dockWidth: dock,
+      pageMin: 400,
     });
     assert.equal(two.columns, 'minmax(0,1fr) calc(50vw / 2) calc(50vw / 2)');
     const single = layoutGeometry({
@@ -180,8 +184,22 @@ describe('layoutGeometry', () => {
       dual: false,
       panelWidth: 1180,
       dockWidth: dock,
+      pageMin: 400,
     });
-    assert.equal(single.columns, 'minmax(0,1fr) 590px 590px');
+    assert.equal(
+      single.columns,
+      'minmax(0,1fr) min(590px, calc((100% - 400px) / 2)) min(590px, calc((100% - 400px) / 2))',
+    );
+    const chatTool = layoutGeometry({
+      resolved: resolve('chat-tool'),
+      overlay: false,
+      phone: false,
+      dual: false,
+      panelWidth: 620,
+      dockWidth: dock,
+      pageMin: 400,
+    });
+    assert.equal(chatTool.columns, 'minmax(0,1fr) 620px');
     const full = layoutGeometry({
       resolved: resolve('tool-full'),
       overlay: false,
@@ -189,6 +207,7 @@ describe('layoutGeometry', () => {
       dual: true,
       panelWidth: 620,
       dockWidth: dock,
+      pageMin: 400,
     });
     assert.equal(full.columns, 'minmax(0,1fr)');
     assert.equal(full.panelFills, true);

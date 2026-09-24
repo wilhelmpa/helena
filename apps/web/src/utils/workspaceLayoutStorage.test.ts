@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  defaultLayout,
   dockWidthsKey,
   layoutContext,
   layoutStorageKey,
@@ -28,6 +29,12 @@ describe('workspace layout storage', () => {
       dockWidthsKey('kiosk-dual', 'chat-left'),
       dockWidthsKey('browser', 'chat-left'),
     );
+  });
+
+  it('starts the dual kiosk with the chat beside the page, everything else as it was', () => {
+    assert.equal(defaultLayout('kiosk-dual').layout, 'chat-left');
+    assert.equal(defaultLayout('kiosk-single').layout, 'standard');
+    assert.equal(defaultLayout('browser').layout, 'standard');
   });
 
   it('reads a stored layout and drops what does not belong', () => {

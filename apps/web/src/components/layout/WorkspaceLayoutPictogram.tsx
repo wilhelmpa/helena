@@ -21,7 +21,7 @@ function weight(layout: WorkspaceLayout, index: number): number {
     return (pageSide ? 3 : 6) / panel;
   }
   if (area.shows === 'page' || !hasPage) return 3;
-  return 1.4;
+  return 2;
 }
 
 export default function WorkspaceLayoutPictogram({
@@ -43,7 +43,9 @@ export default function WorkspaceLayoutPictogram({
   return (
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className={cn(icon ? 'h-4 w-6' : 'h-7 w-11', 'shrink-0', className)}
+      // Sized inline: a menu row sizes the icons in it to 16px through a class.
+      style={icon ? { width: 24, height: 16 } : { width: 44, height: 28 }}
+      className={cn('shrink-0', className)}
       aria-hidden="true"
     >
       <rect
@@ -79,7 +81,7 @@ export default function WorkspaceLayoutPictogram({
           );
         }
         const Icon = area.tool && area.shows === 'tool' ? panelTool(area.tool)?.Icon : undefined;
-        const glyph = Math.min(width - 4, height - 4, 10);
+        const glyph = Math.min(width - 1.5, height - 4, 10);
         return (
           <g key={area.id}>
             <rect
@@ -90,16 +92,17 @@ export default function WorkspaceLayoutPictogram({
               rx="1.5"
               className="fill-current opacity-25"
             />
-            {Icon && !icon && glyph >= 6 ? (
+            {Icon && !icon && glyph >= 5 ? (
               // The tool's icon (24 units) scaled into the box by a nested viewport.
               <svg
                 x={left + (width - glyph) / 2}
                 y={top + (height - glyph) / 2}
                 width={glyph}
                 height={glyph}
+                style={{ width: glyph, height: glyph }}
                 viewBox="0 0 24 24"
               >
-                <Icon />
+                <Icon className="size-6" />
               </svg>
             ) : null}
           </g>

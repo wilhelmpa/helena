@@ -103,8 +103,8 @@ There is no event bus. Instead there are polling outboxes (`webhook_delivery`, `
 - **Home nav.** Already data (`homeNavigation.ts`).
 - **Project nav.** JSX.
 - **Administrator.** `GOD_SECTIONS` plus 12 static routes.
-- **Target.** A `UiSlot` registry with the slots `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section` and `capture-action`.
-- **Done:** panel tools. **Open:** the other slots, one at a time, each by the agent working on that screen.
+- **Target.** A `UiSlot` registry with the slots `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section`, `capture-action` and `workspace-layout`.
+- **Done:** panel tools, workspace layouts (hub/layout, `docs/helena-decisions/layout.md`). **Open:** the other slots, one at a time, each by the agent working on that screen.
 
 ### Templates and packs
 
@@ -249,7 +249,7 @@ In the API, `publishDomainEvent(init, tx?)` (in `shared/helena.ts`) publishes a 
 
 ### 3.6 UI slots
 
-The slots are `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section` and `capture-action`.
+The slots are `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section`, `capture-action` and `workspace-layout`.
 - A built-in slot renders a React component from the web bundle.
 - A plugin slot is a **frame**: a page from the plugin's `ui/` folder, served by the API at `/plugins/<id>/ui/…`. It runs in a sandboxed iframe (`allow-scripts allow-forms`, no same-origin) and carries a `sandbox` CSP of its own.
 
@@ -260,7 +260,20 @@ ctx.uiSlots.register({
 });
 ```
 
-The web app wires the panel today (`extensions/panelTools.tsx`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
+A `workspace-layout` slot is data only: areas that show the page, the panel's own tool or a tool of their own, side by side. It appears in the header's layout menu, and any panel tool, a plugin's included, can go into its areas:
+
+```ts
+ctx.uiSlots.register({
+  slot: 'workspace-layout', id: 'review', label: { en: 'Review', de: 'Prüfen' },
+  areas: [
+    { id: 'page', shows: 'page', side: 'page' },
+    { id: 'main', shows: 'main', side: 'panel' },
+    { id: 'board', shows: 'tool', tool: 'hello', side: 'panel' },  // the plugin's own panel tool
+  ],
+});
+```
+
+The web app wires the panel (`extensions/panelTools.tsx`) and the layouts (`extensions/workspaceLayouts.ts`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
 
 ### 3.7 Runtimes
 

@@ -28,6 +28,7 @@ export default function AppHeader({
   headerLayout,
   headerExtra,
   pageSlotRef,
+  pageHidden = false,
 }: {
   title: ReactNode;
   hasProject: boolean;
@@ -46,6 +47,9 @@ export default function AppHeader({
   // Receives the page slot's element (see ShellHeaderSlotCtx): a section page renders
   // its actions there instead of in a second row.
   pageSlotRef?: (element: HTMLElement | null) => void;
+  // The workspace layout shows no page (the chat or a tool in its place): the page's own
+  // controls stay mounted but out of sight, so they never act on a page nobody sees.
+  pageHidden?: boolean;
 }) {
   const t = useTranslations('nav');
   const { can } = usePermissions();
@@ -72,12 +76,15 @@ export default function AppHeader({
         {title}
       </div>
 
-      {single && headerExtra ? <ShellHeaderExtra store={headerExtra} /> : null}
+      {single && headerExtra && !pageHidden ? <ShellHeaderExtra store={headerExtra} /> : null}
       {single && (
         <div
           ref={pageSlotRef}
           data-slot="app-header-page"
-          className="flex min-w-0 flex-1 items-center justify-end gap-2 empty:hidden"
+          className={cn(
+            'flex min-w-0 flex-1 items-center justify-end gap-2 empty:hidden',
+            pageHidden && 'hidden',
+          )}
         />
       )}
 

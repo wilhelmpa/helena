@@ -278,6 +278,7 @@ export default function Shell({
                 headerLayout={headerLayout}
                 headerExtra={narrow ? null : headerExtra}
                 pageSlotRef={setHeaderSlot}
+                pageHidden={!workspaceLayout.resolved.pageVisible}
               />
               {headerLayout === 'single' && narrow && (
                 <div
