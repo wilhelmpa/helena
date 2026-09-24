@@ -74,6 +74,13 @@ const FOLLOW_INTERVAL_MS = 1_000;
 const TIER_INTERVAL_MS = 2_000;
 // The window a tier's own recent encoder output is measured over, for chooseTier.
 const ENCODE_WINDOW_MS = 3_000;
+// The window a viewer measures its downlink over (THROUGHPUT_WINDOW_MS in
+// useBrowserScreencast.ts). Its downlink is held against its tier's output only once both
+// windows cover that tier alone: right after a tier starts, its first keyframe (over a
+// megabyte at pixel ratio 2) makes its short output window read several times its real rate,
+// while the viewer's window still holds the tier before, and the difference read as a
+// shortfall dropped a viewer on a perfect connection to the worst tier every few seconds.
+const DOWNLINK_WINDOW_MS = 4_000;
 // The minimum span a tier's own kbps measurement must cover before it is trusted. Right after
 // an encoder (re)starts, the window can hold just its opening keyframe plus the next frame a
 // few milliseconds later: dividing that keyframe's size by a near-zero elapsed time produces an
@@ -490,9 +497,13 @@ class ScreencastStream {
 
   // A viewer's last reported round trip and downlink, how far behind its own acknowledged
   // receipt says it is (or, failing that, Node's own backlog figure) and how far it may be,
-  // how long since its last stats report, and its tier's own recent encoder output — the last
-  // two give chooseTier a read on the connection even when a backlog figure cannot.
+  // how long since its last stats report, and its tier's own recent encoder output once it can
+  // be compared (see DOWNLINK_WINDOW_MS) — the last two give chooseTier a read on the
+  // connection even when a backlog figure cannot.
   connectionOf(viewer) {
+    const entry = viewer.tierIndex === null ? null : this.tiers.get(TIERS[viewer.tierIndex].name);
+    const now = Date.now();
+    const settled = entry && now - entry.startedAt >= ENCODE_WINDOW_MS && now - viewer.videoStartedAt >= DOWNLINK_WINDOW_MS;
     return {
       downlinkKbps: viewer.downlinkKbps,
       rttMs: viewer.rttMs,
@@ -504,9 +515,9 @@ class ScreencastStream {
       // chooseTier's RETRY_COOLDOWN_MS).
       bufferedBytes: viewer.backlogBytes(),
       congestedBytes: this.allowanceOf(viewer),
-      feedbackAgeMs: Date.now() - viewer.lastStatsAt,
-      encodedKbps: viewer.tierIndex === null ? 0 : (this.tiers.get(TIERS[viewer.tierIndex].name)?.kbps() ?? 0),
-      droppedAgoMs: Date.now() - viewer.lastDroppedAt,
+      feedbackAgeMs: now - viewer.lastStatsAt,
+      encodedKbps: settled ? entry.kbps() : 0,
+      droppedAgoMs: now - viewer.lastDroppedAt,
     };
   }
 
