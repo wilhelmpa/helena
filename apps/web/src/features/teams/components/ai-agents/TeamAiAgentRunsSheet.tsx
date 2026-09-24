@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAgentSection } from '../../context/agentSection';
+import AgentRunModel from './AgentRunModel';
 import { useTranslations } from 'next-intl';
 
 // Run history for an agent, in a right-side sidebar. Shows the triggered runs (a
@@ -130,6 +131,14 @@ function RunItem({ run: r }: { run: AgentRun }) {
         {r.attempts > 1 && (
           <span className="shrink-0 text-muted-foreground">·{r.attempts} attempts</span>
         )}
+        {r.modelCheck && r.modelCheck.mismatch.length > 0 && (
+          <Badge
+            variant="outline"
+            className="shrink-0 border-status-waiting/50 text-status-waiting"
+          >
+            {t('runModel.badge')}
+          </Badge>
+        )}
         <span className="ms-auto flex shrink-0 items-center gap-4">
           <span className="w-12 text-end">
             {r.contextTokens !== undefined && <AgentContextSize tokens={r.contextTokens} />}
@@ -152,6 +161,7 @@ function RunItem({ run: r }: { run: AgentRun }) {
             <DetailBlock label={t('error')} value={r.lastError} />
           )}
           {r.output && <DetailBlock label={t('result')} value={r.output} />}
+          {r.modelCheck && <AgentRunModel check={r.modelCheck} />}
           {r.reflection && <ReflectionBlock reflection={r.reflection} />}
           {r.status === 'pending' && (
             <DetailBlock

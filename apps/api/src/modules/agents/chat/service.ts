@@ -28,6 +28,7 @@ import { appendReasoningPart, appendTextPart } from '../chat-parts';
 import type { ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { newChatThreadId } from '../core/runtime/thread-ids';
 import { touchRunner, type RunnerAgent } from '../runner/service';
+import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
 import { questionText, imagePaths, type ChatAttachment } from './attachments';
 import {
@@ -1061,9 +1062,13 @@ export async function finishMessage(
     usage?: ContextUsage | null;
     sessionLost?: boolean;
     model?: string;
+    runtime?: RunModelReport;
   },
 ): Promise<boolean> {
   await touchRunner(agentId);
+  const check = modelCheckOf(result.runtime);
+  // What the session really ran on wins over what the command named on its first line.
+  const model = result.runtime?.used?.model ?? result.model;
   if (result.status === 'failed' && result.sessionLost)
     return requeueWithoutSession(agentId, messageId);
   const rows = await db
@@ -1073,7 +1078,8 @@ export async function finishMessage(
       lastError:
         result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Answer failed') : null,
       finishedAt: new Date(),
-      ...(result.model && { model: result.model.slice(0, 200) }),
+      ...(model && { model: model.slice(0, 200) }),
+      ...(check && { modelCheck: check }),
       ...(result.usage && {
         inputTokens: result.usage.inputTokens,
         outputTokens: result.usage.outputTokens,

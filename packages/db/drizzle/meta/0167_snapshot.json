@@ -1,6 +1,6 @@
 {
-  "id": "53a98d06-fafe-4ad9-9729-da5e78761fcc",
-  "prevId": "a27d41c2-b63f-4f1c-a8bc-3f017383927a",
+  "id": "13543fd2-33fa-4dd0-a1ac-4653a0af4cba",
+  "prevId": "50cce884-13ca-4067-b9f3-f049ab58c6cb",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1456,6 +1456,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "model_check": {
+          "name": "model_check",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "input_tokens": {
           "name": "input_tokens",
           "type": "integer",
@@ -2543,6 +2549,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "model_check": {
+          "name": "model_check",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "reflection": {
           "name": "reflection",
           "type": "jsonb",
@@ -2816,7 +2828,7 @@
       "checkConstraints": {
         "agent_runtime_action_kind_check": {
           "name": "agent_runtime_action_kind_check",
-          "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory')"
+          "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory', 'rewrite-profile')"
         }
       },
       "isRLSEnabled": false

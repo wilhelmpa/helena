@@ -421,6 +421,8 @@
       "memory": "ذاكرة المحادثة",
       "memoryWindowLabel": "نافذة رسائل الذاكرة",
       "memoryWindowPlaceholder": "نافذة الرسائل الأخيرة",
+      "maxConcurrentChats": "المحادثات المتوازية",
+      "maxConcurrentChatsHint": "عدد محادثات هذا الوكيل التي يمكن للعضو تركها تجيب في الوقت نفسه. يُرفض أي إرسال يتجاوز الحد حتى تنتهي إحداها.",
       "toolAllow": "الأدوات المسموح بها",
       "mcpGrants": "أذونات MCP",
       "keysPlaceholder": "مفتاح واحد في كل سطر",
@@ -430,7 +432,15 @@
       "filePathPlaceholder": "SOUL.md أو instructions/موضوع.md",
       "filePathLabel": "مسار الملف المُدار {index}",
       "fileContentLabel": "محتوى الملف المُدار {index}",
-      "removeFile": "إزالة الملف المُدار {index}"
+      "removeFile": "إزالة الملف المُدار {index}",
+      "runtime": "بيئة التشغيل",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "يوفّر الخادم Hermes بنفسه ويُبقي ملفه متزامنًا.",
+      "runtimeCliHint": "يعمل على مشغّل بهذا الإعداد المسبق (helena-runner --agent {kind})؛ التعليمات والمهارات وخوادم MCP والنموذج والاستدلال تأتي من Helena."
     },
     "runtimeConflicts": {
       "title": "تم التغيير خارج Helena",
@@ -592,8 +602,8 @@
       "toolsetsReadOnly": "لا يستطيع إيقاف مجموعات الأدوات إلا الأعضاء الذين يمكنهم تعديل الوكلاء.",
       "noToolsets": "لم يُبلغ المنفّذ عن أي مجموعة أدوات.",
       "mcpServers": "خوادم MCP",
-      "mcpServersHint": "من إعدادات Hermes. أوقف واحد واحفظ علشان الوكيل ما يستخدموش.",
-      "mcpServersReadOnly": "من إعدادات Hermes. الأعضاء اللي يقدروا يعدّلوا الوكلاء بس هم اللي يقدروا يوقفوا واحد.",
+      "mcpServersHint": "تمنحها Helena لكل وكيل: خادمها الخاص ومتصفح المشروع. عطّل واحدًا واحفظ كي لا يستخدمه الوكيل.",
+      "mcpServersReadOnly": "تمنحها Helena لكل وكيل. لا يمكن تعطيلها إلا لمن يحق له تعديل الوكلاء.",
       "noMcpServers": "لا يوجد",
       "libraryMcpServers": "خوادم MCP بتاعة الفريق",
       "libraryMcpServersHint": "الخادم المُفعّل بيشتغل مع محادثات الوكيل وتشغيلاته بعد ما تحفظ.",
@@ -608,7 +618,7 @@
       "origin": {
         "agent": "مُتعلَّمة",
         "hub": "من Skills Hub",
-        "plan": "من Plan"
+        "plan": "من Helena"
       },
       "memory": "الذاكرة",
       "memoryHint": "يكتب Hermes هذه الذاكرة بنفسه، وتظهر هنا كما أبلغ عنها المنفّذ آخر مرة. يصل التعديل إلى الوكيل مع المزامنة التالية للمنفّذ.",
@@ -712,6 +722,51 @@
         "instructions": "التعليمات",
         "model": "النموذج/الاستدلال",
         "budgets": "الميزانيات"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "الملف الشخصي متزامن",
+        "drift": "الملف الشخصي مختلف",
+        "pending": "جارٍ تطبيق الإعدادات …",
+        "degraded": "تعذّر تطبيق الإعدادات",
+        "offline": "المشغّل غير متصل",
+        "unknown": "المشغّل لا يبلّغ عن ملفه"
+      },
+      "checked": "تم الفحص قبل {time}",
+      "rewrite": "إعادة الكتابة",
+      "rewriting": "جارٍ إعادة الكتابة …",
+      "rewriteQueued": "سيعيد المشغّل كتابة الملف عند المزامنة التالية.",
+      "drift": {
+        "not-linked": "config.yaml ليس رابطًا إلى إعداد Hermes المشترك.",
+        "managed-config": "لا يطبّق Hermes الإعداد الذي كتبته Helena.",
+        "mcp-unmanaged": "خادم MCP {server} مفعّل مع أن Helena لا تنصّ عليه.",
+        "mcp-missing": "خادم MCP {server} مفقود أو معطّل.",
+        "mcp-differs": "يعمل خادم MCP {server} بإعدادات مختلفة عن Helena.",
+        "mcp-unsupported": "لا يستطيع وقت التشغيل هذا تشغيل خادم MCP {server}.",
+        "setting-differs": "الإعداد {key} مختلف.",
+        "approval-guard": "تُنفَّذ الأوامر الخطرة دون حارس الموافقات في Helena.",
+        "probe-failed": "تعذّرت قراءة الملف."
+      },
+      "defaults": "الافتراضي لوقت التشغيل: {model} ({provider})، الاستدلال {reasoning}",
+      "servers": "خوادم MCP: {servers}",
+      "serversOff": "معطّلة: {servers}"
+    },
+    "runModel": {
+      "title": "النموذج",
+      "configured": "المضبوط: {value}",
+      "used": "نُفّذ على: {value}",
+      "notReported": "نُفّذ على: لم يُبلَّغ",
+      "mismatch": "مختلف: {what}",
+      "badge": "النموذج مختلف",
+      "source": {
+        "run": "من خطوة سير العمل",
+        "agent": "من الوكيل",
+        "default": "افتراضي الوكيل"
+      },
+      "part": {
+        "model": "النموذج",
+        "reasoning": "الاستدلال"
       }
     }
   },

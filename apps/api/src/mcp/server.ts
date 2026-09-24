@@ -37,6 +37,7 @@ export async function buildMcpServer(
   app: McpApp,
   credential: McpCredential,
   userId: string,
+  context: { runId?: number | null } = {},
 ): Promise<Server> {
   const server = new Server(
     // `name` is the stable programmatic identifier; `title` is the human-readable
@@ -94,7 +95,7 @@ export async function buildMcpServer(
       }
     }
     // Helena's policy engine decides an agent's call before it reaches the route.
-    const verdict = await decideMcpCall(tool, args, userId);
+    const verdict = await decideMcpCall(tool, args, userId, context.runId ?? null);
     if (verdict && verdict.outcome !== 'allow') {
       return {
         content: [{ type: 'text', text: verdict.message }],

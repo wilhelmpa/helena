@@ -3,6 +3,7 @@ import { and, desc, eq, gt, inArray, isNotNull, lt, sql } from 'drizzle-orm';
 import { intEnv, iso } from '#shared/lib';
 import type { AgentRunTrigger } from '../model';
 import { reflectionView, type ReflectionView } from '../runner/reflection';
+import type { ModelCheck } from '../runtime-sync/model-check';
 
 // The agent_run outbox: data access for triggered runs and run history. The api's
 // run poller claims pending rows, runs them, and records the outcome.
@@ -306,6 +307,8 @@ export interface AgentRunRow {
   reflection: ReflectionView | null;
   // The Autopilot level the run worked at; null for a run from before the Autopilot.
   autopilotLevel: number | null;
+  // The configured model and reasoning next to what the run's session really ran on.
+  modelCheck: ModelCheck | null;
   nextAttemptAt: string;
   createdAt: string;
 }
@@ -354,6 +357,7 @@ export async function listAgentRuns(
       blockedQuestion: agentRun.blockedQuestion,
       reflection: agentRun.reflection,
       autopilotLevel: agentRun.autopilotLevel,
+      modelCheck: agentRun.modelCheck,
       finishedAt: agentRun.finishedAt,
       nextAttemptAt: agentRun.nextAttemptAt,
       createdAt: agentRun.createdAt,
@@ -391,6 +395,7 @@ export async function listAgentRuns(
       blockedQuestion: r.blockedQuestion,
       reflection: reflectionView(r.reflection, r.finishedAt),
       autopilotLevel: r.autopilotLevel,
+      modelCheck: (r.modelCheck as ModelCheck | null) ?? null,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),
     })),

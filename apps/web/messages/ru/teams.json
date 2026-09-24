@@ -421,6 +421,8 @@
       "memory": "Память разговора",
       "memoryWindowLabel": "Окно сообщений памяти",
       "memoryWindowPlaceholder": "Окно последних сообщений",
+      "maxConcurrentChats": "Параллельные чаты",
+      "maxConcurrentChatsHint": "Сколько чатов этого агента участник может одновременно оставить отвечать. Отправка сверх лимита отклоняется, пока один из них не завершится.",
       "toolAllow": "Разрешённые инструменты",
       "mcpGrants": "Доступы MCP",
       "keysPlaceholder": "По одному ключу на строку",
@@ -430,7 +432,15 @@
       "filePathPlaceholder": "SOUL.md или instructions/тема.md",
       "filePathLabel": "Путь управляемого файла {index}",
       "fileContentLabel": "Содержимое управляемого файла {index}",
-      "removeFile": "Удалить управляемый файл {index}"
+      "removeFile": "Удалить управляемый файл {index}",
+      "runtime": "Среда выполнения",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "Hermes сервер предоставляет сам и держит его профиль синхронным.",
+      "runtimeCliHint": "Работает на runner с этим пресетом (helena-runner --agent {kind}); инструкции, навыки, MCP-серверы, модель и рассуждение приходят из Helena."
     },
     "runtimeConflicts": {
       "title": "Изменено вне Helena",
@@ -592,8 +602,8 @@
       "toolsetsReadOnly": "Выключать наборы инструментов могут только участники, которым разрешено редактировать агентов.",
       "noToolsets": "Раннер не сообщил ни одного набора инструментов.",
       "mcpServers": "Серверы MCP",
-      "mcpServersHint": "Из конфигурации Hermes. Выключите сервер и сохраните, чтобы агент его не использовал.",
-      "mcpServersReadOnly": "Из конфигурации Hermes. Выключить сервер могут только участники, которым можно редактировать агентов.",
+      "mcpServersHint": "Helena даёт их каждому агенту: собственный сервер и браузер проекта. Выключите один и сохраните, чтобы агент его не использовал.",
+      "mcpServersReadOnly": "Helena даёт их каждому агенту. Выключить может только тот, кто может редактировать агентов.",
       "noMcpServers": "Нет",
       "libraryMcpServers": "MCP-серверы команды",
       "libraryMcpServersHint": "Включённый сервер запускается с чатами и запусками агента после сохранения.",
@@ -608,7 +618,7 @@
       "origin": {
         "agent": "Изученный",
         "hub": "Из Skills Hub",
-        "plan": "Из Plan"
+        "plan": "Из Helena"
       },
       "memory": "Память",
       "memoryHint": "Hermes ведёт эту память сам; она показана в том виде, в каком раннер сообщил её последний раз. Изменение дойдёт до агента со следующей синхронизацией раннера.",
@@ -712,6 +722,51 @@
         "instructions": "Инструкции",
         "model": "Модель/reasoning",
         "budgets": "Бюджеты"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Профиль синхронизирован",
+        "drift": "Профиль отличается",
+        "pending": "Применение настроек …",
+        "degraded": "Не удалось применить настройки",
+        "offline": "Runner не в сети",
+        "unknown": "Runner не сообщает свой профиль"
+      },
+      "checked": "проверено {time} назад",
+      "rewrite": "Перезаписать",
+      "rewriting": "Перезапись …",
+      "rewriteQueued": "Runner перезапишет профиль при следующей синхронизации.",
+      "drift": {
+        "not-linked": "config.yaml — не ссылка на общую конфигурацию Hermes.",
+        "managed-config": "Hermes не применяет конфигурацию, записанную Helena.",
+        "mcp-unmanaged": "MCP-сервер {server} включён, хотя Helena его не предусматривает.",
+        "mcp-missing": "MCP-сервер {server} отсутствует или выключен.",
+        "mcp-differs": "MCP-сервер {server} работает с другими настройками, чем в Helena.",
+        "mcp-unsupported": "Эта среда не может запустить MCP-сервер {server}.",
+        "setting-differs": "Настройка {key} отличается.",
+        "approval-guard": "Опасные команды выполняются без охраны одобрений Helena.",
+        "probe-failed": "Не удалось прочитать профиль."
+      },
+      "defaults": "По умолчанию в среде: {model} ({provider}), рассуждение {reasoning}",
+      "servers": "MCP-серверы: {servers}",
+      "serversOff": "выключены: {servers}"
+    },
+    "runModel": {
+      "title": "Модель",
+      "configured": "Настроено: {value}",
+      "used": "Выполнено на: {value}",
+      "notReported": "Выполнено на: не сообщено",
+      "mismatch": "Отличается: {what}",
+      "badge": "Модель отличается",
+      "source": {
+        "run": "из шага процесса",
+        "agent": "из агента",
+        "default": "по умолчанию агента"
+      },
+      "part": {
+        "model": "модель",
+        "reasoning": "рассуждение"
       }
     }
   },

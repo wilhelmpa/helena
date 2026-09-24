@@ -39,8 +39,20 @@ async function projectOfCall(
   return null;
 }
 
-// The run the call comes from: the agent's one claimed, unfinished run in the project.
-async function runOfCall(agentId: number, projectId: number | null): Promise<number | null> {
+// The run the call comes from: the one its runtime names (x-helena-run) when it is the
+// agent's, otherwise the agent's one claimed, unfinished run in the project.
+async function runOfCall(
+  agentId: number,
+  projectId: number | null,
+  named: number | null,
+): Promise<number | null> {
+  if (named != null) {
+    const [run] = await db
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(and(eq(agentRun.id, named), eq(agentRun.agentId, agentId)));
+    if (run) return run.id;
+  }
   if (projectId == null) return null;
   const rows = await db
     .select({ id: agentRun.id })
@@ -62,6 +74,7 @@ export async function decideMcpCall(
   tool: Pick<McpRouteTool, 'name' | 'annotations' | 'category' | 'scope'>,
   args: Record<string, unknown>,
   callerUserId: string,
+  namedRunId: number | null = null,
 ): Promise<EngineDecision | null> {
   const category = categoryFromAnnotations(tool.annotations, tool.category);
   if (category === 'read' || category === 'report') return null;
@@ -73,7 +86,7 @@ export async function decideMcpCall(
     agentId: agent.id,
     teamId: agent.teamId,
     projectId,
-    runId: await runOfCall(agent.id, projectId),
+    runId: await runOfCall(agent.id, projectId, namedRunId),
     category,
     scope: tool.scope ?? (category === 'send' ? 'external' : 'workspace'),
     tool: tool.name,

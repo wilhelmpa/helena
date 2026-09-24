@@ -82,7 +82,13 @@ export const PRESETS: Record<PresetName, Preset> = {
       '--permission-mode',
       'auto',
     ],
-    taskArgs: claudeAutopilotArgs,
+    // The agent's model and reasoning in Helena (without them Claude Code uses its own),
+    // and Helena's Autopilot: the policy hook and, at level 0, plan mode.
+    taskArgs: (settings) => [
+      ...(settings.model ? ['--model', settings.model] : []),
+      ...(settings.thinkingLevel ? ['--effort', settings.thinkingLevel] : []),
+      ...claudeAutopilotArgs(settings),
+    ],
     tail: [],
   },
 
@@ -100,10 +106,13 @@ export const PRESETS: Record<PresetName, Preset> = {
       '-c',
       'sandbox_mode="workspace-write"',
     ],
-    // Codex has no hook to ask Helena before a tool call; at Autopilot level 0 its sandbox
-    // is read-only, so it can only propose.
-    taskArgs: ({ autopilotLevel }) =>
-      autopilotLevel === 0 ? ['-c', 'sandbox_mode="read-only"'] : [],
+    // Both `exec` and `exec resume` take -m and -c. Codex has no hook to ask Helena before a
+    // tool call; at Autopilot level 0 its sandbox is read-only, so it can only propose.
+    taskArgs: ({ model, thinkingLevel, autopilotLevel }) => [
+      ...(model ? ['-m', model] : []),
+      ...(thinkingLevel ? ['-c', `model_reasoning_effort=${JSON.stringify(thinkingLevel)}`] : []),
+      ...(autopilotLevel === 0 ? ['-c', 'sandbox_mode="read-only"'] : []),
+    ],
     tail: ['-'],
   },
 

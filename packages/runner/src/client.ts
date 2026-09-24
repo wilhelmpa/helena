@@ -2,6 +2,7 @@ import type { AgUiEvent, ContextUsage } from './agui';
 import type { RunnerConfig } from './config';
 import type { LoginUse, WebLogin, WorkRef } from './logins';
 import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
+import type { RunModelReport } from './runtime';
 
 // The agent's API key is the whole authorization: it identifies the agent, and the server
 // only ever hands back that agent's work.
@@ -164,6 +165,12 @@ export class Client {
     await this.post('/agent-runtime/status', status);
   }
 
+  // That the runner started (null) or why its service could not start it, for Helena's
+  // health overview. A server that predates the route answers 404.
+  async reportRunnerHealth(error: string | null): Promise<void> {
+    await this.post('/agent-runtime/runner-health', { error });
+  }
+
   async claim(): Promise<Run | null> {
     const res = await this.post('/agent-runs/claim');
     const body = (await res.json()) as { run: Run | null };
@@ -204,6 +211,8 @@ export class Client {
       usage?: ContextUsage | null;
       sessionId?: string;
       toolCalls?: number;
+      // The model and reasoning requested, the runtime's defaults and what really ran.
+      runtime?: RunModelReport;
     },
   ): Promise<ReflectionRequest | null> {
     const res = await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);
@@ -252,6 +261,7 @@ export class Client {
       usage?: ContextUsage | null;
       sessionLost?: boolean;
       model?: string;
+      runtime?: RunModelReport;
     },
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);

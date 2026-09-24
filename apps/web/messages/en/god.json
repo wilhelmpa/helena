@@ -375,6 +375,10 @@
     "janitorCleaned": "{count, plural, one {cleaned up # thing} other {cleaned up # things}}",
     "janitorNeverRan": "has not run yet",
     "resuming": "{count, plural, one {# run is} other {# runs are}} resuming after a crash",
-    "needsResumeReview": "{count, plural, one {# run} other {# runs}} reached the resume limit and need a look"
+    "needsResumeReview": "{count, plural, one {# run} other {# runs}} reached the resume limit and need a look",
+    "agentSync": {
+      "title": "Agent profiles",
+      "synced": "{synced} of {total} in sync"
+    }
   }
 }
