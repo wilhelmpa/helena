@@ -21,6 +21,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-15 | done | see git log | Next.js nonce pattern, no library |
 | WEB-07 | done | see git log | next-intl `timeZone`, `@date-fns/tz` 1.5.0 (MIT), date-fns, `Intl.DurationFormat` |
 | WEB-05 | done (panels later, as the audit says) | see git log | Radix AlertDialog, RadioGroup, ToggleGroup, Dialog (`radix-ui`) |
+| WEB-06 | done (header/MIME rename skipped) | see git log | ESLint bulk suppressions, react-hooks 7.1.1, jsx-a11y 6.10.2, better-tailwindcss 4.7.0, `react/jsx-no-literals` |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -154,3 +155,13 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - The narrow chat list (`ChatListDrawer`) is a Radix **Dialog** rendered in place (no portal, so it stays inside the chat's own box): focus is trapped and restored, the page behind is inert, Escape and a click beside it close it; a visually hidden close button replaces the unlabeled backdrop button.
 - `ResizeGrip` is a focusable `role="separator"` that the arrow keys move (10 px, Shift 50 px). Moving the resizable layouts to `react-resizable-panels` stays for later, as the audit says (persisted pixel widths need a spike).
 - Checked in the browser: alert dialog role, focus on Cancel, outside click ignored, Escape closes; radio groups select by click and by arrow keys (a CDP key with a real hold: Radix checks on focus while the key is down); the provider toggle renders as radios. The drawer check was cut short when Kingston went down.
+
+## WEB-06: a lint toolchain instead of regexes and a ratchet
+
+- **React Hooks 7** (`packages/eslint-config`): the recommended set now includes the React Compiler checks (`set-state-in-effect`, `refs`, `purity`, `immutability`, `static-components`, …), which catch the class of the "Maximum update depth" incident. 125 existing findings (80 `set-state-in-effect`).
+- **jsx-a11y** recommended, **`react/jsx-no-literals`** (text a person reads comes from the message files; punctuation allowed), and **eslint-plugin-better-tailwindcss** in `apps/web`: `enforce-logical-properties` for the inline axis only (left/right → start/end; the block axis and sizes are ignored, the UI has no vertical writing mode) and `no-restricted-classes` for the design rules (raw palette classes, arbitrary text/row sizes, off-scale type), which now match class names with any variant instead of regexes over every string literal. Raw hex/rgb in style objects stays a `no-restricted-syntax` rule.
+- **ESLint bulk suppressions** replace the warn level plus `lintRatchet.test.ts`: every rule is an error, and the 592 existing findings in 285 files are listed in `apps/web/eslint-suppressions.json` (prettier-ignored, ESLint writes it). New code fails; `bunx eslint --prune-suppressions .` in `apps/web` shrinks the list after a fix.
+- **lefthook:** the web app lints from its own directory (a separate `eslint-web` command with `root: apps/web/`), because the suppressions are keyed relative to it; it skips layout fixes (`--fix-type problem,suggestion`) so a suppressed physical class is never rewritten behind anyone's back, and passes on unpruned suppressions like `bun run lint` does (a branch that removes a violation elsewhere never fails on it).
+- Updated docs that named the ratchet: `docs/volition/design-handover.md` and the agent-pool skill reference `bundles/agent-pool/skills/review-ablauf/refs/helena-repo-regeln.md`.
+- **Skipped on purpose:** renaming the `x-volition-local-access` header and the `application/x-volition-file-entry` drag type. Both are existing volition names, which the binding agent rules leave to the one planned rename step (hub/oss-packaging's rename kit), and the header also needs the live nginx config in the same step.
+- CI wiring stays with hub/oss-packaging, as the audit says.

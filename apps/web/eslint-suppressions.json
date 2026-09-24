@@ -1,0 +1,1643 @@
+{
+  "src/app/[identifier]/page.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/components/common/ResizeGrip.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-tabindex": {
+      "count": 1
+    }
+  },
+  "src/components/common/agent-chat/AgentChatSpeakButton.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/common/agent-chat/AgentChatSpeechInput.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/common/agent-chat/AgentChatTranscript.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/common/attachments/AttachmentViewer.tsx": {
+    "jsx-a11y/media-has-caption": {
+      "count": 1
+    }
+  },
+  "src/components/common/chart/ChartDownload.tsx": {
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/components/common/editor/EditorLinkPreview.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/components/common/editor/EditorMentionMenu.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/common/editor/EditorResizableImage.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/common/editor/EditorSlashMenu.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/common/editor/MarkdownEditor.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/use-memo": {
+      "count": 1
+    }
+  },
+  "src/components/common/editor/useEditorLinkPreview.test.ts": {
+    "react-hooks/globals": {
+      "count": 1
+    }
+  },
+  "src/components/common/fields/DatePill.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/components/common/fields/DateTimePill.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/components/common/fields/InitiativeStatusSelect.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/common/files/FileViewerContent.tsx": {
+    "jsx-a11y/media-has-caption": {
+      "count": 2
+    }
+  },
+  "src/components/common/inputs/SecretInput.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/components/common/overlay/Modal.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/common/overlay/NameDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/components/common/permissions/PermissionMatrix.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    }
+  },
+  "src/components/common/permissions/PermissionsPopover.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    }
+  },
+  "src/components/common/share/ShareDialog.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "src/components/common/timeline/TimelineHeader.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/components/common/timeline/TimelineLabelResizer.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/components/layout/AppSidebar.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/layout/AreaDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/components/layout/CommandPalette.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/layout/CopyProjectForm.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/components/layout/CustomFieldMenu.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/components/layout/CustomFieldRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/layout/GodShell.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/layout/InitiativeBreadcrumbName.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/layout/NewProjectForm.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/components/layout/NewProjectModal.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/layout/NewProjectPreset.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/layout/PageToolbar.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/layout/SidebarHomeNav.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/layout/UserMenu.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/layout/WorkspaceBrowserDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 6
+    }
+  },
+  "src/components/layout/WorkspacePanel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/locale-toggle.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/mail/MailAccountDialog.tsx": {
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/components/providers.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/components/theme-toggle.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/ui/alert-dialog.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/components/ui/attachment.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/ui/bubble.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 3
+    }
+  },
+  "src/components/ui/calendar.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 9
+    }
+  },
+  "src/components/ui/command.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/ui/context-menu.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 10
+    }
+  },
+  "src/components/ui/dialog.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 3
+    }
+  },
+  "src/components/ui/dropdown-menu.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 8
+    }
+  },
+  "src/components/ui/field.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/components/ui/input-group.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 8
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/components/ui/marker.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 3
+    }
+  },
+  "src/components/ui/pagination.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    },
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/components/ui/select.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 3
+    }
+  },
+  "src/components/ui/sheet.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    }
+  },
+  "src/components/ui/sidebar.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 20
+    },
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/components/ui/table.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/context/useHotkeys.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/account/components/accounts/AccountTelegramConnection.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/account/components/profile/AccountProfileDetailsForm.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/account/components/security/AccountSecurityTotpEnrollDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/panel/NativeChatWorkspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatAutoSpeakToggle.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatComposer.tsx": {
+    "react-hooks/immutability": {
+      "count": 4
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatDaySeparator.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatDictationButton.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatMessageBubbleUser.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatMessageList.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatPromptVariablesDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatRenameDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatSpeakButton.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatThreadView.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "src/features/ai-chat/components/workspace/ChatToIssueDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/hooks/useAutoSpeak.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/hooks/useComposerCommands.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/hooks/usePlanChat.ts": {
+    "react-hooks/immutability": {
+      "count": 2
+    },
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/ai-chat/utils/artifacts.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/api-keys/components/ApiKeysCreateDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/cycles/components/CycleForm.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/cycles/components/list/CycleInfoPopover.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/cycles/components/list/CycleTableRow.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    }
+  },
+  "src/features/cycles/components/list/CycleTimelineRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "src/features/dashboards/components/AddWidgetDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/dashboards/components/DashboardNameDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/dashboards/components/widgets/ActivityFeedWidget.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/dashboards/components/widgets/AgentRunsWidget.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/dashboards/components/widgets/AgentWorkloadWidget.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 6
+    }
+  },
+  "src/features/dashboards/components/widgets/BreakdownWidget.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 2
+    }
+  },
+  "src/features/dashboards/components/widgets/PulseWidget.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/dashboards/components/widgets/RecentIssuesWidget.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/dashboards/components/widgets/ThroughputWidget.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 2
+    },
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/documents/HomeDocumentsPage.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/documents/components/DocumentConflictBanner.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 4
+    }
+  },
+  "src/features/documents/components/DocumentConflictCopies.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 5
+    }
+  },
+  "src/features/documents/components/DocumentEditor.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/documents/components/DocumentEditorCanvas.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/documents/components/DocumentMarkdownEditor.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    },
+    "react-hooks/use-memo": {
+      "count": 1
+    }
+  },
+  "src/features/documents/components/DocumentPageTitle.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/documents/components/DocumentSaveStatus.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 2
+    }
+  },
+  "src/features/documents/components/DocumentSyncConflicts.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 4
+    }
+  },
+  "src/features/documents/components/DocumentTree.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/god/components/authentication/RegistrationModePicker.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/god/components/projects/GodProjectDetailPanel.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/god/components/projects/GodProjectsTable.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/god/components/teams/GodTeamDetailPanel.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/god/components/teams/GodTeamsTable.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/god/components/users/GodUserDetailPanel.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/god/components/users/GodUsersTable.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/home/components/home/HomeSystemHealth.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/inbox/InboxWorkspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/inbox/components/InboxListItem.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "src/features/inbox/components/InboxSnoozeCalendar.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/inbox/components/MailThreadRow.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 1
+    }
+  },
+  "src/features/inbox/components/MailThreadToolbar.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 1
+    }
+  },
+  "src/features/inbox/components/ProjectPickerDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/inbox/utils/mailHtml.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/initiatives/components/detail/InitiativeFeedRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/initiatives/components/detail/InitiativeStateBreakdown.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "src/features/initiatives/components/shared/HealthInfoPopover.tsx": {
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/features/initiatives/hooks/useInitiativeTabOrder.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/IssueImageAnnotatorToolbar.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/actions/IssueActionsBar.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/actions/IssueContextMenu.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/actions/SubtaskDisposalChoice.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/create/NewIssueAttachButton.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/create/NewIssueBodySwitcher.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/create/NewIssueModal.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/ActivityLine.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/issue/components/detail/CommentComposer.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 4
+    },
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    },
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/features/issue/components/detail/IssueActivityFeed.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueActivityGroup.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    },
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueAgentTeamSteps.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 6
+    }
+  },
+  "src/features/issue/components/detail/IssueChecklistEditableText.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueChecklistGrip.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/issue/components/detail/IssueDevelopmentCreateDialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/issue/components/detail/IssueDevelopmentLinkDialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueDevelopmentStateBadge.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 12
+    }
+  },
+  "src/features/issue/components/detail/IssueLinkDialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueRefRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueTimelineBar.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueTimelineCompact.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueTimelineLane.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/detail/IssueTimelineLanes.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 4
+    }
+  },
+  "src/features/issue/components/detail/IssueWorklogForm.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/fields/CycleSelect.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/issue/components/fields/EstimatePill.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/fields/InitiativeSelect.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/issue/components/fields/InlineTextField.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/fields/InlineUrlField.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/fields/IssueCustomFieldControl.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/fields/IssueCustomFieldPill.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    },
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    },
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/issue/components/shared/IssueBadges.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/issue/hooks/useExitOnClickOutside.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/issue/hooks/useFilePaste.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/issue/hooks/useIssueCommands.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "src/features/issue/hooks/usePersistedOpen.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/mail/components/ComposeEditor.tsx": {
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/mail/hooks/useDraftAutosave.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/members/components/members/MemberDescriptionDialog.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/notes/components/NoteBoardNameDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/notes/components/NoteBoardTab.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "src/features/notes/components/NoteCanvasTitle.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/notes/components/StickerEditor.tsx": {
+    "react-hooks/use-memo": {
+      "count": 1
+    }
+  },
+  "src/features/notes/hooks/useCanvasAutosave.ts": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/features/notes/hooks/useNoteBoardMru.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/owner-terminal/OwnerTerminalPanel.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/owner-terminal/components/GrantBanner.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/owner-terminal/components/StepUpDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/pipelines/components/editor/PipelineAgentStepForm.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/pipelines/components/editor/PipelineRoleRow.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/pipelines/components/project/PipelineRoleMapping.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/pipelines/components/project/WorkflowRunLimitSettings.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/pipelines/hooks/usePipelineDraft.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/project-files/HomeFilesPage.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/project-files/components/FileNameDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/routines/components/RoutineDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/routines/components/RoutineSuggestionsInput.test.tsx": {
+    "react-hooks/globals": {
+      "count": 1
+    }
+  },
+  "src/features/routines/components/RoutinesList.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/actions/SettingsActionDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/actions/SettingsActionIconPicker.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    },
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/actions/SettingsActionRow.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/actions/SettingsActions.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/actions/SettingsEffectEditor.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/browser/SettingsBrowserGateway.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/crud/SettingsInlineEditForm.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/crud/SettingsInlineForm.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/custom-fields/CustomFieldsImportDialog.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/custom-fields/CustomFieldsToolbar.tsx": {
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/features/settings/components/custom-fields/SettingsCustomFieldDialog.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    },
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/git/GitProviderConnectDialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/git/GitRepositoryPickerDialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/issue-templates/SettingsIssueTemplateDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/issue-templates/SettingsIssueTemplates.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/issue-types/IssueTypesToolbar.tsx": {
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/features/settings/components/issue-types/SettingsIssueTypes.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/labels/LabelsToolbar.tsx": {
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/features/settings/components/labels/SettingsLabelGroupSection.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 6
+    }
+  },
+  "src/features/settings/components/network/AgentNetworkModePicker.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/network/SettingsNetworkForm.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 4
+    }
+  },
+  "src/features/settings/components/network/SettingsNetworkLogRow.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/states/SettingsDeleteStateDialog.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/states/SettingsStateRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/settings/components/states/SettingsStates.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/states/StatesToolbar.tsx": {
+    "react/jsx-no-literals": {
+      "count": 2
+    }
+  },
+  "src/features/settings/components/webhooks/JsonViewer.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/webhooks/SettingsWebhookDeliveriesSheet.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/settings/components/webhooks/SettingsWebhookDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/webhooks/SettingsWebhooks.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/workflows/ControlPlaneWorkflowConfiguration.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/components/workflows/ProjectTemplatesPanel.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/settings/hooks/useAgentNetworkForm.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/hooks/useAutoArchiveForm.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/hooks/useEstimatesForm.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/settings/hooks/useSubtaskAutomationForm.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/NewTeamFromQuery.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/NewTeamModal.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/agent-skills/SkillCreateDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    },
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/agent-skills/SkillEditDialog.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/agent-skills/SkillFileList.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/agent-tools/ToolPicker.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/ai-agents/AgentInstructionsField.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 2
+    }
+  },
+  "src/features/teams/components/ai-agents/AgentRunnerHelpSheet.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/ai-agents/AgentSheetForm.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "src/features/teams/components/ai-agents/AgentTemplateField.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/ai-agents/AgentTokenSection.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/ai-agents/AgentTriggersSection.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 3
+    }
+  },
+  "src/features/teams/components/ai-agents/ProjectAgentAssignmentDialog.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/ai-agents/TeamAiAgentFields.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    },
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/ai-agents/TeamAiAgentRunsSheet.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 3
+    },
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/ai-agents/TeamAiAgents.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/integrations/CredentialForm.tsx": {
+    "react/jsx-no-literals": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/integrations/IntegrationPicker.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    },
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/projects/TeamProjectDeleteDialog.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/projects/TeamProjectEditModal.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/projects/TeamProjectPanel.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/roles/RoleEditorPanel.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 6
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/WorkItemsPage.tsx": {
+    "jsx-a11y/no-autofocus": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/calendar/CalendarDayCell.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/calendar/CalendarDayChip.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/calendar/CalendarDayOverflow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/calendar/CalendarUnscheduledCard.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/calendar/CalendarUnscheduledPanel.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/calendar/CalendarView.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/kanban/BoardCard.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/kanban/BoardColumn.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/kanban/BulkActionBar.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/kanban/CardOverlay.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/kanban/FlatBoard.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/kanban/IssueCardLinks.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/kanban/IssueCardSubtasks.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/kanban/SwimlaneBoard.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/public/PublicIssueOverlay.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/shared/DropLine.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/table/TableColumnResizer.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/table/TableRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 3
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/table/TableRowLinks.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/table/TableRowSubtasks.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/table/TableSubHeader.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/timeline/TimelineBar.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 2
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/features/work-items/components/timeline/TimelineGroupRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 3
+    }
+  },
+  "src/features/work-items/components/timeline/TimelineIssueRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/components/timeline/TimelineLinkRows.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    }
+  },
+  "src/features/work-items/components/timeline/TimelineSubgroupRow.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    }
+  },
+  "src/features/work-items/components/timeline/TimelineSubtaskRows.tsx": {
+    "better-tailwindcss/enforce-logical-properties": {
+      "count": 5
+    },
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 2
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/context/useSelection.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/context/useSubtasks.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/work-items/hooks/useTableColumnWidths.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/use-mobile.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/useAgentChat.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/hooks/useBrowserLiveInput.ts": {
+    "react-hooks/preserve-manual-memoization": {
+      "count": 1
+    }
+  },
+  "src/hooks/useBrowserScreencast.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/useExitOnEscape.ts": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/hooks/useMailCompose.test.tsx": {
+    "react-hooks/globals": {
+      "count": 1
+    }
+  },
+  "src/hooks/useOverlays.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/usePersistedBoolean.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/usePersistedSet.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/usePersistedWidth.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/useWorkspaceNavigation.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/useWorkspacePanel.test.tsx": {
+    "react-hooks/globals": {
+      "count": 1
+    }
+  },
+  "src/hooks/useWorkspacePanel.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/utils/viewIcons.tsx": {
+    "react-hooks/static-components": {
+      "count": 1
+    }
+  }
+}

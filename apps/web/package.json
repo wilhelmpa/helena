@@ -7,7 +7,7 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "eslint .",
+    "lint": "eslint --pass-on-unpruned-suppressions .",
     "typecheck": "tsc --noEmit",
     "test": "bun test --preload ./test/setup.ts --isolate"
   },
@@ -78,6 +78,7 @@
     "@types/react-dom": "^19.2.4",
     "@types/react-grid-layout": "^2.1.0",
     "eslint": "^9.39.0",
+    "eslint-plugin-better-tailwindcss": "^4.7.0",
     "eslint-plugin-i18n-json": "^4.0.1",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4.3.3",
