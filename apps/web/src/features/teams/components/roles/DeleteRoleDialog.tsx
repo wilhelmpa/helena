@@ -55,7 +55,7 @@ export default function DeleteRoleDialog({
     return (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{t('deleteInUse')}</p>
-        <ul className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
+        <ul className="space-y-1 rounded-lg border border-sidebar-border bg-card p-3 text-sm">
           {counts.map((entry) => (
             <li key={entry.label} className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">{entry.label}</span>

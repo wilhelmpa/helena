@@ -56,7 +56,7 @@ export default function AgentMemoryEntry({
         )}
       </div>
       {entry.content.trim() ? (
-        <div className="max-h-72 overflow-y-auto rounded-md bg-muted/40 px-3 py-2 text-sm">
+        <div className="max-h-72 overflow-y-auto rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm">
           <Markdown>{entry.content}</Markdown>
         </div>
       ) : (
