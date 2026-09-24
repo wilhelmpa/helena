@@ -562,7 +562,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         description:
           'Send a prompt to an internal AI agent and return its answer. Only an internal agent ' +
           'runs here; an external one has no model config and returns 400.',
-        ...mcpTool('run_ai_agent'),
+        ...mcpTool('run_ai_agent', undefined, 'execute'),
       },
     },
   )

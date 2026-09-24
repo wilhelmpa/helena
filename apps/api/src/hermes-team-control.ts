@@ -32,6 +32,7 @@ import { getMembership } from './modules/members/service';
 import { getProjectByKey } from './modules/projects/service';
 import { bumpControlPlaneRevision } from './modules/sync/service';
 import { pipelineControl } from './modules/pipelines/control';
+import { publishDomainEvent } from '#shared/helena';
 
 const REF = /^[a-z][a-z0-9-]*:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const IDEMPOTENCY = /^[a-f0-9]{64}$/;
@@ -592,6 +593,7 @@ export async function dispatchRoutine(body: unknown) {
   const mode = input?.mode === 'new' || input?.mode === 'reopen' ? input.mode : null;
   const taskRef = input?.taskRef === undefined ? undefined : ref(input.taskRef, 'task');
   const actorId = input?.actorId === undefined ? undefined : text(input.actorId, 200);
+  const routineId = text(input?.routineId, 200) ?? null;
   if (
     !projectRef ||
     !agentRef ||
@@ -633,10 +635,29 @@ export async function dispatchRoutine(body: unknown) {
 
   const actor = actorId && (await getMembership(projectRow.id, actorId)) ? actorId : null;
   const finish = async (checkpoint: RoutineCheckpoint) => {
-    await db
-      .update(projectSetting)
-      .set({ value: { ...checkpoint, phase: 'done' }, updatedAt: new Date() })
-      .where(and(eq(projectSetting.projectId, projectRow.id), eq(projectSetting.key, key)));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(projectSetting)
+        .set({ value: { ...checkpoint, phase: 'done' }, updatedAt: new Date() })
+        .where(and(eq(projectSetting.projectId, projectRow.id), eq(projectSetting.key, key)));
+      await publishDomainEvent(
+        {
+          type: 'helena.routine.fired',
+          projectId: projectRow.id,
+          subject: `routines/${routineId ?? idempotencyKey}`,
+          actor: actor ? `user:${actor}` : 'system',
+          data: {
+            routineId,
+            fireId: idempotencyKey,
+            agentId: agent.id,
+            projectId: projectRow.id,
+            taskRef: checkpoint.taskRef,
+            mode: checkpoint.outcome === 'reopened' ? 'reopen' : 'new',
+          },
+        },
+        tx,
+      );
+    });
     await bumpControlPlaneRevision(projectRow.id);
     return answer(checkpoint);
   };

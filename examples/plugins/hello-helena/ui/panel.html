@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hello Helena</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font:
+          13px/1.5 Inter,
+          system-ui,
+          sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 0 0 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Hello Helena</h1>
+    <p>This panel tool comes from the example plugin in examples/plugins/hello-helena.</p>
+    <p>It runs in a sandboxed frame: it has no access to Helena's page or session.</p>
+    <p id="now"></p>
+    <script>
+      document.getElementById('now').textContent = new Date().toLocaleString();
+    </script>
+  </body>
+</html>

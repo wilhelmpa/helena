@@ -1,0 +1,41 @@
+{
+  "name": "@helena/sdk",
+  "version": "0.1.0",
+  "description": "Helena's extension points: typed contracts, registries, the plugin manifest and loader, and the domain event envelope",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./bundles": "./src/server/bundle-files.ts",
+    "./web": "./src/web.ts",
+    "./plugin.schema.json": "./schema/helena.plugin.schema.json",
+    "./bundle.schema.json": "./schema/helena.bundle.schema.json"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "schema": "bun src/server/write-schema.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@standard-schema/spec": "^1.1.0",
+    "semver": "^7.7.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/semver": "^7.8.0",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  },
+  "files": [
+    "src",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ]
+}

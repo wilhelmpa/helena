@@ -26,3 +26,19 @@ export {
   readNotificationConfig,
   type NotificationConfig,
 } from './domains/notification-settings';
+export {
+  WEBHOOK_CONSUMER_ID,
+  WEBHOOK_EVENT_PATTERNS,
+  WEBHOOK_EVENT_SHAPE,
+  fanOutWebhooks,
+  webhookEventOf,
+  type WebhookEventName,
+} from './domains/webhook-fanout';
+export {
+  DEFAULT_PLUGIN_SETTINGS,
+  PLUGIN_SETTINGS_KEY,
+  getPluginSettings,
+  pluginsDir,
+  setPluginSettings,
+  type PluginSettings,
+} from './domains/plugins';

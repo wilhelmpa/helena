@@ -805,5 +805,22 @@
   "settingState": {
     "on": "Activé",
     "off": "Désactivé"
+  },
+  "templateBundles": {
+    "importAction": "Importer des modèles",
+    "exportAction": "Exporter les modèles",
+    "importTitle": "Importer des modèles",
+    "counts": "{agents} modèles d'agents · {skills} compétences · {servers} serveurs MCP",
+    "chooseFile": "Choisir un fichier de paquet",
+    "fileChosen": "Fichier : {name}",
+    "dryRun": "Vérifier seulement (ne rien modifier)",
+    "update": "Écraser les différences",
+    "check": "Vérifier",
+    "import": "Importer",
+    "close": "Fermer",
+    "failed": "Cela n'a pas fonctionné.",
+    "notJson": "Le fichier n'est pas un paquet JSON.",
+    "summary": "{written} écrits · {unchanged} inchangés · {drift} différents · {warnings} avertissements",
+    "summaryDryRun": "Vérification seule, rien modifié · {unchanged} inchangés · {drift} différents · {warnings} avertissements"
   }
 }

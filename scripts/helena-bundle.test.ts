@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'bun:test';
 import { parseBundleJson, validateBundle, type TemplateBundle } from './helena-bundle.ts';
 import { readBundleDir, writeBundleDir } from './helena-bundle-files.ts';
+import { checkBundle } from '../packages/sdk/src/server/bundle-schema.ts';
 
 const BUNDLES = join(import.meta.dir, '..', 'bundles');
 const bundleDirs = readdirSync(BUNDLES).map((name) => join(BUNDLES, name));
@@ -13,6 +14,8 @@ describe.each(bundleDirs)('bundle %s', (dir) => {
 
   test('is valid', () => {
     expect(validateBundle(bundle)).toEqual([]);
+    // The published JSON Schema's shape holds too (@helena/sdk/bundle.schema.json).
+    expect(checkBundle(JSON.parse(JSON.stringify(bundle)))).toEqual(bundle);
   });
 
   test('reads back the same after writing it out', () => {

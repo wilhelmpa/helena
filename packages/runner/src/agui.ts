@@ -1,4 +1,6 @@
+import type { RuntimeStreamEvent, RuntimeStreamParser } from '@helena/sdk';
 import type { OutputFormat } from './config';
+import { streamParserFor } from './runtimes';
 
 // Turns what the command prints into AG-UI 1.0 events (https://docs.ag-ui.com), which is
 // what the server stores and the chat reads. A CLI that reports its own stream also carries
@@ -87,6 +89,8 @@ export class AnswerStream {
   // The flush in flight, so the next one waits for it instead of racing it.
   private sending: Promise<void> = Promise.resolve();
   private readonly usage: UsageReader;
+  // A plugin runtime's own format, read by the parser it registered.
+  private readonly parser: RuntimeStreamParser | undefined;
 
   constructor(
     private readonly format: OutputFormat,
@@ -95,6 +99,7 @@ export class AnswerStream {
     private readonly send: (events: AgUiEvent[]) => Promise<void>,
   ) {
     this.usage = new UsageReader(format);
+    this.parser = streamParserFor(format);
     this.messageId = `msg-${runId}`;
     this.queued.push({
       type: 'RUN_STARTED',
@@ -282,6 +287,39 @@ export class AnswerStream {
       case 'hermes-stream-json':
         this.readHermesLine(parsed as HermesLine);
         break;
+      default:
+        for (const event of this.parser?.line(parsed) ?? []) this.readEvent(event);
+    }
+  }
+
+  // An event of a plugin runtime's parser (@helena/sdk RuntimeStreamEvent). Its usage
+  // events are read by the UsageReader, which has a parser of its own.
+  private readEvent(event: RuntimeStreamEvent): void {
+    switch (event.type) {
+      case 'session':
+        this.sessionId ??= event.id;
+        return;
+      case 'model':
+        this.reportedModel ??= event.id;
+        return;
+      case 'text':
+        this.sawPartialText = true;
+        this.appendText(event.delta);
+        return;
+      case 'thinking':
+        this.appendThinking(event.delta);
+        return;
+      case 'tool-call':
+        this.pushToolCall(event.id, event.name, event.input);
+        return;
+      case 'tool-result':
+        this.pushToolResult(event.id, event.output, event.isError === true);
+        return;
+      case 'result':
+        if (!this.sawAnyText) this.appendText(event.text);
+        return;
+      case 'usage':
+        return;
     }
   }
 
@@ -587,7 +625,11 @@ export class UsageReader {
   private buffered = '';
   private reportedModel: string | null = null;
 
-  constructor(private readonly format: OutputFormat) {}
+  private readonly parser: RuntimeStreamParser | undefined;
+
+  constructor(private readonly format: OutputFormat) {
+    this.parser = streamParserFor(format);
+  }
 
   // Reads whatever arrived, whole lines first and the rest on the next chunk. Lets a
   // caller that only wants the counts pass the command's output straight through.
@@ -651,6 +693,12 @@ export class UsageReader {
       case 'hermes-stream-json':
         this.readHermes(parsed as HermesLine);
         return;
+      default:
+        for (const event of this.parser?.line(parsed) ?? []) {
+          if (event.type === 'usage') {
+            this.last = { inputTokens: event.inputTokens, outputTokens: event.outputTokens };
+          }
+        }
     }
   }
 

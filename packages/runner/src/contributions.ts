@@ -1,8 +1,8 @@
+import { createRegistry } from '@helena/sdk';
 import { browserGateway } from './browser-gateway';
-import type { HermesProfile } from './inventory';
 import { learningConfig } from './learning';
-import type { RuntimeMcpServer, RuntimeMcpValue, RuntimePolicySnapshot } from './policy';
-import type { McpNamedValue, McpServerSpec, RuntimeId } from './runtime';
+import type { RuntimeMcpServer, RuntimeMcpValue } from './policy';
+import type { McpNamedValue, McpServerSpec } from './runtime';
 
 // What goes into an agent's runtime profile besides its instructions and skills, collected
 // from contributions. The built-in ones below are Helena's own MCP server, the project's
@@ -10,31 +10,10 @@ import type { McpNamedValue, McpServerSpec, RuntimeId } from './runtime';
 // adds its own by registering one (the browser gateway its "Projekt-Browser" server, the
 // Hermes panel its fallback models), and every runtime adapter picks it up the same way.
 
-export interface ProfileContext {
-  runtime: RuntimeId;
-  snapshot: RuntimePolicySnapshot;
-  // Where Helena's API answers, as the runner reaches it. Absent in a bare materializer.
-  url?: string;
-  // The runner config's environment for this agent (HERMES_HOME, BROWSER_CDP_URL, ...).
-  env: Record<string, string>;
-  hermes?: HermesProfile;
-}
-
-export interface ProfileContribution {
-  id: string;
-  // The MCP servers this contribution gives the agent.
-  mcpServers?(context: ProfileContext): McpServerSpec[];
-  // Library servers (snapshot.mcpServers) this contribution renders itself, so the library
-  // contribution leaves them alone.
-  claims?(context: ProfileContext): string[];
-  // Servers that must be off, whoever else names them.
-  suppress?(context: ProfileContext): string[];
-  // Hermes toolsets the agent must not have, on top of what the owner turned off (the
-  // browser gateway turns off Hermes' own `browser`).
-  denyToolsets?(context: ProfileContext): string[];
-  // Keys merged into Hermes' managed configuration (run/itsaplan-managed/config.yaml).
-  hermesConfig?(context: ProfileContext): Record<string, unknown>;
-}
+// The contribution contract lives in @helena/sdk (runtime-policy.ts); a runner plugin
+// registers one through ctx.profileContributions.
+export type { ProfileContext, ProfileContribution } from '@helena/sdk';
+import type { ProfileContext, ProfileContribution } from '@helena/sdk';
 
 // Helena's own MCP server: the tools of the app itself (tasks, comments, approvals). Every
 // agent has it; the name is the one Hermes' tool names and the skills already use.
@@ -133,7 +112,7 @@ const library: ProfileContribution = {
   id: 'library',
   mcpServers: (context) => {
     const claimed = new Set(
-      contributions.flatMap((contribution) => contribution.claims?.(context) ?? []),
+      profileContributions().flatMap((contribution) => contribution.claims?.(context) ?? []),
     );
     return (context.snapshot.mcpServers ?? [])
       .filter((server) => !claimed.has(server.name))
@@ -146,28 +125,26 @@ const learning: ProfileContribution = {
   hermesConfig: ({ snapshot }) => learningConfig(snapshot.learning),
 };
 
-const contributions: ProfileContribution[] = [
-  helenaMcp,
-  legacyBrowser,
-  browserGateway,
-  library,
-  learning,
-];
+// The contributions, as an @helena/sdk registry: the built-ins above and the browser
+// gateway's (browser-gateway.ts) as the internal plugin helena.runtimes, and those of runner
+// plugins (plugins.ts), in this order.
+export const profileContributionRegistry =
+  createRegistry<ProfileContribution>('profile contribution');
+for (const contribution of [helenaMcp, legacyBrowser, browserGateway, library, learning]) {
+  profileContributionRegistry.register(contribution, 'helena.runtimes');
+}
 
 // Adds a contribution, or replaces the one with the same id.
 export function registerProfileContribution(contribution: ProfileContribution): void {
-  const index = contributions.findIndex((entry) => entry.id === contribution.id);
-  if (index >= 0) contributions[index] = contribution;
-  else contributions.push(contribution);
+  profileContributionRegistry.replace(contribution);
 }
 
 export function unregisterProfileContribution(id: string): void {
-  const index = contributions.findIndex((entry) => entry.id === id);
-  if (index >= 0) contributions.splice(index, 1);
+  profileContributionRegistry.remove(id);
 }
 
 export function profileContributions(): readonly ProfileContribution[] {
-  return contributions;
+  return profileContributionRegistry.list();
 }
 
 export interface CollectedProfile {
@@ -210,7 +187,7 @@ export function collectProfile(context: ProfileContext): CollectedProfile {
   let hermesConfig: Record<string, unknown> = {};
   const toolsets = new Set(context.hermes?.toolsets ?? []);
   const shared = new Set([...(context.hermes?.mcpServers ?? []), ...RUNTIME_MCP_SERVERS]);
-  for (const contribution of contributions) {
+  for (const contribution of profileContributions()) {
     const own = contribution.id !== 'library';
     for (const spec of contribution.mcpServers?.(context) ?? []) {
       if (!MCP_SERVER_NAME.test(spec.name)) {

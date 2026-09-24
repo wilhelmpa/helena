@@ -16,30 +16,9 @@ import {
 // decides whether it may, and the owner reviews, takes over or discards what it learned.
 // Hermes owns these files, so the runner changes them only when Plan asks for it.
 
-export interface RuntimeLearning {
-  // The agent keeps memory and creates skills.
-  enabled: boolean;
-  // Hermes' curator marks learned skills stale and archives them after a while unused.
-  curator: boolean;
-}
-
-// An owner's decision Plan hands the runner with the policy. Each is carried out once,
-// after the revision that carries it applied, and its result is reported back.
-export type RuntimeAction =
-  // Write the whole profile again and read it back ("Neu schreiben"); the synchronizer
-  // carries it out with the apply of its revision.
-  | { id: number; kind: 'rewrite-profile' }
-  | { id: number; kind: 'discard-skill'; path: string }
-  | { id: number; kind: 'pin-skill'; path: string; pinned: boolean }
-  | {
-      id: number;
-      kind: 'write-memory';
-      file: MemoryFile;
-      content: string;
-      // The digest of the content the owner edited; a file the agent changed since is
-      // not overwritten.
-      baseSha256: string;
-    };
+// What the agent learns and the owner's decisions on it: @helena/sdk runtime-policy.ts.
+export type { RuntimeAction, RuntimeLearning } from '@helena/sdk';
+import type { RuntimeAction, RuntimeLearning } from '@helena/sdk';
 
 export interface RuntimeActionResult {
   id: number;

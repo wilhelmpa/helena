@@ -12,6 +12,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@helena/sdk": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

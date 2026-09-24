@@ -4,6 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
+import { loadRunnerPlugins } from './plugins';
 import { runtimeAdapter } from './adapters';
 import { readHermesInventory, type HermesProfile } from './inventory';
 import { readLearnedSkills } from './learning';
@@ -402,6 +403,7 @@ async function main(): Promise<void> {
   const cli = parseArgv(process.argv.slice(2));
   const configPath =
     cli.configPath ?? process.env.ITSAPLAN_RUNNER_CONFIG ?? './itsaplan-runner.json';
+  await loadRunnerPlugins(configPath, log);
   const configs = await loadConfig(configPath, { agent: cli.agent, args: cli.args });
   const state: State = { stopping: false, releasing: false, stops: new Set() };
 

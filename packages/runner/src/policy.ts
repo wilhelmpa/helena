@@ -51,69 +51,17 @@ export {
   usesBrowserGateway,
 } from './browser-gateway';
 
-export interface RuntimePolicyFile {
-  kind: 'instructions';
-  path: string;
-  content: string;
-}
-
-export interface RuntimeSkillFile {
-  path: string;
-  content: string;
-}
-
-export interface RuntimeSkill {
-  id: number;
-  slug: string;
-  name: string;
-  description: string;
-  markdown: string;
-  files: RuntimeSkillFile[];
-}
-
-// The parts of the knowledge vault the agent's file tools may reach, as absolute paths:
-// a path is readable below an entry of `read`, writable below one of `write`, and
-// neither below one of `deny`. Hermes gets it as VOLITION_VAULT_ACCESS (JSON) for its
-// approval plugin to enforce.
-export interface VaultAccess {
-  root: string;
-  read: string[];
-  write: string[];
-  deny: string[];
-}
-
-// A literal, or the id of one of the team's secrets, whose value the runner reads from
-// Plan before each run and chat answer.
-export type RuntimeMcpValue = { name: string; value: string } | { name: string; secret: number };
-
-export interface RuntimeMcpServer {
-  name: string;
-  transport: 'stdio' | 'http' | 'sse';
-  command: string | null;
-  args: string[];
-  url: string | null;
-  env: RuntimeMcpValue[];
-  headers: RuntimeMcpValue[];
-}
-
-export interface RuntimePolicySnapshot {
-  revision: string;
-  runtimePolicy: {
-    files: RuntimePolicyFile[];
-    // The Hermes toolsets and MCP servers of the Hermes configuration the agent may not use.
-    toolDeny?: string[];
-  };
-  skills: RuntimeSkill[];
-  // The MCP servers of the team library enabled on the agent. An older server sends none.
-  mcpServers?: RuntimeMcpServer[];
-  // Whether website logins are granted to the agent. An older server sends none.
-  webLogins?: boolean;
-  vaultAccess?: VaultAccess;
-  // Whether the agent learns. An older server sends none, and Hermes' own settings apply.
-  learning?: RuntimeLearning;
-  // The owner's decisions on what the agent learned, not carried out yet.
-  actions?: RuntimeAction[];
-}
+// The runtime policy wire types live in @helena/sdk (runtime-policy.ts).
+export type {
+  RuntimeMcpServer,
+  RuntimeMcpValue,
+  RuntimePolicyFile,
+  RuntimePolicySnapshot,
+  RuntimeSkill,
+  RuntimeSkillFile,
+  VaultAccess,
+} from '@helena/sdk';
+import type { RuntimeMcpServer, RuntimePolicySnapshot, VaultAccess } from '@helena/sdk';
 
 // A managed file that was changed outside Plan. Plan's version replaced it; the changed
 // content is kept next to it and reported, so it can be taken over in Plan.
