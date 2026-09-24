@@ -170,7 +170,7 @@ export default function DesignC() {
   return (
     <div className="@container flex w-full flex-col gap-4 p-4">
       <Greeting className="px-1" />
-      <div className="grid grid-cols-2 gap-4 @2xl:grid-cols-3 @5xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 @lg:grid-cols-3 @5xl:grid-cols-6">
         <FigureTile
           href={approvalsPath()}
           label={t('figures.decisions')}
@@ -219,7 +219,7 @@ export default function DesignC() {
         </RowList>
         <RowList className="bg-card">
           <TodayGroup
-            label={t('today.due')}
+            label={t('tasks.title')}
             count={figures.openTasks}
             trailing={<CardLink href={`${tasksPath()}?assignee=me`}>{t('all')}</CardLink>}
           >
