@@ -164,6 +164,16 @@ fi
 # policy; see setup.sh and 90-wilhelmpa's own comments for why. A restart here ends every
 # open owner-terminal session the same way the project terminal's does; the tmux sessions
 # behind them are unaffected and a reconnect finds them again after a fresh step-up.
+# Brings the provisioned project browsers (and Home's) back after a boot.
+if changed deployment/volition-stack/native/browser-restore; then
+  install -m 0755 "$live/deployment/volition-stack/native/browser-restore/volition-browser-restore" \
+    /usr/local/libexec/volition-browser-restore
+  install -m 0644 "$live/deployment/volition-stack/native/browser-restore/volition-project-browser-restore.service" \
+    /etc/systemd/system/volition-project-browser-restore.service
+  systemctl daemon-reload
+  systemctl enable volition-project-browser-restore.service >/dev/null
+fi
+
 if changed deployment/volition-stack/native/owner-terminal; then
   "$live/deployment/volition-stack/native/owner-terminal/setup.sh"
 fi
