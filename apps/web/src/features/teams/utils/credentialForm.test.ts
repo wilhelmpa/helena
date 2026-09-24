@@ -140,6 +140,21 @@ describe('credential form', () => {
         .allowPrivateAddress,
       false,
     );
+    // The local AI preset of the logit backend brings its own address and key.
+    const logit = {
+      ...jev,
+      label: 'Lokale KI',
+      provider: 'local-logit',
+      baseUrl: '',
+      model: 'Qwen3.5-4B-GGUF',
+      keySource: 'local-ai' as const,
+    };
+    assert.equal(isCredentialFormValid(logit, null), true);
+    assert.equal(toNewCredential(logit).keySource, 'local-ai');
+    // A logit backend on an own server needs its address but no key, and may be local.
+    const own = { ...logit, keySource: 'stored' as const, baseUrl: 'http://192.168.2.20:8080' };
+    assert.equal(isCredentialFormValid(own, null), true);
+    assert.equal(toNewCredential({ ...own, allowPrivateAddress: true }).allowPrivateAddress, true);
   });
 
   it('sends a runtime login with its runtime and how it signs in', () => {

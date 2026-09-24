@@ -1,5 +1,6 @@
 'use client';
 
+import { ModelRouteLine } from '@/features/decisions/components/ModelRouteLine';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Copy, History, LoaderCircle, Play, ScrollText, Waypoints } from 'lucide-react';
@@ -219,6 +220,7 @@ export default function RunView({
               </div>
             )}
             {run.modelCheck && <AgentRunModel check={run.modelCheck} />}
+            {run.modelRoute && <ModelRouteLine route={run.modelRoute} />}
             {run.reflection && <ReflectionBlock reflection={run.reflection} />}
           </div>
         )}

@@ -1,12 +1,13 @@
-import type {
-  ConditionStep,
-  PipelineDefinition,
-  PipelineRole,
-  PipelineStep,
-  PipelineTrigger,
-  PluginTypeName,
-  StepKind,
-  TriggerType,
+import {
+  isBranching,
+  type BranchingStep,
+  type PipelineDefinition,
+  type PipelineRole,
+  type PipelineStep,
+  type PipelineTrigger,
+  type PluginTypeName,
+  type StepKind,
+  type TriggerType,
 } from '@/lib/api/endpoints/pipelines';
 
 // The editor changes a draft definition through these functions. A lane is the root
@@ -32,7 +33,7 @@ function mapLane(
 ): PipelineStep[] {
   if (lane.parentId === null) return change(steps);
   return steps.map((step) => {
-    if (step.type !== 'condition') return step;
+    if (!isBranching(step)) return step;
     if (step.id === lane.parentId) return { ...step, [lane.branch]: change(step[lane.branch]) };
     return {
       ...step,
@@ -73,7 +74,7 @@ export function removeStep(steps: PipelineStep[], id: string): PipelineStep[] {
   return steps
     .filter((step) => step.id !== id)
     .map((step) =>
-      step.type === 'condition'
+      isBranching(step)
         ? { ...step, then: removeStep(step.then, id), else: removeStep(step.else, id) }
         : step,
     );
@@ -82,7 +83,7 @@ export function removeStep(steps: PipelineStep[], id: string): PipelineStep[] {
 export function replaceStep(steps: PipelineStep[], id: string, next: PipelineStep): PipelineStep[] {
   return steps.map((step) => {
     if (step.id === id) return next;
-    if (step.type !== 'condition') return step;
+    if (!isBranching(step)) return step;
     return {
       ...step,
       then: replaceStep(step.then, id, next),
@@ -97,16 +98,16 @@ export function replaceStep(steps: PipelineStep[], id: string, next: PipelineSte
 export interface FlatStep {
   step: PipelineStep;
   path: PipelineStep[];
-  ancestors: ConditionStep[];
+  ancestors: BranchingStep[];
 }
 
 export function flattenSteps(steps: PipelineStep[]): FlatStep[] {
   const flat: FlatStep[] = [];
-  const walk = (lane: PipelineStep[], before: PipelineStep[], ancestors: ConditionStep[]) => {
+  const walk = (lane: PipelineStep[], before: PipelineStep[], ancestors: BranchingStep[]) => {
     lane.forEach((step, position) => {
       const path = [...before, ...lane.slice(0, position)];
       flat.push({ step, path, ancestors });
-      if (step.type === 'condition') {
+      if (isBranching(step)) {
         walk(step.then, [...path, step], [...ancestors, step]);
         walk(step.else, [...path, step], [...ancestors, step]);
       }
@@ -200,6 +201,22 @@ export function newStep(
       return { id, name, type: 'notify', to: { kind: 'assignee' }, message: '' };
     case 'webhook':
       return { id, name, type: 'webhook', url: '', message: '' };
+    case 'decision':
+      return {
+        id,
+        name,
+        type: 'decision',
+        question: '',
+        context: '',
+        options: [],
+        thenOptions: [],
+        unsure: 'else',
+        from: null,
+        then: [],
+        else: [],
+        thenEnd: false,
+        elseEnd: false,
+      };
   }
 }
 
@@ -309,7 +326,7 @@ export function localizeDefinition(
   const localize = (steps: PipelineStep[]): PipelineStep[] =>
     steps.map((step) => {
       const name = names.step(step.id) ?? step.name;
-      return step.type === 'condition'
+      return isBranching(step)
         ? { ...step, name, then: localize(step.then), else: localize(step.else) }
         : { ...step, name };
     });

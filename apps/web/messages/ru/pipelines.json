@@ -6,7 +6,8 @@
     "action": "Действие над задачей",
     "wait": "Ожидание",
     "notify": "Уведомить",
-    "webhook": "Вебхук"
+    "webhook": "Вебхук",
+    "decision": "Decision"
   },
   "kindHints": {
     "agent": "Агент работает над задачей",
@@ -15,7 +16,8 @@
     "action": "Изменяет задачу",
     "wait": "Приостанавливает запуск",
     "notify": "Сообщает людям о запуске",
-    "webhook": "Отправляет задачу на URL"
+    "webhook": "Отправляет задачу на URL",
+    "decision": "A decision model picks one of your options; the run follows the choice."
   },
   "triggers": {
     "manual": "Запускается вручную",
@@ -171,7 +173,9 @@
     "endsRun": "Запуск завершается на этом",
     "limit": "Рабочий процесс содержит не более {max} шагов.",
     "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
-    "plugins": "Расширения"
+    "plugins": "Расширения",
+    "decisionThen": "Chosen",
+    "decisionElse": "Otherwise"
   },
   "summary": {
     "agentRole": "Роль {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "«{field}», до {time}",
     "notify": "Сообщить: {who}: {text}",
     "webhook": "Отправить на {host}",
-    "noUrl": "URL ещё не указан"
+    "noUrl": "URL ещё не указан",
+    "decision": "{question} → {options}",
+    "decisionFrom": "Answer of “{step}” → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# минута} few {# минуты} many {# минут} other {# минуты}}",
@@ -340,6 +346,27 @@
       "noSettings": "Нет настроек.",
       "choose": "Выбрать",
       "missing": "Тип шага {type} не установлен: расширение, которое его добавляет, выключено."
+    },
+    "decision": {
+      "source": "Question",
+      "ask": "Ask a new question",
+      "reuse": "Reuse the answer of “{step}”",
+      "question": "Question",
+      "questionHint": "e.g. What kind of request is this?",
+      "context": "About",
+      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
+      "options": "Options",
+      "optionsHint": "One per line, at most {max}.",
+      "thenOptions": "Into the first lane on",
+      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
+      "noOptions": "Enter the options first.",
+      "unsure": "When the model is not sure",
+      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "unsureModes": {
+        "else": "Second lane",
+        "then": "First lane",
+        "fail": "Stop the run"
+      }
     }
   },
   "issues": {

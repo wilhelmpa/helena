@@ -50,6 +50,16 @@ export function useStepSummary() {
         };
         return test.op === 'is' ? t('summary.taskIs', values) : t('summary.taskIsNot', values);
       }
+      case 'decision':
+        return step.from
+          ? t('summary.decisionFrom', {
+              step: findStep(definition.steps, step.from)?.name ?? step.from,
+              options: step.thenOptions.join(', '),
+            })
+          : t('summary.decision', {
+              question: firstLine(step.question),
+              options: step.thenOptions.join(', '),
+            });
       case 'action': {
         const action = step.action;
         switch (action.kind) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Paperclip, Sparkles, Star } from 'lucide-react';
+import { CircleAlert, Paperclip, Reply, Sparkles, Star } from 'lucide-react';
 import type { MailThreadRow as Row } from '@/lib/api/endpoints/mail';
 import { cn } from '@/lib/utils';
 import { mailListDate } from '../utils/mailDates';
@@ -18,6 +18,8 @@ export default function MailThreadRow({
   onSelect: () => void;
 }) {
   const t = useTranslations('mail.inbox');
+  const tTriage = useTranslations('mail.triage');
+  const triage = row.triage;
   return (
     <button
       type="button"
@@ -42,6 +44,18 @@ export default function MailThreadRow({
             <span className="ms-1 text-xs text-muted-foreground">{row.messageCount}</span>
           )}
         </span>
+        {triage?.priority === 'high' && (
+          <CircleAlert
+            aria-label={tTriage('priorities.high')}
+            className="size-3.5 shrink-0 text-status-danger"
+          />
+        )}
+        {triage?.needsReply && (
+          <Reply
+            aria-label={tTriage('needsReply')}
+            className="size-3.5 shrink-0 text-muted-foreground"
+          />
+        )}
         {row.flagged && <Star className="size-3.5 shrink-0 fill-current text-amber-500" />}
         {row.hasAttachments && (
           <Paperclip
@@ -60,6 +74,11 @@ export default function MailThreadRow({
         {showProject && (
           <span className="shrink-0 rounded border px-1 font-mono text-xs leading-4">
             {row.projectKey ?? t('home')}
+          </span>
+        )}
+        {triage?.category && (
+          <span className="shrink-0 rounded border px-1 leading-4">
+            {tTriage(`categories.${triage.category}` as never)}
           </span>
         )}
         {row.suggestedProjectKey && (

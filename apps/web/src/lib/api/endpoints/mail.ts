@@ -1,3 +1,4 @@
+import type { MailTriageBadge } from '@/lib/api/endpoints/mailTriage';
 import { API_URL, request, uploadFile } from '@/lib/api/core/client';
 
 export interface MailAddress {
@@ -105,6 +106,8 @@ export interface MailThreadRow {
   unread: boolean;
   flagged: boolean;
   hasAttachments: boolean;
+  // What the mail classifier made of it (docs/helena-decisions/decisions.md §5).
+  triage?: MailTriageBadge | null;
 }
 
 export interface MailThreadPage {

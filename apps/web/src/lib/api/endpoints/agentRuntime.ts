@@ -1,3 +1,4 @@
+import type { ModelRoute } from '@/lib/api/endpoints/decisions';
 import type { RunFailure } from '@/lib/api/endpoints/modelAvailability';
 import { request } from '@/lib/api/core/client';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
@@ -213,6 +214,8 @@ export interface RunDetail {
   blockedQuestion: string | null;
   reflection: ReflectionView | null;
   modelCheck: ModelCheck | null;
+  // What the model router did for the run (docs/helena-decisions/decisions.md §4).
+  modelRoute?: ModelRoute | null;
   // Why it failed, where the runtime's words said. Absent from an older server.
   failure?: RunFailure | null;
 }

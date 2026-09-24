@@ -6,6 +6,7 @@ import {
   Hourglass,
   ListChecks,
   Network,
+  Split,
   ShieldCheck,
   Webhook,
   type LucideIcon,
@@ -23,4 +24,5 @@ export const PIPELINE_STEP_ICONS: Record<RunStepKind, LucideIcon> = {
   webhook: Webhook,
   delegate: CalendarClock,
   agent_team: Network,
+  decision: Split,
 };

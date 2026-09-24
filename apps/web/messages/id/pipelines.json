@@ -6,7 +6,8 @@
     "action": "Aksi pada tugas",
     "wait": "Tunggu",
     "notify": "Beri tahu",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "Decision"
   },
   "kindHints": {
     "agent": "Agen mengerjakan tugas",
@@ -15,7 +16,8 @@
     "action": "Mengubah tugas",
     "wait": "Menjeda eksekusi",
     "notify": "Memberi tahu orang tentang proses",
-    "webhook": "Mengirim tugas ke URL"
+    "webhook": "Mengirim tugas ke URL",
+    "decision": "A decision model picks one of your options; the run follows the choice."
   },
   "triggers": {
     "manual": "Dimulai secara manual",
@@ -171,7 +173,9 @@
     "endsRun": "Eksekusi berakhir setelah langkah ini",
     "limit": "Sebuah alur kerja memuat paling banyak {max} langkah.",
     "problems": "{count, plural, other {# masalah}}",
-    "plugins": "Ekstensi"
+    "plugins": "Ekstensi",
+    "decisionThen": "Chosen",
+    "decisionElse": "Otherwise"
   },
   "summary": {
     "agentRole": "Peran {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "Sampai {field} pada {time}",
     "notify": "Beri tahu {who}: {text}",
     "webhook": "Kirim ke {host}",
-    "noUrl": "Belum ada URL"
+    "noUrl": "Belum ada URL",
+    "decision": "{question} → {options}",
+    "decisionFrom": "Answer of “{step}” → {options}"
   },
   "duration": {
     "minutes": "{count, plural, other {# menit}}",
@@ -340,6 +346,27 @@
       "noSettings": "Tidak ada pengaturan.",
       "choose": "Pilih",
       "missing": "Jenis langkah {type} belum terpasang: ekstensi yang menyediakannya nonaktif."
+    },
+    "decision": {
+      "source": "Question",
+      "ask": "Ask a new question",
+      "reuse": "Reuse the answer of “{step}”",
+      "question": "Question",
+      "questionHint": "e.g. What kind of request is this?",
+      "context": "About",
+      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
+      "options": "Options",
+      "optionsHint": "One per line, at most {max}.",
+      "thenOptions": "Into the first lane on",
+      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
+      "noOptions": "Enter the options first.",
+      "unsure": "When the model is not sure",
+      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "unsureModes": {
+        "else": "Second lane",
+        "then": "First lane",
+        "fail": "Stop the run"
+      }
     }
   },
   "issues": {

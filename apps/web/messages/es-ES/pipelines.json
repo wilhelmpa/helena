@@ -6,7 +6,8 @@
     "action": "Acción sobre la tarea",
     "wait": "Espera",
     "notify": "Notificar",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "Decision"
   },
   "kindHints": {
     "agent": "Un agente trabaja en la tarea",
@@ -15,7 +16,8 @@
     "action": "Cambia la tarea",
     "wait": "Pausa la ejecución",
     "notify": "Avisa a las personas del proceso",
-    "webhook": "Envía la tarea a una URL"
+    "webhook": "Envía la tarea a una URL",
+    "decision": "A decision model picks one of your options; the run follows the choice."
   },
   "triggers": {
     "manual": "Iniciado a mano",
@@ -171,7 +173,9 @@
     "endsRun": "La ejecución termina después de esto",
     "limit": "Un flujo de trabajo tiene como máximo {max} pasos.",
     "problems": "{count, plural, one {# problema} other {# problemas}}",
-    "plugins": "Extensiones"
+    "plugins": "Extensiones",
+    "decisionThen": "Chosen",
+    "decisionElse": "Otherwise"
   },
   "summary": {
     "agentRole": "Rol {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "Hasta la {field} a las {time}",
     "notify": "Avisar a {who}: {text}",
     "webhook": "Enviar a {host}",
-    "noUrl": "Aún sin URL"
+    "noUrl": "Aún sin URL",
+    "decision": "{question} → {options}",
+    "decisionFrom": "Answer of “{step}” → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# minuto} other {# minutos}}",
@@ -340,6 +346,27 @@
       "noSettings": "Sin ajustes.",
       "choose": "Elegir",
       "missing": "El tipo de paso {type} no está instalado: la extensión que lo aporta está desactivada."
+    },
+    "decision": {
+      "source": "Question",
+      "ask": "Ask a new question",
+      "reuse": "Reuse the answer of “{step}”",
+      "question": "Question",
+      "questionHint": "e.g. What kind of request is this?",
+      "context": "About",
+      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
+      "options": "Options",
+      "optionsHint": "One per line, at most {max}.",
+      "thenOptions": "Into the first lane on",
+      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
+      "noOptions": "Enter the options first.",
+      "unsure": "When the model is not sure",
+      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "unsureModes": {
+        "else": "Second lane",
+        "then": "First lane",
+        "fail": "Stop the run"
+      }
     }
   },
   "issues": {

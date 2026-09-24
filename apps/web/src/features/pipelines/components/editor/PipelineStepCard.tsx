@@ -5,7 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Puzzle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import { isPluginStep, type PipelineStep } from '@/lib/api/endpoints/pipelines';
+import { isBranching, isPluginStep, type PipelineStep } from '@/lib/api/endpoints/pipelines';
 import { cn } from '@/lib/utils';
 import { PIPELINE_STEP_ICONS } from '@/utils/pipelineStepIcons';
 import { usePipelineEditor } from '../../context/pipelineEditor';
@@ -81,7 +81,7 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
           )}
         </button>
       </div>
-      {step.type === 'condition' && <PipelineConditionLanes step={step} />}
+      {isBranching(step) && <PipelineConditionLanes step={step} />}
     </li>
   );
 }

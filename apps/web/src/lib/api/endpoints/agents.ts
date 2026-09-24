@@ -1,3 +1,4 @@
+import type { ModelRoute } from '@/lib/api/endpoints/decisions';
 import type { RunFailure } from '@/lib/api/endpoints/modelAvailability';
 import { request } from '@/lib/api/core/client';
 import type { ModelCheck, RuntimeProfile } from '@/lib/api/endpoints/agentRuntimeSync';
@@ -242,6 +243,8 @@ export interface AgentRun {
   autopilotLevel?: number | null;
   // Null for a run whose runner reports no model.
   modelCheck: ModelCheck | null;
+  // What the model router did for the run (docs/helena-decisions/decisions.md §4).
+  modelRoute?: ModelRoute | null;
   // Why it failed, where the runtime's words said. Absent from an older server.
   failure?: RunFailure | null;
   nextAttemptAt: string;

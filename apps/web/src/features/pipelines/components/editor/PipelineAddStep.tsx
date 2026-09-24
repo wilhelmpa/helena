@@ -103,7 +103,7 @@ export default function PipelineAddStep({
               return (
                 <DropdownMenuItem
                   key={kind}
-                  disabled={kind === 'condition' && deep}
+                  disabled={(kind === 'condition' || kind === 'decision') && deep}
                   className="items-start"
                   onSelect={() => add(kind)}
                 >

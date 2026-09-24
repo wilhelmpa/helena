@@ -27,6 +27,7 @@
     "allowPrivate": "Izinkan alamat lokal ini",
     "allowPrivateHint": "Helena tidak pernah memanggil alamat di jaringan Anda. Ini mengizinkan tepat alamat ini, tidak lebih.",
     "localKey": "Kunci layanan Laya lokal dibaca dari server; tidak ada yang perlu diisi.",
+    "localAiKey": "Address and key come from Helena's local AI (Administrator → Lokale KI); nothing to enter.",
     "key": "Kunci",
     "keyHintTypesafe": "Dari console.typesafe.ai → Keys.",
     "keyHintVercel": "Kunci AI Gateway dari tim Vercel Anda.",

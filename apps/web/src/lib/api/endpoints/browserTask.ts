@@ -12,7 +12,8 @@ export interface DecisionBackendPreset {
   baseUrl: string;
   model: string;
   allowPrivateAddress: boolean;
-  keySource: 'local-laya' | null;
+  keySource: 'local-laya' | 'local-ai' | null;
+  modelServer: string | null;
 }
 
 export interface DecisionBackend {
@@ -22,6 +23,7 @@ export interface DecisionBackend {
   defaultBaseUrl: string | null;
   defaultModel: string;
   policy: 'jev' | 'laya';
+  protocol: 'systemone' | 'openai-logprobs' | 'openai-json';
   keyRequired: boolean;
   signupUrl: string | null;
   presets: DecisionBackendPreset[];
