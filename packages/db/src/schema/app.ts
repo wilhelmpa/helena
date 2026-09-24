@@ -1374,6 +1374,50 @@ export const agentRuntimeAction = pgTable(
   ],
 );
 
+// The token ledger: one row per run, chat answer or reflection a runner reported, with the
+// model that actually ran. Usage per agent, model, project and day and the budgets are read
+// from here; cost is computed when read, from the price of the model at that time. The token
+// columns follow the OpenTelemetry GenAI conventions (gen_ai.usage.*): input_tokens includes
+// the cached reads and writes, output_tokens includes the reasoning tokens.
+export const agentUsage = pgTable(
+  'agent_usage',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    // Null for work outside a project, such as a Home chat.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    chatMessageId: integer('chat_message_id').references(() => agentChatMessage.id, {
+      onDelete: 'set null',
+    }),
+    kind: text('kind').notNull(),
+    // The runner preset that ran it ('hermes', 'claude', 'codex', ...), null for a custom one.
+    runtime: text('runtime'),
+    // gen_ai.response.model and gen_ai.provider.name, as the runtime reported them.
+    model: text('model'),
+    provider: text('provider'),
+    // gen_ai.conversation.id: the runtime session the tokens were spent in.
+    sessionId: text('session_id'),
+    inputTokens: bigint('input_tokens', { mode: 'number' }).notNull().default(0),
+    outputTokens: bigint('output_tokens', { mode: 'number' }).notNull().default(0),
+    cacheReadTokens: bigint('cache_read_tokens', { mode: 'number' }).notNull().default(0),
+    cacheWriteTokens: bigint('cache_write_tokens', { mode: 'number' }).notNull().default(0),
+    reasoningTokens: bigint('reasoning_tokens', { mode: 'number' }).notNull().default(0),
+    // Wall-clock time of the run, chat answer or reflection, when the runner measured it.
+    durationMs: integer('duration_ms'),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_usage_kind_check', sql`${t.kind} IN ('run', 'chat', 'reflection')`),
+    index('agent_usage_agent_time_idx').on(t.agentId, t.occurredAt),
+    index('agent_usage_project_time_idx').on(t.projectId, t.occurredAt),
+    index('agent_usage_time_idx').on(t.occurredAt),
+    index('agent_usage_run_idx').on(t.runId),
+  ],
+);
+
 // Which skills are enabled on which agents (many-to-many). Deleting an agent or a
 // skill removes the link.
 export const agentSkillLink = pgTable(
