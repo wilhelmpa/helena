@@ -48,9 +48,14 @@ export interface AgentRuntimePolicy {
   // session: 'failure' after a failed run and after rework on an issue, 'complex' also
   // after a run of many tool calls. Unset, 'complex'.
   reflection?: ReflectionMode;
+  // Which runtime runs the agent. Unset is Hermes, provisioned by the server; a Claude
+  // Code or Codex agent runs on a runner started with that preset.
+  runtime?: AgentRuntimeKind;
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex';
+export const AGENT_RUNTIME_KINDS: AgentRuntimeKind[] = ['hermes', 'claude', 'codex'];
 
 // One thing the agent's reflection kept: a memory write, or a skill it created or
 // patched.

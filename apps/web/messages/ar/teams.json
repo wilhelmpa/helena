@@ -430,7 +430,15 @@
       "filePathPlaceholder": "SOUL.md أو instructions/موضوع.md",
       "filePathLabel": "مسار الملف المُدار {index}",
       "fileContentLabel": "محتوى الملف المُدار {index}",
-      "removeFile": "إزالة الملف المُدار {index}"
+      "removeFile": "إزالة الملف المُدار {index}",
+      "runtime": "بيئة التشغيل",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "يوفّر الخادم Hermes بنفسه ويُبقي ملفه متزامنًا.",
+      "runtimeCliHint": "يعمل على مشغّل بهذا الإعداد المسبق (helena-runner --agent {kind})؛ التعليمات والمهارات وخوادم MCP والنموذج والاستدلال تأتي من Helena."
     },
     "runtimeConflicts": {
       "title": "تم التغيير خارج Helena",

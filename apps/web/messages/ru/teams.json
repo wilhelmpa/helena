@@ -430,7 +430,15 @@
       "filePathPlaceholder": "SOUL.md или instructions/тема.md",
       "filePathLabel": "Путь управляемого файла {index}",
       "fileContentLabel": "Содержимое управляемого файла {index}",
-      "removeFile": "Удалить управляемый файл {index}"
+      "removeFile": "Удалить управляемый файл {index}",
+      "runtime": "Среда выполнения",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "Hermes сервер предоставляет сам и держит его профиль синхронным.",
+      "runtimeCliHint": "Работает на runner с этим пресетом (helena-runner --agent {kind}); инструкции, навыки, MCP-серверы, модель и рассуждение приходят из Helena."
     },
     "runtimeConflicts": {
       "title": "Изменено вне Helena",

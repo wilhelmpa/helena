@@ -430,7 +430,15 @@
       "filePathPlaceholder": "SOUL.md 或 instructions/主题.md",
       "filePathLabel": "受管理文件 {index} 的路径",
       "fileContentLabel": "受管理文件 {index} 的内容",
-      "removeFile": "移除受管理文件 {index}"
+      "removeFile": "移除受管理文件 {index}",
+      "runtime": "运行时",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "Hermes 由服务器自行提供，并保持其配置同步。",
+      "runtimeCliHint": "在使用此预设的 runner 上运行（helena-runner --agent {kind}）；指令、技能、MCP 服务器、模型和推理均来自 Helena。"
     },
     "runtimeConflicts": {
       "title": "在 Helena 之外被更改",

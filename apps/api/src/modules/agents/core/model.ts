@@ -75,6 +75,15 @@ export const runtimePolicy = t.Object({
         'uses. Unset, it may not.',
     }),
   ),
+  runtime: t.Optional(
+    t.Union([t.Literal('hermes'), t.Literal('claude'), t.Literal('codex')], {
+      description:
+        'Which runtime runs the agent. Unset is Hermes, whose runtime the server provisions ' +
+        'for an agent of one project; a Claude Code or Codex agent runs on a runner started ' +
+        "with that preset (helena-runner --agent claude|codex), which gets the agent's " +
+        'instructions, skills, MCP servers, model and reasoning from Helena.',
+    }),
+  ),
   reflection: t.Optional(
     t.Union([t.Literal('off'), t.Literal('failure'), t.Literal('complex')], {
       description:

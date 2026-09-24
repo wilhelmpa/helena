@@ -430,7 +430,15 @@
       "filePathPlaceholder": "SOUL.md atau instructions/topik.md",
       "filePathLabel": "Jalur file yang dikelola {index}",
       "fileContentLabel": "Konten file yang dikelola {index}",
-      "removeFile": "Hapus file yang dikelola {index}"
+      "removeFile": "Hapus file yang dikelola {index}",
+      "runtime": "Runtime",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "Server menyediakan Hermes sendiri dan menjaga profilnya tetap sinkron.",
+      "runtimeCliHint": "Berjalan di runner dengan preset ini (helena-runner --agent {kind}); instruksi, skill, server MCP, model, dan penalaran berasal dari Helena."
     },
     "runtimeConflicts": {
       "title": "Diubah di luar Helena",

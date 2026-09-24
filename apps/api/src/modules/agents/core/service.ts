@@ -79,10 +79,15 @@ export interface AgentRuntimePolicy {
   learning?: boolean;
   curator?: boolean;
   reflection?: ReflectionMode;
+  // Which runtime runs the agent. Unset is Hermes, which the server provisions itself; a
+  // Claude Code or Codex agent runs on a runner started with that preset.
+  runtime?: AgentRuntimeKind;
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
 const REFLECTION_MODES: ReflectionMode[] = ['off', 'failure', 'complex'];
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex';
+export const AGENT_RUNTIMES: AgentRuntimeKind[] = ['hermes', 'claude', 'codex'];
 
 export interface AgentRuntimeConflict {
   path: string;
@@ -243,6 +248,9 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     ...(REFLECTION_MODES.includes(policy.reflection as ReflectionMode) && {
       reflection: policy.reflection,
     }),
+    // Hermes is the default and is left out, so an agent's policy keeps its revision.
+    ...(AGENT_RUNTIMES.includes(policy.runtime as AgentRuntimeKind) &&
+      policy.runtime !== 'hermes' && { runtime: policy.runtime }),
   };
 }
 
@@ -1321,8 +1329,16 @@ export async function updateAgent(
   const projectsChanged =
     projectIds.length !== previousProjectIds.length ||
     projectIds.some((projectId) => !previousProjectIds.includes(projectId));
-  // The runner descriptor names the agent by its username.
-  if (projectsChanged || (patch.username !== undefined && patch.username !== agent.username)) {
+  // The runner descriptor names the agent by its username, and only a Hermes agent has one.
+  const runtimeChanged =
+    patch.runtimePolicy !== undefined &&
+    (normalizeRuntimePolicy(patch.runtimePolicy).runtime ?? 'hermes') !==
+      (agent.runtimePolicy.runtime ?? 'hermes');
+  if (
+    projectsChanged ||
+    runtimeChanged ||
+    (patch.username !== undefined && patch.username !== agent.username)
+  ) {
     await queueAgentRuntime(agent.userId, previousProjectIds);
   }
 

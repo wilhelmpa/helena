@@ -430,7 +430,15 @@
       "filePathPlaceholder": "SOUL.md o instructions/tema.md",
       "filePathLabel": "Ruta del archivo gestionado {index}",
       "fileContentLabel": "Contenido del archivo gestionado {index}",
-      "removeFile": "Quitar el archivo gestionado {index}"
+      "removeFile": "Quitar el archivo gestionado {index}",
+      "runtime": "Runtime",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "El servidor aprovisiona Hermes y mantiene su perfil sincronizado.",
+      "runtimeCliHint": "Se ejecuta en un runner con este preset (helena-runner --agent {kind}); instrucciones, skills, servidores MCP, modelo y razonamiento vienen de Helena."
     },
     "runtimeConflicts": {
       "title": "Modificado fuera de Helena",
