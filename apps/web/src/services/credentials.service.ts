@@ -7,30 +7,20 @@ import { useTranslations } from 'next-intl';
 import type { PageParams } from '@/lib/api/core/paging';
 import {
   type CredentialInput,
-  type CredentialKind,
+  type ListedKind,
   type NewCredentialInput,
   createCredential,
   deleteCredential,
-  listCredentialUses,
   listCredentials,
   regenerateSshKey,
-  setCredentialGrants,
   updateCredential,
 } from '@/lib/api/endpoints/credentials';
 import { qk } from '@/services/queryKeys';
 
-export function useCredentialsPageQuery(teamId: number, params: PageParams, kind?: CredentialKind) {
+export function useCredentialsPageQuery(teamId: number, params: PageParams, kind?: ListedKind) {
   return useQuery({
     queryKey: qk.credentialPage(teamId, params, kind),
     queryFn: () => listCredentials(teamId, params, kind),
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useCredentialUsesQuery(teamId: number, id: number, params: PageParams) {
-  return useQuery({
-    queryKey: qk.credentialUses(teamId, id, params),
-    queryFn: () => listCredentialUses(teamId, id, params),
     placeholderData: keepPreviousData,
   });
 }
@@ -72,19 +62,6 @@ export function useDeleteCredential(teamId: number) {
   return useMutation({
     mutationFn: (id: number) => deleteCredential(teamId, id),
     onSuccess: invalidate,
-  });
-}
-
-export function useSetCredentialGrants(teamId: number) {
-  const t = useTranslations('credentials');
-  const invalidate = useInvalidator(teamId);
-  return useMutation({
-    mutationFn: ({ id, agentIds }: { id: number; agentIds: number[] }) =>
-      setCredentialGrants(teamId, id, agentIds),
-    onSuccess: (entry) => {
-      toast.success(t('grantsSaved', { name: entry.label }));
-      invalidate();
-    },
   });
 }
 

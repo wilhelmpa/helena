@@ -170,3 +170,25 @@ test('local HTTP terminal does not upgrade its own assets to unavailable HTTPS',
     },
   );
 });
+
+test('the close path is recognised for POST only and never forwarded to wetty', () => {
+  const host = { host: 'kingston-server.local' };
+  const closing = requestTarget({
+    url: '/focus/owner-terminal/claude/main-2/__helena/close',
+    method: 'POST',
+    headers: host,
+  });
+  assert.equal(closing.close, true);
+  assert.equal(closing.kind, 'claude');
+  assert.equal(closing.name, 'main-2');
+  assert.equal(closing.upstreamPath, undefined);
+  assert.equal(
+    requestTarget({ url: '/focus/owner-terminal/claude/main-2/__helena/close', method: 'GET', headers: host })
+      .status,
+    405,
+  );
+  assert.equal(
+    requestTarget({ url: '/focus/owner-terminal/shell/main/', method: 'POST', headers: host }).close,
+    undefined,
+  );
+});

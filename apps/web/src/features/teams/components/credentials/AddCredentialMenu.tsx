@@ -2,7 +2,11 @@ import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialKind } from '@/lib/api/endpoints/credentials';
 import { cn } from '@/lib/utils';
-import { PAGE_CONTROL_CLASS, usePageToolbarRoom } from '@/components/layout/PageToolbar';
+import {
+  PAGE_CONTROL_CLASS,
+  PAGE_PRIMARY_CLASS,
+  usePageToolbarRoom,
+} from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +18,13 @@ import { CredentialKindIcon } from './CredentialKindIcon';
 
 // "Add credential", the page's primary action at the end of its toolbar row: it
 // opens the four kinds to choose from, so it is a menu rather than PageActions' button.
-export function AddCredentialMenu({ onSelect }: { onSelect: (kind: CredentialKind) => void }) {
+export function AddCredentialMenu({
+  onSelect,
+}: {
+  onSelect: (kind: CredentialKind | 'mcp_oauth') => void;
+}) {
   const t = useTranslations('credentials');
+  const tMcp = useTranslations('access.mcp');
   const room = usePageToolbarRoom();
   return (
     <DropdownMenu>
@@ -25,7 +34,7 @@ export function AddCredentialMenu({ onSelect }: { onSelect: (kind: CredentialKin
           aria-label={t('add')}
           className={cn(
             PAGE_CONTROL_CLASS,
-            'ms-1 bg-primary font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
+            PAGE_PRIMARY_CLASS,
             room.primaryLabel ? 'px-2.5' : 'w-8 justify-center px-0',
           )}
         >
@@ -47,6 +56,13 @@ export function AddCredentialMenu({ onSelect }: { onSelect: (kind: CredentialKin
             </div>
           </DropdownMenuItem>
         ))}
+        <DropdownMenuItem className="items-start gap-2.5" onSelect={() => onSelect('mcp_oauth')}>
+          <CredentialKindIcon kind="mcp_oauth" className="mt-0.5 size-4 text-muted-foreground" />
+          <div className="space-y-0.5">
+            <div className="text-sm">{tMcp('kind')}</div>
+            <div className="text-xs text-muted-foreground">{tMcp('kindHint')}</div>
+          </div>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

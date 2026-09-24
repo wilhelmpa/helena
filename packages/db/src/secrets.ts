@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import { decryptSecret, encryptSecret } from '@repo/crypto';
+import { decryptSecret, encryptSecret, secretContext } from '@repo/crypto';
 import { db } from './client';
 import { appSecret } from './schema/app';
 
@@ -16,11 +16,13 @@ export async function readSecret<T>(key: string): Promise<T | null> {
     .from(appSecret)
     .where(eq(appSecret.key, key));
   const row = rows[0];
-  return row ? (JSON.parse(decryptSecret(row)) as T) : null;
+  return row
+    ? (JSON.parse(decryptSecret(row, secretContext('app_secret', key, 'value'))) as T)
+    : null;
 }
 
 export async function writeSecret(key: string, value: unknown, redacted: object): Promise<void> {
-  const enc = encryptSecret(JSON.stringify(value));
+  const enc = encryptSecret(JSON.stringify(value), secretContext('app_secret', key, 'value'));
   await db
     .insert(appSecret)
     .values({

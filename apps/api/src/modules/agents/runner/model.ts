@@ -31,6 +31,13 @@ export const RunnerRunResponse = t.Object({
         'mid run and reported one. Null for a run claimed for the first time.',
     }),
   ),
+  autopilotLevel: t.Integer({
+    minimum: 0,
+    maximum: 3,
+    description:
+      "The Autopilot level the run works at. Helena's policy engine decides every tool call " +
+      "by it (POST /agent-policy/decide); a runner maps it onto its runtime's permission mode.",
+  }),
 });
 
 // The claim result. The run is wrapped so an empty queue is an explicit null rather

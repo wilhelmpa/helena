@@ -691,7 +691,7 @@ export class GatewayDispatcher {
       case 'browser_login':
         return text(await this.#login(request, session, slug));
       case 'browser_login_code':
-        return text(await this.#loginCode(request, session));
+        return text(await this.#loginCode(request, session, slug));
       default:
         throw new Error(`Tool not implemented: ${request.tool}`);
     }
@@ -739,7 +739,11 @@ export class GatewayDispatcher {
     return `Filled ${result.login.label} (${result.login.username}) on ${frameOrigin}.${result.login.has2fa ? ` This login has 2FA — when the code field shows, use browser_login_code with credentialId ${result.login.id}.` : ''}`;
   }
 
-  async #loginCode(request: GatewayRequest, session: GatewaySession): Promise<string> {
+  async #loginCode(
+    request: GatewayRequest,
+    session: GatewaySession,
+    slug: string,
+  ): Promise<string> {
     const args = request.args;
     const target = this.#requireTarget(args);
     const credentialId = num(args, 'credentialId');
@@ -749,6 +753,7 @@ export class GatewayDispatcher {
       credentialId,
       await session.frameOrigin(target),
       { runId: request.runId, messageId: request.messageId },
+      { projectSlug: slug, via: this.#ownSlug },
     );
     session.guard.track(result.code);
     await session.fillCode(target, result.code);

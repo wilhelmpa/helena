@@ -1,5 +1,7 @@
-import MailAccountsPage from '@/features/mail/MailAccountsPage';
+import { redirect } from 'next/navigation';
+import { accessPath } from '@/utils/paths';
 
-export default function MailAccounts() {
-  return <MailAccountsPage />;
+// The page is a tab of the access center now.
+export default function Page() {
+  redirect(accessPath('mail'));
 }

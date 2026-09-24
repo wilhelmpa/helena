@@ -161,7 +161,12 @@ describe('normalize', () => {
     ]);
     expect(snapshot.windows[2]!.label).toBe('Fable');
     expect(snapshot.extra).toMatchObject({ kind: 'extra_usage', enabled: false, limit: 170 });
-    expect(fromClaudeUsageReport({ rate_limits: null }, { ...snapshot, account: 'a' })).toBeNull();
+    expect(
+      fromClaudeUsageReport(
+        { rate_limits: null },
+        { source: 'claude-code', login: 'owner', account: 'a', plan: null },
+      ),
+    ).toBeNull();
   });
 
   it("reads Claude Code's rate_limit_event", () => {

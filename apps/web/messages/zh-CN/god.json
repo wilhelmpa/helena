@@ -407,7 +407,8 @@
       "mcp": "Helena MCP 工具",
       "webhooks": "Webhook",
       "bundles": "模板包",
-      "limits": "限额"
+      "limits": "限额",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

@@ -407,7 +407,8 @@
       "mcp": "Ferramentas MCP do Helena",
       "webhooks": "Webhooks",
       "bundles": "Pacotes de modelos",
-      "limits": "Limites"
+      "limits": "Limites",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "Carrega quando os plugins externos forem ativados.",

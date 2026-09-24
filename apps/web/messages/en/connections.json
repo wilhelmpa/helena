@@ -12,6 +12,7 @@
   "unconfigured": {
     "title": "No connections service set up",
     "hint": "This server runs no service that checks connections. Mail accounts, credentials and devices have their own pages.",
+    "hintAccess": "This server runs no service that checks connections. Google, mail and credentials are in the tabs next to this one; devices have their own page.",
     "mail": "Mail accounts",
     "credentials": "Credentials",
     "devices": "Devices & Obsidian"

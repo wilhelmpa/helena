@@ -7,3 +7,5 @@ export * from './pipelines';
 export * from './mail';
 export * from './vault';
 export * from './provider-limits';
+export * from './autopilot';
+export * from './knowledge';

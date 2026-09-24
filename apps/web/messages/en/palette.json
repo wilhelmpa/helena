@@ -11,5 +11,15 @@
   "toggleChat": "Show or hide the coordinator chat",
   "board": "Board",
   "commands": "Commands",
-  "switchProject": "Switch project"
+  "switchProject": "Switch project",
+  "filterAll": "All",
+  "filterKinds": "Filter by kind",
+  "capture": "Save",
+  "captureInbox": "Save to the Inbox: “{text}”",
+  "captureJournal": "Add to today's note: “{text}”",
+  "capturedInbox": "Saved to the Inbox",
+  "capturedJournal": "Added to today's note",
+  "openCaptured": "Open",
+  "captureFailed": "Could not save it",
+  "untitled": "Untitled"
 }

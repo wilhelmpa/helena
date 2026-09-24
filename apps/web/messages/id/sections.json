@@ -43,6 +43,10 @@
       "label": "Penyimpanan",
       "description": "Batas unggahan pengguna: ukuran file tunggal, jenis lampiran yang diterima, dan ruang penyimpanan untuk setiap proyek."
     },
+    "knowledge": {
+      "label": "Pengetahuan & pencarian",
+      "description": "Sumber-sumber pencarian terpadu, sejauh mana indeksnya, dan pencarian semantik."
+    },
     "telegram": {
       "label": "Telegram",
       "description": "Bot yang dihubungkan pengguna ke akun Telegram mereka, dan bot yang mengirimkan notifikasi Telegram untuk proyek yang tidak menetapkan bot sendiri."
@@ -66,6 +70,10 @@
     "plugins": {
       "label": "Plugin",
       "description": "Plugin bawaan Helena dan plugin eksternal di folder plugin: apa yang disediakan, hak yang diminta, dan mana yang boleh berjalan."
+    },
+    "model-prices": {
+      "label": "Harga model",
+      "description": "Euro per juta token per model, dasar setiap perkiraan biaya."
     }
   },
   "settings": {
@@ -120,6 +128,10 @@
     "ai-agents": {
       "label": "Agen AI",
       "description": "Agen AI yang bekerja dalam proyek ini."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Seberapa mandiri agen proyek ini bertindak, dan anggarannya."
     },
     "browser": {
       "label": "Browser",

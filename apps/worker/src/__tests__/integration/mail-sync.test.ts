@@ -2,7 +2,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { encryptSecret } from '@repo/crypto';
 import {
   approvalRequest,
   db,
@@ -17,7 +16,9 @@ import {
   mailMessageFolder,
   mailRule,
   mailThread,
+  nextCredentialId,
   project,
+  sealCredential,
   team,
 } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
@@ -80,10 +81,12 @@ async function createAccount(
     .insert(project)
     .values({ teamId: owner!.id, key: 'VOL', name: 'Volition' })
     .returning();
-  const secret = encryptSecret(JSON.stringify({ value: 'app-password' }));
+  const credentialId = await nextCredentialId();
+  const secret = sealCredential(credentialId, JSON.stringify({ value: 'app-password' }));
   const [credential] = await db
     .insert(integrationCredential)
     .values({
+      id: credentialId,
       teamId: owner!.id,
       integrationKey: 'secret',
       label: 'Mail: me@home.example',
@@ -99,6 +102,9 @@ async function createAccount(
     smtpHost: 'smtp.gmail.com',
     username: 'me@home.example',
     credentialId: credential!.id,
+    // These tests import every message whatever its date; the fetch window has tests of
+    // its own (mail-access.test.ts).
+    fetchDays: null,
     ...overrides,
   });
   const [account] = await loadSyncAccounts();
@@ -426,7 +432,7 @@ describe('mail accounts', () => {
     await db
       .update(integrationCredential)
       .set({
-        ...encryptSecret(JSON.stringify({ value: 'new-password' })),
+        ...sealCredential(row!.credentialId!, JSON.stringify({ value: 'new-password' })),
         updatedAt: new Date(Date.now() + 1000),
       })
       .where(eq(integrationCredential.id, row!.credentialId!));

@@ -2,6 +2,7 @@ import { connectionError, folderPriority, folderRole, isSkippedFolder } from '@r
 import { pushActions } from './actions';
 import { syncFolder, type FolderSyncOptions } from './folder-sync';
 import {
+  connectSettings,
   saveFolders,
   setAccountStatus,
   syncedFolders,
@@ -47,10 +48,11 @@ export class AccountSync {
   private async run(): Promise<void> {
     let backoff = this.config.backoffMs;
     while (!this.stopped) {
-      const client = mailTransport().imap(this.account.settings);
-      this.client = client;
-      client.on('error', () => undefined);
+      let client: ImapClient | null = null;
       try {
+        client = mailTransport().imap(await connectSettings(this.account));
+        this.client = client;
+        client.on('error', () => undefined);
         await client.connect();
         backoff = this.config.backoffMs;
         await this.session(client);
@@ -62,7 +64,7 @@ export class AccountSync {
         await this.pause(backoff);
         backoff = Math.min(backoff * 2, this.config.maxBackoffMs);
       } finally {
-        client.close();
+        client?.close();
         this.client = null;
       }
     }

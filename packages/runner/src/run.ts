@@ -82,6 +82,7 @@ function taskOf(run: Run) {
     thinkingLevel: run.thinkingLevel,
     maxTurns: run.maxTurns,
     runBudgetSeconds: run.runBudgetSeconds,
+    autopilotLevel: run.autopilotLevel ?? null,
     env: runEnv(run),
   };
 }

@@ -1,5 +1,5 @@
 {
-  "id": "3d7ac0d0-8aad-4d88-828c-42adfe1bd737",
+  "id": "c0c00e01-6e8d-43c6-a111-dd9ba9535698",
   "prevId": "98dfb2d0-7c12-4e21-ba79-ef159db228e1",
   "version": "7",
   "dialect": "postgresql",
@@ -2868,6 +2868,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "autopilot_level": {
+          "name": "autopilot_level",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "model_check": {
           "name": "model_check",
           "type": "jsonb",
@@ -4400,6 +4406,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "autopilot_level": {
+          "name": "autopilot_level",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autopilot_raise": {
+          "name": "autopilot_raise",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -4543,6 +4562,10 @@
         "ai_agent_kind_check": {
           "name": "ai_agent_kind_check",
           "value": "\"ai_agent\".\"kind\" IN ('external', 'internal')"
+        },
+        "ai_agent_autopilot_level_check": {
+          "name": "ai_agent_autopilot_level_check",
+          "value": "\"ai_agent\".\"autopilot_level\" IS NULL OR \"ai_agent\".\"autopilot_level\" BETWEEN 0 AND 3"
         },
         "ai_agent_runner_scope_check": {
           "name": "ai_agent_runner_scope_check",
@@ -4701,6 +4724,30 @@
         "command": {
           "name": "command",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autopilot_level": {
+          "name": "autopilot_level",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "policy_reason": {
+          "name": "policy_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -4907,7 +4954,7 @@
       "checkConstraints": {
         "approval_request_kind_check": {
           "name": "approval_request_kind_check",
-          "value": "\"approval_request\".\"kind\" IN ('send', 'publish', 'pay', 'delete', 'other')"
+          "value": "\"approval_request\".\"kind\" IN ('send', 'publish', 'pay', 'delete', 'write', 'execute', 'credentials', 'budget', 'other')"
         },
         "approval_request_status_check": {
           "name": "approval_request_status_check",
@@ -10947,6 +10994,13 @@
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
+        },
+        "autopilot_level": {
+          "name": "autopilot_level",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "created_at": {
           "name": "created_at",
@@ -18119,8 +18173,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.helena_provider_limit": {
-      "name": "helena_provider_limit",
+    "public.helena_budget": {
+      "name": "helena_budget",
       "schema": "",
       "columns": {
         "id": {
@@ -18129,79 +18183,73 @@
           "primaryKey": true,
           "notNull": true
         },
-        "provider": {
-          "name": "provider",
-          "type": "text",
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "account": {
-          "name": "account",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "login": {
-          "name": "login",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan": {
-          "name": "plan",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "windows": {
-          "name": "windows",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "extra": {
-          "name": "extra",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reset_credits": {
-          "name": "reset_credits",
+        "agent_id": {
+          "name": "agent_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "allowed": {
-          "name": "allowed",
-          "type": "boolean",
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "via": {
-          "name": "via",
+        "metric": {
+          "name": "metric",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'probe'"
-        },
-        "unavailable": {
-          "name": "unavailable",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "observed_at": {
-          "name": "observed_at",
-          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "period": {
+          "name": "period",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "limit_value": {
+          "name": "limit_value",
+          "type": "numeric(18, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warned_for": {
+          "name": "warned_for",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reached_for": {
+          "name": "reached_for",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grace_for": {
+          "name": "grace_for",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grace_runs": {
+          "name": "grace_runs",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "grace_run_ids": {
+          "name": "grace_run_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -18219,58 +18267,339 @@
         }
       },
       "indexes": {
-        "helena_provider_limit_account_idx": {
-          "name": "helena_provider_limit_account_idx",
+        "helena_budget_agent_uq": {
+          "name": "helena_budget_agent_uq",
           "columns": [
             {
-              "expression": "provider",
+              "expression": "agent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "account",
+              "expression": "metric",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "period",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": true,
+          "where": "\"helena_budget\".\"agent_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "helena_budget_project_uq": {
+          "name": "helena_budget_project_uq",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "metric",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "period",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"helena_budget\".\"project_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "helena_budget_team_id_team_id_fk": {
+          "name": "helena_budget_team_id_team_id_fk",
+          "tableFrom": "helena_budget",
+          "tableTo": "team",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "helena_budget_agent_id_ai_agent_id_fk": {
+          "name": "helena_budget_agent_id_ai_agent_id_fk",
+          "tableFrom": "helena_budget",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "helena_budget_project_id_project_id_fk": {
+          "name": "helena_budget_project_id_project_id_fk",
+          "tableFrom": "helena_budget",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "helena_provider_limit_via_check": {
-          "name": "helena_provider_limit_via_check",
-          "value": "\"helena_provider_limit\".\"via\" IN ('probe', 'passive')"
+        "helena_budget_target_check": {
+          "name": "helena_budget_target_check",
+          "value": "(\"helena_budget\".\"agent_id\" IS NULL) <> (\"helena_budget\".\"project_id\" IS NULL)"
+        },
+        "helena_budget_metric_check": {
+          "name": "helena_budget_metric_check",
+          "value": "\"helena_budget\".\"metric\" IN ('tokens', 'cost', 'time')"
+        },
+        "helena_budget_period_check": {
+          "name": "helena_budget_period_check",
+          "value": "\"helena_budget\".\"period\" IN ('day', 'month')"
+        },
+        "helena_budget_limit_check": {
+          "name": "helena_budget_limit_check",
+          "value": "\"helena_budget\".\"limit_value\" > 0"
         }
       },
       "isRLSEnabled": false
     },
-    "public.helena_provider_limit_agent": {
-      "name": "helena_provider_limit_agent",
+    "public.helena_model_price": {
+      "name": "helena_model_price",
       "schema": "",
       "columns": {
-        "limit_id": {
-          "name": "limit_id",
-          "type": "integer",
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input_eur_per_m": {
+          "name": "input_eur_per_m",
+          "type": "numeric(14, 6)",
           "primaryKey": false,
           "notNull": true
+        },
+        "output_eur_per_m": {
+          "name": "output_eur_per_m",
+          "type": "numeric(14, 6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cache_read_eur_per_m": {
+          "name": "cache_read_eur_per_m",
+          "type": "numeric(14, 6)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cache_write_eur_per_m": {
+          "name": "cache_write_eur_per_m",
+          "type": "numeric(14, 6)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_usd": {
+          "name": "source_usd",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by_user_id": {
+          "name": "updated_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "helena_model_price_updated_by_user_id_user_id_fk": {
+          "name": "helena_model_price_updated_by_user_id_user_id_fk",
+          "tableFrom": "helena_model_price",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updated_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "helena_model_price_source_check": {
+          "name": "helena_model_price_source_check",
+          "value": "\"helena_model_price\".\"source\" IN ('models.dev', 'manual')"
+        },
+        "helena_model_price_positive_check": {
+          "name": "helena_model_price_positive_check",
+          "value": "\"helena_model_price\".\"input_eur_per_m\" >= 0 AND \"helena_model_price\".\"output_eur_per_m\" >= 0\n        AND coalesce(\"helena_model_price\".\"cache_read_eur_per_m\", 0) >= 0 AND coalesce(\"helena_model_price\".\"cache_write_eur_per_m\", 0) >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.helena_policy_decision": {
+      "name": "helena_policy_decision",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "agent_id": {
           "name": "agent_id",
           "type": "integer",
           "primaryKey": false,
+          "notNull": false
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "chat_message_id": {
+          "name": "chat_message_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adapter": {
+          "name": "adapter",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true
         },
-        "seen_at": {
-          "name": "seen_at",
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level_source": {
+          "name": "level_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "policy_ids": {
+          "name": "policy_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_id": {
+          "name": "approval_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reported_at": {
+          "name": "reported_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -18278,11 +18607,68 @@
         }
       },
       "indexes": {
-        "helena_provider_limit_agent_agent_idx": {
-          "name": "helena_provider_limit_agent_agent_idx",
+        "helena_policy_decision_project_idx": {
+          "name": "helena_policy_decision_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "helena_policy_decision_agent_idx": {
+          "name": "helena_policy_decision_agent_idx",
           "columns": [
             {
               "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "helena_policy_decision_run_idx": {
+          "name": "helena_policy_decision_run_idx",
+          "columns": [
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "helena_policy_decision_created_idx": {
+          "name": "helena_policy_decision_created_idx",
+          "columns": [
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -18295,12 +18681,12 @@
         }
       },
       "foreignKeys": {
-        "helena_provider_limit_agent_limit_id_helena_provider_limit_id_fk": {
-          "name": "helena_provider_limit_agent_limit_id_helena_provider_limit_id_fk",
-          "tableFrom": "helena_provider_limit_agent",
-          "tableTo": "helena_provider_limit",
+        "helena_policy_decision_team_id_team_id_fk": {
+          "name": "helena_policy_decision_team_id_team_id_fk",
+          "tableFrom": "helena_policy_decision",
+          "tableTo": "team",
           "columnsFrom": [
-            "limit_id"
+            "team_id"
           ],
           "columnsTo": [
             "id"
@@ -18308,9 +18694,22 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "helena_provider_limit_agent_agent_id_ai_agent_id_fk": {
-          "name": "helena_provider_limit_agent_agent_id_ai_agent_id_fk",
-          "tableFrom": "helena_provider_limit_agent",
+        "helena_policy_decision_project_id_project_id_fk": {
+          "name": "helena_policy_decision_project_id_project_id_fk",
+          "tableFrom": "helena_policy_decision",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "helena_policy_decision_agent_id_ai_agent_id_fk": {
+          "name": "helena_policy_decision_agent_id_ai_agent_id_fk",
+          "tableFrom": "helena_policy_decision",
           "tableTo": "ai_agent",
           "columnsFrom": [
             "agent_id"
@@ -18320,20 +18719,56 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "helena_policy_decision_run_id_agent_run_id_fk": {
+          "name": "helena_policy_decision_run_id_agent_run_id_fk",
+          "tableFrom": "helena_policy_decision",
+          "tableTo": "agent_run",
+          "columnsFrom": [
+            "run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "helena_policy_decision_chat_message_id_agent_chat_message_id_fk": {
+          "name": "helena_policy_decision_chat_message_id_agent_chat_message_id_fk",
+          "tableFrom": "helena_policy_decision",
+          "tableTo": "agent_chat_message",
+          "columnsFrom": [
+            "chat_message_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "helena_policy_decision_approval_id_approval_request_id_fk": {
+          "name": "helena_policy_decision_approval_id_approval_request_id_fk",
+          "tableFrom": "helena_policy_decision",
+          "tableTo": "approval_request",
+          "columnsFrom": [
+            "approval_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "helena_provider_limit_agent_limit_id_agent_id_pk": {
-          "name": "helena_provider_limit_agent_limit_id_agent_id_pk",
-          "columns": [
-            "limit_id",
-            "agent_id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "helena_policy_decision_outcome_check": {
+          "name": "helena_policy_decision_outcome_check",
+          "value": "\"helena_policy_decision\".\"outcome\" IN ('allow', 'needs-approval', 'deny')"
+        }
+      },
       "isRLSEnabled": false
     }
   },

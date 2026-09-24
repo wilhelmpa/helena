@@ -1,8 +1,20 @@
 import { request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 
-export type ApprovalKind = 'send' | 'publish' | 'pay' | 'delete' | 'other';
+export type ApprovalKind =
+  'send' | 'publish' | 'pay' | 'delete' | 'write' | 'execute' | 'credentials' | 'budget' | 'other';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+export interface BudgetCardPayload {
+  budgetId?: number;
+  scope?: 'agent' | 'project';
+  metric?: 'tokens' | 'cost' | 'time';
+  period?: 'day' | 'month';
+  limit?: number;
+  used?: number;
+  agentId?: number | null;
+  projectId?: number | null;
+}
 export type ApprovalListStatus = 'pending' | 'decided';
 
 export interface ApprovalRequest {
@@ -23,6 +35,13 @@ export interface ApprovalRequest {
   details: string;
   // The exact command the agent may run once the request is approved.
   command: string | null;
+  // What Helena's policy engine said about the action: its category, the Autopilot level
+  // that applied and why a person decides (autopilot.reason.<code>).
+  category?: string | null;
+  autopilotLevel?: number | null;
+  policyReason?: string | null;
+  // A budget card's budget ('budget' kind): metric, period, limit, use.
+  payload?: BudgetCardPayload | null;
   status: ApprovalStatus;
   decidedByUserId: string | null;
   decidedByName: string | null;

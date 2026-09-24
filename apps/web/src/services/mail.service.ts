@@ -4,6 +4,7 @@ import {
   createMailDraft,
   createMailRule,
   deleteMailAccount,
+  resetMailAccount,
   deleteMailRule,
   listIssueMailThreads,
   listMailAccounts,
@@ -51,6 +52,14 @@ export function useSaveMailAccount(teamId: number) {
       id == null
         ? createMailAccount(teamId, input as MailAccountInput)
         : updateMailAccount(teamId, id, input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useResetMailAccount(teamId: number) {
+  const invalidate = useInvalidateMail(teamId);
+  return useMutation({
+    mutationFn: (accountId: number) => resetMailAccount(teamId, accountId),
     onSuccess: invalidate,
   });
 }

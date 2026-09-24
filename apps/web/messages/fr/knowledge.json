@@ -1,0 +1,63 @@
+{
+  "source": {
+    "issue": "Tâches",
+    "comment": "Commentaires",
+    "vault": "Notes et fichiers",
+    "mail": "E-mails",
+    "chat": "Chats",
+    "run": "Exécutions d’agents"
+  },
+  "capture": {
+    "inbox": "Boîte de réception",
+    "journal": "Note quotidienne",
+    "saveMessage": "Enregistrer comme note",
+    "chatTitle": "Depuis le chat",
+    "saved": "Enregistré dans la Boîte de réception",
+    "open": "Ouvrir",
+    "failed": "Impossible d’enregistrer",
+    "savePage": "Enregistrer la page dans les Connaissances",
+    "pageSaved": "Page enregistrée dans la Boîte de réception",
+    "pageFailed": "Impossible d’enregistrer la page"
+  },
+  "plugin": {
+    "name": "Connaissances",
+    "description": "Les sources de connaissances propres à Helena, et la capture rapide dans la Boîte de réception et la note quotidienne."
+  },
+  "journal": {
+    "today": "Note du jour"
+  },
+  "templates": {
+    "action": "Nouvelle depuis un modèle",
+    "title": "Nouvelle note à partir d’un modèle",
+    "choose": "Modèle",
+    "none": "Aucun modèle pour l’instant. Les notes du dossier « Templates » apparaissent ici.",
+    "name": "Nom",
+    "namePlaceholder": "Nom de la note",
+    "cancel": "Annuler",
+    "create": "Créer"
+  },
+  "mentions": {
+    "title": "Mentionnée dans"
+  },
+  "admin": {
+    "sources": "Sources",
+    "sourcesHint": "Ce que couvre la recherche unifiée (⌘K et la recherche des agents), et où en est l’index pour chaque source.",
+    "error": "Erreur : {message}",
+    "indexedAt": "Indexé {time}",
+    "notYet": "Pas encore indexé",
+    "items": "{count, plural, one {# élément} other {# éléments}}",
+    "reindex": "Réindexer",
+    "semantic": "Recherche sémantique",
+    "semanticHint": "Trouve aussi ce qui est formulé autrement, d’après le sens. Fonctionne sur ce serveur ; rien n’en sort.",
+    "semanticSwitch": "Rechercher par le sens",
+    "pgvector": "pgvector",
+    "installed": "installé",
+    "notInstalled": "non installé (la recherche fonctionne sans, mais plus lentement)",
+    "model": "Modèle",
+    "none": "aucun",
+    "passages": "Passages",
+    "embedded": "{embedded} sur {passages} vectorisés",
+    "runtimeMissing": "L’environnement d’exécution des embeddings n’est pas encore installé. Il faut l’accord du propriétaire (docs/helena-decisions/second-brain.md).",
+    "modelMissing": "Le modèle d’embeddings n’a pas pu être chargé. Son téléchargement nécessite l’accord du propriétaire."
+  }
+}

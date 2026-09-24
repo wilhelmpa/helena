@@ -76,6 +76,16 @@ def proxy_environment(forwards: dict[int, str]) -> dict[str, str]:
     return env
 
 
+def plan_environment(forwards: dict[int, str]) -> dict[str, str]:
+    """Inside the unit, Helena's API is the loopback forwarder to plan.sock, whatever address
+    the runner reaches it at outside. Without this the approval guard and the MCP tools of a
+    runner whose API is on another port called a port nothing listens on in the unit."""
+    for port, path in forwards.items():
+        if os.path.basename(path) == 'plan.sock':
+            return {'ITSAPLAN_URL': f'http://127.0.0.1:{port}'}
+    return {}
+
+
 def ensure_links(home: str, links: list[tuple[str, str]]) -> None:
     """Links the runtime expects in its profile (the shared Hermes configuration, the Plan
     approval guard). Made here, as the project user, so no one else writes in a profile."""
@@ -233,6 +243,7 @@ def main(argv: list[str]) -> None:
         if args.env_header:
             env.update(read_env_header())
         env.update(proxy_environment(forwards))
+        env.update(plan_environment(forwards))
         home = env.get('HERMES_HOME') or env.get('HOME')
         if home and links:
             ensure_links(home, links)

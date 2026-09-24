@@ -407,7 +407,8 @@
       "mcp": "Інструменти MCP Helena",
       "webhooks": "Вебхуки",
       "bundles": "Пакети шаблонів",
-      "limits": "Ліміти"
+      "limits": "Ліміти",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "Завантажиться, щойно зовнішні плагіни буде ввімкнено.",

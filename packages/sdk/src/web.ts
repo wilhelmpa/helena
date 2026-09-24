@@ -7,6 +7,14 @@ import { sortSlots, uiSlotKey, type SlotOf, type UiSlot, type UiSlotName } from 
 export * from './ui';
 export { resolveText, type LocalizedText, type Translate } from './text';
 export { CORE_PLUGIN_ID, Registry } from './registry';
+// The action categories and where an action lands, for the pages that show policy
+// decisions (the Autopilot).
+export {
+  ACTION_CATEGORIES,
+  isActionCategory,
+  type ActionCategory,
+  type ActionScope,
+} from './actions';
 
 export type UiSlotRegistry = Registry<UiSlot>;
 

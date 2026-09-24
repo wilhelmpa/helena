@@ -18,7 +18,11 @@
     "publish": "Publikasikan",
     "pay": "Bayar",
     "delete": "Hapus",
-    "other": "Lainnya"
+    "other": "Lainnya",
+    "write": "Ubah",
+    "execute": "Jalankan",
+    "credentials": "Akses",
+    "budget": "Anggaran"
   },
   "requestedBy": "{agent} (@{username}) di {project}",
   "notePlaceholder": "Catatan untuk keputusan Anda (opsional)",

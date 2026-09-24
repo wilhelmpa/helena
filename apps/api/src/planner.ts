@@ -1,3 +1,4 @@
+import { RateLimitedError } from '@repo/auth';
 import { projectTemplateRoutes } from './modules/project-templates';
 import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
 import { routineRoutes } from './modules/routines';
@@ -23,6 +24,7 @@ import { agentSkillRoutes } from './modules/agents/skills';
 import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
 import { credentialRoutes } from './modules/agents/credentials';
+import { connectorRoutes, connectorToolRoutes } from './modules/connectors';
 import { agentLearningRoutes } from './modules/agents/learning';
 import { agentRuntimeRequestRoutes } from './modules/agents/runtime-requests';
 import { runTimelineRoutes } from './modules/agents/run-timeline';
@@ -73,6 +75,8 @@ import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
 import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { approvalRoutes } from './modules/approvals';
+import { modelPriceRoutes } from './modules/model-prices';
+import { autopilotRoutes } from './modules/autopilot';
 import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
 import { mailDraftRoutes } from './modules/mail/drafts';
@@ -92,6 +96,12 @@ import { mailThreadRoutes } from './modules/mail/threads';
 export const planner = new Elysia({ name: 'planner' })
   .use(authContext)
   .onError({ as: 'global' }, ({ code, error, set }) => {
+    // An API key over its request limit: 429 with the seconds to wait.
+    if (error instanceof RateLimitedError) {
+      set.status = 429;
+      set.headers['retry-after'] = String(error.retryAfterSeconds);
+      return { error: 'Too many requests', code: 'RATE_LIMITED' };
+    }
     if (error instanceof HttpError) {
       set.status = error.status;
       return error.code ? { error: error.message, code: error.code } : { error: error.message };
@@ -131,6 +141,8 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentToolRoutes)
   .use(agentMcpServerRoutes)
   .use(credentialRoutes)
+  .use(connectorRoutes)
+  .use(connectorToolRoutes)
   .use(agentLearningRoutes)
   .use(agentRuntimeRequestRoutes)
   .use(runTimelineRoutes)
@@ -182,6 +194,8 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentNetworkRoutes)
   .use(agentBrowserGatewayRoutes)
   .use(approvalRoutes)
+  .use(modelPriceRoutes)
+  .use(autopilotRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)
   .use(mailThreadRoutes)

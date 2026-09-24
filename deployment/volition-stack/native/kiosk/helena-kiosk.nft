@@ -1,0 +1,13 @@
+# Only the kiosk user reaches Helena's local owner port (nginx 127.0.0.1:8088).
+table inet helena_kiosk
+delete table inet helena_kiosk
+table inet helena_kiosk {
+	chain nat_output {
+		type nat hook output priority -100;
+		meta skuid "plan-kiosk" ip daddr 127.0.0.1 tcp dport 80 redirect to :8088
+	}
+	chain filter_output {
+		type filter hook output priority 0;
+		ip daddr 127.0.0.1 tcp dport 8088 meta skuid != "plan-kiosk" reject with tcp reset
+	}
+}

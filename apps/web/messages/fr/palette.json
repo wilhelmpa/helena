@@ -11,5 +11,15 @@
   "toggleChat": "Afficher ou masquer le chat du coordinateur",
   "board": "Tableau",
   "commands": "Commandes",
-  "switchProject": "Changer de projet"
+  "switchProject": "Changer de projet",
+  "filterAll": "Tout",
+  "filterKinds": "Filtrer par type",
+  "capture": "Enregistrer",
+  "captureInbox": "Enregistrer dans la Boîte de réception : « {text} »",
+  "captureJournal": "Ajouter à la note du jour : « {text} »",
+  "capturedInbox": "Enregistré dans la Boîte de réception",
+  "capturedJournal": "Ajouté à la note du jour",
+  "openCaptured": "Ouvrir",
+  "captureFailed": "Impossible d’enregistrer",
+  "untitled": "Sans titre"
 }

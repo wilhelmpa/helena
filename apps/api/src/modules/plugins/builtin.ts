@@ -4,6 +4,11 @@ import {
   type HelenaPlugin,
   type PluginManifest,
 } from '@helena/sdk';
+import {
+  KNOWLEDGE_PLUGIN_MANIFEST,
+  knowledgePlugin,
+  useKnowledgeRegistries,
+} from '@helena/knowledge';
 import { INTEGRATIONS_PLUGIN_ID, builtinConnectors } from '@repo/agent-tools';
 import { webhooksManifest, webhooksPlugin } from '@repo/db/plugins';
 import { host } from '#shared/helena';
@@ -12,6 +17,7 @@ import { routeTools, type McpRouteTool } from '#mcp/generate';
 import type { McpApp } from '#mcp/types';
 import { loadRepositoryBundles } from '#modules/template-bundles/service';
 import { SPOOL_SOURCE_ID, spoolLimitSource } from '#modules/provider-limits/spool';
+import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -88,6 +94,16 @@ const limits: HelenaPlugin = {
   },
 };
 
+// Helena's Autopilot (docs/helena-decisions/policy-engine.md) as the policy evaluator every
+// tool call, connector service and workflow step the framework routes is asked through.
+export const AUTOPILOT_PLUGIN_ID = 'helena.autopilot';
+
+const autopilot: HelenaPlugin = {
+  register(ctx) {
+    ctx.policies.register(autopilotPolicyEvaluator);
+  },
+};
+
 let loaded = false;
 
 export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
@@ -99,6 +115,12 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     builtinManifest(INTEGRATIONS_PLUGIN_ID, 'integrations', {
       provides: { connectors: ['*'], tools: ['*'] },
       permissions: { actions: all, credentials: true },
+    }),
+  );
+  await host.load(
+    autopilot,
+    builtinManifest(AUTOPILOT_PLUGIN_ID, 'autopilot', {
+      provides: { policies: [AUTOPILOT_EVALUATOR_ID] },
     }),
   );
   await host.load(
@@ -117,6 +139,13 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
       provides: { usageLimitSources: [SPOOL_SOURCE_ID] },
     }),
   );
+  // The second brain: Helena's knowledge sources and capture targets live in the host's
+  // registries, beside those of plugins (@helena/knowledge).
+  useKnowledgeRegistries({
+    sources: host.knowledgeSources,
+    captureTargets: host.captureTargets,
+  });
+  await host.load(knowledgePlugin, KNOWLEDGE_PLUGIN_MANIFEST);
   await loadRepositoryBundles();
   for (const plugin of host.list()) {
     if (plugin.status !== 'loaded') {

@@ -1,5 +1,5 @@
-import { Cpu, Globe, KeyRound, Lock, TerminalSquare } from 'lucide-react';
-import type { CredentialKind } from '@/lib/api/endpoints/credentials';
+import { Cpu, Globe, KeyRound, Lock, Plug, TerminalSquare } from 'lucide-react';
+import type { ListedKind } from '@/lib/api/endpoints/credentials';
 
 export const CREDENTIAL_KIND_ICONS = {
   web_login: Globe,
@@ -7,15 +7,10 @@ export const CREDENTIAL_KIND_ICONS = {
   ssh_key: TerminalSquare,
   secret: Lock,
   runtime_login: Cpu,
-} satisfies Record<CredentialKind, typeof Globe>;
+  mcp_oauth: Plug,
+} satisfies Record<ListedKind, typeof Globe>;
 
-export function CredentialKindIcon({
-  kind,
-  className,
-}: {
-  kind: CredentialKind;
-  className?: string;
-}) {
+export function CredentialKindIcon({ kind, className }: { kind: ListedKind; className?: string }) {
   const Icon = CREDENTIAL_KIND_ICONS[kind];
   return <Icon className={className} />;
 }

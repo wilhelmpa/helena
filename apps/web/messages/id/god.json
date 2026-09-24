@@ -407,7 +407,8 @@
       "mcp": "Alat MCP Helena",
       "webhooks": "Webhook",
       "bundles": "Paket templat",
-      "limits": "Batas"
+      "limits": "Batas",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

@@ -22,6 +22,7 @@ export {
   categoryFromAnnotations,
   isActionCategory,
   type ActionCategory,
+  type ActionScope,
 } from './actions';
 export { consoleLogger, type AgentRef, type Logger, type ProjectRef } from './common';
 export { resolveText, type LocalizedText, type Translate } from './text';
