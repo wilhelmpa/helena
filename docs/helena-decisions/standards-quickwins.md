@@ -18,6 +18,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-08 / JOB-04 | done | see git log | `croner` 10.0.1 (already the API's) |
 | WEB-03 | done | see git log | `radix-ui` meta package only |
 | WEB-04 | done | see git log | Popover + Command (cmdk); `@base-ui/react` removed |
+| WEB-15 | done | see git log | Next.js nonce pattern, no library |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -127,3 +128,10 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - The routines' free-text field with suggestions (schedule, time zone) is now cmdk's input (`Command.Input asChild` on the field) with the list in a Popover instead of 185 lines of hand-written combobox ARIA. Kept: typing is the value, Enter submits the form when no list is open, Escape closes, the chevron shows all suggestions. JSDOM tests cover role, label, options, arrow keys + Enter, Enter to the form, Escape.
 - `@base-ui/react` is removed.
 - Known cmdk 1.1.1 quirk, measured in the browser: the option cmdk marks active on its own after typing is not yet the input's `aria-activedescendant`; the first arrow key sets it. It affects every cmdk picker alike. If cmdk stays unmaintained, the audit's fallback (all pickers on Base UI together) stands.
+
+## WEB-15: scripts by nonce
+
+- `src/proxy.ts` makes a fresh nonce per document request and sends `script-src 'nonce-…' 'strict-dynamic' https: http: 'unsafe-inline'` (Google's "strict CSP": a browser that knows nonces ignores the three fallbacks, which only CSP-level-1 browsers read). The policy is also set on the forwarded request, where Next finds the nonce and puts it on its own scripts and flight payload; `x-nonce` carries it to the layout for the two inline scripts (RuntimeEnvScript, next-themes). Development adds `'unsafe-eval'` as before; media routes keep the api's headers.
+- Every page already renders per request (`connection()` in RuntimeEnvScript), which a nonce needs.
+- Checked on a production build of this branch: all 41 script tags of `/login` carry the nonce; start page, project board and dashboard, notes, the Scalar API reference and the preferences render, the theme bootstrap and runtime env run, and the console shows no CSP refusal.
+- Live note: the live web runs `next dev` today; the policy then includes `'unsafe-eval'` as before.

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import { ThemeProvider } from 'next-themes';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -33,6 +34,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  // The script nonce of this request (src/proxy.ts), for next-themes' inline bootstrap.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html lang={locale} dir={localeDirection(locale as Locale)} suppressHydrationWarning>
@@ -47,6 +50,7 @@ export default async function RootLayout({
           // other app sharing the same localhost origin. A shared key makes two such
           // apps fight over the value through cross-tab storage events.
           storageKey="itsaplan-theme"
+          nonce={nonce}
         >
           <NextIntlClientProvider>
             <Providers>

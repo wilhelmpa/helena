@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionCookie } from 'better-auth/cookies';
 import { contentSecurityPolicy } from '@/utils/contentSecurityPolicy';
@@ -30,8 +31,8 @@ function matcher(pathname: string) {
 
 // Expires every better-auth cookie the request carries. A `__Secure-` name is only
 // accepted back with `secure`, so the deletion carries it too.
-function clearSession(request: NextRequest): NextResponse {
-  const response = NextResponse.next();
+function clearSession(request: NextRequest, next: () => NextResponse): NextResponse {
+  const response = next();
   for (const { name } of request.cookies.getAll()) {
     if (!name.includes('better-auth.')) continue;
     response.cookies.delete({ name, path: '/', secure: name.startsWith('__Secure-') });
@@ -39,11 +40,20 @@ function clearSession(request: NextRequest): NextResponse {
   return response;
 }
 
+// A page gets a fresh script nonce and the policy naming it. Next reads the nonce from
+// the policy on the request and puts it on its own scripts; the layout reads x-nonce for
+// its inline ones. Media routes keep the api's headers and need neither.
 export async function proxy(request: NextRequest) {
-  const response = await gate(request);
-  if (!MEDIA_PATHS.some(matcher(request.nextUrl.pathname))) {
-    response.headers.set('Content-Security-Policy', contentSecurityPolicy());
+  if (MEDIA_PATHS.some(matcher(request.nextUrl.pathname))) {
+    return gate(request, () => NextResponse.next());
   }
+  const nonce = randomBytes(16).toString('base64');
+  const policy = contentSecurityPolicy(nonce);
+  const headers = new Headers(request.headers);
+  headers.set('x-nonce', nonce);
+  headers.set('Content-Security-Policy', policy);
+  const response = await gate(request, () => NextResponse.next({ request: { headers } }));
+  response.headers.set('Content-Security-Policy', policy);
   return response;
 }
 
@@ -54,12 +64,12 @@ export async function proxy(request: NextRequest) {
 // A cookie the API no longer accepts passes this check, so the client handles that
 // case: `apiFailure` in `lib/api/core/client.ts` signs out on a 401 and lands on
 // `/login?expired=1`, where the cookie is cleared for good.
-async function gate(request: NextRequest): Promise<NextResponse> {
+async function gate(request: NextRequest, next: () => NextResponse): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   const hasSession = getSessionCookie(request) != null;
   const matches = matcher(pathname);
 
-  if (OPEN_PATHS.some(matches)) return NextResponse.next();
+  if (OPEN_PATHS.some(matches)) return next();
 
   const isPublic = PUBLIC_PATHS.some(matches);
   const expired = isPublic && request.nextUrl.searchParams.get('expired') === '1';
@@ -73,9 +83,9 @@ async function gate(request: NextRequest): Promise<NextResponse> {
     // cookie written under attributes the api no longer sets, and that one passes the
     // check below and bounces the browser back into the app, where the next 401 starts
     // the cycle over.
-    if (request.nextUrl.searchParams.get('expired') === '1') return clearSession(request);
+    if (request.nextUrl.searchParams.get('expired') === '1') return clearSession(request, next);
     if (hasSession) return NextResponse.redirect(new URL('/', request.url));
-    return NextResponse.next();
+    return next();
   }
 
   if (!hasSession) {
@@ -87,7 +97,7 @@ async function gate(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return next();
 }
 
 export const config = {
