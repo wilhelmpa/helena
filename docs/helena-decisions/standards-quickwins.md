@@ -13,6 +13,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | BRW-01 | done | see git log | `ws` 8.21.3 (MIT) |
 | BRW-03 | done | see git log | `mp4box` 2.4.1 (BSD-3), test only |
 | WEB-17 | done | see git log | `negotiator` 1.1 + `@formatjs/intl-localematcher` 0.8 (MIT), in `@helena/locales` |
+| WEB-18 | done | see git log | no library |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -89,3 +90,9 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - New package `@helena/locales` (`packages/locales`): the shipped `LOCALES` and `DEFAULT_LOCALE`, which the web and the API each kept a copy of, and, as the server-only entry `@helena/locales/accept-language`, `localeFromAcceptLanguage()`: `negotiator` parses the header, `@formatjs/intl-localematcher` (`match`, best fit with CLDR data) picks the language. Both libraries were already in the tree through next-intl; the matcher uses the same 0.8 line rather than 0.9 so there is one copy.
 - Kept on purpose: a wildcard ranks every language after it below "anything", so `ja-JP,*;q=0.9,zh;q=0.8` still gives the default. Malformed tags are skipped instead of throwing. `zh-TW` still falls to `zh-CN`.
 - The web's `i18n/locales.ts` re-exports the list and keeps its web-only parts (labels, flags, cookie, direction); the API's `user-preferences/locale.ts` re-exports both. `transpilePackages` gains `@helena/locales`. The matcher is a separate entry so negotiator never reaches a client bundle.
+
+## WEB-18: sticky Ctrl/Alt in the mobile terminal key bar
+
+- Finding beyond the audit: xterm.js (6.0 in WeTTY 3.2.2) decides what a key sends by the legacy `keyCode`, and the bar built its events from `key` and `code` only (keyCode 0). Checked in headless Chrome against WeTTY's own `xterm.js`: the old events sent nothing at all, not only Ctrl combinations. The paste button typed characters as keydowns, which xterm ignores for the same reason.
+- Now (`features/owner-terminal/utils/terminalKeys.ts`): every key carries its keyCode; Ctrl and Alt are latched toggles (`aria-pressed`, accent while held) that apply to the next key from the bar **or** from the phone's keyboard (the next typed character is taken over in the frame's document, from `keydown` or, for soft keyboards, `beforeinput`); paste is one `insertText` input event with CR line ends, the path xterm uses for typed text.
+- Verified with the real xterm.js: Esc, Tab, arrows, `|`, Ctrl+C (0x03), paste, and a latched Ctrl followed by a typed key (Ctrl+D, and Ctrl+E via `insertText` as a soft keyboard sends it). Alt+letter becomes ESC+letter on phones; on a Mac xterm treats Option as a compose key, which does not concern the phone-only bar.

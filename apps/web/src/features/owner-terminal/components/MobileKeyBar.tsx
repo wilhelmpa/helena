@@ -1,58 +1,76 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { readClipboardText } from '@/utils/clipboard';
+import {
+  captureNextCharacter,
+  dispatchTerminalKey,
+  dispatchTerminalText,
+  keyForCharacter,
+  NO_MODIFIERS,
+  type Modifiers,
+  type TerminalKey,
+} from '../utils/terminalKeys';
 
-// One physical key or literal character. wetty's xterm.js instance reads
-// keydown/keyup off its own hidden textarea with a plain addEventListener, which
-// fires for a dispatched (non-"trusted") event exactly like a real one -- the
-// isTrusted flag only gates a handful of browser-native default actions (like a
-// real Enter submitting a <form>), not JS listeners. That, plus the iframe being
-// same-origin (both under the Plan host), is what makes sendKey below work at
-// all: a cross-origin iframe's contentDocument would not be reachable.
-// A word key shows its translated name (design: "Strg" in German, not "Ctrl").
-// An arrow or symbol key shows the literal character instead -- universal, and
-// what the design itself lists ("|, ~, /, -"), so `label` skips translation.
-type KeyLabel = 'esc' | 'tab' | 'ctrl' | 'alt';
+// The keys a phone's keyboard lacks, for the terminal in the WeTTY frame (see
+// ../utils/terminalKeys for how they reach xterm.js). A word key shows its translated
+// name (design: "Strg" in German, not "Ctrl"); an arrow or symbol key shows the literal
+// character instead -- universal, and what the design itself lists ("|, ~, /, -").
+//
+// Ctrl and Alt are sticky: a tap holds the modifier for the next key, from the bar or from
+// the phone's keyboard (Ctrl, then "c" is Ctrl+C), and a second tap lets it go.
+type KeyLabel = 'esc' | 'tab';
 
-interface KeySpec {
+interface KeySpec extends TerminalKey {
   labelKey?: KeyLabel;
   label?: string;
-  key: string;
-  code: string;
 }
 
-const KEYS: KeySpec[] = [
-  { labelKey: 'esc', key: 'Escape', code: 'Escape' },
-  { labelKey: 'tab', key: 'Tab', code: 'Tab' },
-  { labelKey: 'ctrl', key: 'Control', code: 'ControlLeft' },
-  { labelKey: 'alt', key: 'Alt', code: 'AltLeft' },
-  { label: '←', key: 'ArrowLeft', code: 'ArrowLeft' },
-  { label: '↑', key: 'ArrowUp', code: 'ArrowUp' },
-  { label: '↓', key: 'ArrowDown', code: 'ArrowDown' },
-  { label: '→', key: 'ArrowRight', code: 'ArrowRight' },
-  { label: '|', key: '|', code: 'Backslash' },
-  { label: '~', key: '~', code: 'Backquote' },
-  { label: '/', key: '/', code: 'Slash' },
-  { label: '-', key: '-', code: 'Minus' },
+const KEYS_BEFORE_MODIFIERS: KeySpec[] = [
+  { labelKey: 'esc', key: 'Escape', code: 'Escape', keyCode: 27 },
+  { labelKey: 'tab', key: 'Tab', code: 'Tab', keyCode: 9 },
 ];
 
-function dispatchKey(target: Document, spec: KeySpec) {
-  const element = (target.activeElement as HTMLElement | null) ?? target.body;
-  for (const type of ['keydown', 'keyup'] as const) {
-    element.dispatchEvent(
-      new KeyboardEvent(type, { key: spec.key, code: spec.code, bubbles: true, cancelable: true }),
-    );
-  }
-}
+const KEYS_AFTER_MODIFIERS: KeySpec[] = [
+  { label: '←', key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
+  { label: '↑', key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
+  { label: '↓', key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
+  { label: '→', key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+  { label: '|', key: '|', code: 'Backslash', keyCode: 220 },
+  { label: '~', key: '~', code: 'Backquote', keyCode: 192 },
+  { label: '/', key: '/', code: 'Slash', keyCode: 191 },
+  { label: '-', key: '-', code: 'Minus', keyCode: 189 },
+];
+
+const KEY_CLASS = 'h-7 shrink-0 px-2 font-mono text-xs';
 
 export default function MobileKeyBar({ frame }: { frame: HTMLIFrameElement | null }) {
   const t = useTranslations('ownerTerminal.keys');
+  const [held, setHeld] = useState<Modifiers>(NO_MODIFIERS);
+  const holding = held.ctrl || held.alt;
 
-  function press(spec: KeySpec) {
+  // A held modifier applies to the next character typed into the terminal as well.
+  useEffect(() => {
     const doc = frame?.contentDocument;
-    if (doc) dispatchKey(doc, spec);
+    if (!doc || !holding) return;
+    return captureNextCharacter(doc, (character) => {
+      dispatchTerminalKey(doc, keyForCharacter(character), held);
+      setHeld(NO_MODIFIERS);
+    });
+  }, [frame, held, holding]);
+
+  function press(spec: TerminalKey) {
+    const doc = frame?.contentDocument;
+    if (doc) dispatchTerminalKey(doc, spec, held);
+    setHeld(NO_MODIFIERS);
+    frame?.contentWindow?.focus();
+  }
+
+  function toggle(modifier: keyof Modifiers) {
+    setHeld((current) => ({ ...current, [modifier]: !current[modifier] }));
     frame?.contentWindow?.focus();
   }
 
@@ -60,16 +78,7 @@ export default function MobileKeyBar({ frame }: { frame: HTMLIFrameElement | nul
     const doc = frame?.contentDocument;
     if (!doc) return;
     try {
-      const text = await readClipboardText();
-      // A synthetic ClipboardEvent cannot carry clipboardData in every browser,
-      // which is what xterm.js listens for on a real paste -- typing the text as
-      // individual keydown events is what actually reaches the shell everywhere.
-      const element = (doc.activeElement as HTMLElement | null) ?? doc.body;
-      for (const char of text) {
-        element.dispatchEvent(
-          new KeyboardEvent('keydown', { key: char, bubbles: true, cancelable: true }),
-        );
-      }
+      dispatchTerminalText(doc, await readClipboardText());
     } catch {
       // readClipboardText needs a secure context or a permission the mobile
       // browser may refuse; nothing to recover here (this LAN instance is plain
@@ -78,20 +87,36 @@ export default function MobileKeyBar({ frame }: { frame: HTMLIFrameElement | nul
     }
   }
 
+  const keyButton = (spec: KeySpec) => (
+    <Button
+      key={spec.labelKey ?? spec.label}
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={KEY_CLASS}
+      onClick={() => press(spec)}
+    >
+      {spec.labelKey ? t(spec.labelKey) : spec.label}
+    </Button>
+  );
+
   return (
     <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-t bg-sidebar px-1">
-      {KEYS.map((spec) => (
+      {KEYS_BEFORE_MODIFIERS.map(keyButton)}
+      {(['ctrl', 'alt'] as const).map((modifier) => (
         <Button
-          key={spec.labelKey ?? spec.label}
+          key={modifier}
           type="button"
           variant="ghost"
           size="sm"
-          className="h-7 shrink-0 px-2 font-mono text-xs"
-          onClick={() => press(spec)}
+          aria-pressed={held[modifier]}
+          className={cn(KEY_CLASS, held[modifier] && 'bg-accent text-accent-foreground')}
+          onClick={() => toggle(modifier)}
         >
-          {spec.labelKey ? t(spec.labelKey) : spec.label}
+          {t(modifier)}
         </Button>
       ))}
+      {KEYS_AFTER_MODIFIERS.map(keyButton)}
       <Button
         type="button"
         variant="ghost"
