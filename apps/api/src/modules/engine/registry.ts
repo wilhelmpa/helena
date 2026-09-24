@@ -1,3 +1,10 @@
+import {
+  eventMatches,
+  listPluginStepTypes,
+  listPluginTriggerTypes,
+  pluginStepType,
+  pluginTriggerType,
+} from './plugins';
 import type {
   DomainEventHandler,
   PolicyDecider,
@@ -7,9 +14,11 @@ import type {
   WorkflowTriggerType,
 } from './sdk';
 
-// The registries of the engine. Built-in types register at startup (builtin/index.ts);
-// a plugin registers the same way. A type registered twice replaces the first, so a
-// plugin can override a built-in one on purpose.
+// The registries of the engine. Helena's built-in types register here at startup
+// (builtin/index.ts). A plugin registers its types with the framework's plugin host
+// (@helena/sdk registries.stepTypes / triggerTypes); the lookups below find those too,
+// adapted to the engine's interface (plugins.ts). A built-in name has no dot and a
+// plugin's does, so neither hides the other.
 
 const stepTypes = new Map<string, WorkflowStepType>();
 const triggerTypes = new Map<string, WorkflowTriggerType>();
@@ -29,24 +38,25 @@ export function registerTriggerType<T extends TriggerDefinition>(
 }
 
 export function stepType(type: string): WorkflowStepType | undefined {
-  return stepTypes.get(type);
+  return stepTypes.get(type) ?? pluginStepType(type);
 }
 
 export function triggerType(type: string): WorkflowTriggerType | undefined {
-  return triggerTypes.get(type);
+  return triggerTypes.get(type) ?? pluginTriggerType(type);
 }
 
 export function listStepTypes(): WorkflowStepType[] {
-  return [...stepTypes.values()];
+  return [...stepTypes.values(), ...listPluginStepTypes()];
 }
 
 export function listTriggerTypes(): WorkflowTriggerType[] {
-  return [...triggerTypes.values()];
+  return [...triggerTypes.values(), ...listPluginTriggerTypes()];
 }
 
-// The trigger types that listen to an event type.
+// The trigger types that listen to an event type (a pattern like `helena.issue.*` covers
+// every issue event).
 export function triggersFor(eventType: string): WorkflowTriggerType[] {
-  return [...triggerTypes.values()].filter((type) => type.events?.includes(eventType));
+  return listTriggerTypes().filter((type) => eventMatches(type.events, eventType));
 }
 
 // The policy engine. The default asks a person for every approval gate and refuses what

@@ -170,7 +170,8 @@
     "no": "Não",
     "endsRun": "A execução termina depois desta etapa",
     "limit": "Um fluxo de trabalho tem no máximo {max} etapas.",
-    "problems": "{count, plural, one {# problema} other {# problemas}}"
+    "problems": "{count, plural, one {# problema} other {# problemas}}",
+    "plugins": "Extensões"
   },
   "summary": {
     "agentRole": "Função {role}",
@@ -334,6 +335,11 @@
       "urlHint": "Recebe a tarefa e os resultados até agora como JSON, assinados com a chave de assinatura do projeto. Uma resposta 2xx conta como sucesso.",
       "message": "Mensagem",
       "messagePlaceholder": "Enviado como message (opcional)"
+    },
+    "plugin": {
+      "noSettings": "Sem configurações.",
+      "choose": "Escolher",
+      "missing": "O tipo de etapa {type} não está instalado: a extensão que o fornece está desligada."
     }
   },
   "issues": {
@@ -365,7 +371,9 @@
     "unknown_area": "O projeto não tem a área {name}.",
     "model_not_allowed": "Nenhum agente da equipe executa o modelo {model}.",
     "schedule_too_frequent": "O agendamento é executado com mais frequência do que a equipe permite.",
-    "invalid_url": "Insira uma URL que comece com https:// ou http://."
+    "invalid_url": "Insira uma URL que comece com https:// ou http://.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "Este gatilho dispara em uma agenda própria, que o motor do Helena ainda não executa."
   },
   "runs": {
     "status": {

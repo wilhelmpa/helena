@@ -455,6 +455,12 @@ export function producesResult(step: StepDefinition): boolean {
   return stepType(step.type)?.producesResult === true;
 }
 
+// The result fields a plugin's step leaves besides summary, outcome and note.
+function outputsOf(steps: StepDefinition[], id: string): string[] {
+  const step = steps.find((candidate) => candidate.id === id);
+  return step ? (stepType(step.type)?.plugin?.outputs ?? []) : [];
+}
+
 function checkVariables(entry: FlatStep, ids: Set<string>, issues: DefinitionIssue[]) {
   const { step } = entry;
   const before = stepsBefore(entry);
@@ -470,7 +476,11 @@ function checkVariables(entry: FlatStep, ids: Set<string>, issues: DefinitionIss
         if (!hasPrevious) report('no_previous_step');
         continue;
       }
-      if (parts[0] === 'step' && parts.length === 3 && RESULT_VARIABLES.has(parts[2])) {
+      if (
+        parts[0] === 'step' &&
+        parts.length === 3 &&
+        (RESULT_VARIABLES.has(parts[2]) || outputsOf(before, parts[1]).includes(parts[2]))
+      ) {
         if (!ids.has(parts[1])) report('unknown_step_variable');
         else if (!beforeIds.has(parts[1])) report('step_variable_not_before');
         continue;
@@ -588,6 +598,9 @@ const MESSAGES: Record<string, string> = {
   no_previous_step: 'No step before this one leaves a result',
   unreachable_step: 'No run reaches this step',
   role_unresolved: 'No agent of the project fills this role',
+  plugin_invalid: "The plugin's step or trigger does not accept the value",
+  plugin_trigger_unsupported:
+    'The plugin trigger fires on a schedule of its own, which the engine does not run yet',
   agent_not_in_project: 'The agent does not work in this project',
   member_not_in_project: 'The member is not in this project',
   unknown_status: 'The project has no status of this name',

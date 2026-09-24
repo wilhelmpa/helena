@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { byKey } from '@/utils/messageKey';
 import { usePipelineEditor } from '../../context/pipelineEditor';
+import { usePluginTypes } from '../../hooks/usePluginTypes';
 import { variablesAt } from '../../utils/variables';
 
 // The variables valid in the step's texts: the task, the previous step's result once
@@ -30,10 +31,20 @@ export default function PipelineVariableMenu({
   const t = useTranslations('pipelines.inspector');
   const label = byKey(t);
   const { definition } = usePipelineEditor();
-  const variables = variablesAt(definition.steps, stepId);
+  const plugins = usePluginTypes();
+  const variables = variablesAt(
+    definition.steps,
+    stepId,
+    (type) => plugins.stepInfo(type)?.outputs ?? [],
+  );
+  // A plugin's output field is shown by its own name.
+  const name = (field: string) =>
+    t.has(`variables.${field}` as Parameters<typeof t.has>[0])
+      ? label(`variables.${field}`)
+      : field;
   const item = (variable: string) => (
     <DropdownMenuItem key={variable} onSelect={() => onInsert(variable)}>
-      <span>{label(`variables.${variable.split('.').pop()}`)}</span>
+      <span>{name(variable.split('.').pop() ?? variable)}</span>
       <code className="ms-auto text-xs text-muted-foreground" dir="ltr">
         {`{{${variable}}}`}
       </code>

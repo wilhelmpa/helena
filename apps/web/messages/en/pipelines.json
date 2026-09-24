@@ -170,7 +170,8 @@
     "no": "No",
     "endsRun": "Run ends after this",
     "limit": "A workflow holds at most {max} steps.",
-    "problems": "{count, plural, one {# problem} other {# problems}}"
+    "problems": "{count, plural, one {# problem} other {# problems}}",
+    "plugins": "Extensions"
   },
   "summary": {
     "agentRole": "Role {role}",
@@ -334,6 +335,11 @@
       "urlHint": "Gets the task and the results so far as JSON, signed with the project's signing key. A 2xx answer counts as success.",
       "message": "Message",
       "messagePlaceholder": "Sent along as message (optional)"
+    },
+    "plugin": {
+      "noSettings": "No settings.",
+      "choose": "Choose",
+      "missing": "The step type {type} is not installed: the extension that brings it is off."
     }
   },
   "issues": {
@@ -365,7 +371,9 @@
     "unknown_area": "The project has no area {name}.",
     "model_not_allowed": "No agent of the team runs the model {model}.",
     "schedule_too_frequent": "The schedule runs more often than the team allows.",
-    "invalid_url": "Enter a URL that starts with https:// or http://."
+    "invalid_url": "Enter a URL that starts with https:// or http://.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "This trigger fires on a schedule of its own, which the Helena engine does not run yet."
   },
   "runs": {
     "status": {

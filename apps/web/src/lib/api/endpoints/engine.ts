@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@helena/sdk/web';
 import { request } from '@/lib/api/core/client';
 
 // The Helena engine (apps/api/src/modules/engine): its settings, the webhook of a
@@ -16,7 +17,34 @@ export interface PipelineHook {
   lastUsedAt: string | null;
 }
 
+// What the builder knows of a plugin's step or trigger type (@helena/sdk): its texts, what
+// it does, and the JSON Schema of its `config`, from which the builder draws a form.
+
+export interface PluginTypeInfo {
+  pluginId: string;
+  label: LocalizedText;
+  description: LocalizedText | null;
+  category: string | null;
+  configSchema: Record<string, unknown>;
+  defaults: Record<string, unknown>;
+  outputs: string[];
+}
+
+export interface EngineTypes {
+  steps: {
+    type: string;
+    builder: boolean;
+    icon: string | null;
+    branching: boolean;
+    category: string | null;
+    plugin: PluginTypeInfo | null;
+  }[];
+  triggers: { type: string; events: string[]; scheduled: boolean; plugin: PluginTypeInfo | null }[];
+}
+
 export const getEngineSettings = () => request<EngineSettings>('/workflow-engine/settings');
+
+export const getEngineTypes = () => request<EngineTypes>('/workflow-engine/types');
 
 export const getPipelineHook = async (projectKey: string, pipelineId: number) =>
   (

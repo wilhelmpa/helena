@@ -178,7 +178,13 @@ export async function setRunStatus(runId: string, status: 'running' | 'waiting')
 }
 
 function asResult(row: StepRow): RenderResult {
-  return { summary: row.summary ?? '', outcome: row.outcome ?? '', note: row.note ?? '' };
+  const output = (row.state as { output?: unknown } | null)?.output;
+  return {
+    summary: row.summary ?? '',
+    outcome: row.outcome ?? '',
+    note: row.note ?? '',
+    ...(output && typeof output === 'object' ? { output: output as Record<string, unknown> } : {}),
+  };
 }
 
 // The variables of a step: the task as it is now, and the results the run recorded

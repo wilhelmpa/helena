@@ -100,6 +100,13 @@ export function useStepSummary() {
         }
         return host ? t('summary.webhook', { host }) : t('summary.noUrl');
       }
+      default: {
+        // A plugin's step: its first text setting.
+        const text = Object.values(step.config).find(
+          (value): value is string => typeof value === 'string' && value.trim() !== '',
+        );
+        return text ? firstLine(text) : '';
+      }
     }
   };
 }

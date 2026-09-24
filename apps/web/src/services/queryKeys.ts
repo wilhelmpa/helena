@@ -94,6 +94,7 @@ export const qk = {
   pipelineValidation: (scope: string, draft: string) =>
     ['pipelineValidation', scope, draft] as const,
   engineSettings: ['engineSettings'] as const,
+  engineTypes: ['engineTypes'] as const,
   pipelineHook: (projectKey: string, pipelineId: number) =>
     ['pipelineHook', projectKey, pipelineId] as const,
   signingSecret: (projectKey: string) => ['signingSecret', projectKey] as const,

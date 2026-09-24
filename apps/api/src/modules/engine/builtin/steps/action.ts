@@ -274,6 +274,7 @@ async function apply(runId: string, step: ActionStep, at: StepExecution): Promis
 export const actionStep: WorkflowStepType<Step> = {
   type: 'action',
   ui: { builder: true, icon: 'zap' },
+  category: 'write',
   producesResult: true,
   read(value, reader, scope) {
     const action = readAction(value.action, reader);

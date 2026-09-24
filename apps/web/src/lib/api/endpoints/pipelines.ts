@@ -34,8 +34,14 @@ export const TRIGGER_TYPES = [
 ] as const;
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
 
-// What started a run: a builder trigger, or a routine or an agent team (delegation).
-export type RunTrigger = TriggerType | 'routine' | 'delegation';
+// A plugin's type is namespaced, `<plugin>.<name>`; Helena's own names have no dot.
+export type PluginTypeName = `${string}.${string}`;
+
+export const isPluginTypeName = (type: string): type is PluginTypeName => type.includes('.');
+
+// What started a run: a builder trigger, a plugin's trigger, or a routine or an agent team
+// (delegation).
+export type RunTrigger = TriggerType | 'routine' | 'delegation' | PluginTypeName;
 
 export type PipelineTrigger =
   | { type: 'manual' | 'task_created' | 'task_assigned' }
@@ -46,7 +52,9 @@ export type PipelineTrigger =
   // Every request to the workflow's hook creates a task with `title` and runs on it.
   | { type: 'webhook'; title: string }
   // Every new mail that matches creates a task with its subject; empty filters match all.
-  | { type: 'mail_received'; from: string; subject: string };
+  | { type: 'mail_received'; from: string; subject: string }
+  // A plugin's trigger: its settings, as its schema describes them.
+  | { type: PluginTypeName; config: Record<string, unknown> };
 
 export type RoleMatch =
   | { type: 'coordinator' }
@@ -153,8 +161,23 @@ export interface WebhookStep extends StepBase {
   message: string;
 }
 
+// A step of a plugin's type: its settings, as the type's schema describes them.
+export interface PluginStep extends StepBase {
+  type: PluginTypeName;
+  config: Record<string, unknown>;
+}
+
 export type PipelineStep =
-  AgentStep | ApprovalStep | ConditionStep | ActionStep | WaitStep | NotifyStep | WebhookStep;
+  | AgentStep
+  | ApprovalStep
+  | ConditionStep
+  | ActionStep
+  | WaitStep
+  | NotifyStep
+  | WebhookStep
+  | PluginStep;
+
+export const isPluginStep = (step: PipelineStep): step is PluginStep => isPluginTypeName(step.type);
 
 export interface PipelineDefinition {
   schemaVersion: 1;

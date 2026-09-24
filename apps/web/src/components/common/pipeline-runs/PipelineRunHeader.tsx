@@ -49,7 +49,14 @@ export default function PipelineRunHeader({
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-        <span>{t('runs.trigger', { trigger: t(`runs.triggers.${run.trigger}`) })}</span>
+        <span>
+          {t('runs.trigger', {
+            // A plugin's trigger is named by its id.
+            trigger: t.has(`runs.triggers.${run.trigger}` as Parameters<typeof t.has>[0])
+              ? t(`runs.triggers.${run.trigger}` as Parameters<typeof t>[0])
+              : run.trigger,
+          })}
+        </span>
         {run.scheduledFor && (
           <span>{t('runs.scheduledFor', { time: formatDateTime(run.scheduledFor) })}</span>
         )}

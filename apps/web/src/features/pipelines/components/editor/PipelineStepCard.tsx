@@ -2,13 +2,14 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Puzzle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import type { PipelineStep } from '@/lib/api/endpoints/pipelines';
+import { isPluginStep, type PipelineStep } from '@/lib/api/endpoints/pipelines';
 import { cn } from '@/lib/utils';
 import { PIPELINE_STEP_ICONS } from '@/utils/pipelineStepIcons';
 import { usePipelineEditor } from '../../context/pipelineEditor';
+import { usePluginTypes } from '../../hooks/usePluginTypes';
 import { useStepSummary } from '../../hooks/useStepSummary';
 import { isProjectIssue, stepIssues } from '../../utils/issueDisplay';
 import PipelineConditionLanes from './PipelineConditionLanes';
@@ -19,11 +20,12 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
   const t = useTranslations('pipelines');
   const { editable, issues, selectedId, select } = usePipelineEditor();
   const summary = useStepSummary();
+  const plugins = usePluginTypes();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: step.id,
     disabled: !editable,
   });
-  const Icon = PIPELINE_STEP_ICONS[step.type];
+  const Icon = isPluginStep(step) ? Puzzle : PIPELINE_STEP_ICONS[step.type];
   const own = stepIssues(issues, step.id);
   const blocking = own.some((issue) => !isProjectIssue(issue));
 
@@ -65,7 +67,7 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
                 {step.name}
               </span>
               <span className="shrink-0 text-xs text-muted-foreground">
-                {t(`kinds.${step.type}`)}
+                {plugins.stepLabel(step.type)}
               </span>
             </span>
             <span className="block truncate text-xs text-muted-foreground" dir="auto">

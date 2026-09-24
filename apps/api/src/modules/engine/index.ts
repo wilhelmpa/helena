@@ -43,6 +43,22 @@ export const engineHookRoutes = new Elysia({ name: 'engine-hooks' }).post(
 
 const hookParams = t.Object({ projectKey: t.String(), pipelineId: t.Numeric() });
 
+const LocalizedText = t.Union([t.String(), t.Record(t.String(), t.String())], {
+  description: 'One text, or one per locale (`{ "en": "…", "de": "…" }`, `{ "i18n": key }`).',
+});
+
+const PluginType = t.Object({
+  pluginId: t.String(),
+  label: LocalizedText,
+  description: t.Nullable(LocalizedText),
+  category: t.Nullable(t.String()),
+  configSchema: t.Record(t.String(), t.Unknown(), {
+    description: "The JSON Schema of the step's or trigger's `config`.",
+  }),
+  defaults: t.Record(t.String(), t.Unknown()),
+  outputs: t.Array(t.String()),
+});
+
 const HookResponse = t.Object({
   id: t.String(),
   url: t.String({ description: 'The path of the hook on the api.' }),
@@ -66,11 +82,14 @@ export const engineRoutes = new Elysia({
           builder: type.ui.builder,
           icon: type.ui.icon ?? null,
           branching: type.branching === true,
+          category: type.category ?? null,
+          plugin: type.plugin ?? null,
         })),
         triggers: listTriggerTypes().map((type) => ({
           type: type.type,
           events: type.events ?? [],
           scheduled: type.schedule !== undefined,
+          plugin: type.plugin ?? null,
         })),
       };
     },
@@ -83,10 +102,19 @@ export const engineRoutes = new Elysia({
               builder: t.Boolean(),
               icon: t.Nullable(t.String()),
               branching: t.Boolean(),
+              category: t.Nullable(
+                t.String({ description: 'The action category the policy decides (D-C1).' }),
+              ),
+              plugin: t.Nullable(PluginType),
             }),
           ),
           triggers: t.Array(
-            t.Object({ type: t.String(), events: t.Array(t.String()), scheduled: t.Boolean() }),
+            t.Object({
+              type: t.String(),
+              events: t.Array(t.String()),
+              scheduled: t.Boolean(),
+              plugin: t.Nullable(PluginType),
+            }),
           ),
         }),
         ...errors(401),
@@ -95,7 +123,8 @@ export const engineRoutes = new Elysia({
         summary: 'List the step and trigger types',
         description:
           'The step and trigger types the engine has registered: the built-in ones and those ' +
-          'plugins add.',
+          "plugins add. A plugin's type carries its texts, its action category and the JSON " +
+          'Schema of its `config`, from which the builder draws its form.',
       },
     },
   )

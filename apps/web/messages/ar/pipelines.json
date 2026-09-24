@@ -170,7 +170,8 @@
     "no": "لا",
     "endsRun": "ينتهي التشغيل بعد هذه الخطوة",
     "limit": "يحتوي سير العمل على {max} خطوة كحد أقصى.",
-    "problems": "{count, plural, zero {لا مشاكل} one {مشكلة واحدة} two {مشكلتان} few {# مشاكل} many {# مشكلةً} other {# مشكلة}}"
+    "problems": "{count, plural, zero {لا مشاكل} one {مشكلة واحدة} two {مشكلتان} few {# مشاكل} many {# مشكلةً} other {# مشكلة}}",
+    "plugins": "الإضافات"
   },
   "summary": {
     "agentRole": "الدور {role}",
@@ -334,6 +335,11 @@
       "urlHint": "يتلقى المهمة والنتائج حتى الآن بتنسيق JSON، موقّعة بمفتاح توقيع المشروع. الرد 2xx يُعد نجاحًا.",
       "message": "الرسالة",
       "messagePlaceholder": "يُرسل كـ message (اختياري)"
+    },
+    "plugin": {
+      "noSettings": "لا توجد إعدادات.",
+      "choose": "اختر",
+      "missing": "نوع الخطوة {type} غير مثبت: الإضافة التي توفره معطلة."
     }
   },
   "issues": {
@@ -365,7 +371,9 @@
     "unknown_area": "لا يوجد في المشروع مجال باسم {name}.",
     "model_not_allowed": "لا يوجد وكيل في الفريق يشغّل النموذج {model}.",
     "schedule_too_frequent": "الجدولة تعمل بتكرار أكبر مما يسمح به الفريق.",
-    "invalid_url": "أدخل عنوان URL يبدأ بـ https:// أو http://."
+    "invalid_url": "أدخل عنوان URL يبدأ بـ https:// أو http://.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "يعمل هذا المشغل وفق جدول خاص به، ولا يشغّله محرك Helena بعد."
   },
   "runs": {
     "status": {

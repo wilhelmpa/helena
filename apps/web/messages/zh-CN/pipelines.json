@@ -170,7 +170,8 @@
     "no": "否",
     "endsRun": "运行在此步骤后结束",
     "limit": "一个工作流最多包含 {max} 个步骤。",
-    "problems": "{count, plural, other {# 个问题}}"
+    "problems": "{count, plural, other {# 个问题}}",
+    "plugins": "扩展"
   },
   "summary": {
     "agentRole": "角色 {role}",
@@ -334,6 +335,11 @@
       "urlHint": "以 JSON 形式接收任务及目前的结果，并使用项目的签名密钥签名。2xx 响应视为成功。",
       "message": "消息",
       "messagePlaceholder": "作为 message 一并发送（可选）"
+    },
+    "plugin": {
+      "noSettings": "没有设置。",
+      "choose": "选择",
+      "missing": "步骤类型 {type} 未安装：提供它的扩展已关闭。"
     }
   },
   "issues": {
@@ -365,7 +371,9 @@
     "unknown_area": "该项目没有名为 {name} 的区域。",
     "model_not_allowed": "团队中没有代理运行模型 {model}。",
     "schedule_too_frequent": "该定时任务的运行频率超过了团队允许的上限。",
-    "invalid_url": "请输入以 https:// 或 http:// 开头的 URL。"
+    "invalid_url": "请输入以 https:// 或 http:// 开头的 URL。",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "此触发器按自己的时间表触发，Helena 引擎尚不支持运行。"
   },
   "runs": {
     "status": {

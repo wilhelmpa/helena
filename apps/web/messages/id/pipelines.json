@@ -170,7 +170,8 @@
     "no": "Tidak",
     "endsRun": "Eksekusi berakhir setelah langkah ini",
     "limit": "Sebuah alur kerja memuat paling banyak {max} langkah.",
-    "problems": "{count, plural, other {# masalah}}"
+    "problems": "{count, plural, other {# masalah}}",
+    "plugins": "Ekstensi"
   },
   "summary": {
     "agentRole": "Peran {role}",
@@ -334,6 +335,11 @@
       "urlHint": "Menerima tugas dan hasil sejauh ini sebagai JSON, ditandatangani dengan kunci tanda tangan proyek. Jawaban 2xx dianggap berhasil.",
       "message": "Pesan",
       "messagePlaceholder": "Dikirim sebagai message (opsional)"
+    },
+    "plugin": {
+      "noSettings": "Tidak ada pengaturan.",
+      "choose": "Pilih",
+      "missing": "Jenis langkah {type} belum terpasang: ekstensi yang menyediakannya nonaktif."
     }
   },
   "issues": {
@@ -365,7 +371,9 @@
     "unknown_area": "Proyek tidak memiliki area {name}.",
     "model_not_allowed": "Tidak ada agen tim yang menjalankan model {model}.",
     "schedule_too_frequent": "Jadwal ini berjalan lebih sering daripada yang diizinkan tim.",
-    "invalid_url": "Masukkan URL yang diawali https:// atau http://."
+    "invalid_url": "Masukkan URL yang diawali https:// atau http://.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "Pemicu ini berjalan dengan jadwalnya sendiri, yang belum dijalankan oleh mesin Helena."
   },
   "runs": {
     "status": {

@@ -188,7 +188,8 @@ export const pipelineRun = pgTable(
         AND (${t.kind} = 'workflow' OR ${t.definition} IS NOT NULL)`,
     ),
     // Trigger types come from the engine's registry, so a plugin can add one.
-    check('pipeline_run_trigger_check', sql`${t.trigger} ~ '^[a-z][a-z0-9_]{0,63}$'`),
+    // A built-in trigger name or a plugin's trigger id (@helena/sdk registry ids).
+    check('pipeline_run_trigger_check', sql`${t.trigger} ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$'`),
     check(
       'pipeline_run_status_check',
       sql`${t.status} IN ('pending', 'running', 'waiting', 'succeeded', 'failed', 'canceled', 'rejected', 'skipped')`,
@@ -253,13 +254,18 @@ export const pipelineRunStep = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.runId, t.stepId, t.iteration] }),
-    check('pipeline_run_step_kind_check', sql`${t.kind} ~ '^[a-z][a-z0-9_]{0,39}$'`),
+    // A built-in step type or a plugin's step type id (@helena/sdk registry ids).
+    check('pipeline_run_step_kind_check', sql`${t.kind} ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$'`),
     check(
       'pipeline_run_step_status_check',
       sql`${t.status} IN ('running', 'waiting', 'succeeded', 'failed', 'canceled', 'simulated', 'skipped')`,
     ),
     index('pipeline_run_step_waiting_idx').on(t.kind, t.status),
     index('pipeline_run_step_agent_run_idx').on(t.agentRunId),
+    // The executions of plugin steps that wait for a signal (engine/plugins.ts), by key.
+    index('pipeline_run_step_wait_key_idx')
+      .on(sql`(${t.state}->'wait'->>'key')`)
+      .where(sql`${t.status} = 'waiting' AND (${t.state}->'wait') IS NOT NULL`),
   ],
 );
 

@@ -39,14 +39,18 @@ export async function startRunSoon(runId: string): Promise<void> {
 // Wakes the run's workflow if it waits for a signal on the topic (an agent run that
 // finished, an approval decided). A signal is only a wake-up call: the workflow reads
 // what changed, and without the signal it looks again after its wait times out.
-export async function signalRun(runId: string, topic: string): Promise<void> {
+export async function signalRun(
+  runId: string,
+  topic: string,
+  message: Record<string, unknown> = {},
+): Promise<void> {
   if (!engineRunning()) return;
   const [row] = await db
     .select({ workflowId: pipelineRun.workflowId, status: pipelineRun.status })
     .from(pipelineRun)
     .where(eq(pipelineRun.id, runId));
   if (!row?.workflowId || !(ACTIVE_STATUSES as readonly string[]).includes(row.status)) return;
-  await DBOS.send(row.workflowId, { at: Date.now() }, topic).catch((error: unknown) => {
+  await DBOS.send(row.workflowId, { at: Date.now(), ...message }, topic).catch((error: unknown) => {
     console.error(
       `[engine] signal to run ${runId} failed:`,
       error instanceof Error ? error.message : error,

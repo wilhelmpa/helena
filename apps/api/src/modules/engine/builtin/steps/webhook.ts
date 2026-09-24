@@ -114,6 +114,7 @@ async function send(
 export const webhookStep: WorkflowStepType<Step> = {
   type: 'webhook',
   ui: { builder: true, icon: 'webhook' },
+  category: 'send',
   producesResult: true,
   read(value, reader) {
     const url = reader.text(value.url, 'url', 2_000);

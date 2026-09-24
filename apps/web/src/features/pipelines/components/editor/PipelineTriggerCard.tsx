@@ -8,11 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TRIGGER_TYPES, type TriggerType } from '@/lib/api/endpoints/pipelines';
+import { isPluginTypeName, TRIGGER_TYPES, type TriggerType } from '@/lib/api/endpoints/pipelines';
 import { useEngineSettings } from '@/services/engine.service';
 import { usePipelineEditor } from '../../context/pipelineEditor';
 import { usePipelineLabels } from '../../hooks/usePipelineLabels';
-import { triggerOf } from '../../utils/editorState';
+import { usePluginTypes } from '../../hooks/usePluginTypes';
+import { pluginTriggerOf, triggerOf } from '../../utils/editorState';
 import { triggerIssues } from '../../utils/issueDisplay';
 import PipelineCard from './PipelineCard';
 import PipelineField from './PipelineField';
@@ -23,22 +24,22 @@ export default function PipelineTriggerCard() {
   const { definition, editable, issues, change } = usePipelineEditor();
   const labels = usePipelineLabels();
   const timezone = useEngineSettings().data?.defaultTimezone;
+  const plugins = usePluginTypes();
   const { trigger } = definition;
+  const choose = (type: string) =>
+    change((current) => ({
+      ...current,
+      trigger: isPluginTypeName(type)
+        ? pluginTriggerOf(type, plugins.triggerInfo(type)?.defaults ?? {})
+        : triggerOf(type as TriggerType, timezone),
+    }));
 
   return (
     <PipelineCard title={t('trigger.title')} issues={triggerIssues(issues)}>
       {editable ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <PipelineField label={t('trigger.type')} htmlFor="pipeline-trigger">
-            <Select
-              value={trigger.type}
-              onValueChange={(type) =>
-                change((current) => ({
-                  ...current,
-                  trigger: triggerOf(type as TriggerType, timezone),
-                }))
-              }
-            >
+            <Select value={trigger.type} onValueChange={choose}>
               <SelectTrigger id="pipeline-trigger" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -46,6 +47,11 @@ export default function PipelineTriggerCard() {
                 {TRIGGER_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
                     {t(`triggers.${type}`)}
+                  </SelectItem>
+                ))}
+                {plugins.triggers.map((entry) => (
+                  <SelectItem key={entry.type} value={entry.type}>
+                    {plugins.text(entry.info.label) || entry.type}
                   </SelectItem>
                 ))}
               </SelectContent>

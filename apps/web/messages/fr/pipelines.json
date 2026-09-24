@@ -170,7 +170,8 @@
     "no": "Non",
     "endsRun": "L’exécution se termine après cette étape",
     "limit": "Un flux de travail contient au plus {max} étapes.",
-    "problems": "{count, plural, one {# problème} other {# problèmes}}"
+    "problems": "{count, plural, one {# problème} other {# problèmes}}",
+    "plugins": "Extensions"
   },
   "summary": {
     "agentRole": "Rôle {role}",
@@ -334,6 +335,11 @@
       "urlHint": "Reçoit la tâche et les résultats obtenus en JSON, signés avec la clé de signature du projet. Une réponse 2xx vaut succès.",
       "message": "Message",
       "messagePlaceholder": "Envoyé comme message (facultatif)"
+    },
+    "plugin": {
+      "noSettings": "Aucun réglage.",
+      "choose": "Choisir",
+      "missing": "Le type d'étape {type} n'est pas installé : l'extension qui l'apporte est désactivée."
     }
   },
   "issues": {
@@ -365,7 +371,9 @@
     "unknown_area": "Le projet n’a pas de domaine {name}.",
     "model_not_allowed": "Aucun agent de l’équipe n’exécute le modèle {model}.",
     "schedule_too_frequent": "La planification s’exécute plus souvent que ce que l’équipe autorise.",
-    "invalid_url": "Saisissez une URL commençant par https:// ou http://."
+    "invalid_url": "Saisissez une URL commençant par https:// ou http://.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "Ce déclencheur suit un calendrier qui lui est propre, que le moteur de Helena n'exécute pas encore."
   },
   "runs": {
     "status": {

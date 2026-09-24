@@ -1,4 +1,9 @@
-import type { DefinitionIssue, PipelineStep, StepKind } from '@/lib/api/endpoints/pipelines';
+import {
+  isPluginStep,
+  type DefinitionIssue,
+  type PipelineStep,
+  type StepKind,
+} from '@/lib/api/endpoints/pipelines';
 
 // Where the editor shows each problem the API names: on the step card and under the
 // field of the inspector it belongs to, on the trigger or role card, or in the list
@@ -60,7 +65,14 @@ export const fieldIssues = (issues: DefinitionIssue[], stepId: string, field: st
 
 // The problems of a step that no field of the inspector shows: the whole step (too
 // deep, unreachable), its id, or a role it names.
+// A plugin's step shows the problems of its settings (`config.<field>`) under the fields
+// its form draws, and the ones of its settings as a whole on top.
 export function unplacedStepIssues(issues: DefinitionIssue[], step: PipelineStep) {
+  if (isPluginStep(step))
+    return stepIssues(issues, step.id).filter(
+      (issue) =>
+        issue.field === null || (issue.field !== 'name' && !issue.field.startsWith('config.')),
+    );
   const placed = new Set(['name', ...STEP_FIELDS[step.type]]);
   return stepIssues(issues, step.id).filter(
     (issue) => issue.field === null || !placed.has(issue.field),

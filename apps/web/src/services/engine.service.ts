@@ -3,6 +3,7 @@ import {
   createPipelineHook,
   deletePipelineHook,
   getEngineSettings,
+  getEngineTypes,
   getPipelineHook,
   getSigningSecret,
   rotateSigningSecret,
@@ -12,6 +13,11 @@ import { qk } from '@/services/queryKeys';
 // The instance's default time zone rarely changes, so it is kept for a while.
 export const useEngineSettings = () =>
   useQuery({ queryKey: qk.engineSettings, queryFn: getEngineSettings, staleTime: 300_000 });
+
+// The step and trigger types the engine runs, the plugins' among them. They change when a
+// plugin is switched on or off, which restarts the api.
+export const useEngineTypes = () =>
+  useQuery({ queryKey: qk.engineTypes, queryFn: getEngineTypes, staleTime: 300_000 });
 
 export const usePipelineHook = (projectKey: string, pipelineId: number, enabled = true) =>
   useQuery({

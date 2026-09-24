@@ -1,8 +1,11 @@
-// The extension points of the Helena engine: step types, trigger types, domain events and
-// the policy seam. Built-in types register through exactly these interfaces
-// (builtin/index.ts), so a plugin adds a step or a trigger without touching the engine.
-// The shapes are kept free of Helena internals so they can move into `@helena/sdk`
-// (hub/framework) unchanged; until then they live here.
+import type { ActionCategory, LocalizedText } from '@helena/sdk';
+
+// The engine's own interface for step and trigger types. Helena's built-in types implement
+// it directly (builtin/index.ts): they need the durable operations of a step execution
+// (`op`, `sleepUntil`, `waitForSignal`). A plugin brings its types in the framework's shape
+// (@helena/sdk `WorkflowStepType` / `TriggerType`, registered through the plugin host), and
+// the engine adapts them to this interface (plugins.ts), so both kinds are listed, read,
+// checked and executed the same way.
 
 // ---- domain events -----------------------------------------------------------------
 
@@ -151,6 +154,20 @@ export class StepFailure extends Error {
   }
 }
 
+// What the builder shows of a plugin's type: its texts, what it does, and its form
+// (JSON Schema of its `config`).
+export interface PluginTypeInfo {
+  pluginId: string;
+  label: LocalizedText;
+  description: LocalizedText | null;
+  // A step's action category; null for a trigger.
+  category: ActionCategory | null;
+  configSchema: Record<string, unknown>;
+  defaults: Record<string, unknown>;
+  // The result fields later steps read as {{step.<id>.<field>}}.
+  outputs: string[];
+}
+
 export interface StepTypeUi {
   // Offered in the builder's "add step" menu. Built-in structural types that only the
   // engine creates (the agent team of a task, a routine's delegation) are not.
@@ -163,6 +180,13 @@ export interface StepTypeUi {
 export interface WorkflowStepType<S extends StepDefinition = StepDefinition> {
   type: string;
   ui: StepTypeUi;
+  // What executing the step does, for the policy (D-C1). The engine asks the framework's
+  // policy host before every execution of a step above `report`; a type without one does
+  // no action of its own (a condition, a wait) or asks its own question (an agent run asks
+  // `run`, an approval `approve`).
+  category?: ActionCategory;
+  // Set for a plugin's type.
+  plugin?: PluginTypeInfo;
   // A step with two lanes of steps, `then` and `else` (a condition): the engine reads the
   // lanes, and `execute` answers with `branch`.
   branching?: boolean;
@@ -198,9 +222,12 @@ export interface TriggerMatch {
 
 export interface WorkflowTriggerType<T extends TriggerDefinition = TriggerDefinition> {
   type: string;
+  // Set for a plugin's type.
+  plugin?: PluginTypeInfo;
   // Reads the trigger's own fields.
   read(raw: Record<string, unknown>, reader: FieldReader): Omit<T, 'type'>;
-  // The domain event types that can start a run of a workflow with this trigger.
+  // The domain event types that can start a run of a workflow with this trigger; a pattern
+  // like `helena.issue.*` covers every issue event.
   events?: string[];
   // Whether one event starts a run of the workflow, and on which task. Called for the
   // enabled workflows of the event's project.
@@ -211,27 +238,8 @@ export interface WorkflowTriggerType<T extends TriggerDefinition = TriggerDefini
 
 // ---- policy --------------------------------------------------------------------------
 
-// The categories an action falls into, in risk order (orchestrator decision D-C1).
-// `report` (status or results into Helena itself) is always allowed; `credentials` (any
-// change to logins, keys or grants) always needs approval.
-// mirror of @helena/sdk ACTION_CATEGORIES
-export const ACTION_CATEGORIES = [
-  'read',
-  'report',
-  'write',
-  'send',
-  'publish',
-  'execute',
-  'delete',
-  'pay',
-  'credentials',
-] as const;
-
-export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
-
-export function actionRank(category: ActionCategory): number {
-  return ACTION_CATEGORIES.indexOf(category);
-}
+// The categories an action falls into (orchestrator decision D-C1) come from @helena/sdk.
+export { ACTION_CATEGORIES, actionRank, type ActionCategory } from '@helena/sdk';
 
 // The policy engine's answer: go ahead, ask a person first, or refuse (with why).
 export type PolicyDecision =

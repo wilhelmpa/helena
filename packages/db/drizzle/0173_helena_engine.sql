@@ -78,6 +78,7 @@ CREATE UNIQUE INDEX "pipeline_run_fire_uq" ON "pipeline_run" USING btree ("sched
 CREATE INDEX "pipeline_run_schedule_idx" ON "pipeline_run" USING btree ("schedule_id","scheduled_for" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "pipeline_run_status_idx" ON "pipeline_run" USING btree ("status","updated_at");--> statement-breakpoint
 CREATE INDEX "pipeline_run_step_agent_run_idx" ON "pipeline_run_step" USING btree ("agent_run_id");--> statement-breakpoint
+CREATE INDEX "pipeline_run_step_wait_key_idx" ON "pipeline_run_step" USING btree (("state"->'wait'->>'key')) WHERE "pipeline_run_step"."status" = 'waiting' AND ("pipeline_run_step"."state"->'wait') IS NOT NULL;--> statement-breakpoint
 ALTER TABLE "ai_agent" DROP COLUMN "model_credential_id";--> statement-breakpoint
 ALTER TABLE "ai_agent" DROP COLUMN "tools";--> statement-breakpoint
 ALTER TABLE "ai_agent" DROP COLUMN "temperature";--> statement-breakpoint
@@ -94,9 +95,9 @@ ALTER TABLE "ai_agent" ADD CONSTRAINT "ai_agent_kind_check" CHECK ("ai_agent"."k
 ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_kind_check" CHECK ("pipeline_run"."kind" IN ('workflow', 'agent_team', 'routine'));--> statement-breakpoint
 ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_source_check" CHECK (("pipeline_run"."kind" = 'workflow') = ("pipeline_run"."pipeline_id" IS NOT NULL AND "pipeline_run"."version_id" IS NOT NULL)
         AND ("pipeline_run"."kind" = 'workflow' OR "pipeline_run"."definition" IS NOT NULL));--> statement-breakpoint
-ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_trigger_check" CHECK ("pipeline_run"."trigger" ~ '^[a-z][a-z0-9_]{0,63}$');--> statement-breakpoint
+ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_trigger_check" CHECK ("pipeline_run"."trigger" ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$');--> statement-breakpoint
 ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_status_check" CHECK ("pipeline_run"."status" IN ('pending', 'running', 'waiting', 'succeeded', 'failed', 'canceled', 'rejected', 'skipped'));--> statement-breakpoint
-ALTER TABLE "pipeline_run_step" ADD CONSTRAINT "pipeline_run_step_kind_check" CHECK ("pipeline_run_step"."kind" ~ '^[a-z][a-z0-9_]{0,39}$');--> statement-breakpoint
+ALTER TABLE "pipeline_run_step" ADD CONSTRAINT "pipeline_run_step_kind_check" CHECK ("pipeline_run_step"."kind" ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$');--> statement-breakpoint
 ALTER TABLE "pipeline_run_step" ADD CONSTRAINT "pipeline_run_step_status_check" CHECK ("pipeline_run_step"."status" IN ('running', 'waiting', 'succeeded', 'failed', 'canceled', 'simulated', 'skipped'));--> statement-breakpoint
 -- The mappings the Mastra bridge kept in project settings: the engine records the agent run of a step on the step itself.
 DELETE FROM "project_setting" WHERE "key" LIKE 'mastra-%';--> statement-breakpoint

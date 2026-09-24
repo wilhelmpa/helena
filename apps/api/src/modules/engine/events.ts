@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createEvent, type EventTransport, type HelenaEvent as BusEvent } from '@helena/sdk';
 import {
+  aiAgent,
   db,
   ENGINE_TRIGGERS_TARGET,
   enqueueEngineEvents,
@@ -15,6 +16,7 @@ import { checkPipelineRunLimit } from '#modules/pipelines/rate-limit';
 import { createRun } from '#modules/pipelines/runs';
 import { registerBuiltins } from './builtin/index';
 import { subscribeDomainEvents, triggersFor } from './registry';
+import { wakePluginWaits } from './plugins';
 import { startRunSoon } from './runs';
 import type { DomainEvent, OutboxStore } from './sdk';
 
@@ -115,6 +117,23 @@ async function listeningWorkflows(projectId: number, triggerTypes: string[]) {
   );
 }
 
+// The member an event's actor names, for the run it starts: a user id as the issue service
+// writes it, or `user:<id>` / `agent:<id>` as other publishers do. A system actor is none.
+async function actorUser(actor: string | undefined): Promise<string | null> {
+  if (!actor || actor.startsWith('system')) return null;
+  if (actor.startsWith('user:')) return actor.slice('user:'.length) || null;
+  if (actor.startsWith('agent:')) {
+    const id = Number(actor.slice('agent:'.length));
+    if (!Number.isInteger(id)) return null;
+    const [row] = await db
+      .select({ userId: aiAgent.userId })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, id));
+    return row?.userId ?? null;
+  }
+  return actor.includes(':') ? null : actor;
+}
+
 // The engine's own subscriber: starts the runs of the workflows whose trigger the event
 // fires. One run per event and workflow, however often the event is handed over.
 export async function startTriggeredRuns(event: DomainEvent): Promise<void> {
@@ -145,8 +164,7 @@ export async function startTriggeredRuns(event: DomainEvent): Promise<void> {
       issueId: match.taskId,
       trigger: trigger.type,
       dryRun: false,
-      actorUserId:
-        helena.helenaactor && !helena.helenaactor.startsWith('system:') ? helena.helenaactor : null,
+      actorUserId: await actorUser(helena.helenaactor),
       ...(match.input ? { input: match.input } : {}),
     });
     if (run) await startRunSoon(run.id);
@@ -155,8 +173,11 @@ export async function startTriggeredRuns(event: DomainEvent): Promise<void> {
 
 let subscribed = false;
 
+// The engine's subscribers: the triggers, and the wake-up of plugin steps that wait for an
+// event, an approval or an agent run (plugins.ts).
 export function subscribeEngineTriggers(): void {
   if (subscribed) return;
   subscribed = true;
   subscribeDomainEvents('engine_triggers', startTriggeredRuns);
+  subscribeDomainEvents('plugin_waits', wakePluginWaits);
 }

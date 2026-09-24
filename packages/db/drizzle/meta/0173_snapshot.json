@@ -1,5 +1,5 @@
 {
-  "id": "44a549be-347c-46b7-ba8d-274b23874f60",
+  "id": "e6f35ac6-8fc5-4fe3-a1a3-3bcb7d1b5ee9",
   "prevId": "9aa2eda9-615c-4b52-b23f-5f657455436d",
   "version": "7",
   "dialect": "postgresql",
@@ -16407,7 +16407,7 @@
         },
         "pipeline_run_trigger_check": {
           "name": "pipeline_run_trigger_check",
-          "value": "\"pipeline_run\".\"trigger\" ~ '^[a-z][a-z0-9_]{0,63}$'"
+          "value": "\"pipeline_run\".\"trigger\" ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$'"
         },
         "pipeline_run_status_check": {
           "name": "pipeline_run_status_check",
@@ -16579,6 +16579,22 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "pipeline_run_step_wait_key_idx": {
+          "name": "pipeline_run_step_wait_key_idx",
+          "columns": [
+            {
+              "expression": "(\"state\"->'wait'->>'key')",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"pipeline_run_step\".\"status\" = 'waiting' AND (\"pipeline_run_step\".\"state\"->'wait') IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -16650,7 +16666,7 @@
       "checkConstraints": {
         "pipeline_run_step_kind_check": {
           "name": "pipeline_run_step_kind_check",
-          "value": "\"pipeline_run_step\".\"kind\" ~ '^[a-z][a-z0-9_]{0,39}$'"
+          "value": "\"pipeline_run_step\".\"kind\" ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$'"
         },
         "pipeline_run_step_status_check": {
           "name": "pipeline_run_step_status_check",

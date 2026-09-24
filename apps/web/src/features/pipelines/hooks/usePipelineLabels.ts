@@ -3,12 +3,14 @@
 import { useTranslations } from 'next-intl';
 import type { DefinitionIssue, PipelineTrigger } from '@/lib/api/endpoints/pipelines';
 import { byKey } from '@/utils/messageKey';
+import { usePluginTypes } from './usePluginTypes';
 
 // The words the workflow screens share: what starts a workflow, a duration, and a
 // problem the API names, translated by its code with the API's own text as fallback.
 export function usePipelineLabels() {
   const t = useTranslations('pipelines');
   const issues = useTranslations('pipelines.issues');
+  const plugins = usePluginTypes();
 
   const trigger = (value: PipelineTrigger): string => {
     if (value.type === 'status_changed' && value.to)
@@ -21,7 +23,7 @@ export function usePipelineLabels() {
       return t('triggerSummary.mail', {
         filter: [value.from, value.subject].filter(Boolean).join(' · '),
       });
-    return t(`triggers.${value.type}`);
+    return plugins.triggerLabel(value.type);
   };
 
   const duration = (minutes: number): string => {

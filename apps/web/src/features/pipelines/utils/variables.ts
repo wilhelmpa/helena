@@ -13,9 +13,10 @@ export const TASK_VARIABLES = [
 const RESULT_FIELDS = ['summary', 'outcome', 'note'] as const;
 
 // A condition and a wait only decide where and when the run goes on; the other steps
-// leave a result the next steps read.
+// leave a result the next steps read (as definition.ts has it). A plugin's step leaves its
+// output fields besides.
 export function producesResult(step: PipelineStep): boolean {
-  return step.type === 'agent' || step.type === 'approval' || step.type === 'action';
+  return step.type !== 'condition' && step.type !== 'wait';
 }
 
 function descendants(step: PipelineStep): PipelineStep[] {
@@ -42,8 +43,12 @@ export interface StepVariables {
 }
 
 // The variables valid in the texts of the step. A step not in the list yet, being
-// added, reads the task only.
-export function variablesAt(steps: PipelineStep[], stepId: string): StepVariables {
+// added, reads the task only. `outputs` names the result fields of a plugin's step type.
+export function variablesAt(
+  steps: PipelineStep[],
+  stepId: string,
+  outputs: (type: string) => string[] = () => [],
+): StepVariables {
   const entry = flattenSteps(steps).find((item) => item.step.id === stepId);
   const before = entry ? stepsBefore(entry).filter(producesResult) : [];
   return {
@@ -52,7 +57,9 @@ export function variablesAt(steps: PipelineStep[], stepId: string): StepVariable
     steps: before.map((step) => ({
       id: step.id,
       name: step.name,
-      variables: RESULT_FIELDS.map((field) => `step.${step.id}.${field}`),
+      variables: [...RESULT_FIELDS, ...outputs(step.type)].map(
+        (field) => `step.${step.id}.${field}`,
+      ),
     })),
   };
 }

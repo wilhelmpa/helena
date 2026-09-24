@@ -24,10 +24,14 @@ export interface StepValidationContext {
 }
 
 export interface StepRun {
-  id: number;
-  workflowId: number;
+  // The run's id (a workflow run, an agent team or a routine fire).
+  id: string;
+  // The builder workflow the run belongs to; null for an agent team or a routine.
+  workflowId: number | null;
   project: ProjectRef | null;
   issueId?: number | null;
+  // A test run: a step that acts on the world should say what it would do instead.
+  dryRun?: boolean;
 }
 
 export interface StepExecutionContext<Config> {
@@ -43,8 +47,12 @@ export interface StepExecutionContext<Config> {
 }
 
 // A step either finishes, waits, or fails. Waiting is how a step outlives the process:
-// the engine stores the run, and wakes it at `until` or when the signal arrives (an
-// approval decided, an agent run finished, an event). Then `resume` is called.
+// the engine stores the run, and wakes it at `until` or when the signal arrives. Then
+// `resume` is called. Signal keys: `approval` an approval request's id (woken when it is
+// decided), `run` an agent run's id (woken when it finishes or fails), `event` a domain
+// event type, or `<type>@<subject>` for one subject (woken by the next such event, whose
+// data the signal carries). `execute` may run again when the process stops while it runs,
+// so a step that acts on the world should make its action idempotent.
 export type StepOutcome =
   | { status: 'completed'; output?: Record<string, unknown>; next?: string }
   | {

@@ -1,19 +1,24 @@
 import { DBOS, Error as DBOSErrors } from '@dbos-inc/dbos-sdk';
 import { registerBuiltins } from './builtin/index';
+import { approvalStep } from './builtin/steps/approval';
+import { askStepPolicy } from './policy';
 import { RUNS_QUEUE } from './dbos';
 import { beginRun, enterStep, failRun, finishRun, leaveStep, runCanceled } from './lifecycle';
 import { branchStart, handlesOutcome, locate, stepAfter } from './navigation';
 import { domainEventSubscribers, stepType } from './registry';
 import { subscribeEngineTriggers } from './events';
+import { writeStep } from './run-context';
 import { planFire } from './schedules';
-import type {
-  DomainEvent,
-  RunInfo,
-  StepContext,
-  StepDefinition,
-  StepExecution,
-  StepResult,
-  WorkflowDefinition,
+import {
+  actionRank,
+  StepFailure,
+  type DomainEvent,
+  type RunInfo,
+  type StepContext,
+  type StepDefinition,
+  type StepExecution,
+  type StepResult,
+  type WorkflowDefinition,
 } from './sdk';
 
 // The two DBOS workflows of the engine. `helena.run` interprets one run: it walks the
@@ -65,6 +70,54 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+// Asks the policy host whether the step may do what its type does (policy.ts). A refusal
+// fails the step; "ask a person first" opens an approval of its own, `<step>.approval`,
+// which the Approvals page lists like an approval step: approved, the step executes;
+// rejected, the run ends as rejected. Answers the result that ends the step instead of
+// executing it, or null to execute it.
+async function passPolicy(
+  run: RunInfo,
+  step: StepDefinition,
+  type: NonNullable<ReturnType<typeof stepType>>,
+  execution: StepExecution,
+  definition: WorkflowDefinition,
+): Promise<StepResult | null> {
+  if (!type.category || actionRank(type.category) <= actionRank('report')) return null;
+  const verdict = await DBOS.runStep(() => askStepPolicy(run.id, step, type), {
+    name: `helena:${step.id}#${execution.iteration}:policy`,
+  });
+  if (verdict.effect === 'allow') return null;
+  if (verdict.effect === 'deny') throw new StepFailure(`Not allowed: ${verdict.reason}`, 'blocked');
+  const gate = {
+    id: `${step.id}.approval`,
+    name: step.name,
+    type: 'approval',
+    message: verdict.reason,
+    onReject: { action: 'end' as const },
+  };
+  const decided = await approvalStep.execute(
+    new EngineStepContext(
+      run,
+      gate as never,
+      { stepId: gate.id, iteration: execution.iteration, seq: execution.seq },
+      1,
+      definition,
+    ),
+  );
+  if (decided.kind !== 'end') return null;
+  await DBOS.runStep(
+    () =>
+      writeStep(run.id, step, execution, {
+        status: 'skipped',
+        outcome: 'rejected',
+        summary: verdict.reason,
+        finishedAt: new Date(),
+      }),
+    { name: `helena:${step.id}#${execution.iteration}:rejected` },
+  );
+  return decided;
+}
+
 async function interpret(runId: string): Promise<string> {
   registerBuiltins();
   const begun = await DBOS.runStep(() => beginRun(runId, DBOS.workflowID ?? runId), {
@@ -101,7 +154,10 @@ async function interpret(runId: string): Promise<string> {
       const attempt = await DBOS.runStep(() => enterStep(runId, step, execution), {
         name: `helena:${step.id}#${iteration}:enter`,
       });
-      result = await type.execute(new EngineStepContext(run, step, execution, attempt, definition));
+      const gate = await passPolicy(run, step, type, execution, definition);
+      result =
+        gate ??
+        (await type.execute(new EngineStepContext(run, step, execution, attempt, definition)));
     } catch (error) {
       if (isCancellation(error)) throw error;
       // A person who canceled the run already ended it; nothing more is recorded.

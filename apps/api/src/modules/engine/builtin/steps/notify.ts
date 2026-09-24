@@ -95,6 +95,7 @@ async function send(runId: string, step: NotifyStep, at: StepExecution): Promise
 export const notifyStep: WorkflowStepType<Step> = {
   type: 'notify',
   ui: { builder: true, icon: 'bell' },
+  category: 'report',
   producesResult: true,
   read(value, reader, scope) {
     const to =

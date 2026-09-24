@@ -170,7 +170,8 @@
     "no": "Nein",
     "endsRun": "Lauf endet danach",
     "limit": "Ein Workflow hat höchstens {max} Schritte.",
-    "problems": "{count, plural, one {# Problem} other {# Probleme}}"
+    "problems": "{count, plural, one {# Problem} other {# Probleme}}",
+    "plugins": "Erweiterungen"
   },
   "summary": {
     "agentRole": "Rolle {role}",
@@ -334,6 +335,11 @@
       "urlHint": "Bekommt die Aufgabe und die bisherigen Ergebnisse als JSON, signiert mit dem Signatur-Schlüssel des Projekts. Eine 2xx-Antwort gilt als Erfolg.",
       "message": "Nachricht",
       "messagePlaceholder": "Wird als message mitgeschickt (optional)"
+    },
+    "plugin": {
+      "noSettings": "Keine Einstellungen.",
+      "choose": "Auswählen",
+      "missing": "Der Schritttyp {type} ist nicht installiert: Die Erweiterung, die ihn bringt, ist aus."
     }
   },
   "issues": {
@@ -365,7 +371,9 @@
     "unknown_area": "Das Projekt hat keinen Bereich {name}.",
     "model_not_allowed": "Kein Agent des Teams nutzt das Modell {model}.",
     "schedule_too_frequent": "Der Zeitplan läuft öfter, als das Team erlaubt.",
-    "invalid_url": "Gib eine URL ein, die mit https:// oder http:// beginnt."
+    "invalid_url": "Gib eine URL ein, die mit https:// oder http:// beginnt.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "Dieser Auslöser feuert nach einem eigenen Zeitplan. Das kann der Helena-Motor noch nicht."
   },
   "runs": {
     "status": {
