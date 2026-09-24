@@ -358,6 +358,77 @@ def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | No
     return None
 
 
+# The runtimes a project agent's descriptor may name besides Hermes: the runner starts them
+# with its preset of that name, in the agent's profile directory as its home
+# (packages/runner/src/cli-runtime.ts).
+CLI_RUNTIMES = ('claude', 'codex')
+
+# What a Claude Code agent can be set to, by Claude Code's own aliases: each follows the
+# newest model of its family, so the list needs no update when a model is released. The
+# levels are Claude Code's --effort (docs: model-config).
+CLAUDE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+CLAUDE_MODELS = [
+    {'id': 'fable', 'name': 'Claude Fable', 'reasoning': True, 'thinkingLevels': CLAUDE_EFFORTS, 'thinkingDefault': None},
+    {'id': 'opus', 'name': 'Claude Opus', 'reasoning': True, 'thinkingLevels': CLAUDE_EFFORTS, 'thinkingDefault': None},
+    {'id': 'sonnet', 'name': 'Claude Sonnet', 'reasoning': True, 'thinkingLevels': CLAUDE_EFFORTS, 'thinkingDefault': None},
+    {'id': 'haiku', 'name': 'Claude Haiku', 'reasoning': False, 'thinkingLevels': [], 'thinkingDefault': None},
+]
+
+
+def cli_models(runtime: str, hermes_models: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The models an agent of this runtime can be set to. Codex signs in to the same ChatGPT
+    Codex backend as Hermes' openai-codex provider, so it offers that provider's models, which
+    the account really has; Claude Code offers its aliases."""
+    if runtime == 'claude':
+        return [dict(model) for model in CLAUDE_MODELS]
+    return [
+        {key: value for key, value in model.items() if key != 'provider'}
+        for model in hermes_models
+        if model.get('provider') == 'openai-codex'
+    ]
+
+
+def descriptor_runtime(item: dict[str, Any]) -> str:
+    runtime = item.get('runtime', 'hermes')
+    if runtime != 'hermes' and runtime not in CLI_RUNTIMES:
+        raise RuntimeError('Hermes runner descriptor names an unknown runtime')
+    return runtime
+
+
+def cli_entry(
+    runtime: str,
+    username: str,
+    item: dict[str, Any],
+    home: Path,
+    slug: str,
+    profile: str,
+    isolated: bool,
+) -> dict[str, Any]:
+    """A Claude Code or Codex agent: its profile directory is its home. The runner keeps its
+    skills below it, Claude Code its sessions and settings in .claude, Codex in .codex. No
+    Hermes file is linked into it, and its login reaches it per run (never from here)."""
+    if not isolated:
+        private_directory(home)
+    env = {
+        'HELENA_AGENT_HOME': str(home),
+        **(
+            {'CLAUDE_CONFIG_DIR': str(home / '.claude')}
+            if runtime == 'claude'
+            else {'CODEX_HOME': str(home / '.codex')}
+        ),
+    }
+    entry: dict[str, Any] = {
+        'name': username,
+        'apiKey': item['apiKey'],
+        'cwd': item['cwd'],
+        'runtime': runtime,
+        'env': env,
+    }
+    if isolated:
+        entry['isolation'] = {'slug': slug, 'profile': profile, 'agentId': item['planAgentId']}
+    return entry
+
+
 def isolation_enabled() -> bool:
     return os.environ.get('AGENT_ISOLATION', '').strip() == 'on'
 
@@ -437,6 +508,9 @@ def descriptor_entry(
         or item['planAgentId'] < 1
     ):
         raise RuntimeError('Hermes runner descriptor conflicts with its project')
+    runtime = descriptor_runtime(item)
+    if runtime in CLI_RUNTIMES:
+        return cli_entry(runtime, username, item, home, slug, descriptor_path.stem, isolated)
     if isolated:
         # The profile belongs to the project's user; the sandbox links what Hermes needs
         # into it, and the project browser is reached through the gateway, not over CDP.
@@ -567,6 +641,25 @@ def write_runtime(
         }
     agents = [home]
     for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated, problems):
+        runtime = entry.pop('runtime', 'hermes')
+        if runtime in CLI_RUNTIMES:
+            # The runner's shared settings, without what only Hermes takes.
+            shared_settings = {
+                key: value
+                for key, value in payload.items()
+                if key not in ('agent', 'command', 'args', 'provider', 'hermes', 'models', 'outputFormat')
+            }
+            agents.append(
+                {
+                    **shared_settings,
+                    **entry,
+                    'agent': runtime,
+                    'args': [],
+                    'models': cli_models(runtime, payload['models']),
+                    'env': {**payload.get('env', {}), **entry['env']},
+                }
+            )
+            continue
         shared = entry.pop('sharedConfig', None)
         agents.append(
             {
@@ -578,6 +671,8 @@ def write_runtime(
         )
     if not isolated:
         for agent in agents:
+            if agent.get('agent', payload.get('agent')) in CLI_RUNTIMES:
+                continue
             link_plan_plugins(Path(agent['env']['HERMES_HOME']), plugin_root)
     payload.pop('apiKey', None)
     payload['agents'] = agents

@@ -1,0 +1,9 @@
+{
+  "name": "helena-runtime-codex",
+  "private": true,
+  "description": "Codex CLI for Helena's Codex agents, installed by install-cli-runtimes.sh into /opt/helena/runtimes/codex/<version>",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@openai/codex": "0.156.1"
+  }
+}

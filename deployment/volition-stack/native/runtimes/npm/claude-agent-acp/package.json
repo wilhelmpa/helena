@@ -1,0 +1,9 @@
+{
+  "name": "helena-runtime-claude-agent-acp",
+  "private": true,
+  "description": "ACP adapter for Claude Code, installed outside Helena's tree by install-cli-runtimes.sh (orchestrator decision D-C3); it runs the installed claude binary (CLAUDE_CODE_EXECUTABLE)",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@agentclientprotocol/claude-agent-acp": "0.81.1"
+  }
+}

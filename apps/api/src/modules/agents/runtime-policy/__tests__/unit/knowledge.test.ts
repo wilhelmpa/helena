@@ -51,6 +51,16 @@ describe('vaultAccessOf', () => {
 });
 
 describe('knowledgeSection', () => {
+  it('tells each runtime its own way to look at a file, and memory only to Hermes', () => {
+    const access = { root: '/vault', read: ['/vault/Projects/VOL'], write: [], deny: [] };
+    expect(knowledgeSection(access)).toContain('your vision tool there');
+    expect(knowledgeSection(access)).toContain('Your own memory stays yours');
+    const claude = knowledgeSection(access, 'claude');
+    expect(claude).toContain('your Read tool there');
+    expect(claude).not.toContain('memory');
+    expect(knowledgeSection(access, 'codex')).toContain('view_image there');
+  });
+
   it('tells the agent where knowledge goes and what it reaches', () => {
     const text = knowledgeSection({
       root: '/vault',

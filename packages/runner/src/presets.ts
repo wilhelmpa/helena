@@ -53,21 +53,20 @@ export const PRESETS: Record<PresetName, Preset> = {
   // Resuming is a subcommand, and it accepts a narrower set of options than plain `exec` —
   // notably no --sandbox, --cd or --profile. An argument only `exec` takes would break
   // every message after the first, so the sandbox is set through `-c sandbox_mode=…`,
-  // which both accept.
+  // which both accept. The sandbox comes last, after the operator's arguments, so the one
+  // Helena decided is the one that holds (execute.ts refuses a command without a sandbox
+  // outside agent isolation).
   codex: {
     bin: 'codex',
     outputFormat: 'codex-jsonl',
     promptVia: 'stdin',
-    head: (sessionId) => [
-      ...(sessionId ? ['exec', 'resume', sessionId] : ['exec']),
-      '--json',
-      '-c',
-      'sandbox_mode="workspace-write"',
-    ],
+    head: (sessionId) => [...(sessionId ? ['exec', 'resume', sessionId] : ['exec']), '--json'],
     // Both `exec` and `exec resume` take -m and -c.
-    taskArgs: ({ model, thinkingLevel }) => [
+    taskArgs: ({ model, thinkingLevel, sandbox }) => [
       ...(model ? ['-m', model] : []),
       ...(thinkingLevel ? ['-c', `model_reasoning_effort=${JSON.stringify(thinkingLevel)}`] : []),
+      '-c',
+      `sandbox_mode=${JSON.stringify(sandbox ?? 'workspace-write')}`,
     ],
     tail: ['-'],
   },

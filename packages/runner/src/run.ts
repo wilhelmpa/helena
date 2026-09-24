@@ -152,6 +152,7 @@ export async function perform(
       systemPrompt: withInstructions(hermes?.instructions, task.systemPrompt, task.sessionId),
       toolsets: hermes?.toolsets ?? null,
       env: { ...task.env, ...hermes?.env },
+      hooks: hermes?.hooks,
     },
     {
       onData: (chunk) => {

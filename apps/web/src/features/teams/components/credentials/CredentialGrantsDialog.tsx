@@ -25,7 +25,13 @@ export function CredentialGrantsDialog({
   const agents = useAiAgentsQuery(teamId).data;
   const [selected, setSelected] = useState(() => new Set(entry.agentIds));
   const save = useSetCredentialGrants(teamId);
-  const groups = agents ? grantableAgentGroups(agents, entry.projectId) : null;
+  const groups = agents
+    ? grantableAgentGroups(
+        agents,
+        entry.projectId,
+        entry.kind === 'runtime_login' ? entry.runtime : null,
+      )
+    : null;
 
   function toggle(agentId: number, on: boolean) {
     setSelected((prev) => {

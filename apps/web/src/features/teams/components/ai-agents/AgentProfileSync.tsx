@@ -10,6 +10,7 @@ import {
   useRuntimeSyncQuery,
 } from '../../services/agentRuntimeSync.service';
 import { driftServer, profileServers, syncStatus } from '../../utils/agentProfileSync';
+import AgentRuntimeIssues from './AgentRuntimeIssues';
 
 // Whether the agent's runtime runs exactly on its settings here: its runner applied them,
 // read the runtime's profile back and found nothing that differs ("Profil synchron"), or
@@ -41,6 +42,16 @@ export default function AgentProfileSync({
         <StatusBadge status={syncStatus(sync.state)} className="text-sm">
           {t(`state.${sync.state}`)}
         </StatusBadge>
+        {sync.version && sync.state !== 'offline' && (
+          <span dir="ltr" className="text-xs text-muted-foreground">
+            {t('version', { version: sync.version })}
+          </span>
+        )}
+        {sync.sandbox && sync.state !== 'offline' && (
+          <span className="text-xs text-muted-foreground">
+            {t('sandbox', { mode: t(`sandboxModes.${sync.sandbox}`) })}
+          </span>
+        )}
         {checkedAt && sync.state !== 'offline' && (
           <span className="text-xs text-muted-foreground">
             {t('checked', { time: formatDurationShort(checkedAt) })}
@@ -60,8 +71,11 @@ export default function AgentProfileSync({
           </Button>
         )}
       </div>
-      {sync.state === 'degraded' && sync.detail && (
+      {sync.state === 'degraded' && sync.detail && (sync.issues ?? []).length === 0 && (
         <p className="text-xs text-destructive">{sync.detail}</p>
+      )}
+      {sync.state !== 'offline' && (
+        <AgentRuntimeIssues adapter={sync.adapter} issues={sync.issues ?? []} />
       )}
       {drift.length > 0 && (
         <ul className="space-y-1">
