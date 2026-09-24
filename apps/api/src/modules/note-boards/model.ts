@@ -15,13 +15,20 @@ export const NoteBoardResponse = t.Object({
   memberIds: t.Array(t.String()),
   name: t.String(),
   canvas: t.Any(),
+  vaultPath: t.Nullable(
+    t.String({
+      description:
+        'A public board is a JSON Canvas file in the project knowledge (Obsidian opens it); null for a private board.',
+    }),
+  ),
+  vaultSha256: t.Nullable(t.String()),
   createdAt: t.String(),
   updatedAt: t.String(),
 });
 
 // What the board switcher lists (NoteBoardSummary from the service).
 export const NoteBoardSummaryListResponse = t.Array(
-  t.Omit(NoteBoardResponse, ['canvas', 'memberIds']),
+  t.Omit(NoteBoardResponse, ['canvas', 'memberIds', 'vaultSha256']),
 );
 
 export const NoteBoardAccessCandidateListResponse = t.Array(

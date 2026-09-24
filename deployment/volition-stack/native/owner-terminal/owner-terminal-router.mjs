@@ -243,7 +243,26 @@ function requestTarget(request) {
   const [, kind, name] = match;
   if (!KINDS.has(kind) || !slugFrom(name)) return { status: 400 };
   const token = request.headers['x-owner-terminal-token'];
+  // The tab's X: POST <base>/__helena/close ends the session itself (owner, 2026-09-24:
+  // "X schließt die Shell wirklich"). wetty never serves this path.
+  if (url.pathname === `/focus/owner-terminal/${kind}/${name}/__helena/close`) {
+    return request.method === 'POST' ? { kind, name, token, close: true } : { status: 405 };
+  }
   return { kind, name, upstreamPath: request.url, token };
+}
+
+// Ends a session for good: its tmux session (and with it the program in it) and the wetty
+// that served it. Closing one that is not running is not an error.
+async function closeSession(kind, name) {
+  const key = `${kind}:${name}`;
+  const current = sessions.get(key);
+  sessions.delete(key);
+  await run(tmux, ['kill-session', '-t', `=owner-${kind}-${name}`]).catch(() => {});
+  if (current) {
+    await Promise.resolve(current)
+      .then((item) => item.child.kill('SIGTERM'))
+      .catch(() => {});
+  }
 }
 
 function upstreamHeaders(headers) {
@@ -291,7 +310,14 @@ async function resolveSession(target) {
 
 const server = http.createServer(async (request, response) => {
   try {
-    const resolved = await resolveSession(requestTarget(request));
+    const target = requestTarget(request);
+    if (target.close) {
+      const allowed = await verifyToken(target.token, target.kind);
+      if (allowed) await closeSession(target.kind, target.name);
+      response.writeHead(allowed ? 204 : 403, { 'cache-control': 'no-store' });
+      return response.end();
+    }
+    const resolved = await resolveSession(target);
     if (resolved.status) {
       response.writeHead(resolved.status, {
         'content-type': 'application/json',
@@ -330,7 +356,9 @@ const server = http.createServer(async (request, response) => {
 
 server.on('upgrade', async (request, client, head) => {
   try {
-    const resolved = await resolveSession(requestTarget(request));
+    const target = requestTarget(request);
+    if (target.close) return client.destroy();
+    const resolved = await resolveSession(target);
     if (resolved.status) return client.destroy();
     const upstream = net.createConnection(resolved.terminal.socketPath);
     upstream.once('connect', () => {

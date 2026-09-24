@@ -8,6 +8,7 @@ import { vaultNotePath } from '@/utils/paths';
 import { useCreateTaskNote, useTaskNotesQuery } from '../../services/knowledge.service';
 import { usePersistedOpen } from '../../hooks/usePersistedOpen';
 import IssueKnowledgeNoteList from './IssueKnowledgeNoteList';
+import IssueMentionsList from './IssueMentionsList';
 import IssueSectionHeading from './IssueSectionHeading';
 
 // The notes of the project knowledge that link to this task with [[KEY-n]]. A new note
@@ -65,6 +66,7 @@ export default function IssueKnowledgePanel({
       </div>
 
       {open && <IssueKnowledgeNoteList identifier={identifier} notes={notes} />}
+      {open && <IssueMentionsList identifier={identifier} />}
     </div>
   );
 }

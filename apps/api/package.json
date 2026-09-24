@@ -23,6 +23,7 @@
     "@elysiajs/swagger": "^1.3.1",
     "@firecrawl/pdf-inspector": "^1.17.0",
     "@helena/connectors": "workspace:*",
+    "@helena/knowledge": "workspace:*",
     "@helena/locales": "workspace:*",
     "@helena/loop": "workspace:*",
     "@helena/policy": "workspace:*",

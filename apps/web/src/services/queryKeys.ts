@@ -124,6 +124,12 @@ export const qk = {
   knowledgeConflicts: (root: string) => ['knowledge', 'conflicts', root] as const,
   knowledgeHistory: (path: string) => ['knowledge', 'history', path] as const,
   knowledgeSearch: (q: string, folder = '') => ['knowledge', 'search', folder, q] as const,
+  // The one search over every source, what mentions an item, templates and the index.
+  knowledgeFind: (q: string, sources: string, project: string) =>
+    ['knowledge', 'find', q, sources, project] as const,
+  knowledgeMentions: (target: string) => ['knowledge', 'mentions', target] as const,
+  knowledgeTemplates: ['knowledge', 'templates'] as const,
+  knowledgeSources: ['knowledge', 'sources'] as const,
   // Note boards (the notes canvases). `noteBoardsForProject` is the invalidation
   // base for every list/search variant; `noteBoardsSearch` is one paged switcher
   // query (scoped by search text); `noteBoard` is a single board with its canvas.

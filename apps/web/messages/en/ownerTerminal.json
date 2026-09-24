@@ -22,7 +22,7 @@
     "codex": "Codex",
     "helena-dev-claude": "Develop Helena (Claude Code)",
     "helena-dev-codex": "Develop Helena (Codex)",
-    "close": "Close tab"
+    "close": "End session"
   },
   "keys": {
     "esc": "Esc",

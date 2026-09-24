@@ -4,6 +4,11 @@ import {
   type HelenaPlugin,
   type PluginManifest,
 } from '@helena/sdk';
+import {
+  KNOWLEDGE_PLUGIN_MANIFEST,
+  knowledgePlugin,
+  useKnowledgeRegistries,
+} from '@helena/knowledge';
 import { INTEGRATIONS_PLUGIN_ID, builtinConnectors } from '@repo/agent-tools';
 import { webhooksManifest, webhooksPlugin } from '@repo/db/plugins';
 import { host } from '#shared/helena';
@@ -117,6 +122,13 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
   // Outgoing webhooks consume issue and comment events; in process until the workflow
   // engine provides the event transport, then in the worker.
   await host.load(webhooksPlugin, webhooksManifest);
+  // The second brain: Helena's knowledge sources and capture targets live in the host's
+  // registries, beside those of plugins (@helena/knowledge).
+  useKnowledgeRegistries({
+    sources: host.knowledgeSources,
+    captureTargets: host.captureTargets,
+  });
+  await host.load(knowledgePlugin, KNOWLEDGE_PLUGIN_MANIFEST);
   await loadRepositoryBundles();
   for (const plugin of host.list()) {
     if (plugin.status !== 'loaded') {

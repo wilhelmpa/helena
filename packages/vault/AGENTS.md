@@ -42,6 +42,13 @@ permissions and the git repositories; the provisioning service creates the proje
 - **Syncthing conflict copies** (`*.sync-conflict-*`) are not indexed; `listSyncConflicts`
   lists them with the file they belong to.
 - **Never follow a link.** File operations refuse symbolic links on the way to a path.
+- **Who wrote it.** `indexVaultPaths(paths, { author, runId })` records the actor of an
+  API write (`user:<id>`, `agent:<id>`) in `vault_entry.last_author`/`last_run_id`; what the
+  watcher finds is `extern`. `commitVaultPaths(..., { trailers })` adds git trailers
+  (`Helena-Actor`, `Helena-Run`) to the commit.
+- **Boards are JSON Canvas 1.0** (`canvas.ts`, a zod schema of the spec that keeps unknown
+  fields). A `.canvas` file is indexed by its cards' words and the notes it links, not by
+  its JSON.
 
 ## Tests
 

@@ -11,5 +11,15 @@
   "toggleChat": "显示或隐藏协调器聊天",
   "board": "看板",
   "commands": "命令",
-  "switchProject": "切换项目"
+  "switchProject": "切换项目",
+  "filterAll": "全部",
+  "filterKinds": "按类型筛选",
+  "capture": "保存",
+  "captureInbox": "保存到收件箱：“{text}”",
+  "captureJournal": "添加到今日笔记：“{text}”",
+  "capturedInbox": "已保存到收件箱",
+  "capturedJournal": "已添加到今日笔记",
+  "openCaptured": "打开",
+  "captureFailed": "保存失败",
+  "untitled": "无标题"
 }
