@@ -4,5 +4,6 @@
   "noProjects": "No projects yet, create one to get started.",
   "noProjectsTitle": "No projects yet",
   "noProjectsHint": "Create your first project to start planning issues on a board.",
-  "createProject": "Create project"
+  "createProject": "Create project",
+  "serverUnreachable": "The server cannot be reached right now, maybe it is restarting. Reload in a moment."
 }

@@ -5,6 +5,7 @@ import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelB
 import { useTranslations } from 'next-intl';
 import type { FeedItem } from '@/lib/api/endpoints/activity';
 import { formatDate } from '@/utils/dates';
+import { readableFieldValue } from '../utils/fieldActivity';
 import { isLinkRelation } from '@/utils/issueLinks';
 import { byKey } from '@/utils/messageKey';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
@@ -30,6 +31,8 @@ export function useActivityText() {
   const modelLine = useTranslations('modelAvailability');
   const phrase = byKey(useTranslations('issueLinks.phrases'));
   const priorityLabel = usePriorityLabel();
+  const tField = useTranslations('issue.customFields');
+  const fieldWords = { yes: tField('yes'), no: tField('no') };
 
   const v = (chunks: ReactNode) => <span className="text-foreground/70">{chunks}</span>;
   const linkPhrase = (subject: string | null) =>
@@ -153,12 +156,14 @@ export function useActivityText() {
           line: rich('worklogChanged', { from, fromDate: fromDay, to, date: toDay }),
         };
       }
-      case 'field':
-        if (isLongValue(to))
-          return { line: rich('fieldUpdated', { field: subject ?? '' }), popover: to };
-        return to
-          ? { line: rich('fieldSet', { field: subject ?? '', value: to }) }
+      case 'field': {
+        const value = to ? readableFieldValue(to, fieldWords) : null;
+        if (isLongValue(value))
+          return { line: rich('fieldUpdated', { field: subject ?? '' }), popover: value };
+        return value
+          ? { line: rich('fieldSet', { field: subject ?? '', value }) }
           : { line: rich('fieldCleared', { field: subject ?? '' }) };
+      }
       case 'archived':
         return { line: line('archived') };
       case 'restored':

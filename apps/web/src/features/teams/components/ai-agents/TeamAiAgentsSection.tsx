@@ -23,11 +23,7 @@ export default function TeamAiAgentsSection({ teamId }: { teamId: number }) {
   const exporting = useTemplateBundleExport(teamId);
 
   return (
-    <SectionPageView
-      title={t('sections.agents.title')}
-      description={t('sections.agents.description')}
-      wide
-    >
+    <SectionPageView title={t('sections.agents.title')} wide>
       <PageToolbar>
         <PageToolbarSpacer />
         <PageActions

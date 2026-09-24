@@ -34,7 +34,8 @@
     "groupCustom": "Benutzerdefinierte Felder",
     "empty": "Leer",
     "openInNewTab": "In neuem Tab öffnen",
-    "area": "Bereich"
+    "area": "Bereich",
+    "invalidUrl": "Keine gültige Webadresse (https://…)."
   },
   "menu": {
     "preview": "Vorschau",
@@ -120,7 +121,9 @@
     "submit": "Aufgabe erstellen",
     "template": "Vorlage",
     "applyTemplate": "Vorlage anwenden…",
-    "noTemplates": "Keine Vorlagen."
+    "noTemplates": "Keine Vorlagen.",
+    "created": "{identifier} erstellt",
+    "open": "Öffnen"
   },
   "attachments": {
     "title": "Anhänge",
@@ -245,7 +248,8 @@
     "no": "Nein",
     "time": "Uhrzeit",
     "startTime": "Startzeit",
-    "endTime": "Endzeit"
+    "endTime": "Endzeit",
+    "none": "Keine Auswahl"
   },
   "editor": {
     "descriptionPlaceholder": "Beschreibung hinzufügen…"
@@ -454,7 +458,7 @@
     "title": "Agententeam",
     "start": "Agententeam starten",
     "startAgain": "Erneut ausführen",
-    "empty": "Das Agententeam hat noch nicht an dieser Aufgabe gearbeitet. Starte es hier oder delegiere die Aufgabe an den Coordinator.",
+    "empty": "Das Agententeam hat noch nicht an dieser Aufgabe gearbeitet. Starte es hier oder delegiere die Aufgabe an den Koordinator.",
     "unavailable": "Die Läufe können gerade nicht geladen werden.",
     "showStages": "{count, plural, one {# Phase anzeigen} other {# Phasen anzeigen}}",
     "hideStages": "Phasen ausblenden",
@@ -474,14 +478,14 @@
     },
     "steps": {
       "coordinate": "Planung",
-      "specialize": "Specialists",
+      "specialize": "Spezialisten",
       "review": "Review",
       "synchronize": "Ergebnis in Aufgabe"
     },
     "phases": {
       "route": "Weitergeleitet",
-      "coordinate": "Coordinator",
-      "specialize": "Specialist",
+      "coordinate": "Koordinator",
+      "specialize": "Spezialist",
       "review": "Review",
       "synchronize": "Ergebnis"
     },

@@ -4,5 +4,6 @@
   "noProjects": "暂无项目，请先新建一个项目。",
   "noProjectsTitle": "暂无项目",
   "noProjectsHint": "新建第一个项目，然后开始在看板中规划工作项。",
-  "createProject": "新建项目"
+  "createProject": "新建项目",
+  "serverUnreachable": "服务器暂时无法访问，可能正在重启。请稍后重新加载。"
 }

@@ -140,7 +140,10 @@
     "typeSet": "عيّن النوع إلى {type}",
     "typeRemoved": "أزال النوع",
     "linked": "ربط بـ {name}",
-    "unlinked": "ألغى الربط بالمبادرة"
+    "unlinked": "ألغى الربط بالمبادرة",
+    "linkedIssue": "ربط <issue>المهمة</issue> بـ {name}",
+    "unlinkedIssue": "ألغى ربط <issue>المهمة</issue> بالمبادرة",
+    "createdIssueNamed": "أنشأ <issue>المهمة</issue>"
   },
   "attachments": {
     "title": "المرفقات",
@@ -154,5 +157,7 @@
     "download": "تنزيل",
     "downloadFile": "تنزيل {name}",
     "deleteFile": "حذف {name}"
-  }
+  },
+  "deleteTitle": "حذف المبادرة",
+  "deleteConfirm": "حذف «{name}»؟ تبقى المهام في المشروع، لكن دون هذه المبادرة."
 }

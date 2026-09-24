@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import PageSkeleton from '@/components/common/skeleton/PageSkeleton';
+import { Button } from '@/components/ui/button';
 
 // The Shell's content area. It renders the routed page once the project is
 // loaded, and stands in for it while loading, when the account has no projects
@@ -9,6 +10,7 @@ export default function ShellBody({
   forbidden,
   hasProject,
   hasError,
+  unreachable = false,
   projectsLoaded,
   projectCount,
   allowNoProject = false,
@@ -17,12 +19,15 @@ export default function ShellBody({
   forbidden: boolean;
   hasProject: boolean;
   hasError: boolean;
+  // The error is the server being down or restarting, not this project.
+  unreachable?: boolean;
   projectsLoaded: boolean;
   projectCount: number;
   allowNoProject?: boolean;
   children: ReactNode;
 }) {
   const t = useTranslations('shell');
+  const tCommon = useTranslations('common');
   if (forbidden) {
     return (
       <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
@@ -36,6 +41,15 @@ export default function ShellBody({
   // the page it will become.
   if (!hasProject) {
     if (allowNoProject) return <>{children}</>;
+    if (hasError && unreachable)
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center text-sm text-muted-foreground">
+          {t('serverUnreachable')}
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            {tCommon('reload')}
+          </Button>
+        </div>
+      );
     if (hasError)
       return (
         <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">

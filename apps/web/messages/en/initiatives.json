@@ -140,7 +140,10 @@
     "typeSet": "set type to {type}",
     "typeRemoved": "removed type",
     "linked": "linked to {name}",
-    "unlinked": "unlinked from the initiative"
+    "unlinked": "unlinked from the initiative",
+    "linkedIssue": "linked <issue>the task</issue> to {name}",
+    "unlinkedIssue": "unlinked <issue>the task</issue> from the initiative",
+    "createdIssueNamed": "created <issue>the task</issue>"
   },
   "attachments": {
     "title": "Attachments",
@@ -154,5 +157,7 @@
     "download": "Download",
     "downloadFile": "Download {name}",
     "deleteFile": "Delete {name}"
-  }
+  },
+  "deleteTitle": "Delete initiative",
+  "deleteConfirm": "Delete “{name}”? Its tasks stay in the project, without this initiative."
 }

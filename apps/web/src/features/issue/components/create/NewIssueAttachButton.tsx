@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import { Paperclip } from 'lucide-react';
 import { useStorageSettingsQuery } from '@/services/storage.service';
-import { attachmentAccept, attachmentLimitHint } from '@/utils/uploadLimits';
+import { attachmentAccept } from '@/utils/uploadLimits';
+import { useUploadLimitText } from '@/hooks/useUploadLimitText';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslations } from 'next-intl';
@@ -15,6 +16,7 @@ export default function NewIssueAttachButton({
 }) {
   const t = useTranslations('issue.attachments');
   const limits = useStorageSettingsQuery().data;
+  const uploadLimitText = useUploadLimitText();
   const fileInput = useRef<HTMLInputElement>(null);
 
   return (
@@ -32,7 +34,8 @@ export default function NewIssueAttachButton({
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
-          Attach files{limits && `. ${attachmentLimitHint(limits)}`}
+          {t('attachFiles')}
+          {limits && `. ${uploadLimitText.hint(limits)}`}
         </TooltipContent>
       </Tooltip>
       <input

@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "Titre 1",
+      "heading2": "Titre 2",
+      "bold": "Gras",
+      "italic": "Italique",
+      "strike": "Barré",
+      "code": "Code",
+      "codeBlock": "Bloc de code",
+      "link": "Lien",
+      "blockquote": "Citation",
+      "bulletList": "Liste à puces",
+      "orderedList": "Liste numérotée"
+    },
+    "linkApply": "Définir le lien",
+    "linkRemove": "Retirer le lien"
   },
   "chart": {
     "download": "Enregistrer le graphique",
@@ -217,5 +232,50 @@
     "page": "Page {number}",
     "perPage": "par page",
     "range": "{first}-{last} sur {total}"
+  },
+  "dnd": {
+    "pickedUp": "Élément {id} saisi.",
+    "movedOver": "L’élément {id} a été déplacé sur {over}.",
+    "notOver": "L’élément {id} n’est plus au-dessus d’une zone de dépôt.",
+    "droppedOver": "L’élément {id} a été déposé sur {over}.",
+    "dropped": "L’élément {id} a été déposé.",
+    "cancelled": "Glisser annulé. L’élément {id} a été remis en place.",
+    "instructions": "Pour saisir un élément, appuyez sur Espace ou Entrée. Pendant le glisser, déplacez-le avec les flèches. Appuyez à nouveau sur Espace ou Entrée pour le déposer, ou sur Échap pour annuler."
+  },
+  "uploadLimits": {
+    "maxSize": "Jusqu’à {mb} Mo par fichier.",
+    "accepted": "Acceptés : {types}.",
+    "tooLarge": "« {name} » dépasse la limite de {mb} Mo",
+    "notAccepted": "« {name} » n’est pas un type de fichier accepté",
+    "types": {
+      "images": "images",
+      "video": "vidéos",
+      "audio": "audio",
+      "pdf": "PDF",
+      "text": "texte",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "documents",
+      "spreadsheets": "feuilles de calcul",
+      "presentations": "présentations"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "Saisissez une adresse web valide (https://…).",
+    "url_https_required": "L’adresse doit commencer par https://.",
+    "url_credentials": "L’adresse ne doit pas contenir de nom d’utilisateur ni de mot de passe.",
+    "url_private": "L’adresse pointe vers un réseau privé ou local, ce qui n’est pas autorisé ici.",
+    "url_unresolvable": "Le nom de serveur de cette adresse est introuvable.",
+    "number_invalid": "Saisissez un nombre."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "Cette adresse ne mène nulle part : un lien ancien ou mal saisi, peut-être.",
+    "home": "Aller à l’accueil"
+  },
+  "systemActors": {
+    "workflow": "Workflow",
+    "agentTeam": "Équipe d’agents",
+    "autoArchive": "Archivage automatique"
   }
 }

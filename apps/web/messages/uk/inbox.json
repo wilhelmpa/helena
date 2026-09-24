@@ -34,7 +34,8 @@
     "commented": "{who} залишив(ла) коментар",
     "stateChanged": "{who} змінив(ла) статус з {from} на {to}",
     "stateChangedPlain": "{who} змінив(ла) статус",
-    "approval_requested": "{who} просить вашого погодження"
+    "approval_requested": "{who} просить вашого погодження",
+    "automation": "Helena"
   },
   "hub": {
     "messages": "Messages",

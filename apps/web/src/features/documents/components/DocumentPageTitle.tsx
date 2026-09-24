@@ -10,11 +10,15 @@ export default function DocumentPageTitle({
   editable,
   autoFocus,
   onRename,
+  onDone,
 }: {
   name: string;
   editable: boolean;
   autoFocus: boolean;
   onRename: (name: string) => Promise<void>;
+  // Enter: the title is done, writing goes on in the text. `renaming` when the new
+  // name renames the note (which opens it at a new address).
+  onDone?: (renaming: boolean) => void;
 }) {
   const t = useTranslations('documents');
   const [value, setValue] = useState(name);
@@ -58,6 +62,10 @@ export default function DocumentPageTitle({
         if (event.key !== 'Enter' && event.key !== 'Escape') return;
         event.preventDefault();
         cancelled.current = event.key === 'Escape';
+        if (event.key === 'Enter') {
+          const clean = cleanFileName(value);
+          onDone?.(!!clean && clean !== name);
+        }
         event.currentTarget.blur();
       }}
     />

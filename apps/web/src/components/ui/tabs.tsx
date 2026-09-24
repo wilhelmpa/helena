@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Tabs as TabsPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
+import { nodeText } from '@/lib/accessibleName';
 import { WORKSPACE_TOOLBAR_TRIGGER_CLASS } from '@/components/layout/WorkspaceToolbarButton';
 
 type TabsVariant = 'default' | 'line' | 'toolbar';
@@ -55,9 +56,15 @@ function TabsList({
 
 function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   const variant = React.useContext(TabsListContext);
+  // An icon-only tab with a title is named by it (see Button).
+  const ariaLabel =
+    props.title && props['aria-label'] == null && !props.asChild && nodeText(props.children) === ''
+      ? props.title
+      : undefined;
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
+      {...(ariaLabel ? { 'aria-label': ariaLabel } : {})}
       className={cn(
         variant === 'toolbar'
           ? `${WORKSPACE_TOOLBAR_TRIGGER_CLASS} disabled:pointer-events-none disabled:opacity-50`

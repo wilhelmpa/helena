@@ -18,7 +18,7 @@ export default function SettingsLabelsPage() {
   const { project } = useShell();
   if (!project) return null;
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+    <SectionPageView title={sectionText.label} wide>
       <SettingsToolbar>
         <LabelsToolbar
           projectKey={project.project.key}

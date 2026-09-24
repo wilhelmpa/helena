@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
 import type { IssueWithWatchers } from '@/lib/api/endpoints/issues';
@@ -23,6 +24,9 @@ export default function IssueChecklistsPanel({ issue }: { issue: IssueWithWatche
   const { can } = usePermissions();
   const canEdit = can('work_items', 'edit');
   const [adding, setAdding] = useState(false);
+  // The checklist just created: its card opens its entry field, so the next lines typed
+  // become its items rather than further checklists.
+  const [justCreated, setJustCreated] = useState<number | null>(null);
   const { open, toggle } = usePersistedOpen('issue-checklists-open');
   const sensors = useDndSensors();
   const createChecklist = useCreateChecklist();
@@ -72,6 +76,7 @@ export default function IssueChecklistsPanel({ issue }: { issue: IssueWithWatche
                       issueId={issue.id}
                       checklist={checklist}
                       canEdit={canEdit}
+                      startAdding={checklist.id === justCreated}
                     />
                   ))}
                 </div>
@@ -84,7 +89,17 @@ export default function IssueChecklistsPanel({ issue }: { issue: IssueWithWatche
               <IssueChecklistAddInput
                 placeholder={t('titlePlaceholder')}
                 maxLength={CHECKLIST_TITLE_MAX}
-                onSubmit={(title) => createChecklist.mutate({ issueId: issue.id, title })}
+                onSubmit={(title) =>
+                  createChecklist.mutate(
+                    { issueId: issue.id, title },
+                    {
+                      onSuccess: (created) => {
+                        setAdding(false);
+                        setJustCreated(created.id);
+                      },
+                    },
+                  )
+                }
                 onClose={() => setAdding(false)}
               />
             </div>

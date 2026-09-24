@@ -253,7 +253,11 @@ export function useViewEditor(
     beginEdit(target);
   }
 
+  // The views deleted here: their address going dead is expected, not a stale link.
+  const deletedIds = useRef(new Set<number>());
+
   async function deleteView(target: View) {
+    deletedIds.current.add(target.id);
     await deleteViewMutation.mutateAsync(target.id);
     if (activeViewId === target.id) onSelectView(null);
   }
@@ -309,6 +313,7 @@ export function useViewEditor(
     saveEdits,
     beginEditView,
     deleteView,
+    wasDeleted: (id: number) => deletedIds.current.has(id),
     reorderView,
   };
 }

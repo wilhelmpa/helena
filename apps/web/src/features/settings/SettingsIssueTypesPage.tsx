@@ -25,7 +25,7 @@ export default function SettingsIssueTypesPage() {
   const addAction = useSettingsAddAction(section.resource, tTypes('add'), () => setAdding(true));
   if (!project) return null;
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+    <SectionPageView title={sectionText.label} wide>
       <SettingsToolbar primary={addAction}>
         <IssueTypesToolbar
           projectKey={project.project.key}

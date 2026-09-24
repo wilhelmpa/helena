@@ -85,6 +85,11 @@
       "type": "按类型",
       "assignee": "按负责人",
       "delegate": "按执行代理"
+    },
+    "none": {
+      "type": "无类型",
+      "assignee": "未分配",
+      "delegate": "未委派"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "移除了以下工作项的标签：",
       "field": "更新了以下工作项的字段：",
       "other": "更新了"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {
@@ -197,5 +203,7 @@
     "inProgress": "进行中",
     "backlog": "待办池",
     "unassigned": "未指派"
-  }
+  },
+  "deleteDashboard": "删除仪表板",
+  "deleteDashboardConfirm": "删除“{name}”及其小组件？任务不受影响。"
 }

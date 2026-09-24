@@ -9,8 +9,8 @@ import {
   type VaultExtractionStatus,
   escapeLike,
 } from '@repo/db';
-import type { Frontmatter, NoteLink } from './markdown';
-import { locateVaultPath } from './paths';
+import { noteTitle, type Frontmatter, type NoteLink } from './markdown';
+import { baseName, isNotePath, locateVaultPath } from './paths';
 
 export type VaultEntryRow = typeof vaultEntry.$inferSelect;
 
@@ -150,6 +150,26 @@ export async function moveEntries(from: string, to: string): Promise<void> {
         projectId,
       })
       .where(pathOrBelow(from));
+    // A title follows the name unless a note's frontmatter sets one. The file itself
+    // is unchanged (same size and time), so the indexer would not look at it again and
+    // the tree kept showing the old name.
+    const renamed = await tx
+      .select({
+        id: vaultEntry.id,
+        path: vaultEntry.path,
+        title: vaultEntry.title,
+        frontmatter: vaultEntry.frontmatter,
+      })
+      .from(vaultEntry)
+      .where(pathOrBelow(to));
+    for (const row of renamed) {
+      const title = isNotePath(row.path)
+        ? noteTitle(row.frontmatter, row.path)
+        : baseName(row.path);
+      if (title !== row.title) {
+        await tx.update(vaultEntry).set({ title }).where(eq(vaultEntry.id, row.id));
+      }
+    }
     const files = moved.filter((row) => row.kind !== 'folder');
     if (files.length > 0) {
       await tx.insert(vaultMove).values(

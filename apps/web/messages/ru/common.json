@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "Заголовок 1",
+      "heading2": "Заголовок 2",
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "strike": "Зачёркнутый",
+      "code": "Код",
+      "codeBlock": "Блок кода",
+      "link": "Ссылка",
+      "blockquote": "Цитата",
+      "bulletList": "Маркированный список",
+      "orderedList": "Нумерованный список"
+    },
+    "linkApply": "Добавить ссылку",
+    "linkRemove": "Убрать ссылку"
   },
   "chart": {
     "download": "Сохранить график",
@@ -217,5 +232,50 @@
     "page": "Страница {number}",
     "perPage": "на странице",
     "range": "{first}-{last} из {total}"
+  },
+  "dnd": {
+    "pickedUp": "Элемент {id} поднят.",
+    "movedOver": "Элемент {id} перемещён над {over}.",
+    "notOver": "Элемент {id} больше не над областью сброса.",
+    "droppedOver": "Элемент {id} перемещён в {over}.",
+    "dropped": "Элемент {id} отпущен.",
+    "cancelled": "Перетаскивание отменено. Элемент {id} возвращён на место.",
+    "instructions": "Чтобы поднять элемент, нажмите Пробел или Enter. Во время перетаскивания перемещайте его стрелками. Нажмите Пробел или Enter ещё раз, чтобы отпустить его, или Escape для отмены."
+  },
+  "uploadLimits": {
+    "maxSize": "До {mb} МБ на файл.",
+    "accepted": "Разрешено: {types}.",
+    "tooLarge": "«{name}» больше лимита {mb} МБ",
+    "notAccepted": "«{name}» имеет недопустимый тип файла",
+    "types": {
+      "images": "изображения",
+      "video": "видео",
+      "audio": "аудио",
+      "pdf": "PDF",
+      "text": "текст",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "документы",
+      "spreadsheets": "таблицы",
+      "presentations": "презентации"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "Введите корректный веб-адрес (https://…).",
+    "url_https_required": "Адрес должен начинаться с https://.",
+    "url_credentials": "Адрес не должен содержать имя пользователя или пароль.",
+    "url_private": "Адрес указывает на частную или локальную сеть, что здесь не разрешено.",
+    "url_unresolvable": "Не удалось найти имя сервера из этого адреса.",
+    "number_invalid": "Введите число."
+  },
+  "notFound": {
+    "title": "Страница не найдена",
+    "description": "Этот адрес никуда не ведёт — возможно, ссылка устарела или набрана с ошибкой.",
+    "home": "На главную"
+  },
+  "systemActors": {
+    "workflow": "Рабочий процесс",
+    "agentTeam": "Команда агентов",
+    "autoArchive": "Автоархивация"
   }
 }

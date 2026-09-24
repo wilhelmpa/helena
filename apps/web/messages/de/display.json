@@ -62,7 +62,8 @@
   },
   "weekStart": {
     "0": "Sonntag",
-    "1": "Montag"
+    "1": "Montag",
+    "locale": "Wie die Sprache"
   },
   "dateFields": {
     "dueDate": "Fälligkeitsdatum",

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { DndContext } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { useTranslations } from 'next-intl';
 import { buildMaps, issueColor, type WorkItemsViewProps } from '@/utils/project';
 import { usePermissions } from '@/hooks/usePermissions';

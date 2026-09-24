@@ -479,7 +479,8 @@
       "success": "成功",
       "failed": "失败",
       "pending": "待处理"
-    }
+    },
+    "invalidUrl": "请输入完整网址，例如 https://example.com/webhook。"
   },
   "git": {
     "enable": "启用仓库集成",

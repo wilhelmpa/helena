@@ -85,6 +85,11 @@
       "type": "حسب النوع",
       "assignee": "حسب المسؤول",
       "delegate": "حسب المفوَّض"
+    },
+    "none": {
+      "type": "بلا نوع",
+      "assignee": "غير مُسند",
+      "delegate": "غير مفوَّض"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "أزال وسمًا من",
       "field": "حدّث حقلًا في",
       "other": "حدّث"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {
@@ -197,5 +203,7 @@
     "inProgress": "قيد التنفيذ",
     "backlog": "قائمة الانتظار",
     "unassigned": "غير مُسندة"
-  }
+  },
+  "deleteDashboard": "حذف لوحة المعلومات",
+  "deleteDashboardConfirm": "حذف «{name}» مع أدواته؟ لا تتأثر المهام."
 }

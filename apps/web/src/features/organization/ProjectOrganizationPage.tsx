@@ -29,7 +29,7 @@ export default function ProjectOrganizationPage() {
   if (!project) return null;
 
   return (
-    <SectionPageView title={t('title')} description={t('description')} wide>
+    <SectionPageView title={t('title')} wide>
       {organization.isPending ? (
         <ListSkeleton rows={6} rowClassName="h-8" />
       ) : organization.isError ? (

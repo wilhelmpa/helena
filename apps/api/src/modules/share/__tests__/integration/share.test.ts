@@ -136,6 +136,37 @@ describe('share', () => {
       expect(shared.data.issue.parent).toBeNull();
     });
 
+    it('names a related task that is not shared by its identifier only', async () => {
+      const { asOwner, issueId, columnId } = await setup();
+      const project = asOwner.projects({ projectKey: 'MKT' });
+      const hidden = await project.issues.post({ columnId, title: 'Private plan' });
+      const open = await project.issues.post({ columnId, title: 'Public plan' });
+      const child = await project.issues.post({
+        columnId,
+        title: 'Private step',
+        parentId: issueId,
+      });
+      await asOwner
+        .issues({ issueId })
+        .links.post({ targetIssueId: hidden.data!.id, kind: 'blocks' });
+      await asOwner
+        .issues({ issueId })
+        .links.post({ targetIssueId: open.data!.id, kind: 'blocks' });
+      await asOwner.issues({ issueId: open.data!.id }).share.post();
+      const token = (await asOwner.issues({ issueId }).share.post()).data!.token;
+
+      const shared = await api.share.issue({ token }).get();
+      const titles = Object.fromEntries(
+        shared.data.issue.links.map((link: { issue: { id: number; title: string } }) => [
+          link.issue.id,
+          link.issue.title,
+        ]),
+      );
+      expect(titles[hidden.data!.id]).toBe('');
+      expect(titles[open.data!.id]).toBe('Public plan');
+      expect(shared.data.issue.subtasks).toMatchObject([{ id: child.data!.id, title: '' }]);
+    });
+
     it('rejects a malformed token', async () => {
       const res = await api.share.issue({ token: 'not-a-uuid' }).get();
       expect(res.status).toBe(400);

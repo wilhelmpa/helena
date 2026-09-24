@@ -34,7 +34,8 @@
     "groupCustom": "自定义字段",
     "empty": "空",
     "openInNewTab": "在新标签页中打开",
-    "area": "区域"
+    "area": "区域",
+    "invalidUrl": "不是有效的网址（https://…）。"
   },
   "menu": {
     "preview": "预览",
@@ -120,7 +121,9 @@
     "submit": "新建工作项",
     "template": "模板",
     "applyTemplate": "套用模板…",
-    "noTemplates": "没有模板。"
+    "noTemplates": "没有模板。",
+    "created": "已创建 {identifier}",
+    "open": "打开"
   },
   "attachments": {
     "title": "附件",
@@ -245,7 +248,8 @@
     "no": "否",
     "time": "时间",
     "startTime": "开始时间",
-    "endTime": "结束时间"
+    "endTime": "结束时间",
+    "none": "未选择"
   },
   "editor": {
     "descriptionPlaceholder": "添加描述…"

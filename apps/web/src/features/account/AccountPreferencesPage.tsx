@@ -53,7 +53,6 @@ export default function AccountPreferencesPage() {
   return (
     <SectionPageView
       title={t('title')}
-      description={t('description')}
       // Only while a save runs: an empty action slot would still hold the header's
       // page bar open on a narrow screen.
       actions={update.isPending ? <AccountPreferencesSaveState saving /> : undefined}

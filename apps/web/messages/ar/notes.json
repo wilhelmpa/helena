@@ -53,5 +53,20 @@
   "addNote": "إضافة ملاحظة",
   "accessHint": "دول بس اللي يقدروا يفتحوها",
   "createdBy": "أنشأها {name}",
-  "backgroundColors": "ألوان الخلفية"
+  "backgroundColors": "ألوان الخلفية",
+  "canvasA11y": {
+    "node": "اضغط Enter أو المسافة لتحديد ملاحظة. حرّكها بمفاتيح الأسهم، وEscape للإلغاء.",
+    "nodeKeyboardDisabled": "النقل بلوحة المفاتيح متوقف في هذه اللوحة.",
+    "nodeMoved": "نُقلت الملاحظة إلى {x}، {y}.",
+    "edge": "اضغط Enter أو المسافة لتحديد اتصال. Delete يحذفه، وEscape للإلغاء.",
+    "controls": "عناصر التحكم باللوحة",
+    "zoomIn": "تكبير",
+    "zoomOut": "تصغير",
+    "fitView": "إظهار كل الملاحظات",
+    "interactive": "قفل النقل أو فتحه",
+    "minimap": "خريطة عامة",
+    "handle": "نقطة اتصال"
+  },
+  "deleteBoard": "حذف اللوحة",
+  "deleteBoardConfirm": "حذف «{name}» وكل الملاحظات عليها؟ لا يمكن التراجع عن ذلك."
 }

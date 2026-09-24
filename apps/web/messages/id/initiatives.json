@@ -140,7 +140,10 @@
     "typeSet": "mengatur tipe ke {type}",
     "typeRemoved": "menghapus tipe",
     "linked": "ditautkan ke {name}",
-    "unlinked": "dilepas tautannya dari inisiatif"
+    "unlinked": "dilepas tautannya dari inisiatif",
+    "linkedIssue": "menautkan <issue>tugas</issue> ke {name}",
+    "unlinkedIssue": "melepas tautan <issue>tugas</issue> dari inisiatif",
+    "createdIssueNamed": "membuat <issue>tugas</issue>"
   },
   "attachments": {
     "title": "Lampiran",
@@ -154,5 +157,7 @@
     "download": "Unduh",
     "downloadFile": "Unduh {name}",
     "deleteFile": "Hapus {name}"
-  }
+  },
+  "deleteTitle": "Hapus inisiatif",
+  "deleteConfirm": "Hapus “{name}”? Tugas tetap ada di proyek, tanpa inisiatif ini."
 }

@@ -479,7 +479,8 @@
       "success": "Success",
       "failed": "Failed",
       "pending": "Pending"
-    }
+    },
+    "invalidUrl": "Enter a full web address, e.g. https://example.com/webhook."
   },
   "git": {
     "enable": "Enable repository integration",

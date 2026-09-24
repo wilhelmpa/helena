@@ -16,15 +16,17 @@ import PreferencesSync from '@/components/preferences-sync';
 import SessionScope from '@/components/session-scope';
 import { SessionProvider } from '@/lib/auth-client';
 
-// The message shown for a failed mutation: the API's `{ error }` text (carried by
-// ApiError) when present, otherwise a generic fallback.
+// The message shown for a failed mutation: the API's error worded in the reader's
+// language when it carries a code this app knows (common.apiErrors), else the API's
+// `{ error }` text (carried by ApiError), otherwise a generic fallback.
 function errorMessage(
   error: unknown,
   fallback: string,
   browser: (code: BrowserControlError['code']) => string,
+  api: (code: string | undefined) => string | undefined,
 ): string {
   if (error instanceof BrowserControlError) return browser(error.code);
-  if (error instanceof ApiError) return error.message;
+  if (error instanceof ApiError) return api(error.code) ?? error.message;
   if (error instanceof Error && error.message) return error.message;
   return fallback;
 }
@@ -45,6 +47,14 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     browserError.current = (code) => tBrowser(code);
   }, [tBrowser]);
+  const tApi = useTranslations('common.apiErrors');
+  const apiError = useRef<(code: string | undefined) => string | undefined>(() => undefined);
+  useEffect(() => {
+    apiError.current = (code) => {
+      const key = code as Parameters<typeof tApi>[0];
+      return code && tApi.has(key) ? tApi(key) : undefined;
+    };
+  }, [tApi]);
 
   const [queryClient] = useState(
     () =>
@@ -56,7 +66,9 @@ export function Providers({ children }: { children: ReactNode }) {
         mutationCache: new MutationCache({
           onError: (error, _vars, _ctx, mutation) => {
             if (mutation.meta?.suppressErrorToast) return;
-            toast.error(errorMessage(error, fallback.current, browserError.current));
+            toast.error(
+              errorMessage(error, fallback.current, browserError.current, apiError.current),
+            );
           },
         }),
         defaultOptions: {

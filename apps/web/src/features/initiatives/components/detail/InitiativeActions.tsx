@@ -10,9 +10,10 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useDeleteInitiative } from '@/services/initiatives.service';
 import { PageActions, type PageAction } from '@/components/layout/PageToolbar';
 import InitiativeDialog from '@/components/common/overlay/InitiativeDialog';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 
 // The initiative's actions at the end of the page's header row: Edit as an icon, and
-// Delete in the "…" menu. Deleting returns to the initiatives list.
+// Delete in the "…" menu, after a confirmation. Deleting returns to the initiatives list.
 export default function InitiativeActions({
   initiative,
   projectKey,
@@ -21,10 +22,12 @@ export default function InitiativeActions({
   projectKey: string;
 }) {
   const tCommon = useTranslations('common');
+  const t = useTranslations('initiatives');
   const { can } = usePermissions();
   const del = useDeleteInitiative(projectKey);
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const canEdit = can('initiatives', 'edit');
   const canDelete = can('initiatives', 'delete');
@@ -49,12 +52,23 @@ export default function InitiativeActions({
       label: tCommon('delete'),
       icon: Trash2,
       menuOnly: true,
-      onClick: () => void remove(),
+      onClick: () => setConfirming(true),
     });
 
   return (
     <>
       <PageActions actions={actions} />
+
+      {confirming && (
+        <ConfirmDialog
+          title={t('deleteTitle')}
+          confirmLabel={tCommon('delete')}
+          onConfirm={remove}
+          onClose={() => setConfirming(false)}
+        >
+          {t('deleteConfirm', { name: initiative.title })}
+        </ConfirmDialog>
+      )}
 
       {editing && (
         <InitiativeDialog

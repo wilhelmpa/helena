@@ -11,12 +11,11 @@ import ApprovalsView from './components/ApprovalsView';
 // view as the global Approvals page, narrowed to one project.
 export default function ProjectApprovalsPage() {
   const tNav = useTranslations('nav');
-  const t = useTranslations('approvals');
   const { project } = useShell();
   if (!project) return null;
 
   return (
-    <SectionPageView title={tNav('approvals')} description={t('projectHint')} wide>
+    <SectionPageView title={tNav('approvals')} wide>
       <RequirePermission resource="ai_agents" action="edit">
         <ApprovalsView fixedProjectKey={project.project.key} />
       </RequirePermission>

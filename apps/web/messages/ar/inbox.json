@@ -34,7 +34,8 @@
     "commented": "علّق {who}",
     "stateChanged": "{who} غيّر الحالة من {from} لـ {to}",
     "stateChangedPlain": "غيّر {who} الحالة",
-    "approval_requested": "يطلب {who} موافقتك"
+    "approval_requested": "يطلب {who} موافقتك",
+    "automation": "Helena"
   },
   "hub": {
     "messages": "Messages",

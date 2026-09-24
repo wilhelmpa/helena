@@ -479,7 +479,8 @@
       "success": "نجح",
       "failed": "فشل",
       "pending": "قيد الانتظار"
-    }
+    },
+    "invalidUrl": "أدخل عنوان ويب كاملًا، مثل https://example.com/webhook."
   },
   "git": {
     "enable": "تفعيل تكامل المستودع",

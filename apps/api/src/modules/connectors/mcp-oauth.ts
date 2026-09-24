@@ -166,7 +166,7 @@ async function assertServer(url: string): Promise<string> {
   try {
     await assertPublicHttpUrl(parsed.toString());
   } catch (error) {
-    if (error instanceof UrlNotAllowedError) throw new HttpError(400, error.message);
+    if (error instanceof UrlNotAllowedError) throw new HttpError(400, error.message, error.code);
     throw error;
   }
   return parsed.toString();

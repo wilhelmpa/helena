@@ -63,7 +63,7 @@ export default function HomeBrowserLabPage() {
           />
         )}
       </PageToolbar>
-      <SectionPageView title={t('title')} description={null} wide>
+      <SectionPageView title={t('title')} wide>
         {teams.isPending || projects.isPending || router.isPending ? (
           <ListSkeleton rows={3} rowClassName="h-24" />
         ) : scope === null ? (

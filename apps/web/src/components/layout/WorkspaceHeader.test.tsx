@@ -1,10 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import {
-  WORKSPACE_HEADER_CLASS,
-  WORKSPACE_HEADER_DESCRIPTION_CLASS,
-  WORKSPACE_PANEL_HEADER_CLASS,
-} from './WorkspaceHeader';
+import { WORKSPACE_HEADER_CLASS, WORKSPACE_PANEL_HEADER_CLASS } from './WorkspaceHeader';
 import {
   WORKSPACE_TOOLBAR_BUTTON_ACTIVE_CLASS,
   WORKSPACE_TOOLBAR_BUTTON_CLASS,
@@ -23,11 +19,6 @@ describe('WorkspaceHeader', () => {
     for (const className of ['h-10', 'shrink-0', 'border-b']) assert(classes.includes(className));
     assert.doesNotMatch(WORKSPACE_PANEL_HEADER_CLASS, /(?:sm|md|lg|xl):h-/);
     assert.notEqual(WORKSPACE_PANEL_HEADER_CLASS, WORKSPACE_HEADER_CLASS);
-  });
-
-  it('keeps secondary text out of the constrained mobile row', () => {
-    const classes = WORKSPACE_HEADER_DESCRIPTION_CLASS.split(' ');
-    for (const className of ['hidden', 'md:block', 'truncate']) assert(classes.includes(className));
   });
 
   it('defines one button contract for task and inbox toolbars', () => {

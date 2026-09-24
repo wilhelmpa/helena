@@ -95,7 +95,12 @@ export function IssueCardBody({
             <TooltipContent>{column.name}</TooltipContent>
           </Tooltip>
         )}
-        <span dir="auto" className="line-clamp-2 text-sm leading-snug text-foreground">
+        {/* A long unbroken word (a URL, a path) breaks inside, so the two lines end in
+            an ellipsis instead of being cut off at the card's edge. */}
+        <span
+          dir="auto"
+          className="line-clamp-2 min-w-0 text-sm leading-snug wrap-anywhere text-foreground"
+        >
           {issue.title}
         </span>
       </div>

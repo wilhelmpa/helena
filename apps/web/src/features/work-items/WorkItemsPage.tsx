@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -27,7 +28,7 @@ import {
   PageToolbarSpacer,
   type PageAction,
 } from '@/components/layout/PageToolbar';
-import { useViewFoldersQuery } from '@/services/views.service';
+import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import BoardDisplayControl from './components/BoardDisplayControl';
 import { IssueLinksProvider } from './context/useIssueLinks';
 import { SubtasksProvider } from './context/useSubtasks';
@@ -68,6 +69,19 @@ export default function WorkItemsPage() {
   });
 
   const { data: folders = [] } = useViewFoldersQuery(projectKey || null);
+
+  // The address names a view that no longer exists (deleted, or a stale link): say so
+  // and show the whole board under its own address, instead of the board under a dead
+  // view's address.
+  const viewsLoaded = useViewsQuery(projectKey || null).isSuccess;
+  const missingView = viewsLoaded && editor.activeViewId != null && !editor.activeView;
+  const reportedMissing = useRef<number | null>(null);
+  useEffect(() => {
+    if (!missingView || reportedMissing.current === editor.activeViewId) return;
+    reportedMissing.current = editor.activeViewId;
+    if (!editor.wasDeleted(editor.activeViewId!)) toast.info(t('viewNotFound'));
+    editor.selectView(null);
+  }, [missingView, editor, t]);
 
   if (!project || !filteredProject) return null;
 
@@ -234,7 +248,7 @@ export default function WorkItemsPage() {
               onSelect={editor.selectView}
               onNewView={editor.beginNewView}
               onEdit={editor.beginEditView}
-              onDelete={(v) => void editor.deleteView(v)}
+              onDelete={editor.deleteView}
               onReorder={editor.reorderView}
             />
             <PageToolbarSpacer />

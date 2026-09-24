@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
-import { projectPath } from '@/utils/paths';
+import SettingsActionsPage from '@/features/settings/SettingsActionsPage';
 
-export default async function Page({ params }: { params: Promise<{ projectKey: string }> }) {
-  const { projectKey } = await params;
-  redirect(`${projectPath(projectKey)}/workflows`);
+// The task action buttons, inside the settings layout like every other section. The
+// route used to redirect to the project's Workflows page, which does not list them.
+export default function Page() {
+  return <SettingsActionsPage />;
 }

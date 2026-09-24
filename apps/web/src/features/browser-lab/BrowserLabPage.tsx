@@ -11,7 +11,7 @@ export default function BrowserLabPage() {
   const { projectKey } = useParams<{ projectKey: string }>();
   const t = useTranslations('browserLab');
   return (
-    <SectionPageView title={t('title')} description={null} wide>
+    <SectionPageView title={t('title')} wide>
       <BrowserLab key={projectKey} scope={{ kind: 'project', projectKey }} />
     </SectionPageView>
   );

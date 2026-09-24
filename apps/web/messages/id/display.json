@@ -62,7 +62,8 @@
   },
   "weekStart": {
     "0": "Minggu",
-    "1": "Senin"
+    "1": "Senin",
+    "locale": "Sesuai bahasa"
   },
   "dateFields": {
     "dueDate": "Tenggat waktu",

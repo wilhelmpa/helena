@@ -53,5 +53,20 @@
   "addNote": "添加便签",
   "accessHint": "只有这些成员可以打开",
   "createdBy": "由 {name} 创建",
-  "backgroundColors": "背景颜色"
+  "backgroundColors": "背景颜色",
+  "canvasA11y": {
+    "node": "按回车键或空格键选择便签。用方向键移动，按 Esc 取消。",
+    "nodeKeyboardDisabled": "此面板已关闭键盘移动。",
+    "nodeMoved": "便签已移至 {x}, {y}。",
+    "edge": "按回车键或空格键选择连线。按 Delete 删除，按 Esc 取消。",
+    "controls": "画布控件",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "fitView": "显示全部便签",
+    "interactive": "锁定或解锁移动",
+    "minimap": "缩略图",
+    "handle": "连接点"
+  },
+  "deleteBoard": "删除面板",
+  "deleteBoardConfirm": "删除“{name}”及其上的所有便签？此操作无法撤销。"
 }

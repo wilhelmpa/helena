@@ -13,7 +13,18 @@ import ipaddr from 'ipaddr.js';
 // SSRF_ALLOWED_HOSTS names the hosts an operator has decided to trust anyway — see
 // isAllowedHost below. It is empty by default.
 
-export class UrlNotAllowedError extends Error {}
+// Why a URL was refused, as a stable code a client can word in its own language.
+export type UrlRefusal =
+  'url_invalid' | 'url_https_required' | 'url_credentials' | 'url_private' | 'url_unresolvable';
+
+export class UrlNotAllowedError extends Error {
+  constructor(
+    message: string,
+    readonly code: UrlRefusal,
+  ) {
+    super(message);
+  }
+}
 
 // A hostname that is inherently local (not an IP literal).
 function isLocalHostname(host: string): boolean {
@@ -146,7 +157,7 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
   try {
     url = new URL(raw);
   } catch {
-    throw new UrlNotAllowedError('url must be a valid URL');
+    throw new UrlNotAllowedError('url must be a valid URL', 'url_invalid');
   }
 
   // Private, loopback and plain-http targets are allowed only when the operator opts in
@@ -162,10 +173,10 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
     url.protocol !== 'https:' &&
     !((devRelaxed || policy.publicOnly || ownerAllowed) && url.protocol === 'http:')
   ) {
-    throw new UrlNotAllowedError('url must use https');
+    throw new UrlNotAllowedError('url must use https', 'url_https_required');
   }
   if (policy.publicOnly && (url.username || url.password)) {
-    throw new UrlNotAllowedError('url must not include credentials');
+    throw new UrlNotAllowedError('url must not include credentials', 'url_credentials');
   }
 
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
@@ -173,7 +184,10 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
   const blockedIp = policy.publicOnly ? isNonPublicIp : isPrivateIp;
   if (isLocalHostname(host) || (isIP(host) && blockedIp(host))) {
     if (!devRelaxed && !allowed && !ownerAllowed) {
-      throw new UrlNotAllowedError('url must not point to a private or local address');
+      throw new UrlNotAllowedError(
+        'url must not point to a private or local address',
+        'url_private',
+      );
     }
     return { url };
   }
@@ -197,7 +211,7 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
     }
   } catch {
     policy.signal?.throwIfAborted();
-    throw new UrlNotAllowedError('url host could not be resolved');
+    throw new UrlNotAllowedError('url host could not be resolved', 'url_unresolvable');
   } finally {
     if (abort) policy.signal?.removeEventListener('abort', abort);
   }
@@ -207,7 +221,7 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
     !allowed &&
     !ownerAllowed
   ) {
-    throw new UrlNotAllowedError('url must not point to a private or local address');
+    throw new UrlNotAllowedError('url must not point to a private or local address', 'url_private');
   }
   return { url, pin: addrs[0] };
 }

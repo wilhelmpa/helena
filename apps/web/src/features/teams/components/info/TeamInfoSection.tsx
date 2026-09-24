@@ -53,7 +53,7 @@ export default function TeamInfoSection({ teamId }: { teamId: number }) {
   }
 
   return (
-    <SectionPageView title={tSection('title')} description={tSection('description')}>
+    <SectionPageView title={tSection('title')}>
       {isOwner && (
         <PageSaveAction
           onSave={() => void save()}

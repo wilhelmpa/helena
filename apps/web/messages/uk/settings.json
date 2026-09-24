@@ -479,7 +479,8 @@
       "success": "Успіх",
       "failed": "Помилка",
       "pending": "Очікує"
-    }
+    },
+    "invalidUrl": "Введіть повну вебадресу, напр. https://example.com/webhook."
   },
   "git": {
     "enable": "Увімкнути інтеграцію з репозиторієм",

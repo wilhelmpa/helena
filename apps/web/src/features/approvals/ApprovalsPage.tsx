@@ -12,10 +12,9 @@ import ApprovalsView from './components/ApprovalsView';
 // may already decide in (see GET /approvals/projects).
 export default function ApprovalsPage() {
   const tNav = useTranslations('nav');
-  const t = useTranslations('approvals');
   return (
     <Shell globalHome globalTitle={tNav('approvals')} autoOpenGlobalChat={false}>
-      <SectionPageView title={tNav('approvals')} description={t('hint')} wide>
+      <SectionPageView title={tNav('approvals')} wide>
         <ApprovalsView />
       </SectionPageView>
     </Shell>

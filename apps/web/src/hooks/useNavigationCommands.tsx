@@ -1,7 +1,11 @@
 import { useRouter } from 'next/navigation';
 import {
-  KeyRound,
+  Activity,
   Bell,
+  BookOpenText,
+  CalendarRange,
+  ShieldCheck,
+  StickyNote,
   Building2,
   Code2,
   Folder,
@@ -18,23 +22,28 @@ import {
 import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
 import {
+  agentActivityPath,
   aiAgentsPath,
   aiTeamPath,
-  accessRootPath,
   dashboardsPath,
   filesPath,
   codePath,
+  cyclesPath,
+  documentsPath,
   godPath,
   inboxPath,
   initiativesPath,
   manageTeamsPath,
   mcpServerPath,
   membersPath,
+  notesPath,
   notificationsPath,
   organizationPath,
+  projectApprovalsPath,
   projectPath,
   workflowsPath,
 } from '@/utils/paths';
+import { HOME_NAVIGATION_ICONS, homeNavigation } from '@/components/layout/homeNavigation';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
 import { AI_AGENTS_SECTION, AI_TEAM_SECTIONS } from '@/utils/settingsSections';
 import { GOD_SECTIONS } from '@/utils/godSections';
@@ -49,12 +58,16 @@ import {
 import type { Command, CommandSection } from '@/utils/commands';
 
 // Every place the palette can navigate to, filtered by what the viewer may read.
-// The destinations mirror the sidebar: the project nav (SidebarProjectNav), the
+// The destinations mirror the sidebar: the project nav (SidebarProjectNav) or, with no
+// project open, the Home nav (homeNavigation, for `homeTeamId` like the sidebar), the
 // project settings (useSettingsNavGroups, which already applies the permission gate),
 // the team nav, the account pages and god mode. Grouped
 // under one "Sections" heading so a search separates them from commands and
 // issues.
-export function useNavigationCommands(projectKey: string | null): CommandSection | null {
+export function useNavigationCommands(
+  projectKey: string | null,
+  homeTeamId: number | null = null,
+): CommandSection | null {
   const t = useTranslations('nav');
   const sectionText = useSettingsSectionText();
   const godText = useGodSectionText();
@@ -92,6 +105,20 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
     add('nav.code', t('workspace.code'), <Code2 />, codePath(key), 'code workspace editor');
     if (features.initiatives && can('initiatives', 'read'))
       add('nav.initiatives', t('initiatives'), <Target />, initiativesPath(key), 'epics');
+    if (features.documents && can('documents', 'read'))
+      add('nav.docs', t('documents'), <BookOpenText />, documentsPath(key), 'docs notes wiki');
+    if (features.cycles && can('cycles', 'read'))
+      add('nav.cycles', t('cycles'), <CalendarRange />, cyclesPath(key), 'sprints iterations');
+    if (features.notes && can('note_boards', 'read'))
+      add('nav.notes', t('notes'), <StickyNote />, notesPath(key), 'boards sticky canvas');
+    add('nav.activity', t('agentActivity'), <Activity />, agentActivityPath(key), 'runs log');
+    add(
+      'nav.approvals',
+      t('approvals'),
+      <ShieldCheck />,
+      projectApprovalsPath(key),
+      'approve review',
+    );
     for (const s of AI_TEAM_SECTIONS) {
       if (can(s.resource, 'read'))
         add(
@@ -134,13 +161,20 @@ export function useNavigationCommands(projectKey: string | null): CommandSection
     }
     add('nav.mcp', t('mcpServer'), <Server />, mcpServerPath(key), 'model context protocol');
   } else {
-    add(
-      'nav.access',
-      t('access'),
-      <KeyRound />,
-      accessRootPath(),
-      'credentials logins google gmail mail imap smtp ssh keys connections accounts health',
-    );
+    // The Home entries; Home's team settings are the project-settings entry below.
+    for (const item of homeNavigation(homeTeamId, isGod)) {
+      if (item.id === 'teamSettings') continue;
+      const Icon = HOME_NAVIGATION_ICONS[item.id];
+      add(
+        `nav.home.${item.id}`,
+        t(item.id),
+        <Icon />,
+        item.href,
+        item.id === 'access'
+          ? 'credentials logins google gmail mail imap smtp ssh keys connections accounts health'
+          : undefined,
+      );
+    }
   }
 
   add(
