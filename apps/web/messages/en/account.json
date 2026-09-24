@@ -90,7 +90,8 @@
     "telegramConnectedLabel": "Connected",
     "loadFailed": "Could not load connected accounts.",
     "connectFailed": "Could not connect Google.",
-    "disconnectFailed": "Could not disconnect this account."
+    "disconnectFailed": "Could not disconnect this account.",
+    "noneAvailable": "No service to link is set up on this instance yet. The administrator adds Google sign-in and the Telegram bot under Administrator › Integrations."
   },
   "preferences": {
     "label": "Preferences",

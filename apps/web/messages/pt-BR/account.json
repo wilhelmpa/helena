@@ -90,7 +90,8 @@
     "telegramConnectedLabel": "Conectado",
     "loadFailed": "Não foi possível carregar as contas conectadas.",
     "connectFailed": "Não foi possível conectar o Google.",
-    "disconnectFailed": "Não foi possível desconectar esta conta."
+    "disconnectFailed": "Não foi possível desconectar esta conta.",
+    "noneAvailable": "Ainda não há nenhum serviço para vincular nesta instância. O administrador configura o login com Google e o bot do Telegram em Administrador › Integrações."
   },
   "preferences": {
     "label": "Preferências",

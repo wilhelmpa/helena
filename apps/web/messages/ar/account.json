@@ -90,7 +90,8 @@
     "telegramConnectedLabel": "متصل",
     "loadFailed": "تعذّر تحميل الحسابات المرتبطة.",
     "connectFailed": "تعذّر ربط Google.",
-    "disconnectFailed": "تعذّر فصل هذا الحساب."
+    "disconnectFailed": "تعذّر فصل هذا الحساب.",
+    "noneAvailable": "لم يُعدّ على هذه النسخة بعد أي خدمة للربط. يضيف المسؤول تسجيل الدخول عبر Google وبوت Telegram من المسؤول › التكاملات."
   },
   "preferences": {
     "label": "التفضيلات",

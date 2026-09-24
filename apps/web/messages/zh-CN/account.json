@@ -90,7 +90,8 @@
     "telegramConnectedLabel": "已连接",
     "loadFailed": "无法加载关联账户。",
     "connectFailed": "无法连接 Google。",
-    "disconnectFailed": "无法断开此账户。"
+    "disconnectFailed": "无法断开此账户。",
+    "noneAvailable": "此实例尚未设置可关联的服务。管理员可在“管理员 › 集成”中设置 Google 登录和 Telegram 机器人。"
   },
   "preferences": {
     "label": "偏好设置",

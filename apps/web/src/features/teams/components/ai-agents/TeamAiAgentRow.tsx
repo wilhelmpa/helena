@@ -67,7 +67,9 @@ export function TeamAiAgentRow({
         <div className="flex min-w-0 items-center gap-2">
           <KindIcon className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate text-sm font-medium">{agent.name}</span>
-          <span className="truncate text-xs text-muted-foreground">@{agent.username}</span>
+          <span className="truncate text-xs text-muted-foreground max-md:hidden">
+            @{agent.username}
+          </span>
           <AgentPausedBadge agent={agent} />
           {agent.projects.length === 0 ? (
             <span className="ms-auto shrink-0 text-xs text-muted-foreground/80">

@@ -90,7 +90,8 @@
     "telegramConnectedLabel": "Terhubung",
     "loadFailed": "Gagal memuat akun yang terhubung.",
     "connectFailed": "Gagal menghubungkan Google.",
-    "disconnectFailed": "Gagal memutuskan akun ini."
+    "disconnectFailed": "Gagal memutuskan akun ini.",
+    "noneAvailable": "Belum ada layanan yang dapat ditautkan di instans ini. Administrator menyiapkan login Google dan bot Telegram di Administrator › Integrasi."
   },
   "preferences": {
     "label": "Preferensi",

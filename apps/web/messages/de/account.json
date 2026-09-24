@@ -90,7 +90,8 @@
     "telegramConnectedLabel": "Verbunden",
     "loadFailed": "Verbundene Konten konnten nicht geladen werden.",
     "connectFailed": "Google konnte nicht verbunden werden.",
-    "disconnectFailed": "Dieses Konto konnte nicht getrennt werden."
+    "disconnectFailed": "Dieses Konto konnte nicht getrennt werden.",
+    "noneAvailable": "Auf dieser Instanz ist noch kein Dienst zum Verknüpfen eingerichtet. Google-Anmeldung und Telegram-Bot richtet der Administrator unter Administrator › Integrationen ein."
   },
   "preferences": {
     "label": "Einstellungen",
