@@ -256,6 +256,9 @@ function upstreamHeaders(headers) {
 
 function downstreamHeaders(headers) {
   const result = { ...headers };
+  // wetty sets Cross-Origin-Opener-Policy, which a frame never uses and which the browser
+  // reports as an error over the plain-http LAN ("header has been ignored").
+  delete result['cross-origin-opener-policy'];
   const csp = result['content-security-policy'];
   if (typeof csp === 'string') {
     result['content-security-policy'] = csp
