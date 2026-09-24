@@ -32,13 +32,14 @@ prompts, Plan, logs, documentation, environment files, or Vaultwarden. Run
 `hermes secrets audit --check` after migrations and `hermes secrets reload` only as a
 separate reviewed runtime operation.
 
-## Mastra boundary
+## Workflow engine boundary
 
-Mastra owns workflow state, not credentials. It may receive an adapter token scoped to
-submitting and observing legacy runtime jobs, plus opaque SecretRefs that legacy runtime resolves at
-execution time. It must not receive mail, Git, browser, provider, or service credentials,
-and it must not mount the legacy runtime store. Consequential external actions remain subject
-to the legacy runtime approval boundary.
+The Helena engine runs inside the Plan API and keeps workflow execution state in the schema
+`helena_engine` of Plan's database. It needs no token of its own. The only secrets it keeps
+are the Standard Webhooks signing secrets of its webhook steps and inbound hooks, encrypted
+at rest in Plan's app secrets. Workflow steps pass agents opaque references, never mail,
+Git, browser, provider, or service credentials. Consequential external actions stop at an
+approval step or the agent runtime's approval boundary.
 
 Run `scripts/probe-secret-boundaries.sh` for a value-free check of these boundaries and
 the latest Vaultwarden restore artifact.

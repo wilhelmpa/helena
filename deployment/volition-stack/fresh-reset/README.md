@@ -24,9 +24,6 @@ creation runs `restic check`, verifies the JSON `last-success` marker, selects
 the newest snapshot across Restic path groups, and confirms every reset scope
 is present in that exact snapshot. It does not modify the backup repository.
 
-The required scope includes `current/mastra-data.tar`. Marker preparation
-fails until the backup job captures the Mastra volume into that artifact.
-
 Prepare requires four current markers and the explicit confirmation:
 
 ```bash
@@ -75,7 +72,6 @@ Finalize validates the bound E2E marker, reruns live drift checks, and writes `f
 
 ## Reset scope
 
-- Mastra data volume and run state, including the exact `/home/pw/.mastra/analytics.json` file
 - Nextcloud database, files, Redis, and former app password
 - Vaultwarden state; Vault remains stopped and its local gateway route is removed
 - Code workspace home and code-server user settings
@@ -111,9 +107,6 @@ empties either trash directory globally.
 Vaultwarden stays stopped because a fresh instance with
 `SIGNUPS_ALLOWED=false` has no usable owner. It is enabled only during a later
 interactive owner setup.
-
-Mastra starts from its current standalone Compose file. Its data volume is
-recreated without adding an Hermes or Hermes IPC mount.
 
 Backup and offsite timers are stopped before the first destructive operation.
 The offsite timer starts after all fresh-service checks pass. The backup timer
@@ -151,7 +144,7 @@ backup and offsite timers.
 python3 -m unittest -v test_fresh_reset.py
 ```
 
-The 29 tests cover harness dry-run and confirmation gates, JSON backup state, newest-snapshot selection, missing Mastra
+The 29 tests cover harness dry-run and confirmation gates, JSON backup state, newest-snapshot selection, missing
 backup scope, current/stale/mismatched/versioned markers, protected paths,
 Copilot-only credential extraction, idempotent prepare/finalize, post-rebuild acceptance binding, live-drift guarded completion, and secret-free
 dry-run output. They do not execute a reset.

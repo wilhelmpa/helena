@@ -14,7 +14,7 @@ transient systemd unit that can reach only what its project gives it:
 
 Not reachable, whatever the agent runs: other projects' files and profiles, `/etc/volition`, the
 runner's descriptors and keys, browser profiles, CDP and noVNC ports, code-server, the Hermes
-dashboard, Mastra, Postgres, Redis, D-Bus, the LAN and the host itself. The unit has a network
+dashboard, Postgres, Redis, D-Bus, the LAN and the host itself. The unit has a network
 namespace of its own (`PrivateNetwork=yes`): its loopback is not the host's.
 
 ## Pieces

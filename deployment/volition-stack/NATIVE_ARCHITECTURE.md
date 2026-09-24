@@ -4,17 +4,18 @@
 
 - Plan is the human interface and canonical store for projects, tasks, reviews, and
   configuration.
-- Mastra owns workflow definitions, schedules, retries, checkpoints, run history, and
-  recovery.
+- The Helena engine inside the Plan API runs builder workflows, agent teams, routines and
+  their schedules: retries, checkpoints, run history, and recovery.
 - The Hermes runner executes project agent sessions, skills, tools, and model calls.
-- PostgreSQL stores Plan state. Mastra stores its state below `/var/lib/volition/mastra`.
+- PostgreSQL stores Plan state, and in the schema `helena_engine` the engine's execution
+  state.
 - The filesystem vault stores durable project documents and files.
 - Nginx authenticates embedded tools through Plan and removes browser credentials before
   proxying. While Debian uses the desktop's private network, the desktop HTTP proxy
   forwards the dedicated LAN hostname to this Nginx entry point.
 
 Systemd starts services and performs service recovery. Business schedules belong to
-Mastra or Plan.
+Plan and are fired by its engine.
 
 ## Native services
 
@@ -22,7 +23,6 @@ Mastra or Plan.
 | --- | --- | --- |
 | Plan API, web, and worker | `volition-plan` | enabled and active |
 | Provisioning and Hermes runner | `volition-hermes` | enabled and active |
-| Hermes team bridge and Mastra | `volition-mastra` | enabled and active |
 | code-server and project terminal | `volition-hermes` | enabled and active |
 | Project browser router and instances | `volition-hermes`; `volition-browser` once `isolation.sh apply` ran | enabled; instances start per project |
 | Agent launcher (isolation) | `root`, socket for `volition-launcher` | socket-activated once `isolation.sh apply` ran |
@@ -47,7 +47,6 @@ project runner would let a second Hermes scheduler traverse all project profiles
 /var/lib/volition/hermes/                          shared Hermes runtime and auth
 /var/lib/volition/hermes/profiles/<slug>/          coordinator Hermes home
 /var/lib/volition/hermes/profiles/<slug>_<id>/     Hermes home of another project agent
-/var/lib/volition/mastra/                          Mastra state
 /var/lib/volition/project-browser/projects/<slug>/ browser profile and runtime state
 ```
 
@@ -74,7 +73,7 @@ queues the provisioning of its projects again; the runtime of an agent that left
 removed.
 
 Project deletion writes one deprovisioning job. Before the worker delivers it, the worker
-deletes the project's Mastra workflow schedules through the control endpoint. Deprovisioning
+switches the project's schedules off in `helena_schedule`. Deprovisioning
 deletes the project's runner descriptors, stops the browser units, and moves the
 workspace, vault folder, Hermes profiles, browser state, and registry entry to
 `/srv/volition/trash/projects/<event-id>/` with a `receipt.json`. The terminal router stops
@@ -93,17 +92,17 @@ database. A provisioned project whose registry entry is missing, whose browser u
 not active, or whose boards or agent runtimes differ is provisioned again; a registry entry
 without a project is deprovisioned.
 
-Mastra coordinates `agent-team` through `/run/volition-ipc/hermes-team.sock`. The bridge
-submits project-bound work to Plan's external-agent queue. The Hermes runner claims that
-queue using the selected project profile. Stable idempotency keys, leases, heartbeats, and
-stored checkpoints cover retries and recovery. Canceling the workflow run closes the socket
-request of the stage it waits for; the bridge then cancels that Plan run, and a runner
-executing it stops Hermes on its next heartbeat.
+The engine runs `agent-team` in the API process. A task delegated to a coordinator starts
+an engine run whose stages are agent runs in Plan's external-agent queue. The Hermes runner
+claims that queue using the selected project profile. The engine waits for each agent run
+by a signal when it finishes, with a long timeout as the safety net. Stable workflow IDs,
+leases, heartbeats, and step checkpoints in `helena_engine` cover retries and recovery.
+Canceling the workflow run cancels the agent run it waits for, and a runner executing it
+stops Hermes on its next heartbeat.
 
 ```text
-Plan API and worker -> Mastra proxy :4111 -> Mastra :4112
-Mastra -> Hermes team Unix socket -> Plan internal orchestration API :3000
-Plan agent queue -> Hermes runner -> /var/lib/volition/hermes/profiles/<slug>[_<id>]
+Plan API (engine) -> Plan agent queue -> Hermes runner -> /var/lib/volition/hermes/profiles/<slug>[_<id>]
+Plan worker -> engine outbox (DBOS queue helena-events) for task and mail events
 ```
 
 ## Public project URLs
@@ -118,7 +117,6 @@ All routes use the Plan origin and require a valid Plan session.
 | Terminal, canonical form | `http://kingston-server.local/focus/terminal-project/<slug>` |
 | Browser | `http://kingston-server.local/browser/projects/<slug>/vnc.html?autoconnect=1&resize=scale&path=browser%2Fprojects%2F<slug>%2Fwebsockify` |
 | Browser live view (WebSocket) | `ws://kingston-server.local/browser/projects/<slug>/api/screencast` |
-| Mastra diagnostics (instance owner only) | `http://kingston-server.local/mastra/workflows` |
 
 The terminal compatibility URL redirects to the project path and then Wetty's slashless
 canonical path. The verified chain terminates after two redirects with HTTP 200. The
@@ -148,9 +146,6 @@ default; the VNC display stays available in the tool. The KasmVNC and Chromium u
 
 - The dedicated LAN hostname forwards application routes to authenticated Nginx.
 - Internal TCP services bind to loopback or Unix sockets.
-- Mastra accepts only the token of its proxy. The proxy accepts Plan's control token and,
-  for Studio, a token Nginx adds for the instance owner (see the trust model in
-  `optional/mastra-studio/ORCHESTRATION_CONTRACT.md`).
 - Embedded tools require a valid Plan session.
 - Nginx does not forward Plan cookies or Authorization headers to tool upstreams.
 - Runtime credentials are root-owned private files delivered with systemd credentials.
@@ -160,6 +155,9 @@ default; the VNC display stays available in the tool. The KasmVNC and Chromium u
 - Consequential external actions stop at an explicit confirmation point.
 
 ## Verified status on 2026-09-23
+
+This is the record of that day. Mastra and the Hermes team bridge, which it names, were
+removed afterwards; the Helena engine in the API replaced them.
 
 - Plan API, web, worker, provisioning, Hermes runner, Hermes team bridge, Mastra,
   code-server, project terminal, browser router, PostgreSQL, Redis, and Nginx were active.
