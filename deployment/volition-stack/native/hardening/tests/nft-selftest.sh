@@ -97,7 +97,6 @@ for name, src, port, want in cases:
     print(("PASS " if got == want else "FAIL ") + f"{name}: {got} (expected {want})")
 sys.exit(0 if ok else 1)
 PY
-kill "$peer" "$server" 2>/dev/null || true
 # The network sync follows a new home network (here: the router moved to 10.20.30.0/24).
 ip addr add 10.20.30.5/24 dev eno1
 ip addr del 192.168.2.58/24 dev eno1
@@ -108,6 +107,7 @@ lan4=$(nft list set inet helena_hardening lan4 | tr -d '\n\t ')
 lan6=$(nft list set inet helena_hardening lan6 | tr -d '\n\t ')
 case "$lan4" in *10.20.30.0/24*) echo "PASS network sync: lan4 follows the new network" ;; *) echo "FAIL network sync: $lan4"; exit 1 ;; esac
 case "$lan6" in *2001:db8:1:2::/64*) echo "PASS network sync: lan6 has the machine's /64" ;; *) echo "FAIL network sync: $lan6"; exit 1 ;; esac
+kill "$peer" "$server" 2>/dev/null || true
 nft list table inet helena_hardening | grep -c 'helena:' | sed 's/^/rules with helena markers: /'
 INNER
 unshare -rn bash "$work/inside.sh" "$work/rules.nft" "$here/files/helena-lan6-sync"
