@@ -48,6 +48,38 @@ const pagesA = {
       `document.getElementById('f').onchange = (e) => { const f = e.target.files[0];
         document.getElementById('r').textContent = 'Gewählt: ' + f.name + ' (' + f.size + ' Bytes)'; };`,
     ),
+  // An upload button that opens the file chooser (a hidden input behind it).
+  '/upload2': () =>
+    page(
+      'Upload per Knopf',
+      '<button id="pick">Dateien wählen</button><input type="file" id="f2" multiple hidden><p id="r">keine Datei</p>',
+      `document.getElementById('pick').onclick = () => document.getElementById('f2').click();
+       document.getElementById('f2').onchange = (e) => { document.getElementById('r').textContent = 'Gewählt: ' + [...e.target.files].map((f) => f.name + ' (' + f.size + ' Bytes)').join(', '); };`,
+    ),
+  '/form': () =>
+    page(
+      'Formular',
+      `<label>Name <input id="name" value="alter Wert"></label>
+       <label><input type="checkbox" id="agb"> AGB</label>
+       <label>Farbe <select id="farbe"><option>rot</option><option>grün</option><option>blau</option></select></label>
+       <label>Menge <input type="range" id="menge" min="0" max="10" value="1"></label>
+       <button id="send">Senden</button><p id="r">nichts gesendet</p>`,
+      `document.getElementById('send').onclick = () => { const v = (id) => document.getElementById(id);
+         v('r').textContent = 'Gesendet: name=' + v('name').value + ' agb=' + v('agb').checked + ' farbe=' + v('farbe').value + ' menge=' + v('menge').value; };`,
+    ),
+  // Content that arrives later, for browser_wait_for.
+  '/later': () =>
+    page(
+      'Später',
+      '<p id="s">Lädt …</p>',
+      `setTimeout(() => { document.getElementById('s').textContent = 'Fertig geladen'; }, 1500);`,
+    ),
+  // A page whose snapshot is cut off, for browser_find.
+  '/long': () =>
+    page(
+      'Lang',
+      `<ul>${Array.from({ length: 2500 }, (_, i) => `<li>Eintrag Nummer ${i} mit etwas Text</li>`).join('')}</ul><button>Nadel im Heuhaufen</button>`,
+    ),
   '/download': () => page('Download', '<a href="/report.txt">Bericht herunterladen</a>'),
   '/dialog': () =>
     page(

@@ -23,6 +23,22 @@ export interface UploadFile {
   buffer: Buffer;
 }
 
+export interface ClickOptions {
+  button?: 'left' | 'right' | 'middle';
+  doubleClick?: boolean;
+  modifiers?: ('Alt' | 'Control' | 'ControlOrMeta' | 'Meta' | 'Shift')[];
+}
+
+// One field of browser_fill_form (Playwright MCP's shape).
+export interface FormField {
+  target: string;
+  name: string;
+  type: 'textbox' | 'checkbox' | 'radio' | 'combobox' | 'slider';
+  value: string;
+}
+
+export type ConsoleLevel = 'error' | 'warning' | 'info' | 'debug';
+
 export interface BrowserStatus {
   url: string;
   title: string;
@@ -49,40 +65,47 @@ export interface GatewaySession {
   applyDomainPolicy(policy: DomainPolicy): Promise<void>;
 
   status(): Promise<BrowserStatus>;
+  // Every page tool answers the way Playwright MCP does: a "### Result" line, then the page
+  // after the action ("### Page", "### Open tabs", "### Modal state", "### Events").
   navigate(url: string): Promise<string>;
   back(): Promise<string>;
   reload(): Promise<string>;
-  snapshot(): Promise<string>;
-  click(ref: string, button?: 'left' | 'right' | 'middle'): Promise<string>;
-  type(ref: string, text: string, submit?: boolean): Promise<string>;
-  select(ref: string, values: string[]): Promise<string>;
-  hover(ref: string): Promise<string>;
-  drag(fromRef: string, toRef: string): Promise<string>;
+  snapshot(options?: { target?: string; depth?: number }): Promise<string>;
+  find(text: string): Promise<string>;
+  click(target: string, options?: ClickOptions): Promise<string>;
+  type(target: string, text: string, submit?: boolean): Promise<string>;
+  fillForm(fields: FormField[]): Promise<string>;
+  select(target: string, values: string[]): Promise<string>;
+  hover(target: string): Promise<string>;
+  drag(startTarget: string, endTarget: string): Promise<string>;
   press(key: string): Promise<string>;
   scroll(
     direction: 'up' | 'down' | 'left' | 'right',
     amount: number,
-    ref?: string,
+    target?: string,
   ): Promise<string>;
-  screenshot(ref?: string): Promise<ToolOutput>;
+  waitFor(options: { time?: number; text?: string; textGone?: string }): Promise<string>;
+  screenshot(options?: { target?: string; fullPage?: boolean }): Promise<ToolOutput>;
   // `agentId` names who opens a tab: a tab an agent opens is closed again when it gives
   // control back (closeTabsOf).
   tabs(
-    action: 'list' | 'open' | 'focus' | 'close',
-    options?: { url?: string; tabId?: string; agentId?: number },
+    action: 'list' | 'new' | 'close' | 'select',
+    options?: { url?: string; index?: number; agentId?: number },
   ): Promise<string>;
   closeTabsOf(agentId: number): Promise<void>;
-  dialogAction(action: 'accept' | 'dismiss', promptText?: string): Promise<string>;
-  upload(ref: string, file: UploadFile): Promise<string>;
+  dialogAction(accept: boolean, promptText?: string): Promise<string>;
+  // Into the open file chooser, or into `target` (a file input, or a button that opens the
+  // chooser). No files cancels the open chooser.
+  upload(files: UploadFile[], target?: string): Promise<string>;
   downloads(): Promise<string>;
-  console(limit: number): Promise<string>;
-  network(limit: number): Promise<string>;
+  console(level: ConsoleLevel): Promise<string>;
+  network(options: { includeStatic: boolean; filter?: string }): Promise<string>;
   // Whether the call would submit a form: a click on a form's submit control, Enter typed
-  // into a form field (browser_type with submit, browser_press Enter). Such a call is decided
+  // into a form field (browser_type with submit, browser_press_key Enter). Such a call is decided
   // as 'send' rather than 'write' (agent-tool.ts); `formAction` names where the form goes.
   submitsForm(call: {
     tool: string;
-    ref?: string;
+    target?: string;
     key?: string;
     submit?: boolean;
   }): Promise<{ submits: boolean; formAction: string | null }>;
@@ -90,19 +113,19 @@ export interface GatewaySession {
   pageOrigin(): string | null;
   // The origin of the frame the element is in (design §6: a login is offered for the
   // frame's origin, not the tab's).
-  frameOrigin(ref: string): Promise<string>;
+  frameOrigin(target: string): Promise<string>;
   // Types a login into its two fields. Refused unless the password field is one (a
   // password could otherwise be typed into a visible text field and photographed), and
   // unless both fields are still in `origin` right before typing. The caller has already
   // tracked the password in `guard`.
   fillLogin(
-    usernameRef: string,
-    passwordRef: string,
+    usernameTarget: string,
+    passwordTarget: string,
     username: string,
     password: string,
     origin: string,
   ): Promise<string>;
-  fillCode(ref: string, code: string): Promise<string>;
+  fillCode(target: string, code: string): Promise<string>;
 }
 
 export interface SessionProvider {

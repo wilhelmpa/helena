@@ -74,13 +74,13 @@ function scenario(token: string, username: string): string {
   const url = (step: string) => `${SITE}/a/${token}${step}`;
   return [
     `@${username} Abnahmetest Projekt-Browser. Nutze dafür ausschließlich die Werkzeuge des MCP-Servers „projekt-browser“ (browser_…), keinen anderen Browser.`,
-    '1. browser_acquire.',
+    '1. Arbeite direkt los: die erste Aktion übernimmt die Steuerung des Browsers.',
     `2. Formular: öffne ${url('/form')}, trage Name „Abnahme ${username}“ und E-Mail „abnahme@example.com“ ein, wähle Farbe „grün“, hake „AGB akzeptiert“ an und sende ab.`,
     `3. Login: öffne ${url('/login')} und melde dich mit browser_login an (das Passwort nie selbst tippen oder erfragen). Auf der nächsten Seite trägst du den Code mit browser_login_code ein und bestätigst.`,
-    `4. Upload: lege in deinem Arbeitsverzeichnis die Datei abnahme-${token.slice(0, 8)}.txt mit dem Inhalt „${token}“ an, öffne ${url('/upload')}, lade sie mit browser_upload hoch und klicke „Hochladen“.`,
+    `4. Upload: lege in deinem Arbeitsverzeichnis die Datei abnahme-${token.slice(0, 8)}.txt mit dem Inhalt „${token}“ an, öffne ${url('/upload')}, lade sie mit browser_file_upload hoch und klicke „Hochladen“.`,
     `5. Download: öffne ${url('/download')}, klicke „Bericht herunterladen“ und prüfe mit browser_downloads, wo die Datei abgelegt wurde.`,
-    `6. Zweiter Tab: öffne ${url('/tab2')} mit browser_tabs (action open), lies den Code auf der Seite und schließe den Tab wieder.`,
-    `7. Dialog: öffne ${url('/dialog')}, klicke „Löschen“ und bestätige den Dialog mit browser_dialog (accept).`,
+    `6. Zweiter Tab: öffne ${url('/tab2')} mit browser_tabs (action new), lies den Code auf der Seite und schließe den Tab wieder.`,
+    `7. Dialog: öffne ${url('/dialog')}, klicke „Löschen“ und bestätige den Dialog mit browser_handle_dialog (accept).`,
     '8. browser_release.',
     'Antworte zum Schluss mit „FERTIG“, dem Code aus Schritt 6 und der Ablage aus Schritt 5.',
   ].join('\n');

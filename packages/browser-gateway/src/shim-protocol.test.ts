@@ -77,31 +77,40 @@ describe('gatewayRequest', () => {
     );
   });
 
-  it("reads an upload with the caller's own rights and sends its bytes, not its path", async () => {
+  it("reads uploads with the caller's own rights and sends their bytes, not their paths", async () => {
     const dir = await tempDir();
     await writeFile(path.join(dir, 'report.pdf'), Buffer.from('%PDF-1.4 test'));
+    await writeFile(path.join(dir, 'notes.txt'), 'hi');
     const request = await gatewayRequest(
-      'browser_upload',
-      { ref: 'e5', path: 'report.pdf' },
+      'browser_file_upload',
+      { target: 'e5', paths: ['report.pdf', path.join(dir, 'notes.txt')] },
       { ITSAPLAN_API_KEY: 'k' },
       dir,
     );
-    expect(request.args).toEqual({ ref: 'e5' });
-    expect(request.upload).toEqual({
-      name: 'report.pdf',
-      mimeType: 'application/pdf',
-      data: Buffer.from('%PDF-1.4 test').toString('base64'),
-    });
+    expect(request.args).toEqual({ target: 'e5' });
+    expect(request.uploads).toEqual([
+      {
+        name: 'report.pdf',
+        mimeType: 'application/pdf',
+        data: Buffer.from('%PDF-1.4 test').toString('base64'),
+      },
+      { name: 'notes.txt', mimeType: 'text/plain', data: Buffer.from('hi').toString('base64') },
+    ]);
+  });
+
+  it('sends no files to cancel the file chooser', async () => {
+    const request = await gatewayRequest('browser_file_upload', {}, {}, await tempDir());
+    expect(request.uploads).toEqual([]);
   });
 
   it('refuses an upload of a file that is not there or not a file', async () => {
     const dir = await tempDir();
     await expect(
-      gatewayRequest('browser_upload', { ref: 'e5', path: 'missing.pdf' }, {}, dir),
+      gatewayRequest('browser_file_upload', { paths: ['missing.pdf'] }, {}, dir),
     ).rejects.toThrow(/does not exist/);
-    await expect(
-      gatewayRequest('browser_upload', { ref: 'e5', path: dir }, {}, dir),
-    ).rejects.toThrow(/not a file/);
+    await expect(gatewayRequest('browser_file_upload', { paths: [dir] }, {}, dir)).rejects.toThrow(
+      /not a file/,
+    );
   });
 });
 
@@ -184,12 +193,12 @@ describe('callGateway', () => {
     await writeFile(path.join(dir, 'big.bin'), big);
     let size = 0;
     await fakeGateway(target, (request) => {
-      size = Buffer.from((request.upload as { data: string }).data, 'base64').length;
+      size = Buffer.from((request.uploads as { data: string }[])[0]!.data, 'base64').length;
       return { ok: true, content: 'x'.repeat(2 * 1024 * 1024) };
     });
     const result = await callGateway(
-      'browser_upload',
-      { ref: 'e1', path: 'big.bin' },
+      'browser_file_upload',
+      { target: 'e1', paths: ['big.bin'] },
       { socketPath: target, env: {}, cwd: dir },
     );
     expect(size).toBe(big.length);

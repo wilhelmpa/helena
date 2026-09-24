@@ -4,13 +4,14 @@
 //
 //   connect fresh per call to the socket
 //   write one line of JSON + "\n":
-//     {"tool", "args", "agentKey", "runId"?, "messageId"?, "upload"?: {"name","mimeType","data"}}
+//     {"tool", "args", "agentKey", "runId"?, "messageId"?,
+//      "uploads"?: [{"name","mimeType","data"}, …]}
 //   read one line of JSON back:
 //     {"ok": true, "content": "<text>", "image"?: {"data","mimeType"}} | {"ok": false, "error"}
 //
 // The shim runs as the agent, inside its sandbox: it has no rights of its own and adds only
-// what the agent itself has — its key from the environment and, for browser_upload, the
-// bytes of a file the agent can read.
+// what the agent itself has — its key from the environment and, for browser_file_upload,
+// the bytes of the files the agent can read.
 import { readFile, stat } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
@@ -18,6 +19,7 @@ import path from 'node:path';
 // Where the isolation launcher binds the project's gateway directory in an agent unit.
 export const DEFAULT_SOCKET_PATH = '/run/volition-agents/browser/gateway.sock';
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+export const MAX_UPLOAD_FILES = 10;
 const MAX_RESPONSE_BYTES = 64 * 1024 * 1024;
 
 export type ShimEnv = Record<string, string | undefined>;
@@ -74,8 +76,9 @@ export function mimeTypeOf(file: string): string {
 
 export class ShimError extends Error {}
 
-// What the shim sends for a call. browser_upload's `path` is read here, with the agent's own
-// rights, and replaced by the file's bytes: the gateway never opens a path an agent names.
+// What the shim sends for a call. browser_file_upload's `paths` are read here, with the
+// agent's own rights, and replaced by the files' bytes: the gateway never opens a path an
+// agent names. No paths cancels the open file chooser.
 export async function gatewayRequest(
   toolName: string,
   args: Record<string, unknown> | undefined,
@@ -93,30 +96,43 @@ export async function gatewayRequest(
   // The runner's name for a chat answer's message id (packages/runner/src/chat.ts).
   const messageId = numberEnv(env, 'ITSAPLAN_MESSAGE_ID');
   if (messageId !== undefined) request.messageId = messageId;
-  if (toolName === 'browser_upload') {
-    const given = callArgs.path;
-    if (typeof given !== 'string' || !given) throw new ShimError('path is required.');
-    const file = path.resolve(cwd, given);
-    let info;
-    try {
-      info = await stat(file);
-    } catch {
-      throw new ShimError(`Cannot read ${given}: it does not exist or is not yours to read.`);
+  if (toolName === 'browser_file_upload') {
+    const given = callArgs.paths;
+    delete callArgs.paths;
+    const paths = typeof given === 'string' ? [given] : Array.isArray(given) ? given : [];
+    if (paths.some((entry) => typeof entry !== 'string' || !entry)) {
+      throw new ShimError('paths must be a list of file paths.');
     }
-    if (!info.isFile()) throw new ShimError(`${given} is not a file.`);
-    if (info.size > MAX_UPLOAD_BYTES) throw new ShimError(`${given} is larger than 50 MB.`);
-    let bytes: Buffer;
-    try {
-      bytes = await readFile(file);
-    } catch {
-      throw new ShimError(`Cannot read ${given}.`);
+    if (paths.length > MAX_UPLOAD_FILES) {
+      throw new ShimError(`At most ${MAX_UPLOAD_FILES} files at once.`);
     }
-    delete callArgs.path;
-    request.upload = {
-      name: path.basename(file),
-      mimeType: mimeTypeOf(file),
-      data: bytes.toString('base64'),
-    };
+    const uploads = [];
+    let total = 0;
+    for (const entry of paths as string[]) {
+      const file = path.resolve(cwd, entry);
+      let info;
+      try {
+        info = await stat(file);
+      } catch {
+        throw new ShimError(`Cannot read ${entry}: it does not exist or is not yours to read.`);
+      }
+      if (!info.isFile()) throw new ShimError(`${entry} is not a file.`);
+      total += info.size;
+      if (total > MAX_UPLOAD_BYTES)
+        throw new ShimError('The files are larger than 50 MB together.');
+      let bytes: Buffer;
+      try {
+        bytes = await readFile(file);
+      } catch {
+        throw new ShimError(`Cannot read ${entry}.`);
+      }
+      uploads.push({
+        name: path.basename(file),
+        mimeType: mimeTypeOf(file),
+        data: bytes.toString('base64'),
+      });
+    }
+    request.uploads = uploads;
   }
   return request;
 }

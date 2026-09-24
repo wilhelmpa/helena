@@ -12,8 +12,10 @@ import type {
   Dialog,
   Download,
   ElementHandle,
+  FileChooser,
   Locator,
   Page,
+  Request,
   Route,
 } from 'patchright-core';
 import { chromium } from 'patchright-core';
@@ -28,7 +30,15 @@ import {
 import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts';
 import { hostAllowed, type DomainPolicy } from './domain.ts';
 import { maskPng, type Rect } from './png.ts';
-import type { BrowserStatus, GatewaySession, ToolOutput, UploadFile } from './session-types.ts';
+import type {
+  BrowserStatus,
+  ClickOptions,
+  ConsoleLevel,
+  FormField,
+  GatewaySession,
+  ToolOutput,
+  UploadFile,
+} from './session-types.ts';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -36,7 +46,8 @@ function sleep(ms: number): Promise<void> {
 
 interface ConsoleEntry {
   tab: string;
-  type: string;
+  source: string;
+  level: ConsoleLevel;
   text: string;
 }
 
@@ -45,11 +56,25 @@ interface NetworkEntry {
   method: string;
   url: string;
   status: number;
+  resourceType: string;
 }
 
 const MAX_BUFFER = 500;
 const ACTION_TIMEOUT_MS = 10_000;
 const LOAD_TIMEOUT_MS = 30_000;
+// After an action, how long to wait for what it set off (Playwright MCP's settle time).
+const SETTLE_MS = 500;
+const MAX_WAIT_SEC = 30;
+const CONSOLE_RANK: Record<ConsoleLevel, number> = { error: 0, warning: 1, info: 2, debug: 3 };
+// What browser_network_requests leaves out unless asked for (Playwright MCP's "static").
+const STATIC_TYPES = new Set(['image', 'font', 'stylesheet', 'script', 'media', 'manifest']);
+
+function consoleLevel(cdpLevel: string): ConsoleLevel {
+  if (cdpLevel === 'error') return 'error';
+  if (cdpLevel === 'warning') return 'warning';
+  if (cdpLevel === 'verbose') return 'debug';
+  return 'info';
+}
 export const MAX_TRANSFER_BYTES = 50 * 1024 * 1024;
 
 // Query values that authenticate (an OAuth code, a magic-link token, a signature) are
@@ -111,6 +136,11 @@ export class PatchrightGatewaySession implements GatewaySession {
   // accept/dismiss has to happen on that same object.
   #dialogs = new Map<Page, Dialog>();
   #downloads: { fileName: string; savedAs: string; at: number }[] = [];
+  // The file chooser a page opened and waits on (a click on an upload button), answered by
+  // browser_file_upload: a modal state, as in Playwright MCP.
+  #choosers = new Map<Page, FileChooser>();
+  // What happened since the last answer (a download finished), told in the next one.
+  #events: string[] = [];
   // The fields a secret was typed into, so a screenshot covers them whatever the page does
   // to them afterwards ("Passwort anzeigen" turns a password field into a text field).
   #filled: ElementHandle[] = [];
@@ -208,7 +238,8 @@ export class PatchrightGatewaySession implements GatewaySession {
             const entry = event.entry;
             this.#console.push({
               tab,
-              type: `${entry.source}/${entry.level}`,
+              source: entry.source,
+              level: consoleLevel(entry.level),
               text: `${entry.text}${entry.url ? ` (${redactUrl(entry.url)})` : ''}`.slice(0, 2000),
             });
             if (this.#console.length > MAX_BUFFER) this.#console.shift();
@@ -220,6 +251,11 @@ export class PatchrightGatewaySession implements GatewaySession {
     page.on('dialog', (dialog) => {
       this.#dialogs.set(page, dialog);
       for (const listener of [...this.#dialogListeners]) listener(page, dialog);
+    });
+    // Listening intercepts the page's file chooser (the native one would open on the
+    // browser's own display, where nobody sees it); browser_file_upload answers it.
+    page.on('filechooser', (chooser) => {
+      this.#choosers.set(page, chooser);
     });
     // Every download of the browser — an agent's, or the owner's in the live view. Chromium
     // saves it into patchright's artifacts directory, which is below this process's TMPDIR:
@@ -234,14 +270,18 @@ export class PatchrightGatewaySession implements GatewaySession {
         method: response.request().method(),
         url: redactUrl(response.url()),
         status: response.status(),
+        resourceType: response.request().resourceType(),
       });
       if (this.#network.length > MAX_BUFFER) this.#network.shift();
     });
     page.on('framenavigated', (frame) => {
-      if (frame === page.mainFrame()) this.#dialogs.delete(page);
+      if (frame !== page.mainFrame()) return;
+      this.#dialogs.delete(page);
+      this.#choosers.delete(page);
     });
     page.on('close', () => {
       this.#dialogs.delete(page);
+      this.#choosers.delete(page);
       this.#tabOwners.delete(page);
       if (page === this.#page) {
         const remaining = this.#context.pages().filter((candidate) => !candidate.isClosed());
@@ -276,22 +316,26 @@ export class PatchrightGatewaySession implements GatewaySession {
         ? await this.#onDownload(fileName, await readFile(file))
         : '(not kept)';
       this.#downloads.push({ fileName, savedAs, at: Date.now() });
+      this.#event(`Downloaded file ${fileName} to "${savedAs}"`);
     } catch (error) {
-      this.#downloads.push({
-        fileName,
-        savedAs: `(failed: ${error instanceof Error ? error.message.slice(0, 120) : 'unknown'})`,
-        at: Date.now(),
-      });
+      const savedAs = `(failed: ${error instanceof Error ? error.message.slice(0, 120) : 'unknown'})`;
+      this.#downloads.push({ fileName, savedAs, at: Date.now() });
+      this.#event(`Download of ${fileName} failed ${savedAs}`);
     } finally {
       if (this.#downloads.length > 100) this.#downloads.shift();
       await download.delete().catch(() => {});
     }
   }
 
+  #event(text: string): void {
+    this.#events.push(text);
+    if (this.#events.length > 20) this.#events.shift();
+  }
+
   // An action a page answers with a dialog (confirm, alert, a leave-page prompt) does not
   // finish until the dialog is answered — which the agent can only do once the tool returns.
-  // So a tool returns as soon as a dialog opens, saying so; the action finishes in the
-  // background once browser_dialog answers it.
+  // So a tool returns as soon as a dialog opens, saying so (the answer's "Modal state"); the
+  // action finishes in the background once browser_handle_dialog answers it.
   async #orDialog(action: Promise<string>): Promise<string> {
     const page = this.#page;
     let off = () => {};
@@ -309,10 +353,7 @@ export class PatchrightGatewaySession implements GatewaySession {
       ]);
       if ('text' in first) return first.text;
       action.catch(() => {});
-      return (
-        `A ${first.dialog.type()} dialog opened: "${first.dialog.message().slice(0, 300)}". ` +
-        'Answer it with browser_dialog (accept or dismiss) before anything else.'
-      );
+      return `The page opened a ${first.dialog.type()} dialog and waits for an answer (browser_handle_dialog).`;
     } finally {
       off();
     }
@@ -323,7 +364,7 @@ export class PatchrightGatewaySession implements GatewaySession {
     const dialog = this.#dialogs.get(this.#page);
     if (dialog) {
       throw new Error(
-        `A ${dialog.type()} dialog is open: "${dialog.message().slice(0, 200)}". Answer it with browser_dialog first.`,
+        `A ${dialog.type()} dialog is open: "${dialog.message().slice(0, 200)}". Answer it with browser_handle_dialog first.`,
       );
     }
   }
@@ -364,9 +405,61 @@ export class PatchrightGatewaySession implements GatewaySession {
     await this.#context.route('**/*', this.#routeHandler);
   }
 
-  async #describe(): Promise<string> {
-    const title = await this.#page.title().catch(() => '');
-    return `${this.#page.url()}${title ? ` — "${title.slice(0, 120)}"` : ''}`;
+  #openPages(): Page[] {
+    return this.#context.pages().filter((page) => !page.isClosed());
+  }
+
+  // A tab's title, or none while it shows a dialog (reading it would wait for the answer).
+  async #title(page: Page): Promise<string> {
+    if (this.#dialogs.has(page)) return '';
+    return Promise.race([page.title().catch(() => ''), sleep(2_000).then(() => '')]);
+  }
+
+  async #tabLines(pages: Page[], agentId?: number): Promise<string[]> {
+    return Promise.all(
+      pages.map(async (page, index) => {
+        const title = (await this.#title(page)).slice(0, 120);
+        const current = page === this.#page ? ' (current)' : '';
+        const yours =
+          agentId !== undefined && this.#tabOwners.get(page) === agentId ? ' (yours)' : '';
+        return `- ${index}:${current} [${title}](${redactUrl(page.url())})${yours}`;
+      }),
+    );
+  }
+
+  // What waits for an answer on the tab in front, worded as Playwright MCP's modal states.
+  #modalLines(): string[] {
+    const lines: string[] = [];
+    const dialog = this.#dialogs.get(this.#page);
+    if (dialog) {
+      lines.push(
+        `- ["${dialog.type()}" dialog with message "${dialog.message().slice(0, 300)}"]: can be handled by browser_handle_dialog`,
+      );
+    }
+    if (this.#choosers.has(this.#page)) {
+      lines.push('- [File chooser]: can be handled by browser_file_upload');
+    }
+    return lines;
+  }
+
+  // Every page tool's answer, in Playwright MCP's sections: what was done, the tabs (when
+  // there are several), the page in front, what waits on it, and what happened meanwhile.
+  async #answer(result: string | string[], extra: string[] = []): Promise<string> {
+    const sections: string[] = [];
+    const results = (Array.isArray(result) ? result : [result]).filter(Boolean);
+    if (results.length) sections.push('### Result', ...results.map((line) => `- ${line}`));
+    const pages = this.#openPages();
+    if (pages.length > 1) sections.push('### Open tabs', ...(await this.#tabLines(pages)));
+    sections.push('### Page', `- Page URL: ${redactUrl(this.#page.url())}`);
+    const title = await this.#title(this.#page);
+    if (title) sections.push(`- Page Title: ${title.slice(0, 200)}`);
+    const modal = this.#modalLines();
+    if (modal.length) sections.push('### Modal state', ...modal);
+    sections.push(...extra);
+    if (this.#events.length) {
+      sections.push('### Events', ...this.#events.splice(0).map((event) => `- ${event}`));
+    }
+    return sections.join('\n');
   }
 
   async #settle(): Promise<void> {
@@ -374,15 +467,53 @@ export class PatchrightGatewaySession implements GatewaySession {
     await this.#page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => {});
   }
 
+  // Runs an action and waits for what it set off (Playwright MCP's waitForCompletion): a
+  // navigation it started until the page loaded, else the requests it made until answered,
+  // at most 5 s, with a short settle time after.
+  async #waitForCompletion<T>(action: () => Promise<T>): Promise<T> {
+    const page = this.#page;
+    const requests: Request[] = [];
+    const listener = (request: Request) => requests.push(request);
+    page.on('request', listener);
+    let result: T;
+    try {
+      result = await action();
+      await sleep(SETTLE_MS);
+    } finally {
+      page.off('request', listener);
+    }
+    if (requests.some((request) => request.isNavigationRequest())) {
+      await page
+        .mainFrame()
+        .waitForLoadState('load', { timeout: 10_000 })
+        .catch(() => {});
+      return result;
+    }
+    const answered = requests.map((request) =>
+      request
+        .response()
+        .then((response) =>
+          ['document', 'stylesheet', 'script', 'xhr', 'fetch'].includes(request.resourceType())
+            ? response?.finished()
+            : undefined,
+        )
+        .catch(() => {}),
+    );
+    await Promise.race([Promise.all(answered), sleep(5_000)]);
+    if (requests.length) await sleep(SETTLE_MS);
+    return result;
+  }
+
   async navigate(url: string): Promise<string> {
     this.#assertNoDialog();
-    return this.#orDialog(
+    const done = await this.#orDialog(
       (async () => {
         await this.#page.goto(url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
         await this.#settle();
-        return `Navigated to ${await this.#describe()}. Call browser_snapshot to see the page.`;
+        return `Navigated to ${redactUrl(url)}`;
       })(),
     );
+    return this.#answer(done);
   }
 
   async back(): Promise<string> {
@@ -392,16 +523,16 @@ export class PatchrightGatewaySession implements GatewaySession {
       timeout: LOAD_TIMEOUT_MS,
     });
     if (response === null && this.#page.url() === 'about:blank')
-      return 'There is no page to go back to.';
+      return this.#answer('There is no page to go back to.');
     await this.#settle();
-    return `Went back to ${await this.#describe()}`;
+    return this.#answer('Went back');
   }
 
   async reload(): Promise<string> {
     this.#assertNoDialog();
     await this.#page.reload({ waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
     await this.#settle();
-    return `Reloaded ${await this.#describe()}`;
+    return this.#answer('Reloaded');
   }
 
   // The current values of every credential-shaped field in every frame of the tab, read in
@@ -426,23 +557,71 @@ export class PatchrightGatewaySession implements GatewaySession {
     return values;
   }
 
-  async snapshot(): Promise<string> {
+  // The accessibility snapshot of the tab (or of one element), credential values removed.
+  async #ariaSnapshot(options: { target?: string; depth?: number } = {}): Promise<string> {
+    const aria = {
+      mode: 'ai' as const,
+      timeout: 15_000,
+      ...(options.depth && options.depth > 0 ? { depth: Math.floor(options.depth) } : {}),
+    };
+    const text = options.target
+      ? await (await this.#resolveOne(options.target)).ariaSnapshot(aria)
+      : await this.#page.ariaSnapshot(aria);
+    return redactValues(text, await this.#credentialValues());
+  }
+
+  async snapshot(options: { target?: string; depth?: number } = {}): Promise<string> {
     this.#assertNoDialog();
-    const text = await this.#page.ariaSnapshot({ mode: 'ai', timeout: 15_000 });
-    const clean = redactValues(text, await this.#credentialValues());
-    const header = `Tab ${this.#tabId(this.#page)}: ${await this.#describe()}\n`;
-    return truncateSnapshot(header + clean);
+    const clean = await this.#ariaSnapshot(options);
+    return this.#answer('', ['### Snapshot', '```yaml', truncateSnapshot(clean), '```']);
   }
 
-  #locatorFor(ref: string): Locator {
-    if (!isValidRef(ref)) throw new Error(`Unknown ref: ${ref}. Call browser_snapshot again.`);
-    return this.#page.locator(refSelector(ref));
+  // Lines of the snapshot that contain `text`, with two lines around each, for a page whose
+  // snapshot is too long to read whole.
+  async find(text: string): Promise<string> {
+    this.#assertNoDialog();
+    const needle = text.trim().toLowerCase();
+    if (!needle) throw new Error('text is required.');
+    const lines = (await this.#ariaSnapshot()).split('\n');
+    const hits = lines
+      .map((line, index) => (line.toLowerCase().includes(needle) ? index : -1))
+      .filter((index) => index >= 0);
+    if (hits.length === 0) return this.#answer(`No match for "${text.slice(0, 100)}"`);
+    const shown = hits.slice(0, 30);
+    const blocks: string[] = [];
+    let lastEnd = -1;
+    for (const hit of shown) {
+      const from = Math.max(0, hit - 2, lastEnd + 1);
+      const to = Math.min(lines.length - 1, hit + 2);
+      if (from > to) continue;
+      if (blocks.length && from > lastEnd + 1) blocks.push('…');
+      blocks.push(...lines.slice(from, to + 1));
+      lastEnd = to;
+    }
+    const count = `${hits.length} match(es) for "${text.slice(0, 100)}"${hits.length > shown.length ? `, the first ${shown.length} shown` : ''}`;
+    return this.#answer(count, [
+      '### Matches',
+      '```yaml',
+      truncateSnapshot(blocks.join('\n')),
+      '```',
+    ]);
   }
 
-  async #resolveOne(ref: string): Promise<Locator> {
-    const locator = this.#locatorFor(ref);
+  #locatorFor(target: string): Locator {
+    if (!isValidRef(target)) {
+      throw new Error(`Unknown ref: ${target}. Use a ref from browser_snapshot (e.g. "e5").`);
+    }
+    return this.#page.locator(refSelector(target));
+  }
+
+  async #resolveOne(target: string): Promise<Locator> {
+    const locator = this.#locatorFor(target);
     const count = await locator.count().catch(() => 0);
-    if (count === 0) throw new Error(`Stale ref: ${ref}. Call browser_snapshot again.`);
+    if (count === 0) {
+      throw new Error(
+        `Ref ${target} not found in the current page snapshot. Try capturing new snapshot.`,
+      );
+    }
     return locator.first();
   }
 
@@ -475,42 +654,83 @@ export class PatchrightGatewaySession implements GatewaySession {
     }));
   }
 
-  async #assertNotCredential(locator: Locator, ref: string): Promise<void> {
+  async #assertNotCredential(locator: Locator, target: string): Promise<void> {
     if (isCredentialField(await this.#fieldAttributes(locator))) {
       throw new Error(
-        `${ref} is a password/2FA field — use browser_login / browser_login_code instead.`,
+        `${target} is a password/2FA field — use browser_login / browser_login_code instead.`,
       );
     }
   }
 
-  async click(ref: string, button: 'left' | 'right' | 'middle' = 'left'): Promise<string> {
+  async click(target: string, options: ClickOptions = {}): Promise<string> {
     this.#assertNoDialog();
-    const locator = await this.#resolveOne(ref);
+    const locator = await this.#resolveOne(target);
     await this.#humanMoveTo(locator);
-    return this.#orDialog(
-      (async () => {
-        await locator.click({ button, timeout: ACTION_TIMEOUT_MS });
-        await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
-        return `Clicked ${ref}. Now on ${await this.#describe()}`;
-      })(),
+    const done = await this.#orDialog(
+      this.#waitForCompletion(async () => {
+        await locator.click({
+          button: options.button ?? 'left',
+          clickCount: options.doubleClick ? 2 : 1,
+          ...(options.modifiers?.length ? { modifiers: options.modifiers } : {}),
+          timeout: ACTION_TIMEOUT_MS,
+        });
+        return `${options.doubleClick ? 'Double-clicked' : 'Clicked'} ${target}`;
+      }),
     );
+    return this.#answer(done);
   }
 
-  async type(ref: string, text: string, submit?: boolean): Promise<string> {
-    this.#assertNoDialog();
-    const locator = await this.#resolveOne(ref);
-    await this.#assertNotCredential(locator, ref);
+  // Types into a field after emptying it (Playwright MCP's browser_type replaces the value),
+  // with real key events, never a DOM value set.
+  async #fillText(locator: Locator, target: string, text: string): Promise<void> {
+    await this.#assertNotCredential(locator, target);
     await this.#humanMoveTo(locator);
     await locator.click({ timeout: ACTION_TIMEOUT_MS });
+    await this.#clearField();
     await this.#typeHumanLike(text);
-    if (!submit) return `Typed into ${ref}`;
-    return this.#orDialog(
-      (async () => {
+  }
+
+  async type(target: string, text: string, submit?: boolean): Promise<string> {
+    this.#assertNoDialog();
+    const locator = await this.#resolveOne(target);
+    await this.#fillText(locator, target, text);
+    if (!submit) return this.#answer(`Typed into ${target}`);
+    const done = await this.#orDialog(
+      this.#waitForCompletion(async () => {
         await this.#page.keyboard.press('Enter');
-        await this.#page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
-        return `Typed into ${ref} and pressed Enter. Now on ${await this.#describe()}`;
-      })(),
+        return `Typed into ${target} and pressed Enter`;
+      }),
     );
+    return this.#answer(done);
+  }
+
+  async fillForm(fields: FormField[]): Promise<string> {
+    this.#assertNoDialog();
+    const done: string[] = [];
+    await this.#waitForCompletion(async () => {
+      for (const field of fields) {
+        const locator = await this.#resolveOne(field.target);
+        const label = `${field.name.slice(0, 80)} (${field.target})`;
+        if (field.type === 'textbox') {
+          await this.#fillText(locator, field.target, field.value);
+        } else if (field.type === 'slider') {
+          await this.#assertNotCredential(locator, field.target);
+          await locator.fill(field.value, { timeout: ACTION_TIMEOUT_MS });
+        } else if (field.type === 'checkbox' || field.type === 'radio') {
+          await this.#humanMoveTo(locator);
+          await locator.setChecked(field.value === 'true', { timeout: ACTION_TIMEOUT_MS });
+        } else if (field.type === 'combobox') {
+          await this.#humanMoveTo(locator);
+          await locator
+            .selectOption({ label: field.value }, { timeout: ACTION_TIMEOUT_MS })
+            .catch(() => locator.selectOption(field.value, { timeout: ACTION_TIMEOUT_MS }));
+        } else {
+          throw new Error(`Unknown field type for ${label}.`);
+        }
+        done.push(`Filled ${label}`);
+      }
+    });
+    return this.#answer(done);
   }
 
   async #typeHumanLike(text: string): Promise<void> {
@@ -525,64 +745,95 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   // Selects and deletes whatever the field already holds, with real key events — never a
-  // DOM value set: a login field must start empty whatever was typed into it before.
+  // DOM value set: a field must start empty whatever was typed into it before.
   async #clearField(): Promise<void> {
     await this.#page.keyboard.press('Control+A');
     await this.#page.keyboard.press('Backspace');
   }
 
-  async select(ref: string, values: string[]): Promise<string> {
+  async select(target: string, values: string[]): Promise<string> {
     this.#assertNoDialog();
-    const locator = await this.#resolveOne(ref);
-    const chosen = await locator.selectOption(values, { timeout: ACTION_TIMEOUT_MS });
-    return `Selected ${chosen.join(', ')} in ${ref}`;
+    const locator = await this.#resolveOne(target);
+    const chosen = await this.#waitForCompletion(() =>
+      locator.selectOption(values, { timeout: ACTION_TIMEOUT_MS }),
+    );
+    return this.#answer(`Selected ${chosen.join(', ')} in ${target}`);
   }
 
-  async hover(ref: string): Promise<string> {
+  async hover(target: string): Promise<string> {
     this.#assertNoDialog();
-    const locator = await this.#resolveOne(ref);
+    const locator = await this.#resolveOne(target);
     await this.#humanMoveTo(locator);
     await locator.hover({ timeout: ACTION_TIMEOUT_MS });
-    return `Hovering ${ref}`;
+    return this.#answer(`Hovering ${target}`);
   }
 
-  async drag(fromRef: string, toRef: string): Promise<string> {
+  async drag(startTarget: string, endTarget: string): Promise<string> {
     this.#assertNoDialog();
-    const from = await this.#resolveOne(fromRef);
-    const to = await this.#resolveOne(toRef);
+    const from = await this.#resolveOne(startTarget);
+    const to = await this.#resolveOne(endTarget);
     await this.#humanMoveTo(from);
-    await from.dragTo(to, { timeout: ACTION_TIMEOUT_MS });
-    return `Dragged ${fromRef} to ${toRef}`;
+    await this.#waitForCompletion(() => from.dragTo(to, { timeout: ACTION_TIMEOUT_MS }));
+    return this.#answer(`Dragged ${startTarget} to ${endTarget}`);
   }
 
   async press(key: string): Promise<string> {
     this.#assertNoDialog();
-    return this.#orDialog(this.#page.keyboard.press(key).then(() => `Pressed ${key}`));
+    const done = await this.#orDialog(
+      this.#waitForCompletion(async () => {
+        await this.#page.keyboard.press(key);
+        return `Pressed ${key}`;
+      }),
+    );
+    return this.#answer(done);
   }
 
   async scroll(
     direction: 'up' | 'down' | 'left' | 'right',
     amount: number,
-    ref?: string,
+    target?: string,
   ): Promise<string> {
     this.#assertNoDialog();
     const dx = direction === 'left' ? -1 : direction === 'right' ? 1 : 0;
     const dy = direction === 'up' ? -1 : direction === 'down' ? 1 : 0;
-    const target = ref ? await this.#resolveOne(ref) : null;
-    if (target) {
-      await this.#humanMoveTo(target);
-      const box = await target.boundingBox().catch(() => null);
+    const element = target ? await this.#resolveOne(target) : null;
+    if (element) {
+      await this.#humanMoveTo(element);
+      const box = await element.boundingBox().catch(() => null);
       if (box) await this.#page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     }
     const steps = 4;
     const perStep = (Math.max(1, Math.min(10, amount)) * 120) / steps;
-    for (let i = 0; i < steps; i++) {
-      // A wheel turn over the element scrolls whatever the page scrolls there, the way a
-      // person's wheel does; no script moves the page.
-      await this.#page.mouse.wheel(dx * perStep, dy * perStep);
-      await sleep(this.#humanInput ? 40 + Math.round(this.#random() * 40) : 0);
+    await this.#waitForCompletion(async () => {
+      for (let i = 0; i < steps; i++) {
+        // A wheel turn over the element scrolls whatever the page scrolls there, the way a
+        // person's wheel does; no script moves the page.
+        await this.#page.mouse.wheel(dx * perStep, dy * perStep);
+        await sleep(this.#humanInput ? 40 + Math.round(this.#random() * 40) : 0);
+      }
+    });
+    return this.#answer(`Scrolled ${direction}`);
+  }
+
+  async waitFor(options: { time?: number; text?: string; textGone?: string }): Promise<string> {
+    this.#assertNoDialog();
+    const done: string[] = [];
+    const timeout = MAX_WAIT_SEC * 1000;
+    if (options.time !== undefined) {
+      const seconds = Math.min(Math.max(options.time, 0), MAX_WAIT_SEC);
+      await sleep(seconds * 1000);
+      done.push(`Waited ${seconds} s`);
     }
-    return `Scrolled ${direction}`;
+    if (options.textGone) {
+      await this.#page.getByText(options.textGone).first().waitFor({ state: 'hidden', timeout });
+      done.push(`"${options.textGone.slice(0, 100)}" is gone`);
+    }
+    if (options.text) {
+      await this.#page.getByText(options.text).first().waitFor({ state: 'visible', timeout });
+      done.push(`"${options.text.slice(0, 100)}" is shown`);
+    }
+    if (done.length === 0) throw new Error('Give time, text or textGone.');
+    return this.#answer(done);
   }
 
   // The rectangles (CSS pixels, relative to the viewport) a screenshot covers: every
@@ -606,16 +857,26 @@ export class PatchrightGatewaySession implements GatewaySession {
     return rects;
   }
 
-  async screenshot(ref?: string): Promise<ToolOutput> {
+  async screenshot(options: { target?: string; fullPage?: boolean } = {}): Promise<ToolOutput> {
     this.#assertNoDialog();
     const rects = await this.#coverRects();
     let png: Buffer;
+    // Where the picture's origin lies, in the viewport coordinates of the rectangles.
     let offset = { x: 0, y: 0 };
-    if (ref) {
-      const locator = await this.#resolveOne(ref);
+    if (options.target) {
+      const locator = await this.#resolveOne(options.target);
       const box = await locator.boundingBox().catch(() => null);
       if (box) offset = { x: box.x, y: box.y };
       png = await locator.screenshot({ type: 'png', scale: 'css', timeout: ACTION_TIMEOUT_MS });
+    } else if (options.fullPage) {
+      const scroll = await this.#page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+      offset = { x: -scroll.x, y: -scroll.y };
+      png = await this.#page.screenshot({
+        type: 'png',
+        scale: 'css',
+        fullPage: true,
+        timeout: ACTION_TIMEOUT_MS,
+      });
     } else {
       png = await this.#page.screenshot({ type: 'png', scale: 'css', timeout: ACTION_TIMEOUT_MS });
     }
@@ -632,58 +893,56 @@ export class PatchrightGatewaySession implements GatewaySession {
       }
       covered = png;
     }
+    const what = options.target
+      ? options.target
+      : options.fullPage
+        ? 'the full page'
+        : 'the viewport';
     return {
-      text: `Screenshot of ${ref ?? 'the viewport'} on ${await this.#describe()}${rects.length ? ` (${rects.length} login field(s) covered)` : ''}`,
+      text: await this.#answer(
+        `Took a screenshot of ${what}${rects.length ? ` (${rects.length} login field(s) covered)` : ''}`,
+      ),
       image: { data: covered.toString('base64'), mimeType: 'image/png' },
     };
   }
 
   async tabs(
-    action: 'list' | 'open' | 'focus' | 'close',
-    options: { url?: string; tabId?: string; agentId?: number } = {},
+    action: 'list' | 'new' | 'close' | 'select',
+    options: { url?: string; index?: number; agentId?: number } = {},
   ): Promise<string> {
-    const pages = this.#context.pages().filter((page) => !page.isClosed());
+    const pages = this.#openPages();
     if (action === 'list') {
-      const lines = await Promise.all(
-        pages.map(async (page) => {
-          const title = await page.title().catch(() => '');
-          const marks = [
-            page === this.#page ? 'active' : null,
-            options.agentId !== undefined && this.#tabOwners.get(page) === options.agentId
-              ? 'yours'
-              : null,
-          ].filter(Boolean);
-          return `[${this.#tabId(page)}] ${page.url()}${title ? ` — "${title.slice(0, 80)}"` : ''}${marks.length ? ` (${marks.join(', ')})` : ''}`;
-        }),
-      );
-      return lines.join('\n') || '(no tabs)';
+      return ['### Open tabs', ...(await this.#tabLines(pages, options.agentId))].join('\n');
     }
-    if (action === 'open') {
-      if (!options.url) throw new Error('url is required to open a tab.');
+    if (action === 'new') {
       const page = await this.#context.newPage();
       this.#wire(page);
       if (options.agentId !== undefined) this.#tabOwners.set(page, options.agentId);
       this.#page = page;
-      await page.goto(options.url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
-      await this.#settle();
-      return `Opened ${this.#tabId(page)}: ${await this.#describe()}`;
+      if (options.url) {
+        await page.goto(options.url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+        await this.#settle();
+      }
+      return this.#answer(`Opened tab ${this.#openPages().indexOf(page)}`);
     }
-    const target = pages.find((page) => this.#tabId(page) === options.tabId);
-    if (!target) throw new Error(`Unknown tab: ${options.tabId}. Call browser_tabs list.`);
-    if (action === 'focus') {
+    const index = options.index ?? (action === 'close' ? pages.indexOf(this.#page) : undefined);
+    if (index === undefined) throw new Error('index is required to select a tab.');
+    const target = pages[index];
+    if (!target) throw new Error(`Tab ${index} not found. Call browser_tabs with action "list".`);
+    if (action === 'select') {
       this.#page = target;
       await target.bringToFront();
-      return `Focused ${options.tabId}: ${await this.#describe()}`;
+      return this.#answer(`Selected tab ${index}`);
     }
     if (action === 'close') {
       if (pages.length === 1) throw new Error('The last tab stays open.');
       await target.close();
       if (target === this.#page) {
-        const remaining = this.#context.pages().filter((page) => !page.isClosed());
+        const remaining = this.#openPages();
         this.#page = remaining[remaining.length - 1]!;
         await this.#page.bringToFront().catch(() => {});
       }
-      return `Closed ${options.tabId}`;
+      return this.#answer(`Closed tab ${index}`);
     }
     throw new Error(`Unknown tabs action: ${action}`);
   }
@@ -693,51 +952,109 @@ export class PatchrightGatewaySession implements GatewaySession {
   async closeTabsOf(agentId: number): Promise<void> {
     for (const [page, owner] of [...this.#tabOwners]) {
       if (owner !== agentId || page.isClosed()) continue;
-      if (this.#context.pages().filter((candidate) => !candidate.isClosed()).length <= 1) break;
+      if (this.#openPages().length <= 1) break;
       await page.close().catch(() => {});
     }
   }
 
-  async dialogAction(action: 'accept' | 'dismiss', promptText?: string): Promise<string> {
+  async dialogAction(accept: boolean, promptText?: string): Promise<string> {
     const dialog = this.#dialogs.get(this.#page);
-    if (!dialog) throw new Error('No dialog is open in the active tab.');
+    if (!dialog) throw new Error('No dialog visible');
     this.#dialogs.delete(this.#page);
     try {
-      await (action === 'accept' ? dialog.accept(promptText) : dialog.dismiss());
+      await (accept ? dialog.accept(promptText) : dialog.dismiss());
     } catch {
-      return 'The dialog was already answered (from the live view, most likely).';
+      return this.#answer('The dialog was already answered (from the live view, most likely).');
     }
-    return `Dialog ${action === 'accept' ? 'accepted' : 'dismissed'}: "${dialog.message().slice(0, 200)}"`;
+    // What the dialog held up (a navigation, a request) goes on now.
+    await sleep(SETTLE_MS);
+    await this.#page.waitForLoadState('load', { timeout: 10_000 }).catch(() => {});
+    return this.#answer(
+      `${accept ? 'Accepted' : 'Dismissed'} the dialog "${dialog.message().slice(0, 200)}"`,
+    );
   }
 
-  async upload(ref: string, file: UploadFile): Promise<string> {
+  async upload(files: UploadFile[], target?: string): Promise<string> {
     this.#assertNoDialog();
-    if (file.buffer.length > MAX_TRANSFER_BYTES) throw new Error('The file is larger than 50 MB.');
-    const locator = await this.#resolveOne(ref);
-    await locator.setInputFiles(
-      { name: file.name, mimeType: file.mimeType, buffer: file.buffer },
-      { timeout: ACTION_TIMEOUT_MS },
-    );
-    return `Uploaded ${file.name} (${file.buffer.length} bytes) to ${ref}`;
+    const total = files.reduce((sum, file) => sum + file.buffer.length, 0);
+    if (total > MAX_TRANSFER_BYTES) throw new Error('The files are larger than 50 MB together.');
+    const payloads = files.map((file) => ({
+      name: file.name,
+      mimeType: file.mimeType,
+      buffer: file.buffer,
+    }));
+    const names = files.map((file) => file.name).join(', ');
+    if (target) {
+      if (files.length === 0) throw new Error('paths is required when a target is given.');
+      const locator = await this.#resolveOne(target);
+      const fileInput = await locator.evaluate(
+        (element) => element.tagName === 'INPUT' && (element as HTMLInputElement).type === 'file',
+      );
+      await this.#waitForCompletion(async () => {
+        if (fileInput) {
+          await locator.setInputFiles(payloads, { timeout: ACTION_TIMEOUT_MS });
+          return;
+        }
+        const opened = this.#page.waitForEvent('filechooser', { timeout: ACTION_TIMEOUT_MS });
+        await this.#humanMoveTo(locator);
+        await locator.click({ timeout: ACTION_TIMEOUT_MS });
+        const chooser = await opened;
+        this.#choosers.delete(this.#page);
+        await chooser.setFiles(payloads);
+      });
+      return this.#answer(`Uploaded ${names} to ${target}`);
+    }
+    const chooser = this.#choosers.get(this.#page);
+    if (!chooser) {
+      throw new Error(
+        'No file chooser visible. Click the upload button first, or give it as target.',
+      );
+    }
+    this.#choosers.delete(this.#page);
+    await this.#waitForCompletion(() => chooser.setFiles(payloads));
+    return this.#answer(files.length ? `Uploaded ${names}` : 'Cancelled the file chooser');
   }
 
   async downloads(): Promise<string> {
-    if (this.#downloads.length === 0) return '(no downloads)';
-    return this.#downloads.map((entry) => `${entry.fileName} -> ${entry.savedAs}`).join('\n');
+    if (this.#downloads.length === 0) return '### Result\n- No downloads yet';
+    return [
+      '### Downloads',
+      ...this.#downloads.map((entry) => `- ${entry.fileName} -> ${entry.savedAs}`),
+    ].join('\n');
   }
 
-  async console(limit: number): Promise<string> {
-    const entries = this.#console.slice(-Math.max(1, Math.min(200, limit)));
-    if (entries.length === 0) return '(no console messages)';
-    return entries.map((entry) => `${entry.tab} [${entry.type}] ${entry.text}`).join('\n');
+  async console(level: ConsoleLevel): Promise<string> {
+    const threshold = CONSOLE_RANK[level] ?? CONSOLE_RANK.info;
+    const entries = this.#console
+      .filter((entry) => CONSOLE_RANK[entry.level] <= threshold)
+      .slice(-100);
+    if (entries.length === 0) return '### Result\n- No console messages';
+    return [
+      '### Console messages',
+      ...entries.map(
+        (entry) =>
+          `- [${entry.level.toUpperCase()}] ${entry.text} (${entry.source}, tab ${entry.tab})`,
+      ),
+    ].join('\n');
   }
 
-  async network(limit: number): Promise<string> {
-    const entries = this.#network.slice(-Math.max(1, Math.min(200, limit)));
-    if (entries.length === 0) return '(no network requests)';
-    return entries
-      .map((entry) => `${entry.tab} ${entry.method} ${entry.status} ${entry.url}`)
-      .join('\n');
+  async network(options: { includeStatic: boolean; filter?: string }): Promise<string> {
+    const needle = options.filter?.trim().toLowerCase();
+    const entries = this.#network
+      .filter(
+        (entry) =>
+          options.includeStatic || entry.status >= 400 || !STATIC_TYPES.has(entry.resourceType),
+      )
+      .filter((entry) => !needle || entry.url.toLowerCase().includes(needle))
+      .slice(-100);
+    if (entries.length === 0) return '### Result\n- No network requests';
+    return [
+      '### Network requests',
+      ...entries.map(
+        (entry, index) =>
+          `${index + 1}. [${entry.method}] ${entry.url} => [${entry.status}] (${entry.resourceType}, tab ${entry.tab})`,
+      ),
+    ].join('\n');
   }
 
   async #remember(handle: ElementHandle | null): Promise<void> {
@@ -752,13 +1069,13 @@ export class PatchrightGatewaySession implements GatewaySession {
 
   async submitsForm(call: {
     tool: string;
-    ref?: string;
+    target?: string;
     key?: string;
     submit?: boolean;
   }): Promise<{ submits: boolean; formAction: string | null }> {
     const none = { submits: false, formAction: null };
     try {
-      if (call.tool === 'browser_press') {
+      if (call.tool === 'browser_press_key') {
         if (call.key !== 'Enter') return none;
         return await this.#page.evaluate(() => {
           const element = document.activeElement as HTMLInputElement | null;
@@ -767,9 +1084,9 @@ export class PatchrightGatewaySession implements GatewaySession {
           return { submits: !!form && field, formAction: form ? form.action : null };
         });
       }
-      if (!call.ref || !isValidRef(call.ref)) return none;
+      if (!call.target || !isValidRef(call.target)) return none;
       if (call.tool === 'browser_type' && !call.submit) return none;
-      const locator = this.#page.locator(refSelector(call.ref)).first();
+      const locator = this.#page.locator(refSelector(call.target)).first();
       if ((await locator.count()) === 0) return none;
       return await locator.evaluate((element, typing) => {
         const control = element as HTMLButtonElement | HTMLInputElement;
@@ -800,20 +1117,20 @@ export class PatchrightGatewaySession implements GatewaySession {
     return locator.evaluate(() => location.origin);
   }
 
-  async frameOrigin(ref: string): Promise<string> {
-    return this.#originOf(await this.#resolveOne(ref));
+  async frameOrigin(target: string): Promise<string> {
+    return this.#originOf(await this.#resolveOne(target));
   }
 
   async fillLogin(
-    usernameRef: string,
-    passwordRef: string,
+    usernameTarget: string,
+    passwordTarget: string,
     username: string,
     password: string,
     origin: string,
   ): Promise<string> {
     this.#assertNoDialog();
-    const usernameLocator = await this.#resolveOne(usernameRef);
-    const passwordLocator = await this.#resolveOne(passwordRef);
+    const usernameLocator = await this.#resolveOne(usernameTarget);
+    const passwordLocator = await this.#resolveOne(passwordTarget);
     const passwordField = await this.#fieldAttributes(passwordLocator);
     const isPasswordInput =
       passwordField.tag === 'input' &&
@@ -821,11 +1138,11 @@ export class PatchrightGatewaySession implements GatewaySession {
         (passwordField.autocomplete ?? '').toLowerCase().includes('password'));
     if (!isPasswordInput) {
       throw new Error(
-        `${passwordRef} is not a password field; the password is typed only into one.`,
+        `${passwordTarget} is not a password field; the password is typed only into one.`,
       );
     }
     if (isCredentialField(await this.#fieldAttributes(usernameLocator))) {
-      throw new Error(`${usernameRef} is a password field, not the username field.`);
+      throw new Error(`${usernameTarget} is a password field, not the username field.`);
     }
     // Right before typing: both fields are still on the origin the login was chosen for.
     if (
@@ -846,12 +1163,12 @@ export class PatchrightGatewaySession implements GatewaySession {
     return 'Login filled.';
   }
 
-  async fillCode(ref: string, code: string): Promise<string> {
+  async fillCode(target: string, code: string): Promise<string> {
     this.#assertNoDialog();
-    const locator = await this.#resolveOne(ref);
+    const locator = await this.#resolveOne(target);
     const field = await this.#fieldAttributes(locator);
     if (field.tag !== 'input' && field.tag !== 'textarea') {
-      throw new Error(`${ref} is not a text field.`);
+      throw new Error(`${target} is not a text field.`);
     }
     await this.#humanMoveTo(locator);
     await locator.click({ timeout: ACTION_TIMEOUT_MS });

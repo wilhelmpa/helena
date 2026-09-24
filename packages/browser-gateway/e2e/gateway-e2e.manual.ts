@@ -86,6 +86,10 @@ const helena = {
     planCalls.push({ route: 'audit', body });
   },
   handover: async () => ({ approvalId: null }),
+  decide: async (body: unknown) => {
+    planCalls.push({ route: 'decide', body });
+    return { effect: 'allow', reason: 'No policy applies' };
+  },
   handoverDone: async () => {},
   download: async () => ({ path: 'unused' }),
   policy: async () => ({}),
@@ -131,10 +135,16 @@ async function snapshot(): Promise<string> {
 }
 
 try {
-  check('acquire', (await call('browser_acquire')).ok);
-
-  // Login with password and 2FA, the password never shown.
-  check('navigate', (await call('browser_navigate', { url: `${SITE}/login` })).ok);
+  // The first action takes control by itself, and answers the way Playwright MCP does.
+  const first = await call('browser_navigate', { url: `${SITE}/login` });
+  check(
+    'navigate takes control and answers with the page',
+    first.ok &&
+      first.text.includes(`- Page URL: ${SITE}/login`) &&
+      first.text.includes('- Page Title: Login'),
+    first.text,
+  );
+  check('acquire (already held) is fine', (await call('browser_acquire')).ok);
   let page = await snapshot();
   check(
     'snapshot shows the form with refs',
@@ -143,15 +153,15 @@ try {
   );
   const user = refOf(page, /textbox "Benutzername"/);
   const pass = refOf(page, /textbox "Passwort"/);
-  const typed = await call('browser_type', { ref: pass, text: 'nicht erlaubt' });
+  const typed = await call('browser_type', { target: pass, text: 'nicht erlaubt' });
   check(
     'typing into a password field is refused',
     !typed.ok && /browser_login/.test(typed.text),
     typed.text,
   );
-  const wrongField = await call('browser_login', { usernameRef: pass, passwordRef: user });
+  const wrongField = await call('browser_login', { usernameTarget: pass, passwordTarget: user });
   check('the password only goes into a password field', !wrongField.ok, wrongField.text);
-  const login = await call('browser_login', { usernameRef: user, passwordRef: pass });
+  const login = await call('browser_login', { usernameTarget: user, passwordTarget: pass });
   check(
     'browser_login fills the login for the page origin',
     login.ok && login.text.includes('Testseite'),
@@ -161,14 +171,14 @@ try {
     'the login was chosen for the page origin',
     JSON.stringify(planCalls).includes(`"frameOrigin":"${SITE}"`),
   );
-  await call('browser_click', { ref: refOf(await snapshot(), /button "Passwort anzeigen"/) });
+  await call('browser_click', { target: refOf(await snapshot(), /button "Passwort anzeigen"/) });
   page = await snapshot();
   check(
     'a revealed password stays out of the snapshot',
     !page.includes(PASSWORD),
     page.slice(0, 600),
   );
-  const shot = await call('browser_screenshot');
+  const shot = await call('browser_take_screenshot');
   check('a screenshot comes back as an image', shot.ok && 'image' in shot && !!shot.image);
   if (shot.ok && shot.image) {
     // The field (185 × 21 CSS pixels on this page) has to be one solid cover in the picture.
@@ -194,7 +204,21 @@ try {
       `widest ${widest}, rows ${rows}`,
     );
   }
-  await call('browser_click', { ref: refOf(page, /button "Anmelden"/) });
+  const signIn = await call('browser_click', {
+    target: refOf(page, /button "Anmelden"/),
+    element: 'Anmelden',
+  });
+  check(
+    'a click that submits a form is decided as a send, with the element named',
+    JSON.stringify(planCalls).includes('"category":"send"') &&
+      JSON.stringify(planCalls).includes('"element":"Anmelden"'),
+    JSON.stringify(planCalls.filter((entry) => entry.route === 'decide').slice(-1)),
+  );
+  check(
+    'the click waited for the next page',
+    signIn.text.includes('- Page Title: Willkommen'),
+    signIn.text,
+  );
   page = await snapshot();
   check('the login worked', page.includes('Angemeldet als agent@example.com'), page.slice(0, 300));
   check(
@@ -205,7 +229,7 @@ try {
   await call('browser_navigate', { url: `${SITE}/otp` });
   page = await snapshot();
   const code = await call('browser_login_code', {
-    ref: refOf(page, /textbox "Code"/),
+    target: refOf(page, /textbox "Code"/),
     credentialId: 1,
   });
   check('browser_login_code fills the code', code.ok, code.text);
@@ -215,7 +239,7 @@ try {
       '"route":"login-code","body":{"credentialId":1,"frameOrigin":"' + SITE,
     ),
   );
-  await call('browser_click', { ref: refOf(page, /button "Prüfen"/) });
+  await call('browser_click', { target: refOf(page, /button "Prüfen"/) });
   page = await snapshot();
   check('the code was accepted', page.includes('Code angenommen'), page.slice(0, 300));
   check('the code never comes back', !page.includes(TOTP_CODE));
@@ -227,15 +251,15 @@ try {
   const framePass = refOf(page, /textbox "Passwort"/);
   check('refs reach into the iframe', /^f\d+e\d+$/.test(framePass), framePass);
   const frameLogin = await call('browser_login', {
-    usernameRef: frameUser,
-    passwordRef: framePass,
+    usernameTarget: frameUser,
+    passwordTarget: framePass,
   });
   check(
     'the iframe login is chosen for the iframe origin',
     frameLogin.ok && frameLogin.text.includes('Rahmen'),
     frameLogin.text,
   );
-  await call('browser_click', { ref: refOf(page, /button "Anmelden"/) });
+  await call('browser_click', { target: refOf(page, /button "Anmelden"/) });
   await new Promise((r) => setTimeout(r, 800));
   page = await snapshot();
   check(
@@ -248,32 +272,110 @@ try {
   await call('browser_navigate', { url: `${SITE}/upload` });
   page = await snapshot();
   const upload = await call(
-    'browser_upload',
-    { ref: refOf(page, /button "Datei"/) },
+    'browser_file_upload',
+    { target: refOf(page, /button "Datei"/) },
     {
-      upload: {
-        name: 'angebot.pdf',
-        mimeType: 'application/pdf',
-        data: Buffer.from('%PDF-1.4 e2e').toString('base64'),
-      },
+      uploads: [
+        {
+          name: 'angebot.pdf',
+          mimeType: 'application/pdf',
+          data: Buffer.from('%PDF-1.4 e2e').toString('base64'),
+        },
+      ],
     },
   );
-  check('upload', upload.ok, upload.text);
+  check('upload into a file input', upload.ok, upload.text);
   page = await snapshot();
   check(
     'the page got the file',
     page.includes('Gewählt: angebot.pdf (12 Bytes)'),
     page.slice(0, 300),
   );
+  // The standard's way: a click opens the file chooser (a modal state), the upload answers it.
+  await call('browser_navigate', { url: `${SITE}/upload2` });
+  page = await snapshot();
+  const picked = await call('browser_click', { target: refOf(page, /button "Dateien wählen"/) });
+  check(
+    'a click that opens the file chooser says so',
+    picked.ok && picked.text.includes('[File chooser]: can be handled by browser_file_upload'),
+    picked.text,
+  );
+  const chosen = await call(
+    'browser_file_upload',
+    {},
+    {
+      uploads: [
+        { name: 'a.txt', mimeType: 'text/plain', data: Buffer.from('aaa').toString('base64') },
+        { name: 'b.txt', mimeType: 'text/plain', data: Buffer.from('bb').toString('base64') },
+      ],
+    },
+  );
+  check(
+    'the chooser takes the files',
+    chosen.ok && !chosen.text.includes('File chooser'),
+    chosen.text,
+  );
+  page = await snapshot();
+  check(
+    'the page got both files',
+    page.includes('Gewählt: a.txt (3 Bytes), b.txt (2 Bytes)'),
+    page.slice(0, 300),
+  );
+
+  // Fill a form at once, replacing what a field held; wait for text; find in a long page.
+  await call('browser_navigate', { url: `${SITE}/form` });
+  page = await snapshot();
+  const filled = await call('browser_fill_form', {
+    fields: [
+      { target: refOf(page, /textbox "Name"/), name: 'Name', type: 'textbox', value: 'Helena' },
+      { target: refOf(page, /checkbox "AGB"/), name: 'AGB', type: 'checkbox', value: 'true' },
+      { target: refOf(page, /combobox "Farbe"/), name: 'Farbe', type: 'combobox', value: 'grün' },
+      { target: refOf(page, /slider "Menge"/), name: 'Menge', type: 'slider', value: '7' },
+    ],
+  });
+  check('fill form', filled.ok, filled.text);
+  await call('browser_click', { target: refOf(page, /button "Senden"/) });
+  page = await snapshot();
+  check(
+    'the form got every value, the old one replaced',
+    page.includes('Gesendet: name=Helena agb=true farbe=grün menge=7'),
+    page.slice(0, 400),
+  );
+  await call('browser_navigate', { url: `${SITE}/later` });
+  const waited = await call('browser_wait_for', { text: 'Fertig geladen' });
+  check('wait for text', waited.ok && waited.text.includes('is shown'), waited.text);
+  const gone = await call('browser_wait_for', { textGone: 'Lädt' });
+  check('wait for text to go', gone.ok, gone.text);
+  await call('browser_navigate', { url: `${SITE}/long` });
+  const found = await call('browser_find', { text: 'nadel im heu' });
+  check(
+    'find in a long page, with the ref',
+    found.ok && /button "Nadel im Heuhaufen" \[ref=(f\d+)?e\d+\]/.test(found.text),
+    found.text.slice(0, 400),
+  );
+  const cut = await snapshot();
+  check(
+    'the long snapshot itself is cut off',
+    !cut.includes('Nadel im Heuhaufen'),
+    String(cut.length),
+  );
 
   // Download: into the project's Inbox (through Helena).
   await call('browser_navigate', { url: `${SITE}/download` });
   page = await snapshot();
-  await call('browser_click', { ref: refOf(page, /link "Bericht herunterladen"/) });
+  const fetched = await call('browser_click', {
+    target: refOf(page, /link "Bericht herunterladen"/),
+  });
   for (let waited = 0; waited < 8000 && downloads.length === 0; waited += 200) {
     await new Promise((r) => setTimeout(r, 200));
   }
   const listed = await call('browser_downloads');
+  const next = await call('browser_snapshot');
+  check(
+    'an answer tells of the download (the click, or the next one)',
+    `${fetched.text}\n${next.text}`.includes('### Events\n- Downloaded file bericht 2026.txt'),
+    `${fetched.text}\n${next.text}`.slice(0, 600),
+  );
   check(
     'download kept',
     downloads.length === 1 && downloads[0]!.bytes.toString() === 'Bericht: alles in Ordnung\n',
@@ -288,10 +390,13 @@ try {
   // A JavaScript dialog: the click returns as soon as it opens, the agent answers it.
   await call('browser_navigate', { url: `${SITE}/dialog` });
   page = await snapshot();
-  const clicked = await call('browser_click', { ref: refOf(page, /button "Löschen"/) });
+  const clicked = await call('browser_click', { target: refOf(page, /button "Löschen"/) });
   check(
-    'the click says a dialog opened',
-    clicked.ok && clicked.text.includes('Wirklich löschen?'),
+    'the click says a dialog opened, as a modal state',
+    clicked.ok &&
+      clicked.text.includes(
+        '["confirm" dialog with message "Wirklich löschen?"]: can be handled by browser_handle_dialog',
+      ),
     clicked.text,
   );
   const status = await call('browser_status');
@@ -299,10 +404,10 @@ try {
   const blockedByDialog = await call('browser_snapshot');
   check(
     'nothing else runs while it is open',
-    !blockedByDialog.ok && blockedByDialog.text.includes('browser_dialog'),
+    !blockedByDialog.ok && blockedByDialog.text.includes('browser_handle_dialog'),
     blockedByDialog.text,
   );
-  const dialog = await call('browser_dialog', { action: 'accept' });
+  const dialog = await call('browser_handle_dialog', { accept: true });
   check(
     'the dialog is answered',
     dialog.ok && dialog.text.includes('Wirklich löschen?'),
@@ -312,17 +417,19 @@ try {
   page = await snapshot();
   check('the page saw the answer', page.includes('gelöscht'), page.slice(0, 300));
 
-  // Tabs.
-  const opened = await call('browser_tabs', { action: 'open', url: `${SITE}/` });
-  check('open a tab', opened.ok, opened.text);
+  // Tabs, by index as in the standard.
+  const opened = await call('browser_tabs', { action: 'new', url: `${SITE}/` });
+  check('new tab', opened.ok && opened.text.includes('### Open tabs'), opened.text);
   const tabs = await call('browser_tabs', { action: 'list' });
-  check("the new tab is the agent's", /\(active, yours\)/.test(tabs.text), tabs.text);
-  const tabId = tabs.text.match(/\[(t\d+)\][^\n]*\(active, yours\)/)?.[1];
-  check('close it', (await call('browser_tabs', { action: 'close', tabId })).ok);
+  const mine = tabs.text.match(/^- (\d+): \(current\) \[Start\][^\n]*\(yours\)$/m);
+  check("the new tab is current and the agent's", !!mine, tabs.text);
+  check('select the first tab', (await call('browser_tabs', { action: 'select', index: 0 })).ok);
+  const closed = await call('browser_tabs', { action: 'close', index: Number(mine?.[1]) });
+  check('close it', closed.ok && !closed.text.includes('### Open tabs'), closed.text);
 
   // Console and network, token values hidden.
   await call('browser_navigate', { url: `${SITE}/token?token=sehr-geheim-123&page=2` });
-  const network = await call('browser_network', { limit: 5 });
+  const network = await call('browser_network_requests', { filter: '/token' });
   check(
     'network lists the request, token hidden',
     network.text.includes('token=%E2%80%A6') &&
@@ -331,7 +438,7 @@ try {
     network.text,
   );
   await call('browser_navigate', { url: `${SITE}/missing-page` });
-  const consoleLog = await call('browser_console', { limit: 10 });
+  const consoleLog = await call('browser_console_messages', { level: 'error' });
   check(
     'the browser log names the failed request',
     consoleLog.text.includes('404'),
@@ -344,7 +451,7 @@ try {
   check('a blocked host is refused', !blocked.ok, blocked.text);
   await call('browser_navigate', { url: `${SITE}/blocked-link` });
   page = await snapshot();
-  await call('browser_click', { ref: refOf(page, /link "Zur gesperrten Seite"/) });
+  await call('browser_click', { target: refOf(page, /link "Zur gesperrten Seite"/) });
   await new Promise((r) => setTimeout(r, 800));
   const after = await call('browser_status');
   check(
@@ -357,8 +464,9 @@ try {
   // Bot signals: nothing the page could see.
   await call('browser_navigate', { url: `${SITE}/leaks` });
   page = await snapshot();
-  await call('browser_screenshot');
-  await call('browser_click', { ref: refOf(page, /button "Bericht"/) });
+  await call('browser_take_screenshot', { fullPage: true });
+  await call('browser_find', { text: 'Bericht' });
+  await call('browser_click', { target: refOf(page, /button "Bericht"/) });
   page = await snapshot();
   check(
     'no automation signal and no foreign DOM change',

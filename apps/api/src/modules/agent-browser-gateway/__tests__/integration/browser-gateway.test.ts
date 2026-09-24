@@ -319,7 +319,7 @@ describe('browser gateway', () => {
     const allowed = await call({});
     expect(allowed.status).toBe(200);
     // No policy is configured yet (hub/autopilot brings it): every category is allowed.
-    expect(await allowed.json()).toEqual({ decision: 'allow' });
+    expect(await allowed.json()).toEqual({ effect: 'allow', reason: 'No policy applies' });
     expect((await call({ category: 'launch-missiles' })).status).toBe(400);
     expect((await call({ projectSlug: 'ops', via: 'ops' })).status).toBe(403);
     expect((await call({ agentKey: 'not-a-key' })).status).toBe(403);

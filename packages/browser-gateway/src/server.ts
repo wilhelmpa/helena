@@ -1,12 +1,25 @@
 import type { Holder } from './lock.ts';
 import { ProjectBrowserLocks } from './lock.ts';
-import { CREDENTIAL_TOOLS, categoryOf, requiresLock, toolByName, type ToolDef } from './tools.ts';
+import {
+  CREDENTIAL_TOOLS,
+  categoryOf,
+  normalizeArgs,
+  requiresLock,
+  toolByName,
+  type ToolDef,
+} from './tools.ts';
 import type { ActionCategory } from './agent-tool.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
 import { hostAllowed } from './domain.ts';
 import type { HelenaClient, ResolveResult } from './helena-client.ts';
 import { HelenaApiError } from './helena-client.ts';
-import type { GatewaySession, SessionProvider, ToolOutput } from './session-types.ts';
+import type {
+  ConsoleLevel,
+  FormField,
+  GatewaySession,
+  SessionProvider,
+  ToolOutput,
+} from './session-types.ts';
 
 // The gateway's tool dispatcher (design §3/§4): one instance per project-browser socket
 // (see browser-gateway-server.mjs), wired to that socket's own slug. Everything here is
@@ -21,8 +34,9 @@ export interface GatewayRequest {
   agentKey: string;
   runId?: number;
   messageId?: number;
-  // browser_upload only: the file the shim read inside the agent's sandbox.
-  upload?: { name: string; mimeType?: string; data: string };
+  // browser_file_upload only: the files the shim read inside the agent's sandbox (the paths
+  // an agent names never reach the gateway).
+  uploads?: { name: string; mimeType?: string; data: string }[];
 }
 
 export type GatewayResponse =
@@ -69,6 +83,7 @@ export interface DispatcherOptions {
 }
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_UPLOAD_FILES = 10;
 
 function str(args: Record<string, unknown> | undefined, key: string): string | undefined {
   const value = args?.[key];
@@ -100,7 +115,37 @@ function safeLabel(url: string): string | null {
 }
 
 // The tools whose call may submit a form, and so be a 'send' rather than a 'write'.
-const FORM_TOOLS = new Set(['browser_click', 'browser_type', 'browser_press']);
+const FORM_TOOLS = new Set(['browser_click', 'browser_type', 'browser_press_key']);
+
+const FIELD_TYPES = new Set(['textbox', 'checkbox', 'radio', 'combobox', 'slider']);
+
+function formFields(value: unknown): FormField[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error('fields is required: a list of {target, name, type, value}.');
+  }
+  if (value.length > 50) throw new Error('At most 50 fields at once.');
+  return value.map((field, index) => {
+    const entry = (field ?? {}) as Record<string, unknown>;
+    const target = str(entry, 'target');
+    const type = str(entry, 'type');
+    const fieldValue = entry.value;
+    if (!target) throw new Error(`fields[${index}].target is required.`);
+    if (!type || !FIELD_TYPES.has(type)) {
+      throw new Error(
+        `fields[${index}].type must be textbox, checkbox, radio, combobox or slider.`,
+      );
+    }
+    if (typeof fieldValue !== 'string' && typeof fieldValue !== 'boolean') {
+      throw new Error(`fields[${index}].value is required.`);
+    }
+    return {
+      target,
+      name: str(entry, 'name') ?? target,
+      type: type as FormField['type'],
+      value: String(fieldValue),
+    };
+  });
+}
 
 function hostOf(url: string): string | null {
   try {
@@ -148,9 +193,10 @@ export class GatewayDispatcher {
     return { slug: projectKey.toLowerCase() === HOME_SLUG ? HOME_SLUG : projectSlug(projectKey) };
   }
 
-  async handle(request: GatewayRequest): Promise<GatewayResponse> {
-    const tool = toolByName(request.tool);
-    if (!tool) return { ok: false, error: `Unknown tool: ${request.tool}` };
+  async handle(incoming: GatewayRequest): Promise<GatewayResponse> {
+    const tool = toolByName(incoming.tool);
+    if (!tool) return { ok: false, error: `Unknown tool: ${incoming.tool}` };
+    const request = { ...incoming, args: normalizeArgs(incoming.args) };
 
     const target = this.#targetSlug(request.args);
     if ('error' in target) return { ok: false, error: target.error };
@@ -201,7 +247,13 @@ export class GatewayDispatcher {
     }
     if (request.tool === 'browser_handover') return this.#handover(request, slug, resolved);
 
-    if (requiresLock(request.tool) && !lock.touch(holder)) {
+    // A page action takes control by itself when nobody holds it (agents that know
+    // Playwright MCP just navigate); while someone else works, it says who and how to wait.
+    if (
+      requiresLock(request.tool) &&
+      !lock.touch(holder) &&
+      !(lock.state().holder === null && (await lock.acquire(holder, 0)).acquired)
+    ) {
       const current = lock.state().holder;
       const by =
         current === null
@@ -209,12 +261,17 @@ export class GatewayDispatcher {
           : current.kind === 'owner'
             ? ' The owner controls it.'
             : ` ${current.agentName} controls it.`;
-      return { ok: false, error: `Control is not held. Call browser_acquire first.${by}` };
+      return {
+        ok: false,
+        error: `Someone else works in this browser.${by} Call browser_acquire to wait for it, or browser_handover if you need the owner.`,
+      };
     }
 
     if (
       request.tool === 'browser_navigate' ||
-      (request.tool === 'browser_tabs' && str(request.args, 'action') === 'open')
+      (request.tool === 'browser_tabs' &&
+        str(request.args, 'action') === 'new' &&
+        str(request.args, 'url'))
     ) {
       const url = str(request.args, 'url');
       const host = url ? hostOf(url) : null;
@@ -290,7 +347,7 @@ export class GatewayDispatcher {
     if (FORM_TOOLS.has(tool.name)) {
       const form = await session.submitsForm({
         tool: tool.name,
-        ref: str(request.args, 'ref'),
+        target: str(request.args, 'target'),
         key: str(request.args, 'key'),
         submit: bool(request.args, 'submit'),
       });
@@ -309,6 +366,7 @@ export class GatewayDispatcher {
         context: {
           origin: session.pageOrigin(),
           target: this.#targetLabel(request) ?? null,
+          element: this.#elementLabel(request),
           formAction: formAction ? safeLabel(formAction) : null,
         },
         runId: request.runId,
@@ -318,14 +376,15 @@ export class GatewayDispatcher {
       const message = error instanceof HelenaApiError ? error.message : 'Helena did not answer';
       return { refusal: { ok: false, error: `Not done: ${message}.` } };
     }
-    if (answer.decision === 'allow') return { category };
-    if (answer.decision === 'approve') {
+    if (answer.effect === 'allow') return { category };
+    if (answer.effect === 'needs-approval') {
       return {
         refusal: {
           ok: false,
           error:
             `This ${category} action needs the owner's approval first` +
-            `${answer.approvalId ? ` (Freigaben #${answer.approvalId})` : ''}. ` +
+            `${answer.reason ? ` (${answer.reason})` : ''}` +
+            `${answer.approvalId ? `, Freigaben #${answer.approvalId}` : ''}. ` +
             'Stop here; once it is decided, a new run tells you.',
         },
       };
@@ -338,16 +397,30 @@ export class GatewayDispatcher {
     };
   }
 
-  // A short, non-secret label for the audit: an address without its query, a ref, a tab.
+  // A short, non-secret label for the audit: an address without its query, a ref and the
+  // element's description, a tab, the names of uploaded files.
   #targetLabel(request: GatewayRequest): string | undefined {
     const url = str(request.args, 'url');
     if (url) return safeLabel(url) ?? undefined;
-    const ref = str(request.args, 'ref');
-    if (ref) return `ref ${ref}`;
-    const tab = str(request.args, 'tabId');
-    if (tab) return `tab ${tab}`;
-    if (request.upload) return request.upload.name.slice(0, 200);
+    const target = str(request.args, 'target') ?? str(request.args, 'startTarget');
+    if (request.uploads?.length) {
+      return request.uploads
+        .map((file) => file.name)
+        .join(', ')
+        .slice(0, 200);
+    }
+    const element = this.#elementLabel(request);
+    if (target) return `ref ${target}${element ? ` "${element}"` : ''}`.slice(0, 300);
+    const index = num(request.args, 'index');
+    if (index !== undefined) return `tab ${index}`;
     return undefined;
+  }
+
+  // The element's description the agent gave (Playwright MCP's `element`, "used to obtain
+  // permission"): what the policy and an approval card show.
+  #elementLabel(request: GatewayRequest): string | null {
+    const element = str(request.args, 'element') ?? str(request.args, 'startElement');
+    return element ? element.replace(/\s+/g, ' ').trim().slice(0, 120) || null : null;
   }
 
   async #status(slug: string, caller: Holder): Promise<GatewayResponse> {
@@ -441,8 +514,8 @@ export class GatewayDispatcher {
       ? {
           ok: true,
           content:
-            'The owner took over and gave control back. Call browser_acquire, then ' +
-            'browser_snapshot to see what changed.',
+            'The owner took over and gave control back. Call browser_snapshot to see what ' +
+            'changed.',
         }
       : {
           ok: true,
@@ -469,40 +542,60 @@ export class GatewayDispatcher {
         if (!url) throw new Error('url is required.');
         return text(await session.navigate(url));
       }
-      case 'browser_back':
+      case 'browser_navigate_back':
         return text(await session.back());
       case 'browser_reload':
         return text(await session.reload());
       case 'browser_snapshot':
-        return text(await session.snapshot());
-      case 'browser_click':
         return text(
-          await session.click(
-            this.#requireRef(args),
-            str(args, 'button') as 'left' | 'right' | 'middle' | undefined,
-          ),
+          await session.snapshot({ target: str(args, 'target'), depth: num(args, 'depth') }),
         );
+      case 'browser_find': {
+        const needle = str(args, 'text');
+        if (!needle) throw new Error('text is required.');
+        return text(await session.find(needle));
+      }
+      case 'browser_click': {
+        const modifiers = Array.isArray(args?.modifiers)
+          ? (args.modifiers as unknown[]).filter(
+              (key): key is 'Alt' | 'Control' | 'ControlOrMeta' | 'Meta' | 'Shift' =>
+                typeof key === 'string' &&
+                ['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift'].includes(key),
+            )
+          : undefined;
+        const button = str(args, 'button');
+        return text(
+          await session.click(this.#requireTarget(args), {
+            button:
+              button === 'right' || button === 'middle' || button === 'left' ? button : undefined,
+            doubleClick: bool(args, 'doubleClick'),
+            modifiers,
+          }),
+        );
+      }
       case 'browser_type': {
         const value = str(args, 'text');
         if (value === undefined) throw new Error('text is required.');
-        return text(await session.type(this.#requireRef(args), value, bool(args, 'submit')));
+        return text(await session.type(this.#requireTarget(args), value, bool(args, 'submit')));
       }
-      case 'browser_select': {
+      case 'browser_fill_form':
+        return text(await session.fillForm(formFields(args?.fields)));
+      case 'browser_select_option': {
         const values = args?.values;
         if (!Array.isArray(values) || values.some((value) => typeof value !== 'string')) {
           throw new Error('values is required: a list of option values or labels.');
         }
-        return text(await session.select(this.#requireRef(args), values as string[]));
+        return text(await session.select(this.#requireTarget(args), values as string[]));
       }
       case 'browser_hover':
-        return text(await session.hover(this.#requireRef(args)));
+        return text(await session.hover(this.#requireTarget(args)));
       case 'browser_drag': {
-        const fromRef = str(args, 'fromRef');
-        const toRef = str(args, 'toRef');
-        if (!fromRef || !toRef) throw new Error('fromRef and toRef are required.');
-        return text(await session.drag(fromRef, toRef));
+        const startTarget = str(args, 'startTarget');
+        const endTarget = str(args, 'endTarget');
+        if (!startTarget || !endTarget) throw new Error('startTarget and endTarget are required.');
+        return text(await session.drag(startTarget, endTarget));
       }
-      case 'browser_press': {
+      case 'browser_press_key': {
         const key = str(args, 'key');
         if (!key) throw new Error('key is required.');
         return text(await session.press(key));
@@ -512,54 +605,75 @@ export class GatewayDispatcher {
         if (!direction || !['up', 'down', 'left', 'right'].includes(direction)) {
           throw new Error('direction is required: up, down, left or right.');
         }
-        return text(await session.scroll(direction, num(args, 'amount') ?? 3, str(args, 'ref')));
+        return text(await session.scroll(direction, num(args, 'amount') ?? 3, str(args, 'target')));
       }
-      case 'browser_screenshot':
-        return session.screenshot(str(args, 'ref'));
+      case 'browser_wait_for':
+        return text(
+          await session.waitFor({
+            time: num(args, 'time'),
+            text: str(args, 'text'),
+            textGone: str(args, 'textGone'),
+          }),
+        );
+      case 'browser_take_screenshot':
+        return session.screenshot({
+          target: str(args, 'target'),
+          fullPage: bool(args, 'fullPage'),
+        });
       case 'browser_tabs': {
-        const action = str(args, 'action') as 'list' | 'open' | 'focus' | 'close' | undefined;
-        if (!action || !['list', 'open', 'focus', 'close'].includes(action)) {
-          throw new Error('action is required: list, open, focus or close.');
+        const action = str(args, 'action') as 'list' | 'new' | 'close' | 'select' | undefined;
+        if (!action || !['list', 'new', 'close', 'select'].includes(action)) {
+          throw new Error('action is required: list, new, close or select.');
         }
         return text(
           await session.tabs(action, {
             url: str(args, 'url'),
-            tabId: str(args, 'tabId'),
+            index: num(args, 'index'),
             agentId: resolved.agentId,
           }),
         );
       }
-      case 'browser_dialog': {
-        const action = str(args, 'action') as 'accept' | 'dismiss' | undefined;
-        if (action !== 'accept' && action !== 'dismiss') {
-          throw new Error('action is required: accept or dismiss.');
-        }
-        return text(await session.dialogAction(action, str(args, 'promptText')));
+      case 'browser_handle_dialog': {
+        const accept = bool(args, 'accept');
+        if (accept === undefined) throw new Error('accept is required: true or false.');
+        return text(await session.dialogAction(accept, str(args, 'promptText')));
       }
-      case 'browser_upload': {
-        const upload = request.upload;
-        if (!upload || typeof upload.data !== 'string' || typeof upload.name !== 'string') {
-          throw new Error(
-            'No file arrived. Give `path`, a file in your workspace or your project folder.',
-          );
+      case 'browser_file_upload': {
+        const uploads = request.uploads ?? [];
+        if (uploads.length > MAX_UPLOAD_FILES) {
+          throw new Error(`At most ${MAX_UPLOAD_FILES} files at once.`);
         }
-        const buffer = Buffer.from(upload.data, 'base64');
-        if (buffer.length > MAX_UPLOAD_BYTES) throw new Error('The file is larger than 50 MB.');
-        const name = upload.name.split(/[\\/]/).pop()!.slice(0, 180) || 'upload';
-        return text(
-          await session.upload(this.#requireRef(args), {
-            name,
+        const files = uploads.map((upload) => {
+          if (!upload || typeof upload.data !== 'string' || typeof upload.name !== 'string') {
+            throw new Error('A file did not arrive whole.');
+          }
+          return {
+            name: upload.name.split(/[\\/]/).pop()!.slice(0, 180) || 'upload',
             mimeType: upload.mimeType || 'application/octet-stream',
-            buffer,
-          }),
-        );
+            buffer: Buffer.from(upload.data, 'base64'),
+          };
+        });
+        if (files.reduce((sum, file) => sum + file.buffer.length, 0) > MAX_UPLOAD_BYTES) {
+          throw new Error('The files are larger than 50 MB together.');
+        }
+        return text(await session.upload(files, str(args, 'target')));
       }
       case 'browser_downloads':
         return text(await session.downloads());
-      case 'browser_console':
-        return text(await session.console(num(args, 'limit') ?? 50));
-      case 'browser_network':
-        return text(await session.network(num(args, 'limit') ?? 50));
+      case 'browser_console_messages': {
+        const level = str(args, 'level') ?? 'info';
+        if (!['error', 'warning', 'info', 'debug'].includes(level)) {
+          throw new Error('level must be error, warning, info or debug.');
+        }
+        return text(await session.console(level as ConsoleLevel));
+      }
+      case 'browser_network_requests':
+        return text(
+          await session.network({
+            includeStatic: bool(args, 'static') ?? false,
+            filter: str(args, 'filter')?.slice(0, 200),
+          }),
+        );
       case 'browser_login':
         return text(await this.#login(request, session, slug));
       case 'browser_login_code':
@@ -569,20 +683,22 @@ export class GatewayDispatcher {
     }
   }
 
-  #requireRef(args: Record<string, unknown> | undefined): string {
-    const ref = str(args, 'ref');
-    if (!ref) throw new Error('ref is required — call browser_snapshot first.');
-    return ref;
+  #requireTarget(args: Record<string, unknown> | undefined): string {
+    const target = str(args, 'target');
+    if (!target) throw new Error('target is required: a ref from browser_snapshot.');
+    return target;
   }
 
   async #login(request: GatewayRequest, session: GatewaySession, slug: string): Promise<string> {
     const args = request.args;
-    const usernameRef = str(args, 'usernameRef');
-    const passwordRef = str(args, 'passwordRef');
-    if (!usernameRef || !passwordRef) throw new Error('usernameRef and passwordRef are required.');
+    const usernameTarget = str(args, 'usernameTarget');
+    const passwordTarget = str(args, 'passwordTarget');
+    if (!usernameTarget || !passwordTarget) {
+      throw new Error('usernameTarget and passwordTarget are required.');
+    }
     // Design §6: the login is chosen for the origin of the frame the password field is in
     // (a login form in an iframe of another site gets that site's login, not the tab's).
-    const frameOrigin = await session.frameOrigin(passwordRef);
+    const frameOrigin = await session.frameOrigin(passwordTarget);
     const result = await this.#helena.login(
       request.agentKey,
       slug,
@@ -600,8 +716,8 @@ export class GatewayDispatcher {
     }
     session.guard.track(result.login.password);
     await session.fillLogin(
-      usernameRef,
-      passwordRef,
+      usernameTarget,
+      passwordTarget,
       result.login.username,
       result.login.password,
       frameOrigin,
@@ -611,17 +727,17 @@ export class GatewayDispatcher {
 
   async #loginCode(request: GatewayRequest, session: GatewaySession): Promise<string> {
     const args = request.args;
-    const ref = this.#requireRef(args);
+    const target = this.#requireTarget(args);
     const credentialId = num(args, 'credentialId');
     if (credentialId === undefined) throw new Error('credentialId is required.');
     const result = await this.#helena.loginCode(
       request.agentKey,
       credentialId,
-      await session.frameOrigin(ref),
+      await session.frameOrigin(target),
       { runId: request.runId, messageId: request.messageId },
     );
     session.guard.track(result.code);
-    await session.fillCode(ref, result.code);
+    await session.fillCode(target, result.code);
     return `Filled the current code (valid ${result.secondsRemaining}s more).`;
   }
 }

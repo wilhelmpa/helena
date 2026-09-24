@@ -67,6 +67,7 @@ const plan = http.createServer((request, response) => {
       });
     }
     if (route === 'audit') return answer(200, { stored: true });
+    if (route === 'decide') return answer(200, { effect: 'allow', reason: 'No policy applies' });
     if (route === 'download') return answer(200, { path: `Projects/E2E/Inbox/${input.fileName}` });
     return answer(404, { error: 'unexpected' });
   });
@@ -110,17 +111,28 @@ async function agent(key: string) {
 }
 
 type Content = { type: string; text?: string; data?: string; mimeType?: string };
-const text = (result: { content?: unknown }) =>
-  ((result.content as Content[] | undefined) ?? []).map((part) => part.text ?? '').join('');
+const text = (result: unknown) =>
+  ((result as { content?: Content[] }).content ?? []).map((part) => part.text ?? '').join('');
 
 try {
   const client = await agent('agent-key');
   const tools = await client.listTools();
-  check('the shim lists the 24 tools', tools.tools.length === 24, String(tools.tools.length));
+  check('the shim lists the 27 tools', tools.tools.length === 27, String(tools.tools.length));
+  const click = tools.tools.find((tool) => tool.name === 'browser_click');
+  check(
+    'with the standard parameters and the action category',
+    !!click &&
+      'target' in (click.inputSchema.properties ?? {}) &&
+      'element' in (click.inputSchema.properties ?? {}) &&
+      click._meta?.['helena/action'] === 'write' &&
+      tools.tools.find((tool) => tool.name === 'browser_snapshot')?.annotations?.readOnlyHint ===
+        true,
+    JSON.stringify(click).slice(0, 300),
+  );
   const instructions = client.getInstructions() ?? '';
   check(
     'and tells the agent how to work',
-    instructions.includes('browser_acquire'),
+    instructions.includes('Playwright MCP') && instructions.includes('browser_acquire'),
     instructions.slice(0, 80),
   );
 
@@ -133,18 +145,17 @@ try {
   );
   await stranger.close();
 
-  check('acquire', !(await client.callTool({ name: 'browser_acquire', arguments: {} })).isError);
   const navigated = await client.callTool({
     name: 'browser_navigate',
     arguments: { url: `${SITE}/upload` },
   });
-  check('navigate', !navigated.isError, text(navigated));
+  check('navigate takes control by itself', !navigated.isError, text(navigated));
   const snap = await client.callTool({ name: 'browser_snapshot', arguments: {} });
   const ref = text(snap).match(/button "Datei" \[ref=([a-z0-9]+)\]/)?.[1];
   check('snapshot through MCP', !!ref, text(snap).slice(0, 200));
   const uploaded = await client.callTool({
-    name: 'browser_upload',
-    arguments: { ref, path: 'angebot.txt' },
+    name: 'browser_file_upload',
+    arguments: { target: ref, paths: ['angebot.txt'] },
   });
   check('upload of a file the agent can read, by relative path', !uploaded.isError, text(uploaded));
   const after = await client.callTool({ name: 'browser_snapshot', arguments: {} });
@@ -154,11 +165,11 @@ try {
     text(after).slice(0, 300),
   );
   const missing = await client.callTool({
-    name: 'browser_upload',
-    arguments: { ref, path: '/etc/shadow' },
+    name: 'browser_file_upload',
+    arguments: { target: ref, paths: ['/etc/shadow'] },
   });
   check('a file the agent cannot read is not sent', missing.isError === true, text(missing));
-  const shot = await client.callTool({ name: 'browser_screenshot', arguments: {} });
+  const shot = await client.callTool({ name: 'browser_take_screenshot', arguments: {} });
   const parts = shot.content as Content[];
   check(
     'a screenshot is an image block',
@@ -170,7 +181,7 @@ try {
   await client.close();
   check(
     'Helena was asked for every call',
-    seen.includes('resolve') && seen.includes('audit'),
+    seen.includes('resolve') && seen.includes('audit') && seen.includes('decide'),
     seen.join(','),
   );
 } catch (error) {

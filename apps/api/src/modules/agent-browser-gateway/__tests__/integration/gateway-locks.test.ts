@@ -188,8 +188,12 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
     expect((await waiting).ok).toBe(true);
     expect((await call('mkt', coder, 'browser_click', { ref: 'e2' })).ok).toBe(true);
 
-    // Another project's browser has a lock of its own.
-    expect((await call('ops', ops, 'browser_acquire', { timeoutSec: 0 })).ok).toBe(true);
+    // Another project's browser has a lock of its own, and its first action takes it (the
+    // way agents that know Playwright MCP just start working).
+    expect((await call('ops', ops, 'browser_snapshot')).ok).toBe(true);
+    expect((await call('home', master, 'browser_status', { project: 'OPS' })).text).toContain(
+      'Controlled by: opsbot.',
+    );
 
     // Nobody but the Home-Master names another project, and every socket keeps to its own.
     const across = await call('ops', ops, 'browser_status', { project: 'MKT' });
@@ -239,7 +243,7 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
 
     // Each browser got exactly its own actions.
     expect(pages.get('mkt')!.actions).toEqual(['navigate https://example.com/a', 'click e2']);
-    expect(pages.get('ops')!.actions).toEqual(['navigate https://example.com/ops']);
+    expect(pages.get('ops')!.actions).toEqual(['snapshot', 'navigate https://example.com/ops']);
     expect(pages.get('home')!.actions).toEqual(['snapshot']);
 
     // And the audit is in each project, naming who acted (fire-and-forget: give it a moment).
@@ -249,8 +253,8 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
     expect(mktEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`).reverse()).toEqual(
       ['writer browser_navigate', 'coder browser_click'],
     );
-    expect(opsEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`)).toEqual([
-      'Home browser_navigate',
-    ]);
+    expect(opsEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`).reverse()).toEqual(
+      ['opsbot browser_snapshot', 'Home browser_navigate'],
+    );
   });
 });

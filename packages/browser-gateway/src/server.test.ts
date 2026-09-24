@@ -37,7 +37,7 @@ function fakeHelenaClient(
     handover: mock(async () => ({ approvalId: 77 })),
     handoverDone: mock(async () => {}),
     download: mock(async () => ({ path: 'Projects/MKT/Inbox/x' })),
-    decide: mock(async () => ({ decision: 'allow' as const })),
+    decide: mock(async () => ({ effect: 'allow' as const })),
     policy: mock(async () => ({})),
     ...overrides,
   } as unknown as HelenaClient;
@@ -61,8 +61,11 @@ function fakeSession(
     back: mock(async () => 'Back'),
     reload: mock(async () => 'Reloaded'),
     snapshot: mock(async () => '- button "Login" [ref=e1]'),
-    click: mock(async (ref: string) => `Clicked ${ref}`),
-    type: mock(async (ref: string) => `Typed into ${ref}`),
+    find: mock(async () => 'Found'),
+    click: mock(async (target: string) => `Clicked ${target}`),
+    type: mock(async (target: string) => `Typed into ${target}`),
+    fillForm: mock(async () => 'Filled'),
+    waitFor: mock(async () => 'Waited'),
     select: mock(async () => 'Selected'),
     hover: mock(async () => 'Hovered'),
     drag: mock(async () => 'Dragged'),
@@ -195,17 +198,16 @@ describe('GatewayDispatcher: project scoping', () => {
 });
 
 describe('GatewayDispatcher: control lock', () => {
-  it('refuses a page-touching tool before the lock is acquired', async () => {
-    const gateway = dispatcher();
+  it('a page action takes control by itself when the browser is free', async () => {
+    const locks = new ProjectBrowserLocks(120_000);
+    const gateway = dispatcher({ locks });
     const result = await gateway.handle({
       tool: 'browser_navigate',
       agentKey: 'k',
       args: { url: 'https://x.test' },
     });
-    expect(result).toEqual({
-      ok: false,
-      error: 'Control is not held. Call browser_acquire first.',
-    });
+    expect(result).toEqual({ ok: true, content: 'Navigated to https://x.test' });
+    expect(locks.of('mkt').state().holder).toMatchObject({ kind: 'agent', agentId: 1 });
   });
 
   it('acquires, acts, releases (closing its tabs), then is refused again', async () => {
@@ -220,12 +222,13 @@ describe('GatewayDispatcher: control lock', () => {
     expect(clicked).toEqual({ ok: true, content: 'Clicked e1' });
     expect((await gateway.handle({ tool: 'browser_release', agentKey: 'k' })).ok).toBe(true);
     expect(calls(session.closeTabsOf)).toEqual([[1]]);
+    // Given back, the next action takes it again (nobody else wanted it).
     const after = await gateway.handle({
       tool: 'browser_click',
       agentKey: 'k',
       args: { ref: 'e1' },
     });
-    expect(after.ok).toBe(false);
+    expect(after.ok).toBe(true);
   });
 
   it('names who holds the lock when a tool is refused', async () => {
@@ -235,7 +238,8 @@ describe('GatewayDispatcher: control lock', () => {
     const result = await gateway.handle({ tool: 'browser_snapshot', agentKey: 'k' });
     expect(result).toEqual({
       ok: false,
-      error: 'Control is not held. Call browser_acquire first. The owner controls it.',
+      error:
+        'Someone else works in this browser. The owner controls it. Call browser_acquire to wait for it, or browser_handover if you need the owner.',
     });
   });
 
@@ -338,6 +342,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
       tool: 'browser_login',
       agentKey: 'k',
       runId: 9,
+      // Our first draft's parameter names still work (normalizeArgs).
       args: { usernameRef: 'e1', passwordRef: 'f1e2' },
     });
     expect(result.ok).toBe(true);
@@ -371,7 +376,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
     await gateway.handle({
       tool: 'browser_login',
       agentKey: 'k',
-      args: { usernameRef: 'e1', passwordRef: 'e2' },
+      args: { usernameTarget: 'e1', passwordTarget: 'e2' },
     });
     const later = await gateway.handle({ tool: 'browser_snapshot', agentKey: 'k' });
     expect(later).toEqual({ ok: true, content: '- textbox "Password": [REDACTED]' });
@@ -392,7 +397,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
     const result = await gateway.handle({
       tool: 'browser_login',
       agentKey: 'k',
-      args: { usernameRef: 'e1', passwordRef: 'e2' },
+      args: { usernameTarget: 'e1', passwordTarget: 'e2' },
     });
     expect(result.ok && result.content).toContain('#1 Primary (a@example.com)');
   });
@@ -423,7 +428,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
     await gateway.handle({
       tool: 'browser_login',
       agentKey: 'k',
-      args: { usernameRef: 'e1', passwordRef: 'e2' },
+      args: { usernameTarget: 'e1', passwordTarget: 'e2' },
     });
     expect(helena.audit).not.toHaveBeenCalled();
   });
@@ -435,25 +440,38 @@ describe('GatewayDispatcher: files and pictures', () => {
     const gateway = dispatcher({ sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const result = await gateway.handle({
-      tool: 'browser_upload',
+      tool: 'browser_file_upload',
       agentKey: 'k',
-      args: { ref: 'e4' },
-      upload: { name: '../../etc/report.pdf', mimeType: 'application/pdf', data: 'aGVsbG8=' },
+      args: { target: 'e4' },
+      uploads: [
+        { name: '../../etc/report.pdf', mimeType: 'application/pdf', data: 'aGVsbG8=' },
+        { name: 'b.txt', data: 'Yg==' },
+      ],
     });
     expect(result.ok).toBe(true);
-    const [ref, file] = calls(session.upload)[0] as [string, { name: string; buffer: Buffer }];
-    expect(ref).toBe('e4');
-    expect(file.name).toBe('report.pdf');
-    expect(file.buffer.toString()).toBe('hello');
+    const [files, target] = calls(session.upload)[0] as [
+      { name: string; mimeType: string; buffer: Buffer }[],
+      string,
+    ];
+    expect(target).toBe('e4');
+    expect(files.map((file) => file.name)).toEqual(['report.pdf', 'b.txt']);
+    expect(files[0]!.buffer.toString()).toBe('hello');
+    expect(files[1]!.mimeType).toBe('application/octet-stream');
   });
 
-  it('refuses an upload without a file', async () => {
+  it('answers the open file chooser without a target, and cancels it without files', async () => {
+    const session = fakeSession();
+    const gateway = dispatcher({ sessions: fakeSessions(session) });
+    await gateway.handle({ tool: 'browser_file_upload', agentKey: 'k', args: {} });
+    expect(calls(session.upload)[0]).toEqual([[], undefined]);
+  });
+
+  it('refuses more than ten files', async () => {
     const gateway = dispatcher();
-    await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const result = await gateway.handle({
-      tool: 'browser_upload',
+      tool: 'browser_file_upload',
       agentKey: 'k',
-      args: { ref: 'e4', path: '/etc/passwd' },
+      uploads: Array.from({ length: 11 }, (_, i) => ({ name: `${i}.txt`, data: 'eA==' })),
     });
     expect(result.ok).toBe(false);
   });
@@ -461,7 +479,7 @@ describe('GatewayDispatcher: files and pictures', () => {
   it('hands a screenshot back as an image next to its text', async () => {
     const gateway = dispatcher();
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
-    const result = await gateway.handle({ tool: 'browser_screenshot', agentKey: 'k' });
+    const result = await gateway.handle({ tool: 'browser_take_screenshot', agentKey: 'k' });
     expect(result).toEqual({
       ok: true,
       content: 'Screenshot of the viewport',
@@ -594,7 +612,7 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
     const tab = await gateway.handle({
       tool: 'browser_tabs',
       agentKey: 'k',
-      args: { action: 'open', url: 'https://bank.example/' },
+      args: { action: 'new', url: 'https://bank.example/' },
     });
     expect(navigate.ok).toBe(false);
     expect(tab.ok).toBe(false);
@@ -660,7 +678,20 @@ describe('GatewayDispatcher: policy per call (action categories)', () => {
       via: 'mkt',
       tool: 'browser_click',
       category: 'write',
-      context: { origin: 'https://example.com', target: 'ref e1', formAction: null },
+      context: { origin: 'https://example.com', target: 'ref e1', element: null, formAction: null },
+    });
+  });
+
+  it("gives the policy the element's description the agent named", async () => {
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ helena });
+    await gateway.handle({
+      tool: 'browser_click',
+      agentKey: 'k',
+      args: { target: 'e7', element: 'Bestellung   absenden' },
+    });
+    expect(calls(helena.decide)[0]![0]).toMatchObject({
+      context: { target: 'ref e7 "Bestellung absenden"', element: 'Bestellung absenden' },
     });
   });
 
@@ -685,8 +716,8 @@ describe('GatewayDispatcher: policy per call (action categories)', () => {
 
   it('does nothing when the policy denies or wants an approval, or cannot be asked', async () => {
     for (const answer of [
-      async () => ({ decision: 'deny' as const, reason: 'no sending from this project' }),
-      async () => ({ decision: 'approve' as const, approvalId: 12 }),
+      async () => ({ effect: 'deny' as const, reason: 'no sending from this project' }),
+      async () => ({ effect: 'needs-approval' as const, approvalId: 12 }),
       async () => {
         throw new Error('down');
       },
@@ -710,7 +741,7 @@ describe('GatewayDispatcher: policy per call (action categories)', () => {
   it('names the approval card when one was filed', async () => {
     const gateway = dispatcher({
       helena: fakeHelenaClient({
-        decide: mock(async () => ({ decision: 'approve' as const, approvalId: 12 })),
+        decide: mock(async () => ({ effect: 'needs-approval' as const, approvalId: 12 })),
       }),
     });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });

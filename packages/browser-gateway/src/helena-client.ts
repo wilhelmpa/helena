@@ -160,18 +160,25 @@ export class HelenaClient {
   }
 
   // The policy's answer for one call (docs/volition-helena-oss.md §3a "Richtlinien"): its
-  // action category and what it acts on. 'approve' filed a card in Freigaben (approvalId).
+  // action category and what it acts on. 'needs-approval' filed a card in Freigaben
+  // (approvalId).
   decide(input: {
     agentKey: string;
     projectSlug: string;
     via: string;
     tool: string;
     category: string;
-    context: { origin: string | null; target: string | null; formAction: string | null };
+    context: {
+      origin: string | null;
+      target: string | null;
+      element: string | null;
+      formAction: string | null;
+    };
     runId?: number;
     messageId?: number;
   }): Promise<{
-    decision: 'allow' | 'deny' | 'approve';
+    // @helena/sdk's PolicyEffect.
+    effect: 'allow' | 'needs-approval' | 'deny';
     reason?: string;
     approvalId?: number | null;
   }> {

@@ -14,9 +14,9 @@
 // stay the router's own, which is then the runner's user.
 //
 // Wire protocol, one JSON line in, one JSON line out, per connection (see
-// browser-gateway-mcp-shim-protocol.mjs, the stdio side of this same contract):
+// packages/browser-gateway/src/shim-protocol.ts, the stdio side of this same contract):
 //   -> {"tool": "browser_navigate", "args": {...}, "agentKey": "...", "runId"?, "messageId"?,
-//       "upload"?: {"name","mimeType","data"}}
+//       "uploads"?: [{"name","mimeType","data"}, …]}
 //   <- {"ok": true, "content": "...", "image"?: {"data","mimeType"}} | {"ok": false, "error": "..."}
 import fs from "node:fs/promises";
 import net from "node:net";
@@ -66,7 +66,7 @@ const SOCKET_ROOT = process.env.BROWSER_GATEWAY_SOCKET_ROOT || "/run/volition-br
 const SOCKET_GROUP = process.env.BROWSER_GATEWAY_SOCKET_GROUP || "volition-agents";
 const HELENA_URL = process.env.BROWSER_GATEWAY_API_URL || "http://127.0.0.1:3000";
 const REFRESH_MS = 5_000;
-// A browser_upload carries the file (at most 50 MB) base64-encoded in its one line.
+// A browser_file_upload carries its files (at most 50 MB together) base64-encoded in its one line.
 const MAX_REQUEST_BYTES = 72 * 1024 * 1024;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 

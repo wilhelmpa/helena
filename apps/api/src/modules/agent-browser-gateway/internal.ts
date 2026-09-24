@@ -273,20 +273,28 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       }
       const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
       const raw = (body.context ?? {}) as Record<string, unknown>;
-      const text = (value: unknown) => (typeof value === 'string' ? value.slice(0, 300) : null);
+      const text = (value: unknown, max = 300) =>
+        typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
       const context = {
         tool: body.tool.slice(0, 64),
         origin: text(raw.origin),
         target: text(raw.target),
+        element: text(raw.element, 120),
         formAction: text(raw.formAction),
       };
       const decided = await decideBrowserAction(agent, project, body.category, context);
-      if (decided.decision !== 'approve') return decided;
+      if (decided.effect !== 'needs-approval') {
+        return { effect: decided.effect, reason: decided.reason };
+      }
       if (!project) {
-        return { decision: 'deny', reason: "an approval, which Home's own browser cannot ask for" };
+        return {
+          effect: 'deny',
+          reason: "it needs an approval, which Home's own browser cannot ask for",
+        };
       }
       return {
-        decision: 'approve',
+        effect: 'needs-approval',
+        reason: decided.reason,
         approvalId: await fileBrowserApproval(
           agent,
           project,
