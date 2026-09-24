@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -18,6 +19,7 @@ export default function ProjectDangerZone({ project }: { project: ProjectDetail 
   const t = useTranslations('settings.general.dangerZone');
   const { can } = usePermissions();
   const [showDelete, setShowDelete] = useState(false);
+  const router = useRouter();
 
   if (!can('danger_zone', 'delete')) return null;
 
@@ -47,6 +49,7 @@ export default function ProjectDangerZone({ project }: { project: ProjectDetail 
           teamId={project.project.teamId}
           project={project.project}
           onClose={() => setShowDelete(false)}
+          onDeleted={() => router.replace('/')}
         />
       )}
     </div>

@@ -11,6 +11,7 @@ export default function TeamProjectDeleteDialog({
   teamId,
   project,
   onClose,
+  onDeleted,
 }: {
   teamId: number;
   // Only the fields this dialog actually reads, so a caller that has a
@@ -18,6 +19,8 @@ export default function TeamProjectDeleteDialog({
   // (the team's project list) can pass it straight through.
   project: Pick<TeamProject, 'id' | 'key' | 'name'>;
   onClose: () => void;
+  // A page of the deleted project leaves it (its own settings go to the start page).
+  onDeleted?: () => void;
 }) {
   const t = useTranslations('projects.deleteDialog');
   const [confirmText, setConfirmText] = useState('');
@@ -33,6 +36,7 @@ export default function TeamProjectDeleteDialog({
       onConfirm={async () => {
         await deleteProject.mutateAsync({ teamId, projectId: project.id, projectKey: project.key });
         onClose();
+        onDeleted?.();
       }}
     >
       <div className="space-y-2 text-sm text-muted-foreground">
