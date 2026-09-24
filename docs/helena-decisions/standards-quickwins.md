@@ -10,6 +10,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | F17 | done | see git log | `papaparse` 5.7.0 (MIT) |
 | F18 | done | see git log | `read-excel-file` 9.3.10 (MIT); `write-excel-file` 4.1.1 (MIT) for test fixtures |
 | DB-2 | done | see git log | no library: `escapeLike`/`containsPattern` in `@repo/db` |
+| BRW-01 | done | see git log | `ws` 8.21.3 (MIT) |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -68,3 +69,11 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - One helper pair in `@repo/db` (`packages/db/src/like.ts`): `escapeLike()` and `containsPattern()`. Postgres' default LIKE escape character is the backslash, so no `ESCAPE` clause is needed.
 - Now escaped: roles, initiatives (list and options), teams (projects), note boards, members, and the five Administrator searches (users, projects, teams, team projects, team members). The four places that escaped by hand (issues, mail contacts, chat history, the vault's folder prefix) use the helper; `likePattern()` in chat history stays as a name for its callers (one of them, the Mastra memory, is being removed on hub/native-engine-runtime).
 - Full-text search across sources stays with hub/second-brain (package K).
+
+## BRW-01: `ws` instead of our RFC 6455 server
+
+- `deployment/volition-stack/browser/websocket.mjs` keeps its one export, `acceptWebSocket`, now over `ws`'s `WebSocketServer({noServer: true, maxPayload: 256 KiB, perMessageDeflate: false})`. The connection object is `ws`'s WebSocket, which already had the same surface the live view uses (`message` with `(Buffer, isBinary)`, `close`, `send`, `close(code, reason)`, `bufferedAmount`). Ours is only the 30 s heartbeat (`ws` answers pings but sends none) and an `error` listener (`ws` reports protocol errors as events after closing).
+- `acceptWebSocket` now passes the connection to a callback instead of returning it (`handleUpgrade` promises no synchronous callback); one line in `project-router.mjs`.
+- `ws` (not Bun's server): the router runs under Node, and the browser gateway (hub/agent-browser-mcp) puts patchright into the same process, so switching the runtime was not a quick win.
+- Dependency: `deployment/volition-stack/browser/package.json` (`@helena/browser-router`) is a workspace member (first entry of the root `workspaces`, so hub/framework's added entry does not collide), and the deploy's `bun install --frozen-lockfile` links `ws` next to the router. The gateway could import `@repo/browser-gateway` by name the same way later.
+- Gains: UTF-8 validation (bad text → 1007, test added), permessage-deflate negotiation handled (declined), 64-bit lengths, the close handshake. The old protocol tests stay and pass (61 with `node --test`); the unmasked-frame test now checks the close code, not `ws`'s reason text.

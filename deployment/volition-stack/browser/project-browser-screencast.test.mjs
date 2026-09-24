@@ -277,8 +277,9 @@ afterEach(async () => {
 async function echoServer() {
   server = http.createServer();
   server.on("upgrade", (request, socket, head) => {
-    const connection = acceptWebSocket(request, socket, head);
-    connection?.on("message", (data, binary) => connection.send(binary ? data : data.toString()));
+    acceptWebSocket(request, socket, head, (connection) => {
+      connection.on("message", (data, binary) => connection.send(binary ? data : data.toString()));
+    });
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   return server.address().port;
@@ -353,7 +354,20 @@ describe("WebSocket server", () => {
     assert.deepEqual([...received()], [0x8a, 1, ...Buffer.from("p"), 0x81, 5, ...Buffer.from("hello")]);
     socket.write(clientFrame(0x1, "plain", { masked: false }));
     await until(() => received().length >= 14);
-    assert.deepEqual([...received().subarray(10, 14)], [0x88, 16, 0x03, 0xea]);
+    // A close frame with code 1002 (protocol error); its reason text is the library's.
+    const close = received().subarray(10);
+    assert.equal(close[0], 0x88);
+    assert.deepEqual([...close.subarray(2, 4)], [0x03, 0xea]);
+    socket.destroy();
+  });
+
+  it("closes on a text message that is no UTF-8", async () => {
+    const port = await echoServer();
+    const { socket, received } = await rawClient(port);
+    socket.write(clientFrame(0x1, Buffer.from([0x68, 0xff, 0x69])));
+    await until(() => received().length >= 4);
+    assert.equal(received()[0], 0x88);
+    assert.deepEqual([...received().subarray(2, 4)], [0x03, 0xef]);
     socket.destroy();
   });
 
@@ -370,9 +384,11 @@ describe("WebSocket server", () => {
     let closed = false;
     server = http.createServer();
     server.on("upgrade", (request, socket, head) => {
-      acceptWebSocket(request, socket, head).on("close", () => {
-        closed = true;
-      });
+      acceptWebSocket(request, socket, head, (connection) =>
+        connection.on("close", () => {
+          closed = true;
+        }),
+      );
     });
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const { socket } = await rawClient(server.address().port);
