@@ -1,5 +1,7 @@
-import ConnectionsPage from '@/features/connections/ConnectionsPage';
+import { redirect } from 'next/navigation';
+import { accessPath } from '@/utils/paths';
 
-export default function Connections() {
-  return <ConnectionsPage />;
+// The page is a tab of the access center now.
+export default function Page() {
+  redirect(accessPath('connections'));
 }

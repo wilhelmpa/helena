@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "Pegar"
+  },
+  "clipboard": {
+    "copied": "Copiado al portapapeles"
   }
 }

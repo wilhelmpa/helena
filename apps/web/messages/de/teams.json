@@ -229,6 +229,7 @@
     "labelPlaceholder": "z. B. Team-Konto",
     "labelHint": "Hilft, Zugangsdaten derselben Integration zu unterscheiden. Secrets werden verschlüsselt gespeichert.",
     "noFields": "Keine Felder",
+    "toolCount": "{count, plural, one {# Werkzeug} other {# Werkzeuge}}",
     "search": "Integrationen suchen",
     "noMatches": "Keine Integration passt zu „{query}“.",
     "empty": "Noch keine Zugangsdaten",
@@ -407,7 +408,6 @@
       "reasoning": "Reasoning",
       "maxConcurrentChats": "Parallele Chats",
       "maxConcurrentChatsHint": "Wie viele Chats dieses Agenten ein Mitglied gleichzeitig antworten lassen kann. Weitere Nachrichten werden abgelehnt, bis einer fertig ist.",
-      "toolAllow": "Erlaubte Tools",
       "mcpGrants": "MCP-Freigaben",
       "keysPlaceholder": "Ein Schlüssel pro Zeile",
       "managedFiles": "Verwaltete Markdown-Dateien",
@@ -424,7 +424,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Hermes stellt der Server selbst bereit und hält das Profil synchron.",
-      "runtimeCliHint": "Läuft auf einem Runner mit diesem Preset (helena-runner --agent {kind}); Anweisungen, Skills, MCP-Server, Modell und Reasoning kommen von Helena."
+      "runtimeCliHint": "Läuft als Dienst wie ein Hermes-Agent, in einem eigenen Verzeichnis. Anweisungen, Skills, MCP-Server, Werkzeuge, Modell und Reasoning kommen von Helena; die Anmeldung aus Zugänge (Laufzeit-Anmeldung)."
     },
     "runtimeConflicts": {
       "title": "Außerhalb von Helena geändert",
@@ -709,7 +709,34 @@
       },
       "defaults": "Standard der Laufzeit: {model} ({provider}), Reasoning {reasoning}",
       "servers": "MCP-Server: {servers}",
-      "serversOff": "abgeschaltet: {servers}"
+      "serversOff": "abgeschaltet: {servers}",
+      "version": "Version {version}",
+      "runtimes": {
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "issues": {
+        "notSignedIn": "Laufzeit nicht angemeldet.",
+        "rejected": "Laufzeit-Anmeldung abgelehnt: abgelaufen oder ungültig.",
+        "runtimeMissing": "{runtime} ist auf dem Server nicht installiert.",
+        "sandboxUnavailable": "Sandbox nicht verfügbar: Codex’ eigene Sandbox startet auf diesem Server nicht, deshalb läuft Codex schreibgeschützt und erreicht nur Helenas Werkzeuge, keine Shell. Mit Agenten-Isolation läuft er in seiner eigenen Einheit.",
+        "notSignedInShort": "Laufzeit nicht angemeldet",
+        "runtimeMissingShort": "Laufzeit fehlt",
+        "sandboxUnavailableShort": "Sandbox nicht verfügbar"
+      },
+      "signIn": {
+        "claude": "Im Terminal (Start → Terminal) den Befehl ausführen, im Browser bestätigen und das Token unter Zugänge als Laufzeit-Anmeldung (Claude Code) eintragen. Dann diesem Agenten freigeben.",
+        "codex": "Unter Zugänge einen API-Schlüssel als Laufzeit-Anmeldung (Codex) eintragen und diesem Agenten freigeben. Oder mit ChatGPT anmelden: den Befehl im Terminal (Start → Terminal) ausführen und dem angezeigten Link mit dem Code folgen."
+      },
+      "copyCommand": "Befehl kopieren",
+      "copied": "Kopiert",
+      "openAccess": "Zugänge öffnen",
+      "sandbox": "Sandbox: {mode}",
+      "sandboxModes": {
+        "workspace-write": "Arbeitsordner",
+        "read-only": "nur lesen",
+        "danger-full-access": "Isolation"
+      }
     },
     "runModel": {
       "title": "Modell",

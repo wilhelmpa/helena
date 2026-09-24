@@ -1,65 +1,13 @@
 import { stat } from 'node:fs/promises';
-import path from 'node:path';
+import { mimeFromName } from '@repo/storage/mime';
 
 const TEXT = 'text/plain; charset=utf-8';
 
-const CONTENT_TYPES: Record<string, string> = {
-  '.pdf': 'application/pdf',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.avif': 'image/avif',
-  '.bmp': 'image/bmp',
-  '.svg': 'image/svg+xml',
-  '.heic': 'image/heic',
-  '.mp3': 'audio/mpeg',
-  '.m4a': 'audio/mp4',
-  '.wav': 'audio/wav',
-  '.ogg': 'audio/ogg',
-  '.oga': 'audio/ogg',
-  '.opus': 'audio/ogg',
-  '.flac': 'audio/flac',
-  '.mp4': 'video/mp4',
-  '.m4v': 'video/mp4',
-  '.webm': 'video/webm',
-  '.mov': 'video/quicktime',
-  '.md': 'text/markdown; charset=utf-8',
-  '.markdown': 'text/markdown; charset=utf-8',
-  '.csv': 'text/csv; charset=utf-8',
-  '.json': 'application/json',
-  '.html': 'text/html',
-  '.htm': 'text/html',
-  '.xml': 'application/xml',
-  '.zip': 'application/zip',
-  '.eml': 'message/rfc822',
-  '.ics': 'text/calendar',
-  '.doc': 'application/msword',
-  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  '.xls': 'application/vnd.ms-excel',
-  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  '.ppt': 'application/vnd.ms-powerpoint',
-  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  '.odt': 'application/vnd.oasis.opendocument.text',
-  '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
-  '.odp': 'application/vnd.oasis.opendocument.presentation',
-};
-
-// Plain text the viewer shows with highlighting. Served as text/plain, so a browser
-// never runs any of it.
-const TEXT_EXTENSIONS = new Set(
-  (
-    '.txt .log .ini .conf .cfg .env .toml .yml .yaml .sh .bash .zsh .ps1 .bat .py .rb .php ' +
-    '.js .mjs .cjs .jsx .ts .tsx .css .scss .less .sql .go .rs .java .kt .kts .swift .c .h ' +
-    '.cpp .hpp .cs .lua .r .pl .dockerfile .gradle .properties .diff .patch .tex .srt .vtt'
-  ).split(' '),
-);
-
+// The type comes from the shared MIME module; the text types a viewer shows get their
+// charset, and source code is text/plain there, so a browser never runs any of it.
 export function contentTypeOf(filename: string): string {
-  const extension = path.extname(filename).toLowerCase();
-  if (TEXT_EXTENSIONS.has(extension)) return TEXT;
-  return CONTENT_TYPES[extension] ?? 'application/octet-stream';
+  const type = mimeFromName(filename);
+  return /^text\/(plain|markdown|csv)$/.test(type) ? `${type}; charset=utf-8` : type;
 }
 
 const isText = (contentType: string) =>

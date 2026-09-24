@@ -1,3 +1,5 @@
+import { TZDate } from '@date-fns/tz';
+import { addDays as addCalendarDays, differenceInCalendarDays } from 'date-fns';
 import type { StateType } from '@/lib/api/endpoints/columns';
 import { DEFAULT_LOCALE } from '@/i18n/locales';
 
@@ -19,11 +21,12 @@ export function getDisplayLocale(): string {
   return displayLocale;
 }
 
-// The zone timestamps are rendered in, from the user's account preferences. The API
-// stores and returns UTC; only the display side applies a zone. Held in a module
-// variable so the formatters stay plain functions callable outside React, and set
-// once by PreferencesSync when the preferences load. Empty means "use the browser
-// zone", which is what an unauthenticated or not-yet-loaded screen falls back to.
+// The zone timestamps are rendered in: the zone next-intl renders the page in (the
+// account's, through the timezone cookie; see i18n/request.ts), so these formatters and
+// next-intl's always agree. The API stores and returns UTC; only the display side
+// applies a zone. Held in a module variable so the formatters stay plain functions
+// callable outside React; PreferencesSync sets it in the browser while rendering.
+// Empty means "use the browser zone".
 let displayTimezone = '';
 
 export function setDisplayTimezone(timezone: string): void {
@@ -49,6 +52,23 @@ const RENAMED_ZONES: Record<string, string> = {
 // The current IANA name for a zone, given a possibly outdated one.
 export function canonicalTimezone(zone: string): string {
   return RENAMED_ZONES[zone] ?? zone;
+}
+
+// Whether Intl knows the zone.
+export function isTimeZone(value: string): boolean {
+  if (!value.trim()) return false;
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// A moment as a date whose getters read the display zone (TZDate from @date-fns/tz), or
+// the browser's when no zone is set.
+function inDisplayZone(date: Date): Date {
+  return displayTimezone ? new TZDate(date, displayTimezone) : date;
 }
 
 // The timezone option for Intl. Omitted while no preference is known, so Intl uses
@@ -109,46 +129,25 @@ export function formatDateTime(value: string): string {
   });
 }
 
-// The display zone's offset at a given moment, in ms (zone time minus UTC).
-function zoneOffsetMs(date: Date): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    ...zoneOption(),
-  }).formatToParts(date);
-  const part = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-  const asUtc = Date.UTC(
-    part('year'),
-    part('month') - 1,
-    part('day'),
-    part('hour'),
-    part('minute'),
-    part('second'),
-  );
-  return asUtc - date.getTime();
-}
-
 // The "YYYY-MM-DD" day and "HH:mm" time a moment falls on in the user's zone —
 // the parts a date-time picker edits. Null for an unparseable value.
 export function toZonedParts(value: string): { day: string; time: string } | null {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  const shifted = new Date(date.getTime() + zoneOffsetMs(date)).toISOString();
-  return { day: shifted.slice(0, 10), time: shifted.slice(11, 16) };
+  const zoned = inDisplayZone(date);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return { day: toDateStr(zoned), time: `${pad(zoned.getHours())}:${pad(zoned.getMinutes())}` };
 }
 
-// The moment a day + time in the user's zone stands for, as an ISO string. The
-// offset is resolved against the result as well, so a time on a DST switch lands
-// on the offset in force at the moment itself.
+// The moment a day + time in the user's zone stands for, as an ISO string. A time that a
+// DST switch skips lands on the offset in force after it.
 export function fromZonedParts(day: string, time: string): string {
-  const asUtc = new Date(`${day}T${time}:00Z`);
-  const first = new Date(asUtc.getTime() - zoneOffsetMs(asUtc));
-  return new Date(asUtc.getTime() - zoneOffsetMs(first)).toISOString();
+  const [year, month, date] = day.split('-').map(Number) as [number, number, number];
+  const [hours, minutes] = time.split(':').map(Number) as [number, number];
+  const moment = displayTimezone
+    ? new TZDate(year, month - 1, date, hours, minutes, displayTimezone)
+    : new Date(year, month - 1, date, hours, minutes);
+  return new Date(moment.getTime()).toISOString();
 }
 
 // "Jul 2, 14:05 – 16:30" for a range, rendered in the user's zone; the day is
@@ -234,20 +233,24 @@ export function toDateStr(date: Date): string {
 
 // Whole days between two local dates (b - a), ignoring the time of day.
 export function daysBetween(a: Date, b: Date): number {
-  const day = 24 * 60 * 60 * 1000;
-  const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-  const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-  return Math.round((ub - ua) / day);
+  return differenceInCalendarDays(b, a);
 }
 
-// A compact duration, e.g. "5m", "3h", "11d". Largest whole unit among
-// minutes/hours/days; under a minute reads as "0m".
+// A compact duration in the display language, e.g. "5m", "3h", "11d" in English and
+// "5 Min.", "3 Std.", "11 T" in German (Intl.DurationFormat, narrow). Largest whole unit
+// among minutes/hours/days; under a minute reads as zero minutes.
 export function formatDuration(ms: number): string {
-  const mins = Math.max(0, Math.floor(ms / 60000));
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
+  const minutes = Math.max(0, Math.floor(ms / 60000));
+  const hours = Math.floor(minutes / 60);
+  if (minutes < 60) {
+    // "always": a zero duration would otherwise format as an empty string.
+    return new Intl.DurationFormat(displayLocale, {
+      style: 'narrow',
+      minutesDisplay: 'always',
+    }).format({ minutes });
+  }
+  const duration = hours < 24 ? { hours } : { days: Math.floor(hours / 24) };
+  return new Intl.DurationFormat(displayLocale, { style: 'narrow' }).format(duration);
 }
 
 // The same compact duration, counted from an ISO datetime to now. Empty string for an
@@ -260,7 +263,5 @@ export function formatDurationShort(fromIso: string): string {
 
 // A new local date `n` days after `date` (n may be negative).
 export function addDays(date: Date, n: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + n);
-  return next;
+  return addCalendarDays(date, n);
 }

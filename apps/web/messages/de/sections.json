@@ -66,6 +66,10 @@
     "plugins": {
       "label": "Plugins",
       "description": "Helenas eigene Plugins und die externen aus dem Plugin-Ordner: was sie bereitstellen, welche Rechte sie verlangen und welche laufen dürfen."
+    },
+    "model-prices": {
+      "label": "Modellpreise",
+      "description": "Euro pro Million Tokens je Modell, die Grundlage jeder Kostenschätzung."
     }
   },
   "settings": {
@@ -120,6 +124,10 @@
     "ai-agents": {
       "label": "KI-Agenten",
       "description": "KI-Agenten, die in diesem Projekt arbeiten."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Wie selbstständig die Agenten dieses Projekts handeln, und ihre Budgets."
     },
     "browser": {
       "label": "Browser",

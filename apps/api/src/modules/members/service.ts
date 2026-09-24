@@ -8,6 +8,7 @@ import {
   user,
   aiAgent,
   userPreference,
+  containsPattern,
 } from '@repo/db';
 import { and, desc, eq, ilike, isNotNull, isNull, notExists, or, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
@@ -321,10 +322,10 @@ export function matchesFilters({ search, kind }: MemberFilters) {
   return and(
     term
       ? or(
-          ilike(user.name, `%${term}%`),
-          ilike(user.email, `%${term}%`),
-          ilike(user.username, `%${term}%`),
-          ilike(aiAgent.username, `%${term}%`),
+          ilike(user.name, containsPattern(term)),
+          ilike(user.email, containsPattern(term)),
+          ilike(user.username, containsPattern(term)),
+          ilike(aiAgent.username, containsPattern(term)),
         )
       : undefined,
     kind === 'human' ? isNull(aiAgent.id) : undefined,

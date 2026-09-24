@@ -23,6 +23,28 @@ export type RuntimeId = 'hermes' | 'claude' | 'codex' | (string & {});
 // What a runner works on: a queued run or a chat message.
 export type WorkRef = { runId: number } | { messageId: number };
 
+// The sandbox a runtime with one of its own (Codex) runs the model's commands in. Helena
+// decides it per agent: no sandbox only inside Helena's agent isolation, whose unit is the
+// sandbox then (docs/helena-decisions/cli-runtimes.md §6).
+export type CommandSandbox = 'read-only' | 'workspace-write' | 'danger-full-access';
+
+// Held while a command starts, so that two commands sharing one login file never refresh
+// it at the same moment. Released by the first model output, the end of the command, or a
+// deadline.
+export interface StartGate {
+  acquire(): Promise<() => void>;
+}
+
+// What an adapter asks of the one command a run or chat answer starts.
+export interface CommandHooks {
+  sandbox?: CommandSandbox;
+  startGate?: StartGate;
+  // Sees the command's output as it arrives.
+  output?(chunk: string): void;
+  // Told how the command ended.
+  finished?(outcome: { status: 'success' | 'failed'; error?: string }): void;
+}
+
 // What a run or chat answer hands the runtime besides the task.
 export interface RunSettings {
   // Hermes toolsets the run is limited to; null leaves the runtime's own selection.
@@ -35,6 +57,26 @@ export interface RunSettings {
   // The agent's standing instructions, for a runtime that has no file of its own for them:
   // the adapter puts them in front of the run's own context.
   instructions?: string;
+  hooks?: CommandHooks;
+}
+
+// Why an agent's runtime cannot do its work, or only part of it, as Helena shows it on the
+// agent and in the health overview ("Laufzeit nicht angemeldet").
+export type RuntimeIssueCode =
+  // The runtime's program is not installed where the runner looks for it.
+  | 'runtime-missing'
+  // No login reaches the runtime, or the one it has was refused (detail 'rejected').
+  | 'not-signed-in'
+  // The runtime's own sandbox cannot start here, so it runs read-only (Codex without
+  // Helena's agent isolation).
+  | 'sandbox-unavailable';
+
+export interface RuntimeIssue {
+  code: RuntimeIssueCode;
+  // A short word or a name, never a value that could be a secret.
+  detail?: string;
+  // The command the owner runs in the owner terminal to put it right (sign the runtime in).
+  command?: string;
 }
 
 // The model and reasoning a session actually ran with, as the runtime recorded them.

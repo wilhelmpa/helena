@@ -9,6 +9,10 @@ import {
   user,
 } from '@repo/db';
 import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, notExists, sql } from 'drizzle-orm';
+import type { AutopilotLevel } from '@helena/policy';
+import { resolveLevel } from '#modules/autopilot/levels';
+import { assertProjectNotHeld } from '#modules/autopilot/service';
+import { enforceBudgets } from '#modules/autopilot/budgets';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { recordUsage, type Spend } from '../usage/service';
@@ -575,6 +579,7 @@ export async function sendMessage(input: {
 }): Promise<{ threadId: string; messageId: number; userMessageId: number } | null> {
   const { agentId, userId, prompt } = input;
   await assertNotPaused(agentId);
+  await assertProjectNotHeld(input.projectId);
   return db.transaction(async (tx) => {
     await assertSendRate(tx, agentId, userId);
     await assertConcurrencyLimit(tx, agentId, userId, input.maxConcurrentChats);
@@ -724,6 +729,7 @@ export interface ClaimedChat {
   model: string | null;
   thinkingLevel: string | null;
   images: string[];
+  autopilotLevel: AutopilotLevel;
 }
 
 // The claim's raw row: the answer plus what the prompts are built from.
@@ -733,6 +739,7 @@ interface ClaimedRow {
   attempts: number;
   model: string | null;
   thinkingLevel: string | null;
+  projectId: number | null;
 }
 
 // Fails answers handed out too many times without a result, so a chat whose runner
@@ -800,7 +807,8 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
       m.thread_id AS "threadId",
       m.attempts,
       (SELECT model FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model",
-      (SELECT thinking_level FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "thinkingLevel"
+      (SELECT thinking_level FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "thinkingLevel",
+      (SELECT project_id FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "projectId"
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
@@ -832,6 +840,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
     sessionId,
     ...settings,
     images: imagePaths(attachments),
+    autopilotLevel: (await resolveLevel(agent.id, row.projectId)).level,
   };
 }
 
@@ -1158,6 +1167,9 @@ export async function finishMessage(
     if (result.usage !== undefined) {
       await recordContextUsage(rows[0].threadId, agentId, result.usage);
     }
+    // What the answer spent (recorded above) counts against the agent's budgets (and the
+    // project's): one used up stops the agent here, as a run's result does.
+    await enforceBudgets(agentId, thread?.projectId ?? null, null);
     return true;
   }
   // Stopped from the chat while the command was ending: the answer is already closed,

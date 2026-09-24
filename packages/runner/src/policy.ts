@@ -8,6 +8,7 @@ import { atomicWrite, digest, ensureRoot, ensureSafeParent } from './files';
 import {
   enabledMcpServers,
   ensureConfigLink,
+  ensureEnvFile,
   hermesDrift,
   hermesManagedMcp,
   hermesSessionFacts,
@@ -31,6 +32,7 @@ import {
   type RuntimeActionResult,
   type RuntimeLearning,
 } from './learning';
+import type { CliLogin, CliLoginState } from './cli-login';
 import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
 import { readerCapabilities } from './readers';
 import './hermes-settings';
@@ -41,6 +43,8 @@ import {
   type RunSettings,
   type RuntimeAdapter,
   type RuntimeDefaults,
+  type CommandSandbox,
+  type RuntimeIssue,
   type SessionFacts,
 } from './runtime';
 
@@ -87,7 +91,7 @@ export interface RuntimeStatus {
   capabilities: string[];
   detail: string | null;
   conflicts?: RuntimeConflict[];
-  // What the runner put back after it was changed or removed outside Plan: managed files
+  // What the runner put back after it was changed or removed outside Helena: managed files
   // and plugin links, by their path in the Hermes home.
   restored?: string[];
   inventory?: HermesInventory;
@@ -98,6 +102,12 @@ export interface RuntimeStatus {
   actions?: RuntimeActionResult[];
   // What the runtime will load, read back and compared with what Helena wrote.
   profile?: ProfileReport;
+  // The version of the runtime's program, as it names it ("2.1.281").
+  version?: string | null;
+  // What keeps the runtime from its work, or from part of it.
+  issues?: RuntimeIssue[];
+  // The sandbox the runtime runs the model's commands in, where it has one of its own (Codex).
+  sandbox?: CommandSandbox | null;
 }
 
 // A memory file the agent changed while its writes wait for the owner: what it wrote, and
@@ -114,6 +124,8 @@ export interface RuntimePolicyClient {
   reportRuntimeStatus(status: RuntimeStatus): Promise<void>;
   mcpSecrets(work?: WorkRef): Promise<Record<string, string>>;
   webLogins(work: WorkRef): Promise<WebLogin[]>;
+  // Claude Code and Codex only (cli-login.ts).
+  runtimeLogin?(work?: WorkRef): Promise<CliLogin | CliLoginState | null>;
 }
 
 // What a run or a chat answer hands Hermes besides the task. `logins` names the Plan
@@ -474,6 +486,8 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
     const restored: string[] = [];
     const shared = this.profile?.sharedConfig;
     if (shared && (await ensureConfigLink(this.hermesHome, shared))) restored.push('config.yaml');
+    // Not a change made outside Helena: a new or older home simply has none yet.
+    await ensureEnvFile(this.hermesHome);
     const plugins = join(this.hermesHome, 'plugins');
     for (const [name, source] of Object.entries(this.profile?.plugins ?? {})) {
       if (!PLUGIN_NAME.test(name) || !isAbsolute(source)) {
@@ -734,7 +748,7 @@ function latest(paths: string[]): string[] {
 }
 
 const RESTORED_DETAIL =
-  'Files or plugin links changed outside Plan were restored; a changed file is kept next to it.';
+  'Files or plugin links changed outside Helena were restored; a changed file is kept next to it.';
 
 // How often the runner reads back what Hermes loads when nothing it knows of changed: the
 // shared configuration can change under it. A new revision, a run or chat answer, a restored

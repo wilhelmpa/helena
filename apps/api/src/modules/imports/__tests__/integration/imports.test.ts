@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import ExcelJS from 'exceljs';
+import writeExcelFile from 'write-excel-file/node';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -24,10 +24,7 @@ async function uploadWorkbook(
   rows: string[][],
   name = 'tasks.xlsx',
 ) {
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Tasks');
-  for (const row of rows) sheet.addRow(row);
-  const bytes = Buffer.from(await workbook.xlsx.writeBuffer());
+  const bytes = await writeExcelFile(rows, { sheet: 'Tasks' }).toBuffer();
   return client.projects({ projectKey: 'MKT' })['chat-attachments'].post({
     filename: name,
     contentBase64: bytes.toString('base64'),

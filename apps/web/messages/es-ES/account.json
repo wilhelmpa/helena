@@ -130,6 +130,7 @@
     "timezone": "Zona horaria",
     "timezoneDescription": "Elige la zona en la que trabajas.",
     "timezonePlaceholder": "Seleccionar una zona horaria",
+    "timezoneSearch": "Buscar zona horaria",
     "timezoneEmpty": "No se han encontrado zonas horarias.",
     "timezoneGroups": {
       "America": "Américas",

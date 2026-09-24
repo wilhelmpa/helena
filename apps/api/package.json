@@ -18,12 +18,14 @@
     "test:coverage": "bun test --env-file=../../.env.test --coverage; bun scripts/coverage-report.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1109.0",
     "@dbos-inc/dbos-sdk": "5.0.2",
     "@elysiajs/cors": "^1.4.2",
     "@elysiajs/swagger": "^1.3.1",
     "@firecrawl/pdf-inspector": "^1.17.0",
+    "@helena/connectors": "workspace:*",
+    "@helena/locales": "workspace:*",
     "@helena/loop": "workspace:*",
+    "@helena/policy": "workspace:*",
     "@helena/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@repo/agent-naming": "workspace:*",
@@ -40,15 +42,18 @@
     "decode-named-character-reference": "^1.3.0",
     "drizzle-orm": "^0.45.2",
     "elysia": "^1.4.29",
-    "exceljs": "^4.4.0",
     "mammoth": "^1.12.1",
+    "papaparse": "^5.7.0",
+    "read-excel-file": "^9.3.10",
     "standardwebhooks": "1.1.1"
   },
   "devDependencies": {
     "@elysiajs/eden": "^1.4.9",
     "@repo/eslint-config": "workspace:*",
     "@types/bun": "latest",
+    "@types/papaparse": "^5.5.2",
     "eslint": "^9.39.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "write-excel-file": "^4.1.1"
   }
 }

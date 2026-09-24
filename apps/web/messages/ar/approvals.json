@@ -18,7 +18,11 @@
     "publish": "نشر",
     "pay": "دفع",
     "delete": "حذف",
-    "other": "أخرى"
+    "other": "أخرى",
+    "write": "تغيير",
+    "execute": "تنفيذ",
+    "credentials": "وصول",
+    "budget": "ميزانية"
   },
   "requestedBy": "{agent} (@{username}) في {project}",
   "notePlaceholder": "ملاحظة مع قرارك (اختياري)",

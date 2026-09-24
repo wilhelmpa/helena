@@ -1,0 +1,193 @@
+{
+  "level": {
+    "0": {
+      "name": "Vorschlagen",
+      "description": "Agenten lesen und schlagen vor. Jede Änderung braucht deine Freigabe."
+    },
+    "1": {
+      "name": "Mit Freigabe",
+      "description": "Agenten ändern Aufgaben und Dateien im Projekt. Alles mit Folgen braucht deine Freigabe."
+    },
+    "2": {
+      "name": "Handeln & berichten",
+      "description": "Agenten löschen und führen riskante Befehle im eigenen Arbeitsbereich selbst aus und berichten danach. Nach außen braucht es deine Freigabe."
+    },
+    "3": {
+      "name": "Autonom im Budget",
+      "description": "Agenten handeln ohne Freigabe, bis ein Budget aufgebraucht ist. Bezahlen, Löschen außerhalb und Zugangsdaten gibst du immer frei."
+    }
+  },
+  "levelTitle": "Stufe",
+  "levelSaved": "Autopilot auf Stufe {level} gestellt.",
+  "badge": "A{level}",
+  "badgeTitle": "Autopilot-Stufe {level}: {name}",
+  "summaryMay": "Agenten in diesem Projekt dürfen",
+  "summaryAsk": "Deine Freigabe brauchen sie für",
+  "category": {
+    "read": "lesen",
+    "report": "kommentieren und berichten",
+    "write": "Aufgaben und Dateien ändern",
+    "send": "senden und absenden",
+    "publish": "veröffentlichen, pushen, deployen",
+    "execute": "riskante Befehle ausführen",
+    "delete": "löschen",
+    "pay": "bezahlen",
+    "credentials": "Zugänge, Schlüssel und Rechte ändern"
+  },
+  "categoryLabel": {
+    "read": "Lesen",
+    "report": "Berichten",
+    "write": "Ändern",
+    "send": "Senden",
+    "publish": "Veröffentlichen",
+    "execute": "Ausführen",
+    "delete": "Löschen",
+    "pay": "Bezahlen",
+    "credentials": "Zugänge"
+  },
+  "scope": {
+    "workspace": "im Arbeitsbereich",
+    "external": "außerhalb"
+  },
+  "source": {
+    "project": "vom Projekt",
+    "agent": "eigene, strengere Stufe",
+    "agent-raised": "eigene Stufe, vom Owner erhöht",
+    "default": "Standard"
+  },
+  "reason": {
+    "always-allowed": "Lesen und Berichten ist immer erlaubt.",
+    "level-allows": "Stufe {level} ({name}) erlaubt das.",
+    "approved": "Freigegeben.",
+    "level-requires-approval": "Stufe {level} ({name}) verlangt dafür eine Freigabe.",
+    "hard-block": "Das gibt immer ein Mensch frei, auch in Stufe 3.",
+    "budget-exhausted": "Ein Budget ist aufgebraucht.",
+    "policy": "Eine Regel verlangt es."
+  },
+  "outcome": {
+    "allow": "erlaubt",
+    "needs-approval": "Freigabe nötig",
+    "deny": "gesperrt"
+  },
+  "budgetsTitle": "Budgets",
+  "budgetsHint": "Tage und Monate in UTC. Bei 80 % kommt eine Warnung, bei 100 % stoppt die Arbeit.",
+  "metric": {
+    "tokens": "Tokens",
+    "cost": "Kosten",
+    "time": "Arbeitszeit"
+  },
+  "metricUnit": {
+    "tokens": "Tokens",
+    "cost": "€",
+    "time": "Stunden"
+  },
+  "period": {
+    "day": "pro Tag",
+    "month": "pro Monat"
+  },
+  "noLimit": "kein Limit",
+  "usedOf": "{used} von {limit}",
+  "usedNoLimit": "{used} verbraucht",
+  "remaining": "noch {remaining}",
+  "reached": "aufgebraucht",
+  "warned": "über 80 %",
+  "graceRuns": "{count, plural, one {# Lauf} other {# Läufe}} darüber hinaus",
+  "unpriced": "{tokens} Tokens ohne Preis",
+  "estimate": "Kosten sind Schätzungen aus der Preisliste.",
+  "budgetsSaved": "Budgets gespeichert.",
+  "invalidLimit": "Ein Limit muss eine Zahl über 0 sein.",
+  "agentsTitle": "Agenten",
+  "agentsEmpty": "In diesem Projekt arbeiten noch keine Agenten.",
+  "paused": "pausiert",
+  "logTitle": "Entscheidungen",
+  "logEmpty": "Noch keine Entscheidungen.",
+  "logAll": "Alle",
+  "logMore": "Mehr laden",
+  "adapter": {
+    "hermes": "Hermes",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "mcp": "Helena-Werkzeug",
+    "gateway": "Browser",
+    "workflow": "Workflow",
+    "approval": "Freigabe-Anfrage",
+    "chat": "Chat"
+  },
+  "agent": {
+    "title": "Autopilot",
+    "hint": "Wie selbstständig der Agent handelt und was er ausgeben darf",
+    "own": "Eigene Stufe",
+    "followProject": "Wie das Projekt",
+    "raise": "Mehr erlauben als das Projekt",
+    "raiseHint": "Sonst gilt die strengere Stufe. Nur der Team-Owner kann einem Agenten mehr erlauben.",
+    "inProject": "In {project}",
+    "noProjects": "Der Agent arbeitet in keinem Projekt.",
+    "usage": "Verbrauch",
+    "today": "Heute",
+    "month": "Diesen Monat",
+    "pausedBecause": "Pausiert: {reason}",
+    "budgetsHint": "Gilt für alles, was der Agent tut: Läufe und Chats.",
+    "projectBudgets": "Budgets von {project}",
+    "pausedBudget": "Pausiert: {budget} ({metric}) aufgebraucht, {usage}."
+  },
+  "card": {
+    "title": "Budget aufgebraucht",
+    "agentBudget": "{budget} ({metric}) von {agent}",
+    "projectBudget": "{budget} ({metric}) von Projekt {project}",
+    "raise": "Budget erhöhen",
+    "once": "Einmalig fortsetzen",
+    "keep": "Gestoppt lassen",
+    "newLimit": "Neues Limit",
+    "raisedToast": "Budget erhöht. Die Arbeit geht weiter.",
+    "onceToast": "Ein weiterer Lauf darf starten.",
+    "keptToast": "Die Arbeit bleibt gestoppt.",
+    "raised": "Budget erhöht von {name}",
+    "continuedOnce": "Einmal fortgesetzt von {name}",
+    "kept": "Gestoppt gelassen von {name}",
+    "limitTooLow": "Das neue Limit muss über dem Verbrauch liegen.",
+    "periodBudget": {
+      "day": "Tagesbudget",
+      "month": "Monatsbudget"
+    }
+  },
+  "request": {
+    "level": "Stufe {level}",
+    "reason": "Warum eine Freigabe"
+  },
+  "prices": {
+    "estimate": "Alle Preise sind Schätzungen: von models.dev in Euro umgerechnet oder von Hand eingetragen.",
+    "search": "Modell suchen",
+    "model": "Modell",
+    "provider": "Anbieter",
+    "input": "Eingabe",
+    "output": "Ausgabe",
+    "cacheRead": "Cache lesen",
+    "cacheWrite": "Cache schreiben",
+    "perMTok": "€ pro 1 Mio. Tokens",
+    "sourceLabel": "Quelle",
+    "source": {
+      "modelsDev": "models.dev",
+      "manual": "von Hand"
+    },
+    "import": "Von models.dev aktualisieren",
+    "importing": "Aktualisiere …",
+    "importedToast": "{count} Preise aktualisiert, {manual} von Hand eingetragene behalten.",
+    "rate": "Wechselkurs",
+    "rateHint": "Euro pro US-Dollar für die Preise von models.dev",
+    "rateSaved": "Wechselkurs gespeichert, Preise neu umgerechnet.",
+    "importedAt": "Zuletzt aktualisiert: {date} ({from})",
+    "from": {
+      "snapshot": "mitgelieferte Liste",
+      "modelsDev": "models.dev"
+    },
+    "add": "Preis eintragen",
+    "edit": "Bearbeiten",
+    "reset": "Zurücksetzen",
+    "resetToast": "Der Preis von {model} kommt wieder von models.dev.",
+    "savedToast": "Preis von {model} gespeichert.",
+    "dialogTitle": "Preis von Hand",
+    "dialogHint": "Ein von Hand eingetragener Preis wird bei keinem Import überschrieben.",
+    "empty": "Keine Preise gefunden.",
+    "none": "–"
+  }
+}

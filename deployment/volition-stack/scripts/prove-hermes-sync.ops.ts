@@ -1,9 +1,10 @@
 // The proof that what is set for an agent in Helena reaches its runtime exactly and stays in
 // sync (prove-hermes-sync.ts). Fs-free and process-free, so it runs in Bun with an API key
 // and in a signed-in Helena tab with the session (prove-hermes-sync.browser.ts). What only a
-// process on the server can do (read a profile file with sudo, replace config.yaml, start a
-// Claude Code or Codex runner) is the `host`'s; without a host those steps are skipped or
-// proven another way, and the report says so.
+// process on the server can do (read a profile file with sudo, replace config.yaml) is the
+// `host`'s; without a host those steps are skipped or proven another way, and the report
+// says so. Hermes, Claude Code and Codex agents all run on the server's own runner: a new
+// test agent has to come online by itself (hub/cli-runtimes).
 
 import type { Transport } from '../../../scripts/helena-bundle-sync.ts';
 
@@ -21,6 +22,9 @@ export interface ProofOptions {
   tamper?: boolean;
   // Delete the test agents afterwards (removes the Hermes test runtime again).
   removeAgents?: boolean;
+  // Grant the Claude Code or Codex test agent the newest runtime login of its runtime in
+  // Zugänge ("Laufzeit-Anmeldung"), keeping every grant it already has. Default: true.
+  grantLogin?: boolean;
   // How long one run may take, in minutes.
   timeoutMin?: number;
 }
@@ -32,11 +36,6 @@ export interface ProofHost {
   // Replaces the profile's config.yaml by a copy of the file it links to.
   replaceConfigLink(profile: string): { ok: boolean; detail: string };
   isConfigLink(profile: string): boolean;
-  // Starts a runner of that preset for the agent with its key; stop() ends it.
-  startCliRunner(
-    runtime: 'claude' | 'codex',
-    apiKey: string,
-  ): { stop(): Promise<void>; log(): string };
 }
 
 export interface Check {
@@ -72,6 +71,19 @@ interface RuntimeSync {
   appliedRevision: string | null;
   rewritePending: boolean;
   profile: { hash: string; drift: { key: string; code: string; detail?: string }[] } | null;
+  // Absent on a server before hub/cli-runtimes.
+  version?: string | null;
+  issues?: { code: string; detail?: string; command?: string }[];
+  sandbox?: 'workspace-write' | 'read-only' | 'danger-full-access' | null;
+}
+
+interface CredentialEntry {
+  id: number;
+  kind: string;
+  label: string;
+  runtime?: string | null;
+  agentIds: number[];
+  updatedAt: string;
 }
 
 interface Run {
@@ -204,8 +216,9 @@ export async function runProof(
     ].join('\n');
   }
 
-  // The test agent of a runtime, created once and reused. A Claude Code or Codex agent's key
-  // is issued again for the runner the host starts; it never leaves this function otherwise.
+  // The test agent of a runtime, created once and reused. With `wantKey` its key is issued
+  // again and handed back (no caller needs it since every runtime runs on the server's own
+  // runner); it never leaves this function otherwise.
   async function ensureAgent(
     info: ProjectInfo,
     runtime: Runtime,
@@ -511,7 +524,25 @@ export async function runProof(
     }
   }
 
-  // ── Claude Code and Codex: a runner of that preset, started by the host ───────────────
+  // ── Claude Code and Codex: the server's own runner, like Hermes ─────────────────────
+
+  // The newest runtime login of the runtime in Zugänge, granted to the agent as well.
+  async function grantLogin(info: ProjectInfo, runtime: 'claude' | 'codex', agent: Agent) {
+    const page = await api<{ items: CredentialEntry[] }>(
+      'GET',
+      `/teams/${info.teamId}/credentials?kind=runtime_login&limit=100`,
+    );
+    const login = page.items
+      .filter((entry) => entry.runtime === runtime)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    if (!login) return null;
+    if (!login.agentIds.includes(agent.id)) {
+      await api('PUT', `/teams/${info.teamId}/credentials/${login.id}/grants`, {
+        agentIds: [...login.agentIds, agent.id],
+      });
+    }
+    return login;
+  }
 
   async function proveCli(
     runtime: 'claude' | 'codex',
@@ -520,38 +551,77 @@ export async function runProof(
     skillId: number,
     skillMarker: string,
   ) {
-    if (!host) {
-      skip(runtime, 'proof', 'needs a runner on the server (prove-hermes-sync.ts)');
-      return;
-    }
     const instruction = marker(`PROOF-${runtime.toUpperCase()}`);
-    const { agent, apiKey } = await ensureAgent(
+    const started = Date.now();
+    const { agent, created } = await ensureAgent(
       info,
       runtime,
       instructions(instruction),
       skillId,
-      true,
+      false,
     );
-    if (!apiKey) throw new Error(`No key for ${agent.username}`);
-    const runner = host.startCliRunner(runtime, apiKey);
-    try {
-      const online = await until(
-        `${runtime} runner to report its profile`,
-        async () => {
-          const current = await sync(info.teamId, agent.id);
-          return current.state === 'synced' ? current : null;
-        },
-        3 * 60_000,
+    evidence[`${runtime}.agent`] = { id: agent.id, username: agent.username, created };
+    const login = options.grantLogin === false ? null : await grantLogin(info, runtime, agent);
+    evidence[`${runtime}.login`] = login ? { credential: login.id, label: login.label } : null;
+
+    // A new agent comes online by itself: provisioning writes its runtime, the runner restarts
+    // and applies its settings. Codex outside agent isolation reports its read-only sandbox
+    // as an issue, which is expected and does not stop the proof.
+    const blocking = (state: RuntimeSync) =>
+      (state.issues ?? []).filter((issue) => issue.code !== 'sandbox-unavailable');
+    const online = await until(
+      `the ${runtime} test agent to be online with its settings applied`,
+      async () => {
+        const state = await sync(info.teamId, agent.id);
+        const applied = state.appliedRevision === state.revision && !!state.profile;
+        if (!applied || state.state === 'offline' || state.state === 'pending') return null;
+        return state;
+      },
+      timeoutMs,
+    );
+    check(
+      runtime,
+      created ? 'new agent came online by itself' : 'agent online',
+      true,
+      `${Math.round((Date.now() - started) / 1000)} s, profile ${online.profile?.hash.slice(0, 19)}`,
+    );
+    check(runtime, 'runtime installed', !!online.version, online.version ?? 'no version reported');
+    const problems = blocking(online);
+    check(
+      runtime,
+      'runtime signed in',
+      problems.length === 0,
+      problems.length === 0
+        ? login
+          ? `runtime login "${login.label}"`
+          : "the agent's own login"
+        : problems
+            .map((issue) => `${issue.code}${issue.detail ? ` (${issue.detail})` : ''}`)
+            .join(', ') +
+            (login ? '' : ' — add a Laufzeit-Anmeldung in Zugänge') +
+            (problems[0]?.command ? `; command: ${problems[0].command}` : ''),
+    );
+    if (runtime === 'codex') {
+      // Never without a sandbox outside isolation: its own sandbox (working folder) where it
+      // starts, read-only where it does not; none only inside isolation.
+      const mode = online.sandbox ?? null;
+      check(
+        runtime,
+        'sandbox policy',
+        mode === 'workspace-write' || mode === 'read-only' || mode === 'danger-full-access',
+        mode === 'workspace-write'
+          ? "Codex' own sandbox, writes in the working folder"
+          : mode === 'read-only'
+            ? "read-only: Codex' own sandbox does not start here, so it reaches only Helena's tools"
+            : mode === 'danger-full-access'
+              ? 'no sandbox of its own inside agent isolation'
+              : 'no sandbox reported',
       );
-      check(runtime, 'runner applied the settings', true, `profile ${online.profile?.hash.slice(0, 19)}`);
-      const description = marker('DESC');
-      const { run, answer } = await oneRun(info, labelId, agent, proofQuestion, description);
-      checkRun(runtime, run, answer, { instruction, skill: skillMarker, description });
-    } catch (error) {
-      check(runtime, 'run', false, `${String(error)} | runner log: ${runner.log().slice(-600)}`);
-    } finally {
-      await runner.stop();
     }
+    if (problems.length > 0) return;
+    const description = marker('DESC');
+    const { run, answer } = await oneRun(info, labelId, agent, proofQuestion, description);
+    checkRun(runtime, run, answer, { instruction, skill: skillMarker, description });
   }
 
   // ── The proof ────────────────────────────────────────────────────────────────────────

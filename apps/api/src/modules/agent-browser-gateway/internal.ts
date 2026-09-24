@@ -245,9 +245,16 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       if (credentialId === undefined || typeof body.frameOrigin !== 'string') {
         throw new HttpError(400, 'Invalid request');
       }
+      // A gateway older than the project in this call names none: then a grant to any
+      // project the agent works in counts, as for a chat answer.
+      const project =
+        body.projectSlug === undefined
+          ? null
+          : (await authorizeTarget(agent, body.projectSlug, body.via)).project;
       return loginCode(
         agent,
         { runId: optionalId(body.runId), messageId: optionalId(body.messageId) },
+        project?.id ?? null,
         credentialId,
         body.frameOrigin,
       );
@@ -293,7 +300,10 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         element: text(raw.element, 120),
         formAction: text(raw.formAction),
       };
-      const decided = await decideBrowserAction(agent, project, body.category, context);
+      const decided = await decideBrowserAction(agent, project, body.category, context, {
+        runId: optionalId(body.runId) ?? null,
+        messageId: optionalId(body.messageId) ?? null,
+      });
       if (decided.effect !== 'needs-approval') {
         return { effect: decided.effect, reason: decided.reason };
       }

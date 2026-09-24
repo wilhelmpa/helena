@@ -16,6 +16,7 @@ import {
   cycle,
   projectViewFolder,
   user,
+  containsPattern,
 } from '@repo/db';
 import { alias } from 'drizzle-orm/pg-core';
 import {
@@ -289,12 +290,6 @@ export interface IssueSearchHit {
   archived: boolean;
 }
 
-// Escapes LIKE metacharacters so the query is matched literally (Postgres LIKE uses
-// '\' as the default escape character).
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
-
 // The filters of an issue search or of the filtered list (list_issues): a text search,
 // exact ids and values, a due window in YYYY-MM-DD, and a result limit (1 to 200). An
 // issue must carry every label in labelIds; a null filter matches the issues where the
@@ -334,7 +329,7 @@ export async function searchIssues(
   const raw = filters.query?.trim();
   let seqMatch: number | null = null;
   if (raw) {
-    const pattern = `%${escapeLike(raw)}%`;
+    const pattern = containsPattern(raw);
     // Recognise the issue number: a bare number, or "KEY-42" whose key matches this
     // project. Matched against sequence_number (the identifier is not a column).
     if (/^\d+$/.test(raw)) {
@@ -544,7 +539,7 @@ export async function listIssuesAcrossProjects(
   if (filters.due === 'week') conds.push(sql`${issue.dueDate} BETWEEN ${today} AND ${today} + 7`);
   const text = filters.q?.trim();
   if (text) {
-    const pattern = `%${escapeLike(text)}%`;
+    const pattern = containsPattern(text);
     conds.push(
       or(
         ilike(issue.title, pattern),

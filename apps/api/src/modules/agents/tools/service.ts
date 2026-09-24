@@ -1,4 +1,4 @@
-import { db, agentTool, agentToolLink, integrationCredential } from '@repo/db';
+import { db, agentTool, agentToolLink, integrationCredential, openCredential } from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { resolveText } from '@helena/sdk';
 import { registries } from '#shared/helena';

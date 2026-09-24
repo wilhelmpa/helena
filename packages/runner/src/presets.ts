@@ -15,6 +15,25 @@ export type PresetName = 'claude' | 'codex' | 'opencode' | 'antigravity' | 'copi
 // The settings a task passes to a preset's command line.
 export type PresetTaskSettings = RuntimeTaskSettings;
 
+// Claude Code asks Helena's policy engine before each tool call through a PreToolUse hook
+// (the runner's `policy-hook`). At Autopilot level 0 it plans only: it proposes, it changes
+// nothing.
+function claudeAutopilotArgs({ autopilotLevel, policyHook }: PresetTaskSettings): string[] {
+  return [
+    ...(autopilotLevel === 0 ? ['--permission-mode', 'plan'] : []),
+    ...(policyHook
+      ? [
+          '--settings',
+          JSON.stringify({
+            hooks: {
+              PreToolUse: [{ matcher: '*', hooks: [{ type: 'command', command: policyHook }] }],
+            },
+          }),
+        ]
+      : []),
+  ];
+}
+
 // A preset is the command line of a runtime the runner starts as a one-shot CLI: the
 // @helena/sdk CliCommand of a built-in runtime (see runtimes.ts), with one of the output
 // formats agui.ts reads.
@@ -42,10 +61,12 @@ export const PRESETS: Record<PresetName, Preset> = {
       '--permission-mode',
       'auto',
     ],
-    // The agent's model and reasoning in Helena; without them Claude Code uses its own.
-    taskArgs: ({ model, thinkingLevel }) => [
-      ...(model ? ['--model', model] : []),
-      ...(thinkingLevel ? ['--effort', thinkingLevel] : []),
+    // The agent's model and reasoning in Helena (without them Claude Code uses its own),
+    // and Helena's Autopilot: the policy hook and, at level 0, plan mode.
+    taskArgs: (settings) => [
+      ...(settings.model ? ['--model', settings.model] : []),
+      ...(settings.thinkingLevel ? ['--effort', settings.thinkingLevel] : []),
+      ...claudeAutopilotArgs(settings),
     ],
     tail: [],
   },
@@ -53,21 +74,21 @@ export const PRESETS: Record<PresetName, Preset> = {
   // Resuming is a subcommand, and it accepts a narrower set of options than plain `exec` —
   // notably no --sandbox, --cd or --profile. An argument only `exec` takes would break
   // every message after the first, so the sandbox is set through `-c sandbox_mode=…`,
-  // which both accept.
+  // which both accept. The sandbox comes last, after the operator's arguments, so the one
+  // Helena decided is the one that holds (execute.ts refuses a command without a sandbox
+  // outside agent isolation).
   codex: {
     bin: 'codex',
     outputFormat: 'codex-jsonl',
     promptVia: 'stdin',
-    head: (sessionId) => [
-      ...(sessionId ? ['exec', 'resume', sessionId] : ['exec']),
-      '--json',
-      '-c',
-      'sandbox_mode="workspace-write"',
-    ],
-    // Both `exec` and `exec resume` take -m and -c.
-    taskArgs: ({ model, thinkingLevel }) => [
+    head: (sessionId) => [...(sessionId ? ['exec', 'resume', sessionId] : ['exec']), '--json'],
+    // Both `exec` and `exec resume` take -m and -c. Codex has no hook to ask Helena before a
+    // tool call; at Autopilot level 0 its sandbox is read-only, so it can only propose.
+    taskArgs: ({ model, thinkingLevel, sandbox, autopilotLevel }) => [
       ...(model ? ['-m', model] : []),
       ...(thinkingLevel ? ['-c', `model_reasoning_effort=${JSON.stringify(thinkingLevel)}`] : []),
+      '-c',
+      `sandbox_mode=${JSON.stringify(autopilotLevel === 0 ? 'read-only' : (sandbox ?? 'workspace-write'))}`,
     ],
     tail: ['-'],
   },

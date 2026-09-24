@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { OwnerTerminalKind } from '@/lib/api/endpoints/owner-terminal';
@@ -14,6 +15,7 @@ import StepUpDialog from './components/StepUpDialog';
 import GrantBanner from './components/GrantBanner';
 import TerminalTabBar from './components/TerminalTabBar';
 import MobileKeyBar from './components/MobileKeyBar';
+import { attachTerminalClipboard } from './utils/terminalClipboard';
 
 export interface OpenTerminalTab {
   kind: OwnerTerminalKind;
@@ -103,6 +105,18 @@ export default function OwnerTerminalPanel() {
       observer.disconnect();
     };
   }, [activeKey, grant.data?.active]);
+
+  // Copy and paste in every open terminal (owner, 2026-09-24: "ich muss copy paste
+  // können im Terminal"); see utils/terminalClipboard.ts.
+  useEffect(() => {
+    if (!grant.data?.active) return;
+    const copied = () =>
+      toast.success(t('clipboard.copied'), { id: 'terminal-copied', duration: 1500 });
+    const cleanups = Object.values(frames.current)
+      .filter((frame): frame is HTMLIFrameElement => !!frame)
+      .map((frame) => attachTerminalClipboard(frame, copied));
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [tabs, grant.data?.active, t]);
 
   if (grant.isLoading) return null;
   if (!grant.data?.active) return <StepUpDialog onSuccess={() => grant.refetch()} />;

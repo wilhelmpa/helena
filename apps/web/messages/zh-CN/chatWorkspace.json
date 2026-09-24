@@ -150,7 +150,11 @@
       "publish": "发布",
       "pay": "付款",
       "delete": "删除",
-      "other": "其他"
+      "other": "其他",
+      "write": "修改",
+      "execute": "执行",
+      "credentials": "凭据",
+      "budget": "预算"
     },
     "notePlaceholder": "随决定附上的备注（可选）",
     "approve": "批准",

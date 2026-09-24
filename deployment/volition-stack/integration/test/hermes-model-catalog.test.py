@@ -71,9 +71,8 @@ class HermesModelCatalogTest(unittest.TestCase):
 
 
 
-class IsolatedRuntimeTest(unittest.TestCase):
-    """With AGENT_ISOLATION=on the runner config names each agent's project and profile, the
-    catalog writes nothing into the profiles, and Home gets a profile and workspace of its own."""
+class RuntimeFixture:
+    """A Hermes home with one project agent's descriptor and a runner template."""
 
     def setUp(self):
         import json
@@ -128,6 +127,11 @@ class IsolatedRuntimeTest(unittest.TestCase):
                               {'toolsets': ['terminal'], 'mcpServers': []}, None, self.dir / 'plugins')
         return self.json.loads(output.read_text())
 
+
+class IsolatedRuntimeTest(RuntimeFixture, unittest.TestCase):
+    """With AGENT_ISOLATION=on the runner config names each agent's project and profile, the
+    catalog writes nothing into the profiles, and Home gets a profile and workspace of its own."""
+
     def test_names_project_and_profile_and_leaves_profiles_alone(self):
         self.os.environ['AGENT_ISOLATION'] = 'on'
         agents = self.runtime()['agents']
@@ -180,6 +184,90 @@ class IsolatedRuntimeTest(unittest.TestCase):
         self.assertNotIn('isolation', agents[0])
         self.assertEqual(agents[0]['env']['HERMES_HOME'], str(self.home))
         self.assertTrue((self.home / 'profiles' / 'alpha_7' / 'config.yaml').is_symlink())
+
+
+class CliRuntimeCatalogTest(RuntimeFixture, unittest.TestCase):
+    """A descriptor that names Claude Code or Codex becomes a runner entry of that preset, in
+    the agent's profile directory as its home, with nothing of Hermes linked into it."""
+
+    def setUp(self):
+        super().setUp()
+        for name, agent_id, runtime in (('alpha_21', 21, 'claude'), ('alpha_22', 22, 'codex')):
+            descriptor = {
+                'schemaVersion': 1,
+                'username': f'{runtime}-coder',
+                'hermesHome': str(self.home / 'profiles' / name),
+                'globalHermesHome': str(self.home),
+                'apiKey': 'c' * 32,
+                'cwd': '/srv/volition/workspaces/projects/alpha',
+                'projectId': 3,
+                'teamId': 1,
+                'planAgentId': agent_id,
+                'runtime': runtime,
+            }
+            path = self.descriptors / f'{name}.json'
+            path.write_text(self.json.dumps(descriptor))
+            self.os.chmod(path, 0o600)
+        self.template.write_text(self.json.dumps({
+            'url': 'http://127.0.0.1:3000', 'agent': 'hermes', 'args': ['--checkpoints'],
+            'concurrency': 3, 'timeoutMs': 1800000,
+        }))
+        CATALOG.configured_route = lambda: ('openai-codex', None)
+        CATALOG.catalog_models = lambda provider: [
+            {**model('gpt-5.6-luna'), 'provider': 'openai-codex'},
+            {**model('claude-opus-5-5'), 'provider': 'anthropic'},
+        ]
+        plugin = self.dir / 'plugins' / 'plan-approval-guard'
+        plugin.mkdir(parents=True)
+        (plugin / '__init__.py').write_text('')
+
+    def entries(self):
+        return {agent['name']: agent for agent in self.runtime()['agents']}
+
+    def test_serves_claude_code_and_codex_agents_in_their_own_homes(self):
+        self.os.environ.pop('AGENT_ISOLATION', None)
+        agents = self.entries()
+        claude, codex = agents['claude-coder'], agents['codex-coder']
+        claude_home = self.home / 'profiles' / 'alpha_21'
+        self.assertEqual(claude['agent'], 'claude')
+        self.assertEqual(claude['args'], [])
+        self.assertEqual(claude['env']['HELENA_AGENT_HOME'], str(claude_home))
+        self.assertEqual(claude['env']['CLAUDE_CONFIG_DIR'], str(claude_home / '.claude'))
+        self.assertNotIn('HERMES_HOME', claude['env'])
+        self.assertNotIn('hermes', claude)
+        self.assertNotIn('provider', claude)
+        self.assertEqual(claude['concurrency'], 3)
+        self.assertEqual([m['id'] for m in claude['models']], ['fable', 'opus', 'sonnet', 'haiku'])
+        self.assertEqual(codex['agent'], 'codex')
+        self.assertEqual(codex['env']['CODEX_HOME'], str(self.home / 'profiles' / 'alpha_22' / '.codex'))
+        # Codex offers the models of the ChatGPT Codex backend Hermes lists, not Anthropic's.
+        self.assertEqual([m['id'] for m in codex['models']], ['gpt-5.6-luna'])
+        self.assertNotIn('provider', codex['models'][0])
+        # Its home exists, private, and holds no Hermes link.
+        self.assertEqual(claude_home.stat().st_mode & 0o777, 0o700)
+        self.assertFalse((claude_home / 'config.yaml').exists())
+        self.assertFalse((claude_home / 'plugins').exists())
+        # The Hermes agent next to them is served as before.
+        self.assertEqual(agents['writer']['agent'], 'hermes')
+        self.assertEqual(agents['writer']['args'], ['--checkpoints'])
+
+    def test_isolated_agents_name_their_project_and_profile(self):
+        self.os.environ['AGENT_ISOLATION'] = 'on'
+        claude = self.entries()['claude-coder']
+        self.assertEqual(claude['isolation'], {'slug': 'alpha', 'profile': 'alpha_21', 'agentId': 21})
+        # The profile is the project user's: the catalog creates nothing in it.
+        self.assertFalse((self.home / 'profiles' / 'alpha_21').exists())
+
+    def test_leaves_out_a_descriptor_with_an_unknown_runtime(self):
+        self.os.environ.pop('AGENT_ISOLATION', None)
+        path = self.descriptors / 'alpha_21.json'
+        descriptor = self.json.loads(path.read_text())
+        descriptor['runtime'] = 'opencode'
+        path.write_text(self.json.dumps(descriptor))
+        runtime = self.runtime()
+        self.assertNotIn('claude-coder', [agent['name'] for agent in runtime['agents']])
+        self.assertEqual(runtime['helenaProblems'],
+                         ['alpha_21: Hermes runner descriptor names an unknown runtime'])
 
 
 if __name__ == '__main__':

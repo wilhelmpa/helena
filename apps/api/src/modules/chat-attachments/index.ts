@@ -13,6 +13,7 @@ import {
   deleteAttachmentObject,
   safeAttachmentFilename,
   storeAttachmentObject,
+  uploadContentType,
 } from '#modules/attachments/storage';
 import {
   ChatAttachmentContentResponse,
@@ -34,13 +35,6 @@ import {
 // Chat attachments: files uploaded in an agent chat. The upload and read routes
 // are MCP tools, so an agent can drop a file and read one back over MCP; the download route is public, like an issue
 // attachment's, so the link a chat message renders works for anyone viewing it.
-
-// A browser reports no type for a .md or .txt file on some platforms, and the
-// instance allowlist matches on the type, so the extension answers for it.
-const EXTENSION_TYPES: Record<string, string> = {
-  md: 'text/markdown',
-  txt: 'text/plain',
-};
 
 // Object keys are grouped by project so a project's bytes sit under one prefix in
 // the bucket, which is what makes per-project listing, cleanup, and policies
@@ -81,9 +75,9 @@ export const chatAttachmentRoutes = new Elysia({
         throw new HttpError(400, 'contentBase64 is empty or not valid base64');
       }
       let filename = safeAttachmentFilename(body.filename);
-      const extension = filename.toLowerCase().split('.').pop() ?? '';
-      let contentType =
-        body.contentType || EXTENSION_TYPES[extension] || 'application/octet-stream';
+      // A browser reports no type for a .md or .txt file on some platforms; the name
+      // answers for it then, and the bytes decide over any claim.
+      let contentType = await uploadContentType(bytes, filename, body.contentType);
       await assertAttachmentUploadAllowed(project.id, bytes.length, contentType);
 
       // A PDF is stored as the Markdown it converts to: the original is

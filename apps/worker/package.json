@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@dbos-inc/dbos-sdk": "5.0.2",
+    "@helena/connectors": "workspace:*",
     "@helena/loop": "workspace:*",
     "@helena/sdk": "workspace:*",
     "@repo/crypto": "workspace:*",

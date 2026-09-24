@@ -19,11 +19,13 @@ import { getProjectByKey } from '#modules/projects/service';
 import { listTeams } from '#modules/teams/service';
 import { host, registries } from '#shared/helena';
 import type { McpApp } from './types';
-import { routeTools, withoutFields, type McpRouteTool } from './generate';
+import { routeTools, toolTitle, withoutFields, type McpRouteTool } from './generate';
 import { dispatchTool } from './dispatch';
 import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
 import { toolError } from './result';
+import { visibleConnectors } from '#modules/connectors/tools';
+import { SERVER_INFO } from './info';
 
 // The path param of every team-scoped route.
 const TEAM_PARAM = 'teamId';
@@ -83,11 +85,13 @@ export async function buildMcpServer(
   app: McpApp,
   credential: McpCredential,
   userId: string,
+  // The run an agent's runtime names on its requests (x-helena-run), for the policy log.
+  context: { runId?: number | null } = {},
 ): Promise<Server> {
   const server = new Server(
     // `name` is the stable programmatic identifier; `title` is the human-readable
     // display name a client shows to the user (per the MCP Implementation spec).
-    { name: 'itsaplan', title: 'Helena', version: '1.0.0' },
+    SERVER_INFO,
     // `instructions` reaches the client in the initialize response and covers what
     // no single tool description can: which tool resolves ids, how a column is
     // picked, how far a request to "work on an issue" goes.
@@ -97,13 +101,26 @@ export async function buildMcpServer(
   const routes = new Map(routeTools(app).map((route) => [route.name, route]));
   const teamId = await callerTeam(userId);
   const needsTeam = (route: McpRouteTool) => route.pathParams.includes(TEAM_PARAM);
+  // The access center's connector tools (routes that act with a Google account …) are
+  // listed only to an agent that holds a grant on one of the connector's accounts; the
+  // route refuses a call without one either way.
+  const granted = [...routes.values()].some((route) => route.connector)
+    ? await visibleConnectors(userId)
+    : new Set<string>();
+  const listed = () =>
+    servedTools().filter((tool) => {
+      const connector = routes.get(tool.name)?.connector;
+      return !connector || granted.has(connector);
+    });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: servedTools().map((tool) => {
+    tools: listed().map((tool) => {
       const route = routes.get(tool.name);
-      if (!route) return toMcpTool(tool);
+      // A plugin's tool without a title of its own gets its name spelled out, like a route.
+      if (!route) return { title: toolTitle(tool.name), ...toMcpTool(tool) };
       return {
         name: route.name,
+        title: route.title,
         description: route.description,
         // A caller whose team is already known does not get to name one.
         inputSchema:
@@ -129,7 +146,14 @@ export async function buildMcpServer(
         agent: await callerAgent(userId),
         project: await callProject(args),
         action: toolCategory(tool, args),
-        context: { tool: tool.name, input: args },
+        context: {
+          tool: tool.name,
+          input: args,
+          runId: context.runId ?? null,
+          // Helena's own routes act on the project's data, inside the agent's workspace,
+          // unless the route says it reaches further (mcpTool's scope).
+          scope: routes.has(tool.name) ? (routes.get(tool.name)?.scope ?? 'workspace') : undefined,
+        },
       });
       if (decision.effect === 'deny') return refusal(403, `Not allowed: ${decision.reason}`);
       if (decision.effect === 'needs-approval') {

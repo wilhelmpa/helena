@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import * as TabsPrimitive from '@radix-ui/react-tabs';
+import { Tabs as TabsPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
 import { WORKSPACE_TOOLBAR_TRIGGER_CLASS } from '@/components/layout/WorkspaceToolbarButton';

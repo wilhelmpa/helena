@@ -25,8 +25,14 @@ const login: CredentialEntry = {
   username: 'bot@example.com',
   notes: '',
   publicKey: null,
+  runtime: null,
+  method: null,
   secrets: ['password', 'totpSecret'],
   agentIds: [],
+  grants: [],
+  serverUrl: null,
+  status: null,
+  statusDetail: null,
   createdAt: '2026-09-23T10:00:00.000Z',
   updatedAt: '2026-09-23T10:00:00.000Z',
 };
@@ -91,6 +97,31 @@ describe('credential form', () => {
     assert.equal(isCredentialFormValid(emptyCredentialValue('api_key'), null), false);
   });
 
+  it('sends a runtime login with its runtime and how it signs in', () => {
+    const login = {
+      ...emptyCredentialValue('runtime_login'),
+      label: 'Claude Code',
+      value: ' sk-ant-oat01-x ',
+    };
+    assert.equal(isCredentialFormValid(login, null), true);
+    assert.deepEqual(toNewCredential(login), {
+      kind: 'runtime_login',
+      label: 'Claude Code',
+      projectId: null,
+      runtime: 'claude',
+      method: 'oauth_token',
+      notes: '',
+      value: 'sk-ant-oat01-x',
+    });
+    // Codex takes an API key here, never a token.
+    assert.equal(isCredentialFormValid({ ...login, runtime: 'codex' }, null), false);
+    assert.equal(
+      isCredentialFormValid({ ...login, runtime: 'codex', method: 'api_key' }, null),
+      true,
+    );
+    assert.equal(isCredentialFormValid({ ...login, value: '' }, null), false);
+  });
+
   it('splits domains on lines, commas and spaces', () => {
     assert.deepEqual(domainsOf(' a.com,b.com\n\nc.com d.com '), [
       'a.com',
@@ -145,6 +176,18 @@ describe('grantable agents', () => {
         ['Marketing', [3, 5]],
         ['Ops', [4]],
       ],
+    );
+  });
+
+  it('offers a runtime login only to the agents running on its runtime', () => {
+    const onClaude = {
+      ...agent(8, 'coder', [mkt]),
+      runtimePolicy: { runtime: 'claude' },
+    } as AiAgent;
+    const groups = grantableAgentGroups([...agents, onClaude], null, 'claude');
+    assert.deepEqual(
+      groups.map((group) => group.agents.map((a) => a.id)),
+      [[8]],
     );
   });
 

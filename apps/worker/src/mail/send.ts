@@ -11,7 +11,7 @@ import {
 import { deleteObject, getObject } from '@repo/storage';
 import { and, eq, lt, sql } from 'drizzle-orm';
 import { importRawMessage } from './import';
-import { accountSettings, accountWithCredential } from './store';
+import { accountSettings, accountWithCredential, connectSettings } from './store';
 import { mailTransport } from './transport';
 
 const STALE_SENDING_MS = 10 * 60_000;
@@ -94,9 +94,18 @@ async function sendDraft(draftId: number): Promise<void> {
   let settings: MailServerSettings;
   try {
     if (!found) throw new Error('No password');
-    settings = accountSettings(found.account, found.credential);
-  } catch {
-    await fail(draftId, 'The account has no password.');
+    settings = await connectSettings({
+      auth: found.account.auth === 'xoauth2' ? 'xoauth2' : 'password',
+      credentialId: found.account.credentialId!,
+      settings: accountSettings(found.account, found.credential),
+    });
+  } catch (error) {
+    await fail(
+      draftId,
+      found?.account.auth === 'xoauth2'
+        ? `The account cannot sign in: ${error instanceof Error ? error.message : 'unknown error'}`
+        : 'The account has no password.',
+    );
     return;
   }
   const { account } = found;

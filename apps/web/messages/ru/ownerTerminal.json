@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "Вставить"
+  },
+  "clipboard": {
+    "copied": "Скопировано в буфер обмена"
   }
 }

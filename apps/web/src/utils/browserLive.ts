@@ -272,10 +272,80 @@ export interface KeyInput extends ModifierKeys {
   altGraph: boolean;
 }
 
-// The paste shortcuts, by key code so that they are found on every layout (Control+V gives
-// the key м on a Russian one): Control+V and Shift+Insert.
+// The paste shortcuts, by virtual key code so that they are found on every layout
+// (Control+V gives the key м on a Russian one): Control+V and Shift+Insert.
 const V_KEY = 86;
 const INSERT_KEY = 45;
+
+// Windows virtual key codes, which DevTools wants with every key and which pages and
+// Chromium's own shortcuts (Ctrl+A, Ctrl+Z) read. Built from the event's key and code
+// rather than taken from its deprecated keyCode, which browsers fill differently (0 for
+// some keys of a non-US layout in Firefox, 229 during composition). The tables follow
+// Puppeteer's USKeyboardLayout.
+const NAMED_KEY_CODES: Record<string, number> = {
+  Backspace: 8,
+  Tab: 9,
+  Enter: 13,
+  Shift: 16,
+  Control: 17,
+  Alt: 18,
+  Pause: 19,
+  CapsLock: 20,
+  Escape: 27,
+  ' ': 32,
+  PageUp: 33,
+  PageDown: 34,
+  End: 35,
+  Home: 36,
+  ArrowLeft: 37,
+  ArrowUp: 38,
+  ArrowRight: 39,
+  ArrowDown: 40,
+  PrintScreen: 44,
+  Insert: 45,
+  Delete: 46,
+  Meta: 91,
+  ContextMenu: 93,
+  NumLock: 144,
+  ScrollLock: 145,
+};
+// Keys found by their place on a US keyboard: punctuation and the number pad.
+const PHYSICAL_KEY_CODES: Record<string, number> = {
+  Semicolon: 186,
+  Equal: 187,
+  Comma: 188,
+  Minus: 189,
+  Period: 190,
+  Slash: 191,
+  Backquote: 192,
+  BracketLeft: 219,
+  Backslash: 220,
+  BracketRight: 221,
+  Quote: 222,
+  IntlBackslash: 226,
+  NumpadMultiply: 106,
+  NumpadAdd: 107,
+  NumpadSubtract: 109,
+  NumpadDecimal: 110,
+  NumpadDivide: 111,
+  NumpadEnter: 13,
+};
+
+// A letter or digit keeps the key the person typed on their layout (the Z of a German
+// keyboard, where a US one has Y, is undo with Control); a letter of another script is the
+// Latin key in its place (Russian м is V), as browsers do it; the rest is its US place.
+export function virtualKeyCode(event: Pick<KeyInput, 'key' | 'code' | 'keyCode' | 'location'>) {
+  const numpad = event.location === 3;
+  if (/^[a-z]$/i.test(event.key)) return event.key.toUpperCase().charCodeAt(0);
+  if (/^[0-9]$/.test(event.key)) return (numpad ? 96 : 48) + Number(event.key);
+  const named = NAMED_KEY_CODES[event.key] ?? /^F([1-9]|1[0-9]|2[0-4])$/.exec(event.key)?.[1];
+  if (named !== undefined) return typeof named === 'number' ? named : 111 + Number(named);
+  const letter = /^Key([A-Z])$/.exec(event.code)?.[1];
+  if (letter) return letter.charCodeAt(0);
+  const digit = /^(Digit|Numpad)([0-9])$/.exec(event.code);
+  if (digit) return (digit[1] === 'Numpad' ? 96 : 48) + Number(digit[2]);
+  return PHYSICAL_KEY_CODES[event.code] ?? (event.keyCode === 229 ? 0 : event.keyCode);
+}
 
 // The message for a key event, or null for one the page must not get as a key: a key of
 // an IME composition, whose result is sent as text when it ends, and a paste shortcut,
@@ -294,9 +364,10 @@ export function keyMessage(event: KeyInput, type: 'down' | 'up', mac: boolean): 
   const typesCharacter =
     printable && (event.altGraph || (mac && event.altKey && !event.metaKey && !event.ctrlKey));
   const pressed = typesCharacter ? (event.shiftKey ? SHIFT : 0) : modifiers(event, mac);
+  const keyCode = virtualKeyCode(event);
   const paste =
-    (event.keyCode === V_KEY && (pressed & ~SHIFT) === CONTROL) ||
-    (event.keyCode === INSERT_KEY && pressed === SHIFT);
+    (keyCode === V_KEY && (pressed & ~SHIFT) === CONTROL) ||
+    (keyCode === INSERT_KEY && pressed === SHIFT);
   if (paste) return null;
   const command = mac && event.key === 'Meta';
   const key = command ? 'Control' : event.key;
@@ -307,7 +378,7 @@ export function keyMessage(event: KeyInput, type: 'down' | 'up', mac: boolean): 
     event: type,
     key,
     code: command ? event.code.replace('Meta', 'Control') : event.code,
-    keyCode: command ? 17 : event.keyCode,
+    keyCode: command ? 17 : keyCode,
     location: event.location,
     autoRepeat: event.repeat,
     modifiers: pressed,

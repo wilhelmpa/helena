@@ -47,6 +47,17 @@ install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/91-volition-gog
 rm -f "$tmp" /etc/sudoers.d/91-volition-gog-claude
 echo "setup.sh: gog runs as volition-google from $home"
 
+# Helena's broker: the API and the worker (user volition-plan) reach gog only through it,
+# with a request on stdin checked against its allowlist. Set HELENA_GOOGLE_BROKER to
+# "sudo -n -u volition-google /usr/local/libexec/helena-google-broker" for both.
+install -m 0755 -o root -g root "$here/helena-google-broker" /usr/local/libexec/helena-google-broker
+tmp=$(mktemp)
+install -m 0440 "$here/sudoers-helena-broker" "$tmp"
+visudo -cf "$tmp" >/dev/null
+install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/92-helena-google-broker
+rm -f "$tmp"
+echo "setup.sh: Helena reaches gog through /usr/local/libexec/helena-google-broker"
+
 # The owner's own `gog` command.
 owner=${SUDO_USER:-}
 if [[ -n $owner && $owner != root ]]; then

@@ -8,9 +8,11 @@ import { processActionRuns } from '#modules/actions/runner';
 import { processInboxTasks } from '#modules/hub-inbox/tasks';
 import { engineRunning, launchEngine } from '#modules/engine/dbos';
 import { engineMaintenance, engineTick } from '#modules/engine/janitor';
+import { processConnectorActions } from '#modules/connectors/tools';
 import { pruneRuntimeRequests } from '#modules/agents/runtime-requests/service';
 import { scheduleCuratorRuns } from '#modules/agents/runtime-requests/curator-schedule';
 import { pruneRunEvents } from '#modules/agents/run-timeline/service';
+import { prunePolicyDecisions } from '#modules/autopilot/engine';
 
 const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANITOR_JOBS;
 
@@ -28,9 +30,21 @@ export function startBackgroundJobs(): void {
   // Archiving is not time-sensitive, so the sweep runs far less often than the queue
   // is drained.
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));
+  // Connector actions the owner approved run within seconds of the decision.
+  startLoop(
+    'connector-actions',
+    async () => void (await processConnectorActions()),
+    () => intEnv('CONNECTOR_ACTION_POLL_INTERVAL_MS', 3_000),
+  );
   startLoop(RUN_JANITOR, runJanitor, () => intEnv('RUN_JANITOR_INTERVAL_MS', 60_000));
   startLoop(RESUME_JANITOR, resumeJanitor, () => intEnv('RESUME_JANITOR_INTERVAL_MS', 60_000));
   startLoop(RUNTIME_JANITOR, runtimeJanitor, () => intEnv('RUNTIME_JANITOR_INTERVAL_MS', 300_000));
+  // The Autopilot's decision log keeps HELENA_POLICY_LOG_DAYS (90) days.
+  startLoop(
+    'policy-log',
+    async () => void (await prunePolicyDecisions()),
+    () => intEnv('HELENA_POLICY_LOG_PRUNE_INTERVAL_MS', 86_400_000),
+  );
   if (process.env.HELENA_ENGINE?.trim().toLowerCase() === 'off') return;
   // Launches the engine and tries again while the database does not answer.
   const launcher = startLoop(

@@ -10,7 +10,7 @@ import type {
   StorageSettingsPatch,
 } from '@/lib/api/endpoints/settings';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
-import type { RuntimeSyncState } from '@/lib/api/endpoints/agentRuntimeSync';
+import type { RuntimeIssue, RuntimeSyncState } from '@/lib/api/endpoints/agentRuntimeSync';
 
 // Who may create an account on this instance.
 export type RegistrationMode = 'open' | 'invite' | 'closed';
@@ -262,6 +262,8 @@ export interface AgentSyncSummary {
     state: RuntimeSyncState;
     adapter: string | null;
     drift: string[];
+    // What keeps its runtime from its work ("Laufzeit nicht angemeldet").
+    issues?: RuntimeIssue[];
   }[];
 }
 

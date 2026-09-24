@@ -263,7 +263,10 @@ describe('credentials', () => {
       agentIds: [shopper.id, planner.id, shopper.id],
     });
     expect(granted.status).toBe(200);
-    expect(granted.data!.agentIds).toEqual([shopper.id, planner.id].sort((a, b) => a - b));
+    expect(granted.data!.grants.map((grant) => grant.agentId).sort((a, b) => a! - b!)).toEqual(
+      [shopper.id, planner.id].sort((a, b) => a - b),
+    );
+    expect(granted.data!.grants.every((grant) => grant.access === 'write')).toBe(true);
 
     for (const agentId of [template.data!.agent.id, foreign.id, 999_999]) {
       const res = await credential(asOwner, teamId, id).grants.put({ agentIds: [agentId] });
@@ -280,7 +283,7 @@ describe('credentials', () => {
     expect((await credential(asOwner, teamId, id).patch({ projectId: 999_999 })).status).toBe(400);
 
     const cleared = await credential(asOwner, teamId, id).grants.put({ agentIds: [] });
-    expect(cleared.data!.agentIds).toEqual([]);
+    expect(cleared.data!.grants).toEqual([]);
   });
 });
 
@@ -395,7 +398,8 @@ describe('credential delivery to the runner', () => {
 
     const log = await credential(asOwner, teamId, github).uses.get({ query: {} });
     expect(log.status).toBe(200);
-    expect(log.data!.total).toBe(2);
+    // The owner's creation and grant are logged too, as changes with no agent.
+    expect(log.data!.total).toBe(4);
     expect(log.data!.items).toMatchObject([
       {
         action: 'used',
@@ -406,14 +410,37 @@ describe('credential delivery to the runner', () => {
         issueIdentifier: `MKT-${issue.sequenceNumber}`,
       },
       { action: 'delivered', purpose: 'Hermes vault', runId: run.id },
+      { action: 'changed', purpose: 'grants', agentId: null },
+      { action: 'changed', purpose: 'created', agentId: null },
     ]);
-    expect((await credential(asOwner, teamId, ungranted).uses.get({ query: {} })).data!.total).toBe(
-      0,
-    );
+    // Nothing of the agent's reaches the credential it was never granted.
+    expect(
+      (await credential(asOwner, teamId, ungranted).uses.get({ query: {} })).data!.items,
+    ).toMatchObject([{ action: 'changed', purpose: 'created' }]);
 
     // The log outlives the credential's grant.
     await credential(asOwner, teamId, github).grants.put({ agentIds: [] });
-    expect((await credential(asOwner, teamId, github).uses.get({ query: {} })).data!.total).toBe(2);
+    expect((await credential(asOwner, teamId, github).uses.get({ query: {} })).data!.total).toBe(5);
+  });
+
+  it("logs the owner's own changes, and keeps them after the credential is gone", async () => {
+    const { asOwner, teamId } = await setup();
+    const id = (await credentials(asOwner, teamId).post(githubLogin())).data!.id;
+    await credential(asOwner, teamId, id).patch({ label: 'GitHub (Bot)' });
+    expect((await credential(asOwner, teamId, id).delete()).status).toBe(204);
+
+    const audit = await asOwner.teams({ teamId }).access.audit.get({ query: {} });
+    expect(audit.data!.items).toMatchObject([
+      {
+        action: 'changed',
+        purpose: 'deleted',
+        credentialId: null,
+        credentialLabel: 'GitHub (Bot)',
+      },
+      { action: 'changed', purpose: 'edited', credentialId: null },
+      { action: 'changed', purpose: 'created', credentialId: null },
+    ]);
+    expect(JSON.stringify(audit.data)).not.toContain(githubLogin().password);
   });
 
   it('records the MCP secrets a runner reads for a run', async () => {
@@ -461,6 +488,7 @@ describe('credential delivery to the runner', () => {
     const log = await credential(asOwner, teamId, apiKey).uses.get({ query: {} });
     expect(log.data!.items).toMatchObject([
       { action: 'delivered', purpose: 'MCP server typesafe', runId: run.id },
+      { action: 'changed', purpose: 'created' },
     ]);
     const stale = await shopper.asRunner['agent-runtime']['mcp-secrets'].get({
       query: { runId: run.id + 1 },

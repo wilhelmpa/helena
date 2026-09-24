@@ -4,6 +4,7 @@ import {
   defaultNotificationConfig,
   readNotificationConfig,
   type NotificationConfig,
+  notificationContext,
 } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
 import { encryptSecret } from '@repo/crypto';
@@ -157,7 +158,7 @@ export async function setNotificationSettings(
   const next = applyPatch(current, patch);
   assertSendable(next);
   const redacted = toDto(next);
-  const enc = encryptSecret(JSON.stringify(next));
+  const enc = encryptSecret(JSON.stringify(next), notificationContext(teamId));
   await db
     .insert(teamNotificationSetting)
     .values({

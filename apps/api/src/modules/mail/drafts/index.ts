@@ -251,7 +251,7 @@ export const mailDraftRoutes = new Elysia({
         summary: 'Draft an answer to a mail thread',
         description:
           'Write an answer to the last message of a thread of this project as a draft in ' +
-          'Plan. The quoted message is added below your text. Nothing is sent: a person ' +
+          'Helena. The quoted message is added below your text. Nothing is sent: a person ' +
           'reviews the draft, or you ask for approval with `request_mail_send`.',
         ...mcpTool('draft_reply'),
       },
@@ -285,8 +285,8 @@ export const mailDraftRoutes = new Elysia({
         description:
           'Ask a person to approve sending a draft of this project. The request shows the ' +
           'whole mail on the Approvals page. End your run afterwards: once the request is ' +
-          'approved Plan sends the mail, and a rejected draft goes back to the drafts.',
-        ...mcpTool('request_mail_send'),
+          'approved Helena sends the mail, and a rejected draft goes back to the drafts.',
+        ...mcpTool('request_mail_send', undefined, 'report'),
       },
     },
   );

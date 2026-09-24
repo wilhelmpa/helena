@@ -158,6 +158,14 @@ if changed deployment/volition-stack/integration/scripts/volition-hermes-runner;
   restart+=(volition-hermes-runner.service)
 fi
 
+# Claude Code, Codex and the ACP adapters are installed by install-cli-runtimes.sh, pinned.
+# A changed pin is a download, which needs the owner's OK: the deploy only says so.
+if changed deployment/volition-stack/native/runtimes; then
+  echo "NOTE: the pinned CLI runtimes changed. After the owner's OK run:"
+  echo "  sudo $live/deployment/volition-stack/native/runtimes/install-cli-runtimes.sh plan"
+  echo "  sudo $live/deployment/volition-stack/native/runtimes/install-cli-runtimes.sh install"
+fi
+
 # A restart ends every open terminal session. The shell script and tmux.conf are read
 # for each new session, so only the router and the unit need one.
 if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs \

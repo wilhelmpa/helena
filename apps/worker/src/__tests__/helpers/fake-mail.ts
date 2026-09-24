@@ -11,6 +11,8 @@ interface StoredMessage {
   raw: Buffer;
   internalDate: Date;
   modseq: bigint;
+  // What Gmail reports as X-GM-THRID.
+  threadId?: string;
 }
 
 class FakeMailbox {
@@ -55,7 +57,13 @@ export class FakeImapServer {
     return box;
   }
 
-  add(path: string, raw: Buffer | string, flags: string[] = []): number {
+  add(
+    path: string,
+    raw: Buffer | string,
+    flags: string[] = [],
+    internalDate = new Date('2026-03-01T12:00:00Z'),
+    threadId?: string,
+  ): number {
     const box = this.mailboxes.get(path)!;
     const uid = box.uidNext++;
     box.modseq += 1n;
@@ -63,8 +71,9 @@ export class FakeImapServer {
       uid,
       flags: new Set(flags),
       raw: Buffer.isBuffer(raw) ? raw : Buffer.from(raw),
-      internalDate: new Date('2026-03-01T12:00:00Z'),
+      internalDate,
       modseq: box.modseq,
+      threadId,
     });
     for (const client of this.clients) {
       if (client.selected === path) client.emit('exists', { path, count: box.messages.length });
@@ -177,15 +186,26 @@ export class FakeImapClient extends EventEmitter {
     return this.box(this.selected);
   }
 
-  async search(query: { all?: boolean; uid?: string }) {
+  searches: Record<string, unknown>[] = [];
+
+  // SINCE compares the internal date by day, as IMAP does.
+  async search(query: { all?: boolean; uid?: string; since?: Date }) {
+    this.searches.push(query);
     const box = this.current();
     if (query.uid) return parseRange(query.uid, box);
+    if (query.since) {
+      const day = new Date(query.since);
+      day.setUTCHours(0, 0, 0, 0);
+      return box.messages
+        .filter((message) => message.internalDate >= day)
+        .map((message) => message.uid);
+    }
     return box.messages.map((message) => message.uid);
   }
 
   async fetchAll(
     range: string,
-    query: { source?: boolean; envelope?: boolean },
+    query: { source?: boolean; envelope?: boolean; threadId?: boolean },
     options: { changedSince?: bigint } = {},
   ) {
     const box = this.current();
@@ -209,6 +229,7 @@ export class FakeImapClient extends EventEmitter {
         flags: new Set(message.flags),
         size: message.raw.length,
         internalDate: message.internalDate,
+        threadId: query.threadId ? message.threadId : undefined,
         envelope: query.envelope ? { messageId: messageIdOf(message.raw) } : undefined,
         source: query.source ? message.raw : undefined,
       };

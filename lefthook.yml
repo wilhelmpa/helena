@@ -10,7 +10,19 @@ pre-commit:
     eslint:
       priority: 1
       glob: '*.{js,jsx,ts,tsx,mjs,cjs}'
+      exclude:
+        - 'apps/web/**'
       run: bunx eslint --flag v10_config_lookup_from_file --fix --no-warn-ignored {staged_files}
+      stage_fixed: true
+    # The web app lints from its own directory: its bulk suppressions
+    # (apps/web/eslint-suppressions.json) are keyed by paths relative to it. Layout fixes
+    # (physical to logical Tailwind classes) are not applied automatically, so a file
+    # that still has suppressed ones keeps them until someone moves them on purpose.
+    eslint-web:
+      priority: 1
+      root: 'apps/web/'
+      glob: '*.{js,jsx,ts,tsx,mjs,cjs}'
+      run: bunx eslint --fix --fix-type problem,suggestion --pass-on-unpruned-suppressions --no-warn-ignored {staged_files}
       stage_fixed: true
     prettier:
       priority: 2

@@ -6,6 +6,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  smallint,
   check,
   type AnyPgColumn,
   date,
@@ -130,9 +131,15 @@ export const project = pgTable('project', {
   // the same place. Independent of the time estimate: a team can log time without
   // estimating first. Turning it off hides the entries and keeps them.
   timeLoggingEnabled: boolean('time_logging_enabled').notNull().default(false),
-  // The tokens the agent runs of this project may use per calendar month (UTC); null
-  // is no ceiling. Reaching it pauses the agent whose run would start next.
+  // Deprecated: the project's budgets live in helena_budget since the Autopilot
+  // migration, which copied this value there. Nothing reads or writes it any more; the
+  // column goes with the rename step.
   monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
+  // How independently the agents of this project act (Helena's Autopilot): 0 they only
+  // propose, 1 consequential actions need approval, 2 they act and report and only
+  // outward or risky actions need approval, 3 autonomous within the budget. An agent may
+  // carry a stricter level of its own (ai_agent.autopilot_level).
+  autopilotLevel: smallint('autopilot_level').notNull().default(1),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -590,16 +597,26 @@ export const aiAgent = pgTable(
     // pause_reason says why, whether a member paused it or a token ceiling did.
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     pauseReason: text('pause_reason'),
-    // The tokens the agent's runs may use per day and per calendar month (UTC); null is
-    // no ceiling. Reaching one pauses the agent.
+    // Deprecated: the agent's budgets live in helena_budget since the Autopilot
+    // migration, which copied these values there. Nothing reads or writes them any more;
+    // the columns go with the rename step.
     dailyTokenCeiling: bigint('daily_token_ceiling', { mode: 'number' }),
     monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
+    // The agent's own Autopilot level; null follows the project's. The stricter of the two
+    // applies, unless the owner set autopilot_raise, which lets this level exceed the
+    // project's.
+    autopilotLevel: smallint('autopilot_level'),
+    autopilotRaise: boolean('autopilot_raise').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex('ai_agent_team_username_uq').on(t.teamId, sql`lower(${t.username})`),
     unique().on(t.userId),
     check('ai_agent_kind_check', sql`${t.kind} = 'external'`),
+    check(
+      'ai_agent_autopilot_level_check',
+      sql`${t.autopilotLevel} IS NULL OR ${t.autopilotLevel} BETWEEN 0 AND 3`,
+    ),
     check('ai_agent_runner_scope_check', sql`${t.runnerScope} IN ('owner', 'team')`),
     check(
       'ai_agent_delegation_delay_check',
@@ -670,6 +687,8 @@ export const agentRun = pgTable(
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
+    // The Autopilot level that applied when the run was claimed.
+    autopilotLevel: smallint('autopilot_level'),
     // The model and reasoning the run was configured to use next to what its session
     // really ran on, as the runner read them back, with any mismatch named. Null for a run
     // whose runner reports neither.
@@ -712,7 +731,7 @@ export const agentRun = pgTable(
     ),
     check(
       'agent_run_trigger_check',
-      sql`${t.trigger} IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval')`,
+      sql`${t.trigger} IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval', 'workspace')`,
     ),
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
     index('agent_run_project_idx').on(t.projectId),
@@ -829,6 +848,13 @@ export const approvalRequest = pgTable(
     // The exact command a blocked tool call asked to run. Hermes' approval guard lets the
     // follow-up run execute exactly this command once the request is approved.
     command: text('command'),
+    // The policy engine's view of the request: the action category, the Autopilot level
+    // that applied and why the action needs a person, as the card shows it.
+    category: text('category'),
+    autopilotLevel: smallint('autopilot_level'),
+    policyReason: text('policy_reason'),
+    // What a 'budget' card is about: the budget, its use and its limit.
+    payload: jsonb('payload'),
     status: text('status').notNull().default('pending'),
     decidedByUserId: text('decided_by_user_id').references(() => user.id, {
       onDelete: 'set null',
@@ -843,7 +869,7 @@ export const approvalRequest = pgTable(
   (t) => [
     check(
       'approval_request_kind_check',
-      sql`${t.kind} IN ('send', 'publish', 'pay', 'delete', 'other')`,
+      sql`${t.kind} IN ('send', 'publish', 'pay', 'delete', 'write', 'execute', 'credentials', 'budget', 'other')`,
     ),
     check('approval_request_status_check', sql`${t.status} IN ('pending', 'approved', 'rejected')`),
     index('approval_request_project_status_idx').on(t.projectId, t.status, t.id.desc()),
@@ -1092,37 +1118,68 @@ export const integrationCredential = pgTable(
     // The credential with secret fields masked; non-secret fields verbatim. Owned by
     // the store, derived from the integration's credential schema.
     redacted: jsonb('redacted').notNull().default({}),
+    // The health of a connector account (a Google account, an MCP/OAuth connection), as
+    // its last check found it: 'ok', 'needs_auth' (the owner has to sign in again) or
+    // 'error'. Null for a credential that has no check, and before the first one.
+    status: text('status'),
+    statusDetail: text('status_detail'),
+    checkedAt: timestamp('checked_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     // The runner replaces a login it delivered once this moves.
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    check(
+      'integration_credential_status_check',
+      sql`${t.status} IS NULL OR ${t.status} IN ('ok', 'needs_auth', 'error')`,
+    ),
     index('integration_credential_team_idx').on(t.teamId),
     index('integration_credential_project_idx').on(t.projectId),
   ],
 );
 
-// The agents that may use a credential of the Credentials page. A credential limited to
-// a project is granted only to agents working in that project.
+// Who may use a credential of the access center: one agent, or every agent working in one
+// project. `service` narrows the grant to one service of a connector account ('mail',
+// 'calendar' …); null covers all of them. `access` is 'read' (only actions of the read
+// category) or 'write' (every action; the policy may still ask for an approval). A
+// credential limited to a project is granted only to that project and its agents. A web
+// login, API key, SSH key or secret has no services and ignores `access`.
 export const integrationCredentialGrant = pgTable(
   'integration_credential_grant',
   {
+    id: serial('id').primaryKey(),
     credentialId: integer('credential_id')
       .notNull()
       .references(() => integrationCredential.id, { onDelete: 'cascade' }),
-    agentId: integer('agent_id')
-      .notNull()
-      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'cascade' }),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    service: text('service'),
+    access: text('access').notNull().default('write'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    primaryKey({ columns: [t.credentialId, t.agentId] }),
+    check(
+      'integration_credential_grant_subject_check',
+      sql`(${t.agentId} IS NULL) <> (${t.projectId} IS NULL)`,
+    ),
+    check('integration_credential_grant_access_check', sql`${t.access} IN ('read', 'write')`),
+    uniqueIndex('integration_credential_grant_uq').on(
+      t.credentialId,
+      sql`coalesce(${t.agentId}, 0)`,
+      sql`coalesce(${t.projectId}, 0)`,
+      sql`coalesce(${t.service}, '')`,
+    ),
     index('integration_credential_grant_agent_idx').on(t.agentId),
+    index('integration_credential_grant_project_idx').on(t.projectId),
   ],
 );
 
-// The audit log of the Credentials page: every credential an agent's runner received
-// ('delivered') and every login the agent filled with it ('used'). The label and the
-// agent's name are copied, so an entry outlives the credential, the agent and the run.
+// The audit log of the access center. What an agent's runner received ('delivered'),
+// every login it filled ('used'), every connector tool it called ('called'), refused by a
+// grant or the policy ('denied') or held for the owner's approval ('approval'), and what
+// the owner changed ('changed': connected, granted, reset …). `category` is the action
+// category of a tool call. The label and the agent's name are copied, so an entry
+// outlives the credential, the agent and the run.
 export const integrationCredentialUse = pgTable(
   'integration_credential_use',
   {
@@ -1141,16 +1198,84 @@ export const integrationCredentialUse = pgTable(
       onDelete: 'set null',
     }),
     action: text('action').notNull(),
+    category: text('category'),
     // What the credential served: the Hermes vault or an MCP server for a delivery, the
-    // tool and the site for a use.
+    // tool and the site for a use, the tool and its target for a call.
     purpose: text('purpose').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check('integration_credential_use_action_check', sql`${t.action} IN ('delivered', 'used')`),
+    check(
+      'integration_credential_use_action_check',
+      sql`${t.action} IN ('delivered', 'used', 'called', 'denied', 'approval', 'changed')`,
+    ),
     index('integration_credential_use_credential_idx').on(t.credentialId, t.createdAt),
     index('integration_credential_use_team_idx').on(t.teamId, t.createdAt),
   ],
+);
+
+// A connector tool call that waits for the owner: stored exactly as the agent asked, so
+// what runs after the approval is what the approval card showed. The API carries it out
+// once the approval request is approved ('done' or 'failed'), or closes it when rejected.
+export const connectorAction = pgTable(
+  'connector_action',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    credentialId: integer('credential_id').references(() => integrationCredential.id, {
+      onDelete: 'set null',
+    }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'set null' }),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    connector: text('connector').notNull(),
+    tool: text('tool').notNull(),
+    category: text('category').notNull(),
+    service: text('service'),
+    input: jsonb('input').notNull().default({}),
+    summary: text('summary').notNull(),
+    status: text('status').notNull().default('pending'),
+    approvalRequestId: integer('approval_request_id').references(() => approvalRequest.id, {
+      onDelete: 'set null',
+    }),
+    result: jsonb('result'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    check(
+      'connector_action_status_check',
+      sql`${t.status} IN ('pending', 'running', 'done', 'failed', 'rejected')`,
+    ),
+    index('connector_action_pending_idx').on(t.status, t.id),
+    index('connector_action_team_idx').on(t.teamId, t.createdAt),
+  ],
+);
+
+// A sign-in that is under way: the owner opened the provider's page and has not brought
+// the code back yet. `id` is the OAuth `state`. The PKCE verifier and whatever else the
+// flow needs to finish are encrypted like a credential. Rows expire after a few minutes.
+export const connectorAuthSession = pgTable(
+  'connector_auth_session',
+  {
+    id: text('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    connector: text('connector').notNull(),
+    ciphertext: text('ciphertext').notNull(),
+    iv: text('iv').notNull(),
+    authTag: text('auth_tag').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('connector_auth_session_expires_idx').on(t.expiresAt)],
 );
 
 export const gitProviderConnection = pgTable(

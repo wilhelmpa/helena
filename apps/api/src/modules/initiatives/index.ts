@@ -22,6 +22,7 @@ import {
   deleteAttachmentObject,
   safeAttachmentFilename,
   storeAttachmentObject,
+  uploadContentType,
 } from '#modules/attachments/storage';
 import {
   FeedPageResponse,
@@ -291,11 +292,12 @@ export const initiativeRoutes = new Elysia({
       if (file.size === 0) throw new HttpError(400, 'Uploaded file is empty');
 
       const filename = safeAttachmentFilename(file.name);
-      const contentType = file.type || 'application/octet-stream';
+      const bytes = Buffer.from(await file.arrayBuffer());
+      const contentType = await uploadContentType(bytes, filename, file.type);
       await assertAttachmentUploadAllowed(projectId, file.size, contentType);
 
       const key = attachmentObjectKey(projectId, 'initiatives', params.initiativeId, filename);
-      await storeAttachmentObject(key, Buffer.from(await file.arrayBuffer()), contentType);
+      await storeAttachmentObject(key, bytes, contentType);
 
       let row;
       try {

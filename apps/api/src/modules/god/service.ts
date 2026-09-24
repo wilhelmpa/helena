@@ -19,6 +19,7 @@ import {
   scimGroup,
   scimGroupMapping,
   scimGroupMember,
+  containsPattern,
 } from '@repo/db';
 import {
   and,
@@ -204,7 +205,9 @@ export async function listInstanceUsers(options: {
     .from(aiAgent)
     .where(eq(aiAgent.userId, user.id));
   const where = and(
-    term ? or(ilike(user.name, `%${term}%`), ilike(user.email, `%${term}%`)) : undefined,
+    term
+      ? or(ilike(user.name, containsPattern(term)), ilike(user.email, containsPattern(term)))
+      : undefined,
     options.kind === 'human'
       ? notExists(isAgent)
       : options.kind === 'agent'
@@ -495,7 +498,7 @@ export async function listInstanceProjects(options: {
 }): Promise<InstanceProjectPage> {
   const term = options.search?.trim();
   const where = term
-    ? or(ilike(project.key, `%${term}%`), ilike(project.name, `%${term}%`))
+    ? or(ilike(project.key, containsPattern(term)), ilike(project.name, containsPattern(term)))
     : undefined;
 
   const [rows, totals] = await Promise.all([
@@ -695,7 +698,7 @@ export async function listInstanceTeams(options: {
   offset: number;
 }): Promise<InstanceTeamPage> {
   const term = options.search?.trim();
-  const where = term ? ilike(team.name, `%${term}%`) : undefined;
+  const where = term ? ilike(team.name, containsPattern(term)) : undefined;
 
   const [rows, totals] = await Promise.all([
     db
@@ -734,7 +737,9 @@ export async function listInstanceTeamProjects(
   const term = options.search?.trim();
   const where = and(
     eq(project.teamId, teamId),
-    term ? or(ilike(project.key, `%${term}%`), ilike(project.name, `%${term}%`)) : undefined,
+    term
+      ? or(ilike(project.key, containsPattern(term)), ilike(project.name, containsPattern(term)))
+      : undefined,
   );
 
   const [rows, totals] = await Promise.all([
@@ -777,7 +782,9 @@ export async function listInstanceTeamMembers(
   const term = options.search?.trim();
   const where = and(
     eq(teamMember.teamId, teamId),
-    term ? or(ilike(user.name, `%${term}%`), ilike(user.email, `%${term}%`)) : undefined,
+    term
+      ? or(ilike(user.name, containsPattern(term)), ilike(user.email, containsPattern(term)))
+      : undefined,
   );
 
   const [rows, totals] = await Promise.all([

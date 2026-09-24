@@ -35,46 +35,28 @@ describe('natural language schedules', () => {
   }
 });
 
-describe('round trips', () => {
+describe('cron schedules', () => {
   const cases = [
-    '*/15 * * * *',
-    '0 */2 * * *',
-    '30 */2 * * *',
-    '0 9-17 * * *',
-    '15 9-17 * * *',
+    '*/5 * * * *',
+    '0 * * * *',
+    '0 9 * * 1-5',
+    '0 9,17 * * 1,5',
+    '0 0 1 1,4,7,10 *',
     '0 9-17/2 * * *',
     '*/15 9-17 * * 1-5',
-    '0 9,17 * * 1,5',
-    '0 9 1-5 1-3 *',
   ];
 
   for (const cron of cases) {
-    test(`preserves ${cron} through its English description`, () => {
-      const described = parseScheduleInput(cron);
-      assert.equal(described.ok, true);
-      if (!described.ok) return;
-      const reparsed = parseScheduleInput(described.description);
-      assert.equal(reparsed.ok, true);
-      if (!reparsed.ok) return;
-      assert.equal(reparsed.cron, cron);
+    test(`accepts ${cron}`, () => {
+      assert.deepEqual(parseScheduleInput(cron), { ok: true, source: 'cron', cron });
     });
   }
-});
 
-describe('cron schedules', () => {
-  const cases: Array<[string, string]> = [
-    ['*/5 * * * *', 'Every 5 minutes'],
-    ['0 * * * *', 'Every hour'],
-    ['0 9 * * 1-5', 'At 9:00 AM on weekdays'],
-    ['0 9,17 * * 1,5', 'At 9:00 AM and 5:00 PM on Monday and Friday'],
-    ['0 0 1 1,4,7,10 *', 'At midnight on 1st in January, April, July and October'],
-  ];
-
-  for (const [cron, description] of cases) {
-    test(`describes ${cron}`, () => {
-      assert.deepEqual(parseScheduleInput(cron), { ok: true, source: 'cron', cron, description });
-    });
-  }
+  test('accepts what croner (the server) accepts beyond the field parser', () => {
+    for (const cron of ['0 9 L * *', '0 9 * * 5#2']) {
+      assert.deepEqual(parseScheduleInput(cron), { ok: true, source: 'cron', cron });
+    }
+  });
 
   test('normalizes named fields', () => {
     const result = parseScheduleInput('0 9 * * MON-FRI');

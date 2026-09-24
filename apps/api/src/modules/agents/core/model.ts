@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
-import { modelCheck, profileReport } from '../runtime-sync/model';
+import { modelCheck, profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -68,10 +68,11 @@ export const runtimePolicy = t.Object({
   runtime: t.Optional(
     t.Union([t.Literal('hermes'), t.Literal('claude'), t.Literal('codex')], {
       description:
-        'Which runtime runs the agent. Unset is Hermes, whose runtime the server provisions ' +
-        'for an agent of one project; a Claude Code or Codex agent runs on a runner started ' +
-        "with that preset (helena-runner --agent claude|codex), which gets the agent's " +
-        'instructions, skills, MCP servers, model and reasoning from Helena.',
+        'Which runtime runs the agent. Unset is Hermes. The server provisions a runtime for ' +
+        'an agent of one project whichever it is, and its runner serves it with that ' +
+        "preset: Claude Code and Codex get the agent's instructions, skills, MCP servers, " +
+        'tools, model and reasoning from Helena, and their login from a runtime login ' +
+        '(credential kind runtime_login) granted to the agent.',
     }),
   ),
   reflection: t.Optional(
@@ -138,7 +139,7 @@ export const runtimeInventory = t.Object({
         {
           description:
             "'bundled' ships with Hermes, 'hub' was installed from the Skills Hub, 'plan' is " +
-            "one of Plan's skills, 'agent' was created by the agent.",
+            "one of Helena's skills, 'agent' was created by the agent.",
         },
       ),
       path: t.Optional(
@@ -181,11 +182,14 @@ export const runtimeState = t.Object({
   conflicts: t.Array(runtimeConflict),
   restored: t.Array(t.String(), {
     description:
-      'What the runtime put back after it was changed or removed outside Plan: managed ' +
+      'What the runtime put back after it was changed or removed outside Helena: managed ' +
       'files and plugin links, by their path in the runtime.',
   }),
   inventory: t.Nullable(runtimeInventory),
   profile: t.Nullable(profileReport),
+  version: t.Nullable(t.String()),
+  issues: t.Array(runtimeIssue),
+  sandbox: t.Nullable(runtimeSandbox),
   reportedAt: t.Nullable(t.String()),
 });
 
@@ -306,6 +310,10 @@ export const AiAgentResponse = t.Object({
   templateSyncedAt: t.Nullable(t.String()),
   dailyTokenCeiling: t.Nullable(t.Number()),
   monthlyTokenCeiling: t.Nullable(t.Number()),
+  autopilotLevel: t.Nullable(
+    t.Number({ description: "The agent's own Autopilot level; null follows the project." }),
+  ),
+  autopilotRaise: t.Boolean({ description: "Whether the agent's level may exceed its project's." }),
   lastSeenAt: t.Nullable(t.String()),
   pausedAt: t.Nullable(
     t.String({
@@ -348,6 +356,13 @@ export const AgentRunResponse = t.Object({
       description:
         'The question the agent asked when it reported itself blocked during the run, which ' +
         'then ended as a success. Null for a run that was not blocked.',
+    }),
+  ),
+  autopilotLevel: t.Nullable(
+    t.Number({
+      description:
+        'The Autopilot level the run worked at (0 propose … 3 autonomous); null for a run ' +
+        'from before the Autopilot.',
     }),
   ),
   reflection: t.Nullable(

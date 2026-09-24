@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
+import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelBadge';
 import { useTranslations } from 'next-intl';
 import type { FeedItem } from '@/lib/api/endpoints/activity';
 import { formatDate } from '@/utils/dates';
@@ -166,7 +167,17 @@ export function useActivityText() {
       case 'comment_deleted':
         return { line: line('commentDeleted') };
       case 'agent_started':
-        return { line: line('agentStarted') };
+        // The subject is the Autopilot level the run worked at, when it was recorded.
+        return {
+          line: (
+            <>
+              {line('agentStarted')}
+              {subject != null && subject !== '' && (
+                <AutopilotLevelBadge level={Number(subject)} className="ms-1.5 align-middle" />
+              )}
+            </>
+          ),
+        };
       case 'agent_finished':
         return { line: line(subject === 'failed' ? 'agentFailed' : 'agentFinished') };
       case 'workflow_run_limited':

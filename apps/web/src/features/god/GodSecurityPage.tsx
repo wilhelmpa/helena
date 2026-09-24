@@ -5,6 +5,7 @@ import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
 import EnabledSwitch from '@/components/common/inputs/EnabledSwitch';
 import { Button } from '@/components/ui/button';
+import { formatDateTime } from '@/utils/dates';
 import {
   useOwnerTerminalAuditQuery,
   useOwnerTerminalGrantQuery,
@@ -33,7 +34,7 @@ export default function GodSecurityPage() {
             <div className="flex items-center justify-between">
               <span>
                 {grant.data.expiresAt
-                  ? t('grantActive', { time: new Date(grant.data.expiresAt).toLocaleString() })
+                  ? t('grantActive', { time: formatDateTime(grant.data.expiresAt) })
                   : t('grantActiveOpen')}
               </span>
               <Button

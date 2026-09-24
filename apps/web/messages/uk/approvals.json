@@ -18,7 +18,11 @@
     "publish": "Публікація",
     "pay": "Оплата",
     "delete": "Видалення",
-    "other": "Інше"
+    "other": "Інше",
+    "write": "Зміна",
+    "execute": "Виконання",
+    "credentials": "Доступи",
+    "budget": "Бюджет"
   },
   "requestedBy": "{agent} (@{username}) у {project}",
   "notePlaceholder": "Примітка до рішення (необов'язково)",

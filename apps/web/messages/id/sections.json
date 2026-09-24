@@ -66,6 +66,10 @@
     "plugins": {
       "label": "Plugin",
       "description": "Plugin bawaan Helena dan plugin eksternal di folder plugin: apa yang disediakan, hak yang diminta, dan mana yang boleh berjalan."
+    },
+    "model-prices": {
+      "label": "Harga model",
+      "description": "Euro per juta token per model, dasar setiap perkiraan biaya."
     }
   },
   "settings": {
@@ -120,6 +124,10 @@
     "ai-agents": {
       "label": "Agen AI",
       "description": "Agen AI yang bekerja dalam proyek ini."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Seberapa mandiri agen proyek ini bertindak, dan anggarannya."
     },
     "browser": {
       "label": "Browser",

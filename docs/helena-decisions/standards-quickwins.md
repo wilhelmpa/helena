@@ -1,0 +1,191 @@
+# Standards quick wins (`hub/standards-quickwins`)
+
+Status: 19 of 20 items done, WEB-02 open (see its section), 2026-09-24. Scope: the backlog in `docs/helena-decisions/standards-audit.md` §5.1 (on `hub/standards-audit`). The research and the choice of library are the audit's; this file records only what was built per item, and every place where the implementation deviates from the audit's recommendation, with the reason.
+
+| ID | State | Commit | Notes |
+|---|---|---|---|
+| F21 | done | see git log | `ipaddr.js` 2.5.0 (MIT) |
+| F07 | done | see git log | no library; SDK 1.30 transport kept for POST |
+| F15 | done | see git log | Bun `S3Client` (built in); `@aws-sdk/client-s3` removed |
+| F17 | done | see git log | `papaparse` 5.7.0 (MIT) |
+| F18 | done | see git log | `read-excel-file` 9.3.10 (MIT); `write-excel-file` 4.1.1 (MIT) for test fixtures |
+| DB-2 | done | see git log | no library: `escapeLike`/`containsPattern` in `@repo/db` |
+| BRW-01 | done | see git log | `ws` 8.21.3 (MIT) |
+| BRW-03 | done | see git log | `mp4box` 2.4.1 (BSD-3), test only |
+| WEB-17 | done | see git log | `negotiator` 1.1 + `@formatjs/intl-localematcher` 0.8 (MIT), in `@helena/locales` |
+| WEB-18 | done | see git log | no library |
+| WEB-19 | done | see git log | no library (Puppeteer's US layout as reference) |
+| WEB-08 / JOB-04 | done | see git log | `croner` 10.0.1 (already the API's) |
+| WEB-03 | done | see git log | `radix-ui` meta package only |
+| WEB-04 | done | see git log | Popover + Command (cmdk); `@base-ui/react` removed |
+| WEB-15 | done | see git log | Next.js nonce pattern, no library |
+| WEB-07 | done | see git log | next-intl `timeZone`, `@date-fns/tz` 1.5.0 (MIT), date-fns, `Intl.DurationFormat` |
+| WEB-05 | done (panels later, as the audit says) | see git log | Radix AlertDialog, RadioGroup, ToggleGroup, Dialog (`radix-ui`) |
+| WEB-06 | done (header/MIME rename skipped) | see git log | ESLint bulk suppressions, react-hooks 7.1.1, jsx-a11y 6.10.2, better-tailwindcss 4.7.0, `react/jsx-no-literals` |
+| WEB-02 | **open** (measured, not migrated) | – | `@tiptap/markdown` 3.30.5 stays the target (D-C6) |
+| F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
+
+## F21: IP classification with `ipaddr.js`
+
+- `packages/net` keeps its DNS pinning, redirect refusal and limits. Only the question "which addresses are refused" moved to `ipaddr.js` `range()` (IANA special-purpose registries).
+- Two tiers remain, as the audit describes them:
+  - **every fetch** (`isPrivateIp`): unspecified, loopback, RFC 1918, link-local (the whole `fe80::/10`, which the old prefix check covered only for `fe80:`), CGNAT, unique-local, and now also NAT64 (`64:ff9b::/96`, `64:ff9b:1::/48`), SIIT (`::ffff:0:0:0/96`), 6to4, Teredo, site-local `fec0::/10`, `192.0.0.0/24` and `198.18.0.0/15`.
+  - **public-only** (link previews): every address `ipaddr.js` does not classify as plain `unicast`, and IPv6 outside `2000::/3`.
+- Deviation, on purpose: the documentation ranges (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`) stay allowed outside public-only. They are unroutable, so there is no SSRF in them, and the API's mail tests use `203.0.113.10` as a stand-in public mail host.
+- Side effect (a fix): public-only used to refuse all of `192.0.0.0/16`, which includes real public hosts such as `192.0.78.9` (WordPress). Now only the two special /24s are refused. The anycast ranges AS112 and AMT are now refused under public-only; they are not link-preview targets.
+
+## F16: one MIME module, magic numbers on uploads
+
+- **Module:** `@repo/storage/mime` (`packages/storage/src/mime.ts`). Files are the storage package's subject, and the API, the worker, the vault and mail already depend on it or now do; a new package for three functions was not worth it.
+  - `mimeFromName()`: `mime-types` (mime-db), plus five overrides that keep the old answers where mime-db differs (`.canvas` JSON, `.yaml/.yml` `application/yaml` per RFC 9512, `.flac` `audio/flac`, `.m4v` `video/mp4`) and the source-code list that is always `text/plain` (mime-db calls `.ts` MPEG-TS video).
+  - `extensionForMime()`: `mime-types` `extension()`, for mail attachments without a name.
+  - `detectUploadType()`: `file-type` on the bytes against the declared type (or, without one, the name).
+- **Replaced:** the maps in `project-files/serve.ts`, `vault/mime.ts`, `chat-attachments/index.ts` and `mail/parse.ts`. `Bun.file().type` was not used: it has no type→extension direction, which mail needs.
+- **Uploads** (issue attachments incl. replace and import by URL/base64, initiative and chat attachments, mail draft attachments, avatars): the bytes decide.
+  - A claim of a format with a known signature (PNG, PDF, ZIP-based Office …) must carry it, else 400 "The file's content is not image/png".
+  - Recognised binary bytes are stored as what they are, so the instance allowlist judges the real format.
+  - Heuristic text guesses (XML, iCalendar) never overrule a text claim (an SVG stays `image/svg+xml`); a specific format inside a generic container stays (a `.doc` is an OLE file, file-type says `application/x-cfb`).
+- **Deviation from the audit:** not Elysia's `t.File({type})`. Only the avatar route has a fixed type list, and Elysia's `InvalidFileType` reaches our `onError` as an unhandled error (500) until F03 (hub/framework) maps it. The same `file-type` check runs in the handlers instead and answers 400 with a clear message. Project files and knowledge assets store no declared type (the extension decides when serving), so they are not sniffed.
+
+## F07: MCP Streamable HTTP details
+
+- `GET /mcp` and `DELETE /mcp` answer **405 with `Allow: POST`** and the JSON-RPC error body the SDK's transport sends for the same case. Routing them through the SDK transport was the alternative; in stateless mode it would hold a GET stream open that never carries a message, and accept a DELETE for a session that does not exist.
+- `serverInfo` is `{name: 'helena', title: 'Helena', version}` with the version from the root `package.json` (the release-please version the OpenAPI document states too), in `apps/api/src/mcp/info.ts`.
+- Every tool has a `title`: the route's OpenAPI `summary`, else the tool name spelled out ("create_issue" → "Create issue").
+- Not changed: the grant/config key `itsaplan` agents use for this server (runner and Hermes configs, `mcpGrants`). It is an identifier in stored agent policies and belongs to the planned rename step.
+
+## F15: one storage switch in `@repo/storage`, Bun's S3 client
+
+- `@repo/storage` now holds the switch (`index.ts`): the local disk (`local.ts`, unchanged) when `STORAGE_ROOT` is set, else an S3-compatible bucket (`s3.ts`) when `S3_ENDPOINT` is set. Every caller goes through it, so mail (API drafts, accounts, threads; worker import and send), which imported `@repo/storage` directly, now follows the configured store without touching the mail files. The worker starts mail when either store is configured (`storageConfigured()`), not only with `STORAGE_ROOT`.
+- `s3.ts` uses Bun's built-in `S3Client` (path-style by default, `S3_FORCE_PATH_STYLE=false` → virtual-hosted), with the same `S3_*` variables as before. A read is a HEAD for type and size plus a streamed GET. `deleteObjectFolder` lists the prefix and deletes page by page, so wiping a mail account works on S3 too.
+- `@aws-sdk/client-s3` is gone from `apps/api` (and ~25 packages from the lockfile). The only other user is `deployment/volition-stack/backup/tests/garage-manifest.mjs`, which runs inside the old Docker image with its own dependencies (Docker-era code, OPS-02).
+- `apps/api/src/shared/s3.ts` stays as a re-export so the ~10 API modules and the running branches that import `#shared/s3` need no change.
+- Tests: the store against an in-memory path-style S3 served by `Bun.serve` (PUT/GET/HEAD/DELETE/ListObjectsV2), incl. missing objects and folder deletes. MinIO itself was not installed (a binary).
+- Live runs with `STORAGE_ROOT`, so nothing changes there.
+
+## F17: CSV attachments with PapaParse
+
+- `chat-attachments/parse.ts` `parseCsv()` is `Papa.parse` with `delimitersToGuess` comma, semicolon, tab and pipe: PapaParse picks the delimiter the first rows agree on, not the one the header line counts most of.
+- `decodeCsv()` decodes the bytes first: a UTF-16 byte-order mark names UTF-16, otherwise UTF-8 when the bytes are valid UTF-8 (a UTF-8 BOM is dropped), else Windows-1252 (German Excel's "CSV (Trennzeichen-getrennt)"). `TextDecoder` does it; no `iconv-lite` needed.
+- Line ends are made uniform before parsing (the old parser ignored `\r`), so a file mixing CRLF and LF still splits into rows; PapaParse on its own would guess CRLF from the first line and keep a trailing LF inside the last field.
+
+## F18: `read-excel-file` instead of `exceljs`
+
+- Both read-only uses moved: the chat-attachment import (`chat-attachments/parse.ts`, first sheet via `readSheet`) and the vault's text extraction (`vault/src/extract.ts`, every sheet via the default export). `exceljs` and the root override `exceljs>uuid` are gone; the lockfile lost about 50 packages.
+- read-excel-file returns the grid from A1 with blank rows kept, so the import's `rowNumbers` are now the real sheet rows (what the comment on `ParsedSheet` always promised; with ExcelJS they counted only non-empty rows). A legacy `.xls` or a non-workbook answers the same 400 as before.
+- The vault extraction writes each row without trailing empty cells and skips blank rows, as it did with ExcelJS.
+- Tests build workbooks with `write-excel-file` (same author, MIT, a devDependency) instead of ExcelJS.
+
+## DB-2: LIKE wildcards escaped everywhere
+
+- One helper pair in `@repo/db` (`packages/db/src/like.ts`): `escapeLike()` and `containsPattern()`. Postgres' default LIKE escape character is the backslash, so no `ESCAPE` clause is needed.
+- Now escaped: roles, initiatives (list and options), teams (projects), note boards, members, and the five Administrator searches (users, projects, teams, team projects, team members). The four places that escaped by hand (issues, mail contacts, chat history, the vault's folder prefix) use the helper; `likePattern()` in chat history stays as a name for its callers (one of them, the Mastra memory, is being removed on hub/native-engine-runtime).
+- Full-text search across sources stays with hub/second-brain (package K).
+
+## BRW-01: `ws` instead of our RFC 6455 server
+
+- `deployment/volition-stack/browser/websocket.mjs` keeps its one export, `acceptWebSocket`, now over `ws`'s `WebSocketServer({noServer: true, maxPayload: 256 KiB, perMessageDeflate: false})`. The connection object is `ws`'s WebSocket, which already had the same surface the live view uses (`message` with `(Buffer, isBinary)`, `close`, `send`, `close(code, reason)`, `bufferedAmount`). Ours is only the 30 s heartbeat (`ws` answers pings but sends none) and an `error` listener (`ws` reports protocol errors as events after closing).
+- `acceptWebSocket` now passes the connection to a callback instead of returning it (`handleUpgrade` promises no synchronous callback); one line in `project-router.mjs`.
+- `ws` (not Bun's server): the router runs under Node, and the browser gateway (hub/agent-browser-mcp) puts patchright into the same process, so switching the runtime was not a quick win.
+- Dependency: `deployment/volition-stack/browser/package.json` (`@helena/browser-router`) is a workspace member (first entry of the root `workspaces`, so hub/framework's added entry does not collide), and the deploy's `bun install --frozen-lockfile` links `ws` next to the router. The gateway could import `@repo/browser-gateway` by name the same way later.
+- Gains: UTF-8 validation (bad text → 1007, test added), permessage-deflate negotiation handled (declined), 64-bit lengths, the close handshake. The old protocol tests stay and pass (61 with `node --test`); the unmasked-frame test now checks the close code, not `ws`'s reason text.
+
+## BRW-03: our fMP4 checked by mp4box.js
+
+- The muxer (`project-browser-mp4.mjs`) stays, as the audit says (latency). The router tests now also parse an init segment plus four fragments with `mp4box` 2.4.1 (a devDependency of `@helena/browser-router`) and check what a player sees: fragmented, one track, `avc1.42c01f`, timescale 90000, 1920x1080, and each sample's decode time, duration, sync flag, size and bytes.
+
+## WEB-17: one Accept-Language matcher
+
+- New package `@helena/locales` (`packages/locales`): the shipped `LOCALES` and `DEFAULT_LOCALE`, which the web and the API each kept a copy of, and, as the server-only entry `@helena/locales/accept-language`, `localeFromAcceptLanguage()`: `negotiator` parses the header, `@formatjs/intl-localematcher` (`match`, best fit with CLDR data) picks the language. Both libraries were already in the tree through next-intl; the matcher uses the same 0.8 line rather than 0.9 so there is one copy.
+- Kept on purpose: a wildcard ranks every language after it below "anything", so `ja-JP,*;q=0.9,zh;q=0.8` still gives the default. Malformed tags are skipped instead of throwing. `zh-TW` still falls to `zh-CN`.
+- The web's `i18n/locales.ts` re-exports the list and keeps its web-only parts (labels, flags, cookie, direction); the API's `user-preferences/locale.ts` re-exports both. `transpilePackages` gains `@helena/locales`. The matcher is a separate entry so negotiator never reaches a client bundle.
+
+## WEB-18: sticky Ctrl/Alt in the mobile terminal key bar
+
+- Finding beyond the audit: xterm.js (6.0 in WeTTY 3.2.2) decides what a key sends by the legacy `keyCode`, and the bar built its events from `key` and `code` only (keyCode 0). Checked in headless Chrome against WeTTY's own `xterm.js`: the old events sent nothing at all, not only Ctrl combinations. The paste button typed characters as keydowns, which xterm ignores for the same reason.
+- Now (`features/owner-terminal/utils/terminalKeys.ts`): every key carries its keyCode; Ctrl and Alt are latched toggles (`aria-pressed`, accent while held) that apply to the next key from the bar **or** from the phone's keyboard (the next typed character is taken over in the frame's document, from `keydown` or, for soft keyboards, `beforeinput`); paste is one `insertText` input event with CR line ends, the path xterm uses for typed text.
+- Verified with the real xterm.js: Esc, Tab, arrows, `|`, Ctrl+C (0x03), paste, and a latched Ctrl followed by a typed key (Ctrl+D, and Ctrl+E via `insertText` as a soft keyboard sends it). Alt+letter becomes ESC+letter on phones; on a Mac xterm treats Option as a compose key, which does not concern the phone-only bar.
+
+## WEB-19: live view key codes from key and code
+
+- `utils/browserLive.ts` `virtualKeyCode()` builds the Windows virtual key code DevTools wants from `KeyboardEvent.key` and `.code` instead of passing the deprecated `keyCode` on. Deviation from "map from `code`" alone: a letter or digit follows `key` (what the person's layout typed), because mapping German Z (physical `KeyY`) by place would turn Ctrl+Z (undo) into Ctrl+Y (redo). A letter of another script (Russian м) and every other key follow the US place of `code`, which is what browsers themselves report, and named keys (Enter, arrows, F1–F24) follow `key`. The raw `keyCode` is only the last fallback (never 229).
+- The paste-shortcut check uses the same code, so Ctrl+V is found when a browser reports keyCode 0.
+
+## WEB-08 / JOB-04: croner decides what a schedule is
+
+- `features/routines/utils/cronDescription.ts` (the English describer, 146 lines) is deleted: its text was only used to decide validity and was never shown; the dialog shows the translated describer (`cronDescribe.ts` with the reader's words).
+- `parseScheduleInput()` validates the resulting cron with croner, the library and options the API uses (`new Cron(expr, {paused: true})`), so the form accepts exactly what the server does. A cron the field parser can read is still normalized (names to numbers); one only croner reads (`L`, `5#2`) is kept as typed and shown raw.
+- Kept: the text→cron parser (English and German, no maintained library does this) and the translated describer. `cronstrue` was optional in the audit and is not added: the describer already speaks all ten languages through the message files.
+- For hub/native-engine (JOB-04 "agree the cron syntax"): the UI now validates with croner 10 and the same options as `apps/api/src/modules/routines/cron.ts`; keep croner on the engine side.
+
+## WEB-03: fewer web dependencies
+
+- Removed from `apps/web`: `jszip` and `highlight.js` (not imported; lowlight brings its own highlight.js), `@uiw/react-color`, and the 11 `@radix-ui/react-*` packages. Every Radix import now comes from the `radix-ui` meta package (`import { Dialog as DialogPrimitive } from 'radix-ui'`, `Slot.Root`), which was already installed and used for Direction, Switch and Collapsible; one copy of each primitive also means one Direction context.
+- Kept: `streamdown`, which hub/chat-standards now uses (the audit's own note).
+- One swatch picker: `components/ui/color-swatches.tsx` (from the settings color field) serves the settings colors and the sticky-note colors; the chosen swatch has `aria-pressed`.
+- Checked in the browser (dev instance of this branch): the labels "Hinzufügen" dropdown, the new-label color popover with selection, the new-board dialog, and a sticky note's color picker changing the note to blue; no console errors. Web tests: 549 pass.
+
+## WEB-04: one combobox pattern
+
+- `components/ui/combobox.tsx` is now the shared trigger of the one pattern (Radix Popover + cmdk Command, as the ~10 existing pickers already were); it replaces the Base UI combobox (282 lines, one consumer) and the agent form's own trigger.
+- The account time-zone picker moved onto it: grouped by region, searchable by zone, city or offset (`keywords`), labels built lazily while the list is open. New message `account.preferences.timezoneSearch` in all 10 locales.
+- The routines' free-text field with suggestions (schedule, time zone) is now cmdk's input (`Command.Input asChild` on the field) with the list in a Popover instead of 185 lines of hand-written combobox ARIA. Kept: typing is the value, Enter submits the form when no list is open, Escape closes, the chevron shows all suggestions. JSDOM tests cover role, label, options, arrow keys + Enter, Enter to the form, Escape.
+- `@base-ui/react` is removed.
+- Known cmdk 1.1.1 quirk, measured in the browser: the option cmdk marks active on its own after typing is not yet the input's `aria-activedescendant`; the first arrow key sets it. It affects every cmdk picker alike. If cmdk stays unmaintained, the audit's fallback (all pickers on Base UI together) stands.
+
+## WEB-15: scripts by nonce
+
+- `src/proxy.ts` makes a fresh nonce per document request and sends `script-src 'nonce-…' 'strict-dynamic' https: http: 'unsafe-inline'` (Google's "strict CSP": a browser that knows nonces ignores the three fallbacks, which only CSP-level-1 browsers read). The policy is also set on the forwarded request, where Next finds the nonce and puts it on its own scripts and flight payload; `x-nonce` carries it to the layout for the two inline scripts (RuntimeEnvScript, next-themes). Development adds `'unsafe-eval'` as before; media routes keep the api's headers.
+- Every page already renders per request (`connection()` in RuntimeEnvScript), which a nonce needs.
+- Checked on a production build of this branch: all 41 script tags of `/login` carry the nonce; start page, project board and dashboard, notes, the Scalar API reference and the preferences render, the theme bootstrap and runtime env run, and the console shows no CSP refusal.
+- Live note: the live web runs `next dev` today; the policy then includes `'unsafe-eval'` as before.
+
+## WEB-07: one zone, localized durations and plurals
+
+- **next-intl `timeZone`:** `i18n/request.ts` now gives next-intl a zone, from the cookie `helena-timezone` (fallback `UTC`, the API's default). Before, next-intl formatted a server render in the server's zone and its hydration in the browser's, and ignored the account setting. PreferencesSync writes the cookie from the account's zone (signed out: the browser's) and refreshes when it differs from the rendered one, the same way the language cookie works; and it hands the rendered zone to `utils/dates.ts` while rendering, so the plain formatters and next-intl always agree (before, `setDisplayTimezone` ran in an effect, so the first paint used the browser zone).
+- Deviation from the audit: the ~60 call sites of `utils/dates.ts` stay plain functions rather than moving to next-intl's `createFormatter`; the bug was the two disagreeing zones, which the shared source fixes. A move to `useFormatter` can follow screen by screen.
+- **Zone math:** the hand-written offset math (`zoneOffsetMs`, ~40 lines) is `TZDate` from `@date-fns/tz` 1.5.0 (MIT); `addDays`/`daysBetween` are date-fns (already a dependency). Tests cover both DST switches of Europe/Berlin and a round trip over a DST day.
+- **Durations:** `formatDuration` (9 call sites) is `Intl.DurationFormat` narrow in the display language: "5m/3h/11d" in English as before, "0 Min." on the German board where it used to say "0m"; the timeline's "<1m" too.
+- **Plurals and English text:** the subtask disposal dialog printed "…2 Unteraufgaben.s. Choose what happens to them." and "New parent:" in every language; the integration picker "3 tools". New ICU messages `issue.subtaskDisposal.choose`, `.newParent`, `teams.integrations.toolCount` in all 10 locales. The Administrator security page and its audit list used `toLocaleString()` in the browser's language and zone; they use `formatDateTime` now, and chart tooltips format numbers in the display language.
+- Checked in the browser: the cookie follows the browser zone signed out and the account zone signed in; the German board shows "0 Min.".
+
+## WEB-05: Radix widgets instead of hand-written ARIA
+
+- `ConfirmDialog` (41 callers, API unchanged) is a Radix **AlertDialog** (`components/ui/alert-dialog.tsx`, shadcn's): announced as an alert dialog, focus starts on Cancel, a click beside it no longer dismisses it (Cancel and Escape do). The one `window.confirm` (disconnecting a git provider) uses it too.
+- The five hand-built radio groups (registration mode, agent network mode, new-project preset, custom field type and member scope) are Radix **RadioGroup**: one tab stop, the arrow keys move the choice. The e-mail `ProviderToggle`, a "tablist" without tab panels, is a Radix **ToggleGroup** (single).
+- The narrow chat list (`ChatListDrawer`) is a Radix **Dialog** rendered in place (no portal, so it stays inside the chat's own box): focus is trapped and restored, the page behind is inert, Escape and a click beside it close it; a visually hidden close button replaces the unlabeled backdrop button.
+- `ResizeGrip` is a focusable `role="separator"` that the arrow keys move (10 px, Shift 50 px). Moving the resizable layouts to `react-resizable-panels` stays for later, as the audit says (persisted pixel widths need a spike).
+- Checked in the browser: alert dialog role, focus on Cancel, outside click ignored, Escape closes; radio groups select by click and by arrow keys (a CDP key with a real hold: Radix checks on focus while the key is down); the provider toggle renders as radios. The drawer check was cut short when Kingston went down.
+
+## WEB-06: a lint toolchain instead of regexes and a ratchet
+
+- **React Hooks 7** (`packages/eslint-config`): the recommended set now includes the React Compiler checks (`set-state-in-effect`, `refs`, `purity`, `immutability`, `static-components`, …), which catch the class of the "Maximum update depth" incident. 125 existing findings (80 `set-state-in-effect`).
+- **jsx-a11y** recommended, **`react/jsx-no-literals`** (text a person reads comes from the message files; punctuation allowed), and **eslint-plugin-better-tailwindcss** in `apps/web`: `enforce-logical-properties` for the inline axis only (left/right → start/end; the block axis and sizes are ignored, the UI has no vertical writing mode) and `no-restricted-classes` for the design rules (raw palette classes, arbitrary text/row sizes, off-scale type), which now match class names with any variant instead of regexes over every string literal. Raw hex/rgb in style objects stays a `no-restricted-syntax` rule.
+- **ESLint bulk suppressions** replace the warn level plus `lintRatchet.test.ts`: every rule is an error, and the 592 existing findings in 285 files are listed in `apps/web/eslint-suppressions.json` (prettier-ignored, ESLint writes it). New code fails; `bunx eslint --prune-suppressions .` in `apps/web` shrinks the list after a fix.
+- **lefthook:** the web app lints from its own directory (a separate `eslint-web` command with `root: apps/web/`), because the suppressions are keyed relative to it; it skips layout fixes (`--fix-type problem,suggestion`) so a suppressed physical class is never rewritten behind anyone's back, and passes on unpruned suppressions like `bun run lint` does (a branch that removes a violation elsewhere never fails on it).
+- Updated docs that named the ratchet: `docs/volition/design-handover.md` and the agent-pool skill reference `bundles/agent-pool/skills/review-ablauf/refs/helena-repo-regeln.md`.
+- **Skipped on purpose:** renaming the `x-volition-local-access` header and the `application/x-volition-file-entry` drag type. Both are existing volition names, which the binding agent rules leave to the one planned rename step (hub/oss-packaging's rename kit), and the header also needs the live nginx config in the same step.
+- CI wiring stays with hub/oss-packaging, as the audit says.
+
+## WEB-02: `@tiptap/markdown` — open, with the measurements
+
+D-C6 keeps `@tiptap/markdown` as the editor's markdown layer. I did not switch in this branch: a parse→serialize comparison of `tiptap-markdown` (today) and `@tiptap/markdown` 3.30.5 (the version that matches the pinned Tiptap 3.30.5; 3.31.3 behaves the same in the parts below) on a corpus of note-like markdown showed changes that would rewrite stored text on the first edit, one of them a correctness bug for agent prompts:
+
+| Input | Today | `@tiptap/markdown` |
+|---|---|---|
+| `Think in <thinking> tags & reply` (agent prompt; `AgentInstructionsEditor` keeps it verbatim today) | verbatim | `Think in &lt;thinking&gt; tags &amp; reply` — every `<`, `>`, `&` is entity-encoded; the text encoder is private to `MarkdownManager` and not configurable per extension or option (checked up to 3.31.3) |
+| `snake_case` | kept | `snake\_case` (every `_`, `[`, `]`, `~` escaped) |
+| `- a` + blank line + `- b` (loose list) | kept | tight list, blank line lost |
+| `- item` + newline + `  continued` | kept | `- item  ` + newline + `continued` (hard break, no indent) |
+| `<https://example.com>` | kept | `[https://example.com](https://example.com)` |
+| `\| A \| B \|` table | compact | padded columns plus blank lines around |
+| `[[Release notes]]`, `[[MKT-12]]`, `![[Diagram.png]]` | kept (own markdown-it rule) | escaped (`\[\[…\]\]`) until a marked tokenizer exists |
+
+What the move needs, in one branch together with hub/second-brain (wikilinks and frontmatter are theirs; frontmatter never enters the editor, `noteDraft` splits it off, so it is byte-stable already):
+
+1. A text-encoding hook: an upstream option in `@tiptap/markdown`, or a small `MarkdownManager` subclass behind `Markdown.extend({ onBeforeCreate })` that leaves `<`, `>`, `&` and intraword `_` alone the way today's serializer does (the prompt editor must stay byte-exact).
+2. Renderers/tokenizers for the custom nodes: wikilink (marked inline tokenizer, byte-stable), mention (`@handle` tokenizer), `SoftLineBreak` (`\n`, `<br>` in tables, list-item indentation), `MarkdownTable` (compact pipes, escaped `|`), `ResizableImage` (`<img width>`), `Video` (`<video>`), Link autolinks (`<url>` when text equals href), and a list attribute that keeps loose lists loose.
+3. The call sites: `editor.storage.markdown.getMarkdown()` → `editor.getMarkdown()` (trimmed), `contentType: 'markdown'` on `useEditor` and on the markdown `setContent`/`insertContentAt` calls (paste).
+4. A round-trip test on a corpus of real-shaped notes (frontmatter-free bodies with wikilinks, task lists, tables, code, soft breaks, loose and tight lists) plus the existing editor tests, which today pin the current output.
+
+Estimate: the audit's 3–5 days stands; the text-encoding hook is the part to settle first (upstream issue or subclass).

@@ -77,6 +77,8 @@ describe('MCP structured results through the SDK client', () => {
     const listed = await client.listTools();
     expect(listed.tools.length).toBeGreaterThan(0);
     expect(listed.tools.every((tool) => tool.outputSchema?.type === 'object')).toBe(true);
+    expect(listed.tools.every((tool) => typeof tool.title === 'string' && tool.title)).toBe(true);
+    expect(client.getServerVersion()).toMatchObject({ name: 'helena', title: 'Helena' });
 
     const created = await callTool(client, {
       name: 'create_project',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import Modal from '@/components/common/overlay/Modal';
@@ -14,6 +15,8 @@ import MailPasswordField from './MailPasswordField';
 import MailProjectSelect from './MailProjectSelect';
 import MailServerFields from './MailServerFields';
 import { GOOGLE_PRESET, isGooglePreset } from './mailPresets';
+import { MailboxWindowField } from '@/features/access/MailboxWindowField';
+import { accessPath } from '@/utils/paths';
 
 type Form = Omit<MailAccountInput, 'password'> & { password: string };
 
@@ -38,6 +41,7 @@ function initial(account: MailAccount | null, projectId: number | null): Form {
       enabled: true,
       syncTrash: false,
       syncSpam: false,
+      fetchDays: 30,
     };
   const {
     id: _id,
@@ -45,6 +49,9 @@ function initial(account: MailAccount | null, projectId: number | null): Form {
     projectKey: _key,
     projectName: _name,
     hasPassword: _has,
+    auth: _auth,
+    googleAccountId: _google,
+    resetPending: _reset,
     credentialId: _credentialId,
     credentialLabel: _credentialLabel,
     syncStatus: _status,
@@ -70,6 +77,7 @@ export default function MailAccountDialog({
   onClose: () => void;
 }) {
   const t = useTranslations('mail.accounts');
+  const tAccess = useTranslations('access.mailbox');
   const [form, setForm] = useState<Form>(() => initial(account, defaultProjectId));
   const [result, setResult] = useState<{ imap: string | null; smtp: string | null } | null>(null);
   const save = useSaveMailAccount(teamId);
@@ -161,7 +169,14 @@ export default function MailAccountDialog({
           </Button>
         </div>
         {google ? (
-          <p className="text-xs text-muted-foreground">{t('googleHint')}</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-muted-foreground">{t('googleHint')}</p>
+            <p className="text-xs text-muted-foreground">
+              <Link className="underline underline-offset-2" href={accessPath('google')}>
+                {tAccess('gmailHint')}
+              </Link>
+            </p>
+          </div>
         ) : (
           <MailServerFields value={form} onChange={set} />
         )}
@@ -173,6 +188,10 @@ export default function MailAccountDialog({
           credentialId={form.credentialId}
           storedLabel={account?.credentialLabel ?? null}
           onChange={set}
+        />
+        <MailboxWindowField
+          value={{ all: form.fetchDays == null, days: form.fetchDays ?? 30 }}
+          onChange={(window) => set({ fetchDays: window.all ? null : window.days })}
         />
         <div className="flex flex-col gap-2 text-sm">
           {(['enabled', 'syncTrash', 'syncSpam'] as const).map((key) => (

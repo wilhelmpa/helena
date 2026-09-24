@@ -21,3 +21,6 @@ charts
 
 # Verbatim runtime checkpoint; validated against live source.
 deployment/volition-stack/
+
+# Written by ESLint itself (--suppress-all / --prune-suppressions) in its own format.
+apps/web/eslint-suppressions.json

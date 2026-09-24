@@ -130,6 +130,7 @@
     "timezone": "المنطقة الزمنية",
     "timezoneDescription": "اختار المنطقة اللي بتشتغل فيها.",
     "timezonePlaceholder": "اختر منطقة زمنية",
+    "timezoneSearch": "ابحث عن منطقة زمنية",
     "timezoneEmpty": "لم يتم العثور على مناطق زمنية.",
     "timezoneGroups": {
       "America": "الأمريكتان",

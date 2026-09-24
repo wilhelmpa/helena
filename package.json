@@ -34,6 +34,7 @@
     "prepare": "lefthook install || true"
   },
   "workspaces": [
+    "deployment/volition-stack/browser",
     "apps/*",
     "packages/*",
     "examples/plugins/*"
@@ -45,7 +46,6 @@
     "@tiptap/extension-floating-menu": "3.30.5",
     "@ai-sdk/provider-utils@4.0.5": "4.0.40",
     "@esbuild-kit/core-utils>esbuild": "0.28.1",
-    "exceljs>uuid": "11.1.1",
     "esbuild": "0.28.1"
   }
 }

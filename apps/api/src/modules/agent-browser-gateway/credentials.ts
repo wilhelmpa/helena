@@ -1,6 +1,6 @@
-import { db, integrationCredential, integrationCredentialGrant } from '@repo/db';
-import { and, eq } from 'drizzle-orm';
-import { decryptSecret, totpCode, totpSecondsRemaining } from '@repo/crypto';
+import { db, integrationCredential, integrationCredentialGrant, openCredential } from '@repo/db';
+import { and, eq, sql } from 'drizzle-orm';
+import { totpCode, totpSecondsRemaining } from '@repo/crypto';
 import { HttpError } from '#shared/lib';
 import type { RunnerAgent } from '../agents/runner/service';
 import { loginOrigins } from '../agents/credentials/kinds';
@@ -8,9 +8,11 @@ import {
   claimedWork,
   deliverWebLogins,
   recordWebLoginUses,
+  subjectOf,
   workRefOf,
   type DeliveredLogin,
 } from '../agents/credentials/delivery';
+import { credentialInScope, grantReaches } from '../agents/credentials/grants';
 
 // The browser gateway's own use of the Credentials page's delivery functions
 // (agents/credentials/delivery.ts), which already do everything design §6 needs: decrypt
@@ -108,9 +110,14 @@ export async function loginForOrigin(
 export async function loginCode(
   agent: RunnerAgent,
   work: GatewayWork,
+  projectId: number | null,
   credentialId: number,
   frameOrigin: string,
 ): Promise<{ code: string; secondsRemaining: number }> {
+  // The same grant rules as the password itself (deliverWebLogins): a grant to the agent
+  // or to the project it works in, and a login limited to a project only there.
+  const claimed = await resolveWork(agent, work, projectId);
+  const subject = subjectOf(agent, claimed);
   const [row] = await db
     .select({
       id: integrationCredential.id,
@@ -120,18 +127,13 @@ export async function loginCode(
       authTag: integrationCredential.authTag,
     })
     .from(integrationCredential)
-    .innerJoin(
-      integrationCredentialGrant,
-      and(
-        eq(integrationCredentialGrant.credentialId, integrationCredential.id),
-        eq(integrationCredentialGrant.agentId, agent.id),
-      ),
-    )
     .where(
       and(
         eq(integrationCredential.id, credentialId),
         eq(integrationCredential.teamId, agent.teamId),
         eq(integrationCredential.integrationKey, 'web_login'),
+        credentialInScope(subject),
+        sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subject)})`,
       ),
     );
   if (!row) throw new HttpError(404, 'Login not found or not granted to this agent');
@@ -139,9 +141,8 @@ export async function loginCode(
   if (!loginOrigins(readable.loginUrl, readable.allowedDomains ?? []).includes(frameOrigin)) {
     throw new HttpError(403, `This login is not for ${frameOrigin.slice(0, 200)}`);
   }
-  const secrets = JSON.parse(decryptSecret(row)) as { totpSecret?: string };
+  const secrets = JSON.parse(openCredential(row)) as { totpSecret?: string };
   if (!secrets.totpSecret) throw new HttpError(400, 'This login has no authenticator key');
-  const claimed = await resolveWork(agent, work, null);
   await recordWebLoginUses(agent, claimed, [
     { credentialId: row.id, tool: 'browser_login_code', origin: frameOrigin },
   ]);

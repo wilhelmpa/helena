@@ -414,7 +414,8 @@
       "integrations": "Integrasi",
       "mcp": "Alat MCP Helena",
       "webhooks": "Webhook",
-      "bundles": "Paket templat"
+      "bundles": "Paket templat",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

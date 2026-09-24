@@ -3,7 +3,7 @@ import { and, asc, eq, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { isHomeAgent } from '../core/home-agent';
-import type { AiAgentRow } from '../core/service';
+import type { AgentRuntimeKind, AiAgentRow } from '../core/service';
 
 const handles = (usernames: string[]) => usernames.map((username) => `@${username}`).join(', ');
 
@@ -25,16 +25,31 @@ export function homeAgentSection(
         ]
       : []),
     '',
-    'To get work done in a project, create a task there with the Plan MCP tools, delegate',
+    'To get work done in a project, create a task there with the Helena MCP tools, delegate',
     "it to the project's coordinator and follow the task until it is done. Answer questions",
     'that span several projects yourself.',
   ].join('\n');
 }
 
+// How the agent's runtime splits one run into parallel parts, if it can. Neither kind of
+// helper is a Helena agent.
+const SUB_AGENTS: Record<AgentRuntimeKind, string[]> = {
+  hermes: [
+    'For parallel parts of one run you may start Hermes sub-agents with the delegation',
+    'toolset. They are not Helena agents, and Helena does not show them.',
+  ],
+  claude: [
+    'For parallel parts of one run you may start Claude Code subagents with the Task tool.',
+    'They are not Helena agents, and Helena does not show them.',
+  ],
+  codex: [],
+};
+
 export function coordinatorSection(input: {
   projectKeys: string[];
   manager: string | null;
   specialists: string[];
+  runtime?: AgentRuntimeKind;
 }): string {
   const manager =
     input.manager == null
@@ -45,8 +60,7 @@ export function coordinatorSection(input: {
   return [
     '## Agent team',
     `You coordinate the agent team of ${input.projectKeys.join(', ')}${manager}.`,
-    'For parallel parts of one run you may start Hermes sub-agents with the delegation',
-    'toolset. They are not Plan agents, and Plan does not show them.',
+    ...SUB_AGENTS[input.runtime ?? 'hermes'],
     "Longer or specialist work goes to the project's specialists through the agent team",
     input.specialists.length > 0
       ? `instead: ${handles(input.specialists)}.`
@@ -119,5 +133,6 @@ export async function structureSection(agent: AiAgentRow): Promise<string> {
     projectKeys: agent.projects.map((p) => p.key),
     manager: assignment.manager,
     specialists: [...new Set([...specialists.values()].flat())],
+    runtime: agent.runtimePolicy.runtime ?? 'hermes',
   });
 }

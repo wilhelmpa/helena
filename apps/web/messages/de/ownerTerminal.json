@@ -30,5 +30,8 @@
     "ctrl": "Strg",
     "alt": "Alt",
     "paste": "Einfügen"
+  },
+  "clipboard": {
+    "copied": "In die Zwischenablage kopiert"
   }
 }

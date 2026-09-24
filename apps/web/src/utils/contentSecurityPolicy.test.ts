@@ -45,6 +45,14 @@ describe('contentSecurityPolicy', () => {
     );
   });
 
+  it('runs scripts by nonce, with fallbacks only old browsers read', () => {
+    assert.match(
+      contentSecurityPolicy('abc123'),
+      /(^|; )script-src 'nonce-abc123' 'strict-dynamic' https: http: 'unsafe-inline'(;|$)/,
+    );
+    assert.match(contentSecurityPolicy(), /(^|; )script-src 'self' 'unsafe-inline'(;|$)/);
+  });
+
   it('allows same-origin frames only when no workspace is configured', () => {
     assert.match(contentSecurityPolicy(), /frame-src 'self';/);
   });

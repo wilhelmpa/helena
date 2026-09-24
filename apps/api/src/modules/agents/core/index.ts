@@ -280,7 +280,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
           'Replace the projects of the team the agent works in. Send the full set: a project ' +
           'left out is detached. A project of another team is rejected, and so is one the ' +
           'caller is not a member of unless they run the team.',
-        ...mcpTool('set_ai_agent_projects'),
+        ...mcpTool('set_ai_agent_projects', undefined, 'credentials'),
       },
     },
   )
@@ -304,7 +304,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         summary: 'Regenerate the API key',
         description: "Rotate an agent's API key and return the new secret once.",
         // Rotating invalidates the previous key, which cannot be recovered.
-        ...mcpTool('regenerate_ai_agent_key', { destructiveHint: true }),
+        ...mcpTool('regenerate_ai_agent_key', { destructiveHint: true }, 'credentials'),
       },
     },
   )
@@ -355,7 +355,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
       detail: {
         summary: 'Delete an AI agent',
         description: 'Delete an AI agent and its bot user. Irreversible.',
-        ...mcpTool('delete_ai_agent'),
+        ...mcpTool('delete_ai_agent', undefined, 'delete', 'external'),
       },
     },
   )

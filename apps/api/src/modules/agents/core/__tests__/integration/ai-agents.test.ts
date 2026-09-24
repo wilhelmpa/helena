@@ -820,6 +820,10 @@ describe('ai agents', () => {
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/events',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream',
       'POST /projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel',
+      // The Autopilot of an agent is set by people only; an agent key is refused.
+      'GET /teams/:teamId/ai-agents/:agentId/autopilot',
+      'PUT /teams/:teamId/ai-agents/:agentId/autopilot',
+      'PUT /teams/:teamId/ai-agents/:agentId/autopilot/budgets',
     ]);
   });
 });

@@ -120,72 +120,73 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2 } = {}) {
   server.on("upgrade", (request, socket, head) => {
     upgraded.add(socket);
     browser.connections++;
-    const connection = acceptWebSocket(request, socket, head);
-    connections.add(connection);
-    connection.on("message", (data) => {
-      const message = JSON.parse(data.toString());
-      commands.push(message);
-      const reply = (result = {}) => connection.send(JSON.stringify({ id: message.id, result }));
-      switch (message.method) {
-        case "Target.getTargets":
-          return reply({ targetInfos: tabs.map(({ id }) => ({ targetId: id, type: "page" })) });
-        case "Target.attachToTarget":
-          return reply({ sessionId: `S-${message.params.targetId}` });
-        case "Browser.getWindowForTarget":
-          return reply({ windowId: 1, bounds });
-        case "Browser.setWindowBounds": {
-          const before = bounds;
-          bounds = { ...bounds, ...message.params.bounds };
-          if (before.width !== bounds.width || before.height !== bounds.height) {
-            if (emulation) resizedWhileEmulated = true;
-            else stale = null;
+    acceptWebSocket(request, socket, head, (connection) => {
+      connections.add(connection);
+      connection.on("message", (data) => {
+        const message = JSON.parse(data.toString());
+        commands.push(message);
+        const reply = (result = {}) => connection.send(JSON.stringify({ id: message.id, result }));
+        switch (message.method) {
+          case "Target.getTargets":
+            return reply({ targetInfos: tabs.map(({ id }) => ({ targetId: id, type: "page" })) });
+          case "Target.attachToTarget":
+            return reply({ sessionId: `S-${message.params.targetId}` });
+          case "Browser.getWindowForTarget":
+            return reply({ windowId: 1, bounds });
+          case "Browser.setWindowBounds": {
+            const before = bounds;
+            bounds = { ...bounds, ...message.params.bounds };
+            if (before.width !== bounds.width || before.height !== bounds.height) {
+              if (emulation) resizedWhileEmulated = true;
+              else stale = null;
+            }
+            return reply();
           }
-          return reply();
-        }
-        case "Emulation.setDeviceMetricsOverride": {
-          if (!emulation) {
-            emulatedFrom = stale ?? windowPage();
-            resizedWhileEmulated = false;
+          case "Emulation.setDeviceMetricsOverride": {
+            if (!emulation) {
+              emulatedFrom = stale ?? windowPage();
+              resizedWhileEmulated = false;
+            }
+            const { width, height, deviceScaleFactor } = message.params;
+            emulation = { width, height, ratio: deviceScaleFactor };
+            return reply();
           }
-          const { width, height, deviceScaleFactor } = message.params;
-          emulation = { width, height, ratio: deviceScaleFactor };
-          return reply();
+          case "Emulation.clearDeviceMetricsOverride":
+            if (emulation && resizedWhileEmulated) stale = emulatedFrom;
+            emulation = null;
+            return reply();
+          case "Page.getFrameTree":
+            return reply({ frameTree: { frame: { id: PAGE } } });
+          case "Page.createIsolatedWorld":
+            return reply({ executionContextId: 5 });
+          case "Runtime.evaluate": {
+            if (message.params.contextId) return reply({ result: { value: browser.lastInput } });
+            if (message.params.awaitPromise) return reply({ result: { value: true } });
+            const tab = tabs.find(({ id }) => message.sessionId === `S-${id}`);
+            const page = pageSizes();
+            const visibility = tab.visible ? "visible" : "hidden";
+            const sizes = [visibility, 1920, 1080, bounds.width, bounds.height, page.width, page.height, page.ratio];
+            if (message.params.expression.includes("__clicks")) return reply({ result: { value: [] } });
+            const visibilityOnly = message.params.expression === "document.visibilityState";
+            return reply({ result: { value: visibilityOnly ? visibility : sizes } });
+          }
+          case "Page.startScreencast":
+            reply();
+            return connection.send(
+              JSON.stringify({
+                method: "Page.screencastFrame",
+                sessionId: message.sessionId,
+                params: {
+                  data: Buffer.from("jpeg").toString("base64"),
+                  metadata: { deviceWidth: 800, deviceHeight: 513 },
+                  sessionId: 7,
+                },
+              }),
+            );
+          default:
+            return reply();
         }
-        case "Emulation.clearDeviceMetricsOverride":
-          if (emulation && resizedWhileEmulated) stale = emulatedFrom;
-          emulation = null;
-          return reply();
-        case "Page.getFrameTree":
-          return reply({ frameTree: { frame: { id: PAGE } } });
-        case "Page.createIsolatedWorld":
-          return reply({ executionContextId: 5 });
-        case "Runtime.evaluate": {
-          if (message.params.contextId) return reply({ result: { value: browser.lastInput } });
-          if (message.params.awaitPromise) return reply({ result: { value: true } });
-          const tab = tabs.find(({ id }) => message.sessionId === `S-${id}`);
-          const page = pageSizes();
-          const visibility = tab.visible ? "visible" : "hidden";
-          const sizes = [visibility, 1920, 1080, bounds.width, bounds.height, page.width, page.height, page.ratio];
-          if (message.params.expression.includes("__clicks")) return reply({ result: { value: [] } });
-          const visibilityOnly = message.params.expression === "document.visibilityState";
-          return reply({ result: { value: visibilityOnly ? visibility : sizes } });
-        }
-        case "Page.startScreencast":
-          reply();
-          return connection.send(
-            JSON.stringify({
-              method: "Page.screencastFrame",
-              sessionId: message.sessionId,
-              params: {
-                data: Buffer.from("jpeg").toString("base64"),
-                metadata: { deviceWidth: 800, deviceHeight: 513 },
-                sessionId: 7,
-              },
-            }),
-          );
-        default:
-          return reply();
-      }
+      });
     });
   });
   browser.sent = (method) => commands.filter((command) => command.method === method);

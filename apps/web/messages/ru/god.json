@@ -414,7 +414,8 @@
       "integrations": "Интеграции",
       "mcp": "Инструменты MCP Helena",
       "webhooks": "Вебхуки",
-      "bundles": "Пакеты шаблонов"
+      "bundles": "Пакеты шаблонов",
+      "autopilot": "Autopilot"
     },
     "problems": {
       "external-off": "Загрузится, как только внешние плагины будут включены.",

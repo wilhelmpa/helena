@@ -82,10 +82,8 @@ For a guarded Plan database reset and minimal Home-chat bootstrap, follow [`docs
 
 ```bash
 npm --prefix gateway ci
-npm --prefix google-bridge ci
 npm --prefix integration ci
 node --test gateway/*.test.mjs
-node --test google-bridge/test/*.test.mjs
 node --test integration/test/*.test.mjs
 python3 -m unittest discover -s workspace-bridge/test
 python3 -m unittest discover -s backup/tests

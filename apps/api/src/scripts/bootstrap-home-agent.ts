@@ -11,7 +11,12 @@ import {
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 
 import { HOME_AGENT_USERNAME, isHomeAgent } from '#modules/agents/core/home-agent';
-import { createAgent, regenerateKey } from '#modules/agents/core/service';
+import {
+  AGENT_RUNTIMES,
+  createAgent,
+  regenerateKey,
+  type AgentRuntimeKind,
+} from '#modules/agents/core/service';
 import {
   createHermesProjectCoordinator,
   hermesProjectCoordinatorUsername,
@@ -36,7 +41,7 @@ export const HOME_AGENT_SOUL =
 const HOME_AGENT_INSTRUCTIONS = [
   'You are the Home agent, the master of all agents of this system.',
   'You help set up and run the whole system.',
-  'Work across projects, keep tasks traceable in Plan, and take no external action without explicit approval.',
+  'Work across projects, keep tasks traceable in Helena, and take no external action without explicit approval.',
 ].join(' ');
 
 export interface ProjectCoordinatorBootstrapResult {
@@ -139,12 +144,16 @@ export interface ProjectAgentBootstrapResult {
   agent: { id: number; userId: string; username: string };
   // Null when the caller's current key is still valid for the agent.
   apiKey: string | null;
+  // What runs the agent: Hermes, or Claude Code or Codex, which the runner starts with
+  // that preset in the same profile directory (the agent's home).
+  runtime: AgentRuntimeKind;
 }
 
-// An external agent of the project with a Hermes runtime of its own. The Home agent and
-// the coordinators have theirs already. An agent that works in another project as well
-// has none, because the runner claims an agent's runs from all of its projects with one
-// working directory. The worker picks the agents by the same rule.
+// An external agent of the project with a runtime of its own: Hermes, Claude Code or
+// Codex, as its runtime policy says. The Home agent and the coordinators have theirs
+// already. An agent that works in another project as well has none, because the runner
+// claims an agent's runs from all of its projects with one working directory. The worker
+// picks the agents by the same rule.
 export async function bootstrapProjectAgent(
   projectId: number,
   agentId: number,
@@ -171,15 +180,15 @@ export async function bootstrapProjectAgent(
     !agent ||
     isHomeAgent(agent.username) ||
     isHermesProjectCoordinatorUsername(agent.username) ||
-    agent.projects !== 1 ||
-    // A Claude Code or Codex agent runs on a runner of that preset, not in Hermes.
-    (agent.runtime ?? 'hermes') !== 'hermes'
+    agent.projects !== 1
   ) {
     return null;
   }
+  const runtime = AGENT_RUNTIMES.find((kind) => kind === agent.runtime) ?? 'hermes';
   return {
     agent: { id: agent.id, userId: agent.userId, username: agent.username },
     apiKey: await currentOrNewKey(agent, agent.teamId, currentApiKey),
+    runtime,
   };
 }
 

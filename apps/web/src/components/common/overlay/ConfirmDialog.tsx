@@ -1,13 +1,24 @@
 import { type ReactNode, useState } from 'react';
-import Modal from './Modal';
-import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
-// A modal with a destructive confirm button that owns the busy state and the
+// A confirmation with a destructive confirm button that owns the busy state and the
 // try/catch around the action. Callers put the dialog-specific body in `children`
 // and supply the action. A failed action is toasted globally; the dialog stays
 // open so the user can retry. Used by the delete confirmations (label/type/state/
 // project) and the members/roles flows.
+//
+// An alert dialog (Radix AlertDialog): announced as one, focus starts on Cancel, and a
+// click beside it does not dismiss it; Cancel and Escape do.
 export default function ConfirmDialog({
   title,
   children,
@@ -38,18 +49,25 @@ export default function ConfirmDialog({
   }
 
   return (
-    <Modal title={title} onClose={onClose}>
-      <div className="space-y-4">
-        {children}
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose} disabled={busy}>
-            {t('cancel')}
-          </Button>
+    <AlertDialog open onOpenChange={(open) => !open && !busy && onClose()}>
+      <AlertDialogContent className="sm:max-w-[440px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+        </AlertDialogHeader>
+        {children ? (
+          <AlertDialogDescription asChild>
+            <div className="space-y-4 text-foreground">{children}</div>
+          </AlertDialogDescription>
+        ) : (
+          <AlertDialogDescription className="sr-only">{title}</AlertDialogDescription>
+        )}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>{t('cancel')}</AlertDialogCancel>
           <Button variant="destructive" onClick={confirm} disabled={busy || confirmDisabled}>
             {confirmLabel}
           </Button>
-        </div>
-      </div>
-    </Modal>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

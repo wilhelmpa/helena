@@ -23,8 +23,11 @@ function runEvent(run: RunRef & { id: number; agentId: number }) {
 }
 
 // Records that an agent took a queued run of the issue. Only the first claim is
-// logged: a re-claim after an expired lease is the same task handed out again.
-export async function recordAgentRunStarted(run: RunRef & { attempts: number }): Promise<void> {
+// logged: a re-claim after an expired lease is the same task handed out again. The
+// Autopilot level the run works at rides along as the entry's subject, for the task's badge.
+export async function recordAgentRunStarted(
+  run: RunRef & { attempts: number; autopilotLevel?: number | null },
+): Promise<void> {
   if (run.attempts > 1) return;
   if (run.id != null && run.agentId != null) {
     await publishDomainEvent({
@@ -36,7 +39,12 @@ export async function recordAgentRunStarted(run: RunRef & { attempts: number }):
     });
   }
   if (run.issueId == null) return;
-  await recordActivity(run.issueId, [{ action: 'agent_started' }], run.agentUserId);
+  const level = run.autopilotLevel == null ? undefined : textSide(String(run.autopilotLevel));
+  await recordActivity(
+    run.issueId,
+    [{ action: 'agent_started', ...(level && { subject: level }) }],
+    run.agentUserId,
+  );
 }
 
 // Records how the agent's run of the issue ended.

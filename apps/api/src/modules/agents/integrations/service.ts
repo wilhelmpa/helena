@@ -1,4 +1,10 @@
-import { db, integrationCredential } from '@repo/db';
+import {
+  db,
+  integrationCredential,
+  nextCredentialId,
+  openCredential,
+  sealCredential,
+} from '@repo/db';
 import { and, eq, isNull, notInArray, sql } from 'drizzle-orm';
 import {
   coerceConfig,
@@ -8,7 +14,6 @@ import {
   type ConfigField,
 } from '@repo/agent-tools';
 import { iso, HttpError } from '#shared/lib';
-import { encryptSecret, decryptSecret } from '@repo/crypto';
 import { CREDENTIAL_KINDS } from '../credentials/kinds';
 import { credentialSchemaFor, integrationKind, type IntegrationKind } from './catalog';
 
@@ -127,7 +132,9 @@ export async function listCredentialOptions(teamId: number): Promise<CredentialO
     .orderBy(integrationCredential.integrationKey);
   return rows.flatMap((row) => {
     const kind =
-      row.integrationKey === 'secret' || row.integrationKey === 'api_key'
+      row.integrationKey === 'secret' ||
+      row.integrationKey === 'api_key' ||
+      row.integrationKey === 'mcp_oauth'
         ? 'secret'
         : integrationKind(row.integrationKey);
     return kind ? [{ ...row, kind }] : [];
@@ -145,6 +152,7 @@ export async function getCredentialById(id: number, teamId: number): Promise<Cre
 async function decrypt(id: number, teamId: number): Promise<ToolConfig | null> {
   const rows = await db
     .select({
+      id: integrationCredential.id,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
@@ -153,7 +161,7 @@ async function decrypt(id: number, teamId: number): Promise<ToolConfig | null> {
     .where(and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId)));
   const row = rows[0];
   if (!row) return null;
-  return JSON.parse(decryptSecret(row)) as ToolConfig;
+  return JSON.parse(openCredential(row)) as ToolConfig;
 }
 
 export interface NewCredentialInput {
@@ -169,10 +177,12 @@ export async function createCredential(
   const schema = credentialSchemaFor(input.integrationKey);
   if (!schema) throw new HttpError(400, `Unknown integration: ${input.integrationKey}`);
   const config = coerce(schema, input.credential);
-  const enc = encryptSecret(JSON.stringify(config));
+  const id = await nextCredentialId();
+  const enc = sealCredential(id, JSON.stringify(config));
   const [row] = await db
     .insert(integrationCredential)
     .values({
+      id,
       teamId,
       integrationKey: input.integrationKey,
       label: input.label ?? null,
@@ -209,7 +219,7 @@ export async function updateCredential(
     // out by the form) are preserved, then re-validate the whole credential.
     const current = (await decrypt(id, teamId)) ?? {};
     const merged = coerce(schema, { ...current, ...patch.credential });
-    const enc = encryptSecret(JSON.stringify(merged));
+    const enc = sealCredential(id, JSON.stringify(merged));
     set.ciphertext = enc.ciphertext;
     set.iv = enc.iv;
     set.authTag = enc.authTag;

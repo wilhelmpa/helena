@@ -1,4 +1,4 @@
-import { categoryFromAnnotations, type ActionCategory } from '@helena/sdk';
+import { categoryFromAnnotations, type ActionCategory, type ActionScope } from '@helena/sdk';
 import type { Permission } from '#shared/guards';
 import type { McpApp } from './types';
 import { outputSchema, type McpOutputSchema } from './result';
@@ -29,6 +29,8 @@ export interface McpToolAnnotations {
 
 export interface McpRouteTool {
   name: string;
+  // The display name a client shows (MCP tool `title`): the route's OpenAPI summary.
+  title: string;
   description: string;
   method: string;
   // The route path template, e.g. "/projects/:projectKey/issues".
@@ -44,10 +46,17 @@ export interface McpRouteTool {
   // What calling it does (@helena/sdk action category): declared on the route, or what
   // its annotations imply (GET reads, DELETE deletes, the rest writes).
   category: ActionCategory;
+  // Where a delete or execute lands for Helena's Autopilot: inside the agent's workspace
+  // (Helena's own data of the project, the default) or outside it (a whole project, an
+  // agent, the internet).
+  scope?: ActionScope;
   // The cell of the role matrix the route's guard asserts, published by the guard as
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
   permission?: Permission;
+  // The connector whose accounts the tool acts with. The tool is listed only to an
+  // agent that holds a grant on one of them.
+  connector?: string;
 }
 
 // Marks a route as an MCP tool. Spread into a route's `detail`:
@@ -67,12 +76,34 @@ export interface McpRouteTool {
 //
 // The third argument is the action category where the annotations understate it: a POST
 // that starts an agent run executes, one that mails an invite sends.
+//
+// The fourth argument says where the action lands, for Helena's Autopilot, when it reaches
+// outside the agent's workspace: deleting a whole project, mailing someone. The fifth names
+// the connector whose accounts the tool acts with (see McpRouteTool.connector).
 export function mcpTool(
   tool: string,
   annotations?: McpToolAnnotations,
   category?: ActionCategory,
-): { 'x-mcp': { tool: string; annotations?: McpToolAnnotations; category?: ActionCategory } } {
-  return { 'x-mcp': { tool, annotations, ...(category ? { category } : {}) } };
+  scope?: ActionScope,
+  connector?: string,
+): {
+  'x-mcp': {
+    tool: string;
+    annotations?: McpToolAnnotations;
+    category?: ActionCategory;
+    scope?: ActionScope;
+    connector?: string;
+  };
+} {
+  return {
+    'x-mcp': {
+      tool,
+      annotations,
+      ...(category ? { category } : {}),
+      ...(scope && { scope }),
+      ...(connector ? { connector } : {}),
+    },
+  };
 }
 
 // What the HTTP method alone says about a route. A GET only reads; a DELETE
@@ -147,6 +178,12 @@ function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]):
   return { type: 'object', properties, required: [...new Set(required)] };
 }
 
+// "create_issue" → "Create issue", for a tool whose route has no summary.
+export function toolTitle(tool: string): string {
+  const words = tool.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 // The tool table derived from an app's routes, built once per app and cached: routes
 // are fixed after boot, so introspection runs on the first call only. Keyed by the app so a second app (a test's) gets its own table instead of
 // inheriting whichever one was generated first.
@@ -172,6 +209,8 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
             tool?: string;
             annotations?: McpToolAnnotations;
             category?: ActionCategory;
+            scope?: ActionScope;
+            connector?: string;
           };
           'x-permission'?: Permission;
         }
@@ -186,6 +225,7 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
     };
     tools.push({
       name: tool,
+      title: detail?.summary ?? toolTitle(tool),
       // The MCP tool description is the full text an LLM reads to pick a tool.
       // Prefer the route's `description` (the long explanation); fall back to the
       // short `summary` (the OpenAPI title) and then the tool name.
@@ -197,10 +237,12 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       inputSchema: mergeInputSchema(hooks, pathParams),
       outputSchema: outputSchema(hooks.response),
       permission: detail?.['x-permission'],
+      ...(detail?.['x-mcp']?.connector && { connector: detail['x-mcp'].connector }),
       // Every tool acts on this tracker's own data and reaches nothing outside it,
       // so openWorldHint is false throughout; the route may still override it.
       annotations,
       category: detail?.['x-mcp']?.category ?? categoryFromAnnotations(annotations),
+      scope: detail?.['x-mcp']?.scope,
     });
   }
   return tools;

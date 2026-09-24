@@ -14,6 +14,7 @@ import {
   project,
   user,
   type MailAddressRow,
+  containsPattern,
 } from '@repo/db';
 import { allowRemoteImages, findInlinePart, resolveCidImages, vaultAbsolute } from '@repo/mail';
 import { getObject } from '@repo/storage';
@@ -497,7 +498,7 @@ export async function attachmentFile(attachmentId: number) {
 }
 
 export async function searchContacts(teamId: number, q: string) {
-  const pattern = `%${q.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+  const pattern = containsPattern(q);
   return db
     .select({ name: mailContact.name, address: mailContact.address })
     .from(mailContact)

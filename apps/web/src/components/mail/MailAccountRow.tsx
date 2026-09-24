@@ -7,7 +7,12 @@ import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { MailAccount } from '@/lib/api/endpoints/mail';
-import { useDeleteMailAccount, useTestMailConnection } from '@/services/mail.service';
+import {
+  useDeleteMailAccount,
+  useResetMailAccount,
+  useTestMailConnection,
+} from '@/services/mail.service';
+import { MailboxSettingsDialog } from '@/features/access/MailboxSettingsDialog';
 import { formatDateTime } from '@/utils/dates';
 
 function statusKey(account: MailAccount) {
@@ -28,9 +33,14 @@ export default function MailAccountRow({
   onEdit: () => void;
 }) {
   const t = useTranslations('mail.accounts');
+  const tBox = useTranslations('access.mailbox');
   const test = useTestMailConnection(teamId);
   const remove = useDeleteMailAccount(teamId);
+  const reset = useResetMailAccount(teamId);
   const [confirming, setConfirming] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [settings, setSettings] = useState(false);
+  const google = account.auth === 'xoauth2';
   const status = statusKey(account);
   const { synced, total } = account.progress;
   const percent = total > 0 ? Math.min(100, Math.floor((synced / total) * 100)) : 0;
@@ -64,12 +74,17 @@ export default function MailAccountRow({
             {account.address} · {account.projectName ?? t('home')}
           </p>
         </div>
+        {google && (
+          <Badge variant="outline" className="font-normal">
+            {tBox('google')}
+          </Badge>
+        )}
         <Badge
           variant={
             status === 'error' ? 'destructive' : status === 'synced' ? 'secondary' : 'outline'
           }
         >
-          {t(`status.${status}`)}
+          {account.resetPending ? tBox('resetPending') : t(`status.${status}`)}
         </Badge>
         {canEdit && (
           <>
@@ -82,8 +97,22 @@ export default function MailAccountRow({
             >
               {test.isPending ? t('testing') : t('test')}
             </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={onEdit}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => (google ? setSettings(true) : onEdit())}
+            >
               {t('edit')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={account.resetPending}
+              onClick={() => setResetting(true)}
+            >
+              {tBox('reset')}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setConfirming(true)}>
               {t('remove')}
@@ -110,6 +139,27 @@ export default function MailAccountRow({
         <p className="text-xs text-muted-foreground">
           {t('lastSync', { at: formatDateTime(account.lastSyncAt) })}
         </p>
+      )}
+      {settings && (
+        <MailboxSettingsDialog
+          teamId={teamId}
+          account={account}
+          onClose={() => setSettings(false)}
+        />
+      )}
+      {resetting && (
+        <ConfirmDialog
+          title={tBox('resetTitle', { address: account.address })}
+          confirmLabel={tBox('reset')}
+          onClose={() => setResetting(false)}
+          onConfirm={async () => {
+            await reset.mutateAsync(account.id);
+            toast.success(tBox('resetDone', { address: account.address }));
+            setResetting(false);
+          }}
+        >
+          <p className="text-sm text-muted-foreground">{tBox('resetMessage')}</p>
+        </ConfirmDialog>
       )}
       {confirming && (
         <ConfirmDialog

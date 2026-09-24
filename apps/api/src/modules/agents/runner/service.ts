@@ -6,10 +6,16 @@ import {
   project,
   projectMember,
 } from '@repo/db';
-import { and, asc, eq, inArray, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt, lte, notInArray, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { type ContextUsage } from '../chat-usage';
 import { enforceAgentLimits } from '../governance';
+import { heldProjects, useGrace } from '#modules/autopilot/budgets';
+import { noteRunLevel } from '#modules/autopilot/engine';
+import { resolveLevel } from '#modules/autopilot/levels';
+import { autopilotRunSection } from '#modules/autopilot/prompt';
+import { postAutopilotReport } from '#modules/autopilot/report';
+import type { AutopilotLevel } from '@helena/policy';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
 import { isHomeAgent } from '../core/home-agent';
@@ -149,11 +155,14 @@ export interface RunnerRun {
   // mid run and reported one: the runner passes this to the command instead of starting
   // a fresh session. Null for a run claimed for the first time, or resumed past its limit.
   sessionId: string | null;
+  // The Autopilot level the run works at (Helena's policy engine decides every tool call by
+  // it); a runner maps it onto its runtime's own permission mode.
+  autopilotLevel: AutopilotLevel;
 }
 
 // The claim's raw row, before framing. The extra people columns exist only to build
 // the prompts and are not handed to the runner.
-type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
+type ClaimedRow = Omit<RunnerRun, 'systemPrompt' | 'autopilotLevel'> & {
   projectId: number;
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
   // the run back, or lost its lease.
@@ -265,8 +274,24 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   // A run whose session has already resumed as often as the instance allows is left
   // pending rather than claimed again: the resume-limit janitor fails it and tells the
   // owner instead of it being retried silently forever.
+  // The runs of a project whose budget is used up wait; the agent's other projects go on.
+  const held = await heldProjects(
+    (
+      await db
+        .selectDistinct({ projectId: agentRun.projectId })
+        .from(agentRun)
+        .where(and(eq(agentRun.agentId, agentId), eq(agentRun.status, 'pending')))
+    ).map((row) => row.projectId),
+  );
+  const notHeld =
+    held.length > 0
+      ? sql` AND q.project_id NOT IN (${sql.join(
+          held.map((id) => sql`${id}`),
+          sql`, `,
+        )})`
+      : sql``;
   const claimable = sql`q.status = 'pending' AND q.next_attempt_at <= now()
-    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})`;
+    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})${notHeld}`;
   const [next] = await db
     .select({ projectId: agentRun.projectId, issueId: agentRun.issueId })
     .from(agentRun)
@@ -276,6 +301,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         eq(agentRun.status, 'pending'),
         lte(agentRun.nextAttemptAt, sql`now()`),
         sql`(${agentRun.sessionId} IS NULL OR ${agentRun.resumes} < ${maxResumes})`,
+        held.length > 0 ? notInArray(agentRun.projectId, held) : undefined,
       ),
     )
     .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id))
@@ -341,6 +367,9 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
+  await useGrace(agent.id, next.projectId, row.id);
+  const autopilot = await resolveLevel(agent.id, next.projectId);
+  await noteRunLevel(row.id, autopilot.level);
   const threadContext = await loadThreadContext(row.sourceActivityId);
   const forPrompt = {
     ...row,
@@ -348,17 +377,26 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     agentUsername: agent.username,
     threadContext,
   };
-  await recordAgentRunStarted({ ...forPrompt, agentId: agent.id });
+  await recordAgentRunStarted({ ...forPrompt, agentId: agent.id, autopilotLevel: autopilot.level });
   return {
     id: row.id,
     trigger: row.trigger,
-    prompt: row.sessionId && !row.continuation ? RESUME_PROMPT : framePrompt(forPrompt),
+    // A workspace job (a clone) is for the runner itself: its prompt is the job as it was
+    // queued, never framed for a model.
+    prompt:
+      row.trigger === 'workspace'
+        ? row.prompt
+        : row.sessionId && !row.continuation
+          ? RESUME_PROMPT
+          : framePrompt(forPrompt),
     systemPrompt:
       buildSystemPrompt(
         agent,
         { key: row.projectKey, name: row.projectName, description: row.projectDescription },
         forPrompt,
-      ) + (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),
+      ) +
+      autopilotRunSection(row.projectKey, autopilot.level) +
+      (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,
     claim: row.claim,
     issueId: row.issueId,
@@ -370,6 +408,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
     workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,
     sessionId: row.sessionId,
+    autopilotLevel: autopilot.level,
   };
 }
 
@@ -640,6 +679,8 @@ export async function finishRun(
     status,
     row.lastError,
   );
+  // "Handeln & berichten": what the run did without approval, on its task.
+  await postAutopilotReport(runId);
   const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);
   return {
     reflection: await requestReflection(

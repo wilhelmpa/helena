@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { ColorSwatches } from '@/components/ui/color-swatches';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -44,7 +45,6 @@ export default function SettingsColorField({
 }) {
   const t = useTranslations('common');
   const [open, setOpen] = useState(false);
-  const selected = value.trim().toLowerCase();
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -59,21 +59,7 @@ export default function SettingsColorField({
         />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-auto p-3">
-        <div className="grid grid-cols-8 gap-1.5">
-          {PRESET_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-label={c}
-              onClick={() => onChange(c)}
-              className={cn(
-                'size-6 rounded-md ring-offset-background transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                selected === c.toLowerCase() && 'ring-2 ring-ring ring-offset-2',
-              )}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-        </div>
+        <ColorSwatches colors={PRESET_COLORS} value={value} onChange={onChange} />
         <div className="mt-3 flex items-center gap-2">
           <span
             className="size-7 shrink-0 rounded-md border border-input"

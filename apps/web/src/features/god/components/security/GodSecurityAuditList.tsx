@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import SettingsCard from '@/components/common/page/SettingsCard';
+import { formatDateTime } from '@/utils/dates';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import type { OwnerTerminalAuditEntry } from '@/lib/api/endpoints/owner-terminal';
 
@@ -49,7 +50,7 @@ export default function GodSecurityAuditList({
       {entries.map((entry) => (
         <div key={entry.id} className="flex h-8 items-center gap-3 px-3 text-xs">
           <span className="w-36 shrink-0 font-mono text-muted-foreground tabular-nums">
-            {new Date(entry.createdAt).toLocaleString()}
+            {formatDateTime(entry.createdAt)}
           </span>
           <span className="min-w-0 flex-1 truncate sm:w-32 sm:flex-none">
             {eventLabel(entry.event)}

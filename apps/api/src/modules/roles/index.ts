@@ -111,7 +111,10 @@ export const roleRoutes = new Elysia({ name: 'roles', detail: { tags: ['Roles'] 
       body: createRoleBody,
       teamManager: true,
       response: { 201: RoleResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Create a role', ...mcpTool('create_role') },
+      detail: {
+        summary: 'Create a role',
+        ...mcpTool('create_role', undefined, 'credentials'),
+      },
     },
   )
 
@@ -135,7 +138,7 @@ export const roleRoutes = new Elysia({ name: 'roles', detail: { tags: ['Roles'] 
       detail: {
         summary: 'Update a role',
         description: 'Update a role.',
-        ...mcpTool('update_role'),
+        ...mcpTool('update_role', undefined, 'credentials'),
       },
     },
   )
@@ -200,7 +203,7 @@ export const roleRoutes = new Elysia({ name: 'roles', detail: { tags: ['Roles'] 
         summary: 'Delete a role',
         description:
           'Delete a custom role. The default role cannot be deleted. A role in use requires targetRoleId, the role its members, agents, pending invites and group mappings are moved to.',
-        ...mcpTool('delete_role'),
+        ...mcpTool('delete_role', undefined, 'credentials'),
       },
     },
   );

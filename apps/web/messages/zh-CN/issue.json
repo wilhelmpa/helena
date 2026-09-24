@@ -201,12 +201,14 @@
   },
   "subtaskDisposal": {
     "intro": "{issues, plural, other {这些工作项包含}} {count, plural, other {# 个子任务}}。",
+    "choose": "选择如何处理{count, plural, other {这些子任务}}。",
     "deleteToo": "{count, plural, other {同时删除}}",
     "archiveToo": "{count, plural, other {同时归档}}",
     "detach": "{count, plural, other {保留并移除父工作项}}",
     "reassign": "{count, plural, other {移至另一个工作项}}",
     "reassignTitle": "将子任务移至另一个工作项",
     "change": "更改",
+    "newParent": "新的父级：",
     "searchParent": "搜索新的父工作项…"
   },
   "comments": {

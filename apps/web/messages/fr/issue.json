@@ -201,12 +201,14 @@
   },
   "subtaskDisposal": {
     "intro": "{issues, plural, one {Ce ticket a} other {Ces tickets ont}} {count, plural, one {# sous-tâche} other {# sous-tâches}}.",
+    "choose": "Choisissez ce qu'il advient {count, plural, one {d'elle} other {d'elles}}.",
     "deleteToo": "{count, plural, one {La supprimer aussi} other {Les supprimer aussi}}",
     "archiveToo": "{count, plural, one {L'archiver aussi} other {Les archiver aussi}}",
     "detach": "{count, plural, one {La conserver sans parent} other {Les conserver sans parent}}",
     "reassign": "{count, plural, one {La déplacer vers un autre ticket} other {Les déplacer vers un autre ticket}}",
     "reassignTitle": "Déplacer les sous-tâches vers un autre ticket",
     "change": "Modifier",
+    "newParent": "Nouveau parent :",
     "searchParent": "Rechercher le nouveau ticket parent…"
   },
   "comments": {

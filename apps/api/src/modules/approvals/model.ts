@@ -1,16 +1,30 @@
 import { t } from 'elysia';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 
-export const ApprovalKind = t.Union(
+// The kinds an agent asks for: the action categories a person decides on (Helena's Autopilot,
+// docs/helena-decisions/policy-engine.md), and 'other' for anything else.
+export const RequestKind = t.Union(
   [
     t.Literal('send'),
     t.Literal('publish'),
     t.Literal('pay'),
     t.Literal('delete'),
+    t.Literal('write'),
+    t.Literal('execute'),
+    t.Literal('credentials'),
     t.Literal('other'),
   ],
-  { description: 'What kind of outward action it is.' },
+  {
+    description:
+      'What kind of action it is: send (mail, messages, anything outside Helena), publish ' +
+      '(push, deploy, release), pay, delete, write (a change the Autopilot level holds back), ' +
+      'execute (a risky command or code), credentials (keys, tokens, grants) or other.',
+  },
 );
+
+// A request is one of those, or 'budget': the card Helena files for the owner when a budget
+// is used up.
+export const ApprovalKind = t.Union([...RequestKind.anyOf, t.Literal('budget')]);
 
 export const ApprovalStatus = t.Union([
   t.Literal('pending'),
@@ -35,6 +49,14 @@ export const ApprovalResponse = t.Object({
   action: t.String(),
   details: t.String(),
   command: t.Nullable(t.String()),
+  // The policy engine's view: the action category, the Autopilot level that applied and why
+  // a person decides (a reason code the app translates: level-requires-approval,
+  // hard-block, budget-exhausted, policy, level-allows).
+  category: t.Nullable(t.String()),
+  autopilotLevel: t.Nullable(t.Number()),
+  policyReason: t.Nullable(t.String()),
+  // A budget card's budget: its metric, period, limit and use.
+  payload: t.Nullable(t.Record(t.String(), t.Unknown())),
   status: ApprovalStatus,
   decidedByUserId: t.Nullable(t.String()),
   decidedByName: t.Nullable(t.String()),
@@ -54,7 +76,7 @@ export const approvalParams = t.Object({
 });
 
 export const createApprovalBody = t.Object({
-  kind: ApprovalKind,
+  kind: RequestKind,
   action: t.String({
     minLength: 1,
     maxLength: 300,

@@ -18,7 +18,11 @@
     "publish": "Publish",
     "pay": "Pay",
     "delete": "Delete",
-    "other": "Other"
+    "other": "Other",
+    "write": "Change",
+    "execute": "Execute",
+    "credentials": "Credentials",
+    "budget": "Budget"
   },
   "requestedBy": "{agent} (@{username}) in {project}",
   "notePlaceholder": "Note with your decision (optional)",

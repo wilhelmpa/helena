@@ -2,7 +2,7 @@
 import argparse, hashlib, json, re, sys
 from fnmatch import fnmatch
 from pathlib import Path
-SOURCE_DIRS=('backup','docs','gateway','google-bridge','integration','hermes/coder-sandbox','scripts','security-images','security-patches','workspace','workspace-bridge')
+SOURCE_DIRS=('backup','docs','gateway','integration','hermes/coder-sandbox','scripts','security-images','security-patches','workspace','workspace-bridge')
 SOURCE_FILES=('compose.apps.yml','compose.gateway.yml','compose.hub.yml','compose.vault.yml','README.apps.md')
 FILE_ALLOWLIST=('Dockerfile','init-sso.sh','nextcloud-entrypoint.sh','nextcloud-webdav.sh','remote-user.conf','remote-user.ini','remote-user.php')
 EXCLUDED_PARTS={'node_modules','__pycache__','.state'}
