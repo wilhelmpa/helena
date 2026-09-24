@@ -39,7 +39,9 @@ const TAP_DISTANCE = 8;
 // Work in the view is told to the router at most this often (see the focus message).
 const FOCUS_INTERVAL_MS = 1_000;
 
-// Events on a page's dialog shown over the view are for the dialog, not for the page.
+// Events on what is shown over the view (a page's dialog, the control banner, a handover
+// card) are for it, not for the page: without this, a press on "Übernehmen" would reach the
+// page and the pointer capture would keep the button from ever getting its click.
 function inDialog(target: EventTarget | null) {
   return target instanceof Element && target.closest('[data-live-dialog]') !== null;
 }
@@ -112,6 +114,7 @@ export function useBrowserLiveInput(
 
   const pointer = {
     onPointerDown(event: PointerEvent<HTMLDivElement>) {
+      if (inDialog(event.target)) return;
       event.preventDefault();
       const at = pointAt(event);
       if (event.pointerType === 'touch') {
@@ -143,6 +146,7 @@ export function useBrowserLiveInput(
       });
     },
     onPointerMove(event: PointerEvent<HTMLDivElement>) {
+      if (inDialog(event.target)) return;
       const current = touch.current;
       if (event.pointerType === 'touch') {
         if (current?.id !== event.pointerId) return;
@@ -167,6 +171,7 @@ export function useBrowserLiveInput(
       });
     },
     onPointerUp(event: PointerEvent<HTMLDivElement>) {
+      if (inDialog(event.target)) return;
       if (event.pointerType === 'touch') {
         const current = touch.current;
         touch.current = null;

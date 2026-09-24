@@ -10,6 +10,7 @@ transient systemd unit that can reach only what its project gives it:
 | the Plan API with its own key | `127.0.0.1:3000` in the unit → `plan.sock` → Plan, which accepts only a key of an agent of that project |
 | the internet | `127.0.0.1:3128` in the unit → `egress.sock` → public addresses only, per the project's network mode |
 | its model | the model endpoints in `egress.json`, in every mode |
+| the browser gateway | `/run/volition-agents/browser/gateway.sock` in the unit (where the MCP shim `helena-browser-mcp` looks) → that project's own directory `/run/volition-browser/gateway/<slug>/` (Home: `home/`; directory 0750 and socket 0660, group `volition-agents`), bound read-only with `-` (a project without a browser starts all the same, without one). The directory, not the socket, is bound, so a router restart that recreates the socket is seen at once. Per project, not shared: the router (one `net.Server` per project) knows the caller's project from the socket that accepted the connection, so no peer-cred lookup is needed (see `volition-design-browser-gateway.md` §3; proof test `B`) |
 
 Not reachable, whatever the agent runs: other projects' files and profiles, `/etc/volition`, the
 runner's descriptors and keys, browser profiles, CDP and noVNC ports, code-server, the Hermes
@@ -60,10 +61,12 @@ launcher's and egress's state), `InaccessiblePaths=` for `/etc/volition`, `/var/
   credentials; phase 2 moves them into the egress proxy).
 - Home gets `profiles/home` (a copy of the Home agent's state in the global home, databases
   through SQLite's backup) and `/srv/volition/workspaces/home`.
-- Browser state (`/var/lib/volition/project-browser`) belongs to `volition-browser`; Chromium,
-  KasmVNC and the router run as that user through the drop-in `systemd/browser-user.conf`,
-  which `isolation.sh` installs in the step that hands the state over (the units themselves keep
-  `volition-hermes`, so a deploy alone never leaves them unable to read their state).
+- Browser state (`/var/lib/volition/project-browser`) belongs to `volition-browser`; Chromium and
+  KasmVNC run as that user through the drop-in `systemd/browser-user.conf`, the router through
+  `systemd/browser-router.conf` (also in `volition-agents`, so it can hand its gateway sockets
+  to that group), both installed by `isolation.sh` in the step that hands the state over (the
+  units themselves keep `volition-hermes`, so a deploy alone never leaves them unable to read
+  their state). `rollback` removes both drop-ins.
 
 ## Network modes (Helena: project settings → agent network)
 

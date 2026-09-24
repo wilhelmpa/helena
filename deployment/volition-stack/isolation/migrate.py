@@ -351,10 +351,23 @@ def apply(args, config) -> Changes:
             own_tree(browser_root, browser.pw_uid, None, changes)
         except KeyError:
             print(f'no user {args.browser_user}; browser state left as it is')
-    for path in args.model_auth or []:
-        agents = grp.getgrnam(config.agents_group).gr_gid
-        acl_tree(path, {(ACL_GROUP, agents): rx}, changes)
+    grant_model_auth(args.model_auth or [], config.agents_group, changes)
     return changes
+
+
+def grant_model_auth(paths: list[str], group: str, changes: Changes) -> None:
+    """Phase 1: every agent reads the model sign-ins (group read on each file or folder)."""
+    for path in paths:
+        try:
+            agents = grp.getgrnam(group).gr_gid
+        except KeyError:
+            if not changes.dry_run:
+                raise
+            # isolation.sh creates the group before this step; a dry run on a system without
+            # it yet can only name the change.
+            changes.note(f'give group {group} read on {path} (the group is created on apply)')
+            continue
+        acl_tree(path, {(ACL_GROUP, agents): 5}, changes)
 
 
 def acl_tree_top(path: str, named, changes: Changes) -> None:

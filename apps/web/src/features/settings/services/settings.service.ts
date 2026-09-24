@@ -20,6 +20,10 @@ import {
   updateProjectSettings,
 } from '@/lib/api/endpoints/settings';
 import {
+  getBrowserGatewaySettings,
+  updateBrowserGatewaySettings,
+} from '@/lib/api/endpoints/browserGateway';
+import {
   createColumn,
   updateColumn,
   reorderColumns,
@@ -227,6 +231,22 @@ export function useRetryProjectDeprovisioning(projectKey: string, teamId: number
   return useMutation({
     mutationFn: (jobId: string) => retryProjectDeprovisioning(teamId, jobId),
     onSuccess: () => void qc.invalidateQueries({ queryKey: qk.projectSetup(projectKey) }),
+  });
+}
+
+export function useBrowserGatewaySettingsQuery(projectKey: string) {
+  return useQuery({
+    queryKey: qk.browserGatewaySettings(projectKey),
+    queryFn: () => getBrowserGatewaySettings(projectKey),
+  });
+}
+
+export function useUpdateBrowserGatewaySettings(projectKey: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: Parameters<typeof updateBrowserGatewaySettings>[1]) =>
+      updateBrowserGatewaySettings(projectKey, patch),
+    onSuccess: (data) => qc.setQueryData(qk.browserGatewaySettings(projectKey), data),
   });
 }
 

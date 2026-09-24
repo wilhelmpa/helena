@@ -19,7 +19,7 @@ export default function McpServerPage() {
   const reachable = detail != null && detail.mcpEnabled && detail.teamMcpEnabled;
 
   return (
-    <SectionPageView title={t('title')} description={t('description')}>
+    <SectionPageView title={t('title')} description={t('description')} wide>
       {reachable && (
         <PageToolbar>
           <PageTabs

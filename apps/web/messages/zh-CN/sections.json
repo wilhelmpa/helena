@@ -116,6 +116,10 @@
     "ai-agents": {
       "label": "AI 代理",
       "description": "在该项目中工作的 AI 代理。"
+    },
+    "browser": {
+      "label": "浏览器",
+      "description": "项目浏览器可以打开的域名、拟人输入节奏以及锁定超时。"
     }
   }
 }

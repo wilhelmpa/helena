@@ -84,7 +84,8 @@ describe('agent MCP servers', () => {
     });
 
     const list = await servers(asOwner, teamId).get();
-    expect(list.data).toHaveLength(1);
+    // The team's own server, next to the built-in "Projekt-Browser" entries.
+    expect(list.data!.filter((row) => !row.builtin)).toHaveLength(1);
     expect(JSON.stringify(list.data)).not.toContain(SECRET_VALUE);
   });
 
@@ -366,7 +367,9 @@ describe('agent MCP servers', () => {
     });
     const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
 
-    expect((await servers(asMember, teamId).get()).data).toHaveLength(1);
+    expect(
+      (await servers(asMember, teamId).get()).data!.filter((row) => !row.builtin),
+    ).toHaveLength(1);
     const post = await servers(asMember, teamId).post({
       name: 'other',
       transport: 'stdio',

@@ -1,4 +1,5 @@
 import { createRegistry } from '@helena/sdk';
+import { browserGateway } from './browser-gateway';
 import { learningConfig } from './learning';
 import type { RuntimeMcpServer, RuntimeMcpValue } from './policy';
 import type { McpNamedValue, McpServerSpec } from './runtime';
@@ -124,11 +125,12 @@ const learning: ProfileContribution = {
   hermesConfig: ({ snapshot }) => learningConfig(snapshot.learning),
 };
 
-// The contributions, as an @helena/sdk registry: the built-ins above as the internal plugin
-// helena.runtimes, and those of runner plugins (plugins.ts).
+// The contributions, as an @helena/sdk registry: the built-ins above and the browser
+// gateway's (browser-gateway.ts) as the internal plugin helena.runtimes, and those of runner
+// plugins (plugins.ts), in this order.
 export const profileContributionRegistry =
   createRegistry<ProfileContribution>('profile contribution');
-for (const contribution of [helenaMcp, legacyBrowser, library, learning]) {
+for (const contribution of [helenaMcp, legacyBrowser, browserGateway, library, learning]) {
   profileContributionRegistry.register(contribution, 'helena.runtimes');
 }
 

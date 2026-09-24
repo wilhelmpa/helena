@@ -361,7 +361,18 @@
     "secretHint": "La valeur d'un secret n'est transmise qu'au runner d'un agent sur lequel le serveur est activé, jamais à cette page.",
     "missingSecret": "secret supprimé",
     "addValue": "Ajouter",
-    "removeValue": "Retirer"
+    "removeValue": "Retirer",
+    "builtinBadge": "Intégré",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Navigateur du projet",
+        "description": "Hermes, Claude Code et Codex pilotent le navigateur du projet via une passerelle commune : les identifiants viennent des Identifiants, jamais de mot de passe dans l'historique."
+      },
+      "hermes-browser-legacy": {
+        "title": "Navigateur propre à Hermes (ancien)",
+        "description": "Revient à l'outil de navigateur CDP propre à Hermes au lieu de la passerelle partagée."
+      }
+    }
   },
   "agents": {
     "newAgent": "Nouvel agent IA",

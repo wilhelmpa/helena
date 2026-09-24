@@ -361,7 +361,18 @@
     "secretHint": "Nilai rahasia hanya dikirim ke runner agen yang mengaktifkan server ini, tidak pernah ke halaman ini.",
     "missingSecret": "rahasia terhapus",
     "addValue": "Tambah",
-    "removeValue": "Hapus"
+    "removeValue": "Hapus",
+    "builtinBadge": "Bawaan",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Browser proyek",
+        "description": "Hermes, Claude Code, dan Codex mengendalikan browser proyek melalui gateway bersama: info masuk berasal dari Kredensial, tidak pernah ada kata sandi dalam riwayat."
+      },
+      "hermes-browser-legacy": {
+        "title": "Browser bawaan Hermes (lama)",
+        "description": "Kembali ke alat browser CDP milik Hermes sendiri, bukan ke gateway bersama."
+      }
+    }
   },
   "agents": {
     "newAgent": "Agen AI baru",
