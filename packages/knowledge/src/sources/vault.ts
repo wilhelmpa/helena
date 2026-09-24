@@ -18,8 +18,12 @@ import {
 // (vault_entry), which the API and the worker's watcher keep in line with the files.
 // Folders are not items. Who reads a path follows the vault's rules
 // (apps/api/src/modules/knowledge/scope.ts): a project's folder by the project's
-// documents permission, Home/ by the team's owners and the Home agent, Templates/ by
+// documents permission, Home/ by the instance owner and the Home agent, Templates/ by
 // everyone of the team, Private/ by the instance owner alone.
+
+// The resource a reader needs for Home's own folder of the vault: only the instance
+// owner and the Home agent hold it (the API's reach), not every team owner.
+export const HOME_VAULT_RESOURCE = 'home_vault';
 
 type EntryRow = typeof vaultEntry.$inferSelect & {
   teamId: number | null;
@@ -48,7 +52,12 @@ function scopeOf(row: EntryRow, home: InstanceHome): KnowledgeScope | null {
         : null;
     default:
       return home.teamId !== null
-        ? { teamId: home.teamId, projectId: null, visibility: 'team', permission: 'documents' }
+        ? {
+            teamId: home.teamId,
+            projectId: null,
+            visibility: 'team',
+            permission: HOME_VAULT_RESOURCE,
+          }
         : null;
   }
 }

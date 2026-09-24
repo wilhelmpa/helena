@@ -11,7 +11,7 @@ export {
   useKnowledgeRegistries,
 } from './registry';
 export { builtinKnowledgeSources } from './sources';
-export { reindexVaultPaths, vaultSource } from './sources/vault';
+export { HOME_VAULT_RESOURCE, reindexVaultPaths, vaultSource } from './sources/vault';
 export { instanceHome, routes, type InstanceHome } from './sources/common';
 export {
   DEFAULT_INDEXER_OPTIONS,
