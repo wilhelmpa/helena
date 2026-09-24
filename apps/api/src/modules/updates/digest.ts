@@ -135,6 +135,9 @@ export function parseDigest(output: string | null | undefined): DigestResult | n
 
 // ── Who writes it, on which model ──────────────────────────────────────────────────────
 
+// What a runner reports when it runs digest runs text only.
+export const DIGEST_CAPABILITY = 'digest-runs';
+
 export interface DigestAgent {
   id: number;
   username: string;
@@ -160,10 +163,17 @@ export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestA
       desc(aiAgent.lastSeenAt),
       asc(aiAgent.id),
     );
-  // Only Hermes has the switches that make a run text only (packages/runner/src/digest.ts).
-  const hermes = rows.filter(
-    (row) => (row.runtimeState as { adapter?: unknown } | null)?.adapter === 'hermes',
-  );
+  // Only Hermes has the switches that make a run text only, and only a runner that reports
+  // `digest-runs` uses them (packages/runner/src/digest.ts): an older runner would run the
+  // untrusted release notes with the agent's tools.
+  const hermes = rows.filter((row) => {
+    const state = row.runtimeState as { adapter?: unknown; capabilities?: unknown } | null;
+    return (
+      state?.adapter === 'hermes' &&
+      Array.isArray(state.capabilities) &&
+      state.capabilities.includes(DIGEST_CAPABILITY)
+    );
+  });
   const chosen =
     hermes.find((row) => row.id === settings.agentId) ??
     hermes.find((row) => isHomeAgent(row.username)) ??
@@ -193,7 +203,14 @@ export async function hermesAgents(): Promise<{ id: number; username: string; na
     .where(and(eq(aiAgent.kind, 'external'), eq(aiAgent.template, false)))
     .orderBy(asc(aiAgent.id));
   return rows
-    .filter((row) => (row.runtimeState as { adapter?: unknown } | null)?.adapter === 'hermes')
+    .filter((row) => {
+      const state = row.runtimeState as { adapter?: unknown; capabilities?: unknown } | null;
+      return (
+        state?.adapter === 'hermes' &&
+        Array.isArray(state.capabilities) &&
+        state.capabilities.includes(DIGEST_CAPABILITY)
+      );
+    })
     .map(({ id, username, name }) => ({ id, username, name: name || username }));
 }
 

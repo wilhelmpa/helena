@@ -330,7 +330,7 @@ async function hermesAgent(api: ReturnType<typeof authedApi>) {
   // test to claim, and the Hermes update check does not wait for an answer.
   await db
     .update(aiAgent)
-    .set({ runtimeState: { adapter: 'hermes', capabilities: [] }, lastSeenAt: null })
+    .set({ runtimeState: { adapter: 'hermes', capabilities: ['digest-runs'] }, lastSeenAt: null })
     .where(eq(aiAgent.id, agent.id));
   const runner = apiKeyApi(created.data!.apiKey!);
   await runner['agent-chats'].catalog.post({
@@ -480,6 +480,19 @@ describe('update center: summaries', () => {
     expect(await queueDigests()).toBe(5);
     const again = await db.select().from(agentRun).where(eq(agentRun.status, 'pending'));
     expect(again.every((run) => run.model === 'helena-test-max')).toBe(true);
+  });
+
+  it('never queues a summary on a runner that cannot run it text only', async () => {
+    const { api } = await owner();
+    const { agent } = await hermesAgent(api);
+    await db
+      .update(aiAgent)
+      .set({ runtimeState: { adapter: 'hermes', capabilities: [] } })
+      .where(eq(aiAgent.id, agent.id));
+    startFakeHelper(helperAnswers);
+    await runUpdateCheck();
+    expect(await queueDigests()).toBe(0);
+    expect(await db.select().from(agentRun)).toEqual([]);
   });
 
   it('names why nothing was summarized when no Hermes agent is there', async () => {
