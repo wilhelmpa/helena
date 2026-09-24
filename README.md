@@ -173,7 +173,8 @@ needed. Run it again later to restart the instance; the data stays.
 | Auth      | [better-auth](https://better-auth.com/)                  |
 | Database  | [Drizzle](https://orm.drizzle.team/) + PostgreSQL        |
 | Storage   | Local disk or an S3-compatible object store (MinIO)      |
-| AI agents | [Mastra](https://github.com/mastra-ai/mastra)            |
+| Workflows | [DBOS Transact](https://github.com/dbos-inc/dbos-transact-ts), in the API |
+| AI agents | External runtimes ([Hermes Agent](https://github.com/NousResearch/hermes-agent), coding agent CLIs) through the runner |
 
 ## Contributing
 

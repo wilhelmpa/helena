@@ -112,7 +112,6 @@
     "volition-sync": "helena-sync",
     "volition-google": "helena-google",
     "volition-plan": "helena-app",
-    "volition-mastra": "helena-mastra",
     "volition-hermes": "helena-hermes",
     "volition-browser": "helena-browser",
     "volition-launcher": "helena-launcher",
@@ -122,10 +121,6 @@
     "volition-plan": {
       "name": "helena",
       "home": "/var/lib/helena/app"
-    },
-    "volition-mastra": {
-      "name": "helena-mastra",
-      "home": "/var/lib/helena/mastra"
     },
     "volition-hermes": {
       "name": "helena-hermes",
@@ -179,10 +174,6 @@
     "volition-hermes-bootstrap.timer": "helena-hermes-bootstrap.timer",
     "volition-hermes-serve.service": "helena-hermes-dashboard.service",
     "volition-hermes-gateway.service": null,
-    "volition-hermes-team-bridge.service": "helena-team-bridge.service",
-    "volition-hermes-team-bridge-dev.service": "helena-team-bridge-dev.service",
-    "volition-mastra.service": "helena-mastra.service",
-    "volition-mastra-dev.service": "helena-mastra-dev.service",
     "volition-provisioning.service": "helena-provisioning.service",
     "volition-terminal.service": "helena-terminal.service",
     "volition-owner-terminal.service": "helena-owner-terminal.service",
@@ -304,7 +295,6 @@
       "/run/volition-agent-launcher": "/run/helena-agent-launcher",
       "/run/volition-owner-terminal": "/run/helena-owner-terminal",
       "/run/volition-terminal": "/run/helena-terminal",
-      "/run/volition-ipc": "/run/helena-ipc",
       "/run/credentials/volition-provisioning.service": "/run/credentials/helena-provisioning.service",
       "/usr/local/lib/volition-isolation": "/usr/local/lib/helena-isolation",
       "run/itsaplan-managed": "run/helena-managed",
@@ -321,7 +311,6 @@
       "volition-project-browser": "helena-browser",
       "volition-hermes-runner": "helena-runner",
       "volition-hermes-serve": "helena-hermes-dashboard",
-      "volition-hermes-team-bridge": "helena-team-bridge",
       "volition_local_owner_source": "helena_local_owner_source",
       "volition_local_owner_token": "helena_local_owner_token",
       "X-Volition-Local-Access": "X-Helena-Local-Access",

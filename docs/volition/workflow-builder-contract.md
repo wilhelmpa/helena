@@ -1,21 +1,18 @@
 # Workflow builder contract
 
 This is the contract between Plan's workflow builder (Home → Workflows, and a project's
-Workflows page) and Mastra's `plan-pipeline` workflow: the shape of a pipeline definition,
-how Plan validates and versions it, and what Mastra is and is not allowed to do with it.
-It complements the "Workflow builder" section of
-[`ORCHESTRATION_CONTRACT.md`](../../deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md#workflow-builder),
-which has the operation table and the request/response shapes Mastra exchanges with Plan
-while a run executes. This document is about the definition itself: what a member can put
-together in the builder, how Plan checks and stores it, and the boundary that keeps Mastra
-an orchestrator and never an executor.
+Workflows page) and the Helena engine, which runs the workflows inside Plan's API
+(`apps/api/src/modules/engine/`): the shape of a pipeline definition, how Plan validates and
+versions it, and what the engine does with it. The engine's design is in
+[`docs/helena-decisions/workflow-engine.md`](../helena-decisions/workflow-engine.md).
 
 Plan owns the definition, its validation and its version history
-(`apps/api/src/modules/pipelines/`). Mastra reads only the fragment of it that decides
-where a run goes next (`deployment/volition-stack/optional/mastra-studio/src/mastra/pipeline-contracts.ts`).
-Mastra orchestrates only: it never calls a model provider and never executes a step's
-content. Every LLM call a workflow needs is one Hermes makes, queued as a normal Plan agent
-run through the same bridge as the agent-team workflow.
+(`apps/api/src/modules/pipelines/`). Step types and trigger types are registries
+(`apps/api/src/modules/engine/registry.ts`); the built-in ones register in
+`engine/builtin/` through the same API a plugin uses, and a plugin adds a type without
+touching the engine. The engine never calls a model provider: every LLM call a workflow
+needs is one Hermes makes, queued as a normal Plan agent run, the same way as the stages of
+the agent team.
 
 ## Definition format
 
@@ -35,12 +32,21 @@ One of:
 | `task_assigned` | — | A task is assigned. |
 | `status_changed` | `to: string \| null` | A task's status changes, to the named status or to any status when `to` is null. |
 | `label_added` | `label: string` | A label is added to a task. |
-| `schedule` | `cron`, `timezone`, `title` | A Mastra schedule fires; Plan creates a task with `title` and runs the workflow on it. |
+| `schedule` | `cron`, `timezone`, `title` | The engine fires the schedule; Plan creates a task with `title` and runs the workflow on it. |
+| `webhook` | `title` | A request to the workflow's hook, `POST /hooks/workflows/:hookId`, signed per Standard Webhooks with the hook's secret (or carrying it as a bearer token). Plan creates a task with `title`, or the request's own `title` field, and runs the workflow on it. The same `webhook-id` starts one run only. |
+| `mail_received` | `from`, `subject` | A new mail of the project's accounts matches both filters (an empty filter matches every mail). Plan creates a task with the mail's subject and runs the workflow on it. |
 
-A workflow with a `schedule` trigger gets a Mastra schedule (`scheduleKey`
-`pipeline-<id>`) for exactly as long as a project has it enabled; disabling or deleting the
-workflow removes the schedule. The team's `minScheduleIntervalSeconds` limit applies to the
-cron the same way it applies to routines (`assertCadence` in `service.ts`).
+Two more trigger types belong to built-in workflows only and are not offered in the
+builder: `delegation` (a task delegated to a coordinator starts the agent team) and
+`routine` (a routine's schedule fires).
+
+A workflow with a `schedule` trigger gets a row in `helena_schedule` for exactly as long as
+a project has it enabled; disabling or deleting the workflow removes it. A schedule that
+names no time zone uses the instance's (Administrator → Allgemein → Helena-Motor →
+Zeitzone). The engine fires each scheduled time once, computed with croner. The team's
+`minScheduleIntervalSeconds` limit applies to the cron the same way it applies to routines
+(`assertCadence` in `service.ts`). A webhook trigger's hook and secret are managed at
+`/projects/:projectKey/pipelines/:pipelineId/hook`.
 
 ### Roles
 
@@ -57,7 +63,7 @@ unresolved until a project maps it). A project's own role mapping
 
 An ordered tree, at most 50 steps in total and 3 levels of condition nesting deep
 (`LIMITS.steps`, `LIMITS.depth`). Every step has `id` (`^[a-z0-9][a-z0-9-]{0,39}$`, unique
-across the whole definition) and `name`. Five kinds:
+across the whole definition) and `name`. The builder offers seven kinds:
 
 - **`agent`** — `assignee` (`{ role }` or `{ agentId }` — a template may only use `role`),
   `instruction` (may hold `{{...}}` variables, see below), optional `maxTurns` and
@@ -77,8 +83,23 @@ across the whole definition) and `name`. Five kinds:
   body), or `create_subtask` (templated title/description). Applied as the system actor
   `Workflow`, which starts no further workflow, so two workflows cannot trigger each other.
 - **`wait`** — either `{ kind: "delay", minutes }` (1–43200) or
-  `{ kind: "until", field: "dueDate" | "startDate", time }` (`HH:MM`, Europe/Berlin), which
-  sleeps until that time of day on the named date field of the task.
+  `{ kind: "until", field: "dueDate" | "startDate", time }` (`HH:MM`, in the instance's
+  time zone), which sleeps until that time of day on the named date field of the task. The
+  wait is durable: a restart of the API does not shorten or lose it.
+- **`notify`** — `to` (`{ kind: "assignee" }`, `{ kind: "watchers" }` or
+  `{ kind: "members", userIds }`) and `message` (template text). Posts a comment on the task
+  that mentions them, which reaches their inbox, email or Telegram like any mention.
+- **`webhook`** — `url` and `message` (template text). Posts the run, its task, the results
+  so far and the message to the URL, signed per Standard Webhooks with the project's
+  signing secret (`/projects/:projectKey/workflow-signing-secret`). `webhook-id` is the same
+  for every try of one execution, so the receiver can drop a repeat. A 2xx answer is
+  `success`, anything else `failed`. The URL must be public: a private or local address is
+  refused.
+
+Two step types are the engine's own and are not offered in the builder: **`delegate`**
+(a routine's work: create a task for an agent or reopen one) and **`agent_team`** (the
+coordinator plans, specialists work, the coordinator reviews; created for a task delegated
+to a coordinator).
 
 `condition` is one of: `{ kind: "outcome", outcomes: [...] }` (matches the outcome —
 `success`/`failed`/`blocked` — of the closest step before it that produces a result: an
@@ -94,8 +115,7 @@ contain `{{task.<field>}}` (`title`, `description`, `identifier`, `status`),
 `{{previous.<field>}}` (`summary`, `outcome`, `note` of the closest step before it that
 produces a result), or `{{step.<id>.<field>}}` naming any earlier step on the path the run
 took to reach this one. Plan renders these server-side before it ever hands a prompt to
-Hermes (`render.ts`); Mastra never sees the template or the rendered text, only the
-resolved `prompt` string the bridge passes on.
+Hermes (`render.ts`); the agent run gets the rendered text only.
 
 ## Validation
 
@@ -120,15 +140,10 @@ definition is attached to a project — a library template is checked structural
 since it must stay valid for any project that might adopt it later — and `enabling` a
 workflow in a project is refused (HTTP 409) while it has any such issue.
 
-Validation runs again, redundantly, on Mastra's side: `pipeline-contracts.ts` defines a
-parallel Zod schema for exactly the fields Mastra reads (step id, name, type, the
-condition's `kind`, `then`/`else`, `thenEnd`/`elseEnd`, `onReject`) and rejects anything
-that does not parse before it lets a step decision depend on it. Mastra's schema is
-intentionally narrower than Plan's: it has no `instruction`, `assignee`, `model`, `message`
-or task-action fields, because Mastra has no use for them and must not be able to act on
-them. This is the technical half of "Mastra orchestrates, Hermes executes" — the fields
-that would let Mastra do anything model- or side-effect-related simply are not present in
-what it parses.
+The engine reads a definition through the same registries: each step type's `read` checks
+its fields for `validateDefinition` and gives the interpreter the step it executes, so what
+validates is what runs. A step whose type is not registered is a validation error, and a run
+of it fails instead of guessing.
 
 ## No code execution
 
@@ -160,24 +175,36 @@ moved past. Every version keeps its author and timestamp
 version history and diff view read directly from this table.
 
 A run pins the exact version it started with: `pipeline_run.versionId` is a foreign key
-into `pipeline_version`, not into `pipeline`, and `control.ts` always joins through that
-row when it answers Mastra's `begin`. A workflow edited mid-run does not change runs
-already in flight; a schedule's next fire, and any run started after the edit, picks up the
+into `pipeline_version`, not into `pipeline`, and the engine interprets the definition of
+that row (a built-in run carries its definition in `pipeline_run.definition`). A workflow
+edited mid-run does not change runs already in flight; a schedule's next fire, and any run started after the edit, picks up the
 row's current version at start time. There is no "publish" step separate from saving — a
 saved change is live for the next run immediately — so a workflow that must not change
 mid-rollout should be edited by creating a new template/workflow rather than in place, and
 project role mappings and enablement issues (`projectIssues`) are what actually gates
 whether a project's workflow can run at all.
 
-## How Mastra executes it
+## How the engine executes it
 
-See the "Workflow builder" section of
-[`ORCHESTRATION_CONTRACT.md`](../../deployment/volition-stack/optional/mastra-studio/ORCHESTRATION_CONTRACT.md#workflow-builder)
-for the full protocol: the three Mastra steps (`prepare-pipeline`, the `run-pipeline-step`
-loop, `finish-pipeline`), the `begin`/`agent`/`condition`/`action`/`approval`/`wait`/
-`record`/`finish` operations and what Plan does and answers for each, the idempotency keys
-that make a retried or continued step safe to ask again, and how a dry run (test run)
-simulates every step without waiting or calling an agent. The short version: Mastra decides
-*which* step runs next by walking the structural shape it parsed; Plan decides and performs
-*what* that step does and is the only party that ever writes task data, resolves an agent
-or calls Hermes.
+One DBOS workflow, `helena.run`, interprets every run: it walks the pinned definition and
+executes each step through its registered type (`apps/api/src/modules/engine/workflows.ts`).
+Every step execution is a sequence of recorded operations named
+`helena:<step>#<iteration>:<operation>`, so a restart of the API continues inside the step
+it was in, and nothing that finished runs twice. Each step writes its row in
+`pipeline_run_step`, which the run history shows.
+
+- An agent step queues a normal Plan agent run and waits for it by a signal when the run
+  finishes; a long timeout is only the safety net. An approval step waits the same way for
+  the decision (`POST /pipeline-runs/:runId/approval`).
+- Cancel (`POST /pipeline-runs/:runId/cancel`) stops the workflow and cancels the agent run
+  it waits for. Retry (`POST /pipeline-runs/:runId/retry`) forks the workflow at the first
+  operation of the failed step: earlier steps keep their results and the failed step runs
+  again.
+- Starts are idempotent: a run's workflow ID is derived from the run, a trigger that fires
+  twice for the same event starts one run, and a workflow that still works on a task starts
+  no second run on it.
+- A dry run (test run) simulates every step without waiting, sending or calling an agent.
+
+The engine decides *which* step runs next by walking the definition; each step type decides
+and performs *what* the step does, with Plan's normal service calls. Only Plan writes task
+data, resolves an agent or queues work for Hermes.
