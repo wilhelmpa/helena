@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { SectionLabel } from '@/components/common/page/RowList';
 import type { CrossProjectIssue } from '@/lib/api/endpoints/issues';
 import { STATE_TYPES } from '@/utils/fieldOptions';
 import { byKey } from '@/utils/messageKey';
@@ -48,12 +49,14 @@ export default function HomeTaskList({
 }) {
   const stateLabel = byKey(useTranslations('display.stateTypes'));
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {groupTasks(issues, grouping, stateLabel).map((group) => (
         <section key={group.key}>
-          <h2 className="mb-1 px-2 text-xs font-medium text-muted-foreground">
-            {group.name} · {group.issues.length}
-          </h2>
+          <SectionLabel
+            trailing={<span className="font-mono text-xs tabular-nums">{group.issues.length}</span>}
+          >
+            {group.name}
+          </SectionLabel>
           <div className="rounded-lg border bg-card p-1">
             {group.issues.map((issue) => (
               <HomeTaskRow key={issue.id} issue={issue} />
