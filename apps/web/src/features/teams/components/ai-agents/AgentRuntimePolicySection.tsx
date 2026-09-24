@@ -92,9 +92,16 @@ export default function AgentRuntimePolicySection({
         </label>
         <Select
           value={policy.runtime ?? 'hermes'}
+          // Another runtime has other models: the agent starts on the new runtime's own
+          // default until one of its models is chosen (its runner lists them once it runs).
           onValueChange={(runtime) =>
-            patchPolicy({
-              runtime: runtime === 'hermes' ? undefined : (runtime as AgentRuntimeKind),
+            onChange({
+              model: '',
+              runtimePolicy: {
+                ...policy,
+                runtime: runtime === 'hermes' ? undefined : (runtime as AgentRuntimeKind),
+                reasoningEffort: null,
+              },
             })
           }
         >
