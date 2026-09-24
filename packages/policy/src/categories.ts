@@ -1,26 +1,29 @@
-// The kinds of action the policy engine decides on (docs/helena-decisions/policy-engine.md).
-// Every tool, connector, workflow step and runtime maps what it is about to do onto one of
-// these, and the Autopilot level of the project and the agent decides the rest.
+// The kinds of action the policy engine decides on (docs/helena-decisions/policy-engine.md,
+// orchestrator decision D-C1), in rising risk. Every tool, connector, workflow step and
+// runtime maps what it is about to do onto one of these, and the Autopilot level of the
+// project and the agent decides the rest.
+// mirror of @helena/sdk ACTION_CATEGORIES: import it from there once hub/framework lands.
 export const ACTION_CATEGORIES = [
   // Look at something: files, Helena data, web pages, mail.
   'read',
-  // Talk within the task: comment, ask, report blocked, request an approval, keep notes.
-  // Always allowed, so an agent that may only propose can still propose.
+  // Post status or results into Helena itself: comment on its own task, ask, report
+  // blocked, request an approval, the run report. Always allowed, so an agent that may only
+  // propose can still propose.
   'report',
   // Change Helena data or files in the agent's own workspace.
   'write',
   // Reach people or systems outside Helena: mail, messages, webhooks, form submissions,
   // uploads, third-party tools.
   'send',
-  // Remove something. `scope` says whether it is inside the workspace or outside.
-  'delete',
-  // Spend money.
-  'pay',
   // Make something public or live: push, release, deploy, publish a package.
   'publish',
   // Run risky code or commands. `scope` says whether they stay in the workspace.
   'execute',
-  // Create, change or reveal credentials, keys, tokens or grants.
+  // Remove something. `scope` says whether it is inside the workspace or outside.
+  'delete',
+  // Spend money.
+  'pay',
+  // Any change to logins, keys, tokens or grants. Always a person's decision.
   'credentials',
 ] as const;
 
@@ -29,6 +32,29 @@ export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
 // Where an action lands: inside the agent's own workspace (its project folder, its
 // project's data in Helena) or outside it (the system, other projects, the internet).
 export type ActionScope = 'workspace' | 'external';
+
+// The risk rank of a category: its place in ACTION_CATEGORIES.
+// mirror of @helena/sdk actionRank()
+export function actionRank(category: ActionCategory): number {
+  return ACTION_CATEGORIES.indexOf(category);
+}
+
+// The MCP tool annotations a tool of this category carries (D-C1).
+// mirror of @helena/sdk
+export function annotationsOf(category: ActionCategory): {
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  openWorldHint?: boolean;
+} {
+  if (category === 'read') return { readOnlyHint: true };
+  if (category === 'write' || category === 'report')
+    return { readOnlyHint: false, openWorldHint: false, destructiveHint: false };
+  if (category === 'delete') return { readOnlyHint: false, destructiveHint: true };
+  return { readOnlyHint: false, openWorldHint: true };
+}
+
+// The `_meta` key a tool declares its category under.
+export const ACTION_META_KEY = 'helena/action';
 
 export function isActionCategory(value: unknown): value is ActionCategory {
   return typeof value === 'string' && (ACTION_CATEGORIES as readonly string[]).includes(value);

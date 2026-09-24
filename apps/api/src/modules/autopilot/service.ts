@@ -296,7 +296,7 @@ export interface RuntimeQuestion {
   tool: string;
   command?: string;
   path?: string;
-  mcp?: { server: string; annotations?: ToolAnnotations | null };
+  mcp?: { server: string; annotations?: ToolAnnotations | null; action?: ActionCategory | null };
   dangerous?: boolean;
   workspace?: string;
   intent?: ActionCategory;

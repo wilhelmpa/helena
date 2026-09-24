@@ -6,6 +6,7 @@ import {
   simpleCommands,
 } from './classify';
 import { costOf, priceCandidates, pricesFromModelsDev, snapshotPrices, toEur } from './prices';
+import { ACTION_CATEGORIES, actionRank, annotationsOf } from './categories';
 
 const WS = '/srv/work/vol';
 
@@ -188,5 +189,40 @@ describe('prices', () => {
       price,
     );
     expect(cost).toBeCloseTo(0.1 * 5 + 0.8 * 0.5 + 0.1 * 6.25 + 0.1 * 25, 6);
+  });
+});
+
+describe('the canonical category list (D-C1, mirror of @helena/sdk)', () => {
+  test('is ordered by risk', () => {
+    expect([...ACTION_CATEGORIES]).toEqual([
+      'read',
+      'report',
+      'write',
+      'send',
+      'publish',
+      'execute',
+      'delete',
+      'pay',
+      'credentials',
+    ]);
+    expect(actionRank('read')).toBeLessThan(actionRank('credentials'));
+  });
+
+  test('maps every category onto annotations that map back to it', () => {
+    expect(annotationsOf('read')).toEqual({ readOnlyHint: true });
+    expect(categoryFromAnnotations(annotationsOf('write'))).toBe('write');
+    expect(categoryFromAnnotations(annotationsOf('delete'))).toBe('delete');
+    expect(categoryFromAnnotations(annotationsOf('send'))).toBe('send');
+    expect(annotationsOf('publish')).toEqual(annotationsOf('send'));
+  });
+
+  test('a category declared in _meta wins over the annotations', () => {
+    expect(
+      classifyToolCall({
+        runtime: 'hermes',
+        tool: 'mcp_shop_create_draft',
+        mcp: { server: 'shop', annotations: {}, action: 'write' },
+      }).category,
+    ).toBe('write');
   });
 });

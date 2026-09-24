@@ -197,6 +197,11 @@ export const decideBody = t.Object({
           }),
         ),
       ),
+      action: t.Optional(
+        t.Nullable(ActionCategorySchema, {
+          description: 'The category the tool declares in its _meta under "helena/action".',
+        }),
+      ),
     }),
   ),
   dangerous: t.Optional(t.Boolean({ description: "The runtime's own verdict on a command." })),

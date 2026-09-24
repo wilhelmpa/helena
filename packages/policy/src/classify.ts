@@ -1,4 +1,4 @@
-import type { ActionCategory, ActionScope } from './categories';
+import { ACTION_CATEGORIES, actionRank, type ActionCategory, type ActionScope } from './categories';
 
 // How a tool call becomes an action category (docs/helena-decisions/policy-engine.md).
 // Every tool is or becomes an MCP tool, so the MCP tool annotations are the basis; the
@@ -274,17 +274,10 @@ function writesByRedirect(command: string): boolean {
   return /(^|[^0-9&<])>>?\s*(?!&|\/dev\/null)\S/.test(command) || /^tee\b/.test(command);
 }
 
-const RANK: Record<ActionCategory, number> = {
-  read: 0,
-  report: 1,
-  write: 2,
-  execute: 3,
-  delete: 4,
-  send: 5,
-  publish: 6,
-  credentials: 7,
-  pay: 8,
-};
+const RANK = Object.fromEntries(ACTION_CATEGORIES.map((c) => [c, actionRank(c)])) as Record<
+  ActionCategory,
+  number
+>;
 
 // The subcommand of a git call, past its global options (-C <dir>, -c <key=value>, ...).
 function gitSubcommand(args: string[]): string {
@@ -346,7 +339,9 @@ export function classifyShell(
     if (RANK[one.category] > RANK[result.category]) result = { ...one, scope: result.scope };
     if (one.scope === 'external') result = { ...result, scope: 'external' };
   }
-  if (options.dangerous && RANK[result.category] < RANK.execute) {
+  // A command Hermes flags as dangerous that looked like a mere change is a risky execution;
+  // one already classified as outward (send, publish) or weightier keeps its category.
+  if (options.dangerous && RANK[result.category] <= RANK.write) {
     result = { ...result, category: 'execute' };
   }
   return result;
@@ -483,8 +478,13 @@ export interface ToolCall {
   command?: string | null;
   // The file a file tool writes.
   path?: string | null;
-  // An MCP tool: its server, and its annotations as far as the runtime knows them.
-  mcp?: { server: string; annotations?: ToolAnnotations | null } | null;
+  // An MCP tool: its server, its annotations as far as the runtime knows them, and the
+  // category it declares in `_meta` under "helena/action".
+  mcp?: {
+    server: string;
+    annotations?: ToolAnnotations | null;
+    action?: ActionCategory | null;
+  } | null;
   // Hermes' own verdict on a terminal command.
   dangerous?: boolean;
   // The directory the runtime works in, which counts as the workspace.
@@ -509,7 +509,7 @@ function baseCategory(call: ToolCall): Classified {
   if (call.mcp) {
     const table = call.mcp.server.includes('browser') ? BROWSER_GATEWAY_TOOL_CATEGORY : null;
     const known = table?.[call.tool] ?? table?.[call.tool.replace(/^.*__/, '')];
-    const category = known ?? categoryFromAnnotations(call.mcp.annotations);
+    const category = known ?? categoryFromAnnotations(call.mcp.annotations, call.mcp.action);
     return {
       category,
       scope: category === 'read' || category === 'write' ? 'workspace' : 'external',

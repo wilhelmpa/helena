@@ -9,6 +9,7 @@ import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
 import { toolError } from './result';
 import { decideMcpCall } from '#modules/autopilot/mcp';
+import { ACTION_META_KEY, categoryFromAnnotations } from '@helena/policy';
 
 // The path param of every team-scoped route.
 const TEAM_PARAM = 'teamId';
@@ -63,6 +64,8 @@ export async function buildMcpServer(
           : t.inputSchema,
       annotations: t.annotations,
       outputSchema: t.outputSchema,
+      // The action category Helena's policy engine files a call of the tool under.
+      _meta: { [ACTION_META_KEY]: categoryFromAnnotations(t.annotations, t.category) },
     })),
   }));
 

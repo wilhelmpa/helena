@@ -13,6 +13,7 @@ import {
   type UsdPrice,
 } from '@helena/policy';
 import { HttpError } from '#shared/lib';
+import { modelsDevRegistry } from '#shared/models-dev';
 
 // The model price table (docs/helena-decisions/policy-engine.md): euros per million tokens
 // per model, for estimating what agents spend. Every price is an estimate. Rows come from
@@ -20,9 +21,7 @@ import { HttpError } from '#shared/lib';
 // hand; an import never touches a manual row. Consumed by the Autopilot budgets and by the
 // cost views (hub/hermes-in-helena) through price() and costOf().
 
-export const MODELS_DEV_URL = 'https://models.dev/api.json';
 const SETTING_KEY = 'helena.model_prices';
-const IMPORT_TIMEOUT_MS = 20_000;
 // Other processes (the worker) change nothing here, so a short cache only has to catch up
 // with this process's own writes, which clear it.
 const CACHE_MS = 60_000;
@@ -315,12 +314,7 @@ export async function importModelPrices(
   } else {
     let body: unknown;
     try {
-      const response = await fetchImpl(MODELS_DEV_URL, {
-        signal: AbortSignal.timeout(IMPORT_TIMEOUT_MS),
-        headers: { accept: 'application/json' },
-      });
-      if (!response.ok) throw new Error(`models.dev answered ${response.status}`);
-      body = await response.json();
+      body = await modelsDevRegistry({ fresh: true, fetchImpl });
     } catch (error) {
       throw new HttpError(
         502,
