@@ -63,8 +63,25 @@ export const ModelAvailabilityEntry = t.Object({
   }),
 });
 
+export const DeadLoginEntry = t.Object({
+  provider: t.String({ description: "The provider the login signs in to ('anthropic', …)." }),
+  state: t.String({ description: "'invalid' (rejected) or 'expired' (ran out unrenewed)." }),
+  command: t.Nullable(
+    t.String({ description: 'What the owner runs in the owner terminal to sign Hermes in again.' }),
+  ),
+  agents: t.Array(
+    t.Composite([ModelAgentRef, t.Object({ model: t.Nullable(t.String()) })]),
+    { description: 'The agents whose model (or runtime default) runs through the login.' },
+  ),
+});
+
 export const ModelAvailabilityResponse = t.Object({
   entries: t.Array(ModelAvailabilityEntry),
+  deadLogins: t.Array(DeadLoginEntry, {
+    description:
+      'Hermes logins agents cannot use now (the token keeper), each with the agents that run ' +
+      'through it.',
+  }),
 });
 
 export const modelAvailabilityParams = t.Object({

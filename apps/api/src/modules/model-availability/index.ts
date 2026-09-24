@@ -14,6 +14,7 @@ import {
   replaceModelBody,
 } from './model';
 import { replaceModel } from './replace';
+import { deadLoginsWithAgents } from './logins';
 import { clearModelAvailability, listModelAvailability } from './service';
 
 // Which models the agents' providers really serve: what runs and chat answers found out,
@@ -29,7 +30,10 @@ export const modelAvailabilityRoutes = new Elysia({
 
   .get(
     '/teams/:teamId/model-availability',
-    async ({ membership }) => ({ entries: await listModelAvailability(membership.teamId) }),
+    async ({ membership }) => ({
+      entries: await listModelAvailability(membership.teamId),
+      deadLogins: await deadLoginsWithAgents(membership.teamId),
+    }),
     {
       params: teamParams,
       teamPermission: ['ai_agents', 'read'],
@@ -113,7 +117,7 @@ export const modelAvailabilityRoutes = new Elysia({
     '/god/model-availability',
     async ({ user }) => {
       requireGod(user);
-      return { entries: await listModelAvailability() };
+      return { entries: await listModelAvailability(), deadLogins: await deadLoginsWithAgents() };
     },
     {
       response: { 200: ModelAvailabilityResponse, ...errors(401, 403) },

@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { agentRun, aiAgent, db, helenaModelAvailability, issueActivity } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
@@ -398,6 +401,84 @@ describe('model availability', () => {
       read: 0,
       refused: 0,
     });
+  });
+
+  it('names the agents whose model runs through a Hermes login the provider rejected', async () => {
+    const ctx = await setup();
+    const agents = ctx.asOwner.teams({ teamId: ctx.teamId })['ai-agents'];
+    const writer = (
+      await agents.post({
+        projectIds: [ctx.projectId],
+        name: 'Writer',
+        username: 'writer',
+        kind: 'external',
+        model: 'claude-sonnet-5',
+        runtimePolicy: {
+          reasoningEffort: null,
+          toolAllow: [],
+          toolDeny: [],
+          mcpGrants: [],
+          files: [],
+        },
+      } as never)
+    ).data!.agent;
+    // Its runner's catalog no longer lists the Claude models (the keeper's catalog leaves a
+    // provider with a dead login out); the model's family still names the provider.
+    const dir = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), 'logins-'));
+    const saved = process.env.HELENA_LOGIN_STATUS_DIR;
+    process.env.HELENA_LOGIN_STATUS_DIR = dir;
+    try {
+      const login = (state: string) => ({
+        version: 1,
+        reporter: 'helena-token-keeper',
+        checkedAt: new Date().toISOString(),
+        intervalSeconds: 600,
+        logins: [
+          {
+            store: 'hermes',
+            provider: 'anthropic',
+            id: 'abc123',
+            label: null,
+            managed: true,
+            state,
+            expiresAt: null,
+            refreshedAt: null,
+            error: null,
+            command: 'hermes auth add anthropic --type oauth',
+          },
+        ],
+        errors: [],
+      });
+      await writeFile(join(dir, 'hermes.json'), JSON.stringify(login('invalid')));
+      const listed = (await ctx.asOwner.teams({ teamId: ctx.teamId })['model-availability'].get())
+        .data!;
+      expect(listed.deadLogins).toEqual([
+        {
+          provider: 'anthropic',
+          state: 'invalid',
+          command: 'hermes auth add anthropic --type oauth',
+          agents: [
+            expect.objectContaining({ id: writer.id, username: 'writer', model: 'claude-sonnet-5' }),
+          ],
+        },
+      ]);
+      const health = (await ctx.asOwner.god['system-health'].get()).data!;
+      expect(health.models.deadLogins[0]).toMatchObject({
+        provider: 'anthropic',
+        agents: [expect.objectContaining({ username: 'writer' })],
+      });
+
+      // A login that only failed to renew for now still works: nobody is named.
+      await writeFile(join(dir, 'hermes.json'), JSON.stringify(login('error')));
+      expect(
+        (await ctx.asOwner.teams({ teamId: ctx.teamId })['model-availability'].get()).data!
+          .deadLogins,
+      ).toEqual([]);
+    } finally {
+      if (saved === undefined) delete process.env.HELENA_LOGIN_STATUS_DIR;
+      else process.env.HELENA_LOGIN_STATUS_DIR = saved;
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it('moves every agent off a model at once, templates carrying their copies', async () => {

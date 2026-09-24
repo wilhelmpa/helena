@@ -4,6 +4,8 @@ import type { RuntimeFailure } from '@helena/sdk';
 import { iso } from '#shared/lib';
 import type { RunModelReport } from '#modules/agents/runtime-sync/model-check';
 import { sameModel } from '#modules/agents/runtime-sync/model-check';
+import { deadLoginsWithAgents } from './logins';
+import { runtimeOfPolicy } from './runtime';
 
 // Which models the agents' providers really serve this installation
 // (docs/helena-decisions/model-availability.md). A runtime's catalog lists what its provider
@@ -30,12 +32,7 @@ export type ModelAvailabilityRow = typeof helenaModelAvailability.$inferSelect;
 const WORKS_REFRESH = sql`interval '1 hour'`;
 const DETAIL_LIMIT = 500;
 
-// The runtime an agent runs on: its runtime policy's, Hermes when it names none.
-export function runtimeOfPolicy(policy: unknown): string {
-  const runtime =
-    policy && typeof policy === 'object' ? (policy as { runtime?: unknown }).runtime : undefined;
-  return typeof runtime === 'string' && runtime.trim() ? runtime.trim() : 'hermes';
-}
+export { runtimeOfPolicy } from './runtime';
 
 // The model a run or chat answer ran on, and where: what the runner asked the runtime for,
 // else what the session used, else the runtime's default; the provider the runner routed it
@@ -355,10 +352,23 @@ export async function agentModelRefusal(agent: {
   return rows[0];
 }
 
-// The models that are refused, for the health overview: each with the agents set to it.
+// The models that are refused, for the health overview: each with the agents set to it; and
+// the Hermes logins the provider rejected, each with the agents that run through it.
 export async function modelAvailabilityHealth() {
-  const entries = await listModelAvailability();
+  const [entries, logins] = await Promise.all([listModelAvailability(), deadLoginsWithAgents()]);
   return {
+    deadLogins: logins.map(({ provider, state, command, agents }) => ({
+      provider,
+      state,
+      command,
+      agents: agents.slice(0, 20).map(({ id, teamId, username, template, model }) => ({
+        id,
+        teamId,
+        username,
+        template,
+        model,
+      })),
+    })),
     unavailable: entries
       .filter((entry) => entry.state === 'unavailable')
       .slice(0, 20)

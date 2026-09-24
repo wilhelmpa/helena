@@ -390,6 +390,27 @@ export const SystemHealthResponse = t.Object({
   }),
   models: t.Object(
     {
+      deadLogins: t.Array(
+        t.Object({
+          provider: t.String(),
+          state: t.String(),
+          command: t.Nullable(t.String()),
+          agents: t.Array(
+            t.Object({
+              id: t.Number(),
+              teamId: t.Number(),
+              username: t.String(),
+              template: t.Boolean(),
+              model: t.Nullable(t.String()),
+            }),
+          ),
+        }),
+        {
+          description:
+            "Hermes logins the provider rejected (or that ran out unrenewed), each with the " +
+            'agents whose model runs through it.',
+        },
+      ),
       unavailable: t.Array(
         t.Object({
           runtime: t.String(),
