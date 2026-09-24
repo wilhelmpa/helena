@@ -164,6 +164,14 @@ def os_name() -> str | None:
     return None
 
 
+def debian_version() -> str | None:
+    try:
+        value = Path("/etc/debian_version").read_text().strip()
+    except OSError:
+        return None
+    return value if re.fullmatch(r"[0-9][0-9A-Za-z.+~-]{0,31}", value) else None
+
+
 def apt_inventory() -> dict:
     upgrades, new, removed = apt_simulation()
     sources = source_packages([entry["name"] for entry in upgrades])
@@ -178,6 +186,7 @@ def apt_inventory() -> dict:
         group["security"] = group["security"] or entry["security"]
     return {
         "os": os_name(),
+        "debianVersion": debian_version(),
         "listsUpdatedAt": lists_updated_at(),
         "packages": sorted(groups.values(), key=lambda group: group["source"]),
         "newPackages": new,

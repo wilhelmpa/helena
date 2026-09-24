@@ -94,12 +94,12 @@ export const aptSource: UpdateSource = {
       {
         component: 'debian',
         name: inventory.apt.os?.trim() || 'Debian',
-        installed: null,
-        available: null,
+        installed: inventory.apt.debianVersion?.trim() || null,
+        available: inventory.apt.debianVersion?.trim() || null,
         updateAvailable: false,
         security: false,
+        sourceUrl: 'https://www.debian.org/security/',
         applicable: false,
-        detail: inventory.apt.listsUpdatedAt ?? null,
       },
     ];
   },

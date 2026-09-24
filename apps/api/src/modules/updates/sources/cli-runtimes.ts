@@ -93,7 +93,10 @@ async function checkOne(context: UpdateCheckContext, info: RuntimeInfo): Promise
   const base = {
     component: info.runtime,
     name: info.name,
-    sourceUrl: `https://github.com/${info.repository}`,
+    // Where an update is downloaded from (the confirmation names it).
+    sourceUrl: info.npm
+      ? `https://www.npmjs.com/package/${info.npm}`
+      : `https://${CLAUDE_RELEASES}/claude-code-releases`,
     notesUrl:
       info.runtime === 'claude'
         ? 'https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md'

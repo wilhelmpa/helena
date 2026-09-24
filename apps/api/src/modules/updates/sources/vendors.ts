@@ -78,6 +78,7 @@ export interface HostInventory {
   apt?: {
     listsUpdatedAt?: string | null;
     os?: string | null;
+    debianVersion?: string | null;
     packages?: {
       source?: string;
       component?: string;
