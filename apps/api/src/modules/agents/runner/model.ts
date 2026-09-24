@@ -1,5 +1,5 @@
 import { t } from 'elysia';
-import { agentRunTrigger, contextUsageBody } from '../model';
+import { agentRunTrigger, contextUsageBody, spendBody } from '../model';
 
 export const MAX_RUN_OUTPUT_BYTES = 128 * 1024;
 
@@ -64,6 +64,13 @@ export const RunAckResponse = t.Object({
       'The run was canceled, or claimed again after the named claim: kill the command ' +
       'and report nothing for it.',
   }),
+  hold: t.Optional(
+    t.Boolean({
+      description:
+        "The instance's emergency stop is on: stop the command and hand the run back; it " +
+        'resumes its session once the stop is lifted.',
+    }),
+  ),
 });
 
 export const resultBody = t.Object({
@@ -90,6 +97,7 @@ export const resultBody = t.Object({
   toolCalls: t.Optional(
     t.Integer({ minimum: 0, description: 'How many tool calls the agent made in the run.' }),
   ),
+  spend: spendBody,
 });
 
 // The answer to a run result: a reflection the runner starts in the run's session, or
@@ -114,6 +122,7 @@ export const reflectionSaved = t.Object({
 export const reflectionBody = t.Object({
   status: t.Union([t.Literal('success'), t.Literal('failed')]),
   usage: contextUsageBody,
+  spend: spendBody,
   saved: t.Array(reflectionSaved, { maxItems: 50 }),
   summary: t.Optional(t.Nullable(t.String({ maxLength: 2000 }))),
   error: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),

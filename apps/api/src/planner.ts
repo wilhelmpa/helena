@@ -24,6 +24,11 @@ import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
 import { credentialRoutes } from './modules/agents/credentials';
 import { agentLearningRoutes } from './modules/agents/learning';
+import { agentRuntimeRequestRoutes } from './modules/agents/runtime-requests';
+import { runTimelineRoutes } from './modules/agents/run-timeline';
+import { runtimeViewRoutes } from './modules/agents/runtime-views';
+import { agentUsageRoutes } from './modules/agents/usage';
+import { emergencyStopRoutes } from './modules/emergency-stop';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
 import { issueRoutes } from './modules/issues';
@@ -120,6 +125,11 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentMcpServerRoutes)
   .use(credentialRoutes)
   .use(agentLearningRoutes)
+  .use(agentRuntimeRequestRoutes)
+  .use(runTimelineRoutes)
+  .use(runtimeViewRoutes)
+  .use(agentUsageRoutes)
+  .use(emergencyStopRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)
