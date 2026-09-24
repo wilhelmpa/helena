@@ -1,0 +1,8 @@
+# Helena local AI: the models install.sh may place, each pinned to a repository commit and the
+# SHA-256 of every file (docs/helena-decisions/local-ai-platform.md §5). The name is the one
+# Lemonade's model registry uses for the same checkpoint, so Lemonade finds the files offline.
+# A download over 1 GB needs the owner's OK first (README.md "Downloads").
+# Tab-separated: name kind unit repo commit files sizes total sha256s license ctx backend
+Qwen3.6-35B-A3B-GGUF	gguf	gpu	unsloth/Qwen3.6-35B-A3B-GGUF	a483e9e6cbd595906af30beda3187c2663a1118c	Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf,mmproj-F16.gguf	22360456160,899283680	23259739840	707a55a8a4397ecde44de0c499d3e68c1ad1d240d1da65826b4949d1043f4450,8971ee4f331ff0a4c609374f32984b3d4e6dc086c0aa35f1d637fad1829e887f	Apache-2.0	131072	vulkan
+Qwen3-Embedding-0.6B-GGUF	gguf	gpu	Qwen/Qwen3-Embedding-0.6B-GGUF	370f27d7550e0def9b39c1f16d3fbaa13aa67728	Qwen3-Embedding-0.6B-Q8_0.gguf	639150592	639150592	06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439	Apache-2.0	32768	vulkan
+Qwen3-0.6B-GGUF	gguf	gpu	unsloth/Qwen3-0.6B-GGUF	50968a4468ef4233ed78cd7c3de230dd1d61a56b	Qwen3-0.6B-Q4_0.gguf	382156480	382156480	33bcc57074ec7b6eada5a90651ee546ec0c2b271002c22baf9f1b2dd1e8f75cb	Apache-2.0	32768	vulkan

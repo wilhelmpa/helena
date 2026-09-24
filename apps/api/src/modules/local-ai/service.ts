@@ -23,9 +23,6 @@ import {
   localProviderName,
   median,
   parseLocalModelId,
-  type LocalAiChatAnswer,
-  type LocalAiChatRequest,
-  type LocalAiEvalContext,
   type LocalAiMode,
   type LocalAiTaskClass,
   type LocalAiUnit,
@@ -37,6 +34,7 @@ import {
 } from '@helena/sdk';
 import { host } from '#shared/helena';
 import { HttpError, iso } from '#shared/lib';
+import { joinUrl, openAiEvalContext } from './eval-context';
 import { LEMONADE, LEMONADE_DEFAULT_BASE_URL } from './server-types';
 
 // Local AI in the API (docs/helena-decisions/local-ai-platform.md): the model servers, their
@@ -49,7 +47,6 @@ export const DEFAULT_KEY_FILE = `${LOCAL_AI_KEY_DIR}/api-key`;
 export const HERMES_MIN_CONTEXT = 65_536;
 const STATUS_TIMEOUT_MS = 5_000;
 const MODELS_TIMEOUT_MS = 15_000;
-const EVAL_TIMEOUT_MS = 180_000;
 
 // ── Registries ─────────────────────────────────────────────────────────────────────────
 
@@ -72,9 +69,7 @@ export function taskClass(id: string): LocalAiTaskClass | null {
 // ── Reaching a server ──────────────────────────────────────────────────────────────────
 
 // Only http(s) to the address the Administrator configured; the path is appended to it.
-export function joinUrl(baseUrl: string, path: string): string {
-  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
-}
+export { joinUrl };
 
 export function validBaseUrl(value: string): string {
   let url: URL;
@@ -310,80 +305,6 @@ export async function refreshServer(id: number): Promise<ServerView> {
 
 // ── Evals ──────────────────────────────────────────────────────────────────────────────
 
-interface ChatCompletion {
-  choices?: {
-    message?: {
-      content?: string | null;
-      reasoning_content?: string | null;
-      tool_calls?: { function?: { name?: string; arguments?: string } }[];
-    };
-  }[];
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
-}
-
-// The two calls an eval makes, over the server's OpenAI-compatible API.
-export function evalContext(
-  server: ModelServerRow,
-  key: string | null,
-  model: string,
-  signal?: AbortSignal,
-): LocalAiEvalContext {
-  const post = async (path: string, body: unknown) => {
-    const response = await fetch(joinUrl(server.baseUrl, path), {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        ...(key ? { authorization: `Bearer ${key}` } : {}),
-      },
-      body: JSON.stringify(body),
-      redirect: 'error',
-      signal: signal ?? AbortSignal.timeout(EVAL_TIMEOUT_MS),
-    });
-    if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-    return response.json();
-  };
-  return {
-    model,
-    signal,
-    async chat(request: LocalAiChatRequest): Promise<LocalAiChatAnswer> {
-      const started = Date.now();
-      const body = (await post('/chat/completions', {
-        model,
-        messages: [
-          ...(request.system ? [{ role: 'system', content: request.system }] : []),
-          { role: 'user', content: request.prompt },
-        ],
-        ...(request.maxTokens && { max_tokens: request.maxTokens }),
-        ...(request.json && { response_format: { type: 'json_object' } }),
-        ...(request.tools && {
-          tools: request.tools.map((tool) => ({ type: 'function', function: tool })),
-        }),
-        temperature: 0,
-        stream: false,
-      })) as ChatCompletion;
-      const message = body.choices?.[0]?.message;
-      return {
-        text: message?.content ?? '',
-        toolCalls: (message?.tool_calls ?? []).map((call) => ({
-          name: call.function?.name ?? '',
-          arguments: call.function?.arguments ?? '{}',
-        })),
-        inputTokens: body.usage?.prompt_tokens ?? null,
-        outputTokens: body.usage?.completion_tokens ?? null,
-        latencyMs: Date.now() - started,
-      };
-    },
-    async embed(texts) {
-      const started = Date.now();
-      const body = (await post('/embeddings', { model, input: texts })) as {
-        data?: { embedding?: number[]; index?: number }[];
-      };
-      const rows = [...(body.data ?? [])].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
-      return { vectors: rows.map((row) => row.embedding ?? []), latencyMs: Date.now() - started };
-    },
-  };
-}
-
 export async function runEval(input: { classId: string; modelId: string; userId: string }) {
   const entry = taskClass(input.classId);
   if (!entry) throw new HttpError(404, 'No such task class');
@@ -403,7 +324,9 @@ export async function runEval(input: { classId: string; modelId: string; userId:
   const threshold = entry.threshold ?? 0.8;
   let values: typeof helenaLocalAiEval.$inferInsert;
   try {
-    const result = await entry.evaluate(evalContext(server, key, model.id));
+    const result = await entry.evaluate(
+      openAiEvalContext({ baseUrl: server.baseUrl, key, model: model.id }),
+    );
     values = {
       classId: entry.id,
       serverId: server.id,
