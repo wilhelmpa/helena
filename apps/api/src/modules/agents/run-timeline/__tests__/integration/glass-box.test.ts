@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { db, agentUsage, aiAgent } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -148,18 +148,17 @@ describe('runtime requests', () => {
       action: 'pin',
       skill: '--all',
     });
-    expect(bad.status).toBe(422);
+    expect(bad.status).toBe(400);
 
     // The curator is off: nothing is scheduled. On, with the capability, one review a week.
     expect(await scheduleCuratorRuns()).toBe(0);
-    const [row] = await db.select().from(aiAgent).where(eq(aiAgent.id, agent.id));
     await db
       .update(aiAgent)
       .set({
-        runtimePolicy: { ...row!.runtimePolicy, curator: true },
-        runtimeState: { ...(row!.runtimeState as object), capabilities: ['curator'] },
+        runtimePolicy: sql`${aiAgent.runtimePolicy} || '{"curator": true}'::jsonb`,
+        runtimeState: sql`jsonb_set(coalesce(${aiAgent.runtimeState}, '{}'::jsonb), '{capabilities}', '["curator"]')`,
         lastSeenAt: new Date(),
-      } as never)
+      })
       .where(eq(aiAgent.id, agent.id));
     const now = new Date();
     expect(await scheduleCuratorRuns(now)).toBe(1);
