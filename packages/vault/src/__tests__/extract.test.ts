@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import ExcelJS from 'exceljs';
+import writeExcelFile from 'write-excel-file/node';
 import { extractText } from '../extract';
 import { has, pandocFile, scannedPage, scannedPdf, tempDir, textPdf } from './fixtures';
 
@@ -57,18 +57,29 @@ describe('text extraction', () => {
   }
 
   it('reads every sheet of a workbook', async () => {
-    const workbook = new ExcelJS.Workbook();
-    workbook.addWorksheet('Kosten').addRows([
-      ['Posten', 'Betrag'],
-      ['Server', 120],
-    ]);
-    workbook.addWorksheet('Termine').addRow(['Abnahme', new Date('2026-10-01T00:00:00Z')]);
     const file = path.join(tempDir('vault-extract-'), 'budget.xlsx');
-    await writeFile(file, Buffer.from(await workbook.xlsx.writeBuffer()));
+    await writeExcelFile([
+      {
+        sheet: 'Kosten',
+        data: [
+          ['Posten', 'Betrag'],
+          ['Server', 120],
+          [null, null],
+          ['Summe', 120, null],
+        ],
+      },
+      {
+        sheet: 'Termine',
+        data: [
+          [null],
+          ['Abnahme', { value: new Date('2026-10-01T00:00:00Z'), format: 'yyyy-mm-dd' }],
+        ],
+      },
+    ]).toFile(file);
     const result = await extractText(file);
     expect(result).toEqual({
       status: 'done',
-      text: '# Kosten\nPosten\tBetrag\nServer\t120\n\n# Termine\nAbnahme\t2026-10-01',
+      text: '# Kosten\nPosten\tBetrag\nServer\t120\nSumme\t120\n\n# Termine\nAbnahme\t2026-10-01',
     });
   });
 

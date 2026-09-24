@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'bun:test';
+import writeExcelFile from 'write-excel-file/node';
 import { decodeCsv, isTableFilename, parseCsv, parseImportFile } from '../../parse';
 
 describe('csv parser', () => {
@@ -78,6 +79,36 @@ describe('import file routing', () => {
     const parsed = await parseImportFile(bytes, 'export.csv');
     expect(parsed.headers).toEqual(['Aufgabe', 'Notiz']);
     expect(parsed.rows).toEqual([['Küche', '€']]);
+  });
+
+  it('reads the first sheet of a workbook and names the sheet rows of its data', async () => {
+    const bytes = await writeExcelFile([
+      {
+        sheet: 'Aufgaben',
+        data: [
+          [null, null, null],
+          [null, 'Titel', 'Punkte'],
+          [null, { value: 'Fett', fontWeight: 'bold' }, 3],
+          [null, null, null],
+          [null, 'Zweite', true],
+        ],
+      },
+      { sheet: 'Andere', data: [['ignored']] },
+    ]).toBuffer();
+    const parsed = await parseImportFile(bytes, 'tasks.xlsx');
+    expect(parsed.headers).toEqual(['', 'Titel', 'Punkte']);
+    expect(parsed.rows).toEqual([
+      ['', 'Fett', '3'],
+      ['', 'Zweite', 'true'],
+    ]);
+    expect(parsed.rowNumbers).toEqual([3, 5]);
+  });
+
+  it('refuses bytes that are not an xlsx workbook', async () => {
+    const legacyXls = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0, 0, 0]);
+    await expect(parseImportFile(legacyXls, 'old.xlsx')).rejects.toThrow(
+      'The file is not a readable .xlsx workbook',
+    );
   });
 
   it('parses a csv buffer end to end', async () => {

@@ -8,6 +8,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | F07 | done | see git log | no library; SDK 1.30 transport kept for POST |
 | F15 | done | see git log | Bun `S3Client` (built in); `@aws-sdk/client-s3` removed |
 | F17 | done | see git log | `papaparse` 5.7.0 (MIT) |
+| F18 | done | see git log | `read-excel-file` 9.3.10 (MIT); `write-excel-file` 4.1.1 (MIT) for test fixtures |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -53,3 +54,10 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - `chat-attachments/parse.ts` `parseCsv()` is `Papa.parse` with `delimitersToGuess` comma, semicolon, tab and pipe: PapaParse picks the delimiter the first rows agree on, not the one the header line counts most of.
 - `decodeCsv()` decodes the bytes first: a UTF-16 byte-order mark names UTF-16, otherwise UTF-8 when the bytes are valid UTF-8 (a UTF-8 BOM is dropped), else Windows-1252 (German Excel's "CSV (Trennzeichen-getrennt)"). `TextDecoder` does it; no `iconv-lite` needed.
 - Line ends are made uniform before parsing (the old parser ignored `\r`), so a file mixing CRLF and LF still splits into rows; PapaParse on its own would guess CRLF from the first line and keep a trailing LF inside the last field.
+
+## F18: `read-excel-file` instead of `exceljs`
+
+- Both read-only uses moved: the chat-attachment import (`chat-attachments/parse.ts`, first sheet via `readSheet`) and the vault's text extraction (`vault/src/extract.ts`, every sheet via the default export). `exceljs` and the root override `exceljs>uuid` are gone; the lockfile lost about 50 packages.
+- read-excel-file returns the grid from A1 with blank rows kept, so the import's `rowNumbers` are now the real sheet rows (what the comment on `ParsedSheet` always promised; with ExcelJS they counted only non-empty rows). A legacy `.xls` or a non-workbook answers the same 400 as before.
+- The vault extraction writes each row without trailing empty cells and skips blank rows, as it did with ExcelJS.
+- Tests build workbooks with `write-excel-file` (same author, MIT, a devDependency) instead of ExcelJS.

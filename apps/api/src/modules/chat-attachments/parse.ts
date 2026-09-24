@@ -1,6 +1,11 @@
-import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 import Papa from 'papaparse';
+import {
+  readSheet,
+  SheetNotFoundError,
+  type CellValue,
+  type SheetData,
+} from 'read-excel-file/node';
 import { HttpError } from '#shared/lib';
 
 // Turns an uploaded file into a flat table: the first non-empty row is the header,
@@ -31,37 +36,25 @@ export function isTableFilename(filename: string): boolean {
   return TABLE_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
-function cellText(value: ExcelJS.CellValue): string {
-  if (value == null) return '';
-  if (typeof value === 'object' && 'richText' in value)
-    return ((value.richText as { text?: string }[]) ?? []).map((part) => part.text ?? '').join('');
-  if (typeof value === 'object' && 'text' in value) return String(value.text ?? '');
-  if (typeof value === 'object' && 'result' in value) return String(value.result ?? '');
-  const text = String(value);
-  return text === 'undefined' || text === 'null' ? '' : text;
+function cellText(value: CellValue | null): string {
+  return value == null ? '' : String(value);
 }
 
+// The first sheet, read with read-excel-file. Its rows start at A1 and keep blank rows,
+// so a row's index is its sheet row. Formula cells hold the value the spreadsheet
+// application computed last; rich text arrives as plain text.
 async function parseXlsx(bytes: Buffer): Promise<ParsedSheet> {
-  const workbook = new ExcelJS.Workbook();
+  let data: SheetData;
   try {
-    await workbook.xlsx.load(bytes as unknown as Parameters<typeof workbook.xlsx.load>[0]);
-  } catch {
+    data = await readSheet(bytes);
+  } catch (error) {
+    if (error instanceof SheetNotFoundError) throw new HttpError(400, 'The workbook has no sheets');
     throw new HttpError(400, 'The file is not a readable .xlsx workbook');
   }
-  const sheet = workbook.worksheets[0];
-  if (!sheet) throw new HttpError(400, 'The workbook has no sheets');
-
-  const table: string[][] = [];
-  sheet.eachRow((row) => {
-    const cells: string[] = [];
-    row.eachCell({ includeEmpty: true }, (cell) => {
-      const col = Number(cell.col);
-      cells[col - 1] = cellText(cell.value);
-    });
-    for (let i = 0; i < cells.length; i++) cells[i] ??= '';
-    table.push(cells);
-  });
-  return fromTable(table, 'The sheet is empty');
+  return fromTable(
+    data.map((row) => row.map(cellText)),
+    'The sheet is empty',
+  );
 }
 
 // Turns the bytes of a CSV file into text. A byte-order mark names the encoding; without

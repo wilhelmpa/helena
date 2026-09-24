@@ -15,14 +15,15 @@
     "@repo/db": "workspace:*",
     "@repo/storage": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "exceljs": "^4.4.0",
     "jszip": "^3.10.1",
+    "read-excel-file": "^9.3.10",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@types/bun": "latest",
     "eslint": "^9.39.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "write-excel-file": "^4.1.1"
   }
 }
