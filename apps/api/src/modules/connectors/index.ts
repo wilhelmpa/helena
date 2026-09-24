@@ -550,7 +550,8 @@ function toolRoutes() {
           ...mcpTool(
             tool.name,
             { ...annotationsForCategory(category), idempotentHint: category === 'read' },
-            { category, connector: 'google' },
+            category,
+            'google',
           ),
         },
       },
