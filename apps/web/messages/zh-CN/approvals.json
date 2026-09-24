@@ -33,5 +33,6 @@
   "gateOf": "{project} 中的 {workflow}",
   "effects": "批准后执行：",
   "loadFailed": "无法加载审批。",
-  "loadFailedHint": "服务器没有响应，请稍后重试。"
+  "loadFailedHint": "服务器没有响应，请稍后重试。",
+  "openBrowser": "打开项目浏览器"
 }

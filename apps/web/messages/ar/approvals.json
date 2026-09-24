@@ -33,5 +33,6 @@
   "gateOf": "{workflow} في {project}",
   "effects": "يُنفَّذ بعد الموافقة:",
   "loadFailed": "تعذّر تحميل الموافقات.",
-  "loadFailedHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل."
+  "loadFailedHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل.",
+  "openBrowser": "فتح متصفح المشروع"
 }

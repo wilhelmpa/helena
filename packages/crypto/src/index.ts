@@ -53,3 +53,4 @@ export function decryptSecret(enc: EncryptedSecret): string {
   ]);
   return plaintext.toString('utf8');
 }
+export * from './totp';

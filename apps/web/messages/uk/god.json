@@ -383,6 +383,10 @@
     "engine": {
       "summary": "Рушій: {active} у роботі · {waiting} чекають · {queued} у черзі · {schedules} розкладів",
       "failure": "{name}: помилка {time} тому:"
+    },
+    "agentSync": {
+      "title": "Профілі агентів",
+      "synced": "{synced} з {total} синхронізовано"
     }
   }
 }

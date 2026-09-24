@@ -383,6 +383,10 @@
     "engine": {
       "summary": "引擎：{active} 运行中 · {waiting} 等待中 · {queued} 排队中 · {schedules} 个计划",
       "failure": "{name} 于 {time} 前失败："
+    },
+    "agentSync": {
+      "title": "代理配置",
+      "synced": "{total} 个中 {synced} 个已同步"
     }
   }
 }

@@ -3,6 +3,7 @@ import { REGISTRATION_MODES } from '@repo/auth';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 import { PermissionMatrixSchema } from '#shared/permissions';
 import { USER_KINDS } from './service';
+import { agentSyncSummary } from '#modules/agents/runtime-sync/model';
 
 const encryption = t.UnionEnum(['none', 'ssl', 'tls']);
 
@@ -323,6 +324,7 @@ export const EngineSettingsResponse = t.Object({
 });
 
 export const SystemHealthResponse = t.Object({
+  agents: agentSyncSummary,
   services: t.Array(
     t.Object({
       service: t.Union([

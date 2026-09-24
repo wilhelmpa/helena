@@ -383,6 +383,10 @@
     "engine": {
       "summary": "Движок: {active} в работе · {waiting} ждут · {queued} в очереди · {schedules} расписаний",
       "failure": "{name}: ошибка {time} назад:"
+    },
+    "agentSync": {
+      "title": "Профили агентов",
+      "synced": "{synced} из {total} синхронизированы"
     }
   }
 }

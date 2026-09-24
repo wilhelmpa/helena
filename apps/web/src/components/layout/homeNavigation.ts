@@ -1,6 +1,7 @@
 import {
   agentsPath,
   approvalsPath,
+  browserOverviewPath,
   connectionsPath,
   devicesPath,
   globalAgentActivityPath,
@@ -29,6 +30,7 @@ export type HomeNavigationId =
   | 'agentPool'
   | 'organization'
   | 'agentActivity'
+  | 'browser'
   | 'schedules'
   | 'workflows'
   | 'skills'
@@ -69,6 +71,7 @@ export function homeNavigation(teamId: number | null, isOwner = false): HomeNavi
       { id: 'organization', group: 'agents', href: teamOrganizationPath() },
     ]),
     { id: 'agentActivity', group: 'agents', href: globalAgentActivityPath() },
+    { id: 'browser', group: 'agents', href: browserOverviewPath() },
     { id: 'schedules', group: 'agents', href: schedulesPath() },
     ...teamOnly([
       { id: 'workflows', group: 'agents', href: pipelinesPath() },

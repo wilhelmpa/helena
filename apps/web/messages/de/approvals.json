@@ -33,5 +33,6 @@
   "gateOf": "{workflow} in {project}",
   "effects": "Wird nach der Freigabe ausgeführt:",
   "loadFailed": "Die Freigaben konnten nicht geladen werden.",
-  "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
+  "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal.",
+  "openBrowser": "Projekt-Browser öffnen"
 }

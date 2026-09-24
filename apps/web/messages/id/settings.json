@@ -624,5 +624,29 @@
     "propertiesHint": "Diterapkan saat issue dibuat, dan dapat diedit sebelumnya.",
     "emptyTitle": "Belum ada templat",
     "emptyDescription": "Templat mengisi issue baru dengan judul, deskripsi, dan properti."
+  },
+  "browser": {
+    "accessTitle": "Domain",
+    "accessHint": "Mengontrol domain mana yang boleh dibuka oleh browser proyek milik agen. Satu domain juga mencakup subdomainnya.",
+    "blocklistLabel": "Daftar blokir domain",
+    "blocklistHint": "Domain ini tetap diblokir meskipun ada di daftar izin.",
+    "allowlistLabel": "Daftar izin",
+    "allowlistHint": "Kosong berarti mengizinkan semua domain kecuali yang diblokir. Jika tidak kosong, hanya domain ini yang diizinkan (misalnya tetap memblokir situs perbankan).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "contoh.com",
+    "removeDomain": "Hapus {domain}",
+    "behaviorTitle": "Perilaku",
+    "humanInputLabel": "Input mirip manusia",
+    "humanInputHint": "Mengetik dan mengklik dengan jeda mirip manusia, bukan secepat mungkin. Matikan hanya untuk proyek uji coba berisiko rendah.",
+    "allowLocalLabel": "Izinkan alamat lokal",
+    "allowLocalHint": "Agen boleh membuka localhost, jaringan lokal, dan alamat .local. Biarkan nonaktif kecuali untuk menguji situs lokal: peramban berjalan di server, tempat alamat ini menjangkau Helena dan peramban lain.",
+    "lockTimeoutLabel": "Batas waktu kunci",
+    "lockTimeoutHint": "Setelah sekian detik tanpa aktivitas, kendali agen atas browser dilepaskan secara otomatis.",
+    "seconds": "detik",
+    "viewportLabel": "Ukuran kerja untuk agen",
+    "viewportHint": "Halaman berukuran ini selama agen mengendalikan; tampilan Anda menampilkannya dengan skala. Saat Anda mengambil alih, ukurannya kembali mengikuti jendela Anda.",
+    "viewportWidth": "Lebar",
+    "viewportHeight": "Tinggi",
+    "pixels": "piksel"
   }
 }

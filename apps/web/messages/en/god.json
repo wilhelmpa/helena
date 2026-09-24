@@ -383,6 +383,10 @@
     "engine": {
       "summary": "Engine: {active} working · {waiting} waiting · {queued} queued · {schedules} schedules",
       "failure": "{name} failed {time} ago:"
+    },
+    "agentSync": {
+      "title": "Agent profiles",
+      "synced": "{synced} of {total} in sync"
     }
   }
 }

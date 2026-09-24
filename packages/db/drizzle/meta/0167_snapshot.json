@@ -1,6 +1,6 @@
 {
-  "id": "21bf5aaf-0008-4545-88da-a5610c0c127f",
-  "prevId": "755a2a11-5d75-417d-a70e-4bd869a75531",
+  "id": "4fb6fc11-72e0-478f-8ba9-0bffbb1672f5",
+  "prevId": "50cce884-13ca-4067-b9f3-f049ab58c6cb",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1456,6 +1456,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "model_check": {
+          "name": "model_check",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "input_tokens": {
           "name": "input_tokens",
           "type": "integer",
@@ -2285,6 +2291,13 @@
           "notNull": true,
           "default": "'[]'::jsonb"
         },
+        "builtin": {
+          "name": "builtin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2534,6 +2547,12 @@
         "blocked_question": {
           "name": "blocked_question",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model_check": {
+          "name": "model_check",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -2810,7 +2829,7 @@
       "checkConstraints": {
         "agent_runtime_action_kind_check": {
           "name": "agent_runtime_action_kind_check",
-          "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory')"
+          "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory', 'rewrite-profile')"
         }
       },
       "isRLSEnabled": false
@@ -3375,6 +3394,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "model_credential_id": {
+          "name": "model_credential_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "model": {
           "name": "model",
           "type": "text",
@@ -3384,6 +3409,25 @@
         "instructions": {
           "name": "instructions",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tools": {
+          "name": "tools",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "temperature": {
+          "name": "temperature",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_steps": {
+          "name": "max_steps",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -3414,6 +3458,37 @@
           "primaryKey": false,
           "notNull": true,
           "default": 3
+        },
+        "api_key_ciphertext": {
+          "name": "api_key_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "api_key_iv": {
+          "name": "api_key_iv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "api_key_auth_tag": {
+          "name": "api_key_auth_tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "memory_enabled": {
+          "name": "memory_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "memory_last_messages": {
+          "name": "memory_last_messages",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "runtime_policy": {
           "name": "runtime_policy",
@@ -3593,6 +3668,19 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
+        "ai_agent_model_credential_id_integration_credential_id_fk": {
+          "name": "ai_agent_model_credential_id_integration_credential_id_fk",
+          "tableFrom": "ai_agent",
+          "tableTo": "integration_credential",
+          "columnsFrom": [
+            "model_credential_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "ai_agent_owner_user_id_user_id_fk": {
           "name": "ai_agent_owner_user_id_user_id_fk",
           "tableFrom": "ai_agent",
@@ -3634,7 +3722,7 @@
       "checkConstraints": {
         "ai_agent_kind_check": {
           "name": "ai_agent_kind_check",
-          "value": "\"ai_agent\".\"kind\" = 'external'"
+          "value": "\"ai_agent\".\"kind\" IN ('external', 'internal')"
         },
         "ai_agent_runner_scope_check": {
           "name": "ai_agent_runner_scope_check",
@@ -4004,6 +4092,128 @@
         "approval_request_status_check": {
           "name": "approval_request_status_check",
           "value": "\"approval_request\".\"status\" IN ('pending', 'approved', 'rejected')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.browser_gateway_event": {
+      "name": "browser_gateway_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_name": {
+          "name": "agent_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "browser_gateway_event_project_idx": {
+          "name": "browser_gateway_event_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "browser_gateway_event_project_id_project_id_fk": {
+          "name": "browser_gateway_event_project_id_project_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "browser_gateway_event_agent_id_ai_agent_id_fk": {
+          "name": "browser_gateway_event_agent_id_ai_agent_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "browser_gateway_event_actor_check": {
+          "name": "browser_gateway_event_actor_check",
+          "value": "\"browser_gateway_event\".\"actor\" IN ('agent', 'owner')"
         }
       },
       "isRLSEnabled": false
@@ -12875,6 +13085,206 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.agent_team_start": {
+      "name": "agent_team_start",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issue_id": {
+          "name": "issue_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "agent_team_start_due_idx": {
+          "name": "agent_team_start_due_idx",
+          "columns": [
+            {
+              "expression": "next_attempt_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_team_start\".\"status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_team_start_issue_idx": {
+          "name": "agent_team_start_issue_idx",
+          "columns": [
+            {
+              "expression": "issue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "agent_team_start_project_id_project_id_fk": {
+          "name": "agent_team_start_project_id_project_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_team_start_issue_id_issue_id_fk": {
+          "name": "agent_team_start_issue_id_issue_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "issue",
+          "columnsFrom": [
+            "issue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_team_start_agent_id_ai_agent_id_fk": {
+          "name": "agent_team_start_agent_id_ai_agent_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_team_start_actor_user_id_user_id_fk": {
+          "name": "agent_team_start_actor_user_id_user_id_fk",
+          "tableFrom": "agent_team_start",
+          "tableTo": "user",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "agent_team_start_event_id_unique": {
+          "name": "agent_team_start_event_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "agent_team_start_status_check": {
+          "name": "agent_team_start_status_check",
+          "value": "\"agent_team_start\".\"status\" IN ('pending', 'started', 'refused', 'superseded')"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.project_action_run_step": {
       "name": "project_action_run_step",
       "schema": "",
@@ -13935,395 +14345,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.helena_schedule": {
-      "name": "helena_schedule",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "pipeline_id": {
-          "name": "pipeline_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "instructions": {
-          "name": "instructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "mode": {
-          "name": "mode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "task_id": {
-          "name": "task_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cron": {
-          "name": "cron",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "timezone": {
-          "name": "timezone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'Europe/Berlin'"
-        },
-        "catch_up": {
-          "name": "catch_up",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'skip'"
-        },
-        "enabled": {
-          "name": "enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "fired_through": {
-          "name": "fired_through",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "actor_user_id": {
-          "name": "actor_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "schedule_key": {
-          "name": "schedule_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "helena_schedule_pipeline_uq": {
-          "name": "helena_schedule_pipeline_uq",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "pipeline_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"helena_schedule\".\"pipeline_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "helena_schedule_project_idx": {
-          "name": "helena_schedule_project_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "helena_schedule_project_id_project_id_fk": {
-          "name": "helena_schedule_project_id_project_id_fk",
-          "tableFrom": "helena_schedule",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_schedule_pipeline_id_pipeline_id_fk": {
-          "name": "helena_schedule_pipeline_id_pipeline_id_fk",
-          "tableFrom": "helena_schedule",
-          "tableTo": "pipeline",
-          "columnsFrom": [
-            "pipeline_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_schedule_agent_id_ai_agent_id_fk": {
-          "name": "helena_schedule_agent_id_ai_agent_id_fk",
-          "tableFrom": "helena_schedule",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "helena_schedule_task_id_issue_id_fk": {
-          "name": "helena_schedule_task_id_issue_id_fk",
-          "tableFrom": "helena_schedule",
-          "tableTo": "issue",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "helena_schedule_actor_user_id_user_id_fk": {
-          "name": "helena_schedule_actor_user_id_user_id_fk",
-          "tableFrom": "helena_schedule",
-          "tableTo": "user",
-          "columnsFrom": [
-            "actor_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "helena_schedule_created_by_user_id_fk": {
-          "name": "helena_schedule_created_by_user_id_fk",
-          "tableFrom": "helena_schedule",
-          "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "helena_schedule_key_uq": {
-          "name": "helena_schedule_key_uq",
-          "nullsNotDistinct": false,
-          "columns": [
-            "project_id",
-            "schedule_key"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "helena_schedule_kind_check": {
-          "name": "helena_schedule_kind_check",
-          "value": "\"helena_schedule\".\"kind\" IN ('routine', 'workflow')"
-        },
-        "helena_schedule_mode_check": {
-          "name": "helena_schedule_mode_check",
-          "value": "\"helena_schedule\".\"mode\" IS NULL OR \"helena_schedule\".\"mode\" IN ('new', 'reopen')"
-        },
-        "helena_schedule_catch_up_check": {
-          "name": "helena_schedule_catch_up_check",
-          "value": "\"helena_schedule\".\"catch_up\" IN ('skip', 'once')"
-        },
-        "helena_schedule_target_check": {
-          "name": "helena_schedule_target_check",
-          "value": "(\"helena_schedule\".\"kind\" = 'workflow') = (\"helena_schedule\".\"pipeline_id\" IS NOT NULL)"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.helena_workflow_hook": {
-      "name": "helena_workflow_hook",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "pipeline_id": {
-          "name": "pipeline_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "secret": {
-          "name": "secret",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "last_used_at": {
-          "name": "last_used_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "helena_workflow_hook_project_id_project_id_fk": {
-          "name": "helena_workflow_hook_project_id_project_id_fk",
-          "tableFrom": "helena_workflow_hook",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_workflow_hook_pipeline_id_pipeline_id_fk": {
-          "name": "helena_workflow_hook_pipeline_id_pipeline_id_fk",
-          "tableFrom": "helena_workflow_hook",
-          "tableTo": "pipeline",
-          "columnsFrom": [
-            "pipeline_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_workflow_hook_created_by_user_id_fk": {
-          "name": "helena_workflow_hook_created_by_user_id_fk",
-          "tableFrom": "helena_workflow_hook",
-          "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "helena_workflow_hook_uq": {
-          "name": "helena_workflow_hook_uq",
-          "nullsNotDistinct": false,
-          "columns": [
-            "project_id",
-            "pipeline_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.pipeline": {
       "name": "pipeline",
       "schema": "",
@@ -14467,42 +14488,17 @@
           "primaryKey": true,
           "notNull": true
         },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'workflow'"
-        },
         "pipeline_id": {
           "name": "pipeline_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "version_id": {
           "name": "version_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
-        },
-        "definition": {
-          "name": "definition",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "input": {
-          "name": "input",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "project_id": {
           "name": "project_id",
@@ -14513,24 +14509,6 @@
         "issue_id": {
           "name": "issue_id",
           "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "schedule_id": {
-          "name": "schedule_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "scheduled_for": {
-          "name": "scheduled_for",
-          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -14560,23 +14538,25 @@
           "primaryKey": false,
           "notNull": false
         },
-        "workflow_id": {
-          "name": "workflow_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "result": {
-          "name": "result",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "error": {
           "name": "error",
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "start_attempts": {
+          "name": "start_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_start_at": {
+          "name": "next_start_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "created_at": {
           "name": "created_at",
@@ -14618,50 +14598,6 @@
           ],
           "isUnique": true,
           "where": "\"pipeline_run\".\"status\" IN ('pending', 'running', 'waiting') AND NOT \"pipeline_run\".\"dry_run\"",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "pipeline_run_team_active_uq": {
-          "name": "pipeline_run_team_active_uq",
-          "columns": [
-            {
-              "expression": "issue_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"pipeline_run\".\"kind\" = 'agent_team' AND \"pipeline_run\".\"status\" IN ('pending', 'running', 'waiting') AND NOT \"pipeline_run\".\"dry_run\"",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "pipeline_run_fire_uq": {
-          "name": "pipeline_run_fire_uq",
-          "columns": [
-            {
-              "expression": "schedule_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "scheduled_for",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"pipeline_run\".\"schedule_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -14729,29 +14665,8 @@
           "method": "btree",
           "with": {}
         },
-        "pipeline_run_schedule_idx": {
-          "name": "pipeline_run_schedule_idx",
-          "columns": [
-            {
-              "expression": "schedule_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "scheduled_for",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "pipeline_run_status_idx": {
-          "name": "pipeline_run_status_idx",
+        "pipeline_run_start_idx": {
+          "name": "pipeline_run_start_idx",
           "columns": [
             {
               "expression": "status",
@@ -14760,7 +14675,7 @@
               "nulls": "last"
             },
             {
-              "expression": "updated_at",
+              "expression": "next_start_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -14825,32 +14740,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "pipeline_run_agent_id_ai_agent_id_fk": {
-          "name": "pipeline_run_agent_id_ai_agent_id_fk",
-          "tableFrom": "pipeline_run",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "pipeline_run_schedule_id_helena_schedule_id_fk": {
-          "name": "pipeline_run_schedule_id_helena_schedule_id_fk",
-          "tableFrom": "pipeline_run",
-          "tableTo": "helena_schedule",
-          "columnsFrom": [
-            "schedule_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
         "pipeline_run_actor_user_id_user_id_fk": {
           "name": "pipeline_run_actor_user_id_user_id_fk",
           "tableFrom": "pipeline_run",
@@ -14869,21 +14758,13 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "pipeline_run_kind_check": {
-          "name": "pipeline_run_kind_check",
-          "value": "\"pipeline_run\".\"kind\" IN ('workflow', 'agent_team', 'routine')"
-        },
-        "pipeline_run_source_check": {
-          "name": "pipeline_run_source_check",
-          "value": "(\"pipeline_run\".\"kind\" = 'workflow') = (\"pipeline_run\".\"pipeline_id\" IS NOT NULL AND \"pipeline_run\".\"version_id\" IS NOT NULL)\n        AND (\"pipeline_run\".\"kind\" = 'workflow' OR \"pipeline_run\".\"definition\" IS NOT NULL)"
-        },
         "pipeline_run_trigger_check": {
           "name": "pipeline_run_trigger_check",
-          "value": "\"pipeline_run\".\"trigger\" ~ '^[a-z][a-z0-9_]{0,63}$'"
+          "value": "\"pipeline_run\".\"trigger\" IN ('manual', 'task_created', 'task_assigned', 'status_changed', 'label_added', 'schedule')"
         },
         "pipeline_run_status_check": {
           "name": "pipeline_run_status_check",
-          "value": "\"pipeline_run\".\"status\" IN ('pending', 'running', 'waiting', 'succeeded', 'failed', 'canceled', 'rejected', 'skipped')"
+          "value": "\"pipeline_run\".\"status\" IN ('pending', 'running', 'waiting', 'succeeded', 'failed', 'canceled', 'rejected')"
         }
       },
       "isRLSEnabled": false
@@ -14965,12 +14846,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "agent_run_id": {
-          "name": "agent_run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "decided_by": {
           "name": "decided_by",
           "type": "text",
@@ -14986,12 +14861,6 @@
         "wake_at": {
           "name": "wake_at",
           "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "state": {
-          "name": "state",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -15036,21 +14905,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "pipeline_run_step_agent_run_idx": {
-          "name": "pipeline_run_step_agent_run_idx",
-          "columns": [
-            {
-              "expression": "agent_run_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -15073,19 +14927,6 @@
           "tableTo": "ai_agent",
           "columnsFrom": [
             "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "pipeline_run_step_agent_run_id_agent_run_id_fk": {
-          "name": "pipeline_run_step_agent_run_id_agent_run_id_fk",
-          "tableFrom": "pipeline_run_step",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "agent_run_id"
           ],
           "columnsTo": [
             "id"
@@ -15122,11 +14963,11 @@
       "checkConstraints": {
         "pipeline_run_step_kind_check": {
           "name": "pipeline_run_step_kind_check",
-          "value": "\"pipeline_run_step\".\"kind\" ~ '^[a-z][a-z0-9_]{0,39}$'"
+          "value": "\"pipeline_run_step\".\"kind\" IN ('agent', 'approval', 'condition', 'action', 'wait')"
         },
         "pipeline_run_step_status_check": {
           "name": "pipeline_run_step_status_check",
-          "value": "\"pipeline_run_step\".\"status\" IN ('running', 'waiting', 'succeeded', 'failed', 'canceled', 'simulated', 'skipped')"
+          "value": "\"pipeline_run_step\".\"status\" IN ('running', 'waiting', 'succeeded', 'failed', 'canceled', 'simulated')"
         }
       },
       "isRLSEnabled": false
@@ -15246,6 +15087,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
+        },
+        "schedule_id": {
+          "name": "schedule_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "updated_by": {
           "name": "updated_by",

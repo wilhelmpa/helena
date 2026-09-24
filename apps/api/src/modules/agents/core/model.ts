@@ -2,6 +2,7 @@ import { t } from 'elysia';
 
 import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
+import { modelCheck, profileReport } from '../runtime-sync/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -62,6 +63,15 @@ export const runtimePolicy = t.Object({
       description:
         "Whether the runtime's curator may archive skills the agent created and no longer " +
         'uses. Unset, it may not.',
+    }),
+  ),
+  runtime: t.Optional(
+    t.Union([t.Literal('hermes'), t.Literal('claude'), t.Literal('codex')], {
+      description:
+        'Which runtime runs the agent. Unset is Hermes, whose runtime the server provisions ' +
+        'for an agent of one project; a Claude Code or Codex agent runs on a runner started ' +
+        "with that preset (helena-runner --agent claude|codex), which gets the agent's " +
+        'instructions, skills, MCP servers, model and reasoning from Helena.',
     }),
   ),
   reflection: t.Optional(
@@ -146,6 +156,7 @@ export const runtimeState = t.Object({
       'files and plugin links, by their path in the runtime.',
   }),
   inventory: t.Nullable(runtimeInventory),
+  profile: t.Nullable(profileReport),
   reportedAt: t.Nullable(t.String()),
 });
 
@@ -339,6 +350,7 @@ export const AgentRunResponse = t.Object({
       },
     ),
   ),
+  modelCheck: t.Nullable(modelCheck),
   nextAttemptAt: t.String(),
   createdAt: t.String(),
 });

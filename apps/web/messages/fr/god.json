@@ -383,6 +383,10 @@
     "engine": {
       "summary": "Moteur : {active} actives · {waiting} en attente · {queued} en file · {schedules} planifications",
       "failure": "{name} a échoué il y a {time} :"
+    },
+    "agentSync": {
+      "title": "Profils des agents",
+      "synced": "{synced} sur {total} synchronisés"
     }
   }
 }

@@ -215,6 +215,21 @@ describe('Project agent bootstrap', () => {
     expect(await bootstrapProjectAgent(project.id, agent.id)).toBeNull();
   });
 
+  it('gives no Hermes runtime to an agent set to run on Claude Code or Codex', async () => {
+    const { api, project, agent } = await setup();
+    const route = api.teams({ teamId: project.teamId })['ai-agents']({ agentId: agent.id });
+    const policy = (await route.get()).data!.runtimePolicy;
+    for (const runtime of ['claude', 'codex'] as const) {
+      const patched = await route.patch({ runtimePolicy: { ...policy, runtime } });
+      expect(patched.data!.runtimePolicy.runtime).toBe(runtime);
+      expect(await bootstrapProjectAgent(project.id, agent.id)).toBeNull();
+    }
+    // Hermes again: the default, which the policy leaves out.
+    const back = await route.patch({ runtimePolicy: { ...policy, runtime: 'hermes' } });
+    expect(back.data!.runtimePolicy).not.toHaveProperty('runtime');
+    expect(await bootstrapProjectAgent(project.id, agent.id)).not.toBeNull();
+  });
+
   it('answers the provisioning service only with the control token', async () => {
     const { project, agent } = await setup();
     const route = () => controlApi().internal.bootstrap['project-agent'];

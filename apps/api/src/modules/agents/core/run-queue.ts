@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { intEnv, iso } from '#shared/lib';
 import type { AgentRunTrigger } from '../model';
 import { reflectionView, type ReflectionView } from '../runner/reflection';
+import type { ModelCheck } from '../runtime-sync/model-check';
 
 // The agent_run outbox: data access for triggered runs and run history. The agent's
 // runner claims pending rows over HTTP (modules/agents/runner) and reports the outcome.
@@ -121,6 +122,8 @@ export interface AgentRunRow {
   contextTokens?: number;
   blockedQuestion: string | null;
   reflection: ReflectionView | null;
+  // The configured model and reasoning next to what the run's session really ran on.
+  modelCheck: ModelCheck | null;
   nextAttemptAt: string;
   createdAt: string;
 }
@@ -168,6 +171,7 @@ export async function listAgentRuns(
       outputTokens: agentRun.outputTokens,
       blockedQuestion: agentRun.blockedQuestion,
       reflection: agentRun.reflection,
+      modelCheck: agentRun.modelCheck,
       finishedAt: agentRun.finishedAt,
       nextAttemptAt: agentRun.nextAttemptAt,
       createdAt: agentRun.createdAt,
@@ -204,6 +208,7 @@ export async function listAgentRuns(
       ...contextTokensOf(r),
       blockedQuestion: r.blockedQuestion,
       reflection: reflectionView(r.reflection, r.finishedAt),
+      modelCheck: (r.modelCheck as ModelCheck | null) ?? null,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),
     })),

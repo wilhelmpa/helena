@@ -33,5 +33,6 @@
   "gateOf": "{workflow} dans {project}",
   "effects": "Exécuté après approbation :",
   "loadFailed": "Impossible de charger les approbations.",
-  "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
+  "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant.",
+  "openBrowser": "Ouvrir le navigateur du projet"
 }

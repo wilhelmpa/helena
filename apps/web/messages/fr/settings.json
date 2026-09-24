@@ -624,5 +624,29 @@
     "propertiesHint": "Appliquées à la création du ticket, et modifiables avant.",
     "emptyTitle": "Aucun modèle pour l'instant",
     "emptyDescription": "Un modèle remplit un nouveau ticket avec un titre, une description et des propriétés."
+  },
+  "browser": {
+    "accessTitle": "Domaines",
+    "accessHint": "Contrôle les domaines que le navigateur du projet des agents peut ouvrir. Un domaine couvre aussi ses sous-domaines.",
+    "blocklistLabel": "Liste de domaines bloqués",
+    "blocklistHint": "Ces domaines restent bloqués même s'ils figurent dans la liste autorisée.",
+    "allowlistLabel": "Liste autorisée",
+    "allowlistHint": "Vide, elle autorise tout domaine sauf ceux bloqués. Non vide, elle autorise uniquement ces domaines (par exemple en laissant les sites bancaires bloqués).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "exemple.com",
+    "removeDomain": "Retirer {domain}",
+    "behaviorTitle": "Comportement",
+    "humanInputLabel": "Saisie de type humain",
+    "humanInputHint": "Tape et clique avec des pauses de type humain plutôt qu'à vitesse maximale. À désactiver uniquement pour un projet de test à faible risque.",
+    "allowLocalLabel": "Autoriser les adresses locales",
+    "allowLocalHint": "Les agents peuvent ouvrir localhost, le réseau local et les adresses .local. À laisser désactivé sauf pour tester un site local : le navigateur tourne sur le serveur, où ces adresses atteignent Helena et les autres navigateurs.",
+    "lockTimeoutLabel": "Délai du verrou",
+    "lockTimeoutHint": "Passé ce nombre de secondes sans action, le contrôle du navigateur par un agent est libéré automatiquement.",
+    "seconds": "secondes",
+    "viewportLabel": "Taille de travail des agents",
+    "viewportHint": "La page a cette taille tant qu'un agent a le contrôle ; votre vue l'affiche à l'échelle. Quand vous prenez le relais, elle suit à nouveau votre fenêtre.",
+    "viewportWidth": "Largeur",
+    "viewportHeight": "Hauteur",
+    "pixels": "pixels"
   }
 }

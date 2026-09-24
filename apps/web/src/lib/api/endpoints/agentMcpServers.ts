@@ -25,6 +25,10 @@ export interface McpServer {
   url: string | null;
   env: McpServerValue[];
   headers: McpServerValue[];
+  // An instance-seeded entry ("Projekt-Browser" and its legacy fallback, see
+  // apps/web/src/features/teams/utils/builtinMcpServers.ts): a team cannot edit or delete
+  // it, only enable it per agent.
+  builtin: boolean;
   createdAt: string;
 }
 

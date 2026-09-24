@@ -156,6 +156,7 @@ export async function bootstrapProjectAgent(
       userId: aiAgent.userId,
       username: aiAgent.username,
       teamId: aiAgent.teamId,
+      runtime: sql<string | null>`${aiAgent.runtimePolicy}->>'runtime'`,
       projects: sql<number>`(select count(*)::int from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId})`,
     })
     .from(aiAgent)
@@ -170,7 +171,9 @@ export async function bootstrapProjectAgent(
     !agent ||
     isHomeAgent(agent.username) ||
     isHermesProjectCoordinatorUsername(agent.username) ||
-    agent.projects !== 1
+    agent.projects !== 1 ||
+    // A Claude Code or Codex agent runs on a runner of that preset, not in Hermes.
+    (agent.runtime ?? 'hermes') !== 'hermes'
   ) {
     return null;
   }

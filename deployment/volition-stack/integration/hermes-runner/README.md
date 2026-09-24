@@ -46,12 +46,23 @@ with each agent's skills and memory, and passes them as `--toolsets` to every ru
 without the toolsets the owner turned off for the agent and without `cronjob`. A change to
 `config.yaml` reaches Plan with the next runner restart.
 
-The MCP servers `config.yaml` names are available to every agent. The owner turns one off for an
-agent, and adds servers of the team's library, on the agent's page in Plan. The runner writes both
-to `run/itsaplan-managed/config.yaml` in the agent's home and starts Hermes with
-`HERMES_MANAGED_DIR` pointing there, so `config.yaml` itself stays shared and unchanged. A stdio
-server of the library runs as the Hermes user with the Hermes `PATH`; an `npx` server downloads
-its package on first start.
+The runner owns every MCP server of an agent (`packages/runner/README.md`, "Helena owns every
+one"): it writes Helena's own server, the `browser-harness` server pointed at the agent's own
+project browser and the servers of the team's library into `run/itsaplan-managed/config.yaml` in
+the agent's home, and turns off every other server of the shared `config.yaml`; Hermes is started
+with `HERMES_MANAGED_DIR` pointing there, so `config.yaml` itself stays shared and unchanged. The
+catalog script names the shared file (`hermes.sharedConfig`) and the harness command
+(`hermes.browserHarness`, read from the shared `browser-harness` entry) in the runner config, and
+gives Home the environment of its own browser. The runner reads the result back with Hermes' own
+Python and reports drift to Helena ("Profil synchron" on the agent). A stdio server of the library
+runs as the Hermes user with the Hermes `PATH`; an `npx` server downloads its package on first
+start.
+
+A home whose `config.yaml` is no longer the link to the shared one (a hand edit) does not stop the
+runner: the runner puts the link back and keeps the file under `run/`. A descriptor the catalog
+script cannot serve is left out of the runner config and named in `helenaProblems`, which the
+runner reports to Helena's health overview; any other failure of the catalog script makes the
+start script report `Runner start failed: …` there before systemd tries again.
 
 The website logins the owner grants an agent on Plan's Credentials page are written to the vault
 of the agent's home before each run and chat answer, with Hermes' own vault code run by the

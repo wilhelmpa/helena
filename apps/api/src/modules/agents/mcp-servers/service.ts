@@ -41,8 +41,22 @@ export interface McpServerRow {
   url: string | null;
   env: McpServerValue[];
   headers: McpServerValue[];
+  builtin: boolean;
   createdAt: string;
 }
+
+// The instance's own library entries (name = the value stored, which is also its Hermes
+// toolset/MCP server key; a team cannot rename, edit or delete these — see guards in
+// index.ts). "Hermes-eigener Browser (alt)" is not an MCP server at all: the runner
+// recognizes this one name and keeps it out of the MCP server list it writes, using its
+// presence on an agent only as the "keep Hermes' native CDP browser toolset" flag (see
+// packages/runner/src/policy.ts, BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME).
+export const BROWSER_GATEWAY_MCP_SERVER_NAME = 'projekt-browser';
+export const BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME = 'hermes-browser-legacy';
+export const BUILTIN_MCP_SERVER_NAMES = [
+  BROWSER_GATEWAY_MCP_SERVER_NAME,
+  BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
+] as const;
 
 export interface McpServerInput {
   name: string;
@@ -94,6 +108,7 @@ function mapRow(row: ServerRecord, labels: Map<number, string | null>): McpServe
     url: row.url,
     env: valuesOf(row.env, labels),
     headers: valuesOf(row.headers, labels),
+    builtin: row.builtin,
     createdAt: iso(row.createdAt),
   };
 }
@@ -175,15 +190,25 @@ async function columns(teamId: number, input: McpServerInput) {
   return { values, labels };
 }
 
+// A team's library, the built-in entries included: a team that does not have them yet (one
+// created before them, or since) gets them here, once, so every team can switch
+// "Projekt-Browser" on for an agent without a setup step.
 export async function listMcpServers(teamId: number): Promise<McpServerRow[]> {
-  const [rows, labels] = await Promise.all([
-    db
-      .select()
-      .from(agentMcpServer)
-      .where(eq(agentMcpServer.teamId, teamId))
-      .orderBy(agentMcpServer.name),
-    secretLabels(teamId),
-  ]);
+  const load = () =>
+    Promise.all([
+      db
+        .select()
+        .from(agentMcpServer)
+        .where(eq(agentMcpServer.teamId, teamId))
+        .orderBy(agentMcpServer.name),
+      secretLabels(teamId),
+    ]);
+  let [rows, labels] = await load();
+  const present = new Set(rows.filter((row) => row.builtin).map((row) => row.name));
+  if (BUILTIN_MCP_SERVER_NAMES.some((name) => !present.has(name))) {
+    await ensureBuiltinMcpServers(teamId);
+    [rows, labels] = await load();
+  }
   return rows.map((row) => mapRow(row, labels));
 }
 
@@ -215,6 +240,8 @@ export async function updateMcpServer(
 ): Promise<McpServerRow | null> {
   const existing = await getRecord(id, teamId);
   if (!existing) return null;
+  if (existing.builtin)
+    throw new HttpError(403, 'This MCP server is built in and cannot be changed.');
   const { values, labels } = await columns(teamId, {
     name: existing.name,
     description: existing.description,
@@ -239,11 +266,66 @@ export async function updateMcpServer(
 }
 
 export async function deleteMcpServer(id: number, teamId: number): Promise<boolean> {
+  const existing = await getRecord(id, teamId);
+  if (!existing) return false;
+  if (existing.builtin)
+    throw new HttpError(403, 'This MCP server is built in and cannot be deleted.');
   const deleted = await db
     .delete(agentMcpServer)
     .where(and(eq(agentMcpServer.id, id), eq(agentMcpServer.teamId, teamId)))
     .returning({ id: agentMcpServer.id });
   return deleted.length > 0;
+}
+
+// Idempotent: called once per team (setup-browser-gateway.ts) and safe to call again after
+// the gateway's shim path changes — it updates the existing builtin row rather than
+// duplicating it. "Projekt-Browser" is a real stdio MCP server, reached over the gateway's
+// Unix socket by the shim at BROWSER_GATEWAY_SHIM_PATH (see
+// deployment/volition-stack/browser/README.md). "Hermes-eigener Browser (alt)" carries no
+// command Hermes ever runs (see BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME above); it is stored
+// with a placeholder, self-explaining command so a team owner inspecting the library is not
+// confused by an empty one, off by default per the design (§3: "Rückfallweg... standardmäßig
+// aus" — no agent gets it enabled by this function).
+export const BROWSER_GATEWAY_SHIM_PATH = '/usr/local/libexec/helena-browser-mcp';
+
+export async function ensureBuiltinMcpServers(teamId: number): Promise<void> {
+  const seeds: Array<{
+    name: string;
+    description: string;
+    transport: McpTransport;
+    command: string;
+    args: string[];
+  }> = [
+    {
+      name: BROWSER_GATEWAY_MCP_SERVER_NAME,
+      description:
+        "The project browser gateway: patchright over CDP against the project's own, " +
+        'always-on Chromium, with logins filled from Zugänge and a shared control lock with ' +
+        'the live view. Built in; cannot be edited or removed.',
+      transport: 'stdio',
+      command: BROWSER_GATEWAY_SHIM_PATH,
+      args: [],
+    },
+    {
+      name: BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
+      description:
+        "Falls back to Hermes' own, pre-gateway CDP browser toolset instead of the shared " +
+        'gateway. Off by default; only Hermes reads this flag. Built in; cannot be edited or ' +
+        'removed.',
+      transport: 'stdio',
+      command: 'hermes-native-browser-toolset',
+      args: [],
+    },
+  ];
+  for (const seed of seeds) {
+    await db
+      .insert(agentMcpServer)
+      .values({ teamId, ...seed, builtin: true })
+      .onConflictDoUpdate({
+        target: [agentMcpServer.teamId, agentMcpServer.name],
+        set: { description: seed.description, command: seed.command, builtin: true },
+      });
+  }
 }
 
 async function linkedRecords(agentId: number): Promise<ServerRecord[]> {

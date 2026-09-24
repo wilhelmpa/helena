@@ -13,7 +13,11 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
-import type { AgentRuntimeConflict } from '@/lib/api/endpoints/agents';
+import {
+  AGENT_RUNTIME_KINDS,
+  type AgentRuntimeConflict,
+  type AgentRuntimeKind,
+} from '@/lib/api/endpoints/agents';
 import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import AgentRuntimeConflicts from './AgentRuntimeConflicts';
@@ -81,6 +85,35 @@ export default function AgentRuntimePolicySection({
       title={t('title')}
       hint={t('hint')}
     >
+      <div className="space-y-1.5">
+        <label htmlFor="agent-runtime-kind" className="text-sm font-medium">
+          {t('runtime')}
+        </label>
+        <Select
+          value={policy.runtime ?? 'hermes'}
+          onValueChange={(runtime) =>
+            patchPolicy({
+              runtime: runtime === 'hermes' ? undefined : (runtime as AgentRuntimeKind),
+            })
+          }
+        >
+          <SelectTrigger id="agent-runtime-kind" className="w-full sm:w-1/2">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AGENT_RUNTIME_KINDS.map((kind) => (
+              <SelectItem key={kind} value={kind}>
+                {t(`runtimeKind.${kind}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          {(policy.runtime ?? 'hermes') === 'hermes'
+            ? t('runtimeHermesHint')
+            : t('runtimeCliHint', { kind: policy.runtime ?? '' })}
+        </p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label htmlFor="agent-runtime-model" className="text-sm font-medium">

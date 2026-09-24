@@ -383,6 +383,10 @@
     "engine": {
       "summary": "Mesin: {active} aktif · {waiting} menunggu · {queued} antre · {schedules} jadwal",
       "failure": "{name} gagal {time} lalu:"
+    },
+    "agentSync": {
+      "title": "Profil agen",
+      "synced": "{synced} dari {total} tersinkron"
     }
   }
 }

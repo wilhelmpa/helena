@@ -383,6 +383,10 @@
     "engine": {
       "summary": "المحرك: {active} يعمل · {waiting} ينتظر · {queued} في الطابور · {schedules} جداول",
       "failure": "فشل {name} قبل {time}:"
+    },
+    "agentSync": {
+      "title": "ملفات الوكلاء",
+      "synced": "{synced} من {total} متزامنة"
     }
   }
 }

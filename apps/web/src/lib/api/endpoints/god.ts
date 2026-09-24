@@ -10,6 +10,7 @@ import type {
   StorageSettingsPatch,
 } from '@/lib/api/endpoints/settings';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
+import type { RuntimeSyncState } from '@/lib/api/endpoints/agentRuntimeSync';
 
 // Who may create an account on this instance.
 export type RegistrationMode = 'open' | 'invite' | 'closed';
@@ -244,7 +245,28 @@ export interface JanitorHealth {
   error: string | null;
 }
 
+// Every agent a runner serves, by how its runtime profile matches its settings.
+export interface AgentSyncSummary {
+  total: number;
+  synced: number;
+  drift: number;
+  pending: number;
+  degraded: number;
+  offline: number;
+  unknown: number;
+  // The agents that are not in sync.
+  agents: {
+    id: number;
+    teamId: number;
+    username: string;
+    state: RuntimeSyncState;
+    adapter: string | null;
+    drift: string[];
+  }[];
+}
+
 export interface SystemHealth {
+  agents: AgentSyncSummary;
   services: SystemServiceHealth[];
   runs: {
     waiting: number;

@@ -1,4 +1,3 @@
-
 CREATE TABLE "helena_schedule" (
 	"id" text PRIMARY KEY NOT NULL,
 	"project_id" integer NOT NULL,

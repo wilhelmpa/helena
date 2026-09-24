@@ -16,6 +16,7 @@ import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy } from '../core/service';
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
+import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
 import {
   REFLECTION_LIMITS,
@@ -558,6 +559,7 @@ export async function finishRun(
     usage?: ContextUsage | null;
     sessionId?: string;
     toolCalls?: number;
+    runtime?: RunModelReport;
   },
   claim?: number,
 ): Promise<{ reflection: ReflectionRequest | null } | null> {
@@ -566,6 +568,11 @@ export async function finishRun(
   }
   await touchRunner(agent.id);
   const error = result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Run failed') : null;
+  // A run that names a model of its own (a workflow step's) was configured with that one.
+  const [own] = result.runtime
+    ? await db.select({ model: agentRun.model }).from(agentRun).where(eq(agentRun.id, runId))
+    : [];
+  const check = modelCheckOf(result.runtime, own?.model ?? null);
   const blocked = sql`${agentRun.blockedQuestion} IS NOT NULL`;
   const rows = await db
     .update(agentRun)
@@ -575,6 +582,7 @@ export async function finishRun(
       lastError: sql`CASE WHEN ${blocked} THEN NULL ELSE ${error}::text END`,
       inputTokens: result.usage?.inputTokens ?? null,
       outputTokens: result.usage?.outputTokens ?? null,
+      ...(check && { modelCheck: check }),
       finishedAt: new Date(),
     })
     .where(heldBy(agent.id, runId, claim))

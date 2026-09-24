@@ -176,6 +176,42 @@ describe('system health', () => {
     expect(needsReview.runs).toMatchObject({ resuming: 0, needsResumeReview: 1 });
   });
 
+  it("names why the runner could not start until an agent is seen again, and each agent's sync", async () => {
+    const { god } = await setup();
+    const { asRunner } = await project(god);
+    // The runner polled and reported, but has not applied the current settings yet.
+    await asRunner['agent-runs'].claim.post();
+    await asRunner['agent-runtime'].status.post({
+      adapter: 'hermes',
+      status: 'online',
+      appliedRevision: 'sha256:older',
+      capabilities: [],
+      detail: null,
+    });
+    const pending = (await god.api.god['system-health'].get()).data!;
+    // The project's coordinator has no runner here.
+    expect(pending.agents).toMatchObject({ total: 2, pending: 1, offline: 1, synced: 0 });
+    expect(pending.agents.agents).toContainEqual(
+      expect.objectContaining({ username: 'ext', state: 'pending', drift: [] }),
+    );
+
+    const failed = await asRunner['agent-runtime']['runner-health'].post({
+      error: 'The isolated Hermes home conflicts with its global provider reference',
+    });
+    expect(failed.status).toBe(204);
+    expect(service((await god.api.god['system-health'].get()).data!, 'runner')).toMatchObject({
+      state: 'down',
+      error: 'The isolated Hermes home conflicts with its global provider reference',
+    });
+
+    await asRunner['agent-runtime']['runner-health'].post({ error: null });
+    await asRunner['agent-runs'].claim.post();
+    expect(service((await god.api.god['system-health'].get()).data!, 'runner')).toMatchObject({
+      state: 'ok',
+      error: null,
+    });
+  });
+
   it('is for the instance owner only', async () => {
     await setup();
     const member = await addUser({ name: 'Member' });

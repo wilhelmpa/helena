@@ -2,13 +2,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { browserTabsQueryKey } from '@/utils/browserControl';
 import {
+  FREE_CONTROL,
   JPEG_FRAME,
   JPEG_FRAME_CROPPED,
   readFrame,
   screencastUrl,
   VIDEO_FRAGMENT,
   VIDEO_INIT,
+  type LiveControlState,
   type LiveDialog,
+  type LiveHandover,
   type LiveMessage,
   type Size,
 } from '@/utils/browserLive';
@@ -92,10 +95,11 @@ type ServerText =
     }
   | { type: 'tab' }
   | { type: 'pong'; t: number }
-  | { type: 'control'; by: 'agent' | 'owner' };
+  | ({ type: 'handover'; open: boolean } & Partial<LiveHandover>)
+  | ({ type: 'control' } & LiveControlState);
 
 // Who last acted on the page, purely informational (see the router's ScreencastStream).
-export type LiveControl = 'agent' | 'owner';
+export type LiveControl = LiveControlState['by'];
 
 // video and jpeg force that stream regardless of the measured round trip; auto (the default)
 // follows it, preferring video but falling back to JPEG on a connection where video's own
@@ -141,8 +145,13 @@ export function useBrowserScreencast(
   // Whether the video element shows a frame of the current MSE video; until it does, the
   // canvas keeps showing the frame before it.
   const [videoElementShown, setVideoElementShown] = useState(false);
+  // A dialog of the page and an agent's handover request are kept apart: the view shows the
+  // dialog first (it has to be answered before anything else), the request once it is gone.
   const [dialog, setDialog] = useState<LiveDialog | null>(null);
-  const [controlBy, setControlBy] = useState<LiveControl>('owner');
+  const [handover, setHandover] = useState<LiveHandover | null>(null);
+  // Who controls the page: the browser gateway's control lock once it runs, else who last
+  // acted on it (see the router's controlMessageFor).
+  const [control, setControl] = useState<LiveControlState>(FREE_CONTROL);
   const [page, setPage] = useState<LivePage | null>(null);
   const onShownRef = useRef(onShown);
   useEffect(() => {
@@ -525,7 +534,17 @@ export function useBrowserScreencast(
         }
         const message = JSON.parse(event.data) as ServerText;
         if (message.type === 'dialog') setDialog(message.open ? message : null);
-        else if (message.type === 'video') {
+        else if (message.type === 'handover') {
+          setHandover(
+            message.open
+              ? {
+                  reason: message.reason ?? '',
+                  agentName: message.agentName ?? '',
+                  since: message.since ?? Date.now(),
+                }
+              : null,
+          );
+        } else if (message.type === 'video') {
           const pageSize = { width: message.width, height: message.height };
           announced.current = {
             codec: message.codec,
@@ -553,7 +572,12 @@ export function useBrowserScreencast(
           if (pingSentAt.current === message.t)
             rttMs.current = Math.round(performance.now() - message.t);
         } else if (message.type === 'control') {
-          setControlBy(message.by);
+          setControl({
+            by: message.by,
+            agentName: message.agentName ?? null,
+            since: message.since ?? null,
+            locked: message.locked === true,
+          });
         } else void queryClient.invalidateQueries({ queryKey: browserTabsQueryKey(controlBase) });
       };
       current.onclose = () => {
@@ -561,7 +585,8 @@ export function useBrowserScreencast(
         clearInterval(statsTimer);
         if (stopped) return;
         setDialog(null);
-        setControlBy('owner');
+        setHandover(null);
+        setControl(FREE_CONTROL);
         // The last frame stays: an MSE video's is copied onto the canvas.
         closeVideo();
         setMode('jpeg');
@@ -604,7 +629,8 @@ export function useBrowserScreencast(
     videoElementShown,
     page,
     dialog,
-    controlBy,
+    handover,
+    control,
     send,
     setViewport,
   };

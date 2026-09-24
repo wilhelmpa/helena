@@ -15,6 +15,7 @@ import {
 import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
 import { RESUME_LIMIT_ERROR } from '#modules/agents/runner/service';
+import { runtimeSyncSummary } from '#modules/agents/runtime-sync/service';
 import { engineExecutorId, engineRunning } from '#modules/engine/dbos';
 import { nextFireTime } from '#modules/engine/schedules';
 
@@ -237,8 +238,19 @@ async function engineHealth() {
   };
 }
 
+// The runner is seen when it polls. Its service wrapper reports when it cannot start it at
+// all; that report counts until an agent is seen again after it.
+function runnerHealth(
+  reported: { lastSeenAt: Date | null; checkedAt: Date; error: string | null } | undefined,
+  lastSeenAt: Date | null,
+): { lastSeenAt: Date | null; error: string | null } {
+  const failed =
+    reported?.error && (!lastSeenAt || reported.checkedAt.getTime() >= lastSeenAt.getTime());
+  return { lastSeenAt, error: failed ? reported.error : null };
+}
+
 export async function systemHealth() {
-  const [reported, [runner], runs, engine, janitors] = await Promise.all([
+  const [reported, [runner], runs, engine, janitors, agents] = await Promise.all([
     db.select().from(serviceHeartbeat),
     db
       .select({ lastSeenAt: sql`max(${aiAgent.lastSeenAt})`.mapWith(aiAgent.lastSeenAt) })
@@ -247,15 +259,17 @@ export async function systemHealth() {
     runCounts(),
     engineHealth(),
     listJanitorRuns(),
+    runtimeSyncSummary(),
   ]);
   const byService = new Map(reported.map((row) => [row.service, row]));
   const byJanitor = new Map(janitors.map((row) => [row.job, row]));
   return {
+    agents,
     services: SERVICES.map((service) =>
       health(
         service,
         service === 'runner'
-          ? { lastSeenAt: runner?.lastSeenAt ?? null, error: null }
+          ? runnerHealth(byService.get('runner'), runner?.lastSeenAt ?? null)
           : byService.get(service),
       ),
     ),

@@ -33,5 +33,6 @@
   "gateOf": "{workflow} in {project}",
   "effects": "Runs once approved:",
   "loadFailed": "The approvals could not be loaded.",
-  "loadFailedHint": "The server did not answer. Try again in a moment."
+  "loadFailedHint": "The server did not answer. Try again in a moment.",
+  "openBrowser": "Open the project browser"
 }

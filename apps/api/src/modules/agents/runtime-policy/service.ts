@@ -8,6 +8,7 @@ import {
   type AgentRuntimeConflict,
   type AgentRuntimeInventory,
   type AgentRuntimePolicy,
+  type AgentRuntimeProfile,
   type AgentRuntimeState,
 } from '../core/service';
 import {
@@ -195,10 +196,14 @@ const MAX_LEARNED_CHARS = 2 * 1024 * 1024;
 
 export async function reportRuntimeState(
   agentId: number,
-  report: Omit<AgentRuntimeState, 'reportedAt' | 'conflicts' | 'restored' | 'inventory'> & {
+  report: Omit<
+    AgentRuntimeState,
+    'reportedAt' | 'conflicts' | 'restored' | 'inventory' | 'profile'
+  > & {
     conflicts?: AgentRuntimeConflict[];
     restored?: string[];
     inventory?: AgentRuntimeInventory;
+    profile?: AgentRuntimeProfile;
     learnedSkills?: LearnedSkill[];
     actions?: RuntimeActionResult[];
   },
@@ -221,6 +226,7 @@ export async function reportRuntimeState(
           toolsets: inventory.toolsets.filter((name) => !WITHHELD_TOOLSETS.includes(name)),
         }
       : null,
+    profile: state.profile ?? null,
     reportedAt: new Date().toISOString(),
   };
   await db

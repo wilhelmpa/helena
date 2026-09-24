@@ -33,5 +33,6 @@
   "gateOf": "{workflow} di {project}",
   "effects": "Dijalankan setelah disetujui:",
   "loadFailed": "Persetujuan tidak dapat dimuat.",
-  "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi."
+  "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi.",
+  "openBrowser": "Buka browser proyek"
 }

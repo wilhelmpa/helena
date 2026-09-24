@@ -60,6 +60,11 @@ export const PRESETS: Record<PresetName, Preset> = {
       '--permission-mode',
       'auto',
     ],
+    // The agent's model and reasoning in Helena; without them Claude Code uses its own.
+    taskArgs: ({ model, thinkingLevel }) => [
+      ...(model ? ['--model', model] : []),
+      ...(thinkingLevel ? ['--effort', thinkingLevel] : []),
+    ],
     tail: [],
   },
 
@@ -76,6 +81,11 @@ export const PRESETS: Record<PresetName, Preset> = {
       '--json',
       '-c',
       'sandbox_mode="workspace-write"',
+    ],
+    // Both `exec` and `exec resume` take -m and -c.
+    taskArgs: ({ model, thinkingLevel }) => [
+      ...(model ? ['-m', model] : []),
+      ...(thinkingLevel ? ['-c', `model_reasoning_effort=${JSON.stringify(thinkingLevel)}`] : []),
     ],
     tail: ['-'],
   },
