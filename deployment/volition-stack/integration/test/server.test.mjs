@@ -4,7 +4,6 @@ import { createProvisioningServer } from "../server.mjs";
 
 const TOKEN = "0123456789abcdef0123456789abcdef"; // gitleaks:allow -- inert test fixture
 const INBOX_TOKEN = "inbox-integration-token-0123456789abcdef";
-const MASTRA_TOKEN = "mastra-inbox-token-0123456789abcdef000";
 const EVENT_ID = "123e4567-e89b-42d3-a456-426614174000";
 let server;
 let origin;
@@ -19,10 +18,6 @@ beforeEach(async () => {
       token: TOKEN,
       inboxAccounts: ["owner@example.com"],
       inboxIntegrationToken: INBOX_TOKEN,
-      mastraInboxToken: MASTRA_TOKEN,
-      mastraInboxOrganizationRef: "organization:volition",
-      mastraInboxProjectRef: "project:PRIV",
-      mastraInboxCapabilityRef: "inbox-triage.v1",
     },
     {
       provisioner: {
@@ -53,10 +48,6 @@ beforeEach(async () => {
           return runId === "run-1"
             ? { status: "completed", result: { summary: "done" } }
             : null;
-        },
-        async classify(value, eventId) {
-          inboxCalls.push(["classify", value, eventId]);
-          return { summary: "classified", priority: null, requiresAction: false, projectKey: null, issueIdentifier: null, confidence: 0.9 };
         },
       },
     },
@@ -144,7 +135,7 @@ describe("provisioning server", () => {
   });
 
   it("refuses triage without the inbox integration bearer", async () => {
-    for (const authorization of [undefined, `Bearer ${MASTRA_TOKEN}`]) {
+    for (const authorization of [undefined, `Bearer ${TOKEN}`]) {
       const response = await fetch(`${origin}/api/inbox/triage`, {
         method: "POST",
         headers: {
@@ -180,35 +171,5 @@ describe("provisioning server", () => {
       result: { summary: "done" },
     });
     assert.deepEqual(inboxCalls, [["triage", payload]]);
-  });
-
-  it("keeps the Mastra classifier callback private and capability-scoped", async () => {
-    const payload = {
-      schemaVersion: 1,
-      capability: "inbox-triage.v1",
-      context: {
-        organizationRef: "organization:volition",
-        projectRef: "project:PRIV",
-        capabilityRefs: ["inbox-triage.v1"],
-        connectionRefs: [],
-      },
-      eventId: EVENT_ID,
-      correlationId: EVENT_ID,
-      payload: { thread: { id: EVENT_ID } },
-    };
-    const unauthorized = await fetch(`${origin}/internal/mastra/inbox/classify`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${INBOX_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    assert.equal(unauthorized.status, 401);
-    const response = await fetch(`${origin}/internal/mastra/inbox/classify`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${MASTRA_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    assert.equal(response.status, 200);
-    assert.equal((await response.json()).result.summary, "classified");
-    assert.deepEqual(inboxCalls.at(-1), ["classify", payload.payload, EVENT_ID]);
   });
 });

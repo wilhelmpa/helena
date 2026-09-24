@@ -1,7 +1,5 @@
 import crypto from "node:crypto";
 import http from "node:http";
-import fs from "node:fs/promises";
-import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   assertServerConfig,
@@ -22,13 +20,8 @@ import {
   createConnectionsService,
   ConnectionsValidationError,
 } from "./connections.mjs";
-import {
-  createMastraEventService,
-  MastraEventError,
-} from "./mastra-events.mjs";
 
 const MAX_BODY_BYTES = 256 * 1024;
-const MAX_EVENT_BODY_BYTES = 64 * 1024;
 
 function json(response, status, body) {
   const payload = JSON.stringify(body);
@@ -82,7 +75,6 @@ export function createRequestHandler(
   provisioner,
   triage = null,
   connections = null,
-  mastraEvents = null,
 ) {
   return async function handle(request, response) {
     if (request.method === "GET" && request.url === "/healthz") {
@@ -90,119 +82,6 @@ export function createRequestHandler(
       return;
     }
     const pathname = new URL(request.url || "/", "http://localhost").pathname;
-    const mastraEventRoute =
-      request.method === "POST" && pathname === "/internal/mastra/events";
-    if (mastraEventRoute) {
-      if (!mastraEvents || !config.mastraControlToken) {
-        json(response, 404, { error: "not_found" });
-        return;
-      }
-      if (
-        !authorized(
-          firstHeader(request.headers.authorization),
-          config.mastraControlToken,
-        )
-      ) {
-        response.setHeader("WWW-Authenticate", "Bearer");
-        json(response, 401, { error: "unauthorized" });
-        return;
-      }
-      if (
-        !firstHeader(request.headers["content-type"])
-          ?.toLowerCase()
-          .startsWith("application/json")
-      ) {
-        json(response, 415, { error: "json_required" });
-        return;
-      }
-      try {
-        json(
-          response,
-          200,
-          await mastraEvents.emit(await requestBody(request, MAX_EVENT_BODY_BYTES)),
-        );
-      } catch (error) {
-        if (
-          error instanceof RequestValidationError ||
-          error instanceof MastraEventError
-        ) {
-          json(response, error.status ?? 400, {
-            error: error.code ?? "invalid_event",
-            message: error.message,
-          });
-        } else {
-          json(response, 502, { error: "event_ingress_failed" });
-        }
-      }
-      return;
-    }
-    const mastraClassifier =
-      request.method === "POST" &&
-      pathname === "/internal/mastra/inbox/classify";
-    if (mastraClassifier) {
-      if (!triage || !config.mastraInboxToken) {
-        json(response, 404, { error: "not_found" });
-        return;
-      }
-      if (
-        !authorized(
-          firstHeader(request.headers.authorization),
-          config.mastraInboxToken,
-        )
-      ) {
-        response.setHeader("WWW-Authenticate", "Bearer");
-        json(response, 401, { error: "unauthorized" });
-        return;
-      }
-      if (
-        !firstHeader(request.headers["content-type"])
-          ?.toLowerCase()
-          .startsWith("application/json")
-      ) {
-        json(response, 415, { error: "json_required" });
-        return;
-      }
-      try {
-        const body = await requestBody(request);
-        const keys =
-          body && typeof body === "object" && !Array.isArray(body)
-            ? Object.keys(body).sort().join(",")
-            : "";
-        if (
-          keys !==
-            "capability,context,correlationId,eventId,payload,schemaVersion" ||
-          body.schemaVersion !== 1 ||
-          body.capability !== config.mastraInboxCapabilityRef ||
-          body.context?.organizationRef !== config.mastraInboxOrganizationRef ||
-          body.context?.projectRef !== config.mastraInboxProjectRef ||
-          !Array.isArray(body.context?.capabilityRefs) ||
-          !body.context.capabilityRefs.includes(
-            config.mastraInboxCapabilityRef,
-          ) ||
-          !Array.isArray(body.context?.connectionRefs) ||
-          !isUuid(body.eventId) ||
-          body.correlationId !== body.payload?.thread?.id
-        ) {
-          throw new InboxValidationError("The classifier request is invalid");
-        }
-        json(response, 200, {
-          result: await triage.classify(body.payload, body.eventId),
-        });
-      } catch (error) {
-        if (
-          error instanceof RequestValidationError ||
-          error instanceof InboxValidationError
-        ) {
-          json(response, error.status ?? 400, {
-            error: "invalid_request",
-            message: error.message,
-          });
-        } else {
-          json(response, 502, { error: "classifier_failed" });
-        }
-      }
-      return;
-    }
     const connectionList =
       request.method === "GET" && pathname === "/api/connections";
     const connectionAction =
@@ -401,22 +280,10 @@ export function createProvisioningServer(config, options = {}) {
   const connections =
     options.connections ??
     (config.connectionsEnabled
-      ? createConnectionsService(config, options)
+      ? createConnectionsService(config)
       : null);
-  const mastraEvents =
-    options.mastraEvents ??
-    (config.mastraEventIngressEnabled && config.mastraEventToken
-      ? createMastraEventService(config, options)
-      : null);
-  const handler = createRequestHandler(
-    config,
-    provisioner,
-    triage,
-    connections,
-    mastraEvents,
-  );
+  const handler = createRequestHandler(config, provisioner, triage, connections);
   const server = http.createServer(handler);
-  server.mastraClassifierServer = http.createServer(handler);
   server.requestTimeout = 120_000;
   server.headersTimeout = 10_000;
   server.keepAliveTimeout = 5_000;
@@ -430,30 +297,12 @@ export function createProvisioningServer(config, options = {}) {
 if (import.meta.url === pathToFileURL(process.argv[1] || "").href) {
   const config = await loadServerSecrets(loadConfig());
   const server = createProvisioningServer(config);
-  if (config.mastraInboxToken) {
-    const socketPath = config.mastraInboxClassifierSocketPath;
-    await fs.mkdir(path.dirname(socketPath), { recursive: true, mode: 0o700 });
-    try {
-      const stat = await fs.lstat(socketPath);
-      if (!stat.isSocket())
-        throw new Error("The Mastra classifier socket path is not a socket");
-      await fs.unlink(socketPath);
-    } catch (error) {
-      if (error?.code !== "ENOENT") throw error;
-    }
-    await new Promise((resolve, reject) => {
-      server.mastraClassifierServer.once("error", reject);
-      server.mastraClassifierServer.listen(socketPath, resolve);
-    });
-    await fs.chmod(socketPath, 0o600);
-  }
   server.listen(config.port, config.host, () => {
     console.log(
       `Volition provisioning service listening on ${config.host}:${config.port}`,
     );
   });
   const shutdown = () => {
-    server.mastraClassifierServer.close(() => undefined);
     server.close(() => process.exit(0));
   };
   process.on("SIGINT", shutdown);

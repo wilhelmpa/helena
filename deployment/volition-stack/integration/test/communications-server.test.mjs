@@ -15,7 +15,6 @@ beforeEach(async () => {
       inboxAccounts: ["owner@example.com"],
       inboxIntegrationToken: INBOX_TOKEN,
       connectionsIntegrationToken: CONNECTIONS_TOKEN,
-      mastraInboxToken: "mastra-inbox-token-0123456789abcdef0123456789",
       connectionsEnabled: true,
     },
     {
