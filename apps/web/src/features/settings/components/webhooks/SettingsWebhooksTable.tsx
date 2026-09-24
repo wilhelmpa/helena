@@ -20,36 +20,38 @@ export function SettingsWebhooksTable({
   const tCommon = useTranslations('common');
 
   return (
-    <Table className="min-w-[820px] table-fixed">
-      <colgroup>
-        <col className="w-[40%]" />
-        <col className="w-[46%]" />
-        <col className="w-[14%]" />
-      </colgroup>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="text-xs font-medium text-muted-foreground">
-            {t('columns.endpoint')}
-          </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
-            {t('columns.events')}
-          </TableHead>
-          <TableHead className="text-right text-xs font-medium text-muted-foreground">
-            {tCommon('actions')}
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {webhooks.map((webhook) => (
-          <SettingsWebhookRow
-            key={webhook.id}
-            webhook={webhook}
-            onShowDeliveries={() => onShowDeliveries(webhook)}
-            onEdit={() => onEdit(webhook.id)}
-            onDelete={() => onDelete(webhook)}
-          />
-        ))}
-      </TableBody>
-    </Table>
+    <div className="overflow-hidden rounded-lg border bg-card">
+      <Table className="min-w-[820px] table-fixed">
+        <colgroup>
+          <col className="w-[40%]" />
+          <col className="w-[46%]" />
+          <col className="w-[14%]" />
+        </colgroup>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+              {t('columns.endpoint')}
+            </TableHead>
+            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+              {t('columns.events')}
+            </TableHead>
+            <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
+              {tCommon('actions')}
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {webhooks.map((webhook) => (
+            <SettingsWebhookRow
+              key={webhook.id}
+              webhook={webhook}
+              onShowDeliveries={() => onShowDeliveries(webhook)}
+              onEdit={() => onEdit(webhook.id)}
+              onDelete={() => onDelete(webhook)}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

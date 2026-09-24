@@ -3,6 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type { AgentTeamPolicyDraft } from './agentTeamPolicy';
 
@@ -23,12 +30,10 @@ export default function ControlPlaneAgentTeamPolicy({
     <fieldset className="grid gap-3 sm:col-span-3 sm:grid-cols-4">
       <div className="space-y-1">
         <Label htmlFor={`${id}-autonomy`}>{t('result')}</Label>
-        <select
-          id={`${id}-autonomy`}
-          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+        <Select
           value={value.autonomy}
-          onChange={(event) => {
-            const autonomy = event.target.value as AgentTeamPolicyDraft['autonomy'];
+          onValueChange={(next) => {
+            const autonomy = next as AgentTeamPolicyDraft['autonomy'];
             onChange({
               ...value,
               autonomy,
@@ -36,13 +41,18 @@ export default function ControlPlaneAgentTeamPolicy({
             });
           }}
         >
-          <option value="review">{t('autonomyReview')}</option>
-          <option value="done">{t('autonomyDone')}</option>
-        </select>
+          <SelectTrigger id={`${id}-autonomy`} className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="review">{t('autonomyReview')}</SelectItem>
+            <SelectItem value="done">{t('autonomyDone')}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-1">
         <Label htmlFor={`${id}-review`}>{t('review')}</Label>
-        <div className="flex h-9 items-center">
+        <div className="flex h-8 items-center">
           <Switch
             id={`${id}-review`}
             checked={value.reviewRequired}

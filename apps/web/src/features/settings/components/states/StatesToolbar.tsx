@@ -5,7 +5,7 @@ import { ClipboardPaste, Copy, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { Column } from '@/lib/api/endpoints/columns';
-import { Button } from '@/components/ui/button';
+import { SETTINGS_MENU_TRIGGER_CLASS } from '../SettingsToolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,14 +104,9 @@ export default function StatesToolbar({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 text-muted-foreground hover:text-foreground"
-            aria-label={t('menu')}
-          >
-            <MoreHorizontal className="size-4" />
-          </Button>
+          <button type="button" aria-label={t('menu')} className={SETTINGS_MENU_TRIGGER_CLASS}>
+            <MoreHorizontal aria-hidden="true" />
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem onClick={() => void copyStates()} disabled={columns.length === 0}>

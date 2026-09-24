@@ -141,13 +141,11 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
                     </Button>
                   )}
                 </div>
-                <ItemGroup>
+                <ItemGroup className="overflow-hidden rounded-lg border bg-card">
                   {group.length === 0 && addingType !== s && (
                     <SettingsEmpty
                       title={t('emptyTitle', { type: tStateType(s) })}
                       description={t('emptyHint')}
-                      addLabel={t('newState')}
-                      onAdd={() => startAdd(s)}
                     />
                   )}
                   <SortableContext

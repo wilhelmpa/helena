@@ -69,7 +69,7 @@ export default function ControlPlaneWorkflowRuntime({
           {workflow.steps.map((step, index) => (
             <li
               key={step.id ?? `${workflow.id}-${index}`}
-              className="rounded-lg border bg-muted/20 p-3"
+              className="rounded-lg border bg-background p-3"
             >
               <div className="flex items-center gap-2 text-sm font-medium">
                 <span className="grid size-5 place-items-center rounded-full bg-primary text-xs text-primary-foreground">
@@ -176,7 +176,13 @@ export default function ControlPlaneWorkflowRuntime({
                 onChange={(event) => setTimezone(event.target.value)}
               />
             </div>
-            <Button className="self-end" type="submit" disabled={scheduleControls.create.isPending}>
+            <Button
+              className="self-end"
+              variant="outline"
+              size="sm"
+              type="submit"
+              disabled={scheduleControls.create.isPending}
+            >
               {t('addSchedule')}
             </Button>
           </form>

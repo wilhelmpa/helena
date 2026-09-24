@@ -22,13 +22,13 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
   return (
     <div className="flex flex-col gap-6">
       <SettingsSection title={t('eventsTitle')}>
-        <div className="max-w-xl">
-          <div className={`${COLS} px-3 pb-1`}>
+        <div className="max-w-xl overflow-hidden rounded-lg border bg-card">
+          <div className={`${COLS} h-8 border-b px-3`}>
             <span />
             <ChannelHeader icon={<Mail className="size-3.5" />} label={t('email')} />
             <ChannelHeader icon={<Send className="size-3.5" />} label={t('telegram')} />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col divide-y">
             {NOTIFICATION_EVENTS.map((event) => (
               <ChannelRow
                 key={event}
@@ -50,7 +50,7 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
 
 function ChannelHeader({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+    <span className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
       {icon}
       {label}
     </span>
@@ -71,7 +71,7 @@ function ChannelRow({
   onTelegram: (value: boolean) => void;
 }) {
   return (
-    <div className={`${COLS} -mx-3 rounded-md px-3 py-1.5`}>
+    <div className={`${COLS} min-h-10 px-3 py-1.5 hover:bg-accent/60`}>
       <span className="text-sm">{label}</span>
       <div className="flex justify-center">
         <Checkbox

@@ -25,7 +25,7 @@ export default function NotificationTelegramAccount() {
 
   return (
     <SettingsSection title={t('telegramAccount')} description={t('telegramAccountHint')}>
-      <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4 sm:max-w-md">
+      <div className="flex items-center justify-between gap-4 rounded-lg border bg-card p-3 sm:max-w-xl">
         <div className="flex min-w-0 items-center gap-3">
           <Send className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate text-sm">{label ?? t('noTelegramAccount')}</span>

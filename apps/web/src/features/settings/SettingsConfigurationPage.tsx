@@ -1,6 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
+import { Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { useShell } from '@/context/shellContext';
@@ -8,8 +9,8 @@ import { settingsSection } from '@/utils/settingsSections';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
-import { Button } from '@/components/ui/button';
 import SectionPageView from '@/components/common/page/SectionPageView';
+import SettingsToolbar from './components/SettingsToolbar';
 import RequirePermission from '@/components/common/permissions/RequirePermission';
 import { SettingsResourceProvider } from './context/settingsPermission';
 import SettingsSubtaskAutomation from './components/configuration/SettingsSubtaskAutomation';
@@ -51,17 +52,20 @@ function ConfigurationPage({ project }: { project: ProjectDetail }) {
   }
 
   return (
-    <SectionPageView
-      title={sectionText.label}
-      description={sectionText.description}
-      actions={
-        can(section.resource, 'edit') ? (
-          <Button size="sm" onClick={() => void save()} disabled={saving || !loaded}>
-            {tCommon('save')}
-          </Button>
-        ) : undefined
-      }
-    >
+    <SectionPageView title={sectionText.label} description={sectionText.description}>
+      <SettingsToolbar
+        primary={
+          can(section.resource, 'edit')
+            ? {
+                id: 'save',
+                label: tCommon('save'),
+                icon: Check,
+                disabled: saving || !loaded,
+                onClick: () => void save(),
+              }
+            : undefined
+        }
+      />
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
           <div className="space-y-6">

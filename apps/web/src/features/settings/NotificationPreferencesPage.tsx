@@ -3,7 +3,8 @@
 import type { ReactNode } from 'react';
 import type { NotificationPreferences as Prefs } from '@/lib/api/endpoints/notificationPreferences';
 import { useShell } from '@/context/shellContext';
-import { Button } from '@/components/ui/button';
+import { Check } from 'lucide-react';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import NotificationPreferences from './components/notifications/NotificationPreferences';
@@ -22,10 +23,12 @@ export default function NotificationPreferencesPage() {
   return <PreferencesPage projectKey={project.project.key} />;
 }
 
+// `actions` is the page's header row (a PageToolbar with Save).
 function Chrome({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
   const t = useTranslations('settings.notifications');
   return (
-    <SectionPageView title={t('title')} description={t('description')} actions={actions}>
+    <SectionPageView title={t('title')} description={t('description')}>
+      {actions}
       {children}
     </SectionPageView>
   );
@@ -49,9 +52,18 @@ function PreferencesLoaded({ projectKey, initial }: { projectKey: string; initia
   return (
     <Chrome
       actions={
-        <Button size="sm" onClick={() => void form.save()} disabled={!form.dirty || form.saving}>
-          {t('save')}
-        </Button>
+        <PageToolbar>
+          <PageToolbarSpacer />
+          <PageActions
+            primary={{
+              id: 'save',
+              label: t('save'),
+              icon: Check,
+              disabled: !form.dirty || form.saving,
+              onClick: () => void form.save(),
+            }}
+          />
+        </PageToolbar>
       }
     >
       <NotificationPreferences form={form} />

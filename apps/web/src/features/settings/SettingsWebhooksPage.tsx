@@ -6,9 +6,10 @@ import { useShell } from '@/context/shellContext';
 import { settingsSection } from '@/utils/settingsSections';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import SectionPageView from '@/components/common/page/SectionPageView';
+import SettingsToolbar from './components/SettingsToolbar';
 import RequirePermission from '@/components/common/permissions/RequirePermission';
 import { SettingsResourceProvider } from './context/settingsPermission';
-import { SettingsHeaderAddButton } from './components/crud/SettingsHeaderAddButton';
+import { useSettingsAddAction } from './components/crud/SettingsHeaderAddButton';
 import SettingsWebhooks from './components/webhooks/SettingsWebhooks';
 
 const section = settingsSection('webhooks');
@@ -19,20 +20,11 @@ export default function SettingsWebhooksPage() {
   const sectionText = useSettingsSectionText()(section.slug);
   const { project } = useShell();
   const [addNew, setAddNew] = useState(false);
+  const addAction = useSettingsAddAction(section.resource, t('new'), () => setAddNew(true));
   if (!project) return null;
   return (
-    <SectionPageView
-      title={sectionText.label}
-      description={sectionText.description}
-      wide
-      actions={
-        <SettingsHeaderAddButton
-          resource={section.resource}
-          label={t('new')}
-          onClick={() => setAddNew(true)}
-        />
-      }
-    >
+    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+      <SettingsToolbar primary={addAction} />
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
           <SettingsWebhooks

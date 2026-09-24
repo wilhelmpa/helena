@@ -5,13 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectSettingsNavGroups } from '@/hooks/useProjectSettingsNavGroups';
 import ProjectSettingsNav from '@/components/common/page/ProjectSettingsNav';
-import ProjectSettingsNavSelect from '@/components/common/page/ProjectSettingsNavSelect';
 
 // The chrome every /project/:projectKey/settings/* page shares: the grouped
 // sub-navigation in a second, narrow column (docs/volition-design-helena-ui.md
 // "Eigenes Einstellungs-Layout"), the page itself beside it. Below lg the rail becomes
-// one select above the page ("Mobil: Unternavigation als Auswahlmenü"), so the page
-// starts with its own content.
+// one dropdown at the start of the page's header row (SettingsToolbar), so the page
+// starts with its own content and there is no second row.
 export default function ProjectSettingsShell({ children }: { children: ReactNode }) {
   const t = useTranslations('nav');
   const { projectKey } = useShellRoute();
@@ -23,10 +22,7 @@ export default function ProjectSettingsShell({ children }: { children: ReactNode
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-      <div className="shrink-0 border-b border-sidebar-border px-4 py-2 lg:hidden">
-        <ProjectSettingsNavSelect groups={groups} label={t('projectSettings')} />
-      </div>
-      <div className="hidden shrink-0 overflow-y-auto border-e border-sidebar-border p-2 lg:block lg:w-56">
+      <div className="hidden shrink-0 overflow-y-auto border-e border-sidebar-border bg-card p-2 lg:block lg:w-56">
         <ProjectSettingsNav groups={groups} label={t('projectSettings')} />
       </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>

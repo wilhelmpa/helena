@@ -6,8 +6,8 @@ import { useShell } from '@/context/shellContext';
 import { settingsSection } from '@/utils/settingsSections';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Button } from '@/components/ui/button';
 import SectionPageView from '@/components/common/page/SectionPageView';
+import SettingsToolbar from './components/SettingsToolbar';
 import RequirePermission from '@/components/common/permissions/RequirePermission';
 import { SettingsResourceProvider } from './context/settingsPermission';
 import SettingsNetworkForm from './components/network/SettingsNetworkForm';
@@ -33,27 +33,24 @@ function NetworkPage({ projectKey }: { projectKey: string }) {
   const form = useAgentNetworkForm(projectKey);
 
   return (
-    <SectionPageView
-      title={sectionText.label}
-      description={sectionText.description}
-      wide
-      actions={
-        can(section.resource, 'edit') ? (
-          <Button size="sm" onClick={() => void form.save()} disabled={!form.canSave}>
-            {form.saving ? (
-              tCommon('saving')
-            ) : form.justSaved ? (
-              <span className="flex items-center gap-1.5">
-                <Check className="size-3.5" />
-                {t('saved')}
-              </span>
-            ) : (
-              tCommon('save')
-            )}
-          </Button>
-        ) : undefined
-      }
-    >
+    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+      <SettingsToolbar
+        primary={
+          can(section.resource, 'edit')
+            ? {
+                id: 'save',
+                label: form.saving
+                  ? tCommon('saving')
+                  : form.justSaved
+                    ? t('saved')
+                    : tCommon('save'),
+                icon: Check,
+                disabled: !form.canSave,
+                onClick: () => void form.save(),
+              }
+            : undefined
+        }
+      />
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
           <div className="space-y-6">
