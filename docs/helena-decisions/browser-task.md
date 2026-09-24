@@ -320,7 +320,10 @@ Jev Cloud numbers yet. Raw rows: `packages/browser-gateway/eval/results/2026-09-
 | fixture (small pages, ≤ 25 elements in scope) | 155 ms | 278 ms | 738 ms |
 | public sites (Wikipedia, HN, toscrape, herokuapp, selenium, todomvc) | 229 ms | 962 ms | 2.2 s |
 
-Model load 5.7 s at start.
+Model load 5.7 s at start; about 2 GB resident after the public pages (the unit allows
+`MemoryHigh=3G`, `MemoryMax=4G`). Laya rewrites the checkpoint's `tokenizer_config.json` once on
+its first load (`laya/agent.py`, `_fix_tokenizer_config`), so the unit keeps `/var/lib/helena-laya`
+writable; the installer's SHA-256 check covers the weights only.
 
 **Tasks reached** (correct outcome and expected status, 10 tasks each):
 
