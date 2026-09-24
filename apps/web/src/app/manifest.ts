@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next';
+import { BRAND_ASSETS } from '@/components/brand/assets';
 import { APP_NAME, THEME_COLOR_LIGHT } from '@/utils/app';
 
-// The install manifest. The icons are the Helena mark (public/brand, see the logo files
-// there): the SVG for any size, PNGs for launchers that want a raster, and a maskable one
-// whose glyph sits inside the 80% safe zone so a round or squircle mask never cuts it.
+// The install manifest. The icons are the Helena mark (packages/brand, public/brand):
+// the SVG for any size, PNGs for launchers that want a raster, and a maskable one whose
+// art sits inside the 80% safe zone so a round or squircle mask never cuts it.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: APP_NAME,
@@ -13,11 +14,11 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: THEME_COLOR_LIGHT,
     theme_color: THEME_COLOR_LIGHT,
     icons: [
-      { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
-      { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: BRAND_ASSETS.favicon, sizes: 'any', type: 'image/svg+xml' },
+      { src: BRAND_ASSETS.icon192, sizes: '192x192', type: 'image/png' },
+      { src: BRAND_ASSETS.icon512, sizes: '512x512', type: 'image/png' },
       {
-        src: '/brand/icon-maskable-512.png',
+        src: BRAND_ASSETS.iconMaskable,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',
