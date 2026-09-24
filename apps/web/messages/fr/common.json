@@ -267,5 +267,10 @@
     "url_private": "L’adresse pointe vers un réseau privé ou local, ce qui n’est pas autorisé ici.",
     "url_unresolvable": "Le nom de serveur de cette adresse est introuvable.",
     "number_invalid": "Saisissez un nombre."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "Cette adresse ne mène nulle part : un lien ancien ou mal saisi, peut-être.",
+    "home": "Aller à l’accueil"
   }
 }

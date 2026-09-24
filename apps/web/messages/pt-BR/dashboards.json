@@ -203,5 +203,7 @@
     "inProgress": "Em andamento",
     "backlog": "Backlog",
     "unassigned": "Não atribuídas"
-  }
+  },
+  "deleteDashboard": "Excluir painel",
+  "deleteDashboardConfirm": "Excluir “{name}” com seus widgets? As tarefas não são afetadas."
 }

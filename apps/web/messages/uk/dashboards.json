@@ -203,5 +203,7 @@
     "inProgress": "В роботі",
     "backlog": "Беклог",
     "unassigned": "Без виконавця"
-  }
+  },
+  "deleteDashboard": "Видалити дашборд",
+  "deleteDashboardConfirm": "Видалити «{name}» разом з віджетами? Завдань це не торкнеться."
 }

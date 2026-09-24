@@ -66,5 +66,7 @@
     "interactive": "Bloquear o desbloquear el movimiento",
     "minimap": "Minimapa",
     "handle": "Punto de conexión"
-  }
+  },
+  "deleteBoard": "Eliminar tablero",
+  "deleteBoardConfirm": "¿Eliminar «{name}» con todas sus notas? No se puede deshacer."
 }

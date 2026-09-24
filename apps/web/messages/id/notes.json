@@ -66,5 +66,7 @@
     "interactive": "Kunci atau buka pemindahan",
     "minimap": "Peta ringkas",
     "handle": "Titik sambungan"
-  }
+  },
+  "deleteBoard": "Hapus papan",
+  "deleteBoardConfirm": "Hapus “{name}” beserta semua catatannya? Ini tidak bisa dibatalkan."
 }

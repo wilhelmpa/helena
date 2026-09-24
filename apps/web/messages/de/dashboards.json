@@ -203,5 +203,7 @@
     "inProgress": "In Bearbeitung",
     "backlog": "Backlog",
     "unassigned": "Nicht zugewiesen"
-  }
+  },
+  "deleteDashboard": "Dashboard löschen",
+  "deleteDashboardConfirm": "„{name}“ mit seinen Widgets löschen? Die Aufgaben bleiben unberührt."
 }

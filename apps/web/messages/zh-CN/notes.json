@@ -66,5 +66,7 @@
     "interactive": "锁定或解锁移动",
     "minimap": "缩略图",
     "handle": "连接点"
-  }
+  },
+  "deleteBoard": "删除面板",
+  "deleteBoardConfirm": "删除“{name}”及其上的所有便签？此操作无法撤销。"
 }

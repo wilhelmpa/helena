@@ -66,5 +66,7 @@
     "interactive": "Verschieben sperren oder freigeben",
     "minimap": "Übersichtskarte",
     "handle": "Verbindungspunkt"
-  }
+  },
+  "deleteBoard": "Board löschen",
+  "deleteBoardConfirm": "„{name}“ mit allen Notizen darauf löschen? Das lässt sich nicht rückgängig machen."
 }

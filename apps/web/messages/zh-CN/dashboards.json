@@ -203,5 +203,7 @@
     "inProgress": "进行中",
     "backlog": "待办池",
     "unassigned": "未指派"
-  }
+  },
+  "deleteDashboard": "删除仪表板",
+  "deleteDashboardConfirm": "删除“{name}”及其小组件？任务不受影响。"
 }

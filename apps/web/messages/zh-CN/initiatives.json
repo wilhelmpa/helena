@@ -156,5 +156,7 @@
     "download": "下载",
     "downloadFile": "下载 {name}",
     "deleteFile": "删除 {name}"
-  }
+  },
+  "deleteTitle": "删除计划",
+  "deleteConfirm": "删除“{name}”？任务会留在项目中，只是不再属于此计划。"
 }

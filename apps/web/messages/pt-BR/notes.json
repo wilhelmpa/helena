@@ -66,5 +66,7 @@
     "interactive": "Bloquear ou liberar o movimento",
     "minimap": "Minimapa",
     "handle": "Ponto de conexão"
-  }
+  },
+  "deleteBoard": "Excluir quadro",
+  "deleteBoardConfirm": "Excluir “{name}” e todas as notas nele? Não dá para desfazer."
 }

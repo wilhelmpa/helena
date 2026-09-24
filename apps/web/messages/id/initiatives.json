@@ -156,5 +156,7 @@
     "download": "Unduh",
     "downloadFile": "Unduh {name}",
     "deleteFile": "Hapus {name}"
-  }
+  },
+  "deleteTitle": "Hapus inisiatif",
+  "deleteConfirm": "Hapus “{name}”? Tugas tetap ada di proyek, tanpa inisiatif ini."
 }

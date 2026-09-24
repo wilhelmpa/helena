@@ -156,5 +156,7 @@
     "download": "Download",
     "downloadFile": "Download {name}",
     "deleteFile": "Delete {name}"
-  }
+  },
+  "deleteTitle": "Delete initiative",
+  "deleteConfirm": "Delete “{name}”? Its tasks stay in the project, without this initiative."
 }

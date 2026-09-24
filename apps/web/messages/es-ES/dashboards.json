@@ -203,5 +203,7 @@
     "inProgress": "En curso",
     "backlog": "Pila de trabajo",
     "unassigned": "Sin asignar"
-  }
+  },
+  "deleteDashboard": "Eliminar panel",
+  "deleteDashboardConfirm": "¿Eliminar «{name}» con sus widgets? Las tareas no se tocan."
 }

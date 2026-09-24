@@ -156,5 +156,7 @@
     "download": "Herunterladen",
     "downloadFile": "{name} herunterladen",
     "deleteFile": "{name} löschen"
-  }
+  },
+  "deleteTitle": "Initiative löschen",
+  "deleteConfirm": "„{name}“ löschen? Die Aufgaben bleiben im Projekt, nur ohne diese Initiative."
 }

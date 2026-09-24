@@ -267,5 +267,10 @@
     "url_private": "该地址指向私有或本地网络，此处不允许。",
     "url_unresolvable": "找不到此地址中的服务器名称。",
     "number_invalid": "请输入数字。"
+  },
+  "notFound": {
+    "title": "找不到页面",
+    "description": "此地址无法打开，可能是旧链接或输入有误。",
+    "home": "返回首页"
   }
 }

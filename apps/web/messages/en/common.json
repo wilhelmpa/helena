@@ -267,5 +267,10 @@
     "url_private": "The address points to a private or local network, which is not allowed here.",
     "url_unresolvable": "The server name in this address could not be found.",
     "number_invalid": "Enter a number."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This address does not lead anywhere, perhaps an old or mistyped link.",
+    "home": "Go to Start"
   }
 }

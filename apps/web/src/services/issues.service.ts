@@ -38,6 +38,7 @@ import {
   createIssue,
 } from '@/lib/api/endpoints/issues';
 import { qk } from '@/services/queryKeys';
+import { forgetWhenUnused } from '@/services/forgetQueries';
 
 // Deleting or archiving one issue. `subtasks` says what happens to the subtasks
 // hanging under it, and is required whenever it has any.
@@ -230,9 +231,9 @@ export function useDeleteIssue(projectKey: string | null) {
         );
         void qc.invalidateQueries({ queryKey: qk.boardIssues(projectKey) });
       }
-      qc.removeQueries({ queryKey: qk.issue(id) });
-      qc.removeQueries({ queryKey: qk.feed(id) });
-      qc.removeQueries({ queryKey: qk.attachments(id) });
+      forgetWhenUnused(qc, qk.issue(id));
+      forgetWhenUnused(qc, qk.feed(id));
+      forgetWhenUnused(qc, qk.attachments(id));
       invalidateGroupings(qc);
     },
   });

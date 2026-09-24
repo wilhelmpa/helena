@@ -156,5 +156,7 @@
     "download": "تنزيل",
     "downloadFile": "تنزيل {name}",
     "deleteFile": "حذف {name}"
-  }
+  },
+  "deleteTitle": "حذف المبادرة",
+  "deleteConfirm": "حذف «{name}»؟ تبقى المهام في المشروع، لكن دون هذه المبادرة."
 }

@@ -267,5 +267,10 @@
     "url_private": "Die Adresse zeigt in ein privates oder lokales Netz – das ist hier nicht erlaubt.",
     "url_unresolvable": "Der Servername in dieser Adresse wurde nicht gefunden.",
     "number_invalid": "Gib eine Zahl ein."
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Diese Adresse führt nirgendwohin – vielleicht ein alter oder vertippter Link.",
+    "home": "Zur Startseite"
   }
 }

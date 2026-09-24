@@ -156,5 +156,7 @@
     "download": "Descargar",
     "downloadFile": "Descargar {name}",
     "deleteFile": "Eliminar {name}"
-  }
+  },
+  "deleteTitle": "Eliminar iniciativa",
+  "deleteConfirm": "¿Eliminar «{name}»? Las tareas se quedan en el proyecto, sin esta iniciativa."
 }

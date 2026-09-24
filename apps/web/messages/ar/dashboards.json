@@ -203,5 +203,7 @@
     "inProgress": "قيد التنفيذ",
     "backlog": "قائمة الانتظار",
     "unassigned": "غير مُسندة"
-  }
+  },
+  "deleteDashboard": "حذف لوحة المعلومات",
+  "deleteDashboardConfirm": "حذف «{name}» مع أدواته؟ لا تتأثر المهام."
 }

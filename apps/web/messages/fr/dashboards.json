@@ -203,5 +203,7 @@
     "inProgress": "En cours",
     "backlog": "Backlog",
     "unassigned": "Non assignés"
-  }
+  },
+  "deleteDashboard": "Supprimer le tableau de bord",
+  "deleteDashboardConfirm": "Supprimer « {name} » et ses widgets ? Les tâches ne sont pas touchées."
 }

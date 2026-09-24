@@ -203,5 +203,7 @@
     "inProgress": "In progress",
     "backlog": "Backlog",
     "unassigned": "Unassigned"
-  }
+  },
+  "deleteDashboard": "Delete dashboard",
+  "deleteDashboardConfirm": "Delete “{name}” with its widgets? The tasks are not touched."
 }

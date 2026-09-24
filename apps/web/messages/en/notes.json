@@ -66,5 +66,7 @@
     "interactive": "Lock or unlock moving",
     "minimap": "Overview map",
     "handle": "Connection point"
-  }
+  },
+  "deleteBoard": "Delete board",
+  "deleteBoardConfirm": "Delete “{name}” and all notes on it? This cannot be undone."
 }

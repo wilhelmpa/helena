@@ -156,5 +156,7 @@
     "download": "Télécharger",
     "downloadFile": "Télécharger {name}",
     "deleteFile": "Supprimer {name}"
-  }
+  },
+  "deleteTitle": "Supprimer l’initiative",
+  "deleteConfirm": "Supprimer « {name} » ? Les tâches restent dans le projet, sans cette initiative."
 }

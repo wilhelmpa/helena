@@ -267,5 +267,10 @@
     "url_private": "O endereço aponta para uma rede privada ou local, o que não é permitido aqui.",
     "url_unresolvable": "Não foi possível encontrar o nome do servidor deste endereço.",
     "number_invalid": "Informe um número."
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "description": "Este endereço não leva a lugar nenhum; talvez seja um link antigo ou digitado errado.",
+    "home": "Ir para o início"
   }
 }

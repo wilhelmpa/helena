@@ -267,5 +267,10 @@
     "url_private": "Alamat mengarah ke jaringan privat atau lokal, yang tidak diizinkan di sini.",
     "url_unresolvable": "Nama server pada alamat ini tidak ditemukan.",
     "number_invalid": "Masukkan angka."
+  },
+  "notFound": {
+    "title": "Halaman tidak ditemukan",
+    "description": "Alamat ini tidak mengarah ke mana pun, mungkin tautan lama atau salah ketik.",
+    "home": "Ke Beranda"
   }
 }

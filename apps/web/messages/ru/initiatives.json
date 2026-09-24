@@ -156,5 +156,7 @@
     "download": "Скачать",
     "downloadFile": "Скачать {name}",
     "deleteFile": "Удалить {name}"
-  }
+  },
+  "deleteTitle": "Удалить инициативу",
+  "deleteConfirm": "Удалить «{name}»? Задачи останутся в проекте, но без этой инициативы."
 }

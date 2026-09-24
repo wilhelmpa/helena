@@ -66,5 +66,7 @@
     "interactive": "Verrouiller ou déverrouiller le déplacement",
     "minimap": "Mini-carte",
     "handle": "Point de liaison"
-  }
+  },
+  "deleteBoard": "Supprimer le tableau",
+  "deleteBoardConfirm": "Supprimer « {name} » et toutes ses notes ? C’est définitif."
 }

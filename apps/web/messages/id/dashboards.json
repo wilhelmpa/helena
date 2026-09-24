@@ -203,5 +203,7 @@
     "inProgress": "Sedang dikerjakan",
     "backlog": "Backlog",
     "unassigned": "Belum ditugaskan"
-  }
+  },
+  "deleteDashboard": "Hapus dasbor",
+  "deleteDashboardConfirm": "Hapus “{name}” beserta widgetnya? Tugas tidak tersentuh."
 }
