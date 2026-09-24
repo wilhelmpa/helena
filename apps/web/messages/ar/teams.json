@@ -421,6 +421,8 @@
       "memory": "ذاكرة المحادثة",
       "memoryWindowLabel": "نافذة رسائل الذاكرة",
       "memoryWindowPlaceholder": "نافذة الرسائل الأخيرة",
+      "maxConcurrentChats": "المحادثات المتوازية",
+      "maxConcurrentChatsHint": "عدد محادثات هذا الوكيل التي يمكن للعضو تركها تجيب في الوقت نفسه. يُرفض أي إرسال يتجاوز الحد حتى تنتهي إحداها.",
       "toolAllow": "الأدوات المسموح بها",
       "mcpGrants": "أذونات MCP",
       "keysPlaceholder": "مفتاح واحد في كل سطر",

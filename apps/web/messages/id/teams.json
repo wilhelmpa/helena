@@ -421,6 +421,8 @@
       "memory": "Memori percakapan",
       "memoryWindowLabel": "Jendela pesan memori",
       "memoryWindowPlaceholder": "Jendela pesan terbaru",
+      "maxConcurrentChats": "Obrolan paralel",
+      "maxConcurrentChatsHint": "Berapa banyak obrolan agen ini yang dapat dibiarkan menjawab bersamaan oleh seorang anggota. Pengiriman di atas batas ditolak hingga salah satunya selesai.",
       "toolAllow": "Alat yang diizinkan",
       "mcpGrants": "Pemberian akses MCP",
       "keysPlaceholder": "Satu kunci per baris",
