@@ -308,10 +308,27 @@ export type {
   PluginProvides,
 } from './manifest-types';
 export {
+  DECISION_PROTOCOLS,
   SYSTEM_ONE_MODELS_PATH,
   SYSTEM_ONE_PATH,
   systemOneUrl,
   type DecisionBackendPreset,
   type DecisionBackendType,
   type DecisionPolicyKind,
+  type DecisionProtocol,
 } from './decision-backends';
+export {
+  DECISION_STATUSES,
+  decisionConfidence,
+  decisionOptionIds,
+  decisionQuestionProblem,
+  isDecisionOptionId,
+  type DecisionAnswer,
+  type DecisionClass,
+  type DecisionEvalCase,
+  type DecisionEvalSet,
+  type DecisionKind,
+  type DecisionOption,
+  type DecisionQuestion,
+  type DecisionStatus,
+} from './decisions';

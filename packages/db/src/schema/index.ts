@@ -12,3 +12,5 @@ export * from './knowledge';
 export * from './model-availability';
 export * from './updates';
 export * from './browser-task';
+export * from './decisions';
+export * from './finance';

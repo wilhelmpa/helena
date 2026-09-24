@@ -1,0 +1,24 @@
+{
+  "name": "@helena/decisions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Helena's typed decisions: System One questions, the local logit and JSON backends over OpenAI-compatible servers, and the eval harness",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@helena/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

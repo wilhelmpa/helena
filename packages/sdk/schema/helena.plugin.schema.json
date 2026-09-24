@@ -239,6 +239,15 @@
             "maxLength": 160
           }
         },
+        "decisionClasses": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        },
         "events": {
           "maxItems": 500,
           "type": "array",
