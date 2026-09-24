@@ -1,0 +1,75 @@
+{
+  "title": "Лимиты",
+  "refresh": "Обновить",
+  "accountsTitle": "Аккаунты",
+  "empty": "Пока нет данных. Они появятся, когда их прочитает раннер агента или отчёт владельца.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "Владелец"
+  },
+  "sources": {
+    "spool": "Отчёт владельца"
+  },
+  "state": {
+    "ok": "OK",
+    "near": "Почти исчерпан",
+    "limited": "Лимит исчерпан",
+    "unknown": "Нет данных"
+  },
+  "window": {
+    "session": "{hours} ч",
+    "weekly": "Неделя",
+    "monthly": "Месяц",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} ч",
+    "labelled": "{label}",
+    "other": "Окно"
+  },
+  "resetsIn": "через {time}",
+  "resetDone": "сброшено",
+  "readAgo": "Прочитано {time} назад",
+  "staleSince": "Устарело, прочитано {time} назад",
+  "freeIn": "Снова доступно через {time}",
+  "nearUntil": "Пополнится через {time}",
+  "resetCredits": "{count, plural, one {# сброс в запасе} few {# сброса в запасе} many {# сбросов в запасе} other {# сброса в запасе}}",
+  "noWindows": "Окна не сообщены.",
+  "unavailable": {
+    "no_login": "Вход не выполнен.",
+    "api_key": "Ключ API: без лимитов тарифа.",
+    "no_profile_scope": "Этот вход не может читать лимиты (токен настройки).",
+    "failed": "Не удалось прочитать.",
+    "unsupported": "Этот провайдер не сообщает лимиты."
+  },
+  "readVia": "Прочитано через {login}, {time}",
+  "readPassive": "Из ответа для {login}, {time}",
+  "forget": "Забыть аккаунт",
+  "resetsAt": "Сброс {time}",
+  "agentTokens": "Агенты: {tokens} токенов в этом окне",
+  "agents": "Агенты на этом аккаунте: {names}",
+  "noAgents": "Ни один агент не сообщает этот аккаунт (вход владельца).",
+  "credits": "Кредиты: {balance}",
+  "extraUsage": "Доп. использование: {used} из {limit}",
+  "settings": {
+    "auto": "Читать автоматически",
+    "autoHint": "Helena опрашивает раннеры с этим интервалом; каждый вход один раз, сколько бы агентов его ни использовало.",
+    "autoHintAt": "Последний опрос {time} назад. Каждый вход один раз, сколько бы агентов его ни использовало.",
+    "interval": "Интервал",
+    "intervalHint": "Как часто Helena читает лимиты.",
+    "minutes": "{count} мин",
+    "near": "Почти исчерпан с",
+    "nearHint": "С этой доли окно становится жёлтым.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider}: лимит исчерпан",
+    "limitedUntil": "{provider}: лимит исчерпан, снова доступно через {time}",
+    "stale": "{provider}: лимиты устарели (прочитано {time} назад)"
+  }
+}

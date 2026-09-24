@@ -22,7 +22,17 @@ export type RuntimeRequest =
   | { op: 'curator.run' }
   | { op: 'curator.set'; action: 'pin' | 'unpin'; skill: string }
   | { op: 'estop.set'; engaged: boolean; reason?: string | null }
-  | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null };
+  | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null }
+  | { op: 'limits.read'; force?: boolean };
+
+// What a feature does with an answer as soon as it arrives, whoever is waiting for it: the
+// plan limits a runner reports are stored even when nobody waits (the background loop).
+type AnswerListener = (agentId: number, result: unknown) => Promise<void>;
+const answerListeners = new Map<RuntimeRequest['op'], AnswerListener>();
+
+export function onRuntimeAnswer(op: RuntimeRequest['op'], listener: AnswerListener): void {
+  answerListeners.set(op, listener);
+}
 
 export const runtimeRequestConfig = {
   // How long a runner's claim waits for a request, and how often it looks.
@@ -180,7 +190,14 @@ export async function answerRuntimeRequest(
         eq(agentRuntimeRequest.status, 'claimed'),
       ),
     )
-    .returning({ id: agentRuntimeRequest.id });
+    .returning({ id: agentRuntimeRequest.id, request: agentRuntimeRequest.request });
+  const op = (rows[0]?.request as { op?: RuntimeRequest['op'] } | undefined)?.op;
+  const listener = op ? answerListeners.get(op) : undefined;
+  if (listener && answer.ok) {
+    await listener(agentId, answer.result).catch((error: unknown) => {
+      console.error('[runtime-requests] answer listener failed:', error);
+    });
+  }
   return rows.length > 0;
 }
 

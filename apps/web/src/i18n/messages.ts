@@ -39,6 +39,7 @@ import palette from '../../messages/en/palette.json';
 import permissions from '../../messages/en/permissions.json';
 import pipelines from '../../messages/en/pipelines.json';
 import projects from '../../messages/en/projects.json';
+import providerLimits from '../../messages/en/providerLimits.json';
 import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
 import settings from '../../messages/en/settings.json';
@@ -100,6 +101,7 @@ const defaultMessages = {
   routines,
   pipelines,
   devices,
+  providerLimits,
   knowledge,
 };
 

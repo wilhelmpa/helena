@@ -1,0 +1,75 @@
+{
+  "title": "Batas",
+  "refresh": "Segarkan",
+  "accountsTitle": "Akun",
+  "empty": "Belum ada angka. Angka muncul setelah runner agen atau laporan pemilik membacanya.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "Pemilik"
+  },
+  "sources": {
+    "spool": "Laporan pemilik"
+  },
+  "state": {
+    "ok": "OK",
+    "near": "Hampir habis",
+    "limited": "Batas tercapai",
+    "unknown": "Tanpa angka"
+  },
+  "window": {
+    "session": "{hours} jam",
+    "weekly": "Minggu",
+    "monthly": "Bulan",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} jam",
+    "labelled": "{label}",
+    "other": "Jendela"
+  },
+  "resetsIn": "dalam {time}",
+  "resetDone": "direset",
+  "readAgo": "Dibaca {time} lalu",
+  "staleSince": "Usang, dibaca {time} lalu",
+  "freeIn": "Bebas lagi dalam {time}",
+  "nearUntil": "Terisi ulang dalam {time}",
+  "resetCredits": "{count, plural, other {# reset tersimpan}}",
+  "noWindows": "Tidak ada jendela yang dilaporkan.",
+  "unavailable": {
+    "no_login": "Belum masuk.",
+    "api_key": "Kunci API: tanpa batas paket.",
+    "no_profile_scope": "Login ini tidak boleh membaca batas (token penyiapan).",
+    "failed": "Pembacaan gagal.",
+    "unsupported": "Penyedia ini tidak menyebutkan batas."
+  },
+  "readVia": "Dibaca melalui {login}, {time}",
+  "readPassive": "Dari jawaban untuk {login}, {time}",
+  "forget": "Lupakan akun",
+  "resetsAt": "Reset {time}",
+  "agentTokens": "Agen: {tokens} token di jendela ini",
+  "agents": "Agen di akun ini: {names}",
+  "noAgents": "Tidak ada agen yang melaporkan akun ini (login pemilik).",
+  "credits": "Kredit: {balance}",
+  "extraUsage": "Pemakaian tambahan: {used} dari {limit}",
+  "settings": {
+    "auto": "Baca otomatis",
+    "autoHint": "Helena menanyai runner dengan jeda ini; setiap login sekali, berapa pun agen yang memakainya.",
+    "autoHintAt": "Terakhir ditanya {time} lalu. Setiap login sekali, berapa pun agen yang memakainya.",
+    "interval": "Jeda",
+    "intervalHint": "Seberapa sering Helena membaca batas.",
+    "minutes": "{count} mnt",
+    "near": "Hampir habis mulai",
+    "nearHint": "Mulai porsi ini sebuah jendela menjadi kuning.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider}: batas tercapai",
+    "limitedUntil": "{provider}: batas tercapai, bebas lagi dalam {time}",
+    "stale": "{provider}: batas usang (dibaca {time} lalu)"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "title": "限额",
+  "refresh": "刷新",
+  "accountsTitle": "账户",
+  "empty": "暂无数据。代理运行器或所有者报告读取后即会显示。",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "所有者"
+  },
+  "sources": {
+    "spool": "所有者报告"
+  },
+  "state": {
+    "ok": "正常",
+    "near": "接近上限",
+    "limited": "已达上限",
+    "unknown": "无数据"
+  },
+  "window": {
+    "session": "{hours} 小时",
+    "weekly": "本周",
+    "monthly": "本月",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} 小时",
+    "labelled": "{label}",
+    "other": "窗口"
+  },
+  "resetsIn": "{time} 后",
+  "resetDone": "已重置",
+  "readAgo": "{time}前读取",
+  "staleSince": "已过时，{time}前读取",
+  "freeIn": "{time}后恢复",
+  "nearUntil": "{time}后补满",
+  "resetCredits": "{count, plural, other {已储存 # 次重置}}",
+  "noWindows": "未报告任何窗口。",
+  "unavailable": {
+    "no_login": "未登录。",
+    "api_key": "API 密钥：没有套餐限额。",
+    "no_profile_scope": "此登录无权读取限额（设置令牌）。",
+    "failed": "读取失败。",
+    "unsupported": "此提供商不提供限额。"
+  },
+  "readVia": "通过 {login} 读取，{time}",
+  "readPassive": "来自发给 {login} 的回复，{time}",
+  "forget": "忘记账户",
+  "resetsAt": "重置于 {time}",
+  "agentTokens": "代理：此窗口内 {tokens} 个令牌",
+  "agents": "使用此账户的代理：{names}",
+  "noAgents": "没有代理报告此账户（所有者登录）。",
+  "credits": "额度：{balance}",
+  "extraUsage": "额外用量：{used} / {limit}",
+  "settings": {
+    "auto": "自动读取",
+    "autoHint": "Helena 按此间隔询问运行器；每个登录只问一次，无论有多少代理使用它。",
+    "autoHintAt": "上次询问于 {time}前。每个登录只问一次，无论有多少代理使用它。",
+    "interval": "间隔",
+    "intervalHint": "Helena 读取限额的频率。",
+    "minutes": "{count} 分钟",
+    "near": "接近上限起点",
+    "nearHint": "达到此比例时窗口变为黄色。",
+    "percent": "{value}%"
+  },
+  "health": {
+    "limited": "{provider}：已达上限",
+    "limitedUntil": "{provider}：已达上限，{time}后恢复",
+    "stale": "{provider}：限额已过时（{time}前读取）"
+  }
+}

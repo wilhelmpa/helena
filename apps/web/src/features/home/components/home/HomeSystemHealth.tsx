@@ -11,6 +11,7 @@ import { healthProblems } from '../../utils/systemHealth';
 import HomeAgentSync from './HomeAgentSync';
 import HomeJanitorState from './HomeJanitorState';
 import HomeServiceState from './HomeServiceState';
+import LimitsHealthLines from '@/features/provider-limits/components/LimitsHealthLines';
 
 // The instance owner's view of the services around Helena — the Hermes runner, Mastra,
 // the bridge between them, the provisioning service and the worker — the agent runs
@@ -53,6 +54,7 @@ export default function HomeSystemHealth() {
             ))}
           </ul>
         )}
+        <LimitsHealthLines />
         {data.agents && (
           <div className="mt-2">
             <HomeAgentSync summary={data.agents} />

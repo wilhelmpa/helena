@@ -15,6 +15,7 @@ import { processConnectorActions } from '#modules/connectors/tools';
 import { pruneRuntimeRequests } from '#modules/agents/runtime-requests/service';
 import { scheduleCuratorRuns } from '#modules/agents/runtime-requests/curator-schedule';
 import { pruneRunEvents } from '#modules/agents/run-timeline/service';
+import { scheduleLimitProbes } from '#modules/provider-limits/service';
 import { prunePolicyDecisions } from '#modules/autopilot/engine';
 
 const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR, RUNTIME_JANITOR] =
@@ -54,6 +55,12 @@ export function startBackgroundJobs(): void {
   );
   startLoop(RESUME_JANITOR, resumeJanitor, () => intEnv('RESUME_JANITOR_INTERVAL_MS', 60_000));
   startLoop(RUNTIME_JANITOR, runtimeJanitor, () => intEnv('RUNTIME_JANITOR_INTERVAL_MS', 300_000));
+  // Plan limits: the spool every minute, the runners once per the owner's interval.
+  startLoop(
+    'provider-limits',
+    async () => void (await scheduleLimitProbes()),
+    () => intEnv('PROVIDER_LIMITS_TICK_MS', 60_000),
+  );
   // The Autopilot's decision log keeps HELENA_POLICY_LOG_DAYS (90) days.
   startLoop(
     'policy-log',
