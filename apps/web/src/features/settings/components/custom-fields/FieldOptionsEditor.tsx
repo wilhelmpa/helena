@@ -88,7 +88,10 @@ export default function FieldOptionsEditor({
           // text itself. Turning it into rows here would grow the form under the
           // pointer, so the click would miss the button and need a second one.
           const next = e.relatedTarget as HTMLElement | null;
-          if (next?.getAttribute('type') === 'submit' && next.closest('form') === e.currentTarget.form)
+          if (
+            next?.getAttribute('type') === 'submit' &&
+            next.closest('form') === e.currentTarget.form
+          )
             return;
           commitPending();
         }}

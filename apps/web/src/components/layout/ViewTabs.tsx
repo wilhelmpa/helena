@@ -1,10 +1,5 @@
 import { useState } from 'react';
-import {
-  closestCenter,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core';
+import { closestCenter, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import DndContext from '@/components/common/dnd/DndContext';
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';

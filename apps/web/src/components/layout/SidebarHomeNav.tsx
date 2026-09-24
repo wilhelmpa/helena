@@ -12,11 +12,7 @@ import { useSession } from '@/lib/auth-client';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
-import {
-  HOME_NAVIGATION_ICONS,
-  homeNavigation,
-  type HomeNavigationGroup,
-} from './homeNavigation';
+import { HOME_NAVIGATION_ICONS, homeNavigation, type HomeNavigationGroup } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 
 const GROUPS: HomeNavigationGroup[] = ['work', 'agents', 'globalSettings'];

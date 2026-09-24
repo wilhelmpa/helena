@@ -15,11 +15,7 @@ import ipaddr from 'ipaddr.js';
 
 // Why a URL was refused, as a stable code a client can word in its own language.
 export type UrlRefusal =
-  | 'url_invalid'
-  | 'url_https_required'
-  | 'url_credentials'
-  | 'url_private'
-  | 'url_unresolvable';
+  'url_invalid' | 'url_https_required' | 'url_credentials' | 'url_private' | 'url_unresolvable';
 
 export class UrlNotAllowedError extends Error {
   constructor(
@@ -179,7 +175,10 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
   const blockedIp = policy.publicOnly ? isNonPublicIp : isPrivateIp;
   if (isLocalHostname(host) || (isIP(host) && blockedIp(host))) {
     if (!devRelaxed && !allowed) {
-      throw new UrlNotAllowedError('url must not point to a private or local address', 'url_private');
+      throw new UrlNotAllowedError(
+        'url must not point to a private or local address',
+        'url_private',
+      );
     }
     return { url };
   }

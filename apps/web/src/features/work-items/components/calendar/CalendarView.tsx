@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { isSameDay, isSameMonth, startOfMonth } from 'date-fns';
-import {
-  DragOverlay,
-  pointerWithin,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core';
+import { DragOverlay, pointerWithin, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import DndContext from '@/components/common/dnd/DndContext';
 import { useTranslations } from 'next-intl';
 import type { Issue } from '@/lib/api/endpoints/issues';

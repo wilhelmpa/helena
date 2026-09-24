@@ -106,8 +106,7 @@ export default function CommandPalette({
   const owner = session?.user.role === 'god';
   // Results for the typed text are still on their way.
   const pending =
-    searching &&
-    (query.trim() !== debounced.trim() || search.isFetching || everything.isFetching);
+    searching && (query.trim() !== debounced.trim() || search.isFetching || everything.isFetching);
 
   // After each render of new results: a "save this" action (or nothing) highlighted by
   // cmdk itself gives way to the first real item, which cmdk's ranking puts on top.
