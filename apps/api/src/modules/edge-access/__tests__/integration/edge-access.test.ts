@@ -118,7 +118,11 @@ describe('edge access (the internet tunnel entry)', () => {
 
     expect((await configure(owner.cookie)).status).toBe(200);
     const read = await call('/god/security/edge', { cookie: owner.cookie });
-    expect(await read.json()).toMatchObject({ teamDomain: TEAM, audiences: [AUD], configured: true });
+    expect(await read.json()).toMatchObject({
+      teamDomain: TEAM,
+      audiences: [AUD],
+      configured: true,
+    });
   });
 
   it('never counts a tunnel request as the LAN for the owner terminal', async () => {
@@ -144,8 +148,20 @@ describe('edge access (the internet tunnel entry)', () => {
         host: 'kingston-server',
         ranAt: new Date().toISOString(),
         checks: [
-          { id: 'ssh.password_auth', group: 'ssh', state: 'pass', severity: 'critical', detail: 'no' },
-          { id: 'net.firewall', group: 'network', state: 'fail', severity: 'critical', detail: 'accept' },
+          {
+            id: 'ssh.password_auth',
+            group: 'ssh',
+            state: 'pass',
+            severity: 'critical',
+            detail: 'no',
+          },
+          {
+            id: 'net.firewall',
+            group: 'network',
+            state: 'fail',
+            severity: 'critical',
+            detail: 'accept',
+          },
           { id: 'bad id!', group: 'x', state: 'pass', severity: 'low', detail: '' },
           { id: 'sys.time_sync', group: 'system', state: 'maybe', severity: 'high', detail: '' },
         ],

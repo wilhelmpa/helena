@@ -97,7 +97,7 @@ export const edgeVerifyRoutes = new Elysia({ name: 'edge-verify' }).get(
     detail: {
       summary: 'Check the edge sign-in for the reverse proxy',
       description:
-        "204 when the request carries a valid assertion of the configured edge provider " +
+        '204 when the request carries a valid assertion of the configured edge provider ' +
         '(Cloudflare Access), 403 otherwise. Used by nginx for the tunnel entry.',
     },
   },

@@ -16,8 +16,7 @@ const config: EdgeAccessConfig = {
   allowedEmails: [],
 };
 
-const headers = (token?: string) =>
-  new Headers(token ? { 'cf-access-jwt-assertion': token } : {});
+const headers = (token?: string) => new Headers(token ? { 'cf-access-jwt-assertion': token } : {});
 
 async function refusal(promise: Promise<unknown>): Promise<string> {
   try {

@@ -46,7 +46,11 @@ export default function SecurityAuditPanel({
   const rest = checks.filter((check) => check.state !== 'fail' && check.state !== 'warn');
   const visible = showPassed ? checks : findings;
   const summaryStatus: Status =
-    audit.summary.fail > 0 ? 'danger' : audit.summary.warn > 0 || audit.stale ? 'waiting' : 'success';
+    audit.summary.fail > 0
+      ? 'danger'
+      : audit.summary.warn > 0 || audit.stale
+        ? 'waiting'
+        : 'success';
 
   return (
     <SettingsCard className="divide-y p-0">

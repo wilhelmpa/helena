@@ -24,10 +24,7 @@ export interface EdgeIdentity {
 export class EdgeAccessError extends Error {
   constructor(
     readonly code:
-      | 'not_configured'
-      | 'missing_assertion'
-      | 'invalid_assertion'
-      | 'identity_not_allowed',
+      'not_configured' | 'missing_assertion' | 'invalid_assertion' | 'identity_not_allowed',
     message: string,
   ) {
     super(message);
@@ -136,7 +133,8 @@ export const cloudflareAccessProvider: EdgeProvider = {
       provider: CLOUDFLARE_ACCESS,
       email,
       subject,
-      expiresAt: typeof payload.exp === 'number' ? new Date(payload.exp * 1000).toISOString() : null,
+      expiresAt:
+        typeof payload.exp === 'number' ? new Date(payload.exp * 1000).toISOString() : null,
     };
   },
 };

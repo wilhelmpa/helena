@@ -66,7 +66,13 @@ export function parseAuditReport(raw: string, now = Date.now()): AuditReport | n
     if (!ID.test(id) || !AUDIT_STATES.includes(state) || !AUDIT_SEVERITIES.includes(severity)) {
       continue;
     }
-    checks.push({ id, group: text(check.group, 32) || 'other', state, severity, detail: text(check.detail, 300) });
+    checks.push({
+      id,
+      group: text(check.group, 32) || 'other',
+      state,
+      severity,
+      detail: text(check.detail, 300),
+    });
   }
   const summary = { pass: 0, fail: 0, warn: 0, skip: 0 } as Record<AuditState, number>;
   for (const check of checks) summary[check.state] += 1;
@@ -98,9 +104,12 @@ export function securityHealth(report: AuditReport | null): {
   code: string;
   values: Record<string, number>;
 } {
-  if (!report) return { id: 'security:audit', state: 'unknown', code: 'security.noReport', values: {} };
+  if (!report)
+    return { id: 'security:audit', state: 'unknown', code: 'security.noReport', values: {} };
   const failing = report.checks.filter((check) => check.state === 'fail');
-  const severe = failing.filter((check) => check.severity === 'critical' || check.severity === 'high');
+  const severe = failing.filter(
+    (check) => check.severity === 'critical' || check.severity === 'high',
+  );
   const state: SecurityHealthState =
     severe.length > 0
       ? 'critical'
