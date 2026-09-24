@@ -3,7 +3,7 @@
 Gilt, wenn der Code aus dem Helena-Repo stammt (Monorepo mit `apps/api` Elysia/Bun, `apps/web` Next.js, `packages/*`).
 
 ## Produkt und Texte
-- Produktname in allem, was ein Mensch sieht, ist **Helena** – nie „Plan" oder „It's a Plan" (einzige Ausnahme: der AGPL-Hinweis in LICENSE/NOTICE, README und der About-Seite). `scripts/no-itsaplan-strings.test.ts` muss grün bleiben.
+- Produktname in allem, was ein Mensch sieht, ist nur **Helena** – kein anderer Produkt- oder Firmenname, auch nicht der des Upstream-Projekts (einzige Ausnahme: die AGPL-Attribution in LICENSE/NOTICE, README und auf der About-Seite). `scripts/no-itsaplan-strings.test.ts` muss grün bleiben.
 - Interne Bezeichner (`itsaplan` in DB, Paketnamen, systemd-Units, Pfade) werden **nicht** stückweise umbenannt.
 - UI-Texte über `next-intl`, neue Schlüssel in **allen** Sprachdateien unter `apps/web/messages/<locale>/`.
 

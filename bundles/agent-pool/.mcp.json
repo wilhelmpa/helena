@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "shopify-dev": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@shopify/dev-mcp@latest"],
+      "description": "Durchsucht die Dokumentation und API-Schemas von Shopify und prüft GraphQL-, Liquid- und Extension-Code. Braucht keine Zugangsdaten."
+    }
+  }
+}
