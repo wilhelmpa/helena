@@ -608,6 +608,28 @@ const triggerScopeColumns = {
   ownerUserId: aiAgent.ownerUserId,
 };
 
+// Who a change on an issue counts as coming from, for an agent that takes work only from
+// its owner: the actor, and when the actor is an agent's bot user also that agent's owner.
+// The Home agent and the coordinators act for the person who owns them, so the owner's
+// Home agent can hand a task to the owner's coordinator (Home → coordinators →
+// specialists); another member's agent still cannot.
+async function triggerActors(actorUserId: string | null): Promise<(string | null)[]> {
+  if (!actorUserId) return [null];
+  const [agent] = await db
+    .select({ ownerUserId: aiAgent.ownerUserId })
+    .from(aiAgent)
+    .where(eq(aiAgent.userId, actorUserId))
+    .limit(1);
+  return agent?.ownerUserId ? [actorUserId, agent.ownerUserId] : [actorUserId];
+}
+
+function isTriggerableByAny(
+  agent: { runnerScope: string; ownerUserId: string | null },
+  actors: (string | null)[],
+): boolean {
+  return actors.some((actor) => isTriggerableBy(agent, actor));
+}
+
 // Whether the member may send the agent a task, for the paths that queue a run
 // outside the mention and delegation triggers (a schedule). An agent that no longer
 // exists reads as triggerable — the caller's own lookup reports it missing.
@@ -642,8 +664,9 @@ export async function listMentionTriggerAgents(
         inArray(aiAgent.userId, userIds),
       ),
     );
+  const actors = await triggerActors(actorUserId);
   return rows
-    .filter((row) => isTriggerableBy(row, actorUserId))
+    .filter((row) => isTriggerableByAny(row, actors))
     .map((row) => ({ id: row.id, userId: row.userId }));
 }
 
@@ -672,7 +695,7 @@ export async function getAssignTriggerAgent(
     )
     .limit(1);
   const row = rows[0];
-  if (!row || !isTriggerableBy(row, actorUserId)) return null;
+  if (!row || !isTriggerableByAny(row, await triggerActors(actorUserId))) return null;
   return { id: row.id, delegationDelaySec: row.delegationDelaySec };
 }
 
@@ -703,7 +726,7 @@ export async function getFieldTriggerAgent(
     )
     .limit(1);
   const row = rows[0];
-  if (!row || !isTriggerableBy(row, actorUserId)) return null;
+  if (!row || !isTriggerableByAny(row, await triggerActors(actorUserId))) return null;
   return { id: row.id, delaySec: row.delaySec };
 }
 
