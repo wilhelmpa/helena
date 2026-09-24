@@ -164,6 +164,18 @@ const PLUGIN_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 export const BROWSER_GATEWAY_MCP_SERVER_NAME = 'projekt-browser';
 export const BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME = 'hermes-browser-legacy';
 export const BROWSER_GATEWAY_SHIM_PATH = '/usr/local/libexec/volition-browser-gateway-mcp';
+// What the shim needs from the agent's environment: its key, the run or chat answer it
+// works on (the gateway files a login's use and a handover card under it), and — without
+// isolation only — the socket of its project's browser. Hermes and Codex hand a stdio MCP
+// server only the variables they are told to; Claude Code hands it its whole environment.
+export const BROWSER_GATEWAY_ENV = [
+  'ITSAPLAN_API_KEY',
+  'ITSAPLAN_RUN_ID',
+  'ITSAPLAN_MESSAGE_ID',
+  'BROWSER_GATEWAY_SOCKET',
+] as const;
+// browser_handover waits up to 30 minutes for the owner, browser_acquire up to 10.
+export const BROWSER_GATEWAY_TOOL_TIMEOUT_SEC = 1900;
 const MAX_CONFLICTS = 8;
 const MAX_RESTORED = 20;
 const CAPABILITIES = [
@@ -357,6 +369,18 @@ export function hermesMcpServers(
     }
     if (taken.includes(server.name)) {
       throw new Error(`MCP server ${server.name} has the name of a Hermes toolset or server`);
+    }
+    if (server.name === BROWSER_GATEWAY_MCP_SERVER_NAME) {
+      // The gateway's shim, always at its installed path whatever the library row says;
+      // its variables are passed through by name (Hermes leaves an unset one as its
+      // literal placeholder, which the shim ignores).
+      config[server.name] = {
+        command: BROWSER_GATEWAY_SHIM_PATH,
+        args: [],
+        env: Object.fromEntries(BROWSER_GATEWAY_ENV.map((name) => [name, `\${${name}}`])),
+        timeout: BROWSER_GATEWAY_TOOL_TIMEOUT_SEC,
+      };
+      continue;
     }
     config[server.name] =
       server.transport === 'stdio'
@@ -590,127 +614,69 @@ function withoutBrowser(toolsets: string[] | null): string[] | null {
     : toolsets;
 }
 
-// ── Claude Code / Codex MCP config (design §3: every runtime reaches the gateway the same
-// way) ────────────────────────────────────────────────────────────────────────────────────
+// ── Claude Code / Codex (design §3: every runtime reaches the gateway the same way) ─────
 //
-// Hermes gets its MCP servers automatically, through its own managed config.yaml above.
-// Claude Code and Codex have no such delivery today; these two writers add exactly one thing
-// to whatever configuration file each already reads on its own — the "projekt-browser" entry
-// — and touch nothing else in it, so a person's or another tool's own entries survive. Both
-// are idempotent: applying the same snapshot again, or applying an unrelated one, changes the
-// file only if the entry itself has to change.
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-async function readJsonRecord(path: string): Promise<Record<string, unknown>> {
-  try {
-    const value = JSON.parse(await readFile(path, 'utf8')) as unknown;
-    return isRecord(value) ? value : {};
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {};
-    throw error;
+// Hermes gets its MCP servers through its own managed config.yaml above. Claude Code and
+// Codex get the gateway on the command line of the run, so nothing is written into the
+// agent's working directory or home (a file there could be a link an agent planted, and a
+// project .mcp.json would need its servers approved first). Verified against the installed
+// binaries (Claude Code 2.1.280, codex-cli 0.156.1): Claude Code starts a server given with
+// --mcp-config as a dynamic one and hands it its whole environment; Codex takes the table
+// through -c overrides (checked with --strict-config) and hands the server exactly the
+// variables named in env_vars.
+export function browserGatewayArgs(runtime: 'claude' | 'codex'): string[] {
+  if (runtime === 'claude') {
+    return [
+      '--mcp-config',
+      JSON.stringify({
+        mcpServers: {
+          [BROWSER_GATEWAY_MCP_SERVER_NAME]: {
+            type: 'stdio',
+            command: BROWSER_GATEWAY_SHIM_PATH,
+            args: [],
+          },
+        },
+      }),
+      // Nobody is there to approve a tool call; the gateway itself decides what is allowed.
+      '--allowedTools',
+      `mcp__${BROWSER_GATEWAY_MCP_SERVER_NAME}`,
+    ];
   }
+  const table = `mcp_servers.${BROWSER_GATEWAY_MCP_SERVER_NAME}`;
+  return [
+    '-c',
+    `${table}.command=${JSON.stringify(BROWSER_GATEWAY_SHIM_PATH)}`,
+    '-c',
+    `${table}.args=[]`,
+    '-c',
+    `${table}.env_vars=${JSON.stringify(BROWSER_GATEWAY_ENV)}`,
+    '-c',
+    `${table}.tool_timeout_sec=${BROWSER_GATEWAY_TOOL_TIMEOUT_SEC}`,
+    '-c',
+    `${table}.default_tools_approval_mode="approve"`,
+  ];
 }
 
-function hasGatewayServer(servers: RuntimeMcpServer[]): boolean {
-  return servers.some((server) => server.name === BROWSER_GATEWAY_MCP_SERVER_NAME);
-}
+// The gateway arguments of a Claude Code or Codex agent's next run: none unless the agent
+// has "Projekt-Browser" turned on (and not the old Hermes browser, which only Hermes has).
+// The agent's own runtime policy says so; when it cannot be read, the last answer holds.
+export class BrowserGatewayArgs {
+  private last: string[] = [];
 
-// Claude Code's own MCP config, read from the run's working directory (`.mcp.json`). The
-// shape below — `{"mcpServers":{"<name>":{"command","args","env"}}}` for a stdio server — is
-// the well-known one Claude Code documents and that `claude mcp add-json` writes; it is
-// **unverified against a real Claude Code binary** by this change. AgentRunnerHelpSheet.tsx
-// documents the same file for an http server, which this leaves alone.
-export class ClaudeMcpConfigWriter {
-  private readonly root: string;
-  private readonly path: string;
+  constructor(
+    private readonly client: Pick<RuntimePolicyClient, 'runtimePolicy'>,
+    private readonly runtime: 'claude' | 'codex',
+  ) {}
 
-  constructor(cwd: string) {
-    this.root = assertRoot(cwd, 'Claude Code working directory');
-    this.path = join(this.root, '.mcp.json');
-  }
-
-  async apply(mcpServers: RuntimeMcpServer[]): Promise<void> {
-    const file = await readJsonRecord(this.path);
-    const servers = { ...(isRecord(file.mcpServers) ? file.mcpServers : {}) };
-    if (hasGatewayServer(mcpServers)) {
-      servers[BROWSER_GATEWAY_MCP_SERVER_NAME] = { command: BROWSER_GATEWAY_SHIM_PATH, args: [] };
-    } else {
-      delete servers[BROWSER_GATEWAY_MCP_SERVER_NAME];
+  async current(): Promise<string[]> {
+    try {
+      const snapshot = await this.client.runtimePolicy();
+      const names = (snapshot.mcpServers ?? []).map(({ name }) => name);
+      this.last = usesBrowserGateway(names) ? browserGatewayArgs(this.runtime) : [];
+    } catch {
+      // The run goes ahead with what the agent had.
     }
-    const content = `${JSON.stringify({ ...file, mcpServers: servers }, null, 2)}\n`;
-    if ((await existingHash(this.path)) === digest(content)) return;
-    await atomicWrite(this.root, this.path, content);
-  }
-}
-
-function tomlString(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
-
-// A minimal, line-based upsert of exactly one named TOML table `[header]`: every other line
-// in the file — other tables, comments, blank lines, formatting — is kept exactly as found.
-// Deliberately not a TOML parser: Codex's config.toml may hold tables (and syntax) this
-// runner has no reason to understand, so it never reads past what it needs to find the start
-// and end of this one table. `block` null removes the table; its lines otherwise replace the
-// table's current ones. Exported for its own tests.
-export function upsertTomlTable(content: string, header: string, block: string[] | null): string {
-  const lines = content.length > 0 ? content.split('\n') : [];
-  if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
-  const isHeaderLine = (line: string) => line.trimStart().startsWith('[');
-  const at = lines.findIndex((line) => line.trim() === header);
-  let end = lines.length;
-  if (at !== -1) {
-    end = at + 1;
-    while (end < lines.length && !isHeaderLine(lines[end])) end++;
-  }
-  const before = at === -1 ? lines : lines.slice(0, at);
-  const after = at === -1 ? [] : lines.slice(end);
-  const blankBefore = before.length > 0 && before[before.length - 1] !== '' ? [''] : [];
-  const blankAfter = block && after.length > 0 && after[0] !== '' ? [''] : [];
-  const merged =
-    block === null
-      ? before[before.length - 1] === '' && after[0] === ''
-        ? [...before, ...after.slice(1)]
-        : [...before, ...after]
-      : [...before, ...blankBefore, header, ...block, ...blankAfter, ...after];
-  return merged.length === 0 ? '' : `${merged.join('\n')}\n`;
-}
-
-const CODEX_TABLE_HEADER = `[mcp_servers.${BROWSER_GATEWAY_MCP_SERVER_NAME}]`;
-
-function codexTableBlock(): string[] {
-  return [`command = ${tomlString(BROWSER_GATEWAY_SHIM_PATH)}`, 'args = []'];
-}
-
-// Codex's own MCP config, `~/.codex/config.toml`, a `[mcp_servers.<name>]` table per server
-// (documented for an http server in AgentRunnerHelpSheet.tsx; the stdio shape here —
-// `command`/`args`/`env` keys of the table — is the well-known one and is **unverified
-// against a real Codex binary** by this change). Written without a TOML parser (see
-// upsertTomlTable) so a person's or another tool's own tables are never disturbed.
-export class CodexMcpConfigWriter {
-  private readonly root: string;
-  private readonly path: string;
-
-  constructor(codexHome: string) {
-    this.root = assertRoot(codexHome, 'Codex home');
-    this.path = join(this.root, 'config.toml');
-  }
-
-  async apply(mcpServers: RuntimeMcpServer[]): Promise<void> {
-    const current = await readFile(this.path, 'utf8').catch((error: NodeJS.ErrnoException) => {
-      if (error.code === 'ENOENT') return '';
-      throw error;
-    });
-    const content = upsertTomlTable(
-      current,
-      CODEX_TABLE_HEADER,
-      hasGatewayServer(mcpServers) ? codexTableBlock() : null,
-    );
-    if (content === current) return;
-    await atomicWrite(this.root, this.path, content);
+    return this.last;
   }
 }
 
@@ -837,6 +803,8 @@ export class HermesPolicySynchronizer {
   // The agent's own MCP servers and the secrets they name, as the last applied revision
   // wrote them. mcpSecrets is null while the managed configuration names no secret.
   private mcpServerNames: string[] = [];
+  // Whether the web logins a Hermes vault held from before the gateway were removed yet.
+  private vaultCleared = false;
   private mcpSecrets: number[] | null = null;
   private vaultAccess: VaultAccess | null = null;
   private inventory: HermesInventory | undefined;
@@ -897,13 +865,25 @@ export class HermesPolicySynchronizer {
     if (!work || !this.options.vault) return settings;
     // The gateway is this agent's browser (toolsets() above already keeps Hermes' native
     // toolset out of `settings`): its web logins reach browser_login/browser_login_code
-    // through the gateway, never Hermes' own vault, so there is nothing to sync here.
-    if (usesBrowserGateway(this.mcpServerNames)) return settings;
+    // through the gateway, never Hermes' own vault, which is emptied instead.
+    if (usesBrowserGateway(this.mcpServerNames)) {
+      await this.clearVault();
+      return settings;
+    }
     const granted = this.webLogins ? await this.client.webLogins(work) : [];
     const logins = await this.options.vault.sync(granted);
     if (logins.size === 0) return { ...settings, logins };
     const toolsets = toolsetsWithBrowser(this.options.profile, this.denied(), this.mcpServerNames);
     return { ...settings, toolsets, logins };
+  }
+
+  // Design §6: an agent that uses the gateway keeps no copy of a web login in its Hermes
+  // vault. Done once per runner process: on the first policy sync (so a restart clears the
+  // vault of an agent that never runs) and again before a run if that failed.
+  private async clearVault(): Promise<void> {
+    if (this.vaultCleared || !this.options.vault) return;
+    await this.options.vault.sync([]);
+    this.vaultCleared = true;
   }
 
   // The knowledge vault paths the agent's file tools may reach, for the approval plugin.
@@ -946,6 +926,7 @@ export class HermesPolicySynchronizer {
       changed = (await this.readInventory()) || changed;
     }
     if ((changed || this.unreported) && this.state) await this.report(this.state);
+    if (usesBrowserGateway(this.mcpServerNames)) await this.clearVault().catch(() => {});
   }
 
   // True when the revision was applied or failed to apply, either of which is reported.

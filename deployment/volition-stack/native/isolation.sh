@@ -139,17 +139,25 @@ switch() { # on|off
       run rm -f "$dropin"
     fi
   done
+  # Chromium and KasmVNC get browser-user.conf; the router, which also serves the browser
+  # gateway's sockets to the project users, browser-router.conf.
   for unit in chromium@ kasm@ router; do
     local name=volition-project-browser-$unit.service
-    local dropin=$units/${name}.d/browser-user.conf
+    local file=browser-user.conf
+    [[ $unit == router ]] && file=browser-router.conf
+    local dropin=$units/${name}.d/$file
     if [[ $1 == on ]]; then
-      if ! cmp -s "$source_dir/systemd/browser-user.conf" "$dropin"; then
+      if ! cmp -s "$source_dir/systemd/$file" "$dropin"; then
         say "run $name as volition-browser"
-        ((dry_run)) || install -D -m 0644 "$source_dir/systemd/browser-user.conf" "$dropin"
+        ((dry_run)) || install -D -m 0644 "$source_dir/systemd/$file" "$dropin"
       fi
-    elif [[ -f $dropin ]]; then
-      say "run $name as volition-hermes again"
-      run rm -f "$dropin"
+    else
+      for stale in "$units/${name}.d/browser-user.conf" "$units/${name}.d/browser-router.conf"; do
+        if [[ -f $stale ]]; then
+          say "run $name as volition-hermes again"
+          run rm -f "$stale"
+        fi
+      done
     fi
   done
   run systemctl daemon-reload

@@ -31,9 +31,9 @@
     "node": "/usr/local/bin/node",
     "bases": { "display": 200, "cdp": 19200, "vnc": 15900, "noVnc": 16080 }
   },
-  "browserGatewaySocket": {
-    "root": "/run/volition-browser",
-    "target": "/run/volition-agents/browser.sock"
+  "browserGateway": {
+    "root": "/run/volition-browser/gateway",
+    "target": "/run/volition-agents/browser"
   },
   "hide": ["/var/lib/volition", "/srv/volition", "/var/lib/volition-agent-launcher", "/var/lib/volition-egress"],
   "inaccessible": ["/etc/volition", "/var/lib/volition-google", "/var/lib/postgresql", "/var/lib/redis", "/var/backups", "/var/log"],

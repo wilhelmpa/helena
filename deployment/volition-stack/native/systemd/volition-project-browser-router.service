@@ -19,6 +19,13 @@ User=volition-hermes
 Group=volition
 Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
 Environment=PROJECT_BROWSER_ROUTER_PORT=6082
+# The browser gateway's sockets, one directory per project browser (browser-gateway-server.mjs).
+# Kept across restarts: the isolation launcher binds a project's directory into its running
+# agent units, which a directory created anew would leave behind. The gateway itself starts
+# only with its token (install-browser-gateway.sh adds it as a drop-in).
+RuntimeDirectory=volition-browser
+RuntimeDirectoryMode=0711
+RuntimeDirectoryPreserve=yes
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/browser/project-router.mjs
 Restart=always
 RestartSec=2

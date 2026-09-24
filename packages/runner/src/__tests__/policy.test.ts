@@ -22,13 +22,12 @@ import {
   BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
   BROWSER_GATEWAY_MCP_SERVER_NAME,
   BROWSER_GATEWAY_SHIM_PATH,
-  ClaudeMcpConfigWriter,
-  CodexMcpConfigWriter,
+  BrowserGatewayArgs,
+  browserGatewayArgs,
   hermesMcpServers,
   HermesPolicyMaterializer,
   HermesPolicySynchronizer,
   toolsetsWithBrowser,
-  upsertTomlTable,
   usesBrowserGateway,
   type LoginVault,
   type RuntimeMcpServer,
@@ -939,11 +938,23 @@ const legacyServer: RuntimeMcpServer = {
 
 describe('Browser gateway: Hermes side (design §3, §6)', () => {
   it("never writes the legacy marker into Hermes' own mcp_servers, but does write the gateway", () => {
-    expect(hermesMcpServers([gatewayServer, legacyServer], undefined, [])).toEqual({
+    expect(
+      hermesMcpServers(
+        [{ ...gatewayServer, command: '/somewhere/else', args: ['--x'] }, legacyServer],
+        undefined,
+        [],
+      ),
+    ).toEqual({
       [BROWSER_GATEWAY_MCP_SERVER_NAME]: {
         command: BROWSER_GATEWAY_SHIM_PATH,
         args: [],
-        env: {},
+        env: {
+          ITSAPLAN_API_KEY: '${ITSAPLAN_API_KEY}',
+          ITSAPLAN_RUN_ID: '${ITSAPLAN_RUN_ID}',
+          ITSAPLAN_MESSAGE_ID: '${ITSAPLAN_MESSAGE_ID}',
+          BROWSER_GATEWAY_SOCKET: '${BROWSER_GATEWAY_SOCKET}',
+        },
+        timeout: 1900,
       },
     });
     expect(hermesMcpServers([legacyServer], undefined, [])).toBeNull();
@@ -1008,11 +1019,12 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
       expect(settings.logins?.size).toBe(1);
     });
 
-    it('gateway only: the native browser toolset is excluded and the Hermes vault sync is skipped', async () => {
+    it('gateway only: the native browser toolset is excluded and the Hermes vault is emptied, once', async () => {
       const { toolsets, settings, vaultCalls } = await run([gatewayServer]);
       expect(toolsets).toEqual(['file', 'terminal', BROWSER_GATEWAY_MCP_SERVER_NAME]);
       expect(settings.toolsets).toEqual(['file', 'terminal', BROWSER_GATEWAY_MCP_SERVER_NAME]);
-      expect(vaultCalls).toEqual([]);
+      // Emptied at the policy sync; the run itself finds it done and syncs nothing more.
+      expect(vaultCalls).toEqual([[]]);
       expect(settings.logins).toBeUndefined();
     });
 
@@ -1043,182 +1055,54 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
   });
 });
 
-describe('Browser gateway: Claude Code .mcp.json writer', () => {
-  async function dir(): Promise<string> {
-    const root = await mkdtemp(join(tmpdir(), 'itsaplan-claude-mcp-'));
-    roots.push(root);
-    return root;
-  }
-
-  it('creates the file when none exists yet', async () => {
-    const cwd = await dir();
-    await new ClaudeMcpConfigWriter(cwd).apply([gatewayServer]);
-    expect(JSON.parse(await readFile(join(cwd, '.mcp.json'), 'utf8'))).toEqual({
+describe('Browser gateway: Claude Code and Codex get it on the command line', () => {
+  it('Claude Code: a dynamic stdio server and its tools allowed', () => {
+    const args = browserGatewayArgs('claude');
+    expect(args[0]).toBe('--mcp-config');
+    expect(JSON.parse(args[1]!)).toEqual({
       mcpServers: {
-        [BROWSER_GATEWAY_MCP_SERVER_NAME]: { command: BROWSER_GATEWAY_SHIM_PATH, args: [] },
-      },
-    });
-  });
-
-  it('adds its entry next to servers a person or another tool already configured, untouched', async () => {
-    const cwd = await dir();
-    const original = {
-      mcpServers: { own: { command: 'npx', args: ['-y', 'own-server'] } },
-      somethingElse: true,
-    };
-    await writeFile(join(cwd, '.mcp.json'), JSON.stringify(original, null, 2));
-
-    await new ClaudeMcpConfigWriter(cwd).apply([gatewayServer]);
-
-    const written = JSON.parse(await readFile(join(cwd, '.mcp.json'), 'utf8'));
-    expect(written).toEqual({
-      mcpServers: {
-        own: { command: 'npx', args: ['-y', 'own-server'] },
-        [BROWSER_GATEWAY_MCP_SERVER_NAME]: { command: BROWSER_GATEWAY_SHIM_PATH, args: [] },
-      },
-      somethingElse: true,
-    });
-  });
-
-  it('updates a stale entry in place, is idempotent, and removes it once the gateway is off', async () => {
-    const cwd = await dir();
-    await writeFile(
-      join(cwd, '.mcp.json'),
-      JSON.stringify({
-        mcpServers: {
-          [BROWSER_GATEWAY_MCP_SERVER_NAME]: { command: '/old/path', args: ['--stale'] },
+        [BROWSER_GATEWAY_MCP_SERVER_NAME]: {
+          type: 'stdio',
+          command: BROWSER_GATEWAY_SHIM_PATH,
+          args: [],
         },
-      }),
-    );
-
-    const writer = new ClaudeMcpConfigWriter(cwd);
-    await writer.apply([gatewayServer]);
-    const once = await readFile(join(cwd, '.mcp.json'), 'utf8');
-    expect(JSON.parse(once).mcpServers[BROWSER_GATEWAY_MCP_SERVER_NAME]).toEqual({
-      command: BROWSER_GATEWAY_SHIM_PATH,
-      args: [],
+      },
     });
-
-    // Applying the same snapshot again does not touch the file (mtime-independent: same bytes).
-    await writer.apply([gatewayServer]);
-    expect(await readFile(join(cwd, '.mcp.json'), 'utf8')).toBe(once);
-
-    // The team turns the toggle off: the entry is removed, nothing else changes.
-    await writer.apply([]);
-    const off = JSON.parse(await readFile(join(cwd, '.mcp.json'), 'utf8'));
-    expect(off).toEqual({ mcpServers: {} });
-  });
-});
-
-describe('Browser gateway: upsertTomlTable (a minimal TOML table upsert, no parser)', () => {
-  const header = '[mcp_servers.projekt-browser]';
-  const block = ['command = "/usr/local/libexec/volition-browser-gateway-mcp"', 'args = []'];
-
-  it('writes just the table when the file does not exist yet (empty content)', () => {
-    expect(upsertTomlTable('', header, block)).toBe(
-      '[mcp_servers.projekt-browser]\ncommand = "/usr/local/libexec/volition-browser-gateway-mcp"\nargs = []\n',
-    );
+    expect(args.slice(2)).toEqual(['--allowedTools', `mcp__${BROWSER_GATEWAY_MCP_SERVER_NAME}`]);
   });
 
-  it('appends after unrelated tables without disturbing them', () => {
-    const content = '[mcp_servers.other]\ncommand = "other"\n';
-    const result = upsertTomlTable(content, header, block);
-    expect(result).toBe(
-      '[mcp_servers.other]\ncommand = "other"\n\n' +
-        '[mcp_servers.projekt-browser]\n' +
-        'command = "/usr/local/libexec/volition-browser-gateway-mcp"\n' +
-        'args = []\n',
-    );
-    // Idempotent: applying again produces exactly the same bytes.
-    expect(upsertTomlTable(result, header, block)).toBe(result);
+  it('Codex: the table as -c overrides, its variables passed by name', () => {
+    expect(browserGatewayArgs('codex')).toEqual([
+      '-c',
+      'mcp_servers.projekt-browser.command="/usr/local/libexec/volition-browser-gateway-mcp"',
+      '-c',
+      'mcp_servers.projekt-browser.args=[]',
+      '-c',
+      'mcp_servers.projekt-browser.env_vars=["ITSAPLAN_API_KEY","ITSAPLAN_RUN_ID","ITSAPLAN_MESSAGE_ID","BROWSER_GATEWAY_SOCKET"]',
+      '-c',
+      'mcp_servers.projekt-browser.tool_timeout_sec=1900',
+      '-c',
+      'mcp_servers.projekt-browser.default_tools_approval_mode="approve"',
+    ]);
   });
 
-  it('replaces a stale table in place, between two other tables, keeping both intact', () => {
-    const content =
-      '[mcp_servers.other]\ncommand = "other"\n\n' +
-      '[mcp_servers.projekt-browser]\n' +
-      'command = "/old/path"\n' +
-      'args = ["--stale"]\n\n' +
-      '[mcp_servers.after]\ncommand = "after"\n';
-
-    const result = upsertTomlTable(content, header, block);
-
-    expect(result).toBe(
-      '[mcp_servers.other]\ncommand = "other"\n\n' +
-        '[mcp_servers.projekt-browser]\n' +
-        'command = "/usr/local/libexec/volition-browser-gateway-mcp"\n' +
-        'args = []\n\n' +
-        '[mcp_servers.after]\ncommand = "after"\n',
-    );
-  });
-
-  it('removes the table (block null) and leaves the rest as it was', () => {
-    const content =
-      '[mcp_servers.other]\ncommand = "other"\n\n' +
-      '[mcp_servers.projekt-browser]\n' +
-      'command = "/old/path"\n\n' +
-      '[mcp_servers.after]\ncommand = "after"\n';
-
-    expect(upsertTomlTable(content, header, null)).toBe(
-      '[mcp_servers.other]\ncommand = "other"\n\n[mcp_servers.after]\ncommand = "after"\n',
-    );
-  });
-
-  it('removing a table that is not there leaves the file untouched', () => {
-    const content = '[mcp_servers.other]\ncommand = "other"\n';
-    expect(upsertTomlTable(content, header, null)).toBe(content);
-  });
-});
-
-describe('Browser gateway: Codex config.toml writer', () => {
-  async function dir(): Promise<string> {
-    const root = await mkdtemp(join(tmpdir(), 'itsaplan-codex-mcp-'));
-    roots.push(root);
-    return root;
-  }
-
-  it('creates config.toml when none exists yet', async () => {
-    const codexHome = await dir();
-    await new CodexMcpConfigWriter(codexHome).apply([gatewayServer]);
-    expect(await readFile(join(codexHome, 'config.toml'), 'utf8')).toBe(
-      '[mcp_servers.projekt-browser]\n' +
-        'command = "/usr/local/libexec/volition-browser-gateway-mcp"\n' +
-        'args = []\n',
-    );
-  });
-
-  it('adds its table next to tables a person or another tool already wrote, untouched', async () => {
-    const codexHome = await dir();
-    const original = '[mcp_servers.own]\ncommand = "own-server"\n\n[profile]\nmodel = "gpt"\n';
-    await writeFile(join(codexHome, 'config.toml'), original);
-
-    await new CodexMcpConfigWriter(codexHome).apply([gatewayServer]);
-
-    const written = await readFile(join(codexHome, 'config.toml'), 'utf8');
-    expect(written).toContain('[mcp_servers.own]\ncommand = "own-server"\n');
-    expect(written).toContain('[profile]\nmodel = "gpt"\n');
-    expect(written).toContain(
-      '[mcp_servers.projekt-browser]\ncommand = "/usr/local/libexec/volition-browser-gateway-mcp"\nargs = []',
-    );
-  });
-
-  it('updates a stale table in place, is idempotent, and removes it once the gateway is off', async () => {
-    const codexHome = await dir();
-    await writeFile(
-      join(codexHome, 'config.toml'),
-      '[mcp_servers.projekt-browser]\ncommand = "/old/path"\n',
-    );
-
-    const writer = new CodexMcpConfigWriter(codexHome);
-    await writer.apply([gatewayServer]);
-    const once = await readFile(join(codexHome, 'config.toml'), 'utf8');
-    expect(once).toContain('command = "/usr/local/libexec/volition-browser-gateway-mcp"');
-    expect(once).not.toContain('/old/path');
-
-    await writer.apply([gatewayServer]);
-    expect(await readFile(join(codexHome, 'config.toml'), 'utf8')).toBe(once);
-
-    await writer.apply([]);
-    expect(await readFile(join(codexHome, 'config.toml'), 'utf8')).toBe('');
+  it('only for an agent with Projekt-Browser on, keeping the last answer when Helena is away', async () => {
+    let servers: RuntimeMcpServer[] = [gatewayServer];
+    let reachable = true;
+    const client = {
+      runtimePolicy: async () => {
+        if (!reachable) throw new Error('offline');
+        return { ...withServers('sha256:one', servers) };
+      },
+    };
+    const gateway = new BrowserGatewayArgs(client, 'codex');
+    expect(await gateway.current()).toEqual(browserGatewayArgs('codex'));
+    reachable = false;
+    expect(await gateway.current()).toEqual(browserGatewayArgs('codex'));
+    reachable = true;
+    servers = [gatewayServer, legacyServer];
+    expect(await gateway.current()).toEqual([]);
+    servers = [];
+    expect(await gateway.current()).toEqual([]);
   });
 });

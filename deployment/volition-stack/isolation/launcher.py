@@ -294,18 +294,21 @@ class Launcher:
         }
 
     def browser_gateway_bind(self, slug: str) -> str | None:
-        """Read-only bind of this project's own browser-gateway socket into the unit, at the
-        fixed in-unit path every runtime's MCP shim looks for (see policy.ts's
-        BROWSER_GATEWAY_SHIM_PATH / packages/runner). The router (Node) listens on one socket
-        per provisioned project browser, `{root}/gateway-<slug>.sock` (Home: `gateway-home`),
-        and knows the caller's project from which socket accepted the connection -- so unlike
-        egress.sock/plan.sock this is per-project, not shared, and its source path depends on
-        `slug` the same way a project's own workspace/profile/vault binds do."""
-        if not self.config.browser_gateway_socket:
+        """Read-only bind of this project's own browser-gateway directory into the unit, at the
+        fixed in-unit path the MCP shim looks in (`<target>/gateway.sock`, see
+        packages/browser-gateway/src/shim-protocol.ts). The router listens on
+        `{root}/<slug>/gateway.sock` (Home: `home`) and knows the caller's project from the
+        socket that accepted it, so only the project's own directory is bound. Optional (`-`):
+        an agent of a project without a browser, or while the router is down, still starts;
+        its browser tools then answer that the gateway cannot be reached."""
+        if not self.config.browser_gateway:
             return None
-        root, target = self.config.browser_gateway_socket
-        source = os.path.join(root, f'gateway-{slug}.sock')
-        return f'BindReadOnlyPaths={_safe_path(source, "browser gateway socket")}:{_safe_path(target, "browser gateway socket target")}'
+        root, target = self.config.browser_gateway
+        source = os.path.join(root, slug)
+        return (
+            f'BindReadOnlyPaths=-{_safe_path(source, "browser gateway directory")}'
+            f':{_safe_path(target, "browser gateway target")}'
+        )
 
     def sandbox_properties(
         self,

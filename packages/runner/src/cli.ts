@@ -8,6 +8,7 @@ import { readLearnedSkills } from './learning';
 import { pythonVaultStore, WebLoginVault } from './logins';
 import {
   HermesPolicyMaterializer,
+  BrowserGatewayArgs,
   hermesPolicySynchronizer,
   type HermesPolicySynchronizer,
 } from './policy';
@@ -253,6 +254,16 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
   );
   const policy = hermesPolicySynchronizer(config, client);
   await policy?.ensure();
+  // Claude Code and Codex get the browser gateway on the command line of each run (Hermes
+  // gets it through its managed configuration, above).
+  const gateway =
+    config.agent === 'claude' || config.agent === 'codex'
+      ? new BrowserGatewayArgs(client, config.agent)
+      : null;
+  const withGateway = async (): Promise<RunnerConfig> => {
+    const extra = gateway ? await gateway.current() : [];
+    return extra.length > 0 ? { ...config, args: [...config.args, ...extra] } : config;
+  };
   if (config.models.length > 0) void publishCatalog(state, log, client, config);
   let chatSupported = true;
   const inFlight = new Map<number, Run>();
@@ -277,7 +288,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
         inFlight.set(run.id, run);
         try {
           await policy?.ensure();
-          await handle(state, config, client, log, run, policy);
+          await handle(state, await withGateway(), client, log, run, policy);
           policy?.inventoryChanged();
         } finally {
           inFlight.delete(run.id);
@@ -310,7 +321,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
       },
       async (message) => {
         await policy?.ensure();
-        await handleChat(config, client, log, message, policy);
+        await handleChat(await withGateway(), client, log, message, policy);
         policy?.inventoryChanged();
       },
       () => Promise.resolve(chatSupported),

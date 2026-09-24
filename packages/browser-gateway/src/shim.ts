@@ -33,4 +33,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) =>
   callGateway(request.params.name, request.params.arguments ?? {}),
 );
 
-await server.connect(new StdioServerTransport());
+// Built as CommonJS (no top-level await): the installed file has no extension, which Node
+// reads as CommonJS.
+server.connect(new StdioServerTransport()).catch((error: unknown) => {
+  process.stderr.write(`projekt-browser: ${error instanceof Error ? error.message : String(error)}\n`);
+  process.exit(1);
+});
