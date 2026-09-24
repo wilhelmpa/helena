@@ -23,8 +23,6 @@ const longRunning = [
   'volition-plan-worker.service',
   'volition-plan-web.service',
   'volition-hermes-runner.service',
-  'volition-hermes-team-bridge.service',
-  'volition-mastra.service',
   'volition-provisioning.service',
   'volition-project-browser-router.service',
   'volition-terminal.service',
@@ -43,20 +41,10 @@ test('no Volition service requires another one, so a restart of one restarts not
 
 test('the services around Plan start after what they use and ask for it', () => {
   const unit = (name) => units.find((item) => item.name === name).text;
-  for (const name of [
-    'volition-hermes-runner.service',
-    'volition-hermes-team-bridge.service',
-    'volition-provisioning.service',
-  ]) {
+  for (const name of ['volition-hermes-runner.service', 'volition-provisioning.service']) {
     expect(values(unit(name), 'After')).toContain('volition-plan-api.service');
     expect(values(unit(name), 'Wants')).toContain('volition-plan-api.service');
   }
-  expect(values(unit('volition-mastra.service'), 'After')).toContain(
-    'volition-hermes-team-bridge.service',
-  );
-  expect(values(unit('volition-mastra.service'), 'Wants')).toContain(
-    'volition-hermes-team-bridge.service',
-  );
 });
 
 test('every long-running service is restarted however often it fails, with a backoff', () => {

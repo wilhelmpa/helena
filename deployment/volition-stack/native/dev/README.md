@@ -10,8 +10,7 @@ database, so an edit never reaches the running system before it is merged and de
 | Database | `itsaplan` | `itsaplan_dev` (copy, refreshed on demand) |
 | API / web | `127.0.0.1:3000` / `:3001` | `127.0.0.1:3100` / `:3101` |
 | Entry | Nginx on port 80 | Nginx on the unix socket `/srv/volition/dev-run/plan-dev.sock` |
-| Mastra | `volition-mastra`, 127.0.0.1:4111 | `volition-mastra-dev`, 127.0.0.1:4211, own database |
-| Mastra to Plan bridge | `hermes-team.sock` → API :3000 | `hermes-team-dev.sock` → API :3100 |
+| Helena engine (workflows, agent teams, routines) | in the API, on | in the API, off (`HELENA_ENGINE=off`) |
 | Worker, provisioning, Hermes runner | yes | no (nothing is provisioned from dev; start a runner by hand to test agents) |
 
 The dev entry signs the owner in automatically, like the live local-owner mode. It is
@@ -42,9 +41,13 @@ copy is removed when the runner stops.
 
 `setup.sh` renders `/etc/volition/plan-dev.env` from the live `plan.env` without
 printing any value. It points the database at `itsaplan_dev`, moves the ports, removes
-the tool URLs and the Mastra control URL, and gives the dev instance its own local-owner
-token. It also builds the development Mastra instance from this worktree and installs
-`volition-mastra-dev` and `volition-hermes-team-bridge-dev`, which use their own tokens
-under `/etc/volition/dev`. After a change below `optional/mastra-studio`, rebuild it with
-`bun run build` there and restart `volition-mastra-dev`. Logs are written to
-`~/.local/state/plan-dev/`.
+the tool URLs and any `MASTRA_*` line left from before the Helena engine, and gives the
+dev instance its own local-owner token and control token (`/etc/volition/dev`). Logs are
+written to `~/.local/state/plan-dev/`.
+
+The Helena engine runs inside the API, so the dev API would run it on the copied database:
+the live instance's pending workflows, due schedules and queued runs would run a second
+time, webhooks included. The dev env therefore sets `HELENA_ENGINE=off`. To test workflows
+in dev, cancel the copied runs first, then set `HELENA_ENGINE=on` in
+`/etc/volition/plan-dev.env` and restart the API window; `refresh-db.sh` brings the live
+state back with the next copy.

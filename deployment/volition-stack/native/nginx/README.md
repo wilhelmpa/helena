@@ -34,41 +34,13 @@ curl -H 'Origin: http://kingston-server.local' -o /dev/null -sS -w '%{http_code}
 The expected responses are `401`, `403`, and `401`. The final request passes the
 Origin allowlist and then reaches the session gate.
 
-## Mastra Studio
+## Mastra Studio (removed)
 
-Studio is served below `/mastra/` to the instance owner only. `mastra-studio.conf` holds
-the locations: `auth_request` asks Plan's `/auth/verify/owner`, which answers 204 for an
-active session of the `god` user, and the request goes to the Mastra proxy on `:4111` with
-`X-Volition-Gateway-Token` set to `$volition_mastra_gateway_token`. The proxy refuses every
-Studio request without that token, so a local process that reaches `:4111` directly gets
-403. The trust model is in `optional/mastra-studio/ORCHESTRATION_CONTRACT.md`.
-
-`install-mastra-studio.sh`, run as root, is idempotent and does the following:
-
-1. Creates `/etc/volition/mastra-control.token` and `/etc/volition/mastra-gateway.token`
-   (`0600 root`, 32 random bytes as hex) when they are missing. `volition-mastra`,
-   `volition-plan-api` and `volition-plan-worker` load them with `LoadCredential=`.
-2. Writes `/etc/nginx/conf.d/volition-mastra-gateway.conf` (`0600 root`), the `map` that
-   defines `$volition_mastra_gateway_token` from the gateway token. The token never
-   appears in a command argument.
-3. Installs `mastra-studio.conf` as `/etc/nginx/snippets/volition-mastra-studio.conf` and
-   includes it in `/etc/nginx/sites-available/volition.conf` after the project terminal
-   include.
-4. Runs `nginx -t` and reloads Nginx, and restores the site file when either fails.
-
-`deploy.sh` runs it before it installs units, whenever the script or the snippet changed.
-Verify after the Mastra units run with the new tokens:
-
-```sh
-curl -o /dev/null -sS -w '%{http_code}\n' http://kingston-server.local/mastra/workflows  # 401
-curl -o /dev/null -sS -w '%{http_code}\n' http://127.0.0.1:4111/mastra/workflows         # 403
-curl -o /dev/null -sS -w '%{http_code}\n' -H 'X-Volition-Auth: verified' \
-  http://127.0.0.1:4111/mastra/api/workflows                                              # 403
-curl -o /dev/null -sS -w '%{http_code}\n' http://127.0.0.1:4112/mastra/api/workflows     # 401
-```
-
-In the browser, the owner opens `http://kingston-server.local/mastra/workflows`; another
-member gets 403.
+The Helena engine in the API replaced Mastra, so there is no `/mastra/` route any more.
+`deploy.sh` takes the Studio include out of `/etc/nginx/sites-available/volition.conf` on an
+instance that still has it, checks and reloads Nginx, and then deletes
+`/etc/nginx/snippets/volition-mastra-studio.conf` and
+`/etc/nginx/conf.d/volition-mastra-gateway.conf`. It restores the site when Nginx refuses it.
 
 ## KasmVNC UDP verification
 
