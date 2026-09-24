@@ -28,6 +28,7 @@ import {
   onRuntimeAnswer,
   queueRuntimeRequest,
 } from '#modules/agents/runtime-requests/service';
+import { mergeSameSubscriptions } from './merge';
 
 // How much of each subscription's limits is used (docs/helena-decisions/provider-limits.md).
 // The numbers come from the usage-limit sources (@helena/sdk usage-limits.ts): the runners
@@ -289,11 +290,13 @@ export async function listProviderLimits(now: Date = new Date()): Promise<{
     });
   }
   const schedule = await getSetting<{ lastAt?: string }>(SCHEDULE_KEY);
+  // One subscription seen through two logins is shown once (merge.ts).
+  const shown = mergeSameSubscriptions(accounts);
   return {
-    accounts,
+    accounts: shown,
     settings,
     probedAt: schedule?.lastAt ?? null,
-    state: worstState(accounts.map((account) => account.state)),
+    state: worstState(shown.map((account) => account.state)),
   };
 }
 
