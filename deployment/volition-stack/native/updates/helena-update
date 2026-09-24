@@ -325,8 +325,8 @@ def perform(config: dict, request: dict) -> dict:
         else:
             raise UpdateError("unknown action")
         return {"ok": True, "result": result, "log": log.text()}
-    except (UpdateError, subprocess.TimeoutExpired, OSError) as error:
-        return {"ok": False, "error": str(error)[:500], "log": log.text()}
+    except Exception as error:  # noqa: BLE001 - every failure is the answer, never a hang
+        return {"ok": False, "error": str(error)[:500] or type(error).__name__, "log": log.text()}
 
 
 # ── Spool ────────────────────────────────────────────────────────────────────────────────
