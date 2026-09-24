@@ -22,6 +22,7 @@ import {
 } from '@helena/knowledge';
 import { requireGod, requireUser } from '#shared/access';
 import { authContext } from '#shared/auth-context';
+import { requiresPermission } from '#shared/guards';
 import { HttpError } from '#shared/lib';
 import { isMcpRequest } from '#shared/mcp-request';
 import { commonErrors } from '#shared/responses';
@@ -160,6 +161,10 @@ export const everythingRoutes = new Elysia({
         description:
           'One ranked search over tasks, their comments, the notes and files of the knowledge vault (with the text of PDFs, scans and office files), mail, chats and agent runs, limited to what you may open. Each hit has a `ref` (read the whole item with read_knowledge), a short excerpt (matches in **bold**) and a `cite` Markdown link: when an answer uses what you found, put that link after the statement it supports. Narrow with `sources` (e.g. "vault,mail"), `project` (a key) or `folder` (a vault folder).',
         ...mcpTool('search_knowledge'),
+        // What the tool table and the agents' action catalog show it needs: the search
+        // spans every source, and each hit is filtered by the reader's reach (reach.ts);
+        // documents is the permission the tool always had.
+        ...requiresPermission(['documents', 'read']),
       },
     },
   )
