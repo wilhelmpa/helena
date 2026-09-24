@@ -28,7 +28,8 @@ const status = (fields: Record<string, unknown> = {}) => ({
       expiresAt: '2026-09-24T17:40:00Z',
       refreshedAt: null,
       error: 'Anthropic token refresh failed: HTTP 400 invalid_grant',
-      command: 'sudo -u volition-hermes env HERMES_HOME=/var/lib/volition/hermes hermes auth add anthropic',
+      command:
+        'sudo -u volition-hermes env HERMES_HOME=/var/lib/volition/hermes hermes auth add anthropic',
     },
     {
       store: 'hermes',

@@ -20,7 +20,10 @@ export function loginNeedsOwner(login: Pick<RuntimeLogin, 'state' | 'managed'>):
   return login.managed && (login.state === 'expired' || login.state === 'error');
 }
 
-export function loginStatus(login: Pick<RuntimeLogin, 'state' | 'managed'>, stale: boolean): Status {
+export function loginStatus(
+  login: Pick<RuntimeLogin, 'state' | 'managed'>,
+  stale: boolean,
+): Status {
   if (loginNeedsOwner(login)) return 'danger';
   if (stale || login.state === 'unknown' || login.state === 'expired') return 'idle';
   if (login.state === 'expiring' || login.state === 'error') return 'waiting';

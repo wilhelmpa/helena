@@ -191,6 +191,12 @@ class KeeperLogic(unittest.TestCase):
         self.keeper().tick(refresh=True)
         self.assertEqual(self.hermes.refreshed, ['a'])
 
+    def test_renew_refreshes_a_provider_now_once(self):
+        self.hermes.add('anthropic', Row('a', 'at', 'rt', ms(7 * 3600)))
+        self.hermes.add('openai-codex', Row('c', 'at', 'rt-c', ms(7 * 3600)))
+        self.keeper('--renew', 'anthropic').tick(refresh=True)
+        self.assertEqual(self.hermes.refreshed, ['a'])
+
     def test_rows_sharing_one_refresh_token_are_refreshed_once(self):
         self.hermes.add('openai-codex', Row('singleton', jwt(exp=int(time.time()) + 3600), 'rt', None))
         self.hermes.add('openai-codex', Row('alias', jwt(exp=int(time.time()) + 3600), 'rt', None))
@@ -209,6 +215,12 @@ class KeeperLogic(unittest.TestCase):
             '/opt/hermes/bin/hermes auth add anthropic --type oauth && sudo systemctl start helena-token-keeper.service'))
         self.keeper().tick(refresh=True)
         self.assertEqual(self.hermes.refreshed, ['a'])
+
+    def test_a_dead_login_signed_in_again_beside_it_is_no_longer_reported(self):
+        self.hermes.add('anthropic', Row('a', 'at', 'rt', ms(-60), last_status='dead'))
+        self.hermes.add('anthropic', Row('b', 'at2', 'rt2', ms(8 * 3600)))
+        status = self.keeper().tick(refresh=False)
+        self.assertEqual([(login['id'], login['state']) for login in status['logins']], [('b', 'ok')])
 
     def test_a_failed_early_refresh_lifts_the_bench_hermes_puts_on_a_working_login(self):
         self.hermes.add('anthropic', Row('a', 'at', 'rt', ms(3600)))

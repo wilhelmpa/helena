@@ -224,6 +224,9 @@ class Settings:
         self.quiet_poll = max(1, int(args.quiet_poll))
         # A login is refreshed at most this often by the keeper, however short its tokens live.
         self.min_gap = max(0, int(args.min_gap))
+        # Providers whose logins are renewed in this run whatever their expiry (a proof, or
+        # finding out early whether a login is still alive).
+        self.renew = frozenset(args.renew or ())
         self.runner_user = args.runner_user
         self.unit = args.unit
         self.hermes_bin = args.hermes_bin or str(Path(sys.executable).with_name('hermes'))
@@ -460,6 +463,8 @@ class Keeper:
             return None
         if getattr(entry, 'last_status', None) == self.hermes.STATUS_DEAD:
             return None
+        if provider in self.settings.renew and self.key(provider, entry) not in self.refreshed:
+            return 'prefer'
         expiry = self.hermes.expiry(provider, entry)
         if expiry is None:
             return None
@@ -712,6 +717,10 @@ class Keeper:
                     'error': record.get('error'), 'command': self.settings.relogin_command(provider),
                 })
         self.state.prune(seen_keys)
+        # A rejected login the owner has signed in again beside it (a new row of the same
+        # provider that works) is history, not a problem: Hermes prunes it after a day.
+        live = {login['provider'] for login in logins if login['store'] == 'hermes' and login['state'] != 'invalid'}
+        logins = [login for login in logins if not (login['state'] == 'invalid' and login['provider'] in live)]
         if codex is not None:
             expiry = codex.get('expiry')
             linked = codex.get('link') == 'linked'
@@ -804,6 +813,8 @@ def parse(argv: list[str]) -> argparse.Namespace:
     parser.add_argument('--quiet-wait', type=int, default=240, help='how long one run waits for no agent unit')
     parser.add_argument('--quiet-poll', type=int, default=15)
     parser.add_argument('--min-gap', type=int, default=1800, help='least seconds between two refreshes of a login')
+    parser.add_argument('--renew', action='append', metavar='PROVIDER',
+                        help='renew this provider\'s logins now (still waiting for a moment without agent units)')
     parser.add_argument('--runner-user', default=DEFAULT_RUNNER_USER)
     parser.add_argument('--unit', default=DEFAULT_UNIT)
     parser.add_argument('--hermes-bin')

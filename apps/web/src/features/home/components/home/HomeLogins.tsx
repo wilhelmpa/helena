@@ -31,7 +31,9 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
     }
     if (login.state === 'ok') {
       const left = login.expiresAt && now !== null ? Date.parse(login.expiresAt) - now : null;
-      return left !== null && left > 0 ? t('state.okFor', { time: formatCountdown(left) }) : t('state.ok');
+      return left !== null && left > 0
+        ? t('state.okFor', { time: formatCountdown(left) })
+        : t('state.ok');
     }
     return t(`state.${login.state}`);
   }

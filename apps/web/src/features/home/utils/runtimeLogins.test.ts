@@ -40,7 +40,10 @@ function health(logins: RuntimeLogin[], stale = false): RuntimeLoginsHealth {
 describe('runtime logins', () => {
   test('a rejected login is the owners, first', () => {
     const rows = loginRows(
-      health([login({}), login({ provider: 'anthropic', id: 'b2', state: 'invalid', command: 'x' })]),
+      health([
+        login({}),
+        login({ provider: 'anthropic', id: 'b2', state: 'invalid', command: 'x' }),
+      ]),
     );
     assert.deepEqual(
       rows.map((row) => [row.login.provider, row.needsOwner, row.status]),

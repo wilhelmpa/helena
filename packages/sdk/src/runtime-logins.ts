@@ -114,7 +114,9 @@ function loginFrom(value: unknown): RuntimeLogin | null {
     id,
     label: text(raw.label, 120),
     managed: raw.managed === true,
-    state: STATES.has(raw.state as RuntimeLoginState) ? (raw.state as RuntimeLoginState) : 'unknown',
+    state: STATES.has(raw.state as RuntimeLoginState)
+      ? (raw.state as RuntimeLoginState)
+      : 'unknown',
     expiresAt: isoDate(raw.expiresAt),
     refreshedAt: isoDate(raw.refreshedAt),
     error: text(raw.error, 300),
