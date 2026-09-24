@@ -19,6 +19,7 @@ import {
 } from '@repo/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { stopEngine } from '#modules/engine/dbos';
+import { createAgent } from '#tests/helpers/agents';
 import { resetDb } from '#tests/helpers/db';
 import {
   cancelLeftovers,
@@ -211,17 +212,24 @@ describe('engine chaos', () => {
     expect([...executors.values()].every((id) => ['chaos-1', 'chaos-2'].includes(id))).toBe(true);
 
     // A routine whose time has come: both replicas tick, one run.
-    const routine = (
-      await ctx.asOwner.projects({ projectKey: 'MKT' }).routines.post({
-        idempotencyKey: crypto.randomUUID(),
-        agentId: ctx.coder.id,
-        title: 'Daily check',
-        instructions: 'Check the site.',
-        mode: 'new',
-        cron: '0 9 * * *',
-        catchUp: 'once',
+    const checker = (
+      await createAgent(ctx.asOwner, 'MKT', {
+        name: 'Checker',
+        username: 'checker',
+        triggerOnAssign: true,
       } as never)
-    ).data!;
+    ).data!.agent;
+    const created = await ctx.asOwner.projects({ projectKey: 'MKT' }).routines.post({
+      idempotencyKey: crypto.randomUUID(),
+      agentId: checker.id,
+      title: 'Daily check',
+      instructions: 'Check the site.',
+      mode: 'new',
+      cron: '0 9 * * *',
+      catchUp: 'once',
+    });
+    expect(created.status).toBe(201);
+    const routine = created.data!;
     await db
       .update(helenaSchedule)
       .set({ firedThrough: new Date(Date.now() - 2 * 86_400_000) })
@@ -241,10 +249,10 @@ describe('engine chaos', () => {
     routineRuns = await db.select().from(pipelineRun).where(eq(pipelineRun.scheduleId, routine.id));
     expect(routineRuns).toHaveLength(1);
     expect(routineRuns[0]).toMatchObject({ status: 'succeeded', trigger: 'schedule' });
-    const created = await db
+    const tasksOfRoutine = await db
       .select({ id: issueTable.id })
       .from(issueTable)
       .where(and(eq(issueTable.projectId, ctx.projectId), eq(issueTable.title, 'Daily check')));
-    expect(created).toHaveLength(1);
+    expect(tasksOfRoutine).toHaveLength(1);
   });
 });
