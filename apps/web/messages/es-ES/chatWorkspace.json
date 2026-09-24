@@ -122,7 +122,9 @@
     "dictationFailed": "No se pudo iniciar el dictado.",
     "dictationBlocked": "El navegador no ha permitido el micrófono. Permítelo en la configuración del sitio.",
     "dictationInsecureTitle": "El dictado necesita una conexión segura",
-    "dictationInsecure": "Los navegadores solo prestan el micrófono a páginas HTTPS. Hasta que Helena funcione con HTTPS: abre chrome://flags en Chrome, activa «Insecure origins treated as secure» y añade {origin}. El quiosco ya lo permite."
+    "dictationInsecure": "Los navegadores solo prestan el micrófono a páginas HTTPS. Hasta que Helena funcione con HTTPS: abre chrome://flags en Chrome, activa «Insecure origins treated as secure» y añade {origin}. El quiosco ya lo permite.",
+    "autoSpeak": "Leer las respuestas en voz alta automáticamente",
+    "autoSpeakOn": "Las respuestas se leen en voz alta: haz clic para desactivarlo"
   },
   "artifact": {
     "title": "Artefacto",

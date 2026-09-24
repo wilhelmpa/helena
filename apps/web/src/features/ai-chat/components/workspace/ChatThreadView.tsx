@@ -18,6 +18,9 @@ import ChatComposer from './ChatComposer';
 import ChatNewChatIntro from './ChatNewChatIntro';
 import ChatRestoreError from './ChatRestoreError';
 import { activeTool, composerActivity, pendingChoices } from '../../utils/composerActivity';
+import { useAutoSpeak } from '../../hooks/useAutoSpeak';
+import { messageText } from '../../utils/chatMessages';
+import { speak } from '../../utils/speak';
 import type { QueuedMessage } from './ChatQueuedMessages';
 
 type Queued = QueuedMessage & { options: PlanSendOptions; metadata: PlanChatMetadata };
@@ -111,6 +114,23 @@ export default function ChatThreadView({
   useEffect(() => {
     if (activity === 'failed' || activity === 'sendFailed') setQueuePaused(true);
   }, [activity]);
+  // Voice mode: with "read answers aloud" on, an answer is spoken as soon as it is
+  // complete (not one that was stopped or failed).
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  const wasBusy = useRef(false);
+  useEffect(() => {
+    if (plan.busy) {
+      wasBusy.current = true;
+      return;
+    }
+    if (!wasBusy.current) return;
+    wasBusy.current = false;
+    const last = plan.messages.at(-1);
+    if (!autoSpeak || last?.role !== 'assistant') return;
+    if (last.metadata?.stopped || last.metadata?.error || last.metadata?.interrupted) return;
+    speak(messageText(last));
+  }, [plan.busy, plan.messages, autoSpeak]);
+
   // One send per turn: between handing a message to the chat and the chat reporting it
   // busy there is a render in which it still looks idle; the next status change (the
   // send taken, or refused) opens the gate again.
@@ -173,6 +193,8 @@ export default function ChatThreadView({
         onRemoveQueued={(id) => setQueue((current) => current.filter((item) => item.id !== id))}
         choices={activity === 'answered' ? pendingChoices(plan.messages) : null}
         contextTokens={summary.data?.contextTokens}
+        autoSpeak={autoSpeak}
+        onAutoSpeakChange={setAutoSpeak}
         threadId={threadId}
         projectKey={projectKey}
         draft={threadId == null ? newChatDraft : undefined}

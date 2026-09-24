@@ -122,7 +122,9 @@
     "dictationFailed": "Das Diktat konnte nicht gestartet werden.",
     "dictationBlocked": "Der Browser hat das Mikrofon nicht freigegeben. Erlaube es in den Website-Einstellungen.",
     "dictationInsecureTitle": "Diktieren braucht eine sichere Verbindung",
-    "dictationInsecure": "Der Browser gibt das Mikrofon nur über HTTPS frei. Bis Helena über HTTPS läuft: in Chrome chrome://flags öffnen, „Insecure origins treated as secure“ aktivieren und {origin} eintragen. Im Kiosk ist es bereits freigeschaltet."
+    "dictationInsecure": "Der Browser gibt das Mikrofon nur über HTTPS frei. Bis Helena über HTTPS läuft: in Chrome chrome://flags öffnen, „Insecure origins treated as secure“ aktivieren und {origin} eintragen. Im Kiosk ist es bereits freigeschaltet.",
+    "autoSpeak": "Antworten automatisch vorlesen",
+    "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken"
   },
   "artifact": {
     "title": "Artefakt",

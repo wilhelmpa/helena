@@ -22,6 +22,7 @@ import type { ChatAgentState } from '../../utils/agentPresence';
 import type { ComposerActivity, PendingChoices } from '../../utils/composerActivity';
 import { AgentContextSize } from '@/components/common/agent-chat/AgentContextSize';
 import ChatDictationButton from './ChatDictationButton';
+import ChatAutoSpeakToggle from './ChatAutoSpeakToggle';
 import ChatQueuedMessages, { type QueuedMessage } from './ChatQueuedMessages';
 import ChatChoiceChips from './ChatChoiceChips';
 import ChatComposerAttachments, { type PendingAttachment } from './ChatComposerAttachments';
@@ -54,6 +55,9 @@ export interface ChatComposerProps {
   // The conversation's context size after its last answer (see AgentContextSize);
   // undefined while none has completed.
   contextTokens: number | null | undefined;
+  // Voice mode: answers are read aloud when complete.
+  autoSpeak: boolean;
+  onAutoSpeakChange: (on: boolean) => void;
   threadId: string | null;
   projectKey: string | null;
   // Where a new chat's text is kept while its agent is still being picked.
@@ -96,6 +100,8 @@ export default function ChatComposer({
   onRemoveQueued,
   choices,
   contextTokens,
+  autoSpeak,
+  onAutoSpeakChange,
   threadId,
   projectKey,
   draft,
@@ -372,6 +378,7 @@ export default function ChatComposer({
                 requestAnimationFrame(resize);
               }}
             />
+            <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
             <ChatAgentMenu agent={agent} agents={agents} states={states} onPick={onPickAgent} />
             <ChatModelPicker
               scopeKey={scopeKey}

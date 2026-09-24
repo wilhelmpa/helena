@@ -122,7 +122,9 @@
     "dictationFailed": "Не удалось начать диктовку.",
     "dictationBlocked": "Браузер не разрешил доступ к микрофону. Разрешите его в настройках сайта.",
     "dictationInsecureTitle": "Для диктовки нужно защищённое соединение",
-    "dictationInsecure": "Браузеры дают доступ к микрофону только страницам HTTPS. Пока Helena не работает по HTTPS: откройте chrome://flags в Chrome, включите «Insecure origins treated as secure» и добавьте {origin}. В киоске это уже разрешено."
+    "dictationInsecure": "Браузеры дают доступ к микрофону только страницам HTTPS. Пока Helena не работает по HTTPS: откройте chrome://flags в Chrome, включите «Insecure origins treated as secure» и добавьте {origin}. В киоске это уже разрешено.",
+    "autoSpeak": "Автоматически зачитывать ответы",
+    "autoSpeakOn": "Ответы зачитываются вслух — нажмите, чтобы выключить"
   },
   "artifact": {
     "title": "Артефакт",

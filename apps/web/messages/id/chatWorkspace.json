@@ -122,7 +122,9 @@
     "dictationFailed": "Dikte tidak dapat dimulai.",
     "dictationBlocked": "Browser tidak mengizinkan mikrofon. Izinkan di pengaturan situs.",
     "dictationInsecureTitle": "Dikte memerlukan koneksi aman",
-    "dictationInsecure": "Browser hanya meminjamkan mikrofon ke halaman HTTPS. Sampai Helena berjalan di HTTPS: buka chrome://flags di Chrome, aktifkan “Insecure origins treated as secure” dan tambahkan {origin}. Kios sudah mengizinkannya."
+    "dictationInsecure": "Browser hanya meminjamkan mikrofon ke halaman HTTPS. Sampai Helena berjalan di HTTPS: buka chrome://flags di Chrome, aktifkan “Insecure origins treated as secure” dan tambahkan {origin}. Kios sudah mengizinkannya.",
+    "autoSpeak": "Bacakan jawaban secara otomatis",
+    "autoSpeakOn": "Jawaban dibacakan – klik untuk mematikan"
   },
   "artifact": {
     "title": "Artefak",

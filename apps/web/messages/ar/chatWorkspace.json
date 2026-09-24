@@ -122,7 +122,9 @@
     "dictationFailed": "تعذّر بدء الإملاء.",
     "dictationBlocked": "لم يسمح المتصفح باستخدام الميكروفون. اسمح به من إعدادات الموقع.",
     "dictationInsecureTitle": "الإملاء يحتاج إلى اتصال آمن",
-    "dictationInsecure": "لا تتيح المتصفحات الميكروفون إلا لصفحات HTTPS. إلى أن تعمل Helena عبر HTTPS: افتح chrome://flags في Chrome وفعّل “Insecure origins treated as secure” وأضف {origin}. الكشك يسمح بذلك مسبقًا."
+    "dictationInsecure": "لا تتيح المتصفحات الميكروفون إلا لصفحات HTTPS. إلى أن تعمل Helena عبر HTTPS: افتح chrome://flags في Chrome وفعّل “Insecure origins treated as secure” وأضف {origin}. الكشك يسمح بذلك مسبقًا.",
+    "autoSpeak": "قراءة الإجابات بصوت عالٍ تلقائيًا",
+    "autoSpeakOn": "تُقرأ الإجابات بصوت عالٍ – انقر للإيقاف"
   },
   "artifact": {
     "title": "المُصنَّع",

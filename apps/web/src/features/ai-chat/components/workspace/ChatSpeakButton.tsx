@@ -4,59 +4,39 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Square, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { canSpeak, speak, stopSpeaking } from '../../utils/speak';
 import { speechText } from '../../utils/speechText';
 
-// The voice that fits the page's language best: an exact match ("de-DE"), then any voice
-// of the language, then the browser's default.
-function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-  const voices = window.speechSynthesis.getVoices();
-  const short = lang.slice(0, 2).toLowerCase();
-  return (
-    voices.find((voice) => voice.lang.toLowerCase() === lang.toLowerCase()) ??
-    voices.find((voice) => voice.lang.toLowerCase().startsWith(short))
-  );
-}
-
 // Reads an answer aloud (owner, 2026-09-24: "voice"): its words without the Markdown
-// around them (speechText), in the page's language, and stops on a second press or
-// when the message leaves the view. Works on plain http, unlike dictation.
+// around them, in the page's language, and stops on a second press or when the message
+// leaves the view. Works on plain http, unlike dictation.
 export default function ChatSpeakButton({ text }: { text: string }) {
   const t = useTranslations('common.agentChat');
   const [supported, setSupported] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const utterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const mine = useRef(false);
 
   useEffect(() => {
-    setSupported('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window);
+    setSupported(canSpeak());
     return () => {
-      if (utterance.current) window.speechSynthesis.cancel();
+      if (mine.current) stopSpeaking();
     };
   }, []);
 
-  const spoken = speechText(text);
-  if (!supported || !spoken) return null;
+  if (!supported || !speechText(text)) return null;
 
   function toggle() {
-    window.speechSynthesis.cancel();
     if (speaking) {
-      utterance.current = null;
+      stopSpeaking();
+      mine.current = false;
       setSpeaking(false);
       return;
     }
-    const lang = document.documentElement.lang || navigator.language || 'de-DE';
-    const next = new SpeechSynthesisUtterance(spoken);
-    next.lang = lang;
-    const voice = pickVoice(lang);
-    if (voice) next.voice = voice;
-    const finish = () => {
-      if (utterance.current === next) utterance.current = null;
+    mine.current = speak(text, () => {
+      mine.current = false;
       setSpeaking(false);
-    };
-    next.onend = finish;
-    next.onerror = finish;
-    utterance.current = next;
-    setSpeaking(true);
-    window.speechSynthesis.speak(next);
+    });
+    setSpeaking(mine.current);
   }
 
   const label = speaking ? t('stopReading') : t('readAloud');
