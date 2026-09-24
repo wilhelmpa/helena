@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { totpCode, totpSecondsRemaining, parseTotpSecret } from './totp';
+import { parseTotpSecret, TotpSecretError, totpCode, totpSecondsRemaining } from './totp';
 
 // RFC 6238 Appendix B test vectors use the ASCII seed "12345678901234567890" (SHA1, 20
 // bytes), base32-encoded below, with 8-digit codes and a few known timestamps.
@@ -47,12 +47,21 @@ describe('parseTotpSecret', () => {
     const parsed = parseTotpSecret(
       `otpauth://totp/x?secret=${RFC6238_SHA1_SECRET_BASE32}&digits=8&period=60&algorithm=SHA256`,
     );
-    expect(parsed).toEqual({
-      seed: RFC6238_SHA1_SECRET_BASE32,
-      digits: 8,
-      period: 60,
-      algorithm: 'SHA256',
-    });
+    expect(parsed.secret.base32).toBe(RFC6238_SHA1_SECRET_BASE32);
+    expect([parsed.digits, parsed.period, parsed.algorithm]).toEqual([8, 60, 'SHA256']);
+  });
+
+  it("refuses what Hermes' vault refuses, with a message for the person", () => {
+    for (const value of [
+      'otpauth://hotp/x?secret=JBSWY3DPEHPK3PXP',
+      'otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&digits=9',
+      'otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&algorithm=MD5',
+      'otpauth://totp/x',
+      'JBSWY3DPEHPK3PX1',
+      '',
+    ]) {
+      expect(() => parseTotpSecret(value)).toThrow(TotpSecretError);
+    }
   });
 });
 

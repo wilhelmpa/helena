@@ -56,7 +56,7 @@ function schema(properties: Record<string, unknown>, required: string[] = []) {
   };
 }
 
-export const BROWSER_TOOLS: ToolDef[] = [
+const DEFINED_TOOLS: ToolDef[] = [
   {
     name: 'browser_navigate',
     category: 'write',
@@ -509,6 +509,21 @@ export const BROWSER_TOOLS: ToolDef[] = [
     ),
   },
 ];
+
+// The tools that only concern the lock, the owner and the downloads Helena already holds;
+// every other tool acts on, or reads, pages of the open web (MCP's openWorldHint).
+const LOCAL_TOOLS = new Set([
+  'browser_status',
+  'browser_acquire',
+  'browser_release',
+  'browser_handover',
+  'browser_downloads',
+]);
+
+export const BROWSER_TOOLS: ToolDef[] = DEFINED_TOOLS.map((tool) => ({
+  ...tool,
+  annotations: { openWorldHint: !LOCAL_TOOLS.has(tool.name), ...tool.annotations },
+}));
 
 // Tools that need the lock held before they act (everything that touches the page or a
 // tab); browser_status/browser_acquire/browser_release manage the lock itself and are

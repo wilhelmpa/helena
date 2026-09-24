@@ -12,11 +12,13 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "patchright-core": "1.63.0"
+    "patchright-core": "1.63.0",
+    "pngjs": "^7.0.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@types/bun": "latest",
+    "@types/pngjs": "^6.0.5",
     "eslint": "^9.39.0",
     "typescript": "^6.0.3"
   }

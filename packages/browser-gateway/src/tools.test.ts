@@ -112,9 +112,14 @@ describe('action categories (Helena agent tools)', () => {
 
   it('are shown to MCP clients as annotations and _meta', () => {
     const listed = mcpToolOf(toolByName('browser_snapshot')!);
-    expect(listed.annotations.readOnlyHint).toBe(true);
+    expect(listed.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: true });
     expect(listed._meta).toEqual({ 'helena/action': 'read' });
-    expect(mcpToolOf(toolByName('browser_click')!).annotations.readOnlyHint).toBe(false);
+    expect(mcpToolOf(toolByName('browser_click')!).annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      openWorldHint: true,
+    });
+    expect(mcpToolOf(toolByName('browser_status')!).annotations.openWorldHint).toBe(false);
   });
 });
 
@@ -136,5 +141,21 @@ describe('normalizeArgs', () => {
 
   it('keeps the standard name when both are given', () => {
     expect(normalizeArgs({ ref: 'e1', target: 'e2' })).toEqual({ target: 'e2' });
+  });
+});
+
+describe('ACTION_CATEGORIES', () => {
+  it('mirrors the order @helena/sdk decided (D-C1)', () => {
+    expect([...ACTION_CATEGORIES]).toEqual([
+      'read',
+      'report',
+      'write',
+      'send',
+      'publish',
+      'execute',
+      'delete',
+      'pay',
+      'credentials',
+    ]);
   });
 });

@@ -8,14 +8,17 @@ import type { RunnerAgent } from '../agents/runner/service';
 // hub/autopilot's policy engine are in the hub, decideBrowserAction becomes
 // `decide(registry.policies, { agent, project, action: category, context })`; until then no
 // policy applies and every call is allowed, as it always was.
+// mirror of @helena/sdk ACTION_CATEGORIES (orchestrator decision D-C1), in rising risk.
 export const ACTION_CATEGORIES = [
   'read',
+  'report',
   'write',
-  'execute',
   'send',
-  'delete',
   'publish',
+  'execute',
+  'delete',
   'pay',
+  'credentials',
 ] as const;
 export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
 

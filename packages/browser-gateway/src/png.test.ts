@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { deflateSync } from 'node:zlib';
+import { crc32, deflateSync } from 'node:zlib';
 import { decodePng, encodePng, maskPng } from './png';
 
 function image(width: number, height: number, channels: 3 | 4, fill: number) {
@@ -7,17 +7,16 @@ function image(width: number, height: number, channels: 3 | 4, fill: number) {
 }
 
 describe('png', () => {
-  it('round-trips an RGBA and an RGB image', () => {
-    for (const channels of [3, 4] as const) {
-      const source = image(7, 5, channels, 200);
-      source.pixels[3] = 9;
-      const decoded = decodePng(encodePng(source));
-      expect(decoded).toEqual(source);
-    }
+  it('round-trips an RGBA image, and reads an RGB one as RGBA', () => {
+    const source = image(7, 5, 4, 200);
+    source.pixels[3] = 9;
+    expect(decodePng(encodePng(source))).toEqual(source);
+    const rgb = decodePng(encodePng(image(2, 1, 3, 40)));
+    expect([...rgb.pixels]).toEqual([40, 40, 40, 255, 40, 40, 40, 255]);
   });
 
-  it('reads every PNG row filter', () => {
-    // A 2x2 RGB image written with filters Sub (1) and Paeth (4), the way other encoders do.
+  it('reads the row filters other encoders use', () => {
+    // A 2x2 RGB image written with filters Sub (1) and Paeth (4).
     const width = 2;
     const rows = [
       [1, 10, 20, 30, 5, 5, 5], // Sub: second pixel = first + 5
@@ -32,7 +31,9 @@ describe('png', () => {
       const head = Buffer.alloc(8);
       head.writeUInt32BE(data.length, 0);
       head.write(type, 4, 'latin1');
-      return Buffer.concat([head, data, Buffer.alloc(4)]);
+      const crc = Buffer.alloc(4);
+      crc.writeUInt32BE(crc32(Buffer.concat([head.subarray(4), data])), 0);
+      return Buffer.concat([head, data, crc]);
     };
     const png = Buffer.concat([
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
@@ -41,7 +42,9 @@ describe('png', () => {
       chunk('IEND', Buffer.alloc(0)),
     ]);
     const decoded = decodePng(png);
-    expect([...decoded.pixels]).toEqual([10, 20, 30, 15, 25, 35, 11, 21, 31, 15, 25, 35]);
+    expect([...decoded.pixels]).toEqual([
+      10, 20, 30, 255, 15, 25, 35, 255, 11, 21, 31, 255, 15, 25, 35, 255,
+    ]);
   });
 
   it('covers a rectangle opaque and leaves the rest', () => {
@@ -59,7 +62,8 @@ describe('png', () => {
   it('scales CSS rectangles to image pixels and clips at the edges', () => {
     const source = image(8, 8, 3, 0);
     const masked = decodePng(maskPng(encodePng(source), [{ x: 3, y: 3, width: 5, height: 5 }], 2));
-    expect(masked.pixels[(7 * 8 + 7) * 3]).toBe(17);
+    expect(masked.pixels[(7 * 8 + 7) * 4]).toBe(17);
+    expect(masked.pixels[0]).toBe(0);
   });
 
   it('returns the picture unchanged when nothing is covered, and refuses what it cannot read', () => {
