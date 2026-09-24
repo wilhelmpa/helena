@@ -20,16 +20,16 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
   const t = useTranslations('organization');
 
   return (
-    <section className="space-y-4 rounded-lg border p-4">
+    <section className="space-y-4 rounded-lg border bg-card p-4">
       <div>
-        <h2 className="text-sm font-medium">{t('orchestration.teamTitle')}</h2>
+        <h2 className="text-md font-medium">{t('orchestration.teamTitle')}</h2>
         <p className="text-xs text-muted-foreground">{t('orchestration.teamDescription')}</p>
       </div>
       {ROLES.map((role) => {
         const members = agents.filter((agent) => organizationAgentRole(agent) === role);
         return (
           <div key={role} className="space-y-1.5">
-            <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <h3 className="text-xs font-medium text-muted-foreground">
               {t(`roles.${role}`)} <span className="tabular-nums">{members.length}</span>
             </h3>
             {members.length === 0 ? (
@@ -55,7 +55,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                       {agent.capabilities.map((capability) => (
                         <span
                           key={capability}
-                          className="rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                          className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground"
                         >
                           {capability}
                         </span>

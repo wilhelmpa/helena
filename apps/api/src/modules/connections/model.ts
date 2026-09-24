@@ -32,6 +32,9 @@ export const ConnectionItem = t.Object({
 
 export const ConnectionsResponse = t.Object({
   checkedAt: t.String(),
+  // Whether this server has a connections service at all; without one the list is
+  // empty because nothing can be checked, not because nothing is connected.
+  configured: t.Boolean(),
   items: t.Array(ConnectionItem),
 });
 export const ConnectionActionBody = t.Object({

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
 import { useIssueBySeqQuery } from '@/services/issues.service';
 import { useAccountPreferences } from '@/services/preferences.service';
@@ -17,14 +17,19 @@ import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
 import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
 import { projectPath, issuePath } from '@/utils/paths';
 import { useKioskDisplay } from '@/utils/kioskDisplay';
+import { createHeaderExtraStore } from '@/utils/headerExtraStore';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
 import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/shellContext';
+import { ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/AppSidebar';
 import AppHeader from '@/components/layout/AppHeader';
 import CommandLayer from '@/components/layout/CommandLayer';
 import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
+import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
 import ShellOverlays from '@/components/layout/ShellOverlays';
 import WorkspacePanel from '@/components/layout/WorkspacePanel';
 import { useTranslations } from 'next-intl';
@@ -43,7 +48,8 @@ export default function Shell({
   children: ReactNode;
   defaultSidebarOpen?: boolean;
   globalHome?: boolean;
-  globalTitle?: ReactNode;
+  // The page name on a Home-level page; the header shows it as "Start › page".
+  globalTitle?: string;
   autoOpenGlobalChat?: boolean;
 }) {
   const t = useTranslations('nav');
@@ -69,7 +75,18 @@ export default function Shell({
   // What the active page put into the single-row header's middle slot (its view
   // tabs/filter bar); see useShellHeaderExtra. Unused, and always empty, in
   // 'classic' layout, where the page renders that row itself instead.
-  const [headerExtra, setHeaderExtra] = useState<ReactNode>(null);
+  const [headerExtra] = useState(createHeaderExtraStore);
+  // The single-row header's page slot, where a page's title bar puts its actions (see
+  // WorkspacePageHeader). A DOM element, set once by AppHeader's ref callback — not a
+  // React element, so it never re-renders the page in a loop.
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  // Below 1024px (a phone, a tablet, a narrow window) the header row has room only for
+  // where you are and the app's tools, so a page's toolbar goes into its own 44px row
+  // right under it instead — the same row on every page (owner, 2026-09-24: "mobile
+  // muss alles richtig gut aussehen").
+  const [pageBarSlot, setPageBarSlot] = useState<HTMLElement | null>(null);
+  const narrow = useMediaQuery('(max-width: 1023px)');
+  const pageSlot = headerLayout === 'single' ? (narrow ? pageBarSlot : headerSlot) : null;
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kioskDual = useKioskDisplay() === 'dual';
@@ -94,12 +111,20 @@ export default function Shell({
     setOpen: setWorkspaceOpen,
   } = workspacePanel;
 
+  // A page that already is a tool (code, inbox, chat) does not also show that tool in
+  // the panel beside it — two chats side by side, one of them not the page's.
+  const pathname = usePathname();
   useEffect(() => {
-    const routedTool = route.sub === 'code' || route.sub === 'inbox' ? route.sub : null;
+    const routedTool =
+      route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
+        ? route.sub
+        : pathname === '/chat'
+          ? 'chat'
+          : null;
     if (routedTool && workspaceOpen && activeWorkspaceTool === routedTool) {
       setWorkspaceOpen(false);
     }
-  }, [activeWorkspaceTool, route.sub, setWorkspaceOpen, workspaceOpen]);
+  }, [activeWorkspaceTool, route.sub, pathname, setWorkspaceOpen, workspaceOpen]);
 
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.
@@ -182,106 +207,124 @@ export default function Shell({
     chatThreadRequest,
     onChatThreadHandled: () => setChatThreadRequest(null),
     headerLayout,
-    setHeaderExtra,
+    headerExtra,
   };
 
   return (
     <ShellCtx.Provider value={context}>
-      <SidebarProvider
-        open={navigation.sidebarOpen}
-        onOpenChange={navigation.setSidebarOpen}
-        className="h-svh overflow-hidden"
-      >
-        <AppSidebar
-          projects={projects}
-          currentProjectKey={projectKey}
-          onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-          onNewProject={() => overlays.setShowNewProject(true)}
-        />
-        <SidebarInset className="min-w-0">
-          <AppHeader
-            title={
-              globalHome ? (
-                (globalTitle ?? t('home'))
-              ) : (
-                <ShellHeaderTitle
-                  route={route}
-                  projectName={project?.project.name ?? t('project')}
-                  issueIdentifier={issueQuery.data?.identifier ?? null}
-                  issueParent={issueQuery.data?.parent ?? null}
-                />
-              )
-            }
-            hasProject={!!project}
-            onOpenCommand={() => overlays.setShowCommand(true)}
+      <ShellHeaderSlotCtx.Provider value={pageSlot}>
+        <SidebarProvider
+          open={navigation.sidebarOpen}
+          onOpenChange={navigation.setSidebarOpen}
+          className="h-svh overflow-hidden"
+        >
+          <AppSidebar
+            projects={projects}
+            currentProjectKey={projectKey}
+            onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+            onNewProject={() => overlays.setShowNewProject(true)}
+          />
+          <SidebarInset className="min-w-0">
+            <AppHeader
+              title={
+                globalHome ? (
+                  globalTitle ? (
+                    <HeaderCrumbs
+                      items={[{ label: t('home'), href: '/' }, { label: globalTitle }]}
+                    />
+                  ) : (
+                    t('home')
+                  )
+                ) : (
+                  <ShellHeaderTitle
+                    route={route}
+                    projectName={project?.project.name ?? t('project')}
+                    issueIdentifier={issueQuery.data?.identifier ?? null}
+                    issueParent={issueQuery.data?.parent ?? null}
+                  />
+                )
+              }
+              hasProject={!!project}
+              onOpenCommand={() => overlays.setShowCommand(true)}
+              onNewIssue={openNewIssue}
+              workspaceOpen={workspacePanel.open}
+              activeWorkspaceTool={workspacePanel.activeTool}
+              onSelectWorkspaceTool={selectWorkspaceTool}
+              headerLayout={headerLayout}
+              headerExtra={narrow ? null : headerExtra}
+              pageSlotRef={setHeaderSlot}
+            />
+            {headerLayout === 'single' && narrow && (
+              <div
+                ref={setPageBarSlot}
+                data-slot="app-page-bar"
+                className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden [&:not(:has(>:not(:empty)))]:hidden"
+              >
+                <ShellHeaderExtra store={headerExtra} bare />
+              </div>
+            )}
+
+            {errorMsg && !forbidden && (
+              <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                {errorMsg}
+              </div>
+            )}
+
+            <div className="relative flex min-h-0 flex-1 overflow-hidden">
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                <ShellBody
+                  forbidden={forbidden}
+                  hasProject={!!project}
+                  hasError={!!errorMsg}
+                  projectsLoaded={projectsLoaded}
+                  projectCount={projects.length}
+                  allowNoProject={globalHome}
+                >
+                  {children}
+                </ShellBody>
+              </div>
+
+              <WorkspacePanel
+                open={workspacePanel.open}
+                activeTool={workspacePanel.activeTool}
+                contextProjectKey={projectKey}
+                toolSession={workspacePanel.toolSession}
+                splitTool={workspacePanel.splitTool}
+                onSplitToolChange={workspacePanel.setSplitTool}
+                mode={workspacePanel.mode}
+                fullscreen={workspacePanel.fullscreen}
+                onToggleMode={workspacePanel.toggleMode}
+                onToggleFullscreen={workspacePanel.toggleFullscreen}
+                pinned={workspacePanel.pinned}
+                onClose={() => workspacePanel.setOpen(false)}
+              />
+            </div>
+          </SidebarInset>
+
+          <CommandLayer
+            open={overlays.showCommand}
+            onOpenChange={overlays.setShowCommand}
+            projects={projects}
+            currentProjectKey={projectKey}
+            onBoard={route.onBoard}
+            view={editor.view}
+            currentIssueId={currentIssueId}
+            onViewChange={editor.changeView}
             onNewIssue={openNewIssue}
-            workspaceOpen={workspacePanel.open}
-            activeWorkspaceTool={workspacePanel.activeTool}
-            onSelectWorkspaceTool={selectWorkspaceTool}
-            headerLayout={headerLayout}
-            headerExtra={headerExtra}
+            // Handled by the kanban board's selection provider (mounted only on the
+            // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
+            onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
+            onNewInitiative={() => overlays.setShowNewInitiative(true)}
+            onNewProject={() => overlays.setShowNewProject(true)}
+            onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+            onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
+            onIssueDeleted={onIssueDeleted}
+            onToggleChat={toggleCoordinatorChat}
           />
 
-          {errorMsg && !forbidden && (
-            <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-              {errorMsg}
-            </div>
-          )}
-
-          <div className="relative flex min-h-0 flex-1 overflow-hidden">
-            <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-              <ShellBody
-                forbidden={forbidden}
-                hasProject={!!project}
-                hasError={!!errorMsg}
-                projectsLoaded={projectsLoaded}
-                projectCount={projects.length}
-                allowNoProject={globalHome}
-              >
-                {children}
-              </ShellBody>
-            </div>
-
-            <WorkspacePanel
-              open={workspacePanel.open}
-              activeTool={workspacePanel.activeTool}
-              contextProjectKey={projectKey}
-              toolSession={workspacePanel.toolSession}
-              splitTool={workspacePanel.splitTool}
-              onSplitToolChange={workspacePanel.setSplitTool}
-              mode={workspacePanel.mode}
-              fullscreen={workspacePanel.fullscreen}
-              onToggleMode={workspacePanel.toggleMode}
-              onToggleFullscreen={workspacePanel.toggleFullscreen}
-              pinned={workspacePanel.pinned}
-              onClose={() => workspacePanel.setOpen(false)}
-            />
-          </div>
-        </SidebarInset>
-
-        <CommandLayer
-          open={overlays.showCommand}
-          onOpenChange={overlays.setShowCommand}
-          projects={projects}
-          currentProjectKey={projectKey}
-          onBoard={route.onBoard}
-          view={editor.view}
-          currentIssueId={currentIssueId}
-          onViewChange={editor.changeView}
-          onNewIssue={openNewIssue}
-          // Handled by the kanban board's selection provider (mounted only on the
-          // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
-          onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
-          onNewInitiative={() => overlays.setShowNewInitiative(true)}
-          onNewProject={() => overlays.setShowNewProject(true)}
-          onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-          onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
-          onIssueDeleted={onIssueDeleted}
-          onToggleChat={toggleCoordinatorChat}
-        />
-
-        <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
-      </SidebarProvider>
+          <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+        </SidebarProvider>
+      </ShellHeaderSlotCtx.Provider>
     </ShellCtx.Provider>
   );
 }

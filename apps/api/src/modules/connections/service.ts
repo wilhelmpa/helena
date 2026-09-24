@@ -6,6 +6,7 @@ type ConnectionStatus =
   'connected' | 'available' | 'configured' | 'disabled' | 'unavailable' | 'unsupported' | 'error';
 export interface ConnectionsDto {
   checkedAt: string;
+  configured: boolean;
   items: Array<{
     id: string;
     kind: 'mcp' | 'channel' | 'service' | 'mail';
@@ -106,9 +107,15 @@ async function json<T>(
   return payload as T;
 }
 
-export const connectionsSnapshot = () =>
+// The connections service answers the list without `configured`; the API adds it, so the
+// page can tell "no service on this server" from "nothing connected".
+type BridgeSnapshot = Omit<ConnectionsDto, 'configured'>;
+
+export const connectionsSnapshot = async (): Promise<ConnectionsDto> =>
   bridgeConfigured()
-    ? json<ConnectionsDto>('/api/connections')
-    : Promise.resolve({ checkedAt: new Date().toISOString(), items: [] });
-export const connectionsAction = (body: unknown) =>
-  json<ConnectionsDto>('/api/connections/actions', body);
+    ? { ...(await json<BridgeSnapshot>('/api/connections')), configured: true }
+    : { checkedAt: new Date().toISOString(), configured: false, items: [] };
+export const connectionsAction = async (body: unknown): Promise<ConnectionsDto> => ({
+  ...(await json<BridgeSnapshot>('/api/connections/actions', body)),
+  configured: true,
+});

@@ -2,6 +2,7 @@ import { db, agentSkill, agentSkillLink } from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { iso, rethrowDuplicate, HttpError } from '#shared/lib';
 import { putObject, getObjectText, deleteObjects } from '#shared/s3';
+import { onTemplateRelevantChange } from '../core/template-sync';
 import { parseFrontmatter, isDisallowedRef } from './skill-format';
 
 // Data access for the team skill library, shared by every project the team owns. A
@@ -419,4 +420,5 @@ export async function setAgentSkills(
       await tx.insert(agentSkillLink).values(valid.map((skillId) => ({ agentId, skillId })));
     }
   });
+  await onTemplateRelevantChange(agentId, ['skills']);
 }

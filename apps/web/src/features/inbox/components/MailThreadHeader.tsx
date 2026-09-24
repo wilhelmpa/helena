@@ -19,7 +19,7 @@ export default function MailThreadHeader({
   const move = useMoveThread();
   return (
     <div className="flex flex-col gap-2">
-      <h2 dir="auto" className="text-lg font-semibold break-words">
+      <h2 dir="auto" className="text-base font-semibold break-words">
         {thread.subject || t('noSubject')}
       </h2>
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

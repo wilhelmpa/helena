@@ -141,7 +141,9 @@ export default function FlatBoard({
       onDragEnd={dnd.onDragEnd}
     >
       <div
-        className="flex h-full gap-3 overflow-x-auto p-4"
+        // On a phone a swipe lands on the next column (snap), proximity rather than
+        // mandatory so a card drag's auto-scroll is never pulled back.
+        className="flex h-full gap-3 overflow-x-auto p-4 max-sm:snap-x max-sm:snap-proximity max-sm:scroll-px-4"
         onClick={() => selection.isSelecting && selection.clear()}
       >
         {orderedGroups.map((group) =>

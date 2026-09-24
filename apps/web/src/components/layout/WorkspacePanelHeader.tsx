@@ -31,6 +31,7 @@ export default function WorkspacePanelHeader({
   pinned = false,
   splitControl,
   toolbar,
+  slotRef,
   onToggleAdvanced,
   onToggleBrowserLossless,
   onToggleMode,
@@ -52,6 +53,9 @@ export default function WorkspacePanelHeader({
   splitControl: ReactNode;
   // Shown in place of the title, such as the browser's address bar.
   toolbar?: ReactNode;
+  // Receives the slot the showing tool may fill with its own bar (PanelHeaderSlotCtx);
+  // while it holds anything, the plain title is hidden.
+  slotRef?: (element: HTMLElement | null) => void;
   onToggleAdvanced: () => void;
   onToggleBrowserLossless: () => void;
   onToggleMode: () => void;
@@ -64,7 +68,18 @@ export default function WorkspacePanelHeader({
   const tCommon = useTranslations('common');
   return (
     <div className={cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1 px-3')}>
-      {toolbar ?? <div className="min-w-0 flex-1 truncate text-sm font-medium">{title}</div>}
+      {toolbar ?? (
+        <>
+          <div
+            ref={slotRef}
+            data-slot="panel-header-slot"
+            className="peer flex min-w-0 flex-1 items-center gap-0.5 empty:hidden"
+          />
+          <div className="min-w-0 flex-1 truncate text-sm font-medium peer-[:not(:empty)]:hidden">
+            {title}
+          </div>
+        </>
+      )}
       {canExpandChat && (
         <Button
           variant={advanced ? 'secondary' : 'ghost'}

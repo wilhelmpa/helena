@@ -50,7 +50,27 @@
     "thisDevice": "Este dispositivo",
     "deleteWarning": "Você não poderá mais entrar com esta chave de acesso. Isso não pode ser desfeito.",
     "passkeyFallback": "Chave de acesso",
-    "passkeysLoadFailed": "Não foi possível carregar as chaves de acesso."
+    "passkeysLoadFailed": "Não foi possível carregar as chaves de acesso.",
+    "totpTitle": "Aplicativo autenticador",
+    "totpDescription": "O código que o terminal do proprietário pede toda vez que é aberto (Início → Terminal).",
+    "totpStatusEnabled": "Configurado.",
+    "totpStatusDisabled": "Ainda não configurado.",
+    "totpPasswordLabel": "Senha",
+    "totpPasswordHint": "Pedida somente se esta conta tiver uma. Caso contrário, deixe em branco.",
+    "totpEnable": "Configurar",
+    "totpDisable": "Desativar",
+    "totpEnrollTitle": "Configurar o aplicativo autenticador",
+    "totpSecretLabel": "Chave de configuração",
+    "totpSecretHint": "No aplicativo autenticador, escolha “inserir uma chave manualmente” e cole isto.",
+    "totpCodeLabel": "Código do aplicativo",
+    "totpConfirm": "Confirmar",
+    "totpEnabled": "Aplicativo autenticador ativado",
+    "totpDisabled": "Aplicativo autenticador desativado",
+    "totpEnrollFailed": "Não foi possível iniciar a configuração.",
+    "totpConfirmFailed": "O código não foi aceito.",
+    "totpDisableFailed": "Não foi possível desativar o aplicativo autenticador.",
+    "minLength": "Pelo menos {count} caracteres.",
+    "added": "Adicionada em {date}"
   },
   "accounts": {
     "label": "Contas",
@@ -70,7 +90,8 @@
     "telegramConnectedLabel": "Conectado",
     "loadFailed": "Não foi possível carregar as contas conectadas.",
     "connectFailed": "Não foi possível conectar o Google.",
-    "disconnectFailed": "Não foi possível desconectar esta conta."
+    "disconnectFailed": "Não foi possível desconectar esta conta.",
+    "noneAvailable": "Ainda não há nenhum serviço para vincular nesta instância. O administrador configura o login com Google e o bot do Telegram em Administrador › Integrações."
   },
   "preferences": {
     "label": "Preferências",
@@ -154,5 +175,8 @@
     "autoWatchDescription": "As que você cria, é atribuído, comenta ou é mencionado.",
     "showChatByDefault": "Mostrar o chat por padrão",
     "showChatByDefaultDescription": "O painel de chat abre com uma página de projeto. Feche-o a qualquer momento pelo cabeçalho ou pelo ícone de chat."
+  },
+  "shell": {
+    "title": "Conta"
   }
 }

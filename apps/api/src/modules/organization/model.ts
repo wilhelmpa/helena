@@ -137,6 +137,12 @@ const OrganizationAgentResponse = t.Object({
   name: t.String(),
   username: t.String(),
   kind: t.Union([t.Literal('external'), t.Literal('internal')]),
+  // The Home master, root of the reporting chain; never a "pool template" or an
+  // "unassigned" agent, even though it carries no organization_agent_assignment row.
+  isHome: t.Boolean(),
+  // A pool template (runs nowhere, joins no project). Shown as "Vorlage", never counted
+  // as an unassigned agent.
+  template: t.Boolean(),
   departmentId: nullableId,
   reportsToAgentId: nullableId,
   roleTitle: t.String(),

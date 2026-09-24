@@ -26,6 +26,7 @@ import {
 } from '@/lib/api/endpoints/agentChat';
 import {
   listAiAgents,
+  getAiAgent,
   listAgentRuns,
   listAgentTools,
   createAiAgent,
@@ -33,6 +34,8 @@ import {
   updateAiAgent,
   regenerateAiAgentKey,
   deleteAiAgent,
+  resetAiAgentToTemplate,
+  type TemplateFieldGroup,
 } from '@/lib/api/endpoints/agents';
 import { qk } from '@/services/queryKeys';
 
@@ -62,6 +65,18 @@ export function useAiAgentsQuery(teamId: number | null, projectId?: number) {
     queryFn: () => listAiAgents(teamId!, projectId),
     enabled: teamId != null,
     refetchInterval: RUNNER_PRESENCE_REFRESH_MS,
+  });
+}
+
+// One agent by id, for a caller that already knows which one it wants rather than
+// picking from the team's list — the chat workspace's fallback when a thread names an
+// agent its own kind/template-filtered picker did not carry (an internal agent, a
+// template, or simply one the picker has not loaded yet).
+export function useAiAgentQuery(teamId: number | null, agentId: number | null) {
+  return useQuery({
+    queryKey: qk.aiAgent(teamId ?? 0, agentId ?? 0),
+    queryFn: () => getAiAgent(teamId!, agentId!),
+    enabled: teamId != null && agentId != null,
   });
 }
 
@@ -291,6 +306,21 @@ export function useCopyAiAgentTemplate(teamId: number | null) {
     mutationFn: ({ templateId, projectId }: { templateId: number; projectId: number }) =>
       copyAiAgentTemplate(teamId!, templateId, projectId),
     onSuccess: invalidate,
+  });
+}
+
+// Drops a copy's own override of one field group and re-applies the template's
+// current value right away ("Auf Vorlage zurücksetzen").
+export function useResetAiAgentToTemplate(teamId: number | null) {
+  const t = useTranslations('teams.agents.templateSync');
+  const invalidate = useAgentInvalidator(teamId);
+  return useMutation({
+    mutationFn: ({ id, group }: { id: number; group: TemplateFieldGroup }) =>
+      resetAiAgentToTemplate(teamId!, id, group),
+    onSuccess: (_agent, { group }) => {
+      toast.success(t('resetDone', { group: t(`groups.${group}`) }));
+      invalidate();
+    },
   });
 }
 

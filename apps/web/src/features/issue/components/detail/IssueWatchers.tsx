@@ -67,7 +67,7 @@ export default function IssueWatchers({
         </Tooltip>
       ))}
       {watchers.length > 4 && (
-        <span className="relative z-10 flex size-5 items-center justify-center rounded-full bg-muted text-[10px] ring-2 ring-card">
+        <span className="relative z-10 flex size-5 items-center justify-center rounded-full bg-muted text-xs ring-2 ring-card">
           +{watchers.length - 4}
         </span>
       )}

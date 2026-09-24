@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { SectionLabel } from '@/components/common/page/RowList';
 import { useWorkflowGates } from '@/services/approvals.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
 import { gateKey } from '../utils/workflowGates';
@@ -26,8 +27,8 @@ export default function WorkflowApprovalList({ projectKey }: { projectKey?: stri
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium">{t('workflows')}</h2>
-      {incomplete && <p className="text-xs text-muted-foreground">{t('workflowsIncomplete')}</p>}
+      <SectionLabel className="-mb-1">{t('workflows')}</SectionLabel>
+      {incomplete && <p className="px-2 text-xs text-status-waiting">{t('workflowsIncomplete')}</p>}
       {approvals.map((approval) => (
         <PipelineApprovalCard
           key={`${approval.runId}:${approval.stepId}:${approval.iteration}`}

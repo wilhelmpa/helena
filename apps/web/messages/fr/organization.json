@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "N'a pas de modèle et ne rend compte à personne. Attribuez un département ou un responsable.",
+    "noDepartment": "Sans département",
+    "templates": "Modèles du pool"
   },
   "summary": {
     "pool": "Agent pool",
@@ -172,5 +175,8 @@
       "perClosedTask": "Par tâche fermée",
       "closedTasks": "{count, plural, =0 {Aucune tâche fermée avec des agents ce mois-ci} one {# tâche fermée avec des agents ce mois-ci} other {# tâches fermées avec des agents ce mois-ci}}"
     }
-  }
+  },
+  "managerRequiredTitle": "Aucun accès",
+  "loadFailed": "Impossible de charger l’organisation.",
+  "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
 }

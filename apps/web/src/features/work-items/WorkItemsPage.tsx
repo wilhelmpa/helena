@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
-import { useShellHeaderExtra } from '@/hooks/useShellHeaderExtra';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useGroupLabels } from '@/hooks/useGroupLabels';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
@@ -17,13 +16,19 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Check, X } from 'lucide-react';
 import ViewTabs from '@/components/layout/ViewTabs';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
-import FilterBar from '@/components/layout/FilterBar';
-import DisplayPopover from '@/components/layout/DisplayPopover';
+import ViewFolderManager from '@/components/layout/ViewFolderManager';
+import { FilterControl } from '@/components/layout/FilterBar';
+import {
+  PageActions,
+  PageToolbar,
+  PageToolbarSpacer,
+  type PageAction,
+} from '@/components/layout/PageToolbar';
+import { useViewFoldersQuery } from '@/services/views.service';
+import BoardDisplayControl from './components/BoardDisplayControl';
 import { IssueLinksProvider } from './context/useIssueLinks';
 import { SubtasksProvider } from './context/useSubtasks';
 import KanbanBoard from './components/kanban/KanbanBoard';
@@ -37,21 +42,15 @@ interface TimelineCollapseState {
 }
 
 // The work items page (the index and /view/:viewId child routes of the Shell).
-// It renders the saved-view tabs, the inline edit bar and the selected layout;
-// the project data and the view editor come from the Shell through React context.
+// Everything it offers is one header row (PageToolbar, docs/volition/ui-standard.md):
+// the saved-view tabs, then the area, filter and display controls. Editing or
+// creating a view turns that row into the edit bar (icon, name, Cancel, Save). The
+// project data and the view editor come from the Shell through React context.
 export default function WorkItemsPage() {
   const t = useTranslations('workItems');
   const tCommon = useTranslations('common');
-  const {
-    project,
-    filteredProject,
-    views,
-    editor,
-    customFields,
-    onOpenIssue,
-    onAddIssue,
-    headerLayout,
-  } = useShell();
+  const { project, filteredProject, views, editor, customFields, onOpenIssue, onAddIssue } =
+    useShell();
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
   const features = useProjectFeatures();
@@ -68,39 +67,7 @@ export default function WorkItemsPage() {
     targets: [qk.boardIssues(projectKey)],
   });
 
-  // In the single-row header this page's saved-view tabs merge into the Shell's own
-  // header instead of a second row; in 'classic' layout this stays null and the tabs
-  // render inline below, exactly as before. Called unconditionally (before the
-  // `!project` return) because it is a hook; there is nothing to show yet either way
-  // while the project has not loaded.
-  useShellHeaderExtra(
-    headerLayout === 'single' && project ? (
-      <ViewTabs
-        embedded
-        views={views}
-        projectKey={project.project.key}
-        activeViewId={editor.activeViewId}
-        onSelect={editor.selectView}
-        onNewView={editor.beginNewView}
-        onEdit={editor.beginEditView}
-        onDelete={(v) => void editor.deleteView(v)}
-        onReorder={editor.reorderView}
-        onToggleFilter={editor.toggleFilters}
-        displayControl={
-          <DisplayPopover
-            view={editor.view}
-            onViewChange={editor.changeView}
-            settings={withoutHiddenSections(editor.settings, features)}
-            onSettingsChange={(next) =>
-              editor.changeSettings(restoreHiddenSections(next, editor.settings, features))
-            }
-            customFields={customFields}
-            issueTypes={project.issueTypes}
-          />
-        }
-      />
-    ) : null,
-  );
+  const { data: folders = [] } = useViewFoldersQuery(projectKey || null);
 
   if (!project || !filteredProject) return null;
 
@@ -108,6 +75,7 @@ export default function WorkItemsPage() {
   // one is a views create. Filtering/display stay available to everyone (transient,
   // client-side); only persisting is gated.
   const canSaveView = can('views', editor.activeView ? 'edit' : 'create');
+  const canSaveDraft = !!editor.activeView || !!editor.draftName.trim();
 
   // With an optional section off, its property and grouping are left out of what
   // the layouts and the Display panel work with, and put back on the way out so the
@@ -196,80 +164,87 @@ export default function WorkItemsPage() {
     }
   }
 
-  const displayProps = {
-    view: editor.view,
-    onViewChange: editor.changeView,
-    settings,
-    onSettingsChange: changeSettings,
-    customFields,
-    issueTypes: project.issueTypes,
-  };
+  const controls = (
+    <>
+      <FilterControl
+        filters={editor.filters}
+        onChange={editor.changeFilters}
+        project={project}
+        customFields={customFields}
+      />
+      <BoardDisplayControl
+        view={editor.view}
+        onViewChange={editor.changeView}
+        settings={settings}
+        onSettingsChange={changeSettings}
+        customFields={customFields}
+        issueTypes={project.issueTypes}
+      />
+    </>
+  );
+
+  // The edit bar's two actions: Save is the row's one filled button.
+  const editActions: PageAction[] = [
+    { id: 'cancel', label: tCommon('cancel'), icon: X, onClick: editor.cancelEdits },
+  ];
 
   return (
     <>
-      {/* In 'single' header layout this same bar already rendered into the Shell's
-          header above, via useShellHeaderExtra; rendering it again here would show
-          it twice. */}
-      {headerLayout !== 'single' && (
-        <ViewTabs
-          views={views}
-          projectKey={project.project.key}
-          activeViewId={editor.activeViewId}
-          onSelect={editor.selectView}
-          onNewView={editor.beginNewView}
-          onEdit={editor.beginEditView}
-          onDelete={(v) => void editor.deleteView(v)}
-          onReorder={editor.reorderView}
-          onToggleFilter={editor.toggleFilters}
-          displayControl={<DisplayPopover {...displayProps} />}
-        />
-      )}
-
-      {/* The filter row applies to the current screen only; it never writes to a
-          view. The edit bar above it (icon picker + name input + Cancel/Save)
-          appears only after Edit view or New view, and Save is the one write:
-          it updates the active view or creates one from the live state. */}
-      {(editor.editing || editor.showFilters) && (
-        <div className="border-b">
-          {editor.editing && (
-            <div className="flex items-center gap-2 px-3 py-2">
-              <ViewIconPicker icon={editor.draftIcon} onChange={editor.setDraftIcon} />
-              <Input
-                value={editor.draftName}
-                placeholder={t('viewNamePlaceholder')}
-                autoFocus
-                onChange={(e) => editor.setDraftName(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === 'Enter' &&
-                  (editor.activeView || editor.draftName.trim()) &&
-                  void editor.saveEdits()
-                }
-                className="h-8 flex-1 border-0 bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-0"
-              />
-              <Button variant="ghost" size="sm" onClick={editor.cancelEdits}>
-                {tCommon('cancel')}
-              </Button>
-              {canSaveView && (
-                <Button
-                  size="sm"
-                  disabled={!editor.activeView && !editor.draftName.trim()}
-                  onClick={() => void editor.saveEdits()}
-                >
-                  {tCommon('save')}
-                </Button>
-              )}
-            </div>
-          )}
-          <div className={cn('px-3 pb-2', editor.editing ? '' : 'pt-2')}>
-            <FilterBar
-              filters={editor.filters}
-              onChange={editor.changeFilters}
-              project={project}
-              customFields={customFields}
+      <PageToolbar>
+        {editor.editing ? (
+          // The view edit bar (Edit view / New view): the name and icon of the view,
+          // the filter and display it will keep, and Cancel/Save. Save is the one
+          // write; it updates the active view or creates one from the live state.
+          <>
+            <ViewIconPicker icon={editor.draftIcon} onChange={editor.setDraftIcon} />
+            <input
+              value={editor.draftName}
+              placeholder={t('viewNamePlaceholder')}
+              aria-label={t('viewNamePlaceholder')}
+              autoFocus
+              onChange={(e) => editor.setDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && canSaveDraft) void editor.saveEdits();
+                if (e.key === 'Escape') editor.cancelEdits();
+              }}
+              className="h-7 min-w-24 flex-1 rounded-md bg-transparent px-1.5 text-sm font-medium outline-none placeholder:font-normal placeholder:text-muted-foreground focus-visible:bg-sidebar-accent/40"
             />
-          </div>
-        </div>
-      )}
+            {controls}
+            <PageActions
+              actions={editActions}
+              primary={
+                canSaveView
+                  ? {
+                      id: 'save',
+                      label: tCommon('save'),
+                      icon: Check,
+                      disabled: !canSaveDraft,
+                      onClick: () => void editor.saveEdits(),
+                    }
+                  : undefined
+              }
+            />
+          </>
+        ) : (
+          <>
+            <ViewTabs
+              views={views}
+              projectKey={project.project.key}
+              activeViewId={editor.activeViewId}
+              onSelect={editor.selectView}
+              onNewView={editor.beginNewView}
+              onEdit={editor.beginEditView}
+              onDelete={(v) => void editor.deleteView(v)}
+              onReorder={editor.reorderView}
+            />
+            <PageToolbarSpacer />
+            {can('views', 'edit') && (
+              <ViewFolderManager projectKey={project.project.key} folders={folders} />
+            )}
+            {controls}
+          </>
+        )}
+      </PageToolbar>
 
       <div className="relative flex-1 overflow-hidden">
         <IssueLinksProvider issues={project.issues} enabled={settings.showLinks}>

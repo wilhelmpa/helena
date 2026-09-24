@@ -47,7 +47,8 @@
     "loadFailed": "Die Vorlagen konnten nicht geladen werden.",
     "tryAgain": "Erneut versuchen",
     "noAccess": "Du darfst die Workflows dieses Teams nicht sehen.",
-    "readOnly": "Nur Mitglieder, die Workflows erstellen dürfen, fügen hier Vorlagen hinzu."
+    "readOnly": "Nur Mitglieder, die Workflows erstellen dürfen, fügen hier Vorlagen hinzu.",
+    "noAccessTitle": "Kein Zugriff"
   },
   "starter": {
     "name": "Neuer Workflow",
@@ -112,7 +113,8 @@
     "openTemplate": "Vorlage öffnen",
     "issuesTitle": "{count, plural, one {# Fehler} other {# Fehler}}",
     "warningsTitle": "{count, plural, one {# Problem in diesem Projekt} other {# Probleme in diesem Projekt}}",
-    "warningsHint": "Der Workflow lässt sich speichern, aber erst im Projekt einschalten, wenn diese Probleme behoben sind."
+    "warningsHint": "Der Workflow lässt sich speichern, aber erst im Projekt einschalten, wenn diese Probleme behoben sind.",
+    "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
   },
   "trigger": {
     "title": "Auslöser",
@@ -388,7 +390,12 @@
     "allRuns": "Alle Läufe",
     "onlyTestRuns": "Testläufe",
     "onlyRealRuns": "Echte Läufe",
-    "allProjects": "Alle Projekte"
+    "allProjects": "Alle Projekte",
+    "filter": "Filter",
+    "filterReset": "Filter zurücksetzen",
+    "filterProject": "Projekt",
+    "filterStatus": "Status",
+    "filterKind": "Art"
   },
   "versions": {
     "empty": "Keine Versionen.",

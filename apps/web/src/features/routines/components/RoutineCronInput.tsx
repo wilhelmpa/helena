@@ -1,19 +1,16 @@
 import { useId } from 'react';
 import { RoutineSuggestionsInput, type InputSuggestion } from './RoutineSuggestionsInput';
-import { parseScheduleInput } from '../utils/cronSchedule';
 import { useTranslations } from 'next-intl';
+import { parseScheduleInput } from '../utils/cronSchedule';
+import { useCronDescription } from '../hooks/useCronDescription';
 
-// `value` is what the preset writes into the input, and `parseScheduleInput` reads
-// English phrases — so only the label is translated.
+// A preset writes its cron expression into the input, which reads the same in every
+// language; its label and the line under the input are in the reader's.
 const SCHEDULE_PRESETS = [
-  { value: 'Every 15 minutes', labelKey: 'presetEvery15Minutes', description: '*/15 * * * *' },
-  { value: 'Every hour', labelKey: 'presetEveryHour', description: '0 * * * *' },
-  {
-    value: 'Every weekday at 9:00 AM',
-    labelKey: 'presetEveryWeekdayAt9',
-    description: '0 9 * * 1-5',
-  },
-  { value: 'Every day at 9:00 AM', labelKey: 'presetEveryDayAt9', description: '0 9 * * *' },
+  { value: '*/15 * * * *', labelKey: 'presetEvery15Minutes' },
+  { value: '0 * * * *', labelKey: 'presetEveryHour' },
+  { value: '0 9 * * 1-5', labelKey: 'presetEveryWeekdayAt9' },
+  { value: '0 9 * * *', labelKey: 'presetEveryDayAt9' },
 ] as const;
 
 export function RoutineCronInput({
@@ -26,12 +23,13 @@ export function RoutineCronInput({
   onChange: (value: string) => void;
 }) {
   const t = useTranslations('routines');
+  const describe = useCronDescription();
   const result = parseScheduleInput(value);
   const messageId = useId();
   const scheduleSuggestions: InputSuggestion[] = SCHEDULE_PRESETS.map((preset) => ({
     value: preset.value,
     label: t(preset.labelKey),
-    description: preset.description,
+    description: preset.value,
   }));
 
   return (
@@ -55,7 +53,9 @@ export function RoutineCronInput({
         }
         aria-live="polite"
       >
-        {result.ok ? successMessage(result, t) : result.error}
+        {result.ok
+          ? successMessage(result, describe(result.cron) ?? result.cron, t)
+          : t('invalidSchedule')}
       </span>
     </>
   );
@@ -63,13 +63,14 @@ export function RoutineCronInput({
 
 function successMessage(
   result: Extract<ReturnType<typeof parseScheduleInput>, { ok: true }>,
+  description: string,
   t: ReturnType<typeof useTranslations<'routines'>>,
 ): React.ReactNode {
-  if (result.source === 'cron') return t('runs', { description: result.description });
+  if (result.source === 'cron') return t('runs', { description });
   return (
     <>
       {t('cronLabel')} <code className="font-mono">{result.cron}</code> ·{' '}
-      {t('runsSuffix', { description: result.description })}
+      {t('runsSuffix', { description })}
     </>
   );
 }

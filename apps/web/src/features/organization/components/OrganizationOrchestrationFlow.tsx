@@ -9,14 +9,14 @@ export default function OrganizationOrchestrationFlow() {
   const t = useTranslations('organization.orchestration.flow');
 
   return (
-    <section className="space-y-3 rounded-lg border p-4 text-sm">
-      <h2 className="font-medium">{t('title')}</h2>
+    <section className="space-y-3 rounded-lg border bg-card p-4 text-sm">
+      <h2 className="text-md font-medium">{t('title')}</h2>
       <div>
-        <h3 className="text-xs font-medium text-muted-foreground uppercase">{t('directTitle')}</h3>
+        <h3 className="text-xs font-medium text-muted-foreground">{t('directTitle')}</h3>
         <p className="mt-1">{t('direct')}</p>
       </div>
       <div>
-        <h3 className="text-xs font-medium text-muted-foreground uppercase">{t('teamTitle')}</h3>
+        <h3 className="text-xs font-medium text-muted-foreground">{t('teamTitle')}</h3>
         <p className="mt-1">{t('team')}</p>
         <ol className="mt-2 list-decimal space-y-1 ps-5">
           {STAGES.map((stage) => (

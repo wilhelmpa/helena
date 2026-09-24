@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 // table cells (TableView) so both render the same pill/icon/avatar.
 
 // Outline pill styling shared by the label and date badges.
-const PILL = 'text-muted-foreground rounded-full px-1.5 py-0.5 text-[10px]';
+const PILL = 'text-muted-foreground rounded-full px-1.5 py-0.5 text-xs';
 
 // Priority glyph with a "<priority> priority" tooltip.
 export function PriorityBadge({

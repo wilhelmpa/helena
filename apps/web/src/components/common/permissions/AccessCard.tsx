@@ -29,7 +29,7 @@ export default function AccessCard({
 
   return (
     <DisclosureCard header={header} trailing={trailing}>
-      <div className="space-y-5">
+      <div className="space-y-4">
         {details}
         <section>
           <h4 className="mb-2 text-sm font-medium">{t('accessHeading')}</h4>

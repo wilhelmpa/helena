@@ -1,0 +1,32 @@
+{
+  "stepUp": {
+    "title": "Підтвердьте, що це ви",
+    "description": "Введіть код із застосунку-автентифікатора, щоб відкрити термінал на 12 годин.",
+    "codeLabel": "Код",
+    "confirm": "Підтвердити",
+    "verifying": "Перевірка…",
+    "wrongCode": "Код не прийнято.",
+    "rateLimited": "Забагато спроб. Зачекайте 15 хвилин і спробуйте ще раз."
+  },
+  "grant": {
+    "active": "Термінал дозволено до {time}",
+    "expired": "Дозвіл термінала закінчився.",
+    "end": "Завершити",
+    "lan": "Термінал відкрито без коду (LAN)"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "Розвивати Helena (Claude Code)",
+    "helena-dev-codex": "Розвивати Helena (Codex)",
+    "close": "Закрити вкладку"
+  },
+  "keys": {
+    "esc": "Esc",
+    "tab": "Tab",
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "paste": "Вставити"
+  }
+}

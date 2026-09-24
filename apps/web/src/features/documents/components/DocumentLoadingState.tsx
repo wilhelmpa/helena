@@ -9,7 +9,7 @@ export default function DocumentLoadingState() {
       <div className="h-11 border-b px-4 py-2">
         <Skeleton className="h-7 w-80 max-w-full" />
       </div>
-      <div className="mx-auto w-full max-w-[800px] px-6 py-12 md:px-12">
+      <div className="mx-auto w-full max-w-[800px] px-4 py-12 md:px-12">
         <Skeleton className="h-11 w-2/3 max-w-xl" />
         <Skeleton className="mt-4 h-3 w-48" />
         <Skeleton className="mt-10 h-72 w-full" />

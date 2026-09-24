@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Plus, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { WidgetType } from '@/utils/dashboardWidgets';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -10,16 +9,23 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { WIDGET_GROUPS, WIDGET_ICON } from '../utils/widgetCatalog';
 
 // Picks a widget type from the catalog and adds it to the current dashboard. Widgets
 // are grouped by subject and filtered by a case-insensitive search over the label and
-// description, matching the tool picker and GitHub skill import dialogs.
-export default function AddWidgetDialog({ onAdd }: { onAdd: (type: WidgetType) => void }) {
+// description, matching the tool picker and GitHub skill import dialogs. Opened from
+// the page's header row ("Widget hinzufügen" while the layout is edited).
+export default function AddWidgetDialog({
+  open,
+  onOpenChange,
+  onAdd,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdd: (type: WidgetType) => void;
+}) {
   const t = useTranslations('dashboards');
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
   // Each group's types narrowed to the ones matching the query; empty groups are
@@ -40,7 +46,7 @@ export default function AddWidgetDialog({ onAdd }: { onAdd: (type: WidgetType) =
 
   function add(type: WidgetType) {
     onAdd(type);
-    setOpen(false);
+    onOpenChange(false);
     setQuery('');
   }
 
@@ -48,15 +54,10 @@ export default function AddWidgetDialog({ onAdd }: { onAdd: (type: WidgetType) =
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        setOpen(next);
+        onOpenChange(next);
         if (!next) setQuery('');
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="size-4" /> {t('addWidget')}
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('addWidgetTitle')}</DialogTitle>
@@ -76,7 +77,7 @@ export default function AddWidgetDialog({ onAdd }: { onAdd: (type: WidgetType) =
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="absolute top-1/2 right-3 -translate-y-1/2 rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="absolute end-3 top-1/2 -translate-y-1/2 rounded-sm text-muted-foreground transition-colors hover:text-foreground"
               aria-label={t('clearSearch')}
             >
               <X className="size-4" />
@@ -84,15 +85,15 @@ export default function AddWidgetDialog({ onAdd }: { onAdd: (type: WidgetType) =
           )}
         </div>
 
-        <div className="max-h-[55vh] space-y-5 overflow-y-auto pr-1">
+        <div className="max-h-[55vh] space-y-4 overflow-y-auto pe-1">
           {groups.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               {t('noWidgetMatches', { query: query.trim() })}
             </p>
           )}
           {groups.map((group) => (
             <div key={group.key} className="space-y-1.5">
-              <h3 className="px-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              <h3 className="px-1 text-xs font-medium text-muted-foreground">
                 {t(`widgetGroups.${group.key}`)}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -103,7 +104,7 @@ export default function AddWidgetDialog({ onAdd }: { onAdd: (type: WidgetType) =
                       key={type}
                       type="button"
                       onClick={() => add(type)}
-                      className="flex items-start gap-3 rounded-lg border border-transparent bg-muted/20 p-3 text-left transition-colors hover:border-border hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="flex items-start gap-3 rounded-lg border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                       <span className="min-w-0">

@@ -131,9 +131,7 @@ function DetailBlock({ label, value }: { label: string; value: unknown }) {
   const t = useTranslations('settings.webhooks');
   return (
     <div className="space-y-1">
-      <div className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-        {label}
-      </div>
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
       {value == null || value === '' ? (
         <p className="text-xs text-muted-foreground">{t('noResponse')}</p>
       ) : (

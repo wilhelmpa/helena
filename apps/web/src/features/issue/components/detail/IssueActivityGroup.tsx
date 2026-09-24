@@ -34,7 +34,7 @@ export default function IssueActivityGroup({
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-medium">{group.status ?? t('unknownStatus')}</span>
           {group.repeat && <span className="text-xs text-muted-foreground">· again</span>}
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground tabular-nums">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground tabular-nums">
             {durationLabel(group.durationMs)}
           </span>
         </div>

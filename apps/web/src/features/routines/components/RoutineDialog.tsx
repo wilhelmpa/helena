@@ -48,7 +48,7 @@ export function RoutineDialog({
         }
       : null,
   );
-  const [scheduleInput, setScheduleInput] = useState(initial?.cron ?? 'Every weekday at 9:00 AM');
+  const [scheduleInput, setScheduleInput] = useState(initial?.cron ?? '0 9 * * 1-5');
   const [timezone, setTimezone] = useState(initial?.timezone ?? DEFAULT_TIMEZONE);
   const agent = agents.find((a) => String(a.id) === agentId) ?? null;
   const schedule = parseScheduleInput(scheduleInput);
@@ -84,7 +84,7 @@ export function RoutineDialog({
       wide
     >
       <form
-        className="space-y-5"
+        className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
           void submit();

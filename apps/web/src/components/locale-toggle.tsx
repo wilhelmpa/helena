@@ -16,7 +16,8 @@ import { useUpdateAccountPreferences } from '@/services/preferences.service';
 // Picks the interface language. The choice is saved to the account, the same as
 // picking it in preferences, so it survives a new session and reaches other devices;
 // PreferencesSync writes the cookie the server renders from and re-renders the page.
-export function LocaleToggle() {
+// `ghost` is the sidebar-footer look (no outline box); `outline` the classic header's.
+export function LocaleToggle({ variant = 'outline' }: { variant?: 'outline' | 'ghost' }) {
   const t = useTranslations('common');
   const locale = useLocale();
   const update = useUpdateAccountPreferences();
@@ -27,9 +28,9 @@ export function LocaleToggle() {
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="outline"
+              variant={variant}
               size="icon"
-              className="size-8 shrink-0"
+              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
               aria-label={t('language')}
             >
               <Languages />

@@ -81,7 +81,7 @@ export default function RolesImportDialog({
             <div
               key={role.name}
               className={cn(
-                'flex items-center gap-2.5 rounded-lg bg-muted/30 px-3 py-2.5',
+                'flex items-center gap-2.5 rounded-lg border border-sidebar-border bg-card px-3 py-2.5',
                 role.action === 'skip' && 'opacity-60',
               )}
             >

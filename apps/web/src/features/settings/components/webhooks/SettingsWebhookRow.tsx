@@ -88,7 +88,7 @@ export function SettingsWebhookRow({
       <TableCell className="px-3 py-4 align-top whitespace-normal">
         <div className="flex flex-wrap gap-1">
           {webhook.events.map((event) => (
-            <Badge key={event} variant="outline" className="font-mono text-[10px]">
+            <Badge key={event} variant="outline" className="font-mono text-xs">
               {event}
             </Badge>
           ))}

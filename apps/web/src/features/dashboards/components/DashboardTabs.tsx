@@ -11,22 +11,27 @@ import { LayoutDashboard, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Dashboard } from '@/lib/api/endpoints/dashboards';
 import { useStripSortSensors } from '@/lib/dnd';
+import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
-import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
+import {
+  PAGE_CONTROL_ACTIVE_CLASS,
+  PAGE_CONTROL_CLASS,
+  PageTabs,
+  usePageToolbarRoom,
+} from '@/components/layout/PageToolbar';
 import DashboardTab from './DashboardTab';
-import DashboardNameDialog from './DashboardNameDialog';
 
-// The row of dashboard tabs. Each named dashboard is a sortable tab; the active
-// one exposes Rename/Delete. A "New dashboard" button and a name dialog handle
-// create/rename. When the project has no dashboards, a single non-clickable
-// "Overview" chip stands in for the built-in default.
+// The dashboard tabs, first in the page's header row (PageToolbar). Each named
+// dashboard is a sortable tab; the active one exposes Rename/Delete. When the
+// project has no dashboards, a single "Overview" tab stands in for the built-in
+// default. When the row runs out of room the tabs fold into one dropdown, and New,
+// Rename and Delete move into the row's "…" menu (see DashboardsPage).
 export default function DashboardTabs({
   dashboards,
   activeDashboardId,
   isVirtual,
-  actions,
   onSelect,
-  onNewDashboard,
+  onNew,
   onRename,
   onDelete,
   onReorder,
@@ -34,24 +39,21 @@ export default function DashboardTabs({
   dashboards: Dashboard[];
   activeDashboardId: number | null;
   isVirtual: boolean;
-  actions?: React.ReactNode;
   onSelect: (id: number) => void;
-  onNewDashboard: (name: string) => void;
-  onRename: (d: Dashboard, name: string) => void;
+  onNew: () => void;
+  onRename: (d: Dashboard) => void;
   onDelete: (d: Dashboard) => void;
   onReorder: (draggedId: number, targetId: number) => void;
 }) {
   const t = useTranslations('dashboards');
   const { can } = usePermissions();
+  const room = usePageToolbarRoom();
   const canCreate = can('dashboards', 'create');
   const canEdit = can('dashboards', 'edit');
   const canDelete = can('dashboards', 'delete');
   const sensors = useStripSortSensors();
   const [activeId, setActiveId] = useState<number | null>(null);
   const dragged = activeId != null ? dashboards.find((d) => d.id === activeId) : null;
-  // Name dialog state: 'new' to create, a dashboard to rename, or null (closed).
-  const [dialog, setDialog] = useState<'new' | Dashboard | null>(null);
-  const renaming = dialog && dialog !== 'new' ? dialog : null;
 
   function handleDragEnd(e: DragEndEvent) {
     setActiveId(null);
@@ -59,76 +61,79 @@ export default function DashboardTabs({
     if (over && active.id !== over.id) onReorder(Number(active.id), Number(over.id));
   }
 
-  return (
-    <WorkspaceHeader className="gap-1 px-2 sm:px-3">
-      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-        {dashboards.length === 0 ? (
-          <span className="flex shrink-0 items-center gap-1.5 rounded-md bg-secondary px-2 py-1 text-sm font-medium text-foreground">
-            <LayoutDashboard className="size-3.5" />
-            {t('defaultName')}
-          </span>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={(e: DragStartEvent) => setActiveId(Number(e.active.id))}
-            onDragCancel={() => setActiveId(null)}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={dashboards.map((d) => d.id)}
-              strategy={horizontalListSortingStrategy}
-            >
-              {dashboards.map((d) => (
-                <DashboardTab
-                  key={d.id}
-                  dashboard={d}
-                  active={!isVirtual && activeDashboardId === d.id}
-                  canEdit={canEdit}
-                  canDelete={canDelete}
-                  onSelect={() => onSelect(d.id)}
-                  onRename={() => setDialog(d)}
-                  onDelete={() => onDelete(d)}
-                />
-              ))}
-            </SortableContext>
-            <DragOverlay>
-              {dragged ? (
-                <span className="flex items-center gap-1.5 rounded-md bg-secondary px-2 py-1 text-sm font-medium text-foreground shadow-md">
-                  <LayoutDashboard className="size-3.5" />
-                  {dragged.name}
-                </span>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        )}
-
-        {canCreate && (
-          <button
-            type="button"
-            onClick={() => setDialog('new')}
-            className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <Plus className="size-3.5" />
-            {t('newDashboard')}
-          </button>
-        )}
+  if (dashboards.length === 0) {
+    return (
+      <div className="flex shrink-0 items-center gap-0.5">
+        <span className={cn(PAGE_CONTROL_CLASS, PAGE_CONTROL_ACTIVE_CLASS, 'h-7')}>
+          <LayoutDashboard aria-hidden="true" />
+          {t('defaultName')}
+        </span>
+        {canCreate && room.tabs && <NewDashboardButton onClick={onNew} />}
       </div>
+    );
+  }
 
-      {actions && <div className="flex shrink-0 items-center gap-2 pl-2">{actions}</div>}
-
-      <DashboardNameDialog
-        key={renaming?.id ?? (dialog === 'new' ? 'new' : 'closed')}
-        open={dialog != null}
-        title={renaming ? t('renameDashboard') : t('newDashboard')}
-        initial={renaming?.name ?? ''}
-        onClose={() => setDialog(null)}
-        onSubmit={(name) => {
-          if (renaming) onRename(renaming, name);
-          else if (dialog === 'new') onNewDashboard(name);
-          setDialog(null);
-        }}
+  if (!room.tabs) {
+    return (
+      <PageTabs
+        label={t('options')}
+        value={String(isVirtual ? '' : (activeDashboardId ?? ''))}
+        onChange={(id) => onSelect(Number(id))}
+        items={dashboards.map((d) => ({
+          value: String(d.id),
+          label: d.name,
+          icon: LayoutDashboard,
+        }))}
       />
-    </WorkspaceHeader>
+    );
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-0.5">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={(e: DragStartEvent) => setActiveId(Number(e.active.id))}
+        onDragCancel={() => setActiveId(null)}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={dashboards.map((d) => d.id)}
+          strategy={horizontalListSortingStrategy}
+        >
+          {dashboards.map((d) => (
+            <DashboardTab
+              key={d.id}
+              dashboard={d}
+              active={!isVirtual && activeDashboardId === d.id}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              onSelect={() => onSelect(d.id)}
+              onRename={() => onRename(d)}
+              onDelete={() => onDelete(d)}
+            />
+          ))}
+        </SortableContext>
+        <DragOverlay>
+          {dragged ? (
+            <span className={cn(PAGE_CONTROL_CLASS, PAGE_CONTROL_ACTIVE_CLASS, 'h-7 shadow-md')}>
+              <LayoutDashboard aria-hidden="true" />
+              {dragged.name}
+            </span>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+      {canCreate && <NewDashboardButton onClick={onNew} />}
+    </div>
+  );
+}
+
+function NewDashboardButton({ onClick }: { onClick: () => void }) {
+  const t = useTranslations('dashboards');
+  return (
+    <button type="button" onClick={onClick} className={cn(PAGE_CONTROL_CLASS, 'h-7')}>
+      <Plus aria-hidden="true" />
+      {t('newDashboard')}
+    </button>
   );
 }

@@ -40,5 +40,11 @@
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…"
+  },
+  "mailFilter": {
+    "read": "阅读状态",
+    "attachments": "附件",
+    "any": "全部",
+    "reset": "重置筛选"
   }
 }

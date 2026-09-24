@@ -19,7 +19,7 @@ export default function PipelineBuilder({ header }: { header?: ReactNode }) {
   const isMobile = useIsMobile();
 
   return (
-    <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_24rem]">
+    <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="min-w-0 space-y-4">
         {header}
         <PipelineIssueSummary />
@@ -39,7 +39,7 @@ export default function PipelineBuilder({ header }: { header?: ReactNode }) {
           </SheetContent>
         </Sheet>
       ) : (
-        <aside className="sticky top-0 rounded-xl border bg-card p-4">
+        <aside className="sticky top-0 rounded-lg border bg-card p-4">
           <PipelineStepInspector />
         </aside>
       )}

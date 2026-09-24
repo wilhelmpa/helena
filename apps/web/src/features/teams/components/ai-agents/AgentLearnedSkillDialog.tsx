@@ -41,7 +41,7 @@ export default function AgentLearnedSkillDialog({
           <p className="text-sm text-muted-foreground">{t('tooLarge')}</p>
         ) : (
           <>
-            <div className="rounded-md bg-muted/40 px-3 py-2 text-sm">
+            <div className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm">
               <Markdown>{skill.markdown}</Markdown>
             </div>
             {skill.files.map((file) => (
@@ -49,7 +49,7 @@ export default function AgentLearnedSkillDialog({
                 <p className="font-mono text-xs text-muted-foreground" dir="ltr">
                   {file.path}
                 </p>
-                <div className="rounded-md bg-muted/40 px-3 py-2 text-sm">
+                <div className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm">
                   <Markdown>{file.content}</Markdown>
                 </div>
               </div>

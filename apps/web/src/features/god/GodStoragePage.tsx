@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import type { StorageSettings } from '@/lib/api/endpoints/settings';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +15,7 @@ import {
   useInstanceStorageSettingsQuery,
   useUpdateInstanceStorageSettings,
 } from './services/god.service';
+import PageSaveAction from '@/components/common/page/PageSaveAction';
 
 export default function GodStoragePage() {
   const query = useInstanceStorageSettingsQuery();
@@ -47,7 +47,6 @@ function settingsToForm(settings: StorageSettings): FormState {
 
 function StorageForm({ settings }: { settings: FormState }) {
   const t = useTranslations('god.storage');
-  const tCommon = useTranslations('common');
   const update = useUpdateInstanceStorageSettings();
   const [form, setForm] = useState(settings);
 
@@ -84,21 +83,15 @@ function StorageForm({ settings }: { settings: FormState }) {
   }
 
   return (
-    <GodSectionPage
-      slug="storage"
-      actions={
-        <Button
-          size="sm"
-          onClick={() => void save()}
-          disabled={!dirty || !valid || update.isPending}
-        >
-          {update.isPending ? tCommon('saving') : tCommon('save')}
-        </Button>
-      }
-    >
-      <div className="space-y-8">
+    <GodSectionPage slug="storage">
+      <PageSaveAction
+        onSave={() => void save()}
+        disabled={!dirty || !valid}
+        saving={update.isPending}
+      />
+      <div className="space-y-6">
         <SettingsSection title={t('fileSize')} description={t('fileSizeHint')}>
-          <SettingsCard className="grid gap-6 p-4 sm:grid-cols-2">
+          <SettingsCard className="grid gap-4 p-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="storage-attachment-mb">{t('attachmentMb')}</Label>
               <Input

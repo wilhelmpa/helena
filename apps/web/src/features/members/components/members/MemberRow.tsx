@@ -57,11 +57,7 @@ export default function MemberRow({
       <TableCell className="px-3 py-3 align-top whitespace-normal">
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <Avatar
-              name={displayName}
-              image={member.image}
-              className="size-8 shrink-0 text-[11px]"
-            />
+            <Avatar name={displayName} image={member.image} className="size-8 shrink-0" />
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="flex items-center gap-2 text-sm font-medium">
                 <span className="truncate">{displayName}</span>
@@ -100,11 +96,11 @@ export default function MemberRow({
           isLastOwner={isLastOwner}
         />
       </TableCell>
-      <TableCell className="px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground">
+      <TableCell className="hidden px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground md:table-cell">
         {/* An agent reads no timestamps, so its bot user's zone means nothing. */}
         {member.isAgent ? null : member.timezone}
       </TableCell>
-      <TableCell className="px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground">
+      <TableCell className="hidden px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground md:table-cell">
         {formatDateTime(member.createdAt)}
       </TableCell>
       <TableCell className="px-3 pt-3 pb-2 align-top">

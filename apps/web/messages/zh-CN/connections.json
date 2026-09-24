@@ -1,24 +1,35 @@
 {
-  "title": "Connections",
-  "description": "Connected services and accounts",
-  "loading": "Checking connections…",
-  "loadError": "Connection status could not be loaded.",
-  "lastCheck": "Last check",
-  "never": "Never",
-  "availableTools": "Available tools",
+  "title": "连接",
+  "description": "已连接的服务和账户",
+  "loading": "正在检查连接…",
+  "loadError": "无法加载连接状态。",
+  "loadErrorHint": "服务器没有响应，请稍后重试。",
+  "lastCheck": "上次检查",
+  "never": "从未",
+  "toolCount": "{count, plural, other {# 个工具}}",
+  "empty": "没有连接",
+  "emptyHint": "连接服务没有报告任何已连接的服务。",
+  "unconfigured": {
+    "title": "未设置连接服务",
+    "hint": "此服务器没有运行检查连接的服务。邮箱账户、凭据和设备都有各自的页面。",
+    "mail": "邮箱账户",
+    "credentials": "凭据",
+    "devices": "设备与 Obsidian"
+  },
   "status": {
-    "connected": "Connected",
-    "available": "Available",
-    "configured": "Configured",
-    "disabled": "Disabled",
-    "unavailable": "Unavailable",
-    "unsupported": "Unsupported",
-    "error": "Error"
+    "connected": "已连接",
+    "available": "可用",
+    "configured": "已配置",
+    "disabled": "已停用",
+    "unavailable": "不可用",
+    "unsupported": "不支持",
+    "error": "错误"
   },
   "actions": {
-    "checkAll": "Check all",
-    "check": "Check",
-    "reconnect": "Reconnect",
-    "openPairing": "Open pairing"
+    "checkAll": "全部检查",
+    "check": "检查",
+    "reconnect": "重新连接",
+    "openPairing": "打开配对",
+    "retry": "重试"
   }
 }

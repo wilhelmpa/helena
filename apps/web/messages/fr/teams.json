@@ -398,6 +398,7 @@
     "usernamePlaceholder": "ex. bot-triage",
     "usernameHint": "Lettres, chiffres, points, tirets et tirets bas. Jusqu'à 64 caractères.",
     "template": "Modèle",
+    "templateCopyCount": "{count, plural, =0 {aucune copie} one {# copie} other {# copies}}",
     "templateHint": "Un modèle ne s'exécute nulle part et ne travaille dans aucun projet. Les projets en ajoutent des copies comme leurs propres spécialistes. L'activer retire l'agent de ses projets.",
     "templates": "Modèles",
     "templatesHint": "Les projets en ajoutent des copies comme leurs propres spécialistes. Les connaissances partagées par les copies vont dans la bibliothèque de compétences ; chaque copie garde sa propre mémoire.",
@@ -704,6 +705,24 @@
       "toolMemory": "Mémoire",
       "toolSkill": "Compétence",
       "tokens": "{count} tokens"
+    },
+    "templateSync": {
+      "copyOf": "Copie de {name}",
+      "copyOfUnknown": "Copie d'un modèle supprimé",
+      "overridden": "diffère",
+      "overriddenHint": "Modifié ici manuellement et ne suit plus le modèle.",
+      "followsHint": "Suit le modèle.",
+      "resetToTemplate": "Réinitialiser selon le modèle",
+      "resetDone": "{group} réinitialisé selon le modèle",
+      "groups": {
+        "skills": "Compétences",
+        "tools": "Outils",
+        "mcpServers": "Serveurs MCP",
+        "approvals": "Règles d'approbation",
+        "instructions": "Instructions",
+        "model": "Modèle/raisonnement",
+        "budgets": "Budgets"
+      }
     }
   },
   "members": {

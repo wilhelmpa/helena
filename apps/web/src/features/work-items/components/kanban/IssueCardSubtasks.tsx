@@ -46,7 +46,7 @@ export function IssueCardSubtasks({
           e.preventDefault();
           setUnfolded(!open);
         }}
-        className="-mx-1.5 flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] tracking-wide text-muted-foreground/70 hover:bg-muted/70 hover:text-foreground"
+        className="-mx-1.5 flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs tracking-wide text-muted-foreground/70 hover:bg-muted/70 hover:text-foreground"
       >
         <Chevron className="size-3 shrink-0 text-muted-foreground" />
         <ListTree className="size-3 shrink-0 text-muted-foreground" />
@@ -90,12 +90,12 @@ export function IssueCardSubtasks({
                       className="size-3 shrink-0"
                     />
                   )}
-                  <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
                     {subtask.identifier}
                   </span>
                   <span
                     className={cn(
-                      'truncate text-[11px] text-foreground/85',
+                      'truncate text-xs text-foreground/85',
                       column?.stateType === 'completed' && 'text-muted-foreground/70 line-through',
                     )}
                   >

@@ -1,12 +1,15 @@
 import { FolderKanban, Home, LayoutTemplate, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { PageSelect } from '@/components/layout/PageToolbar';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { cn } from '@/lib/utils';
 
 export type HomeFilesRoot = 'home' | 'private' | 'templates' | `project:${string}`;
 
 // The folders the Home Files page browses: Home, Private for the owner, Templates, and
-// the folder of every project the reader works in.
+// the folder of every project the reader works in. From md a list beside the files, like
+// the sidebar; on a phone the same choice as a select in the header row
+// (HomeFilesRootSelect), so the page has no second row of chips.
 export default function HomeFilesRoots({
   current,
   owner,
@@ -31,7 +34,7 @@ export default function HomeFilesRoots({
         onClick={() => onChange(root)}
         aria-current={current === root ? 'page' : undefined}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm hover:bg-accent',
+          'flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm transition-colors hover:bg-accent',
           current === root && 'bg-accent font-medium',
         )}
       >
@@ -44,20 +47,61 @@ export default function HomeFilesRoots({
   );
 
   return (
-    <nav className="shrink-0 md:w-52" aria-label={t('label')}>
-      <ul className="flex gap-1 overflow-x-auto md:flex-col">
+    <nav className="w-52 shrink-0 max-md:hidden" aria-label={t('label')}>
+      <ul className="flex flex-col gap-px">
         {entries.map((entry) => item(entry.root, entry.label, entry.Icon))}
       </ul>
       {projects.length > 0 && (
         <>
-          <p className="mt-4 mb-1 hidden px-2 text-xs font-medium text-muted-foreground md:block">
+          <p className="mt-3 flex h-8 items-center px-2 text-xs font-medium text-muted-foreground">
             {t('projects')}
           </p>
-          <ul className="flex gap-1 overflow-x-auto md:flex-col">
+          <ul className="flex flex-col gap-px">
             {projects.map((project) => item(`project:${project.key}`, project.name, FolderKanban))}
           </ul>
         </>
       )}
     </nav>
+  );
+}
+
+// The same choice of folder for the header row on a phone.
+export function HomeFilesRootSelect({
+  current,
+  owner,
+  projects,
+  onChange,
+}: {
+  current: HomeFilesRoot;
+  owner: boolean;
+  projects: Project[];
+  onChange: (root: HomeFilesRoot) => void;
+}) {
+  const t = useTranslations('files.roots');
+  const icon =
+    current === 'private'
+      ? Lock
+      : current === 'templates'
+        ? LayoutTemplate
+        : current === 'home'
+          ? Home
+          : FolderKanban;
+  return (
+    <PageSelect<HomeFilesRoot>
+      label={t('label')}
+      icon={icon}
+      value={current}
+      onChange={onChange}
+      options={[
+        { value: 'home', label: t('home'), icon: Home },
+        ...(owner ? [{ value: 'private' as const, label: t('private'), icon: Lock }] : []),
+        { value: 'templates', label: t('templates'), icon: LayoutTemplate },
+        ...projects.map((project) => ({
+          value: `project:${project.key}` as const,
+          label: project.name,
+          icon: FolderKanban,
+        })),
+      ]}
+    />
   );
 }

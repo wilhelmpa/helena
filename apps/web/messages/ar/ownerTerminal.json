@@ -1,0 +1,32 @@
+{
+  "stepUp": {
+    "title": "أكّد أنك أنت",
+    "description": "أدخل الرمز من تطبيق المصادقة لفتح الطرفية لمدة 12 ساعة.",
+    "codeLabel": "الرمز",
+    "confirm": "تأكيد",
+    "verifying": "جارٍ التحقق…",
+    "wrongCode": "لم يُقبل الرمز.",
+    "rateLimited": "محاولات كثيرة جدًا. انتظر 15 دقيقة وحاول مرة أخرى."
+  },
+  "grant": {
+    "active": "الطرفية مصرَّحة حتى {time}",
+    "expired": "انتهت صلاحية تصريح الطرفية.",
+    "end": "إنهاء",
+    "lan": "الطرفية مفتوحة بدون رمز (الشبكة المحلية)"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "تطوير Helena (Claude Code)",
+    "helena-dev-codex": "تطوير Helena (Codex)",
+    "close": "إغلاق التبويب"
+  },
+  "keys": {
+    "esc": "Esc",
+    "tab": "Tab",
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "paste": "لصق"
+  }
+}

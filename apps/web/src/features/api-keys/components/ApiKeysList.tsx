@@ -19,7 +19,7 @@ export default function ApiKeysList({
 
   if (isPending) {
     return (
-      <div className="space-y-2 py-3">
+      <div className="space-y-2 p-4">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>
@@ -27,11 +27,11 @@ export default function ApiKeysList({
   }
 
   if (apiKeys.length === 0) {
-    return <p className="py-6 text-sm text-muted-foreground">{t('empty')}</p>;
+    return <p className="px-4 py-3 text-sm text-muted-foreground">{t('empty')}</p>;
   }
 
   return (
-    <ItemGroup>
+    <ItemGroup className="divide-y">
       {apiKeys.map((key) => (
         <ApiKeysItem key={key.id} apiKey={key} onDelete={() => onDelete(key)} />
       ))}

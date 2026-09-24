@@ -35,8 +35,8 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
     >
       <div
         className={cn(
-          'flex items-start gap-1 rounded-lg border bg-card p-2',
-          selectedId === step.id && 'border-primary ring-1 ring-primary',
+          'flex items-start gap-1 rounded-lg border bg-background p-2 transition-colors',
+          selectedId === step.id && 'border-foreground/25 bg-accent',
         )}
       >
         {editable && (
@@ -53,7 +53,7 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
         )}
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-start gap-2 rounded-md p-1 text-start hover:bg-accent/50"
+          className="flex min-w-0 flex-1 items-start gap-2 rounded-md p-1 text-start hover:bg-accent/60"
           onClick={() => select(step.id)}
         >
           <span className="grid size-7 shrink-0 place-items-center rounded-md bg-muted">

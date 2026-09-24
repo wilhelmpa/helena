@@ -67,7 +67,7 @@ export default function AccountProfileAvatar() {
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar name={user?.name || user?.email || '?'} image={image} className="size-16 text-lg" />
+      <Avatar name={user?.name || user?.email || '?'} image={image} className="size-16" />
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
           <input ref={inputRef} type="file" accept={ACCEPT} className="hidden" onChange={onPick} />

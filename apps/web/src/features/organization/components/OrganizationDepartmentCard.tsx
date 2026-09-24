@@ -26,7 +26,7 @@ export default function OrganizationDepartmentCard({
 
   return (
     <form
-      className="space-y-3 rounded-lg border p-4"
+      className="space-y-3 rounded-lg border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate({
@@ -37,13 +37,15 @@ export default function OrganizationDepartmentCard({
     >
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.name')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.name')}</span>
           <Input value={name} maxLength={80} onChange={(event) => setName(event.target.value)} />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.parentDepartment')}</span>
+          <span className="block text-xs text-muted-foreground">
+            {t('fields.parentDepartment')}
+          </span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={parentId}
             onChange={(event) => setParentId(event.target.value)}
           >
@@ -59,7 +61,7 @@ export default function OrganizationDepartmentCard({
         </label>
       </div>
       <label className="space-y-1 text-sm">
-        <span className="text-muted-foreground">{t('fields.description')}</span>
+        <span className="block text-xs text-muted-foreground">{t('fields.description')}</span>
         <Textarea
           value={description}
           maxLength={1000}
@@ -69,14 +71,20 @@ export default function OrganizationDepartmentCard({
       <div className="flex justify-end gap-2">
         <Button
           type="button"
-          variant="destructive"
+          variant="ghost"
           size="sm"
+          className="text-destructive hover:text-destructive"
           disabled={remove.isPending}
           onClick={() => remove.mutate(department.id)}
         >
           {t('actions.delete')}
         </Button>
-        <Button type="submit" size="sm" disabled={update.isPending || !name.trim()}>
+        <Button
+          type="submit"
+          variant="outline"
+          size="sm"
+          disabled={update.isPending || !name.trim()}
+        >
           {t('actions.save')}
         </Button>
       </div>

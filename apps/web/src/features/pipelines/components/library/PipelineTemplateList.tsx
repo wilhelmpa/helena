@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { SectionLabel } from '@/components/common/page/RowList';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
 import { usePipelineTemplates } from '@/services/pipelines.service';
@@ -18,24 +19,31 @@ export default function PipelineTemplateList({
   const rows = templates.data ?? [];
 
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-medium">{t('templates')}</h2>
+    <section className="min-w-0">
+      <SectionLabel
+        trailing={
+          rows.length > 0 ? (
+            <span className="font-mono text-xs tabular-nums">{rows.length}</span>
+          ) : null
+        }
+      >
+        {t('templates')}
+      </SectionLabel>
       {templates.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-14" />
       ) : templates.isError ? (
-        <div className="flex items-center gap-3 rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadFailed')}
           <Button size="sm" variant="outline" onClick={() => void templates.refetch()}>
             {t('tryAgain')}
           </Button>
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-4 text-sm">
-          <p className="font-medium">{t('empty')}</p>
-          <p className="text-muted-foreground">{t('emptyHint')}</p>
-        </div>
+        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+          {t('emptyHint')}
+        </p>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ul className="divide-y overflow-hidden rounded-lg border bg-card">
           {rows.map((pipeline) => (
             <PipelineTemplateRow key={pipeline.id} pipeline={pipeline} canDelete={canDelete} />
           ))}

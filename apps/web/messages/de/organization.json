@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "Noch keine Organisationsstruktur.",
-    "unassigned": "Nicht zugewiesene Agenten"
+    "unassigned": "Nicht zugewiesene Agenten",
+    "unassignedHint": "Hat keine Vorlage und berichtet an niemanden. Weise eine Abteilung oder einen Vorgesetzten zu.",
+    "noDepartment": "Ohne Abteilung",
+    "templates": "Vorlagen im Pool"
   },
   "summary": {
     "pool": "Agentenpool",
@@ -172,5 +175,8 @@
       "perClosedTask": "Pro abgeschlossener Aufgabe",
       "closedTasks": "{count, plural, =0 {Diesen Monat keine Aufgabe mit Agenten abgeschlossen} one {# Aufgabe diesen Monat mit Agenten abgeschlossen} other {# Aufgaben diesen Monat mit Agenten abgeschlossen}}"
     }
-  }
+  },
+  "managerRequiredTitle": "Kein Zugriff",
+  "loadFailed": "Die Organisation konnte nicht geladen werden.",
+  "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
 }

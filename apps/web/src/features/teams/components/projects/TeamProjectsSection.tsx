@@ -9,13 +9,17 @@ import { useTeam, useTeamProjectsQuery } from '@/services/teams.service';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import ListPager from '@/components/common/ListPager';
-import SearchInput from '@/components/common/SearchInput';
 import { usePaging } from '@/hooks/usePaging';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
-import { Button } from '@/components/ui/button';
 import NewProjectModal from '@/components/layout/NewProjectModal';
 import TeamProjectPanel from './TeamProjectPanel';
 import TeamProjectsTable from './TeamProjectsTable';
+import {
+  PageActions,
+  PageSearch,
+  PageToolbar,
+  PageToolbarSpacer,
+} from '@/components/layout/PageToolbar';
 
 // The projects the team owns, one row each, opening in a side panel. Owners and
 // managers run them, so only they create one; a plain member only reads them.
@@ -44,25 +48,28 @@ export default function TeamProjectsSection({ teamId }: { teamId: number }) {
       title={t('sections.projects.title')}
       description={t('sections.projects.description')}
       wide
-      actions={
-        canCreate ? (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('panel.newProject')}
-          </Button>
-        ) : undefined
-      }
     >
+      <PageToolbar>
+        <PageToolbarSpacer />
+        <PageSearch
+          value={search}
+          onChange={onSearchChange}
+          placeholder={t('panel.searchProjects')}
+        />
+        <PageActions
+          primary={
+            canCreate
+              ? {
+                  id: 'new',
+                  label: t('panel.newProject'),
+                  icon: Plus,
+                  onClick: () => setCreating(true),
+                }
+              : undefined
+          }
+        />
+      </PageToolbar>
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <SearchInput
-            value={search}
-            onChange={onSearchChange}
-            placeholder={t('panel.searchProjects')}
-            className="w-60"
-          />
-        </div>
-
         {!data ? (
           <ListSkeleton rows={4} rowClassName="h-12" />
         ) : projects.length === 0 ? (

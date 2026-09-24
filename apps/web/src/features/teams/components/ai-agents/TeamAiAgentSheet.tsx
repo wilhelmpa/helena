@@ -101,8 +101,8 @@ function SheetBody({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-3 border-b border-border/60 px-5 pt-4 pb-3.5">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/60">
+      <div className="flex items-center gap-3 border-b border-border/60 px-4 pt-4 pb-3.5">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground ring-1 ring-border/60">
           <KindIcon className="size-4.5" />
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -115,7 +115,7 @@ function SheetBody({
             </SheetDescription>
           </div>
           {agent && (
-            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {agent.kind}
             </span>
           )}
@@ -159,7 +159,7 @@ function SheetBody({
               onReset={chat.newChat}
             />
           ) : (
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
               <MessageSquare className="size-5 text-muted-foreground" />
               <p className="text-sm font-medium">{t('testChat')}</p>
               <p className="max-w-xs text-xs text-muted-foreground">

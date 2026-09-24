@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "Немає шаблону і ні перед ким не звітує. Призначте відділ або керівника.",
+    "noDepartment": "Без відділу",
+    "templates": "Шаблони пулу"
   },
   "summary": {
     "pool": "Agent pool",
@@ -172,5 +175,8 @@
       "perClosedTask": "На закрите завдання",
       "closedTasks": "{count, plural, =0 {Цього місяця агенти не закрили жодного завдання} one {# завдання закрито з агентами цього місяця} few {# завдання закрито з агентами цього місяця} many {# завдань закрито з агентами цього місяця} other {# завдання закрито з агентами цього місяця}}"
     }
-  }
+  },
+  "managerRequiredTitle": "Немає доступу",
+  "loadFailed": "Не вдалося завантажити організацію.",
+  "loadFailedHint": "Сервер не відповів. Спробуйте ще раз трохи згодом."
 }

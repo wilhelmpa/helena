@@ -3,12 +3,13 @@
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { SectionLabel } from '@/components/common/page/RowList';
 import { Button } from '@/components/ui/button';
 import { useBuiltinPipelines, useCreatePipelineTemplate } from '@/services/pipelines.service';
 import { useNewPipeline } from '../../hooks/useNewPipeline';
 
-// The templates Plan ships. Adding one copies it into the library with its names in the
-// reader's language.
+// The templates Helena ships. Adding one copies it into the library with its names in
+// the reader's language.
 export default function PipelineBuiltinList({
   teamId,
   canCreate,
@@ -23,23 +24,27 @@ export default function PipelineBuiltinList({
   if (!builtins.data?.length) return null;
 
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-sm font-medium">{t('builtins')}</h2>
-        <p className="text-xs text-muted-foreground">{t('builtinsHint')}</p>
-      </div>
-      <ul className="grid gap-3 md:grid-cols-2">
+    <section className="min-w-0">
+      <SectionLabel>{t('builtins')}</SectionLabel>
+      <ul className="grid gap-2 md:grid-cols-2">
         {builtins.data.map((template) => {
           const input = builtin(template);
           return (
-            <li key={template.key} className="flex flex-col gap-2 rounded-lg border bg-card p-3">
-              <p className="font-medium">{input.name}</p>
-              <p className="flex-1 text-sm text-muted-foreground">{input.description}</p>
+            <li
+              key={template.key}
+              className="flex flex-col gap-1.5 rounded-lg border bg-card px-3 py-2.5"
+            >
+              <p className="text-md font-medium" dir="auto">
+                {input.name}
+              </p>
+              <p className="flex-1 text-sm text-muted-foreground" dir="auto">
+                {input.description}
+              </p>
               {canCreate && (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="self-start"
+                  className="mt-1 self-start"
                   disabled={create.isPending}
                   onClick={() =>
                     create.mutate(input, {

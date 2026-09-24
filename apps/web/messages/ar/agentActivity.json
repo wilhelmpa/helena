@@ -40,5 +40,8 @@
   "notice": {
     "workflow-runs-unavailable": "لم يستجب Mastra، لذلك لم تُعرض تشغيلات سير العمل.",
     "workflow-runs-limited": "لا تُعرض كل تشغيلات سير العمل: يقرأ الخط الزمني من Mastra عددًا محدودًا من سير العمل والتشغيلات."
-  }
+  },
+  "filterKind": "النوع",
+  "filterAgent": "الوكيل",
+  "unavailableHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل."
 }

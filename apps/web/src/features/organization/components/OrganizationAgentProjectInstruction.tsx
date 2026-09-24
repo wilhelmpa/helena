@@ -22,7 +22,7 @@ export default function OrganizationAgentProjectInstruction({
 
   return (
     <form
-      className="space-y-2 rounded-md bg-muted/40 p-3"
+      className="space-y-2 rounded-md border p-3"
       onSubmit={(event) => {
         event.preventDefault();
         save.mutate({ agentId, projectId: project.id, instructions });
@@ -38,7 +38,7 @@ export default function OrganizationAgentProjectInstruction({
         onChange={(event) => setInstructions(event.target.value)}
       />
       <div className="flex justify-end">
-        <Button type="submit" size="sm" disabled={save.isPending}>
+        <Button type="submit" variant="outline" size="sm" disabled={save.isPending}>
           {t('actions.saveInstructions')}
         </Button>
       </div>

@@ -12,7 +12,7 @@ import { agentTeamWorkflow } from './team-workflow.ts';
 
 const inboxEffects: readonly EffectSpec[] = [
   { kind: 'analysis', target: 'inbox:classification', description: 'Classify and route the message' },
-  { kind: 'internal-write', target: 'plan:issue', description: 'Let the existing Plan worker create or update the proposed issue' },
+  { kind: 'internal-write', target: 'plan:issue', description: 'Let the existing Helena worker create or update the proposed issue' },
 ];
 
 const prepareInbox = createStep({

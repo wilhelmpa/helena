@@ -10,7 +10,7 @@ import DisplayTimelineRows from '@/components/layout/DisplayTimelineRows';
 
 // The body of the Display settings: a tabbed layout switcher (Project/Table/
 // Timeline/Calendar) and the settings for the selected layout. Rendered inside
-// the DisplayPopover. Settings belong to the active project+view or saved view
+// the board's display control (BoardDisplayControl). Settings belong to the active project+view or saved view
 // (see the view editor and lib/viewSettings).
 export default function DisplaySettingsBody({
   view,

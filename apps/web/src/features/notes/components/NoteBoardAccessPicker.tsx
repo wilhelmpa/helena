@@ -65,11 +65,11 @@ export default function NoteBoardAccessPicker({
     return {
       key: candidate.userId,
       search: candidate.name,
-      icon: <Avatar name={candidate.name} image={candidate.image} className="size-4 text-[8px]" />,
+      icon: <Avatar name={candidate.name} image={candidate.image} className="size-4" />,
       label: candidate.name,
       selected,
       trailing: candidate.canAccess ? undefined : (
-        <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+        <Badge variant="secondary" className="px-1.5 py-0 text-xs">
           {t('noAccessShort')}
         </Badge>
       ),
@@ -98,9 +98,9 @@ export default function NoteBoardAccessPicker({
           type="button"
           aria-label={t('boardAccess')}
           title={t(`visibilityHint.${visibility}`)}
-          className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         >
-          <Icon className="size-3.5" />
+          <Icon className="size-4" />
         </button>
       }
       inputPlaceholder={t('boardAccessPlaceholder')}

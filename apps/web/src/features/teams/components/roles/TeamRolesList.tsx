@@ -18,6 +18,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PermissionsPopover } from '@/components/common/permissions/PermissionsPopover';
 import DeleteRoleDialog from './DeleteRoleDialog';
+import TableCard from '@/components/common/page/TableCard';
 
 // The team's roles, one row each: what it grants, and the actions to edit or delete
 // it. Deleting is the owner's, so a manager gets the row without that action. The
@@ -57,90 +58,92 @@ export default function TeamRolesList({
 
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-[560px] table-fixed">
-        <colgroup>
-          <col className="w-[56%]" />
-          <col className="w-[26%]" />
-          <col className="w-[18%]" />
-        </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.role')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.permissions')}
-            </TableHead>
-            <TableHead className="text-end text-xs font-medium text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {roles.map((role) => (
-            <TableRow
-              key={role.id}
-              className={canEdit ? 'cursor-pointer' : undefined}
-              onClick={() => canEdit && onEdit(role)}
-            >
-              <TableCell className="px-3 py-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-sm font-medium">{role.name}</span>
-                  {role.isDefault && (
-                    <Badge
-                      variant="secondary"
-                      className="shrink-0 px-1.5 py-0 text-[10px] font-normal"
-                    >
-                      {t('roles.default')}
-                    </Badge>
-                  )}
-                </div>
-              </TableCell>
-
-              <TableCell className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                <PermissionsPopover permissions={role.permissions} />
-              </TableCell>
-
-              <TableCell className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 text-muted-foreground hover:text-foreground"
-                    disabled={!canEdit}
-                    aria-label={t('roles.editAction')}
-                    title={t('roles.editAction')}
-                    onClick={() => onEdit(role)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                  {canDelete && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="inline-flex">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 text-muted-foreground hover:text-destructive"
-                            disabled={role.isDefault}
-                            aria-label={t('roles.deleteAction')}
-                            onClick={() => setDeleting(role)}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {role.isDefault ? t('roles.defaultUndeletable') : t('roles.deleteAction')}
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </TableCell>
+      <TableCard>
+        <Table className="table-fixed xl:min-w-[560px]">
+          <colgroup>
+            <col className="w-[56%]" />
+            <col className="w-[26%]" />
+            <col className="w-[18%]" />
+          </colgroup>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="text-xs font-medium text-muted-foreground">
+                {t('columns.role')}
+              </TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground">
+                {t('columns.permissions')}
+              </TableHead>
+              <TableHead className="text-end text-xs font-medium text-muted-foreground">
+                {tCommon('actions')}
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {roles.map((role) => (
+              <TableRow
+                key={role.id}
+                className={canEdit ? 'cursor-pointer' : undefined}
+                onClick={() => canEdit && onEdit(role)}
+              >
+                <TableCell className="px-3 py-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm font-medium">{role.name}</span>
+                    {role.isDefault && (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 px-1.5 py-0 text-xs font-normal"
+                      >
+                        {t('roles.default')}
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+
+                <TableCell className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                  <PermissionsPopover permissions={role.permissions} />
+                </TableCell>
+
+                <TableCell className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-muted-foreground hover:text-foreground"
+                      disabled={!canEdit}
+                      aria-label={t('roles.editAction')}
+                      title={t('roles.editAction')}
+                      onClick={() => onEdit(role)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    {canDelete && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 text-muted-foreground hover:text-destructive"
+                              disabled={role.isDefault}
+                              aria-label={t('roles.deleteAction')}
+                              onClick={() => setDeleting(role)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {role.isDefault ? t('roles.defaultUndeletable') : t('roles.deleteAction')}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableCard>
 
       {deleting && (
         <DeleteRoleDialog

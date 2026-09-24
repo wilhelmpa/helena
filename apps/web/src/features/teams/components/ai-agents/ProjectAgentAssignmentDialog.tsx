@@ -100,7 +100,7 @@ export default function ProjectAgentAssignmentDialog({
               {t('assignmentDescription', { name: agent.name })}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-5 py-2">
+          <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor={`agent-role-${agent.id}`}>{t('projectRole')}</Label>
               <Select

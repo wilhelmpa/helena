@@ -37,7 +37,7 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
       ) : !permissions.read ? (
         <p className="text-sm text-muted-foreground">{t('tools.noAccess')}</p>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-6">
           <TeamMcpServers
             teamId={teamId}
             canManage={team?.role === 'owner' || team?.role === 'manager'}
@@ -48,7 +48,7 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
               hint={t('tools.hint')}
               action={
                 permissions.create ? (
-                  <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
+                  <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
                     <Plus className="size-3.5" />
                     {t('tools.add')}
                   </Button>

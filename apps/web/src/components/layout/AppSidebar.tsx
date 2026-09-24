@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FolderPlus, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { useSession } from '@/lib/auth-client';
-import { APP_NAME } from '@/utils/app';
+import { cn } from '@/lib/utils';
 import { godPath } from '@/utils/paths';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
@@ -23,10 +23,8 @@ import ProjectList from '@/components/layout/ProjectList';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarProjectNav from '@/components/layout/SidebarProjectNav';
 import SidebarHomeNav from '@/components/layout/SidebarHomeNav';
-import HelenaMark from '@/components/brand/HelenaMark';
-import HelenaWordmark from '@/components/brand/HelenaWordmark';
-import SidebarBrandFooter from '@/components/brand/SidebarBrandFooter';
-import SidebarUtilityRow from '@/components/brand/SidebarUtilityRow';
+import SidebarBrand from '@/components/brand/SidebarBrand';
+import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 
 // The app sidebar: the projects, then either the navigation of the selected project
 // (its work, its agents and automation, its settings folded under one entry) or, with
@@ -63,17 +61,33 @@ export default function AppSidebar({
   // 'classic' keeps them in AppHeader instead, exactly where they are today.
   const { headerLayout } = useAccountPreferences();
 
+  // Whether rows are hidden below the navigation's bottom edge: only then does its last
+  // visible row fade out, so a list that fits never looks greyed at its end.
+  const navRef = useRef<HTMLDivElement>(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+  useEffect(() => {
+    const node = navRef.current;
+    if (!node) return;
+    const check = () => setMoreBelow(node.scrollTop + node.clientHeight < node.scrollHeight - 1);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(node);
+    for (const child of Array.from(node.children)) observer.observe(child);
+    node.addEventListener('scroll', check, { passive: true });
+    return () => {
+      observer.disconnect();
+      node.removeEventListener('scroll', check);
+    };
+  }, [currentProjectKey]);
+
   return (
     <Sidebar collapsible="icon" side={side}>
-      <SidebarHeader className="h-12 shrink-0 justify-center px-4 py-0 group-data-[collapsible=icon]:px-2">
-        <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
-          <span className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-            <HelenaMark className="size-6 shrink-0" />
-            <HelenaWordmark label={APP_NAME} className="h-3.5 w-auto text-sidebar-foreground" />
-          </span>
+      <SidebarHeader className="h-12 shrink-0 justify-center px-2 py-0">
+        <div className="flex items-center justify-between gap-1 group-data-[collapsible=icon]:justify-center">
+          <SidebarBrand className="min-w-0 flex-1" />
           <button
             type="button"
-            className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             title={newProjectT('title')}
             onClick={onNewProject}
           >
@@ -89,7 +103,16 @@ export default function AppSidebar({
           currentProjectKey={currentProjectKey}
           onSelectProject={onSelectProject}
         />
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain group-data-[collapsible=icon]:overflow-hidden">
+        {/* A long navigation scrolls; while rows are hidden below, its last visible row
+            fades out instead of being cut off hard at the footer. */}
+        <div
+          ref={navRef}
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain group-data-[collapsible=icon]:overflow-hidden',
+            moreBelow &&
+              '[mask-image:linear-gradient(to_bottom,black_calc(100%-1.25rem),transparent)]',
+          )}
+        >
           {currentProjectKey ? (
             <SidebarProjectNav projectKey={currentProjectKey} />
           ) : (
@@ -115,10 +138,9 @@ export default function AppSidebar({
         {headerLayout === 'single' && (
           <>
             <SidebarSeparator />
-            <SidebarUtilityRow />
+            <SidebarAccountRow />
           </>
         )}
-        <SidebarBrandFooter />
       </SidebarFooter>
 
       <SidebarRail />

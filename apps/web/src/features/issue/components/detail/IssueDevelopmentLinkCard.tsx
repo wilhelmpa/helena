@@ -66,11 +66,11 @@ export default function IssueDevelopmentLinkCard({
             </p>
           )}
           {link.kind === 'pull_request' && (link.sourceBranch || link.targetBranch) && (
-            <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground" dir="ltr">
+            <p className="mt-1 truncate font-mono text-xs text-muted-foreground" dir="ltr">
               {link.sourceBranch ?? '?'} → {link.targetBranch}
             </p>
           )}
-          <time dateTime={link.updatedAt} className="mt-1 block text-[11px] text-muted-foreground">
+          <time dateTime={link.updatedAt} className="mt-1 block text-xs text-muted-foreground">
             {t('updated', {
               date: format.dateTime(new Date(link.updatedAt), {
                 dateStyle: 'medium',

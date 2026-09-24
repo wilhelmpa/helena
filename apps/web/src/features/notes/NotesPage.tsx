@@ -87,7 +87,7 @@ export default function NotesPage() {
 
   if (!project || seedQuery.isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-6">
+      <div className="flex-1 space-y-4 p-4">
         <Skeleton className="h-8 w-full max-w-md" />
         <Skeleton className="h-96 w-full" />
       </div>
@@ -126,9 +126,9 @@ export default function NotesPage() {
     }
     // A board is selected but its canvas is still loading.
     if (activeBoardId != null && !isError) {
-      return <Skeleton className="m-6 flex-1" />;
+      return <Skeleton className="m-4 flex-1" />;
     }
-    return <NotesEmptyState projectKey={projectKey} onCreate={create} />;
+    return <NotesEmptyState />;
   }
 
   return (

@@ -191,7 +191,7 @@ export default function CommentComposer({
         <Avatar
           name={authorName}
           image={authorImage}
-          className={cn('mt-0.5 shrink-0 text-[11px]', compact ? 'size-6' : 'size-7')}
+          className={cn('mt-0.5 shrink-0', compact ? 'size-6' : 'size-7')}
           title={t('commentAs', { name: authorName })}
         />
         <div className="relative min-w-0 flex-1">
@@ -218,8 +218,8 @@ export default function CommentComposer({
               {isEdit ? (
                 <span />
               ) : (
-                <span className="text-[11px] text-muted-foreground/70">
-                  <kbd className="rounded bg-muted px-1.5 py-0.5 font-sans text-[10px] font-medium">
+                <span className="text-xs text-muted-foreground/70">
+                  <kbd className="rounded bg-muted px-1.5 py-0.5 font-sans text-xs font-medium">
                     {cmdKey} ↵
                   </kbd>
                   <span className="ml-1.5">{t('toSend')}</span>
@@ -264,10 +264,10 @@ export default function CommentComposer({
                       @{a.username}
                     </span>
                     {a.kind === 'agent' && (
-                      <span className="text-[10px] text-muted-foreground uppercase">agent</span>
+                      <span className="text-xs text-muted-foreground uppercase">agent</span>
                     )}
                     {a.paused && (
-                      <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                      <span className="text-xs text-amber-700 dark:text-amber-400">
                         {t('agentPaused')}
                       </span>
                     )}

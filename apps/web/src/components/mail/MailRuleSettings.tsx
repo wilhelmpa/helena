@@ -45,13 +45,15 @@ export default function MailRuleSettings({
 
   return (
     <section className="flex flex-col gap-3 border-t pt-4">
-      <h3 className="text-sm font-medium">{t('title')}</h3>
-      <p className="text-sm text-muted-foreground">{t('intro')}</p>
+      <div>
+        <h3 className="text-md font-medium">{t('title')}</h3>
+        <p className="text-xs text-muted-foreground">{t('intro')}</p>
+      </div>
       <ul className="flex flex-col gap-1">
         {(rules.data ?? []).map((rule) => (
           <li
             key={rule.id}
-            className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
+            className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-sm"
           >
             <span className="font-mono text-xs">
               {rule.matchType === 'domain' ? `@${rule.value}` : rule.value}
@@ -75,7 +77,7 @@ export default function MailRuleSettings({
       </ul>
       {canEdit && (
         <form
-          className="grid gap-2 sm:grid-cols-2"
+          className="grid gap-2 rounded-lg border bg-card p-3 sm:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
             if (!projectId || !value.trim()) return;
@@ -139,6 +141,7 @@ export default function MailRuleSettings({
           <Button
             type="submit"
             size="sm"
+            variant="outline"
             className="sm:col-span-2 sm:justify-self-end"
             disabled={!projectId || !value.trim() || create.isPending}
           >

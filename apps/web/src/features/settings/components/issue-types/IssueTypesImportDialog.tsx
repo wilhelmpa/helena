@@ -72,7 +72,7 @@ export default function IssueTypesImportDialog({
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{type.name}</span>
               <Badge
                 variant={type.action === 'unchanged' ? 'outline' : 'secondary'}
-                className="shrink-0 px-1.5 py-0 text-[10px] font-normal"
+                className="shrink-0 px-1.5 py-0 text-xs font-normal"
               >
                 {actionLabel(type.action)}
               </Badge>

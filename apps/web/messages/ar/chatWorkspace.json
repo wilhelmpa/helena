@@ -44,14 +44,14 @@
     "purged": "حُذفت المحادثة نهائيًا."
   },
   "empty": {
-    "title": "لا توجد محادثة مفتوحة",
-    "description": "اختر وكيلًا لبدء محادثة جديدة. كل محادثة تكون مع وكيل واحد — وللتحدث مع وكيل آخر، ابدأ محادثة جديدة."
+    "noAgentsTitle": "لا يوجد وكيل للدردشة",
+    "noAgentsDescription": "لا يوجد هنا بعد أي وكيل يمكن بدء دردشة معه. أضف وكيلًا أو امنح وكيلًا موجودًا الوصول إلى هذا المشروع.",
+    "manageAgents": "إدارة الوكلاء"
   },
   "messages": {
     "transcript": "الرسائل",
     "loadOlder": "تحميل رسائل أقدم",
     "loading": "جارٍ التحميل…",
-    "thinking": "يفكّر…",
     "reasoning": "التفكير",
     "reasoningLive": "يفكّر الآن…",
     "toolCalls": "{count, plural, zero {لا استدعاءات أدوات} one {استدعاء أداة واحد} two {استدعاءا أداتين} few {# استدعاءات أدوات} many {# استدعاء أداة} other {# استدعاء أداة}}",
@@ -64,19 +64,21 @@
     "regenerate": "إعادة التوليد",
     "previousVersion": "النسخة السابقة",
     "nextVersion": "النسخة التالية",
-    "clarificationLabel": "بانتظار ردّك",
-    "clarificationPlaceholder": "اكتب ردّك…",
-    "reply": "رد",
     "saveAsNote": "حفظ كملاحظة",
     "noteSaved": "حُفظت المحادثة كملاحظة في Docs.",
     "noteSaveFailed": "تعذّر حفظ المحادثة كملاحظة.",
     "noteQuestion": "السؤال",
     "noteAnswer": "إجابة {agent}",
-    "noteSource": "محادثة مع {agent}، حُفظت في {date}"
+    "noteSource": "محادثة مع {agent}، حُفظت في {date}",
+    "restoreFailedTitle": "تعذّر تحميل هذه الدردشة",
+    "restoreFailed": "تعذّرت قراءة رسائلها. تحقّق من الاتصال وحاول مرة أخرى.",
+    "retry": "حاول مرة أخرى",
+    "today": "اليوم",
+    "yesterday": "أمس"
   },
   "composer": {
     "placeholder": "رسالة إلى {agent}…",
-    "hint": "Shift + Enter لسطر جديد · أفلت الملفات أو الصقها لإرفاقها · / للأوامر والمطالبات",
+    "hint": "Enter للإرسال · Shift+Enter أو ⌘/Ctrl+Enter لسطر جديد · أفلت الملفات أو الصقها للإرفاق · / للأوامر والقوالب",
     "send": "إرسال",
     "stop": "إيقاف الإجابة",
     "attach": "إرفاق",
@@ -108,7 +110,21 @@
       "approvals": "أوامر الموافقة لا تُنفَّذ من المحادثة — استخدم بطاقة الموافقة أو صفحة الموافقات.",
       "config": "هذا يغيّر إعدادات الوكيل نفسه — استخدم إعدادات الوكيل في Helena.",
       "outside": "هذا ليس شيئًا يمكن للمحادثة فعله."
-    }
+    },
+    "reasoning": "مستوى التفكير",
+    "reasoningDefault": "الافتراضي",
+    "queue": "إضافة إلى قائمة الانتظار",
+    "queued": "بانتظار {agent}",
+    "queuePaused": "متوقف",
+    "removeQueued": "إزالة من قائمة الانتظار",
+    "dictate": "إملاء",
+    "stopDictation": "إيقاف الإملاء",
+    "dictationFailed": "تعذّر بدء الإملاء.",
+    "dictationBlocked": "لم يسمح المتصفح باستخدام الميكروفون. اسمح به من إعدادات الموقع.",
+    "dictationInsecureTitle": "الإملاء يحتاج إلى اتصال آمن",
+    "dictationInsecure": "لا تتيح المتصفحات الميكروفون إلا لصفحات HTTPS. إلى أن تعمل Helena عبر HTTPS: افتح chrome://flags في Chrome وفعّل “Insecure origins treated as secure” وأضف {origin}. الكشك يسمح بذلك مسبقًا.",
+    "autoSpeak": "قراءة الإجابات بصوت عالٍ تلقائيًا",
+    "autoSpeakOn": "تُقرأ الإجابات بصوت عالٍ – انقر للإيقاف"
   },
   "artifact": {
     "title": "المُصنَّع",
@@ -146,5 +162,56 @@
     "approvedBy": "وافق عليه {name}",
     "rejectedBy": "رفضه {name}",
     "loading": "جارٍ تحميل الطلب…"
+  },
+  "newChat": {
+    "title": "دردشة جديدة مع {agent}",
+    "hint": "اختر الوكيل أسفل يسار حقل الإدخال — وتظهر حالته هناك أيضًا."
+  },
+  "agents": {
+    "status": {
+      "running": "يعمل",
+      "waiting": "بانتظارك",
+      "ready": "جاهز",
+      "offline": "غير متصل",
+      "never": "لم يتصل قط",
+      "paused": "متوقف مؤقتًا",
+      "template": "قالب — أضفه إلى مشروع للدردشة معه"
+    },
+    "runtimeExternal": "خارجي",
+    "switch": "دردشة مع {agent} — ابدأ دردشة جديدة مع وكيل آخر",
+    "newChatWith": "دردشة جديدة مع…"
+  },
+  "interrupted": {
+    "lost": "انقطع الاتصال بالإجابة. ربما لا يزال {agent} يعمل عليها.",
+    "stopped": "أُوقفت الإجابة.",
+    "failed": "انقطعت الإجابة قبل أن تكتمل.",
+    "sendFailed": "تعذّر إرسال الرسالة.",
+    "reconnect": "إعادة الاتصال",
+    "continue": "متابعة",
+    "continuePrompt": "من فضلك تابع من حيث توقفت.",
+    "resend": "إرسال مرة أخرى"
+  },
+  "commands": {
+    "new": "بدء دردشة جديدة",
+    "retry": "الإجابة عن السؤال الأخير من جديد",
+    "undo": "إزالة التبادل الأخير",
+    "title": "إعادة تسمية هذه الدردشة",
+    "model": "اختيار النموذج",
+    "reasoning": "ضبط مستوى التفكير",
+    "skills": "فتح مهارات الوكيل",
+    "memory": "فتح ذاكرة الوكيل",
+    "usage": "عرض استهلاك الرموز في هذه الدردشة",
+    "stop": "إيقاف الإجابة"
+  },
+  "activity": {
+    "thinking": "{agent} يفكّر…",
+    "writing": "{agent} يكتب…",
+    "queued": "بانتظار {agent} — المشغّل الخاص به غير متصل. تبدأ الإجابة فور عودته.",
+    "usingTool": "{agent} يستخدم {tool} …"
+  },
+  "session": {
+    "copy": "نسخ معرّف الجلسة",
+    "copied": "تم نسخ معرّف الجلسة",
+    "hint": "المتابعة في الطرفية: hermes --resume {id} (أو claude --resume {id})"
   }
 }

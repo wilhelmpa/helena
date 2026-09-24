@@ -398,6 +398,7 @@
     "usernamePlaceholder": "e.g. triage-bot",
     "usernameHint": "Letters, digits, dots, dashes, and underscores. Up to 64 characters.",
     "template": "Template",
+    "templateCopyCount": "{count, plural, =0 {no copies} one {# copy} other {# copies}}",
     "templateHint": "A template runs nowhere and works in no project. Projects add copies of it as their own specialists. Turning it on takes the agent out of its projects.",
     "templates": "Templates",
     "templatesHint": "Projects add copies of these as their own specialists. Knowledge the copies share belongs in the skills library; each copy keeps its own memory.",
@@ -704,6 +705,24 @@
       "toolMemory": "Memory",
       "toolSkill": "Skill",
       "tokens": "{count} tokens"
+    },
+    "templateSync": {
+      "copyOf": "Copy of {name}",
+      "copyOfUnknown": "Copy of a deleted template",
+      "overridden": "differs",
+      "overriddenHint": "Changed by hand here and no longer follows the template.",
+      "followsHint": "Follows the template.",
+      "resetToTemplate": "Reset to template",
+      "resetDone": "{group} reset to the template",
+      "groups": {
+        "skills": "Skills",
+        "tools": "Tools",
+        "mcpServers": "MCP servers",
+        "approvals": "Approval rules",
+        "instructions": "Instructions",
+        "model": "Model/reasoning",
+        "budgets": "Budgets"
+      }
     }
   },
   "members": {

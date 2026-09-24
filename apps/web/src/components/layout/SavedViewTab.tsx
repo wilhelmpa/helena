@@ -87,11 +87,11 @@ export default function SavedViewTab({
       <button
         type="button"
         onClick={onSelect}
-        className="flex h-full items-center gap-1.5 pr-1 pl-2"
+        className="flex h-full items-center gap-1.5 ps-2 pe-1"
       >
         {folder && (
-          <span className="flex max-w-24 items-center gap-1 truncate text-xs text-muted-foreground">
-            <FolderClosed className="size-3 shrink-0" /> {folder.name}
+          <span className="flex max-w-24 items-center gap-1 truncate text-xs font-normal text-muted-foreground">
+            <FolderClosed className="!size-3 shrink-0" /> {folder.name}
           </span>
         )}
         <ViewTabLabel view={view} />
@@ -103,9 +103,10 @@ export default function SavedViewTab({
             <button
               type="button"
               title={t('options')}
-              className="mr-1.5 rounded p-0.5 hover:bg-accent-foreground/10"
+              aria-label={t('options')}
+              className="me-1 flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-background/60 hover:text-foreground"
             >
-              <MoreHorizontal className="size-3.5" />
+              <MoreHorizontal className="!size-3.5" />
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-60 p-1">
@@ -115,7 +116,7 @@ export default function SavedViewTab({
                 setMenuOpen(false);
                 setFavorite.mutate({ id: view.id, favorite: !view.favorite });
               }}
-              className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-accent"
+              className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm hover:bg-accent"
             >
               <Star
                 className={cn('size-3.5 shrink-0', view.favorite && 'fill-current text-amber-500')}
@@ -123,8 +124,8 @@ export default function SavedViewTab({
               {view.favorite ? t('unfavorite') : t('favorite')}
             </button>
             {canEdit && (
-              <div className="border-t px-2 py-1">
-                <p className="py-1 text-xs text-muted-foreground">{t('moveToFolder')}</p>
+              <div className="my-1 border-y py-1">
+                <p className="px-2 py-1 text-xs text-muted-foreground">{t('moveToFolder')}</p>
                 {[{ id: null, name: t('noFolder') }, ...folders].map((folder) => (
                   <button
                     key={folder.id ?? 'none'}
@@ -134,7 +135,7 @@ export default function SavedViewTab({
                       setMenuOpen(false);
                       onMove(folder.id);
                     }}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-accent disabled:opacity-50"
+                    className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm hover:bg-accent disabled:opacity-50"
                   >
                     <FolderInput className="size-3.5 shrink-0" /> {folder.name}
                   </button>
@@ -148,7 +149,7 @@ export default function SavedViewTab({
                   setMenuOpen(false);
                   setSharing(true);
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-accent"
+                className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm hover:bg-accent"
               >
                 <Globe className="size-3.5 shrink-0" /> {view.shareToken ? t('shared') : t('share')}
               </button>
@@ -160,7 +161,7 @@ export default function SavedViewTab({
                   setMenuOpen(false);
                   onEdit();
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-accent"
+                className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm hover:bg-accent"
               >
                 <Pencil className="size-3.5 shrink-0" /> {tCommon('edit')}
               </button>
@@ -172,7 +173,7 @@ export default function SavedViewTab({
                   setMenuOpen(false);
                   onDelete();
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-destructive hover:bg-destructive/10"
+                className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="size-3.5 shrink-0" /> {tCommon('delete')}
               </button>
@@ -180,7 +181,7 @@ export default function SavedViewTab({
           </PopoverContent>
         </Popover>
       ) : (
-        <span className="w-1.5" />
+        <span className="w-1" />
       )}
       <ShareDialog
         open={sharing}

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { MruEntry } from '../hooks/useNoteBoardMru';
 import { boardListIcon } from '../utils/visibility';
+import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 
 // One board tab in the notes header; the active one also carries the board menu.
 // Who sees the board is changed on the canvas instead (NoteBoardAccessPicker).
@@ -37,26 +38,24 @@ export default function NoteBoardTab({
   const Icon = boardListIcon(tab.visibility);
 
   return (
-    <div
-      className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-sm',
-        active
-          ? 'bg-secondary font-medium text-foreground'
-          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-      )}
-    >
-      <button type="button" onClick={onSelect} className="flex items-center gap-1.5">
-        <Icon className="size-3.5" />
-        {tab.name}
+    <div className={cn(PAGE_CONTROL_CLASS, 'h-7 gap-0 px-0', active && PAGE_CONTROL_ACTIVE_CLASS)}>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={active ? 'page' : undefined}
+        className={cn('flex h-full items-center gap-1.5 ps-2', showMenu ? 'pe-1' : 'pe-2')}
+      >
+        <Icon className="!size-3.5" />
+        <span className="max-w-40 truncate">{tab.name}</span>
       </button>
 
       {showMenu && (
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={t('boardOptions')}
-            className="text-muted-foreground hover:text-foreground"
+            className="me-1 flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-background/60 hover:text-foreground"
           >
-            <MoreHorizontal className="size-3.5" />
+            <MoreHorizontal className="!size-3.5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             {canEdit && (

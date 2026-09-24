@@ -50,7 +50,27 @@
     "thisDevice": "Cet appareil",
     "deleteWarning": "Vous ne pourrez plus vous connecter avec cette clé d'accès. Cette action est irréversible.",
     "passkeyFallback": "Clé d'accès",
-    "passkeysLoadFailed": "Impossible de charger les clés d'accès."
+    "passkeysLoadFailed": "Impossible de charger les clés d'accès.",
+    "totpTitle": "Application d'authentification",
+    "totpDescription": "Le code que le terminal propriétaire demande à chaque ouverture (Accueil → Terminal).",
+    "totpStatusEnabled": "Configurée.",
+    "totpStatusDisabled": "Pas encore configurée.",
+    "totpPasswordLabel": "Mot de passe",
+    "totpPasswordHint": "Demandé seulement si ce compte en a un. Sinon, laissez vide.",
+    "totpEnable": "Configurer",
+    "totpDisable": "Désactiver",
+    "totpEnrollTitle": "Configurer l'application d'authentification",
+    "totpSecretLabel": "Clé de configuration",
+    "totpSecretHint": "Dans l'application d'authentification, choisissez « saisir une clé manuellement » et collez ceci.",
+    "totpCodeLabel": "Code de l'application",
+    "totpConfirm": "Confirmer",
+    "totpEnabled": "Application d'authentification activée",
+    "totpDisabled": "Application d'authentification désactivée",
+    "totpEnrollFailed": "Impossible de démarrer la configuration.",
+    "totpConfirmFailed": "Le code n'a pas été accepté.",
+    "totpDisableFailed": "Impossible de désactiver l'application d'authentification.",
+    "minLength": "Au moins {count} caractères.",
+    "added": "Ajoutée le {date}"
   },
   "accounts": {
     "label": "Comptes",
@@ -70,7 +90,8 @@
     "telegramConnectedLabel": "Connecté",
     "loadFailed": "Impossible de charger les comptes connectés.",
     "connectFailed": "Impossible de connecter Google.",
-    "disconnectFailed": "Impossible de déconnecter ce compte."
+    "disconnectFailed": "Impossible de déconnecter ce compte.",
+    "noneAvailable": "Aucun service à associer n’est encore configuré sur cette instance. L’administrateur ajoute la connexion Google et le bot Telegram sous Administrateur › Intégrations."
   },
   "preferences": {
     "label": "Préférences",
@@ -154,5 +175,8 @@
     "autoWatchDescription": "Ceux que vous créez, qui vous sont assignés, que vous commentez ou dans lesquels vous êtes mentionné.",
     "showChatByDefault": "Afficher le chat par défaut",
     "showChatByDefaultDescription": "Le panneau de chat s'ouvre avec une page de projet. Fermez-le à tout moment depuis son en-tête ou l'icône de chat."
+  },
+  "shell": {
+    "title": "Compte"
   }
 }

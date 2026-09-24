@@ -17,14 +17,13 @@ import {
   useUpdateAccountPreferences,
   PREFERENCE_DEFAULTS,
 } from '@/services/preferences.service';
-import FullPageView from '@/components/common/page/FullPageView';
+import SectionPageView from '@/components/common/page/SectionPageView';
 import { Switch } from '@/components/ui/switch';
 import AccountPreferenceRow from './components/preferences/AccountPreferenceRow';
 import AccountPreferenceSelect from './components/preferences/AccountPreferenceSelect';
 import AccountPreferencesSection from './components/preferences/AccountPreferencesSection';
 import AccountPreferencesTimezone from './components/preferences/AccountPreferencesTimezone';
 import AccountHotkeys from './components/preferences/AccountHotkeys';
-import AccountPreferencesNav from './components/preferences/AccountPreferencesNav';
 import AccountPreferencesSaveState from './components/preferences/AccountPreferencesSaveState';
 
 const THEMES: ThemePreference[] = ['system', 'light', 'dark'];
@@ -52,150 +51,159 @@ export default function AccountPreferencesPage() {
   const localeOptions = LOCALES.map((value) => ({ value, label: LOCALE_LABELS[value] }));
 
   return (
-    <FullPageView
-      label={t('label')}
+    <SectionPageView
       title={t('title')}
       description={t('description')}
-      actions={<AccountPreferencesSaveState saving={update.isPending} />}
-      nav={<AccountPreferencesNav />}
+      // Only while a save runs: an empty action slot would still hold the header's
+      // page bar open on a narrow screen.
+      actions={update.isPending ? <AccountPreferencesSaveState saving /> : undefined}
     >
-      <AccountPreferencesSection id="appearance" title={t('sections.appearance')}>
-        <AccountPreferenceRow label={t('theme')} description={t('themeDescription')}>
-          <AccountPreferenceSelect
-            value={prefs.theme}
-            options={THEMES.map((value) => ({ value, label: t(`themeOptions.${value}`) }))}
-            onChange={(theme) => save({ theme })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-        <AccountPreferenceRow label={t('language')} description={t('languageDescription')}>
-          <AccountPreferenceSelect
-            value={prefs.locale}
-            options={localeOptions}
-            onChange={(locale) => save({ locale })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-        <AccountPreferenceRow label={t('headerLayout')} description={t('headerLayoutDescription')}>
-          <AccountPreferenceSelect
-            value={prefs.headerLayout}
-            options={HEADER_LAYOUTS.map((value) => ({
-              value,
-              label: t(`headerLayoutOptions.${value}`),
-            }))}
-            onChange={(headerLayout) => save({ headerLayout })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-      </AccountPreferencesSection>
+      <div className="space-y-6">
+        <AccountPreferencesSection id="appearance" title={t('sections.appearance')}>
+          <AccountPreferenceRow label={t('theme')} description={t('themeDescription')}>
+            <AccountPreferenceSelect
+              value={prefs.theme}
+              options={THEMES.map((value) => ({ value, label: t(`themeOptions.${value}`) }))}
+              onChange={(theme) => save({ theme })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+          <AccountPreferenceRow label={t('language')} description={t('languageDescription')}>
+            <AccountPreferenceSelect
+              value={prefs.locale}
+              options={localeOptions}
+              onChange={(locale) => save({ locale })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+          <AccountPreferenceRow
+            label={t('headerLayout')}
+            description={t('headerLayoutDescription')}
+          >
+            <AccountPreferenceSelect
+              value={prefs.headerLayout}
+              options={HEADER_LAYOUTS.map((value) => ({
+                value,
+                label: t(`headerLayoutOptions.${value}`),
+              }))}
+              onChange={(headerLayout) => save({ headerLayout })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+        </AccountPreferencesSection>
 
-      <AccountPreferencesSection
-        id="date-and-time"
-        title={t('sections.dateAndTime')}
-        description={t('sections.dateAndTimeDescription')}
-      >
-        <AccountPreferenceRow label={t('timezone')} description={t('timezoneDescription')}>
-          <AccountPreferencesTimezone
-            value={prefs.timezone}
-            onChange={(timezone) => save({ timezone })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-      </AccountPreferencesSection>
-
-      <AccountPreferencesSection
-        id="navigation"
-        title={t('sections.navigation')}
-        description={t('sections.navigationDescription')}
-      >
-        <AccountPreferenceRow
-          label={t('issueOpenMode')}
-          description={t('issueOpenModeDescription')}
+        <AccountPreferencesSection
+          id="date-and-time"
+          title={t('sections.dateAndTime')}
+          description={t('sections.dateAndTimeDescription')}
         >
-          <AccountPreferenceSelect
-            value={prefs.issueOpenMode}
-            options={ISSUE_OPEN_MODES.map((value) => ({
-              value,
-              label: t(`issueOpenModeOptions.${value}`),
-            }))}
-            onChange={(issueOpenMode) => save({ issueOpenMode })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-        <AccountPreferenceRow label={t('startPage')} description={t('startPageDescription')}>
-          <AccountPreferenceSelect
-            value={prefs.startPage}
-            options={START_PAGES.map((value) => ({
-              value,
-              label: t(`startPageOptions.${value}`),
-            }))}
-            onChange={(startPage) => save({ startPage })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-      </AccountPreferencesSection>
+          <AccountPreferenceRow label={t('timezone')} description={t('timezoneDescription')}>
+            <AccountPreferencesTimezone
+              value={prefs.timezone}
+              onChange={(timezone) => save({ timezone })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+        </AccountPreferencesSection>
 
-      <AccountPreferencesSection
-        id="issue-settings"
-        title={t('sections.issueSettings')}
-        description={t('sections.issueSettingsDescription')}
-      >
-        <AccountPreferenceRow label={t('showStats')} description={t('showStatsDescription')}>
-          <Switch
-            checked={prefs.issueStatsOpen}
-            onCheckedChange={(issueStatsOpen) => save({ issueStatsOpen })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-        <AccountPreferenceRow label={t('statsView')} description={t('statsViewDescription')}>
-          <AccountPreferenceSelect
-            value={prefs.issueStatsView}
-            options={ISSUE_STATS_VIEWS.map((value) => ({
-              value,
-              label: t(`statsViewOptions.${value}`),
-            }))}
-            onChange={(issueStatsView) => save({ issueStatsView })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-        <AccountPreferenceRow label={t('activityView')} description={t('activityViewDescription')}>
-          <AccountPreferenceSelect
-            value={prefs.issueActivityView}
-            options={ISSUE_ACTIVITY_VIEWS.map((value) => ({
-              value,
-              label: t(`activityViewOptions.${value}`),
-            }))}
-            onChange={(issueActivityView) => save({ issueActivityView })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-      </AccountPreferencesSection>
+        <AccountPreferencesSection
+          id="navigation"
+          title={t('sections.navigation')}
+          description={t('sections.navigationDescription')}
+        >
+          <AccountPreferenceRow
+            label={t('issueOpenMode')}
+            description={t('issueOpenModeDescription')}
+          >
+            <AccountPreferenceSelect
+              value={prefs.issueOpenMode}
+              options={ISSUE_OPEN_MODES.map((value) => ({
+                value,
+                label: t(`issueOpenModeOptions.${value}`),
+              }))}
+              onChange={(issueOpenMode) => save({ issueOpenMode })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+          <AccountPreferenceRow label={t('startPage')} description={t('startPageDescription')}>
+            <AccountPreferenceSelect
+              value={prefs.startPage}
+              options={START_PAGES.map((value) => ({
+                value,
+                label: t(`startPageOptions.${value}`),
+              }))}
+              onChange={(startPage) => save({ startPage })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+        </AccountPreferencesSection>
 
-      <AccountPreferencesSection
-        id="notifications"
-        title={t('sections.notifications')}
-        description={t('sections.notificationsDescription')}
-      >
-        <AccountPreferenceRow label={t('autoWatch')} description={t('autoWatchDescription')}>
-          <Switch
-            checked={prefs.autoWatch}
-            onCheckedChange={(autoWatch) => save({ autoWatch })}
-            disabled={disabled}
-          />
-        </AccountPreferenceRow>
-      </AccountPreferencesSection>
+        <AccountPreferencesSection
+          id="issue-settings"
+          title={t('sections.issueSettings')}
+          description={t('sections.issueSettingsDescription')}
+        >
+          <AccountPreferenceRow label={t('showStats')} description={t('showStatsDescription')}>
+            <Switch
+              checked={prefs.issueStatsOpen}
+              onCheckedChange={(issueStatsOpen) => save({ issueStatsOpen })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+          <AccountPreferenceRow label={t('statsView')} description={t('statsViewDescription')}>
+            <AccountPreferenceSelect
+              value={prefs.issueStatsView}
+              options={ISSUE_STATS_VIEWS.map((value) => ({
+                value,
+                label: t(`statsViewOptions.${value}`),
+              }))}
+              onChange={(issueStatsView) => save({ issueStatsView })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+          <AccountPreferenceRow
+            label={t('activityView')}
+            description={t('activityViewDescription')}
+          >
+            <AccountPreferenceSelect
+              value={prefs.issueActivityView}
+              options={ISSUE_ACTIVITY_VIEWS.map((value) => ({
+                value,
+                label: t(`activityViewOptions.${value}`),
+              }))}
+              onChange={(issueActivityView) => save({ issueActivityView })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+        </AccountPreferencesSection>
 
-      <AccountPreferencesSection
-        id="shortcuts"
-        title={t('sections.shortcuts')}
-        description={t('sections.shortcutsDescription')}
-      >
-        {/* Only once the saved overrides are known: a rebinding recorded before they
+        <AccountPreferencesSection
+          id="notifications"
+          title={t('sections.notifications')}
+          description={t('sections.notificationsDescription')}
+        >
+          <AccountPreferenceRow label={t('autoWatch')} description={t('autoWatchDescription')}>
+            <Switch
+              checked={prefs.autoWatch}
+              onCheckedChange={(autoWatch) => save({ autoWatch })}
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
+        </AccountPreferencesSection>
+
+        <AccountPreferencesSection
+          id="shortcuts"
+          title={t('sections.shortcuts')}
+          description={t('sections.shortcutsDescription')}
+          bare
+        >
+          {/* Only once the saved overrides are known: a rebinding recorded before they
             arrive would be built on an empty map and drop the ones already stored. */}
-        {data && (
-          <AccountHotkeys overrides={data.hotkeys} onChange={(hotkeys) => save({ hotkeys })} />
-        )}
-      </AccountPreferencesSection>
-    </FullPageView>
+          {data && (
+            <AccountHotkeys overrides={data.hotkeys} onChange={(hotkeys) => save({ hotkeys })} />
+          )}
+        </AccountPreferencesSection>
+      </div>
+    </SectionPageView>
   );
 }

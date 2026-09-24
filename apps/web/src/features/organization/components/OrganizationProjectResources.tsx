@@ -60,10 +60,10 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
     job.status === 'succeeded' ? CheckCircle2 : job.status === 'failed' ? CircleAlert : Clock3;
 
   return (
-    <section className="mb-4 rounded-lg border bg-muted/20 p-4">
+    <section className="mb-4 rounded-lg border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-sm font-medium">
+          <h2 className="flex items-center gap-2 text-md font-medium">
             <ServerCog className="size-4 text-muted-foreground" /> {t('title')}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">{t('description')}</p>

@@ -73,12 +73,12 @@ export default function InviteRow({
       <ItemContent className="min-w-0 gap-0.5">
         <ItemTitle className="max-w-full flex-wrap">
           <span className="break-all">{invite.email}</span>
-          <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+          <Badge variant="outline" className="px-1.5 py-0 text-xs font-normal">
             {roleLabel}
           </Badge>
           <Badge
             variant={STATUS_VARIANT[invite.status]}
-            className="px-1.5 py-0 text-[10px] font-normal"
+            className="px-1.5 py-0 text-xs font-normal"
           >
             {t(`status.${invite.status}`)}
           </Badge>

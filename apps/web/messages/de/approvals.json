@@ -1,6 +1,6 @@
 {
-  "hint": "Agenten fragen hier, bevor sie außerhalb von Plan etwas senden, veröffentlichen, bezahlen oder löschen, und Workflows warten hier an ihrem Freigabeschritt. Deine Entscheidung und deine Notiz starten den nächsten Schritt.",
-  "projectHint": "Agenten fragen hier, bevor sie für dieses Projekt außerhalb von Plan etwas senden, veröffentlichen, bezahlen oder löschen, und seine Workflows warten hier an ihrem Freigabeschritt.",
+  "hint": "Agenten fragen hier, bevor sie außerhalb von Helena etwas senden, veröffentlichen, bezahlen oder löschen, und Workflows warten hier an ihrem Freigabeschritt. Deine Entscheidung und deine Notiz starten den nächsten Schritt.",
+  "projectHint": "Agenten fragen hier, bevor sie für dieses Projekt außerhalb von Helena etwas senden, veröffentlichen, bezahlen oder löschen, und seine Workflows warten hier an ihrem Freigabeschritt.",
   "pending": "Offen",
   "decided": "Entschieden",
   "filterProject": "Nach Projekt filtern",
@@ -10,7 +10,7 @@
     "decided": "Noch keine Entscheidungen"
   },
   "emptyHint": {
-    "pending": "Wenn ein Agent fragt, bevor er außerhalb von Plan handelt, erscheint die Anfrage hier.",
+    "pending": "Wenn ein Agent fragt, bevor er außerhalb von Helena handelt, erscheint die Anfrage hier.",
     "decided": "Freigegebene und abgelehnte Anfragen erscheinen hier."
   },
   "kind": {
@@ -34,5 +34,7 @@
   "gateOf": "{workflow} in {project}",
   "effects": "Wird nach der Freigabe ausgeführt:",
   "gateApprovedToast": "Freigegeben. Der Workflow läuft weiter.",
-  "gateRejectedToast": "Abgelehnt. Der Workflow endet ohne diese Wirkungen."
+  "gateRejectedToast": "Abgelehnt. Der Workflow endet ohne diese Wirkungen.",
+  "loadFailed": "Die Freigaben konnten nicht geladen werden.",
+  "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
 }

@@ -47,7 +47,8 @@
     "loadFailed": "The templates could not be loaded.",
     "tryAgain": "Try again",
     "noAccess": "You may not see the workflows of this team.",
-    "readOnly": "Only members who may create workflows add templates here."
+    "readOnly": "Only members who may create workflows add templates here.",
+    "noAccessTitle": "No access"
   },
   "starter": {
     "name": "New workflow",
@@ -112,7 +113,8 @@
     "openTemplate": "Open the template",
     "issuesTitle": "{count, plural, one {# problem} other {# problems}}",
     "warningsTitle": "{count, plural, one {# problem in this project} other {# problems in this project}}",
-    "warningsHint": "The workflow can be saved, but not enabled in the project until these are fixed."
+    "warningsHint": "The workflow can be saved, but not enabled in the project until these are fixed.",
+    "loadFailedHint": "The server did not answer. Try again in a moment."
   },
   "trigger": {
     "title": "Trigger",
@@ -388,7 +390,12 @@
     "allRuns": "All runs",
     "onlyTestRuns": "Test runs",
     "onlyRealRuns": "Real runs",
-    "allProjects": "All projects"
+    "allProjects": "All projects",
+    "filter": "Filter",
+    "filterReset": "Reset filters",
+    "filterProject": "Project",
+    "filterStatus": "Status",
+    "filterKind": "Kind"
   },
   "versions": {
     "empty": "No versions.",

@@ -47,7 +47,7 @@ export default function CycleTimelineRow({
   const canMove = canEdit && ends.move;
 
   return (
-    <div className="flex border-b hover:bg-accent/20" style={{ height: CYCLE_ROW_H }}>
+    <div className="flex border-b hover:bg-accent/40" style={{ height: CYCLE_ROW_H }}>
       <div
         className="sticky left-0 z-10 flex shrink-0 items-center overflow-hidden border-r bg-background px-3"
         style={{ width: labelW }}
@@ -82,7 +82,7 @@ export default function CycleTimelineRow({
               className="absolute top-0 left-0 h-full w-1.5 cursor-ew-resize bg-white/40 opacity-0 group-hover:opacity-100"
             />
           )}
-          <span className="relative truncate text-[11px] leading-none">{cycle.name}</span>
+          <span className="relative truncate text-xs leading-none">{cycle.name}</span>
           {canEdit && ends.end && (
             <span
               onPointerDown={(e) => onBeginDrag(e, cycle, 'end')}
@@ -92,12 +92,12 @@ export default function CycleTimelineRow({
         </div>
 
         <div
-          className="pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center gap-2.5 text-[11px] whitespace-nowrap text-muted-foreground tabular-nums"
+          className="pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center gap-2.5 text-xs whitespace-nowrap text-muted-foreground tabular-nums"
           style={{ left: rect.left + rect.width + 8 }}
         >
           <span className="flex items-center gap-1" title={t('columns.length')}>
             <CalendarRange className="size-3" />
-            {cycleLength(cycle)}d
+            {t('lengthDays', { count: cycleLength(cycle) })}
           </span>
           {cycle.progress.total > 0 && (
             <span className="flex items-center gap-1" title={t('issuesDone')}>

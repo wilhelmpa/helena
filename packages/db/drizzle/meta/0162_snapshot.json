@@ -1,5 +1,5 @@
 {
-  "id": "377f4914-a32d-4227-822c-289c13b557d9",
+  "id": "b3de2b6a-2b0b-42d4-b020-2c2caee9d319",
   "prevId": "d76942b0-2251-4ba0-86a8-bd901f93bc3c",
   "version": "7",
   "dialect": "postgresql",
@@ -1810,214 +1810,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.agent_egress_event": {
-      "name": "agent_egress_event",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigserial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "host": {
-          "name": "host",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "port": {
-          "name": "port",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "decision": {
-          "name": "decision",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "connections": {
-          "name": "connections",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
-        "bytes_out": {
-          "name": "bytes_out",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "bytes_in": {
-          "name": "bytes_in",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "first_at": {
-          "name": "first_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_at": {
-          "name": "last_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_egress_event_project_idx": {
-          "name": "agent_egress_event_project_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_egress_event_last_idx": {
-          "name": "agent_egress_event_last_idx",
-          "columns": [
-            {
-              "expression": "last_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_egress_event_run_idx": {
-          "name": "agent_egress_event_run_idx",
-          "columns": [
-            {
-              "expression": "run_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_egress_event_project_id_project_id_fk": {
-          "name": "agent_egress_event_project_id_project_id_fk",
-          "tableFrom": "agent_egress_event",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_egress_event_agent_id_ai_agent_id_fk": {
-          "name": "agent_egress_event_agent_id_ai_agent_id_fk",
-          "tableFrom": "agent_egress_event",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "agent_egress_event_run_id_agent_run_id_fk": {
-          "name": "agent_egress_event_run_id_agent_run_id_fk",
-          "tableFrom": "agent_egress_event",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "agent_egress_event_decision_check": {
-          "name": "agent_egress_event_decision_check",
-          "value": "\"agent_egress_event\".\"decision\" IN ('allowed', 'blocked')"
-        },
-        "agent_egress_event_port_check": {
-          "name": "agent_egress_event_port_check",
-          "value": "\"agent_egress_event\".\"port\" >= 0 AND \"agent_egress_event\".\"port\" <= 65535"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.agent_field_trigger": {
@@ -11644,6 +11436,13 @@
           "notNull": true,
           "default": "'panel'"
         },
+        "header_layout": {
+          "name": "header_layout",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'single'"
+        },
         "start_page": {
           "name": "start_page",
           "type": "text",
@@ -11759,6 +11558,10 @@
         "user_preference_issue_open_mode_check": {
           "name": "user_preference_issue_open_mode_check",
           "value": "\"user_preference\".\"issue_open_mode\" IN ('panel', 'page')"
+        },
+        "user_preference_header_layout_check": {
+          "name": "user_preference_header_layout_check",
+          "value": "\"user_preference\".\"header_layout\" IN ('single', 'classic')"
         },
         "user_preference_start_page_check": {
           "name": "user_preference_start_page_check",

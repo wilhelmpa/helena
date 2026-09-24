@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "Tidak memiliki templat dan tidak melapor kepada siapa pun. Tetapkan departemen atau atasan.",
+    "noDepartment": "Tanpa departemen",
+    "templates": "Templat pool"
   },
   "summary": {
     "pool": "Agent pool",
@@ -172,5 +175,8 @@
       "perClosedTask": "Per tugas yang ditutup",
       "closedTasks": "{count, plural, =0 {Belum ada tugas yang ditutup bersama agen bulan ini} other {# tugas ditutup bersama agen bulan ini}}"
     }
-  }
+  },
+  "managerRequiredTitle": "Tidak ada akses",
+  "loadFailed": "Organisasi tidak dapat dimuat.",
+  "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi."
 }

@@ -40,10 +40,13 @@ export default function CycleActions({
   cycle,
   projectKey,
   onTransfer,
+  triggerClassName,
 }: {
   cycle: Cycle;
   projectKey: string;
   onTransfer: (cycle: Cycle) => void;
+  // The trigger's look where it is not a row's small "…" (the detail page's header row).
+  triggerClassName?: string;
 }) {
   const t = useTranslations('cycles');
   const tCommon = useTranslations('common');
@@ -70,7 +73,10 @@ export default function CycleActions({
           <button
             type="button"
             aria-label={t('options')}
-            className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground"
+            className={
+              triggerClassName ??
+              'flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground'
+            }
           >
             <MoreHorizontal className="size-4" />
           </button>

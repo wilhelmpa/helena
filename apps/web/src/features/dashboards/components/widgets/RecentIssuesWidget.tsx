@@ -59,7 +59,7 @@ export default function RecentIssuesWidget({
       <p className="text-xs text-muted-foreground">{caption}</p>
 
       {issues.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">{t('empty')}</p>
+        <p className="py-4 text-center text-sm text-muted-foreground">{t('empty')}</p>
       ) : (
         <ul className="space-y-0.5">
           {issues.map((issue) => {

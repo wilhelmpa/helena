@@ -25,7 +25,7 @@ export default function AgentWorkloadWidget({ projectKey }: { projectKey: string
   }
 
   if (items.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+    return <p className="py-4 text-center text-sm text-muted-foreground">{t('empty')}</p>;
   }
 
   return (

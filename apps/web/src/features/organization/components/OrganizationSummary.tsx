@@ -19,15 +19,14 @@ export default function OrganizationSummary({ agents }: { agents: OrganizationAg
     { key: 'specialists', value: specialists, icon: UsersRound },
   ] as const;
 
+  // Plain figures in one line, like Home's KPI row: a count, not a control, so no frame.
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-3">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-2">
       {cards.map(({ key, value, icon: Icon }) => (
-        <div key={key} className="flex items-center gap-3 rounded-lg border bg-background p-3">
+        <div key={key} className="flex h-8 items-center gap-2 text-sm">
           <Icon className="size-4 text-muted-foreground" />
-          <div>
-            <p className="text-lg leading-none font-semibold">{value}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{t(`summary.${key}`)}</p>
-          </div>
+          <span className="text-md font-semibold tabular-nums">{value}</span>
+          <span className="text-muted-foreground">{t(`summary.${key}`)}</span>
         </div>
       ))}
     </div>

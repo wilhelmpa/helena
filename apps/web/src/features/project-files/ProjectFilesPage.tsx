@@ -2,12 +2,13 @@
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { BookOpen, Code2 } from 'lucide-react';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
+import { PageTabs } from '@/components/layout/PageToolbar';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { ProjectFileRoot } from '@/lib/api/endpoints/projectFiles';
 import { filesPath } from '@/utils/paths';
 import FileBrowser from './components/FileBrowser';
-import FileRootTabs from './components/FileRootTabs';
 
 // A project's files: its vault folder ("Wissen") and its workspace ("Code"). The root,
 // the folder and the open file are in the address.
@@ -31,11 +32,21 @@ export default function ProjectFilesPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <WorkspacePageHeader title={t('title')} description={t('projectDescription')} />
-      <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 md:p-6">
-        <FileRootTabs root={root} onChange={(next) => go({ root: next, path: '' })} />
+      <WorkspacePageHeader title={t('title')} />
+      <div className="flex min-h-0 flex-1 flex-col p-4">
         <FileBrowser
           key={root}
+          leading={
+            <PageTabs
+              label={t('title')}
+              value={root}
+              onChange={(next) => go({ root: next, path: '' })}
+              items={[
+                { value: 'vault', label: t('roots.vault'), icon: BookOpen },
+                { value: 'code', label: t('roots.code'), icon: Code2 },
+              ]}
+            />
+          }
           scope={{ kind: 'project', projectKey, root }}
           path={path}
           selected={params.get('file')}

@@ -2,36 +2,32 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Check, Copy, ListPlus, Pencil, RefreshCw } from 'lucide-react';
+import { Check, Copy, ListPlus, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { copyText } from '@/utils/clipboard';
 import { messageText, type PlanUIMessage } from '../../utils/chatMessages';
 import ChatToIssueDialog from './ChatToIssueDialog';
+import ChatSpeakButton from './ChatSpeakButton';
 
 export interface ChatMessageActionsProps {
   message: PlanUIMessage;
   isUser: boolean;
-  canRegenerate: boolean;
   projectKey: string | null;
   threadId: string | null;
   agentId: number;
-  onRegenerate: () => void;
   onEditRequest: () => void;
 }
 
-// The row of actions under a message: copy always, edit on the member's own words,
-// regenerate on the answer that just finished, and turning the single message into a
-// task — next to the whole-chat one in ChatHeader, for when only this part of it
+// The row of actions under a message: copy always, edit on the member's own words, and
+// turning the single message into a task — next to the whole-chat one in ChatHeader, for when only this part of it
 // belongs in the project's backlog.
 export default function ChatMessageActions({
   message,
   isUser,
-  canRegenerate,
   projectKey,
   threadId,
   agentId,
-  onRegenerate,
   onEditRequest,
 }: ChatMessageActionsProps) {
   const t = useTranslations('chatWorkspace');
@@ -60,6 +56,7 @@ export default function ChatMessageActions({
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
         </Button>
       )}
+      {!isUser && text && <ChatSpeakButton text={text} />}
       {isUser && (
         <Button
           variant="ghost"
@@ -69,17 +66,6 @@ export default function ChatMessageActions({
           aria-label={t('messages.edit')}
         >
           <Pencil className="size-3.5" />
-        </Button>
-      )}
-      {canRegenerate && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6"
-          onClick={onRegenerate}
-          aria-label={t('messages.regenerate')}
-        >
-          <RefreshCw className="size-3.5" />
         </Button>
       )}
       {projectKey && threadId && text && (

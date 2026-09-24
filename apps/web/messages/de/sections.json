@@ -35,6 +35,10 @@
       "label": "Tastenkürzel",
       "description": "Die Tastenbelegung jedes Befehls für alle auf dieser Instanz. Jede Person kann ein Tastenkürzel für das eigene Konto in den Einstellungen neu belegen."
     },
+    "security": {
+      "label": "Sicherheit",
+      "description": "Die Freigabe-Richtlinie des Owner-Terminals, die aktuelle Freigabe und das Audit-Protokoll."
+    },
     "storage": {
       "label": "Speicher",
       "description": "Wie viel hochgeladen werden darf: die Größe einer einzelnen Datei, die erlaubten Anhangstypen und der Speicherplatz pro Projekt."

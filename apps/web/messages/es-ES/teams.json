@@ -398,6 +398,7 @@
     "usernamePlaceholder": "p. ej. bot-triaje",
     "usernameHint": "Letras, dígitos, puntos, guiones y barras bajas. Hasta 64 caracteres.",
     "template": "Plantilla",
+    "templateCopyCount": "{count, plural, =0 {sin copias} one {# copia} other {# copias}}",
     "templateHint": "Una plantilla no se ejecuta en ningún sitio ni trabaja en ningún proyecto. Los proyectos añaden copias de ella como sus propios especialistas. Al activarla, el agente sale de sus proyectos.",
     "templates": "Plantillas",
     "templatesHint": "Los proyectos añaden copias de estas plantillas como sus propios especialistas. El conocimiento que comparten las copias va en la biblioteca de habilidades; cada copia conserva su propia memoria.",
@@ -704,6 +705,24 @@
       "toolMemory": "Memoria",
       "toolSkill": "Habilidad",
       "tokens": "{count} tokens"
+    },
+    "templateSync": {
+      "copyOf": "Copia de {name}",
+      "copyOfUnknown": "Copia de una plantilla eliminada",
+      "overridden": "difiere",
+      "overriddenHint": "Se cambió aquí manualmente y ya no sigue la plantilla.",
+      "followsHint": "Sigue la plantilla.",
+      "resetToTemplate": "Restablecer a la plantilla",
+      "resetDone": "{group} restablecido a la plantilla",
+      "groups": {
+        "skills": "Habilidades",
+        "tools": "Herramientas",
+        "mcpServers": "Servidores MCP",
+        "approvals": "Reglas de aprobación",
+        "instructions": "Instrucciones",
+        "model": "Modelo/razonamiento",
+        "budgets": "Presupuestos"
+      }
     }
   },
   "members": {

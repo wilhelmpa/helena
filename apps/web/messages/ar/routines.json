@@ -28,7 +28,7 @@
   "presetEveryHour": "كل ساعة",
   "presetEveryWeekdayAt9": "كل يوم عمل في 9:00 صباحًا",
   "presetEveryDayAt9": "كل يوم في 9:00 صباحًا",
-  "inputPlaceholder": "Every weekday at 9:00 AM أو 0 9 * * 1-5",
+  "inputPlaceholder": "مثلًا 0 9 * * 1-5",
   "runs": "التشغيل: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "لا توجد جدولات بعد",
   "emptyHint": "اختار وكيل، والشغل اللي هيعمله، وكل قد إيه.",
   "homeHint": "جدولات كل المشاريع اللي تقدر تشوف وكلاءها. الجدولة بتتغيّر جوه مشروعها.",
-  "homeEmptyHint": "الجدولة بتتعمل من صفحة الجدولات في المشروع."
+  "homeEmptyHint": "الجدولة بتتعمل من صفحة الجدولات في المشروع.",
+  "cron": {
+    "everyMinute": "كل دقيقة",
+    "everyNMinutes": "كل {n} دقيقة",
+    "everyHour": "كل ساعة",
+    "everyNHours": "كل {n} ساعات",
+    "everyNHoursAtMinute": "كل {n} ساعات، عند الدقيقة {minute}",
+    "at": "عند {times}",
+    "everyNMinutesBetween": "كل {n} دقيقة من {start} إلى {end}",
+    "everyHourBetween": "كل ساعة من {start} إلى {end}",
+    "everyNHoursBetween": "كل {n} ساعات من {start} إلى {end}",
+    "atMinuteDuringHour": "الدقيقة {minute}، الساعة {hour}",
+    "onDays": "في اليوم {days}",
+    "onDaysOrWeekdays": "في اليوم {days} أو {weekdays}",
+    "inMonths": "في {months}",
+    "weekdays": "من الاثنين إلى الجمعة",
+    "weekends": "السبت والأحد",
+    "through": "{start} إلى {end}",
+    "dayOrdinal": "{n}"
+  },
+  "invalidSchedule": "جدول غير صالح. مثال: 0 9 * * 1-5 (من الاثنين إلى الجمعة الساعة 9:00)."
 }

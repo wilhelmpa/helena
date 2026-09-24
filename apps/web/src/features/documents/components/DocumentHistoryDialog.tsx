@@ -34,7 +34,7 @@ export default function DocumentHistoryDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[min(86vh,760px)] overflow-hidden p-0 sm:max-w-5xl">
-        <DialogHeader className="border-b px-5 py-4 pe-12 text-start">
+        <DialogHeader className="border-b px-4 py-4 pe-12 text-start">
           <DialogTitle className="flex items-center gap-2">
             <History className="size-4 text-muted-foreground" />
             {t('versionHistory')}
@@ -42,7 +42,7 @@ export default function DocumentHistoryDialog({
           <DialogDescription>{t('versionHistoryDescription')}</DialogDescription>
         </DialogHeader>
         {history.isSuccess && revisions.length === 0 ? (
-          <p className="px-6 py-16 text-center text-sm text-muted-foreground">{t('noHistory')}</p>
+          <p className="px-4 py-16 text-center text-sm text-muted-foreground">{t('noHistory')}</p>
         ) : (
           <div className="grid min-h-72 overflow-hidden md:grid-cols-[19rem_minmax(0,1fr)]">
             <DocumentHistoryList history={history} selected={selected} onSelect={setPicked} />

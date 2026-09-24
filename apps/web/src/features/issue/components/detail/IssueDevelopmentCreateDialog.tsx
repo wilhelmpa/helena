@@ -116,11 +116,11 @@ export default function IssueDevelopmentCreateDialog({
           <DialogDescription>{t('createPullRequestDescription')}</DialogDescription>
         </DialogHeader>
         {repositoriesQuery.isPending ? (
-          <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
             {t('loadingRepositories')}
           </div>
         ) : repositoriesQuery.data?.length === 0 ? (
-          <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
             {t('noConnectedRepositories')}
           </div>
         ) : (

@@ -72,5 +72,7 @@
   "dragFailed": "Der Zyklus konnte nicht verschoben werden",
   "notFound": "Zyklus nicht gefunden.",
   "defaultName": "Sprint {n}",
-  "issuesDone": "Erledigte Aufgaben"
+  "issuesDone": "Erledigte Aufgaben",
+  "daysLeft": "noch {count} Tg.",
+  "lengthDays": "{count} Tg."
 }

@@ -15,6 +15,7 @@ import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
 import { integrationLabel } from '@/utils/integrationLabels';
 import { ToolConfigRow } from './ToolConfigRow';
+import TableCard from '@/components/common/page/TableCard';
 
 // The team's configured tools as a table: a catalog tool bound to an integration
 // credential, callable by the internal agents of every project the team owns. Adding
@@ -53,39 +54,41 @@ export default function TeamAgentTools({
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto">
-            <Table className="min-w-[760px] table-fixed">
-              <colgroup>
-                <col className="w-[34%]" />
-                <col className="w-[52%]" />
-                <col className="w-[14%]" />
-              </colgroup>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    {t('tool')}
-                  </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    {t('scopes')}
-                  </TableHead>
-                  <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                    {tCommon('actions')}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tools.map((tool) => (
-                  <ToolConfigRow
-                    key={tool.id}
-                    tool={tool}
-                    toolLabel={toolLabel(tool.toolKey)}
-                    integrationLabel={integrationLabel(catalog, tool.integrationKey)}
-                    scopes={toolScopes(tool.toolKey)}
-                    canDelete={permissions.delete}
-                    onDelete={() => setDeleting(tool)}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+            <TableCard>
+              <Table className="table-fixed xl:min-w-[760px]">
+                <colgroup>
+                  <col className="w-[34%]" />
+                  <col className="w-[52%] max-md:hidden" />
+                  <col className="w-[14%]" />
+                </colgroup>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-medium text-muted-foreground">
+                      {t('tool')}
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
+                      {t('scopes')}
+                    </TableHead>
+                    <TableHead className="text-end text-xs font-medium text-muted-foreground">
+                      {tCommon('actions')}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tools.map((tool) => (
+                    <ToolConfigRow
+                      key={tool.id}
+                      tool={tool}
+                      toolLabel={toolLabel(tool.toolKey)}
+                      integrationLabel={integrationLabel(catalog, tool.integrationKey)}
+                      scopes={toolScopes(tool.toolKey)}
+                      canDelete={permissions.delete}
+                      onDelete={() => setDeleting(tool)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </TableCard>
           </div>
           <ListPager paging={paging} total={total} />
         </div>

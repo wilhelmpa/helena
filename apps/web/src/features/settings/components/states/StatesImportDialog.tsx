@@ -78,7 +78,7 @@ export default function StatesImportDialog({
               </span>
               <Badge
                 variant={state.action === 'unchanged' ? 'outline' : 'secondary'}
-                className="shrink-0 px-1.5 py-0 text-[10px] font-normal"
+                className="shrink-0 px-1.5 py-0 text-xs font-normal"
               >
                 {actionLabel(state.action)}
               </Badge>

@@ -3,6 +3,7 @@ import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
 import { routineRoutes } from './modules/routines';
 import { connectionsRoutes } from './modules/connections';
 import { deviceSyncRoutes } from './modules/device-sync';
+import { ownerTerminalRoutes } from './modules/owner-terminal';
 import { projectFileRoutes } from './modules/project-files';
 import { organizationRoutes } from './modules/organization';
 import { Elysia } from 'elysia';
@@ -167,5 +168,6 @@ export const planner = new Elysia({ name: 'planner' })
   .use(organizationRoutes)
   .use(connectionsRoutes)
   .use(deviceSyncRoutes)
+  .use(ownerTerminalRoutes)
   .use(settingsRoutes)
   .use(godRoutes);

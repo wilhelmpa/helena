@@ -28,39 +28,41 @@ export function SettingsActionsTable({
   const tCommon = useTranslations('common');
 
   return (
-    <Table className="min-w-[680px] table-fixed">
-      <colgroup>
-        <col className="w-[44%]" />
-        <col className="w-[42%]" />
-        <col className="w-[14%]" />
-      </colgroup>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="text-xs font-medium text-muted-foreground">
-            {t('columns.action')}
-          </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
-            {t('columns.thenSet')}
-          </TableHead>
-          <TableHead className="text-right text-xs font-medium text-muted-foreground">
-            {tCommon('actions')}
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {actions.map((action) => (
-          <SettingsActionRow
-            key={action.id}
-            action={action}
-            project={project}
-            customFields={customFields}
-            onEdit={() => onEdit(action.id)}
-            onDuplicate={() => onDuplicate(action)}
-            onDelete={() => onDelete(action)}
-            onToggle={(enabled) => onToggle(action, enabled)}
-          />
-        ))}
-      </TableBody>
-    </Table>
+    <div className="overflow-hidden rounded-lg border bg-card">
+      <Table className="min-w-[680px] table-fixed">
+        <colgroup>
+          <col className="w-[44%]" />
+          <col className="w-[42%]" />
+          <col className="w-[14%]" />
+        </colgroup>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+              {t('columns.action')}
+            </TableHead>
+            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+              {t('columns.thenSet')}
+            </TableHead>
+            <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
+              {tCommon('actions')}
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {actions.map((action) => (
+            <SettingsActionRow
+              key={action.id}
+              action={action}
+              project={project}
+              customFields={customFields}
+              onEdit={() => onEdit(action.id)}
+              onDuplicate={() => onDuplicate(action)}
+              onDelete={() => onDelete(action)}
+              onToggle={(enabled) => onToggle(action, enabled)}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

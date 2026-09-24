@@ -56,7 +56,9 @@ export default function TeamInviteRow({
           {tManage(`roles.${invite.teamRole}`)}
         </Badge>
       </TableCell>
-      <TableCell className="px-3 py-3 text-sm text-muted-foreground">{t('pending')}</TableCell>
+      <TableCell className="px-3 py-3 text-sm text-muted-foreground max-md:hidden">
+        {t('pending')}
+      </TableCell>
       <TableCell className="px-3 py-2">
         <div className="flex items-center justify-end gap-1">
           <Button

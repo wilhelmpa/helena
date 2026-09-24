@@ -1,0 +1,32 @@
+{
+  "stepUp": {
+    "title": "Confirmez que c'est vous",
+    "description": "Saisissez le code de votre application d'authentification pour ouvrir le terminal pendant 12 heures.",
+    "codeLabel": "Code",
+    "confirm": "Confirmer",
+    "verifying": "Vérification…",
+    "wrongCode": "Le code n'a pas été accepté.",
+    "rateLimited": "Trop de tentatives. Attendez 15 minutes et réessayez."
+  },
+  "grant": {
+    "active": "Terminal autorisé jusqu'à {time}",
+    "expired": "L'autorisation du terminal a expiré.",
+    "end": "Terminer",
+    "lan": "Terminal ouvert sans code (réseau local)"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "Développer Helena (Claude Code)",
+    "helena-dev-codex": "Développer Helena (Codex)",
+    "close": "Fermer l'onglet"
+  },
+  "keys": {
+    "esc": "Échap",
+    "tab": "Tab",
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "paste": "Coller"
+  }
+}

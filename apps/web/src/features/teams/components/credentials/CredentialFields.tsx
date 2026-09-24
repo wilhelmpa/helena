@@ -58,7 +58,7 @@ export function CredentialFields({
         (entry ? (
           <CredentialSshKey teamId={teamId} entry={entry} onChange={onKeyChange} />
         ) : (
-          <p className="rounded-md bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <p className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm text-muted-foreground">
             {t('ssh.generatedOnSave')}
           </p>
         ))}

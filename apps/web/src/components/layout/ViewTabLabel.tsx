@@ -8,9 +8,9 @@ import { ViewIcon } from '@/utils/viewIcons';
 export default function ViewTabLabel({ view }: { view: View }) {
   return (
     <>
-      <ViewIcon name={view.icon} className="size-3.5" />
-      {view.name}
-      {view.favorite && <Star className="size-3 fill-current text-amber-500" />}
+      <ViewIcon name={view.icon} className="!size-3.5" />
+      <span className="max-w-48 truncate">{view.name}</span>
+      {view.favorite && <Star className="!size-3 fill-current text-amber-500" />}
     </>
   );
 }

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { PermissionResource } from '@/lib/api/endpoints/roles';
 import type { IssueType } from '@/lib/api/endpoints/issueTypes';
-import { Button } from '@/components/ui/button';
+import { SETTINGS_MENU_TRIGGER_CLASS } from '../SettingsToolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,6 @@ import {
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMac } from '@/context/useHotkeys';
 import { useTransferErrorMessage } from '../../hooks/useTransferErrorMessage';
-import { SettingsHeaderAddButton } from '../crud/SettingsHeaderAddButton';
 import IssueTypesImportDialog from './IssueTypesImportDialog';
 import {
   parseIssueTypesText,
@@ -27,18 +26,16 @@ import {
 } from '../../utils/issueTypesTransfer';
 import { copyText, readClipboardText } from '@/utils/clipboard';
 
-// The Issue types page header actions: a copy/paste menu (like States) and the primary
-// "Add type" button (which opens the inline add form in the list via onAdd).
+// The Issue types page's copy/paste menu (like States) in its header row; the page's
+// primary action "Add type" opens the inline add form in the list.
 export default function IssueTypesToolbar({
   projectKey,
   resource,
   types,
-  onAdd,
 }: {
   projectKey: string;
   resource: PermissionResource;
   types: IssueType[];
-  onAdd: () => void;
 }) {
   const t = useTranslations('settings.issueTypes');
   const tTransfer = useTranslations('settings.transfer');
@@ -105,18 +102,13 @@ export default function IssueTypesToolbar({
   }, [resource, can, importing, copyTypes, pasteTypes]);
 
   return (
-    <div className="flex items-center gap-1.5">
+    <>
       {can(resource, 'create') && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground hover:text-foreground"
-              aria-label={t('menu')}
-            >
-              <MoreHorizontal className="size-4" />
-            </Button>
+            <button type="button" aria-label={t('menu')} className={SETTINGS_MENU_TRIGGER_CLASS}>
+              <MoreHorizontal aria-hidden="true" />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={() => void copyTypes()} disabled={types.length === 0}>
@@ -133,8 +125,6 @@ export default function IssueTypesToolbar({
         </DropdownMenu>
       )}
 
-      <SettingsHeaderAddButton resource={resource} label={t('add')} onClick={onAdd} />
-
       {importing && (
         <IssueTypesImportDialog
           projectKey={projectKey}
@@ -142,6 +132,6 @@ export default function IssueTypesToolbar({
           onClose={() => setImporting(null)}
         />
       )}
-    </div>
+    </>
   );
 }

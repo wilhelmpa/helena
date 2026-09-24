@@ -50,7 +50,27 @@
     "thisDevice": "Este dispositivo",
     "deleteWarning": "Ya no podrás iniciar sesión con este passkey. No se puede deshacer.",
     "passkeyFallback": "Passkey",
-    "passkeysLoadFailed": "No se han podido cargar los passkeys."
+    "passkeysLoadFailed": "No se han podido cargar los passkeys.",
+    "totpTitle": "Aplicación de autenticación",
+    "totpDescription": "El código que la terminal del propietario pide cada vez que se abre (Inicio → Terminal).",
+    "totpStatusEnabled": "Configurada.",
+    "totpStatusDisabled": "Sin configurar.",
+    "totpPasswordLabel": "Contraseña",
+    "totpPasswordHint": "Solo se pide si esta cuenta tiene una. Si no, déjalo en blanco.",
+    "totpEnable": "Configurar",
+    "totpDisable": "Desactivar",
+    "totpEnrollTitle": "Configurar la aplicación de autenticación",
+    "totpSecretLabel": "Clave de configuración",
+    "totpSecretHint": "En la aplicación de autenticación, elige «introducir una clave manualmente» y pega esto.",
+    "totpCodeLabel": "Código de la aplicación",
+    "totpConfirm": "Confirmar",
+    "totpEnabled": "Aplicación de autenticación activada",
+    "totpDisabled": "Aplicación de autenticación desactivada",
+    "totpEnrollFailed": "No se pudo iniciar la configuración.",
+    "totpConfirmFailed": "El código no fue aceptado.",
+    "totpDisableFailed": "No se pudo desactivar la aplicación de autenticación.",
+    "minLength": "Al menos {count} caracteres.",
+    "added": "Añadida el {date}"
   },
   "accounts": {
     "label": "Cuentas",
@@ -70,7 +90,8 @@
     "telegramConnectedLabel": "Conectado",
     "loadFailed": "No se han podido cargar las cuentas conectadas.",
     "connectFailed": "No se ha podido conectar Google.",
-    "disconnectFailed": "No se ha podido disconnectar esta cuenta."
+    "disconnectFailed": "No se ha podido disconnectar esta cuenta.",
+    "noneAvailable": "Esta instancia aún no tiene ningún servicio para vincular. El administrador configura el inicio de sesión con Google y el bot de Telegram en Administrador › Integraciones."
   },
   "preferences": {
     "label": "Preferencias",
@@ -154,5 +175,8 @@
     "autoWatchDescription": "Las que creas, te asignen, comentes o en las que te mencionen.",
     "showChatByDefault": "Mostrar el chat por defecto",
     "showChatByDefaultDescription": "El panel de chat se abre con una página de proyecto. Ciérralo cuando quiera desde su cabecera o el icono de chat."
+  },
+  "shell": {
+    "title": "Cuenta"
   }
 }

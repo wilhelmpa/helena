@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import Shell from '@/components/layout/Shell';
 import ListPager from '@/components/common/ListPager';
 import { EmptyState } from '@/components/common/page/EmptyState';
-import PageHeader from '@/components/common/page/PageHeader';
+import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { usePaging } from '@/hooks/usePaging';
 import { useMemberRoutines } from './services/routines.service';
@@ -21,9 +21,8 @@ export default function HomeRoutinesPage() {
   const total = query.data?.total ?? 0;
   return (
     <Shell globalHome globalTitle={tNav('schedules')} autoOpenGlobalChat={false}>
-      <div className="h-full overflow-y-auto p-6">
-        <div className="mx-auto max-w-[1600px] space-y-4">
-          <PageHeader title={tNav('schedules')} description={t('homeHint')} />
+      <SectionPageView title={tNav('schedules')} description={t('homeHint')} wide>
+        <div className="flex flex-1 flex-col gap-4">
           {query.isError ? (
             <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
               <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
@@ -41,7 +40,7 @@ export default function HomeRoutinesPage() {
             </>
           )}
         </div>
-      </div>
+      </SectionPageView>
     </Shell>
   );
 }

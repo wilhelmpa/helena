@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "没有模板，也不向任何人汇报。请指定部门或上级。",
+    "noDepartment": "无部门",
+    "templates": "代理池模板"
   },
   "summary": {
     "pool": "Agent pool",
@@ -172,5 +175,8 @@
       "perClosedTask": "每个已关闭任务",
       "closedTasks": "{count, plural, =0 {本月没有由智能体参与关闭的任务} other {本月由智能体参与关闭了 # 个任务}}"
     }
-  }
+  },
+  "managerRequiredTitle": "无访问权限",
+  "loadFailed": "无法加载组织。",
+  "loadFailedHint": "服务器没有响应，请稍后重试。"
 }

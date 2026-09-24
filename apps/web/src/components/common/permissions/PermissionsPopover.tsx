@@ -49,7 +49,10 @@ export function PermissionsPopover({
         </TooltipTrigger>
         <TooltipContent>{triggerLabel}</TooltipContent>
       </Tooltip>
-      <PopoverContent align="start" className="max-h-96 w-[22rem] overflow-auto p-0">
+      <PopoverContent
+        align="start"
+        className="max-h-96 w-[26rem] max-w-[calc(100vw-2rem)] overflow-auto p-0"
+      >
         <table className="w-full border-collapse text-xs">
           <thead className="sticky top-0 bg-popover">
             <tr className="border-b border-border/50">
@@ -67,7 +70,7 @@ export function PermissionsPopover({
                 <tr>
                   <td
                     colSpan={ACTION_ORDER.length + 1}
-                    className="px-3 pt-3 pb-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+                    className="px-3 pt-3 pb-1 text-xs font-medium text-muted-foreground"
                   >
                     {groupLabel(g.key)}
                   </td>

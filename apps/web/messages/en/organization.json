@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "Has no template and reports to no one. Assign a department or a manager.",
+    "noDepartment": "No department",
+    "templates": "Pool templates"
   },
   "summary": {
     "pool": "Agent pool",
@@ -172,5 +175,8 @@
       "perClosedTask": "Per closed task",
       "closedTasks": "{count, plural, =0 {No task closed with agents this month} one {# task closed with agents this month} other {# tasks closed with agents this month}}"
     }
-  }
+  },
+  "managerRequiredTitle": "No access",
+  "loadFailed": "The organization could not be loaded.",
+  "loadFailedHint": "The server did not answer. Try again in a moment."
 }

@@ -22,7 +22,7 @@ export default function PublicIssuePage({ token }: { token: string }) {
   if (query.isLoading) {
     return (
       <PublicShareFrame>
-        <div className="px-6 py-4">
+        <div className="px-4 py-4">
           <IssueDetailSkeleton />
         </div>
       </PublicShareFrame>
@@ -32,7 +32,7 @@ export default function PublicIssuePage({ token }: { token: string }) {
   if (query.isError || !query.data) {
     return (
       <PublicShareFrame>
-        <p className="px-6 py-10 text-sm text-muted-foreground">{t('shareUnavailable')}</p>
+        <p className="px-4 py-6 text-sm text-muted-foreground">{t('shareUnavailable')}</p>
       </PublicShareFrame>
     );
   }

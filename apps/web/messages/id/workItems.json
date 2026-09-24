@@ -146,6 +146,17 @@
     "emptyHint": "Tidak ada item pekerjaan yang cocok dengan filter ini.",
     "myOpenTasks": "Item pekerjaan terbuka saya",
     "viewAll": "Semua item pekerjaan",
-    "noOpenTasks": "Tidak ada item pekerjaan terbuka yang ditugaskan kepada Anda."
+    "noOpenTasks": "Tidak ada item pekerjaan terbuka yang ditugaskan kepada Anda.",
+    "filter": {
+      "project": "Proyek",
+      "state": "Status",
+      "assignee": "Penanggung jawab",
+      "due": "Jatuh tempo",
+      "group": "Kelompokkan",
+      "title": "Filter",
+      "reset": "Atur ulang filter"
+    },
+    "loadFailed": "Tugas tidak dapat dimuat.",
+    "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi."
   }
 }

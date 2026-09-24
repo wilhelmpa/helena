@@ -41,31 +41,36 @@ export function ControlPlaneWorkflowPanel({
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-sm font-medium">{t('title')}</h2>
+        <h2 className="text-md font-medium">{t('title')}</h2>
         <p className="text-xs text-muted-foreground">{t('description')}</p>
       </div>
       {workflows.isPending ? (
         <p className="text-sm text-muted-foreground">{t('loading')}</p>
       ) : workflows.isError ? (
-        <p className="rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+        <p className="rounded-lg border border-destructive/40 bg-card p-3 text-sm text-destructive">
           {t('unavailable')}
+          {workflows.error instanceof Error && workflows.error.message ? (
+            <span className="mt-1 block text-xs text-muted-foreground">
+              {workflows.error.message}
+            </span>
+          ) : null}
         </p>
       ) : !workflows.data?.length ? (
-        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-dashed bg-card p-4 text-sm text-muted-foreground">
           {t('empty')}
         </p>
       ) : (
         <div className="space-y-3">
           {workflows.data?.map((workflow) => (
-            <article key={workflow.id} className="rounded-xl border p-4">
+            <article key={workflow.id} className="rounded-lg border bg-card p-4">
               <div className="flex flex-wrap items-start gap-3">
                 <button
                   type="button"
-                  className="min-w-0 flex-1 text-left"
+                  className="min-w-0 flex-1 text-start"
                   onClick={() => setExpanded(expanded === workflow.id ? null : workflow.id)}
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-medium">{workflow.name}</h3>
+                    <h3 className="text-sm font-medium">{workflow.name}</h3>
                     {workflow.externalEffects && (
                       <Badge variant="secondary">{t('approvalRequired')}</Badge>
                     )}

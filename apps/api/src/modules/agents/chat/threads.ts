@@ -28,6 +28,12 @@ export interface ChatSummary {
   match?: ThreadMatch;
   createdAt: string;
   updatedAt: string;
+  // The model and reasoning level the chat was last sent with (null: the agent's own
+  // default), and the coding-agent session an external agent's runner keeps for it —
+  // so reopening a chat restores its settings and can name the session to resume.
+  model: string | null;
+  thinkingLevel: string | null;
+  cliSessionId: string | null;
   // The context size after the chat's last completed answer (see the agent_chat_usage
   // comment in the schema): absent while no answer has completed, null where the agent
   // reports no usable counts. The `/usage` command is the one reader of this on a
@@ -66,6 +72,9 @@ interface ChatRow {
   rank: number | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  model: string | null;
+  thinkingLevel: string | null;
+  cliSessionId: string | null;
   hasUsage: boolean;
   contextTokens: number | null;
 }
@@ -94,6 +103,9 @@ function summary(row: ChatRow): ChatSummary {
     ...(row.rank != null ? { match: (['title', 'user', 'assistant'] as const)[row.rank - 1] } : {}),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
+    model: row.model ?? null,
+    thinkingLevel: row.thinkingLevel ?? null,
+    cliSessionId: row.cliSessionId ?? null,
     ...(row.hasUsage ? { contextTokens: row.contextTokens } : {}),
   };
 }
@@ -168,6 +180,9 @@ async function readChats(
            ${rank} AS rank,
            t.created_at AS "createdAt",
            t.updated_at AS "updatedAt",
+           t.model,
+           t.thinking_level AS "thinkingLevel",
+           t.cli_session_id AS "cliSessionId",
            cu.thread_id IS NOT NULL AS "hasUsage",
            CASE WHEN cu.input_tokens IS NULL THEN NULL
                 ELSE cu.input_tokens + COALESCE(cu.output_tokens, 0) END AS "contextTokens"

@@ -28,7 +28,7 @@
   "presetEveryHour": "每小时",
   "presetEveryWeekdayAt9": "每个工作日 9:00",
   "presetEveryDayAt9": "每天 9:00",
-  "inputPlaceholder": "每个工作日早上 9:00 或 0 9 * * 1-5",
+  "inputPlaceholder": "例如 0 9 * * 1-5",
   "runs": "运行时间：{description}",
   "cronLabel": "Cron：",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "暂无定时任务",
   "emptyHint": "选择一个代理、它要处理的工作以及频率。",
   "homeHint": "你能看到其代理的所有项目中的定时任务。定时任务在其所属项目中修改。",
-  "homeEmptyHint": "定时任务在项目的“定时任务”页面中创建。"
+  "homeEmptyHint": "定时任务在项目的“定时任务”页面中创建。",
+  "cron": {
+    "everyMinute": "每分钟",
+    "everyNMinutes": "每 {n} 分钟",
+    "everyHour": "每小时",
+    "everyNHours": "每 {n} 小时",
+    "everyNHoursAtMinute": "每 {n} 小时，整点后 {minute} 分",
+    "at": "{times}",
+    "everyNMinutesBetween": "{start} 至 {end} 每 {n} 分钟",
+    "everyHourBetween": "{start} 至 {end} 每小时",
+    "everyNHoursBetween": "{start} 至 {end} 每 {n} 小时",
+    "atMinuteDuringHour": "第 {minute} 分，第 {hour} 时",
+    "onDays": "每月 {days} 日",
+    "onDaysOrWeekdays": "每月 {days} 日或{weekdays}",
+    "inMonths": "{months}",
+    "weekdays": "周一至周五",
+    "weekends": "周六和周日",
+    "through": "{start}至{end}",
+    "dayOrdinal": "{n}"
+  },
+  "invalidSchedule": "不是有效的计划。示例：0 9 * * 1-5（周一至周五 9:00）。"
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/page/EmptyState';
@@ -8,12 +8,26 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { AgentActivityFilters as Filters } from '@/lib/api/endpoints/agentActivity';
 import { useAgentActivityFeed } from '../services/agentActivity.service';
-import AgentActivityFilters from './AgentActivityFilters';
+import AgentActivityToolbar from './AgentActivityToolbar';
 import AgentActivityLiveRefresh from './AgentActivityLiveRefresh';
 import AgentActivityRow from './AgentActivityRow';
 
 // One sync request reads at most 20 scopes for the whole screen, two per project here.
 const WATCHED_PROJECTS = 6;
+
+const KIND_VALUES = new Set(['chat', 'agent-run', 'agent-team-run', 'workflow-run']);
+
+// The filters live in the address (?agent=12&kind=agent-run): Home's "Agenten gerade"
+// opens the timeline on the one agent it names, and the back button returns to the same
+// filters.
+export function activityFiltersFromSearch(params: URLSearchParams): Filters {
+  const agentId = Number(params.get('agent'));
+  const kind = params.get('kind');
+  return {
+    ...(Number.isInteger(agentId) && agentId > 0 ? { agentId } : {}),
+    ...(kind && KIND_VALUES.has(kind) ? { kind: kind as Filters['kind'] } : {}),
+  };
+}
 
 // The agent timeline of a project, or of Home when projectKey is null, newest first.
 export default function AgentActivityTimeline({
@@ -27,31 +41,48 @@ export default function AgentActivityTimeline({
 }) {
   const t = useTranslations('agentActivity');
   const tCommon = useTranslations('common');
-  const [filters, setFilters] = useState<Filters>({});
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const filters = activityFiltersFromSearch(new URLSearchParams(searchParams.toString()));
   const feed = useAgentActivityFeed(projectKey, filters);
   const pages = feed.data?.pages ?? [];
   const items = pages.flatMap((page) => page.items);
   const notice = pages.find((page) => page.notice)?.notice ?? null;
+
+  const setFilters = (next: Filters) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next.agentId) params.set('agent', String(next.agentId));
+    else params.delete('agent');
+    if (next.kind) params.set('kind', next.kind);
+    else params.delete('kind');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-4">
       {projectIds.slice(0, WATCHED_PROJECTS).map((projectId) => (
         <AgentActivityLiveRefresh key={projectId} projectId={projectId} projectKey={projectKey} />
       ))}
-      <AgentActivityFilters filters={filters} onChange={setFilters} agents={agents} />
+      <AgentActivityToolbar filters={filters} onChange={setFilters} agents={agents} />
       {notice && (
-        <p className="rounded-md bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-300">
+        <p className="rounded-lg border bg-card px-3 py-2 text-xs text-status-waiting">
           {t(`notice.${notice}`)}
         </p>
       )}
       {feed.isPending ? (
         <ListSkeleton rows={6} rowClassName="h-14" />
       ) : feed.isError ? (
-        <p className="text-sm text-muted-foreground">{t('unavailable')}</p>
+        <EmptyState title={t('unavailable')} description={t('unavailableHint')}>
+          <Button size="sm" variant="outline" onClick={() => void feed.refetch()}>
+            {tCommon('reload')}
+          </Button>
+        </EmptyState>
       ) : items.length === 0 ? (
         <EmptyState title={t('empty')} description={t('emptyHint')} />
       ) : (
-        <ol className="divide-y rounded-lg border">
+        <ol className="divide-y overflow-hidden rounded-lg border bg-card">
           {items.map((entry) => (
             <AgentActivityRow key={entry.id} entry={entry} showProject={projectKey == null} />
           ))}

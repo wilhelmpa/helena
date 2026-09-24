@@ -52,12 +52,7 @@ export default function SettingsIssueTemplates({
   return (
     <div>
       {templates.length === 0 ? (
-        <SettingsEmpty
-          title={t('emptyTitle')}
-          description={t('emptyDescription')}
-          addLabel={t('addTemplate')}
-          onAdd={() => setEditing('new')}
-        />
+        <SettingsEmpty title={t('emptyTitle')} description={t('emptyDescription')} />
       ) : (
         <div className="divide-y divide-border/50">
           {templates.map((template) => (

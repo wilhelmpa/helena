@@ -13,7 +13,7 @@ export default function PipelineIssueSummary() {
   if (issues.length === 0) return null;
 
   return (
-    <div className="space-y-3 rounded-xl border p-4">
+    <div className="space-y-3 rounded-lg border bg-card p-4">
       {blocking.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-sm font-medium text-destructive">

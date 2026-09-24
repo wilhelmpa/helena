@@ -13,9 +13,7 @@ export default function DocumentBacklinks({ path }: { path: string }) {
 
   return (
     <section className="space-y-2">
-      <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {t('backlinks')}
-      </h3>
+      <h3 className="text-xs font-semibold text-muted-foreground">{t('backlinks')}</h3>
       {backlinks.isPending ? (
         <Skeleton className="h-7 w-full" />
       ) : backlinks.isError ? (

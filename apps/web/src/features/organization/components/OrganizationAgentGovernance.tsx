@@ -42,7 +42,7 @@ export default function OrganizationAgentGovernance({
       />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('dailyCeiling')}</span>
+          <span className="block text-xs text-muted-foreground">{t('dailyCeiling')}</span>
           <Input
             inputMode="numeric"
             value={daily}
@@ -52,7 +52,7 @@ export default function OrganizationAgentGovernance({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('monthlyCeiling')}</span>
+          <span className="block text-xs text-muted-foreground">{t('monthlyCeiling')}</span>
           <Input
             inputMode="numeric"
             value={monthly}

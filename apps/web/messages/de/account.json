@@ -50,7 +50,27 @@
     "thisDevice": "Dieses Gerät",
     "deleteWarning": "Du kannst dich dann nicht mehr mit diesem Passkey anmelden. Das kann nicht rückgängig gemacht werden.",
     "passkeyFallback": "Passkey",
-    "passkeysLoadFailed": "Passkeys konnten nicht geladen werden."
+    "passkeysLoadFailed": "Passkeys konnten nicht geladen werden.",
+    "totpTitle": "Authenticator-App",
+    "totpDescription": "Der Code, nach dem das Owner-Terminal bei jeder Öffnung fragt (Home → Terminal).",
+    "totpStatusEnabled": "Eingerichtet.",
+    "totpStatusDisabled": "Noch nicht eingerichtet.",
+    "totpPasswordLabel": "Passwort",
+    "totpPasswordHint": "Nur nötig, wenn dieses Konto eins hat. Sonst leer lassen.",
+    "totpEnable": "Einrichten",
+    "totpDisable": "Ausschalten",
+    "totpEnrollTitle": "Authenticator-App einrichten",
+    "totpSecretLabel": "Setup-Schlüssel",
+    "totpSecretHint": "In der Authenticator-App „Setup-Schlüssel manuell eingeben“ wählen und diesen einfügen.",
+    "totpCodeLabel": "Code aus der App",
+    "totpConfirm": "Bestätigen",
+    "totpEnabled": "Authenticator-App eingerichtet",
+    "totpDisabled": "Authenticator-App ausgeschaltet",
+    "totpEnrollFailed": "Einrichtung konnte nicht gestartet werden.",
+    "totpConfirmFailed": "Der Code wurde nicht akzeptiert.",
+    "totpDisableFailed": "Authenticator-App konnte nicht ausgeschaltet werden.",
+    "minLength": "Mindestens {count} Zeichen.",
+    "added": "Hinzugefügt am {date}"
   },
   "accounts": {
     "label": "Konten",
@@ -70,7 +90,8 @@
     "telegramConnectedLabel": "Verbunden",
     "loadFailed": "Verbundene Konten konnten nicht geladen werden.",
     "connectFailed": "Google konnte nicht verbunden werden.",
-    "disconnectFailed": "Dieses Konto konnte nicht getrennt werden."
+    "disconnectFailed": "Dieses Konto konnte nicht getrennt werden.",
+    "noneAvailable": "Auf dieser Instanz ist noch kein Dienst zum Verknüpfen eingerichtet. Google-Anmeldung und Telegram-Bot richtet der Administrator unter Administrator › Integrationen ein."
   },
   "preferences": {
     "label": "Einstellungen",
@@ -154,5 +175,8 @@
     "autoWatchDescription": "Aufgaben, die du erstellst, die dir zugewiesen werden, die du kommentierst oder in denen du erwähnt wirst.",
     "showChatByDefault": "Chat standardmäßig anzeigen",
     "showChatByDefaultDescription": "Das Chat-Panel öffnet sich zusammen mit einer Projektseite. Du kannst es jederzeit über seine Kopfzeile oder das Chat-Symbol schließen."
+  },
+  "shell": {
+    "title": "Konto"
   }
 }

@@ -12,7 +12,7 @@ export default function ApprovalDecisionSummary({ request }: { request: Approval
   return (
     <div className="space-y-1 border-t pt-3 text-sm">
       <p className="flex flex-wrap items-center gap-x-2">
-        <Icon className={approved ? 'size-4 text-emerald-600' : 'size-4 text-destructive'} />
+        <Icon className={approved ? 'size-4 text-status-success' : 'size-4 text-destructive'} />
         <span className="font-medium">
           {approved ? t('approvedBy', { name }) : t('rejectedBy', { name })}
         </span>

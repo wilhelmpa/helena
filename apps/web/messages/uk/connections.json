@@ -1,24 +1,35 @@
 {
-  "title": "Connections",
-  "description": "Connected services and accounts",
-  "loading": "Checking connections…",
-  "loadError": "Connection status could not be loaded.",
-  "lastCheck": "Last check",
-  "never": "Never",
-  "availableTools": "Available tools",
+  "title": "Підключення",
+  "description": "Підключені сервіси та акаунти",
+  "loading": "Перевірка підключень…",
+  "loadError": "Не вдалося завантажити стан підключень.",
+  "loadErrorHint": "Сервер не відповів. Спробуйте ще раз трохи згодом.",
+  "lastCheck": "Остання перевірка",
+  "never": "Ніколи",
+  "toolCount": "{count, plural, one {# інструмент} few {# інструменти} many {# інструментів} other {# інструмента}}",
+  "empty": "Немає підключень",
+  "emptyHint": "Сервіс підключень не повідомляє про підключені сервіси.",
+  "unconfigured": {
+    "title": "Сервіс підключень не налаштовано",
+    "hint": "На цьому сервері не працює сервіс, що перевіряє підключення. Поштові акаунти, доступи та пристрої мають власні сторінки.",
+    "mail": "Поштові акаунти",
+    "credentials": "Доступи",
+    "devices": "Пристрої та Obsidian"
+  },
   "status": {
-    "connected": "Connected",
-    "available": "Available",
-    "configured": "Configured",
-    "disabled": "Disabled",
-    "unavailable": "Unavailable",
-    "unsupported": "Unsupported",
-    "error": "Error"
+    "connected": "Підключено",
+    "available": "Доступно",
+    "configured": "Налаштовано",
+    "disabled": "Вимкнено",
+    "unavailable": "Недоступно",
+    "unsupported": "Не підтримується",
+    "error": "Помилка"
   },
   "actions": {
-    "checkAll": "Check all",
-    "check": "Check",
-    "reconnect": "Reconnect",
-    "openPairing": "Open pairing"
+    "checkAll": "Перевірити всі",
+    "check": "Перевірити",
+    "reconnect": "Перепідключити",
+    "openPairing": "Відкрити сполучення",
+    "retry": "Спробувати ще"
   }
 }

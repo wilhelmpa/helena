@@ -1,68 +1,79 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
+import { PageSelect } from '@/components/layout/PageToolbar';
+import SectionPageView from '@/components/common/page/SectionPageView';
+import { EmptyState } from '@/components/common/page/EmptyState';
+import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
+import { Button } from '@/components/ui/button';
 import { useTeamsQuery } from '@/services/teams.service';
-import PageHeader from '@/components/common/page/PageHeader';
 import OrganizationWorkspace from './components/OrganizationWorkspace';
 import { useOrganizationQuery } from './services/organization.service';
 
+// The organization of a team the reader manages: its structure, departments, goals,
+// agents and projects. With several such teams the team is chosen in the header row
+// and kept in the address (?team=3).
 export default function OrganizationPage() {
   const t = useTranslations('organization');
+  const tCommon = useTranslations('common');
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const teams = useTeamsQuery();
   const manageableTeams = useMemo(
     () => (teams.data ?? []).filter((team) => team.role === 'owner' || team.role === 'manager'),
     [teams.data],
   );
-  const [teamId, setTeamId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (manageableTeams.length > 0 && !manageableTeams.some((team) => team.id === teamId)) {
-      setTeamId(manageableTeams[0]!.id);
-    }
-  }, [manageableTeams, teamId]);
-
+  const requested = Number(params.get('team'));
+  const teamId =
+    manageableTeams.find((team) => team.id === requested)?.id ?? manageableTeams[0]?.id ?? null;
   const organization = useOrganizationQuery(teamId);
+
+  const selectTeam = (value: string) => {
+    const query = new URLSearchParams(params.toString());
+    query.set('team', value);
+    query.delete('tab');
+    router.replace(`${pathname}?${query.toString()}`, { scroll: false });
+  };
 
   return (
     <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0 border-b px-4 py-3">
-          <PageHeader
-            title={t('title')}
-            description={t('description')}
-            actions={
+      <SectionPageView title={t('title')} description={t('description')} wide>
+        {teams.isPending || (teamId != null && organization.isPending) ? (
+          <ListSkeleton rows={6} rowClassName="h-8" />
+        ) : manageableTeams.length === 0 ? (
+          <EmptyState title={t('managerRequiredTitle')} description={t('managerRequired')} />
+        ) : organization.isError ? (
+          <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
+            <Button size="sm" variant="outline" onClick={() => void organization.refetch()}>
+              {tCommon('reload')}
+            </Button>
+          </EmptyState>
+        ) : organization.data ? (
+          <OrganizationWorkspace
+            key={organization.data.teamId}
+            organization={organization.data}
+            toolbarEnd={
               manageableTeams.length > 1 ? (
-                <label className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">{t('fields.team')}</span>
-                  <select
-                    className="h-8 rounded-md border bg-background px-2 text-sm"
-                    value={teamId ?? ''}
-                    onChange={(event) => setTeamId(Number(event.target.value))}
-                  >
-                    {manageableTeams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : undefined
+                <PageSelect
+                  label={t('fields.team')}
+                  icon={Users}
+                  value={String(teamId)}
+                  onChange={selectTeam}
+                  options={manageableTeams.map((team) => ({
+                    value: String(team.id),
+                    label: team.name,
+                  }))}
+                />
+              ) : null
             }
           />
-        </div>
-
-        {teams.isPending ? (
-          <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>
-        ) : manageableTeams.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">{t('managerRequired')}</p>
-        ) : organization.isPending ? (
-          <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>
-        ) : organization.data ? (
-          <OrganizationWorkspace key={organization.data.teamId} organization={organization.data} />
         ) : null}
-      </div>
+      </SectionPageView>
     </Shell>
   );
 }

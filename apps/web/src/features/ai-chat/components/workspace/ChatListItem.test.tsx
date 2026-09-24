@@ -69,6 +69,9 @@ function chat(overrides: Partial<ChatSummary> = {}): ChatSummary {
     issue: null,
     pinned: false,
     running: false,
+    model: null,
+    thinkingLevel: null,
+    cliSessionId: null,
     archivedAt: null,
     deletedAt: null,
     createdAt: '2026-09-23T10:00:00Z',
@@ -85,6 +88,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => {}}
+        onRemoved={() => {}}
         highlightQuery="release"
       />,
     );
@@ -103,6 +107,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => {}}
+        onRemoved={() => {}}
       />,
     );
     assert.equal(document.querySelectorAll('img').length, 0);
@@ -118,6 +123,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => {}}
+        onRemoved={() => {}}
       />,
     );
     assert.ok(document.querySelector('[role="status"]'));
@@ -131,6 +137,7 @@ describe('ChatListItem', () => {
         view="active"
         selected={false}
         onSelect={() => (selected = true)}
+        onRemoved={() => {}}
       />,
     );
     const button = document.querySelector('button');

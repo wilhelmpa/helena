@@ -17,6 +17,7 @@ import { CredentialDialog } from './CredentialDialog';
 import { CredentialGrantsDialog } from './CredentialGrantsDialog';
 import { CredentialKindFilter } from './CredentialKindFilter';
 import { CredentialRow } from './CredentialRow';
+import { PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 
 type Open =
   | { dialog: 'edit'; entry: CredentialEntry }
@@ -42,18 +43,9 @@ export default function TeamCredentialsSection({ teamId }: { teamId: number }) {
     <SectionPageView
       title={t('title')}
       description={canManage ? t('description') : `${t('description')} ${t('managerOnly')}`}
-      actions={
-        canManage ? (
-          <AddCredentialMenu onSelect={(next) => setOpen({ dialog: 'new', kind: next })} />
-        ) : undefined
-      }
     >
-      {!team ? (
-        <ListSkeleton rows={3} rowClassName="h-14" />
-      ) : !canRead ? (
-        <p className="text-sm text-muted-foreground">{t('noAccess')}</p>
-      ) : (
-        <div className="space-y-4">
+      <PageToolbar>
+        {canRead && (
           <CredentialKindFilter
             value={kind}
             onChange={(next) => {
@@ -61,13 +53,25 @@ export default function TeamCredentialsSection({ teamId }: { teamId: number }) {
               paging.reset();
             }}
           />
+        )}
+        <PageToolbarSpacer />
+        {canManage && (
+          <AddCredentialMenu onSelect={(next) => setOpen({ dialog: 'new', kind: next })} />
+        )}
+      </PageToolbar>
+      {!team ? (
+        <ListSkeleton rows={3} rowClassName="h-14" />
+      ) : !canRead ? (
+        <p className="text-sm text-muted-foreground">{t('noAccess')}</p>
+      ) : (
+        <div className="flex flex-1 flex-col gap-4">
           {!page.data ? (
             <ListSkeleton rows={3} rowClassName="h-14" />
           ) : page.data.total === 0 ? (
             <EmptyState title={t('empty')} description={t('emptyHint')} />
           ) : (
             <>
-              <ul className="divide-y">
+              <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
                 {page.data.items.map((entry) => (
                   <CredentialRow
                     key={entry.id}

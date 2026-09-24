@@ -44,7 +44,7 @@ export default function ListPager({ paging, total }: { paging: Paging; total: nu
             ))}
           </SelectContent>
         </Select>
-        <span className="text-sm text-muted-foreground">{t('perPage')}</span>
+        <span className="text-xs text-muted-foreground">{t('perPage')}</span>
       </div>
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground" dir="ltr">

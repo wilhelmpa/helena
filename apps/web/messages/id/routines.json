@@ -28,7 +28,7 @@
   "presetEveryHour": "Setiap jam",
   "presetEveryWeekdayAt9": "Setiap hari kerja pukul 09.00",
   "presetEveryDayAt9": "Setiap hari pukul 09.00",
-  "inputPlaceholder": "Setiap hari kerja pukul 09.00 atau 0 9 * * 1-5",
+  "inputPlaceholder": "mis. 0 9 * * 1-5",
   "runs": "Eksekusi: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "Belum ada jadwal",
   "emptyHint": "Pilih agen, apa yang dikerjakannya, dan seberapa sering.",
   "homeHint": "Jadwal dari setiap proyek yang agennya dapat Anda lihat. Jadwal diubah di proyeknya.",
-  "homeEmptyHint": "Jadwal dibuat di halaman Jadwal pada sebuah proyek."
+  "homeEmptyHint": "Jadwal dibuat di halaman Jadwal pada sebuah proyek.",
+  "cron": {
+    "everyMinute": "Setiap menit",
+    "everyNMinutes": "Setiap {n} menit",
+    "everyHour": "Setiap jam",
+    "everyNHours": "Setiap {n} jam",
+    "everyNHoursAtMinute": "Setiap {n} jam, menit ke-{minute}",
+    "at": "Pukul {times}",
+    "everyNMinutesBetween": "Setiap {n} menit dari {start} sampai {end}",
+    "everyHourBetween": "Setiap jam dari {start} sampai {end}",
+    "everyNHoursBetween": "Setiap {n} jam dari {start} sampai {end}",
+    "atMinuteDuringHour": "Menit {minute}, jam {hour}",
+    "onDays": "tanggal {days}",
+    "onDaysOrWeekdays": "tanggal {days} atau hari {weekdays}",
+    "inMonths": "bulan {months}",
+    "weekdays": "Senin sampai Jumat",
+    "weekends": "Sabtu dan Minggu",
+    "through": "{start} sampai {end}",
+    "dayOrdinal": "{n}"
+  },
+  "invalidSchedule": "Jadwal tidak valid. Contoh: 0 9 * * 1-5 (Senin sampai Jumat pukul 09.00)."
 }

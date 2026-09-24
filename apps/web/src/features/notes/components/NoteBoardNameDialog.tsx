@@ -42,7 +42,7 @@ export default function NoteBoardNameDialog({
   return (
     <Modal title={title} description={description} scope={projectKey} onClose={onClose}>
       <form
-        className="space-y-5"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           if (isValid) onSubmit(name.trim(), visibility);

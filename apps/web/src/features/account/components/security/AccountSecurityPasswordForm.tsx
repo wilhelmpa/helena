@@ -47,7 +47,7 @@ export default function AccountSecurityPasswordForm() {
 
   return (
     <form
-      className="flex max-w-sm flex-col gap-3"
+      className="flex flex-col gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -59,7 +59,7 @@ export default function AccountSecurityPasswordForm() {
         saveMutation.mutate();
       }}
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="current-password">{t('currentPassword')}</Label>
         <Input
           id="current-password"
@@ -69,7 +69,7 @@ export default function AccountSecurityPasswordForm() {
           autoComplete="current-password"
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="new-password">{t('newPassword')}</Label>
         <Input
           id="new-password"
@@ -78,9 +78,9 @@ export default function AccountSecurityPasswordForm() {
           onChange={(e) => setNext(e.target.value)}
           autoComplete="new-password"
         />
-        <p className="text-xs text-muted-foreground">At least {MIN_LENGTH} characters.</p>
+        <p className="text-xs text-muted-foreground">{t('minLength', { count: MIN_LENGTH })}</p>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="confirm-password">{t('confirmNewPassword')}</Label>
         <Input
           id="confirm-password"
@@ -91,8 +91,13 @@ export default function AccountSecurityPasswordForm() {
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <div>
-        <Button type="submit" size="sm" disabled={!valid || saveMutation.isPending}>
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          variant="outline"
+          size="sm"
+          disabled={!valid || saveMutation.isPending}
+        >
           {saveMutation.isPending ? t('changing') : t('changePassword')}
         </Button>
       </div>

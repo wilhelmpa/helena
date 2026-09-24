@@ -40,5 +40,8 @@
   "notice": {
     "workflow-runs-unavailable": "Mastra n’a pas répondu, les exécutions de flux sont donc omises.",
     "workflow-runs-limited": "Toutes les exécutions de flux ne sont pas affichées : la chronologie lit un nombre limité de flux et d’exécutions dans Mastra."
-  }
+  },
+  "filterKind": "Type",
+  "filterAgent": "Agent",
+  "unavailableHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
 }

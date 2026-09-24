@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Bot, Plus, UserRound, UsersRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { InviteRow } from '@/lib/api/endpoints/invites';
@@ -21,16 +21,21 @@ import { teamSectionPath } from '@/utils/paths';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
-import SearchInput from '@/components/common/SearchInput';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import MembersEmptyState from '@/components/common/page/MembersEmptyState';
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TeamInviteDialog from './TeamInviteDialog';
 import TeamInviteRow from './TeamInviteRow';
 import TeamMemberRow from './TeamMemberRow';
+import {
+  PageActions,
+  PageSearch,
+  PageTabs,
+  PageToolbar,
+  PageToolbarSpacer,
+} from '@/components/layout/PageToolbar';
+import TableCard from '@/components/common/page/TableCard';
 
 // The team's members, a page at a time, with the invites that have not been answered
 // yet above them. People and agents work on one board, so both are listed and the tabs
@@ -66,8 +71,8 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
       ? (invitesQuery.data ?? []).filter((invite) => invite.status === 'pending')
       : [];
 
-  function onKindChange(next: string) {
-    setKind(next as MemberKind);
+  function onKindChange(next: MemberKind) {
+    setKind(next);
     paging.reset();
   }
 
@@ -88,43 +93,45 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
       title={t('sections.members.title')}
       description={t('sections.members.description')}
       wide
-      actions={
-        canInvite ? (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setInviting(true)}>
-            <Plus className="size-3.5" />
-            {tInvite('action')}
-          </Button>
-        ) : undefined
-      }
     >
+      <PageToolbar>
+        <PageTabs<MemberKind>
+          label={t('sections.members.title')}
+          value={kind}
+          onChange={onKindChange}
+          items={[
+            { value: 'all', label: tMembers('tabs.all'), icon: UsersRound },
+            { value: 'human', label: tMembers('tabs.people'), icon: UserRound },
+            { value: 'agent', label: tMembers('tabs.agents'), icon: Bot },
+          ]}
+        />
+        <PageToolbarSpacer />
+        <PageSearch value={search} onChange={onSearchChange} placeholder={searchPlaceholder} />
+        <PageActions
+          primary={
+            canInvite
+              ? {
+                  id: 'invite',
+                  label: tInvite('action'),
+                  icon: Plus,
+                  onClick: () => setInviting(true),
+                }
+              : undefined
+          }
+        />
+      </PageToolbar>
       <div className="flex min-h-0 flex-1 flex-col gap-4">
-        <Tabs value={kind} onValueChange={onKindChange}>
-          <div className="flex items-center justify-between gap-3">
-            <TabsList variant="line" className="w-auto border-b-0">
-              <TabsTrigger value="all">{tMembers('tabs.all')}</TabsTrigger>
-              <TabsTrigger value="human">{tMembers('tabs.people')}</TabsTrigger>
-              <TabsTrigger value="agent">{tMembers('tabs.agents')}</TabsTrigger>
-            </TabsList>
-            <SearchInput
-              value={search}
-              onChange={onSearchChange}
-              placeholder={searchPlaceholder}
-              className="w-60 shrink-0"
-            />
-          </div>
-        </Tabs>
-
         {membersQuery.isPending ? (
           <ListSkeleton rows={4} rowClassName="h-12" />
         ) : members.length === 0 && pending.length === 0 ? (
           <MembersEmptyState kind={kind} searching={term !== undefined} />
         ) : (
-          <div className="overflow-x-auto">
-            <Table className="min-w-[720px] table-fixed">
+          <TableCard>
+            <Table className="table-fixed xl:min-w-[720px]">
               <colgroup>
                 <col className="w-[46%]" />
                 <col className="w-[16%]" />
-                <col className="w-[20%]" />
+                <col className="w-[20%] max-md:hidden" />
                 <col className="w-[18%]" />
               </colgroup>
               <TableHeader>
@@ -135,7 +142,7 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
                   <TableHead className="text-xs font-medium text-muted-foreground">
                     {t('columns.role')}
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
+                  <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
                     {t('columns.joined')}
                   </TableHead>
                   <TableHead className="text-end text-xs font-medium text-muted-foreground">
@@ -164,7 +171,7 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
         )}
 
         {total > 0 && <ListPager paging={paging} total={total} />}

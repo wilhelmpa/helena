@@ -57,7 +57,7 @@ export default function AgentLibraryMcpServers({
             : server.description;
           const label = (
             <span className="min-w-0">
-              <span className={builtinSlug ? 'text-[13px] font-medium' : 'font-mono text-[13px]'}>
+              <span className={builtinSlug ? 'text-sm font-medium' : 'font-mono text-xs'}>
                 {name}
               </span>
               {description && (

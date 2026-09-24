@@ -50,7 +50,27 @@
     "thisDevice": "此设备",
     "deleteWarning": "移除后将无法再使用此通行密钥登录。此操作无法撤销。",
     "passkeyFallback": "通行密钥",
-    "passkeysLoadFailed": "无法加载通行密钥。"
+    "passkeysLoadFailed": "无法加载通行密钥。",
+    "totpTitle": "身份验证器应用",
+    "totpDescription": "所有者终端每次打开时要求输入的验证码(首页 → 终端)。",
+    "totpStatusEnabled": "已设置。",
+    "totpStatusDisabled": "尚未设置。",
+    "totpPasswordLabel": "密码",
+    "totpPasswordHint": "仅当此账户设有密码时才会要求输入,否则留空即可。",
+    "totpEnable": "设置",
+    "totpDisable": "关闭",
+    "totpEnrollTitle": "设置身份验证器应用",
+    "totpSecretLabel": "设置密钥",
+    "totpSecretHint": "在身份验证器应用中选择“手动输入设置密钥”,然后粘贴此内容。",
+    "totpCodeLabel": "应用中的验证码",
+    "totpConfirm": "确认",
+    "totpEnabled": "身份验证器应用已启用",
+    "totpDisabled": "身份验证器应用已关闭",
+    "totpEnrollFailed": "无法开始设置。",
+    "totpConfirmFailed": "验证码未被接受。",
+    "totpDisableFailed": "无法关闭身份验证器应用。",
+    "minLength": "至少 {count} 个字符。",
+    "added": "添加于 {date}"
   },
   "accounts": {
     "label": "关联账户",
@@ -70,7 +90,8 @@
     "telegramConnectedLabel": "已连接",
     "loadFailed": "无法加载关联账户。",
     "connectFailed": "无法连接 Google。",
-    "disconnectFailed": "无法断开此账户。"
+    "disconnectFailed": "无法断开此账户。",
+    "noneAvailable": "此实例尚未设置可关联的服务。管理员可在“管理员 › 集成”中设置 Google 登录和 Telegram 机器人。"
   },
   "preferences": {
     "label": "偏好设置",
@@ -154,5 +175,8 @@
     "autoWatchDescription": "自动关注你创建、获指派、评论或被提及的工作项。",
     "showChatByDefault": "默认显示聊天",
     "showChatByDefaultDescription": "打开项目页面时同时打开聊天面板。可随时通过面板标题栏或聊天图标关闭。"
+  },
+  "shell": {
+    "title": "账户"
   }
 }

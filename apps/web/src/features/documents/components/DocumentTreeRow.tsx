@@ -41,10 +41,10 @@ export default function DocumentTreeRow({
     <li role="treeitem" aria-expanded={folder ? open : undefined} aria-selected={active}>
       <div
         className={cn(
-          'group/row flex h-8 items-center rounded-md pe-1 text-[13px] transition-colors',
+          'group/row flex h-8 items-center rounded-md pe-1 text-sm transition-colors',
           active
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'focus-within:bg-muted/65 hover:bg-muted/65',
+            ? 'bg-sidebar-accent font-medium text-foreground'
+            : 'focus-within:bg-sidebar-accent/60 hover:bg-sidebar-accent/60',
         )}
         style={{ paddingInlineStart: `${4 + Math.min(depth, 10) * 14}px` }}
       >
@@ -61,9 +61,9 @@ export default function DocumentTreeRow({
               )}
             />
             {open ? (
-              <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" />
+              <FolderOpen className="size-4 shrink-0 text-muted-foreground" />
             ) : (
-              <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+              <Folder className="size-4 shrink-0 text-muted-foreground" />
             )}
             {label}
           </button>
@@ -73,7 +73,7 @@ export default function DocumentTreeRow({
             className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-sm ps-5 outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             aria-current={active ? 'page' : undefined}
           >
-            <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+            <FileText className="size-4 shrink-0 text-muted-foreground" />
             {label}
           </Link>
         )}

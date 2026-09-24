@@ -1,31 +1,28 @@
 import type { ReactNode } from 'react';
+import SettingsCard from '@/components/common/page/SettingsCard';
+import SettingsSection from '@/components/common/page/SettingsSection';
 
-// One block of an account page: a heading over an optional explanation, with an
-// optional control on the right of that heading, then the content it introduces.
-// Blocks are separated by a rule, except the first. Shared by the Profile and
-// Security pages.
+// One block of an account page, in the settings look every other settings page uses:
+// the title (14px) and its one-line explanation on the left, the content in one
+// sidebar-toned card on the right (one column on a narrow page). `actions` sits beside
+// the title (e.g. "Add passkey"). `flush` drops the card's padding for a list whose
+// rows carry their own.
 export default function AccountSection({
   title,
   description,
   actions,
+  flush = false,
   children,
 }: {
   title: string;
   description?: string;
-  // Rendered on the right of the heading row, e.g. an "Add passkey" button.
   actions?: ReactNode;
+  flush?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section className="border-t py-6 first:border-t-0 first:pt-0">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-sm font-medium">{title}</h2>
-          {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
-        </div>
-        {actions && <div className="shrink-0">{actions}</div>}
-      </div>
-      {children}
-    </section>
+    <SettingsSection title={title} description={description} action={actions}>
+      <SettingsCard className={flush ? 'divide-y' : 'p-4'}>{children}</SettingsCard>
+    </SettingsSection>
   );
 }

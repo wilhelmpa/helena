@@ -4,14 +4,21 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
-import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
+import {
+  PageActions,
+  PageToolbar,
+  PageToolbarSpacer,
+  usePageToolbarRoom,
+} from '@/components/layout/PageToolbar';
 import type { MruEntry } from '../hooks/useNoteBoardMru';
 import type { NewBoardVisibility } from '../utils/visibility';
 import NoteBoardNameDialog from './NoteBoardNameDialog';
 import NoteBoardTab from './NoteBoardTab';
 import BoardSwitcher from './BoardSwitcher';
 
-// The notes header. The tab set is the MRU list from the host.
+// The notes header row (PageToolbar, docs/volition/ui-standard.md): the recently used
+// boards as tabs (the host's MRU list), the switcher over every board, and "Neues
+// Board" as the page's one primary action.
 export default function NoteBoardBar({
   projectKey,
   tabs,
@@ -43,32 +50,23 @@ export default function NoteBoardBar({
   }
 
   return (
-    <WorkspaceHeader className="gap-1 px-2 sm:px-3">
-      {canCreate && (
-        <button
-          type="button"
-          aria-label={t('newBoard')}
-          onClick={() => setDialog('create')}
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <Plus className="size-4" />
-        </button>
-      )}
-
+    <PageToolbar>
+      <NoteBoardTabs
+        tabs={tabs}
+        activeBoardId={activeBoardId}
+        onSelect={onSelect}
+        onRename={(tab) => setDialog(tab)}
+        onDelete={onDelete}
+      />
       <BoardSwitcher projectKey={projectKey} activeBoardId={activeBoardId} onSelect={onSelect} />
-
-      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-        {tabs.map((tab) => (
-          <NoteBoardTab
-            key={tab.id}
-            tab={tab}
-            active={activeBoardId === tab.id}
-            onSelect={() => onSelect(tab.id)}
-            onRename={() => setDialog(tab)}
-            onDelete={() => onDelete(tab.id)}
-          />
-        ))}
-      </div>
+      <PageToolbarSpacer />
+      <PageActions
+        primary={
+          canCreate
+            ? { id: 'new', label: t('newBoard'), icon: Plus, onClick: () => setDialog('create') }
+            : undefined
+        }
+      />
 
       <NoteBoardNameDialog
         key={dialogKey()}
@@ -85,6 +83,39 @@ export default function NoteBoardBar({
           setDialog(null);
         }}
       />
-    </WorkspaceHeader>
+    </PageToolbar>
+  );
+}
+
+// The board tabs. When the row runs out of room only the open board keeps its tab
+// (with its menu); the switcher next to it reaches the others.
+function NoteBoardTabs({
+  tabs,
+  activeBoardId,
+  onSelect,
+  onRename,
+  onDelete,
+}: {
+  tabs: MruEntry[];
+  activeBoardId: number | null;
+  onSelect: (id: number) => void;
+  onRename: (tab: MruEntry) => void;
+  onDelete: (id: number) => void;
+}) {
+  const room = usePageToolbarRoom();
+  const shown = room.tabs ? tabs : tabs.filter((tab) => tab.id === activeBoardId);
+  return (
+    <div className="flex min-w-0 shrink-0 items-center gap-0.5">
+      {shown.map((tab) => (
+        <NoteBoardTab
+          key={tab.id}
+          tab={tab}
+          active={activeBoardId === tab.id}
+          onSelect={() => onSelect(tab.id)}
+          onRename={() => onRename(tab)}
+          onDelete={() => onDelete(tab.id)}
+        />
+      ))}
+    </div>
   );
 }

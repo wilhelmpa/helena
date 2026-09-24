@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { useProjectsQuery } from '@/services/projects.service';
-import PageHeader from '@/components/common/page/PageHeader';
+import SectionPageView from '@/components/common/page/SectionPageView';
 import AgentActivityTimeline from './components/AgentActivityTimeline';
 
 // What the agents of every project the reader works in did. The agent filter lists the
@@ -18,16 +18,13 @@ export default function HomeAgentActivityPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('agentActivity')} autoOpenGlobalChat={false}>
-      <div className="h-full overflow-y-auto p-6">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4">
-          <PageHeader title={tNav('agentActivity')} description={t('homeDescription')} />
-          <AgentActivityTimeline
-            projectKey={null}
-            projectIds={projects.map((project) => project.id)}
-            agents={agents.data ?? []}
-          />
-        </div>
-      </div>
+      <SectionPageView title={tNav('agentActivity')} description={t('homeDescription')} wide>
+        <AgentActivityTimeline
+          projectKey={null}
+          projectIds={projects.map((project) => project.id)}
+          agents={agents.data ?? []}
+        />
+      </SectionPageView>
     </Shell>
   );
 }

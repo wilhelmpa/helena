@@ -9,9 +9,12 @@ import { workspaceTools } from '@/utils/workspaceTools';
 import WorkspaceFrame from '@/components/layout/WorkspaceFrame';
 import WorkspaceUnavailable from '@/components/layout/WorkspaceUnavailable';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
+import { ExternalLink } from 'lucide-react';
 
 export default function CodePage() {
   const t = useTranslations('nav.workspace');
+  const tCommon = useTranslations('common');
   const { projectKey } = useParams<{ projectKey: string }>();
   const provisioning = useProjectProvisioningQuery(projectKey);
   const resources = useMemo(
@@ -27,6 +30,22 @@ export default function CodePage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
       <WorkspacePageHeader title={t('code')} />
+      {code.url && (
+        <PageToolbar>
+          <PageToolbarSpacer />
+          <PageActions
+            actions={[
+              {
+                id: 'open',
+                label: tCommon('editor.openPreviewLink', { name: t('code') }),
+                icon: ExternalLink,
+                href: code.url,
+                external: true,
+              },
+            ]}
+          />
+        </PageToolbar>
+      )}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {code.url ? (
           <WorkspaceFrame url={code.url} title={t('code')} active />

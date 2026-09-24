@@ -70,9 +70,11 @@ export class AgUiChunkMapper {
     }
   }
 
-  // Closes the message when the stream ended without a terminal event.
+  // Closes the message when the stream ended without a terminal event: the browser lost
+  // the answer rather than the answer ending, so it is marked as interrupted, for the
+  // chat to offer picking it up again (see ChatInterruptedBar).
   end(): PlanChunk[] {
-    return this.finished ? [] : this.finish();
+    return this.finished ? [] : this.finish({ interrupted: true });
   }
 
   private delta(kind: 'text' | 'reasoning', delta: string): PlanChunk[] {
@@ -112,10 +114,11 @@ export class AgUiChunkMapper {
 
   private finish(metadata?: PlanChatMetadata): PlanChunk[] {
     this.finished = true;
+    const finishReason = metadata?.error ? 'error' : metadata?.interrupted ? 'other' : 'stop';
     return [
       ...this.close(),
       ...(metadata ? [{ type: 'message-metadata' as const, messageMetadata: metadata }] : []),
-      { type: 'finish', finishReason: metadata?.error ? 'error' : 'stop' },
+      { type: 'finish', finishReason },
     ];
   }
 }

@@ -5,7 +5,7 @@
   "ownerOnly": "Only the instance owner manages the devices.",
   "unavailable": {
     "unconfiguredTitle": "Syncthing is not set up",
-    "unconfigured": "Plan has no working key for Syncthing on this server. Install the Debian package syncthing and run <code>deployment/volition-stack/native/syncthing/setup.sh</code> as root.",
+    "unconfigured": "Helena has no working key for Syncthing on this server. Install the Debian package syncthing and run <code>deployment/volition-stack/native/syncthing/setup.sh</code> as root.",
     "unreachableTitle": "Syncthing is not reachable",
     "unreachable": "Syncthing is not installed on this server, or the service <code>volition-syncthing</code> is not running."
   },
@@ -71,7 +71,7 @@
     "step2Lan": "For direct syncing at home, enter <code>{address}, dynamic</code> as the device's addresses.",
     "step3": "The device then appears above under “Devices asking to connect”. Choose Accept.",
     "step4": "On the device, accept the folder Volition into a folder named Volition: <code>~/Volition</code> on the Mac, <code>Volition</code> in the internal storage on Android, the Obsidian vault Volition on the iPhone.",
-    "step5": "Wait until the folder shows “Up to date” on the device, then open the folder Volition in Obsidian as a vault. Links from Plan open the vault Volition.",
+    "step5": "Wait until the folder shows “Up to date” on the device, then open the folder Volition in Obsidian as a vault. Links from Helena open the vault Volition.",
     "iphoneTitle": "iPhone",
     "iphone": "Obsidian on the iPhone only opens its own folders. First create the vault Volition in Obsidian (on the iPhone, not in iCloud) and close Obsidian. Then, in Möbius Sync, put the folder Volition into On My iPhone › Obsidian › Volition. Obsidian writes its own settings when it creates a vault, so conflicts in <code>.obsidian</code> can appear after the first sync; their conflict copies hold this server's defaults. Möbius Sync syncs while the app is open or iOS lets it run in the background.",
     "spaceTitle": "Save space on the phone (optional)",

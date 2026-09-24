@@ -177,7 +177,7 @@ function ReflectionBlock({ reflection }: { reflection: ReflectionView }) {
   );
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <span>{t('title')}</span>
         <span>·</span>
         <span>{t(reflection.status)}</span>
@@ -216,9 +216,7 @@ function ReflectionBlock({ reflection }: { reflection: ReflectionView }) {
 function DetailBlock({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <div className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-        {label}
-      </div>
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
       <pre className="max-h-64 overflow-auto rounded-md bg-muted/50 p-2.5 text-xs whitespace-pre-wrap">
         {value}
       </pre>

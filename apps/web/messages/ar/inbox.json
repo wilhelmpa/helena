@@ -40,5 +40,11 @@
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…"
+  },
+  "mailFilter": {
+    "read": "حالة القراءة",
+    "attachments": "المرفقات",
+    "any": "الكل",
+    "reset": "إعادة تعيين عوامل التصفية"
   }
 }

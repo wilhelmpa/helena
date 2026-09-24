@@ -6,7 +6,6 @@ import {
   devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
-  homeChatPath,
   homeDocsPath,
   homeFilesPath,
   mailAccountsPath,
@@ -25,7 +24,6 @@ export type HomeNavigationId =
   | 'overview'
   | 'allWorkItems'
   | 'inbox'
-  | 'chat'
   | 'files'
   | 'approvals'
   | 'docs'
@@ -56,14 +54,15 @@ export interface HomeNavigationItem {
 
 // The entries that need a single team to point at are left out without one. The
 // schedules read across every project, like the tasks, and need none. The workflows are
-// the team's library of templates. Home's Docs are the instance owner's own notes.
+// the team's library of templates. Home's Docs are the instance owner's own notes. The
+// chat is not an entry (owner, 2026-09-24): it lives in the tool panel, full screen from
+// there, and /chat stays reachable by link.
 export function homeNavigation(teamId: number | null, isOwner = false): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
     { id: 'overview', group: 'work', href: '/' },
     { id: 'allWorkItems', group: 'work', href: tasksPath() },
     { id: 'inbox', group: 'work', href: globalInboxPath() },
-    ...teamOnly([{ id: 'chat', group: 'work' as const, href: homeChatPath() }]),
     { id: 'files', group: 'work', href: homeFilesPath() },
     { id: 'approvals', group: 'work', href: approvalsPath() },
     ...(isOwner ? [{ id: 'docs' as const, group: 'work' as const, href: homeDocsPath() }] : []),

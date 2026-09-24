@@ -28,7 +28,7 @@ export default function SettingsGit({ project }: { project: ProjectDetail }) {
   const settings = settingsQuery.data;
   const editable = can('integrations', 'edit');
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <SettingsCard>
         <SettingsRow
           title={t('enable')}

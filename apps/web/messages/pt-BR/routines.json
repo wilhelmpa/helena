@@ -28,7 +28,7 @@
   "presetEveryHour": "A cada hora",
   "presetEveryWeekdayAt9": "Todo dia útil às 9h",
   "presetEveryDayAt9": "Todo dia às 9h",
-  "inputPlaceholder": "Todo dia útil às 9h ou 0 9 * * 1-5",
+  "inputPlaceholder": "ex.: 0 9 * * 1-5",
   "runs": "Executa: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "Nenhum agendamento ainda",
   "emptyHint": "Escolha um agente, no que ele trabalha e com que frequência.",
   "homeHint": "Os agendamentos de todos os projetos cujos agentes você pode ver. Um agendamento é alterado no projeto dele.",
-  "homeEmptyHint": "Um agendamento é criado na página Agendamentos de um projeto."
+  "homeEmptyHint": "Um agendamento é criado na página Agendamentos de um projeto.",
+  "cron": {
+    "everyMinute": "A cada minuto",
+    "everyNMinutes": "A cada {n} minutos",
+    "everyHour": "A cada hora",
+    "everyNHours": "A cada {n} horas",
+    "everyNHoursAtMinute": "A cada {n} horas, {minute} minutos após a hora cheia",
+    "at": "Às {times}",
+    "everyNMinutesBetween": "A cada {n} minutos das {start} às {end}",
+    "everyHourBetween": "A cada hora das {start} às {end}",
+    "everyNHoursBetween": "A cada {n} horas das {start} às {end}",
+    "atMinuteDuringHour": "Minuto {minute}, hora {hour}",
+    "onDays": "no dia {days}",
+    "onDaysOrWeekdays": "no dia {days} ou {weekdays}",
+    "inMonths": "em {months}",
+    "weekdays": "de segunda a sexta",
+    "weekends": "sábado e domingo",
+    "through": "{start} a {end}",
+    "dayOrdinal": "{n}"
+  },
+  "invalidSchedule": "Agendamento inválido. Exemplo: 0 9 * * 1-5 (de segunda a sexta às 9h)."
 }

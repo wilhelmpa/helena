@@ -47,7 +47,7 @@ export default function WorkflowRunLimitSettings({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b pb-6">
+    <div className="flex flex-col gap-2 border-b pb-6 sm:flex-row sm:items-center sm:gap-3">
       <div className="min-w-0 flex-1">
         <h3 className="text-sm font-medium">{t('title')}</h3>
         <p className="text-xs text-muted-foreground">{t('hint')}</p>

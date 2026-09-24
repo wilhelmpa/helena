@@ -55,7 +55,7 @@ export default function AgentChatMessage({
     <MessageScrollerItem
       messageId={message.id}
       scrollAnchor={isUser}
-      className="flex flex-col gap-6 motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in motion-safe:slide-in-from-bottom-1"
+      className="flex flex-col gap-4 motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in motion-safe:slide-in-from-bottom-1"
     >
       {showDate && (
         <Marker variant="separator">

@@ -1,24 +1,35 @@
 {
-  "title": "Connections",
-  "description": "Connected services and accounts",
-  "loading": "Checking connections…",
-  "loadError": "Connection status could not be loaded.",
-  "lastCheck": "Last check",
-  "never": "Never",
-  "availableTools": "Available tools",
+  "title": "Conexiones",
+  "description": "Servicios y cuentas conectados",
+  "loading": "Comprobando conexiones…",
+  "loadError": "No se pudo cargar el estado de las conexiones.",
+  "loadErrorHint": "El servidor no respondió. Vuelve a intentarlo en un momento.",
+  "lastCheck": "Última comprobación",
+  "never": "Nunca",
+  "toolCount": "{count, plural, one {# herramienta} other {# herramientas}}",
+  "empty": "No hay conexiones",
+  "emptyHint": "El servicio de conexiones no informa de ningún servicio conectado.",
+  "unconfigured": {
+    "title": "No hay servicio de conexiones configurado",
+    "hint": "Este servidor no ejecuta ningún servicio que compruebe conexiones. Las cuentas de correo, las credenciales y los dispositivos tienen sus propias páginas.",
+    "mail": "Cuentas de correo",
+    "credentials": "Credenciales",
+    "devices": "Dispositivos y Obsidian"
+  },
   "status": {
-    "connected": "Connected",
-    "available": "Available",
-    "configured": "Configured",
-    "disabled": "Disabled",
-    "unavailable": "Unavailable",
-    "unsupported": "Unsupported",
+    "connected": "Conectado",
+    "available": "Disponible",
+    "configured": "Configurado",
+    "disabled": "Desactivado",
+    "unavailable": "No disponible",
+    "unsupported": "No compatible",
     "error": "Error"
   },
   "actions": {
-    "checkAll": "Check all",
-    "check": "Check",
-    "reconnect": "Reconnect",
-    "openPairing": "Open pairing"
+    "checkAll": "Comprobar todo",
+    "check": "Comprobar",
+    "reconnect": "Volver a conectar",
+    "openPairing": "Abrir emparejamiento",
+    "retry": "Reintentar"
   }
 }

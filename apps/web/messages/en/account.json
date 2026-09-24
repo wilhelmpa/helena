@@ -50,7 +50,27 @@
     "thisDevice": "This device",
     "deleteWarning": "You will no longer be able to sign in with this passkey. This cannot be undone.",
     "passkeyFallback": "Passkey",
-    "passkeysLoadFailed": "Could not load passkeys."
+    "passkeysLoadFailed": "Could not load passkeys.",
+    "totpTitle": "Authenticator app",
+    "totpDescription": "The code the owner terminal asks for every time it opens (Home -> Terminal).",
+    "totpStatusEnabled": "Enabled.",
+    "totpStatusDisabled": "Not set up.",
+    "totpPasswordLabel": "Password",
+    "totpPasswordHint": "Only asked for when this account has one. Leave blank otherwise.",
+    "totpEnable": "Set up",
+    "totpDisable": "Turn off",
+    "totpEnrollTitle": "Set up the authenticator app",
+    "totpSecretLabel": "Setup key",
+    "totpSecretHint": "In the authenticator app, choose “enter a setup key manually” and paste this.",
+    "totpCodeLabel": "Code from the app",
+    "totpConfirm": "Confirm",
+    "totpEnabled": "Authenticator app enabled",
+    "totpDisabled": "Authenticator app turned off",
+    "totpEnrollFailed": "Could not start setup.",
+    "totpConfirmFailed": "The code was not accepted.",
+    "totpDisableFailed": "Could not turn off the authenticator app.",
+    "minLength": "At least {count} characters.",
+    "added": "Added {date}"
   },
   "accounts": {
     "label": "Accounts",
@@ -70,7 +90,8 @@
     "telegramConnectedLabel": "Connected",
     "loadFailed": "Could not load connected accounts.",
     "connectFailed": "Could not connect Google.",
-    "disconnectFailed": "Could not disconnect this account."
+    "disconnectFailed": "Could not disconnect this account.",
+    "noneAvailable": "No service to link is set up on this instance yet. The administrator adds Google sign-in and the Telegram bot under Administrator › Integrations."
   },
   "preferences": {
     "label": "Preferences",
@@ -154,5 +175,8 @@
     "autoWatchDescription": "The ones you create, get assigned, comment on, or are mentioned in.",
     "showChatByDefault": "Show the chat by default",
     "showChatByDefaultDescription": "The chat panel opens with a project page. Close it any time from its header or the chat icon."
+  },
+  "shell": {
+    "title": "Account"
   }
 }

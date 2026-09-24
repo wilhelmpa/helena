@@ -126,99 +126,101 @@ export default function SettingsIssueTypes({
 
   return (
     <div className="space-y-4">
-      <Table className="min-w-[640px] table-fixed">
-        <colgroup>
-          <col className="w-[46%]" />
-          <col className="w-[40%]" />
-          <col className="w-[14%]" />
-        </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.type')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.issues')}
-            </TableHead>
-            <TableHead className="text-right text-xs font-medium text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {types.map((type) =>
-            editingId === type.id ? (
-              <TableRow key={type.id} className="hover:bg-transparent">
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <Table className="table-fixed md:min-w-[640px]">
+          <colgroup>
+            <col className="w-[46%]" />
+            <col className="w-[40%]" />
+            <col className="w-[14%]" />
+          </colgroup>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+                {t('columns.type')}
+              </TableHead>
+              <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+                {t('columns.issues')}
+              </TableHead>
+              <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
+                {tCommon('actions')}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {types.map((type) =>
+              editingId === type.id ? (
+                <TableRow key={type.id} className="hover:bg-transparent">
+                  <TableCell colSpan={3} className="px-3 py-2">
+                    {inlineForm(
+                      tCommon('save'),
+                      () => void saveEdit(type),
+                      () => setEditingId(null),
+                      `type-default-edit-${type.id}`,
+                    )}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <TableRow key={type.id} className="group/item">
+                  <TableCell className="px-3 py-3 align-middle">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {colorDot(type.color)}
+                      <span className="truncate text-sm font-medium">{type.name}</span>
+                      {type.isDefault && (
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                          {t('default')}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-3 py-3 align-middle text-sm text-muted-foreground tabular-nums">
+                    {t('issueCount', { count: issueCount(type.id) })}
+                  </TableCell>
+                  <TableCell className="px-3 py-2 align-middle">
+                    <div className="flex items-center justify-end gap-1">
+                      {can('edit') && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground hover:text-foreground"
+                          title={t('edit')}
+                          aria-label={t('edit')}
+                          onClick={() => startEdit(type)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      )}
+                      {can('delete') && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground hover:text-destructive"
+                          title={t('delete')}
+                          aria-label={t('delete')}
+                          onClick={() => setDeleting(type)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ),
+            )}
+            {adding && (
+              <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={3} className="px-3 py-2">
                   {inlineForm(
-                    tCommon('save'),
-                    () => void saveEdit(type),
-                    () => setEditingId(null),
-                    `type-default-edit-${type.id}`,
+                    tCommon('add'),
+                    () => void add(),
+                    () => onAddingChange(false),
+                    'type-default-new',
                   )}
                 </TableCell>
               </TableRow>
-            ) : (
-              <TableRow key={type.id} className="group/item">
-                <TableCell className="px-3 py-3 align-middle">
-                  <div className="flex min-w-0 items-center gap-2">
-                    {colorDot(type.color)}
-                    <span className="truncate text-sm font-medium">{type.name}</span>
-                    {type.isDefault && (
-                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[11px] font-medium text-secondary-foreground">
-                        {t('default')}
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="px-3 py-3 align-middle text-sm text-muted-foreground tabular-nums">
-                  {t('issueCount', { count: issueCount(type.id) })}
-                </TableCell>
-                <TableCell className="px-3 py-2 align-middle">
-                  <div className="flex items-center justify-end gap-1">
-                    {can('edit') && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-muted-foreground hover:text-foreground"
-                        title={t('edit')}
-                        aria-label={t('edit')}
-                        onClick={() => startEdit(type)}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                    )}
-                    {can('delete') && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-muted-foreground hover:text-destructive"
-                        title={t('delete')}
-                        aria-label={t('delete')}
-                        onClick={() => setDeleting(type)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ),
-          )}
-          {adding && (
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={3} className="px-3 py-2">
-                {inlineForm(
-                  tCommon('add'),
-                  () => void add(),
-                  () => onAddingChange(false),
-                  'type-default-new',
-                )}
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {deleting && (
         <SettingsConfirmDeleteDialog

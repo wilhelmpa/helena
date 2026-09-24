@@ -1,6 +1,6 @@
 {
-  "hint": "Agen meminta persetujuan di sini sebelum mengirim, memublikasikan, membayar, atau menghapus sesuatu di luar Plan, dan alur kerja menunggu di sini pada gerbang persetujuannya. Keputusan dan catatan Anda memulai langkah berikutnya.",
-  "projectHint": "Agen meminta persetujuan di sini sebelum mengirim, memublikasikan, membayar, atau menghapus sesuatu di luar Plan untuk proyek ini, dan alur kerjanya menunggu di sini pada gerbang persetujuannya.",
+  "hint": "Agen meminta persetujuan di sini sebelum mengirim, memublikasikan, membayar, atau menghapus sesuatu di luar Helena, dan alur kerja menunggu di sini pada gerbang persetujuannya. Keputusan dan catatan Anda memulai langkah berikutnya.",
+  "projectHint": "Agen meminta persetujuan di sini sebelum mengirim, memublikasikan, membayar, atau menghapus sesuatu di luar Helena untuk proyek ini, dan alur kerjanya menunggu di sini pada gerbang persetujuannya.",
   "pending": "Menunggu",
   "decided": "Diputuskan",
   "filterProject": "Filter berdasarkan proyek",
@@ -10,7 +10,7 @@
     "decided": "Belum ada keputusan"
   },
   "emptyHint": {
-    "pending": "Saat agen meminta persetujuan sebelum bertindak di luar Plan, permintaannya muncul di sini.",
+    "pending": "Saat agen meminta persetujuan sebelum bertindak di luar Helena, permintaannya muncul di sini.",
     "decided": "Permintaan yang disetujui dan ditolak muncul di sini."
   },
   "kind": {
@@ -34,5 +34,7 @@
   "gateOf": "{workflow} di {project}",
   "effects": "Dijalankan setelah disetujui:",
   "gateApprovedToast": "Disetujui. Alur kerja berlanjut.",
-  "gateRejectedToast": "Ditolak. Alur kerja berakhir tanpa efek ini."
+  "gateRejectedToast": "Ditolak. Alur kerja berakhir tanpa efek ini.",
+  "loadFailed": "Persetujuan tidak dapat dimuat.",
+  "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi."
 }

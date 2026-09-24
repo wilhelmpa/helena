@@ -22,7 +22,7 @@ export default function InboxDetailHeader({
   const openLabel = tIssue('openAsPage');
 
   return (
-    <div className="flex h-11 shrink-0 items-center gap-2 border-b px-4 sm:px-6 xl:px-10">
+    <div className="flex h-11 shrink-0 items-center gap-2 border-b px-4 xl:px-10">
       {isMobile && (
         <Button variant="ghost" size="sm" className="-ms-2 gap-1.5" onClick={onBack}>
           <ChevronLeft aria-hidden="true" className="size-4 rtl:rotate-180" />

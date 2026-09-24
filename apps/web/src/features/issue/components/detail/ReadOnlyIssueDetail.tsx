@@ -43,17 +43,17 @@ export default function ReadOnlyIssueDetail({
   // Content on the left (capped), the Properties panel pinned to the right edge,
   // matching the standalone issue page.
   return (
-    <div className="flex justify-between gap-8 px-8 py-8 xl:px-12">
+    <div className="flex justify-between gap-6 px-6 py-6 xl:px-12">
       <div className="w-full max-w-3xl min-w-0">
         <div className="flex items-center gap-2">
           {issue.archivedAt && (
-            <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase">
+            <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
               {t('archived')}
             </span>
           )}
           <span className="text-xs text-muted-foreground tabular-nums">{issue.identifier}</span>
         </div>
-        <h1 className="mt-1 text-lg font-semibold">{issue.title}</h1>
+        <h1 className="mt-1 text-base font-semibold">{issue.title}</h1>
 
         {issue.description.trim() && (
           <MarkdownEditor className="mt-4" defaultValue={issue.description} editable={false} />

@@ -85,11 +85,11 @@ export default function IssueDevelopmentLinkDialog({
           <DialogDescription>{t('linkExistingDescription')}</DialogDescription>
         </DialogHeader>
         {repositoriesQuery.isPending ? (
-          <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
             {t('loadingRepositories')}
           </div>
         ) : repositoriesQuery.data?.length === 0 ? (
-          <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
             {t('noConnectedRepositories')}
           </div>
         ) : (
@@ -157,7 +157,7 @@ export default function IssueDevelopmentLinkDialog({
                       {pullRequest.title}
                     </span>
                     <span
-                      className="block truncate font-mono text-[11px] text-muted-foreground"
+                      className="block truncate font-mono text-xs text-muted-foreground"
                       dir="ltr"
                     >
                       #{pullRequest.number} · {pullRequest.sourceBranch ?? '?'} →{' '}

@@ -89,7 +89,10 @@
   },
   "map": {
     "empty": "No organization structure yet.",
-    "unassigned": "Unassigned agents"
+    "unassigned": "Unassigned agents",
+    "unassignedHint": "No tiene plantilla y no depende de nadie. Asigna un departamento o un responsable.",
+    "noDepartment": "Sin departamento",
+    "templates": "Plantillas del grupo"
   },
   "summary": {
     "pool": "Agent pool",
@@ -172,5 +175,8 @@
       "perClosedTask": "Por tarea cerrada",
       "closedTasks": "{count, plural, =0 {Ninguna tarea cerrada con agentes este mes} one {# tarea cerrada con agentes este mes} other {# tareas cerradas con agentes este mes}}"
     }
-  }
+  },
+  "managerRequiredTitle": "Sin acceso",
+  "loadFailed": "No se pudo cargar la organización.",
+  "loadFailedHint": "El servidor no respondió. Vuelve a intentarlo en un momento."
 }

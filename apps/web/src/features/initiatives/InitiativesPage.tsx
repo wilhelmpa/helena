@@ -2,23 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core';
-import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useInitiativeCountsQuery, useInitiativesQuery } from '@/services/initiatives.service';
 import { INITIATIVE_SORTS, type InitiativeSort } from '@/lib/api/endpoints/initiatives';
-import { useStripSortSensors } from '@/lib/dnd';
 import { initiativesTabPath, type InitiativesTab } from '@/utils/paths';
-import { Button } from '@/components/ui/button';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
-import { Tabs, TabsList } from '@/components/ui/tabs';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import InitiativesList from './components/list/InitiativesList';
 import InitiativesPagination from './components/list/InitiativesPagination';
 import InitiativeDialog from '@/components/common/overlay/InitiativeDialog';
-import InitiativeTabTrigger from './components/list/InitiativeTabTrigger';
+import InitiativeTabs from './components/list/InitiativeTabs';
 import { useInitiativeTabOrder } from './hooks/useInitiativeTabOrder';
 import { INITIATIVE_TABS, tabCount } from './utils/tabs';
 
@@ -38,7 +34,6 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
   const searchParams = useSearchParams();
   const [creating, setCreating] = useState(false);
   const { order, reorder } = useInitiativeTabOrder();
-  const sensors = useStripSortSensors();
 
   const projectKey = project?.project.key ?? null;
   const activeTab = INITIATIVE_TABS.find((item) => item.value === tab)!;
@@ -95,59 +90,44 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
     pushQuery(params);
   };
 
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (over && active.id !== over.id) {
-      reorder(active.id as InitiativesTab, over.id as InitiativesTab);
-    }
-  };
+  const canCreate = can('initiatives', 'create');
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <WorkspacePageHeader
-        title={t('title')}
-        actions={
-          can('initiatives', 'create') && (
-            <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-              <Plus className="size-3.5" />
-              {t('newInitiative')}
-            </Button>
-          )
-        }
-      />
-
-      <div className="min-w-0 px-4 pb-2">
-        {/* The open tab comes from the route, and each trigger navigates on click
-            (see InitiativeTabTrigger), so Radix drives no selection of its own:
-            manual activation keeps focus from switching tabs mid-drag. */}
-        <Tabs value={tab} activationMode="manual">
-          <TabsList variant="line" className="overflow-x-auto">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext items={order} strategy={horizontalListSortingStrategy}>
-                {orderedTabs.map((item) => (
-                  <InitiativeTabTrigger
-                    key={item.value}
-                    value={item.value}
-                    label={t(`tabs.${item.value}`)}
-                    count={tabCount(counts, item.value)}
-                    onSelect={() => changeTab(item.value)}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
-          </TabsList>
-        </Tabs>
-      </div>
+      <WorkspacePageHeader title={t('title')} />
+      {/* One row (docs/volition/ui-standard.md): the status tabs, sortable by drag, and
+          the page's one primary action. */}
+      <PageToolbar>
+        <InitiativeTabs
+          label={t('title')}
+          value={tab}
+          items={orderedTabs.map((item) => ({
+            value: item.value,
+            label: t(`tabs.${item.value}`),
+            count: tabCount(counts, item.value),
+          }))}
+          onSelect={changeTab}
+          onReorder={reorder}
+        />
+        <PageToolbarSpacer />
+        <PageActions
+          primary={
+            canCreate
+              ? {
+                  id: 'new',
+                  label: t('newInitiative'),
+                  icon: Plus,
+                  onClick: () => setCreating(true),
+                }
+              : undefined
+          }
+        />
+      </PageToolbar>
 
       <InitiativesList
         initiatives={items}
         project={project}
         isLoading={query.isLoading}
-        canCreate={can('initiatives', 'create')}
-        onCreate={() => setCreating(true)}
         statusTab={activeTab.value === 'all' ? undefined : activeTab.value}
         sort={sort}
         dir={dir}

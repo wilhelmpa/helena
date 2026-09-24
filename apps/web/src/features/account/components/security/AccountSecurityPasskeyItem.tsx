@@ -25,10 +25,7 @@ export default function AccountSecurityPasskeyItem({
 }) {
   const t = useTranslations('account.security');
   return (
-    <Item
-      size="sm"
-      className="rounded-none border-0 border-b border-border px-1 last:border-b-0 hover:bg-accent/50"
-    >
+    <Item size="sm" className="rounded-none border-0 px-4 py-2.5">
       <ItemMedia>
         <KeyRound className="size-4" />
       </ItemMedia>
@@ -36,20 +33,21 @@ export default function AccountSecurityPasskeyItem({
         <ItemTitle className="flex items-center gap-2">
           {passkeyLabel(passkey, t('passkeyFallback'))}
           {passkey.deviceType === 'singleDevice' && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
+            <Badge variant="secondary" className="px-1.5 py-0 text-xs font-normal">
               {t('thisDevice')}
             </Badge>
           )}
         </ItemTitle>
         <ItemDescription>
-          {passkey.name ? `${passkey.name} · ` : ''}Added {formatDate(passkey.createdAt)}
+          {passkey.name ? `${passkey.name} · ` : ''}
+          {t('added', { date: formatDate(passkey.createdAt) })}
         </ItemDescription>
       </ItemContent>
       <ItemActions>
         <Button
           variant="ghost"
           size="icon"
-          className="size-7 text-muted-foreground hover:text-destructive"
+          className="size-8 text-muted-foreground hover:text-destructive"
           title={t('removePasskey')}
           onClick={onDelete}
         >

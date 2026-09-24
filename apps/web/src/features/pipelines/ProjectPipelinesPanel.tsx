@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import NameDialog from '@/components/common/overlay/NameDialog';
-import { Button } from '@/components/ui/button';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import { useShell } from '@/context/shellContext';
 import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -23,7 +23,7 @@ import { useNewPipeline } from './hooks/useNewPipeline';
 
 // The workflow builder on a project's Workflows page: the templates of the team's
 // library and the project's own workflows, each turned on or off here with the agents
-// of its roles.
+// of its roles. "Workflow erstellen" is the page's one primary action, in the header row.
 export default function ProjectPipelinesPanel() {
   const t = useTranslations('pipelines.project');
   const router = useRouter();
@@ -43,26 +43,32 @@ export default function ProjectPipelinesPanel() {
   const editable = can('actions', 'edit');
 
   return (
-    <section className="mb-8 space-y-3 border-b pb-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-medium">{t('title')}</h2>
-          <p className="text-xs text-muted-foreground">{t('hint')}</p>
-          {!editable && <p className="mt-1 text-xs text-muted-foreground">{t('readOnly')}</p>}
-        </div>
-        {can('actions', 'create') && (
-          <Button size="sm" variant="outline" onClick={() => setCreating(true)}>
-            <Plus /> {t('create')}
-          </Button>
-        )}
+    <section className="mb-6 space-y-3 border-b pb-6">
+      {can('actions', 'create') && (
+        <PageToolbar>
+          <PageToolbarSpacer />
+          <PageActions
+            primary={{
+              id: 'new',
+              label: t('create'),
+              icon: Plus,
+              onClick: () => setCreating(true),
+            }}
+          />
+        </PageToolbar>
+      )}
+      <div>
+        <h2 className="text-md font-medium">{t('title')}</h2>
+        <p className="text-xs text-muted-foreground">{t('hint')}</p>
+        {!editable && <p className="mt-1 text-xs text-muted-foreground">{t('readOnly')}</p>}
       </div>
       <WorkflowRunLimitSettings projectKey={projectKey} editable={editable} />
       {pipelines.isPending ? null : pipelines.isError ? (
-        <p className="rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadFailed')}
         </p>
       ) : !pipelines.data.length ? (
-        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
           {t('empty')}
         </p>
       ) : (

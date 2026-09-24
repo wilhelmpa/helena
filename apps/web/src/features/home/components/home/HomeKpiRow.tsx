@@ -2,17 +2,15 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
-import { tasksPath, approvalsPath } from '@/utils/paths';
+import { tasksPath, approvalsPath, globalAgentActivityPath } from '@/utils/paths';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { useCrossProjectIssuesQuery } from '../../services/tasks.service';
 import { useHomeRunningAgentsCount } from '../../services/homeKpis.service';
 import StatusBadge from '@/components/common/page/StatusBadge';
 
-// The KPI row at the top of Home (docs/volition-design-helena-ui.md "Start"):
-// open tasks, pending approvals (amber, clickable), running agents (live), each a
-// plain number with a label — no cards, no borders, so it reads as one line, the
-// way the sidebar itself favors a row over a box.
+// One figure of the KPI row: the number and what it counts, in a sidebar-surface tile.
+// Every figure opens the list it counts, so each one is a link with the sidebar's hover
+// fill.
 function Kpi({
   href,
   label,
@@ -20,32 +18,27 @@ function Kpi({
   status,
   loading,
 }: {
-  href?: string;
+  href: string;
   label: string;
   value: number | null;
   status?: 'waiting' | 'running';
   loading: boolean;
 }) {
-  const content = (
-    <>
-      {status && <StatusBadge status={status} dotOnly />}
-      <span className="text-2xl font-semibold tabular-nums">{loading ? '–' : (value ?? 0)}</span>
-      <span className="text-sm text-muted-foreground">{label}</span>
-    </>
-  );
-  const className = cn(
-    'flex items-center gap-2 rounded-lg px-1 py-1',
-    href && 'transition-colors hover:bg-accent',
-  );
-  return href ? (
-    <Link href={href} className={className}>
-      {content}
+  return (
+    <Link
+      href={href}
+      className="flex h-10 min-w-0 items-center gap-2 rounded-lg border bg-card px-3 text-sm transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+    >
+      <span className="text-md font-semibold tabular-nums">{loading ? '–' : (value ?? 0)}</span>
+      <span className="min-w-0 truncate text-muted-foreground">{label}</span>
+      {status && <StatusBadge status={status} dotOnly className="ms-auto" />}
     </Link>
-  ) : (
-    <div className={className}>{content}</div>
   );
 }
 
+// The KPI row at the top of Home (docs/volition-design-helena-ui.md "Start"): the
+// reader's open tasks, pending approvals (amber when any wait), running agents (live).
+// Three tiles side by side, one under the other on a phone.
 export default function HomeKpiRow() {
   const t = useTranslations('nav');
   const openTasks = useCrossProjectIssuesQuery(
@@ -56,9 +49,9 @@ export default function HomeKpiRow() {
   const runningAgents = useHomeRunningAgentsCount();
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
       <Kpi
-        href={tasksPath()}
+        href={`${tasksPath()}?assignee=me`}
         label={t('homeKpiOpenTasks')}
         value={openTasks.data?.total ?? null}
         loading={openTasks.isPending}
@@ -71,6 +64,7 @@ export default function HomeKpiRow() {
         loading={approvals.isPending}
       />
       <Kpi
+        href={globalAgentActivityPath()}
         label={t('homeKpiRunningAgents')}
         value={runningAgents.count}
         status={runningAgents.count > 0 ? 'running' : undefined}

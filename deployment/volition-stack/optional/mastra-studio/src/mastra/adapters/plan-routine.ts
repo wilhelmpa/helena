@@ -32,7 +32,7 @@ export const privatePlanRoutineAdapter: PlanRoutineAdapter = {
     );
     const answer = routineAnswerSchema.parse(raw);
     if (answer.idempotencyKey !== input.idempotencyKey) {
-      throw new Error('Plan answered another routine request');
+      throw new Error('Helena answered another routine request');
     }
     return answer;
   },

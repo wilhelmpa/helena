@@ -22,7 +22,7 @@
       "email": "E-mail"
     },
     "registered": "entrou em {date}",
-    "roleGod": "God",
+    "roleGod": "Administrador",
     "roleUser": "Usuário",
     "agent": "Agente",
     "noProviders": "nenhum",
@@ -199,6 +199,33 @@
   },
   "hotkeys": {
     "saved": "Atalhos de teclado salvos"
+  },
+  "security": {
+    "grantTitle": "Concessão do terminal",
+    "grantDescription": "A janela de 12 horas que uma verificação adicional abre para sessões de Shell, Claude Code e Codex.",
+    "grantActive": "Concedido até {time}",
+    "grantInactive": "Nenhuma concessão ativa.",
+    "grantRevoke": "Revogar",
+    "stepUpTitle": "Pedir um código ao abrir",
+    "stepUpDescription": "O que comprova que é realmente o proprietário abrindo o terminal, sempre, mesmo na rede local.",
+    "stepUpMethod": "TOTP (um aplicativo autenticador), configurado em Conta → Segurança. A chave de acesso assume assim que esta instância estiver atrás de HTTPS.",
+    "stepUpOffHint": "Na LAN sem código: o terminal abre direto para a sua sessão na rede de casa. Pelo túnel (loopback) e de fora, o código do autenticador continua sempre obrigatório.",
+    "sudoTitle": "sudo no terminal do navegador pede senha",
+    "sudoDescription": "Desativado (padrão) deixa todo comando sudo sem senha em qualquer lugar, no terminal do proprietário assim como na automação via SSH -- o sudo autoriza por conta Unix e não consegue diferenciar os dois. Ativado restringe o sudo do terminal do navegador a uma lista revisada de comandos de automação e pede a senha do Linux para tudo o mais.",
+    "sudoHint": "Ativar isso aqui não basta sozinho: o sudo não pode ser alternado por sessão em tempo de execução, então um operador ainda precisa auditar cada comando `sudo -n` que a automação SSH da instância realmente executa, conferi-lo contra a política do sudo e instalar essa política manualmente. Combine com o operador antes de ativar -- até lá, esta configuração não tem efeito.",
+    "auditTitle": "Registro de auditoria",
+    "auditDescription": "Cada tentativa de verificação adicional, cada mudança na concessão e cada sessão de terminal, mais recentes primeiro. Sem teclas digitadas.",
+    "auditEmpty": "Ainda não há eventos.",
+    "event": {
+      "step_up_ok": "Verificação adicional bem-sucedida",
+      "step_up_fail": "Verificação adicional falhou",
+      "rate_limited": "Limite de tentativas atingido",
+      "grant_revoked": "Concessão revogada",
+      "session_start": "Sessão iniciada",
+      "session_end": "Sessão encerrada",
+      "token_rejected": "Token rejeitado"
+    },
+    "grantActiveOpen": "Acesso concedido."
   },
   "storage": {
     "saved": "Configurações de armazenamento salvas",

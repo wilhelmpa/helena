@@ -48,10 +48,10 @@ export function SettingsActionRow({
           <div className="flex min-w-0 flex-col gap-1.5 pt-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="truncate text-sm font-medium">{action.name}</span>
-              <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+              <Badge variant="outline" className="px-1.5 py-0 text-xs font-normal">
                 {t(triggerLabel(action.trigger))}
               </Badge>
-              <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
+              <Badge variant="secondary" className="px-1.5 py-0 text-xs font-normal">
                 {t('stepCount', { count: action.workflow.nodes.length })}
               </Badge>
             </div>

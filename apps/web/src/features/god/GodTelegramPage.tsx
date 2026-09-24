@@ -8,7 +8,6 @@ import SettingsCard from '@/components/common/page/SettingsCard';
 import EnabledSwitch from '@/components/common/inputs/EnabledSwitch';
 import SecretInput from '@/components/common/inputs/SecretInput';
 import SettingsSection from '@/components/common/page/SettingsSection';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import GodSectionPage from './components/GodSectionPage';
 import GodSettingsGate from './components/GodSettingsGate';
@@ -16,6 +15,7 @@ import {
   useInstanceTelegramSettingsQuery,
   useUpdateInstanceTelegramSettings,
 } from './services/god.service';
+import PageSaveAction from '@/components/common/page/PageSaveAction';
 
 export default function GodTelegramPage() {
   const query = useInstanceTelegramSettingsQuery();
@@ -29,7 +29,6 @@ export default function GodTelegramPage() {
 
 function TelegramForm({ settings }: { settings: InstanceTelegramSettings }) {
   const t = useTranslations('god.telegram');
-  const tCommon = useTranslations('common');
   const update = useUpdateInstanceTelegramSettings();
   const [enabled, setEnabled] = useState(settings.enabled);
   const [botToken, setBotToken] = useState('');
@@ -52,14 +51,8 @@ function TelegramForm({ settings }: { settings: InstanceTelegramSettings }) {
   }
 
   return (
-    <GodSectionPage
-      slug="telegram"
-      actions={
-        <Button size="sm" onClick={() => void save()} disabled={!dirty || update.isPending}>
-          {update.isPending ? tCommon('saving') : tCommon('save')}
-        </Button>
-      }
-    >
+    <GodSectionPage slug="telegram">
+      <PageSaveAction onSave={() => void save()} disabled={!dirty} saving={update.isPending} />
       <SettingsSection
         title={t('bot')}
         description={t(hasToken ? 'botConfigured' : 'botMissing')}
@@ -71,7 +64,7 @@ function TelegramForm({ settings }: { settings: InstanceTelegramSettings }) {
           />
         }
       >
-        <SettingsCard className="space-y-6 p-4">
+        <SettingsCard className="space-y-4 p-4">
           <div className="space-y-1.5 sm:max-w-md">
             <Label htmlFor="telegram-bot-token">{t('botToken')}</Label>
             <SecretInput

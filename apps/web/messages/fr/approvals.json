@@ -1,6 +1,6 @@
 {
-  "hint": "Les agents demandent ici une approbation avant d'envoyer, publier, payer ou supprimer quelque chose en dehors de Plan, et les flux de travail attendent ici à leur étape d'approbation. Votre décision et votre note lancent l'étape suivante.",
-  "projectHint": "Les agents demandent ici une approbation avant d'envoyer, publier, payer ou supprimer quelque chose en dehors de Plan pour ce projet, et ses flux de travail attendent ici à leur étape d'approbation.",
+  "hint": "Les agents demandent ici une approbation avant d'envoyer, publier, payer ou supprimer quelque chose en dehors de Helena, et les flux de travail attendent ici à leur étape d'approbation. Votre décision et votre note lancent l'étape suivante.",
+  "projectHint": "Les agents demandent ici une approbation avant d'envoyer, publier, payer ou supprimer quelque chose en dehors de Helena pour ce projet, et ses flux de travail attendent ici à leur étape d'approbation.",
   "pending": "En attente",
   "decided": "Traitées",
   "filterProject": "Filtrer par projet",
@@ -10,7 +10,7 @@
     "decided": "Aucune décision pour l'instant"
   },
   "emptyHint": {
-    "pending": "Lorsqu'un agent demande une approbation avant d'agir en dehors de Plan, la demande apparaît ici.",
+    "pending": "Lorsqu'un agent demande une approbation avant d'agir en dehors de Helena, la demande apparaît ici.",
     "decided": "Les demandes approuvées et refusées apparaissent ici."
   },
   "kind": {
@@ -34,5 +34,7 @@
   "gateOf": "{workflow} dans {project}",
   "effects": "Exécuté après approbation :",
   "gateApprovedToast": "Approuvée. Le flux de travail continue.",
-  "gateRejectedToast": "Refusée. Le flux de travail se termine sans ces effets."
+  "gateRejectedToast": "Refusée. Le flux de travail se termine sans ces effets.",
+  "loadFailed": "Impossible de charger les approbations.",
+  "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
 }

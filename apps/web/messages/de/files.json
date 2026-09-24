@@ -31,10 +31,10 @@
     "folder": "Dieser Ordner ist leer.",
     "folderHint": "Dateien hierher ziehen oder „Hochladen“ verwenden.",
     "filter": "Kein Eintrag passt zu „{filter}“.",
-    "readOnly": "Plan zeigt diesen Ordner schreibgeschützt."
+    "readOnly": "Helena zeigt diesen Ordner schreibgeschützt."
   },
   "unreadable": {
-    "title": "Plan kann diesen Ordner nicht lesen",
+    "title": "Helena kann diesen Ordner nicht lesen",
     "body": "Der Workspace gehört dem Benutzer der Agenten auf dem Server. Öffne ihn stattdessen in VS Code.",
     "missing": "Dieser Ordner existiert auf dem Server nicht."
   },

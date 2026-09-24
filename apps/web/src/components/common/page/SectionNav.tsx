@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 export const sectionNavItemClass =
   'flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring/60';
 
-export const sectionNavIdleClass = 'text-foreground/85 hover:bg-accent/60 hover:text-foreground';
+export const sectionNavIdleClass =
+  'text-sidebar-foreground hover:bg-accent/60 hover:text-foreground';
 
 export interface SectionNavItem {
   id: string;
@@ -41,7 +42,7 @@ export function SectionNav({
           const Icon = section.icon;
           const itemClassName = cn(
             sectionNavItemClass,
-            active ? 'bg-secondary font-medium text-secondary-foreground' : sectionNavIdleClass,
+            active ? 'bg-accent font-medium text-accent-foreground' : sectionNavIdleClass,
           );
           const content = (
             <>

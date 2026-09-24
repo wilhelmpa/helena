@@ -72,5 +72,7 @@
   "dragFailed": "Não foi possível mover o ciclo",
   "notFound": "Ciclo não encontrado.",
   "defaultName": "Sprint {n}",
-  "issuesDone": "Issues concluídas"
+  "issuesDone": "Issues concluídas",
+  "daysLeft": "faltam {count} d",
+  "lengthDays": "{count} d"
 }

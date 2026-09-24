@@ -1,7 +1,8 @@
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialKind } from '@/lib/api/endpoints/credentials';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { PAGE_CONTROL_CLASS, usePageToolbarRoom } from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,15 +12,26 @@ import {
 import { CREDENTIAL_KINDS } from '../../utils/credentialForm';
 import { CredentialKindIcon } from './CredentialKindIcon';
 
+// "Add credential", the page's primary action at the end of its toolbar row: it
+// opens the four kinds to choose from, so it is a menu rather than PageActions' button.
 export function AddCredentialMenu({ onSelect }: { onSelect: (kind: CredentialKind) => void }) {
   const t = useTranslations('credentials');
+  const room = usePageToolbarRoom();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" className="h-8 gap-1.5">
-          <Plus className="size-3.5" />
-          {t('add')}
-        </Button>
+        <button
+          type="button"
+          aria-label={t('add')}
+          className={cn(
+            PAGE_CONTROL_CLASS,
+            'ms-1 bg-primary font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
+            room.primaryLabel ? 'px-2.5' : 'w-8 justify-center px-0',
+          )}
+        >
+          <Plus aria-hidden="true" />
+          <span className={room.primaryLabel ? undefined : 'sr-only'}>{t('add')}</span>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         {CREDENTIAL_KINDS.map((kind) => (

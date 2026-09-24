@@ -36,7 +36,7 @@ export default function IssueGroupedFeed({
 
   return (
     <>
-      <ol className="flex flex-col gap-5">
+      <ol className="flex flex-col gap-4">
         {groups.map((group) => (
           <IssueActivityGroup
             key={group.from}

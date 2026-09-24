@@ -1,18 +1,18 @@
 'use client';
 
+import { Bot, UserRound, UsersRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { InstanceUserKind } from '@/lib/api/endpoints/god';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import SearchInput from '@/components/common/SearchInput';
+  PageSearch,
+  PageTabs,
+  PageToolbar,
+  PageToolbarSpacer,
+} from '@/components/layout/PageToolbar';
 
-// Search and the kind filter above the directory. Both drive server-side queries,
-// so a change here refetches a page rather than filtering what is on screen.
+// The directory's kind filter (people, agents, everyone) and its search, in the
+// header's one toolbar row. Both drive server-side queries, so a change here
+// refetches a page rather than filtering what is on screen.
 export default function GodUsersToolbar({
   search,
   onSearchChange,
@@ -27,24 +27,19 @@ export default function GodUsersToolbar({
   const t = useTranslations('god.users');
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <SearchInput
-        value={search}
-        onChange={onSearchChange}
-        placeholder={t('searchPlaceholder')}
-        className="min-w-[240px] flex-1"
+    <PageToolbar>
+      <PageTabs<InstanceUserKind>
+        label={t('kind')}
+        value={kind}
+        onChange={onKindChange}
+        items={[
+          { value: 'human', label: t('kinds.human'), icon: UserRound },
+          { value: 'agent', label: t('kinds.agent'), icon: Bot },
+          { value: 'all', label: t('kinds.all'), icon: UsersRound },
+        ]}
       />
-
-      <Select value={kind} onValueChange={(v) => onKindChange(v as InstanceUserKind)}>
-        <SelectTrigger className="h-9 w-[160px]" aria-label={t('kind')}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="human">{t('kinds.human')}</SelectItem>
-          <SelectItem value="agent">{t('kinds.agent')}</SelectItem>
-          <SelectItem value="all">{t('kinds.all')}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+      <PageToolbarSpacer />
+      <PageSearch value={search} onChange={onSearchChange} placeholder={t('searchPlaceholder')} />
+    </PageToolbar>
   );
 }
