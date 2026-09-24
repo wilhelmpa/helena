@@ -166,14 +166,14 @@ step_local_owner() {
   install -m 0644 "$files/helena-local-owner-guard.conf" "$new"
   show_diff "$guard" "$new"
   if grep -q 'X-Volition-Local-Access \$volition_local_owner_token;' "$nginx_site"; then
-    say "local-owner: $nginx_site: proxy_set_header X-Volition-Local-Access \$volition_local_owner_token → \$helena_local_owner_token"
+    say "local-owner: $nginx_site: proxy_set_header X-Volition-Local-Access \$volition_local_owner_token → \$helena_owner_capability"
   else
     say "local-owner: $nginx_site already uses the guarded variable"
   fi
   [[ $apply -eq 1 ]] || { rm -f "$new"; return 0; }
   keep "$guard"; keep "$nginx_site"
   install -m 0644 "$new" "$guard"; rm -f "$new"
-  sed -i 's/X-Volition-Local-Access \$volition_local_owner_token;/X-Volition-Local-Access $helena_local_owner_token;/' "$nginx_site"
+  sed -i 's/X-Volition-Local-Access \$volition_local_owner_token;/X-Volition-Local-Access $helena_owner_capability;/' "$nginx_site"
   if ! nginx -t 2>/dev/null; then
     cp -a "$backup$nginx_site" "$nginx_site"; rm -f "$guard"
     [[ -e $backup$guard ]] && cp -a "$backup$guard" "$guard"

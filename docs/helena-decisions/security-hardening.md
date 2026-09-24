@@ -469,7 +469,9 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
   method `io.helena.hostd.SecurityAudit` that runs `/usr/local/libexec/helena-security-audit
   --json-file /var/lib/helena-security/audit.json` for a "Neu prüfen" button.
 - The rename (package G) must carry `volition-*` names in the scripts' defaults
-  (`HELENA_API_UNITS`, paths) and `$volition_local_owner_token` in the guard map.
+  (`HELENA_API_UNITS`, paths). The guard map is rename-safe: its output is
+  `$helena_owner_capability`, and the kit's rule `volition_local_owner_token` →
+  `helena_local_owner_token` rewrites its input consistently (checked against `rename-map.json`).
 - The kiosk under the HTTPS origin needs its own TLS listener (it is off now).
 - Browser egress restriction (M-05) as an nft rule once the owner decides.
 - `code-server` could listen on a Unix socket instead of 127.0.0.1:8443 (removes H-02 for it

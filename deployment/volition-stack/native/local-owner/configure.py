@@ -93,8 +93,8 @@ guard.write_text((pathlib.Path(__file__).resolve().parent.parent
                   / 'hardening/files/helena-local-owner-guard.conf').read_text())
 guard.chmod(0o644)
 text = text.replace('X-Volition-Local-Access $volition_local_owner_token;',
-                    'X-Volition-Local-Access $helena_local_owner_token;')
-for location, value in [('location /backend/ {', '""'), ('location / {', '$helena_local_owner_token')]:
+                    'X-Volition-Local-Access $helena_owner_capability;')
+for location, value in [('location /backend/ {', '""'), ('location / {', '$helena_owner_capability')]:
     marker = f'        proxy_set_header X-Volition-Local-Access {value};'
     if marker not in text:
         if text.count(location) != 1:

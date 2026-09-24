@@ -37,7 +37,7 @@ spec = importlib.util.spec_from_file_location('lan_https', f'{cf}/lan_https.py')
 mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
 text = mod.edit(open(site).read(), host)
 text = text.replace('X-Volition-Local-Access $volition_local_owner_token;',
-                    'X-Volition-Local-Access $helena_local_owner_token;')
+                    'X-Volition-Local-Access $helena_owner_capability;')
 open(out, 'w').write(text)
 open(out.replace('lan.conf', 'redirect.conf'), 'w').write(mod.redirect(host))
 open(out.replace('sites/lan.conf', 'snippets/helena-tls.conf'), 'w').write(mod.TLS)

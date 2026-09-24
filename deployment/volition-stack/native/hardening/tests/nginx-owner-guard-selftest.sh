@@ -55,7 +55,7 @@ http {
         listen 127.0.0.1:$port;
         listen $lan:$port;
         ${gl:+listen [$gl]:$port;}
-        location / { return 200 "old=\$volition_local_owner_token new=\$helena_local_owner_token\n"; }
+        location / { return 200 "old=\$volition_local_owner_token new=\$helena_owner_capability\n"; }
     }
 }
 EOF

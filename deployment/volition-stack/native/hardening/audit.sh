@@ -138,14 +138,14 @@ elif [[ $is_root -eq 0 ]]; then
 else
   problems=()
   grep -Eq '^\s*(127\.|::1)' "$lo_conf" && problems+=("loopback in the owner geo")
-  if [[ -e $guard_conf ]] && grep -rqs 'helena_local_owner_token' /etc/nginx/sites-enabled/; then
+  if [[ -e $guard_conf ]] && grep -rqs 'helena_owner_capability' /etc/nginx/sites-enabled/; then
     :
   else
     grep -Eq '^\s*fe80::/10\s+1;' "$lo_conf" && problems+=("link-local fe80::/10 in the owner geo")
     grep -Eq '^\s*192\.168\.122\.1/32\s+1;' "$lo_conf" && problems+=("stale 192.168.122.1 in the owner geo")
     problems+=("no listener/source guard (helena-local-owner-guard.conf)")
   fi
-  if [[ -e $NGINX_TUNNEL_SITE ]] && grep -Eq 'volition_local_owner_token|helena_local_owner_token' "$NGINX_TUNNEL_SITE"; then
+  if [[ -e $NGINX_TUNNEL_SITE ]] && grep -Eq 'volition_local_owner_token|helena_owner_capability' "$NGINX_TUNNEL_SITE"; then
     problems+=("the tunnel site references the owner token")
   fi
   if ((${#problems[@]})); then
@@ -212,7 +212,7 @@ fi
 if [[ -e $NGINX_TUNNEL_SITE ]]; then
   problems=()
   grep -q "listen 127.0.0.1:$TUNNEL_PORT" "$NGINX_TUNNEL_SITE" || problems+=("not bound to 127.0.0.1:$TUNNEL_PORT")
-  grep -Eq 'volition_local_owner_token|helena_local_owner_token' "$NGINX_TUNNEL_SITE" && problems+=("owner token referenced")
+  grep -Eq 'volition_local_owner_token|helena_owner_capability' "$NGINX_TUNNEL_SITE" && problems+=("owner token referenced")
   # Every location, the internal auth ones included, sets the tunnel headers through the
   # one snippet (nginx does not inherit proxy_set_header into a location that sets its own).
   n_loc=$(grep -Ec '^\s*location ' "$NGINX_TUNNEL_SITE")
