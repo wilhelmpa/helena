@@ -130,6 +130,7 @@
     "timezone": "Fuso horário",
     "timezoneDescription": "Escolha o fuso no qual você trabalha.",
     "timezonePlaceholder": "Selecione um fuso horário",
+    "timezoneSearch": "Buscar fuso horário",
     "timezoneEmpty": "Nenhum fuso horário encontrado.",
     "timezoneGroups": {
       "America": "Américas",

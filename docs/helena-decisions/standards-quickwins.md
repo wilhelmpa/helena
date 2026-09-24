@@ -17,6 +17,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-19 | done | see git log | no library (Puppeteer's US layout as reference) |
 | WEB-08 / JOB-04 | done | see git log | `croner` 10.0.1 (already the API's) |
 | WEB-03 | done | see git log | `radix-ui` meta package only |
+| WEB-04 | done | see git log | Popover + Command (cmdk); `@base-ui/react` removed |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -118,3 +119,11 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - Kept: `streamdown`, which hub/chat-standards now uses (the audit's own note).
 - One swatch picker: `components/ui/color-swatches.tsx` (from the settings color field) serves the settings colors and the sticky-note colors; the chosen swatch has `aria-pressed`.
 - Checked in the browser (dev instance of this branch): the labels "Hinzufügen" dropdown, the new-label color popover with selection, the new-board dialog, and a sticky note's color picker changing the note to blue; no console errors. Web tests: 549 pass.
+
+## WEB-04: one combobox pattern
+
+- `components/ui/combobox.tsx` is now the shared trigger of the one pattern (Radix Popover + cmdk Command, as the ~10 existing pickers already were); it replaces the Base UI combobox (282 lines, one consumer) and the agent form's own trigger.
+- The account time-zone picker moved onto it: grouped by region, searchable by zone, city or offset (`keywords`), labels built lazily while the list is open. New message `account.preferences.timezoneSearch` in all 10 locales.
+- The routines' free-text field with suggestions (schedule, time zone) is now cmdk's input (`Command.Input asChild` on the field) with the list in a Popover instead of 185 lines of hand-written combobox ARIA. Kept: typing is the value, Enter submits the form when no list is open, Escape closes, the chevron shows all suggestions. JSDOM tests cover role, label, options, arrow keys + Enter, Enter to the form, Escape.
+- `@base-ui/react` is removed.
+- Known cmdk 1.1.1 quirk, measured in the browser: the option cmdk marks active on its own after typing is not yet the input's `aria-activedescendant`; the first arrow key sets it. It affects every cmdk picker alike. If cmdk stays unmaintained, the audit's fallback (all pickers on Base UI together) stands.

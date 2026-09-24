@@ -130,6 +130,7 @@
     "timezone": "Zeitzone",
     "timezoneDescription": "Wähle die Zeitzone, in der du arbeitest.",
     "timezonePlaceholder": "Zeitzone auswählen",
+    "timezoneSearch": "Zeitzone suchen",
     "timezoneEmpty": "Keine Zeitzonen gefunden.",
     "timezoneGroups": {
       "America": "Amerika",

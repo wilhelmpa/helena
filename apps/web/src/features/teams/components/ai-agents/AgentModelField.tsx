@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent } from '@/components/ui/popover';
 import { useTranslations } from 'next-intl';
-import { AgentComboboxTrigger } from './AgentComboboxTrigger';
+import { ComboboxTrigger } from '@/components/ui/combobox';
 
 // Model picker for an agent: a searchable list of the selected provider's models
 // (from the models.dev registry) that also accepts a model id typed by hand, so a
@@ -45,7 +45,7 @@ export default function AgentModelField({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <AgentComboboxTrigger
+      <ComboboxTrigger
         value={value}
         placeholder={t('chooseModel')}
         open={open}
