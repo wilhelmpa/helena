@@ -53,7 +53,7 @@ export default function MemberRow({
   const displayName = member.name || member.email;
 
   return (
-    <TableRow className="group/item hover:bg-accent/60">
+    <TableRow className="group/item">
       <TableCell className="px-3 py-3 align-top whitespace-normal">
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2.5">

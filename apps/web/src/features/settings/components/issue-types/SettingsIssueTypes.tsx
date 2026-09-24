@@ -127,7 +127,7 @@ export default function SettingsIssueTypes({
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-lg border bg-card">
-        <Table className="min-w-[640px] table-fixed">
+        <Table className="table-fixed md:min-w-[640px]">
           <colgroup>
             <col className="w-[46%]" />
             <col className="w-[40%]" />

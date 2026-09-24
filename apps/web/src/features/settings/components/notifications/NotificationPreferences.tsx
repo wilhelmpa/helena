@@ -71,7 +71,7 @@ function ChannelRow({
   onTelegram: (value: boolean) => void;
 }) {
   return (
-    <div className={`${COLS} min-h-10 px-3 py-1.5 hover:bg-accent/60`}>
+    <div className={`${COLS} min-h-10 px-3 py-1.5`}>
       <span className="text-sm">{label}</span>
       <div className="flex justify-center">
         <Checkbox
