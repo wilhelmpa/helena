@@ -107,7 +107,10 @@ for (const widget of BUILTINS)
   if (!dashboardWidgets.has(widget.id)) registerDashboardWidget(widget, HOME_PLUGIN_ID);
 
 // The machine's red problems (hub/server-admin), right after the services' and logins'.
-const SOURCES = [...BUILTIN_NEEDS_YOU_SOURCES, { id: 'server', order: 15, useEntries: useServerEntries }];
+const SOURCES = [
+  ...BUILTIN_NEEDS_YOU_SOURCES,
+  { id: 'server', order: 15, useEntries: useServerEntries },
+];
 
 for (const source of SOURCES)
   if (!needsYouSources.has(source.id)) needsYouSources.register(source, HOME_PLUGIN_ID);

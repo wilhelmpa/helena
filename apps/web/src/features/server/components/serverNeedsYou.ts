@@ -15,16 +15,14 @@ export function useServerEntries({ owner }: { owner: boolean }): NeedsYouSourceR
   const overview = useServerOverview(owner);
   const message = useHealthMessage();
   if (!owner) return { entries: [], isPending: false };
-  const entries = redServerItems(serverHealthItems(overview.data)).map(
-    (item): NeedsYouEntry => ({
-      key: `problem:server:${item.id}`,
-      kind: 'problem',
-      at: item.since ?? '',
-      href: serverPath(serverTabOf(item.id)),
-      icon: Server,
-      title: message(item).replace(/\.$/, ''),
-      detail: '',
-    }),
-  );
+  const entries = redServerItems(serverHealthItems(overview.data)).map((item): NeedsYouEntry => ({
+    key: `problem:server:${item.id}`,
+    kind: 'problem',
+    at: item.since ?? '',
+    href: serverPath(serverTabOf(item.id)),
+    icon: Server,
+    title: message(item).replace(/\.$/, ''),
+    detail: '',
+  }));
   return { entries, isPending: false };
 }

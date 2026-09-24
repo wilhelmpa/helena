@@ -188,7 +188,12 @@ const PROBLEM_AREA: Record<
   run: 'runs',
 };
 
-const SERVER_STATUS = { ok: 'success', attention: 'waiting', critical: 'danger', unknown: undefined } as const;
+const SERVER_STATUS = {
+  ok: 'success',
+  attention: 'waiting',
+  critical: 'danger',
+  unknown: undefined,
+} as const;
 const RANK = { success: 0, waiting: 1, danger: 2 } as const;
 
 // "System": whether everything runs — the services, logins, agents, runs and maintenance,
