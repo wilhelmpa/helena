@@ -1,10 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { PluginHost, loadPluginDir, type LoadedPlugin } from '@helena/sdk/server';
 import { profileContributionRegistry } from './contributions';
+import { limitSources } from './limits';
 import { runtimes } from './runtimes';
 
 // Plugins give the runner runtimes it does not ship (an ACP agent, a CLI with a stream
-// format of its own) and contributions to every agent's runtime profile. The runner loads the `runner` entry of each plugin folder its config
+// format of its own), contributions to every agent's runtime profile, and usage-limit
+// sources (limits/). The runner loads the `runner` entry of each plugin folder its config
 // file names under `plugins`, or HELENA_RUNNER_PLUGINS names (folders separated by `:`).
 // The operator who writes that file decides what runs; there is no approval step here as
 // there is for the server's plugin folder.
@@ -38,7 +40,11 @@ export async function loadRunnerPlugins(
   if (dirs.length === 0) return [];
   const host = new PluginHost({
     process: 'runner',
-    registries: { runtimes, profileContributions: profileContributionRegistry },
+    registries: {
+      runtimes,
+      profileContributions: profileContributionRegistry,
+      usageLimitSources: limitSources,
+    },
   });
   const loaded: LoadedPlugin[] = [];
   for (const dir of dirs) {

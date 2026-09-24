@@ -8,6 +8,7 @@ import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
+import type { UsageLimitSource } from './usage-limits';
 import type { TriggerType, WorkflowStepType } from './workflows';
 
 // One registry per extension point. A process creates the set once (or only the ones it
@@ -26,6 +27,7 @@ export interface HelenaRegistries {
   bundles: Registry<BundleOffer>;
   mcpServers: Registry<McpServerContribution>;
   profileContributions: Registry<ProfileContribution>;
+  usageLimitSources: Registry<UsageLimitSource>;
 }
 
 export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaRegistries {
@@ -45,5 +47,7 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
       new Registry<McpServerContribution>('MCP server', (server) => server.name),
     profileContributions:
       given.profileContributions ?? createRegistry<ProfileContribution>('profile contribution'),
+    usageLimitSources:
+      given.usageLimitSources ?? createRegistry<UsageLimitSource>('usage-limit source'),
   };
 }

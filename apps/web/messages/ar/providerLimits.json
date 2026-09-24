@@ -1,0 +1,75 @@
+{
+  "title": "الحدود",
+  "refresh": "تحديث",
+  "accountsTitle": "الحسابات",
+  "empty": "لا توجد أرقام بعد. تصل بمجرد أن يقرأها مشغّل وكيل أو تقرير المالك.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "المالك"
+  },
+  "sources": {
+    "spool": "تقرير المالك"
+  },
+  "state": {
+    "ok": "جيد",
+    "near": "قريب من الحد",
+    "limited": "تم بلوغ الحد",
+    "unknown": "لا أرقام"
+  },
+  "window": {
+    "session": "{hours} س",
+    "weekly": "الأسبوع",
+    "monthly": "الشهر",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} س",
+    "labelled": "{label}",
+    "other": "نافذة"
+  },
+  "resetsIn": "بعد {time}",
+  "resetDone": "أُعيد الضبط",
+  "readAgo": "قُرئ قبل {time}",
+  "staleSince": "قديم، قُرئ قبل {time}",
+  "freeIn": "متاح مجددًا بعد {time}",
+  "nearUntil": "يُعاد ملؤه بعد {time}",
+  "resetCredits": "{count, plural, zero {لا إعادات ضبط محفوظة} one {إعادة ضبط واحدة محفوظة} two {إعادتا ضبط محفوظتان} few {# إعادات ضبط محفوظة} many {# إعادة ضبط محفوظة} other {# إعادة ضبط محفوظة}}",
+  "noWindows": "لم يُبلَّغ عن أي نافذة.",
+  "unavailable": {
+    "no_login": "لم يتم تسجيل الدخول.",
+    "api_key": "مفتاح API: لا حدود للخطة.",
+    "no_profile_scope": "لا يُسمح لهذا الدخول بقراءة الحدود (رمز الإعداد).",
+    "failed": "فشلت القراءة.",
+    "unsupported": "هذا المزوّد لا يذكر حدودًا."
+  },
+  "readVia": "قُرئ عبر {login}، {time}",
+  "readPassive": "من إجابة إلى {login}، {time}",
+  "forget": "نسيان الحساب",
+  "resetsAt": "يُعاد الضبط {time}",
+  "agentTokens": "الوكلاء: {tokens} رمزًا في هذه النافذة",
+  "agents": "الوكلاء على هذا الحساب: {names}",
+  "noAgents": "لا يبلّغ أي وكيل عن هذا الحساب (دخول المالك).",
+  "credits": "الرصيد: {balance}",
+  "extraUsage": "استخدام إضافي: {used} من {limit}",
+  "settings": {
+    "auto": "القراءة تلقائيًا",
+    "autoHint": "تسأل Helena المشغّلات بهذا الفاصل؛ كل دخول مرة واحدة مهما كان عدد الوكلاء الذين يستخدمونه.",
+    "autoHintAt": "آخر سؤال قبل {time}. كل دخول مرة واحدة مهما كان عدد الوكلاء الذين يستخدمونه.",
+    "interval": "الفاصل",
+    "intervalHint": "كم مرة تقرأ Helena الحدود.",
+    "minutes": "{count} د",
+    "near": "قريب من الحد ابتداءً من",
+    "nearHint": "ابتداءً من هذه النسبة تصبح النافذة كهرمانية.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider}: تم بلوغ الحد",
+    "limitedUntil": "{provider}: تم بلوغ الحد، متاح مجددًا بعد {time}",
+    "stale": "{provider}: الحدود قديمة (قُرئت قبل {time})"
+  }
+}

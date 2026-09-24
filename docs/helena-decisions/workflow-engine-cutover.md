@@ -4,7 +4,7 @@ Package D ("Helena engine instead of Mastra"). Design in `workflow-engine.md`. T
 
 Everything below runs on Kingston (`ssh wilhelmpa@kingston-server.local`). Paths are the live ones as of 2026-09-24. Secrets are named by path only; nobody prints them.
 
-Live state checked read-only on 2026-09-24 ~15:30: `pipeline_run` 0 rows, no enabled builder workflow, 173 migrations applied (0000–0172), 7 `project_setting` rows `mastra-agent-run:*`, `mastra_schedules` in `/var/lib/volition/mastra/mastra.db` 0 rows, agent team on for VOL and VERVE (`project_workflow_assignment`). Running: `volition-mastra`, `volition-hermes-team-bridge` and `volition-hermes-team-bridge-dev` (the `-dev` bridge is pulled in by `volition-hermes-team-bridge.service.wants/`, so it kept running after dev mode ended).
+Live state checked read-only on 2026-09-24 ~15:30: `pipeline_run` 0 rows, no enabled builder workflow, 173 migrations applied (0000–0172; `0173_helena_provider_limits` was being deployed right after), 7 `project_setting` rows `mastra-agent-run:*`, `mastra_schedules` in `/var/lib/volition/mastra/mastra.db` 0 rows, agent team on for VOL and VERVE (`project_workflow_assignment`). Running: `volition-mastra`, `volition-hermes-team-bridge` and `volition-hermes-team-bridge-dev` (the `-dev` bridge is pulled in by `volition-hermes-team-bridge.service.wants/`, so it kept running after dev mode ended).
 
 ## What changes
 
@@ -16,13 +16,13 @@ Live state checked read-only on 2026-09-24 ~15:30: `pipeline_run` 0 rows, no ena
 | `/etc/volition/mastra-control.token`, `/etc/volition/mastra-gateway.token` | moved into the cutover backup by hand (step 4) |
 | nginx `include /etc/nginx/snippets/volition-mastra-studio.conf;` in `/etc/nginx/sites-available/volition.conf`, `/etc/nginx/conf.d/volition-mastra-gateway.conf` | gone: no `/mastra/` route. New public route on the api: `POST /hooks/workflows/:hookId` (webhook trigger), served through the existing api location |
 | Routines in Mastra's `mastra_schedules` (live: 0 rows) | rows in `helena_schedule` |
-| `mastra_*` tables in `itsaplan` (all empty) and the 7 `project_setting` rows `mastra-agent-run:*` | dropped by migration `0173_helena_engine` |
+| `mastra_*` tables in `itsaplan` (all empty) and the 7 `project_setting` rows `mastra-agent-run:*` | dropped by migration `0174_helena_engine` |
 
 The migration also drops `agent_team_start`, `pipeline_run.start_attempts/next_start_at`, `project_pipeline.schedule_id` and the unused `ai_agent` columns of the in-process runtime (`model_credential_id`, `tools`, `temperature`, `max_steps`, `api_key_*`, `memory_*`), restricts `ai_agent.kind` to `external`, and widens the step kind and trigger names to the framework's type ids (a plugin's `acme.send`). The old code cannot run on the migrated database, so a rollback restores the database dump (see "Rollback").
 
 ## 0. Before you start
 
-1. `volition/hub` contains `hub/native-engine`, merged by the migration clash rule (`0173_helena_engine` after `0172_knowledge_index`; a second `bunx drizzle-kit generate` in `packages/db` says "No schema changes"). `full-test.sh` is green against the baseline.
+1. `volition/hub` contains `hub/native-engine`, merged by the migration clash rule (`0174_helena_engine` after `0173_helena_provider_limits`; a second `bunx drizzle-kit generate` in `packages/db` says "No schema changes"). `full-test.sh` is green against the baseline.
 2. The live checkout is clean apart from `apps/web/next-env.d.ts` (`git -C /srv/volition/source/plan status --short`). Never reset or checkout there.
 3. Nothing waits in Mastra that must not be lost. Mastra's agent-team runs are not carried over; their stage runs in Helena finish normally, the coordinator's next stage does not start. Check:
    ```sh
@@ -68,7 +68,7 @@ What `deploy.sh` does for this switch, in order:
 1. fast-forwards the live checkout and runs `bun install --frozen-lockfile` (DBOS 5.0.2 and `standardwebhooks` come in, `@mastra/*` and `@ai-sdk/openai` go);
 2. disables, stops and removes `volition-mastra`, `volition-hermes-team-bridge` and both `-dev` units (with their `.service.d` and `.service.wants`), then `daemon-reload`;
 3. takes the Studio include out of `/etc/nginx/sites-available/volition.conf` and removes the Studio snippet and the gateway conf after `nginx -t` passes (restores the site file if it does not);
-4. runs `volition-plan-migrate.service` (migration `0173_helena_engine`);
+4. runs `volition-plan-migrate.service` (migration `0174_helena_engine`);
 5. installs the api, worker, web and provisioning units from the repo (without the Mastra credential and env lines), `daemon-reload`, rebuilds the web release, and restarts api, worker, web and provisioning;
 6. checks that every service runs and the api and web answer.
 

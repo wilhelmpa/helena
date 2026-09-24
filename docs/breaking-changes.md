@@ -9,7 +9,7 @@ released with the API and needs no change.
 Builder workflows, the agent team, routines and workflow schedules run in the api now, on
 the Helena engine: DBOS Transact, with its state in the schema `helena_engine` of the api's
 database, which the api creates and migrates when it starts. Mastra, Mastra Studio, the
-Hermes team bridge and their tokens are gone. The migration `0173_helena_engine` drops the
+Hermes team bridge and their tokens are gone. The migration `0174_helena_engine` drops the
 `mastra_*` tables and the `mastra-*` project settings; every run keeps its history in
 `pipeline_run`, and routines and workflow schedules are rows of `helena_schedule`.
 

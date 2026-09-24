@@ -1,0 +1,75 @@
+{
+  "title": "Limites",
+  "refresh": "Actualiser",
+  "accountsTitle": "Comptes",
+  "empty": "Pas encore de valeurs. Elles arrivent dès qu’un runner d’agent ou le rapport du propriétaire les lit.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "Propriétaire"
+  },
+  "sources": {
+    "spool": "Rapport du propriétaire"
+  },
+  "state": {
+    "ok": "OK",
+    "near": "Juste",
+    "limited": "Limite atteinte",
+    "unknown": "Pas de valeurs"
+  },
+  "window": {
+    "session": "{hours} h",
+    "weekly": "Semaine",
+    "monthly": "Mois",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} h",
+    "labelled": "{label}",
+    "other": "Fenêtre"
+  },
+  "resetsIn": "dans {time}",
+  "resetDone": "réinitialisé",
+  "readAgo": "Lu il y a {time}",
+  "staleSince": "Périmé, lu il y a {time}",
+  "freeIn": "À nouveau libre dans {time}",
+  "nearUntil": "Rechargé dans {time}",
+  "resetCredits": "{count, plural, one {# réinitialisation en réserve} other {# réinitialisations en réserve}}",
+  "noWindows": "Aucune fenêtre signalée.",
+  "unavailable": {
+    "no_login": "Non connecté.",
+    "api_key": "Clé d’API : pas de limites de forfait.",
+    "no_profile_scope": "Cette connexion ne peut pas lire les limites (jeton de configuration).",
+    "failed": "La lecture a échoué.",
+    "unsupported": "Ce fournisseur n’indique pas de limites."
+  },
+  "readVia": "Lu via {login}, {time}",
+  "readPassive": "D’après une réponse à {login}, {time}",
+  "forget": "Oublier le compte",
+  "resetsAt": "Réinitialisation {time}",
+  "agentTokens": "Agents : {tokens} jetons dans cette fenêtre",
+  "agents": "Agents sur ce compte : {names}",
+  "noAgents": "Aucun agent ne signale ce compte (connexion du propriétaire).",
+  "credits": "Crédits : {balance}",
+  "extraUsage": "Utilisation supplémentaire : {used} sur {limit}",
+  "settings": {
+    "auto": "Lire automatiquement",
+    "autoHint": "Helena interroge les runners à cet intervalle ; chaque connexion une seule fois, quel que soit le nombre d’agents qui l’utilisent.",
+    "autoHintAt": "Dernière interrogation il y a {time}. Chaque connexion une seule fois, quel que soit le nombre d’agents qui l’utilisent.",
+    "interval": "Intervalle",
+    "intervalHint": "À quelle fréquence Helena lit les limites.",
+    "minutes": "{count} min",
+    "near": "Juste à partir de",
+    "nearHint": "À partir de cette part, une fenêtre passe à l’orange.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider} : limite atteinte",
+    "limitedUntil": "{provider} : limite atteinte, à nouveau libre dans {time}",
+    "stale": "{provider} : limites périmées (lues il y a {time})"
+  }
+}

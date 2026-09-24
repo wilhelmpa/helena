@@ -103,8 +103,8 @@ There is no event bus. Instead there are polling outboxes (`webhook_delivery`, `
 - **Home nav.** Already data (`homeNavigation.ts`).
 - **Project nav.** JSX.
 - **Administrator.** `GOD_SECTIONS` plus 12 static routes.
-- **Target.** A `UiSlot` registry with the slots `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section` and `capture-action`.
-- **Done:** panel tools. **Open:** the other slots, one at a time, each by the agent working on that screen.
+- **Target.** A `UiSlot` registry with the slots `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section`, `capture-action` and `workspace-layout`.
+- **Done:** panel tools, workspace layouts (hub/layout, `docs/helena-decisions/layout.md`). **Open:** the other slots, one at a time, each by the agent working on that screen.
 
 ### Templates and packs
 
@@ -249,7 +249,7 @@ In the API, `publishDomainEvent(init, tx?)` (in `shared/helena.ts`) publishes a 
 
 ### 3.6 UI slots
 
-The slots are `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section` and `capture-action`.
+The slots are `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section`, `capture-action` and `workspace-layout`.
 - A built-in slot renders a React component from the web bundle.
 - A plugin slot is a **frame**: a page from the plugin's `ui/` folder, served by the API at `/plugins/<id>/ui/…`. It runs in a sandboxed iframe (`allow-scripts allow-forms`, no same-origin) and carries a `sandbox` CSP of its own.
 
@@ -260,7 +260,20 @@ ctx.uiSlots.register({
 });
 ```
 
-The web app wires the panel today (`extensions/panelTools.tsx`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
+A `workspace-layout` slot is data only: areas that show the page, the panel's own tool or a tool of their own, side by side. It appears in the header's layout menu, and any panel tool, a plugin's included, can go into its areas:
+
+```ts
+ctx.uiSlots.register({
+  slot: 'workspace-layout', id: 'review', label: { en: 'Review', de: 'Prüfen' },
+  areas: [
+    { id: 'page', shows: 'page', side: 'page' },
+    { id: 'main', shows: 'main', side: 'panel' },
+    { id: 'board', shows: 'tool', tool: 'hello', side: 'panel' },  // the plugin's own panel tool
+  ],
+});
+```
+
+The web app wires the panel (`extensions/panelTools.tsx`) and the layouts (`extensions/workspaceLayouts.ts`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
 
 ### 3.7 Runtimes
 
@@ -297,6 +310,29 @@ The format is `@helena/sdk` `TemplateBundle` (JSON Schema `@helena/sdk/bundle.sc
 - Agentenpool → "Vorlagen importieren" lists every offer and accepts a file.
 - Agentenpool → "Vorlagen exportieren" downloads the team's templates.
 - The routes are `/teams/:teamId/template-bundles/{offers,import,export}`.
+
+### 3.10 Usage-limit sources
+
+A `UsageLimitSource` reads how much of a subscription's limits is used: the rolling session window, the week, model-specific weeks, pay-as-you-go credit. It reads where a login already lives, inside the process that holds it, and hands Helena numbers only (`UsageLimitSnapshot`: provider, a hash of the account, windows with share used and reset time, plan, state hints). Decision and sources: [helena-decisions/provider-limits.md](helena-decisions/provider-limits.md).
+
+```ts
+ctx.usageLimitSources.register({
+  id: 'acme.credits',
+  label: { en: 'Acme credits', de: 'Acme-Guthaben' },
+  providers: ['acme'],
+  // API/worker: numbers it can fetch without an agent (a key from the plugin's settings).
+  poll: async ({ now }) => [{ provider: 'acme', account: 'main', source: 'acme.credits', login: null,
+    plan: 'team', windows: [{ id: 'monthly', kind: 'monthly', label: null, usedPercent: 37,
+    windowMinutes: 43200, resetsAt: '2026-10-01T00:00:00Z', severity: null, limited: null }],
+    extra: null, resetCredits: null, allowed: true, via: 'probe', observedAt: now.toISOString(),
+    unavailable: null }],
+});
+```
+
+- **Runner sources** offer `probes(context)` (one per login, keyed, so a login several agents share is probed once per interval) and `observe(format, context)` (snapshots read off a runtime's own output as a run goes). The built-ins are `hermes` (Hermes' own `account_usage`), `codex` (Codex' app-server `account/rateLimits/read`) and `claude-code` (Claude Code's local `/usage` and its `rate_limit_event` lines), internal plugin `helena.limits` in `packages/runner/src/limits`.
+- **API sources** offer `poll(context)`. The built-in is `spool` (files the owner reporter `itsaplan-runner limits-report` writes; internal plugin `helena.limits` in the API).
+- Helena asks the runners with the runtime request `limits.read` once per interval and on "Aktualisieren"; runners also post to `POST /agent-runtime/limits`. Everything a source hands over is checked with `normalizeUsageLimitSnapshot`; `windowState`/`snapshotState` give ok, near, limited or unknown.
+- The numbers are read with `GET /provider-limits` and the read-only MCP tool `get_provider_limits`.
 
 ## 4. Plugin schreiben
 
@@ -386,5 +422,6 @@ The format is `@helena/sdk` `TemplateBundle` (JSON Schema `@helena/sdk/bundle.sc
 | hub/hermes-sync (merged) | `RuntimeType` (`acp`), `RuntimeAdapter`, `ProfileContribution` | Your runtime.ts and the contribution types are in `@helena/sdk` unchanged (runtime-profile.ts, runtime-policy.ts; `RuntimeId` widened for plugin runtimes); the runner files re-export them and the contributions list is an SDK registry (`ctx.profileContributions` for runner plugins). Next: RUN-01, the ACP client behind `protocol: 'acp'` for Claude and Codex (Hermes stays on its CLI). |
 | hub/agent-browser-mcp | `AgentTool` | Register the 24 `browser_*` tools with `category` + `classify(input)` (click may send/pay/publish); import categories from the SDK; a real `handover` approval kind instead of the text prefix. |
 | hub/second-brain | `KnowledgeSource`, `CaptureTarget`, `capture-action` slot | The API and worker hosts exist: `host` in `apps/api/src/shared/helena.ts`, `startEventDelivery().host` in `apps/worker/src/events.ts`. Load `knowledgePlugin` there with `host.load(knowledgePlugin, manifest)`; the host's `knowledgeSources`/`captureTargets` are the registries. |
+| hub/provider-limits | `UsageLimitSource` | The registry and its built-ins (`hermes`, `codex`, `claude-code` in the runner, `spool` in the API). hub/autopilot: an evaluator may read `agentLimitState(agentId)` (`#modules/provider-limits/service`) to hold non-urgent runs back while the agent's account is at its limit (optional, proposed in provider-limits.md). |
 | hub/oss-packaging | plugins dir, logger | `HELENA_PLUGINS_DIR` in the units/compose; OPS-01 pino logger behind `ctx.log`. |
 | web owners | UI slots | Settings sections, agent sections, dashboard widgets, header actions, home nav and admin sections move onto the slot registry one at a time, the way the panel did. |

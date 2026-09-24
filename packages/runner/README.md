@@ -368,6 +368,33 @@ the applied revision, a profile digest, the runtime's version and what keeps it 
 runtime to Claude Code or Codex in Helena: the server provisions it like a Hermes agent, and
 its runner serves it with that preset.
 
+## Plan limits
+
+Helena shows how much of the plan limits of the subscriptions your agents run on is used (the
+ChatGPT plan behind Codex and Hermes' `openai-codex`, the Claude plan behind Claude Code): the
+rolling session window, the week and model-specific weeks, with their reset times. The runner
+reads them with the runtime's own login and sends numbers only
+(`docs/helena-decisions/provider-limits.md`):
+
+- **Hermes:** Hermes' own `agent.account_usage` (what `hermes usage` prints), once per login store
+  however many agents share it.
+- **Codex:** `codex app-server` → `account/rateLimits/read`, for a ChatGPT login in the agent's
+  `CODEX_HOME` (an API key has no plan limits).
+- **Claude Code:** the `rate_limit_event` lines of every run and chat answer; for a stored
+  claude.ai login also the local `/usage` command (a `claude setup-token` token cannot read it).
+
+Helena asks through the runtime request `limits.read` (Administrator → Agenten-Laufzeit →
+Limits sets the interval); the runner caches each login's answer for four minutes.
+
+Two commands read limits outside the agent loop:
+
+```sh
+# The owner's own Claude Code and Codex logins, as the owner, into Helena's spool
+itsaplan-runner limits-report --out /var/lib/helena-limits/reports/owner.json
+# What the runner would answer for one runtime home (for a proof after a deploy)
+itsaplan-runner limits-probe --runtime hermes --home "$HERMES_HOME" --provider openai-codex
+```
+
 ## What the coding agent receives
 
 ### The task text

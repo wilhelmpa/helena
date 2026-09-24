@@ -1,0 +1,4 @@
+# Installed by deployment/volition-stack/native/limits/install.sh: the API reads the owner
+# reporter's snapshots (numbers only) from the spool.
+[Service]
+Environment=HELENA_LIMITS_SPOOL_DIR=@SPOOL@

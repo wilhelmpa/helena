@@ -1,8 +1,7 @@
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { treaty } from '@elysiajs/eden';
-import { app } from '../../app';
+import { app, client } from './app';
 
 // The bearer of the internal bootstrap routes the provisioning service calls. The file is
 // written when this module loads, once per test process, because the API caches the
@@ -15,5 +14,5 @@ process.env.PLAN_CONTROL_TOKEN_FILE = file;
 
 // Treaty client that calls the internal routes the way the provisioning service does.
 export function controlApi() {
-  return treaty(app, { headers: { authorization: `Bearer ${PLAN_CONTROL_TOKEN}` } });
+  return client(app, { headers: { authorization: `Bearer ${PLAN_CONTROL_TOKEN}` } });
 }
