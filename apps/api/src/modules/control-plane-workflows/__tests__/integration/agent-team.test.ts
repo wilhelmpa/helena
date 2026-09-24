@@ -1,4 +1,5 @@
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -19,6 +20,7 @@ import {
   runSteps,
   startEngine,
   stopEngineRuns,
+  stopTestEngine,
   waitForAgentRun,
   waitForStatus,
 } from '#tests/helpers/engine';
@@ -101,6 +103,10 @@ async function runsOf(asOwner: Api, teamId: number, agentId: number) {
 
 beforeAll(async () => {
   await startEngine();
+});
+
+afterAll(async () => {
+  await stopTestEngine();
 });
 
 beforeEach(async () => {

@@ -1,7 +1,7 @@
 import { DBOS } from '@dbos-inc/dbos-sdk';
 import { agentRun, db, pipelineRun, pipelineRunStep } from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
-import { launchEngine } from '#modules/engine/dbos';
+import { engineClient, launchEngine, stopEngine } from '#modules/engine/dbos';
 import { signalFinishedAgentRuns } from '#modules/engine/runs';
 
 // The Helena engine in the api tests: it runs in the test process against the test
@@ -14,8 +14,25 @@ process.env.HELENA_ENGINE_WAIT_SECONDS ??= '1';
 process.env.HELENA_ENGINE_POLL_MS ??= '100';
 process.env.HELENA_ENGINE_EXECUTOR_ID ??= 'api-tests';
 
+// The engine runs only while a file that tests it runs (beforeAll → startEngine, afterAll
+// → stopTestEngine). The other files publish their task events into the engine's queue
+// without an engine taking them, so nothing works in the background while their
+// resetDb truncates the tables; what they left is canceled before the engine starts.
 export async function startEngine(): Promise<void> {
+  await cancelLeftovers();
   await launchEngine();
+}
+
+// Cancels the workflows earlier files left queued or unfinished.
+export async function cancelLeftovers(): Promise<void> {
+  const client = await engineClient();
+  const left = await client.listWorkflows({ status: ['PENDING', 'ENQUEUED'], limit: 10_000 });
+  if (left.length > 0) await client.cancelWorkflows(left.map((item) => item.workflowID));
+}
+
+export async function stopTestEngine(): Promise<void> {
+  await stopEngineRuns();
+  await stopEngine();
 }
 
 // Stops what the previous test left running, so its workflows do not act on the rows

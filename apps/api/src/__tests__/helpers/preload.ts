@@ -22,10 +22,19 @@ if (url && process.env.NODE_ENV === 'test' && process.env.HELENA_TEST_DB_CLONE !
   if (clone) {
     process.env.DATABASE_URL = clone.url;
     afterAll(async () => {
-      // The engine keeps connections to the copy; it stops before the copy goes.
+      // The engine keeps connections to the copy; it stops before the copy goes (the
+      // drop ends whatever it leaves open).
       const { stopEngine } = await import('#modules/engine/dbos');
-      await stopEngine().catch(() => {});
+      await Promise.race([stopEngine().catch(() => {}), Bun.sleep(3_000)]);
       await clone.drop();
     });
   }
+}
+
+// The engine's schema exists from the start, so the task events of files that do not run
+// the engine can be queued (helpers/engine.ts).
+if (process.env.NODE_ENV === 'test' && process.env.DATABASE_URL) {
+  const { launchEngine, stopEngine } = await import('#modules/engine/dbos');
+  await launchEngine();
+  await stopEngine();
 }

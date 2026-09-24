@@ -10,7 +10,7 @@ import { intEnv } from '#shared/lib';
 let launching: Promise<void> | null = null;
 let running = false;
 
-// The name every Helena workflow, queue and schedule is registered under.
+// The name the engine's workflows and queues are registered under.
 export const ENGINE_APP = 'helena';
 
 // The schema of the engine's state in Helena's database.
@@ -37,8 +37,7 @@ function configure(): void {
 }
 
 // Starts the engine once: creates or migrates its schema, recovers the runs this
-// executor left pending, and starts the schedules and queues. Every later call waits for
-// the first.
+// executor left pending, and starts the queues. Every later call waits for the first.
 export function launchEngine(): Promise<void> {
   launching ??= (async () => {
     // The workflows have to be registered before the launch, and the built-in types and
@@ -73,7 +72,12 @@ export function engineRunning(): boolean {
   return running;
 }
 
+// Stops the engine and closes the client's connections (the engine starts again with
+// launchEngine).
 export async function stopEngine(): Promise<void> {
+  const open = client;
+  client = null;
+  await (await open?.catch(() => null))?.destroy();
   if (!launching) return;
   await launching.catch(() => {});
   running = false;
@@ -91,8 +95,8 @@ export function engineWaitSeconds(fallback: number): number {
   return Math.min(fallback, intEnv('HELENA_ENGINE_WAIT_SECONDS', fallback));
 }
 
-// The queues of the engine: the runs, and the outbox's events. Neither limits how many
-// workflows run at once: a run spends most of its time waiting.
+// The queue of the runs. It does not limit how many run at once: a run spends most of
+// its time waiting. The outbox's queue is in events.ts.
 export const RUNS_QUEUE = 'helena-runs';
 
 let client: Promise<DBOSClient> | null = null;

@@ -1,4 +1,5 @@
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -16,6 +17,7 @@ import {
   runSteps,
   startEngine,
   stopEngineRuns,
+  stopTestEngine,
   waitForAgentRun,
   waitForRun,
   waitForStatus,
@@ -54,6 +56,10 @@ function stepsOf(rows: Awaited<ReturnType<typeof runSteps>>) {
 
 beforeAll(async () => {
   await startEngine();
+});
+
+afterAll(async () => {
+  await stopTestEngine();
 });
 
 beforeEach(async () => {

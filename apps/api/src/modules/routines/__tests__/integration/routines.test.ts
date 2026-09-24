@@ -1,4 +1,5 @@
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -20,7 +21,7 @@ import { api, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { startEngine, stopEngineRuns, waitForStatus } from '#tests/helpers/engine';
+import { startEngine, stopEngineRuns, stopTestEngine, waitForStatus } from '#tests/helpers/engine';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
@@ -114,6 +115,10 @@ async function fire(scheduleId: string, at: Date, now = at.getTime()) {
 
 beforeAll(async () => {
   await startEngine();
+});
+
+afterAll(async () => {
+  await stopTestEngine();
 });
 
 beforeEach(async () => {

@@ -1,4 +1,5 @@
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -12,7 +13,7 @@ import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { startEngine, stopEngineRuns, waitForStatus } from '#tests/helpers/engine';
+import { startEngine, stopEngineRuns, stopTestEngine, waitForStatus } from '#tests/helpers/engine';
 import { addProjectMember } from '#tests/helpers/members';
 import {
   agentStep,
@@ -37,6 +38,10 @@ setDefaultTimeout(30_000);
 
 beforeAll(async () => {
   await startEngine();
+});
+
+afterAll(async () => {
+  await stopTestEngine();
 });
 
 afterEach(async () => {

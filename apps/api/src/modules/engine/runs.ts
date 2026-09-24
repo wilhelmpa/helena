@@ -129,6 +129,9 @@ export async function retryEngineRun(runId: string): Promise<void> {
     .orderBy(desc(pipelineRunStep.seq))
     .limit(1);
   const workflowId = row.workflowId ?? runId;
+  // The engine keeps a failed run's record for 90 days (janitor.ts).
+  if (!(await DBOS.getWorkflowStatus(workflowId)))
+    throw new HttpError(409, 'This run is too old to retry; start the workflow again');
   const steps = (await DBOS.listWorkflowSteps(workflowId)) ?? [];
   const prefix = failed ? `helena:${failed.stepId}#${failed.iteration}:` : null;
   const start =
